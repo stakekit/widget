@@ -1,0 +1,15 @@
+id: no-async-result-in-feature-ui
+language: Tsx
+severity: error
+message: Feature UI presents view states, never raw async results. Publish a Presentable (shared/effect/async-result) or a plain value from the feature's state read model.
+files:
+  - packages/widget/src/features/**/ui/**/*.ts
+  - packages/widget/src/features/**/ui/**/*.tsx
+rule:
+  kind: string
+  regex: ^["']effect/reactivity/AsyncResult["']$
+  inside:
+    stopBy: end
+    any:
+      - kind: import_statement
+      - kind: export_statement

@@ -1,10 +1,11 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import {
-  defaultFormattedNumber,
   formatNumber,
+  formatTokenAmount,
 } from "../../../../../shared/lib/number-format";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 
 export const BorrowBalanceLabel = ({
   amount,
@@ -14,6 +15,7 @@ export const BorrowBalanceLabel = ({
   readonly symbol: string;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   return (
     <AmountToggle.Root>
@@ -22,8 +24,8 @@ export const BorrowBalanceLabel = ({
           t("dashboard.borrow.form.wallet_balance", {
             amount:
               state === "full"
-                ? formatNumber(amount)
-                : defaultFormattedNumber(amount),
+                ? formatNumber(amount, locale)
+                : formatTokenAmount(amount, locale),
             symbol,
           })
         }

@@ -2,7 +2,7 @@ import { Effect, Record } from "effect";
 import type { Network } from "../../../../../domain/network/network";
 import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
-import type { WidgetVariant } from "../../../../config/widget-config-model";
+import type { HostProfile } from "../../../../config/host-profile";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { type EvmChainsMap, evmChainsMap } from "./chains";
@@ -18,13 +18,13 @@ import {
 const queryFn = async ({
   enabledNetworks,
   institutionalWallets,
-  variant,
+  walletCatalogue,
   walletConnectPresentation,
   runWalletEffect,
 }: {
   enabledNetworks: ReadonlySet<Network>;
   institutionalWallets: boolean;
-  variant: WidgetVariant;
+  walletCatalogue: HostProfile["walletCatalogue"];
 } & EvmWalletPresentationOptions): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
@@ -53,7 +53,7 @@ const queryFn = async ({
   });
 
   const getConfiguredWallets = (): WalletList[number]["wallets"] => {
-    if (variant === "porto") return [portoWallet];
+    if (walletCatalogue === "porto") return [portoWallet];
     return [
       wallets.metaMaskWallet,
       injectedWallet,
@@ -77,10 +77,9 @@ const queryFn = async ({
     evmChainsMap: filteredEvmChainsMap,
     evmChains,
     connector: evmChains.length > 0 ? connector : null,
-    institutionalWallets:
-      variant === "finery" || institutionalWallets
-        ? createFineryWallets(evmChains, wallets)
-        : null,
+    institutionalWallets: institutionalWallets
+      ? createFineryWallets(evmChains, wallets)
+      : null,
   };
 };
 

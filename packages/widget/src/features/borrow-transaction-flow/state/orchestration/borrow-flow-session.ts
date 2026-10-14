@@ -1,8 +1,12 @@
-import { Effect, type Scope, ScopedRef } from "effect";
+import { Effect, Option, type Scope, ScopedRef } from "effect";
 import type { Action } from "../../../../domain/borrow/execution/action";
 import { WidgetNavigation } from "../../../../services/navigation/widget-navigation";
 import type { TransactionWorkflowInputError } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { acquireInChildScope } from "../../../../shared/effect/child-scope";
+import {
+  makeScopedExclusiveSlot,
+  type ScopedExclusiveSlot,
+} from "../../../../shared/effect/scoped-exclusive-slot";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {
   type BorrowFlowSession,
@@ -23,7 +27,8 @@ export type AcquireBorrowFlowExecutionOutcome =
       readonly _tag: "Acquired";
       readonly execution: BorrowFlowExecutionHandle;
     }>
-  | Readonly<{ readonly _tag: "RejectedNoReservation" }>;
+  | Readonly<{ readonly _tag: "RejectedNoReservation" }>
+  | Readonly<{ readonly _tag: "RejectedExecutionLive" }>;
 
 export type BorrowFlowSessionHandle = Readonly<{
   readonly acquireExecution: () => Effect.Effect<
@@ -39,10 +44,13 @@ export type BorrowFlowSessionHandle = Readonly<{
   readonly intake: BorrowFlowSession["intake"];
 }>;
 
-/** The reserved action and the Scope its Execution lives in. */
+/**
+ * The reserved action and the slot its one live Execution holds. The slot lives
+ * in the reservation's Scope, so replacing the reservation ends its Execution.
+ */
 type BorrowFlowReservation = Readonly<{
   readonly action: Action;
-  readonly scope: Scope.Scope;
+  readonly executionSlot: ScopedExclusiveSlot;
 }>;
 
 export const makeBorrowFlowSessionFactory = Effect.fn(
@@ -83,7 +91,10 @@ export const makeBorrowFlowSessionFactory = Effect.fn(
           yield* Effect.uninterruptible(
             ScopedRef.set(
               reservation,
-              Effect.map(Effect.scope, (scope) => ({ action, scope }))
+              Effect.map(makeScopedExclusiveSlot(), (executionSlot) => ({
+                action,
+                executionSlot,
+              }))
             ).pipe(
               Effect.andThen(
                 navigation.execute({ _tag: "Push", path: paths.stepsPath })
@@ -121,15 +132,17 @@ export const makeBorrowFlowSessionFactory = Effect.fn(
       > {
         const reserved = yield* ScopedRef.get(reservation);
         if (!reserved) return { _tag: "RejectedNoReservation" } as const;
-        const execution = yield* acquireInChildScope(
-          reserved.scope,
+        const execution = yield* reserved.executionSlot.acquire(
           makeExecution({
             action: reserved.action,
             intake: session.intake,
             walletScope: session.walletScope,
           })
         );
-        return { _tag: "Acquired", execution } as const;
+        return Option.match(execution, {
+          onNone: () => ({ _tag: "RejectedExecutionLive" }) as const,
+          onSome: (execution) => ({ _tag: "Acquired", execution }) as const,
+        });
       }
     );
 

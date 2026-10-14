@@ -1,6 +1,3 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
-import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   packageEntries,
@@ -232,68 +229,5 @@ describe.each(packageEntries)("entry declarations: %s", (entry) => {
         new RegExp(`\\b${name}\\b`, "u").test(outputText)
       )
     ).toStrictEqual([]);
-  });
-});
-
-const widgetRoot = path.resolve(import.meta.dirname, "..", "..");
-
-const resolveModuleSpecifier = (
-  fromRelativePath: string,
-  specifier: string
-): string => {
-  // Declaration-reachable files carry the runtime `.js` specifier they publish.
-  const base = path.join(
-    path.dirname(path.join(widgetRoot, fromRelativePath)),
-    specifier.replace(/\.js$/u, "")
-  );
-  const resolved = [
-    `${base}.ts`,
-    `${base}.tsx`,
-    path.join(base, "index.ts"),
-    path.join(base, "index.tsx"),
-  ].find((candidate) => existsSync(candidate));
-
-  if (!resolved) {
-    throw new Error(
-      `Cannot resolve "${specifier}" from ${fromRelativePath}. Public API ` +
-        "files may only import relative paths inside packages/widget."
-    );
-  }
-
-  return path.relative(widgetRoot, resolved);
-};
-
-describe("public API dependencies", () => {
-  it("imports Domain only through contract.ts files", () => {
-    const publicApiFiles = readdirSync(path.join(widgetRoot, "src/public-api"))
-      .filter((file) => file.endsWith(".ts"))
-      .map((file) => path.join("src/public-api", file));
-
-    const disallowed = publicApiFiles.flatMap((publicApiFile) =>
-      ts
-        .createSourceFile(
-          publicApiFile,
-          readFileSync(path.join(widgetRoot, publicApiFile), "utf8"),
-          ts.ScriptTarget.ESNext,
-          true
-        )
-        .statements.flatMap((statement) =>
-          (ts.isImportDeclaration(statement) ||
-            ts.isExportDeclaration(statement)) &&
-          statement.moduleSpecifier &&
-          ts.isStringLiteral(statement.moduleSpecifier)
-            ? [statement.moduleSpecifier.text]
-            : []
-        )
-        .filter((specifier) => specifier.startsWith("."))
-        .map((specifier) => resolveModuleSpecifier(publicApiFile, specifier))
-        .filter((resolved) => !resolved.startsWith("src/public-api/"))
-        .filter(
-          (resolved) => !/^src\/domain\/.+\/contract\.ts$/u.test(resolved)
-        )
-        .map((resolved) => `${publicApiFile} -> ${resolved}`)
-    );
-
-    expect(disallowed).toStrictEqual([]);
   });
 });

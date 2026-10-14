@@ -17,11 +17,14 @@ import {
 import { Token } from "../token/token";
 
 const PendingActionArgumentField = Schema.Struct({
-  ...YieldApi.ArgumentFieldDto.fields,
+  ...Struct.pick(YieldApi.ArgumentFieldDto.fields, ["name", "required"]),
   maximum: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
   minimum: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
 });
 
+// Request bodies keep every generated field: the widget writes them, and a
+// listed action's `rawArguments` is forwarded whole to host wallets as
+// `SKActionArguments`.
 const ActionArguments = Schema.Struct({
   ...YieldApi.ActionArgumentsDto.fields,
   providerId: Schema.optionalKey(ProviderOption),
@@ -47,7 +50,20 @@ export const TransactionGasEstimateJson = Schema.fromJsonString(
 );
 
 export const ActionTransaction = Schema.Struct({
-  ...YieldApi.TransactionDto.fields,
+  ...Struct.pick(YieldApi.TransactionDto.fields, [
+    "network",
+    "status",
+    "type",
+    "hash",
+    "unsignedTransaction",
+    "annotatedTransaction",
+    "structuredTransaction",
+    "stepIndex",
+    "error",
+    "gasEstimate",
+    "explorerUrl",
+    "isMessage",
+  ]),
   broadcastedAt: TolerantNullableUtcDateTimeFromString({
     operation: "yield-action-transaction",
     field: "broadcastedAt",
@@ -66,7 +82,7 @@ export type ActionTransactionReceipt = typeof ActionTransactionReceipt.Type;
 
 // `executionPattern` and `events` are unread, so they are not decoded.
 export const YieldAction = Schema.Struct({
-  ...Struct.omit(YieldApi.ActionDto.fields, ["executionPattern", "events"]),
+  ...Struct.pick(YieldApi.ActionDto.fields, ["intent", "type", "status"]),
   address: WalletAddress,
   amount: Schema.NullOr(ExactDecimal),
   amountRaw: Schema.NullOr(ExactBaseUnitAmount),
@@ -100,12 +116,15 @@ export const ManageActionCommand = Schema.Struct({
 export type ManageActionCommand = typeof ManageActionCommand.Type;
 
 export const PendingAction = Schema.Struct({
-  ...YieldApi.PendingActionDto.fields,
+  ...Struct.pick(YieldApi.PendingActionDto.fields, [
+    "intent",
+    "type",
+    "passthrough",
+  ]),
   amount: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
   arguments: Schema.optionalKey(
     Schema.Union([
       Schema.Struct({
-        ...YieldApi.ArgumentSchemaDto.fields,
         fields: Schema.optionalKey(Schema.Array(PendingActionArgumentField)),
       }),
       Schema.Null,

@@ -238,6 +238,54 @@ export const updateCurrentTransactionWorkflowTransaction = ({
   };
 };
 
+/**
+ * Applies a Borrow action response to every transaction of the current batch,
+ * matched by transaction identity. Remote status and payload facts replace the
+ * local snapshot; local submission facts (signed payload, broadcast flag,
+ * submission) are kept.
+ */
+export const reconcileBorrowTransactionWorkflowBatch = ({
+  action,
+  context,
+}: {
+  readonly action: BorrowAction;
+  readonly context: TransactionWorkflowContext;
+}): TransactionWorkflowContext => {
+  const remoteById = new Map(
+    action.transactions.map((transaction) => [transaction.id, transaction])
+  );
+
+  return {
+    ...context,
+    batches: context.batches.map((batch, batchIndex) =>
+      batchIndex === context.currentBatchIndex
+        ? {
+            ...batch,
+            transactions: batch.transactions.map((transaction) => {
+              const remote =
+                transaction.source._tag === "Borrow"
+                  ? remoteById.get(transaction.source.transaction.id)
+                  : undefined;
+
+              return remote
+                ? {
+                    meta: {
+                      ...transaction.meta,
+                      done:
+                        transaction.meta.done ||
+                        isTransactionWorkflowDoneStatus(remote.status),
+                    },
+                    source: { _tag: "Borrow", transaction: remote },
+                  }
+                : transaction;
+            }),
+          }
+        : batch
+    ),
+    domain: { _tag: "Borrow", action },
+  };
+};
+
 export const selectNextTransactionWorkflowTransaction = (
   context: TransactionWorkflowContext
 ): TransactionWorkflowContext => {

@@ -24,6 +24,9 @@ export const DashboardTab = ({ isSelected, variant, onTabPress }: Props) => {
   const { t } = useTranslation();
   const appVariant = useWidgetConfig("variant");
 
+  // ast-grep-ignore: no-host-variant-comparison -- variant-keyed style: the Finery theme underlines the selected tab
+  const showsTabBorder = isSelected && appVariant === "finery";
+
   return (
     <Box
       className={combineRecipeWithVariant({
@@ -55,9 +58,7 @@ export const DashboardTab = ({ isSelected, variant, onTabPress }: Props) => {
         </Text>
       </Box>
 
-      {isSelected && appVariant === "finery" ? (
-        <div className={tabBorder} />
-      ) : null}
+      {showsTabBorder ? <div className={tabBorder} /> : null}
     </Box>
   );
 };

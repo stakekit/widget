@@ -12,6 +12,7 @@ import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
 import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
 import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import {
   formatCommission,
@@ -369,11 +370,12 @@ const ProviderMetaLine = ({
   tokenSymbol: string;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const statusLabel = formatProviderStatus(item.status, t);
 
   const details = [
-    formatCommission(item.commission),
-    formatProviderTvl(item.stakedBalance, tokenSymbol),
+    formatCommission(item.commission, locale),
+    formatProviderTvl(item.stakedBalance, tokenSymbol, locale),
     statusLabel,
   ].filter((item): item is string => !!item);
 

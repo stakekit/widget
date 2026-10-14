@@ -261,7 +261,7 @@ export const makeWalletConnectPicker = Effect.fn("makeWalletConnectPicker")(
         apiErrors: undefined,
         customTranslations: undefined,
         language: "en",
-        variant: "default",
+        translationOverlay: "none",
       }),
     });
 

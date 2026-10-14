@@ -39,13 +39,24 @@ export type ModuleCollectionDeclaration = Readonly<{
   parent?: string;
 }>;
 
-export type OwnedModuleDeclaration = Readonly<{
+type ApiOwnedModuleDeclaration = Readonly<{
   kind: "api";
   root: string;
   interfaces: Readonly<
     Record<"resource-sources" | "operations" | "runtime", ReadonlyArray<string>>
   >;
 }>;
+
+/** A service whose `internal/` folder only the service itself may import. */
+type ServiceOwnedModuleDeclaration = Readonly<{
+  kind: "service";
+  name: string;
+  root: string;
+}>;
+
+export type OwnedModuleDeclaration =
+  | ApiOwnedModuleDeclaration
+  | ServiceOwnedModuleDeclaration;
 
 type GeneratedRuntimeDeclaration = Readonly<{
   files: ReadonlyArray<string>;
@@ -147,6 +158,16 @@ export const architecturePolicy = {
         runtime: ["src/app/runtime"],
       },
     }),
+    ownedModule({
+      kind: "service",
+      name: "wallet",
+      root: "src/services/wallet",
+    }),
+    ownedModule({
+      kind: "service",
+      name: "transaction-workflow",
+      root: "src/services/transaction-workflow",
+    }),
   ],
   generatedRuntime: {
     root: "src/generated/api",
@@ -168,8 +189,9 @@ const audiencePaths: Readonly<Record<AudienceName, ReadonlyArray<string>>> = {
   "borrow-composition": ["^src/features/borrow/composition\\.ts$"],
   "borrow-runtime": ["^src/features/borrow/runtime\\.ts$"],
 };
-const ownedModulePath =
-  "^(?:src/features/[^/]+/|src/resources/[^/]+/|src/services/api/)";
+const ownedModulePath = `^(?:src/features/[^/]+/|src/resources/[^/]+/|${architecturePolicy.ownedModules
+  .map((declaration) => `${declaration.root}/`)
+  .join("|")})`;
 
 const makeLayerRules = (): IForbiddenRuleType[] =>
   architecturePolicy.layers.map((layer) => ({
@@ -389,15 +411,27 @@ const makeCollectionRules = (
 
 const directoryPattern = (path: string) => `^${path.replaceAll("*", "[^/]+")}/`;
 
-const makeOwnedModuleRules = (
-  declaration: OwnedModuleDeclaration
+const makeServiceModuleRules = (
+  declaration: ServiceOwnedModuleDeclaration
+): IForbiddenRuleType[] => [
+  {
+    name: `${declaration.name}-internals-private`,
+    severity: "error",
+    comment: `Only ${declaration.root} may import its internal/ folder.`,
+    from: { pathNot: `^${declaration.root}/` },
+    to: { path: `^${declaration.root}/internal/` },
+  },
+];
+
+const makeApiModuleRules = (
+  declaration: ApiOwnedModuleDeclaration
 ): IForbiddenRuleType[] => {
   const interfacePaths = Object.fromEntries(
     Object.keys(declaration.interfaces).map((name) => [
       name,
       `^${declaration.root}/${name}\\.ts$`,
     ])
-  ) as Record<keyof OwnedModuleDeclaration["interfaces"], string>;
+  ) as Record<keyof ApiOwnedModuleDeclaration["interfaces"], string>;
   const allInterfaces = `^${declaration.root}/(?:${Object.keys(
     declaration.interfaces
   ).join("|")})\\.ts$`;
@@ -431,13 +465,20 @@ const makeOwnedModuleRules = (
         },
         to: {
           path: interfacePaths[
-            name as keyof OwnedModuleDeclaration["interfaces"]
+            name as keyof ApiOwnedModuleDeclaration["interfaces"]
           ],
         },
       })
     ),
   ];
 };
+
+const makeOwnedModuleRules = (
+  declaration: OwnedModuleDeclaration
+): IForbiddenRuleType[] =>
+  declaration.kind === "api"
+    ? makeApiModuleRules(declaration)
+    : makeServiceModuleRules(declaration);
 
 const configuration: IConfiguration = {
   forbidden: [
@@ -483,6 +524,14 @@ const configuration: IConfiguration = {
         ],
       },
       to: { path: "^src/public-api/" },
+    },
+    {
+      name: "api-transport-neutral",
+      severity: "error",
+      comment:
+        "API transport only acquires data; Resources and operations decide whether a failure is presented as a Rich Error.",
+      from: { path: "^src/services/api/transport\\.ts$" },
+      to: { path: "^src/services/errors/" },
     },
     {
       name: "shared-public-theme-contract-only",

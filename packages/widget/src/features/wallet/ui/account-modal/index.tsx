@@ -1,7 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Title } from "@radix-ui/react-dialog";
 import clsx from "clsx";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
@@ -50,10 +49,7 @@ export const AccountModal = () => {
   const logout = useAtomSet(logoutAtom);
   const switchAccount = useAtomSet(switchAccountAtom);
   const copyAddress = useAtomSet(copyWalletAddressAtom);
-  const copied = AsyncResult.getOrElse(
-    useAtomValue(walletAddressCopiedAtom),
-    () => false
-  );
+  const copied = useAtomValue(walletAddressCopiedAtom);
 
   // A connecting wallet keeps its scope owner while a network switch settles.
   if (!wallet?.network) return null;

@@ -16,6 +16,7 @@ import {
 import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { combineAsyncResults } from "../../shared/effect/async-result";
 import { borrowIntegrationsResourceAtom } from "../borrow-integrations/index";
 import {
   BorrowMarketsKey,
@@ -100,7 +101,7 @@ const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
 
   return Atom.readable(
     (get) =>
-      AsyncResult.all({
+      combineAsyncResults({
         integrationPositions: get(positionDataAtom),
         markets: get(marketsAtom),
       }).pipe(

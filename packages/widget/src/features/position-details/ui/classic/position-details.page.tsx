@@ -2,12 +2,16 @@ import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
-import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
+import {
+  formatRewardRatePercent,
+  formatTokenAmount,
+} from "../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
@@ -43,6 +47,7 @@ const PositionDetails = () => {
   });
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (!isLoading && positionLost) {
     return <Navigate replace to="/positions" />;
@@ -120,9 +125,10 @@ const PositionDetails = () => {
                     variant={{ level: "h4" }}
                     data-testid="personalized-reward-rate"
                   >
-                    {getRewardRateFormatted({
-                      rewardRate: personalizedRewardRate.total,
-                    })}
+                    {formatRewardRatePercent(
+                      personalizedRewardRate.total,
+                      locale
+                    )}
                   </Heading>
                 </Box>
 
@@ -193,11 +199,19 @@ const PositionDetails = () => {
                 flexDirection="column"
                 gap="1"
               >
-                {[...shareToAmountConversionsValue.values()].map((v) => (
-                  <Text variant={{ type: "muted", weight: "normal" }} key={v}>
-                    {v}
-                  </Text>
-                ))}
+                {[...shareToAmountConversionsValue].map(
+                  ([tokenKey, conversion]) => (
+                    <Text
+                      variant={{ type: "muted", weight: "normal" }}
+                      key={tokenKey}
+                    >
+                      {`1 ${conversion.symbol} = ${formatTokenAmount(
+                        conversion.rate,
+                        locale
+                      )} ${conversion.shareSymbol}`}
+                    </Text>
+                  )
+                )}
               </Box>
             ) : null}
 

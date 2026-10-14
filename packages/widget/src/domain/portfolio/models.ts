@@ -4,10 +4,12 @@ import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantArray, TolerantRecord } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { WalletAddress, YieldId } from "../identity/identifiers";
-import { Token } from "../token/token";
+import { LegacyToken } from "../token/token";
 import { AdditionalAddresses } from "../wallet/address";
 
-export const KycStatus = YieldApi.KycStatusResponseDto;
+export const KycStatus = YieldApi.KycStatusResponseDto.mapFields(
+  Struct.pick(["kycStatus", "authorizeUrl"])
+);
 export type KycStatus = typeof KycStatus.Type;
 
 export const HistoryPeriod = Schema.Literals(["30d", "90d", "1y", "all"]);
@@ -20,7 +22,6 @@ export const HistoryPoint = Schema.Struct({
 export type HistoryPoint = typeof HistoryPoint.Type;
 
 const RewardRateHistoryItem = Schema.Struct({
-  ...YieldApi.RewardRateSnapshotDto.fields,
   rewardRate: ExactDecimal,
   timestamp: UtcDateTimeFromString,
 });
@@ -36,7 +37,6 @@ export type TvlHistoryItem = typeof TvlHistoryItem.Type;
 // The response `interval` echoes the request and is unread, so it is not
 // decoded.
 export const RewardRateHistoryResponse = Schema.Struct({
-  ...Struct.omit(YieldApi.RewardRateHistoryResponseDto.fields, ["interval"]),
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
@@ -46,7 +46,6 @@ export const RewardRateHistoryResponse = Schema.Struct({
 });
 
 export const TvlHistoryResponse = Schema.Struct({
-  ...Struct.omit(YieldApi.TvlHistoryResponseDto.fields, ["interval"]),
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
@@ -56,8 +55,8 @@ export const TvlHistoryResponse = Schema.Struct({
 });
 
 export const RewardsSummary = Schema.Struct({
-  ...LegacyApi.YieldRewardsSummaryResponseDto.fields,
-  token: LegacyApi.TokenDto.pipe(Schema.decodeTo(Token)),
+  ...Struct.pick(LegacyApi.YieldRewardsSummaryResponseDto.fields, ["rewards"]),
+  token: LegacyToken,
 });
 export type RewardsSummary = typeof RewardsSummary.Type;
 

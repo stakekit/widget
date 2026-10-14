@@ -1,22 +1,20 @@
 import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { useMemo } from "react";
 import { exactDecimal } from "../../../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";
-import {
-  PricesKey,
-  pricesAtom,
-} from "../../../../../../resources/token-prices/index";
+import { PricesKey } from "../../../../../../resources/token-prices/index";
 import { config } from "../../../../../../shared/config/widget-defaults";
-import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../../yield-summary/index";
+import { positionPricesAtom } from "../../../../state/read-models/position-list-item";
 import type { PositionItem } from "../../../../state/read-models/positions";
 import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {
+  const { locale } = useWidgetPresentation();
   const {
     integrationData,
     providersDetails,
@@ -24,68 +22,56 @@ export const usePositionListItem = (item: PositionItem) => {
     inactiveValidator,
     baseToken,
     totalAmountFormatted,
-    totalAmountPriceFormatted,
+    totalAmountUsd,
   } = useBasePositionListItem(item);
 
-  const rewardsSummaries = AsyncResult.getOrElse(
-    useAtomValue(
-      currentRewardsSummaryAtom(
-        new CurrentRewardsSummaryKey({
-          yieldIds: [item.integrationId],
-        })
-      )
-    ),
-    () => null
+  const rewardsSummaries = useAtomValue(
+    currentRewardsSummaryAtom(
+      new CurrentRewardsSummaryKey({
+        yieldIds: [item.integrationId],
+      })
+    )
   );
 
-  const rewardsSummary = useMemo(() => {
-    const summary = rewardsSummaries?.[item.integrationId];
+  const summary =
+    rewardsSummaries._tag === "Ready"
+      ? rewardsSummaries.value?.[item.integrationId]
+      : undefined;
+  const rewardsSummary =
+    summary && exactDecimal(summary.rewards.total).gt(0) ? summary : null;
 
-    return summary && exactDecimal(summary.rewards.total).gt(0)
-      ? summary
+  const pricesView = useAtomValue(
+    positionPricesAtom(
+      new PricesKey({
+        request: {
+          currency: config.currency,
+          tokenList: [
+            ...(baseToken ? [baseToken] : []),
+            ...(rewardsSummary ? [rewardsSummary.token] : []),
+          ],
+        },
+      })
+    )
+  );
+  const prices = pricesView._tag === "Ready" ? pricesView.value : null;
+
+  const rewardsAmountFormatted = rewardsSummary
+    ? formatTokenAmount(exactDecimal(rewardsSummary.rewards.total), locale)
+    : null;
+
+  const rewardsAmountPriceFormatted =
+    baseToken && rewardsSummary && prices
+      ? formatTokenAmount(
+          getTokenPriceInUSD({
+            baseToken,
+            amount: rewardsSummary.rewards.total,
+            pricePerShare: null,
+            token: rewardsSummary.token,
+            prices,
+          }),
+          locale
+        )
       : null;
-  }, [item.integrationId, rewardsSummaries]);
-
-  const prices = AsyncResult.getOrElse(
-    useAtomValue(
-      pricesAtom.foreground(
-        new PricesKey({
-          request: {
-            currency: config.currency,
-            tokenList: [
-              ...(baseToken ? [baseToken] : []),
-              ...(rewardsSummary ? [rewardsSummary.token] : []),
-            ],
-          },
-        })
-      )
-    ),
-    () => null
-  );
-
-  const rewardsAmountFormatted = useMemo(
-    () =>
-      rewardsSummary
-        ? defaultFormattedNumber(exactDecimal(rewardsSummary.rewards.total))
-        : null,
-    [rewardsSummary]
-  );
-
-  const rewardsAmountPriceFormatted = useMemo(
-    () =>
-      baseToken && rewardsSummary && prices
-        ? defaultFormattedNumber(
-            getTokenPriceInUSD({
-              baseToken,
-              amount: rewardsSummary.rewards.total,
-              pricePerShare: null,
-              token: rewardsSummary.token,
-              prices,
-            })
-          )
-        : null,
-    [rewardsSummary, baseToken, prices]
-  );
 
   return {
     integrationData,
@@ -93,7 +79,7 @@ export const usePositionListItem = (item: PositionItem) => {
     rewardRateAverage,
     inactiveValidator,
     totalAmountFormatted,
-    totalAmountPriceFormatted,
+    totalAmountUsd,
     rewardsAmountFormatted,
     rewardsAmountPriceFormatted,
   };

@@ -1,7 +1,12 @@
+import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { PositionDetailsLabelType } from "../../../../domain/portfolio/positions";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../shared/ui/primitives/box";
@@ -10,6 +15,7 @@ import { SKLink } from "../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { PositionItem } from "../../state/read-models/positions";
 import {
@@ -31,7 +37,8 @@ export type EarnPositionListItemDetails = {
   > | null;
   readonly rewardRateAverage: string | null;
   readonly totalAmountFormatted: string | null;
-  readonly totalAmountPriceFormatted: string | null;
+  /** Positive USD value of the position, when priced. */
+  readonly totalAmountUsd: BigNumber | null;
 };
 
 type Presentation = "classic" | "dashboard";
@@ -45,6 +52,8 @@ const EarnPositionAmount = ({
   readonly details: EarnPositionListItemDetails;
   readonly presentation: Presentation;
 }) => {
+  const { locale } = useWidgetPresentation();
+
   if (details.totalAmountFormatted && item.token) {
     return (
       <Box
@@ -58,12 +67,12 @@ const EarnPositionAmount = ({
           {details.totalAmountFormatted} {item.token.symbol}
         </Text>
 
-        {details.totalAmountPriceFormatted ? (
+        {details.totalAmountUsd ? (
           <Text
             className={noWrap}
             variant={{ type: "muted", weight: "normal" }}
           >
-            ≈ ${details.totalAmountPriceFormatted}
+            ≈ {formatUsd(details.totalAmountUsd, locale)}
           </Text>
         ) : null}
       </Box>
@@ -85,6 +94,7 @@ export const EarnPositionListItem = ({
   readonly presentation: Presentation;
 }): ReactElement => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   const {
     integrationData,
@@ -235,7 +245,7 @@ export const EarnPositionListItem = ({
                       overflowWrap="anywhere"
                       variant={{ type: "muted", weight: "normal" }}
                     >
-                      {val.amount}
+                      {formatTokenAmount(val.amount, locale)}
                     </Text>
                   </Box>
                 ))}

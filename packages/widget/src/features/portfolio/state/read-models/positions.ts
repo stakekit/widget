@@ -13,10 +13,7 @@ import {
   toPositionsData,
 } from "../../../../domain/portfolio/positions";
 import type { YieldBalanceLabel } from "../../../../domain/portfolio/token-balance";
-import {
-  widgetBootstrapSnapshotAtom,
-  widgetConfigAtom,
-} from "../../../../features/widget-configuration/index";
+import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
@@ -25,7 +22,7 @@ import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
 } from "../../../../resources/yield-directory/index";
-import { defaultFormattedNumber } from "../../../../shared/lib/number-format";
+import { toPresentable } from "../../../../shared/effect/async-result";
 import { walletScopeAtom } from "../../../wallet/index";
 import { yieldBalancesScanAtom } from "./yield-balances";
 
@@ -35,9 +32,7 @@ export type PositionItem = {
   readonly allBalances: EarnBalance[];
   readonly balanceId: string;
   readonly actionRequired: boolean;
-  readonly pointsRewardTokenBalances: ReadonlyArray<
-    Omit<EarnBalance, "amount"> & { readonly amount: string }
-  >;
+  readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
   readonly hasPendingClaimRewards: boolean;
   readonly token: EarnBalance["token"] | null;
   readonly yieldLabelDto: YieldBalanceLabel | null;
@@ -93,12 +88,9 @@ export const toPositionItems = (
           actionRequired:
             balancesWithAmount.some((balance) => balance.type === "locked") ||
             hasPendingNonClaimAction,
-          pointsRewardTokenBalances: balancesWithAmount
-            .filter((balance) => !!balance.token.isPoints)
-            .map((balance) => ({
-              ...balance,
-              amount: defaultFormattedNumber(balance.amount),
-            })),
+          pointsRewardTokenBalances: balancesWithAmount.filter(
+            (balance) => !!balance.token.isPoints
+          ),
           hasPendingClaimRewards: balancesWithAmount.some((balance) =>
             balance.pendingActions.some(
               (action) => action.type === "CLAIM_REWARDS"
@@ -129,14 +121,21 @@ const positionsDataAtom = yieldBalancesScanAtom.pipe(
 );
 
 export const positionsTableDataAtom = Atom.make((get) => {
-  const variant = get(widgetBootstrapSnapshotAtom).wallet.variant;
+  const zerionPresentation =
+    get(widgetConfigAtom).hostProfile.earnPresentation.zerion;
 
   return get(positionsDataAtom).pipe(
     AsyncResult.map((positions) =>
-      toPositionItems(positions, variant === "zerion")
+      toPositionItems(positions, zerionPresentation)
     )
   );
 }).pipe(Atom.withLabel("positionsTableDataAtom"));
+
+/** Earn positions as the Manage pages present them. */
+export const positionsViewAtom = positionsTableDataAtom.pipe(
+  Atom.map(toPresentable),
+  Atom.withLabel("positionsViewAtom")
+);
 
 export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
   const enabled = get(widgetConfigAtom).borrowEnabled;
@@ -155,11 +154,15 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
       ? ("connected" as const)
       : ("inactive" as const),
     enabled,
-    positionsResult: borrowPositionsResult.pipe(
-      AsyncResult.map((positions) => positions.items)
+    positions: toPresentable(
+      borrowPositionsResult.pipe(
+        AsyncResult.map((positions) => positions.items)
+      )
     ),
-    totalsResult: borrowPositionsResult.pipe(
-      AsyncResult.map((positions) => positions.totals)
+    totals: toPresentable(
+      borrowPositionsResult.pipe(
+        AsyncResult.map((positions) => positions.totals)
+      )
     ),
   };
 }).pipe(Atom.withLabel("currentPortfolioBorrowPositionsAtom"));

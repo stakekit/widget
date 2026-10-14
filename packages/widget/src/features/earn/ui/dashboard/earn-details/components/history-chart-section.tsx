@@ -1,9 +1,18 @@
 import type { HistoryPeriod } from "../../../../../../domain/portfolio/models";
+import { lazyComponent } from "../../../../../../shared/ui/components/lazy-component";
 import { Box } from "../../../../../../shared/ui/primitives/box";
+import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import type { YieldHistoryChartView } from "../../../../state/yield-history-charts";
-import { HistoryChart } from "../reward-rate-chart";
 import * as styles from "../styles.css";
+
+// The chart carries recharts, so both load when a chart first renders. The
+// fallback matches the chart's own loading skeleton.
+const HistoryChart = lazyComponent(
+  () => import("../reward-rate-chart"),
+  "HistoryChart",
+  <ContentLoaderSquare heightPx={150} />
+);
 
 const periods = [
   ["30d", "1M"],

@@ -725,11 +725,6 @@
           "RemainingDebtBelowMarketMinimum": "The remaining debt is below the current market minimum. The provider or blockchain may reject this action.",
           "RiskCapacityExceeded": "This action exceeds the currently known borrow capacity. The provider or blockchain may reject this action."
         },
-        "risk_block": {
-          "title": "This action can't be confirmed",
-          "healthFactor": "The projected health factor would fall below 1, so the protocol would reject this action or the position could be liquidated. Reduce the amount or add collateral.",
-          "ltv": "The projected LTV would exceed the market's max LTV, so the protocol would reject this action. Reduce the amount or add collateral."
-        },
         "risk_disclosures": {
           "borrow": "Borrowing increases debt and liquidation risk if collateral value falls.",
           "borrowAndSupply": "Supplying collateral and borrowing changes your LTV and liquidation risk.",
@@ -739,6 +734,11 @@
           "supply": "Supplying collateral may affect your withdrawal availability and borrowing capacity.",
           "withdraw": "Withdrawing collateral can increase LTV and liquidation risk."
         }
+      },
+      "risk_block": {
+        "title": "This action can't be confirmed",
+        "healthFactor": "The projected health factor would fall below 1, so the protocol would reject this action or the position could be liquidated. Reduce the amount or add collateral.",
+        "ltv": "The projected LTV would exceed the market's max LTV, so the protocol would reject this action. Reduce the amount or add collateral."
       },
       "execution_page": {
         "unavailable_title": "Borrow execution unavailable",
@@ -823,6 +823,10 @@
         "enable_collateral_warning": "Enabling this asset as collateral can improve health factor, but the supplied asset remains exposed to market risk.",
         "disable_collateral_warning": "Disabling this asset as collateral can lower health factor and increase liquidation risk.",
         "validation": {
+          "collateral_toggle_risk": {
+            "healthFactor": "Disabling this collateral would drop the health factor below 1. Repay debt or add other collateral first.",
+            "ltv": "Disabling this collateral would push the LTV past the market's max LTV. Repay debt or add other collateral first."
+          },
           "repay_debt": "Amount exceeds outstanding debt.",
           "repay_minimum": "Repayment would leave debt below the market minimum. Repay all or reduce the repayment.",
           "wallet_balance": "Amount exceeds wallet balance.",

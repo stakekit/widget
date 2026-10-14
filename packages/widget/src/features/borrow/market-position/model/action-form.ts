@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
@@ -12,6 +13,7 @@ import {
   type BorrowActionPreparation,
   type BorrowConstraintWarning,
   type CollateralToggleProjection,
+  getBorrowActionRiskBlock,
   prepareBorrowAction,
   type RepayProjection,
   type WithdrawProjection,
@@ -82,13 +84,17 @@ export type BorrowWithdrawFormView = {
   readonly projectedCollateralUsd: BigNumber;
   readonly projectedLtv: BigNumber | null;
   readonly riskStatus: "available" | "unavailable";
+  /** The limit the Risk Gate blocks on; `warning` never repeats it. */
+  readonly riskBlock: RiskGateBlockReason | null;
   readonly preparation: BorrowActionPreparation<WithdrawProjection>;
   readonly selectedToken: BorrowWithdrawTokenOption;
   readonly withdrawUsd: BigNumber;
 };
 
 export type BorrowCollateralToggleFormView = {
+  readonly canSubmit: boolean;
   readonly preparation: BorrowActionPreparation<CollateralToggleProjection>;
+  readonly riskBlock: RiskGateBlockReason | null;
   readonly riskStatus: "available" | "unavailable";
 };
 
@@ -233,6 +239,7 @@ export const resolveBorrowWithdrawFormView = ({
   const { projection } = preparation;
   const warnings: ReadonlyArray<BorrowConstraintWarning> =
     preparation._tag === "Ready" ? preparation.warnings : [];
+  const riskBlock = getBorrowActionRiskBlock(preparation);
   const getWarning = (): BorrowPositionActionFormWarning | null => {
     if (warnings.includes("AmountExceedsPositionBalance")) {
       return "withdrawBalance";
@@ -243,7 +250,7 @@ export const resolveBorrowWithdrawFormView = ({
 
   return {
     amount,
-    canSubmit: preparation._tag === "Ready",
+    canSubmit: preparation._tag === "Ready" && riskBlock === null,
     currentCollateralUsd: projection.financials.existingCollateralUsd,
     currentLtv: projection.risk.currentLtv,
     preparation,
@@ -252,6 +259,7 @@ export const resolveBorrowWithdrawFormView = ({
       projection.risk.status === "available"
         ? projection.risk.projectedLtv
         : null,
+    riskBlock,
     riskStatus: projection.risk.status,
     selectedToken,
     warning: getWarning(),
@@ -271,9 +279,12 @@ export const resolveBorrowCollateralToggleFormView = ({
     address,
     context,
   });
+  const riskBlock = getBorrowActionRiskBlock(preparation);
 
   return {
+    canSubmit: preparation._tag === "Ready" && riskBlock === null,
     preparation,
+    riskBlock,
     riskStatus: preparation.projection.risk.status,
   };
 };

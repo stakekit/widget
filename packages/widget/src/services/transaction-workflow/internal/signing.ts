@@ -5,9 +5,12 @@ import {
   decodeBorrowTypedDataForWallet,
 } from "../../../domain/borrow/execution/transaction";
 import type { Network } from "../../../domain/network/network";
-import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
+import type { WalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import { TrackingService } from "../../tracking/tracking-service";
-import type { WalletRuntimeInvariantError } from "../../wallet/wallet-errors";
+import type {
+  WalletOwnerMismatchError,
+  WalletRuntimeInvariantError,
+} from "../../wallet/wallet-errors";
 import { WalletService } from "../../wallet/wallet-service";
 import type { BorrowTransactionMeta } from "../../wallet/wallet-transactions";
 import {
@@ -17,7 +20,6 @@ import {
   type TransactionWorkflowContext,
 } from "../transaction-workflow-model";
 import {
-  type CurrentWorkflow,
   getCurrentWorkflowTrackingYieldId,
   requireCurrentWorkflow,
 } from "./current";
@@ -25,6 +27,7 @@ import { updateCurrentTransactionWorkflowTransaction } from "./model";
 
 type WalletSignFailure =
   | TransactionSignWalletOperationCause
+  | WalletOwnerMismatchError
   | WalletRuntimeInvariantError;
 
 const walletSignFailureReason = (
@@ -51,6 +54,10 @@ const walletSignFailureReason = (
       _tag: "WalletRequestCancelled" as const,
       operation,
     }),
+    WalletOwnerMismatchError: ({ reason }) => ({
+      _tag: "WalletUnavailable" as const,
+      detail: reason,
+    }),
     WalletRuntimeInvariantError: (cause) => ({
       _tag: "WalletUnavailable" as const,
       cause,
@@ -68,73 +75,6 @@ export const makePrepareAndSign = Effect.gen(function* () {
     TrackingService,
     WalletService,
   ]);
-  const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
-    function* ({
-      current,
-      network,
-    }: {
-      readonly current: CurrentWorkflow;
-      readonly network: string;
-    }) {
-      const { batch, transaction, workflowId } = current;
-      const expectedAddress = Match.value(current).pipe(
-        Match.tag("Classic", ({ domain }) => domain.actionMeta.address),
-        Match.tag("Borrow", ({ domain }) => domain.action.address),
-        Match.exhaustive
-      );
-      const fail = (reason: TransactionSignFailureReason) =>
-        makeTransactionSignError({
-          batchId: batch.id,
-          network,
-          reason,
-          transactionId: transaction.source.transaction.id,
-          workflowId,
-        });
-      const walletState = yield* wallet.state.pipe(
-        Effect.map((state) => state.connection),
-        Effect.mapError((cause) =>
-          fail({
-            _tag: "WalletUnavailable",
-            cause,
-            detail: "state-unavailable",
-          })
-        )
-      );
-
-      if (walletState.status !== "connected") {
-        return yield* fail({
-          _tag: "WalletUnavailable",
-          detail: "disconnected",
-        });
-      }
-
-      if (!expectedAddress) {
-        return yield* fail({
-          _tag: "WalletUnavailable",
-          detail: "no-address",
-        });
-      }
-
-      if (walletState.network !== network) {
-        return yield* fail({
-          _tag: "WalletUnavailable",
-          detail: "network-changed",
-        });
-      }
-
-      if (
-        !sameWalletScopeOwner(
-          { address: walletState.address, network: walletState.network },
-          { address: expectedAddress, network: walletState.network }
-        )
-      ) {
-        return yield* fail({
-          _tag: "WalletUnavailable",
-          detail: "account-changed",
-        });
-      }
-    }
-  );
 
   const getBorrowTransactionMeta = ({
     action,
@@ -190,9 +130,14 @@ export const makePrepareAndSign = Effect.gen(function* () {
     };
   };
 
-  return Effect.fn("TransactionWorkflow.prepareAndSign")(function* (
-    context: TransactionWorkflowContext
-  ) {
+  return Effect.fn("TransactionWorkflow.prepareAndSign")(function* ({
+    context,
+    expectedOwner,
+  }: {
+    readonly context: TransactionWorkflowContext;
+    /** The workflow's Wallet Scope Owner; the wallet signs only for it. */
+    readonly expectedOwner: WalletScopeOwner;
+  }) {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
@@ -205,8 +150,6 @@ export const makePrepareAndSign = Effect.gen(function* () {
         transactionId: source.transaction.id,
         workflowId,
       });
-
-    yield* validateWallet({ current, network });
 
     const signed = yield* Match.value(current).pipe(
       Match.tag("Classic", ({ domain, transaction }) => {
@@ -222,7 +165,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
             : JSON.stringify(source.transaction.unsignedTransaction);
 
         return source.transaction.isMessage
-          ? wallet.signMessage({ message: payload }).pipe(
+          ? wallet.signMessage({ expectedOwner, message: payload }).pipe(
               Effect.map((signedTx) => ({
                 broadcasted: false as const,
                 signedTx,
@@ -233,6 +176,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
             )
           : wallet
               .signTransaction({
+                expectedOwner,
                 family: "classic",
                 ledgerHwAppId: null,
                 network: network as Network,
@@ -279,7 +223,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
           return decodeBorrowTypedDataForWallet(source.transaction).pipe(
             Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
             Effect.flatMap((typedData) =>
-              wallet.signTypedData({ txMeta, typedData }).pipe(
+              wallet.signTypedData({ expectedOwner, txMeta, typedData }).pipe(
                 Effect.map((signedTx) => ({
                   broadcasted: false as const,
                   signedTx,
@@ -297,6 +241,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
           Effect.flatMap((tx) =>
             wallet
               .signTransaction({
+                expectedOwner,
                 family: "borrow",
                 ledgerHwAppId: null,
                 network: network as Network,

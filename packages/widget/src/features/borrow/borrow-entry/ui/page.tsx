@@ -1,5 +1,4 @@
 import { useAtomSet } from "@effect/atom-react";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
@@ -87,10 +86,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
     catalogResetNotice,
     collateralAmount,
     collateralOptions,
-    integrationsResult,
+    integrations,
     isActionReady,
     markets,
-    marketsResult,
+    marketsView,
     projection,
     selectedCollateralBalance,
     selectedCollateralToken,
@@ -103,11 +102,11 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const {
     borrowAmountGreaterThanAvailable,
     collateralAmountGreaterThanBalance,
-    ltvGreaterThanMax,
     projectedDebtBelowMinimum,
+    riskBlock,
+    riskWarning,
   } = validation;
   const onReviewClick = () => startReview(undefined);
-  const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
   const getBorrowAmountWarningText = () => {
     if (borrowAmountGreaterThanAvailable) {
       return t("dashboard.borrow.form.validation.available_liquidity");
@@ -120,14 +119,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const borrowAmountWarningText = getBorrowAmountWarningText();
 
   const getFormContent = (): ReactNode => {
-    if (
-      markets.length === 0 &&
-      (AsyncResult.isInitial(marketsResult) ||
-        AsyncResult.isWaiting(marketsResult))
-    ) {
+    if (marketsView._tag === "Loading") {
       return <ContentLoaderSquare heightPx={340} />;
     }
-    if (markets.length === 0 && AsyncResult.isFailure(marketsResult)) {
+    if (marketsView._tag === "Failed") {
       return (
         <BorrowNotice tone="error" title={t("dashboard.borrow.error_title")}>
           {t("dashboard.borrow.error_description")}
@@ -197,9 +192,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
         <BorrowFormDetails
           borrowAmount={borrowAmount}
           collateralAmount={collateralAmount}
-          ltvGreaterThanMax={ltvGreaterThanMax}
           market={selectedMarket}
           projection={projection}
+          riskBlock={riskBlock}
+          riskWarning={riskWarning}
           walletBalances={walletBalances}
         />
       </>
@@ -208,7 +204,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const formContent = getFormContent();
 
   const getCtaLabel = () => {
-    if (!isActionReady && !validation.ltvBlocksBorrow) {
+    if (!isActionReady && riskBlock === null) {
       return t("dashboard.borrow.enter_amounts");
     }
     // Collateral without a borrow amount opens a supply-only action.

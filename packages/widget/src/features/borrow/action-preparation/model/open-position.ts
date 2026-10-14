@@ -1,6 +1,7 @@
 import { resolveBorrowOrigination } from "../../../../domain/borrow/execution/origination-fee";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
 import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
+import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";
 import {
   exactZero,
   truncateToTokenDecimals,
@@ -142,8 +143,9 @@ export const prepareOpenPositionAction = (
   if (executableCollateralAmount.gt(collateralMaxAmount)) {
     warnings.push("AmountExceedsWalletBalance");
   }
-  if (assessment.decision === "block") {
-    warnings.push("RiskCapacityExceeded");
+  const riskVerdict = assessRiskGate(assessment);
+  if (riskVerdict._tag === "Warn") {
+    warnings.push(...riskVerdict.warnings);
   }
   const existingDebtAmount =
     marketPosition?.balances.debt?.balance ?? exactZero();
@@ -173,6 +175,7 @@ export const prepareOpenPositionAction = (
     projectedDebtUsd,
     providerName: integration?.name ?? market.integrationId,
     risk,
+    riskVerdict,
     warnings,
   } satisfies PreparedActionCommonFacts & OpenPositionFinancialFacts;
   const facts = makeOpenPositionFacts({

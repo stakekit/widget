@@ -4,7 +4,7 @@ import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantArray } from "../decoding/response-schema";
 import { TokenAddress, WalletAddress, YieldId } from "../identity/identifiers";
 import { Network } from "../network/network";
-import { Token } from "../token/token";
+import { LegacyToken } from "../token/token";
 import { AdditionalAddresses } from "../wallet/address";
 import { ExactDecimal } from "./scalars";
 
@@ -15,10 +15,9 @@ export const TokenBalanceScanCommand = Schema.Struct({
 export type TokenBalanceScanCommand = typeof TokenBalanceScanCommand.Type;
 
 export const TokenBalance = Schema.Struct({
-  ...LegacyApi.TokenBalanceScanResponseDto.fields,
   amount: ExactDecimal,
   availableYields: Schema.Array(YieldId),
-  token: LegacyApi.TokenDto.pipe(Schema.decodeTo(Token)),
+  token: LegacyToken,
 });
 export type TokenBalance = typeof TokenBalance.Type;
 

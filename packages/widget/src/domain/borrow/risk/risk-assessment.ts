@@ -14,6 +14,7 @@ import {
   type OracleRiskAnchor,
   type RiskAssessment,
   type RiskChange,
+  type RiskPricing,
   type RiskProjection,
   type RiskState,
   type RiskStateResult,
@@ -298,6 +299,27 @@ const applyOracleChange = ({
   }
 };
 
+/** Without a projection, the kind of change alone says whether it adds risk. */
+const unprojected = ({
+  changes,
+  pricing,
+  projection,
+}: {
+  readonly changes: ReadonlyArray<RiskChange>;
+  readonly pricing: RiskPricing;
+  readonly projection: RiskProjection;
+}): RiskAssessment => ({
+  capacity: "withinCapacity",
+  pricing,
+  projection,
+  riskIncreasing: changes.some(
+    (change) =>
+      change.type === "borrow" ||
+      change.type === "withdraw" ||
+      change.type === "disableCollateral"
+  ),
+});
+
 /** Collateral value in loan-token units at the anchored oracle price. */
 const oracleCollateralValue = ({
   anchor,
@@ -332,14 +354,15 @@ const assessOracle = ({
     { state: baseline, status: "available" }
   );
   if (changed.status === "unavailable") {
-    return {
-      decision: "allow",
+    return unprojected({
+      changes,
+      pricing: "oracle",
       projection: unavailable({
         reason: changed.reason,
         totalCollateralUsd: null,
         totalDebtUsd: null,
       }),
-    };
+    });
   }
 
   const { debtAmount } = changed.state;
@@ -379,9 +402,14 @@ const assessOracle = ({
       oracleCollateralValue({ anchor, state: baseline })
     );
 
-  return riskIncreasing && debtAmount.isGreaterThan(liquidationCapacity)
-    ? { decision: "block", projection, reason: "borrowCapacityExceeded" }
-    : { decision: "allow", projection };
+  return {
+    capacity: debtAmount.isGreaterThan(liquidationCapacity)
+      ? "exceedsCapacity"
+      : "withinCapacity",
+    pricing: "oracle",
+    projection,
+    riskIncreasing,
+  };
 };
 
 type DisplayTotals = {
@@ -411,25 +439,25 @@ export const makeRiskPosition = ({
   readonly valuation: RiskValuation;
 }): RiskPositionContract => ({
   assess: (changes) => {
+    const pricing: RiskPricing =
+      valuation.type === "oracle" ? "oracle" : "display";
     const decodedChanges = decodeChanges(changes);
     if (Option.isNone(decodedChanges)) {
-      return {
-        decision: "allow",
+      return unprojected({
+        changes,
+        pricing,
         projection: unavailable({
           reason: "invalidAmount",
           totalCollateralUsd: current.totalCollateralUsd,
           totalDebtUsd: current.totalDebtUsd,
         }),
-      };
+      });
     }
 
     // No changes means nothing to project: the current (authoritative)
     // projection is the answer, not a recomputation from component balances.
     if (changes.length === 0 || current.status === "unavailable") {
-      return {
-        decision: "allow",
-        projection: current,
-      };
+      return unprojected({ changes, pricing, projection: current });
     }
 
     const changed = applyChanges({
@@ -439,14 +467,15 @@ export const makeRiskPosition = ({
       state,
     });
     if (changed.status === "unavailable") {
-      return {
-        decision: "allow",
+      return unprojected({
+        changes,
+        pricing,
         projection: unavailable({
           reason: changed.reason,
           totalCollateralUsd: null,
           totalDebtUsd: null,
         }),
-      };
+      });
     }
 
     const baseline = projectExactRiskTotals(state);
@@ -487,14 +516,16 @@ export const makeRiskPosition = ({
       changed.state.debtUsd.isGreaterThan(state.debtUsd) ||
       projectedTotals.borrowCapacityUsd.isLessThan(baseline.borrowCapacityUsd);
 
-    return riskIncreasing &&
-      changed.state.debtUsd.isGreaterThan(projectedTotals.borrowCapacityUsd)
-      ? {
-          decision: "block",
-          projection,
-          reason: "borrowCapacityExceeded",
-        }
-      : { decision: "allow", projection };
+    return {
+      capacity: changed.state.debtUsd.isGreaterThan(
+        projectedTotals.borrowCapacityUsd
+      )
+        ? "exceedsCapacity"
+        : "withinCapacity",
+      pricing,
+      projection,
+      riskIncreasing,
+    };
   },
   current,
   scope,

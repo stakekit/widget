@@ -1,6 +1,7 @@
 import { type PropsWithChildren, useState } from "react";
 import { makeYieldActionContinuationSession } from "../model/classic-transaction-flow";
 import {
+  ClassicFlowCompletionGuard,
   ClassicFlowExecutionScope,
   ClassicFlowReviewScope,
   ClassicFlowSessionRoute,
@@ -58,4 +59,8 @@ export const YieldActionContinuationStepsPage = () => {
   }
 };
 
-export const YieldActionContinuationCompletePage = ActivityCompletePage;
+export const YieldActionContinuationCompletePage = () => (
+  <ClassicFlowCompletionGuard>
+    <ActivityCompletePage />
+  </ClassicFlowCompletionGuard>
+);

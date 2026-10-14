@@ -9,17 +9,18 @@ import {
   type Market,
 } from "../../../../../domain/borrow/catalog/market";
 import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/execution/origination-fee";
+import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
-  formatBorrowProviderName,
   formatPercent,
   formatUsd,
-} from "../../../../../shared/lib/formatters";
+} from "../../../../../shared/lib/number-format";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import {
   SelectedToken,
   SelectTokenTrigger,
 } from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   filterBorrowMarketGroups,
   toBorrowEntryToken,
@@ -42,6 +43,7 @@ export const MarketSelectModal = ({
   readonly selectedMarketId: string | null;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const selectMarket = useAtomSet(selectBorrowMarketAtom);
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -103,7 +105,7 @@ export const MarketSelectModal = ({
         ) : (
           marketGroups.map((group) => {
             const isExpanded = expandedGroupKey === group.key;
-            const bestRate = formatPercent(group.bestRate);
+            const bestRate = formatPercent(group.bestRate, locale);
 
             return (
               <Box className={styles.assetSelectorGroup} key={group.key}>
@@ -159,18 +161,24 @@ export const MarketSelectModal = ({
                             selectMarket(market.id);
                             onOpenChange(false);
                           }}
-                          rate={formatPercent(market.borrowRate)}
+                          rate={formatPercent(market.borrowRate, locale)}
                           rateMeta={[
                             t("dashboard.borrow.form.liquidity_available", {
                               amount: formatUsd(
-                                getMarketAvailableLiquidityUsd(market)
+                                getMarketAvailableLiquidityUsd(market),
+                                locale
                               ),
                             }),
                             ...(feeBps > 0
                               ? [
                                   t(
                                     "dashboard.borrow.form.origination_fee_value",
-                                    { value: formatPercent(feeBps / 10_000) }
+                                    {
+                                      value: formatPercent(
+                                        feeBps / 10_000,
+                                        locale
+                                      ),
+                                    }
                                   ),
                                 ]
                               : []),

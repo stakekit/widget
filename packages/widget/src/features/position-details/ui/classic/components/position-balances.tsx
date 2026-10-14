@@ -9,11 +9,14 @@ import {
 import type { PositionBalanceRow } from "../../../../../domain/portfolio/positions";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 
 export const PositionBalances = ({
   yieldBalance,
@@ -23,6 +26,7 @@ export const PositionBalances = ({
   integrationData: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const presentationTime = useAtomValue(presentationClockAtom);
 
   const date = yieldBalance.date;
@@ -91,10 +95,10 @@ export const PositionBalances = ({
             overflowWrap="anywhere"
             variant={{ type: "muted", weight: "normal" }}
           >
-            {defaultFormattedNumber(yieldBalance.amount)}{" "}
+            {formatTokenAmount(yieldBalance.amount, locale)}{" "}
             {yieldBalance.token.symbol}
             {!yieldBalance.token.isPoints &&
-              ` (${formatUsd(yieldBalance.amountUsd)})`}
+              ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
           </Text>
         </Box>
 

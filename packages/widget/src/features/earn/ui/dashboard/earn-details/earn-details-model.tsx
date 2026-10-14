@@ -21,10 +21,12 @@ import {
 } from "../../../../../domain/earn/yield";
 import {
   formatNetworkName,
-  formatUsd,
   humanizeEnumValue,
 } from "../../../../../shared/lib/formatters";
-import { APToPercentage } from "../../../../../shared/lib/general";
+import {
+  formatRoundedPercent,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   formatCooldownDays,
@@ -136,10 +138,12 @@ export const canPresentRewardRateHistory = (yieldDto: EarnYieldWithProvider) =>
   !isYieldValidatorSelectionRequired(yieldDto);
 
 export const getEarnDetailsModel = ({
+  locale,
   selectedValidators,
   t,
   yieldDto,
 }: {
+  locale: string;
   selectedValidators?: SelectedValidators | null;
   t: TFunction;
   yieldDto: EarnYieldWithProvider;
@@ -152,6 +156,7 @@ export const getEarnDetailsModel = ({
   });
   const detailFacts = getEarnDetailFacts({
     effectiveRewardRate,
+    locale,
     provider,
     t,
     yieldDto,
@@ -166,6 +171,7 @@ export const getEarnDetailsModel = ({
     dashboardYieldCategory,
     detailRows: getDetailRows({
       facts: detailFacts,
+      locale,
       promotedFactIds,
       t,
       yieldDto,
@@ -179,8 +185,9 @@ export const getEarnDetailsModel = ({
       selectedValidators,
       yieldDto,
     }),
-    rewardRateFormatted: formatRewardRate(effectiveRewardRate, yieldDto) ?? "-",
-    tvlChartValue: formatUsd(yieldDto.statistics?.tvlUsd),
+    rewardRateFormatted:
+      formatRewardRate(effectiveRewardRate, yieldDto, locale) ?? "-",
+    tvlChartValue: formatUsd(yieldDto.statistics?.tvlUsd, locale),
   };
 };
 
@@ -214,28 +221,30 @@ const toMetricCard = (fact: EarnDetailFact): EarnDetailsMetricCard => ({
 
 const getEarnDetailFacts = ({
   effectiveRewardRate,
+  locale,
   provider,
   t,
   yieldDto,
 }: {
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
+  locale: string;
   provider: EarnYieldWithProvider["provider"];
   t: TFunction;
   yieldDto: EarnYieldWithProvider;
 }) =>
   [
-    getRewardRateFact({ effectiveRewardRate, t, yieldDto }),
+    getRewardRateFact({ effectiveRewardRate, locale, t, yieldDto }),
     getRiskFact(yieldDto, t),
-    getMinStakeFact(yieldDto, t),
+    getMinStakeFact(yieldDto, t, locale),
     getCooldownFact(yieldDto, t),
     getWarmupFact(yieldDto, t),
     getLockupFact(yieldDto, t),
     getWithdrawalFact(yieldDto, t),
-    getTvlFact(yieldDto, t),
-    getFeesFact(yieldDto, t),
+    getTvlFact(yieldDto, t, locale),
+    getFeesFact(yieldDto, t, locale),
     getStatusFact({ provider, t, yieldDto }),
-    getAveragePositionFact(yieldDto, t),
-    getUsersFact(yieldDto, t),
+    getAveragePositionFact(yieldDto, t, locale),
+    getUsersFact(yieldDto, t, locale),
     getTypeFact(yieldDto, t),
     getRewardScheduleFact(yieldDto, t),
     getRewardClaimingFact({ t, yieldDto }),
@@ -243,11 +252,13 @@ const getEarnDetailFacts = ({
 
 const getDetailRows = ({
   facts,
+  locale,
   promotedFactIds,
   t,
   yieldDto,
 }: {
   facts: EarnDetailFact[];
+  locale: string;
   promotedFactIds: Set<EarnDetailFactId>;
   t: TFunction;
   yieldDto: EarnYieldWithProvider;
@@ -267,7 +278,7 @@ const getDetailRows = ({
     label: t("dashboard.earn_details.reward_token"),
     value: formatRewardTokenLabel(yieldDto, t),
   },
-  ...getPricePerShareRows(yieldDto, t),
+  ...getPricePerShareRows(yieldDto, t, locale),
   ...facts
     .filter((fact) => fact.detailEligible && !promotedFactIds.has(fact.id))
     .map((fact) => ({
@@ -279,9 +290,10 @@ const getDetailRows = ({
 
 const getPricePerShareRows = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): EarnDetailRow[] => {
-  const value = formatPricePerShare(yieldDto);
+  const value = formatPricePerShare(yieldDto, locale);
 
   if (!value) return [];
 
@@ -296,14 +308,16 @@ const getPricePerShareRows = (
 
 const getRewardRateFact = ({
   effectiveRewardRate,
+  locale,
   t,
   yieldDto,
 }: {
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
+  locale: string;
   t: TFunction;
   yieldDto: EarnYieldWithProvider;
 }): EarnDetailFact | null => {
-  const value = formatRewardRate(effectiveRewardRate, yieldDto);
+  const value = formatRewardRate(effectiveRewardRate, yieldDto, locale);
 
   if (!value) return null;
 
@@ -343,9 +357,10 @@ const getRiskFact = (
 
 const getMinStakeFact = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): EarnDetailFact | null => {
-  const value = formatMinStake(yieldDto, t);
+  const value = formatMinStake(yieldDto, t, locale);
 
   if (!value) return null;
 
@@ -427,9 +442,10 @@ const getWithdrawalFact = (
 
 const getTvlFact = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): EarnDetailFact | null => {
-  const value = formatMeaningfulCompactUsd(getYieldTvlUsd(yieldDto));
+  const value = formatMeaningfulCompactUsd(getYieldTvlUsd(yieldDto), locale);
 
   if (!value) return null;
 
@@ -445,7 +461,8 @@ const getTvlFact = (
 
 const getFeesFact = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): EarnDetailFact | null => {
   const fee = getYieldFeePercent(yieldDto);
 
@@ -457,7 +474,7 @@ const getFeesFact = (
     kpiEligible: true,
     kpiPrimaryEligible: true,
     label: t("shared.fees"),
-    value: `${APToPercentage(fee)}%`,
+    value: formatRoundedPercent(fee, locale),
   };
 };
 
@@ -481,10 +498,12 @@ const getStatusFact = ({
 
 const getAveragePositionFact = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): EarnDetailFact | null => {
   const value = formatMeaningfulCompactUsd(
-    yieldDto.statistics?.averagePositionSizeUsd
+    yieldDto.statistics?.averagePositionSizeUsd,
+    locale
   );
 
   if (!value) return null;
@@ -501,9 +520,13 @@ const getAveragePositionFact = (
 
 const getUsersFact = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): EarnDetailFact | null => {
-  const value = formatMeaningfulCompactNumber(yieldDto.statistics?.uniqueUsers);
+  const value = formatMeaningfulCompactNumber(
+    yieldDto.statistics?.uniqueUsers,
+    locale
+  );
 
   if (!value) return null;
 

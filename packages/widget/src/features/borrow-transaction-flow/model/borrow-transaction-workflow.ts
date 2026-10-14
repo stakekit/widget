@@ -5,17 +5,17 @@ import {
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
-  getTransactionWorkflowStepState,
+  getTransactionStepProgress,
+  type TransactionStepProgress,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
-import type { TransactionStepState } from "../../../shared/lib/transaction-step-state";
 
 type BorrowExecutionStep = {
   readonly done: boolean;
   readonly explorerUrl: string | null;
   readonly id: string;
-  readonly state: TransactionStepState;
+  readonly progress: TransactionStepProgress;
   readonly type: Transaction["type"];
 };
 
@@ -66,26 +66,6 @@ const getExecutionStatus = (
   }
 };
 
-/**
- * Leaving drops the reserved action. While the wallet holds the current
- * transaction, or its broadcast hash has not reached the API, the transaction
- * may land on-chain with no record, so the flow must stay open.
- */
-export const canLeaveBorrowExecution = (state: TransactionWorkflowState) => {
-  switch (state._tag) {
-    case "Signing":
-    case "Submitting":
-      return false;
-    case "SubmissionFailed":
-      return (
-        getCurrentTransactionWorkflowTransaction(state.context)?.meta
-          .broadcasted !== true
-      );
-    default:
-      return true;
-  }
-};
-
 const isWalletCancellation = (error: TransactionWorkflowError | null) =>
   error?._tag === "TransactionSignError" &&
   error.reason._tag === "WalletRequestCancelled";
@@ -115,7 +95,6 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   return {
     action,
     batches: state.context.batches,
-    canLeave: canLeaveBorrowExecution(state),
     cancelled: isWalletCancellation(status.error),
     completionResult: completed
       ? {
@@ -157,7 +136,7 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
             done: transaction.meta.done,
             explorerUrl: transaction.meta.url ?? submission?.link ?? null,
             id: transaction.source.transaction.id,
-            state: getTransactionWorkflowStepState(state, transaction),
+            progress: getTransactionStepProgress(state, transaction),
             type: transaction.source.transaction.type,
           },
         ];
@@ -172,7 +151,6 @@ const noBorrowExecutionSteps: ReadonlyArray<BorrowExecutionStep> = [];
 export const emptyBorrowExecutionView = {
   action: null,
   batches: [],
-  canLeave: true,
   cancelled: false,
   completionResult: null,
   currentStep: 0,

@@ -5,10 +5,11 @@ import type { Market } from "../../../domain/borrow/catalog/market";
 import type { ActionMetadata } from "../../../domain/borrow/execution/action";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
-import {
-  exceedsBorrowableLtv,
-  fallsClearlyBelowLiquidation,
-} from "../../../domain/borrow/risk/ltv-limits";
+import type {
+  RiskGateBlockReason,
+  RiskGateVerdict,
+  RiskGateWarning,
+} from "../../../domain/borrow/risk/risk-gate";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
@@ -22,7 +23,7 @@ export type BorrowConstraintWarning =
   | "AmountExceedsWalletBalance"
   | "ProjectedDebtBelowMarketMinimum"
   | "RemainingDebtBelowMarketMinimum"
-  | "RiskCapacityExceeded";
+  | RiskGateWarning;
 
 type BorrowReviewCommon = {
   readonly marketLabel: string;
@@ -109,6 +110,8 @@ type BorrowTransactionFlowSummary = BorrowReviewCommon &
 
 export type BorrowTransactionFlowReview = {
   readonly command: ActionCommand;
+  /** The Risk Gate's verdict at preparation; Review never re-derives it. */
+  readonly riskVerdict: RiskGateVerdict;
   readonly summary: BorrowTransactionFlowSummary;
 };
 
@@ -143,40 +146,13 @@ export const getBorrowTransactionFlowTitle = (
 };
 
 /**
- * A risk-raising action Review must refuse because the protocol would reject
- * it: the projected health factor or LTV is past its limit by more than
- * display prices can differ from protocol oracles. Missing or borderline risk
- * figures never block.
+ * The limit Review refuses to confirm past: the Risk Gate's Block verdict
+ * carried from preparation. Review never re-derives it from display figures.
  */
 export const getBorrowReviewRiskBlock = (
-  summary: BorrowTransactionFlowSummary
-): "healthFactor" | "ltv" | null => {
-  if (summary.riskStatus !== "available") return null;
-  if (
-    summary.action !== "borrow" &&
-    summary.action !== "borrowAndSupply" &&
-    summary.action !== "withdraw" &&
-    summary.action !== "disableCollateral"
-  ) {
-    return null;
-  }
-  if (
-    summary.projectedHealthFactor !== undefined &&
-    fallsClearlyBelowLiquidation(exactDecimal(summary.projectedHealthFactor))
-  ) {
-    return "healthFactor";
-  }
-  if (
-    exceedsBorrowableLtv({
-      ltv: exactDecimal(summary.projectedLtv),
-      maxLtv:
-        summary.maxLtv === undefined ? null : exactDecimal(summary.maxLtv),
-    })
-  ) {
-    return "ltv";
-  }
-  return null;
-};
+  review: BorrowTransactionFlowReview
+): RiskGateBlockReason | null =>
+  review.riskVerdict._tag === "Block" ? review.riskVerdict.reason : null;
 
 const projectOrigination = (
   summary: BorrowReviewOrigination & { readonly loanTokenSymbol: string },

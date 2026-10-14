@@ -15,13 +15,15 @@ import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-ri
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
+  formatNetworkName,
+} from "../../../../shared/lib/formatters";
+import {
   formatHealthFactor,
   formatLtv,
-  formatNetworkName,
+  formatNumber,
   formatPercent,
   formatUsd,
-} from "../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../shared/lib/number-format";
+} from "../../../../shared/lib/number-format";
 import type { DetailRowTone } from "../../../../shared/ui/components/details-section";
 import type { BorrowFormProjection } from "./borrow-entry";
 
@@ -80,6 +82,7 @@ export const getBorrowDetailsModel = ({
   collateralAmount,
   collateralToken,
   integration,
+  locale,
   market,
   projection,
   t,
@@ -88,6 +91,7 @@ export const getBorrowDetailsModel = ({
   readonly collateralAmount: BigNumber;
   readonly collateralToken: CollateralToken | null;
   readonly integration: Integration | null;
+  readonly locale: string;
   readonly market: Market;
   readonly projection?: BorrowFormProjection;
   readonly t: TFunction;
@@ -137,12 +141,12 @@ export const getBorrowDetailsModel = ({
       id: "borrow-apy",
       label: t("dashboard.borrow.details.borrow_apy"),
       subValue: market.loanToken.symbol,
-      value: formatPercent(market.borrowRate),
+      value: formatPercent(market.borrowRate, locale),
     },
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
-      value: formatPercent(maxLtv),
+      value: formatPercent(maxLtv, locale),
     },
   ];
 
@@ -154,11 +158,11 @@ export const getBorrowDetailsModel = ({
       return null;
     }
     if (!hasExistingPosition) {
-      return formatLtv(displayedProjectedLtv);
+      return formatLtv(displayedProjectedLtv, locale);
     }
     return formatTransition({
-      current: formatLtv(existingLtv),
-      projected: formatLtv(displayedProjectedLtv),
+      current: formatLtv(existingLtv, locale),
+      projected: formatLtv(displayedProjectedLtv, locale),
     });
   };
   const ltvValue = getLtvValue();
@@ -166,13 +170,13 @@ export const getBorrowDetailsModel = ({
   const getLoanValue = (): string => {
     if (hasExistingPosition) {
       return formatTransition({
-        current: formatUsd(projection.existingDebtUsd),
-        projected: formatUsd(displayedDebtUsd),
+        current: formatUsd(projection.existingDebtUsd, locale),
+        projected: formatUsd(displayedDebtUsd, locale),
       });
     }
     return borrowAmount.isZero()
       ? "-"
-      : `${formatNumber(borrowAmount, 6)} ${market.loanToken.symbol}`;
+      : `${formatNumber(borrowAmount, locale, 6)} ${market.loanToken.symbol}`;
   };
   const loanValue = getLoanValue();
 
@@ -192,17 +196,17 @@ export const getBorrowDetailsModel = ({
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
-      value: formatPercent(maxLtv),
+      value: formatPercent(maxLtv, locale),
     },
     {
       id: "collateral-value",
       label: t("dashboard.borrow.form.collateral_value"),
       value: hasExistingPosition
         ? formatTransition({
-            current: formatUsd(projection.existingCollateralUsd),
-            projected: formatUsd(displayedCollateralUsd),
+            current: formatUsd(projection.existingCollateralUsd, locale),
+            projected: formatUsd(displayedCollateralUsd, locale),
           })
-        : formatUsd(displayedCollateralUsd),
+        : formatUsd(displayedCollateralUsd, locale),
     },
     {
       id: "loan",
@@ -212,7 +216,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "borrow-rate",
       label: t("dashboard.borrow.form.borrow_rate"),
-      value: formatPercent(market.borrowRate),
+      value: formatPercent(market.borrowRate, locale),
     },
     ...(healthFactor === null
       ? []
@@ -221,7 +225,7 @@ export const getBorrowDetailsModel = ({
             id: "health-factor",
             label: t("dashboard.borrow.form.health_factor"),
             tone: riskLevelTone[classifyHealthFactor(healthFactor)],
-            value: formatHealthFactor(healthFactor),
+            value: formatHealthFactor(healthFactor, locale),
           },
         ]),
   ];
@@ -231,27 +235,29 @@ export const getBorrowDetailsModel = ({
       id: "total-supply",
       label: t("dashboard.borrow.details.total_supply"),
       value: formatUsd(
-        market.totalSupply.multipliedBy(market.loanTokenPriceUsd)
+        market.totalSupply.multipliedBy(market.loanTokenPriceUsd),
+        locale
       ),
     },
     {
       id: "total-borrow",
       label: t("dashboard.borrow.details.total_borrow"),
       value: formatUsd(
-        market.totalBorrow.multipliedBy(market.loanTokenPriceUsd)
+        market.totalBorrow.multipliedBy(market.loanTokenPriceUsd),
+        locale
       ),
     },
     {
       id: "available-liquidity",
       label: t("dashboard.borrow.details.available_liquidity"),
-      value: `${formatNumber(market.availableLiquidity, 4)} ${
+      value: `${formatNumber(market.availableLiquidity, locale, 4)} ${
         market.loanToken.symbol
       }`,
     },
     {
       id: "utilization",
       label: t("dashboard.borrow.details.utilization"),
-      value: formatPercent(market.utilizationRate),
+      value: formatPercent(market.utilizationRate, locale),
     },
   ];
 

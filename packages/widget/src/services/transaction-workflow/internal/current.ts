@@ -11,7 +11,7 @@ type CurrentBatch = NonNullable<
   ReturnType<typeof getCurrentTransactionWorkflowBatch>
 >;
 
-export type CurrentWorkflow =
+type CurrentWorkflow =
   | {
       readonly _tag: "Classic";
       readonly batch: CurrentBatch;

@@ -1,10 +1,8 @@
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../../../domain/borrow/catalog/market";
 import { exactZero } from "../../../../../domain/finance/exact";
-import { toPresentable } from "../../../../../shared/effect/async-result";
 import {
   formatBorrowProviderName,
   formatNetworkName,
@@ -25,6 +23,7 @@ import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content
 import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import type {
   BorrowEntryView,
   BorrowFormProjection,
@@ -68,26 +67,19 @@ export const BorrowEntryDetailsPanel = ({
 }) => {
   const { t } = useTranslation();
   const {
-    integrationsResult,
-    marketsResult,
+    integrationsView,
+    marketsView,
     projection,
     selectedIntegration,
     selectedMarket,
     walletBalances,
   } = view;
 
-  if (
-    (view.markets.length === 0 &&
-      toPresentable(marketsResult)._tag === "Loading") ||
-    toPresentable(integrationsResult)._tag === "Loading"
-  ) {
+  if (marketsView._tag === "Loading" || integrationsView._tag === "Loading") {
     return <ContentLoaderSquare heightPx={430} />;
   }
 
-  if (
-    (view.markets.length === 0 && AsyncResult.isFailure(marketsResult)) ||
-    AsyncResult.isFailure(integrationsResult)
-  ) {
+  if (marketsView._tag === "Failed" || integrationsView._tag === "Failed") {
     return (
       <BorrowDetailsEmpty title={t("dashboard.borrow.error_title")}>
         {t("dashboard.borrow.error_description")}
@@ -128,11 +120,13 @@ export const BorrowMarketDetails = ({
   readonly projection?: BorrowFormProjection;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const model = getBorrowDetailsModel({
     borrowAmount: exactZero(),
     collateralAmount: exactZero(),
     collateralToken,
     integration,
+    locale,
     market,
     projection,
     t,

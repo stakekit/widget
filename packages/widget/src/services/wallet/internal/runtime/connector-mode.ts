@@ -1,5 +1,4 @@
 import { Match } from "effect";
-import type { WidgetVariant } from "../../../config/widget-config-model";
 
 type ConnectorMode =
   | "institutional"
@@ -12,16 +11,15 @@ type ConnectorMode =
 type ConnectorModeInput = {
   readonly hasCustomWalletList: boolean;
   readonly hasExternalProviders: boolean;
+  /** Includes institutional wallets forced by the Host Profile. */
   readonly institutionalWallets: boolean;
   readonly isLedgerDappBrowser: boolean;
   readonly isSafe: boolean;
-  readonly variant: WidgetVariant;
 };
 
 const resolveConnectorMode = (input: ConnectorModeInput): ConnectorMode =>
   Match.value(input).pipe(
     Match.when({ institutionalWallets: true }, () => "institutional" as const),
-    Match.when({ variant: "finery" }, () => "institutional" as const),
     Match.when(
       { hasExternalProviders: true },
       () => "external-provider" as const

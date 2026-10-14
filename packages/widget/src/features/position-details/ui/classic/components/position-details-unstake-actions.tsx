@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
+import { formatUsd } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import { KycGateCard } from "../../../../yield-summary/views";
 import { usePositionDetails } from "../hooks/use-position-details";
@@ -17,7 +19,7 @@ export const PositionDetailsUnstakeActions = () => {
     unstakeMinAmount: unstakeMinAmountValue,
     unstakeIsGreaterOrLessIntegrationLimitError,
     unstakeAmount,
-    unstakeFormattedAmount,
+    unstakeAmountUsd,
     exitBalance,
     canChangeUnstakeAmount: canChangeUnstakeAmountValue,
     canUnstake,
@@ -35,6 +37,7 @@ export const PositionDetailsUnstakeActions = () => {
   } = usePositionDetails();
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (
     !exitBalance ||
@@ -84,7 +87,9 @@ export const PositionDetailsUnstakeActions = () => {
         label={t(
           `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
         )}
-        formattedAmount={unstakeFormattedAmount}
+        formattedAmount={
+          unstakeAmountUsd ? formatUsd(unstakeAmountUsd, locale) : ""
+        }
         balance={exitBalance}
         yieldDto={integrationDataValue}
         validators={providersDetails ?? []}

@@ -1,13 +1,13 @@
 import type BigNumber from "bignumber.js";
-import { type ReactNode, useMemo } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/earn/validator";
 import type { Token } from "../../../../../domain/token/token";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import {
-  defaultFormattedNumber,
   formatNumber,
+  formatTokenAmount,
 } from "../../../../../shared/lib/number-format";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
 import { AmountTokenSection } from "../../../../../shared/ui/components/amount-token-section";
@@ -17,6 +17,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { useYieldMetaInfo } from "../../../../yield-summary/views";
 
 type AmountBlockProps = {
@@ -71,6 +72,7 @@ export const AmountBlock = ({
   ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const dashboardVariant = useWidgetConfig("dashboardVariant");
 
   const unstakeProps =
@@ -81,13 +83,15 @@ export const AmountBlock = ({
     unstakeProps?.unstakeMinAmount == null
       ? null
       : `${t("shared.min")} ${formatNumber(
-          unstakeProps.unstakeMinAmount
+          unstakeProps.unstakeMinAmount,
+          locale
         )} ${unstakeProps.unstakeToken.symbol}`;
   const max =
     unstakeProps?.unstakeMaxAmount == null
       ? null
       : `${t("shared.max")} ${formatNumber(
-          unstakeProps.unstakeMaxAmount
+          unstakeProps.unstakeMaxAmount,
+          locale
         )} ${unstakeProps.unstakeToken.symbol}`;
   const hasMinMax =
     !!unstakeProps &&
@@ -140,8 +144,8 @@ export const AmountBlock = ({
             {t("position_details.available", {
               amount:
                 state === "full"
-                  ? formatNumber(balance.amount)
-                  : defaultFormattedNumber(balance.amount),
+                  ? formatNumber(balance.amount, locale)
+                  : formatTokenAmount(balance.amount, locale),
               symbol: balance.token?.symbol ?? "",
             })}
           </span>
@@ -203,30 +207,26 @@ export const UnstakeInfo = ({
       tokenDto: unstakeToken,
     });
 
-  return useMemo(() => {
-    const values = [
-      withdrawnTime,
-      withdrawnNotAvailable,
-      positionLocked,
-    ].filter(Boolean);
-    return values.length > 0 ? (
-      <Box display="flex" flexDirection="column" gap="2">
-        {values.map((v, i) => (
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="flex-start"
-            gap="1"
-            key={i}
-          >
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <InfoIcon />
-            </Box>
-
-            <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
+  const values = [withdrawnTime, withdrawnNotAvailable, positionLocked].filter(
+    Boolean
+  );
+  return values.length > 0 ? (
+    <Box display="flex" flexDirection="column" gap="2">
+      {values.map((v, i) => (
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="flex-start"
+          gap="1"
+          key={i}
+        >
+          <Box display="flex" alignItems="center" justifyContent="center">
+            <InfoIcon />
           </Box>
-        ))}
-      </Box>
-    ) : null;
-  }, [withdrawnTime, withdrawnNotAvailable, positionLocked]);
+
+          <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
+        </Box>
+      ))}
+    </Box>
+  ) : null;
 };

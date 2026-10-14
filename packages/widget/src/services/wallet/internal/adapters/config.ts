@@ -2,7 +2,7 @@ import type { Connection } from "@solana/web3.js";
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/network/network";
 import { config } from "../../../../shared/config/widget-defaults";
-import type { WidgetVariant } from "../../../config/widget-config-model";
+import type { HostProfile } from "../../../config/host-profile";
 import type { Chain, WalletList } from "../../wallet-descriptors";
 import { WalletIntegrationError } from "../../wallet-errors";
 import type { WalletModal } from "../../wallet-modal";
@@ -18,7 +18,7 @@ const queryFn = async ({
   enabledNetworks,
   solanaWallets,
   solanaConnection,
-  variant,
+  walletCatalogue,
   tonConnectManifestUrl,
   stellarConnector,
   walletConnectProtocol,
@@ -29,7 +29,7 @@ const queryFn = async ({
   enabledNetworks: ReadonlySet<Network>;
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
-  variant: WidgetVariant;
+  walletCatalogue: HostProfile["walletCatalogue"];
   tonConnectManifestUrl: string | undefined;
   stellarConnector: WalletList[number] | null;
   readonly walletConnectProtocol: WalletConnectProtocol;
@@ -69,7 +69,7 @@ const queryFn = async ({
               module.getSolanaConnectors({
                 wallets: solanaWallets,
                 connection: solanaConnection,
-                variant,
+                walletCatalogue,
               })
             )
           : null,

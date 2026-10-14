@@ -1,6 +1,7 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
+import type { WalletScopeOwner } from "../../domain/wallet/wallet-scope";
 import type { BorrowTransactionMeta } from "./wallet-transactions";
 
 export type Eip712TypedData = {
@@ -58,4 +59,13 @@ export type WalletSignTypedDataInput = Eip712TypedData & {
 export type WalletSignBorrowTypedDataInput = {
   readonly txMeta: BorrowTransactionMeta;
   readonly typedData: Eip712TypedData;
+};
+
+/**
+ * A signing command bound to the Wallet Scope Owner its caller captured. The
+ * Wallet Service checks it against the Wallet Command Context it dispatches
+ * with.
+ */
+export type WalletOwnerCheckedInput<Input> = Input & {
+  readonly expectedOwner: WalletScopeOwner;
 };

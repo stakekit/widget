@@ -1,11 +1,16 @@
-import { Effect, Schema, SchemaTransformation } from "effect";
+import { Effect, Schema, SchemaTransformation, Struct } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
 import { ExactBaseUnitAmount } from "../../finance/scalars";
 import { TransactionId, WalletAddress } from "../ids";
 import { BorrowNetwork } from "../network";
 
 export const Transaction = Schema.Struct({
-  ...BorrowApi.TransactionDto.fields,
+  ...Struct.pick(BorrowApi.TransactionDto.fields, [
+    "type",
+    "status",
+    "signingFormat",
+    "signablePayload",
+  ]),
   address: WalletAddress,
   // ast-grep-ignore: no-financial-finite-from-string -- chain IDs stay safe integer numbers
   chainId: Schema.FiniteFromString,
@@ -136,6 +141,10 @@ export const SubmitTransactionCommand = Schema.Struct(
 export type SubmitTransactionCommand = typeof SubmitTransactionCommand.Type;
 
 export const SubmitTransactionResult = Schema.Struct(
-  BorrowApi.SubmitTransactionResponseDto.fields
+  Struct.pick(BorrowApi.SubmitTransactionResponseDto.fields, [
+    "transactionHash",
+    "link",
+    "status",
+  ])
 );
 export type SubmitTransactionResult = typeof SubmitTransactionResult.Type;

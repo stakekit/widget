@@ -22,13 +22,6 @@ export type ArgumentSchemaDto = {
   readonly default?: unknown;
   readonly notes?: string;
 };
-export type TokenDto = {
-  readonly address?: string;
-  readonly symbol: string;
-  readonly name: string;
-  readonly decimals: number;
-  readonly logoURI?: string;
-};
 export type PositionStateDto = {
   readonly currentLtv: string;
   readonly liquidationThreshold: string;
@@ -204,18 +197,6 @@ export type ActionMetadataDto = {
   readonly feeBps?: number;
   readonly effectiveCollateralAmount?: string;
 };
-export type BorrowTransactionType =
-  | "APPROVAL"
-  | "AUTHORIZE"
-  | "DEAUTHORIZE"
-  | "SUPPLY"
-  | "BORROW"
-  | "REPAY"
-  | "WITHDRAW"
-  | "ENABLE_COLLATERAL"
-  | "DISABLE_COLLATERAL"
-  | "BUNDLE"
-  | "WRAP";
 export type SubmitTransactionDto = {
   readonly signedPayload?: string;
   readonly transactionHash?: string;
@@ -237,7 +218,6 @@ export type SubmitTransactionResponseDto = {
   readonly error?: string;
   readonly details?: { readonly [x: string]: unknown };
 };
-export type HealthStatus = "OK" | "FAIL";
 export type ActionDefinitionDto = {
   readonly id:
     | "supply"
@@ -249,14 +229,6 @@ export type ActionDefinitionDto = {
     | "supplyAndBorrow";
   readonly label: string;
   readonly schema: ArgumentSchemaDto;
-};
-export type CollateralTokenDto = {
-  readonly token: TokenDto;
-  readonly priceUsd: string;
-  readonly maxLtv: string;
-  readonly liquidationThreshold: string;
-  readonly liquidationPenalty: string;
-  readonly supplyRate: string;
 };
 export type BorrowPendingActionDto = {
   readonly type:
@@ -310,16 +282,6 @@ export type ActionDto = {
   readonly rawArguments?: ArgumentsDto;
   readonly metadata?: ActionMetadataDto;
   readonly createdAt: string;
-};
-export type TransactionGasEstimateDto = {
-  readonly amount: string;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly type: BorrowTransactionType;
-};
-export type HealthStatusDto = {
-  readonly status: HealthStatus;
-  readonly timestamp: string;
 };
 export type IntegrationDto = {
   readonly id: string;
@@ -437,138 +399,6 @@ export type IntegrationDto = {
   readonly metadata: IntegrationMetadataDto;
   readonly actions: ReadonlyArray<ActionDefinitionDto>;
 };
-export type MarketDto = {
-  readonly id: string;
-  readonly integrationId: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly type: "pool" | "isolated";
-  readonly poolAddress: string;
-  readonly loanToken: TokenDto;
-  readonly collateralTokens: ReadonlyArray<CollateralTokenDto>;
-  readonly borrowRate: string;
-  readonly totalSupply: string;
-  readonly totalSupplyRaw: string;
-  readonly totalBorrow: string;
-  readonly totalBorrowRaw: string;
-  readonly availableLiquidity: string;
-  readonly availableLiquidityRaw: string;
-  readonly utilizationRate: string;
-  readonly loanTokenPriceUsd: string;
-  readonly isBorrowEnabled: boolean;
-  readonly supplyCollateralFeeBps: string;
-  readonly feeWrapperAddress: string | null;
-  readonly originationFeeBps: string;
-  readonly originationFeeWrapperAddress: string | null;
-  readonly blueBundleOriginationFeeBps: string | null;
-  readonly minLoan: string | null;
-};
 export type SupplyBalanceDto = {
   readonly marketId: string;
   readonly tokenAddress: string;
@@ -590,11 +420,6 @@ export type DebtBalanceDto = {
   readonly balanceUsd: string;
   readonly apy: string;
   readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
-};
-export type SimulationGasDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
 };
 export type PositionDto = {
   readonly address: string;
@@ -713,14 +538,12 @@ export type PositionDto = {
   readonly netWorthUsd: string;
   readonly healthFactor: string | null;
   readonly currentLtv: string;
+  readonly maxLtv: string;
+  readonly liquidationThreshold: string;
   readonly availableToBorrowUsd: string | null;
   readonly netApy: string;
   readonly supplyBalances: ReadonlyArray<SupplyBalanceDto>;
   readonly debtBalances: ReadonlyArray<DebtBalanceDto>;
-};
-export type ActionSimulationDto = {
-  readonly gas: SimulationGasDto;
-  readonly outcome: ActionMetadataDto;
 };
 // schemas
 export type IntegrationsControllerGetIntegrationsV1200 =
@@ -731,18 +554,6 @@ export type IntegrationsControllerGetIntegrationsV1401 = {
   readonly statusCode?: number;
 };
 export type IntegrationsControllerGetIntegrationsV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type IntegrationsControllerGetIntegrationV1200 = IntegrationDto;
-export type IntegrationsControllerGetIntegrationV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type IntegrationsControllerGetIntegrationV1429 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
@@ -879,18 +690,6 @@ export type MarketsControllerGetMarketsV1429 = {
   readonly statusCode?: number;
   readonly retryAfter?: number;
 };
-export type MarketsControllerGetMarketByIdV1200 = MarketDto;
-export type MarketsControllerGetMarketByIdV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type MarketsControllerGetMarketByIdV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
 export type PositionsControllerGetPositionsV1Params = {
   readonly integrationId: string;
   readonly network:
@@ -1015,138 +814,6 @@ export type PositionsControllerGetPositionsV1429 = {
   readonly statusCode?: number;
   readonly retryAfter?: number;
 };
-export type PositionsControllerGetLiquidationsV1Params = {
-  readonly offset?: number;
-  readonly limit?: number;
-  readonly integrationId: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly address: string;
-  readonly marketId?: string;
-};
-export type PositionsControllerGetLiquidationsV1200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export type PositionsControllerGetLiquidationsV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type PositionsControllerGetLiquidationsV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
 export type ActionsControllerGetActionsV1Params = {
   readonly offset?: number;
   readonly limit?: number;
@@ -1208,19 +875,6 @@ export type ActionsControllerExecuteActionV1429 = {
   readonly statusCode?: number;
   readonly retryAfter?: number;
 };
-export type ActionsControllerSimulateActionV1RequestJson = ActionRequestDto;
-export type ActionsControllerSimulateActionV1200 = ActionSimulationDto;
-export type ActionsControllerSimulateActionV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateActionV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
 export type ActionsControllerGetActionV1200 = ActionDto;
 export type ActionsControllerGetActionV1401 = {
   readonly message?: string;
@@ -1260,7 +914,6 @@ export type TransactionsControllerSubmitTransactionV1429 = {
   readonly statusCode?: number;
   readonly retryAfter?: number;
 };
-export type HealthControllerHealth200 = HealthStatusDto;
 
 export interface OperationConfig {
   /**
@@ -1456,30 +1109,6 @@ export const make = (
           "429": "IntegrationsControllerGetIntegrationsV1429",
         })
       ),
-    IntegrationsControllerGetIntegrationV1: (
-      integrationId,
-      options: Parameters<
-        BorrowApi["IntegrationsControllerGetIntegrationV1"]
-      >[1]
-    ) =>
-      __makePathRequest(
-        HttpClientRequest.get,
-        [integrationId],
-        () => "/v1/integrations/" + __encodePathParam(integrationId) + ""
-      ).pipe(
-        Effect.flatMap((request) =>
-          request.pipe(
-            onRequest(options?.config)(
-              ["2xx"],
-              {
-                "401": "IntegrationsControllerGetIntegrationV1401",
-                "429": "IntegrationsControllerGetIntegrationV1429",
-              },
-              { binary: [], voidSuccess: [], voidError: ["404"] }
-            )
-          )
-        )
-      ),
     MarketsControllerGetMarketsV1: (
       options: Parameters<BorrowApi["MarketsControllerGetMarketsV1"]>[0]
     ) =>
@@ -1496,28 +1125,6 @@ export const make = (
           "429": "MarketsControllerGetMarketsV1429",
         })
       ),
-    MarketsControllerGetMarketByIdV1: (
-      marketId,
-      options: Parameters<BorrowApi["MarketsControllerGetMarketByIdV1"]>[1]
-    ) =>
-      __makePathRequest(
-        HttpClientRequest.get,
-        [marketId],
-        () => "/v1/markets/" + __encodePathParam(marketId) + ""
-      ).pipe(
-        Effect.flatMap((request) =>
-          request.pipe(
-            onRequest(options?.config)(
-              ["2xx"],
-              {
-                "401": "MarketsControllerGetMarketByIdV1401",
-                "429": "MarketsControllerGetMarketByIdV1429",
-              },
-              { binary: [], voidSuccess: [], voidError: ["404"] }
-            )
-          )
-        )
-      ),
     PositionsControllerGetPositionsV1: (
       options: Parameters<BorrowApi["PositionsControllerGetPositionsV1"]>[0]
     ) =>
@@ -1530,23 +1137,6 @@ export const make = (
         onRequest(options.config)(["2xx"], {
           "401": "PositionsControllerGetPositionsV1401",
           "429": "PositionsControllerGetPositionsV1429",
-        })
-      ),
-    PositionsControllerGetLiquidationsV1: (
-      options: Parameters<BorrowApi["PositionsControllerGetLiquidationsV1"]>[0]
-    ) =>
-      HttpClientRequest.get("/v1/positions/liquidations").pipe(
-        HttpClientRequest.setUrlParams({
-          offset: options.params["offset"] as any,
-          limit: options.params["limit"] as any,
-          integrationId: options.params["integrationId"] as any,
-          network: options.params["network"] as any,
-          address: options.params["address"] as any,
-          marketId: options.params["marketId"] as any,
-        }),
-        onRequest(options.config)(["2xx"], {
-          "401": "PositionsControllerGetLiquidationsV1401",
-          "429": "PositionsControllerGetLiquidationsV1429",
         })
       ),
     ActionsControllerGetActionsV1: (
@@ -1575,16 +1165,6 @@ export const make = (
         onRequest(options.config)(["2xx"], {
           "401": "ActionsControllerExecuteActionV1401",
           "429": "ActionsControllerExecuteActionV1429",
-        })
-      ),
-    ActionsControllerSimulateActionV1: (
-      options: Parameters<BorrowApi["ActionsControllerSimulateActionV1"]>[0]
-    ) =>
-      HttpClientRequest.post("/v1/actions/simulate").pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "401": "ActionsControllerSimulateActionV1401",
-          "429": "ActionsControllerSimulateActionV1429",
         })
       ),
     ActionsControllerGetActionV1: (
@@ -1656,12 +1236,6 @@ export const make = (
           )
         )
       ),
-    HealthControllerHealth: (
-      options: Parameters<BorrowApi["HealthControllerHealth"]>[0]
-    ) =>
-      HttpClientRequest.get("/health").pipe(
-        onRequest(options?.config)(["2xx"])
-      ),
   };
 };
 
@@ -1701,46 +1275,6 @@ export interface BorrowApi {
           "IntegrationsControllerGetIntegrationsV1429",
           IntegrationsControllerGetIntegrationsV1429
         >
-    >;
-  };
-  /**
-   * Retrieve detailed information about a specific lending/borrowing integration
-   */
-  readonly IntegrationsControllerGetIntegrationV1: {
-    <Config extends OperationConfig | undefined = undefined>(
-      integrationId: string,
-      options: { readonly config: Config }
-    ): Effect.Effect<
-      WithOptionalResponse<IntegrationsControllerGetIntegrationV1200, Config>,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "IntegrationsControllerGetIntegrationV1401",
-          IntegrationsControllerGetIntegrationV1401
-        >
-      | BorrowApiError<
-          "IntegrationsControllerGetIntegrationV1429",
-          IntegrationsControllerGetIntegrationV1429
-        >
-      | BorrowApiError<"404", undefined>
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      integrationId: string,
-      options: { readonly config?: Config | undefined } | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<
-        IntegrationsControllerGetIntegrationV1200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "IntegrationsControllerGetIntegrationV1401",
-          IntegrationsControllerGetIntegrationV1401
-        >
-      | BorrowApiError<
-          "IntegrationsControllerGetIntegrationV1429",
-          IntegrationsControllerGetIntegrationV1429
-        >
-      | BorrowApiError<"404", undefined>
     >;
   };
   /**
@@ -1786,46 +1320,6 @@ export interface BorrowApi {
     >;
   };
   /**
-   * Retrieve details for a specific lending market. Useful for deep linking into a specific market (e.g., cbBTC/USDT on Morpho Blue).
-   */
-  readonly MarketsControllerGetMarketByIdV1: {
-    <Config extends OperationConfig | undefined = undefined>(
-      marketId: string,
-      options: { readonly config: Config }
-    ): Effect.Effect<
-      WithOptionalResponse<MarketsControllerGetMarketByIdV1200, Config>,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "MarketsControllerGetMarketByIdV1401",
-          MarketsControllerGetMarketByIdV1401
-        >
-      | BorrowApiError<
-          "MarketsControllerGetMarketByIdV1429",
-          MarketsControllerGetMarketByIdV1429
-        >
-      | BorrowApiError<"404", undefined>
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      marketId: string,
-      options: { readonly config?: Config | undefined } | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<
-        MarketsControllerGetMarketByIdV1200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "MarketsControllerGetMarketByIdV1401",
-          MarketsControllerGetMarketByIdV1401
-        >
-      | BorrowApiError<
-          "MarketsControllerGetMarketByIdV1429",
-          MarketsControllerGetMarketByIdV1429
-        >
-      | BorrowApiError<"404", undefined>
-    >;
-  };
-  /**
    * Retrieve all supply and borrow positions for a user address across specified integration and network.
    */
   readonly PositionsControllerGetPositionsV1: {
@@ -1860,44 +1354,6 @@ export interface BorrowApi {
       | BorrowApiError<
           "PositionsControllerGetPositionsV1429",
           PositionsControllerGetPositionsV1429
-        >
-    >;
-  };
-  /**
-   * Retrieve a paginated history of Morpho Blue liquidation events for a borrower address, read from the indexed store. This is the only place a fully-liquidated (closed) position can be retrieved, since it no longer appears in GET /v1/positions. Ordered by most recent first.
-   */
-  readonly PositionsControllerGetLiquidationsV1: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly params: PositionsControllerGetLiquidationsV1Params;
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<PositionsControllerGetLiquidationsV1200, Config>,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "PositionsControllerGetLiquidationsV1401",
-          PositionsControllerGetLiquidationsV1401
-        >
-      | BorrowApiError<
-          "PositionsControllerGetLiquidationsV1429",
-          PositionsControllerGetLiquidationsV1429
-        >
-    >;
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly params: PositionsControllerGetLiquidationsV1Params;
-      readonly config?: Config | undefined;
-    }): Effect.Effect<
-      WithOptionalResponse<
-        PositionsControllerGetLiquidationsV1200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "PositionsControllerGetLiquidationsV1401",
-          PositionsControllerGetLiquidationsV1401
-        >
-      | BorrowApiError<
-          "PositionsControllerGetLiquidationsV1429",
-          PositionsControllerGetLiquidationsV1429
         >
     >;
   };
@@ -1974,44 +1430,6 @@ export interface BorrowApi {
       | BorrowApiError<
           "ActionsControllerExecuteActionV1429",
           ActionsControllerExecuteActionV1429
-        >
-    >;
-  };
-  /**
-   * Simulates an action without creating or persisting it. The response is sectioned so it can grow additively.
-   */
-  readonly ActionsControllerSimulateActionV1: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly payload: ActionsControllerSimulateActionV1RequestJson;
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<ActionsControllerSimulateActionV1200, Config>,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "ActionsControllerSimulateActionV1401",
-          ActionsControllerSimulateActionV1401
-        >
-      | BorrowApiError<
-          "ActionsControllerSimulateActionV1429",
-          ActionsControllerSimulateActionV1429
-        >
-    >;
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly payload: ActionsControllerSimulateActionV1RequestJson;
-      readonly config?: Config | undefined;
-    }): Effect.Effect<
-      WithOptionalResponse<
-        ActionsControllerSimulateActionV1200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | BorrowApiError<
-          "ActionsControllerSimulateActionV1401",
-          ActionsControllerSimulateActionV1401
-        >
-      | BorrowApiError<
-          "ActionsControllerSimulateActionV1429",
-          ActionsControllerSimulateActionV1429
         >
     >;
   };
@@ -2126,23 +1544,6 @@ export interface BorrowApi {
         >
       | BorrowApiError<"403", undefined>
       | BorrowApiError<"404", undefined>
-    >;
-  };
-  /**
-   * Get the health status of the borrow API with current timestamp
-   */
-  readonly HealthControllerHealth: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<HealthControllerHealth200, Config>,
-      HttpClientError.HttpClientError
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      options: { readonly config?: Config | undefined } | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<HealthControllerHealth200, Config | undefined>,
-      HttpClientError.HttpClientError
     >;
   };
 }

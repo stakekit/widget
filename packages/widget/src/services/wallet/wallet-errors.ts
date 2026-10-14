@@ -48,6 +48,17 @@ export class WalletRequestCancelledError extends Data.TaggedError(
   readonly operation: WalletSigningCommand;
 }> {}
 
+/**
+ * A signing command's Wallet Command Context does not belong to the Wallet
+ * Scope Owner its caller expected; nothing was signed or sent.
+ */
+export class WalletOwnerMismatchError extends Data.TaggedError(
+  "WalletOwnerMismatchError"
+)<{
+  readonly operation: WalletSigningCommand;
+  readonly reason: "account-changed" | "disconnected" | "network-changed";
+}> {}
+
 export class WalletCapabilityUnavailableError extends Data.TaggedError(
   "WalletCapabilityUnavailableError"
 )<{

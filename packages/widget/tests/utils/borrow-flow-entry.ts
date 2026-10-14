@@ -22,7 +22,6 @@ export const borrowEntryFlowMarket = Schema.decodeSync(Market)({
       },
     },
   ],
-  feeWrapperAddress: null,
   id: "morpho-blue-borrow-base-cbbtc-usdc-86",
   integrationId: "morpho-blue",
   isBorrowEnabled: true,

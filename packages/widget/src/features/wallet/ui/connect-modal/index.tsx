@@ -2,7 +2,6 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
 import clsx from "clsx";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { PropsWithChildren } from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,7 @@ import type {
   ConnectPickerGroup,
   ConnectPickerWallet,
 } from "../../model/connect-picker";
+import { walletIconUrlAtom } from "../../state/wallet-icon";
 import {
   connectPickerAtom,
   connectWalletAtom,
@@ -22,7 +22,6 @@ import {
   walletConnectPresentationOpenAtom,
 } from "../../state/wallet-modal";
 import { WalletDialog, WalletDialogClose } from "../wallet-dialog";
-import { useWalletIconUrl } from "../wallet-dialog/icon-url";
 import { BackIcon } from "../wallet-dialog/icons";
 import { closeButton, heading, menuButton } from "../wallet-dialog/styles.css";
 import {
@@ -60,28 +59,16 @@ export const WalletModalsProvider = ({ children }: PropsWithChildren) => (
 
 const ConnectModal = () => {
   const { t } = useTranslation();
-  const isOpen = AsyncResult.getOrElse(
-    useAtomValue(walletConnectModalOpenAtom),
-    () => false
-  );
-  const presentationOpen = AsyncResult.getOrElse(
-    useAtomValue(walletConnectPresentationOpenAtom),
-    () => false
-  );
+  const isOpen = useAtomValue(walletConnectModalOpenAtom);
+  const presentationOpen = useAtomValue(walletConnectPresentationOpenAtom);
   const setOpen = useAtomSet(setWalletConnectModalOpenAtom);
   const [selectedChainGroupId, setSelectedChainGroupId] = useState<
     string | undefined
   >();
   const connect = useAtomSet(connectWalletAtom);
-  const attempt = AsyncResult.getOrElse(
-    useAtomValue(walletConnectionAttemptAtom),
-    () => ({ _tag: "Idle" as const })
-  );
+  const attempt = useAtomValue(walletConnectionAttemptAtom);
 
-  const ecosystems = AsyncResult.getOrElse(
-    useAtomValue(connectPickerAtom),
-    () => []
-  );
+  const ecosystems = useAtomValue(connectPickerAtom);
   const activeEcosystem = ecosystems.find(
     ({ chainGroup }) =>
       chainGroup.id === selectedChainGroupId || ecosystems.length === 1
@@ -283,7 +270,7 @@ const OptionContent = ({
   readonly iconUrl: ConnectPickerWallet["iconUrl"];
   readonly title: string;
 }>) => {
-  const resolvedIconUrl = useWalletIconUrl(iconUrl);
+  const resolvedIconUrl = useAtomValue(walletIconUrlAtom(iconUrl));
 
   return (
     <span className={optionRow}>

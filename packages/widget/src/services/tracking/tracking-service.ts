@@ -27,9 +27,10 @@ export class TrackingService extends Context.Service<TrackingService>()(
 
       const trackEvent = Effect.fn("TrackingService.trackEvent")(
         function* (event: TrackEventKey, properties?: Properties) {
-          const { tracking, variant } = yield* widgetConfig.current;
-          const variantTracking =
-            variant === "zerion" ? yield* getVariantTracking : undefined;
+          const { hostProfile, tracking } = yield* widgetConfig.current;
+          const variantTracking = hostProfile.hostTracking
+            ? yield* getVariantTracking
+            : undefined;
 
           yield* Effect.try({
             try: () =>
@@ -54,9 +55,10 @@ export class TrackingService extends Context.Service<TrackingService>()(
 
       const trackPageView = Effect.fn("TrackingService.trackPageView")(
         function* (page: TrackPageKey, properties?: Properties) {
-          const { tracking, variant } = yield* widgetConfig.current;
-          const variantTracking =
-            variant === "zerion" ? yield* getVariantTracking : undefined;
+          const { hostProfile, tracking } = yield* widgetConfig.current;
+          const variantTracking = hostProfile.hostTracking
+            ? yield* getVariantTracking
+            : undefined;
 
           yield* Effect.try({
             try: () =>

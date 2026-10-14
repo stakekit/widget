@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
 import {
   ExactBaseUnitAmount,
@@ -19,7 +19,12 @@ const OriginationFeeBps = Schema.FiniteFromString.check(
 );
 
 export const Market = Schema.Struct({
-  ...BorrowApi.MarketDto.fields,
+  ...Struct.pick(BorrowApi.MarketDto.fields, [
+    "type",
+    "poolAddress",
+    "isBorrowEnabled",
+    "originationFeeWrapperAddress",
+  ]),
   availableLiquidity: ExactDecimal,
   availableLiquidityRaw: ExactBaseUnitAmount,
   blueBundleOriginationFeeBps: Schema.NullOr(OriginationFeeBps),

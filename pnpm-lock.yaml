@@ -275,9 +275,6 @@ catalogs:
     '@solana/web3.js':
       specifier: ^1.99.0
       version: 1.99.0
-    '@tanstack/react-query':
-      specifier: ^5.104.1
-      version: 5.104.1
     '@tanstack/react-virtual':
       specifier: ^3.14.13
       version: 3.14.13
@@ -479,9 +476,6 @@ overrides:
 
 packageExtensionsChecksum: sha256-FZ9pA8g2+w7cg8p8CU69qpPAEhtGVHP/kzcJxOvNvcM=
 
-patchedDependencies:
-  effect@4.0.3: f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba
-
 importers:
 
   .:
@@ -596,7 +590,7 @@ importers:
         version: 1.2.6
       effect:
         specifier: 'catalog:'
-        version: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+        version: 4.0.3
       react-remove-scroll:
         specifier: 'catalog:'
         version: 2.7.2(@types/react@19.3.0)(react@19.3.0)
@@ -627,19 +621,19 @@ importers:
         version: '@jsr/creit-tech__stellar-wallets-kit@2.7.1(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@7.2.0))(@types/react@19.3.0)(bufferutil@4.0.9)(react@19.3.0)(supports-color@7.2.0)(utf-8-validate@5.0.10)))(@types/react@19.3.0)(bufferutil@4.0.9)(debug@4.4.3(supports-color@7.2.0))(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(immer@11.1.15)(ioredis@5.10.1(supports-color@7.2.0))(near-api-js@5.1.1(encoding@0.1.13))(react@19.3.0)(supports-color@7.2.0)(tslib@2.8.1)(typescript@6.0.3)(use-sync-external-store@1.4.0(react@19.3.0))(utf-8-validate@5.0.10)(zod@3.25.76)'
       '@effect/atom-react':
         specifier: 'catalog:'
-        version: 4.0.3(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(react@19.3.0)(scheduler@0.28.0)
+        version: 4.0.3(effect@4.0.3)(react@19.3.0)(scheduler@0.28.0)
       '@effect/openapi-generator':
         specifier: 'catalog:'
-        version: 4.0.3(@effect/platform-node@4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(encoding@0.1.13)
+        version: 4.0.3(@effect/platform-node@4.0.3(bufferutil@4.0.9)(effect@4.0.3)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.3)(encoding@0.1.13)
       '@effect/platform-browser':
         specifier: 'catalog:'
-        version: 4.0.3(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))
+        version: 4.0.3(effect@4.0.3)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(redis@6.2.1)(utf-8-validate@5.0.10)
+        version: 4.0.3(bufferutil@4.0.9)(effect@4.0.3)(redis@6.2.1)(utf-8-validate@5.0.10)
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 4.0.3(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(vitest@5.0.3)
+        version: 4.0.3(effect@4.0.3)(vitest@5.0.3)
       '@ledgerhq/wallet-api-client':
         specifier: 'catalog:'
         version: 1.16.0(@ton/crypto@3.3.0)(encoding@0.1.13)
@@ -694,9 +688,6 @@ importers:
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.99.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@6.0.3)(utf-8-validate@5.0.10)
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.104.1(react@19.3.0)
       '@tanstack/react-virtual':
         specifier: 'catalog:'
         version: 3.14.13(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -12665,37 +12656,37 @@ snapshots:
       '@leichtgewicht/ip-codec': 2.0.5
       utf8-codec: 1.0.0
 
-  '@effect/atom-react@4.0.3(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(react@19.3.0)(scheduler@0.28.0)':
+  '@effect/atom-react@4.0.3(effect@4.0.3)(react@19.3.0)(scheduler@0.28.0)':
     dependencies:
-      effect: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+      effect: 4.0.3
       react: 19.3.0
       scheduler: 0.28.0
 
-  '@effect/openapi-generator@4.0.3(@effect/platform-node@4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(encoding@0.1.13)':
+  '@effect/openapi-generator@4.0.3(@effect/platform-node@4.0.3(bufferutil@4.0.9)(effect@4.0.3)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.3)(encoding@0.1.13)':
     dependencies:
-      '@effect/platform-node': 4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(redis@6.2.1)(utf-8-validate@5.0.10)
-      effect: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+      '@effect/platform-node': 4.0.3(bufferutil@4.0.9)(effect@4.0.3)(redis@6.2.1)(utf-8-validate@5.0.10)
+      effect: 4.0.3
       swagger2openapi: 7.0.8(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
-  '@effect/platform-browser@4.0.3(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))':
+  '@effect/platform-browser@4.0.3(effect@4.0.3)':
     dependencies:
-      effect: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+      effect: 4.0.3
 
-  '@effect/platform-node-shared@4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(utf-8-validate@5.0.10)':
+  '@effect/platform-node-shared@4.0.3(bufferutil@4.0.9)(effect@4.0.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@types/ws': 8.18.2
-      effect: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+      effect: 4.0.3
       ws: 8.22.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(redis@6.2.1)(utf-8-validate@5.0.10)':
+  '@effect/platform-node@4.0.3(bufferutil@4.0.9)(effect@4.0.3)(redis@6.2.1)(utf-8-validate@5.0.10)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.3(bufferutil@4.0.9)(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(utf-8-validate@5.0.10)
-      effect: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+      '@effect/platform-node-shared': 4.0.3(bufferutil@4.0.9)(effect@4.0.3)(utf-8-validate@5.0.10)
+      effect: 4.0.3
       redis: 6.2.1
       undici: 8.11.2
     transitivePeerDependencies:
@@ -12733,9 +12724,9 @@ snapshots:
       '@effect/tsgo-win32-arm64': 0.51.1
       '@effect/tsgo-win32-x64': 0.51.1
 
-  '@effect/vitest@4.0.3(effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba))(vitest@5.0.3)':
+  '@effect/vitest@4.0.3(effect@4.0.3)(vitest@5.0.3)':
     dependencies:
-      effect: 4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba)
+      effect: 4.0.3
       vitest: 5.0.3(@types/node@26.6.4)(@vitest/browser-playwright@5.0.3)(@vitest/ui@5.0.3)(jsdom@30.1.2(@noble/hashes@2.4.0))(msw@3.0.2(@types/node@26.6.4)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(less@4.2.2)(sass@1.85.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(less@4.2.2)(sass@1.85.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))
 
   '@emnapi/core@1.11.2':
@@ -21087,7 +21078,7 @@ snapshots:
   ee-first@1.1.1:
     optional: true
 
-  effect@4.0.3(patch_hash=f7ffb36bb1958a6ec6456d8771717cebe845ff15533e718dc0ce684b0a4ac7ba): {}
+  effect@4.0.3: {}
 
   electron-to-chromium@1.5.445: {}
 

@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
@@ -9,8 +10,6 @@ import { tokenString } from "../../../domain/token/token";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { config } from "../../../shared/config/widget-defaults";
-import { formatUsd } from "../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../shared/lib/number-format";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -20,8 +19,10 @@ import {
 import { earnPageSearchAtom } from "./page-workflow";
 
 export type EarnTokenSelectionItem = EarnTokenOption & {
-  readonly formattedAmount: string | null;
-  readonly formattedUsd: string | null;
+  /** Positive balance worth showing; the UI formats it. */
+  readonly fundedAmount: BigNumber | null;
+  /** USD value of `fundedAmount` when priced. */
+  readonly fundedUsd: BigNumber | null;
 };
 
 const positiveAmount = (option: EarnTokenOption) => {
@@ -43,9 +44,8 @@ const toSelectionItem = (
 
   return {
     ...option,
-    formattedAmount: funded ? defaultFormattedNumber(amount) : null,
-    formattedUsd:
-      funded && price?.isGreaterThan(0) ? formatUsd(amount.times(price)) : null,
+    fundedAmount: funded ? amount : null,
+    fundedUsd: funded && price?.isGreaterThan(0) ? amount.times(price) : null,
   };
 };
 

@@ -36,11 +36,6 @@ import {
 } from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { getPullResultItems } from "../../../shared/effect/pagination";
-import { formatUsd } from "../../../shared/lib/formatters";
-import {
-  defaultFormattedNumber,
-  formatNumber,
-} from "../../../shared/lib/number-format";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
 import { walletScopeAtom } from "../../wallet/index";
 import {
@@ -259,18 +254,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
-        formattedPrice:
-          input.prices && selectedYield && selectedToken
-            ? formatUsd(
-                getTokenPriceInUSD({
-                  amount: entry.amount,
-                  baseToken: selectedYield.token,
-                  pricePerShare: null,
-                  prices: input.prices,
-                  token: selectedToken,
-                })
-              )
-            : "",
         isFetching: input.isFetching,
         isStakeTokenSameAsGasToken:
           selectedYield && selectedToken
@@ -282,18 +265,21 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         kyc: entry.kyc,
         ownerCurrent: input.ownerCurrent,
         preparation: entry.preparation,
+        priceUsd:
+          input.prices && selectedYield && selectedToken
+            ? getTokenPriceInUSD({
+                amount: entry.amount,
+                baseToken: selectedYield.token,
+                pricePerShare: null,
+                prices: input.prices,
+                token: selectedToken,
+              })
+            : null,
         providers: entry.providers,
         selectedStake: selectedYield,
         selectedToken,
         selectedTokenAvailableAmount:
-          availableAmount !== null
-            ? {
-                amount: availableAmount,
-                fullFormattedAmount: formatNumber(availableAmount),
-                shortFormattedAmount: defaultFormattedNumber(availableAmount),
-                symbol,
-              }
-            : null,
+          availableAmount !== null ? { amount: availableAmount, symbol } : null,
         selectedValidators: input.selectedValidators,
         stakeAmount: entry.amount,
         stakeMaxAmount:

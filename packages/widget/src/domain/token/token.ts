@@ -1,13 +1,37 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
+import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { addressIdentity, TokenAddress } from "../identity/identifiers";
 
+// Host wallets receive the whole token as `SKToken`, so every field it
+// publishes is picked.
 export const Token = Schema.Struct({
-  ...YieldApi.TokenDto.fields,
+  ...Struct.pick(YieldApi.TokenDto.fields, [
+    "symbol",
+    "name",
+    "network",
+    "logoURI",
+    "isPoints",
+    "coinGeckoId",
+  ]),
   address: Schema.optionalKey(TokenAddress),
   decimals: Schema.Finite.check(Schema.isInt()),
 });
 export type Token = typeof Token.Type;
+
+/** A Legacy API token, decoded through the fields `Token` reads. */
+export const LegacyToken = LegacyApi.TokenDto.mapFields(
+  Struct.pick([
+    "symbol",
+    "name",
+    "decimals",
+    "network",
+    "address",
+    "logoURI",
+    "isPoints",
+    "coinGeckoId",
+  ])
+).pipe(Schema.decodeTo(Token));
 
 export type TokenString = `${Token["network"]}-${string}-${string}`;
 

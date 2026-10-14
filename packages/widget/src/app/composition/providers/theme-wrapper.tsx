@@ -1,6 +1,5 @@
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import type { PropsWithChildren } from "react";
-import { useMemo } from "react";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import type { WidgetConfig } from "../../../services/config/widget-config-model";
 import { mergeDeep } from "../../../shared/effect/merge-deep";
@@ -38,15 +37,12 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
   const theme = useWidgetConfig("theme");
   const variant = useWidgetConfig("variant");
 
-  const finalTheme = useMemo(() => {
-    const baseTheme = mergeDeep(lightTheme, theme);
-    const overrides = getThemeOverrides({
-      baseTheme,
-      variant,
-    });
-
-    return mergeDeep(lightTheme, theme, overrides);
-  }, [theme, variant]);
+  const baseTheme = mergeDeep(lightTheme, theme);
+  const overrides = getThemeOverrides({
+    baseTheme,
+    variant,
+  });
+  const finalTheme = mergeDeep(lightTheme, theme, overrides);
 
   return (
     <div data-rk={id}>

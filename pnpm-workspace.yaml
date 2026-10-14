@@ -59,7 +59,6 @@ catalog:
   "@solana/wallet-adapter-wallets": ^0.19.40
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
   "@solana/web3.js": ^1.99.0
-  "@tanstack/react-query": ^5.104.1
   "@tanstack/react-virtual": ^3.14.13
   "@ton/core": ^0.63.1
   "@tonconnect/ui": ^3.0.2
@@ -144,9 +143,6 @@ packageExtensions:
   "@fractalwagmi/solana-wallet-adapter@0.1.1":
     peerDependencies:
       "@solana/web3.js": ^1.98.4
-
-patchedDependencies:
-  effect@4.0.3: patches/effect@4.0.3.patch
 
 peerDependencyRules:
   allowedVersions:

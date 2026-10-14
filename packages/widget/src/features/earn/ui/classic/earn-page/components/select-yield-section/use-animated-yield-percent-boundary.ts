@@ -1,8 +1,12 @@
 import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import { config } from "../../../../../../../shared/config/widget-defaults";
-import { APToPercentage } from "../../../../../../../shared/lib/general";
-import { toChartNumber } from "../../../../../../../shared/lib/number-format";
+import {
+  formatRewardRatePercent,
+  formatRoundedPercent,
+  toChartNumber,
+} from "../../../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
 import type { getYieldEstimatedRewards } from "../../../../../../yield-summary/index";
 
 type EstimatedRewards = ReturnType<typeof getYieldEstimatedRewards>;
@@ -27,6 +31,7 @@ const resolvePerReward = (
 // Framer Motion owns an imperative animation value, so this adapter is the
 // named third-party presentation lifecycle boundary for the percentage tween.
 export const useAnimateYieldPercent = (estimatedRewards: EstimatedRewards) => {
+  const { locale } = useWidgetPresentation();
   const perReward = resolvePerReward(estimatedRewards);
 
   const rewardPercMotionValue = useMotionValue(0);
@@ -44,12 +49,15 @@ export const useAnimateYieldPercent = (estimatedRewards: EstimatedRewards) => {
     }
   }, [perReward, rewardPercMotionValue]);
 
-  const transformedMotionValue = useTransform(
-    rewardPercMotionValue,
-    (val) => `${APToPercentage(val)}%`
+  const transformedMotionValue = useTransform(rewardPercMotionValue, (val) =>
+    formatRoundedPercent(val, locale)
   );
 
-  return typeof perReward === "string" || config.env.isTestMode
-    ? estimatedRewards?.percentage
-    : transformedMotionValue;
+  if (typeof perReward !== "string" && !config.env.isTestMode) {
+    return transformedMotionValue;
+  }
+
+  return estimatedRewards
+    ? formatRewardRatePercent(estimatedRewards.rewardRateAverage, locale)
+    : undefined;
 };

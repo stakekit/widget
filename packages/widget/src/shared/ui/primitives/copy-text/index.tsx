@@ -1,13 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Box } from "../box";
 import { Check } from "../icons/check";
 import { Copy } from "../icons/copy";
@@ -41,14 +34,11 @@ export const Provider = ({
 }) => {
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
-  const onClick = useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      e.stopPropagation();
-      void window.navigator.clipboard.writeText(text);
-      setShowCopySuccess(true);
-    },
-    [text]
-  );
+  const onClick = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    void window.navigator.clipboard.writeText(text);
+    setShowCopySuccess(true);
+  };
 
   useEffect(() => {
     if (!showCopySuccess) return;
@@ -60,10 +50,7 @@ export const Provider = ({
     };
   }, [showCopySuccess]);
 
-  const value = useMemo<CopyTextContextType>(
-    () => ({ showCopySuccess, onClick }),
-    [onClick, showCopySuccess]
-  );
+  const value: CopyTextContextType = { showCopySuccess, onClick };
 
   return (
     <CopyTextContext.Provider value={value}>

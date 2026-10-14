@@ -9,10 +9,11 @@ import type {
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {
@@ -33,6 +34,7 @@ export const StaticActionBlock = ({
   yieldId,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   return (
     <Box
@@ -51,7 +53,10 @@ export const StaticActionBlock = ({
           <Trans
             i18nKey="position_details.available_to"
             values={{
-              amount: defaultFormattedNumber(exactDecimal(yieldBalance.amount)),
+              amount: formatTokenAmount(
+                exactDecimal(yieldBalance.amount),
+                locale
+              ),
               symbol: yieldBalance.token.symbol,
               pendingAction: t(
                 `position_details.pending_action.${

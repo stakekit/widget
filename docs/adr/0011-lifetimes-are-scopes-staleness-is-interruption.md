@@ -8,9 +8,9 @@ the next asynchronous boundary and refuses later work by interruption. Code does
 not keep revision, epoch, or generation counters and does not re-check
 `isCurrent` between steps to decide whether to continue.
 
-This trades typed `RejectedStale` outcomes for interruption: callers of an
-ended handle observe an interrupted exit rather than a domain value, and Atom
-results become an interrupt `Failure` that routes treat as unavailable.
+This trades typed staleness outcomes for interruption: callers of an ended
+handle observe an interrupted exit rather than a domain value, and Atom results
+become an interrupt `Failure` that routes treat as unavailable.
 
 Nested lifetimes are child Scopes. A resource that one owner bounds and another
 consumer holds is acquired with `acquireInChildScope`, so it ends with
@@ -34,8 +34,13 @@ mid-flight. Pass an `AbortSignal` where an external API accepts one.
 
 Checks against external mutable state remain data validation, not lifetime:
 for example, comparing a wallet's current identity before acting on it, or
-guarding a third-party client's own pending-request slot.
+guarding a third-party client's own pending-request slot. Such a check may
+return a typed rejection: adding a Ledger account rejects when the Wallet
+Command Identity captured at the start no longer matches.
 
 Value identity that distinguishes otherwise-equal instances, such as a Session
 `epoch` used as a React key or Atom family key, is allowed; it must never decide
-whether work continues.
+whether work continues. Attempt identity may select which UI instance a
+completed, uninterruptible result applies to: the pending-action modal closes on
+a flow-start receipt only when the receipt's attempt identity matches the open
+modal's.

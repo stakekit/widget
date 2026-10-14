@@ -1,7 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Title } from "@radix-ui/react-dialog";
 import clsx from "clsx";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
@@ -78,10 +77,7 @@ const ChainDialog = ({
   open,
 }: ChainDialogProps) => {
   const { t } = useTranslation();
-  const selection = AsyncResult.getOrElse(
-    useAtomValue(walletChainSelectionAtom),
-    () => undefined
-  );
+  const selection = useAtomValue(walletChainSelectionAtom);
 
   return (
     <WalletDialog
@@ -208,10 +204,7 @@ export const ChainModal = () => {
   const variant = useWidgetConfig("variant");
   const disabledChains = useLedgerDisabledChain();
   const logout = useAtomSet(logoutAtom);
-  const chainOpen = AsyncResult.getOrElse(
-    useAtomValue(walletChainModalOpenAtom),
-    () => false
-  );
+  const chainOpen = useAtomValue(walletChainModalOpenAtom);
   const setChainOpen = useAtomSet(setWalletChainModalOpenAtom);
   const selectChain = useAtomSet(selectWalletChainAtom);
 

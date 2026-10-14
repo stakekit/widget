@@ -9,8 +9,6 @@ import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { type TokenString, tokenString } from "../../../domain/token/token";
-import { formatUsd } from "../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../shared/lib/number-format";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { positionDetailsExitActions } from "./classic-actions/exit";
 import {
@@ -30,7 +28,13 @@ const hasCampaignRewardRate = (
   rewardRate: YieldRewardRate | null | undefined
 ) => getRewardRateBreakdown(rewardRate).some((item) => item.key === "campaign");
 
-const formatUnstakeAmount = ({
+export type PositionDetailsShareConversion = {
+  readonly rate: BigNumber;
+  readonly shareSymbol: string | undefined;
+  readonly symbol: string;
+};
+
+const getUnstakeAmountUsd = ({
   amount,
   amountUsd,
   unstakeAmount,
@@ -39,11 +43,9 @@ const formatUnstakeAmount = ({
   readonly amountUsd: BigNumber;
   readonly unstakeAmount: BigNumber;
 }) =>
-  formatUsd(
-    amount.isZero()
-      ? 0
-      : amountUsd.dividedBy(amount).multipliedBy(unstakeAmount)
-  );
+  amount.isZero()
+    ? exactDecimal(0)
+    : amountUsd.dividedBy(amount).multipliedBy(unstakeAmount);
 
 const getExitResourcesKey = (
   view: Atom.Type<ReturnType<typeof positionDetailsWorkflowViewAtom>>
@@ -99,18 +101,17 @@ export const positionDetailsClassicViewAtom = Atom.family(
                       !balance.token.isPoints
                   )
                   .forEach((balance) => {
-                    conversions.set(
-                      tokenString(balance.token),
-                      `1 ${balance.token.symbol} = ${defaultFormattedNumber(
-                        exactDecimal(balance.shareAmount ?? 0).dividedBy(
-                          exactDecimal(balance.amount ?? 0)
-                        )
-                      )} ${balance.shareToken?.symbol}`
-                    );
+                    conversions.set(tokenString(balance.token), {
+                      rate: exactDecimal(balance.shareAmount ?? 0).dividedBy(
+                        exactDecimal(balance.amount ?? 0)
+                      ),
+                      shareSymbol: balance.shareToken?.symbol,
+                      symbol: balance.token.symbol,
+                    });
                   });
                 return conversions;
               },
-              new Map<TokenString, string>()
+              new Map<TokenString, PositionDetailsShareConversion>()
             )
           : null;
       const canUnstake = Boolean(integration?.status.exit);
@@ -157,12 +158,12 @@ export const positionDetailsClassicViewAtom = Atom.family(
           AsyncResult.isInitial(workflow.yieldOpportunity) ||
           !canUnstake ||
           exitResources.kyc.isBlocking,
-        unstakeFormattedAmount: workflow.exitBalance
-          ? formatUnstakeAmount({
+        unstakeAmountUsd: workflow.exitBalance
+          ? getUnstakeAmountUsd({
               ...workflow.exitBalance,
               unstakeAmount: workflow.unstakeAmount,
             })
-          : "",
+          : null,
         unstakeIsGreaterOrLessIntegrationLimitError:
           workflow.unstakeIsGreaterOrLessIntegrationLimitError ||
           submittedBelowMinimum,

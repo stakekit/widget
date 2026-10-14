@@ -1,9 +1,12 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { formatPercent } from "../../../../../shared/lib/formatters";
-import { toChartNumber } from "../../../../../shared/lib/number-format";
+import {
+  formatPercent,
+  toChartNumber,
+} from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import * as styles from "../styles.css";
 
 export const LtvGauge = ({
@@ -14,6 +17,7 @@ export const LtvGauge = ({
   readonly liquidationThreshold: BigNumber | null;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (currentLtv == null) {
     return null;
@@ -38,7 +42,7 @@ export const LtvGauge = ({
           {t("dashboard.borrow.position_details.loan_to_value")}
         </Text>
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatPercent(currentLtv)}
+          {formatPercent(currentLtv, locale)}
         </Text>
       </Box>
 
@@ -62,7 +66,7 @@ export const LtvGauge = ({
         {liquidationThreshold == null ? null : (
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t("dashboard.borrow.position_details.liquidation_at", {
-              value: formatPercent(liquidationThreshold),
+              value: formatPercent(liquidationThreshold, locale),
             })}
           </Text>
         )}

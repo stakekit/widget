@@ -9,6 +9,7 @@ import type {
 } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { BorrowPositions } from "../../../../domain/borrow/positions/borrow-positions";
+import type { RiskGateVerdict } from "../../../../domain/borrow/risk/risk-gate";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type {
@@ -129,6 +130,7 @@ export type PreparedActionCommonFacts = {
   readonly network: BorrowNetwork;
   readonly providerName: string;
   readonly risk: BorrowRiskProjection;
+  readonly riskVerdict: RiskGateVerdict;
   readonly warnings: ReadonlyArray<BorrowConstraintWarning>;
 };
 

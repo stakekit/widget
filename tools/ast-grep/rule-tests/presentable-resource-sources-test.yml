@@ -1,0 +1,24 @@
+id: presentable-resource-sources
+valid:
+  - |
+    import { YieldResourceSource } from "../../services/api/resource-sources";
+    import { makePresentableResource } from "../resource-failure-presentation";
+    export const yieldsAtom = makePresentableResource(
+      YieldResourceSource.use((source) => source.yields)
+    );
+  - |
+    import { LegacyResourceSource } from "../../services/api/resource-sources";
+    import { makePresentableResourceFamily } from "../resource-failure-presentation";
+    export const pricesAtom = makePresentableResourceFamily(
+      (key) => LegacyResourceSource.use((source) => source.prices(key))
+    );
+  - 'import { exactDecimal } from "../../domain/finance/exact";'
+invalid:
+  - |
+    import { YieldResourceSource } from "../../services/api/resource-sources";
+    export const yieldsAtom = runtime.atom(
+      YieldResourceSource.use((source) => source.yields)
+    );
+  - |
+    import { BorrowResourceSource, LegacyResourceSource } from "../../services/api/resource-sources";
+    export const marketsAtom = runtime.atom(BorrowResourceSource.use((source) => source.markets));

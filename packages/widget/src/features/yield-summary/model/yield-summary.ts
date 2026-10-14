@@ -8,7 +8,6 @@ import {
   getExtendedYieldType,
   getYieldRewardTokens,
 } from "../../../domain/earn/yield";
-import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 
 export type YieldSummaryProvider = Readonly<{
   readonly address?: EarnValidator["address"];
@@ -17,7 +16,6 @@ export type YieldSummaryProvider = Readonly<{
   readonly name: string;
   readonly preferred?: EarnValidator["preferred"];
   readonly rewardRate: BigNumber | undefined;
-  readonly rewardRateFormatted: string;
   readonly rewardType: string | undefined;
   readonly stakedBalance?: EarnValidator["tvl"];
   readonly status?: EarnValidator["status"];
@@ -50,7 +48,6 @@ const getValidatorProvider = (
     name: validator.name ?? validator.address,
     preferred: validator.preferred,
     rewardRate,
-    rewardRateFormatted: getRewardRateFormatted({ rewardRate }),
     rewardType: validator.rewardRate?.rateType?.toLowerCase(),
     stakedBalance: validator.tvl,
     status: validator.status,
@@ -68,7 +65,6 @@ const getYieldProvider = (
     logo: provider?.logoURI ?? selectedYield.metadata.logoURI,
     name: provider?.name ?? selectedYield.metadata.name,
     rewardRate,
-    rewardRateFormatted: getRewardRateFormatted({ rewardRate }),
     rewardType: selectedYield.rewardRate.rateType?.toLowerCase(),
     website: provider?.website,
   };

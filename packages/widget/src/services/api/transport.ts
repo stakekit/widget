@@ -7,10 +7,20 @@ import * as YieldApi from "../../generated/api/yield";
 import { WidgetConfigService } from "../config/widget-config";
 import { GeoBlockService } from "../geoblocking";
 
+/**
+ * Clients for one backend. Reads retry transient failures; writes are sent
+ * once, because the server may already have acted on a request whose
+ * response was lost. Repeating a write is the user's explicit Retry.
+ */
+export type ApiClients<A> = {
+  readonly read: A;
+  readonly write: A;
+};
+
 type ApiTransport = {
-  readonly borrow: BorrowApi.BorrowApi | null;
+  readonly borrow: ApiClients<BorrowApi.BorrowApi> | null;
   readonly legacy: LegacyApi.LegacyApi;
-  readonly yield: YieldApi.YieldApi;
+  readonly yield: ApiClients<YieldApi.YieldApi>;
 };
 
 const makeApiTransport = Effect.gen(function* () {
@@ -19,8 +29,18 @@ const makeApiTransport = Effect.gen(function* () {
   const httpClient = yield* HttpClient.HttpClient;
   const geoBlock = yield* GeoBlockService;
 
-  const makeClient = (baseUrl: string) =>
-    httpClient.pipe(
+  const observeGeoBlock = HttpClient.tap((response) =>
+    Effect.gen(function* () {
+      if (response.status < 400) return;
+
+      const data = yield* Effect.orElseSucceed(response.json, () => undefined);
+
+      yield* geoBlock.observeResponse({ data, status: response.status });
+    })
+  );
+
+  const makeClients = (baseUrl: string): ApiClients<HttpClient.HttpClient> => {
+    const client = httpClient.pipe(
       HttpClient.mapRequest(
         flow(
           HttpClientRequest.prependUrl(baseUrl),
@@ -28,28 +48,33 @@ const makeApiTransport = Effect.gen(function* () {
           HttpClientRequest.setHeader("X-Yield-Widget-Version", widgetVersion),
           HttpClientRequest.acceptJson
         )
-      ),
-      HttpClient.retryTransient({ times: 3 }),
-      HttpClient.tap((response) =>
-        Effect.gen(function* () {
-          if (response.status < 400) return;
-
-          const data = yield* Effect.orElseSucceed(
-            response.json,
-            () => undefined
-          );
-
-          yield* geoBlock.observeResponse({ data, status: response.status });
-        })
       )
     );
 
+    return {
+      read: client.pipe(
+        HttpClient.retryTransient({ times: 3 }),
+        observeGeoBlock
+      ),
+      write: client.pipe(observeGeoBlock),
+    };
+  };
+
+  const borrowClients = api.borrowApiUrl ? makeClients(api.borrowApiUrl) : null;
+  const yieldClients = makeClients(api.yieldsApiUrl);
+
   return {
-    borrow: api.borrowApiUrl
-      ? BorrowApi.make(makeClient(api.borrowApiUrl))
+    borrow: borrowClients
+      ? {
+          read: BorrowApi.make(borrowClients.read),
+          write: BorrowApi.make(borrowClients.write),
+        }
       : null,
-    legacy: LegacyApi.make(makeClient(api.baseUrl)),
-    yield: YieldApi.make(makeClient(api.yieldsApiUrl)),
+    legacy: LegacyApi.make(makeClients(api.baseUrl).read),
+    yield: {
+      read: YieldApi.make(yieldClients.read),
+      write: YieldApi.make(yieldClients.write),
+    },
   } satisfies ApiTransport;
 });
 

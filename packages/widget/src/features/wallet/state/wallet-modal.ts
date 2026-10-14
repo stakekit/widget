@@ -1,4 +1,5 @@
 import { Effect, Stream } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
@@ -13,13 +14,18 @@ import {
   connectPickerEcosystems,
 } from "../model/connect-picker";
 
+// Modal flags are local streams; each read publishes the value, closed until
+// the first emission, so the UI never handles an async result.
 export const walletChainModalOpenAtom = appRuntime
   .atom(
     WalletModal.use((modal) => Effect.succeed(modal.chainOpen.changes)).pipe(
       Stream.unwrap
     )
   )
-  .pipe(Atom.withLabel("walletChainModalOpenAtom"));
+  .pipe(
+    Atom.map(AsyncResult.getOrElse(() => false)),
+    Atom.withLabel("walletChainModalOpenAtom")
+  );
 
 export const walletConnectModalOpenAtom = appRuntime
   .atom(
@@ -27,7 +33,10 @@ export const walletConnectModalOpenAtom = appRuntime
       Stream.unwrap
     )
   )
-  .pipe(Atom.withLabel("walletConnectModalOpenAtom"));
+  .pipe(
+    Atom.map(AsyncResult.getOrElse(() => false)),
+    Atom.withLabel("walletConnectModalOpenAtom")
+  );
 
 export const walletConnectPresentationOpenAtom = appRuntime
   .atom(
@@ -35,7 +44,10 @@ export const walletConnectPresentationOpenAtom = appRuntime
       Effect.succeed(modal.presentationOpen.changes)
     ).pipe(Stream.unwrap)
   )
-  .pipe(Atom.withLabel("walletConnectPresentationOpenAtom"));
+  .pipe(
+    Atom.map(AsyncResult.getOrElse(() => false)),
+    Atom.withLabel("walletConnectPresentationOpenAtom")
+  );
 
 export const setWalletChainModalOpenAtom = appRuntime.fn((open: boolean) =>
   WalletModal.use((modal) => modal.chainOpen.set(open))
@@ -45,11 +57,16 @@ export const setWalletConnectModalOpenAtom = appRuntime.fn((open: boolean) =>
   WalletModal.use((modal) => modal.connectOpen.set(open))
 );
 
-export const walletConnectionAttemptAtom = walletRuntime.atom(
-  WalletService.use((wallet) => Effect.succeed(wallet.connectionAttempts)).pipe(
-    Stream.unwrap
+export const walletConnectionAttemptAtom = walletRuntime
+  .atom(
+    WalletService.use((wallet) =>
+      Effect.succeed(wallet.connectionAttempts)
+    ).pipe(Stream.unwrap)
   )
-);
+  .pipe(
+    Atom.map(AsyncResult.getOrElse(() => ({ _tag: "Idle" as const }))),
+    Atom.withLabel("walletConnectionAttemptAtom")
+  );
 
 const noEcosystems: ReadonlyArray<ConnectPickerEcosystem> = [];
 
@@ -78,7 +95,10 @@ export const connectPickerAtom = walletRuntime
     }).pipe(Stream.unwrap),
     { initialValue: noEcosystems }
   )
-  .pipe(Atom.withLabel("connectPickerAtom"));
+  .pipe(
+    Atom.map(AsyncResult.getOrElse(() => noEcosystems)),
+    Atom.withLabel("connectPickerAtom")
+  );
 
 export const connectWalletAtom = walletRuntime.fn(
   (connector: ConnectorWithWalletDetails) =>

@@ -20,10 +20,9 @@ export const EstimatedRewardAmounts = ({
   earnYearly,
   earnMonthly,
 }: EstimatedRewardAmountsProps) => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
-  if (dashboardVariant || variant === "utila" || variant === "porto") {
+  if (earnPresentation.compact) {
     return (
       <CompactEarnYearlyOrMonthly
         earnMonthly={earnMonthly}
@@ -46,6 +45,7 @@ const DefaultEarnYearlyOrMonthly = ({
 }: EstimatedRewardAmountsProps) => {
   const { t } = useTranslation();
   const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
   return (
     <>
@@ -66,7 +66,9 @@ const DefaultEarnYearlyOrMonthly = ({
             })
           )}
         >
-          {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
+          {t(
+            earnPresentation.zerion ? "details.rewards.yearly" : "shared.yearly"
+          )}
         </Text>
         <Text
           variant={{ type: "muted", weight: "normal" }}

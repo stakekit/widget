@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
+import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";
 import {
   exactZero,
   truncateToTokenDecimals,
@@ -101,6 +102,7 @@ export const prepareRepayAction = (
     providerName: position.integration.name,
     repayAll,
     risk,
+    riskVerdict: assessRiskGate(assessment),
     warnings,
   };
 

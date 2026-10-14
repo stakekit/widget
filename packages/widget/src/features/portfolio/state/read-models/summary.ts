@@ -11,6 +11,10 @@ import {
   pricesAtom,
 } from "../../../../resources/token-prices/index";
 import {
+  combineAsyncResults,
+  toPresentable,
+} from "../../../../shared/effect/async-result";
+import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../../yield-summary/index";
@@ -80,7 +84,7 @@ export const getPositionsAverageApy = (
 };
 
 export const allPositionsSummaryAtom = Atom.make((get) =>
-  AsyncResult.all({
+  combineAsyncResults({
     positions: get(positionsResultAtom),
     yields: get(summaryYieldsResultAtom),
   }).pipe(
@@ -91,7 +95,7 @@ export const allPositionsSummaryAtom = Atom.make((get) =>
 );
 
 export const averageApySummaryAtom = Atom.make((get) =>
-  AsyncResult.all({
+  combineAsyncResults({
     positions: get(positionsResultAtom),
     yields: get(summaryYieldsResultAtom),
   }).pipe(
@@ -127,7 +131,7 @@ export const availableBalanceSummaryAtom = Atom.make((get) => {
     return AsyncResult.success<BigNumber | undefined>(undefined);
   }
 
-  return AsyncResult.all({
+  return combineAsyncResults({
     prices: get(availableBalancePricesResultAtom),
     tokenBalances: tokenBalancesScan.result,
   }).pipe(
@@ -150,3 +154,10 @@ export const availableBalanceSummaryAtom = Atom.make((get) => {
     )
   );
 });
+
+/** The Manage summary as it presents: each figure with its own view state. */
+export const summaryViewAtom = Atom.make((get) => ({
+  allPositions: toPresentable(get(allPositionsSummaryAtom)),
+  availableBalance: toPresentable(get(availableBalanceSummaryAtom)),
+  averageApy: toPresentable(get(averageApySummaryAtom)),
+})).pipe(Atom.withLabel("summaryViewAtom"));

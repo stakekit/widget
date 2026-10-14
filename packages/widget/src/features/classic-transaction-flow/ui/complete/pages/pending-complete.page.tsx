@@ -1,11 +1,13 @@
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
 import { CompletePage } from "./common.page.tsx";
 
 export const PendingCompletePage = () => {
+  const { locale } = useWidgetPresentation();
   const manageFlow = useClassicFlowIntake("Manage");
   const integrationData = manageFlow.integration;
   const token = manageFlow.interactedToken;
@@ -15,7 +17,9 @@ export const PendingCompletePage = () => {
 
   return (
     <CompletePage
-      amount={rawAmount ? defaultFormattedNumber(exactDecimal(rawAmount)) : ""}
+      amount={
+        rawAmount ? formatTokenAmount(exactDecimal(rawAmount), locale) : ""
+      }
       integrationId={integrationData.id}
       metadata={{
         logoURI: integrationData.metadata.logoURI,

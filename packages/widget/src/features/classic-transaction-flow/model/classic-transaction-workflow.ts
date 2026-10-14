@@ -9,7 +9,7 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
-  getTransactionWorkflowStepState,
+  getTransactionStepProgress,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
 
 export type ClassicTransactionCompletionUrl = {
@@ -38,6 +38,14 @@ export const getClassicTransactionCompletionUrls = (
     }))
     .filter((value): value is ClassicTransactionCompletionUrl => !!value.url);
 
+/**
+ * Terminal success of a Classic workflow: every transaction completed, or the
+ * engine found none left to sign (all skipped) and started Disabled.
+ */
+export const isClassicTransactionWorkflowFinished = (
+  state: TransactionWorkflowState
+) => state._tag === "Completed" || state._tag === "Disabled";
+
 export const getClassicTransactionStepsView = (
   machineState: TransactionWorkflowState,
   workflowInput: Pick<ClassicTransactionWorkflowInput, "yieldId">
@@ -53,7 +61,7 @@ export const getClassicTransactionStepsView = (
       ? [
           {
             meta: transaction.meta,
-            state: getTransactionWorkflowStepState(machineState, transaction),
+            progress: getTransactionStepProgress(machineState, transaction),
             tx: transaction.source.transaction,
           },
         ]

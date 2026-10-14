@@ -1,8 +1,8 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
+import { formatNumber } from "../../../shared/lib/number-format";
 import {
   DetailRow,
   DetailRowList,
@@ -11,6 +11,7 @@ import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Text } from "../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
@@ -42,9 +43,10 @@ export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
   const review = useBorrowTransactionFlowReview();
-  const createActionResult = useAtomValue(review.confirmAtom);
+  const confirmation = useAtomValue(review.confirmAtom);
   const confirm = useAtomSet(review.confirmAtom);
   const back = useAtomSet(review.backAtom);
   const reviewState = flow.intake;
@@ -52,22 +54,15 @@ export const BorrowReviewPage = () => {
 
   const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
-  const riskBlock = getBorrowReviewRiskBlock(summary);
-  const createActionErrorCopy = (() => {
-    if (
-      !AsyncResult.isFailure(createActionResult) ||
-      AsyncResult.isWaiting(createActionResult)
-    ) {
-      return null;
-    }
-
-    const error = Cause.findErrorOption(createActionResult.cause);
-
-    return Option.match(error, {
-      onNone: () => borrowReviewConfirmationErrorCopy,
-      onSome: presentBorrowReviewConfirmationError,
-    });
-  })();
+  const riskBlock = getBorrowReviewRiskBlock(reviewState);
+  const createActionErrorCopy = Option.match(confirmation.failure, {
+    onNone: () => null,
+    onSome: (cause) =>
+      Option.match(Cause.findErrorOption(cause), {
+        onNone: () => borrowReviewConfirmationErrorCopy,
+        onSome: presentBorrowReviewConfirmationError,
+      }),
+  });
   const collateralFeeAmount =
     projectedSummary.collateral && "feeAmount" in projectedSummary.collateral
       ? projectedSummary.collateral.feeAmount
@@ -77,13 +72,13 @@ export const BorrowReviewPage = () => {
     exactDecimal(collateralFeeAmount).isGreaterThan(0);
   const collateralFee =
     hasCollateralFee && projectedSummary.collateral
-      ? `${collateralFeeAmount} ${projectedSummary.collateral.symbol}`
+      ? `${formatNumber(collateralFeeAmount, locale)} ${projectedSummary.collateral.symbol}`
       : null;
   const effectiveCollateral =
     hasCollateralFee &&
     projectedSummary.collateral &&
     "effectiveAmount" in projectedSummary.collateral
-      ? `${projectedSummary.collateral.effectiveAmount} ${projectedSummary.collateral.symbol}`
+      ? `${formatNumber(projectedSummary.collateral.effectiveAmount, locale)} ${projectedSummary.collateral.symbol}`
       : null;
 
   return (
@@ -169,10 +164,10 @@ export const BorrowReviewPage = () => {
           {riskBlock ? (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
-                {t("dashboard.borrow.review_page.risk_block.title")}
+                {t("dashboard.borrow.risk_block.title")}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
-                {t(`dashboard.borrow.review_page.risk_block.${riskBlock}`)}
+                {t(`dashboard.borrow.risk_block.${riskBlock}`)}
               </Text>
             </Box>
           ) : null}
@@ -185,8 +180,8 @@ export const BorrowReviewPage = () => {
 
           <PageCtaButton
             cta={{
-              disabled: createActionResult.waiting || riskBlock !== null,
-              isLoading: createActionResult.waiting,
+              disabled: confirmation.pending || riskBlock !== null,
+              isLoading: confirmation.pending,
               label: t("dashboard.borrow.review_page.confirm"),
               onClick: () => confirm(undefined),
             }}

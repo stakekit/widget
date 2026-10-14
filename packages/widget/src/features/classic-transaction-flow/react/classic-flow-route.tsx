@@ -7,12 +7,14 @@ import {
   useState,
 } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
+import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
 import {
   type ClassicFlowSession,
   type ClassicTransactionFlowIntake,
   decodeClassicFlowNavigationState,
   getClassicTransactionFlowIntakeVariant,
 } from "../model/classic-transaction-flow";
+import { isClassicTransactionWorkflowFinished } from "../model/classic-transaction-workflow";
 import {
   type ClassicFlowExecutionFacade,
   type ClassicFlowReviewFacade,
@@ -165,5 +167,26 @@ const ExecutionBinding = ({ children }: PropsWithChildren) => {
   if (availability._tag === "Failure") return <Navigate to="/" replace />;
   if (availability._tag !== "Success") return null;
 
+  return children ?? <Outlet />;
+};
+
+/**
+ * Admits Complete only once the Execution's workflow finished; until then
+ * Complete belongs to Steps.
+ */
+export const ClassicFlowCompletionGuard = ({ children }: PropsWithChildren) => {
+  const execution = useClassicFlowExecution();
+  const [completionAtom] = useState(() => execution.makeCompletionStateAtom());
+  const result = useAtomValue(completionAtom);
+  const { state } = useAtomValue(execution.workflow.viewAtom);
+  const { stepsPath } = useClassicFlowSession().destination;
+  if (result._tag === "Initial") return <LoadingSkeleton />;
+  if (result._tag === "Failure" || !result.value) {
+    return <Navigate replace to={stepsPath} />;
+  }
+  // Admission is authoritative; the page still needs its completion details.
+  if (!state || !isClassicTransactionWorkflowFinished(state)) {
+    return <LoadingSkeleton />;
+  }
   return children ?? <Outlet />;
 };

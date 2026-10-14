@@ -10,7 +10,7 @@ export const Header = () => {
   const {
     headerRef,
     walletConfigReady,
-    variant,
+    hidesHeaderWalletControl,
     hideChainSelector,
     isConnected,
     showBack,
@@ -59,7 +59,7 @@ export const Header = () => {
         </Box>
 
         {walletConfigReady &&
-        variant !== "zerion" &&
+        !hidesHeaderWalletControl &&
         (isConnected || isConnecting) ? (
           <motion.div
             className={animationContainer}

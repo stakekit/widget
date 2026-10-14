@@ -1,9 +1,13 @@
-import { Effect, type Scope, ScopedRef, type Stream } from "effect";
+import { Effect, Option, type Scope, ScopedRef, type Stream } from "effect";
 import type { YieldAction } from "../../../../domain/action/models";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { WidgetNavigation } from "../../../../services/navigation/widget-navigation";
 import type { TransactionWorkflowInputError } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { acquireInChildScope } from "../../../../shared/effect/child-scope";
+import {
+  makeScopedExclusiveSlot,
+  type ScopedExclusiveSlot,
+} from "../../../../shared/effect/scoped-exclusive-slot";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import type {
   ClassicFlowSession,
@@ -30,7 +34,8 @@ type AcquireClassicFlowExecutionOutcome =
       readonly _tag: "Acquired";
       readonly execution: ClassicFlowExecutionHandle;
     }>
-  | Readonly<{ readonly _tag: "RejectedNoReservation" }>;
+  | Readonly<{ readonly _tag: "RejectedNoReservation" }>
+  | Readonly<{ readonly _tag: "RejectedExecutionLive" }>;
 
 export type ClassicFlowSessionHandle = Readonly<{
   readonly acquireExecution: () => Effect.Effect<
@@ -44,10 +49,13 @@ export type ClassicFlowSessionHandle = Readonly<{
   readonly intake: ClassicTransactionFlowIntake;
 }>;
 
-/** The reserved action and the Scope its Execution lives in. */
+/**
+ * The reserved action and the slot its one live Execution holds. The slot lives
+ * in the reservation's Scope, so replacing the reservation ends its Execution.
+ */
 type ClassicFlowReservation = Readonly<{
   readonly action: YieldAction;
-  readonly scope: Scope.Scope;
+  readonly executionSlot: ScopedExclusiveSlot;
 }>;
 
 export const makeClassicFlowSessionFactory = Effect.fn(
@@ -99,7 +107,10 @@ export const makeClassicFlowSessionFactory = Effect.fn(
       yield* Effect.uninterruptible(
         ScopedRef.set(
           reservation,
-          Effect.map(Effect.scope, (scope) => ({ action, scope }))
+          Effect.map(makeScopedExclusiveSlot(), (executionSlot) => ({
+            action,
+            executionSlot,
+          }))
         ).pipe(
           Effect.andThen(
             Effect.all(
@@ -155,15 +166,17 @@ export const makeClassicFlowSessionFactory = Effect.fn(
     > {
       const reserved = yield* ScopedRef.get(reservation);
       if (!reserved) return { _tag: "RejectedNoReservation" } as const;
-      const execution = yield* acquireInChildScope(
-        reserved.scope,
+      const execution = yield* reserved.executionSlot.acquire(
         makeExecution({
           action: reserved.action,
           intake: session.intake,
           paths: session.destination,
         })
       );
-      return { _tag: "Acquired", execution } as const;
+      return Option.match(execution, {
+        onNone: () => ({ _tag: "RejectedExecutionLive" }) as const,
+        onSome: (execution) => ({ _tag: "Acquired", execution }) as const,
+      });
     });
 
     return {

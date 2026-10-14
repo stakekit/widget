@@ -3,7 +3,7 @@ import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import { normalizeBorrowReviewConfirmationResult } from "../borrow-review-confirmation-error";
+import { toBorrowReviewConfirmation } from "../borrow-review-confirmation-error";
 import type { BorrowFlowReviewHandle } from "../orchestration/borrow-flow-review";
 import type { BorrowFlowSessionHandle } from "../orchestration/borrow-flow-session";
 
@@ -31,7 +31,7 @@ export const makeBorrowFlowReviewScopeAtom = <E>(
           { concurrent: false, initialValue: undefined }
         )
         .pipe(
-          Atom.map(normalizeBorrowReviewConfirmationResult),
+          Atom.map(toBorrowReviewConfirmation),
           Atom.withLabel("confirmBorrowFlowReview")
         );
       const backAtom = walletRuntime

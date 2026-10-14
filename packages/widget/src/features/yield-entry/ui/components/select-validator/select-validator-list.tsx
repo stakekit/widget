@@ -1,16 +1,13 @@
 import { Array as EArray, Option } from "effect";
 import type { ComponentProps } from "react";
-import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
 import type { ValidatorKey } from "../../../../../domain/earn/validator";
-import {
-  getRewardRateFormatted,
-  getRewardTypeFormatted,
-} from "../../../../../shared/lib/formatters";
+import { getRewardTypeFormatted } from "../../../../../shared/lib/formatters";
+import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import {
   SelectModalItem,
@@ -27,6 +24,7 @@ import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferr
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { textStyles } from "../../../../../shared/ui/primitives/typography/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { useMetaInfo } from "./meta-info";
 import {
   groupLabel,
@@ -60,6 +58,7 @@ export const SelectValidatorList = ({
   groupCounts: number[];
 } & InfiniteScrollProps) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   return (
     <GroupedVirtualList
@@ -211,9 +210,10 @@ export const SelectValidatorList = ({
                           className={rewardRateText}
                           variant={{ weight: "bold" }}
                         >
-                          {getRewardRateFormatted({
-                            rewardRate: item.rewardRate?.total,
-                          })}
+                          {formatRewardRatePercent(
+                            item.rewardRate?.total,
+                            locale
+                          )}
                         </Text>
 
                         {rateTypeLabel ? (
@@ -256,7 +256,7 @@ export const SelectValidatorList = ({
   );
 };
 
-const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
+const ValidatorMeta = (props: Parameters<typeof useMetaInfo>[0]) => {
   const metaInfo = useMetaInfo(props);
 
   return (
@@ -284,4 +284,4 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
         })}
     </Box>
   );
-});
+};

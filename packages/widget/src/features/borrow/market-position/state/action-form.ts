@@ -333,7 +333,7 @@ export const borrowWithdrawFormAtom = Atom.family(
     ).pipe(Atom.withLabel("borrowWithdrawFormAtom"))
 );
 
-const borrowCollateralToggleFormAtom = Atom.family(
+export const borrowCollateralToggleFormAtom = Atom.family(
   (key: BorrowPositionActionRouteKey) =>
     Atom.make<BorrowCollateralToggleFormView | null>((get) => {
       const current = getCurrentPositionAction(get, key);
@@ -352,7 +352,8 @@ const borrowCollateralToggleFormAtom = Atom.family(
     }).pipe(Atom.withLabel("borrowCollateralToggleFormAtom"))
 );
 
-const getCurrentPreparation = (
+/** The current form for a position action; a form that cannot submit stops Review. */
+const getCurrentForm = (
   context: Atom.FnContext,
   key: BorrowPositionActionRouteKey
 ) => {
@@ -363,12 +364,12 @@ const getCurrentPreparation = (
 
   switch (current.action.pendingContext.type) {
     case "repay":
-      return context(borrowRepayFormAtom(key))?.preparation ?? null;
+      return context(borrowRepayFormAtom(key));
     case "withdraw":
-      return context(borrowWithdrawFormAtom(key))?.preparation ?? null;
+      return context(borrowWithdrawFormAtom(key));
     case "disableCollateral":
     case "enableCollateral":
-      return context(borrowCollateralToggleFormAtom(key))?.preparation ?? null;
+      return context(borrowCollateralToggleFormAtom(key));
   }
 };
 
@@ -381,11 +382,12 @@ export const startBorrowPositionActionReviewAtom = appRuntime
         });
       }
 
-      const preparation = getCurrentPreparation(context, key);
+      const form = getCurrentForm(context, key);
       const scope = context(walletScopeAtom);
-      if (preparation?._tag !== "Ready" || !scope) {
+      if (!form?.canSubmit || form.preparation._tag !== "Ready" || !scope) {
         return { _tag: "Unavailable" } as const;
       }
+      const preparation = form.preparation;
 
       // The page's market, not the command's: a pool collateral action
       // targets its own reserve, which has no position page of its own.

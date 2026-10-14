@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Chain } from "../../../../../services/wallet/wallet-descriptors";
@@ -80,10 +79,7 @@ const BorrowNetworkSwitch = ({
   const { t } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const { selectChain } = useScopedWalletChainSelection();
-  const selection = AsyncResult.getOrElse(
-    useAtomValue(walletChainSelectionAtom),
-    () => undefined
-  );
+  const selection = useAtomValue(walletChainSelectionAtom);
   const [onlyChain] = chains;
   const onSwitchClick = () => {
     if (chains.length === 1 && onlyChain) {

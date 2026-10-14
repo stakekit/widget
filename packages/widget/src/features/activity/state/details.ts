@@ -1,8 +1,6 @@
-import { Data, Array as EArray, Effect, Option, Schema } from "effect";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
+import { Data, Effect, Option, Schema } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import {
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
@@ -14,10 +12,9 @@ import {
   activityActionResourceAtom,
 } from "../../../resources/activity-history/index";
 import {
-  ValidatorByAddressKey,
-  validatorByAddressAtom,
-} from "../../../resources/validator-directory/index";
-import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
+  type Presentable,
+  toPresentable,
+} from "../../../shared/effect/async-result";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import {
   YieldSummaryKey,
@@ -28,6 +25,11 @@ import type {
   ActivityActionItem,
   YieldActivityItem,
 } from "../model/activity-action";
+import { projectYieldActivityItem } from "../model/activity-enrichment";
+import {
+  ActivityEnrichmentKey,
+  loadActivityEnrichmentFacts,
+} from "./enrichment";
 import { type ActivityPageView, activityPageViewAtom } from "./page";
 
 class ActivityDetailsKey extends Data.Class<{
@@ -49,44 +51,24 @@ const activityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
         );
         if (!action) return null;
 
-        const yieldData = yield* context
-          .result(enrichedYieldOpportunityResourceAtom.local(action.yieldId))
-          .pipe(Effect.catchCause(() => Effect.succeed(null)));
-        if (
-          !isActivityActionOwnedByScope({
-            action,
-            scope: key.scope,
-            yieldData,
-          })
-        ) {
-          return null;
-        }
-        const validators = yield* Effect.forEach(
-          getActionValidatorAddresses(action) ?? [],
-          (address) =>
-            context
-              .result(
-                validatorByAddressAtom.local(
-                  new ValidatorByAddressKey({
-                    address,
-                    yieldId: action.yieldId,
-                  })
-                )
-              )
-              .pipe(Effect.catchCause(() => Effect.succeed(null))),
-          { concurrency: 5 }
-        );
-        const validatorsData = EArray.flatMap(validators, (validator) =>
-          validator ? [validator] : []
+        // Details tracks its Resources so a recovered Yield or validator
+        // re-projects the row (ADR 0003); the feed takes them once per page.
+        const item = projectYieldActivityItem(
+          action,
+          key.scope,
+          yield* loadActivityEnrichmentFacts(
+            new ActivityEnrichmentKey([{ _tag: "yield", action }]),
+            (resource) => context.result(resource)
+          )
         );
 
-        return {
-          _tag: "yield",
-          actionData: action,
-          validatorsData,
-          walletScope: key.scope,
-          yieldData,
-        } satisfies YieldActivityItem;
+        return isActivityActionOwnedByScope({
+          action,
+          scope: key.scope,
+          yieldData: item.yieldData,
+        })
+          ? item
+          : null;
       })
     )
     .pipe(Atom.withLabel("activityActionDetailsAtom"))
@@ -214,21 +196,18 @@ export const resolveUnavailableActivitySelection = (
   intent._tag === "default" ? "empty" : "clear-route";
 
 const projectDetailsResult = (
-  result: Atom.Type<ReturnType<typeof activityActionDetailsAtom>>
+  details: Presentable<YieldActivityItem | null, unknown>
 ): ActivitySelectedActionView => {
-  if (
-    AsyncResult.isInitial(result) ||
-    (result.waiting && Option.isNone(AsyncResult.value(result)))
-  ) {
-    return { status: "loading" };
+  switch (details._tag) {
+    case "Loading":
+      return { status: "loading" };
+    case "Failed":
+      return { status: "failed" };
+    case "Ready":
+      return details.value
+        ? { item: details.value, status: "ready" }
+        : { status: "unavailable" };
   }
-  if (AsyncResult.isFailure(result)) {
-    return { status: "failed" };
-  }
-  if (!result.value) {
-    return { status: "unavailable" };
-  }
-  return { item: result.value, status: "ready" };
 };
 
 /** Prefer the enriched feed row so selection does not wait on GET-by-id. */
@@ -262,9 +241,11 @@ const activitySelectedActionAtom = Atom.family((key: ActivitySelectionKey) =>
     }
 
     return projectDetailsResult(
-      context(
-        activityActionDetailsAtom(
-          new ActivityDetailsKey({ actionId, scope: key.scope })
+      toPresentable(
+        context(
+          activityActionDetailsAtom(
+            new ActivityDetailsKey({ actionId, scope: key.scope })
+          )
         )
       )
     );

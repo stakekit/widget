@@ -1,7 +1,8 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { formatUsd } from "../../../shared/lib/formatters";
+import { formatNumber, formatUsd } from "../../../shared/lib/number-format";
 import { DetailRow } from "../../../shared/ui/components/details-section";
+import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import {
   type BorrowTransactionFlowReview,
   getBorrowTransactionFlowAmountLabelKey,
@@ -23,6 +24,7 @@ export const BorrowFlowAmountRows = ({
   };
 }): ReactElement => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   return (
     <>
@@ -30,14 +32,14 @@ export const BorrowFlowAmountRows = ({
         <DetailRow
           id="borrow-amount"
           label={t(getBorrowTransactionFlowAmountLabelKey(action))}
-          value={`${projected.borrow.amount} ${projected.borrow.symbol}`}
+          value={`${formatNumber(projected.borrow.amount, locale)} ${projected.borrow.symbol}`}
         />
       ) : null}
       {projected.collateral ? (
         <DetailRow
           id="collateral-amount"
           label={t("dashboard.borrow.review_page.collateral_amount")}
-          value={`${projected.collateral.amount} ${projected.collateral.symbol}`}
+          value={`${formatNumber(projected.collateral.amount, locale)} ${projected.collateral.symbol}`}
         />
       ) : null}
     </>
@@ -55,11 +57,14 @@ export const BorrowFlowOriginationRows = ({
   } | null;
 }): ReactElement | null => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (!origination) return null;
 
-  const feeUsd = origination.feeUsd ? formatUsd(origination.feeUsd) : "-";
-  const fee = `${origination.feeAmount} ${origination.symbol}`;
+  const feeUsd = origination.feeUsd
+    ? formatUsd(origination.feeUsd, locale)
+    : "-";
+  const fee = `${formatNumber(origination.feeAmount, locale)} ${origination.symbol}`;
 
   return (
     <>
@@ -71,7 +76,7 @@ export const BorrowFlowOriginationRows = ({
       <DetailRow
         id="debt-principal"
         label={t("dashboard.borrow.review_page.debt_principal")}
-        value={`${origination.principalAmount} ${origination.symbol}`}
+        value={`${formatNumber(origination.principalAmount, locale)} ${origination.symbol}`}
       />
     </>
   );

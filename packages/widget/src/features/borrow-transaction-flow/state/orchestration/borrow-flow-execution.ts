@@ -16,7 +16,6 @@ import { TransactionWorkflowService } from "../../../../services/transaction-wor
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import type { BorrowTransactionFlowIntake } from "../../model/borrow-transaction-flow";
 import { getBorrowTransactionFlowRoutes } from "../../model/borrow-transaction-flow";
-import { canLeaveBorrowExecution } from "../../model/borrow-transaction-workflow";
 
 type BorrowFlowFinishOutcome =
   | Readonly<{ readonly _tag: "Accepted" }>
@@ -93,10 +92,6 @@ export const makeBorrowFlowExecutionFactory = Effect.fn(
     );
 
     const backOpen = Effect.fn("BorrowFlowExecution.back")(function* () {
-      const state = yield* workflow.states.pipe(Stream.runHead);
-      if (Option.isSome(state) && !canLeaveBorrowExecution(state.value)) {
-        return;
-      }
       yield* navigate({ _tag: "Replace", path: paths.basePath });
     });
 

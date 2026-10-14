@@ -1,12 +1,17 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../../../shared/lib/number-format";
+import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../../../../../../shared/ui/components/select-modal";
 import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
 import type { EarnTokenSelectionItem } from "../../../../../state/token-selection";
 import { selectItemText } from "../../styles.css";
 
@@ -22,6 +27,7 @@ export const SelectTokenListItem = ({
   onTokenBalanceSelect,
 }: Props) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
     closeModal,
@@ -69,12 +75,14 @@ export const SelectTokenListItem = ({
             flexShrink={0}
             gap="1"
           >
-            {item.formattedAmount && (
-              <Text variant={{ weight: "normal" }}>{item.formattedAmount}</Text>
+            {item.fundedAmount && (
+              <Text variant={{ weight: "normal" }}>
+                {formatTokenAmount(item.fundedAmount, locale)}
+              </Text>
             )}
             <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
-              {item.formattedUsd
-                ? `${item.formattedUsd} · ${yieldsCount}`
+              {item.fundedUsd
+                ? `${formatUsd(item.fundedUsd, locale)} · ${yieldsCount}`
                 : yieldsCount}
             </Text>
           </Box>

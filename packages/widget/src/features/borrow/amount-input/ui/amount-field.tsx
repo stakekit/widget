@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
-import { formatUsd } from "../../../../shared/lib/formatters";
+import { formatUsd } from "../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import {
   AmountTokenSection,
@@ -8,6 +8,7 @@ import {
 } from "../../../../shared/ui/components/amount-token-section";
 import { amountTokenSectionTitleContainer } from "../../../../shared/ui/components/amount-token-section/styles.css";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { useWidgetConfig } from "../../../widget-configuration/index";
 
 /**
@@ -42,6 +43,7 @@ export const BorrowAmountField = ({
   readonly warning?: string | null;
 }) => {
   const variant = useWidgetConfig("variant");
+  const { locale } = useWidgetPresentation();
 
   return (
     <Box>
@@ -60,7 +62,7 @@ export const BorrowAmountField = ({
         disabled={disabled}
         isInvalid={!!warning}
         accessory={accessory}
-        formattedPrice={formatUsd(usdValue)}
+        formattedPrice={formatUsd(usdValue, locale)}
         balance={balance}
         balanceError={balanceError}
         onMaxClick={onMaxClick}

@@ -3,13 +3,14 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   capitalizeFirstLetters,
-  getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../../../shared/lib/formatters";
+import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
 import { SelectModalItem } from "../../../../../shared/ui/components/select-modal";
 import { ProviderIcon } from "../../../../../shared/ui/components/token-icon/provider-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   itemSubtitle,
   rewardRateLabel,
@@ -31,6 +32,7 @@ export const SelectOpportunityListItem = <T extends EarnYieldWithProvider>({
   selected,
 }: SelectOpportunityListItemProps<T>) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   const onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
     closeModal,
@@ -41,9 +43,7 @@ export const SelectOpportunityListItem = <T extends EarnYieldWithProvider>({
 
   const provider = item.provider;
 
-  const rateFormatted = getRewardRateFormatted({
-    rewardRate: item.rewardRate.total,
-  });
+  const rateFormatted = formatRewardRatePercent(item.rewardRate.total, locale);
   const rateTypeLabel = getRewardTypeFormatted(item.rewardRate.rateType);
 
   const subtitle = provider?.name

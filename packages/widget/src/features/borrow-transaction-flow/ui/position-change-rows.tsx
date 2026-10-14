@@ -10,11 +10,12 @@ import {
   formatHealthFactor,
   formatLtv,
   formatUsd,
-} from "../../../shared/lib/formatters";
+} from "../../../shared/lib/number-format";
 import {
   DetailRow,
   type DetailRowTone,
 } from "../../../shared/ui/components/details-section";
+import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import type { BorrowPositionChange } from "../model/borrow-completion";
 
 const riskLevelTone = {
@@ -24,22 +25,26 @@ const riskLevelTone = {
 } as const satisfies Record<RiskLevel, DetailRowTone>;
 
 /** `-` is the formatters' unavailable marker; an unavailable figure shows nothing. */
+type FigureFormatter = (value: string, locale: string) => string;
+
 const formatFigure = (
-  format: (value: string) => string,
-  value: string | null
+  format: FigureFormatter,
+  value: string | null,
+  locale: string
 ) => {
-  const formatted = value === null ? "-" : format(value);
+  const formatted = value === null ? "-" : format(value, locale);
 
   return formatted === "-" ? null : formatted;
 };
 
 const formatChange = (
-  format: (value: string) => string,
-  figure: { readonly after: string; readonly before: string | null } | null
+  format: FigureFormatter,
+  figure: { readonly after: string; readonly before: string | null } | null,
+  locale: string
 ) => {
-  const after = figure && formatFigure(format, figure.after);
+  const after = figure && formatFigure(format, figure.after, locale);
   if (!figure || !after) return null;
-  const before = formatFigure(format, figure.before);
+  const before = formatFigure(format, figure.before, locale);
 
   return before && before !== after ? `${before} → ${after}` : after;
 };
@@ -51,10 +56,15 @@ export const BorrowFlowPositionChangeRows = ({
   readonly change: BorrowPositionChange;
 }): ReactElement => {
   const { t } = useTranslation();
-  const collateral = formatChange(formatUsd, change.collateralUsd);
-  const debt = formatChange(formatUsd, change.debtUsd);
-  const ltv = formatChange(formatLtv, change.ltv);
-  const healthFactor = formatChange(formatHealthFactor, change.healthFactor);
+  const { locale } = useWidgetPresentation();
+  const collateral = formatChange(formatUsd, change.collateralUsd, locale);
+  const debt = formatChange(formatUsd, change.debtUsd, locale);
+  const ltv = formatChange(formatLtv, change.ltv, locale);
+  const healthFactor = formatChange(
+    formatHealthFactor,
+    change.healthFactor,
+    locale
+  );
 
   return (
     <>

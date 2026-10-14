@@ -1,0 +1,34 @@
+id: no-manual-memo
+valid:
+  - 'const total = items.length * price'
+  - 'const memo = { note: "useMemo" }'
+  - 'transaction.memo(value)'
+  - |
+    const List = () => {
+      "use no memo";
+      const end = useMemo(() => items.at(-1), [items]);
+      return end;
+    };
+  - |
+    function List() {
+      "use no memo";
+      const onScroll = useCallback(() => load(), [load]);
+      return onScroll;
+    }
+invalid:
+  - 'const total = useMemo(() => items.length * price, [items, price])'
+  - 'const total = React.useMemo(() => items.length, [items])'
+  - 'const onClick = useCallback(() => submit(), [submit])'
+  - 'const onClick = React.useCallback(() => submit(), [submit])'
+  - 'export const Row = memo((props: Props) => <div>{props.label}</div>)'
+  - 'export const Row = React.memo(function Row() { return null; })'
+  - |
+    const List = () => {
+      const end = useMemo(() => items.at(-1), [items]);
+      return end;
+    };
+  - |
+    const List = () => {
+      const label = "use no memo";
+      return useMemo(() => label, [label]);
+    };

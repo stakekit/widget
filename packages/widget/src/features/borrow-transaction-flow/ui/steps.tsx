@@ -1,7 +1,10 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
-import { TransactionSteps } from "../../../shared/ui/components/transaction-steps";
+import {
+  getTransactionStepPhases,
+  TransactionSteps,
+} from "../../../shared/ui/components/transaction-steps";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
@@ -49,7 +52,6 @@ export const BorrowStepsPage = () => {
                 aria-label={t("dashboard.borrow.review_page.back_to_position")}
                 as="button"
                 className={styles.flowBackButton}
-                disabled={!execution.canLeave}
                 onClick={() => back(undefined)}
                 type="button"
               >
@@ -72,7 +74,10 @@ export const BorrowStepsPage = () => {
           {execution.steps.length > 0 ? (
             <TransactionSteps
               steps={execution.steps.map((step) => ({
-                ...step,
+                done: step.done,
+                explorerUrl: step.explorerUrl,
+                id: step.id,
+                phases: getTransactionStepPhases(t, step.progress.phases),
                 type: t(`dashboard.borrow.execution_page.tx_type.${step.type}`),
               }))}
             />
@@ -118,7 +123,7 @@ export const BorrowStepsPage = () => {
 
           <PageCtaButton
             cta={{
-              disabled: execution.isRunning || !execution.canLeave,
+              disabled: false,
               isLoading: false,
               label: t("shared.cancel"),
               onClick: () => back(undefined),

@@ -14,10 +14,8 @@ import { evmChainGroup } from "../../../../services/wallet/evm-chain-group";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import { config } from "../../../../shared/config/widget-defaults";
 import type { ExternalProviderSnapshot } from "../../../config/external-provider-snapshot";
-import type {
-  WidgetConfig,
-  WidgetVariant,
-} from "../../../config/widget-config-model";
+import type { HostProfile } from "../../../config/host-profile";
+import type { WidgetConfig } from "../../../config/widget-config-model";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { omitEnsUniversalResolver } from "../../default-wagmi-config";
 import type { CurrentRef } from "../../external-provider";
@@ -123,7 +121,7 @@ export type BuildWagmiConfigOptions = {
   isSafe: boolean;
   chainIconMapping: WidgetConfig["chainIconMapping"];
   institutionalWallets: boolean;
-  variant: WidgetVariant;
+  walletCatalogue: HostProfile["walletCatalogue"];
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
   walletPolicy?: WalletPolicy;
@@ -170,7 +168,6 @@ export const buildWagmiConfig = (
       institutionalWallets: opts.institutionalWallets,
       isLedgerDappBrowser: opts.isLedgerLive,
       isSafe: opts.isSafe,
-      variant: opts.variant,
     });
     const [evmConfig, cosmosConfig, miscConfig, substrateConfig] =
       yield* Effect.all(
@@ -178,7 +175,7 @@ export const buildWagmiConfig = (
           getEvmConfig({
             enabledNetworks: opts.enabledNetworks,
             institutionalWallets: opts.institutionalWallets,
-            variant: opts.variant,
+            walletCatalogue: opts.walletCatalogue,
             walletConnectPresentation,
             runWalletEffect,
           }),
@@ -203,7 +200,7 @@ export const buildWagmiConfig = (
               walletConnectProtocol,
               solanaWallets: opts.solanaWallets,
               solanaConnection: opts.solanaConnection,
-              variant: opts.variant,
+              walletCatalogue: opts.walletCatalogue,
               tonConnectManifestUrl: opts.tonConnectManifestUrl,
               walletModal,
             })
@@ -315,7 +312,7 @@ export const buildWagmiConfig = (
       !opts.externalProviders &&
       !val.ledgerLiveConnector &&
       !val.safeConnector &&
-      opts.variant !== "porto";
+      opts.walletCatalogue !== "porto";
     const solanaConnectorMode =
       !!val.miscConfig.miscChainsMap.solana &&
       !opts.externalProviders &&
@@ -521,7 +518,7 @@ export const buildWagmiConfig = (
       );
       const solanaGroup = getSolanaConnectors({
         connection: opts.solanaConnection,
-        variant: opts.variant,
+        walletCatalogue: opts.walletCatalogue,
         wallets: [wallet],
       });
       const dynamicWalletList = customizeWalletList([solanaGroup]);

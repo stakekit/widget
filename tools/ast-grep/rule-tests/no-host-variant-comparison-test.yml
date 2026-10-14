@@ -1,0 +1,24 @@
+id: no-host-variant-comparison
+valid:
+  - 'const compact = hostProfile.earnPresentation.compact'
+  - 'const showsAmount = props.variant === "action"'
+  - 'const positions = variant === "positions"'
+  - 'const hidden = walletCatalogue === "porto"'
+  - 'const dashboard = dashboardVariant === true'
+  - |
+    switch (status) {
+      case "zerion":
+        break;
+    }
+invalid:
+  - 'const tos = variant === "utila"'
+  - "const zerion = variant !== 'zerion'"
+  - 'const sort = config.variant === "porto"'
+  - 'const finery = "finery" === variant'
+  - 'const border = appVariant === "finery"'
+  - 'const host = settings.hostVariant == "default"'
+  - |
+    switch (variant) {
+      case "zerion":
+        break;
+    }

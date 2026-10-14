@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
-import { formatNumber } from "../../../../../../../shared/lib/number-format";
+import {
+  formatNumber,
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
 import { AmountTokenSection } from "../../../../../../../shared/ui/components/amount-token-section";
@@ -12,6 +16,7 @@ import {
 } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
 import {
   useEarnEntry,
   useEarnTokenSelection,
@@ -27,15 +32,17 @@ export const SelectTokenSection = ({
   sectionMarginTop?: BoxProps["marginTop"];
 } = {}) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
   const { setAmount, setMaxAmount, view } = useEarnEntry();
   const { view: tokenSelection } = useEarnTokenSelection();
   const {
     appLoading,
     selectedTokenAvailableAmount,
-    formattedPrice,
+    priceUsd,
     stakeAmount,
     validation,
     stakeMaxAmount,
@@ -65,15 +72,19 @@ export const SelectTokenSection = ({
   const min =
     stakeMinAmount === null
       ? null
-      : `${t("shared.min")} ${formatNumber(stakeMinAmount)} ${symbol}`;
+      : `${t("shared.min")} ${formatNumber(stakeMinAmount, locale)} ${symbol}`;
   const max =
     stakeMaxAmount === null
       ? null
-      : `${t("shared.max")} ${formatNumber(stakeMaxAmount)} ${symbol}`;
+      : `${t("shared.max")} ${formatNumber(stakeMaxAmount, locale)} ${symbol}`;
   const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
   const getBalanceContent = (): ReactNode => {
     if (!selectedTokenAvailableAmount) return null;
-    if (variant === "zerion") {
+    const shortFormattedAmount = formatTokenAmount(
+      selectedTokenAvailableAmount.amount,
+      locale
+    );
+    if (earnPresentation.zerion) {
       return (
         <>
           <span>{t("shared.balance")}:&nbsp;</span>
@@ -85,7 +96,7 @@ export const SelectTokenSection = ({
                   as: "button",
                 })}
           >
-            {selectedTokenAvailableAmount.shortFormattedAmount}&nbsp;
+            {shortFormattedAmount}&nbsp;
             {selectedTokenAvailableAmount.symbol}
           </Box>
         </>
@@ -97,8 +108,8 @@ export const SelectTokenSection = ({
           {({ state }) => (
             <span>
               {state === "full"
-                ? selectedTokenAvailableAmount.fullFormattedAmount
-                : selectedTokenAvailableAmount.shortFormattedAmount}
+                ? formatNumber(selectedTokenAvailableAmount.amount, locale)
+                : shortFormattedAmount}
               &nbsp;{selectedTokenAvailableAmount.symbol}&nbsp;
               {t("shared.available")}
             </span>
@@ -117,27 +128,24 @@ export const SelectTokenSection = ({
   }
 
   // Zerion places the title and min/max in a header row above the input.
-  const zerionHeader =
-    variant === "zerion" ? (
-      <Box display="flex" justifyContent="space-between">
-        <SelectTokenTitle />
-        {minMaxLabel ? (
-          <Box
-            className={combineRecipeWithVariant({
-              rec: minMaxContainer,
-              variant,
-            })}
-            data-rk="stake-token-section-min-max"
-          >
-            <Text
-              variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
-            >
-              {minMaxLabel}
-            </Text>
-          </Box>
-        ) : null}
-      </Box>
-    ) : null;
+  const zerionHeader = earnPresentation.zerion ? (
+    <Box display="flex" justifyContent="space-between">
+      <SelectTokenTitle />
+      {minMaxLabel ? (
+        <Box
+          className={combineRecipeWithVariant({
+            rec: minMaxContainer,
+            variant,
+          })}
+          data-rk="stake-token-section-min-max"
+        >
+          <Text variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}>
+            {minMaxLabel}
+          </Text>
+        </Box>
+      ) : null}
+    </Box>
+  ) : null;
 
   return (
     <AmountTokenSection
@@ -145,13 +153,13 @@ export const SelectTokenSection = ({
       onChange={setAmount}
       isInvalid={errorInput}
       accessory={<SelectToken canSelect={canSelectToken} />}
-      formattedPrice={formattedPrice}
+      formattedPrice={priceUsd ? formatUsd(priceUsd, locale) : ""}
       balance={getBalanceContent()}
       balanceError={stakeAmountGreaterThanAvailableAmount}
       onMaxClick={
         isStakeTokenSameAsGasToken ? null : () => setMaxAmount(undefined)
       }
-      minMaxLabel={variant === "zerion" ? null : minMaxLabel}
+      minMaxLabel={earnPresentation.zerion ? null : minMaxLabel}
       minMaxError={stakeAmountLessThanMin}
       state={submitted && stakeAmountIsZero ? "danger" : "default"}
       marginTop={sectionMarginTop}

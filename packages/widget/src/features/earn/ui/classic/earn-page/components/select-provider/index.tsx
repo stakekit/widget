@@ -1,11 +1,12 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
-import { formatUsd } from "../../../../../../../shared/lib/formatters";
+import { formatUsd } from "../../../../../../../shared/lib/number-format";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
 import type { EarnProviderOption } from "../../../../../state/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../../components/earn-provider-option-selection";
 import {
@@ -26,10 +27,10 @@ const getDisplayWebsite = (website: string) => {
   }
 };
 
-const getProviderTvl = (tvlUsd: unknown) => {
+const getProviderTvl = (tvlUsd: unknown, locale: string) => {
   if (typeof tvlUsd !== "string" && typeof tvlUsd !== "number") return null;
 
-  const formatted = formatUsd(tvlUsd);
+  const formatted = formatUsd(tvlUsd, locale);
 
   return formatted === "-" ? null : formatted;
 };
@@ -41,6 +42,8 @@ const ProviderOptionSummary = ({
   readonly option: EarnProviderOption | null;
   readonly placeholder: string;
 }) => {
+  const { locale } = useWidgetPresentation();
+
   if (!option) {
     return (
       <Box className={selectorSummaryContent}>
@@ -53,7 +56,7 @@ const ProviderOptionSummary = ({
 
   const { provider } = option;
   const name = provider?.name ?? option.value;
-  const tvl = getProviderTvl(provider?.tvlUsd);
+  const tvl = getProviderTvl(provider?.tvlUsd, locale);
 
   return (
     <Box className={selectorSummaryContent}>

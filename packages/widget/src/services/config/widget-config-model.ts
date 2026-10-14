@@ -9,8 +9,7 @@ import type { WalletPolicy } from "../../domain/wallet/wallet-policy";
 import type { VariantProps } from "../../public-api/react-types";
 import type { SettingsProps } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
-
-export type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
+import type { HostProfile, WidgetVariant } from "./host-profile";
 
 type YieldGrouping = "flat" | "category";
 
@@ -49,6 +48,8 @@ export type WidgetConfig = {
   readonly hideAccountAndChainSelector: boolean;
   readonly hideChainSelector: boolean;
   readonly hideNetworkLogo: boolean;
+  /** Capabilities resolved once from `variant` and `dashboardVariant`. */
+  readonly hostProfile: HostProfile;
   readonly initialChain?: SupportedSKChainIds;
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;

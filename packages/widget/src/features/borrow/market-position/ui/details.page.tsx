@@ -5,6 +5,7 @@ import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { toPresentable } from "../../../../shared/effect/async-result";
 import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../../tracking/index";
 import {
   AnimationPage,
@@ -38,6 +39,7 @@ export const BorrowPositionDetailsPage = () => {
   const { marketId } = useParams();
   const location = useLocation();
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
   const borrowPosition = useBorrowPosition(marketId);
   // Nested routes remount the split on the Actions side; returning to the
@@ -49,7 +51,7 @@ export const BorrowPositionDetailsPage = () => {
   const position =
     presentablePosition._tag === "Ready" ? presentablePosition.value : null;
   const model = position
-    ? getBorrowPositionDetailsModel({ position, t })
+    ? getBorrowPositionDetailsModel({ locale, position, t })
     : null;
   const actions = position
     ? getBorrowPositionActions({

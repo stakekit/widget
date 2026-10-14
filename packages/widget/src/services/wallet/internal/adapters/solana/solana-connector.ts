@@ -11,7 +11,7 @@ import { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
-import type { WidgetVariant } from "../../../../config/widget-config-model";
+import type { HostProfile } from "../../../../config/host-profile";
 import type {
   Chain,
   WalletAvailability,
@@ -184,25 +184,25 @@ const availability = ({
 export const getSolanaConnectors = ({
   wallets,
   connection,
-  variant,
+  walletCatalogue,
 }: {
   wallets: ReadonlyArray<SolanaWalletDescriptor>;
   connection: Connection;
-  variant: WidgetVariant;
+  walletCatalogue: HostProfile["walletCatalogue"];
 }): WalletList[number] => {
+  const porto = walletCatalogue === "porto";
+
   return {
     groupName: "Solana",
     wallets: wallets
       .filter((w) =>
-        variant === "porto"
-          ? w.adapter instanceof WalletConnectSolanaAdapter
-          : true
+        porto ? w.adapter instanceof WalletConnectSolanaAdapter : true
       )
       .map((w) => () => ({
         id: w.adapter.name,
-        name: variant === "porto" ? "Porto" : w.adapter.name,
-        iconUrl: variant === "porto" ? portoIcon : w.adapter.icon,
-        iconBackground: variant === "porto" ? "#000" : "#fff",
+        name: porto ? "Porto" : w.adapter.name,
+        iconUrl: porto ? portoIcon : w.adapter.icon,
+        iconBackground: porto ? "#000" : "#fff",
         chainGroup: {
           iconUrl: getWalletNetworkLogo("solana"),
           title: "Solana",

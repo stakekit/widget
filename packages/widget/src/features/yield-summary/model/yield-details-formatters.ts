@@ -8,14 +8,14 @@ import {
   isNonZeroRewardRateYield,
 } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
+import { getRewardTypeFormatted } from "../../../shared/lib/formatters";
 import {
   formatCompactNumber,
+  formatNumber,
   formatPercent,
+  formatRoundedPercent,
   formatUsd,
-  getRewardTypeFormatted,
-} from "../../../shared/lib/formatters";
-import { APToPercentage } from "../../../shared/lib/general";
-import { formatNumber } from "../../../shared/lib/number-format";
+} from "../../../shared/lib/number-format";
 
 export const formatDisplayTokenSymbol = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
@@ -37,7 +37,8 @@ export const formatRewardRateLabel = (
 
 export const formatRewardRate = (
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>,
-  yieldDto: EarnYieldWithProvider
+  yieldDto: EarnYieldWithProvider,
+  locale: string
 ) => {
   if (!effectiveRewardRate) return null;
 
@@ -47,7 +48,7 @@ export const formatRewardRate = (
 
   if (amount.isZero() && !isNonZeroRewardRateYield(yieldDto)) return null;
 
-  return `${APToPercentage(amount)}%`;
+  return formatRoundedPercent(amount, locale);
 };
 
 export const formatMinStakeLabel = (
@@ -60,7 +61,8 @@ export const formatMinStakeLabel = (
 
 export const formatMinStake = (
   yieldDto: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): { kpiPrimaryEligible: boolean; value: string } | null => {
   const minimum =
     yieldDto.mechanics.entryLimits?.minimum ??
@@ -81,7 +83,7 @@ export const formatMinStake = (
 
   return {
     kpiPrimaryEligible: true,
-    value: `${formatNumber(amount, amount.isInteger() ? 0 : 6)} ${
+    value: `${formatNumber(amount, locale, amount.isInteger() ? 0 : 6)} ${
       yieldDto.token.symbol
     }`,
   };
@@ -101,22 +103,24 @@ export const formatRequirementStatus = (
 };
 
 export const formatCommission = (
-  commission: string | number | null | undefined
+  commission: string | number | null | undefined,
+  locale: string
 ) => {
   if (commission == null) return null;
 
-  const formatted = formatPercent(commission);
+  const formatted = formatPercent(commission, locale);
 
   return formatted === "-" ? null : `Commission ${formatted}`;
 };
 
 export const formatProviderTvl = (
   tvl: string | number | null | undefined,
-  tokenSymbol: string
+  tokenSymbol: string,
+  locale: string
 ) => {
   if (tvl === null || tvl === undefined) return null;
 
-  const formatted = formatCompactNumber(tvl);
+  const formatted = formatCompactNumber(tvl, locale);
 
   return formatted === "-" ? null : `TVL ${formatted} ${tokenSymbol}`;
 };
@@ -161,7 +165,8 @@ export const formatRewardTokenLabel = (
 };
 
 export const formatPricePerShare = (
-  yieldDto: EarnYieldWithProvider
+  yieldDto: EarnYieldWithProvider,
+  locale: string
 ): string | null => {
   const price = yieldDto.state?.pricePerShareState?.price;
 
@@ -171,7 +176,7 @@ export const formatPricePerShare = (
 
   if (!amount.isFinite() || amount.isLessThanOrEqualTo(0)) return null;
 
-  return formatNumber(amount, 8);
+  return formatNumber(amount, locale, 8);
 };
 
 export const formatCooldownDays = (days: number, t: TFunction): string => {
@@ -201,21 +206,23 @@ export const formatOptionalDays = (
 };
 
 export const formatMeaningfulCompactUsd = (
-  value: string | number | null | undefined
+  value: string | number | null | undefined,
+  locale: string
 ) => {
   if (!isPositiveFinite(value)) return null;
 
-  const formatted = formatUsd(value);
+  const formatted = formatUsd(value, locale);
 
   return formatted === "-" ? null : formatted;
 };
 
 export const formatMeaningfulCompactNumber = (
-  value: string | number | null | undefined
+  value: string | number | null | undefined,
+  locale: string
 ) => {
   if (!isPositiveFinite(value)) return null;
 
-  const formatted = formatCompactNumber(value);
+  const formatted = formatCompactNumber(value, locale);
 
   return formatted === "-" ? null : formatted;
 };

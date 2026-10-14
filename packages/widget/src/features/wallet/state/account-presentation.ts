@@ -1,4 +1,5 @@
 import { Effect, Stream } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
@@ -8,11 +9,14 @@ type WalletChainSelectionInput = Parameters<
   WalletPresentationService["Service"]["selectChain"]
 >[0];
 
-export const walletChainSelectionAtom = walletRuntime.atom(
-  WalletPresentationService.use((service) =>
-    Effect.succeed(service.chainSelection)
-  ).pipe(Stream.unwrap)
-);
+/** The header chain selection; `undefined` until the service first emits. */
+export const walletChainSelectionAtom = walletRuntime
+  .atom(
+    WalletPresentationService.use((service) =>
+      Effect.succeed(service.chainSelection)
+    ).pipe(Stream.unwrap)
+  )
+  .pipe(Atom.map(AsyncResult.getOrElse(() => undefined)));
 
 export const selectWalletChainAtom = walletRuntime.fn(
   (input: WalletChainSelectionInput) =>
@@ -45,11 +49,13 @@ export const makeWalletChainSelectionScopeAtom = () =>
     runtime: walletRuntime,
   });
 
-export const walletAddressCopiedAtom = walletRuntime.atom(
-  WalletPresentationService.use((service) =>
-    Effect.succeed(service.addressCopied)
-  ).pipe(Stream.unwrap)
-);
+export const walletAddressCopiedAtom = walletRuntime
+  .atom(
+    WalletPresentationService.use((service) =>
+      Effect.succeed(service.addressCopied)
+    ).pipe(Stream.unwrap)
+  )
+  .pipe(Atom.map(AsyncResult.getOrElse(() => false)));
 
 export const copyWalletAddressAtom = walletRuntime.fn(() =>
   WalletPresentationService.use((service) => service.copyAddress)

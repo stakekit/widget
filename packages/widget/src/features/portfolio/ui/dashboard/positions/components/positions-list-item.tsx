@@ -5,6 +5,7 @@ import { Box } from "../../../../../../shared/ui/primitives/box";
 import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
 import type { UnifiedPositionItem } from "../../../../state/read-models/positions";
 import { EarnPositionListItem } from "../../../components/earn-position-list-item";
 import {
@@ -24,7 +25,8 @@ const BorrowMarketPositionListItem = ({
   readonly position: MarketPosition;
 }) => {
   const { t } = useTranslation();
-  const model = getBorrowMarketPositionListItemModel({ position, t });
+  const { locale } = useWidgetPresentation();
+  const model = getBorrowMarketPositionListItemModel({ locale, position, t });
 
   return (
     <SKLink relative="path" to={`../positions/borrow/${position.id}`}>

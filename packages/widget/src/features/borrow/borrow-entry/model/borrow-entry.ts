@@ -16,15 +16,20 @@ import {
   emptyBorrowPositions,
 } from "../../../../domain/borrow/positions/borrow-positions";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import { exceedsBorrowableLtv } from "../../../../domain/borrow/risk/ltv-limits";
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
+import {
+  type Presentable,
+  toPresentable,
+} from "../../../../shared/effect/async-result";
 import {
   type BorrowActionPreparation,
   type BorrowConstraintWarning,
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
+  getBorrowActionRiskBlock,
   type OpenPositionProjection,
   prepareBorrowAction,
 } from "../../action-preparation/index";
@@ -66,9 +71,11 @@ type BorrowFormValidation = {
   readonly borrowAmountGreaterThanAvailable: boolean;
   readonly collateralAmountGreaterThanBalance: boolean;
   readonly hasAmounts: boolean;
-  readonly ltvBlocksBorrow: boolean;
-  readonly ltvGreaterThanMax: boolean;
   readonly projectedDebtBelowMinimum: boolean;
+  /** The limit the Risk Gate blocks on. */
+  readonly riskBlock: RiskGateBlockReason | null;
+  /** A risk overshoot the user can still submit; never set with a block. */
+  readonly riskWarning: boolean;
 };
 
 export type BorrowFormProjection = {
@@ -93,13 +100,15 @@ export type BorrowEntryView = {
   /** Listed collateral for the selected market, default first. */
   readonly collateralOptions: ReadonlyArray<BorrowCollateralOption>;
   readonly collateralAmount: BigNumber;
-  readonly integrationsResult: AtomAsyncResult<
+  readonly integrations: ReadonlyArray<Integration>;
+  readonly integrationsView: Presentable<
     ReadonlyArray<Integration>,
     BorrowAtomResultError
   >;
   readonly isActionReady: boolean;
+  /** Listed markets of the catalog, empty until it has a value. */
   readonly markets: ReadonlyArray<Market>;
-  readonly marketsResult: AtomAsyncResult<
+  readonly marketsView: Presentable<
     ReadonlyArray<Market>,
     BorrowAtomResultError
   >;
@@ -373,22 +382,15 @@ export const resolveBorrowEntryView = ({
   const collateralAmountGreaterThanBalance = warnings.includes(
     "AmountExceedsWalletBalance"
   );
-  const ltvGreaterThanMax = warnings.includes("RiskCapacityExceeded");
+  const riskBlock = getBorrowActionRiskBlock(preparation);
+  const riskWarning = warnings.includes("RiskCapacityExceeded");
   const projectedDebtBelowMinimum = warnings.includes(
     "ProjectedDebtBelowMarketMinimum"
   );
-  // Supplying collateral alone only lowers LTV, so only a borrow can block.
-  const ltvBlocksBorrow =
-    borrowAmount.gt(0) &&
-    availableRisk !== null &&
-    exceedsBorrowableLtv({
-      ltv: availableRisk.projectedLtv,
-      maxLtv: availableRisk.maxLtv,
-    });
   const isActionReady =
     preparation?._tag === "Ready" &&
     !AsyncResult.isFailure(marketsResult) &&
-    !ltvBlocksBorrow;
+    riskBlock === null;
   const projection: BorrowFormProjection = {
     borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? exactZero(),
     borrowUsd: preparedProjection?.borrowUsd ?? exactZero(),
@@ -411,10 +413,11 @@ export const resolveBorrowEntryView = ({
     catalogResetNotice: false,
     collateralAmount,
     collateralOptions,
-    integrationsResult,
+    integrations,
+    integrationsView: toPresentable(integrationsResult),
     isActionReady,
     markets,
-    marketsResult,
+    marketsView: toPresentable(marketsResult),
     preparation,
     projection,
     selectedCollateralBalance,
@@ -428,9 +431,9 @@ export const resolveBorrowEntryView = ({
       borrowAmountGreaterThanAvailable,
       collateralAmountGreaterThanBalance,
       hasAmounts,
-      ltvBlocksBorrow,
-      ltvGreaterThanMax,
       projectedDebtBelowMinimum,
+      riskBlock,
+      riskWarning,
     },
     walletBalances,
   };

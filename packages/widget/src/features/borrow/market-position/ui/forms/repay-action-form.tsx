@@ -7,6 +7,7 @@ import {
 import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { PageCtaButton } from "../../../../widget-shell/views";
 import type { BorrowRepayActionContext } from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
@@ -25,6 +26,7 @@ export const RepayActionForm = ({
   readonly context: BorrowRepayActionContext;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const startReview = useStartBorrowPositionReview(action);
   const [view, dispatch] = useBorrowRepayForm(action);
   const { debtBalance } = context;
@@ -43,7 +45,7 @@ export const RepayActionForm = ({
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.outstanding_debt", {
-          amount: formatNumber(debtBalance.balance, 6),
+          amount: formatNumber(debtBalance.balance, locale, 6),
           symbol: debtBalance.tokenSymbol,
         })}
         disabled={view.repayAll}
@@ -87,8 +89,9 @@ export const RepayActionForm = ({
           <DetailRow
             id="loan"
             label={t("dashboard.borrow.form.loan")}
-            value={`${formatNumber(debtBalance.balance, 6)} -> ${formatNumber(
+            value={`${formatNumber(debtBalance.balance, locale, 6)} -> ${formatNumber(
               view.remainingDebt,
+              locale,
               6
             )} ${debtBalance.tokenSymbol}`}
           />

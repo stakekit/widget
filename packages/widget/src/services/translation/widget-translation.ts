@@ -14,6 +14,7 @@ import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import { mergeDeep } from "../../shared/effect/merge-deep";
+import type { HostProfile } from "../config/host-profile";
 import { WidgetConfigService } from "../config/widget-config";
 import type { WidgetConfig } from "../config/widget-config-model";
 import translationEN from "./English/translations.json";
@@ -49,15 +50,16 @@ type SupportedLanguage = keyof typeof localResources;
 type CustomTranslations = WidgetConfig["customTranslations"];
 type WidgetTranslationSettings = Pick<
   WidgetConfig,
-  "customTranslations" | "language" | "variant"
->;
+  "customTranslations" | "language"
+> &
+  Pick<HostProfile, "translationOverlay">;
 
 const selectWidgetTranslationSettings = (
   settings: WidgetConfig
 ): WidgetTranslationSettings => ({
   customTranslations: settings.customTranslations,
   language: settings.language,
-  variant: settings.variant,
+  translationOverlay: settings.hostProfile.translationOverlay,
 });
 
 const equalWidgetTranslationSettings = (
@@ -65,23 +67,25 @@ const equalWidgetTranslationSettings = (
   previous: WidgetTranslationSettings
 ) =>
   next.language === previous.language &&
-  next.variant === previous.variant &&
+  next.translationOverlay === previous.translationOverlay &&
   Equal.equals(next.customTranslations, previous.customTranslations);
 
 export const composeWidgetTranslationResources = ({
   apiErrors,
   customTranslations,
   language,
-  variant,
+  translationOverlay,
 }: {
   readonly apiErrors: ApiErrorTranslations | undefined;
   readonly customTranslations: CustomTranslations;
   readonly language: SupportedLanguage;
-  readonly variant: string;
+  readonly translationOverlay: HostProfile["translationOverlay"];
 }) =>
   mergeDeep(
     localResources,
-    variant === "utila" ? { en: { translation: utilaTranslations } } : {},
+    translationOverlay === "utila"
+      ? { en: { translation: utilaTranslations } }
+      : {},
     apiErrors ? { [language]: { translation: { errors: apiErrors } } } : {},
     customTranslations ?? {}
   );
@@ -193,7 +197,7 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
             apiErrors,
             customTranslations: settings.customTranslations,
             language,
-            variant: settings.variant,
+            translationOverlay: settings.translationOverlay,
           }),
         })
       );

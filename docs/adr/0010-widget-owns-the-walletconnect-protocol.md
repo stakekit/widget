@@ -3,11 +3,15 @@
 Every non-EVM WalletConnect wallet (Solana, Stellar, Tron, Cosmos, and
 Substrate) uses one Widget-owned WalletConnect Protocol Client: a single
 `@walletconnect/sign-client` instance with the `stakekit-walletconnect` storage
-prefix, created lazily and scoped to the Wallet Runtime. Family libraries own
-only their extension and injected wallets. A family's WalletConnect wallet is a
-small owned adapter that maps the family's account and signing interface to
-that namespace's JSON-RPC methods, restores unexpired sessions on reload, and
-disconnects only its own session topic.
+prefix, created lazily on first use and shared by every Wallet Runtime in the
+document for the page's lifetime. A SignClient holds its relayer subscription
+until the page unloads, and its metadata is constant for the page, so runtimes
+do not initialize their own. Each Wallet Runtime still scopes its own
+session-end listeners and connect attempts and releases them when it closes.
+Family libraries own only their extension and injected wallets. A family's
+WalletConnect wallet is a small owned adapter that maps the family's account
+and signing interface to that namespace's JSON-RPC methods, restores unexpired
+sessions on reload, and disconnects only its own session topic.
 
 Library-provided WalletConnect clients each created their own client with
 different SDK versions and storage prefixes, and each carried its own defects:

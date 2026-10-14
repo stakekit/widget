@@ -4,7 +4,6 @@ import * as Atom from "effect/reactivity/Atom";
 import { isBittensorStaking } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { Prices } from "../../../domain/health/models";
-import { getFeesInUSD, getGasFeeInUSD } from "../../../shared/lib/formatters";
 import {
   getYieldEstimatedRewards,
   YieldSummaryKey,
@@ -22,26 +21,25 @@ type ClassicStakeReviewResourceView = Readonly<{
   readonly prices: Prices | null;
 }>;
 
+type ClassicFlowPercentageFee = Readonly<{
+  /** Fee charged on the stake amount, in the selected token. */
+  readonly amount: BigNumber;
+  /** Fee as a decimal ratio (e.g. 0.005 for 0.5%). */
+  readonly ratio: BigNumber;
+}>;
+
 const makePercentageFee = ({
   amount,
   percentage,
-  prices,
-  token,
 }: {
   readonly amount: BigNumber;
   readonly percentage: string | undefined;
-  readonly prices: Prices | null;
-  readonly token: ClassicFlowEnterIntake["selectedToken"];
-}) =>
+}): ClassicFlowPercentageFee | null =>
   percentage === undefined
     ? null
     : {
-        inPercentage: `${percentage}%`,
-        inUSD: getFeesInUSD({
-          amount: amount.multipliedBy(percentage).dividedBy(100),
-          prices,
-          token,
-        }),
+        amount: amount.multipliedBy(percentage).dividedBy(100),
+        ratio: exactDecimal(percentage).dividedBy(100),
       };
 
 export const makeClassicFlowStakeReviewViewAtom = (
@@ -82,11 +80,7 @@ export const makeClassicFlowStakeReviewViewAtom = (
         };
       }
     ).mechanics?.fee;
-    const feeInput = {
-      amount: stakeAmount,
-      prices: review.prices,
-      token: intake.selectedToken,
-    };
+    const feeInput = { amount: stakeAmount };
 
     return {
       depositFee: makePercentageFee({
@@ -94,11 +88,7 @@ export const makeClassicFlowStakeReviewViewAtom = (
         percentage: yieldFee?.deposit,
       }),
       estimatedRewards,
-      gasFee: getGasFeeInUSD({
-        gas: review.gasAmount,
-        prices: review.prices,
-        yieldDto: intake.selectedStake,
-      }),
+      gasAmount: review.gasAmount,
       managementFee: makePercentageFee({
         ...feeInput,
         percentage: yieldFee?.management,
@@ -107,6 +97,7 @@ export const makeClassicFlowStakeReviewViewAtom = (
         ...feeInput,
         percentage: yieldFee?.performance,
       }),
+      prices: review.prices,
       rewardToken: yieldSummary.rewardToken,
       rewardsTokenSymbol,
       stakeAmount,

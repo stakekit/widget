@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import {
+  formatNumber,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import {
   DetailRow,
   DetailRowList,
@@ -11,7 +13,9 @@ import {
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import { SelectTokenTrigger } from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { PageCtaButton } from "../../../../widget-shell/views";
+import { BorrowNotice } from "../../../action-feedback/views";
 import type {
   BorrowWithdrawActionContext,
   BorrowWithdrawTokenOption,
@@ -40,6 +44,7 @@ const WithdrawTokenSelect = ({
   readonly tokens: ReadonlyArray<BorrowWithdrawTokenOption>;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -71,8 +76,11 @@ const WithdrawTokenSelect = ({
                 onSelect(token);
                 setIsOpen(false);
               }}
-              rate={formatNumber(token.availableAmount, 6)}
-              rateMeta={formatUsd(token.supplyBalance.balanceUsd.toString())}
+              rate={formatNumber(token.availableAmount, locale, 6)}
+              rateMeta={formatUsd(
+                token.supplyBalance.balanceUsd.toString(),
+                locale
+              )}
               selected={tokenAddress === selectedToken.action.args.tokenAddress}
               testId={`borrow-withdraw-token-select__item_${tokenAddress}`}
               token={borrowTokenToAppToken({
@@ -95,6 +103,7 @@ export const WithdrawActionForm = ({
   readonly context: BorrowWithdrawActionContext;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const startReview = useStartBorrowPositionReview(action);
   const [view, dispatch] = useBorrowWithdrawForm(action);
 
@@ -114,7 +123,7 @@ export const WithdrawActionForm = ({
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.withdrawable", {
-          amount: formatNumber(selectedToken.availableAmount, 6),
+          amount: formatNumber(selectedToken.availableAmount, locale, 6),
           symbol: selectedToken.supplyBalance.tokenSymbol,
         })}
         label={t("dashboard.borrow.position_details.actions.withdraw")}
@@ -155,11 +164,21 @@ export const WithdrawActionForm = ({
             id="collateral"
             label={t("dashboard.borrow.form.collateral_value")}
             value={`${formatUsd(
-              view.currentCollateralUsd.toString()
-            )} -> ${formatUsd(view.projectedCollateralUsd.toString())}`}
+              view.currentCollateralUsd.toString(),
+              locale
+            )} -> ${formatUsd(view.projectedCollateralUsd.toString(), locale)}`}
           />
         </DetailRowList>
       </Box>
+
+      {view.riskBlock ? (
+        <BorrowNotice
+          tone="error"
+          title={t("dashboard.borrow.risk_block.title")}
+        >
+          {t(`dashboard.borrow.risk_block.${view.riskBlock}`)}
+        </BorrowNotice>
+      ) : null}
 
       <PageCtaButton
         cta={{

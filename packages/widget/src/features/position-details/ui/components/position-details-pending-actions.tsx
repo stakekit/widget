@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import type { YieldPendingActionType } from "../../../../domain/action/pending-action";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
+import { formatUsd } from "../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { AmountBlock } from "../classic/components/amount-block";
 import { StaticActionBlock } from "../classic/components/static-action-block";
 import type { usePositionDetails } from "../classic/hooks/use-position-details";
@@ -19,6 +21,7 @@ export const PositionDetailsPendingActions = ({
   readonly presentation: "classic" | "dashboard";
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const {
     integrationData,
     pendingActions,
@@ -80,7 +83,9 @@ export const PositionDetailsPendingActions = ({
             }
             label={label}
             onMaxClick={null}
-            formattedAmount={val.formattedAmount}
+            formattedAmount={
+              val.amountUsd ? formatUsd(val.amountUsd, locale) : ""
+            }
             balance={null}
             unstakeAmountError={unstakeAmountError}
           />

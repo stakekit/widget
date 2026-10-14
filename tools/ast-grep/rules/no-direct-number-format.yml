@@ -1,0 +1,17 @@
+id: no-direct-number-format
+language: Tsx
+severity: error
+message: Format numbers for display with shared/lib/number-format, which takes the Widget language explicitly.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+  - packages/widget/tests/**/*.ts
+  - packages/widget/tests/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+  - packages/widget/src/shared/lib/number-format.ts
+rule:
+  any:
+    - pattern: $VALUE.toFormat($$$ARGS)
+    - pattern: Intl.NumberFormat

@@ -1,5 +1,3 @@
-import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -18,8 +16,7 @@ import { container } from "./style.css";
 const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positions, positionsResult, listData, showPositions } =
-    usePositions();
+  const { positions, positionsView, listData, showPositions } = usePositions();
 
   const wallet = useSKWallet();
   const isConnected = wallet?.status === "connected";
@@ -27,12 +24,8 @@ const PositionsPage = () => {
 
   const { t } = useTranslation();
 
-  const content = useMemo(() => {
-    if (
-      AsyncResult.isInitial(positionsResult) &&
-      positionsResult.waiting &&
-      isConnected
-    ) {
+  const renderContent = () => {
+    if (positionsView._tag === "Loading" && isConnected) {
       return <FallbackContent type="spinner" />;
     }
     if (!isConnected && !isConnecting) {
@@ -61,16 +54,16 @@ const PositionsPage = () => {
         </Box>
       );
     }
-    if (AsyncResult.isFailure(positionsResult) && !positions.length) {
+    if (positionsView._tag === "Failed") {
       return <FallbackContent type="something_wrong" />;
     }
 
     return null;
-  }, [isConnected, isConnecting, positions.length, positionsResult, t]);
+  };
 
   return (
     <Box className={container} display="flex" flex={1} flexDirection="column">
-      {content}
+      {renderContent()}
 
       {showPositions && (
         <Box flex={1} display="flex" flexDirection="column">

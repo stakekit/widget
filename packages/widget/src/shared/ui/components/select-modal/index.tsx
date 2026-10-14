@@ -2,7 +2,7 @@ import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
 import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../../primitives/box";
@@ -228,27 +228,24 @@ export const SelectModal = ({
 
   const isOpen = state ? state.isOpen : internalIsOpen;
 
-  const value = useMemo<SelectModalContextType>(
-    () => ({
-      isOpen,
-      setOpen: (val) => {
-        if (state) {
-          state.setOpen(val);
-        } else {
-          setInternalIsOpen(val);
-        }
+  const value: SelectModalContextType = {
+    isOpen,
+    setOpen: (val) => {
+      if (state) {
+        state.setOpen(val);
+      } else {
+        setInternalIsOpen(val);
+      }
 
-        if (val === isOpen) return;
+      if (val === isOpen) return;
 
-        if (val) {
-          onOpen?.();
-        } else {
-          onClose?.();
-        }
-      },
-    }),
-    [isOpen, state, onOpen, onClose]
-  );
+      if (val) {
+        onOpen?.();
+      } else {
+        onClose?.();
+      }
+    },
+  };
 
   return (
     <SelectModalContext.Provider value={value}>

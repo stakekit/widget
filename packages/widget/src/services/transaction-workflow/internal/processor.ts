@@ -143,7 +143,9 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
       context: TransactionWorkflowContext
     ): Effect.Effect<void> =>
       SubscriptionRef.set(stateRef, { _tag: "Signing", context }).pipe(
-        Effect.andThen(prepareAndSign(context)),
+        Effect.andThen(
+          prepareAndSign({ context, expectedOwner: input.walletScope })
+        ),
         Effect.matchEffect({
           onFailure: (error) =>
             SubscriptionRef.set(stateRef, {

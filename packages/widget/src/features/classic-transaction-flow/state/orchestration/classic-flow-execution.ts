@@ -1,4 +1,4 @@
-import { Duration, Effect, Schedule, type Scope, Stream } from "effect";
+import { Duration, Effect, Option, Schedule, type Scope, Stream } from "effect";
 import type { YieldAction } from "../../../../domain/action/models";
 import {
   toWidgetPath,
@@ -18,6 +18,11 @@ import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionWorkflowInput,
 } from "../../model/classic-transaction-flow";
+import { isClassicTransactionWorkflowFinished } from "../../model/classic-transaction-workflow";
+
+type ClassicFlowFinishOutcome =
+  | Readonly<{ readonly _tag: "Accepted" }>
+  | Readonly<{ readonly _tag: "RejectedNotCompleted" }>;
 
 /**
  * Execution of one reserved Classic action. Its operations run only while the
@@ -26,7 +31,10 @@ import {
  */
 export type ClassicFlowExecutionHandle = Readonly<{
   readonly back: () => Effect.Effect<void, WidgetNavigationError>;
-  readonly finish: () => Effect.Effect<void, WidgetNavigationError>;
+  readonly finish: () => Effect.Effect<
+    ClassicFlowFinishOutcome,
+    WidgetNavigationError
+  >;
   readonly runWorkflow: (
     command: TransactionWorkflowCommand
   ) => Effect.Effect<void>;
@@ -65,14 +73,7 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
     const operations = yield* makeScopedSerialOperations();
 
     yield* workflow.states.pipe(
-      Stream.filter(
-        (
-          state
-        ): state is Extract<
-          TransactionWorkflowState,
-          { readonly _tag: "Completed" | "Disabled" }
-        > => state._tag === "Completed" || state._tag === "Disabled"
-      ),
+      Stream.filter(isClassicTransactionWorkflowFinished),
       Stream.take(1),
       Stream.runForEach(() =>
         operations
@@ -86,18 +87,32 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
       Effect.forkScoped({ startImmediately: true })
     );
 
+    const finishOpen = Effect.fn("ClassicFlowExecution.finish")(
+      function* (): Effect.fn.Return<
+        ClassicFlowFinishOutcome,
+        WidgetNavigationError
+      > {
+        const state = yield* workflow.states.pipe(Stream.runHead);
+        if (
+          Option.isNone(state) ||
+          !isClassicTransactionWorkflowFinished(state.value)
+        ) {
+          return { _tag: "RejectedNotCompleted" } as const;
+        }
+        yield* navigate({
+          _tag: "Push",
+          path: toWidgetPath(
+            intake._tag === "YieldActionContinuation" ? "/activity" : "/"
+          ),
+        });
+        return { _tag: "Accepted" } as const;
+      }
+    );
+
     return {
       back: () =>
         operations.run(navigate({ _tag: "Replace", path: paths.reviewPath })),
-      finish: () =>
-        operations.run(
-          navigate({
-            _tag: "Push",
-            path: toWidgetPath(
-              intake._tag === "YieldActionContinuation" ? "/activity" : "/"
-            ),
-          })
-        ),
+      finish: () => operations.run(finishOpen()),
       runWorkflow: (command) =>
         operations.run(Effect.suspend(() => workflow.dispatch(command))),
       states: workflow.states,

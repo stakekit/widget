@@ -1,0 +1,875 @@
+import { Effect, Layer, Schema } from "effect";
+import { Atom, AtomRegistry } from "effect/reactivity";
+import * as Reactivity from "effect/reactivity/Reactivity";
+import { describe, expect, it, vi } from "vitest";
+import { appRuntime } from "../../../src/app/runtime/app-runtime";
+import type { EarnYield } from "../../../src/domain/earn/models";
+import { TokenBalancesResponse } from "../../../src/domain/finance/models";
+import {
+  ProviderOption,
+  WalletAddress,
+} from "../../../src/domain/identity/identifiers";
+import { tokenString } from "../../../src/domain/token/token";
+import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import {
+  earnSelectionProviderOptionsViewAtom,
+  earnSelectionStatusViewAtom,
+  earnSelectionTokenOptionsViewAtom,
+  earnSelectionViewAtom,
+  earnSelectionYieldOptionsViewAtom,
+  selectEarnSelectionProviderAtom,
+  selectEarnSelectionTokenAtom,
+  setEarnSelectionAmountAtom,
+} from "../../../src/features/earn/state/earn-selection";
+import { earnEntryAtom } from "../../../src/features/earn/state/earn-selection/state/atoms";
+import type { EarnEntry } from "../../../src/features/earn/state/earn-selection/types";
+import { earnEntryViewAtom } from "../../../src/features/earn/state/entry";
+import {
+  ApiRequestError,
+  LegacyResourceSource,
+  YieldResourceSource,
+} from "../../../src/services/api/resource-sources";
+import {
+  yieldApiProviderFixture,
+  yieldApiYieldDtoFixture,
+  yieldApiYieldFixture,
+} from "../../fixtures";
+import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
+
+const firstYield = yieldApiYieldFixture();
+const secondYield = yieldApiYieldFixture({
+  id: "ethereum-usdc-lending",
+  token: {
+    ...firstYield.token,
+    address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    name: "USD Coin",
+    symbol: "USDC",
+  },
+});
+const scope = new WalletScopeKey({
+  address: Schema.decodeSync(WalletAddress)(
+    "0x9999999999999999999999999999999999999999"
+  ),
+  network: "ethereum",
+});
+const classicEntry: EarnEntry = {
+  categoryOrder: ["stake", "defi", "rwa"],
+  dashboardVariant: false,
+  initParams: null,
+  preferredTokenYieldsPerNetwork: null,
+  walletResolution: "settled",
+  walletScope: scope,
+};
+
+const tokenCatalog = [firstYield, secondYield].map((yieldModel) => ({
+  availableYields: [yieldModel.id],
+  token: yieldModel.token,
+}));
+
+const makeRegistry = ({
+  entry = classicEntry,
+  getProvider = () => Effect.succeedNone,
+  listYields = () =>
+    Effect.succeed({
+      items: [firstYield, secondYield],
+      limit: 100,
+      offset: 0,
+      total: 2,
+    }),
+  scanTokenBalances,
+  tokenOptions = tokenCatalog,
+}: {
+  readonly entry?: EarnEntry;
+  readonly getProvider?: YieldResourceSource["Service"]["getProvider"];
+  readonly listYields?: YieldResourceSource["Service"]["listYields"];
+  readonly scanTokenBalances: LegacyResourceSource["Service"]["scanTokenBalances"];
+  readonly tokenOptions?: typeof tokenCatalog;
+}) => {
+  const getTokenOptions = vi.fn(() => Effect.succeed(tokenOptions));
+  const registry = AtomRegistry.make({
+    initialValues: [
+      applicationRuntimeInitInitialValue(),
+      Atom.initialValue(earnEntryAtom, entry),
+      Atom.initialValue(
+        appRuntime.layer,
+        Layer.mergeAll(
+          Reactivity.layer,
+          Layer.succeed(
+            LegacyResourceSource,
+            LegacyResourceSource.of({
+              getTokenOptions,
+              scanTokenBalances,
+            } as never)
+          ),
+          Layer.succeed(
+            YieldResourceSource,
+            YieldResourceSource.of({
+              getPositions: () => Effect.succeed({ errors: [], items: [] }),
+              getProvider,
+              listYields,
+            } as never)
+          )
+        ) as never
+      ),
+    ],
+  });
+  return { getTokenOptions, registry };
+};
+
+describe("Earn Selection", () => {
+  it("waits for the first balance attempt before choosing the initial token", async () => {
+    const balanceResult = Schema.decodeSync(TokenBalancesResponse)([
+      {
+        amount: "5",
+        availableYields: [secondYield.id],
+        token: secondYield.token,
+      },
+    ]);
+    const { registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.sleep("100 millis").pipe(Effect.as(balanceResult)),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      expect(registry.get(earnSelectionViewAtom).selection.token).toBeNull();
+
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+        ).toBe("USDC")
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("keeps browsing available with unknown amounts after balance failure", async () => {
+    const { getTokenOptions, registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.fail(
+          new ApiRequestError({
+            cause: new Error("offline"),
+            operation: "token-balances-scan",
+          })
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionTokenOptionsViewAtom).items
+        ).toHaveLength(2)
+      );
+      expect(
+        registry
+          .get(earnSelectionTokenOptionsViewAtom)
+          .items.every((option) => option.amount === null)
+      ).toBe(true);
+      expect(registry.get(earnSelectionViewAtom).canSubmit).toBe(false);
+      expect(registry.get(earnSelectionStatusViewAtom).blockingFailure).toBe(
+        false
+      );
+      expect(getTokenOptions).toHaveBeenCalledWith({
+        enter: true,
+        network: "ethereum",
+        yieldTypes: undefined,
+      });
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("applies focused token transitions and clears yield-scoped form intent", async () => {
+    const { registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "2",
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: "1",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionViewAtom).selection.yield
+        ).not.toBeNull()
+      );
+      registry.set(setEarnSelectionAmountAtom, "1.25");
+      registry.set(
+        selectEarnSelectionTokenAtom,
+        tokenString(secondYield.token)
+      );
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom)).toMatchObject({
+          form: { stakeAmount: "0", useMaxAmount: false },
+          selection: {
+            token: { token: secondYield.token },
+            yield: secondYield,
+          },
+        })
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("keeps a captured initialization seed across Earn route remounts", async () => {
+    const { registry } = makeRegistry({
+      entry: {
+        ...classicEntry,
+        initParams: {
+          accountId: null,
+          balanceId: null,
+          network: "ethereum",
+          pendingaction: null,
+          tab: "earn",
+          token: null,
+          validator: null,
+          yieldId: secondYield.id,
+        },
+      },
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "2",
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: "1",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    let unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          secondYield.id
+        )
+      );
+      unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      unmount = registry.mount(earnSelectionViewAtom);
+
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          secondYield.id
+        )
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("lists display-only yields closed to deposits without defaulting to them", async () => {
+    const displayOnlyYield = yieldApiYieldFixture({
+      id: "ethereum-usdc-midas-mglobal-vault",
+      status: { enter: false, exit: true },
+      token: secondYield.token,
+    });
+    const closedYield = yieldApiYieldFixture({
+      id: "ethereum-usdc-closed-vault",
+      status: { enter: false, exit: true },
+      token: secondYield.token,
+    });
+    const usdcYields = [displayOnlyYield, closedYield, secondYield];
+    const { registry } = makeRegistry({
+      listYields: () =>
+        Effect.succeed({
+          items: usdcYields,
+          limit: 100,
+          offset: 0,
+          total: usdcYields.length,
+        }),
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "1",
+              availableYields: usdcYields.map(({ id }) => id),
+              token: secondYield.token,
+            },
+          ])
+        ),
+      tokenOptions: [
+        {
+          availableYields: usdcYields.map(({ id }) => id),
+          token: secondYield.token,
+        },
+      ],
+    });
+    const unmount = registry.mount(earnSelectionYieldOptionsViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionYieldOptionsViewAtom).selected?.id
+        ).toBe(secondYield.id)
+      );
+      expect(
+        registry
+          .get(earnSelectionYieldOptionsViewAtom)
+          .items.map(({ id }) => id)
+          .sort()
+      ).toEqual([displayOnlyYield.id, secondYield.id].sort());
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("does not reopen initialization after user intent completes it", async () => {
+    const { registry } = makeRegistry({
+      entry: {
+        ...classicEntry,
+        initParams: {
+          accountId: null,
+          balanceId: null,
+          network: "ethereum",
+          pendingaction: null,
+          tab: "earn",
+          token: null,
+          validator: null,
+          yieldId: secondYield.id,
+        },
+      },
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "2",
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: "1",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    let unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          secondYield.id
+        )
+      );
+      registry.set(selectEarnSelectionTokenAtom, tokenString(firstYield.token));
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          firstYield.id
+        )
+      );
+      unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      unmount = registry.mount(earnSelectionViewAtom);
+
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          firstYield.id
+        )
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("keeps initialization active while the seeded yield is loading", async () => {
+    const seededYield = yieldApiYieldFixture({
+      id: "ethereum-eth-seeded",
+      token: firstYield.token,
+    });
+    const { registry } = makeRegistry({
+      entry: {
+        ...classicEntry,
+        initParams: {
+          accountId: null,
+          balanceId: null,
+          network: "ethereum",
+          pendingaction: null,
+          tab: "earn",
+          token: null,
+          validator: null,
+          yieldId: seededYield.id,
+        },
+      },
+      listYields: () =>
+        Effect.sleep("100 millis").pipe(
+          Effect.as({
+            items: [firstYield, seededYield],
+            limit: 100,
+            offset: 0,
+            total: 2,
+          })
+        ),
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "1",
+              availableYields: [firstYield.id, seededYield.id],
+              token: firstYield.token,
+            },
+          ])
+        ),
+      tokenOptions: [
+        {
+          availableYields: [firstYield.id, seededYield.id],
+          token: firstYield.token,
+        },
+      ],
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          seededYield.id
+        )
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("continues a captured initialization seed across remounts while loading", async () => {
+    const seededYield = yieldApiYieldFixture({
+      id: "ethereum-eth-route-seed",
+      token: firstYield.token,
+    });
+    const { registry } = makeRegistry({
+      entry: {
+        ...classicEntry,
+        initParams: {
+          accountId: null,
+          balanceId: null,
+          network: "ethereum",
+          pendingaction: null,
+          tab: "earn",
+          token: null,
+          validator: null,
+          yieldId: seededYield.id,
+        },
+      },
+      listYields: () =>
+        Effect.sleep("100 millis").pipe(
+          Effect.as({
+            items: [firstYield, seededYield],
+            limit: 100,
+            offset: 0,
+            total: 2,
+          })
+        ),
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "1",
+              availableYields: [firstYield.id, seededYield.id],
+              token: firstYield.token,
+            },
+          ])
+        ),
+      tokenOptions: [
+        {
+          availableYields: [firstYield.id, seededYield.id],
+          token: firstYield.token,
+        },
+      ],
+    });
+    let unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionStatusViewAtom).loading.yields).toBe(
+          true
+        )
+      );
+      unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      unmount = registry.mount(earnSelectionViewAtom);
+
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          seededYield.id
+        )
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("derives force-max form state through the feature view", async () => {
+    const base = yieldApiYieldDtoFixture();
+    const forceMaxYield = yieldApiYieldFixture({
+      mechanics: {
+        ...base.mechanics,
+        arguments: {
+          ...base.mechanics.arguments,
+          enter: {
+            fields: [
+              {
+                label: "Amount",
+                maximum: "-1",
+                minimum: "-1",
+                name: "amount",
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+      token: firstYield.token,
+    });
+    const { registry } = makeRegistry({
+      listYields: () =>
+        Effect.succeed({
+          items: [forceMaxYield],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        }),
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "10",
+              availableYields: [forceMaxYield.id],
+              token: forceMaxYield.token,
+            },
+          ])
+        ),
+      tokenOptions: [
+        {
+          availableYields: [forceMaxYield.id],
+          token: forceMaxYield.token,
+        },
+      ],
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom)).toMatchObject({
+          canSubmit: true,
+          form: { stakeAmount: "10", useMaxAmount: true },
+        })
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("does not sort or default to dust balances", async () => {
+    const { registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "0.000000000000000001",
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: "5",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+        ).toBe("USDC")
+      );
+      expect(
+        registry
+          .get(earnSelectionTokenOptionsViewAtom)
+          .items.map((option) => [option.token.symbol, option.amount])
+      ).toEqual([
+        ["USDC", "5"],
+        [firstYield.token.symbol, "0.000000000000000001"],
+      ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("reports a zero balance for tokens missing from a successful scan", async () => {
+    const { registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "5",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionTokenOptionsViewAtom).items
+        ).toHaveLength(2)
+      );
+      expect(
+        registry
+          .get(earnSelectionTokenOptionsViewAtom)
+          .items.map(({ amount, source, token }) => ({
+            amount,
+            source,
+            symbol: token.symbol,
+          }))
+      ).toEqual([
+        { amount: "5", source: "balance", symbol: "USDC" },
+        { amount: "0", source: "balance", symbol: firstYield.token.symbol },
+      ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  describe("entry view available amount", () => {
+    const selectFirstToken = async (
+      scanTokenBalances: LegacyResourceSource["Service"]["scanTokenBalances"]
+    ) => {
+      const { registry } = makeRegistry({ scanTokenBalances });
+      const unmount = registry.mount(earnEntryViewAtom);
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionTokenOptionsViewAtom).items
+        ).toHaveLength(2)
+      );
+      registry.set(selectEarnSelectionTokenAtom, tokenString(firstYield.token));
+      await vi.waitFor(() =>
+        expect(registry.get(earnEntryViewAtom).selectedToken).toEqual(
+          firstYield.token
+        )
+      );
+      return {
+        dispose: () => {
+          unmount();
+          registry.dispose();
+        },
+        registry,
+      };
+    };
+
+    it("shows a zero amount when the scan succeeded without the token", async () => {
+      const { dispose, registry } = await selectFirstToken(() =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "5",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        )
+      );
+
+      try {
+        const available =
+          registry.get(earnEntryViewAtom).selectedTokenAvailableAmount;
+        expect(available?.amount.toString(10)).toBe("0");
+        expect(available?.symbol).toBe(firstYield.token.symbol);
+      } finally {
+        dispose();
+      }
+    });
+
+    it("hides the available amount when the scan failed", async () => {
+      const { dispose, registry } = await selectFirstToken(() =>
+        Effect.fail(
+          new ApiRequestError({
+            cause: new Error("offline"),
+            operation: "token-balances-scan",
+          })
+        )
+      );
+
+      try {
+        expect(
+          registry.get(earnEntryViewAtom).selectedTokenAvailableAmount
+        ).toBeNull();
+      } finally {
+        dispose();
+      }
+    });
+  });
+
+  describe("provider options", () => {
+    const makeProviderOptionsYield = ({
+      options,
+      required,
+    }: {
+      readonly options: ReadonlyArray<string>;
+      readonly required: boolean;
+    }) => {
+      const base = yieldApiYieldDtoFixture();
+      return yieldApiYieldFixture({
+        mechanics: {
+          ...base.mechanics,
+          arguments: {
+            ...base.mechanics.arguments,
+            enter: {
+              fields: [
+                ...(base.mechanics.arguments?.enter?.fields ?? []),
+                {
+                  label: "Provider",
+                  name: "providerId",
+                  options: [...options],
+                  required,
+                  type: "string",
+                },
+              ],
+            },
+          },
+        },
+        token: firstYield.token,
+      });
+    };
+
+    const makeProviderOptionsRegistry = (
+      yieldModel: EarnYield,
+      getProvider?: YieldResourceSource["Service"]["getProvider"]
+    ) =>
+      makeRegistry({
+        getProvider,
+        listYields: () =>
+          Effect.succeed({
+            items: [yieldModel],
+            limit: 100,
+            offset: 0,
+            total: 1,
+          }),
+        scanTokenBalances: () =>
+          Effect.succeed(
+            Schema.decodeSync(TokenBalancesResponse)([
+              {
+                amount: "10",
+                availableYields: [yieldModel.id],
+                token: yieldModel.token,
+              },
+            ])
+          ),
+        tokenOptions: [
+          { availableYields: [yieldModel.id], token: yieldModel.token },
+        ],
+      }).registry;
+
+    it("defaults a single required option and shows it without a choice", async () => {
+      const registry = makeProviderOptionsRegistry(
+        makeProviderOptionsYield({ options: ["P2P"], required: true })
+      );
+      const unmountView = registry.mount(earnSelectionViewAtom);
+      const unmountOptions = registry.mount(
+        earnSelectionProviderOptionsViewAtom
+      );
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).form).toMatchObject({
+            providerOption: "P2P",
+          })
+        );
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionProviderOptionsViewAtom)).toEqual({
+            canSelect: false,
+            items: [{ provider: null, value: "P2P" }],
+            selected: "P2P",
+          })
+        );
+      } finally {
+        unmountOptions();
+        unmountView();
+        registry.dispose();
+      }
+    });
+
+    it("lists optional options in advertised order with metadata when the provider is known", async () => {
+      const p2p = yieldApiProviderFixture({ id: "P2P", name: "P2P.org" });
+      const registry = makeProviderOptionsRegistry(
+        makeProviderOptionsYield({
+          options: ["unlisted-operator", "P2P"],
+          required: false,
+        }),
+        (providerId) =>
+          providerId === "P2P" ? Effect.succeedSome(p2p) : Effect.succeedNone
+      );
+      const unmountView = registry.mount(earnSelectionViewAtom);
+      const unmountOptions = registry.mount(
+        earnSelectionProviderOptionsViewAtom
+      );
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionProviderOptionsViewAtom)).toEqual({
+            canSelect: true,
+            items: [
+              { provider: null, value: "unlisted-operator" },
+              { provider: p2p, value: "P2P" },
+            ],
+            selected: null,
+          })
+        );
+
+        registry.set(
+          selectEarnSelectionProviderAtom,
+          ProviderOption.make("unlisted-operator")
+        );
+
+        expect(
+          registry.get(earnSelectionProviderOptionsViewAtom)
+        ).toMatchObject({ selected: "unlisted-operator" });
+        expect(registry.get(earnSelectionViewAtom).form).toMatchObject({
+          providerOption: "unlisted-operator",
+        });
+      } finally {
+        unmountOptions();
+        unmountView();
+        registry.dispose();
+      }
+    });
+  });
+});

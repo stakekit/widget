@@ -3,13 +3,17 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { decodeTokenId, type TokenId } from "../../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
-import { formatPercent, formatUsd } from "../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import {
+  formatPercent,
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import {
   SelectedToken,
   SelectTokenTrigger,
 } from "../../../../../shared/ui/components/selected-token";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   type BorrowCollateralOption,
   filterBorrowCollateralOptions,
@@ -35,6 +39,7 @@ export const CollateralSelectModal = ({
   readonly selectedCollateralTokenId: TokenId | null;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const selectCollateralToken = useAtomSet(selectBorrowCollateralTokenAtom);
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -108,15 +113,16 @@ export const CollateralSelectModal = ({
                 labelMeta={
                   collateralToken.supplyRate.gte(MIN_SHOWN_SUPPLY_RATE)
                     ? t("dashboard.borrow.form.collateral_earns", {
-                        rate: formatPercent(collateralToken.supplyRate),
+                        rate: formatPercent(collateralToken.supplyRate, locale),
                       })
                     : undefined
                 }
                 meta={t("dashboard.borrow.form.collateral_terms", {
                   liquidationThreshold: formatPercent(
-                    collateralToken.liquidationThreshold
+                    collateralToken.liquidationThreshold,
+                    locale
                   ),
-                  maxLtv: formatPercent(collateralToken.maxLtv),
+                  maxLtv: formatPercent(collateralToken.maxLtv, locale),
                 })}
                 onClick={() => {
                   selectCollateralToken(collateralToken);
@@ -124,10 +130,12 @@ export const CollateralSelectModal = ({
                 }}
                 rate={
                   walletAmount?.gt(0)
-                    ? defaultFormattedNumber(walletAmount)
+                    ? formatTokenAmount(walletAmount, locale)
                     : undefined
                 }
-                rateMeta={walletUsd?.gt(0) ? formatUsd(walletUsd) : undefined}
+                rateMeta={
+                  walletUsd?.gt(0) ? formatUsd(walletUsd, locale) : undefined
+                }
                 selected={
                   decodeTokenId(collateralToken.token) ===
                   selectedCollateralTokenId

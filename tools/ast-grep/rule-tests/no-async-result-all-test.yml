@@ -1,0 +1,9 @@
+id: no-async-result-all
+valid:
+  - 'combineAsyncResults({ left, right })'
+  - 'AsyncResult.map(result, f)'
+  - 'Effect.all([left, right])'
+invalid:
+  - 'AsyncResult.all({ left, right })'
+  - 'AsyncResult.all([left, right]).pipe(AsyncResult.map(f))'
+  - 'const combine = AsyncResult.all'

@@ -1,4 +1,5 @@
-import { Context, type Effect } from "effect";
+import { Cause, Context, type Effect, Predicate, Schema } from "effect";
+import { HttpClientError } from "effect/http";
 import type {
   ActionCommand,
   ActionTransactionReceipt,
@@ -15,11 +16,11 @@ import type {
   SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
-import type {
+import {
   ApiRequestError,
-  InputValidationError,
-  MissingBorrowApiConfig,
-  ResponseDecodeError,
+  type InputValidationError,
+  type MissingBorrowApiConfig,
+  type ResponseDecodeError,
 } from "./resource-sources";
 
 export type { InputValidationError } from "./resource-sources";
@@ -54,6 +55,14 @@ type BorrowOperationsService = {
     readonly command: BorrowSubmitTransactionCommand;
     readonly transactionId: string;
   }) => Effect.Effect<BorrowSubmitTransactionResult, BorrowOperationFailure>;
+  /**
+   * `submitTransaction` for work that outlives the user's Transaction Flow:
+   * it never presents the failure as a Rich Error.
+   */
+  readonly submitTransactionInBackground: (request: {
+    readonly command: BorrowSubmitTransactionCommand;
+    readonly transactionId: string;
+  }) => Effect.Effect<BorrowSubmitTransactionResult, BorrowOperationFailure>;
 };
 
 type YieldOperationsService = {
@@ -69,6 +78,13 @@ type YieldOperationsService = {
   readonly submitTransactionHash: (
     command: SubmitTransactionHashCommand
   ) => Effect.Effect<ActionTransactionReceipt, ApiOperationFailure>;
+  /**
+   * `submitTransactionHash` for work that outlives the user's Transaction
+   * Flow: it never presents the failure as a Rich Error.
+   */
+  readonly submitTransactionHashInBackground: (
+    command: SubmitTransactionHashCommand
+  ) => Effect.Effect<ActionTransactionReceipt, ApiOperationFailure>;
 };
 
 export class BorrowOperations extends Context.Service<
@@ -80,3 +96,32 @@ export class YieldOperations extends Context.Service<
   YieldOperations,
   YieldOperationsService
 >()("stakekit/widget/services/api/YieldOperations") {}
+
+const transientStatuses: ReadonlySet<number> = new Set([
+  408, 429, 500, 502, 503, 504,
+]);
+
+/**
+ * Whether repeating the request may succeed: it timed out, never reached the
+ * API, or the API answered with a transient status. Every other failure,
+ * including an undecodable response, is final.
+ */
+export const isTransientApiFailure = (error: unknown): boolean => {
+  if (!Schema.is(ApiRequestError)(error)) return false;
+  const { cause } = error;
+  if (Cause.isTimeoutError(cause)) return true;
+  if (HttpClientError.isHttpClientError(cause)) {
+    return (
+      cause.reason._tag === "TransportError" ||
+      (cause.reason._tag === "StatusCodeError" &&
+        transientStatuses.has(cause.reason.response.status))
+    );
+  }
+  // Generated API clients fail declared error statuses with the response attached.
+  return (
+    Predicate.hasProperty(cause, "response") &&
+    Predicate.hasProperty(cause.response, "status") &&
+    typeof cause.response.status === "number" &&
+    transientStatuses.has(cause.response.status)
+  );
+};

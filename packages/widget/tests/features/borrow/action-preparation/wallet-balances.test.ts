@@ -1,0 +1,229 @@
+import * as Schema from "effect/Schema";
+import { describe, expect, it } from "vitest";
+import { Market } from "../../../../src/domain/borrow/catalog/market";
+import { BorrowToken } from "../../../../src/domain/borrow/catalog/token";
+import { decodeTokenId } from "../../../../src/domain/borrow/ids";
+import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
+import {
+  deriveBorrowMarketWalletBalances,
+  deriveBorrowTokenWalletBalance,
+} from "../../../../src/features/borrow/action-preparation/model/wallet-balances";
+
+const market = Schema.decodeSync(Market)({
+  id: "aave-v3-ethereum-usdc",
+  integrationId: "aave-borrow",
+  network: "ethereum",
+  type: "pool",
+  poolAddress: "0x0000000000000000000000000000000000000001",
+  loanToken: {
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    symbol: "USDC",
+    name: "USD Coin",
+    decimals: 6,
+  },
+  collateralTokens: [
+    {
+      token: {
+        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        symbol: "WETH",
+        name: "Wrapped Ether",
+        decimals: 18,
+      },
+      priceUsd: "2000",
+      maxLtv: "0.8",
+      liquidationThreshold: "0.85",
+      liquidationPenalty: "0.05",
+      supplyRate: "0.02",
+    },
+  ],
+  borrowRate: "0.06",
+  totalSupply: "1000000",
+  totalSupplyRaw: "1000000000000",
+  totalBorrow: "500000",
+  totalBorrowRaw: "500000000000",
+  availableLiquidity: "500000",
+  availableLiquidityRaw: "500000000000",
+  utilizationRate: "0.5",
+  loanTokenPriceUsd: "1",
+  isBorrowEnabled: true,
+  supplyCollateralFeeBps: "0",
+  originationFeeBps: "0",
+  originationFeeWrapperAddress: null,
+  blueBundleOriginationFeeBps: null,
+  minLoan: null,
+});
+
+const balances = Schema.decodeSync(TokenBalancesResponse)([
+  {
+    token: {
+      network: "ethereum",
+      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      symbol: "USDC",
+      name: "USD Coin",
+      decimals: 6,
+    },
+    amount: "123.45",
+    availableYields: [],
+  },
+  {
+    token: {
+      network: "ethereum",
+      address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      symbol: "WETH",
+      name: "Wrapped Ether",
+      decimals: 18,
+    },
+    amount: "0.25",
+    availableYields: [],
+  },
+  {
+    token: {
+      network: "polygon",
+      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      symbol: "USDC",
+      name: "USD Coin",
+      decimals: 6,
+    },
+    amount: "999",
+    availableYields: [],
+  },
+]);
+
+describe("borrow balance adapter", () => {
+  it("derives loan and collateral balances from existing token scans", () => {
+    const walletBalances = deriveBorrowMarketWalletBalances({
+      balances,
+      market,
+    });
+
+    expect(walletBalances.loanToken.amount).toBe("123.45");
+    expect(walletBalances.loanToken.amountValue.toString()).toBe("123.45");
+    expect(walletBalances.collateralTokens[0]?.amount).toBe("0.25");
+    expect(walletBalances.selectedCollateralToken?.token.symbol).toBe("WETH");
+  });
+
+  it("selects collateral balances by address and ignores other networks", () => {
+    const walletBalances = deriveBorrowMarketWalletBalances({
+      balances,
+      market,
+      selectedCollateralTokenId: decodeTokenId(
+        market.collateralTokens[0]!.token
+      ),
+    });
+
+    expect(walletBalances.selectedCollateralToken?.amount).toBe("0.25");
+    expect(walletBalances.loanToken.balance?.token.network).toBe("ethereum");
+  });
+
+  it("returns zero for missing balances", () => {
+    const balance = deriveBorrowTokenWalletBalance({
+      balances,
+      network: "base",
+      token: market.loanToken,
+    });
+
+    expect(balance.amount).toBe("0");
+    expect(balance.amountValue.isZero()).toBe(true);
+    expect(balance.balance).toBeNull();
+  });
+
+  it("matches addressed tokens by contract when scan symbols differ", () => {
+    const scanBalances = Schema.decodeSync(TokenBalancesResponse)([
+      {
+        amount: "0.0009698",
+        availableYields: [],
+        token: {
+          address: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          decimals: 18,
+          name: "Wrapped Ether",
+          network: "arbitrum",
+          symbol: "wETH",
+        },
+      },
+      {
+        amount: "0.02994",
+        availableYields: [],
+        token: {
+          address: "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+          decimals: 6,
+          name: "Tether USD",
+          network: "arbitrum",
+          symbol: "USDT",
+        },
+      },
+    ]);
+
+    const weth = deriveBorrowTokenWalletBalance({
+      balances: scanBalances,
+      network: "arbitrum",
+      token: Schema.decodeSync(BorrowToken)({
+        address: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        decimals: 18,
+        name: "WETH",
+        symbol: "WETH",
+      }),
+    });
+    const usdt0 = deriveBorrowTokenWalletBalance({
+      balances: scanBalances,
+      network: "arbitrum",
+      token: Schema.decodeSync(BorrowToken)({
+        address: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        decimals: 6,
+        name: "USD₮0",
+        symbol: "USDT0",
+      }),
+    });
+
+    expect(weth.amount).toBe("0.0009698");
+    expect(usdt0.amount).toBe("0.02994");
+  });
+
+  it("does not match an addressed token against a native balance", () => {
+    const nativeBalances = Schema.decodeSync(TokenBalancesResponse)([
+      {
+        amount: "2",
+        availableYields: [],
+        token: {
+          decimals: 18,
+          name: "Ether",
+          network: "ethereum",
+          symbol: "WETH",
+        },
+      },
+    ]);
+    const balance = deriveBorrowTokenWalletBalance({
+      balances: nativeBalances,
+      network: "ethereum",
+      token: market.collateralTokens[0]!.token,
+    });
+
+    expect(balance.balance).toBeNull();
+  });
+
+  it("does not fold native token symbol casing", () => {
+    const nativeBalances = Schema.decodeSync(TokenBalancesResponse)([
+      {
+        amount: "2",
+        availableYields: [],
+        token: {
+          decimals: 18,
+          name: "Ether",
+          network: "ethereum",
+          symbol: "eth",
+        },
+      },
+    ]);
+    const balance = deriveBorrowTokenWalletBalance({
+      balances: nativeBalances,
+      network: "ethereum",
+      token: {
+        decimals: 18,
+        name: "Ether",
+        symbol: "ETH",
+      },
+    });
+
+    expect(balance.balance).toBeNull();
+    expect(balance.amount).toBe("0");
+  });
+});

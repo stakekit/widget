@@ -228,5 +228,5 @@ desktop; a late result only changes the row's action.
   fake `SignClient` and fake AppKit; share a store to model a reload.
 - `tests/utils/wallet-connect-picker.tsx`: the real picker and runtime with fake
   connectors and injected providers.
-- Per family: `tests/providers/wallet/*-wallet-connect.test.ts` and
+- Per family: `tests/services/wallet/*-wallet-connect.test.ts` and
   `*-wallet-availability.test.ts`.

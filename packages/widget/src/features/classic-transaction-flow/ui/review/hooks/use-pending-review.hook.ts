@@ -1,11 +1,11 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { ComponentProps } from "react";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import type { RewardTokenDetails } from "../../../../yield-summary/views";
 import {
@@ -21,10 +21,7 @@ export const usePendingActionReview = () => {
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;
 
-  const amount = useMemo(
-    () => exactDecimal(manageFlow.request.arguments?.amount ?? 0),
-    [manageFlow.request.arguments?.amount]
-  );
+  const amount = exactDecimal(manageFlow.request.arguments?.amount ?? 0);
 
   const interactedToken = manageFlow.interactedToken;
   const integrationData = manageFlow.integration;
@@ -32,50 +29,34 @@ export const usePendingActionReview = () => {
   const prices = review.prices;
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
-  const title = useMemo(
-    () =>
-      t(
-        `position_details.pending_action_button.${
-          manageFlow.request.action.toLowerCase() as Lowercase<YieldPendingActionType>
-        }` as const
-      ),
-    [manageFlow.request.action, t]
+  const title = t(
+    `position_details.pending_action_button.${
+      manageFlow.request.action.toLowerCase() as Lowercase<YieldPendingActionType>
+    }` as const
   );
 
-  const fee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: pendingTxGas,
-        prices,
-        yieldDto: integrationData,
-      }),
-    [integrationData, pendingTxGas, prices]
-  );
+  const fee = getGasFeeInUSD({
+    gas: pendingTxGas,
+    locale,
+    prices,
+    yieldDto: integrationData,
+  });
 
   const onClick = () => confirmFlow(undefined);
 
-  const rewardTokenDetailsProps = useMemo(
-    () =>
-      integrationData.provider
-        ? (() => {
-            const rewardToken = {
-              logoUri: integrationData.provider.logoURI,
-              providerName: integrationData.provider.name,
-              rewardTokens: [integrationData.token],
-            } satisfies ComponentProps<
-              typeof RewardTokenDetails
-            >["rewardToken"];
-
-            return {
-              type: "pendingAction",
-              pendingAction: manageFlow.request.action,
-              rewardToken,
-            } satisfies ComponentProps<typeof RewardTokenDetails>;
-          })()
-        : null,
-    [integrationData, manageFlow.request.action]
-  );
+  const rewardTokenDetailsProps = integrationData.provider
+    ? ({
+        type: "pendingAction",
+        pendingAction: manageFlow.request.action,
+        rewardToken: {
+          logoUri: integrationData.provider.logoURI,
+          providerName: integrationData.provider.name,
+          rewardTokens: [integrationData.token],
+        },
+      } satisfies ComponentProps<typeof RewardTokenDetails>)
+    : null;
 
   const resolveCta = (): PageCta => ({
     label: t("shared.confirm"),
@@ -84,12 +65,9 @@ export const usePendingActionReview = () => {
     isLoading: review.confirmLoading,
   });
 
-  const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
+  const metaInfo: MetaInfoProps = { showMetaInfo: false };
 
-  const formattedAmount = useMemo(
-    () => defaultFormattedNumber(amount),
-    [amount]
-  );
+  const formattedAmount = formatTokenAmount(amount, locale);
 
   return {
     integrationData,

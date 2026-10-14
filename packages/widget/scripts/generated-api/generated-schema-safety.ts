@@ -2,7 +2,10 @@
  * OpenAPI and generated-source checks shared by `gen:api` and the schema
  * safety script.
  */
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import ts from "typescript";
+import { widgetRoot } from "../paths";
 
 type JsonObject = Record<string, unknown>;
 
@@ -187,4 +190,34 @@ export const findUnsafeGeneratedSchemaUnions = (
 
   visit(sourceFile);
   return issues;
+};
+
+const generatedSchemaFiles = [
+  "src/generated/api/borrow.ts",
+  "src/generated/api/legacy-schema.ts",
+  "src/generated/api/yield-schema.ts",
+];
+
+/** Fails when a generated schema file has an unsafe `Schema.Union` member. */
+export const assertGeneratedSchemasSafe = async (): Promise<void> => {
+  const diagnostics = (
+    await Promise.all(
+      generatedSchemaFiles.map(async (relativePath) => {
+        const sourceText = await readFile(
+          path.join(widgetRoot, relativePath),
+          "utf8"
+        );
+        return findUnsafeGeneratedSchemaUnions(sourceText, relativePath).map(
+          (issue) =>
+            `${relativePath}:${issue.line}:${issue.column} ${issue.message}`
+        );
+      })
+    )
+  ).flat();
+
+  if (diagnostics.length > 0) {
+    throw new Error(
+      `Generated schema safety check failed:\n${diagnostics.join("\n")}`
+    );
+  }
 };

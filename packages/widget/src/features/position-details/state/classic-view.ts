@@ -33,7 +33,6 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { config } from "../../../shared/config/widget-defaults";
-import { formatUsd } from "../../../shared/lib/formatters";
 import { getYieldAmountConstraints } from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
@@ -337,7 +336,7 @@ type PricedEarnBalance =
 
 type PositionDetailsPendingActionView = {
   readonly amount: BigNumber | null;
-  readonly formattedAmount: string;
+  readonly amountUsd: BigNumber | null;
   readonly pendingAction: PendingAction;
   readonly validation: PendingActionAmountValidation;
   readonly yieldBalance: PricedEarnBalance;
@@ -391,21 +390,19 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 const projection =
                   view.pendingActionProjections.get(pendingKey);
                 const amount = projection?.amount ?? null;
-                const formattedAmount =
+                const amountUsd =
                   prices && amount && baseToken
-                    ? formatUsd(
-                        getTokenPriceInUSD({
-                          amount,
-                          baseToken,
-                          pricePerShare: null,
-                          prices,
-                          token: balance.token,
-                        })
-                      )
-                    : "";
+                    ? getTokenPriceInUSD({
+                        amount,
+                        baseToken,
+                        pricePerShare: null,
+                        prices,
+                        token: balance.token,
+                      })
+                    : null;
                 return {
                   amount,
-                  formattedAmount,
+                  amountUsd,
                   pendingAction,
                   validation: projection?.validation ?? null,
                   yieldBalance: balance,

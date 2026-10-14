@@ -2,6 +2,7 @@ import { DateTime } from "effect";
 import type { ActionTransaction } from "../../../domain/action/models";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import { formatDateTime } from "../../../shared/lib/date";
+import { formatNumber } from "../../../shared/lib/number-format";
 import type { YieldActivityItem } from "./activity-action";
 import {
   type ActivityActionTitle,
@@ -136,8 +137,9 @@ export const projectActivityActionDetails = ({
     presentationTime.now
   );
   const statusLabel = projectActivityStatusLabel(action, presentationTime);
-  const exactAmount = action.amount?.toFixed() ?? null;
-  const amount = exactAmount ? `${listItem.amountSign}${exactAmount}` : null;
+  const amount = action.amount
+    ? `${listItem.amountSign}${formatNumber(action.amount, locale)}`
+    : null;
   const transactions = action.transactions
     .toSorted(compareTransactionSteps)
     .map(

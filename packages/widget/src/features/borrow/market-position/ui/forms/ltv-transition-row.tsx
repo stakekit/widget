@@ -1,8 +1,9 @@
 import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { formatLtv } from "../../../../../shared/lib/formatters";
+import { formatLtv } from "../../../../../shared/lib/number-format";
 import { DetailRow } from "../../../../../shared/ui/components/details-section";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 
 export const LtvTransitionRow = ({
   currentLtv,
@@ -12,13 +13,14 @@ export const LtvTransitionRow = ({
   readonly projectedLtv: BigNumber | null;
 }): ReactElement | null => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (projectedLtv === null) return null;
 
   const value =
     currentLtv === null
-      ? formatLtv(projectedLtv)
-      : `${formatLtv(currentLtv)} -> ${formatLtv(projectedLtv)}`;
+      ? formatLtv(projectedLtv, locale)
+      : `${formatLtv(currentLtv, locale)} -> ${formatLtv(projectedLtv, locale)}`;
 
   return (
     <DetailRow

@@ -1,4 +1,4 @@
-import { Data, Effect, Option, type Scope } from "effect";
+import { Data, Effect, Option, type Scope, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectStateAtom } from "../../../../app/runtime/scoped-effect-atom";
@@ -12,7 +12,10 @@ import {
   type ClassicFlowSession,
   getClassicTransactionFlowIntakeVariant,
 } from "../../model/classic-transaction-flow";
-import { getClassicTransactionStepsView } from "../../model/classic-transaction-workflow";
+import {
+  getClassicTransactionStepsView,
+  isClassicTransactionWorkflowFinished,
+} from "../../model/classic-transaction-workflow";
 import type { ClassicFlowExecutionHandle } from "../orchestration/classic-flow-execution";
 import type { ClassicFlowSessionHandle } from "../orchestration/classic-flow-session";
 
@@ -53,13 +56,20 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
       > {
         const handle = yield* context.result(sessionAtom);
         const outcome = yield* handle.acquireExecution();
-        if (outcome._tag === "RejectedNoReservation") {
-          return yield* new ClassicFlowExecutionUnavailableError({
-            message:
-              "The Classic Flow Session has no reserved execution action.",
-          });
+        switch (outcome._tag) {
+          case "Acquired":
+            return outcome.execution;
+          case "RejectedNoReservation":
+            return yield* new ClassicFlowExecutionUnavailableError({
+              message:
+                "The Classic Flow Session has no reserved execution action.",
+            });
+          case "RejectedExecutionLive":
+            return yield* new ClassicFlowExecutionUnavailableError({
+              message:
+                "The Classic Flow Session's reservation already has a live execution.",
+            });
         }
-        return outcome.execution;
       }),
     getStates: (execution: ClassicFlowExecutionHandle) => execution.states,
     label: "classicFlowExecutionScope",
@@ -68,7 +78,8 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
         const result = get(stateAtom);
         const state = Option.getOrNull(AsyncResult.value(result));
         return {
-          result,
+          /** Why acquiring the Execution or its workflow failed. */
+          setupError: Option.getOrNull(AsyncResult.error(result)),
           state,
           steps: state
             ? getClassicTransactionStepsView(state, {
@@ -112,6 +123,24 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
           { initialValue: undefined }
         )
         .pipe(Atom.withLabel("finishClassicFlowExecutionAtom"));
+      // Read the existing workflow afresh on completion-route mount. Do not
+      // reacquire its Execution or consult the potentially lagging view.
+      const makeCompletionStateAtom = () =>
+        walletRuntime
+          .atom((context) =>
+            Stream.unwrap(
+              context
+                .result(handleAtom)
+                .pipe(
+                  Effect.map((execution) =>
+                    execution.states.pipe(
+                      Stream.map(isClassicTransactionWorkflowFinished)
+                    )
+                  )
+                )
+            )
+          )
+          .pipe(Atom.withLabel("classicFlowCompletionState"));
       const activityCompleteViewAtom = Atom.make((get) => {
         const state = Option.getOrNull(AsyncResult.value(get(stateAtom)));
         if (state?.context.domain._tag !== "Classic") return null;
@@ -144,6 +173,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
           activityCompleteViewAtom,
           backAtom,
           finishAtom,
+          makeCompletionStateAtom,
           workflow: {
             dispatchAtom: workflowDispatchAtom,
             viewAtom: workflowViewAtom,

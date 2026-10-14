@@ -1,0 +1,11 @@
+id: no-async-result-in-feature-ui
+valid:
+  - 'import { toPresentable } from "../../../shared/effect/async-result"'
+  - 'import type { Presentable } from "../../../shared/effect/async-result"'
+  - 'import { useAtomValue } from "@effect/atom-react"'
+invalid:
+  - 'import * as AsyncResult from "effect/reactivity/AsyncResult"'
+  - 'import type * as AsyncResult from "effect/reactivity/AsyncResult"'
+  - 'import type { AsyncResult } from "effect/reactivity/AsyncResult"'
+  - "import { getOrElse } from 'effect/reactivity/AsyncResult'"
+  - 'export { isFailure } from "effect/reactivity/AsyncResult"'

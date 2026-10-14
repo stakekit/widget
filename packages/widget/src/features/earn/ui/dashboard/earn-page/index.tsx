@@ -21,7 +21,7 @@ export const EarnPageContent = ({
   readonly registerFooterButton?: boolean;
 }) => {
   const { t } = useTranslation();
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
   const variant = useWidgetConfig("variant");
   const { view: status } = useEarnPageStatus();
 
@@ -46,9 +46,7 @@ export const EarnPageContent = ({
         <ExtraArgsSelection />
       </Box>
 
-      {(dashboardVariant || variant === "utila" || variant === "porto") && (
-        <Divider />
-      )}
+      {earnPresentation.compact && <Divider />}
 
       <Box>
         <Footer />

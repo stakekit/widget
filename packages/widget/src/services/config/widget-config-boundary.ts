@@ -1,4 +1,4 @@
-import { Data, Result, Schema, SchemaIssue } from "effect";
+import { Data, Predicate, Result, Schema, SchemaIssue } from "effect";
 import { DashboardYieldCategory } from "../../domain/earn/contract";
 import {
   EvmChainIds,
@@ -231,12 +231,21 @@ type TokenIconMapper = Extract<
   (...args: never[]) => unknown
 >;
 
-type ExternalProviderCapability =
-  | Readonly<{
-      borrow: false;
-      settings: SKExternalProviders | SKBorrowExternalProviders | undefined;
-    }>
-  | Readonly<{ borrow: true; settings: SKBorrowExternalProviders | undefined }>;
+/**
+ * Host settings fixed at mount (ADR 0004). A decode given them uses them in
+ * place of the host's values, so cross-field rules hold for the published value.
+ */
+export type MountFixedHostSettings = Pick<
+  SKHostConfiguration,
+  "apiKey" | "baseUrl" | "borrowApiUrl" | "borrowEnabled" | "yieldsApiUrl"
+>;
+
+// Borrow follows `borrowEnabled`, which may be fixed at mount while the
+// provider comes from a later update, so its settings are not narrowed here.
+type ExternalProviderCapability = Readonly<{
+  borrow: boolean;
+  settings: SKExternalProviders | SKBorrowExternalProviders | undefined;
+}>;
 
 type HostCapabilities = Readonly<{
   chainIconMapper: ChainIconMapper | undefined;
@@ -303,7 +312,8 @@ const issuePaths = (error: Schema.SchemaError): ReadonlyArray<string> => [
 ];
 
 const makeCapabilities = (
-  hostConfiguration: SKHostConfiguration
+  hostConfiguration: SKHostConfiguration,
+  borrowEnabled: boolean | undefined
 ): HostCapabilities => ({
   chainIconMapper:
     typeof hostConfiguration.chainIconMapping === "function"
@@ -313,10 +323,10 @@ const makeCapabilities = (
     hostConfiguration.variant === "zerion"
       ? hostConfiguration.chainModal
       : undefined,
-  externalProviders:
-    hostConfiguration.borrowEnabled === true
-      ? { borrow: true, settings: hostConfiguration.externalProviders }
-      : { borrow: false, settings: hostConfiguration.externalProviders },
+  externalProviders: {
+    borrow: borrowEnabled === true,
+    settings: hostConfiguration.externalProviders,
+  },
   mapWalletFn: hostConfiguration.mapWalletFn,
   onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
   portalContainer: hostConfiguration.portalContainer,
@@ -327,7 +337,10 @@ const makeCapabilities = (
   tracking: hostConfiguration.tracking,
 });
 
-const projectValues = (hostConfiguration: SKHostConfiguration): unknown => {
+const projectValues = (
+  hostConfiguration: SKHostConfiguration,
+  mountFixed: MountFixedHostSettings | undefined
+): unknown => {
   if (typeof hostConfiguration !== "object" || hostConfiguration === null) {
     return hostConfiguration;
   }
@@ -342,6 +355,7 @@ const projectValues = (hostConfiguration: SKHostConfiguration): unknown => {
       typeof hostConfiguration.tokenIconMapping === "function"
         ? undefined
         : hostConfiguration.tokenIconMapping,
+    ...mountFixed,
   };
 };
 
@@ -403,10 +417,12 @@ const combineExternalProvider = (
     });
   }
 
-  // Bundle hosts are untyped: confirm the declared Borrow callbacks exist
-  // before Borrow can depend on them.
+  // Bundle hosts are untyped: confirm the provider is an object carrying the
+  // declared Borrow callbacks before Borrow can depend on them.
   const { provider } = capability.settings;
-  return typeof provider.sendBorrowTransaction === "function" &&
+  return Predicate.hasProperty(provider, "sendBorrowTransaction") &&
+    typeof provider.sendBorrowTransaction === "function" &&
+    Predicate.hasProperty(provider, "signTypedData") &&
     typeof provider.signTypedData === "function"
     ? Result.succeed({
         ...common,
@@ -453,15 +469,19 @@ const semanticIssuePath: Record<SemanticHostConfigurationIssue, string> = {
 };
 
 export const decodeHostConfiguration = (
-  hostConfiguration: SKHostConfiguration
+  hostConfiguration: SKHostConfiguration,
+  mountFixed?: MountFixedHostSettings
 ): Result.Result<HostConfigurationDecodeSuccess, InvalidHostConfiguration> => {
   const decoded = Schema.decodeUnknownResult(HostConfigurationValues)(
-    projectValues(hostConfiguration),
+    projectValues(hostConfiguration, mountFixed),
     { errors: "all" }
   );
   if (Result.isFailure(decoded)) return decodeFailure(decoded.failure);
 
-  const capabilities = makeCapabilities(hostConfiguration);
+  const capabilities = makeCapabilities(
+    hostConfiguration,
+    decoded.success.borrowEnabled
+  );
   const externalProviders = combineExternalProvider(
     decoded.success.externalProviders,
     capabilities.externalProviders

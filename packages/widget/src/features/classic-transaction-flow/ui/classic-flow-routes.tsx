@@ -2,6 +2,7 @@ import { Match } from "effect";
 import type { ComponentType, ReactNode } from "react";
 import { Route } from "react-router";
 import {
+  ClassicFlowCompletionGuard,
   ClassicFlowExecutionScope,
   ClassicFlowReviewScope,
   ClassicFlowRoute,
@@ -47,7 +48,14 @@ const createStandardClassicFlowRoutes = (
       />
       <Route element={<ClassicFlowExecutionScope />}>
         <Route path="steps" element={<StepsPage />} />
-        <Route path="complete" element={<CompletePage />} />
+        <Route
+          path="complete"
+          element={
+            <ClassicFlowCompletionGuard>
+              <CompletePage />
+            </ClassicFlowCompletionGuard>
+          }
+        />
       </Route>
     </>
   );

@@ -109,6 +109,15 @@ export const switchButtonChecked = style({
   background: "#25a56a",
 });
 
+export const switchButtonDisabled = style({
+  cursor: "not-allowed",
+  opacity: 0.5,
+});
+
+export const collateralRowNote = style({
+  gridColumn: "1 / -1",
+});
+
 export const switchThumb = style({
   background: vars.color.text,
   borderRadius: vars.borderRadius.baseContract.full,

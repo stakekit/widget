@@ -13,7 +13,64 @@ import {
   findBorrowCollateralToggleAction,
   type getBorrowPositionDetailsModel,
 } from "../../model/details";
+import { useBorrowCollateralToggleForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";
+
+/** A toggle the Risk Gate blocks cannot start Review, so it renders disabled. */
+const CollateralToggle = ({
+  action,
+  isCollateral,
+  onActionSelect,
+}: {
+  readonly action: BorrowPositionAction;
+  readonly isCollateral: boolean;
+  readonly onActionSelect: (action: BorrowPositionAction) => void;
+}) => {
+  const { t } = useTranslation();
+  const form = useBorrowCollateralToggleForm(action);
+  const riskBlock = form?.riskBlock ?? null;
+  const blocked = form !== null && !form.canSubmit;
+
+  return (
+    <>
+      <Box
+        as="button"
+        aria-checked={isCollateral}
+        aria-label={action.label}
+        className={clsx(
+          styles.switchButton,
+          isCollateral && styles.switchButtonChecked,
+          blocked && styles.switchButtonDisabled
+        )}
+        data-rk={`borrow-collateral-toggle__${action.type}`}
+        data-testid={`borrow-collateral-toggle__${action.type}`}
+        disabled={blocked}
+        onClick={(event) => {
+          event.stopPropagation();
+          onActionSelect(action);
+        }}
+        role="switch"
+        type="button"
+      >
+        <Box
+          className={clsx(
+            styles.switchThumb,
+            isCollateral && styles.switchThumbChecked
+          )}
+        />
+      </Box>
+      {riskBlock ? (
+        <Box className={styles.collateralRowNote}>
+          <Text variant={{ type: "danger", weight: "normal" }}>
+            {t(
+              `dashboard.borrow.position_details.validation.collateral_toggle_risk.${riskBlock}`
+            )}
+          </Text>
+        </Box>
+      ) : null}
+    </>
+  );
+};
 
 export const CollateralList = ({
   actions,
@@ -78,30 +135,11 @@ export const CollateralList = ({
                   </Box>
 
                   {toggleAction ? (
-                    <Box
-                      as="button"
-                      aria-checked={item.isCollateral}
-                      aria-label={toggleAction.label}
-                      className={clsx(
-                        styles.switchButton,
-                        item.isCollateral && styles.switchButtonChecked
-                      )}
-                      data-rk={`borrow-collateral-toggle__${toggleAction.type}`}
-                      data-testid={`borrow-collateral-toggle__${toggleAction.type}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onActionSelect(toggleAction);
-                      }}
-                      role="switch"
-                      type="button"
-                    >
-                      <Box
-                        className={clsx(
-                          styles.switchThumb,
-                          item.isCollateral && styles.switchThumbChecked
-                        )}
-                      />
-                    </Box>
+                    <CollateralToggle
+                      action={toggleAction}
+                      isCollateral={item.isCollateral}
+                      onActionSelect={onActionSelect}
+                    />
                   ) : null}
                 </Box>
               );

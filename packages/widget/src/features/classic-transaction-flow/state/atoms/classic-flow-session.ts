@@ -36,6 +36,7 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
       };
 
       const facade = {
+        destination: session.destination,
         getIntake,
         intake: session.intake,
         mount: session.mount,

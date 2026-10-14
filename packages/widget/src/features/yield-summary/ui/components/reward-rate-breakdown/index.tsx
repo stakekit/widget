@@ -4,9 +4,10 @@ import {
   type RewardRateBreakdownItem,
   type YieldRewardRate,
 } from "../../../../../domain/earn/reward-rate";
-import { getRewardRateFormatted } from "../../../../../shared/lib/formatters";
+import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 
 const getLabelKey = (key: RewardRateBreakdownItem["key"]) => {
   switch (key) {
@@ -31,6 +32,7 @@ export const RewardRateBreakdown = ({
   testId?: string;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   const items = getRewardRateBreakdown(rewardRate, {
     showUpToCampaign,
@@ -53,9 +55,7 @@ export const RewardRateBreakdown = ({
       ) : null}
 
       {items.map((item) => {
-        const value = getRewardRateFormatted({
-          rewardRate: item.rate,
-        });
+        const value = formatRewardRatePercent(item.rate, locale);
 
         return (
           <Box

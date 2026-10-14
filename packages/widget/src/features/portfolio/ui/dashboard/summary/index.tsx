@@ -1,5 +1,3 @@
-import { Option } from "effect";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { emptyBorrowPositions } from "../../../../../domain/borrow/positions/borrow-positions";
 import { exactZero } from "../../../../../domain/finance/exact";
@@ -12,35 +10,30 @@ import { SummaryItem } from "../../components/summary-item";
 import { summaryContainer } from "../../components/summary-item/index.css";
 
 export const Summary = () => {
-  const { allPositionsResult, averageApyResult, availableBalanceResult } =
-    useSummary();
-  const allPositions = allPositionsResult.pipe(
-    AsyncResult.value,
-    Option.getOrUndefined
-  );
-  const averageApy = averageApyResult.pipe(
-    AsyncResult.value,
-    Option.getOrUndefined
-  );
-  const availableBalance = availableBalanceResult.pipe(
-    AsyncResult.value,
-    Option.getOrUndefined
-  );
+  const summary = useSummary();
+  const allPositions =
+    summary.allPositions._tag === "Ready"
+      ? summary.allPositions.value
+      : undefined;
+  const averageApy =
+    summary.averageApy._tag === "Ready" ? summary.averageApy.value : undefined;
+  const availableBalance =
+    summary.availableBalance._tag === "Ready"
+      ? summary.availableBalance.value
+      : undefined;
   const borrowPositions = usePortfolioBorrowPositions();
-  const borrowPositionItems = AsyncResult.getOrElse(
-    borrowPositions.positionsResult,
-    () => []
-  );
   const borrowPositionsAreLoading =
     borrowPositions.enabled &&
     borrowPositions.connectionStatus === "connected" &&
-    AsyncResult.isInitial(borrowPositions.positionsResult);
+    borrowPositions.positions._tag === "Loading";
   const hasBorrowPositions =
-    borrowPositions.enabled && borrowPositionItems.length > 0;
-  const borrowTotals = AsyncResult.getOrElse(
-    borrowPositions.totalsResult,
-    () => emptyBorrowPositions.totals
-  );
+    borrowPositions.enabled &&
+    borrowPositions.positions._tag === "Ready" &&
+    borrowPositions.positions.value.length > 0;
+  const borrowTotals =
+    borrowPositions.totals._tag === "Ready"
+      ? borrowPositions.totals.value
+      : emptyBorrowPositions.totals;
   const borrowApySummary = {
     totalValue: borrowTotals.netApyWeightUsd,
     weightedApy: borrowTotals.netApy
@@ -92,7 +85,7 @@ export const Summary = () => {
         )}
         value={totalPositionsValue}
         isLoading={
-          AsyncResult.isInitial(allPositionsResult) || borrowPositionsAreLoading
+          summary.allPositions._tag === "Loading" || borrowPositionsAreLoading
         }
       />
 
@@ -101,7 +94,7 @@ export const Summary = () => {
         label={t("dashboard.overview.summary.average_apy")}
         value={averageApyValue}
         isLoading={
-          AsyncResult.isInitial(averageApyResult) || borrowPositionsAreLoading
+          summary.averageApy._tag === "Loading" || borrowPositionsAreLoading
         }
       />
 
@@ -115,9 +108,9 @@ export const Summary = () => {
         value={availableOrNetWorthValue}
         isLoading={
           hasBorrowPositions
-            ? AsyncResult.isInitial(allPositionsResult) ||
+            ? summary.allPositions._tag === "Loading" ||
               borrowPositionsAreLoading
-            : AsyncResult.isInitial(availableBalanceResult)
+            : summary.availableBalance._tag === "Loading"
         }
       />
     </Box>

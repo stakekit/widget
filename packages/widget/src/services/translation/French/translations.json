@@ -23,7 +23,8 @@
     "powered_by": "Alimenté par <span0>{{name}}</span0>",
     "learn_more": "En savoir plus",
     "change": "Changer",
-    "manage_validators": "Gérer les validateurs"
+    "manage_validators": "Gérer les validateurs",
+    "fee": "Frais"
   },
   "errors": {
     "InvalidArgumentError": {
@@ -442,6 +443,7 @@
     },
     "vault": {
       "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
+      "description_with_fee_configuration": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
@@ -453,6 +455,7 @@
     },
     "lend": {
       "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
+      "description_with_fee_configuration": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
@@ -538,7 +541,8 @@
     "deposit_fee_explanation": "Une commission fixe déduite lors du dépôt, réduisant le capital investi.",
     "management_fee_explanation": "Une commission annuelle fixe déduite des dépôts du vault en émettant de nouvelles parts, ce qui dilue les participants. Calculée en fonction du temps écoulé depuis la dernière récolte et appliquée lors de la récolte.",
     "performance_fee_explanation": "Une commission déduite des gains lorsqu'un vault récolte une stratégie. Elle n'est appliquée qu'après avoir dépassé un seuil variable.",
-    "receive_token": "Jeton reçu"
+    "receive_token": "Jeton reçu",
+    "staking_fee": "Frais de staking"
   },
   "steps": {
     "title": "Suivi des étapes",
@@ -1207,11 +1211,6 @@
           "RemainingDebtBelowMarketMinimum": "La dette restante est inférieure au minimum actuel du marché. Le fournisseur ou la blockchain peut rejeter cette action.",
           "RiskCapacityExceeded": "Cette action dépasse la capacité d'emprunt actuellement connue. Le fournisseur ou la blockchain peut rejeter cette action."
         },
-        "risk_block": {
-          "title": "Cette action ne peut pas être confirmée",
-          "healthFactor": "Le facteur de santé projeté passerait sous 1 : le protocole rejetterait cette action ou la position pourrait être liquidée. Réduisez le montant ou ajoutez une garantie.",
-          "ltv": "Le LTV projeté dépasserait le LTV maximal du marché : le protocole rejetterait cette action. Réduisez le montant ou ajoutez une garantie."
-        },
         "risk_disclosures": {
           "borrow": "L'emprunt augmente la dette et le risque de liquidation si la valeur de la garantie baisse.",
           "borrowAndSupply": "Fournir une garantie et emprunter modifie votre LTV et le risque de liquidation.",
@@ -1221,6 +1220,11 @@
           "supply": "Fournir une garantie peut modifier la disponibilité au retrait et la capacité d'emprunt.",
           "withdraw": "Retirer une garantie peut augmenter le LTV et le risque de liquidation."
         }
+      },
+      "risk_block": {
+        "title": "Cette action ne peut pas être confirmée",
+        "healthFactor": "Le facteur de santé projeté passerait sous 1 : le protocole rejetterait cette action ou la position pourrait être liquidée. Réduisez le montant ou ajoutez une garantie.",
+        "ltv": "Le LTV projeté dépasserait le LTV maximal du marché : le protocole rejetterait cette action. Réduisez le montant ou ajoutez une garantie."
       },
       "execution_page": {
         "unavailable_title": "Exécution d'emprunt indisponible",
@@ -1305,6 +1309,10 @@
         "enable_collateral_warning": "Activer cet actif comme garantie peut améliorer le facteur de santé, mais l'actif fourni reste exposé au risque de marché.",
         "disable_collateral_warning": "Désactiver cet actif comme garantie peut réduire le facteur de santé et augmenter le risque de liquidation.",
         "validation": {
+          "collateral_toggle_risk": {
+            "healthFactor": "Désactiver cette garantie ferait passer le facteur de santé sous 1. Remboursez la dette ou ajoutez d'abord une autre garantie.",
+            "ltv": "Désactiver cette garantie porterait le LTV au-delà du LTV maximal du marché. Remboursez la dette ou ajoutez d'abord une autre garantie."
+          },
           "repay_debt": "Le montant dépasse la dette restante.",
           "repay_minimum": "Le remboursement laisserait une dette inférieure au minimum du marché. Remboursez tout ou réduisez le remboursement.",
           "wallet_balance": "Le montant dépasse le solde du portefeuille.",
@@ -1367,10 +1375,6 @@
     },
     "activity_details": {
       "your_position": "Votre Position"
-    },
-    "summary_item": {
-      "rewards_summary_zero_tooltip": "Résumé des récompenses bientôt disponible",
-      "rewards_summary_current_enabled_tooltip": "Résumé des récompenses actuellement activé pour :"
     },
     "enabled_rewards_summary_yield_names": {
       "polkadot_dot_validator_staking": "Staking natif DOT",

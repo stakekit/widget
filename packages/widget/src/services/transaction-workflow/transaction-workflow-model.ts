@@ -8,7 +8,6 @@ import type { Action as BorrowAction } from "../../domain/borrow/execution/actio
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
-import { TransactionStepState } from "../../shared/lib/transaction-step-state";
 import { ExternalProviderError } from "../wallet/external-provider";
 import type {
   WalletBroadcastError,
@@ -151,7 +150,6 @@ export type TransactionSignFailureReason =
         | "account-changed"
         | "disconnected"
         | "network-changed"
-        | "no-address"
         | "state-unavailable";
     }
   | { readonly _tag: "MissingUnsignedPayload" }
@@ -188,10 +186,6 @@ const transactionSignFailureMessage = (
         Match.when(
           "disconnected",
           () => "Wallet is not connected for transaction signing."
-        ),
-        Match.when(
-          "no-address",
-          () => "The transaction workflow has no wallet address."
         ),
         Match.when(
           "network-changed",
@@ -397,36 +391,68 @@ export const flattenTransactionWorkflowTransactions = (
 ): ReadonlyArray<TransactionWorkflowTransaction> =>
   context.batches.flatMap((batch) => batch.transactions);
 
-export const getTransactionWorkflowStepState = (
-  state: TransactionWorkflowState,
-  transaction: TransactionWorkflowTransaction
-): TransactionStepState => {
-  if (transaction.meta.done) {
-    return TransactionStepState.CHECK_TX_STATUS_SUCCESS;
-  }
-  const current = getCurrentTransactionWorkflowTransaction(state.context);
-  if (current?.source.transaction.id !== transaction.source.transaction.id) {
-    return TransactionStepState.SIGN_IDLE;
-  }
+export type TransactionPhaseStatus = "idle" | "active" | "failed" | "done";
 
-  switch (state._tag) {
+/** One transaction's progress through its sign, broadcast and confirm phases. */
+export type TransactionPhaseProgress = Readonly<{
+  sign: TransactionPhaseStatus;
+  broadcast: TransactionPhaseStatus;
+  confirm: TransactionPhaseStatus;
+}>;
+
+export type TransactionStepProgress = Readonly<{
+  /** The workflow is Disabled: nothing will run, unlike a transaction waiting to sign. */
+  disabled: boolean;
+  phases: TransactionPhaseProgress;
+}>;
+
+const toPhaseProgress = (
+  sign: TransactionPhaseStatus,
+  broadcast: TransactionPhaseStatus,
+  confirm: TransactionPhaseStatus
+): TransactionPhaseProgress => ({ broadcast, confirm, sign });
+
+const notStarted = toPhaseProgress("idle", "idle", "idle");
+const finished = toPhaseProgress("done", "done", "done");
+
+const getCurrentTransactionPhases = (
+  tag: TransactionWorkflowState["_tag"]
+): TransactionPhaseProgress => {
+  switch (tag) {
+    case "Disabled":
+      return notStarted;
     case "Signing":
-      return TransactionStepState.SIGN_LOADING;
+      return toPhaseProgress("active", "idle", "idle");
     case "SignFailed":
-      return TransactionStepState.SIGN_ERROR;
+      return toPhaseProgress("failed", "idle", "idle");
     case "Submitting":
-      return TransactionStepState.BROADCAST_LOADING;
+      return toPhaseProgress("done", "active", "idle");
     case "SubmissionFailed":
-      return TransactionStepState.BROADCAST_ERROR;
+      return toPhaseProgress("done", "failed", "idle");
     case "Confirming":
     case "Advancing":
-      return TransactionStepState.CHECK_TX_STATUS_LOADING;
+      return toPhaseProgress("done", "done", "active");
     case "ConfirmationFailed":
     case "AdvanceFailed":
-      return TransactionStepState.CHECK_TX_STATUS_ERROR;
+      return toPhaseProgress("done", "done", "failed");
     case "Completed":
-      return TransactionStepState.CHECK_TX_STATUS_SUCCESS;
-    case "Disabled":
-      return TransactionStepState.SIGN_IDLE;
+      return finished;
   }
+};
+
+export const getTransactionStepProgress = (
+  state: TransactionWorkflowState,
+  transaction: TransactionWorkflowTransaction
+): TransactionStepProgress => {
+  const disabled = state._tag === "Disabled";
+  if (transaction.meta.done) return { disabled, phases: finished };
+
+  const current = getCurrentTransactionWorkflowTransaction(state.context);
+  return {
+    disabled,
+    phases:
+      current?.source.transaction.id === transaction.source.transaction.id
+        ? getCurrentTransactionPhases(state._tag)
+        : notStarted,
+  };
 };

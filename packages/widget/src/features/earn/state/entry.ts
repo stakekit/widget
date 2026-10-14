@@ -20,11 +20,6 @@ import {
   pricesAtom,
 } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import { formatUsd } from "../../../shared/lib/formatters";
-import {
-  defaultFormattedNumber,
-  formatNumber,
-} from "../../../shared/lib/number-format";
 import { makeYieldEntry } from "../../yield-entry/index";
 import {
   earnSelectionProviderOptionsViewAtom,
@@ -122,8 +117,6 @@ export const earnEntryViewAtom = Atom.make((get) => {
     availableAmount !== null
       ? {
           amount: availableAmount,
-          fullFormattedAmount: formatNumber(availableAmount),
-          shortFormattedAmount: defaultFormattedNumber(availableAmount),
           symbol,
         }
       : null;
@@ -152,18 +145,16 @@ export const earnEntryViewAtom = Atom.make((get) => {
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,
     footerIsLoading: input.footerIsLoading,
-    formattedPrice:
+    priceUsd:
       prices && selectedToken && selectedYield
-        ? formatUsd(
-            getTokenPriceInUSD({
-              amount: entry.amount,
-              baseToken: selectedYield.token,
-              pricePerShare: null,
-              prices,
-              token: selectedToken,
-            })
-          )
-        : "",
+        ? getTokenPriceInUSD({
+            amount: entry.amount,
+            baseToken: selectedYield.token,
+            pricePerShare: null,
+            prices,
+            token: selectedToken,
+          })
+        : null,
     isFetching: entry.isFetching,
     isLedgerLiveAccountPlaceholder: entry.isLedgerAccountPlaceholder,
     isStakeTokenSameAsGasToken:

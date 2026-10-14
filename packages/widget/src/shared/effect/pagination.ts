@@ -7,7 +7,8 @@ type PaginatedPage<Item> = {
   readonly items?: ReadonlyArray<Item> | null;
   readonly limit?: number | null;
   readonly offset?: number | null;
-  readonly total?: number | null;
+  /** Required: a page schema that drops it would silently stop at page one. */
+  readonly total: number;
 };
 
 export type PullPage<Item> = {

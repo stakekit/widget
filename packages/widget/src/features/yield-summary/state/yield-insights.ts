@@ -23,6 +23,7 @@ import {
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
 } from "../../../resources/yield-insights/index";
+import { toPresentable } from "../../../shared/effect/async-result";
 import {
   selectCurrentWalletAtom,
   walletConnectionStateAtom,
@@ -221,21 +222,24 @@ const currentRewardsAddressesAtom = selectCurrentWalletAtom((walletState) =>
     : null
 ).pipe(Atom.withLabel("currentRewardsAddressesAtom"));
 
+/** The wallet's reward summaries for the Yields, as the UI presents them. */
 export const currentRewardsSummaryAtom = Atom.family(
   (key: CurrentRewardsSummaryKey) =>
     Atom.make((get) => {
       const filteredIds = key.yieldIds.filter(isValidYieldIdForRewardsSummary);
       const addresses = get(currentRewardsAddressesAtom);
 
-      return addresses && filteredIds.length > 0
-        ? get(
-            rewardSummariesResourceAtom.foreground(
-              new RewardSummariesKey({
-                addresses,
-                yieldIds: filteredIds,
-              })
+      return toPresentable(
+        addresses && filteredIds.length > 0
+          ? get(
+              rewardSummariesResourceAtom.foreground(
+                new RewardSummariesKey({
+                  addresses,
+                  yieldIds: filteredIds,
+                })
+              )
             )
-          )
-        : AsyncResult.success(null);
+          : AsyncResult.success(null)
+      );
     })
 );

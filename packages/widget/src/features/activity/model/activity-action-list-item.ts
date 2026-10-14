@@ -12,7 +12,7 @@ import {
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../shared/lib/number-format";
 import type {
   ActivityActionItem,
   BorrowActivityItem,
@@ -305,7 +305,7 @@ const projectBorrowActivityListItem = ({
   const direction = BORROW_ACTIVITY_DIRECTION[borrowAction.action];
   const tokenSymbol = getReadableRawTokenSymbol(action.token?.symbol);
   const exactAmount = resolveBorrowActivityAmount(action);
-  const amount = exactAmount ? defaultFormattedNumber(exactAmount) : null;
+  const amount = exactAmount ? formatTokenAmount(exactAmount, locale) : null;
 
   return {
     amount,
@@ -345,7 +345,7 @@ export const projectActivityActionListItem = ({
   const amount =
     action.actionData.amount == null
       ? null
-      : defaultFormattedNumber(action.actionData.amount);
+      : formatTokenAmount(action.actionData.amount, locale);
 
   return {
     amount,

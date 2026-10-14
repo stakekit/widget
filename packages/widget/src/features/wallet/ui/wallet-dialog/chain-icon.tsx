@@ -1,9 +1,10 @@
+import { useAtomValue } from "@effect/atom-react";
 import type { SyntheticEvent } from "react";
 import { walletChainIcon } from "../../../../services/wallet/wallet-chain-icons";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { createMonogramImageSrc } from "../../../../shared/ui/primitives/image";
-import { useWalletIconUrl } from "./icon-url";
+import { walletIconUrlAtom } from "../../state/wallet-icon";
 
 export const WalletChainIcon = ({
   chain,
@@ -16,7 +17,7 @@ export const WalletChainIcon = ({
 }) => {
   const icon = walletChainIcon(chain);
   const fallbackSrc = createMonogramImageSrc(chain.name);
-  const src = useWalletIconUrl(icon.iconUrl) ?? fallbackSrc;
+  const src = useAtomValue(walletIconUrlAtom(icon.iconUrl)) ?? fallbackSrc;
   if (!src) return null;
 
   const onError = (event: SyntheticEvent<HTMLImageElement>) => {

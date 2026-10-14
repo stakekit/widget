@@ -4,8 +4,10 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../../../domain/earn/models";
-import { formatCompactNumber } from "../../../../../../../shared/lib/formatters";
-import { APToPercentage } from "../../../../../../../shared/lib/general";
+import {
+  formatCompactNumber,
+  formatRoundedPercent,
+} from "../../../../../../../shared/lib/number-format";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
@@ -14,6 +16,7 @@ import { PreferredIcon } from "../../../../../../../shared/ui/primitives/icons/p
 import { XIcon } from "../../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
 import {
   addValidatorContainer,
   overflowEllipsis,
@@ -31,18 +34,21 @@ import {
   validatorChipsContainer,
 } from "../../styles.css";
 
-const formatCommission = (commission: number | undefined) =>
-  typeof commission === "number" ? `${APToPercentage(commission)}%` : null;
+const formatCommission = (commission: number | undefined, locale: string) =>
+  typeof commission === "number"
+    ? formatRoundedPercent(commission, locale)
+    : null;
 
 const formatValidatorTvl = (
   validator: EarnValidator,
-  selectedStake: EarnYieldWithProvider
+  selectedStake: EarnYieldWithProvider,
+  locale: string
 ) => {
   const tvl = validator.tvl ?? validator.tvlRaw;
 
   if (!tvl) return null;
 
-  const formatted = formatCompactNumber(tvl);
+  const formatted = formatCompactNumber(tvl, locale);
 
   return formatted === "-"
     ? null
@@ -61,6 +67,7 @@ export const SelectValidatorTrigger = ({
   selectedStake: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const hasSelectedValidators = selectedValidatorsArr.length > 0;
 
   if (multiSelect) {
@@ -161,8 +168,8 @@ export const SelectValidatorTrigger = ({
 
       {selectedValidatorsArr.map((sv) => {
         const nameOrAddress = sv.name ?? sv.address;
-        const commission = formatCommission(sv.commission);
-        const tvl = formatValidatorTvl(sv, selectedStake);
+        const commission = formatCommission(sv.commission, locale);
+        const tvl = formatValidatorTvl(sv, selectedStake, locale);
         const getStatusLabel = () => {
           if (sv.status === "jailed") {
             return t("details.validators_jailed");

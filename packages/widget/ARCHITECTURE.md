@@ -21,7 +21,8 @@ public-api/   host-facing types
 
 Code stays private to its owner unless another owner needs a deliberate
 interface. Shared is for neutral building blocks, not displaced feature logic.
-The application composes Modules; it does not absorb their behavior.
+Shared may depend on Domain types and rules, but not on features, resources, or
+services. The application composes Modules; it does not absorb their behavior.
 
 ## Dependency direction
 
@@ -200,13 +201,19 @@ and Effect Atom registry.
 
 ## Enforcement
 
-- dependency-cruiser enforces cross-Module direction and keeps API internals
-  private.
+- dependency-cruiser enforces cross-Module direction, keeps API internals
+  private, keeps the `internal/` folders of `services/wallet` and
+  `services/transaction-workflow` private to their service, and keeps API
+  transport free of error presentation.
 - Biome constrains barrels and keeps React out of domain, Resource, and service
-  logic.
-- ast-grep rejects ad hoc Atom runtimes, direct Effect runtime execution, native
-  `Date`, global `fetch`, throws in Effect generators, and wildcard Module
-  exports.
+  logic and out of Feature `model/` and `state/`.
+- ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
+  Compiler memoizes, and only functions with a `"use no memo"` directive may
+  memoize by hand), ad hoc Atom runtimes, direct Effect runtime execution,
+  native `Date`, global `fetch`, throws in Effect generators, wildcard Module
+  exports, and Resources that read an API ResourceSource without
+  `makePresentableResource`.
+- Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
 - jscpd fails when duplicated source and tooling code (tests and generated API
   clients excluded) exceeds 1% of lines.

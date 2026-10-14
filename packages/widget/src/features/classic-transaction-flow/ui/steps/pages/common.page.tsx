@@ -2,7 +2,10 @@ import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { TransactionSteps } from "../../../../../shared/ui/components/transaction-steps";
+import {
+  getTransactionStepPhases,
+  TransactionSteps,
+} from "../../../../../shared/ui/components/transaction-steps";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
@@ -18,13 +21,12 @@ import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 
 export const StepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
+  const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
   const { cancelled, retry, txStates, cta, customSignErrorMessage, yieldId } =
     useSteps();
 
   const { t } = useTranslation();
-  const showUtilaPendingApprovals = variant === "utila";
 
   return (
     <AnimationPage>
@@ -55,7 +57,7 @@ export const StepsPage = () => {
             </Box>
           )}
 
-          {showUtilaPendingApprovals && (
+          {showsPendingApprovalsNotice && (
             <Box
               className={utilaPendingApprovalsBanner}
               data-rk="utila-pending-approvals"
@@ -76,7 +78,7 @@ export const StepsPage = () => {
               steps={txStates.map((txState) => ({
                 done: txState.meta.done,
                 id: txState.tx.id,
-                state: txState.state,
+                phases: getTransactionStepPhases(t, txState.progress.phases),
                 type: formatTransactionTypeLabel(txState.tx.type, t, {
                   context: isEthenaUsdeStaking(yieldId)
                     ? "ETHENA_USDE"

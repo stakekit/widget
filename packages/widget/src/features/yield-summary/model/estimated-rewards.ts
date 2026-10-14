@@ -7,8 +7,6 @@ import type {
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { isBittensorStaking } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
-import { getRewardRateFormatted } from "../../../shared/lib/formatters";
-import { formatNumber } from "../../../shared/lib/number-format";
 
 type YieldRewardProvider = Readonly<{
   readonly rewardRate?: BigNumber | number | null;
@@ -42,19 +40,15 @@ export const getYieldEstimatedRewards = ({
     )
     .dividedBy(providers.length);
 
+  // Exact amounts; the presentation layer formats them in the Widget language.
   return {
     monthly: rewardRateAverage.isGreaterThan(0)
-      ? formatNumber(
-          rewardAmount.times(rewardRateAverage).dividedBy(12).decimalPlaces(5)
-        )
-      : "-",
-    percentage: getRewardRateFormatted({
-      rewardRate: rewardRateAverage,
-    }),
+      ? rewardAmount.times(rewardRateAverage).dividedBy(12).decimalPlaces(5)
+      : null,
     rewardRateAverage,
     rewardType: selectedYield.rewardRate.rateType?.toLowerCase(),
     yearly: rewardRateAverage.isGreaterThan(0)
-      ? formatNumber(rewardAmount.times(rewardRateAverage).decimalPlaces(5))
-      : "-",
+      ? rewardAmount.times(rewardRateAverage).decimalPlaces(5)
+      : null,
   } as const;
 };

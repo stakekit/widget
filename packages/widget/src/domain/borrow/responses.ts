@@ -1,4 +1,4 @@
-import { Schema, SchemaGetter } from "effect";
+import { Schema, SchemaGetter, Struct } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
 import { TolerantArray } from "../decoding/response-schema";
 import {
@@ -30,7 +30,12 @@ const BorrowMarketItems = TolerantArray(Market, {
 });
 
 export const BorrowMarketsResponse = Schema.Struct({
-  ...BorrowApi.MarketsControllerGetMarketsV1200.fields,
+  // Pagination reads these to request the remaining pages.
+  ...Struct.pick(BorrowApi.MarketsControllerGetMarketsV1200.fields, [
+    "total",
+    "offset",
+    "limit",
+  ]),
   items: Schema.optionalKey(BorrowMarketItems),
 });
 
@@ -68,7 +73,11 @@ export type BorrowActivityAction = typeof BorrowActivityAction.Type;
 
 // The generated list response declares `items: never`; the API returns actions.
 export const BorrowActionsPage = Schema.Struct({
-  ...BorrowApi.ActionsControllerGetActionsV1200.fields,
+  ...Struct.pick(BorrowApi.ActionsControllerGetActionsV1200.fields, [
+    "total",
+    "offset",
+    "limit",
+  ]),
   items: Schema.optionalKey(
     TolerantArray(BorrowActivityAction, {
       operation: "borrow-actions",

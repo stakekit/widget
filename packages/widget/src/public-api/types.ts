@@ -537,11 +537,15 @@ export type SKPreferredTokenYieldsPerNetwork = Readonly<
 >;
 
 type SettingsPropsBase = {
+  /** StakeKit API key. Read at mount; remount the widget to change it. */
   apiKey: string;
+  /** StakeKit API base URL. Read at mount; remount the widget to change it. */
   baseUrl?: string;
+  /** Borrow API URL. Read at mount; remount the widget to change it. */
   borrowApiUrl?: string;
   /** Borrow market catalog listed for new borrows. Defaults to `"all"`. */
   borrowMarketsScope?: SKBorrowMarketsScope;
+  /** Yields API URL. Read at mount; remount the widget to change it. */
   yieldsApiUrl?: string;
   theme?: SKTheme;
   tracking?: SKTrackingConfig;
@@ -597,10 +601,12 @@ type SettingsPropsBase = {
 
 type BorrowProviderSettings =
   | {
+      /** Enables Borrow. Read at mount; remount the widget to change it. */
       borrowEnabled?: false;
       externalProviders?: SKExternalProviders | SKBorrowExternalProviders;
     }
   | {
+      /** Enables Borrow. Read at mount; remount the widget to change it. */
       borrowEnabled?: boolean;
       externalProviders?: SKBorrowExternalProviders;
     };

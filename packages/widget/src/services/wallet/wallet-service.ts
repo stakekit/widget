@@ -7,6 +7,10 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import {
+  sameWalletScopeOwner,
+  type WalletScopeOwner,
+} from "../../domain/wallet/wallet-scope";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 import { WidgetPersistence } from "../persistence/widget-persistence";
 import { isLedgerLiveConnector } from "./internal/adapters/ledger/ledger-live-connector-meta";
@@ -39,6 +43,7 @@ import {
 } from "./wallet-command-identity";
 import type {
   WalletConnectInput,
+  WalletOwnerCheckedInput,
   WalletSignBorrowTypedDataInput,
   WalletSignMessageInput,
   WalletSwitchAccountInput,
@@ -52,6 +57,7 @@ import {
 import {
   type WalletIntegrationError,
   WalletNotAvailableError,
+  WalletOwnerMismatchError,
   type WalletRuntimeInvariantError,
 } from "./wallet-errors";
 import { WalletModal, type WalletModalOpening } from "./wallet-modal";
@@ -161,6 +167,38 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
   ) {
     const context = yield* state.context;
     return yield* use(context.routing);
+  });
+  /**
+   * Runs a signing command on one captured Wallet Command Context once it
+   * belongs to the expected Wallet Scope Owner. Later Wallet State changes do
+   * not reach the started command.
+   */
+  const withOwnerContext = Effect.fn("withOwnerContext")(function* <A, E>(
+    operation: WalletOwnerMismatchError["operation"],
+    expectedOwner: WalletScopeOwner,
+    use: (routing: WalletRoutingContext) => Effect.Effect<A, E>
+  ) {
+    const { routing } = yield* state.context;
+    const captured = routing.state;
+    if (captured.status !== "connected") {
+      return yield* new WalletOwnerMismatchError({
+        operation,
+        reason: "disconnected",
+      });
+    }
+    if (captured.network !== expectedOwner.network) {
+      return yield* new WalletOwnerMismatchError({
+        operation,
+        reason: "network-changed",
+      });
+    }
+    if (!sameWalletScopeOwner(captured, expectedOwner)) {
+      return yield* new WalletOwnerMismatchError({
+        operation,
+        reason: "account-changed",
+      });
+    }
+    return yield* use(routing);
   });
   const logout = yield* Effect.cachedWithTTL(
     withContext((routing) => routing.actions.disconnect()).pipe(
@@ -272,24 +310,27 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     ),
     enabledNetworks: bootstrap.snapshot.enabledNetworks,
     logout,
-    signMessage: Effect.fn("signMessage")(function* (
-      input: WalletSignMessageInput
-    ) {
-      return yield* withContext((routing) =>
+    signMessage: Effect.fn("signMessage")(function* ({
+      expectedOwner,
+      ...input
+    }: WalletOwnerCheckedInput<WalletSignMessageInput>) {
+      return yield* withOwnerContext("message", expectedOwner, (routing) =>
         routeWalletMessage(routing, input)
       );
     }),
-    signTypedData: Effect.fn("signTypedData")(function* (
-      input: WalletSignBorrowTypedDataInput
-    ) {
-      return yield* withContext((routing) =>
+    signTypedData: Effect.fn("signTypedData")(function* ({
+      expectedOwner,
+      ...input
+    }: WalletOwnerCheckedInput<WalletSignBorrowTypedDataInput>) {
+      return yield* withOwnerContext("typed-data", expectedOwner, (routing) =>
         routeWalletTypedData(routing, input)
       );
     }),
-    signTransaction: Effect.fn("signTransaction")(function* (
-      input: WalletSignTransactionInput
-    ) {
-      return yield* withContext((routing) =>
+    signTransaction: Effect.fn("signTransaction")(function* ({
+      expectedOwner,
+      ...input
+    }: WalletOwnerCheckedInput<WalletSignTransactionInput>) {
+      return yield* withOwnerContext("transaction", expectedOwner, (routing) =>
         routeWalletTransaction(routing, input)
       );
     }),

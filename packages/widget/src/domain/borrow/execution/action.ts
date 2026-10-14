@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
 import {
   ExactBaseUnitAmount,
@@ -15,7 +15,11 @@ import {
 import { Transaction } from "./transaction";
 
 const ActionRawArguments = Schema.Struct({
-  ...BorrowApi.ArgumentsDto.fields,
+  ...Struct.pick(BorrowApi.ArgumentsDto.fields, [
+    "repayAll",
+    "borrowAmount",
+    "targetLtv",
+  ]),
   marketId: MarketId,
   tokenAddress: Schema.optionalKey(TokenAddress),
   collateralTokenAddress: Schema.optionalKey(TokenAddress),
@@ -26,7 +30,6 @@ const ActionRawArguments = Schema.Struct({
 });
 
 const ActionMetadata = Schema.Struct({
-  ...BorrowApi.ActionMetadataDto.fields,
   currentHealthFactor: Schema.NullOr(ExactDecimal),
   predictedHealthFactor: Schema.NullOr(ExactDecimal),
   currentLtv: ExactDecimal,
@@ -42,7 +45,13 @@ const ActionMetadata = Schema.Struct({
 export type ActionMetadata = typeof ActionMetadata.Type;
 
 export const Action = Schema.Struct({
-  ...BorrowApi.ActionDto.fields,
+  ...Struct.pick(BorrowApi.ActionDto.fields, [
+    "action",
+    "status",
+    "hasNextStep",
+    "currentStep",
+    "totalSteps",
+  ]),
   id: ActionId,
   integrationId: IntegrationId,
   address: WalletAddress,

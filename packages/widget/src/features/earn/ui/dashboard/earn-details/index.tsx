@@ -2,8 +2,11 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import { exactDecimal } from "../../../../../domain/finance/exact";
+import {
+  formatPercent,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { dashboardDetailsScroll } from "../../../../../shared/ui/components/dashboard-details/styles.css";
 import {
   AddressRow,
@@ -13,6 +16,7 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { useClassicFlowIntake } from "../../../../classic-transaction-flow/index";
 import { YieldDetailsHeader } from "../../../../yield-summary/views";
 import {
@@ -87,6 +91,7 @@ const EarnDetailsPanel = ({
   readonly yieldDto: EarnYieldWithProvider | null;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const presentsRewardRateHistory = yieldDto
     ? canPresentRewardRateHistory(yieldDto)
     : false;
@@ -125,6 +130,7 @@ const EarnDetailsPanel = ({
     rewardRateFormatted,
     tvlChartValue,
   } = getEarnDetailsModel({
+    locale,
     selectedValidators,
     t,
     yieldDto,
@@ -151,7 +157,9 @@ const EarnDetailsPanel = ({
         <HistoryChartSection
           chartId="reward-rate"
           onPeriodChange={rewardRateChart.selectPeriod}
-          tickFormatter={(value) => `${formatNumber(value, 2)}%`}
+          tickFormatter={(value) =>
+            formatPercent(exactDecimal(value).div(100), locale)
+          }
           title={t("dashboard.earn_details.reward_rate")}
           value={rewardRateFormatted}
           view={rewardRateChart.view}
@@ -162,7 +170,7 @@ const EarnDetailsPanel = ({
         <HistoryChartSection
           chartId="tvl"
           onPeriodChange={tvlChart.selectPeriod}
-          tickFormatter={formatUsd}
+          tickFormatter={(value) => formatUsd(value, locale)}
           title={t("dashboard.earn_details.tvl")}
           value={tvlChartValue}
           view={tvlChart.view}

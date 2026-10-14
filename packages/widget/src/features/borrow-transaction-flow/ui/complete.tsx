@@ -5,6 +5,7 @@ import {
   formatNetworkName,
 } from "../../../shared/lib/formatters";
 import { formatAddress } from "../../../shared/lib/general";
+import { formatNumber } from "../../../shared/lib/number-format";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import {
   DetailRow,
@@ -15,6 +16,7 @@ import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circl
 import { ExternalLinkIcon } from "../../../shared/ui/primitives/icons/external-link";
 import { Heading } from "../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
@@ -35,6 +37,7 @@ export const BorrowCompletePage = () => {
   useTrackPage("borrowComplete");
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
   const settled = useAtomValue(flow.settledPositionAtom);
   const execution = useBorrowExecution();
@@ -98,7 +101,7 @@ export const BorrowCompletePage = () => {
             <Heading variant={{ level: "h3" }}>
               {headline.amount === null
                 ? headline.symbol
-                : `${headline.amount} ${headline.symbol}`}
+                : `${formatNumber(headline.amount, locale)} ${headline.symbol}`}
             </Heading>
             <Text variant={{ type: "muted", weight: "normal" }}>
               {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
@@ -111,14 +114,14 @@ export const BorrowCompletePage = () => {
                 <DetailRow
                   id="collateral-supplied"
                   label={t("dashboard.borrow.success_page.collateral_supplied")}
-                  value={`${collateralSupplied.amount} ${collateralSupplied.symbol}`}
+                  value={`${formatNumber(collateralSupplied.amount, locale)} ${collateralSupplied.symbol}`}
                 />
               ) : null}
               {collateralFee ? (
                 <DetailRow
                   id="collateral-fee"
                   label={t("dashboard.borrow.review_page.collateral_fee")}
-                  value={`${collateralFee.amount} ${collateralFee.symbol}`}
+                  value={`${formatNumber(collateralFee.amount, locale)} ${collateralFee.symbol}`}
                 />
               ) : null}
               <BorrowFlowOriginationRows origination={origination} />

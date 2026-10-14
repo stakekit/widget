@@ -14,25 +14,30 @@ const httpClient = HttpClient.make(() =>
 
 describe("generated Legacy API", () => {
   it("exposes runtime DTO schemas", () => {
-    expect(Schema.isSchema(LegacySchema.HealthStatusDto)).toBe(true);
     expect(Schema.isSchema(LegacySchema.PriceResponseDto)).toBe(true);
     expect(Schema.isSchema(LegacySchema.TokenDto)).toBe(true);
-    expect(Schema.isSchema(LegacySchema.YieldDto)).toBe(true);
+    expect(Schema.isSchema(LegacySchema.TransactionDto)).toBe(true);
+    expect(Schema.isSchema(LegacySchema.TronResourceType)).toBe(true);
+    expect(Schema.isSchema(LegacySchema.YieldRewardsSummaryResponseDto)).toBe(
+      true
+    );
     expect("make" in LegacySchema).toBe(false);
   });
 
-  it("exposes typed Effect client operations separately from schemas", () => {
+  it("exposes only allowlisted client operations", () => {
     const client = LegacyClient.make(httpClient);
 
-    expect(client).toEqual(
-      expect.objectContaining({
-        TokenControllerGetTokenPrices: expect.any(Function),
-        YieldControllerGetMyNetworks: expect.any(Function),
-      })
+    expect(Object.keys(client).sort()).toEqual([
+      "NetworkAddressesTokenV2ControllerGetTokenBalances",
+      "TokenControllerGetTokenBalances",
+      "TokenControllerGetTokenPrices",
+      "TokenControllerGetTokens",
+      "YieldControllerGetSingleYieldRewardsSummary",
+      "httpClient",
+    ]);
+    expect(Effect.isEffect(client.TokenControllerGetTokens(undefined))).toBe(
+      true
     );
-    expect(
-      Effect.isEffect(client.YieldControllerGetMyNetworks(undefined))
-    ).toBe(true);
   });
 });
 
@@ -126,55 +131,18 @@ describe("generated Yield API", () => {
     });
   });
 
-  it("decodes concrete risk metrics and validates balance price ranges", () => {
+  it("validates balance price ranges", () => {
     expect(
-      Schema.decodeSync(YieldSchema.YieldRiskCredoraDto)({
-        rating: "A",
-        score: 4.5,
-        psl: 0.01,
-        publishDate: "2026-01-01",
-        curator: "Credora",
-      })
-    ).toEqual({
-      rating: "A",
-      score: 4.5,
-      psl: 0.01,
-      publishDate: "2026-01-01",
-      curator: "Credora",
-    });
-
-    expect(
-      Schema.decodeSync(YieldSchema.YieldRiskStakingRewardsDto)({
-        rating: "A",
-        score: 4,
-        potentialRating: "A+",
-        potentialScore: 4.5,
-        ratedAt: "2026-01-01",
-        ratedSince: "2025-01-01",
-        profileUrl: "https://stakingrewards.com/provider",
-        reportUrl: "https://stakingrewards.com/report",
-        providerName: "Provider",
-        version: "v1",
-        type: "validator",
-        chain: "ethereum",
-        contractAddress: "0x0000000000000000000000000000000000000001",
-        riskMetrics: { users: 1000 },
-      }).riskMetrics
-    ).toEqual({ users: 1000 });
-
-    expect(
-      Schema.decodeUnknownSync(YieldSchema.BalanceDto)(
-        yieldBalanceFixture({
-          priceRange: { min: "2700", max: "3310" },
-        })
-      ).priceRange
+      Schema.decodeUnknownSync(YieldSchema.BalanceDto)({
+        ...yieldBalanceFixture(),
+        priceRange: { min: "2700", max: "3310" },
+      }).priceRange
     ).toEqual({ min: "2700", max: "3310" });
     expect(() =>
-      Schema.decodeUnknownSync(YieldSchema.BalanceDto)(
-        yieldBalanceFixture({
-          priceRange: { min: 2700, max: 3310 } as never,
-        })
-      )
+      Schema.decodeUnknownSync(YieldSchema.BalanceDto)({
+        ...yieldBalanceFixture(),
+        priceRange: { min: 2700, max: 3310 },
+      })
     ).toThrow();
   });
 });

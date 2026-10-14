@@ -1,11 +1,9 @@
 import type BigNumber from "bignumber.js";
 import type { EarnYieldWithProvider } from "../../domain/earn/models";
-import { exactDecimal } from "../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../domain/finance/price";
 import { Prices } from "../../domain/health/models";
 import type { Token } from "../../domain/token/token";
-import { APToPercentage } from "./general";
-import { formatNumber } from "./number-format";
+import { formatNumber, formatUsd } from "./number-format";
 
 export const formatCountryCode = ({
   language,
@@ -15,18 +13,6 @@ export const formatCountryCode = ({
   countryCode: string;
 }) => {
   return new Intl.DisplayNames([language], { type: "region" }).of(countryCode);
-};
-
-export const getRewardRateFormatted = (opts: {
-  rewardRate: BigNumber | number | undefined;
-}) => {
-  const { rewardRate } = opts;
-
-  if (rewardRate == null || exactDecimal(rewardRate).isZero()) {
-    return "- %";
-  }
-
-  return `${APToPercentage(rewardRate)}%`;
 };
 
 export const getRewardTypeFormatted = (rewardType: string | undefined) => {
@@ -45,10 +31,12 @@ export const getRewardTypeFormatted = (rewardType: string | undefined) => {
 export const getGasFeeInUSD = ({
   yieldDto,
   gas,
+  locale,
   prices,
 }: {
   yieldDto: EarnYieldWithProvider | null;
   gas: BigNumber | null;
+  locale: string;
   prices: Prices | null;
 }) => {
   if (!yieldDto || !gas) return "";
@@ -61,17 +49,19 @@ export const getGasFeeInUSD = ({
     baseToken: null,
   });
 
-  return `${formatNumber(gas, 10)} ${yieldDto.mechanics.gasFeeToken.symbol} ${
-    gasFeeInUSD.isGreaterThan(0) ? ` (${formatUsd(gasFeeInUSD)})` : ""
-  }`;
+  return `${formatNumber(gas, locale, 10)} ${
+    yieldDto.mechanics.gasFeeToken.symbol
+  } ${gasFeeInUSD.isGreaterThan(0) ? ` (${formatUsd(gasFeeInUSD, locale)})` : ""}`;
 };
 
 export const getFeesInUSD = ({
   amount,
+  locale,
   prices,
   token,
 }: {
   amount: BigNumber | null;
+  locale: string;
   token: Token | null;
   prices: Prices | null;
 }) => {
@@ -85,108 +75,9 @@ export const getFeesInUSD = ({
     baseToken: null,
   });
 
-  return `${formatNumber(amount, 10)} ${token.symbol} ${
-    feeInUSD.isGreaterThan(0) ? ` (${formatUsd(feeInUSD)})` : ""
+  return `${formatNumber(amount, locale, 10)} ${token.symbol} ${
+    feeInUSD.isGreaterThan(0) ? ` (${formatUsd(feeInUSD, locale)})` : ""
   }`;
-};
-
-const usdFormatter = new Intl.NumberFormat("en-US", {
-  currency: "USD",
-  currencyDisplay: "narrowSymbol",
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-  style: "currency",
-});
-
-const compactUsdFormatter = new Intl.NumberFormat("en-US", {
-  currency: "USD",
-  currencyDisplay: "narrowSymbol",
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 0,
-  notation: "compact",
-  style: "currency",
-});
-
-const compactNumberFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 0,
-});
-
-const isMissingNumericInput = (
-  value: string | BigNumber | number | null | undefined
-) => value == null || value === "";
-
-const toFiniteDecimal = (
-  value: string | BigNumber | number | null | undefined
-): BigNumber | null => {
-  if (isMissingNumericInput(value)) return null;
-
-  const amount = exactDecimal(value);
-
-  return amount.isFinite() ? amount : null;
-};
-
-export const formatCompactNumber = (
-  value: string | number | null | undefined
-) => {
-  const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
-
-  return compactNumberFormatter.format(amount.toNumber());
-};
-
-export const formatUsd = (
-  value: string | BigNumber | number | null | undefined
-) => {
-  const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
-
-  if (amount.isZero()) return "$0.00";
-
-  const absoluteAmount = amount.abs();
-
-  if (absoluteAmount.lt(0.01)) {
-    return amount.isNegative() ? ">-$0.01" : "<$0.01";
-  }
-
-  const formatter = absoluteAmount.lt(1000)
-    ? usdFormatter
-    : compactUsdFormatter;
-
-  return formatter.format(amount.toNumber());
-};
-
-const minimumHealthFactor = exactDecimal("0.01");
-
-export const formatHealthFactor = (
-  value: string | BigNumber | number | null | undefined
-) => {
-  const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
-
-  if (amount.gt(0) && amount.lt(minimumHealthFactor)) return "<0.01";
-
-  return formatNumber(amount, 4);
-};
-
-/** Formats a decimal ratio (e.g. 0.75) as a percent string (e.g. "75%"). */
-export const formatPercent = (
-  value: string | BigNumber | number | null | undefined
-) => {
-  if (isMissingNumericInput(value)) return "-";
-
-  const amount = exactDecimal(value);
-
-  return amount.isFinite() ? `${formatNumber(amount.times(100), 2)}%` : "-";
-};
-
-/** LTV past 100% means debt exceeds collateral; the exact figure adds nothing. */
-export const formatLtv = (
-  value: string | BigNumber | number | null | undefined
-) => {
-  if (isMissingNumericInput(value)) return "-";
-
-  return exactDecimal(value).gt(1) ? ">100%" : formatPercent(value);
 };
 
 export const formatNetworkName = (network: string) =>

@@ -132,9 +132,9 @@ const serializeOrigination = (
   originationFeeAmount: facts.originationFeeAmount.toString(10),
 });
 
-export const toBorrowTransactionFlowReview = (
+const toCommandAndSummary = (
   facts: PreparedActionFacts
-): BorrowTransactionFlowReview => {
+): Omit<BorrowTransactionFlowReview, "riskVerdict"> => {
   const commonSummary = {
     marketLabel: facts.marketLabel,
     network: facts.network,
@@ -287,3 +287,10 @@ export const toBorrowTransactionFlowReview = (
     }
   }
 };
+
+export const toBorrowTransactionFlowReview = (
+  facts: PreparedActionFacts
+): BorrowTransactionFlowReview => ({
+  ...toCommandAndSummary(facts),
+  riskVerdict: facts.riskVerdict,
+});
