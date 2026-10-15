@@ -24,10 +24,7 @@ import {
   YieldDirectoryKey,
 } from "../../../../../resources/yield-directory/index";
 import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/index";
-import {
-  combineAsyncResults,
-  mapAsyncResultError,
-} from "../../../../../shared/effect/async-result";
+import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
@@ -214,7 +211,7 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
   return Atom.make<EarnTokenOptionsState>((get) => {
     const catalog = get(earnTokenCatalogAtom(catalogKey));
     const balances = tokenBalancesResult(get, key);
-    return combineAsyncResults({ balances, catalog }).pipe(
+    return AsyncResult.all({ balances, catalog }).pipe(
       AsyncResult.map(({ balances, catalog }) =>
         enrichTokenOptions(catalog, balances)
       )
@@ -273,7 +270,7 @@ export const yieldValidatorsAtom = Atom.family(
       );
     const initialValidatorsResultAtom = Atom.make((get) => {
       const validatorsConfig = get(widgetConfigAtom).validatorsConfig;
-      return combineAsyncResults({
+      return AsyncResult.all({
         defaults: get(defaultValidatorsResultAtom),
         preferred: get(preferredValidatorsAtom),
       }).pipe(

@@ -10,10 +10,7 @@ import {
   PricesKey,
   pricesAtom,
 } from "../../../../resources/token-prices/index";
-import {
-  combineAsyncResults,
-  toPresentable,
-} from "../../../../shared/effect/async-result";
+import { toPresentable } from "../../../../shared/effect/async-result";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
@@ -84,7 +81,7 @@ export const getPositionsAverageApy = (
 };
 
 export const allPositionsSummaryAtom = Atom.make((get) =>
-  combineAsyncResults({
+  AsyncResult.all({
     positions: get(positionsResultAtom),
     yields: get(summaryYieldsResultAtom),
   }).pipe(
@@ -95,7 +92,7 @@ export const allPositionsSummaryAtom = Atom.make((get) =>
 );
 
 export const averageApySummaryAtom = Atom.make((get) =>
-  combineAsyncResults({
+  AsyncResult.all({
     positions: get(positionsResultAtom),
     yields: get(summaryYieldsResultAtom),
   }).pipe(
@@ -131,7 +128,7 @@ export const availableBalanceSummaryAtom = Atom.make((get) => {
     return AsyncResult.success<BigNumber | undefined>(undefined);
   }
 
-  return combineAsyncResults({
+  return AsyncResult.all({
     prices: get(availableBalancePricesResultAtom),
     tokenBalances: tokenBalancesScan.result,
   }).pipe(
