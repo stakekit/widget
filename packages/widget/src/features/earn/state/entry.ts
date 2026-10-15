@@ -4,6 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
+import { confidentialTokenBalanceKey } from "../../../domain/earn/confidential";
 import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
 import {
   getExtendedYieldType,
@@ -14,6 +15,7 @@ import { exactDecimal } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { ProviderOption } from "../../../domain/identity/identifiers";
 import { hasActivePositionForYield } from "../../../domain/portfolio/positions";
+import { confidentialValuesAtom } from "../../../resources/confidential-values/index";
 import {
   getTokensPricesRequest,
   PricesKey,
@@ -21,6 +23,7 @@ import {
 } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { makeYieldEntry } from "../../yield-entry/index";
+import { isHiddenTokenBalance } from "./confidential";
 import {
   earnSelectionProviderOptionsViewAtom,
   earnSelectionStatusViewAtom,
@@ -31,6 +34,7 @@ import {
   setEarnSelectionAmountAtom,
   setEarnSelectionMaxAmountAtom,
 } from "./earn-selection";
+import { earnEntryAtom } from "./earn-selection/state/atoms";
 import { earnAppLoadingAtom } from "./page-status";
 import {
   earnPageInputAtom,
@@ -51,10 +55,32 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const selectedTokenOption = selection.token;
   const selectedToken = quote.selectedToken;
   const selectedValidators = get(selectedEarnValidatorsAtom);
-  const availableAmount =
-    selectedTokenOption && selectedTokenOption.amount !== null
-      ? exactDecimal(selectedTokenOption.amount)
-      : null;
+  const owner = get(earnEntryAtom).walletScope?.address ?? null;
+  const hiddenTokenBalance = isHiddenTokenBalance(selectedYield, selectedToken);
+  const revealedTokenBalance =
+    hiddenTokenBalance && owner && selectedToken
+      ? get(confidentialValuesAtom).pipe(
+          AsyncResult.value,
+          Option.map((values) =>
+            values.get(
+              confidentialTokenBalanceKey({ owner, token: selectedToken })
+            )
+          ),
+          Option.getOrUndefined
+        )
+      : undefined;
+  // Unrevealed balances stay unknown so an over-balance transfer cannot clamp to zero.
+  const availableAmount = (() => {
+    if (!hiddenTokenBalance) {
+      return selectedTokenOption && selectedTokenOption.amount !== null
+        ? exactDecimal(selectedTokenOption.amount)
+        : null;
+    }
+    if (revealedTokenBalance === undefined || !selectedToken) return null;
+    return exactDecimal(revealedTokenBalance.toString()).shiftedBy(
+      -selectedToken.decimals
+    );
+  })();
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading = status.loading.yields;
@@ -77,6 +103,10 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   return {
     amountInitialization: "PreserveIntent",
     availableAmount,
+    hiddenTokenBalance:
+      hiddenTokenBalance && revealedTokenBalance === undefined,
+    revealedTokenBalance:
+      hiddenTokenBalance && revealedTokenBalance !== undefined,
     entry: {
       amount: quote.stakeAmount,
       selectedProviderOption: quote.selectedProviderOption,
@@ -104,8 +134,13 @@ export const earnEntryViewAtom = Atom.make((get) => {
   const selectedYield = input.entry.yield;
   const selectedToken = input.entry.token;
   const selectedValidators = input.entry.validators;
+  // Confidential wrappers are unpriced; 1:1 with the underlying.
+  const priceToken =
+    selectedYield && isHiddenTokenBalance(selectedYield, selectedToken)
+      ? selectedYield.token
+      : selectedToken;
   const pricesRequest = getTokensPricesRequest({
-    token: selectedToken,
+    token: priceToken,
     yieldDto: selectedYield,
   });
   const prices = get(
@@ -145,14 +180,16 @@ export const earnEntryViewAtom = Atom.make((get) => {
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,
     footerIsLoading: input.footerIsLoading,
+    hiddenTokenBalance: input.hiddenTokenBalance,
+    revealedTokenBalance: input.revealedTokenBalance,
     priceUsd:
-      prices && selectedToken && selectedYield
+      prices && priceToken && selectedYield
         ? getTokenPriceInUSD({
             amount: entry.amount,
             baseToken: selectedYield.token,
             pricePerShare: null,
             prices,
-            token: selectedToken,
+            token: priceToken,
           })
         : null,
     isFetching: entry.isFetching,

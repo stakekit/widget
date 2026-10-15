@@ -14,6 +14,7 @@ import {
   Box,
   type BoxProps,
 } from "../../../../../../../shared/ui/primitives/box";
+import { Button } from "../../../../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
@@ -37,7 +38,14 @@ export const SelectTokenSection = ({
   const variant = useWidgetConfig("variant");
   const { earnPresentation } = useWidgetConfig("hostProfile");
 
-  const { setAmount, setMaxAmount, view } = useEarnEntry();
+  const {
+    hideTokenBalance,
+    revealTokenBalance,
+    revealTokenBalanceStatus,
+    setAmount,
+    setMaxAmount,
+    view,
+  } = useEarnEntry();
   const { view: tokenSelection } = useEarnTokenSelection();
   const {
     appLoading,
@@ -79,6 +87,22 @@ export const SelectTokenSection = ({
       : `${t("shared.max")} ${formatNumber(stakeMaxAmount, locale)} ${symbol}`;
   const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
   const getBalanceContent = (): ReactNode => {
+    if (view.hiddenTokenBalance) {
+      return (
+        <Button
+          variant={{ size: "small", color: "smallButtonLight" }}
+          disabled={revealTokenBalanceStatus.revealing}
+          isLoading={revealTokenBalanceStatus.revealing}
+          onClick={() => revealTokenBalance(undefined)}
+        >
+          <Text>
+            {revealTokenBalanceStatus.failed
+              ? t("shared.confidential.reveal_failed")
+              : t("shared.confidential.reveal")}
+          </Text>
+        </Button>
+      );
+    }
     if (!selectedTokenAvailableAmount) return null;
     const shortFormattedAmount = formatTokenAmount(
       selectedTokenAvailableAmount.amount,
@@ -118,6 +142,19 @@ export const SelectTokenSection = ({
       </AmountToggle.Root>
     );
   };
+  const balanceContent = view.revealedTokenBalance ? (
+    <>
+      {getBalanceContent()}
+      <Button
+        variant={{ size: "small", color: "smallButtonLight" }}
+        onClick={() => hideTokenBalance(undefined)}
+      >
+        <Text>{t("shared.confidential.hide")}</Text>
+      </Button>
+    </>
+  ) : (
+    getBalanceContent()
+  );
 
   if (isLoading) {
     return (
@@ -154,7 +191,7 @@ export const SelectTokenSection = ({
       isInvalid={errorInput}
       accessory={<SelectToken canSelect={canSelectToken} />}
       formattedPrice={priceUsd ? formatUsd(priceUsd, locale) : ""}
-      balance={getBalanceContent()}
+      balance={balanceContent}
       balanceError={stakeAmountGreaterThanAvailableAmount}
       onMaxClick={
         isStakeTokenSameAsGasToken ? null : () => setMaxAmount(undefined)

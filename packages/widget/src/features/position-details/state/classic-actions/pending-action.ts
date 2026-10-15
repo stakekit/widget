@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { PendingAction } from "../../../../domain/action/models";
+import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnValidator,
@@ -264,10 +265,15 @@ const runPositionPendingActionAtom = Atom.family(
         }
 
         const value = decision.prepared;
+        const confidentialHandle = getPendingActionDecryptHandle(
+          decision.selection.yieldBalance,
+          decision.selection.pendingAction.type
+        );
         const start = context
           .setResult(startClassicTransactionFlowAtom, {
             intake: {
               _tag: "Manage",
+              ...(confidentialHandle ? { confidentialHandle } : {}),
               gasFeeToken: value.gasFeeToken,
               integration: value.integrationData,
               interactedToken: decision.selection.yieldBalance.token,

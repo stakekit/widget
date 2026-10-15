@@ -27,9 +27,11 @@ import { installExternalProviderSynchronization } from "./internal/runtime/exter
 import { makeWalletLifecyclePolicy } from "./internal/runtime/lifecycle";
 import type { WalletRoutingContext } from "./internal/runtime/router";
 import {
+  canRouteWalletPermit,
   routeWalletAccountSwitch,
   routeWalletLedgerAccountRequest,
   routeWalletMessage,
+  routeWalletPermit,
   routeWalletTransaction,
   routeWalletTypedData,
 } from "./internal/runtime/router";
@@ -46,6 +48,7 @@ import type {
   WalletOwnerCheckedInput,
   WalletSignBorrowTypedDataInput,
   WalletSignMessageInput,
+  WalletSignPermitInput,
   WalletSwitchAccountInput,
   WalletSwitchChainInput,
 } from "./wallet-commands";
@@ -324,6 +327,17 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     }: WalletOwnerCheckedInput<WalletSignBorrowTypedDataInput>) {
       return yield* withOwnerContext("typed-data", expectedOwner, (routing) =>
         routeWalletTypedData(routing, input)
+      );
+    }),
+    canSignPermit: withContext((routing) =>
+      Effect.succeed(canRouteWalletPermit(routing))
+    ),
+    signPermit: Effect.fn("signPermit")(function* ({
+      expectedOwner,
+      ...input
+    }: WalletOwnerCheckedInput<WalletSignPermitInput>) {
+      return yield* withOwnerContext("typed-data", expectedOwner, (routing) =>
+        routeWalletPermit(routing, input)
       );
     }),
     signTransaction: Effect.fn("signTransaction")(function* ({

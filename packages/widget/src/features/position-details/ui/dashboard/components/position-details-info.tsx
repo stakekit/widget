@@ -11,6 +11,7 @@ import {
   PositionMetricCards,
 } from "../../../../../shared/ui/components/position-details";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { Button } from "../../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
@@ -90,6 +91,33 @@ export const PositionDetailsInfo = () => {
         {model.breakdownRows.length > 0 && (
           <DetailsSection title={t("dashboard.position_details.breakdown")}>
             <PositionBreakdownRows rows={model.breakdownRows} />
+            {positionDetails.hasHiddenBalances ? (
+              <Box display="flex" flexDirection="column" gap="1" marginTop="2">
+                <Button
+                  variant={{ size: "small", color: "smallButtonLight" }}
+                  disabled={positionDetails.revealing}
+                  isLoading={positionDetails.revealing}
+                  onClick={positionDetails.onRevealBalances}
+                >
+                  <Text>{t("shared.confidential.reveal")}</Text>
+                </Button>
+                {positionDetails.revealFailed ? (
+                  <Text variant={{ type: "danger", weight: "normal" }}>
+                    {t("shared.confidential.reveal_failed")}
+                  </Text>
+                ) : null}
+              </Box>
+            ) : null}
+            {positionDetails.hasRevealedBalances ? (
+              <Box marginTop="2" display="flex" flexDirection="column">
+                <Button
+                  variant={{ size: "small", color: "smallButtonLight" }}
+                  onClick={positionDetails.onHideBalances}
+                >
+                  <Text>{t("shared.confidential.hide")}</Text>
+                </Button>
+              </Box>
+            ) : null}
           </DetailsSection>
         )}
 

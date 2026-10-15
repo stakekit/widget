@@ -53,10 +53,9 @@ export const StaticActionBlock = ({
           <Trans
             i18nKey="position_details.available_to"
             values={{
-              amount: formatTokenAmount(
-                exactDecimal(yieldBalance.amount),
-                locale
-              ),
+              amount: yieldBalance.isEncrypted
+                ? t("shared.confidential.hidden")
+                : formatTokenAmount(exactDecimal(yieldBalance.amount), locale),
               symbol: yieldBalance.token.symbol,
               pendingAction: t(
                 `position_details.pending_action.${

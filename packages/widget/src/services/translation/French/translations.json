@@ -1,5 +1,13 @@
 {
   "shared": {
+    "confidential": {
+      "decrypt": "Déchiffrer",
+      "decrypt_to_withdraw": "Votre solde est chiffré. Déchiffrez-le pour retirer.",
+      "hidden": "Masqué",
+      "hide": "Masquer le solde",
+      "reveal": "Afficher le solde",
+      "reveal_failed": "Impossible d'afficher le solde. Réessayez."
+    },
     "stake_kit": "Yield.xyz",
     "max": "Max",
     "min": "Min",
@@ -565,9 +573,18 @@
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
     "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
+    "decrypt": "Déchiffrement du montant retiré",
+    "decrypt_desc": "Zama publie le montant débloqué. Prend généralement 10 à 30 secondes.",
+    "decrypt_error": "Le déchiffrement a échoué. Réessayez.",
+    "encrypt": "Chiffrement de votre montant",
+    "encrypt_desc": "Prend généralement 10 à 30 secondes. Gardez cette page ouverte.",
+    "encrypt_error": "Le chiffrement a échoué. Réessayez.",
+    "prepare_rejected": "Cette demande ne peut pas aboutir. Revenez en arrière pour la modifier.",
     "approve_error": "Une erreur s'est produite",
     "view_transaction": "Voir la transaction",
     "tx_type": {
+      "DECRYPT": "DÉCHIFFRER LE MONTANT",
+      "ENCRYPT": "CHIFFRER LE MONTANT",
       "SWAP": "ÉCHANGE",
       "DEPOSIT": "DÉPÔT",
       "APPROVAL": "APPROBATION",
@@ -616,6 +633,8 @@
       "INFSTONES_CLAIM_REQUEST": "DEMANDE DE RÉCLAMATION INFSTONES",
       "WRAP": "ENVELOPER",
       "UNWRAP": "DÉENVELOPER",
+      "REDEEM": "RACHETER",
+      "CANCEL_PENDING": "ANNULER LA DEMANDE EN ATTENTE",
       "DELEGATE": "DÉLÉGUER",
       "UNDELEGATE": "ANNULER DÉLÉGATION",
       "VERIFY_WITHDRAW_CREDENTIALS": "VÉRIFIER IDENTIFIANTS RETRAIT",
@@ -694,6 +713,7 @@
       "withdraw_all": "Retirer tout",
       "verify_withdraw_credentials": "identifiants de retrait vérifiés",
       "delegate": "délégué",
+      "cancel_pending": "demande en attente annulée",
       "undelegate": "délégation annulée",
       "create_eigenpod": "eigenpod créé",
       "start_checkpoint": "checkpoint démarré",
@@ -833,7 +853,9 @@
       "label": "Jeton reçu",
       "select_title": "Sélectionner le jeton reçu",
       "note": "Vous recevrez {{symbol}} lors du retrait.",
-      "note_with_address": "Vous recevrez {{symbol}} ({{address}}) lors du retrait."
+      "note_with_address": "Vous recevrez {{symbol}} ({{address}}) lors du retrait.",
+      "confidential_batched": "{{symbol}} reste privé. Les retraits sont groupés et peuvent prendre du temps.",
+      "confidential_instant": "{{symbol}} arrive immédiatement, mais le montant est public on-chain."
     },
     "select_validators": {
       "submit": "Envoyer"
@@ -930,6 +952,7 @@
       "migrate": "Migrer",
       "verify_withdraw_credentials": "Vérifier identifiants de retrait",
       "delegate": "Déléguer",
+      "cancel_pending": "Annuler la demande en attente",
       "undelegate": "Annuler délégation",
       "create_eigenpod": "Créer eigenpod",
       "start_checkpoint": "Démarrer checkpoint",
@@ -960,7 +983,8 @@
       "rebond": "Re-staker",
       "migrate": "Migrer",
       "verify_withdraw_credentials": "Vérifier identifiants de retrait",
-      "delegate": "Déléguer"
+      "delegate": "Déléguer",
+      "cancel_pending": "Annuler la demande en attente"
     },
     "unstake_sign": {
       "title": "Vérifier la propriété",
@@ -996,7 +1020,8 @@
       "rebond": "Re-staker avec {{providerName}}",
       "migrate": "Migrer de {{providerName}}",
       "verify_withdraw_credentials": "Vérifier identifiants de retrait de {{providerName}}",
-      "delegate": "Déléguer avec {{providerName}}"
+      "delegate": "Déléguer avec {{providerName}}",
+      "cancel_pending": "Annuler la demande en attente avec {{providerName}}"
     }
   },
   "select_token": {

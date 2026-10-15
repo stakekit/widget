@@ -219,7 +219,8 @@ export type SKActionType =
   | "REBOND"
   | "MIGRATE"
   | "VERIFY_WITHDRAW_CREDENTIALS"
-  | "DELEGATE";
+  | "DELEGATE"
+  | "CANCEL_PENDING";
 
 export type SKTransactionType =
   | "SWAP"
@@ -277,7 +278,9 @@ export type SKTransactionType =
   | "INFSTONES_PROVISION"
   | "INFSTONES_EXIT_REQUEST"
   | "INFSTONES_CLAIM_REQUEST"
-  | "BATCH";
+  | "BATCH"
+  | "REDEEM"
+  | "CANCEL_PENDING";
 
 export type ActionMeta = {
   actionId: string;
@@ -416,6 +419,28 @@ export type SKBorrowWallet = SKWallet & {
     tx: SKBorrowTx,
     txMeta: SKBorrowTxMeta
   ) => Promise<SKBorrowTxResult>;
+};
+
+/** What a Zama decryption permit reveals, for the host's signing prompt. */
+export type SKZamaPermitMeta = {
+  readonly address: string;
+  readonly chainId: number;
+  readonly contracts: ReadonlyArray<string>;
+};
+
+/** Outcome of `SKZamaWallet.signZamaPermit`. */
+export type SKZamaPermitResult =
+  | { readonly type: "success"; readonly signature: string }
+  | { readonly type: "cancelled" }
+  | { readonly type: "error"; readonly error: string };
+
+/** Without `signZamaPermit`, Zama deposits are blocked: balances could not be revealed to withdraw. */
+export type SKZamaWallet = SKWallet & {
+  /** Signs the EIP-712 permit that reveals Zama confidential balances. */
+  readonly signZamaPermit: (
+    typedData: SKEip712TypedData,
+    meta: SKZamaPermitMeta
+  ) => Promise<SKZamaPermitResult>;
 };
 
 export type SKExternalProviders = {

@@ -8,6 +8,15 @@ import type {
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
+import {
+  type ConfidentialConversion,
+  getConfidentialAssetToken,
+  getConfidentialChainId,
+  getConfidentialConversion,
+  isConfidentialInstantExit,
+  isConfidentialYield,
+  toBaseUnits,
+} from "../../../domain/earn/confidential";
 import type {
   EarnProvider,
   EarnValidator,
@@ -66,6 +75,7 @@ type ExitClassicTransactionFlowIntake = {
 
 type ManageClassicTransactionFlowIntake = {
   readonly _tag: "Manage";
+  readonly confidentialHandle?: string;
   readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;
   readonly interactedToken: Token;
@@ -399,4 +409,71 @@ export const getClassicTransactionWorkflowInput = (
     providersDetails: intake.providersDetails,
     walletScope: intake.walletScope,
   });
+};
+
+export type ClassicFlowConfidentialInput = Readonly<{
+  readonly amount: bigint;
+  readonly assetAddress: string | null;
+  readonly conversion: ConfidentialConversion | null;
+  readonly instant?: boolean;
+  readonly intent: "enter" | "exit";
+  readonly yieldDto: EarnYieldWithProvider;
+}>;
+
+export const getClassicFlowConfidentialInput = (
+  intake: ClassicTransactionFlowIntake
+): ClassicFlowConfidentialInput | null => {
+  switch (intake._tag) {
+    case "Enter": {
+      const asset = getConfidentialAssetToken(intake.selectedStake);
+      const amount = intake.request.arguments?.amount;
+      if (!asset?.address || amount === undefined) return null;
+      return {
+        amount: toBaseUnits(
+          exactDecimal(amount),
+          intake.selectedToken.decimals
+        ),
+        assetAddress: asset.address,
+        conversion: getConfidentialConversion(
+          intake.selectedStake,
+          intake.selectedToken
+        ),
+        intent: "enter",
+        yieldDto: intake.selectedStake,
+      };
+    }
+    case "Exit": {
+      const shares = intake.request.arguments?.shareAmountRaw;
+      if (!isConfidentialYield(intake.integration) || shares === undefined) {
+        return null;
+      }
+      return {
+        amount: BigInt(shares),
+        assetAddress: null,
+        conversion: null,
+        instant: isConfidentialInstantExit(
+          intake.integration,
+          intake.request.arguments?.outputToken
+        ),
+        intent: "exit",
+        yieldDto: intake.integration,
+      };
+    }
+    default:
+      return null;
+  }
+};
+
+export const getClassicFlowDecryptInput = (
+  intake: ClassicTransactionFlowIntake
+) => {
+  if (intake._tag !== "Manage" || !intake.confidentialHandle) return null;
+  const chainId = getConfidentialChainId(intake.integration);
+  return chainId === null
+    ? null
+    : {
+        chainId,
+        handle: intake.confidentialHandle,
+        owner: intake.request.address,
+      };
 };

@@ -58,6 +58,7 @@ import type { server } from "../../mocks/server";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestWallet } from "../../utils/services/wallet-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
+import { makeTestZamaLayer } from "../../utils/services/zama-service";
 import { makeTestStakeKitApiLayer } from "../../utils/stakekit-api-layer";
 import { describe, expect, it, vi } from "../../utils/test-extend.dom.ts";
 import { render } from "../../utils/test-utils.dom.tsx";
@@ -393,7 +394,8 @@ const FlowTestApp = ({
     apiLayer,
     navigationLayer,
     trackingLayer,
-    walletLayer
+    walletLayer,
+    makeTestZamaLayer()
   );
   const classicWalletLayer = Layer.merge(
     classicDependencies,

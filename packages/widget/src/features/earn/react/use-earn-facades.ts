@@ -1,6 +1,11 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import {
+  hideEarnTokenBalanceAtom,
+  revealEarnTokenBalanceAtom,
+  revealEarnTokenBalanceStatusAtom,
+} from "../state/confidential";
 import type { EarnProviderOption } from "../state/earn-selection/types";
 import {
   earnEntryViewAtom,
@@ -65,6 +70,9 @@ export const useEarnValidatorSelection = () => ({
 
 export const useEarnEntry = () => ({
   refreshKyc: useAtomSet(refreshEarnKycAtom),
+  hideTokenBalance: useAtomSet(hideEarnTokenBalanceAtom),
+  revealTokenBalance: useAtomSet(revealEarnTokenBalanceAtom),
+  revealTokenBalanceStatus: useAtomValue(revealEarnTokenBalanceStatusAtom),
   runPrimaryAction: useAtomSet(runEarnPrimaryActionAtom),
   selectTronResource: useAtomSet(selectEarnTronResourceAtom),
   setAmount: useAtomSet(setEarnAmountAtom),

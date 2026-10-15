@@ -1,5 +1,10 @@
 import { Data, Effect, Schema } from "effect";
-import type { SKBorrowTx, SKTx } from "../../public-api/types";
+import type {
+  SKBorrowTx,
+  SKTx,
+  SKZamaPermitMeta,
+  SKZamaWallet,
+} from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "../config/external-provider-snapshot";
 import type { Eip712TypedData } from "./wallet-commands";
 import type {
@@ -165,7 +170,45 @@ export class ExternalProvider {
       );
     });
   }
+
+  canSignZamaPermit(): boolean {
+    return hasZamaPermitSigner(this.variantProvider.current.provider);
+  }
+
+  signZamaPermit(
+    typedData: Eip712TypedData,
+    meta: SKZamaPermitMeta
+  ): HostOutcome {
+    return Effect.suspend(() => {
+      const provider = this.variantProvider.current.provider;
+      if (!hasZamaPermitSigner(provider)) {
+        return Effect.fail(
+          new ExternalProviderError({
+            customMessage: null,
+            message: "Zama permit signing capability is unavailable",
+          })
+        );
+      }
+
+      return callHost(
+        () => provider.signZamaPermit(typedData, meta),
+        BorrowSignatureResult
+      ).pipe(
+        Effect.flatMap(
+          (result): HostOutcome =>
+            result.type === "success"
+              ? Effect.succeed(result.signature)
+              : failHost(result)
+        )
+      );
+    });
+  }
 }
+
+const hasZamaPermitSigner = (
+  provider: ExternalProviderSnapshot["provider"]
+): provider is ExternalProviderSnapshot["provider"] & SKZamaWallet =>
+  typeof (provider as Partial<SKZamaWallet>).signZamaPermit === "function";
 
 const HostCancelled = Schema.Struct({ type: Schema.Literal("cancelled") });
 

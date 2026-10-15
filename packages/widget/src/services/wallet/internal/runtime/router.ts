@@ -5,6 +5,7 @@ import { isEvmWalletNetwork } from "../../../../domain/wallet/network";
 import type {
   WalletSignBorrowTypedDataInput,
   WalletSignMessageInput,
+  WalletSignPermitInput,
   WalletSwitchAccountInput,
 } from "../../wallet-commands";
 import type { Chain } from "../../wallet-descriptors";
@@ -113,6 +114,35 @@ export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
     return yield* actions.signTypedData({ ...input.typedData, connector });
   }
 );
+
+export const canRouteWalletPermit = ({ state }: WalletRoutingContext) =>
+  state.status === "connected" &&
+  (isExternalProviderConnector(state.connector)
+    ? state.connector.canSignZamaPermit()
+    : isEvmWalletNetwork(state.network) && canUseWagmiSigning(state.connector));
+
+export const routeWalletPermit = Effect.fn("routeWalletPermit")(function* (
+  routing: WalletRoutingContext,
+  input: WalletSignPermitInput
+) {
+  const { actions, state } = routing;
+  if (state.status !== "connected") {
+    return yield* unavailable("typed-data", state);
+  }
+
+  const { connector } = state;
+  if (isExternalProviderConnector(connector)) {
+    return yield* makeExternalProviderWalletDriver({
+      connector,
+    }).signZamaPermit(input);
+  }
+
+  if (!isEvmWalletNetwork(state.network) || !canUseWagmiSigning(connector)) {
+    return yield* unavailable("typed-data", state);
+  }
+
+  return yield* actions.signTypedData({ ...input.typedData, connector });
+});
 
 export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
   function* (routing: WalletRoutingContext, input: WalletSignTransactionInput) {

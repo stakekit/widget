@@ -52,6 +52,7 @@ describe("Exit receive token presentation", () => {
       resolveExitReceiveTokenAccessory({
         positionToken: usds,
         selection: {
+          confidentialExit: null,
           options: [
             { address: usdsAddress, symbol: "USDS" },
             { address: usdcAddress, symbol: "USDC" },
@@ -74,6 +75,7 @@ describe("Exit receive token presentation", () => {
       resolveExitReceiveTokenAccessory({
         positionToken: usds,
         selection: {
+          confidentialExit: null,
           options: [{ address: usdcAddress, symbol: "USDC" }],
           selected: { address: usdcAddress, symbol: "USDC" },
         },

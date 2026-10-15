@@ -13,6 +13,7 @@ import {
   getClassicTransactionFlowIntakeVariant,
 } from "../../model/classic-transaction-flow";
 import {
+  getClassicConversionStepsView,
   getClassicTransactionStepsView,
   isClassicTransactionWorkflowFinished,
 } from "../../model/classic-transaction-workflow";
@@ -74,24 +75,38 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
     getStates: (execution: ClassicFlowExecutionHandle) => execution.states,
     label: "classicFlowExecutionScope",
     makeValue: ({ handleAtom, stateAtom }) => {
+      const conversionAtom = walletRuntime
+        .atom((get) =>
+          Stream.unwrap(
+            get
+              .result(handleAtom)
+              .pipe(Effect.map((execution) => execution.conversion))
+          )
+        )
+        .pipe(Atom.withLabel("classicExecutionConversion"));
       const workflowViewAtom = Atom.make((get) => {
         const result = get(stateAtom);
         const state = Option.getOrNull(AsyncResult.value(result));
+        const yieldId = getIntakeYieldId(session);
+        const engine = state
+          ? getClassicTransactionStepsView(state, { yieldId })
+          : null;
+        const conversion = Option.getOrNull(
+          AsyncResult.value(get(conversionAtom))
+        );
         return {
           /** Why acquiring the Execution or its workflow failed. */
           setupError: Option.getOrNull(AsyncResult.error(result)),
           state,
-          steps: state
-            ? getClassicTransactionStepsView(state, {
-                yieldId: getIntakeYieldId(session),
-              })
-            : {
+          steps: conversion
+            ? getClassicConversionStepsView(conversion, engine, yieldId)
+            : (engine ?? {
                 cancelled: false,
                 customSignErrorMessage: null,
                 retryable: false,
                 txStates: [],
-                yieldId: getIntakeYieldId(session),
-              },
+                yieldId,
+              }),
         } as const;
       }).pipe(Atom.withLabel("classicExecutionWorkflowView"));
       const workflowDispatchAtom = walletRuntime

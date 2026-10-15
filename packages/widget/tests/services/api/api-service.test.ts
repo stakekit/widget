@@ -28,10 +28,12 @@ import { makeYieldOperations } from "../../../src/services/api/yield-operations"
 import { makeYieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
 import {
+  confidentialFixture,
   yieldApiActionDtoFixture,
   yieldApiProviderFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
+  yieldBalanceFixture,
 } from "../../fixtures";
 import { makeTestStakeKitApiLayer } from "../../utils/stakekit-api-layer";
 
@@ -307,6 +309,48 @@ describe("application API services", () => {
 
         expect(result).toEqual({ items: [] });
         expect(aggregateBalances).toHaveBeenCalledWith({ payload: command });
+      })
+  );
+
+  it.effect(
+    "decodes encrypted balances as hidden with zero amounts and their handle",
+    () =>
+      Effect.gen(function* () {
+        const { cShare, usdc } = confidentialFixture;
+        const handle = `0x${"aa".repeat(32)}`;
+        const source = makeYieldResourceSource({
+          YieldsControllerGetAggregateBalances: () =>
+            Effect.succeed({
+              errors: [],
+              items: [
+                {
+                  balances: [
+                    {
+                      ...yieldBalanceFixture({ token: usdc }),
+                      amount: "",
+                      amountRaw: "",
+                      isEncrypted: true,
+                      shareAmount: "",
+                      shareAmountRaw: handle,
+                      shareToken: cShare,
+                    },
+                  ],
+                  yieldId: firstYieldId,
+                },
+              ],
+            }),
+        } as never);
+
+        const result = yield* source.getPositions({
+          queries: [{ address, network: "ethereum" }],
+        });
+        const [hidden] = result.items[0]?.balances ?? [];
+
+        expect(hidden).toMatchObject({
+          isEncrypted: true,
+          shareAmountRaw: handle,
+        });
+        expect(hidden?.amount.toFixed()).toBe("0");
       })
   );
 

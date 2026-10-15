@@ -162,7 +162,13 @@ export type ArgumentFieldDto = {
     | "tokenId"
     | "skipPrechecks"
     | "useMaxAllowance"
-    | "feePayerAddress";
+    | "feePayerAddress"
+    | "encryptedAmount"
+    | "encryptedAmountProof"
+    | "encryptedLegAmounts"
+    | "encryptedLegProof"
+    | "decryptedAmount"
+    | "decryptionProof";
   readonly type: "string" | "number" | "address" | "enum" | "boolean";
   readonly label: string;
   readonly description?: string;
@@ -323,7 +329,12 @@ export type YieldStatusDto = {
   readonly enter: boolean;
   readonly exit: boolean;
 };
-export type ERCStandards = "ERC20" | "ERC4626" | "ERC721" | "ERC1155";
+export type ERCStandards =
+  | "ERC20"
+  | "ERC4626"
+  | "ERC721"
+  | "ERC1155"
+  | "ERC7984";
 export type YieldType =
   | "staking"
   | "restaking"
@@ -746,7 +757,9 @@ export type TransactionDto = {
     | "INFSTONES_PROVISION"
     | "INFSTONES_EXIT_REQUEST"
     | "INFSTONES_CLAIM_REQUEST"
-    | "BATCH";
+    | "BATCH"
+    | "REDEEM"
+    | "CANCEL_PENDING";
   readonly hash: string | null;
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
@@ -1018,6 +1031,12 @@ export type ActionArgumentsDto = {
   readonly rangeMax?: string;
   readonly percentage?: number;
   readonly tokenId?: string;
+  readonly encryptedAmount?: string;
+  readonly encryptedAmountProof?: string;
+  readonly encryptedLegAmounts?: ReadonlyArray<string>;
+  readonly encryptedLegProof?: string;
+  readonly decryptedAmount?: string;
+  readonly decryptionProof?: string;
 };
 export type TransactionType =
   | "SWAP"
@@ -1075,7 +1094,9 @@ export type TransactionType =
   | "INFSTONES_PROVISION"
   | "INFSTONES_EXIT_REQUEST"
   | "INFSTONES_CLAIM_REQUEST"
-  | "BATCH";
+  | "BATCH"
+  | "REDEEM"
+  | "CANCEL_PENDING";
 export type SubmitHashDto = { readonly hash: string };
 export type SubmitTransactionDto = { readonly signedTransaction: string };
 export type KycStatusResponseDto = {
@@ -1245,7 +1266,8 @@ export type PendingActionDto = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly passthrough: string;
   readonly arguments?: {
     readonly fields: ReadonlyArray<ArgumentFieldDto>;
@@ -1402,7 +1424,8 @@ export type ActionDto = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly yieldId: string;
   readonly address: string;
   readonly amount: string | null;
@@ -1660,6 +1683,12 @@ export type ActionDto = {
     readonly rangeMax?: string;
     readonly percentage?: number;
     readonly tokenId?: string;
+    readonly encryptedAmount?: string;
+    readonly encryptedAmountProof?: string;
+    readonly encryptedLegAmounts?: ReadonlyArray<string>;
+    readonly encryptedLegProof?: string;
+    readonly decryptedAmount?: string;
+    readonly decryptionProof?: string;
   };
   readonly createdAt: string;
   readonly completedAt: string | null;
@@ -1671,6 +1700,8 @@ export type ActionDto = {
     | "FAILED"
     | "SUCCESS"
     | "STALE";
+  readonly isEncrypted?: boolean;
+  readonly encryptedAmount?: string;
 };
 export type CreateActionDto = {
   readonly yieldId: string;
@@ -1703,7 +1734,8 @@ export type CreateManageActionDto = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly passthrough: string;
 };
 export type TransactionGasEstimateDto = {
@@ -1873,6 +1905,7 @@ export type BalanceDto = {
   readonly shareAmount?: string;
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
+  readonly isEncrypted?: boolean;
 };
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -1940,6 +1973,7 @@ export type YieldBalancesDto = {
     readonly shareAmount?: string;
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
+    readonly isEncrypted?: boolean;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -2683,7 +2717,8 @@ export type ActionsControllerGetActionsParams = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly yieldId?: string;
   readonly yieldTypes?: ReadonlyArray<
     | "staking"

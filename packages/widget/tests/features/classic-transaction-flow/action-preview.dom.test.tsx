@@ -33,6 +33,7 @@ import { TestAtomRuntimeProvider } from "../../utils/atom-runtime-provider";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestWallet } from "../../utils/services/wallet-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
+import { makeTestZamaLayer } from "../../utils/services/zama-service";
 import { makeTestStakeKitApiLayer } from "../../utils/stakekit-api-layer";
 import { describe, expect, it } from "../../utils/test-extend.dom.ts";
 import { renderHook } from "../../utils/test-utils.dom.tsx";
@@ -63,6 +64,7 @@ const testDependencies = Layer.unwrap(
 
 const classicDependencies = Layer.mergeAll(
   testDependencies,
+  makeTestZamaLayer(),
   makeTestStakeKitApiLayer({
     apiKey: "test-key",
     baseUrl: "https://api.example.com",

@@ -1,5 +1,9 @@
 import { Struct } from "effect";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
+import {
+  getConfidentialAssetToken,
+  isConfidentialYield,
+} from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import {
@@ -14,6 +18,7 @@ import {
 import { formatAddress } from "../../../shared/lib/general";
 
 export type PositionDetailsExitReceiveTokenSelection = Readonly<{
+  confidentialExit: "batched" | "instant" | null;
   options: ReadonlyArray<ExitReceiveToken>;
   selected: ExitReceiveToken;
 }>;
@@ -89,6 +94,7 @@ export const resolvePositionDetailsExitReceiveTokenSelection = ({
   readonly integration: EarnYieldWithProvider;
   readonly selectedAddress: TokenAddress | null;
 }): PositionDetailsExitReceiveTokenSelection | null => {
+  const confidential = isConfidentialYield(integration);
   const advertisedOptions = getYieldActionArg(
     integration,
     "exit",
@@ -111,9 +117,25 @@ export const resolvePositionDetailsExitReceiveTokenSelection = ({
     ? options.find((option) => option.symbol.toLowerCase() === "usds")
     : undefined;
 
+  const confidentialAsset = confidential
+    ? getConfidentialAssetToken(integration)?.address
+    : undefined;
+  const defaultOption = confidentialAsset
+    ? options.find((option) =>
+        equalExitReceiveTokenAddresses(option.address, confidentialAsset)
+      )
+    : preferred;
+
+  const resolved = selected ?? defaultOption ?? options[0]!;
+  const exitMode =
+    confidentialAsset &&
+    equalExitReceiveTokenAddresses(resolved.address, confidentialAsset)
+      ? "batched"
+      : "instant";
   return {
+    confidentialExit: confidential ? exitMode : null,
     options,
-    selected: selected ?? preferred ?? options[0]!,
+    selected: resolved,
   };
 };
 

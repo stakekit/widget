@@ -106,6 +106,7 @@ describe("Classic Flow Atom bridge", () => {
                   _tag: "Acquired",
                   execution: {
                     back: executionBack,
+                    conversion: Stream.succeed(null),
                     finish: executionFinish,
                     runWorkflow: workflowDispatch,
                     states: Stream.succeed(workflowState),

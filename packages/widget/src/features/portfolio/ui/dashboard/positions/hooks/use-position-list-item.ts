@@ -74,6 +74,9 @@ export const usePositionListItem = (item: PositionItem) => {
       : null;
 
   return {
+    hasHiddenBalance: item.balancesWithAmount.some(
+      (balance) => balance.isEncrypted
+    ),
     integrationData,
     providersDetails,
     rewardRateAverage,

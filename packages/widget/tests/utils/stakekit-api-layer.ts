@@ -6,6 +6,7 @@ import {
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { GeoBlockService } from "../../src/services/geoblocking";
+import { ConfidentialValues } from "../../src/services/zama/confidential-values";
 
 const makeTestLayers = (api: ApplicationApiIdentity) => {
   const configLayer = WidgetConfigService.layer({
@@ -19,6 +20,7 @@ const makeTestLayers = (api: ApplicationApiIdentity) => {
   );
   const geoBlockLayer = GeoBlockService.layer;
   const applicationApiLayer = apiLayer.pipe(
+    Layer.provide(ConfidentialValues.layer),
     Layer.provide(geoBlockLayer),
     Layer.provide(richErrorLayer),
     Layer.provide(configLayer)

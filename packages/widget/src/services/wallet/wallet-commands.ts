@@ -56,6 +56,17 @@ export type WalletSignTypedDataInput = Eip712TypedData & {
   readonly connector?: Connector;
 };
 
+type ZamaPermitMeta = {
+  readonly address: string;
+  readonly chainId: number;
+  readonly contracts: ReadonlyArray<string>;
+};
+
+export type WalletSignPermitInput = {
+  readonly meta: ZamaPermitMeta;
+  readonly typedData: Eip712TypedData;
+};
+
 export type WalletSignBorrowTypedDataInput = {
   readonly txMeta: BorrowTransactionMeta;
   readonly typedData: Eip712TypedData;

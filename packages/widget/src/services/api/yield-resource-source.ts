@@ -3,6 +3,7 @@ import * as HttpClientError from "effect/http/HttpClientError";
 import { YieldAction } from "../../domain/action/models";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
+import { zeroEncryptedBalance } from "../../domain/earn/confidential";
 import {
   EarnPositionsResponse,
   EarnProvider,
@@ -154,6 +155,10 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
         payload: { address: request.address },
       })
       .pipe(
+        Effect.map((response) => ({
+          ...response,
+          balances: response.balances.map(zeroEncryptedBalance),
+        })),
         decodeApiResponse("single-yield-balances", EarnYieldBalancesResponse)
       );
   });
@@ -206,7 +211,16 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
   ) {
     return yield* yieldApi
       .YieldsControllerGetAggregateBalances({ payload: command })
-      .pipe(decodeApiResponse("yield-positions", EarnPositionsResponse));
+      .pipe(
+        Effect.map((response) => ({
+          ...response,
+          items: response.items.map((item) => ({
+            ...item,
+            balances: item.balances.map(zeroEncryptedBalance),
+          })),
+        })),
+        decodeApiResponse("yield-positions", EarnPositionsResponse)
+      );
   });
 
   const getProvider = Effect.fn("YieldResourceSource.getProvider")(function* (

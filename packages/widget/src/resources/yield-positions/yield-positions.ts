@@ -1,4 +1,5 @@
 import { Data, Duration, Effect } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { YieldBalancesCommand } from "../../domain/finance/models";
@@ -22,6 +23,7 @@ import type {
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { fillRevealedPositions } from "../confidential-values/index";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const yieldPositionsPolicy = withApiResourcePolicy({
@@ -62,6 +64,12 @@ const yieldPositionsByOwnerResourceAtom = Atom.family(
   (scope: WalletScopeOwnerKey) =>
     yieldPositionsRequestAtom(scope).pipe(
       Atom.withRefresh(scheduledRefreshInterval),
+      Atom.transform((get, self) =>
+        AsyncResult.map(get(self), (page) => ({
+          ...page,
+          items: fillRevealedPositions(get, page.items),
+        }))
+      ),
       Atom.withLabel("yieldPositionsResourceAtom")
     )
 );

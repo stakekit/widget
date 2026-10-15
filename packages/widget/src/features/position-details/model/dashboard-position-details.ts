@@ -479,7 +479,9 @@ const getBreakdownRows = ({
       subValue: row.token.isPoints
         ? t("shared.points")
         : formatUsdSubValue(row.amountUsd, locale),
-      value: `${formatTokenAmount(row.amount, locale)} ${row.token.symbol}`,
+      value: row.isEncrypted
+        ? t("shared.confidential.hidden")
+        : `${formatTokenAmount(row.amount, locale)} ${row.token.symbol}`,
     })
   );
 

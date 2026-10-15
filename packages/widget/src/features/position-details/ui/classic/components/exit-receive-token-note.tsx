@@ -19,6 +19,28 @@ export const ExitReceiveTokenNote = ({
 
   if (!selection) return null;
 
+  if (selection.confidentialExit) {
+    return (
+      <Box
+        data-testid="position-details-exit-receive-token-note"
+        display="flex"
+        alignItems="center"
+        justifyContent="flex-start"
+        gap="1"
+      >
+        <Box display="flex" alignItems="center" justifyContent="center">
+          <InfoIcon />
+        </Box>
+        <Text variant={{ type: "muted", size: "small" }}>
+          {t(
+            `position_details.receive_token.confidential_${selection.confidentialExit}`,
+            { symbol: selection.selected.symbol }
+          )}
+        </Text>
+      </Box>
+    );
+  }
+
   const note = resolveExitReceiveTokenNote({
     positionToken,
     selected: selection.selected,

@@ -56,7 +56,7 @@ const integration = yieldApiYieldFixture({
 
 const Harness = () => {
   const [selected, setSelected] = useState<ExitReceiveToken>(options[0]!);
-  const selection = { options, selected };
+  const selection = { confidentialExit: null, options, selected };
 
   return (
     <>

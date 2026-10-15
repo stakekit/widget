@@ -15,6 +15,7 @@ import {
   makeTestNavigation,
   type TestNavigationOptions,
 } from "./services/widget-navigation";
+import { makeTestZamaLayer } from "./services/zama-service";
 
 type ClassicFlowTestKitBehavior = Readonly<{
   readonly makeWorkflow?: TransactionWorkflowService["Service"]["make"];
@@ -22,6 +23,7 @@ type ClassicFlowTestKitBehavior = Readonly<{
   readonly previewAction?: YieldOperations["Service"]["previewAction"];
   readonly tracking?: TestTrackingOptions;
   readonly wallet?: TestWalletBehaviorOptions;
+  readonly zama?: Parameters<typeof makeTestZamaLayer>[0];
 }>;
 
 type ClassicFlowTestKitOptions = ClassicFlowTestKitBehavior &
@@ -72,6 +74,7 @@ export const makeClassicFlowTestKit = Effect.fn("makeClassicFlowTestKit")(
             ),
         })
       ),
+      makeTestZamaLayer(options.zama),
       Layer.succeed(
         TransactionWorkflowService,
         TransactionWorkflowService.of({

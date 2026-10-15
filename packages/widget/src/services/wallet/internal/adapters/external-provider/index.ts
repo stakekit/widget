@@ -25,8 +25,10 @@ type ExtraProps = ConnectorWithFilteredChains &
     ExternalProvider,
     | "sendBorrowTransaction"
     | "sendTransaction"
+    | "canSignZamaPermit"
     | "signMessage"
     | "signTypedData"
+    | "signZamaPermit"
   > & {
     onSupportedChainsChanged: (args: {
       supportedChainIds: ReadonlyArray<number> | undefined;
@@ -202,6 +204,8 @@ export const externalProviderConnector = (
             sendTransaction: provider.sendTransaction.bind(provider),
             signMessage: provider.signMessage.bind(provider),
             signTypedData: provider.signTypedData.bind(provider),
+            canSignZamaPermit: provider.canSignZamaPermit.bind(provider),
+            signZamaPermit: provider.signZamaPermit.bind(provider),
             $filteredChains: filteredChains.changes,
             onSupportedChainsChanged,
           };

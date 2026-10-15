@@ -19,6 +19,12 @@ declare module "vite" {
   }
 }
 
+// A literal chunk-relative URL lets host bundlers re-emit the Zama worker.
+export const chunkRelativeAssetUrls: UserConfig["experimental"] = {
+  renderBuiltUrl: (filename, { hostType }) =>
+    hostType === "js" ? `./${filename}` : undefined,
+};
+
 export const getConfig = (
   overides?: Partial<UserConfig>,
   options?: { plugins?: Plugin[] }

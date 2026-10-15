@@ -147,6 +147,7 @@
     "@wallet-standard/base": "catalog:",
     "@walletconnect/sign-client": "catalog:",
     "@walletconnect/universal-provider": "catalog:",
+    "@zama-fhe/sdk": "catalog:",
     "autoprefixer": "catalog:",
     "bignumber.js": "catalog:",
     "bs58": "catalog:",

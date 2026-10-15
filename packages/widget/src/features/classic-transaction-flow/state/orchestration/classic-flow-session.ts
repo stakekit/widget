@@ -1,5 +1,11 @@
-import { Effect, Option, type Scope, ScopedRef, type Stream } from "effect";
-import type { YieldAction } from "../../../../domain/action/models";
+import {
+  Effect,
+  Option,
+  Ref,
+  type Scope,
+  ScopedRef,
+  type Stream,
+} from "effect";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { WidgetNavigation } from "../../../../services/navigation/widget-navigation";
 import type { TransactionWorkflowInputError } from "../../../../services/transaction-workflow/transaction-workflow-model";
@@ -15,6 +21,7 @@ import type {
 } from "../../model/classic-transaction-flow";
 import {
   type ClassicFlowExecutionHandle,
+  type ClassicFlowExecutionSource,
   makeClassicFlowExecutionFactory,
 } from "./classic-flow-execution";
 import {
@@ -50,11 +57,11 @@ export type ClassicFlowSessionHandle = Readonly<{
 }>;
 
 /**
- * The reserved action and the slot its one live Execution holds. The slot lives
+ * The reserved source and the slot its one live Execution holds. The slot lives
  * in the reservation's Scope, so replacing the reservation ends its Execution.
  */
 type ClassicFlowReservation = Readonly<{
-  readonly action: YieldAction;
+  readonly source: ClassicFlowExecutionSource;
   readonly executionSlot: ScopedExclusiveSlot;
 }>;
 
@@ -81,15 +88,16 @@ export const makeClassicFlowSessionFactory = Effect.fn(
       () => null
     );
     const releaseReservation = ScopedRef.set(reservation, Effect.succeed(null));
+    const convertedRef = yield* Ref.make(false);
 
     const promoteToExecutionOpen = Effect.fn(
       "ClassicFlowSession.promoteToExecution"
     )(function* ({
-      action,
       afterReservation,
       eligibility,
+      source,
     }: {
-      readonly action: YieldAction;
+      readonly source: ClassicFlowExecutionSource;
       readonly afterReservation: Effect.Effect<void>;
       readonly eligibility: Effect.Effect<ClassicFlowReviewEligibility>;
     }): Effect.fn.Return<PromoteToExecutionOutcome, WidgetNavigationError> {
@@ -108,8 +116,8 @@ export const makeClassicFlowSessionFactory = Effect.fn(
         ScopedRef.set(
           reservation,
           Effect.map(makeScopedExclusiveSlot(), (executionSlot) => ({
-            action,
             executionSlot,
+            source,
           }))
         ).pipe(
           Effect.andThen(
@@ -131,12 +139,12 @@ export const makeClassicFlowSessionFactory = Effect.fn(
     });
 
     const promoteToExecution = (
-      action: YieldAction,
+      source: ClassicFlowExecutionSource,
       afterReservation: Effect.Effect<void>,
       eligibility: Effect.Effect<ClassicFlowReviewEligibility>
     ) =>
       operations.run(
-        promoteToExecutionOpen({ action, afterReservation, eligibility })
+        promoteToExecutionOpen({ afterReservation, eligibility, source })
       );
 
     const acquireReview = (
@@ -168,9 +176,10 @@ export const makeClassicFlowSessionFactory = Effect.fn(
       if (!reserved) return { _tag: "RejectedNoReservation" } as const;
       const execution = yield* reserved.executionSlot.acquire(
         makeExecution({
-          action: reserved.action,
+          convertedRef,
           intake: session.intake,
           paths: session.destination,
+          source: reserved.source,
         })
       );
       return Option.match(execution, {
