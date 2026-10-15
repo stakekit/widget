@@ -40,8 +40,10 @@ const makeBorrowItem = ({
   _tag: "borrow",
   actionData: Schema.decodeSync(BorrowActivityAction)({
     action,
+    address: "0x0000000000000000000000000000000000000001",
     createdAt: "2026-07-28T08:00:00.000Z",
     id: "borrow-action",
+    integrationId: "aave-borrow",
     rawArguments: {
       ...(amount === undefined ? {} : { amount }),
       ...(amountRaw === undefined ? {} : { amountRaw }),
@@ -50,6 +52,9 @@ const makeBorrowItem = ({
     status,
     transactions: [],
   }),
+  integration: null,
+  market: null,
+  network: "ethereum",
   token: { decimals: 6, symbol: "USDC" } as BorrowActivityItem["token"],
   walletScope: {} as never,
 });
@@ -93,7 +98,6 @@ describe("Activity action list item projection", () => {
 
     expect(projection).toMatchObject({
       amountSign: "",
-      canOpenDetails: true,
       direction: "deposit",
       isPositive: true,
       timestamp: {
@@ -201,7 +205,6 @@ describe("Activity action list item projection", () => {
     });
 
     expect(projection).toMatchObject({
-      canOpenDetails: true,
       title: {
         _tag: "generic",
         actionLabel: "Vote",
@@ -251,26 +254,6 @@ describe("Activity action list item projection", () => {
 
     expect(projection.tokenSymbol).toBe("POL");
   });
-
-  it.each(["CANCELED", "STALE"] as const)(
-    "allows direct details for a %s action",
-    (status) => {
-      const yieldData = yieldApiYieldFixture();
-      const projection = projectActivityActionListItem({
-        action: makeItem(
-          yieldApiActionFixture({
-            status,
-            yieldId: yieldData.id,
-          }),
-          yieldData
-        ),
-        locale: "en-US",
-        presentationTime: null,
-      });
-
-      expect(projection.canOpenDetails).toBe(true);
-    }
-  );
 
   it.each([
     ["SUCCESS", "completed"],
@@ -349,7 +332,6 @@ describe("Activity action list item projection", () => {
     expect(projection).toMatchObject({
       amount: "1.5",
       amountSign: "+",
-      canOpenDetails: false,
       statusLabel: "completed",
       timestamp: { dayKind: "today", relative: { unit: "hours", value: 2 } },
       title: { _tag: "borrow", action: "supply", tokenSymbol: "USDC" },
@@ -387,7 +369,6 @@ describe("Activity action list item projection", () => {
 
       expect(projection).toMatchObject({
         amount: null,
-        canOpenDetails: false,
         direction,
         statusLabel,
         title: { _tag: "borrow", action },

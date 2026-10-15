@@ -1,16 +1,21 @@
 import { useAtomValue } from "@effect/atom-react";
 import clsx from "clsx";
 import { capitalize, toLowerCase } from "effect/String";
-import { useId } from "react";
+import { type ReactNode, useId } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
-import { capitalizeFirstLetters } from "../../../../shared/lib/formatters";
+import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
+import {
+  capitalizeFirstLetters,
+  formatBorrowProviderName,
+} from "../../../../shared/lib/formatters";
 import { formatAddress } from "../../../../shared/lib/general";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
+import type { TokenIconProps } from "../../../../shared/ui/components/token-icon/props";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../shared/ui/primitives/icons/caret-left";
 import { CheckCircleIcon } from "../../../../shared/ui/primitives/icons/check-circle";
@@ -25,6 +30,10 @@ import {
 import { YieldActionContinuationReviewScope } from "../../../classic-transaction-flow/views";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
 import { PageCtaButton } from "../../../widget-shell/views";
+import type {
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "../../model/activity-action";
 import {
   type ActivityActionDetailsProjection,
   projectActivityActionDetails,
@@ -180,7 +189,11 @@ const TransactionRow = ({
   const detailsId = `${id}-details`;
   const type = capitalize(
     toLowerCase(
-      formatTransactionTypeLabel(transaction.type, t, { context: typeContext })
+      transaction._tag === "borrow"
+        ? t(`dashboard.borrow.execution_page.tx_type.${transaction.type}`)
+        : formatTransactionTypeLabel(transaction.type, t, {
+            context: typeContext,
+          })
     )
   );
   const statusLabel = t(statusLabelKey[transaction.status]);
@@ -249,21 +262,65 @@ const TransactionRow = ({
   );
 };
 
+const ReceiptRow = ({
+  label,
+  value,
+}: {
+  readonly label: string;
+  readonly value: string;
+}) => (
+  <Box className={styles.row}>
+    <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
+    <Text className={styles.rowValue} variant={{ weight: "normal" }}>
+      {value}
+    </Text>
+  </Box>
+);
+
+const BorrowReceiptRows = ({
+  borrow,
+}: {
+  readonly borrow: NonNullable<ActivityActionDetailsProjection["borrow"]>;
+}) => {
+  const { t } = useTranslation();
+  const rows = [
+    { label: t("activity.details.market"), value: borrow.market },
+    {
+      label: t("activity.details.origination_fee"),
+      value: borrow.originationFee,
+    },
+    {
+      label: t("activity.details.collateral_fee"),
+      value: borrow.collateralFee,
+    },
+    { label: t("activity.details.ltv"), value: borrow.ltv },
+    { label: t("activity.details.health_factor"), value: borrow.healthFactor },
+  ];
+
+  return rows.map(({ label, value }) =>
+    value ? <ReceiptRow key={label} label={label} value={value} /> : null
+  );
+};
+
 const Receipt = ({
+  children,
+  providerName,
+  token,
+  transactionTypeContext,
   view,
 }: {
+  readonly children?: ReactNode;
+  readonly providerName: string | null;
+  readonly token: TokenIconProps["token"] | null;
+  readonly transactionTypeContext: "ETHENA_USDE" | undefined;
   readonly view: ActivityActionDetailsProjection;
 }) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { continuationReady, item, presentation, providersDetails } =
-    useActivityActionRoute();
+  const { presentation } = useActivityActionRoute();
   const navigate = useNavigate();
   const title = useActivityActionTitle(view.title);
-  const firstProvider = providersDetails[0];
-  const providerName = firstProvider?.name ?? firstProvider?.address ?? null;
-  const token = item.yieldData?.token ?? null;
-  useTrackPage(reviewPageByIntent[item.actionData.intent]);
+  const network = capitalizeFirstLetters(view.network.replaceAll("-", " "));
 
   const openTransaction = (url: string) => {
     window.open(url, "_blank");
@@ -304,12 +361,10 @@ const Receipt = ({
           <Text variant={{ type: "muted", weight: "normal" }}>
             {providerName
               ? t("activity.details.via_network", {
-                  network: capitalizeFirstLetters(
-                    view.network.replaceAll("-", " ")
-                  ),
+                  network,
                   provider: providerName,
                 })
-              : capitalizeFirstLetters(view.network.replaceAll("-", " "))}
+              : network}
           </Text>
         </Box>
       </Box>
@@ -323,24 +378,17 @@ const Receipt = ({
 
       <Divider />
       <Box className={styles.rows}>
-        <Box className={styles.row}>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("activity.details.created")}
-          </Text>
-          <Text className={styles.rowValue} variant={{ weight: "normal" }}>
-            {view.createdAt}
-          </Text>
-        </Box>
+        <ReceiptRow
+          label={t("activity.details.created")}
+          value={view.createdAt}
+        />
         {view.completedAt ? (
-          <Box className={styles.row}>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("activity.details.completed")}
-            </Text>
-            <Text className={styles.rowValue} variant={{ weight: "normal" }}>
-              {view.completedAt}
-            </Text>
-          </Box>
+          <ReceiptRow
+            label={t("activity.details.completed")}
+            value={view.completedAt}
+          />
         ) : null}
+        {view.borrow ? <BorrowReceiptRows borrow={view.borrow} /> : null}
       </Box>
 
       {view.transactions.length > 0 ? (
@@ -359,17 +407,39 @@ const Receipt = ({
                 onOpen={openTransaction}
                 position={index + 1}
                 transaction={transaction}
-                typeContext={
-                  isEthenaUsdeStaking(item.actionData.yieldId)
-                    ? "ETHENA_USDE"
-                    : undefined
-                }
+                typeContext={transactionTypeContext}
               />
             ))}
           </Box>
         </>
       ) : null}
 
+      {children}
+    </Box>
+  );
+};
+
+const YieldReceipt = ({
+  item,
+  view,
+}: {
+  readonly item: YieldActivityItem;
+  readonly view: ActivityActionDetailsProjection;
+}) => {
+  const { t } = useTranslation();
+  const { continuationReady, providersDetails } = useActivityActionRoute();
+  const firstProvider = providersDetails[0];
+  useTrackPage(reviewPageByIntent[item.actionData.intent]);
+
+  return (
+    <Receipt
+      providerName={firstProvider?.name ?? firstProvider?.address ?? null}
+      token={item.yieldData?.token ?? null}
+      transactionTypeContext={
+        isEthenaUsdeStaking(item.actionData.yieldId) ? "ETHENA_USDE" : undefined
+      }
+      view={view}
+    >
       {view.continuationUnavailable ? (
         <Text
           className={styles.unavailable}
@@ -384,9 +454,31 @@ const Receipt = ({
           <ContinuationControls />
         </YieldActionContinuationReviewScope>
       ) : null}
-    </Box>
+    </Receipt>
   );
 };
+
+// Borrow receipts are not continuation reviews, so they track no review page.
+const BorrowReceipt = ({
+  item,
+  view,
+}: {
+  readonly item: BorrowActivityItem;
+  readonly view: ActivityActionDetailsProjection;
+}) => (
+  <Receipt
+    providerName={
+      item.integration ? formatBorrowProviderName(item.integration.name) : null
+    }
+    token={
+      item.token
+        ? borrowTokenToAppToken({ network: item.network, token: item.token })
+        : null
+    }
+    transactionTypeContext={undefined}
+    view={view}
+  />
+);
 
 export const ActivityDetailsPage = () => {
   const { i18n } = useTranslation();
@@ -394,13 +486,15 @@ export const ActivityDetailsPage = () => {
   const presentationTime = useAtomValue(presentationClockAtom);
   if (!presentationTime) return null;
 
-  return (
-    <Receipt
-      view={projectActivityActionDetails({
-        item,
-        locale: i18n.language,
-        presentationTime,
-      })}
-    />
+  const view = projectActivityActionDetails({
+    item,
+    locale: i18n.language,
+    presentationTime,
+  });
+
+  return item._tag === "yield" ? (
+    <YieldReceipt item={item} view={view} />
+  ) : (
+    <BorrowReceipt item={item} view={view} />
   );
 };

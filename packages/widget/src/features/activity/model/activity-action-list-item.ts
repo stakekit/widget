@@ -62,7 +62,6 @@ type ActivityActionTimestamp = {
 type ActivityActionListItemProjection = {
   readonly amount: string | null;
   readonly amountSign: "" | "+" | "-";
-  readonly canOpenDetails: boolean;
   readonly direction: ActivityDirection;
   readonly isPositive: boolean;
   readonly statusLabel: ActivityStatusLabel | null;
@@ -282,7 +281,7 @@ const resolveTimestamp = ({
 };
 
 // Borrow actions carry either a decimal amount or base units in the token's decimals.
-const resolveBorrowActivityAmount = ({
+export const resolveBorrowActivityAmount = ({
   actionData,
   token,
 }: BorrowActivityItem) => {
@@ -311,7 +310,6 @@ const projectBorrowActivityListItem = ({
   return {
     amount,
     amountSign: resolveAmountSign({ amount, direction }),
-    canOpenDetails: false,
     direction,
     isPositive: direction === "deposit",
     statusLabel: BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status],
@@ -351,7 +349,6 @@ export const projectActivityActionListItem = ({
   return {
     amount,
     amountSign: resolveAmountSign({ amount, direction }),
-    canOpenDetails: true,
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
     statusLabel: projectActivityStatusLabel(

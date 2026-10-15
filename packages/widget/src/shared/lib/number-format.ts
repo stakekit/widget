@@ -256,6 +256,23 @@ export const formatHealthFactor = (
   return formatNumber(amount, locale, 4);
 };
 
+/**
+ * A figure as it moves with an action: `before → after`, or just `after` when
+ * the two match or `before` is unknown. `-` is the formatters' unavailable
+ * marker, so an unavailable `after` formats to null.
+ */
+export const formatFigureChange = <Value>(
+  format: (value: Value, locale: string) => string,
+  figure: { readonly after: Value; readonly before: Value | null } | null,
+  locale: string
+): string | null => {
+  const after = figure ? format(figure.after, locale) : "-";
+  if (!figure || after === "-") return null;
+  const before = figure.before === null ? "-" : format(figure.before, locale);
+
+  return before !== "-" && before !== after ? `${before} → ${after}` : after;
+};
+
 export const toRepresentationNumber = (
   value: BigNumber | number | string
 ): number => exactDecimal(value).toNumber();

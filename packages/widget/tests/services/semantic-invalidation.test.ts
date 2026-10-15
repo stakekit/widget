@@ -407,13 +407,20 @@ describe("semantic resource invalidation", () => {
         });
         const historyKey = (scope: WalletScopeKey) =>
           getActivityHistoryKey(
-            new ActivityActionsKey({ filter: "all", scope })
+            new ActivityActionsKey({
+              borrowEnabled: false,
+              filter: "all",
+              scope,
+            })
           )!;
         const actions = activityHistoryPullAtom(
           historyKey(sameWalletCachedScope)
         );
         const filters = activityFilterOptionsAtom(
-          new ActivityFilterOptionsKey({ scope: sameWalletCachedScope })
+          new ActivityFilterOptionsKey({
+            borrowEnabled: false,
+            scope: sameWalletCachedScope,
+          })
         );
         const otherWalletActions = activityHistoryPullAtom(historyKey(scopeB));
         const otherNetworkActions = activityHistoryPullAtom(

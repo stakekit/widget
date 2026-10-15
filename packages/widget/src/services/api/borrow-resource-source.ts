@@ -1,9 +1,11 @@
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
+import type { ActionId } from "../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
   BorrowActionsPage,
+  BorrowActivityAction,
   BorrowIntegrationPositionsResponse,
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
@@ -82,6 +84,34 @@ export const makeBorrowResourceSource = (
     }
   );
 
+  const getAction = Effect.fn("BorrowResourceSource.getAction")(function* (
+    actionId: ActionId
+  ) {
+    const client = yield* requireTransport();
+    const response = yield* client
+      .ActionsControllerGetActionV1(actionId, undefined)
+      .pipe(
+        Effect.asSome,
+        Effect.catchTag("404", () =>
+          Effect.succeed(
+            Option.none<BorrowApi.ActionsControllerGetActionV1200>()
+          )
+        ),
+        withApiRequestError("borrow-activity-action")
+      );
+
+    return yield* response.pipe(
+      Option.match({
+        onNone: () => Effect.succeed(Option.none<BorrowActivityAction>()),
+        onSome: (value) =>
+          Schema.decodeUnknownEffect(BorrowActivityAction)(value).pipe(
+            withResponseDecodeError("borrow-activity-action"),
+            Effect.asSome
+          ),
+      })
+    );
+  });
+
   const listActions = Effect.fn("BorrowResourceSource.listActions")(function* (
     request: BorrowActionsRequest
   ) {
@@ -92,6 +122,7 @@ export const makeBorrowResourceSource = (
   });
 
   return {
+    getAction,
     getIntegrations,
     getMarkets,
     getPositionData,

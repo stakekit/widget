@@ -2,7 +2,12 @@ import { Cause, DateTime, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { BorrowActionsPage } from "../../../src/domain/borrow/responses";
+import { BorrowFeatureDisabled } from "../../../src/domain/borrow/availability";
+import { ActionId as BorrowActionId } from "../../../src/domain/borrow/ids";
+import {
+  BorrowActionsPage,
+  BorrowActivityAction,
+} from "../../../src/domain/borrow/responses";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
@@ -12,6 +17,8 @@ import {
   activityActionResourceAtom,
   activityCountResourceAtom,
   activityHistoryPullAtom,
+  BorrowActivityActionKey,
+  borrowActivityActionResourceAtom,
 } from "../../../src/resources/activity-history/activity-history";
 import {
   ApiRequestError,
@@ -19,10 +26,7 @@ import {
   MissingBorrowApiConfig,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
-import {
-  API_MAX_PAGE_SIZE,
-  getPullResultItems,
-} from "../../../src/shared/effect/pagination";
+import { getPullResultItems } from "../../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 
 const scope = new WalletScopeKey({
@@ -32,8 +36,15 @@ const scope = new WalletScopeKey({
   network: "ethereum",
 });
 const yieldId = yieldApiYieldFixture().id;
-const makeKey = () =>
+const makeKey = (
+  sources: {
+    readonly includeBorrow?: boolean;
+    readonly includeYield?: boolean;
+  } = {}
+) =>
   new ActivityHistoryKey({
+    includeBorrow: sources.includeBorrow ?? true,
+    includeYield: sources.includeYield ?? true,
     scope,
     statuses: ["SUCCESS", "FAILED", "SUCCESS"],
   });
@@ -241,6 +252,8 @@ describe("Activity History resource", () => {
     });
     const first = makeKey();
     const second = new ActivityHistoryKey({
+      includeBorrow: true,
+      includeYield: true,
       scope: scopeWithAdditionalAddress,
       statuses: ["FAILED", "SUCCESS"],
     });
@@ -366,8 +379,7 @@ describe("Activity History resource", () => {
     expect(listActivity).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
   });
 
-  // Re-enable the Borrow feed tests when Borrow activity is reconnected.
-  it.skip("merges Yield and Borrow actions by date while paging each source independently", async () => {
+  it("merges Yield and Borrow actions by date while paging each source independently", async () => {
     const listActivity =
       vi.fn<YieldResourceSource["Service"]["listActivity"]>();
     vi.when(listActivity, { onUnmatched: "throw" })
@@ -397,13 +409,12 @@ describe("Activity History resource", () => {
           borrowPage({
             items: [
               borrowAction({
-                createdAt: "2026-07-10T09:00:00.000Z",
+                createdAt: "2026-07-10T09:30:00.000Z",
                 id: "borrow-1",
               }),
               borrowAction({
-                createdAt: "2026-07-10T09:30:00.000Z",
-                id: "borrow-on-base",
-                network: "base",
+                createdAt: "2026-07-10T09:00:00.000Z",
+                id: "borrow-2",
               }),
             ],
             limit: 2,
@@ -419,7 +430,7 @@ describe("Activity History resource", () => {
             items: [
               borrowAction({
                 createdAt: "2026-07-10T07:00:00.000Z",
-                id: "borrow-2",
+                id: "borrow-3",
               }),
             ],
             limit: 2,
@@ -434,7 +445,7 @@ describe("Activity History resource", () => {
 
     await vi.waitFor(() =>
       expect(getPullResultItems(registry.get(pull))).toMatchObject([
-        { actions: [{ _tag: "yield", action: { id: "yield-1" } }], total: 4 },
+        { actions: [{ _tag: "yield", action: { id: "yield-1" } }], total: 5 },
       ])
     );
     registry.set(pull, undefined);
@@ -447,96 +458,42 @@ describe("Activity History resource", () => {
     );
 
     expect(getPullResultItems(registry.get(pull))).toMatchObject([
-      { actions: [{ _tag: "yield", action: { id: "yield-1" } }], total: 4 },
-      { actions: [{ _tag: "borrow", action: { id: "borrow-1" } }], total: 4 },
+      { actions: [{ _tag: "yield", action: { id: "yield-1" } }], total: 5 },
+      {
+        actions: [
+          { _tag: "borrow", action: { id: "borrow-1" }, network: "ethereum" },
+          { _tag: "borrow", action: { id: "borrow-2" }, network: "ethereum" },
+        ],
+        total: 5,
+      },
       {
         actions: [
           { _tag: "yield", action: { id: "yield-2" } },
-          { _tag: "borrow", action: { id: "borrow-2" } },
+          { _tag: "borrow", action: { id: "borrow-3" } },
         ],
-        total: 4,
+        total: 5,
       },
     ]);
     expect(listActivity.mock.calls.map(([request]) => request.offset)).toEqual([
       0, 1,
     ]);
-    // The scoped Borrow count is read first; history then pages on its own.
+    // Borrow pages are filtered by the API, so no count scan precedes them.
     expect(listActions.mock.calls.map(([request]) => request)).toEqual([
-      expect.objectContaining({ limit: API_MAX_PAGE_SIZE, offset: 0 }),
-      expect.objectContaining({ limit: API_MAX_PAGE_SIZE, offset: 2 }),
       expect.objectContaining({
         address: scope.address,
         limit: 50,
+        network: "ethereum",
         offset: 0,
         statuses: ["FAILED", "SUCCESS"],
       }),
-      expect.objectContaining({ limit: 50, offset: 2 }),
+      expect.objectContaining({ limit: 50, network: "ethereum", offset: 2 }),
     ]);
 
     unmount();
     registry.dispose();
   });
 
-  it.skip("totals only wallet-network Borrow actions, including those on later pages", () => {
-    const listActivity = vi.fn(() =>
-      Effect.succeed({
-        items: [yieldActionAt("yield-1", "2026-07-10T10:00:00.000Z")],
-        limit: 50,
-        offset: 0,
-        total: 1,
-      })
-    );
-    const listActions: ListBorrowActions = ({ offset }) =>
-      Effect.succeed(
-        borrowPage(
-          offset === 0
-            ? {
-                items: [
-                  borrowAction({
-                    createdAt: "2026-07-10T09:00:00.000Z",
-                    id: "borrow-1",
-                  }),
-                  borrowAction({
-                    createdAt: "2026-07-10T08:30:00.000Z",
-                    id: "borrow-2",
-                  }),
-                ],
-                limit: 2,
-                offset: 0,
-                total: 3,
-              }
-            : {
-                items: [
-                  borrowAction({
-                    createdAt: "2026-07-10T08:00:00.000Z",
-                    id: "borrow-on-base",
-                    network: "base",
-                  }),
-                ],
-                limit: 2,
-                offset: 2,
-                total: 3,
-              }
-        )
-      );
-    const registry = makeRegistry(listActivity, listActions);
-
-    expect(
-      getPullResultItems(registry.get(activityHistoryPullAtom(makeKey())))
-    ).toMatchObject([
-      {
-        actions: [
-          { _tag: "yield", action: { id: "yield-1" } },
-          { _tag: "borrow", action: { id: "borrow-1" } },
-          { _tag: "borrow", action: { id: "borrow-2" } },
-        ],
-        hasNextPage: true,
-        total: 3,
-      },
-    ]);
-  });
-
-  it.skip("lists Borrow actions whose unread execution fields are malformed", () => {
+  it("lists Borrow actions whose unread execution fields are malformed", () => {
     const listActivity = vi.fn(() =>
       Effect.succeed({ items: [], limit: 50, offset: 0, total: 0 })
     );
@@ -568,7 +525,12 @@ describe("Activity History resource", () => {
     expect(
       getPullResultItems(registry.get(activityHistoryPullAtom(makeKey())))
     ).toMatchObject([
-      { actions: [{ _tag: "borrow", action: { id: "borrow-1" } }], total: 1 },
+      {
+        actions: [
+          { _tag: "borrow", action: { id: "borrow-1", metadata: null } },
+        ],
+        total: 1,
+      },
     ]);
   });
 
@@ -608,34 +570,24 @@ describe("Activity History resource", () => {
     ).toBe(1);
   });
 
-  it.skip("counts Borrow actions on the wallet network alongside Yield actions", () => {
+  it("counts network-filtered Borrow actions alongside Yield actions", () => {
     const listActivity = vi.fn(() =>
-      Effect.succeed({ items: [], limit: 1, offset: 0, total: 2 })
+      Effect.succeed({ items: [], limit: 1, offset: 0, total: 1 })
     );
-    const listActions: ListBorrowActions = () =>
-      Effect.succeed(
-        borrowPage({
-          items: [
-            borrowAction({
-              createdAt: "2026-07-10T09:00:00.000Z",
-              id: "borrow-1",
-            }),
-            borrowAction({
-              createdAt: "2026-07-10T09:30:00.000Z",
-              id: "borrow-on-base",
-              network: "base",
-            }),
-          ],
-          limit: 100,
-          offset: 0,
-          total: 2,
-        })
-      );
+    const listActions = vi.fn<ListBorrowActions>(() =>
+      Effect.succeed(borrowPage({ items: [], limit: 1, offset: 0, total: 2 }))
+    );
     const registry = makeRegistry(listActivity, listActions);
 
     expect(
       AsyncResult.getOrThrow(registry.get(activityCountResourceAtom(makeKey())))
     ).toBe(3);
+    expect(listActions).toHaveBeenCalledOnce();
+    expect(listActions.mock.calls[0]?.[0]).toMatchObject({
+      limit: 1,
+      network: "ethereum",
+      offset: 0,
+    });
   });
 
   it("keeps category feeds Yield-only", () => {
@@ -645,6 +597,8 @@ describe("Activity History resource", () => {
     const listActions = vi.fn<ListBorrowActions>();
     const registry = makeRegistry(listActivity, listActions);
     const key = new ActivityHistoryKey({
+      includeBorrow: false,
+      includeYield: true,
       scope,
       statuses: ["SUCCESS"],
       yieldTypes: ["staking"],
@@ -659,21 +613,39 @@ describe("Activity History resource", () => {
     expect(listActions).not.toHaveBeenCalled();
   });
 
-  it("does not request Borrow actions while Borrow activity is disconnected", () => {
+  it("does not request Borrow actions for a wallet on a non-Borrow network", () => {
     const listActivity = vi.fn(() =>
-      Effect.succeed({
-        items: [yieldActionAt("yield-1", "2026-07-10T10:00:00.000Z")],
-        limit: 50,
-        offset: 0,
-        total: 1,
-      })
+      Effect.succeed({ items: [], limit: 50, offset: 0, total: 0 })
     );
-    const listActions = vi.fn<ListBorrowActions>(() =>
+    const listActions = vi.fn<ListBorrowActions>();
+    const registry = makeRegistry(listActivity, listActions);
+    const key = new ActivityHistoryKey({
+      includeBorrow: true,
+      includeYield: true,
+      scope: new WalletScopeKey({
+        address: Schema.decodeSync(WalletAddress)("SoLanaWallet1111"),
+        network: "solana",
+      }),
+      statuses: ["SUCCESS"],
+    });
+
+    expect(
+      getPullResultItems(registry.get(activityHistoryPullAtom(key)))
+    ).toMatchObject([{ actions: [], total: 0 }]);
+    expect(
+      AsyncResult.getOrThrow(registry.get(activityCountResourceAtom(key)))
+    ).toBe(0);
+    expect(listActions).not.toHaveBeenCalled();
+  });
+
+  it("reads only Borrow actions for a Borrow-only feed", () => {
+    const listActivity = vi.fn();
+    const listActions: ListBorrowActions = () =>
       Effect.succeed(
         borrowPage({
           items: [
             borrowAction({
-              createdAt: "2026-07-10T11:00:00.000Z",
+              createdAt: "2026-07-10T09:00:00.000Z",
               id: "borrow-1",
             }),
           ],
@@ -681,19 +653,84 @@ describe("Activity History resource", () => {
           offset: 0,
           total: 1,
         })
-      )
-    );
+      );
     const registry = makeRegistry(listActivity, listActions);
-    const key = makeKey();
+    const key = makeKey({ includeYield: false });
 
     expect(
       getPullResultItems(registry.get(activityHistoryPullAtom(key)))
     ).toMatchObject([
-      { actions: [{ _tag: "yield", action: { id: "yield-1" } }], total: 1 },
+      { actions: [{ _tag: "borrow", action: { id: "borrow-1" } }], total: 1 },
     ]);
     expect(
       AsyncResult.getOrThrow(registry.get(activityCountResourceAtom(key)))
     ).toBe(1);
-    expect(listActions).not.toHaveBeenCalled();
+    expect(listActivity).not.toHaveBeenCalled();
+  });
+
+  describe("Borrow action by id", () => {
+    const actionId = Schema.decodeSync(BorrowActionId)("borrow-1");
+    const decodeAction = (overrides: Record<string, unknown> = {}) =>
+      Schema.decodeUnknownSync(BorrowActivityAction)({
+        ...borrowAction({
+          createdAt: "2026-07-10T09:00:00.000Z",
+          id: actionId,
+        }),
+        ...overrides,
+      });
+    const readAction = (
+      getAction: BorrowResourceSource["Service"]["getAction"]
+    ) =>
+      AsyncResult.getOrThrow(
+        AtomRegistry.make({
+          initialValues: [
+            Atom.initialValue(
+              appRuntime.layer,
+              Layer.succeed(
+                BorrowResourceSource,
+                BorrowResourceSource.of({ getAction } as never)
+              )
+            ),
+          ],
+        }).get(
+          borrowActivityActionResourceAtom(
+            new BorrowActivityActionKey({ actionId, scope })
+          )
+        )
+      );
+
+    it("loads an owned Borrow action on the wallet network", () => {
+      expect(
+        readAction(() => Effect.succeedSome(decodeAction()))
+      ).toMatchObject({
+        _tag: "borrow",
+        action: { id: "borrow-1" },
+        network: "ethereum",
+      });
+    });
+
+    it("does not expose a Borrow action owned by another wallet", () => {
+      expect(
+        readAction(() =>
+          Effect.succeedSome(
+            decodeAction({
+              address: "0x0000000000000000000000000000000000000002",
+            })
+          )
+        )
+      ).toBeNull();
+    });
+
+    it("treats disabled Borrow as no action", () => {
+      expect(
+        readAction(() =>
+          Effect.fail(
+            new BorrowFeatureDisabled({
+              message: "Borrow is disabled by Widget configuration.",
+            })
+          )
+        )
+      ).toBeNull();
+    });
   });
 });

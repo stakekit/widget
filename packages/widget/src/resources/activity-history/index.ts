@@ -1,6 +1,7 @@
 export type {
   ActivityHistoryBatch,
   ActivityHistoryEntry,
+  BorrowActivityHistoryEntry,
 } from "./activity-history";
 export {
   ActivityActionKey,
@@ -9,4 +10,6 @@ export {
   activityActionResourceAtom,
   activityCountResourceAtom,
   activityHistoryPullAtom,
+  BorrowActivityActionKey,
+  borrowActivityActionResourceAtom,
 } from "./activity-history";

@@ -7,6 +7,7 @@ import {
 } from "../../../domain/borrow/risk/ltv-limits";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
+  formatFigureChange,
   formatHealthFactor,
   formatLtv,
   formatUsd,
@@ -24,31 +25,6 @@ const riskLevelTone = {
   safe: "default",
 } as const satisfies Record<RiskLevel, DetailRowTone>;
 
-/** `-` is the formatters' unavailable marker; an unavailable figure shows nothing. */
-type FigureFormatter = (value: string, locale: string) => string;
-
-const formatFigure = (
-  format: FigureFormatter,
-  value: string | null,
-  locale: string
-) => {
-  const formatted = value === null ? "-" : format(value, locale);
-
-  return formatted === "-" ? null : formatted;
-};
-
-const formatChange = (
-  format: FigureFormatter,
-  figure: { readonly after: string; readonly before: string | null } | null,
-  locale: string
-) => {
-  const after = figure && formatFigure(format, figure.after, locale);
-  if (!figure || !after) return null;
-  const before = formatFigure(format, figure.before, locale);
-
-  return before && before !== after ? `${before} → ${after}` : after;
-};
-
 /** Collateral, debt, LTV, and health factor as they move with the action. */
 export const BorrowFlowPositionChangeRows = ({
   change,
@@ -57,10 +33,14 @@ export const BorrowFlowPositionChangeRows = ({
 }): ReactElement => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const collateral = formatChange(formatUsd, change.collateralUsd, locale);
-  const debt = formatChange(formatUsd, change.debtUsd, locale);
-  const ltv = formatChange(formatLtv, change.ltv, locale);
-  const healthFactor = formatChange(
+  const collateral = formatFigureChange(
+    formatUsd,
+    change.collateralUsd,
+    locale
+  );
+  const debt = formatFigureChange(formatUsd, change.debtUsd, locale);
+  const ltv = formatFigureChange(formatLtv, change.ltv, locale);
+  const healthFactor = formatFigureChange(
     formatHealthFactor,
     change.healthFactor,
     locale

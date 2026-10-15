@@ -1,16 +1,33 @@
+import type BigNumber from "bignumber.js";
 import { DateTime } from "effect";
 import type { ActionTransaction } from "../../../domain/action/models";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
+import { getBorrowMarketPairLabel } from "../../../domain/borrow/catalog/market";
+import type { BorrowToken } from "../../../domain/borrow/catalog/token";
+import type { BorrowActivityAction } from "../../../domain/borrow/responses";
 import { formatDateTime } from "../../../shared/lib/date";
-import { formatNumber } from "../../../shared/lib/number-format";
-import type { YieldActivityItem } from "./activity-action";
+import {
+  formatFigureChange,
+  formatHealthFactor,
+  formatLtv,
+  formatNumber,
+} from "../../../shared/lib/number-format";
+import type {
+  ActivityActionItem,
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "./activity-action";
 import {
   type ActivityActionTitle,
   type ActivityPresentationTime,
   type ActivityStatusLabel,
   projectActivityActionListItem,
   projectActivityStatusLabel,
+  resolveBorrowActivityAmount,
 } from "./activity-action-list-item";
+import { findBorrowMarketToken } from "./activity-enrichment";
+
+type BorrowActivityTransaction = BorrowActivityAction["transactions"][number];
 
 type ActivityDetailsTransactionStatus =
   | "confirmed"
@@ -19,15 +36,25 @@ type ActivityDetailsTransactionStatus =
   | "not_submitted"
   | "skipped";
 
-type ActivityDetailsTransaction = Readonly<{
+type ActivityDetailsTransactionFields = Readonly<{
   readonly broadcastedAt: string | null;
   readonly error: string | null;
   readonly explorerUrl: string | null;
   readonly hash: string | null;
   readonly id: string;
   readonly status: ActivityDetailsTransactionStatus;
-  readonly type: ActionTransaction["type"];
 }>;
+
+/** Yield and Borrow name transaction types from different vocabularies. */
+type ActivityDetailsTransaction =
+  | (ActivityDetailsTransactionFields & {
+      readonly _tag: "yield";
+      readonly type: ActionTransaction["type"];
+    })
+  | (ActivityDetailsTransactionFields & {
+      readonly _tag: "borrow";
+      readonly type: BorrowActivityTransaction["type"];
+    });
 
 type ActivityDetailsTransactionsSummary =
   | { readonly _tag: "allConfirmed"; readonly count: number }
@@ -35,8 +62,18 @@ type ActivityDetailsTransactionsSummary =
   | { readonly _tag: "inProgress"; readonly count: number }
   | { readonly _tag: "total"; readonly count: number };
 
+/** Borrow-only receipt rows; each is absent when its fact is unknown. */
+type ActivityBorrowDetailsProjection = Readonly<{
+  readonly collateralFee: string | null;
+  readonly healthFactor: string | null;
+  readonly ltv: string | null;
+  readonly market: string | null;
+  readonly originationFee: string | null;
+}>;
+
 export type ActivityActionDetailsProjection = Readonly<{
   readonly amount: string | null;
+  readonly borrow: ActivityBorrowDetailsProjection | null;
   readonly canContinue: boolean;
   readonly completedAt: string | null;
   readonly continuationUnavailable: boolean;
@@ -64,8 +101,9 @@ const formatDate = (
     minute: "2-digit",
   });
 
+// Yield and Borrow transactions share the same ten statuses.
 const projectTransactionStatus = (
-  status: ActionTransaction["status"]
+  status: ActionTransaction["status"] | BorrowActivityTransaction["status"]
 ): ActivityDetailsTransactionStatus => {
   switch (status) {
     case "CONFIRMED":
@@ -114,7 +152,7 @@ const summarizeTransactions = (
     : { _tag: "total", count: transactions.length };
 };
 
-export const projectActivityActionDetails = ({
+const projectYieldActivityDetails = ({
   item,
   locale,
   presentationTime,
@@ -144,6 +182,7 @@ export const projectActivityActionDetails = ({
     .toSorted(compareTransactionSteps)
     .map(
       (transaction): ActivityDetailsTransaction => ({
+        _tag: "yield",
         broadcastedAt: transaction.broadcastedAt
           ? formatDate(
               transaction.broadcastedAt,
@@ -162,6 +201,7 @@ export const projectActivityActionDetails = ({
 
   return {
     amount,
+    borrow: null,
     canContinue,
     completedAt: action.completedAt
       ? formatDate(action.completedAt, locale, presentationTime.timeZone)
@@ -179,3 +219,118 @@ export const projectActivityActionDetails = ({
     transactionsSummary: summarizeTransactions(transactions),
   };
 };
+
+/** Fee text in the fee's token; zero or unknown fees are not shown. */
+const formatBorrowFee = (
+  amount: BigNumber | undefined,
+  token: BorrowToken | null,
+  locale: string
+) => {
+  if (!amount || amount.isZero()) return null;
+  const formatted = formatNumber(amount, locale);
+  return token ? `${formatted} ${token.symbol}` : formatted;
+};
+
+// Collateral fees are charged in the supplied collateral token.
+const resolveCollateralFeeToken = ({
+  actionData,
+  market,
+  token,
+}: BorrowActivityItem): BorrowToken | null => {
+  const collateralAddress = actionData.rawArguments?.collateralTokenAddress;
+  if (market && collateralAddress) {
+    return findBorrowMarketToken(market, collateralAddress);
+  }
+  return actionData.action === "supply" ? token : null;
+};
+
+const projectBorrowActivityDetails = ({
+  item,
+  locale,
+  presentationTime,
+}: {
+  readonly item: BorrowActivityItem;
+  readonly locale: string;
+  readonly presentationTime: ActivityPresentationTime;
+}): ActivityActionDetailsProjection => {
+  const action = item.actionData;
+  const metadata = action.metadata ?? null;
+  const listItem = projectActivityActionListItem({
+    action: item,
+    locale,
+    presentationTime,
+  });
+  const exactAmount = resolveBorrowActivityAmount(item);
+  // The API returns the current step's transactions in order, without hashes.
+  const transactions = action.transactions.map(
+    (transaction): ActivityDetailsTransaction => ({
+      _tag: "borrow",
+      broadcastedAt: null,
+      error: null,
+      explorerUrl: null,
+      hash: null,
+      id: transaction.id,
+      status: projectTransactionStatus(transaction.status),
+      type: transaction.type,
+    })
+  );
+
+  return {
+    amount: exactAmount
+      ? `${listItem.amountSign}${formatNumber(exactAmount, locale)}`
+      : null,
+    borrow: {
+      collateralFee: formatBorrowFee(
+        metadata?.feeAmount,
+        resolveCollateralFeeToken(item),
+        locale
+      ),
+      healthFactor: formatFigureChange(
+        formatHealthFactor,
+        metadata?.predictedHealthFactor
+          ? {
+              after: metadata.predictedHealthFactor,
+              before: metadata.currentHealthFactor,
+            }
+          : null,
+        locale
+      ),
+      ltv: formatFigureChange(
+        formatLtv,
+        metadata
+          ? { after: metadata.predictedLtv, before: metadata.currentLtv }
+          : null,
+        locale
+      ),
+      market: item.market ? getBorrowMarketPairLabel(item.market) : null,
+      originationFee: formatBorrowFee(
+        metadata?.originationFeeAmount,
+        item.market?.loanToken ?? null,
+        locale
+      ),
+    },
+    canContinue: false,
+    completedAt: null,
+    continuationUnavailable: false,
+    createdAt: formatDate(action.createdAt, locale, presentationTime.timeZone),
+    network: item.network,
+    statusLabel: listItem.statusLabel,
+    title: listItem.title,
+    tokenSymbol: listItem.tokenSymbol,
+    transactions,
+    transactionsSummary: summarizeTransactions(transactions),
+  };
+};
+
+export const projectActivityActionDetails = ({
+  item,
+  locale,
+  presentationTime,
+}: {
+  readonly item: ActivityActionItem;
+  readonly locale: string;
+  readonly presentationTime: ActivityPresentationTime;
+}): ActivityActionDetailsProjection =>
+  item._tag === "yield"
+    ? projectYieldActivityDetails({ item, locale, presentationTime })
+    : projectBorrowActivityDetails({ item, locale, presentationTime });

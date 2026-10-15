@@ -1,9 +1,13 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useNavigate, useParams } from "react-router";
-import type { ActivityActionItem } from "../model/activity-action";
+import { useMatch, useNavigate, useParams } from "react-router";
+import {
+  type ActivityActionItem,
+  getActivityActionPath,
+  getActivitySelectionTarget,
+} from "../model/activity-action";
 import {
   parseActivityRouteIntent,
-  resolveActivityHighlightActionId,
+  resolveActivityHighlightAction,
 } from "../state/details";
 import {
   activityPageViewAtom,
@@ -19,6 +23,7 @@ export const useActivityPage = ({
 } = {}) => {
   const navigate = useNavigate();
   const { actionId: actionIdParam } = useParams();
+  const borrowMatch = useMatch("/activity/borrow/:actionId");
   const view = useAtomValue(activityPageViewAtom);
   const loadMore = useAtomSet(loadMoreActivityAtom);
   const retry = useAtomSet(retryActivityPageAtom);
@@ -26,17 +31,18 @@ export const useActivityPage = ({
   const parsed = parseActivityRouteIntent({
     actionIdParam,
     allowDefault: allowDefaultSelection,
+    source: borrowMatch ? "borrow" : "yield",
   });
-  const selectedActionId = resolveActivityHighlightActionId(
+  const selectedAction = resolveActivityHighlightAction(
     parsed.status === "ok" ? parsed.intent : null,
     view
   );
 
   return {
     view,
-    selectedActionId,
+    selectedAction,
     onActionSelect: (item: ActivityActionItem) =>
-      navigate(`/activity/${encodeURIComponent(item.actionData.id)}`),
+      navigate(getActivityActionPath(getActivitySelectionTarget(item))),
     onFilterSelect: selectFilter,
     onLoadMore: () => loadMore(undefined),
     onRetry: () => retry(undefined),

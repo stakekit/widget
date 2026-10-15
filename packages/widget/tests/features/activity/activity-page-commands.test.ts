@@ -28,6 +28,7 @@ import {
 import { YieldResourceSource } from "../../../src/services/api/resource-sources";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { unconfiguredBorrowResourceSourceLayer } from "../../utils/services/borrow-resource-source";
+import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
@@ -49,7 +50,7 @@ const connectedWallet = {
   status: "connected" as const,
 };
 const filterOptionsAtom = activityFilterOptionsAtom(
-  new ActivityFilterOptionsKey({ scope: walletScope })
+  new ActivityFilterOptionsKey({ borrowEnabled: false, scope: walletScope })
 );
 
 type ListActivity = YieldResourceSource["Service"]["listActivity"];
@@ -81,6 +82,7 @@ const makeRegistry = (
       ),
       Atom.initialValue(walletConnectionStateAtom, connectedWallet),
       Atom.initialValue(walletScopeAtom, walletScope),
+      applicationRuntimeInitInitialValue(),
     ],
   });
 
@@ -292,6 +294,7 @@ describe("Activity actions resource commands", () => {
       });
     });
     const key = new ActivityActionsKey({
+      borrowEnabled: false,
       filter: "all",
       scope: walletScope,
     });

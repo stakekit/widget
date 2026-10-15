@@ -1,7 +1,12 @@
-import { DateTime } from "effect";
+import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../../src/domain/action/models";
-import type { YieldActivityItem } from "../../../src/features/activity/model/activity-action";
+import { Market } from "../../../src/domain/borrow/catalog/market";
+import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import type {
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "../../../src/features/activity/model/activity-action";
 import { projectActivityActionDetails } from "../../../src/features/activity/model/activity-action-details";
 import {
   yieldApiActionFixture,
@@ -187,5 +192,124 @@ describe("Activity action details projection", () => {
     expect(view.statusLabel).toBe("expired");
     expect(view.canContinue).toBe(false);
     expect(view.continuationUnavailable).toBe(false);
+  });
+
+  it("projects a Borrow receipt with market, fees, LTV and health factor changes", () => {
+    const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+    const market = Schema.decodeSync(Market)({
+      availableLiquidity: "500000",
+      availableLiquidityRaw: "500000000000",
+      blueBundleOriginationFeeBps: null,
+      borrowRate: "0.06",
+      collateralTokens: [
+        {
+          liquidationPenalty: "0.05",
+          liquidationThreshold: "0.85",
+          maxLtv: "0.8",
+          priceUsd: "2000",
+          supplyRate: "0.02",
+          token: {
+            address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            decimals: 18,
+            name: "Wrapped Ether",
+            symbol: "WETH",
+          },
+        },
+      ],
+      id: "morpho-weth-usdc",
+      integrationId: "morpho-borrow",
+      isBorrowEnabled: true,
+      loanToken: {
+        address: loanTokenAddress,
+        decimals: 6,
+        name: "USD Coin",
+        symbol: "USDC",
+      },
+      loanTokenPriceUsd: "1",
+      minLoan: null,
+      network: "ethereum",
+      originationFeeBps: "0",
+      originationFeeWrapperAddress: null,
+      poolAddress: "0x0000000000000000000000000000000000000001",
+      supplyCollateralFeeBps: "0",
+      totalBorrow: "500000",
+      totalBorrowRaw: "500000000000",
+      totalSupply: "1000000",
+      totalSupplyRaw: "1000000000000",
+      type: "isolated",
+      utilizationRate: "0.5",
+    });
+    const item: BorrowActivityItem = {
+      _tag: "borrow",
+      actionData: Schema.decodeSync(BorrowActivityAction)({
+        action: "supplyAndBorrow",
+        address: "0x0000000000000000000000000000000000000001",
+        createdAt: "2026-08-26T10:00:00.000Z",
+        id: "borrow-action",
+        integrationId: "morpho-borrow",
+        metadata: {
+          currentHealthFactor: null,
+          currentLtv: "0",
+          feeAmount: "0",
+          originationFeeAmount: "1.2",
+          predictedHealthFactor: "1.6",
+          predictedLtv: "0.5",
+        },
+        rawArguments: {
+          amount: "100",
+          marketId: market.id,
+          tokenAddress: loanTokenAddress,
+        },
+        status: "SUCCESS",
+        transactions: [
+          {
+            id: "approval",
+            network: "ethereum",
+            status: "CONFIRMED",
+            type: "APPROVAL",
+          },
+          {
+            id: "bundle",
+            network: "ethereum",
+            status: "CONFIRMED",
+            type: "BUNDLE",
+          },
+        ],
+      }),
+      integration: null,
+      market,
+      network: "ethereum",
+      token: market.loanToken,
+      walletScope: {} as never,
+    };
+
+    expect(
+      projectActivityActionDetails({ item, locale: "en-US", presentationTime })
+    ).toMatchObject({
+      amount: "+100",
+      borrow: {
+        collateralFee: null,
+        healthFactor: "1.6",
+        ltv: "0% → 50%",
+        market: "WETH / USDC",
+        originationFee: "1.2 USDC",
+      },
+      canContinue: false,
+      completedAt: null,
+      network: "ethereum",
+      statusLabel: "completed",
+      tokenSymbol: "USDC",
+      transactions: [
+        {
+          _tag: "borrow",
+          explorerUrl: null,
+          id: "approval",
+          status: "confirmed",
+          type: "APPROVAL",
+        },
+        { _tag: "borrow", id: "bundle", type: "BUNDLE" },
+      ],
+      transactionsSummary: { _tag: "allConfirmed", count: 2 },
+    });
   });
 });

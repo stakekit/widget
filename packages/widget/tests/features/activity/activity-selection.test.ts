@@ -1,14 +1,19 @@
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
+import type {
+  ActivityActionItem,
+  ActivitySelectionTarget,
+} from "../../../src/features/activity/model/activity-action";
 import {
   ActivityDefaultIntent,
   ActivityExplicitIntent,
+  BorrowActivityExplicitIntent,
   findActivityActionInFeed,
   parseActivityRouteIntent,
-  resolveActivityHighlightActionId,
+  resolveActivityHighlightAction,
   resolveActivitySelection,
-  resolveDefaultSelectedActionId,
+  resolveDefaultSelection,
   resolveUnavailableActivitySelection,
 } from "../../../src/features/activity/state/details";
 import {
@@ -29,8 +34,20 @@ const feedItem = (id: string) => ({
   yieldData: null,
 });
 
+// Only the tag and id take part in selection.
+const borrowFeedItem = (id: string) =>
+  ({
+    _tag: "borrow",
+    actionData: { id },
+  }) as unknown as ActivityActionItem;
+
+const yieldTarget = (actionId: string) =>
+  ({ actionId, source: "yield" }) as ActivitySelectionTarget;
+const borrowTarget = (actionId: string) =>
+  ({ actionId, source: "borrow" }) as ActivitySelectionTarget;
+
 const readyView = (
-  actions = [feedItem("newest-action")]
+  actions: Array<ActivityActionItem> = [feedItem("newest-action")]
 ): ActivityPageView => ({
   actions,
   filterOptions: [],
@@ -58,13 +75,21 @@ const projectFeed = (actionsResult: ActivityActionsResult) =>
 
 describe("Activity default selection", () => {
   it("waits while the feed has no rows yet", () => {
-    expect(resolveDefaultSelectedActionId({ status: "loading" })).toBe(
-      "loading"
-    );
+    expect(resolveDefaultSelection({ status: "loading" })).toBe("loading");
   });
 
   it("selects the first feed action", () => {
-    expect(resolveDefaultSelectedActionId(readyView())).toBe("newest-action");
+    expect(resolveDefaultSelection(readyView())).toEqual(
+      yieldTarget("newest-action")
+    );
+  });
+
+  it("selects a Borrow row as the default when it is first", () => {
+    expect(
+      resolveDefaultSelection(
+        readyView([borrowFeedItem("borrow-action"), feedItem("older")])
+      )
+    ).toEqual(borrowTarget("borrow-action"));
   });
 
   it.each([
@@ -76,13 +101,13 @@ describe("Activity default selection", () => {
       }),
     ],
   ])("keeps the first feed action while the feed %s", (_, result) => {
-    expect(resolveDefaultSelectedActionId(projectFeed(result))).toBe(
-      "newest-action"
+    expect(resolveDefaultSelection(projectFeed(result))).toEqual(
+      yieldTarget("newest-action")
     );
   });
 
   it("is unavailable when the feed is empty", () => {
-    expect(resolveDefaultSelectedActionId({ status: "empty" })).toBe(null);
+    expect(resolveDefaultSelection({ status: "empty" })).toBe(null);
   });
 });
 
@@ -93,24 +118,33 @@ describe("Activity selection from intent", () => {
         new ActivityExplicitIntent({ actionId: "picked-action" as never }),
         { status: "loading" }
       )
-    ).toBe("picked-action");
+    ).toEqual(yieldTarget("picked-action"));
+  });
+
+  it("keeps an explicit Borrow action as a Borrow target", () => {
+    expect(
+      resolveActivitySelection(
+        new BorrowActivityExplicitIntent({ actionId: "borrow-1" as never }),
+        { status: "loading" }
+      )
+    ).toEqual(borrowTarget("borrow-1"));
   });
 
   it("resolves default intent from the feed", () => {
     expect(
       resolveActivitySelection(new ActivityDefaultIntent(), readyView())
-    ).toBe("newest-action");
+    ).toEqual(yieldTarget("newest-action"));
   });
 
   it("hides the feed highlight while default selection is still loading", () => {
     expect(
-      resolveActivityHighlightActionId(new ActivityDefaultIntent(), {
+      resolveActivityHighlightAction(new ActivityDefaultIntent(), {
         status: "loading",
       })
     ).toBe(null);
     expect(
-      resolveActivityHighlightActionId(new ActivityDefaultIntent(), readyView())
-    ).toBe("newest-action");
+      resolveActivityHighlightAction(new ActivityDefaultIntent(), readyView())
+    ).toEqual(yieldTarget("newest-action"));
   });
 });
 
@@ -119,18 +153,32 @@ describe("Activity feed lookup for details", () => {
     const item = feedItem("picked-action");
     expect(
       findActivityActionInFeed(
-        "picked-action" as never,
+        yieldTarget("picked-action"),
         readyView([feedItem("other"), item])
       )
     ).toBe(item);
   });
 
+  it("finds a row only for a target from its own source", () => {
+    const borrowItem = borrowFeedItem("shared-id");
+    const view = readyView([feedItem("shared-id"), borrowItem]);
+
+    expect(findActivityActionInFeed(borrowTarget("shared-id"), view)).toBe(
+      borrowItem
+    );
+    expect(
+      findActivityActionInFeed(borrowTarget("newest-action"), readyView())
+    ).toBe(null);
+  });
+
   it("returns null when the feed is not ready or the id is missing", () => {
     expect(
-      findActivityActionInFeed("picked-action" as never, { status: "loading" })
+      findActivityActionInFeed(yieldTarget("picked-action"), {
+        status: "loading",
+      })
     ).toBe(null);
     expect(
-      findActivityActionInFeed("missing-action" as never, readyView())
+      findActivityActionInFeed(yieldTarget("missing-action"), readyView())
     ).toBe(null);
   });
 });
@@ -141,12 +189,14 @@ describe("Activity route intent parsing", () => {
       parseActivityRouteIntent({
         actionIdParam: undefined,
         allowDefault: true,
+        source: "yield",
       })
     ).toEqual({ intent: new ActivityDefaultIntent(), status: "ok" });
     expect(
       parseActivityRouteIntent({
         actionIdParam: undefined,
         allowDefault: false,
+        source: "yield",
       })
     ).toEqual({ status: "missing" });
   });
@@ -156,6 +206,7 @@ describe("Activity route intent parsing", () => {
       parseActivityRouteIntent({
         actionIdParam: "action-1",
         allowDefault: false,
+        source: "yield",
       })
     ).toEqual({
       intent: new ActivityExplicitIntent({ actionId: "action-1" as never }),
@@ -163,11 +214,27 @@ describe("Activity route intent parsing", () => {
     });
   });
 
-  it("rejects an empty action id segment", () => {
+  it("decodes a Borrow route param as Borrow explicit intent", () => {
+    expect(
+      parseActivityRouteIntent({
+        actionIdParam: "borrow-1",
+        allowDefault: false,
+        source: "borrow",
+      })
+    ).toEqual({
+      intent: new BorrowActivityExplicitIntent({
+        actionId: "borrow-1" as never,
+      }),
+      status: "ok",
+    });
+  });
+
+  it("treats an empty action id segment as default", () => {
     expect(
       parseActivityRouteIntent({
         actionIdParam: "",
         allowDefault: true,
+        source: "yield",
       })
     ).toEqual({ intent: new ActivityDefaultIntent(), status: "ok" });
   });

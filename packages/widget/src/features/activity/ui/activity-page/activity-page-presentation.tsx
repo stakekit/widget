@@ -5,7 +5,11 @@ import { Box } from "../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { FallbackContent } from "../../../widget-shell/views";
-import type { ActivityActionItem } from "../../model/activity-action";
+import {
+  type ActivityActionItem,
+  type ActivitySelectionTarget,
+  isActivitySelectionTarget,
+} from "../../model/activity-action";
 import type { ActivityFilter } from "../../model/filters";
 import type {
   ActivityPagePagination,
@@ -82,13 +86,13 @@ const ReadyActivityPage = ({
   onActionSelect,
   onFilterSelect,
   onLoadMore,
-  selectedActionId,
+  selectedAction,
   view,
 }: {
   readonly onActionSelect: (item: ActivityActionItem) => void;
   readonly onFilterSelect: (filter: ActivityFilter) => void;
   readonly onLoadMore: () => void;
-  readonly selectedActionId: string | null;
+  readonly selectedAction: ActivitySelectionTarget | null;
   readonly view: ActivityPageReadyView;
 }) => {
   const { t } = useTranslation();
@@ -128,7 +132,7 @@ const ReadyActivityPage = ({
             itemContent={(_index, item) => (
               <ActionListItem
                 action={item}
-                isSelected={item.actionData.id === selectedActionId}
+                isSelected={isActivitySelectionTarget(item, selectedAction)}
                 onActionSelect={onActionSelect}
               />
             )}
@@ -155,14 +159,14 @@ export const ActivityPagePresentation = ({
   onFilterSelect,
   onLoadMore,
   onRetry,
-  selectedActionId = null,
+  selectedAction = null,
   view,
 }: {
   readonly onActionSelect: (item: ActivityActionItem) => void;
   readonly onFilterSelect: (filter: ActivityFilter) => void;
   readonly onLoadMore: () => void;
   readonly onRetry: () => void;
-  readonly selectedActionId?: string | null;
+  readonly selectedAction?: ActivitySelectionTarget | null;
   readonly view: ActivityPageView;
 }) => {
   const { t } = useTranslation();
@@ -204,7 +208,7 @@ export const ActivityPagePresentation = ({
         onActionSelect={onActionSelect}
         onFilterSelect={onFilterSelect}
         onLoadMore={onLoadMore}
-        selectedActionId={selectedActionId}
+        selectedAction={selectedAction}
         view={readyView}
       />
     )),

@@ -285,9 +285,14 @@
     },
     "details": {
       "back": "Retour à l'activité",
+      "collateral_fee": "Frais de garantie",
       "completed": "Terminée",
       "continuation_unavailable": "Cette action ne peut pas continuer, car ses informations de rendement sont indisponibles.",
       "created": "Créée",
+      "health_factor": "Facteur de santé",
+      "ltv": "LTV",
+      "market": "Marché",
+      "origination_fee": "Frais d'ouverture",
       "unavailable_description": "Cette action n'existe pas ou appartient à un autre portefeuille.",
       "unavailable_title": "Activité indisponible",
       "via_network": "via {{provider}} · {{network}}"
