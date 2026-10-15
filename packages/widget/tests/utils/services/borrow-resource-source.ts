@@ -14,6 +14,7 @@ export const unconfiguredBorrowResourceSourceLayer = Layer.succeed(
   BorrowResourceSource.of({
     getIntegrations: Effect.fail(missingBorrowApiConfig),
     getMarkets: () => Effect.fail(missingBorrowApiConfig),
+    getAction: () => Effect.fail(missingBorrowApiConfig),
     getPositionData: () => Effect.fail(missingBorrowApiConfig),
     listActions: () => Effect.fail(missingBorrowApiConfig),
   })

@@ -5,11 +5,14 @@ import {
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
 } from "../../../domain/activity/action-capabilities";
+import { ActionId as BorrowActionId } from "../../../domain/borrow/ids";
 import { ActionId } from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   ActivityActionKey,
   activityActionResourceAtom,
+  BorrowActivityActionKey,
+  borrowActivityActionResourceAtom,
 } from "../../../resources/activity-history/index";
 import {
   type Presentable,
@@ -21,11 +24,16 @@ import {
   type YieldSummaryProvider,
   yieldSummaryAtom,
 } from "../../yield-summary/index";
-import type {
-  ActivityActionItem,
-  YieldActivityItem,
+import {
+  type ActivityActionItem,
+  type ActivitySelectionTarget,
+  getActivitySelectionTarget,
+  isActivitySelectionTarget,
 } from "../model/activity-action";
-import { projectYieldActivityItem } from "../model/activity-enrichment";
+import {
+  projectBorrowActivityItem,
+  projectYieldActivityItem,
+} from "../model/activity-enrichment";
 import {
   ActivityEnrichmentKey,
   loadActivityEnrichmentFacts,
@@ -34,6 +42,11 @@ import { type ActivityPageView, activityPageViewAtom } from "./page";
 
 class ActivityDetailsKey extends Data.Class<{
   readonly actionId: ActionId;
+  readonly scope: WalletScopeKey;
+}> {}
+
+class BorrowActivityDetailsKey extends Data.Class<{
+  readonly actionId: BorrowActionId;
   readonly scope: WalletScopeKey;
 }> {}
 
@@ -74,6 +87,35 @@ const activityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
     .pipe(Atom.withLabel("activityActionDetailsAtom"))
 );
 
+const borrowActivityActionDetailsAtom = Atom.family(
+  (key: BorrowActivityDetailsKey) =>
+    appRuntime
+      .atom((context) =>
+        Effect.gen(function* () {
+          const entry = yield* context.result(
+            borrowActivityActionResourceAtom.local(
+              new BorrowActivityActionKey({
+                actionId: key.actionId,
+                scope: key.scope,
+              })
+            )
+          );
+          if (!entry) return null;
+
+          // Ownership is settled by the Resource; facts only name its tokens.
+          return projectBorrowActivityItem(
+            entry,
+            key.scope,
+            yield* loadActivityEnrichmentFacts(
+              new ActivityEnrichmentKey([entry]),
+              (resource) => context.result(resource)
+            )
+          );
+        })
+      )
+      .pipe(Atom.withLabel("borrowActivityActionDetailsAtom"))
+);
+
 const retryActivityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
   Atom.fnSync(
     (_input: undefined, context) => {
@@ -91,6 +133,24 @@ const retryActivityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
   ).pipe(Atom.withLabel("retryActivityActionDetailsAtom"))
 );
 
+const retryBorrowActivityActionDetailsAtom = Atom.family(
+  (key: BorrowActivityDetailsKey) =>
+    Atom.fnSync(
+      (_input: undefined, context) => {
+        context.refresh(borrowActivityActionDetailsAtom(key));
+        context.refresh(
+          borrowActivityActionResourceAtom.local(
+            new BorrowActivityActionKey({
+              actionId: key.actionId,
+              scope: key.scope,
+            })
+          )
+        );
+      },
+      { initialValue: undefined }
+    ).pipe(Atom.withLabel("retryBorrowActivityActionDetailsAtom"))
+);
+
 export class ActivityDefaultIntent extends Data.TaggedClass("default")<{
   readonly _Intent: "default";
 }> {
@@ -103,9 +163,16 @@ export class ActivityExplicitIntent extends Data.TaggedClass("explicit")<{
   readonly actionId: ActionId;
 }> {}
 
+export class BorrowActivityExplicitIntent extends Data.TaggedClass(
+  "explicitBorrow"
+)<{
+  readonly actionId: BorrowActionId;
+}> {}
+
 export type ActivitySelectionIntent =
   | ActivityDefaultIntent
-  | ActivityExplicitIntent;
+  | ActivityExplicitIntent
+  | BorrowActivityExplicitIntent;
 
 export class ActivitySelectionKey extends Data.Class<{
   readonly intent: ActivitySelectionIntent;
@@ -118,23 +185,20 @@ type ActivitySelectedActionView =
   | { readonly status: "unavailable" }
   | { readonly status: "failed" }
   | {
-      readonly item: YieldActivityItem;
+      readonly item: ActivityActionItem;
       readonly status: "ready";
     };
 
-/** Borrow rows have no details, so Default selects the first Yield row. */
-export const resolveDefaultSelectedActionId = (
+/** Default selects the first row of the feed, Yield or Borrow. */
+export const resolveDefaultSelection = (
   view: Atom.Type<typeof activityPageViewAtom>
-): ActionId | "loading" | null => {
+): ActivitySelectionTarget | "loading" | null => {
   if (view.status !== "ready") {
     if (view.status === "empty") return null;
     return "loading";
   }
-  return (
-    view.actions.find(
-      (item): item is YieldActivityItem => item._tag === "yield"
-    )?.actionData.id ?? null
-  );
+  const first = view.actions[0];
+  return first ? getActivitySelectionTarget(first) : null;
 };
 
 /**
@@ -144,9 +208,15 @@ export const resolveDefaultSelectedActionId = (
 export const resolveActivitySelection = (
   intent: ActivitySelectionIntent,
   view: Atom.Type<typeof activityPageViewAtom>
-): ActionId | "loading" | null => {
-  if (intent._tag === "explicit") return intent.actionId;
-  return resolveDefaultSelectedActionId(view);
+): ActivitySelectionTarget | "loading" | null => {
+  switch (intent._tag) {
+    case "explicit":
+      return { actionId: intent.actionId, source: "yield" };
+    case "explicitBorrow":
+      return { actionId: intent.actionId, source: "borrow" };
+    case "default":
+      return resolveDefaultSelection(view);
+  }
 };
 
 export type ActivityRouteIntentParse =
@@ -154,13 +224,18 @@ export type ActivityRouteIntentParse =
   | { readonly status: "invalid" }
   | { readonly status: "missing" };
 
-/** Decode route params into selection intent. Missing is only Default on Dashboard. */
+/**
+ * Decode route params into selection intent. Missing is only Default on
+ * Dashboard; `source` is the route the param came from.
+ */
 export const parseActivityRouteIntent = ({
   actionIdParam,
   allowDefault,
+  source,
 }: {
   readonly actionIdParam: string | undefined;
   readonly allowDefault: boolean;
+  readonly source: ActivitySelectionTarget["source"];
 }): ActivityRouteIntentParse => {
   if (actionIdParam === undefined || actionIdParam === "") {
     return allowDefault
@@ -168,22 +243,28 @@ export const parseActivityRouteIntent = ({
       : { status: "missing" };
   }
 
+  if (source === "borrow") {
+    const actionId = Schema.decodeOption(BorrowActionId)(actionIdParam).pipe(
+      Option.getOrNull
+    );
+    return actionId
+      ? { intent: new BorrowActivityExplicitIntent({ actionId }), status: "ok" }
+      : { status: "invalid" };
+  }
+
   const actionId = Schema.decodeOption(ActionId)(actionIdParam).pipe(
     Option.getOrNull
   );
-  if (!actionId) return { status: "invalid" };
-
-  return {
-    intent: new ActivityExplicitIntent({ actionId }),
-    status: "ok",
-  };
+  return actionId
+    ? { intent: new ActivityExplicitIntent({ actionId }), status: "ok" }
+    : { status: "invalid" };
 };
 
-/** Highlight id for the feed; loading defaults show nothing selected yet. */
-export const resolveActivityHighlightActionId = (
+/** Highlighted feed row; loading defaults show nothing selected yet. */
+export const resolveActivityHighlightAction = (
   intent: ActivitySelectionIntent | null,
   view: Atom.Type<typeof activityPageViewAtom>
-): ActionId | null => {
+): ActivitySelectionTarget | null => {
   if (intent === null) return null;
   const resolved = resolveActivitySelection(intent, view);
   return resolved === "loading" ? null : resolved;
@@ -196,7 +277,7 @@ export const resolveUnavailableActivitySelection = (
   intent._tag === "default" ? "empty" : "clear-route";
 
 const projectDetailsResult = (
-  details: Presentable<YieldActivityItem | null, unknown>
+  details: Presentable<ActivityActionItem | null, unknown>
 ): ActivitySelectedActionView => {
   switch (details._tag) {
     case "Loading":
@@ -212,39 +293,50 @@ const projectDetailsResult = (
 
 /** Prefer the enriched feed row so selection does not wait on GET-by-id. */
 export const findActivityActionInFeed = (
-  actionId: string,
+  target: ActivitySelectionTarget,
   view: ActivityPageView
 ): ActivityActionItem | null => {
   if (view.status !== "ready") return null;
-  return view.actions.find((item) => item.actionData.id === actionId) ?? null;
+  return (
+    view.actions.find((item) => isActivitySelectionTarget(item, target)) ?? null
+  );
 };
-
-const resolveSelectedActionId = (
-  key: ActivitySelectionKey,
-  get: <A>(atom: Atom.Atom<A>) => A
-): ActionId | "loading" | null =>
-  resolveActivitySelection(key.intent, get(activityPageViewAtom));
 
 const activitySelectedActionAtom = Atom.family((key: ActivitySelectionKey) =>
   Atom.make((context): ActivitySelectedActionView => {
     const view = context(activityPageViewAtom);
-    const actionId = resolveActivitySelection(key.intent, view);
+    const target = resolveActivitySelection(key.intent, view);
 
-    if (actionId === "loading") return { status: "loading" };
-    if (actionId === null) return { status: "unavailable" };
+    if (target === "loading") return { status: "loading" };
+    if (target === null) return { status: "unavailable" };
 
-    const fromFeed = findActivityActionInFeed(actionId, view);
-    // Borrow ids never reach the Yield GET-by-id endpoint.
-    if (fromFeed?._tag === "borrow") return { status: "unavailable" };
+    const fromFeed = findActivityActionInFeed(target, view);
     if (fromFeed) {
       return { item: fromFeed, status: "ready" };
     }
 
+    if (target.source === "borrow") {
+      return projectDetailsResult(
+        toPresentable(
+          context(
+            borrowActivityActionDetailsAtom(
+              new BorrowActivityDetailsKey({
+                actionId: target.actionId,
+                scope: key.scope,
+              })
+            )
+          )
+        )
+      );
+    }
     return projectDetailsResult(
       toPresentable(
         context(
           activityActionDetailsAtom(
-            new ActivityDetailsKey({ actionId, scope: key.scope })
+            new ActivityDetailsKey({
+              actionId: target.actionId,
+              scope: key.scope,
+            })
           )
         )
       )
@@ -256,12 +348,30 @@ const retryActivitySelectedActionAtom = Atom.family(
   (key: ActivitySelectionKey) =>
     Atom.fnSync(
       (_input: undefined, context) => {
-        const actionId = resolveSelectedActionId(key, context);
-        if (actionId === null || actionId === "loading") return;
+        const target = resolveActivitySelection(
+          key.intent,
+          context(activityPageViewAtom)
+        );
+        if (target === null || target === "loading") return;
 
+        if (target.source === "borrow") {
+          context.set(
+            retryBorrowActivityActionDetailsAtom(
+              new BorrowActivityDetailsKey({
+                actionId: target.actionId,
+                scope: key.scope,
+              })
+            ),
+            undefined
+          );
+          return;
+        }
         context.set(
           retryActivityActionDetailsAtom(
-            new ActivityDetailsKey({ actionId, scope: key.scope })
+            new ActivityDetailsKey({
+              actionId: target.actionId,
+              scope: key.scope,
+            })
           ),
           undefined
         );
@@ -276,7 +386,7 @@ type ActivityDetailsView =
   | { readonly status: "failed" }
   | {
       readonly canContinue: boolean;
-      readonly item: YieldActivityItem;
+      readonly item: ActivityActionItem;
       readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
       readonly status: "ready";
     };
@@ -288,7 +398,16 @@ export const activityDetailsViewAtom = Atom.family(
       if (selected.status !== "ready") return selected;
 
       const item = selected.item;
-      const action = item.actionData;
+      // Borrow rows name their provider themselves and never continue.
+      if (item._tag === "borrow") {
+        return {
+          canContinue: false,
+          item,
+          providersDetails: [],
+          status: "ready",
+        };
+      }
+
       const providersDetails =
         context(
           yieldSummaryAtom(
@@ -299,11 +418,10 @@ export const activityDetailsViewAtom = Atom.family(
           )
         ).providers ?? [];
       const presentationTime = context(presentationClockAtom);
-      const selectedYield = item.yieldData;
       const canContinue =
         presentationTime !== null &&
-        selectedYield !== null &&
-        isContinuableYieldAction(action, presentationTime.now);
+        item.yieldData !== null &&
+        isContinuableYieldAction(item.actionData, presentationTime.now);
 
       return {
         canContinue: key.surface === "review" && canContinue,

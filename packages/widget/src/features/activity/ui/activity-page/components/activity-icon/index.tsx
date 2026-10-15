@@ -1,4 +1,5 @@
 import { Match } from "effect";
+import { vars } from "../../../../../../shared/styles/theme/contract.css";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Arrow } from "../../../../../../shared/ui/primitives/icons/arrow";
 import { GifIcon } from "../../../../../../shared/ui/primitives/icons/gift";
@@ -22,7 +23,7 @@ export const ActivityIcon = ({ type }: { type: ActivityIconType }) => {
         <path
           d="M3 8h10"
           fill="none"
-          stroke="currentColor"
+          stroke={vars.color.text}
           strokeLinecap="round"
           strokeWidth="1.5"
         />

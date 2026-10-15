@@ -1,9 +1,13 @@
-import { DateTime } from "effect";
+import { DateTime, Schema } from "effect";
 import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import type { YieldActivityItem } from "../../../src/features/activity/model/activity-action";
+import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import type {
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "../../../src/features/activity/model/activity-action";
 import { ActivityDetailsPage } from "../../../src/features/activity/ui/activity-details/activity-details.page";
 import { ActivityDetailsFailure } from "../../../src/features/activity/ui/activity-details/activity-details-status";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
@@ -148,6 +152,74 @@ describe("Activity details receipt", () => {
       "This action cannot continue because its yield details are unavailable."
     );
     expect(app.container.textContent).not.toContain("Continue");
+  });
+
+  it("renders a Borrow receipt without continuation", async () => {
+    trackPage.mockClear();
+    const item: BorrowActivityItem = {
+      _tag: "borrow",
+      actionData: Schema.decodeSync(BorrowActivityAction)({
+        action: "supplyAndBorrow",
+        address: "0x0000000000000000000000000000000000000001",
+        createdAt: "2026-08-26T10:00:00.000Z",
+        id: "borrow-action",
+        integrationId: "morpho-borrow",
+        metadata: {
+          currentHealthFactor: null,
+          currentLtv: "0",
+          originationFeeAmount: "1.2",
+          predictedHealthFactor: "1.6",
+          predictedLtv: "0.5",
+        },
+        rawArguments: { amount: "100", marketId: "morpho-weth-usdc" },
+        status: "SUCCESS",
+        transactions: [
+          {
+            id: "approval",
+            network: "ethereum",
+            status: "CONFIRMED",
+            type: "APPROVAL",
+          },
+        ],
+      }),
+      integration: {
+        name: "Morpho Borrow",
+      } as BorrowActivityItem["integration"],
+      // Only the pair label and loan token are read by the receipt.
+      market: {
+        collateralTokens: [{ token: { symbol: "WETH" } }],
+        loanToken: { symbol: "USDC" },
+        type: "isolated",
+      } as unknown as BorrowActivityItem["market"],
+      network: "ethereum",
+      token: null,
+      walletScope: { network: "ethereum" } as never,
+    };
+    route.current = {
+      continuationReady: false,
+      item,
+      presentation: "Dashboard",
+      providersDetails: [],
+    };
+
+    const app = await renderDetails();
+    const text = app.container.textContent;
+
+    expect(text).toContain("Supplied and borrowed");
+    expect(text).toContain("via Morpho · Ethereum");
+    expect(text).toContain("MarketWETH / USDC");
+    expect(text).toContain("Origination fee1.2 USDC");
+    expect(text).toContain("LTV0% → 50%");
+    expect(text).toContain("Health factor1.6");
+    expect(text).not.toContain("Continue");
+    expect(
+      Array.from(
+        app.container.querySelectorAll(
+          '[data-rk="activity-details-transaction"]'
+        )
+      ).map((row) => row.textContent)
+    ).toEqual(["1. Token approvalConfirmed"]);
+    expect(trackPage).not.toHaveBeenCalled();
   });
 
   it("shows a retryable failure when the action cannot be loaded", async () => {

@@ -33,28 +33,44 @@ export const createActivityActionRoutes = (
   }
 ) => {
   const ActionScopeGuard = options?.ActionScopeGuard;
-  const actionIdRoute = (
-    <Route
-      path=":actionId"
-      element={<ActivityActionRoute presentation={presentation} />}
-    >
-      {activityActionChildRoutes}
-    </Route>
+  const actionIdRoutes = (
+    <>
+      <Route
+        path="borrow/:actionId"
+        element={
+          <ActivityActionRoute presentation={presentation} source="borrow" />
+        }
+      >
+        <Route index element={<ActivityDetailsPage />} />
+      </Route>
+      <Route
+        path=":actionId"
+        element={
+          <ActivityActionRoute presentation={presentation} source="yield" />
+        }
+      >
+        {activityActionChildRoutes}
+      </Route>
+    </>
   );
 
   return (
     <>
       {presentation === "Dashboard" ? (
-        <Route element={<ActivityActionRoute presentation={presentation} />}>
+        <Route
+          element={
+            <ActivityActionRoute presentation={presentation} source="yield" />
+          }
+        >
           <Route index element={<ActivityDetailsPage />} />
         </Route>
       ) : null}
       {ActionScopeGuard ? (
         <Route element={<ActionScopeGuard fallbackPath="/activity" />}>
-          {actionIdRoute}
+          {actionIdRoutes}
         </Route>
       ) : (
-        actionIdRoute
+        actionIdRoutes
       )}
     </>
   );

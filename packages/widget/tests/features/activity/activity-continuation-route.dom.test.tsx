@@ -152,7 +152,12 @@ const renderActivity = async (
             {presentation === "Dashboard" ? (
               <Route
                 path="/activity"
-                element={<ActivityActionRoute presentation="Dashboard" />}
+                element={
+                  <ActivityActionRoute
+                    presentation="Dashboard"
+                    source="yield"
+                  />
+                }
               >
                 <Route index element={<div>Default</div>} />
               </Route>
@@ -161,7 +166,12 @@ const renderActivity = async (
             )}
             <Route
               path="/activity/:actionId"
-              element={<ActivityActionRoute presentation={presentation} />}
+              element={
+                <ActivityActionRoute
+                  presentation={presentation}
+                  source="yield"
+                />
+              }
             >
               <Route index element={<div>Review</div>} />
               <Route path="steps" element={<div>Steps</div>} />

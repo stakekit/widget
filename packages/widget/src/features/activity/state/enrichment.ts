@@ -4,6 +4,7 @@ import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { YieldAction } from "../../../domain/action/models";
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
+import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
@@ -12,6 +13,7 @@ import type {
 } from "../../../domain/earn/models";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { ActivityHistoryEntry } from "../../../resources/activity-history/index";
+import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/index";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
@@ -28,7 +30,7 @@ import {
 
 const ACTIVITY_ENRICHMENT_CONCURRENCY = 5;
 
-/** The yield, validator, and market facts a set of Activity rows needs. */
+/** The yield, validator, market, and integration facts a set of Activity rows needs. */
 export class ActivityEnrichmentKey extends Data.Class<{
   readonly borrowNetworks: ReadonlyArray<BorrowNetwork>;
   readonly validatorKeys: ReadonlyArray<ValidatorByAddressKey>;
@@ -41,9 +43,7 @@ export class ActivityEnrichmentKey extends Data.Class<{
 
     for (const entry of entries) {
       if (entry._tag === "borrow") {
-        for (const transaction of entry.action.transactions) {
-          borrowNetworks.add(transaction.network);
-        }
+        borrowNetworks.add(entry.network);
         continue;
       }
 
@@ -72,6 +72,10 @@ export class ActivityEnrichmentKey extends Data.Class<{
 
 type ActivityEnrichmentFact =
   | {
+      readonly _tag: "borrowIntegrations";
+      readonly value: ReadonlyArray<Integration>;
+    }
+  | {
       readonly _tag: "borrowMarkets";
       readonly value: ReadonlyArray<Market>;
     }
@@ -87,6 +91,7 @@ type ActivityEnrichmentFact =
     };
 
 type ActivityEnrichmentRequest =
+  | { readonly _tag: "borrowIntegrations" }
   | { readonly _tag: "borrowMarkets"; readonly network: BorrowNetwork }
   | { readonly _tag: "validator"; readonly validatorKey: ValidatorByAddressKey }
   | { readonly _tag: "yield"; readonly yieldId: YieldId };
@@ -118,6 +123,10 @@ export const loadActivityEnrichmentFacts = (
       _tag: "borrowMarkets" as const,
       network,
     })),
+    // Every Borrow row names a network, so networks imply Borrow rows.
+    ...(key.borrowNetworks.length > 0
+      ? [{ _tag: "borrowIntegrations" as const }]
+      : []),
   ];
   const loadFact = (
     request: ActivityEnrichmentRequest
@@ -158,6 +167,14 @@ export const loadActivityEnrichmentFacts = (
             value,
           }))
         );
+      case "borrowIntegrations":
+        return read(borrowIntegrationsResourceAtom.local).pipe(
+          Effect.orElseSucceed((): ReadonlyArray<Integration> => []),
+          Effect.map((value) => ({
+            _tag: "borrowIntegrations" as const,
+            value,
+          }))
+        );
     }
   };
 
@@ -165,23 +182,40 @@ export const loadActivityEnrichmentFacts = (
     concurrency: ACTIVITY_ENRICHMENT_CONCURRENCY,
   }).pipe(
     Effect.map((facts): ActivityEnrichmentFacts => {
+      const borrowIntegrationsById = new Map<string, Integration>();
       const borrowMarketsById = new Map<string, Market>();
       const validatorsByKey = new Map<string, EarnValidator>();
       const yieldsById = new Map<YieldId, EarnYieldWithProvider | null>();
 
       for (const fact of facts) {
-        if (fact._tag === "yield") {
-          yieldsById.set(fact.yieldId, fact.value);
-        } else if (fact._tag === "borrowMarkets") {
-          for (const market of fact.value) {
-            borrowMarketsById.set(market.id, market);
-          }
-        } else if (fact.value) {
-          validatorsByKey.set(validatorFactKey(fact.key), fact.value);
+        switch (fact._tag) {
+          case "yield":
+            yieldsById.set(fact.yieldId, fact.value);
+            break;
+          case "borrowMarkets":
+            for (const market of fact.value) {
+              borrowMarketsById.set(market.id, market);
+            }
+            break;
+          case "borrowIntegrations":
+            for (const integration of fact.value) {
+              borrowIntegrationsById.set(integration.id, integration);
+            }
+            break;
+          case "validator":
+            if (fact.value) {
+              validatorsByKey.set(validatorFactKey(fact.key), fact.value);
+            }
+            break;
         }
       }
 
-      return { borrowMarketsById, validatorsByKey, yieldsById };
+      return {
+        borrowIntegrationsById,
+        borrowMarketsById,
+        validatorsByKey,
+        yieldsById,
+      };
     })
   );
 };

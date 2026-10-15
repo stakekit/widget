@@ -29,7 +29,7 @@ const ActionRawArguments = Schema.Struct({
   collateralAmountRaw: Schema.optionalKey(ExactBaseUnitAmount),
 });
 
-const ActionMetadata = Schema.Struct({
+export const ActionMetadata = Schema.Struct({
   currentHealthFactor: Schema.NullOr(ExactDecimal),
   predictedHealthFactor: Schema.NullOr(ExactDecimal),
   currentLtv: ExactDecimal,

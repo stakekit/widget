@@ -13,12 +13,15 @@ import { appRuntime } from "../../app/runtime/app-runtime";
 import type { YieldAction } from "../../domain/action/models";
 import { isActivityActionOwnedByScope } from "../../domain/activity/action-capabilities";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
-import type {
-  BorrowActionsPage,
-  BorrowActivityAction,
-} from "../../domain/borrow/responses";
+import type { ActionId as BorrowActionId } from "../../domain/borrow/ids";
+import {
+  type BorrowNetwork,
+  isBorrowNetwork,
+} from "../../domain/borrow/network";
+import type { BorrowActivityAction } from "../../domain/borrow/responses";
 import type { ActionId } from "../../domain/identity/identifiers";
 import {
+  sameWalletScopeOwner,
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
@@ -33,21 +36,25 @@ import {
 } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
-import {
-  API_MAX_PAGE_SIZE,
-  getNextPageOffset,
-  loadAllPages,
-} from "../../shared/effect/pagination";
+import { getNextPageOffset } from "../../shared/effect/pagination";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const PAGE_SIZE = 50;
 const COUNT_PAGE_SIZE = 1;
-const BORROW_COUNT_CONCURRENCY = 3;
 
 /** One Activity feed row, tagged by the API that owns it. */
 export type ActivityHistoryEntry =
   | { readonly _tag: "yield"; readonly action: YieldAction }
-  | { readonly _tag: "borrow"; readonly action: BorrowActivityAction };
+  | {
+      readonly _tag: "borrow";
+      readonly action: BorrowActivityAction;
+      readonly network: BorrowNetwork;
+    };
+
+export type BorrowActivityHistoryEntry = Extract<
+  ActivityHistoryEntry,
+  { readonly _tag: "borrow" }
+>;
 
 export class ActivityActionKey extends Data.TaggedClass("ActivityActionKey")<{
   readonly actionId: ActionId;
@@ -80,7 +87,13 @@ type ActivityHistoryAttempt =
       readonly error: ActivityHistoryError;
     };
 
+/**
+ * One Activity feed: Yield actions (optionally of some Yield types), Borrow
+ * actions on the wallet network, or both. Callers decide whether Borrow is on.
+ */
 export class ActivityHistoryKey extends Data.TaggedClass("ActivityHistoryKey")<{
+  readonly includeBorrow: boolean;
+  readonly includeYield: boolean;
   readonly scope: WalletScopeOwnerKey;
   readonly statuses: ReadonlyArray<
     NonNullable<ActivityActionsQuery["statuses"]>[number]
@@ -90,6 +103,8 @@ export class ActivityHistoryKey extends Data.TaggedClass("ActivityHistoryKey")<{
   >;
 }> {
   constructor(input: {
+    readonly includeBorrow: boolean;
+    readonly includeYield: boolean;
     readonly scope: WalletScopeKey;
     readonly statuses: ReadonlyArray<
       NonNullable<ActivityActionsQuery["statuses"]>[number]
@@ -99,6 +114,8 @@ export class ActivityHistoryKey extends Data.TaggedClass("ActivityHistoryKey")<{
     >;
   }) {
     super({
+      includeBorrow: input.includeBorrow,
+      includeYield: input.includeYield,
       scope: walletScopeOwnerKey(input.scope),
       statuses: [...new Set(input.statuses)].sort(),
       yieldTypes: [...new Set(input.yieldTypes ?? [])].sort(),
@@ -146,6 +163,77 @@ export const activityActionResourceAtom = makePresentableResourceFamily(
   activityActionCanonicalAtom
 );
 
+export class BorrowActivityActionKey extends Data.TaggedClass(
+  "BorrowActivityActionKey"
+)<{
+  readonly actionId: BorrowActionId;
+  readonly scope: WalletScopeOwnerKey;
+}> {
+  constructor(input: {
+    readonly actionId: BorrowActionId;
+    readonly scope: WalletScopeKey;
+  }) {
+    super({
+      actionId: input.actionId,
+      scope: walletScopeOwnerKey(input.scope),
+    });
+  }
+}
+
+// Disabled or unconfigured Borrow has no actions to show, not a failure.
+const borrowActivityActionCanonicalAtom = Atom.family(
+  (key: BorrowActivityActionKey) =>
+    appRuntime
+      .atom(() => {
+        const network = key.scope.network;
+        if (!isBorrowNetwork(network)) {
+          return Effect.succeed<BorrowActivityHistoryEntry | null>(null);
+        }
+
+        return BorrowResourceSource.use((source) =>
+          source.getAction(key.actionId)
+        ).pipe(
+          Effect.map(
+            // Owned: the wallet's address, and every transaction on its network.
+            Option.filter(
+              (action) =>
+                sameWalletScopeOwner(
+                  { address: action.address, network },
+                  key.scope
+                ) &&
+                action.transactions.every(
+                  (transaction) => transaction.network === network
+                )
+            )
+          ),
+          Effect.map(
+            Option.match({
+              onNone: (): BorrowActivityHistoryEntry | null => null,
+              onSome: (action): BorrowActivityHistoryEntry => ({
+                _tag: "borrow",
+                action,
+                network,
+              }),
+            })
+          ),
+          Effect.catchTags({
+            BorrowFeatureDisabled: () => Effect.succeed(null),
+            MissingBorrowApiConfig: () => Effect.succeed(null),
+          }),
+          Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+        );
+      })
+      .pipe(
+        Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)),
+        activityPolicy,
+        Atom.withLabel("borrowActivityActionResourceAtom")
+      )
+);
+
+export const borrowActivityActionResourceAtom = makePresentableResourceFamily(
+  borrowActivityActionCanonicalAtom
+);
+
 const activityRequest = (
   key: ActivityHistoryKey,
   pagination: { readonly limit: number; readonly offset: number }
@@ -158,17 +246,14 @@ const activityRequest = (
   ...(key.yieldTypes.length > 0 ? { yieldTypes: key.yieldTypes } : {}),
 });
 
-/**
- * Borrow actions stay disconnected until the Borrow API filters `/v1/actions`
- * by network; until then the feed would have to load and filter every page.
- */
-const borrowActivityConnected = false;
-
-/** Borrow has no Yield type, so only the unfiltered feed includes it. */
-const includesBorrow = (key: ActivityHistoryKey) =>
-  borrowActivityConnected && key.yieldTypes.length === 0;
+/** The only gate on Borrow requests: an opted-in feed on a Borrow network. */
+const borrowNetworkOf = (key: ActivityHistoryKey): BorrowNetwork | null =>
+  key.includeBorrow && isBorrowNetwork(key.scope.network)
+    ? key.scope.network
+    : null;
 
 const listBorrowActions = (
+  network: BorrowNetwork,
   key: ActivityHistoryKey,
   pagination: { readonly limit: number; readonly offset: number }
 ) =>
@@ -176,18 +261,10 @@ const listBorrowActions = (
     source.listActions({
       address: key.scope.address,
       limit: pagination.limit,
+      network,
       offset: pagination.offset,
       statuses: key.statuses,
     })
-  );
-
-// The Borrow API cannot filter by network; actions carry their chain on each transaction.
-const isBorrowActionOnScopeNetwork = (
-  key: ActivityHistoryKey,
-  action: BorrowActivityAction
-) =>
-  action.transactions.some(
-    (transaction) => transaction.network === key.scope.network
   );
 
 type ActivityHistorySourcePage = {
@@ -250,33 +327,32 @@ const yieldSourcePage = (key: ActivityHistoryKey, offset: number) =>
     )
   );
 
-// A Borrow page total spans every network, so the cursor keeps the scoped count.
-const projectBorrowSourcePage = (
-  key: ActivityHistoryKey,
-  page: BorrowActionsPage,
-  scopedTotal: number
-): ActivityHistorySourcePage => ({
-  entries: (page.items ?? []).flatMap((action) =>
-    isBorrowActionOnScopeNetwork(key, action)
-      ? [{ _tag: "borrow" as const, action }]
-      : []
-  ),
-  nextOffset: getNextPageOffset(page),
-  total: scopedTotal,
-});
-
 // Borrow is optional: when it is unconfigured or failing, Activity stays Yield-only.
 const fetchBorrowCursor = (
   key: ActivityHistoryKey,
   cursor: ActivityHistorySourceCursor
-) =>
-  fetchSourcePage(cursor, (offset) =>
-    listBorrowActions(key, { limit: PAGE_SIZE, offset }).pipe(
-      Effect.map((page) => projectBorrowSourcePage(key, page, cursor.total))
+) => {
+  const network = borrowNetworkOf(key);
+  if (!network) return Effect.succeed(cursor);
+
+  return fetchSourcePage(cursor, (offset) =>
+    listBorrowActions(network, key, { limit: PAGE_SIZE, offset }).pipe(
+      Effect.map(
+        (page): ActivityHistorySourcePage => ({
+          entries: (page.items ?? []).map((action) => ({
+            _tag: "borrow" as const,
+            action,
+            network,
+          })),
+          nextOffset: getNextPageOffset(page),
+          total: page.total,
+        })
+      )
     )
   ).pipe(
     Effect.orElseSucceed(() => ({ ...cursor, nextOffset: Option.none() }))
   );
+};
 
 /** Fetch until every source with more rows has buffered at least one. */
 const fillActivityHistoryCursor = (
@@ -351,8 +427,7 @@ type ActivityHistoryStep = readonly [
 ];
 
 const activityHistoryAttemptStream = (
-  key: ActivityHistoryKey,
-  borrowTotal: number
+  key: ActivityHistoryKey
 ): Stream.Stream<
   ActivityHistoryAttempt,
   never,
@@ -361,10 +436,13 @@ const activityHistoryAttemptStream = (
   Stream.paginate(
     {
       borrow: makeSourceCursor(
-        includesBorrow(key) ? Option.some(0) : Option.none(),
-        borrowTotal
+        borrowNetworkOf(key) ? Option.some(0) : Option.none(),
+        0
       ),
-      yield: makeSourceCursor(Option.some(0), 0),
+      yield: makeSourceCursor(
+        key.includeYield ? Option.some(0) : Option.none(),
+        0
+      ),
     } satisfies ActivityHistoryCursor,
     (cursor) =>
       fillActivityHistoryCursor(key, cursor).pipe(
@@ -427,48 +505,21 @@ const projectActivityHistoryResult = (
     return sourceSuccess.waiting ? AsyncResult.waiting(projected) : projected;
   });
 
-// Borrow totals span every network, so its count needs the scoped rows.
-const borrowActivityCount = (key: ActivityHistoryKey) =>
-  includesBorrow(key)
-    ? loadAllPages({
-        concurrency: BORROW_COUNT_CONCURRENCY,
-        fetchPage: (offset) =>
-          listBorrowActions(key, { limit: API_MAX_PAGE_SIZE, offset }),
-        pageSize: API_MAX_PAGE_SIZE,
-      }).pipe(
-        Effect.map(
-          (actions) =>
-            actions.filter((action) =>
-              isBorrowActionOnScopeNetwork(key, action)
-            ).length
-        ),
-        Effect.orElseSucceed(() => 0)
-      )
-    : Effect.succeed(0);
+const borrowActivityCount = (key: ActivityHistoryKey) => {
+  const network = borrowNetworkOf(key);
+  if (!network) return Effect.succeed(0);
 
-const borrowActivityCountAtom = Atom.family((key: ActivityHistoryKey) =>
-  appRuntime
-    .atom(() => borrowActivityCount(key))
-    .pipe(
-      Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)),
-      activityPolicy,
-      Atom.withLabel("borrowActivityCountAtom")
-    )
-);
-
+  return listBorrowActions(network, key, {
+    limit: COUNT_PAGE_SIZE,
+    offset: 0,
+  }).pipe(
+    Effect.map((page) => page.total),
+    Effect.orElseSucceed(() => 0)
+  );
+};
 const activityHistoryCanonicalPullAtom = Atom.family(
   (key: ActivityHistoryKey) => {
-    const source = appRuntime.pull((get) =>
-      Stream.unwrap(
-        get
-          .result(borrowActivityCountAtom(key))
-          .pipe(
-            Effect.map((borrowTotal) =>
-              activityHistoryAttemptStream(key, borrowTotal)
-            )
-          )
-      )
-    );
+    const source = appRuntime.pull(() => activityHistoryAttemptStream(key));
 
     return Atom.transform(source, (context) =>
       projectActivityHistoryResult(context.get(source))
@@ -486,15 +537,17 @@ export const activityHistoryPullAtom = makePresentableResourceFamily(
 
 const activityCountCanonicalAtom = Atom.family((key: ActivityHistoryKey) =>
   appRuntime
-    .atom((context) =>
+    .atom(() =>
       Effect.all(
         [
-          YieldResourceSource.use((source) =>
-            source.listActivity(
-              activityRequest(key, { limit: COUNT_PAGE_SIZE, offset: 0 })
-            )
-          ).pipe(Effect.map((page) => page.total)),
-          context.result(borrowActivityCountAtom(key)),
+          key.includeYield
+            ? YieldResourceSource.use((source) =>
+                source.listActivity(
+                  activityRequest(key, { limit: COUNT_PAGE_SIZE, offset: 0 })
+                )
+              ).pipe(Effect.map((page) => page.total))
+            : Effect.succeed(0),
+          borrowActivityCount(key),
         ],
         { concurrency: "unbounded" }
       ).pipe(

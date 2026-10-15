@@ -277,9 +277,14 @@
     },
     "details": {
       "back": "Back to Activity",
+      "collateral_fee": "Collateral fee",
       "completed": "Completed",
       "continuation_unavailable": "This action cannot continue because its yield details are unavailable.",
       "created": "Created",
+      "health_factor": "Health factor",
+      "ltv": "LTV",
+      "market": "Market",
+      "origination_fee": "Origination fee",
       "unavailable_description": "This action does not exist or belongs to another wallet.",
       "unavailable_title": "Activity unavailable",
       "via_network": "via {{provider}} · {{network}}"

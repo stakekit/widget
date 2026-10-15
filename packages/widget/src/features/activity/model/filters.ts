@@ -2,7 +2,9 @@ import type { ActivityActionsQuery } from "../../../domain/activity/query";
 import type { DashboardYieldCategory } from "../../../domain/earn/contract";
 import { getApiYieldTypesForDashboardCategory } from "../../../domain/earn/yield";
 
-export type ActivityFilter = "all" | DashboardYieldCategory;
+export type ActivityFilterCategory = DashboardYieldCategory | "borrow";
+
+export type ActivityFilter = "all" | ActivityFilterCategory;
 
 export type ActivityFilterOption = {
   readonly count: number;
@@ -13,9 +15,38 @@ export const activityFilterCategories = [
   "stake",
   "defi",
   "rwa",
-] as const satisfies ReadonlyArray<DashboardYieldCategory>;
+  "borrow",
+] as const satisfies ReadonlyArray<ActivityFilterCategory>;
 
-export const getActivityFilterYieldTypes = (
-  filter: ActivityFilter
-): ActivityActionsQuery["yieldTypes"] =>
-  filter === "all" ? undefined : getApiYieldTypesForDashboardCategory(filter);
+/** Which Activity sources a filter reads; Borrow is read only when enabled. */
+export type ActivityFilterSources = {
+  readonly includeBorrow: boolean;
+  readonly includeYield: boolean;
+  readonly yieldTypes: ActivityActionsQuery["yieldTypes"];
+};
+
+export const getActivityFilterSources = (
+  filter: ActivityFilter,
+  borrowEnabled: boolean
+): ActivityFilterSources => {
+  switch (filter) {
+    case "all":
+      return {
+        includeBorrow: borrowEnabled,
+        includeYield: true,
+        yieldTypes: undefined,
+      };
+    case "borrow":
+      return {
+        includeBorrow: borrowEnabled,
+        includeYield: false,
+        yieldTypes: undefined,
+      };
+    default:
+      return {
+        includeBorrow: false,
+        includeYield: true,
+        yieldTypes: getApiYieldTypesForDashboardCategory(filter),
+      };
+  }
+};

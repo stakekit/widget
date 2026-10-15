@@ -26,7 +26,7 @@ import { projectActivityActionItem } from "../model/activity-enrichment";
 import {
   type ActivityFilter,
   activityFilterCategories,
-  getActivityFilterYieldTypes,
+  getActivityFilterSources,
 } from "../model/filters";
 import {
   ActivityEnrichmentKey,
@@ -38,6 +38,7 @@ const ACTIVITY_ACTION_STATUSES = Object.values(ActionStatus).filter(
 );
 
 export class ActivityActionsKey extends Data.Class<{
+  readonly borrowEnabled: boolean;
   readonly filter: ActivityFilter;
   readonly scope: WalletScopeKey | null;
 }> {}
@@ -45,12 +46,18 @@ export class ActivityActionsKey extends Data.Class<{
 export const getActivityHistoryKey = (
   key: ActivityActionsKey
 ): ActivityHistoryKey | null => {
-  if (!key.scope) return null;
+  const { includeBorrow, includeYield, yieldTypes } = getActivityFilterSources(
+    key.filter,
+    key.borrowEnabled
+  );
+  if (!key.scope || !(includeBorrow || includeYield)) return null;
 
   return new ActivityHistoryKey({
+    includeBorrow,
+    includeYield,
     scope: key.scope,
     statuses: ACTIVITY_ACTION_STATUSES,
-    yieldTypes: getActivityFilterYieldTypes(key.filter),
+    yieldTypes,
   });
 };
 
@@ -157,6 +164,7 @@ export const loadMoreActivityActionsAtom = Atom.family(
 );
 
 export class ActivityFilterOptionsKey extends Data.Class<{
+  readonly borrowEnabled: boolean;
   readonly scope: WalletScopeKey | null;
 }> {}
 
@@ -168,7 +176,11 @@ export const activityFilterOptionsAtom = Atom.family(
         const scope = key.scope;
         const count = (filter: ActivityFilter) => {
           const historyKey = getActivityHistoryKey(
-            new ActivityActionsKey({ filter, scope })
+            new ActivityActionsKey({
+              borrowEnabled: key.borrowEnabled,
+              filter,
+              scope,
+            })
           );
 
           return historyKey

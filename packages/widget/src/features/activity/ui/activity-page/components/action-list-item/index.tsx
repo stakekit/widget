@@ -34,7 +34,6 @@ export const ActionListItem = ({
   if (!listItemView) return null;
 
   const {
-    canOpenDetails,
     providersDetails,
     iconType,
     title,
@@ -60,14 +59,14 @@ export const ActionListItem = ({
   return (
     <Box py="1" width="full">
       <ListItem
-        onClick={canOpenDetails ? () => onActionSelect(action) : undefined}
+        onClick={() => onActionSelect(action)}
         className={listItem}
         data-rk={
           isSelected ? "activity-list-item-selected" : "activity-list-item"
         }
         variant={{
           active: isSelected ? "active" : "inactive",
-          hover: canOpenDetails ? "enabled" : "disabled",
+          hover: "enabled",
         }}
       >
         <Box

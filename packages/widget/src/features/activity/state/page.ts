@@ -10,6 +10,7 @@ import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../wallet/index";
+import { widgetConfigAtom } from "../../widget-configuration/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import type { ActivityFilter, ActivityFilterOption } from "../model/filters";
 import {
@@ -213,15 +214,20 @@ export const activityPageViewAtom = Atom.make((context) => {
 
 function resolveActivityPageResources(context: Atom.FnContext) {
   const scope = context(walletScopeAtom);
+  const { borrowEnabled } = context(widgetConfigAtom);
   const filterOptions = activityFilterOptionsAtom(
-    new ActivityFilterOptionsKey({ scope })
+    new ActivityFilterOptionsKey({ borrowEnabled, scope })
   );
   const filterOptionsResult = context(filterOptions);
   const selectedFilter = resolveActivityPageFilter({
     filterOptionsResult,
     selectedFilter: context(activityFilterAtom),
   });
-  const actionsKey = new ActivityActionsKey({ filter: selectedFilter, scope });
+  const actionsKey = new ActivityActionsKey({
+    borrowEnabled,
+    filter: selectedFilter,
+    scope,
+  });
   const actions = activityActionsPullAtom(actionsKey);
 
   for (const option of getVisibleFilterOptions(
@@ -229,7 +235,7 @@ function resolveActivityPageResources(context: Atom.FnContext) {
   )) {
     context(
       activityActionsPullAtom(
-        new ActivityActionsKey({ filter: option.filter, scope })
+        new ActivityActionsKey({ borrowEnabled, filter: option.filter, scope })
       )
     );
   }

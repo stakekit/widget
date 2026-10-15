@@ -1,6 +1,7 @@
 import { Array as EArray } from "effect";
 import type { YieldAction } from "../../../domain/action/models";
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
+import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../domain/borrow/catalog/token";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
@@ -13,11 +14,19 @@ import type {
   YieldId,
 } from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
-import type { ActivityHistoryEntry } from "../../../resources/activity-history/index";
-import type { ActivityActionItem, YieldActivityItem } from "./activity-action";
+import type {
+  ActivityHistoryEntry,
+  BorrowActivityHistoryEntry,
+} from "../../../resources/activity-history/index";
+import type {
+  ActivityActionItem,
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "./activity-action";
 
 /** Facts resolved for a set of Activity rows; missing facts stay absent. */
 export type ActivityEnrichmentFacts = {
+  readonly borrowIntegrationsById: ReadonlyMap<string, Integration>;
   readonly borrowMarketsById: ReadonlyMap<string, Market>;
   readonly validatorsByKey: ReadonlyMap<string, EarnValidator>;
   readonly yieldsById: ReadonlyMap<YieldId, EarnYieldWithProvider | null>;
@@ -41,25 +50,30 @@ const BORROW_DEBT_ACTIONS: Record<BorrowActivityAction["action"], boolean> = {
   withdraw: false,
 };
 
+/** A market's loan or collateral token at an address, case-insensitively. */
+export const findBorrowMarketToken = (
+  market: Market,
+  address: string
+): BorrowToken | null => {
+  const normalized = address.toLowerCase();
+
+  return (
+    [
+      market.loanToken,
+      ...market.collateralTokens.map((collateral) => collateral.token),
+    ].find((token) => token.address?.toLowerCase() === normalized) ?? null
+  );
+};
+
 /** Borrow actions name a token by address; the market catalog names it. */
 const resolveBorrowActivityToken = (
   action: BorrowActivityAction,
-  market: Market | undefined
+  market: Market | null
 ): BorrowToken | null => {
   if (!market) return null;
 
-  const tokenAddress = action.rawArguments?.tokenAddress?.toLowerCase();
-  if (tokenAddress) {
-    const tokens = [
-      market.loanToken,
-      ...market.collateralTokens.map((collateral) => collateral.token),
-    ];
-
-    return (
-      tokens.find((token) => token.address?.toLowerCase() === tokenAddress) ??
-      null
-    );
-  }
+  const tokenAddress = action.rawArguments?.tokenAddress;
+  if (tokenAddress) return findBorrowMarketToken(market, tokenAddress);
   if (BORROW_DEBT_ACTIONS[action.action]) return market.loanToken;
   // Pool markets list every collateral, so only an isolated market implies one.
   if (market.type === "isolated") {
@@ -90,6 +104,26 @@ export const projectYieldActivityItem = (
   yieldData: yieldsById.get(action.yieldId) ?? null,
 });
 
+/** The one join of a Borrow action with its market and integration facts. */
+export const projectBorrowActivityItem = (
+  { action, network }: BorrowActivityHistoryEntry,
+  walletScope: WalletScopeKey,
+  { borrowIntegrationsById, borrowMarketsById }: ActivityEnrichmentFacts
+): BorrowActivityItem => {
+  const market =
+    borrowMarketsById.get(action.rawArguments?.marketId ?? "") ?? null;
+
+  return {
+    _tag: "borrow",
+    actionData: action,
+    integration: borrowIntegrationsById.get(action.integrationId) ?? null,
+    market,
+    network,
+    token: resolveBorrowActivityToken(action, market),
+    walletScope,
+  };
+};
+
 export const projectActivityActionItem = (
   entry: ActivityHistoryEntry,
   walletScope: WalletScopeKey,
@@ -97,12 +131,4 @@ export const projectActivityActionItem = (
 ): ActivityActionItem =>
   entry._tag === "yield"
     ? projectYieldActivityItem(entry.action, walletScope, facts)
-    : {
-        _tag: "borrow",
-        actionData: entry.action,
-        token: resolveBorrowActivityToken(
-          entry.action,
-          facts.borrowMarketsById.get(entry.action.rawArguments?.marketId ?? "")
-        ),
-        walletScope,
-      };
+    : projectBorrowActivityItem(entry, walletScope, facts);

@@ -1,12 +1,16 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { createContext, useContext, useState } from "react";
 import { Navigate, Outlet, useMatch, useParams } from "react-router";
-import type { ActionId } from "../../../domain/identity/identifiers";
 import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
 import { YieldActionContinuationSessionRoute } from "../../classic-transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
 import type { YieldSummaryProvider } from "../../yield-summary/index";
-import type { YieldActivityItem } from "../model/activity-action";
+import {
+  type ActivityActionItem,
+  type ActivitySelectionTarget,
+  getActivityActionPath,
+  getActivitySelectionTarget,
+} from "../model/activity-action";
 import {
   ActivitySelectionKey,
   activityDetailsViewAtom,
@@ -23,7 +27,7 @@ export type ActivityPresentation = "Classic" | "Dashboard";
 
 type ActivityActionRouteValue = Readonly<{
   readonly continuationReady: boolean;
-  readonly item: YieldActivityItem;
+  readonly item: ActivityActionItem;
   readonly presentation: ActivityPresentation;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
 }>;
@@ -39,8 +43,10 @@ export const useActivityActionRoute = (): ActivityActionRouteValue => {
 
 export const ActivityActionRoute = ({
   presentation,
+  source,
 }: {
   readonly presentation: ActivityPresentation;
+  readonly source: ActivitySelectionTarget["source"];
 }) => {
   const { actionId: actionIdParam } = useParams();
   const stepsMatch = useMatch("/activity/:actionId/steps");
@@ -50,6 +56,7 @@ export const ActivityActionRoute = ({
   const parsed = parseActivityRouteIntent({
     actionIdParam,
     allowDefault: presentation === "Dashboard",
+    source,
   });
 
   if (!scope) return <ActivityDetailsUnavailable />;
@@ -82,7 +89,7 @@ const BoundActivityActionRoute = ({
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
   // The action whose Continuation this route mounted from its Review. Its
   // Session lives in this subtree across Review, Steps, and Complete.
-  const [continuedActionId, setContinuedActionId] = useState<ActionId | null>(
+  const [continuedActionId, setContinuedActionId] = useState<string | null>(
     null
   );
 
@@ -100,8 +107,8 @@ const BoundActivityActionRoute = ({
   }
 
   const { item } = result;
-  const action = item.actionData;
-  const reviewPath = `/activity/${encodeURIComponent(action.id)}`;
+  const actionId = item.actionData.id;
+  const reviewPath = getActivityActionPath(getActivitySelectionTarget(item));
   // Only the explicit action route spans Review, Steps, and Complete, so it is
   // the one that owns a continuation.
   if (result.canContinue && selectionKey.intent._tag === "default") {
@@ -110,12 +117,12 @@ const BoundActivityActionRoute = ({
   // A continuation started on this action's Review stays mounted through its
   // execution; any other action drops it.
   const nextContinuedActionId =
-    result.canContinue || continuedActionId === action.id ? action.id : null;
+    result.canContinue || continuedActionId === actionId ? actionId : null;
   if (nextContinuedActionId !== continuedActionId) {
     setContinuedActionId(nextContinuedActionId);
     return null;
   }
-  const continuationReady = continuedActionId === action.id;
+  const continuationReady = continuedActionId === actionId;
   if (selectionKey.surface === "execution" && !continuationReady) {
     return <Navigate replace to={reviewPath} />;
   }
@@ -129,11 +136,11 @@ const BoundActivityActionRoute = ({
         providersDetails: result.providersDetails,
       }}
     >
-      {continuationReady && item.yieldData ? (
+      {continuationReady && item._tag === "yield" && item.yieldData ? (
         <YieldActionContinuationSessionRoute
-          key={action.id}
+          key={actionId}
           continuation={{
-            action,
+            action: item.actionData,
             providersDetails: result.providersDetails,
             selectedValidators: item.validatorsData,
             selectedYield: item.yieldData,

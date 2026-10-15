@@ -61,6 +61,20 @@ const describeRoute = (route: RouteObject): RouteDescription => ({
   path: route.path ?? null,
 });
 
+const borrowActionIdRoute = (presentation: string): RouteDescription => ({
+  children: [
+    {
+      children: [],
+      element: "ActivityDetailsPage",
+      index: true,
+      path: null,
+    },
+  ],
+  element: `ActivityActionRoute(${presentation})`,
+  index: false,
+  path: "borrow/:actionId",
+});
+
 const actionIdRoute = (presentation: string): RouteDescription => ({
   children: [
     {
@@ -104,7 +118,10 @@ describe("Activity routes", () => {
       createActivityActionRoutes("Classic")
     );
 
-    expect(routes.map(describeRoute)).toEqual([actionIdRoute("Classic")]);
+    expect(routes.map(describeRoute)).toEqual([
+      borrowActionIdRoute("Classic"),
+      actionIdRoute("Classic"),
+    ]);
   });
 
   it("keeps Dashboard default selection outside the action-scope guard", () => {
@@ -127,7 +144,10 @@ describe("Activity routes", () => {
         path: null,
       },
       {
-        children: [actionIdRoute("Dashboard")],
+        children: [
+          borrowActionIdRoute("Dashboard"),
+          actionIdRoute("Dashboard"),
+        ],
         element: "ActionScopeGuard(/activity)",
         index: false,
         path: null,

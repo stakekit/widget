@@ -13,10 +13,15 @@ import {
 } from "../../../src/features/activity/state/details";
 import {
   ActivityActionsKey,
+  ActivityFilterOptionsKey,
   activityActionsPullAtom,
+  activityFilterOptionsAtom,
 } from "../../../src/features/activity/state/page-resources";
 import { yieldOpportunityResourceAtom } from "../../../src/resources/yield-opportunity/yield-opportunity";
-import { YieldResourceSource } from "../../../src/services/api/resource-sources";
+import {
+  BorrowResourceSource,
+  YieldResourceSource,
+} from "../../../src/services/api/resource-sources";
 import { toPresentable } from "../../../src/shared/effect/async-result";
 import { getPullResultItems } from "../../../src/shared/effect/pagination";
 import {
@@ -39,6 +44,7 @@ const getActivityActions = (
 describe("activity action atom boundary", () => {
   it("constructs value-equal activity resource keys", () => {
     const fields = {
+      borrowEnabled: true,
       filter: "stake" as const,
       scope: new WalletScopeKey({ address, network }),
     };
@@ -153,7 +159,11 @@ describe("activity action atom boundary", () => {
       ],
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const unmount = registry.mount(resource);
 
@@ -260,7 +270,11 @@ describe("activity action atom boundary", () => {
       ],
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const unmount = registry.mount(resource);
 
@@ -308,7 +322,11 @@ describe("activity action atom boundary", () => {
       ],
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const unmount = registry.mount(resource);
 
@@ -358,7 +376,11 @@ describe("activity action atom boundary", () => {
       ],
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const unmount = registry.mount(resource);
 
@@ -468,7 +490,11 @@ describe("activity enrichment per loaded page", () => {
       listValidators,
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const unmount = registry.mount(resource);
 
@@ -539,7 +565,11 @@ describe("activity enrichment per loaded page", () => {
       ]),
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const unmount = registry.mount(resource);
 
@@ -570,7 +600,11 @@ describe("activity enrichment per loaded page", () => {
         Effect.succeed(validatorPage(request)),
     });
     const resource = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: walletScope })
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
     );
     const details = activityDetailsViewAtom(
       new ActivitySelectionKey({
@@ -649,5 +683,69 @@ describe("activity enrichment per loaded page", () => {
 
     unmount();
     registry.dispose();
+  });
+});
+
+describe("Activity filter options", () => {
+  const readFilterOptions = (borrowEnabled: boolean) => {
+    const listActivity = vi.fn(
+      (request: { readonly yieldTypes?: ReadonlyArray<string> }) =>
+        Effect.succeed({
+          items: [],
+          limit: 1,
+          offset: 0,
+          total:
+            request.yieldTypes === undefined ||
+            request.yieldTypes.includes("staking")
+              ? 3
+              : 0,
+        })
+    );
+    const listActions = vi.fn(() =>
+      Effect.succeed({ items: [], limit: 1, offset: 0, total: 2 })
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.mergeAll(
+            Layer.succeed(
+              YieldResourceSource,
+              YieldResourceSource.of({ listActivity } as never)
+            ),
+            Layer.succeed(
+              BorrowResourceSource,
+              BorrowResourceSource.of({ listActions } as never)
+            )
+          )
+        ),
+      ],
+    });
+    const options = AsyncResult.getOrThrow(
+      registry.get(
+        activityFilterOptionsAtom(
+          new ActivityFilterOptionsKey({ borrowEnabled, scope: walletScope })
+        )
+      )
+    );
+    registry.dispose();
+
+    return { listActions, options };
+  };
+
+  it("lists a Borrow filter with its network-filtered count when Borrow is enabled", () => {
+    const { options } = readFilterOptions(true);
+
+    expect(options[0]).toEqual({ count: 5, filter: "all" });
+    expect(options.at(-1)).toEqual({ count: 2, filter: "borrow" });
+  });
+
+  it("neither lists nor counts Borrow when Borrow is disabled", () => {
+    const { listActions, options } = readFilterOptions(false);
+
+    expect(options).not.toContainEqual(
+      expect.objectContaining({ filter: "borrow" })
+    );
+    expect(listActions).not.toHaveBeenCalled();
   });
 });

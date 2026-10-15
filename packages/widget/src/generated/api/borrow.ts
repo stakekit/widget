@@ -2575,6 +2575,114 @@ export type ActionsControllerGetActionsV1Params = {
   readonly limit?: number;
   readonly address: string;
   readonly integrationId?: string;
+  readonly network?:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "arc-testnet"
+    | "arc"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "xlayer"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
   readonly action?:
     | "supply"
     | "borrow"
@@ -2630,6 +2738,117 @@ export const ActionsControllerGetActionsV1Params = Schema.Struct({
   }),
   integrationId: Schema.optionalKey(
     Schema.String.annotate({ examples: ["aave-borrow"] })
+  ),
+  network: Schema.optionalKey(
+    Schema.Literals([
+      "ethereum",
+      "ethereum-goerli",
+      "ethereum-holesky",
+      "ethereum-sepolia",
+      "ethereum-hoodi",
+      "arbitrum",
+      "base",
+      "base-sepolia",
+      "gnosis",
+      "optimism",
+      "polygon",
+      "polygon-amoy",
+      "starknet",
+      "zksync",
+      "linea",
+      "unichain",
+      "plume",
+      "monad-testnet",
+      "monad",
+      "robinhood",
+      "robinhood-testnet",
+      "arc-testnet",
+      "arc",
+      "avalanche-c",
+      "avalanche-c-atomic",
+      "avalanche-p",
+      "binance",
+      "celo",
+      "fantom",
+      "harmony",
+      "moonriver",
+      "okc",
+      "viction",
+      "core",
+      "sonic",
+      "plasma",
+      "katana",
+      "hyperevm",
+      "tempo",
+      "pharos",
+      "xlayer",
+      "agoric",
+      "akash",
+      "axelar",
+      "band-protocol",
+      "bitsong",
+      "canto",
+      "chihuahua",
+      "comdex",
+      "coreum",
+      "cosmos",
+      "crescent",
+      "cronos",
+      "cudos",
+      "desmos",
+      "dydx",
+      "evmos",
+      "fetch-ai",
+      "gravity-bridge",
+      "injective",
+      "irisnet",
+      "juno",
+      "kava",
+      "ki-network",
+      "mars-protocol",
+      "nym",
+      "okex-chain",
+      "onomy",
+      "osmosis",
+      "persistence",
+      "quicksilver",
+      "regen",
+      "secret",
+      "sentinel",
+      "sommelier",
+      "stafi",
+      "stargaze",
+      "stride",
+      "teritori",
+      "tgrade",
+      "umee",
+      "sei",
+      "mantra",
+      "celestia",
+      "saga",
+      "zetachain",
+      "dymension",
+      "humansai",
+      "neutron",
+      "polkadot",
+      "kusama",
+      "westend",
+      "bittensor",
+      "aptos",
+      "binancebeacon",
+      "cardano",
+      "near",
+      "solana",
+      "solana-devnet",
+      "stellar",
+      "stellar-testnet",
+      "sui",
+      "tezos",
+      "tron",
+      "ton",
+      "ton-testnet",
+      "hyperliquid",
+    ]).annotate({ examples: ["ethereum"] })
   ),
   action: Schema.optionalKey(
     Schema.Literals([
