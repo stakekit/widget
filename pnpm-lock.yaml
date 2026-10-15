@@ -344,6 +344,9 @@ catalogs:
     '@walletconnect/universal-provider':
       specifier: 2.23.7
       version: 2.23.7
+    '@zama-fhe/sdk':
+      specifier: 3.6.0
+      version: 3.6.0
     aria-hidden:
       specifier: ^1.2.6
       version: 1.2.6
@@ -754,6 +757,9 @@ importers:
       '@walletconnect/universal-provider':
         specifier: 'catalog:'
         version: 2.23.7(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@7.2.0))(@types/react@19.3.0)(bufferutil@4.0.9)(react@19.3.0)(supports-color@7.2.0)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(encoding@0.1.13)(ioredis@5.10.1(supports-color@7.2.0))(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@zama-fhe/sdk':
+        specifier: 'catalog:'
+        version: 3.6.0(@tanstack/query-core@5.104.1)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(typescript@6.0.3)(viem@2.57.4(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       autoprefixer:
         specifier: 'catalog:'
         version: 10.6.1(postcss@8.5.29)
@@ -1868,6 +1874,21 @@ packages:
   '@exodus/schemasafe@1.3.0':
     resolution: {integrity: sha512-5Aap/GaRupgNx/feGBwLLTVv8OQFfv3pq2lPRzPg9R+IOBnDgghTGW7l7EuVXOvg5cc/xSAlRW8rBrjIC3Nvqw==}
 
+  '@fhevm/sdk@0.13.2':
+    resolution: {integrity: sha512-M1ZUKdRJedxRa57bVeQ7jrzVP6hKAXjS8WabvMNJKBui7C2ZXDsvoyb7qpLqYib85obA+OQTwcPZV/oxWfciWA==}
+    engines: {node: '>=22.0'}
+    peerDependencies:
+      ethers: '>=6.8.0'
+      typescript: '>=5.0.4'
+      viem: '>=2'
+    peerDependenciesMeta:
+      ethers:
+        optional: true
+      typescript:
+        optional: true
+      viem:
+        optional: true
+
   '@fivebinaries/coin-selection@3.0.0':
     resolution: {integrity: sha512-h25Pn1ZA7oqQBQDodGAgIsQt66T2wDge9onBKNqE66WNWL0KJiKJbpij8YOLo5AAlEIg5IS7EB1QjBgDOIg6DQ==}
 
@@ -2633,6 +2654,10 @@ packages:
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/curves@2.0.1':
+    resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
+    engines: {node: '>= 20.19.0'}
+
   '@noble/curves@2.2.0':
     resolution: {integrity: sha512-T/BoHgFXirb0ENSPBquzX0rcjXeM6Lo892a2jlYJkqk83LqZx0l1Of7DzlKJ6jkpvMrkHSnAcgb5JegL8SeIkQ==}
     engines: {node: '>= 20.19.0'}
@@ -2674,6 +2699,10 @@ packages:
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
 
   '@noble/hashes@2.2.0':
     resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
@@ -6554,6 +6583,21 @@ packages:
 
   '@yuku-toolchain/types@0.8.7':
     resolution: {integrity: sha512-2Z53dNxAJL6UvFoIrDZvYf3zlO8s4VJK4O2hhaB4mXVwwpX/7ajtss3cmfqKvamlNLWyt9FSWs4eoYdlbxpnHA==}
+
+  '@zama-fhe/sdk@3.6.0':
+    resolution: {integrity: sha512-z7EiQQBdffJvPD04S0AK9u4B1FOOzFhXTOe8bvibXbC0z7M+oi3nfhntNKUw8Z+HouD8EIuEDlqQ/wXMIYwxCA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@tanstack/query-core': '>=5'
+      ethers: '>=6'
+      viem: '>=2'
+    peerDependenciesMeta:
+      '@tanstack/query-core':
+        optional: true
+      ethers:
+        optional: true
+      viem:
+        optional: true
 
   '@zeit/schemas@2.36.0':
     resolution: {integrity: sha512-7kjMwcChYEzMKjeex9ZFXkt1AyNov9R5HZtjBKVsmVpw7pa7ZtlCGvCBC2vnnXctaYN+aRI61HjIqeetZW5ROg==}
@@ -11150,6 +11194,9 @@ packages:
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
+  wasm-feature-detect@1.9.0:
+    resolution: {integrity: sha512-zonE+xlIIYtxPy++L24ow0hAD8CICb4+FgPyROd3buyXIqsJvUEDkBgfCCoXOd1Hu3DUr0GOfnPIdcGV+YpNaA==}
+
   watskeburt@6.0.0:
     resolution: {integrity: sha512-jfiuDABaxSkC71T6oZ3vCS99roYkSHm/+As+G0Dz8taAHQb+SJBvLEm5RlsgG71XdfAj3rv7eudUBTgwcQUPlQ==}
     engines: {node: ^22.13||^24||>=26}
@@ -12904,6 +12951,16 @@ snapshots:
 
   '@exodus/schemasafe@1.3.0': {}
 
+  '@fhevm/sdk@0.13.2(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(typescript@6.0.3)(viem@2.57.4(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+    dependencies:
+      '@noble/curves': 2.0.1
+      '@noble/hashes': 2.0.1
+      wasm-feature-detect: 1.9.0
+    optionalDependencies:
+      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      typescript: 6.0.3
+      viem: 2.57.4(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+
   '@fivebinaries/coin-selection@3.0.0':
     dependencies:
       '@emurgo/cardano-serialization-lib-browser': 13.2.1
@@ -14045,6 +14102,10 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
+  '@noble/curves@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+
   '@noble/curves@2.2.0':
     dependencies:
       '@noble/hashes': 2.2.0
@@ -14070,6 +14131,8 @@ snapshots:
   '@noble/hashes@1.7.1': {}
 
   '@noble/hashes@1.8.0': {}
+
+  '@noble/hashes@2.0.1': {}
 
   '@noble/hashes@2.2.0': {}
 
@@ -19929,6 +19992,17 @@ snapshots:
 
   '@yuku-toolchain/types@0.8.7': {}
 
+  '@zama-fhe/sdk@3.6.0(@tanstack/query-core@5.104.1)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(typescript@6.0.3)(viem@2.57.4(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+    dependencies:
+      '@fhevm/sdk': 0.13.2(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(typescript@6.0.3)(viem@2.57.4(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      zod: 4.6.5
+    optionalDependencies:
+      '@tanstack/query-core': 5.104.1
+      ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      viem: 2.57.4(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+    transitivePeerDependencies:
+      - typescript
+
   '@zeit/schemas@2.36.0': {}
 
   '@zondax/ledger-js@1.3.1':
@@ -25205,6 +25279,8 @@ snapshots:
   warning@4.0.3:
     dependencies:
       loose-envify: 1.4.0
+
+  wasm-feature-detect@1.9.0: {}
 
   watskeburt@6.0.0: {}
 

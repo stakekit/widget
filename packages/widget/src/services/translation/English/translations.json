@@ -1,5 +1,13 @@
 {
   "shared": {
+    "confidential": {
+      "decrypt": "Decrypt",
+      "decrypt_to_withdraw": "Your balance is encrypted. Decrypt it to withdraw.",
+      "hidden": "Hidden",
+      "hide": "Hide balance",
+      "reveal": "Reveal balance",
+      "reveal_failed": "Could not reveal the balance. Try again."
+    },
     "stake_kit": "Yield.xyz",
     "max": "Max",
     "min": "Min",
@@ -937,9 +945,18 @@
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
     "cancelled": "You cancelled this request in your wallet.",
+    "decrypt": "Decrypting the withdrawal amount",
+    "decrypt_desc": "Zama publishes the unwrapped amount. Usually takes 10–30 seconds.",
+    "decrypt_error": "Decryption failed. Retry to try again.",
+    "encrypt": "Encrypting your amount",
+    "encrypt_desc": "Usually takes 10–30 seconds. Keep this page open.",
+    "encrypt_error": "Encryption failed. Retry to try again.",
+    "prepare_rejected": "This request can't be completed. Go back and change it.",
     "approve_error": "Something went wrong",
     "view_transaction": "View transaction",
     "tx_type": {
+      "DECRYPT": "DECRYPT AMOUNT",
+      "ENCRYPT": "ENCRYPT AMOUNT",
       "SWAP": "SWAP",
       "DEPOSIT": "DEPOSIT",
       "APPROVAL": "APPROVAL",
@@ -988,6 +1005,8 @@
       "INFSTONES_CLAIM_REQUEST": "INFSTONES CLAIM REQUEST",
       "WRAP": "WRAP",
       "UNWRAP": "UNWRAP",
+      "REDEEM": "REDEEM",
+      "CANCEL_PENDING": "CANCEL PENDING REQUEST",
       "DELEGATE": "DELEGATE",
       "UNDELEGATE": "UNDELEGATE",
       "VERIFY_WITHDRAW_CREDENTIALS": "VERIFY WITHDRAW CREDENTIALS",
@@ -1066,6 +1085,7 @@
       "withdraw_all": "withdraw all",
       "verify_withdraw_credentials": "verified withdraw credentials",
       "delegate": "delegated",
+      "cancel_pending": "cancelled pending request",
       "undelegate": "undelegated",
       "create_eigenpod": "created eigenpod",
       "start_checkpoint": "started checkpoint",
@@ -1205,7 +1225,9 @@
       "label": "Receive token",
       "select_title": "Select receive token",
       "note": "You will receive {{symbol}} when you withdraw.",
-      "note_with_address": "You will receive {{symbol}} ({{address}}) when you withdraw."
+      "note_with_address": "You will receive {{symbol}} ({{address}}) when you withdraw.",
+      "confidential_batched": "{{symbol}} stays private. Withdrawals are batched and can take a while.",
+      "confidential_instant": "{{symbol}} arrives right away, but the amount is public on-chain."
     },
     "select_validators": {
       "submit": "Submit"
@@ -1302,6 +1324,7 @@
       "migrate": "Migrate",
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
+      "cancel_pending": "Cancel pending request",
       "undelegate": "Undelegate",
       "create_eigenpod": "Create eigenpod",
       "start_checkpoint": "Start checkpoint",
@@ -1332,7 +1355,8 @@
       "rebond": "Rebond",
       "migrate": "Migrate",
       "verify_withdraw_credentials": "Verify withdraw credentials",
-      "delegate": "Delegate"
+      "delegate": "Delegate",
+      "cancel_pending": "Cancel pending request"
     },
     "unstake_sign": {
       "title": "Verify Ownership",
@@ -1368,7 +1392,8 @@
       "rebond": "Rebond with {{providerName}}",
       "migrate": "Migrate from {{providerName}}",
       "verify_withdraw_credentials": "Verify withdraw credentials from {{providerName}}",
-      "delegate": "Delegate with {{providerName}}"
+      "delegate": "Delegate with {{providerName}}",
+      "cancel_pending": "Cancel pending request with {{providerName}}"
     }
   },
   "select_token": {

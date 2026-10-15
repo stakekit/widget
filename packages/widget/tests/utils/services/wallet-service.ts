@@ -12,6 +12,8 @@ export type TestWalletBehaviorOptions = Readonly<{
   readonly enabledNetworks?: TestWalletService["enabledNetworks"];
   readonly logout?: TestWalletService["logout"];
   readonly signMessage?: TestWalletService["signMessage"];
+  readonly canSignPermit?: TestWalletService["canSignPermit"];
+  readonly signPermit?: TestWalletService["signPermit"];
   readonly signTypedData?: TestWalletService["signTypedData"];
   readonly signTransaction?: TestWalletService["signTransaction"];
   readonly switchAccount?: TestWalletService["switchAccount"];
@@ -56,6 +58,9 @@ export const makeTestWallet = Effect.fn("makeTestWallet")(function* (
     logout: options.logout ?? unexpectedWalletCommand("logout"),
     signMessage:
       options.signMessage ?? (() => unexpectedWalletCommand("signMessage")),
+    canSignPermit: options.canSignPermit ?? Effect.succeed(true),
+    signPermit:
+      options.signPermit ?? (() => unexpectedWalletCommand("signPermit")),
     signTypedData:
       options.signTypedData ?? (() => unexpectedWalletCommand("signTypedData")),
     signTransaction:

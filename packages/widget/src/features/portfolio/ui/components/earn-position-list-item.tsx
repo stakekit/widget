@@ -29,6 +29,7 @@ import {
 } from "./position-list-item.css";
 
 export type EarnPositionListItemDetails = {
+  readonly hasHiddenBalance: boolean;
   readonly integrationData: EarnYieldWithProvider | null;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider> | null;
   readonly inactiveValidator: Exclude<
@@ -52,6 +53,7 @@ const EarnPositionAmount = ({
   readonly details: EarnPositionListItemDetails;
   readonly presentation: Presentation;
 }) => {
+  const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
   if (details.totalAmountFormatted && item.token) {
@@ -64,7 +66,9 @@ const EarnPositionAmount = ({
         gap="1"
       >
         <Text className={noWrap}>
-          {details.totalAmountFormatted} {item.token.symbol}
+          {details.hasHiddenBalance
+            ? t("shared.confidential.hidden")
+            : `${details.totalAmountFormatted} ${item.token.symbol}`}
         </Text>
 
         {details.totalAmountUsd ? (

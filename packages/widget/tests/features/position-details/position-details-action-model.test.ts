@@ -10,7 +10,10 @@ import {
 } from "../../../src/domain/action/action-command";
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { Prices } from "../../../src/domain/health/models";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  TokenAddress,
+  WalletAddress,
+} from "../../../src/domain/identity/identifiers";
 import { toPositionBalancesByType } from "../../../src/domain/portfolio/positions";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
@@ -18,6 +21,7 @@ import {
   makePendingActionModalStore,
   openPendingActionModal,
   reconcilePendingActionModalReceipt,
+  resolvePositionDetailsExitSubmission,
 } from "../../../src/features/position-details/model/classic-flow-actions";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../../../src/features/position-details/model/exit-receive-token";
 import { resolvePositionDetailsActionCapabilities } from "../../../src/features/position-details/model/hub";
@@ -41,6 +45,8 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
 import {
+  confidentialFixture,
+  confidentialYieldFixture,
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
@@ -145,6 +151,7 @@ describe("Position Details action model", () => {
         selectedAddress: null,
       })
     ).toEqual({
+      confidentialExit: null,
       options: [
         {
           address: "0x1111111111111111111111111111111111111111",
@@ -159,6 +166,66 @@ describe("Position Details action model", () => {
         address: "0x1111111111111111111111111111111111111111",
         symbol: "USDS",
       },
+    });
+  });
+
+  it("offers the private batched and instant public exits of a confidential vault", () => {
+    const { cUsdc, depositBatcher, redeemBatcher, usdc } = confidentialFixture;
+    const baseMechanics = yieldApiYieldDtoFixture().mechanics;
+    const vault = confidentialYieldFixture({
+      inputTokens: [cUsdc, usdc],
+      mechanics: {
+        ...baseMechanics,
+        arguments: {
+          enter: {
+            fields: [
+              {
+                isArray: true,
+                label: "Encrypted Leg Amounts",
+                name: "encryptedLegAmounts",
+                options: [depositBatcher],
+                type: "string",
+              },
+            ],
+          },
+          exit: {
+            fields: [
+              {
+                isArray: true,
+                label: "Encrypted Leg Amounts",
+                name: "encryptedLegAmounts",
+                options: [redeemBatcher],
+                type: "string",
+              },
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: [usdc.address, cUsdc.address],
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(
+      resolvePositionDetailsExitReceiveTokenSelection({
+        integration: vault,
+        selectedAddress: null,
+      })
+    ).toMatchObject({
+      confidentialExit: "batched",
+      selected: { address: cUsdc.address, symbol: "cUSDC" },
+    });
+    expect(
+      resolvePositionDetailsExitReceiveTokenSelection({
+        integration: vault,
+        selectedAddress: Schema.decodeSync(TokenAddress)(usdc.address),
+      })
+    ).toMatchObject({
+      confidentialExit: "instant",
+      selected: { address: usdc.address, symbol: "USDC" },
     });
   });
 
@@ -243,6 +310,7 @@ describe("Position Details action model", () => {
         selectedAddress: null,
       })
     ).toEqual({
+      confidentialExit: null,
       options: [
         {
           address: "0x1111111111111111111111111111111111111111",
@@ -588,6 +656,115 @@ describe("Position Details action model", () => {
     ).toEqual(["5"]);
 
     registry.dispose();
+  });
+
+  it("converts a partial confidential exit amount to shares at the share price", () => {
+    const { cShare, usdc } = confidentialFixture;
+    const shareToken = { ...cShare, decimals: 8 };
+    const integration = confidentialYieldFixture({
+      state: {
+        pricePerShareState: { price: 1.25, quoteToken: usdc, shareToken },
+      },
+    });
+
+    const decision = resolvePositionDetailsExitSubmission({
+      amountValid: true,
+      canMount: true,
+      facts: {
+        additionalAddresses: null,
+        address: Schema.decodeSync(WalletAddress)("0xWallet"),
+        amount: new BigNumber("2.5"),
+        integration,
+        receiveToken: null,
+        stakedOrLiquidBalances: [
+          Schema.decodeSync(EarnBalance)(
+            yieldBalanceFixture({
+              amount: "12.5",
+              amountRaw: "12500000",
+              shareToken,
+              token: usdc,
+            })
+          ),
+        ],
+        token: integration.token,
+        useMaxAmount: false,
+      },
+      kycBlocking: false,
+      token: integration.token,
+    });
+
+    expect(decision).toMatchObject({
+      _tag: "Start",
+      prepared: { request: { arguments: { shareAmountRaw: "200000000" } } },
+    });
+  });
+
+  const confidentialExitDecision = ({
+    amount,
+    balance,
+    useMaxAmount,
+  }: {
+    readonly amount: string;
+    readonly balance: Partial<typeof EarnBalance.Encoded>;
+    readonly useMaxAmount: boolean;
+  }) => {
+    const integration = confidentialYieldFixture();
+    return resolvePositionDetailsExitSubmission({
+      amountValid: true,
+      canMount: true,
+      facts: {
+        additionalAddresses: null,
+        address: Schema.decodeSync(WalletAddress)("0xWallet"),
+        amount: new BigNumber(amount),
+        integration,
+        receiveToken: null,
+        stakedOrLiquidBalances: [
+          Schema.decodeSync(EarnBalance)(
+            yieldBalanceFixture({
+              shareToken: { ...confidentialFixture.cShare, decimals: 8 },
+              token: confidentialFixture.usdc,
+              ...balance,
+            })
+          ),
+        ],
+        token: integration.token,
+        useMaxAmount,
+      },
+      kycBlocking: false,
+      token: integration.token,
+    });
+  };
+
+  it("redeems every revealed share on a max confidential exit", () => {
+    expect(
+      confidentialExitDecision({
+        amount: "12.345678",
+        balance: {
+          amount: "12.345678",
+          amountRaw: "12345678",
+          shareAmountRaw: "1234567891",
+        },
+        useMaxAmount: true,
+      })
+    ).toMatchObject({
+      _tag: "Start",
+      prepared: { request: { arguments: { shareAmountRaw: "1234567891" } } },
+    });
+  });
+
+  it("offers no confidential exit while the share balance is still hidden", () => {
+    expect(
+      confidentialExitDecision({
+        amount: "1",
+        balance: {
+          amount: "0",
+          amountRaw: "0",
+          isEncrypted: true,
+          shareAmountRaw: "0xhandle",
+        },
+        useMaxAmount: false,
+      })
+    ).toEqual({ _tag: "Invalid" });
   });
 });
 

@@ -1,5 +1,9 @@
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
+import {
+  getConfidentialAssetToken,
+  sameTokenContract,
+} from "../../../../../domain/earn/confidential";
 import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import {
   filterValidators,
@@ -257,9 +261,17 @@ export const resolveEarnView = ({
   const validatorInput = observations.validators;
   const validatorOptions =
     validatorInput._tag === "enabled" ? validatorInput.options : [];
+  const confidentialAsset = getConfidentialAssetToken(selectedYield);
+  // Unknown to the API (not zero); checked at review.
+  const hiddenTokenBalance =
+    confidentialAsset !== null &&
+    sameTokenContract(confidentialAsset, selectedToken.token);
+  const selectionToken = hiddenTokenBalance
+    ? { ...selectedToken, amount: null }
+    : selectedToken;
   const availableAmount =
-    entry.walletScope && selectedToken.amount !== null
-      ? selectedToken.amount
+    entry.walletScope && selectionToken.amount !== null
+      ? selectionToken.amount
       : null;
   const form = resolveForm({
     availableAmount,
@@ -279,7 +291,7 @@ export const resolveEarnView = ({
     },
     selection: {
       category: category.category,
-      token: selectedToken,
+      token: selectionToken,
       yield: selectedYield,
     },
   };
@@ -330,7 +342,7 @@ export const resolveEarnView = ({
       selectValidator: validatorInput._tag === "enabled",
       submit:
         entry.walletScope !== null &&
-        availableAmount !== null &&
+        (availableAmount !== null || hiddenTokenBalance) &&
         (validatorInput._tag === "disabled" || selectedValidators.length > 0) &&
         canSubmitEarnForm({
           availableAmount,
@@ -347,7 +359,7 @@ export const resolveEarnView = ({
     },
     selection: {
       category: category.category,
-      token: selectedToken,
+      token: selectionToken,
       validators: selectedValidators,
       yield: selectedYield,
     },

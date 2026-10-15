@@ -84,6 +84,10 @@ const SupportedActionArguments: Record<
     validatorAddresses: true,
     subnetId: true,
     cosmosPubKey: true,
+    encryptedAmount: true,
+    encryptedAmountProof: true,
+    encryptedLegAmounts: true,
+    encryptedLegProof: true,
   },
   exit: {
     amount: true,
@@ -95,6 +99,11 @@ const SupportedActionArguments: Record<
     validatorAddresses: true,
     subnetId: true,
     cosmosPubKey: true,
+    encryptedAmount: true,
+    encryptedAmountProof: true,
+    encryptedLegAmounts: true,
+    encryptedLegProof: true,
+    shareAmountRaw: true,
   },
 };
 
@@ -284,9 +293,46 @@ const ValidatorAddressesArgument = makeRequiredArgument(
   "string"
 );
 const SubnetIdArgument = makeRequiredArgument("subnetId", "number");
+const EncryptedAmountArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  options: Schema.Array(Schema.String),
+});
+
+const EncryptedAmountArgument = decodeApiArgument(
+  "encryptedAmount",
+  "string",
+  EncryptedAmountArgumentDomain,
+  SchemaGetter.transform<
+    typeof EncryptedAmountArgumentDomain.Encoded,
+    ApiArgumentField
+  >((field) => ({
+    options: field.options ?? [],
+    required: field.required ?? false,
+  }))
+);
+
+const EncryptedLegAmountsArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  options: Schema.Array(Schema.String),
+}).check(makeRequiredOptionsFilter("encryptedLegAmounts"));
+
+const EncryptedLegAmountsArgument = decodeApiArgument(
+  "encryptedLegAmounts",
+  "string",
+  EncryptedLegAmountsArgumentDomain,
+  SchemaGetter.transform<
+    typeof EncryptedLegAmountsArgumentDomain.Encoded,
+    ApiArgumentField
+  >((field) => ({
+    options: field.options ?? [],
+    required: field.required ?? false,
+  }))
+);
 
 const EarnYieldArgumentFieldsDomain = Schema.Struct({
   amount: Schema.optionalKey(AmountArgument),
+  encryptedAmount: Schema.optionalKey(EncryptedAmountArgument),
+  encryptedLegAmounts: Schema.optionalKey(EncryptedLegAmountsArgument),
   outputToken: Schema.optionalKey(OutputTokenArgument),
   providerId: Schema.optionalKey(ProviderIdArgument),
   subnetId: Schema.optionalKey(SubnetIdArgument),
@@ -432,6 +478,13 @@ const EarnYieldRisk = Schema.Struct({
 
 export const EarnYield = Schema.Struct({
   ...Struct.pick(YieldApi.YieldDto.fields, ["network", "statistics", "status"]),
+  // Malformed contracts leave the yield non-confidential.
+  executionContracts: Schema.optionalKey(
+    TolerantNullOr(YieldApi.ExecutionContractsDto, {
+      operation: "yield",
+      field: "executionContracts",
+    })
+  ),
   id: YieldId,
   providerId: ProviderId,
   inputTokens: EarnYieldTokens,
@@ -483,7 +536,9 @@ export const EarnBalance = Schema.Struct({
   ...Struct.pick(YieldApi.BalanceDto.fields, [
     "address",
     "type",
+    "isEncrypted",
     "shareAmount",
+    "shareAmountRaw",
     "shareToken",
   ]),
   amount: ExactDecimal,

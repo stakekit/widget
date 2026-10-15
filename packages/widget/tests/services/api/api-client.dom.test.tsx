@@ -33,6 +33,7 @@ import {
 } from "../../../src/services/config/widget-config";
 import { RichErrorService } from "../../../src/services/errors/rich-error-service";
 import { GeoBlockService } from "../../../src/services/geoblocking";
+import { ConfidentialValues } from "../../../src/services/zama/confidential-values";
 import { config } from "../../../src/shared/config/widget-defaults";
 import { yieldApiActionDtoFixture } from "../../fixtures";
 import { describe, expect, it } from "../../utils/test-extend.dom.ts";
@@ -78,6 +79,7 @@ const createTestClient = (options: Partial<ApplicationApiIdentity> = {}) =>
     );
     const geoBlockLayer = GeoBlockService.layer;
     const clientLayer = apiLayer.pipe(
+      Layer.provide(ConfidentialValues.layer),
       Layer.provide(geoBlockLayer),
       Layer.provide(richErrorLayer),
       Layer.provide(configLayer)

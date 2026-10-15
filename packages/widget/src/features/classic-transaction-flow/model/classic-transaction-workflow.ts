@@ -1,7 +1,9 @@
 import type { TFunction } from "i18next";
+import type { YieldAction } from "../../../domain/action/models";
 import type { TransactionType } from "../../../domain/action/rules";
 import type {
   ClassicTransactionWorkflowInput,
+  TransactionPhaseProgress,
   TransactionWorkflowContext,
   TransactionWorkflowState,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
@@ -18,7 +20,7 @@ export type ClassicTransactionCompletionUrl = {
 };
 
 export const formatTransactionTypeLabel = (
-  type: TransactionType,
+  type: TransactionType | "DECRYPT" | "ENCRYPT",
   t: TFunction,
   options?: { readonly context?: "ETHENA_USDE" }
 ) =>
@@ -85,3 +87,74 @@ export const getClassicTransactionStepsView = (
     yieldId: workflowInput.yieldId,
   } as const;
 };
+
+export type ClassicFlowConversionStepStatus =
+  | "confirming"
+  | "done"
+  | "failed"
+  | "idle"
+  | "rejected"
+  | "signing";
+
+export type ClassicFlowConversion = Readonly<{
+  readonly steps: ReadonlyArray<
+    Readonly<{
+      readonly status: ClassicFlowConversionStepStatus;
+      readonly step: "approve" | "decrypt" | "encrypt" | "wrap";
+    }>
+  >;
+  readonly transactions: YieldAction["transactions"];
+}>;
+
+const idle = { broadcast: "idle", confirm: "idle", sign: "idle" } as const;
+
+const conversionStepPhases: Record<
+  ClassicFlowConversionStepStatus,
+  TransactionPhaseProgress
+> = {
+  confirming: { broadcast: "done", confirm: "active", sign: "done" },
+  done: { broadcast: "done", confirm: "done", sign: "done" },
+  failed: { ...idle, sign: "failed" },
+  idle,
+  rejected: { ...idle, sign: "failed" },
+  signing: { ...idle, sign: "active" },
+};
+
+const conversionStepTypes = {
+  approve: "APPROVAL",
+  decrypt: "DECRYPT",
+  encrypt: "ENCRYPT",
+  wrap: "WRAP",
+} as const;
+
+export const getClassicConversionStepsView = (
+  conversion: ClassicFlowConversion,
+  engine: ReturnType<typeof getClassicTransactionStepsView> | null,
+  yieldId: YieldAction["yieldId"]
+) => ({
+  cancelled: engine?.cancelled ?? false,
+  customSignErrorMessage: engine?.customSignErrorMessage ?? null,
+  retryable:
+    conversion.steps.some((step) => step.status === "failed") ||
+    (engine?.retryable ?? false),
+  txStates: [
+    ...conversion.steps.map((step) => ({
+      meta: {
+        done: step.status === "done",
+        rejected: step.status === "rejected",
+      },
+      progress: { disabled: false, phases: conversionStepPhases[step.status] },
+      tx: {
+        id: `conversion-${step.step}`,
+        type: conversionStepTypes[step.step],
+      },
+    })),
+    ...(engine?.txStates ??
+      conversion.transactions.map((tx) => ({
+        meta: { done: false },
+        progress: { disabled: false, phases: idle },
+        tx,
+      }))),
+  ],
+  yieldId,
+});

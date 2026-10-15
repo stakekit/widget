@@ -169,6 +169,7 @@ export const sumBalancesByToken = (
 export type PositionBalanceRow = PositionTokenSum &
   Readonly<{
     readonly date: EarnBalance["date"];
+    readonly isEncrypted?: boolean;
     readonly type: YieldBalanceType;
   }>;
 
@@ -180,7 +181,10 @@ export type PositionBalanceRow = PositionTokenSum &
  */
 export const groupPositionBalanceRows = (
   balances: ReadonlyArray<
-    Pick<EarnBalance, "amount" | "amountUsd" | "date" | "token" | "type">
+    Pick<
+      EarnBalance,
+      "amount" | "amountUsd" | "date" | "isEncrypted" | "token" | "type"
+    >
   >
 ): ReadonlyArray<PositionBalanceRow> => [
   ...balances
@@ -196,6 +200,7 @@ export const groupPositionBalanceRows = (
           balance.amountUsd ?? 0
         ),
         date: balance.date,
+        isEncrypted: previous?.isEncrypted || balance.isEncrypted,
         token: previous?.token ?? balance.token,
         type: balance.type,
       });
@@ -226,7 +231,9 @@ export const toPositionBalancesByType = (
 ): PositionBalancesByType =>
   balances.reduce((byType, balance) => {
     const amount = exactDecimal(balance.amount);
-    if (amount.isZero() || amount.isNaN()) return byType;
+    if (!balance.isEncrypted && (amount.isZero() || amount.isNaN())) {
+      return byType;
+    }
 
     const tokenPriceInUsd = exactDecimal(
       String(balance.amountUsd ?? 0).replace(/,/g, "")

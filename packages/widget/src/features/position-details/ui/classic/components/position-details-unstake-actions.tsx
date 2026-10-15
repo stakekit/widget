@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { formatUsd } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { Button } from "../../../../../shared/ui/primitives/button";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import { KycGateCard } from "../../../../yield-summary/views";
@@ -34,10 +36,51 @@ export const PositionDetailsUnstakeActions = () => {
     exitReceiveTokenSelection,
     onReceiveTokenSelect,
     onUnstakeAmountChange,
+    hasHiddenBalances,
+    onRevealBalances,
+    revealFailed,
+    revealing,
   } = usePositionDetails();
 
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+
+  // Withdrawing encrypts an amount, so reveal first.
+  if (hasHiddenBalances && integrationDataValue) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        gap="3"
+        px="4"
+        py="4"
+        borderRadius="2xl"
+        borderColor="backgroundMuted"
+        borderWidth={1}
+        borderStyle="solid"
+      >
+        <Box display="flex" flexDirection="column" gap="1">
+          <Text variant={{ weight: "normal" }}>
+            {t("shared.confidential.decrypt_to_withdraw")}
+          </Text>
+          {revealFailed ? (
+            <Text variant={{ type: "danger", weight: "normal" }}>
+              {t("shared.confidential.reveal_failed")}
+            </Text>
+          ) : null}
+        </Box>
+        <Button
+          variant={{ size: "small", color: "smallButtonLight" }}
+          disabled={revealing}
+          isLoading={revealing}
+          onClick={onRevealBalances}
+        >
+          <Text>{t("shared.confidential.decrypt")}</Text>
+        </Button>
+      </Box>
+    );
+  }
 
   if (
     !exitBalance ||

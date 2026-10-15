@@ -316,7 +316,13 @@ export type ArgumentFieldDto = {
     | "tokenId"
     | "skipPrechecks"
     | "useMaxAllowance"
-    | "feePayerAddress";
+    | "feePayerAddress"
+    | "encryptedAmount"
+    | "encryptedAmountProof"
+    | "encryptedLegAmounts"
+    | "encryptedLegProof"
+    | "decryptedAmount"
+    | "decryptionProof";
   readonly type: "string" | "number" | "address" | "enum" | "boolean";
   readonly label: string;
   readonly description?: string;
@@ -364,6 +370,12 @@ export const ArgumentFieldDto = Schema.Struct({
     "skipPrechecks",
     "useMaxAllowance",
     "feePayerAddress",
+    "encryptedAmount",
+    "encryptedAmountProof",
+    "encryptedLegAmounts",
+    "encryptedLegProof",
+    "decryptedAmount",
+    "decryptionProof",
   ]).annotate({ description: "Field name", examples: ["amount"] }),
   type: Schema.Literals([
     "string",
@@ -838,12 +850,18 @@ export const YieldStatusDto = Schema.Struct({
     examples: [true],
   }),
 }).annotate({ identifier: "YieldStatusDto" });
-export type ERCStandards = "ERC20" | "ERC4626" | "ERC721" | "ERC1155";
+export type ERCStandards =
+  | "ERC20"
+  | "ERC4626"
+  | "ERC721"
+  | "ERC1155"
+  | "ERC7984";
 export const ERCStandards = Schema.Literals([
   "ERC20",
   "ERC4626",
   "ERC721",
   "ERC1155",
+  "ERC7984",
 ]).annotate({
   description: "Supported standards for this yield",
   identifier: "ERCStandards",
@@ -1814,7 +1832,9 @@ export type TransactionDto = {
     | "INFSTONES_PROVISION"
     | "INFSTONES_EXIT_REQUEST"
     | "INFSTONES_CLAIM_REQUEST"
-    | "BATCH";
+    | "BATCH"
+    | "REDEEM"
+    | "CANCEL_PENDING";
   readonly hash: string | null;
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
@@ -2025,6 +2045,8 @@ export const TransactionDto = Schema.Struct({
     "INFSTONES_EXIT_REQUEST",
     "INFSTONES_CLAIM_REQUEST",
     "BATCH",
+    "REDEEM",
+    "CANCEL_PENDING",
   ]).annotate({
     description: "Type of transaction operation",
     examples: ["STAKE"],
@@ -2399,6 +2421,12 @@ export type ActionArgumentsDto = {
   readonly rangeMax?: string;
   readonly percentage?: number;
   readonly tokenId?: string;
+  readonly encryptedAmount?: string;
+  readonly encryptedAmountProof?: string;
+  readonly encryptedLegAmounts?: ReadonlyArray<string>;
+  readonly encryptedLegProof?: string;
+  readonly decryptedAmount?: string;
+  readonly decryptionProof?: string;
 };
 export const ActionArgumentsDto = Schema.Struct({
   amount: Schema.optionalKey(
@@ -2838,6 +2866,42 @@ export const ActionArgumentsDto = Schema.Struct({
       examples: ["12345"],
     })
   ),
+  encryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
+    })
+  ),
+  encryptedAmountProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Input proof returned by the Zama SDK alongside encryptedAmount.",
+    })
+  ),
+  encryptedLegAmounts: Schema.optionalKey(
+    Schema.Array(Schema.String).annotate({
+      description:
+        "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
+    })
+  ),
+  encryptedLegProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
+    })
+  ),
+  decryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
+    })
+  ),
+  decryptionProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
+    })
+  ),
 }).annotate({ identifier: "ActionArgumentsDto" });
 export type TransactionType =
   | "SWAP"
@@ -2895,7 +2959,9 @@ export type TransactionType =
   | "INFSTONES_PROVISION"
   | "INFSTONES_EXIT_REQUEST"
   | "INFSTONES_CLAIM_REQUEST"
-  | "BATCH";
+  | "BATCH"
+  | "REDEEM"
+  | "CANCEL_PENDING";
 export const TransactionType = Schema.Literals([
   "SWAP",
   "DEPOSIT",
@@ -2953,6 +3019,8 @@ export const TransactionType = Schema.Literals([
   "INFSTONES_EXIT_REQUEST",
   "INFSTONES_CLAIM_REQUEST",
   "BATCH",
+  "REDEEM",
+  "CANCEL_PENDING",
 ]).annotate({ identifier: "TransactionType" });
 export type SubmitHashDto = { readonly hash: string };
 export const SubmitHashDto = Schema.Struct({
@@ -3357,7 +3425,8 @@ export type PendingActionDto = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly passthrough: string;
   readonly arguments?: {
     readonly fields: ReadonlyArray<ArgumentFieldDto>;
@@ -3393,6 +3462,7 @@ export const PendingActionDto = Schema.Struct({
     "MIGRATE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
+    "CANCEL_PENDING",
   ]).annotate({
     description: "Specific action type",
     examples: ["CLAIM_REWARDS"],
@@ -4043,7 +4113,8 @@ export type ActionDto = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly yieldId: string;
   readonly address: string;
   readonly amount: string | null;
@@ -4301,6 +4372,12 @@ export type ActionDto = {
     readonly rangeMax?: string;
     readonly percentage?: number;
     readonly tokenId?: string;
+    readonly encryptedAmount?: string;
+    readonly encryptedAmountProof?: string;
+    readonly encryptedLegAmounts?: ReadonlyArray<string>;
+    readonly encryptedLegProof?: string;
+    readonly decryptedAmount?: string;
+    readonly decryptionProof?: string;
   };
   readonly createdAt: string;
   readonly completedAt: string | null;
@@ -4312,6 +4389,8 @@ export type ActionDto = {
     | "FAILED"
     | "SUCCESS"
     | "STALE";
+  readonly isEncrypted?: boolean;
+  readonly encryptedAmount?: string;
 };
 export const ActionDto = Schema.Struct({
   id: Schema.String.annotate({
@@ -4345,6 +4424,7 @@ export const ActionDto = Schema.Struct({
     "MIGRATE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
+    "CANCEL_PENDING",
   ]).annotate({
     description: "Specific action type",
     examples: ["CLAIM_REWARDS"],
@@ -4833,6 +4913,42 @@ export const ActionDto = Schema.Struct({
         examples: ["12345"],
       })
     ),
+    encryptedAmount: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
+      })
+    ),
+    encryptedAmountProof: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "Input proof returned by the Zama SDK alongside encryptedAmount.",
+      })
+    ),
+    encryptedLegAmounts: Schema.optionalKey(
+      Schema.Array(Schema.String).annotate({
+        description:
+          "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
+      })
+    ),
+    encryptedLegProof: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
+      })
+    ),
+    decryptedAmount: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
+      })
+    ),
+    decryptionProof: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
+      })
+    ),
   }).annotate({
     description:
       "Raw arguments exactly as submitted by the user for this action",
@@ -4853,6 +4969,18 @@ export const ActionDto = Schema.Struct({
     "SUCCESS",
     "STALE",
   ]).annotate({ description: "Current status of the action" }),
+  isEncrypted: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "True when the amount was submitted encrypted: amount, amountRaw and amountUsd are null and encryptedAmount holds the ERC-7984 input handle.",
+    })
+  ),
+  encryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "ERC-7984 input handle for the action amount. Set only when isEncrypted is true.",
+    })
+  ),
 }).annotate({ identifier: "ActionDto" });
 export type CreateActionDto = {
   readonly yieldId: string;
@@ -4900,7 +5028,8 @@ export type CreateManageActionDto = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly passthrough: string;
 };
 export const CreateManageActionDto = Schema.Struct({
@@ -4940,6 +5069,7 @@ export const CreateManageActionDto = Schema.Struct({
     "MIGRATE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
+    "CANCEL_PENDING",
   ]).annotate({
     description: "Pending action type (required for manage actions)",
     examples: ["CLAIM_REWARDS"],
@@ -5590,6 +5720,7 @@ export type BalanceDto = {
   readonly shareAmount?: string;
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
+  readonly isEncrypted?: boolean;
 };
 export const BalanceDto = Schema.Struct({
   address: Schema.String.annotate({
@@ -5804,6 +5935,12 @@ export const BalanceDto = Schema.Struct({
         "The share token that shareAmount and shareAmountRaw are denominated in",
     })
   ),
+  isEncrypted: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
+    })
+  ),
 }).annotate({ identifier: "BalanceDto" });
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -5974,6 +6111,7 @@ export type YieldBalancesDto = {
     readonly shareAmount?: string;
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
+    readonly isEncrypted?: boolean;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -6212,6 +6350,12 @@ export const YieldBalancesDto = Schema.Struct({
         Schema.suspend((): Schema.Codec<TokenDto> => TokenDto).annotate({
           description:
             "The share token that shareAmount and shareAmountRaw are denominated in",
+        })
+      ),
+      isEncrypted: Schema.optionalKey(
+        Schema.Boolean.annotate({
+          description:
+            "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
         })
       ),
     }).annotate({ description: "Balance for the output token" })
@@ -8343,7 +8487,8 @@ export type ActionsControllerGetActionsParams = {
     | "REBOND"
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
+    | "DELEGATE"
+    | "CANCEL_PENDING";
   readonly yieldId?: string;
   readonly yieldTypes?: ReadonlyArray<
     | "staking"
@@ -8541,6 +8686,7 @@ export const ActionsControllerGetActionsParams = Schema.Struct({
       "MIGRATE",
       "VERIFY_WITHDRAW_CREDENTIALS",
       "DELEGATE",
+      "CANCEL_PENDING",
     ])
   ),
   yieldId: Schema.optionalKey(

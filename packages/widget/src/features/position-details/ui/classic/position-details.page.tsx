@@ -8,6 +8,7 @@ import {
 } from "../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { Button } from "../../../../shared/ui/primitives/button";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
@@ -40,6 +41,12 @@ const PositionDetails = () => {
     personalizedRewardRate,
     apyCompositionRewardRate,
     apyCompositionShowsUpToCampaign,
+    hasHiddenBalances,
+    hasRevealedBalances,
+    onHideBalances,
+    onRevealBalances,
+    revealFailed,
+    revealing,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -190,6 +197,31 @@ const PositionDetails = () => {
                   yieldBalance={row}
                 />
               ))}
+              {hasHiddenBalances ? (
+                <Box display="flex" flexDirection="column" gap="1">
+                  <Button
+                    variant={{ size: "small", color: "smallButtonLight" }}
+                    disabled={revealing}
+                    isLoading={revealing}
+                    onClick={onRevealBalances}
+                  >
+                    <Text>{t("shared.confidential.reveal")}</Text>
+                  </Button>
+                  {revealFailed ? (
+                    <Text variant={{ type: "danger", weight: "normal" }}>
+                      {t("shared.confidential.reveal_failed")}
+                    </Text>
+                  ) : null}
+                </Box>
+              ) : null}
+              {hasRevealedBalances ? (
+                <Button
+                  variant={{ size: "small", color: "smallButtonLight" }}
+                  onClick={onHideBalances}
+                >
+                  <Text>{t("shared.confidential.hide")}</Text>
+                </Button>
+              ) : null}
             </Box>
             {shareToAmountConversionsValue ? (
               <Box

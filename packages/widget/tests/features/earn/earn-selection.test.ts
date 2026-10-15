@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
@@ -5,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import type { EarnYield } from "../../../src/domain/earn/models";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
+import { type PriceRequest, Prices } from "../../../src/domain/health/models";
 import {
   ProviderOption,
   WalletAddress,
@@ -30,6 +32,7 @@ import {
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import {
+  confidentialYieldFixture,
   yieldApiProviderFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
@@ -97,6 +100,22 @@ const makeRegistry = ({
           Layer.succeed(
             LegacyResourceSource,
             LegacyResourceSource.of({
+              getPrices: (request: PriceRequest) =>
+                Effect.succeed(
+                  new Prices(
+                    new Map(
+                      request.tokenList
+                        .filter((token) => token.symbol === "USDC")
+                        .map((token) => [
+                          `${token.network}-${token.address?.toLowerCase()}`,
+                          {
+                            price: new BigNumber(1),
+                            price24H: new BigNumber(0),
+                          },
+                        ])
+                    )
+                  )
+                ),
               getTokenOptions,
               scanTokenBalances,
             } as never)
@@ -521,6 +540,56 @@ describe("Earn Selection", () => {
           seededYield.id
         )
       );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("submits and prices a confidential token whose balance the API cannot read", async () => {
+    const confidentialYield = confidentialYieldFixture();
+    const cUsdc = confidentialYield.inputTokens[0]!;
+    const { registry } = makeRegistry({
+      entry: {
+        ...classicEntry,
+        walletScope: new WalletScopeKey({
+          address: scope.address,
+          network: "ethereum-sepolia",
+        }),
+      },
+      listYields: () =>
+        Effect.succeed({
+          items: [confidentialYield],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        }),
+      scanTokenBalances: () =>
+        Effect.succeed(Schema.decodeSync(TokenBalancesResponse)([])),
+      tokenOptions: [
+        { availableYields: [confidentialYield.id], token: cUsdc },
+      ] as never,
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          confidentialYield.id
+        )
+      );
+      registry.set(setEarnSelectionAmountAtom, "5");
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom)).toMatchObject({
+          canSubmit: true,
+          selection: { token: { amount: null } },
+        })
+      );
+      const unmountEntry = registry.mount(earnEntryViewAtom);
+      await vi.waitFor(() =>
+        expect(registry.get(earnEntryViewAtom).priceUsd?.toFixed()).toBe("5")
+      );
+      unmountEntry();
     } finally {
       unmount();
       registry.dispose();

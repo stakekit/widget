@@ -84,6 +84,7 @@ catalog:
   "@walletconnect/sign-client": 2.26.0
   # Must equal the exact version @reown/appkit depends on: createAppKit types its universalProvider option against it.
   "@walletconnect/universal-provider": 2.23.7
+  "@zama-fhe/sdk": 3.6.0
   aria-hidden: ^1.2.6
   autoprefixer: ^10.6.1
   bignumber.js: ^11.1.5

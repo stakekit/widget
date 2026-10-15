@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig, esmExternalRequirePlugin } from "vite";
-import { getConfig } from "./vite.config.base.ts";
+import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 
 // These packages coordinate work or DOM state with the embedding application.
 // Bundling a private copy separates React's cleanup queue and modal lock stacks.
@@ -14,6 +14,7 @@ const sharedDependencies = [
 ];
 
 const config = getConfig({
+  experimental: chunkRelativeAssetUrls,
   define: {
     // Drop dead AMD branches from bundled UMD dependencies so Next Turbopack
     // does not resolve their dependency arrays as real relative imports.

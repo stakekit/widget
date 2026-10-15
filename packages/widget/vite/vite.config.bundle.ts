@@ -1,9 +1,10 @@
 import path from "node:path";
 import { defineConfig } from "vite";
-import { getConfig } from "./vite.config.base.ts";
+import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 
 export default defineConfig(
   getConfig({
+    experimental: chunkRelativeAssetUrls,
     build: {
       lib: {
         entry: path.resolve(import.meta.dirname, "..", "src/index.bundle.ts"),

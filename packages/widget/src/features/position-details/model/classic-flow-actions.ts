@@ -14,6 +14,11 @@ import {
   isPendingActionValidatorAddressRequired,
 } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
+import {
+  getConfidentialPricePerShare,
+  isConfidentialYield,
+  toBaseUnits,
+} from "../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnValidator,
@@ -285,6 +290,35 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
   })();
   if (!validatorArguments) return null;
 
+  // Confidential vaults redeem shares.
+  const confidential = isConfidentialYield(facts.integration);
+  const shareBalances = confidential
+    ? facts.stakedOrLiquidBalances.filter(
+        (balance) => balance.shareToken && !balance.isEncrypted
+      )
+    : [];
+  const shareToken = shareBalances[0]?.shareToken;
+  // The API rejects plain amounts for confidential vaults.
+  if (confidential && !shareToken) return null;
+  const confidentialArguments = shareToken
+    ? {
+        // Exact share count; converting back could leave dust.
+        shareAmountRaw: facts.useMaxAmount
+          ? shareBalances
+              .reduce(
+                (total, balance) => total + BigInt(balance.shareAmountRaw ?? 0),
+                0n
+              )
+              .toString()
+          : toBaseUnits(
+              facts.amount.dividedBy(
+                getConfidentialPricePerShare(facts.integration, shareToken)
+              ),
+              shareToken.decimals
+            ).toString(),
+      }
+    : {};
+
   return {
     gasFeeToken: facts.integration.mechanics.gasFeeToken,
     request: ActionCommand.make({
@@ -296,6 +330,7 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
         ).toFixed(),
         ...(outputToken ? { outputToken } : {}),
         ...(facts.useMaxAmount ? { useMaxAmount: true } : {}),
+        ...confidentialArguments,
         ...optionArguments,
         ...validatorArguments,
         ...(facts.additionalAddresses ?? {}),

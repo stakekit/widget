@@ -13,7 +13,10 @@ import type {
   ExternalProviderCancelled,
   ExternalProviderError,
 } from "../../../external-provider";
-import type { WalletSignBorrowTypedDataInput } from "../../../wallet-commands";
+import type {
+  WalletSignBorrowTypedDataInput,
+  WalletSignPermitInput,
+} from "../../../wallet-commands";
 import {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
@@ -220,6 +223,29 @@ export const makeExternalProviderWalletDriver = ({
 
       return yield* connector
         .signTypedData(input.typedData, input.txMeta)
+        .pipe(Effect.mapError(toSigningError("typed-data")));
+    }),
+  signZamaPermit: (
+    input: WalletSignPermitInput
+  ): Effect.Effect<
+    string,
+    | WalletCapabilityUnavailableError
+    | WalletRequestCancelledError
+    | WalletSigningError
+  > =>
+    Effect.gen(function* () {
+      if (
+        !isExternalProviderConnector(connector) ||
+        !connector.canSignZamaPermit()
+      ) {
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "typed-data",
+          connectorId: connector.id,
+        });
+      }
+
+      return yield* connector
+        .signZamaPermit(input.typedData, input.meta)
         .pipe(Effect.mapError(toSigningError("typed-data")));
     }),
   signTransaction: (

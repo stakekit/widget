@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
@@ -18,6 +19,27 @@ import {
 import { formatTransactionTypeLabel } from "../../../model/classic-transaction-workflow";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
+
+type StepsTxState = ReturnType<typeof useSteps>["txStates"][number];
+
+const getStepPhases = (t: TFunction, txState: StepsTxState) => {
+  if (txState.tx.type !== "ENCRYPT" && txState.tx.type !== "DECRYPT") {
+    return getTransactionStepPhases(t, txState.progress.phases);
+  }
+  // Runs in the browser: no wallet or broadcast phases.
+  const kind = txState.tx.type === "DECRYPT" ? "decrypt" : "encrypt";
+  const rejected = "rejected" in txState.meta && txState.meta.rejected;
+  return [
+    {
+      description: t(`steps.${kind}_desc`),
+      failureMessage: rejected
+        ? t("steps.prepare_rejected")
+        : t(`steps.${kind}_error`),
+      label: t(`steps.${kind}`),
+      status: txState.progress.phases.sign,
+    },
+  ];
+};
 
 export const StepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
@@ -78,7 +100,7 @@ export const StepsPage = () => {
               steps={txStates.map((txState) => ({
                 done: txState.meta.done,
                 id: txState.tx.id,
-                phases: getTransactionStepPhases(t, txState.progress.phases),
+                phases: getStepPhases(t, txState),
                 type: formatTransactionTypeLabel(txState.tx.type, t, {
                   context: isEthenaUsdeStaking(yieldId)
                     ? "ETHENA_USDE"

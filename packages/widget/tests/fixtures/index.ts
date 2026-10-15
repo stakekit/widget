@@ -475,3 +475,96 @@ const getYieldActionIntent = (type: YieldAction["type"]) => {
   if (type === "UNSTAKE") return "exit" as const;
   return "manage" as const;
 };
+
+// Zama confidential vault on Sepolia with a two-leg router.
+const router = "0x9999999999999999999999999999999999999999";
+const otherDepositBatcher = "0x1111111111111111111111111111111111111111";
+const depositBatcher = "0x4444444444444444444444444444444444444444";
+const otherRedeemBatcher = "0x2222222222222222222222222222222222222222";
+const redeemBatcher = "0x5555555555555555555555555555555555555555";
+
+const usdc = {
+  address: "0x6666666666666666666666666666666666666666",
+  decimals: 6,
+  name: "USD Coin",
+  network: "ethereum-sepolia",
+  symbol: "USDC",
+} as const;
+const cUsdc = {
+  address: "0x7777777777777777777777777777777777777777",
+  decimals: 6,
+  name: "Confidential USDC",
+  network: "ethereum-sepolia",
+  symbol: "cUSDC",
+} as const;
+const cShare = {
+  address: "0x8888888888888888888888888888888888888888",
+  decimals: 6,
+  name: "Confidential Share",
+  network: "ethereum-sepolia",
+  symbol: "csteakcUSDC",
+} as const;
+
+const legsField = (options: ReadonlyArray<string>) => ({
+  isArray: true,
+  label: "Encrypted Leg Amounts",
+  name: "encryptedLegAmounts" as const,
+  options: [...options],
+  required: true,
+  type: "string" as const,
+});
+
+export const confidentialYieldFixture = (
+  overrides?: Partial<YieldApiYieldDto>
+) =>
+  yieldApiYieldFixture({
+    executionContracts: {
+      enter: [cUsdc.address, router, depositBatcher],
+      exit: [router, cShare.address, redeemBatcher],
+    },
+    id: "ethereum-sepolia-usdc-zama-confidential-vault",
+    inputTokens: [cUsdc],
+    mechanics: {
+      ...yieldApiYieldDtoFixture().mechanics,
+      arguments: {
+        enter: {
+          fields: [
+            {
+              label: "Encrypted Amount",
+              name: "encryptedAmount",
+              options: [cUsdc.address],
+              required: true,
+              type: "string",
+            },
+            legsField([otherDepositBatcher, depositBatcher]),
+          ],
+        },
+        exit: {
+          fields: [
+            legsField([otherRedeemBatcher, redeemBatcher]),
+            {
+              label: "Encrypted Amount",
+              name: "encryptedAmount",
+              options: [cShare.address],
+              required: false,
+              type: "string",
+            },
+          ],
+        },
+      },
+      gasFeeToken: usdc,
+    },
+    network: "ethereum-sepolia",
+    token: usdc,
+    tokens: [usdc],
+    ...overrides,
+  });
+
+export const confidentialFixture = {
+  cShare,
+  cUsdc,
+  depositBatcher,
+  redeemBatcher,
+  router,
+  usdc,
+} as const;

@@ -98,6 +98,7 @@ const getActivityDirection = (type: ActionType): ActivityDirection => {
     case "MIGRATE":
     case "VERIFY_WITHDRAW_CREDENTIALS":
     case "DELEGATE":
+    case "CANCEL_PENDING":
       return "neutral";
   }
 };

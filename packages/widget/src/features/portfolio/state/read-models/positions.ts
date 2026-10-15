@@ -63,7 +63,10 @@ export const toPositionItems = (
       for (const [balanceId, value] of position.balanceData) {
         const balancesWithAmount = value.balances.filter((balance) => {
           const amount = exactDecimal(balance.amount);
-          return !amount.isZero() && !amount.isNaN();
+          return (
+            balance.isEncrypted === true ||
+            (!amount.isZero() && !amount.isNaN())
+          );
         });
 
         if (balancesWithAmount.length === 0) continue;

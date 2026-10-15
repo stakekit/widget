@@ -6,6 +6,7 @@ import { WalletPresentationService } from "../../features/wallet/runtime";
 import { YieldEntrySubmissionService } from "../../features/yield-entry/runtime";
 import { TransactionWorkflowService } from "../../services/transaction-workflow/transaction-workflow-service";
 import { WalletService } from "../../services/wallet/wallet-service";
+import { ZamaService } from "../../services/zama/zama-service";
 import { appRuntime } from "./app-runtime";
 import { DeepLinkCoordinator } from "./deep-link-coordinator";
 
@@ -15,9 +16,12 @@ export const walletRuntime = Atom.runtime((get) => {
   const transactionWorkflowLayer = TransactionWorkflowService.layer.pipe(
     Layer.provide(Layer.merge(appLayer, walletLayer))
   );
+  const zamaLayer = ZamaService.layer.pipe(
+    Layer.provide(Layer.merge(appLayer, walletLayer))
+  );
   const classicTransactionFlowLayer = ClassicTransactionFlowService.layer.pipe(
     Layer.provide(
-      Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer)
+      Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer, zamaLayer)
     )
   );
   const borrowTransactionFlowLayer = BorrowTransactionFlowService.layer.pipe(
@@ -45,6 +49,7 @@ export const walletRuntime = Atom.runtime((get) => {
     borrowTransactionFlowLayer,
     classicTransactionFlowLayer,
     deepLinkCoordinatorLayer,
-    yieldEntrySubmissionLayer
+    yieldEntrySubmissionLayer,
+    zamaLayer
   );
 });

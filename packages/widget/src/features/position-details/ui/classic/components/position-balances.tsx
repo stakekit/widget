@@ -95,10 +95,16 @@ export const PositionBalances = ({
             overflowWrap="anywhere"
             variant={{ type: "muted", weight: "normal" }}
           >
-            {formatTokenAmount(yieldBalance.amount, locale)}{" "}
-            {yieldBalance.token.symbol}
-            {!yieldBalance.token.isPoints &&
-              ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
+            {yieldBalance.isEncrypted ? (
+              t("shared.confidential.hidden")
+            ) : (
+              <>
+                {formatTokenAmount(yieldBalance.amount, locale)}{" "}
+                {yieldBalance.token.symbol}
+                {!yieldBalance.token.isPoints &&
+                  ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
+              </>
+            )}
           </Text>
         </Box>
 

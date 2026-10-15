@@ -2,6 +2,10 @@ import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import {
+  isConfidentialYield,
+  isUserRevealableBalance,
+} from "../../../domain/earn/confidential";
+import {
   getRewardRateBreakdown,
   type YieldRewardRate,
 } from "../../../domain/earn/reward-rate";
@@ -96,6 +100,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
                 balances
                   .filter(
                     (balance) =>
+                      !balance.isEncrypted &&
                       balance.shareAmount &&
                       balance.amount &&
                       !balance.token.isPoints
@@ -115,12 +120,23 @@ export const positionDetailsClassicViewAtom = Atom.family(
             )
           : null;
       const canUnstake = Boolean(integration?.status.exit);
+      const positionBalances = [
+        ...(workflow.positionBalancesByType?.values() ?? []),
+      ].flat();
+      const hasHiddenBalances = positionBalances.some(isUserRevealableBalance);
       const action = get(positionDetailsExitActions.view(key));
       const submittedBelowMinimum =
         action.submissionError &&
         workflow.unstakeAmount.isLessThan(workflow.minUnstakeAmount);
 
       return {
+        hasHiddenBalances,
+        hasRevealedBalances:
+          Boolean(integration && isConfidentialYield(integration)) &&
+          !hasHiddenBalances &&
+          positionBalances.some(
+            (balance) => !balance.isEncrypted && balance.type !== "withdrawable"
+          ),
         apyCompositionRewardRate: personalizedRewardRate ?? fallbackRewardRate,
         apyCompositionShowsUpToCampaign:
           !personalizedRewardRate && Boolean(fallbackRewardRate),

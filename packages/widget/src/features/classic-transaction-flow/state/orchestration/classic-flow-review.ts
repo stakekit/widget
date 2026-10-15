@@ -18,13 +18,28 @@ import {
   getValidStakeSessionTx,
 } from "../../../../domain/action/rules";
 import {
+  getConfidentialChainId,
+  planConfidentialEncryption,
+  toConfidentialArguments,
+} from "../../../../domain/earn/confidential";
+import {
   type InputValidationError,
   YieldOperations,
 } from "../../../../services/api/operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
+import { WalletService } from "../../../../services/wallet/wallet-service";
+import { ZamaService } from "../../../../services/zama/zama-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
-import type { ClassicTransactionFlowIntake } from "../../model/classic-transaction-flow";
+import {
+  type ClassicTransactionFlowIntake,
+  getClassicFlowConfidentialInput,
+  getClassicFlowDecryptInput,
+} from "../../model/classic-transaction-flow";
+import {
+  type ClassicFlowExecutionSource,
+  ClassicFlowPrepareError,
+} from "./classic-flow-execution";
 
 class ClassicFlowPreviewError extends Data.TaggedError(
   "ClassicFlowPreviewError"
@@ -93,7 +108,7 @@ export type ClassicFlowReviewHandle = Readonly<{
 }>;
 
 type PromoteToExecution = (
-  action: YieldAction,
+  source: ClassicFlowExecutionSource,
   afterReservation: Effect.Effect<void>,
   eligibility: Effect.Effect<ClassicFlowReviewEligibility>
 ) => Effect.Effect<
@@ -136,6 +151,13 @@ const getInitialReviewPreview = (
   if (intake._tag === "YieldActionContinuation") {
     return { _tag: "Success", action: intake.action };
   }
+  // Confidential actions are created on Steps, after encryption.
+  if (
+    getClassicFlowConfidentialInput(intake) ||
+    getClassicFlowDecryptInput(intake)
+  ) {
+    return { _tag: "Success", action: null };
+  }
   return { _tag: "Initial" };
 };
 
@@ -144,6 +166,8 @@ export const makeClassicFlowReviewFactory = Effect.fn(
 )(function* () {
   const tracking = yield* TrackingService;
   const yieldOperations = yield* YieldOperations;
+  const zama = yield* ZamaService;
+  const wallet = yield* WalletService;
 
   return Effect.fn("makeClassicFlowReview")(function* ({
     eligibilityStates,
@@ -163,6 +187,49 @@ export const makeClassicFlowReviewFactory = Effect.fn(
     });
     yield* Effect.addFinalizer(() => PubSub.shutdown(stateRef.pubsub));
     const operations = yield* makeScopedSerialOperations();
+    const confidential = getClassicFlowConfidentialInput(intake);
+
+    const encryptPreviewRequest = Effect.fn("ClassicFlowReview.encrypt")(
+      function* (request: ActionPreviewRequest) {
+        if (!confidential || request.intent === "manage") return request;
+        const value = confidential.conversion
+          ? yield* zama.wrappedAmount({
+              amount: confidential.amount,
+              conversion: confidential.conversion,
+            })
+          : confidential.amount;
+        const plan = planConfidentialEncryption({
+          instant: confidential.instant,
+          intent: confidential.intent,
+          value,
+          yieldDto: confidential.yieldDto,
+        });
+        if (!plan) return request;
+        const encryption = yield* zama.encrypt({
+          owner: request.command.address,
+          plan,
+        });
+        return {
+          ...request,
+          command: {
+            ...request.command,
+            arguments: toConfidentialArguments(
+              request.command.arguments ?? {},
+              encryption,
+              confidential.assetAddress
+            ),
+          },
+        };
+      },
+      Effect.mapError(
+        (cause) =>
+          new ClassicFlowPreviewError({
+            cause,
+            message: "Classic Transaction Flow amount encryption failed.",
+            retryable: true,
+          })
+      )
+    );
 
     const loadPreviewOpen = Effect.gen(function* () {
       if (intake._tag === "YieldActionContinuation") return intake.action;
@@ -232,6 +299,90 @@ export const makeClassicFlowReviewFactory = Effect.fn(
       Effect.forkScoped({ startImmediately: true })
     );
 
+    const decrypt = getClassicFlowDecryptInput(intake);
+
+    const decryptPreviewRequest = Effect.fn("ClassicFlowReview.decrypt")(
+      function* (request: ActionPreviewRequest) {
+        if (!decrypt || request.intent !== "manage") return request;
+        const { cleartext, decryptionProof } = yield* zama.publicDecrypt({
+          chainId: decrypt.chainId,
+          owner: decrypt.owner,
+          requestId: decrypt.handle,
+        });
+        return {
+          ...request,
+          command: {
+            ...request.command,
+            arguments: {
+              ...request.command.arguments,
+              decryptedAmount: cleartext.toString(),
+              decryptionProof,
+            },
+          },
+        };
+      }
+    );
+
+    const prepareConfidentialAction = Effect.gen(function* () {
+      if (intake._tag === "YieldActionContinuation") {
+        return yield* Effect.die("A continuation never prepares an action.");
+      }
+      // No permit signer: the balance could never be revealed to withdraw.
+      if (
+        intake._tag === "Enter" &&
+        confidential &&
+        !(yield* wallet.canSignPermit)
+      ) {
+        return yield* new ClassicFlowInvalidPreviewError({
+          cause: null,
+          message: "This wallet cannot reveal confidential balances.",
+          retryable: false,
+        });
+      }
+      // The hidden cUSDC balance is checked here, not on the form.
+      if (intake._tag === "Enter" && confidential && !confidential.conversion) {
+        const chainId = getConfidentialChainId(confidential.yieldDto);
+        const balance =
+          chainId === null
+            ? null
+            : yield* zama.revealTokenBalance({
+                chainId,
+                owner: intake.request.address,
+                token: intake.selectedToken,
+              });
+        if (balance !== null && balance < confidential.amount) {
+          return yield* new ClassicFlowInvalidPreviewError({
+            cause: { amount: confidential.amount, balance },
+            message: "Amount exceeds the confidential balance.",
+            retryable: false,
+          });
+        }
+      }
+      const request = decrypt
+        ? yield* decryptPreviewRequest(getPreviewRequest(intake))
+        : yield* encryptPreviewRequest(getPreviewRequest(intake));
+      const action = yield* yieldOperations.previewAction(request);
+      const validation = getValidStakeSessionTx(action);
+      if (Result.isFailure(validation)) {
+        return yield* new ClassicFlowInvalidPreviewError({
+          cause: validation.failure,
+          message: "Classic Transaction Flow Action preview is not executable.",
+          retryable: false,
+        });
+      }
+      return validation.success;
+    }).pipe(
+      Effect.mapError(
+        (cause) =>
+          new ClassicFlowPrepareError({
+            cause,
+            retryable:
+              cause._tag !== "InputValidationError" &&
+              cause._tag !== "ClassicFlowInvalidPreviewError",
+          })
+      )
+    );
+
     const confirmOpen = Effect.fn("ClassicFlowReview.confirm")(function* () {
       const eligibility = yield* Ref.get(eligibilityRef);
       if (eligibility.kycBlocking) {
@@ -239,6 +390,43 @@ export const makeClassicFlowReviewFactory = Effect.fn(
       }
       if (eligibility.activityExpired) {
         return { _tag: "RejectedExpired" } as const;
+      }
+
+      const exitIntake = intake._tag === "Exit" ? intake : null;
+      const trackConfirmation = exitIntake
+        ? tracking.trackEvent("unstakeClicked", {
+            yieldId: exitIntake.integration.id,
+            ...(exitIntake.request.arguments?.amount
+              ? { amount: exitIntake.request.arguments.amount }
+              : {}),
+          })
+        : Effect.void;
+      const promote = (source: ClassicFlowExecutionSource) =>
+        promoteToExecution(
+          source,
+          trackConfirmation,
+          Ref.get(eligibilityRef)
+        ).pipe(
+          Effect.map((promotion) => {
+            switch (promotion._tag) {
+              case "Promoted":
+                return { _tag: "Confirmed" } as const;
+              case "RejectedAlreadyReserved":
+                return { _tag: "RejectedSession" } as const;
+              case "RejectedBlocked":
+                return { _tag: "RejectedBlocked" } as const;
+              case "RejectedExpired":
+                return { _tag: "RejectedExpired" } as const;
+            }
+          })
+        );
+
+      if (confidential || decrypt) {
+        return yield* promote({
+          _tag: "Prepare",
+          prepare: prepareConfidentialAction,
+          step: decrypt ? "decrypt" : "encrypt",
+        });
       }
 
       const initialState = yield* SubscriptionRef.get(stateRef);
@@ -262,30 +450,7 @@ export const makeClassicFlowReviewFactory = Effect.fn(
         return { _tag: "RejectedPreview" } as const;
       }
 
-      const exitIntake = intake._tag === "Exit" ? intake : null;
-      const trackConfirmation = exitIntake
-        ? tracking.trackEvent("unstakeClicked", {
-            yieldId: exitIntake.integration.id,
-            ...(exitIntake.request.arguments?.amount
-              ? { amount: exitIntake.request.arguments.amount }
-              : {}),
-          })
-        : Effect.void;
-      const promotion = yield* promoteToExecution(
-        state.preview.action,
-        trackConfirmation,
-        Ref.get(eligibilityRef)
-      );
-      switch (promotion._tag) {
-        case "Promoted":
-          return { _tag: "Confirmed" } as const;
-        case "RejectedAlreadyReserved":
-          return { _tag: "RejectedSession" } as const;
-        case "RejectedBlocked":
-          return { _tag: "RejectedBlocked" } as const;
-        case "RejectedExpired":
-          return { _tag: "RejectedExpired" } as const;
-      }
+      return yield* promote({ _tag: "Action", action: state.preview.action });
     });
 
     return {
