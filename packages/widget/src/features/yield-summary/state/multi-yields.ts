@@ -1,14 +1,10 @@
 import { Data } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import { isYieldVisible } from "../../../domain/earn/yield";
+import * as Atom from "effect/reactivity/Atom";
 import type { YieldId } from "../../../domain/identity/identifiers";
-import { isWalletNetwork } from "../../../domain/wallet/network";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
 } from "../../../resources/yield-directory/index";
-import { walletConnectedNetworkAtom } from "../../wallet/index";
 
 export class MultiYieldsKey extends Data.Class<{
   readonly yieldIds: ReadonlyArray<YieldId>;
@@ -26,29 +22,6 @@ const multiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
         key.yieldIds.length === 0 ? null : directory.items
       )
     )
-);
-
-export const visibleMultiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
-  Atom.make((get) => {
-    const connectedNetwork = get(walletConnectedNetworkAtom);
-
-    return get(multiYieldsAtom(key)).pipe(
-      AsyncResult.map(
-        (yields) =>
-          yields?.filter((yieldModel) => {
-            const visible =
-              isYieldVisible(yieldModel) &&
-              isWalletNetwork(yieldModel.token.network);
-
-            return (
-              visible &&
-              (connectedNetwork === null ||
-                connectedNetwork === yieldModel.token.network)
-            );
-          }) ?? null
-      )
-    );
-  })
 );
 
 export const multiYieldsByIdAtom = Atom.family((key: MultiYieldsKey) =>

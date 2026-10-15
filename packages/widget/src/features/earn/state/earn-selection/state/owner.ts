@@ -25,14 +25,22 @@ const sameOwner = (
     ? first === second
     : sameWalletScopeOwner(first, second);
 
-export const resetEarnEntryIntent = (
+/**
+ * A started Transaction Workflow consumes the entered amount. Token, yield,
+ * validators, provider and any initialization seed they came from stay, so the
+ * details pane keeps describing what the workflow executes against.
+ */
+export const clearEarnEntryAmounts = (
   previous: EarnEntryState
 ): EarnEntryState => {
   const next: EarnEntryState = {
     ...previous,
-    initializationPhase: "complete",
-    initParams: null,
-    intent: makeDefaultEarnIntent(),
+    intent: {
+      ...previous.intent,
+      amountInput: "untouched",
+      stakeAmount: "0",
+      useMaxAmount: false,
+    },
   };
 
   return Equal.equals(previous, next) ? previous : next;
@@ -53,7 +61,9 @@ export const reconcileEarnEntryOwner = (
         ? "applying-init-params"
         : "waiting-for-wallet",
       initParams: applying ? initParams : null,
-      intent: makeDefaultEarnIntent(),
+      intent: makeDefaultEarnIntent(
+        applying ? (initParams?.validator ?? null) : null
+      ),
       owner,
     };
   }
@@ -80,7 +90,9 @@ export const reconcileEarnEntryOwner = (
     dashboardVariant,
     initializationPhase: applying ? "applying-init-params" : "complete",
     initParams: applying ? initParams : null,
-    intent: makeDefaultEarnIntent(),
+    intent: makeDefaultEarnIntent(
+      applying ? (initParams?.validator ?? null) : null
+    ),
     owner,
   };
 };

@@ -6,7 +6,10 @@ import {
   type TransactionWorkflowContext,
   type TransactionWorkflowSubmission,
 } from "../transaction-workflow-model";
-import { requireCurrentWorkflow } from "./current";
+import {
+  getCurrentWorkflowTrackingYieldId,
+  requireCurrentWorkflow,
+} from "./current";
 import { updateCurrentTransactionWorkflowTransaction } from "./model";
 
 export const makeSubmitCurrent = Effect.gen(function* () {
@@ -123,16 +126,11 @@ export const makeSubmitCurrent = Effect.gen(function* () {
         },
       }),
     });
-    const yieldId = Match.value(current).pipe(
-      Match.tag("Classic", ({ domain }) => domain.yieldId),
-      Match.tag("Borrow", ({ domain }) => domain.action.integrationId),
-      Match.exhaustive
-    );
 
     yield* tracking.trackEvent("txSubmitted", {
       network: source.transaction.network,
       txId: source.transaction.id,
-      yieldId,
+      yieldId: getCurrentWorkflowTrackingYieldId(current),
     });
 
     return { context: updated, submission };

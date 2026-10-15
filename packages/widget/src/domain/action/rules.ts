@@ -4,7 +4,6 @@ import type { EarnYieldWithProvider } from "../earn/models";
 import type { TokenAddress, ValidatorAddress } from "../identity/identifiers";
 import { NATIVE_TOKEN_ADDRESS, type Token } from "../token/token";
 import {
-  type ActionCommand,
   type ActionTransaction,
   TransactionGasEstimateJson,
   type YieldAction,
@@ -22,9 +21,6 @@ export type ExitReceiveToken = Readonly<{
   readonly symbol: string;
 }>;
 
-export const getActionProviderYieldId = (
-  command: Pick<ActionCommand, "arguments">
-) => command.arguments?.providerId ?? null;
 type TransactionGasEstimate = {
   amount: BigNumber;
   gasLimit?: string;

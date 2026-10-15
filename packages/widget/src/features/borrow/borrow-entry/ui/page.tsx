@@ -1,12 +1,11 @@
 import { useAtomSet } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { useTrackPage } from "../../../tracking/index";
-import { ConnectButton } from "../../../wallet/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import { BorrowNotice } from "../../action-feedback/views";
+import { BorrowAmountField } from "../../amount-input/views";
 import type { BorrowWalletView } from "../../wallet/index";
 import { useBorrowWalletView } from "../../wallet/index";
 import type { BorrowEntryView } from "../model/borrow-entry";
@@ -17,10 +16,14 @@ import {
   setBorrowCollateralMaxAmountAtom,
   startBorrowEntryReviewAtom,
 } from "../state/borrow-entry";
-import { AmountField, BorrowBalanceLabel } from "./components/amount-field";
+import { BorrowBalanceLabel } from "./components/balance-label";
 import { CollateralSelectModal } from "./components/collateral-select-modal";
 import { BorrowFormDetails } from "./components/form-details";
 import { MarketSelectModal } from "./components/market-select-modal";
+import {
+  BorrowConnectCta,
+  BorrowNetworkRecoveryPanel,
+} from "./components/network-recovery";
 
 type BorrowEntryWalletView = Exclude<
   BorrowWalletView,
@@ -52,36 +55,23 @@ const BorrowEntryFormPage = ({
 }) => {
   const { t } = useTranslation();
 
-  return walletView.status === "connection-required" ? (
-    <>
-      <BorrowNotice title={t("dashboard.borrow.connect_title")}>
-        {t("dashboard.borrow.connect_description")}
-      </BorrowNotice>
+  if (walletView.status === "connecting") {
+    return <ContentLoaderSquare heightPx={340} />;
+  }
 
-      <ConnectButton
-        variant={{
-          animation: "press",
-          color: "primary",
-          size: "compact",
-        }}
-      />
-    </>
-  ) : (
-    <>
-      <BorrowNotice title={t("dashboard.borrow.unsupported_network")}>
-        {t("dashboard.borrow.unsupported_network_description")}
-      </BorrowNotice>
+  if (walletView.status === "connection-required") {
+    return (
+      <>
+        <BorrowNotice title={t("dashboard.borrow.connect_title")}>
+          {t("dashboard.borrow.connect_description")}
+        </BorrowNotice>
 
-      <PageCtaButton
-        cta={{
-          disabled: true,
-          isLoading: false,
-          label: t("dashboard.borrow.unsupported_network"),
-          onClick: () => undefined,
-        }}
-      />
-    </>
-  );
+        <BorrowConnectCta />
+      </>
+    );
+  }
+
+  return <BorrowNetworkRecoveryPanel recovery={walletView.recovery} />;
 };
 
 const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
@@ -95,10 +85,11 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
     canSelectCollateralMaxAmount,
     catalogResetNotice,
     collateralAmount,
-    integrationsResult,
+    collateralOptions,
+    integrations,
     isActionReady,
     markets,
-    marketsResult,
+    marketsView,
     projection,
     selectedCollateralBalance,
     selectedCollateralToken,
@@ -111,11 +102,11 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const {
     borrowAmountGreaterThanAvailable,
     collateralAmountGreaterThanBalance,
-    ltvGreaterThanMax,
     projectedDebtBelowMinimum,
+    riskBlock,
+    riskWarning,
   } = validation;
   const onReviewClick = () => startReview(undefined);
-  const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
   const getBorrowAmountWarningText = () => {
     if (borrowAmountGreaterThanAvailable) {
       return t("dashboard.borrow.form.validation.available_liquidity");
@@ -128,14 +119,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const borrowAmountWarningText = getBorrowAmountWarningText();
 
   const getFormContent = (): ReactNode => {
-    if (
-      markets.length === 0 &&
-      (AsyncResult.isInitial(marketsResult) ||
-        AsyncResult.isWaiting(marketsResult))
-    ) {
+    if (marketsView._tag === "Loading") {
       return <ContentLoaderSquare heightPx={340} />;
     }
-    if (markets.length === 0 && AsyncResult.isFailure(marketsResult)) {
+    if (marketsView._tag === "Failed") {
       return (
         <BorrowNotice tone="error" title={t("dashboard.borrow.error_title")}>
           {t("dashboard.borrow.error_description")}
@@ -152,50 +139,50 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
     return (
       <>
-        <AmountField
-          amount={borrowAmount}
-          balanceLabel={null}
-          label={t("dashboard.borrow.form.borrow")}
-          highlight
-          onMaxClick={null}
-          onAmountChange={setBorrowAmount}
-          tokenSelector={
+        <BorrowAmountField
+          accessory={
             <MarketSelectModal
               integrations={integrations}
               markets={markets}
               selectedMarketId={selectedMarketId}
             />
           }
+          amount={borrowAmount}
+          dataRk="borrow-amount-section"
+          label={t("dashboard.borrow.form.borrow")}
+          onAmountChange={setBorrowAmount}
           usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
-          warningText={borrowAmountWarningText}
+          warning={borrowAmountWarningText}
         />
 
-        <AmountField
+        <BorrowAmountField
+          accessory={
+            <CollateralSelectModal
+              collateralOptions={collateralOptions}
+              marketNetwork={selectedMarket.network}
+              selectedCollateralTokenId={selectedCollateralTokenId}
+            />
+          }
           amount={collateralAmount}
-          balanceLabel={
+          balance={
             <BorrowBalanceLabel
               amount={selectedCollateralBalance?.amount ?? "0"}
               symbol={selectedCollateralToken.token.symbol}
             />
           }
+          balanceError={collateralAmountGreaterThanBalance}
+          dataRk="borrow-amount-section"
           label={t("dashboard.borrow.form.collateral")}
+          onAmountChange={setCollateralAmount}
           onMaxClick={
             canSelectCollateralMaxAmount
               ? () => setCollateralMaxAmount(undefined)
               : null
           }
-          onAmountChange={setCollateralAmount}
-          tokenSelector={
-            <CollateralSelectModal
-              collateralTokens={selectedMarket.collateralTokens}
-              marketNetwork={selectedMarket.network}
-              selectedCollateralTokenId={selectedCollateralTokenId}
-            />
-          }
           usdValue={collateralAmount.multipliedBy(
             selectedCollateralToken.priceUsd
           )}
-          warningText={
+          warning={
             collateralAmountGreaterThanBalance
               ? t("dashboard.borrow.form.validation.wallet_balance")
               : null
@@ -205,9 +192,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
         <BorrowFormDetails
           borrowAmount={borrowAmount}
           collateralAmount={collateralAmount}
-          ltvGreaterThanMax={ltvGreaterThanMax}
           market={selectedMarket}
           projection={projection}
+          riskBlock={riskBlock}
+          riskWarning={riskWarning}
           walletBalances={walletBalances}
         />
       </>
@@ -216,8 +204,14 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const formContent = getFormContent();
 
   const getCtaLabel = () => {
-    if (isActionReady) return t("dashboard.borrow.review");
-    return t("dashboard.borrow.enter_amounts");
+    if (!isActionReady && riskBlock === null) {
+      return t("dashboard.borrow.enter_amounts");
+    }
+    // Collateral without a borrow amount opens a supply-only action.
+    if (borrowAmount.isZero()) {
+      return t("dashboard.borrow.review_actions.supply");
+    }
+    return t("dashboard.borrow.review_actions.borrow");
   };
   const ctaLabel = getCtaLabel();
 

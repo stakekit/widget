@@ -7,19 +7,20 @@ import type {
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
-import type { ActionMeta } from "../../public-api/types";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
 import { ExternalProviderError } from "../wallet/external-provider";
 import type {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
   WalletDecodeError,
+  WalletRequestCancelledError,
   WalletRuntimeInvariantError,
   WalletSigningError,
 } from "../wallet/wallet-errors";
+import type { ClassicActionMeta } from "../wallet/wallet-transactions";
 
 type ClassicTransactionWorkflowInputFields = {
-  readonly actionMeta: ActionMeta;
+  readonly actionMeta: ClassicActionMeta;
   readonly transactions: YieldAction["transactions"];
   readonly walletScope: WalletScopeKey;
   readonly yieldId: YieldAction["yieldId"];
@@ -54,7 +55,7 @@ export const makeClassicTransactionWorkflowInput = ({
   walletScope,
 }: {
   readonly action: YieldAction;
-  readonly inputToken: ActionMeta["inputToken"];
+  readonly inputToken: ClassicActionMeta["inputToken"];
   readonly providersDetails:
     | ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
     | null
@@ -138,6 +139,7 @@ export type TransactionSignWalletOperationCause =
   | WalletBroadcastError
   | WalletCapabilityUnavailableError
   | WalletDecodeError
+  | WalletRequestCancelledError
   | WalletSigningError;
 
 export type TransactionSignFailureReason =
@@ -148,7 +150,6 @@ export type TransactionSignFailureReason =
         | "account-changed"
         | "disconnected"
         | "network-changed"
-        | "no-address"
         | "state-unavailable";
     }
   | { readonly _tag: "MissingUnsignedPayload" }
@@ -161,6 +162,11 @@ export type TransactionSignFailureReason =
       >;
     }
   | { readonly _tag: "DecodeFailed"; readonly cause: Schema.SchemaError }
+  /** The user declined in the wallet; nothing was signed or sent. */
+  | {
+      readonly _tag: "WalletRequestCancelled";
+      readonly operation: "message" | "transaction" | "typed-data";
+    }
   | {
       readonly _tag: "WalletOperationFailed";
       readonly cause: TransactionSignWalletOperationCause;
@@ -182,10 +188,6 @@ const transactionSignFailureMessage = (
           () => "Wallet is not connected for transaction signing."
         ),
         Match.when(
-          "no-address",
-          () => "The transaction workflow has no wallet address."
-        ),
-        Match.when(
           "network-changed",
           () => "Wallet network changed during transaction execution."
         ),
@@ -201,10 +203,14 @@ const transactionSignFailureMessage = (
     UnsupportedBorrowSigningFormat: () =>
       "This borrow transaction requires an unsupported signing method.",
     DecodeFailed: () => "Borrow transaction payload could not be decoded.",
+    WalletRequestCancelled: () => "The request was cancelled in the wallet.",
     WalletOperationFailed: ({ operation }) =>
-      operation === "transaction"
-        ? "Transaction signing failed."
-        : "Message signing failed.",
+      Match.value(operation).pipe(
+        Match.when("transaction", () => "Transaction signing failed."),
+        Match.when("typed-data", () => "Typed data signing failed."),
+        Match.when("message", () => "Message signing failed."),
+        Match.exhaustive
+      ),
   });
 
 export class TransactionSignError extends Data.TaggedError(
@@ -285,7 +291,7 @@ export type TransactionWorkflowSubmission = {
   readonly transactionId: string;
 };
 
-export type TransactionWorkflowTransactionMeta = {
+type TransactionWorkflowTransactionMeta = {
   readonly broadcasted: boolean | null;
   readonly confirmationError: TransactionConfirmationError | null;
   readonly done: boolean;
@@ -316,7 +322,7 @@ type TransactionWorkflowBatch = {
 type TransactionWorkflowDomainContext =
   | {
       readonly _tag: "Classic";
-      readonly actionMeta: ActionMeta;
+      readonly actionMeta: ClassicActionMeta;
       readonly yieldId: YieldAction["yieldId"];
     }
   | {
@@ -384,3 +390,69 @@ export const flattenTransactionWorkflowTransactions = (
   context: TransactionWorkflowContext
 ): ReadonlyArray<TransactionWorkflowTransaction> =>
   context.batches.flatMap((batch) => batch.transactions);
+
+export type TransactionPhaseStatus = "idle" | "active" | "failed" | "done";
+
+/** One transaction's progress through its sign, broadcast and confirm phases. */
+export type TransactionPhaseProgress = Readonly<{
+  sign: TransactionPhaseStatus;
+  broadcast: TransactionPhaseStatus;
+  confirm: TransactionPhaseStatus;
+}>;
+
+export type TransactionStepProgress = Readonly<{
+  /** The workflow is Disabled: nothing will run, unlike a transaction waiting to sign. */
+  disabled: boolean;
+  phases: TransactionPhaseProgress;
+}>;
+
+const toPhaseProgress = (
+  sign: TransactionPhaseStatus,
+  broadcast: TransactionPhaseStatus,
+  confirm: TransactionPhaseStatus
+): TransactionPhaseProgress => ({ broadcast, confirm, sign });
+
+const notStarted = toPhaseProgress("idle", "idle", "idle");
+const finished = toPhaseProgress("done", "done", "done");
+
+const getCurrentTransactionPhases = (
+  tag: TransactionWorkflowState["_tag"]
+): TransactionPhaseProgress => {
+  switch (tag) {
+    case "Disabled":
+      return notStarted;
+    case "Signing":
+      return toPhaseProgress("active", "idle", "idle");
+    case "SignFailed":
+      return toPhaseProgress("failed", "idle", "idle");
+    case "Submitting":
+      return toPhaseProgress("done", "active", "idle");
+    case "SubmissionFailed":
+      return toPhaseProgress("done", "failed", "idle");
+    case "Confirming":
+    case "Advancing":
+      return toPhaseProgress("done", "done", "active");
+    case "ConfirmationFailed":
+    case "AdvanceFailed":
+      return toPhaseProgress("done", "done", "failed");
+    case "Completed":
+      return finished;
+  }
+};
+
+export const getTransactionStepProgress = (
+  state: TransactionWorkflowState,
+  transaction: TransactionWorkflowTransaction
+): TransactionStepProgress => {
+  const disabled = state._tag === "Disabled";
+  if (transaction.meta.done) return { disabled, phases: finished };
+
+  const current = getCurrentTransactionWorkflowTransaction(state.context);
+  return {
+    disabled,
+    phases:
+      current?.source.transaction.id === transaction.source.transaction.id
+        ? getCurrentTransactionPhases(state._tag)
+        : notStarted,
+  };
+};

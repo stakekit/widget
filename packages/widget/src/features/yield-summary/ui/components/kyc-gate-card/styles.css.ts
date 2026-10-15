@@ -144,7 +144,7 @@ export const verificationModalHeaderStyle = style([
     py: "3",
   }),
   {
-    borderBottom: `1px solid ${vars.color.backgroundMuted}`,
+    borderBottom: `1px solid ${vars.color.tabBorder}`,
     flexShrink: 0,
   },
 ]);

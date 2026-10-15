@@ -70,26 +70,28 @@ const sumCollateralUsd = (balances: ReadonlyArray<SupplyBalance>) =>
     )
   );
 
-export const makeMarketPosition = ({
+type NetMetrics = {
+  readonly netApy: BigNumber;
+  readonly netWorthUsd: BigNumber;
+};
+
+const deriveMarketNetMetrics = ({
   debtBalance,
-  debtPendingActions,
-  integration,
-  market,
-  risk,
   supplyBalances,
-  supplyPendingActions,
+  totalBorrowedUsd,
+  totalSuppliedUsd,
 }: {
   readonly debtBalance: DebtBalance | null;
-  readonly debtPendingActions: ReadonlyArray<PendingAction>;
-  readonly integration: Integration;
-  readonly market: Market;
-  readonly risk: RiskPosition;
   readonly supplyBalances: ReadonlyArray<SupplyBalance>;
-  readonly supplyPendingActions: ReadonlyArray<PendingAction>;
-}): MarketPosition => {
-  const totalSuppliedUsd = sumSupplyUsd(supplyBalances);
-  const totalBorrowedUsd = debtBalance?.balanceUsd ?? exactZero();
+  readonly totalBorrowedUsd: BigNumber;
+  readonly totalSuppliedUsd: BigNumber;
+}): NetMetrics => {
   const netWorthUsd = totalSuppliedUsd.minus(totalBorrowedUsd);
+
+  if (!netWorthUsd.isGreaterThan(0)) {
+    return { netApy: exactZero(), netWorthUsd };
+  }
+
   const totalSupplyEarnings = sumExact(
     supplyBalances.map((balance) =>
       balance.balanceUsd.multipliedBy(balance.apy)
@@ -98,6 +100,47 @@ export const makeMarketPosition = ({
   const totalBorrowCosts = totalBorrowedUsd.multipliedBy(
     debtBalance?.apy ?? exactZero()
   );
+
+  return {
+    netApy: totalSupplyEarnings.minus(totalBorrowCosts).dividedBy(netWorthUsd),
+    netWorthUsd,
+  };
+};
+
+export const makeMarketPosition = ({
+  debtBalance,
+  debtPendingActions,
+  integration,
+  market,
+  poolAccountMetrics,
+  risk,
+  supplyBalances,
+  supplyPendingActions,
+}: {
+  readonly debtBalance: DebtBalance | null;
+  readonly debtPendingActions: ReadonlyArray<PendingAction>;
+  readonly integration: Integration;
+  readonly market: Market;
+  /**
+   * Account-level values the API reports for a pooled account (Aave). Pool
+   * collateral backs every debt in the pool, so these headline values cannot
+   * be derived from one market's balances. Null for isolated markets.
+   */
+  readonly poolAccountMetrics: NetMetrics | null;
+  readonly risk: RiskPosition;
+  readonly supplyBalances: ReadonlyArray<SupplyBalance>;
+  readonly supplyPendingActions: ReadonlyArray<PendingAction>;
+}): MarketPosition => {
+  const totalSuppliedUsd = sumSupplyUsd(supplyBalances);
+  const totalBorrowedUsd = debtBalance?.balanceUsd ?? exactZero();
+  const { netApy, netWorthUsd } =
+    poolAccountMetrics ??
+    deriveMarketNetMetrics({
+      debtBalance,
+      supplyBalances,
+      totalBorrowedUsd,
+      totalSuppliedUsd,
+    });
 
   return {
     actions: {
@@ -113,9 +156,7 @@ export const makeMarketPosition = ({
     market,
     metrics: {
       borrowApy: debtBalance?.apy ?? null,
-      netApy: netWorthUsd.isZero()
-        ? exactZero()
-        : totalSupplyEarnings.minus(totalBorrowCosts).dividedBy(netWorthUsd),
+      netApy,
       netWorthUsd,
       totalBorrowedUsd,
       totalCollateralUsd: sumCollateralUsd(supplyBalances),

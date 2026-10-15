@@ -45,14 +45,14 @@ type Consumer = {
 const consumers = [
   {
     allowedExternalTypes: ["effect"],
-    declarationEntry: "dist/types/public-api/index.bundle.d.ts",
+    declarationEntry: "dist/types/index.bundle.d.ts",
     fixture: "bundle-consumer.ts",
     label: "standalone bundle",
     reactPeers: false,
   },
   {
     allowedExternalTypes: ["effect", "react"],
-    declarationEntry: "dist/types/public-api/index.package.d.ts",
+    declarationEntry: "dist/types/index.package.d.ts",
     fixture: "package-consumer.ts",
     label: "React package",
     reactPeers: true,
@@ -170,16 +170,19 @@ const run = async (
   }
 };
 
+// npm_execpath is a JavaScript entry for npm-installed pnpm and a native
+// executable for the standalone pnpm binary pinned by mise.
 const packageManagerCommand = () => {
   const pnpmCli = process.env.npm_execpath;
-  if (pnpmCli) {
-    return {
-      argsPrefix: [pnpmCli],
-      command: process.execPath,
-    } as const;
+  if (!pnpmCli) {
+    return { argsPrefix: [], command: "pnpm" } as const;
   }
 
-  return { argsPrefix: [], command: "pnpm" } as const;
+  if (/\.[cm]?js$/.test(pnpmCli)) {
+    return { argsPrefix: [pnpmCli], command: process.execPath } as const;
+  }
+
+  return { argsPrefix: [], command: pnpmCli } as const;
 };
 
 const runPnpm = async (
@@ -396,8 +399,8 @@ const main = async () => {
   const tarballPath = join(temporaryRoot, "stakekit-widget.tgz");
 
   try {
-    await access(join(widgetRoot, "dist/types/public-api/index.package.d.ts"));
-    await access(join(widgetRoot, "dist/types/public-api/index.bundle.d.ts"));
+    await access(join(widgetRoot, "dist/types/index.package.d.ts"));
+    await access(join(widgetRoot, "dist/types/index.bundle.d.ts"));
     await runPnpm("pack Widget", ["pack", "--out", tarballPath], widgetRoot, {
       quiet: true,
     });

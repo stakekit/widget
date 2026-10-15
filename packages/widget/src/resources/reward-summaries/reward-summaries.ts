@@ -1,5 +1,5 @@
 import { Data, Duration, Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { YieldId } from "../../domain/identity/identifiers";
 import type {

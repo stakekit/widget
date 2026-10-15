@@ -1,12 +1,12 @@
 import { Duration, Effect, Schedule, Schema } from "effect";
 import type { EarnYield } from "../../../../domain/earn/models";
 import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
-import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
 import {
   decodeInitParams,
   type InitParams,
   InitParams as InitParamsSchema,
 } from "../../../../services/wallet/init-params";
+import type { ExternalProviderSnapshot } from "../../../config/external-provider-snapshot";
 import {
   selectWidgetBootstrapSnapshot,
   type WidgetBootstrapSnapshot as WidgetConfigBootstrapSnapshot,
@@ -158,7 +158,6 @@ export const bootstrapWallet = Effect.gen(function* () {
   const includeSolanaWalletAdapters =
     snapshot.enabledNetworks.has("solana") &&
     !walletConfig.hasExternalProvider &&
-    !walletConfig.forceWalletConnectOnly &&
     !walletConfig.isLedgerLive &&
     !walletConfig.isSafe &&
     !connectorSource.walletListFactory;
@@ -175,7 +174,6 @@ export const bootstrapWallet = Effect.gen(function* () {
       ...walletConfig,
       enabledNetworks: snapshot.enabledNetworks,
       externalProviders: snapshot.externalProviders,
-      isMobileWallet: snapshot.browser.isMobileWallet,
       persistPublicKey: persistence.upsertStoredPublicKey,
       queryParams: snapshot.initParams,
       solanaConnection: solanaRuntime.connection,

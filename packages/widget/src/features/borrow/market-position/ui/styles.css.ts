@@ -81,7 +81,7 @@ export const collateralListButton = style({
 export const collateralRow = style([
   atoms({
     background: "stakeSectionBackground",
-    borderRadius: "base",
+    borderRadius: "xl",
     px: "3",
     py: "3",
   }),
@@ -107,6 +107,15 @@ export const switchButton = style({
 
 export const switchButtonChecked = style({
   background: "#25a56a",
+});
+
+export const switchButtonDisabled = style({
+  cursor: "not-allowed",
+  opacity: 0.5,
+});
+
+export const collateralRowNote = style({
+  gridColumn: "1 / -1",
 });
 
 export const switchThumb = style({

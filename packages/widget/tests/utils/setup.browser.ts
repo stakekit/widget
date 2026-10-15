@@ -1,7 +1,10 @@
 import { MotionGlobalConfig } from "motion/react";
 import { vi } from "vitest";
+import { failOnReactErrors } from "./fail-on-react-errors";
 
 MotionGlobalConfig.skipAnimations = true;
+// Before the console spies below, so they forward to the detecting console.error.
+failOnReactErrors();
 
 const ignoredConsoleMessages = [
   "All fibers interrupted without error",

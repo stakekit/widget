@@ -1,12 +1,12 @@
 import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { filterValidators } from "../../../../../domain/earn/yield";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import {
+  filterValidators,
+  type PreferredTokenYieldsPerNetwork,
+} from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
-import type {
-  DashboardYieldCategory,
-  PreferredTokenYieldsPerNetwork,
-} from "../../../../../public-api/types";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
 import { resolveToken } from "./token";
@@ -308,10 +308,14 @@ export const resolveEarnView = ({
           yieldId: selectedYield.id,
         })
       : null;
+  const requestedLookup =
+    validatorInput._tag === "enabled" ? validatorInput.requested : null;
   const selectedValidators = resolveValidators({
     complete: validatorInput._tag === "enabled" && validatorInput.complete,
-    entry,
-    network: selectedYield.token.network,
+    requestedMatch: requestedLookup
+      ? getAvailableValue(requestedLookup, null)
+      : null,
+    requestedValidator: intent.requestedValidator,
     selectedValidators: selectedValidatorIntent,
     validatorOptions,
   });
@@ -337,6 +341,10 @@ export const resolveEarnView = ({
     },
     empty: { ...validatorFacts.empty, validators: validatorsEmpty },
     intent,
+    loading: {
+      ...validatorFacts.loading,
+      validators: requestedLookup !== null && isResolving(requestedLookup),
+    },
     selection: {
       category: category.category,
       token: selectedToken,

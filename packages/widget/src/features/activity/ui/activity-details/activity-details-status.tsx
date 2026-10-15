@@ -1,30 +1,24 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { ActivityRetryMessage } from "../components/activity-retry-message";
 
 export const ActivityDetailsFailure = ({
   onRetry,
 }: {
   readonly onRetry: () => void;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <Box
-      alignItems="center"
-      display="flex"
-      flex={1}
-      flexDirection="column"
-      gap="3"
-      justifyContent="center"
-    >
-      <Text variant={{ type: "danger" }} textAlign="center">
-        {t("shared.something_went_wrong")}
-      </Text>
-      <Button onClick={onRetry}>{t("shared.retry")}</Button>
-    </Box>
-  );
-};
+}) => (
+  <Box
+    alignItems="center"
+    display="flex"
+    flex={1}
+    flexDirection="column"
+    gap="3"
+    justifyContent="center"
+  >
+    <ActivityRetryMessage onRetry={onRetry} />
+  </Box>
+);
 
 export const ActivityDetailsUnavailable = () => {
   const { t } = useTranslation();

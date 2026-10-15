@@ -2,10 +2,14 @@ import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { VerticalDivider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { selectYieldRewardsText } from "./styles.css";
+import {
+  compactAmount,
+  compactAmountsClip,
+  compactAmountsRow,
+  selectYieldRewardsText,
+} from "./styles.css";
 
 type EstimatedRewardAmountsProps = {
   earnYearly: string;
@@ -16,10 +20,9 @@ export const EstimatedRewardAmounts = ({
   earnYearly,
   earnMonthly,
 }: EstimatedRewardAmountsProps) => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
-  if (dashboardVariant || variant === "utila" || variant === "porto") {
+  if (earnPresentation.compact) {
     return (
       <CompactEarnYearlyOrMonthly
         earnMonthly={earnMonthly}
@@ -42,6 +45,7 @@ const DefaultEarnYearlyOrMonthly = ({
 }: EstimatedRewardAmountsProps) => {
   const { t } = useTranslation();
   const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
   return (
     <>
@@ -62,7 +66,9 @@ const DefaultEarnYearlyOrMonthly = ({
             })
           )}
         >
-          {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
+          {t(
+            earnPresentation.zerion ? "details.rewards.yearly" : "shared.yearly"
+          )}
         </Text>
         <Text
           variant={{ type: "muted", weight: "normal" }}
@@ -119,17 +125,17 @@ const CompactEarnYearlyOrMonthly = ({
   const { t } = useTranslation();
 
   return (
-    <Box display="flex" alignItems="center" gap="3" flexWrap="wrap">
-      <Box display="flex" alignItems="center" gap="2">
-        <Text variant={{ weight: "normal" }}>{t("shared.yearly")}</Text>
-        <Text variant={{ weight: "normal" }}>{earnYearly}</Text>
-      </Box>
+    <Box className={compactAmountsClip}>
+      <Box className={compactAmountsRow}>
+        <Box className={compactAmount}>
+          <Text variant={{ weight: "normal" }}>{t("shared.yearly")}</Text>
+          <Text variant={{ weight: "normal" }}>{earnYearly}</Text>
+        </Box>
 
-      <VerticalDivider />
-
-      <Box display="flex" alignItems="center" gap="2">
-        <Text variant={{ weight: "normal" }}>{t("shared.monthly")}</Text>
-        <Text variant={{ weight: "normal" }}>{earnMonthly}</Text>
+        <Box className={compactAmount}>
+          <Text variant={{ weight: "normal" }}>{t("shared.monthly")}</Text>
+          <Text variant={{ weight: "normal" }}>{earnMonthly}</Text>
+        </Box>
       </Box>
     </Box>
   );

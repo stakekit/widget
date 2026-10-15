@@ -1,14 +1,13 @@
-import type { ChainWalletBase } from "@cosmos-kit/core";
-import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import { isEvmWalletNetwork } from "../../../../domain/wallet/network";
 import type {
+  WalletSignBorrowTypedDataInput,
   WalletSignMessageInput,
-  WalletSignTypedDataInput,
   WalletSwitchAccountInput,
 } from "../../wallet-commands";
+import type { Chain } from "../../wallet-descriptors";
 import { WalletCapabilityUnavailableError } from "../../wallet-errors";
 import type {
   LedgerConnectorState,
@@ -17,7 +16,10 @@ import type {
 import type { WalletSignTransactionInput } from "../../wallet-transactions";
 import { isCardanoConnector } from "../adapters/cardano/cardano-connector-meta";
 import { makeCardanoWalletDriver } from "../adapters/cardano/driver";
-import { isCosmosConnector } from "../adapters/cosmos/cosmos-connector-meta";
+import {
+  type CosmosChainWallet,
+  isCosmosConnector,
+} from "../adapters/cosmos/cosmos-connector-meta";
 import { makeCosmosWalletDriver } from "../adapters/cosmos/driver";
 import { makeEvmWalletDriver } from "../adapters/evm/driver";
 import { isExternalProviderConnector } from "../adapters/external-provider";
@@ -40,7 +42,7 @@ import type { WagmiActions } from "./wagmi-actions";
 
 export type WalletRoutingContext = {
   readonly actions: WagmiActions;
-  readonly cosmosChainWallet: ChainWalletBase | null;
+  readonly cosmosChainWallet: CosmosChainWallet | null;
   readonly ledgerState: LedgerConnectorState;
   readonly state: NormalizedWalletState;
 };
@@ -88,7 +90,10 @@ export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
 });
 
 export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
-  function* (routing: WalletRoutingContext, input: WalletSignTypedDataInput) {
+  function* (
+    routing: WalletRoutingContext,
+    input: WalletSignBorrowTypedDataInput
+  ) {
     const { actions, state } = routing;
     if (state.status !== "connected") {
       return yield* unavailable("typed-data", state);
@@ -105,7 +110,7 @@ export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
       return yield* unavailable("typed-data", state);
     }
 
-    return yield* actions.signTypedData({ ...input, connector });
+    return yield* actions.signTypedData({ ...input.typedData, connector });
   }
 );
 

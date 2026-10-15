@@ -1,5 +1,6 @@
 import { Effect, Match, Queue, Ref, SubscriptionRef } from "effect";
 import {
+  flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
   type TransactionWorkflowAction,
@@ -27,14 +28,42 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
   return ({
     input,
     queue,
+    resourcesChanged,
     stateRef,
   }: {
     readonly input: TransactionWorkflowInput;
     readonly queue: Queue.Queue<TransactionWorkflowAction>;
+    /** Announces that on-chain state owned by the workflow wallet changed. */
+    readonly resourcesChanged: Effect.Effect<void>;
     readonly stateRef: SubscriptionRef.SubscriptionRef<TransactionWorkflowState>;
   }) => {
     const complete = (context: TransactionWorkflowContext) =>
       SubscriptionRef.set(stateRef, { _tag: "Completed", context });
+
+    /**
+     * A failed action still changed the wallet if any of its transactions
+     * confirmed — locally, or in the latest Borrow action response when the
+     * action failed before local confirmation caught up.
+     */
+    const settleFailed = (
+      state: Extract<
+        TransactionWorkflowState,
+        { readonly _tag: "AdvanceFailed" | "ConfirmationFailed" }
+      >
+    ) =>
+      SubscriptionRef.set(stateRef, state).pipe(
+        Effect.andThen(
+          flattenTransactionWorkflowTransactions(state.context).some(
+            (transaction) => transaction.meta.done
+          ) ||
+            (state.context.domain._tag === "Borrow" &&
+              state.context.domain.action.transactions.some(
+                (transaction) => transaction.status === "CONFIRMED"
+              ))
+            ? resourcesChanged
+            : Effect.void
+        )
+      );
 
     const runAdvance = (
       context: TransactionWorkflowContext,
@@ -44,13 +73,10 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
         Effect.andThen(advanceBatch({ context, reconcile })),
         Effect.matchEffect({
           onFailure: (error) =>
-            SubscriptionRef.set(stateRef, {
-              _tag: "AdvanceFailed",
-              context,
-              error,
-            }),
+            settleFailed({ _tag: "AdvanceFailed", context, error }),
           onSuccess: Match.valueTags({
-            Complete: (result) => complete(result.context),
+            Complete: (result) =>
+              complete(result.context).pipe(Effect.andThen(resourcesChanged)),
             Continue: (result) => runCurrent(result.context),
           }),
         })
@@ -72,7 +98,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
             onFailure: (error) =>
               Ref.get(latestContextRef).pipe(
                 Effect.flatMap((latestContext) =>
-                  SubscriptionRef.set(stateRef, {
+                  settleFailed({
                     _tag: "ConfirmationFailed",
                     context: updateCurrentTransactionWorkflowTransaction({
                       context: latestContext,
@@ -86,9 +112,13 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
                 )
               ),
             onSuccess: ({ context: confirmed }) =>
-              getCurrentTransactionWorkflowTransaction(confirmed)
-                ? runCurrent(confirmed)
-                : runAdvance(confirmed, false),
+              resourcesChanged.pipe(
+                Effect.andThen(
+                  getCurrentTransactionWorkflowTransaction(confirmed)
+                    ? runCurrent(confirmed)
+                    : runAdvance(confirmed, false)
+                )
+              ),
           })
         );
       });
@@ -113,7 +143,9 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
       context: TransactionWorkflowContext
     ): Effect.Effect<void> =>
       SubscriptionRef.set(stateRef, { _tag: "Signing", context }).pipe(
-        Effect.andThen(prepareAndSign(context)),
+        Effect.andThen(
+          prepareAndSign({ context, expectedOwner: input.walletScope })
+        ),
         Effect.matchEffect({
           onFailure: (error) =>
             SubscriptionRef.set(stateRef, {

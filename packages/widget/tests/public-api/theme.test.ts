@@ -1,21 +1,19 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { SKTheme } from "../../src/public-api/theme";
-import { decodeTheme } from "../../src/public-api/theme";
+import { decodeTheme } from "../../src/services/config/theme-decoder";
 
 const staleHostTheme = (input: unknown) => input as SKTheme;
 
 describe("public theme contract", () => {
-  it("types supported widget and ConnectKit tokens", () => {
+  it("types supported widget tokens", () => {
     const theme = {
       color: {
         accent: "#4A60FF",
-        connectKit: {
-          modalBackground: "#fff",
-        },
+        modalBodyBackground: "#fff",
       },
       borderRadius: {
-        connectKit: {
-          modal: "12px",
+        baseContract: {
+          widgetBorderRadius: "12px",
         },
       },
     } satisfies SKTheme;

@@ -1,8 +1,9 @@
 import { Effect, Schema } from "effect";
-import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import type { Integration } from "../../domain/borrow/catalog/integration";
+import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
+  BorrowActionsPage,
   BorrowIntegrationPositionsResponse,
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
@@ -14,7 +15,8 @@ import {
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { MissingBorrowApiConfig } from "./resource-sources";
+import { requireBorrowTransport } from "./borrow-transport";
+import type { BorrowActionsRequest } from "./resource-sources";
 
 export const makeBorrowResourceSource = (
   borrow: BorrowApi.BorrowApi | null,
@@ -22,17 +24,7 @@ export const makeBorrowResourceSource = (
 ) => {
   const requireTransport = Effect.fn("BorrowResourceSource.requireTransport")(
     function* () {
-      if (!borrowEnabled) {
-        return yield* new BorrowFeatureDisabled({
-          message: "Borrow is disabled by Widget configuration.",
-        });
-      }
-
-      if (borrow) return borrow;
-
-      return yield* new MissingBorrowApiConfig({
-        message: "Borrow API URL must be configured before using Borrow.",
-      });
+      return yield* requireBorrowTransport(borrow, borrowEnabled);
     }
   );
 
@@ -50,7 +42,7 @@ export const makeBorrowResourceSource = (
       readonly limit: number;
       readonly network: BorrowNetwork;
       readonly offset: number;
-      readonly scope: "all";
+      readonly scope: BorrowMarketsScope;
     }) {
       const client = yield* requireTransport();
       return yield* client
@@ -90,5 +82,19 @@ export const makeBorrowResourceSource = (
     }
   );
 
-  return { getIntegrations, getMarkets, getPositionData } as const;
+  const listActions = Effect.fn("BorrowResourceSource.listActions")(function* (
+    request: BorrowActionsRequest
+  ) {
+    const client = yield* requireTransport();
+    return yield* client
+      .ActionsControllerGetActionsV1({ params: request })
+      .pipe(decodeApiResponse("borrow-actions", BorrowActionsPage));
+  });
+
+  return {
+    getIntegrations,
+    getMarkets,
+    getPositionData,
+    listActions,
+  } as const;
 };

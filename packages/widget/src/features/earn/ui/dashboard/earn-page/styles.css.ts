@@ -1,5 +1,4 @@
 import { style } from "@vanilla-extract/css";
-import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 
 export const container = style([
@@ -12,13 +11,3 @@ export const container = style([
     flex: 1,
   },
 ]);
-
-export const selectTokenTitleContainer = recipe({
-  variants: {
-    variant: {
-      default: atoms({ marginBottom: "4" }),
-      utila: atoms({ marginBottom: "4" }),
-      porto: atoms({ marginBottom: "4" }),
-    },
-  },
-});

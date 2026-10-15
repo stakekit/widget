@@ -9,6 +9,7 @@ export type RiskUnavailableReason =
   | "invalidAmount"
   | "missingParameters"
   | "missingPositionState"
+  | "missingRiskAnchor"
   | "missingPrice"
   | "unknownCollateral"
   | "unknownMarket";
@@ -63,16 +64,26 @@ const RiskChangeSchema = Schema.Union([
 
 export type RiskChange = typeof RiskChangeSchema.Type;
 
-export type RiskAssessment =
-  | {
-      readonly decision: "allow";
-      readonly projection: RiskProjection;
-    }
-  | {
-      readonly decision: "block";
-      readonly projection: AvailableRiskProjection;
-      readonly reason: "borrowCapacityExceeded";
-    };
+/** Whether projected debt fits the borrow capacity of projected collateral. */
+type RiskCapacity = "withinCapacity" | "exceedsCapacity";
+
+/**
+ * The prices a projection rests on: the protocol oracle anchored on the
+ * on-chain position, or display prices that can differ from it.
+ */
+export type RiskPricing = "display" | "oracle";
+
+/**
+ * A Risk Position's projection of a proposed change. It describes the change;
+ * the Risk Gate decides whether the change may proceed.
+ */
+export type RiskAssessment = {
+  readonly capacity: RiskCapacity;
+  readonly pricing: RiskPricing;
+  readonly projection: RiskProjection;
+  /** The change adds debt or removes collateral capacity. */
+  readonly riskIncreasing: boolean;
+};
 
 export type CollateralDefinition = {
   readonly liquidationThreshold: BigNumber;
@@ -90,6 +101,25 @@ export type RiskState = {
   readonly collateral: ReadonlyArray<CollateralExposure>;
   readonly debtUsd: BigNumber;
 };
+
+/**
+ * Isolated-market collateral valued in loan-token units at the oracle price
+ * implied by the current on-chain position snapshot.
+ */
+export type OracleRiskAnchor = {
+  readonly collateralAmount: BigNumber;
+  readonly collateralTokenId: TokenId;
+  readonly debtAmount: BigNumber;
+  readonly liquidationThreshold: BigNumber;
+  readonly loanPriceUsd: BigNumber;
+  readonly marketId: MarketId;
+  readonly oraclePrice: BigNumber;
+};
+
+export type RiskValuation =
+  | { readonly type: "display" }
+  | { readonly anchor: OracleRiskAnchor; readonly type: "oracle" }
+  | { readonly type: "unanchored" };
 
 export type RiskStateResult =
   | {

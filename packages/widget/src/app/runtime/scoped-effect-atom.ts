@@ -1,8 +1,8 @@
 import { type Cause, Effect, type Scope, Stream } from "effect";
-import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import type * as Reactivity from "effect/unstable/reactivity/Reactivity";
+import type * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
+import type * as Reactivity from "effect/reactivity/Reactivity";
 
 type ScopedAcquire<R, A, E> = (
   context: Atom.AtomContext

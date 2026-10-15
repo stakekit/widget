@@ -10,6 +10,7 @@ import {
 } from "effect";
 import { walletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 import { WidgetDomainEvents } from "../events/widget-domain-events";
+import { makeHeldHashRegistration } from "./internal/held-hash-registration";
 import {
   getTransactionWorkflowAction,
   initializeTransactionWorkflow,
@@ -36,6 +37,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
   {
     make: Effect.gen(function* () {
       const process = yield* makeTransactionWorkflowProcessor;
+      const registerHeldHash = yield* makeHeldHashRegistration;
       const events = yield* WidgetDomainEvents;
 
       const make = Effect.fn("TransactionWorkflowService.make")(function* (
@@ -62,13 +64,25 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           )
         );
 
+        const owner = walletScopeOwnerKey(input.walletScope);
+
+        // Registered before the processor forks, so it runs after the processor
+        // is interrupted and reads the state the workflow was left in.
+        yield* Effect.addFinalizer(() =>
+          SubscriptionRef.get(stateRef).pipe(Effect.flatMap(registerHeldHash))
+        );
+
         yield* process({
           input,
           queue,
+          resourcesChanged: events.publish({
+            _tag: "TransactionWorkflowResourcesChanged",
+            owner,
+            workflowKind: input._tag,
+          }),
           stateRef,
         }).pipe(Effect.forkScoped);
 
-        const owner = walletScopeOwnerKey(input.walletScope);
         yield* Effect.addFinalizer(() =>
           events.publish({
             _tag: "TransactionWorkflowEnded",

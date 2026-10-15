@@ -1,7 +1,7 @@
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { TypeRegistry } from "@polkadot/types";
 import { Result } from "effect";
-import type { SKTxMeta } from "../../../../../public-api/types";
+import type { ClassicTransactionMeta } from "../../../wallet-transactions";
 import type { substratePayloadCodec } from "../substrate/transaction";
 
 type SubstrateHumanMethod = {
@@ -13,7 +13,7 @@ type SubstrateHumanMethod = {
 export type BuildPolkadotLedgerTransaction = (params: {
   fee: string;
   payload: typeof substratePayloadCodec.Type;
-  txMeta: SKTxMeta;
+  txMeta: ClassicTransactionMeta;
 }) => Result.Result<RawTransaction, string>;
 
 /**

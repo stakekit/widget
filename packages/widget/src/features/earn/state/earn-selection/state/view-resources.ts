@@ -1,5 +1,5 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import type { PullPage } from "../../../../../shared/effect/pagination";
 import { yieldValidatorsAtom } from "../catalog/catalog";

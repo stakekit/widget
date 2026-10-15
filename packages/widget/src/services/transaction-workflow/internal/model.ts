@@ -131,27 +131,18 @@ export const validateTransactionWorkflowInput = (
 const initializeTransactionWorkflowContext = (
   input: TransactionWorkflowInput
 ): TransactionWorkflowContext => {
-  if (input._tag === "Classic") {
-    const batch = makeClassicTransactionWorkflowBatch(input.transactions);
-    const currentTransactionIndex = batch.transactions.findIndex(
-      ({ meta }) => !meta.done
-    );
-
-    return {
-      batches: [batch],
-      currentBatchIndex: currentTransactionIndex === -1 ? null : 0,
-      currentTransactionIndex:
-        currentTransactionIndex === -1 ? null : currentTransactionIndex,
-      domain: {
-        _tag: "Classic",
-        actionMeta: input.actionMeta,
-        yieldId: input.yieldId,
-      },
-      submissions: [],
-    };
-  }
-
-  const batch = makeBorrowTransactionWorkflowBatch(input.action);
+  const batch =
+    input._tag === "Classic"
+      ? makeClassicTransactionWorkflowBatch(input.transactions)
+      : makeBorrowTransactionWorkflowBatch(input.action);
+  const domain: TransactionWorkflowDomainContext =
+    input._tag === "Classic"
+      ? {
+          _tag: "Classic",
+          actionMeta: input.actionMeta,
+          yieldId: input.yieldId,
+        }
+      : { _tag: "Borrow", action: input.action };
   const currentTransactionIndex = batch.transactions.findIndex(
     ({ meta }) => !meta.done
   );
@@ -161,7 +152,7 @@ const initializeTransactionWorkflowContext = (
     currentBatchIndex: currentTransactionIndex === -1 ? null : 0,
     currentTransactionIndex:
       currentTransactionIndex === -1 ? null : currentTransactionIndex,
-    domain: { _tag: "Borrow", action: input.action },
+    domain,
     submissions: [],
   };
 };
@@ -244,6 +235,54 @@ export const updateCurrentTransactionWorkflowTransaction = ({
           }
         : batch
     ),
+  };
+};
+
+/**
+ * Applies a Borrow action response to every transaction of the current batch,
+ * matched by transaction identity. Remote status and payload facts replace the
+ * local snapshot; local submission facts (signed payload, broadcast flag,
+ * submission) are kept.
+ */
+export const reconcileBorrowTransactionWorkflowBatch = ({
+  action,
+  context,
+}: {
+  readonly action: BorrowAction;
+  readonly context: TransactionWorkflowContext;
+}): TransactionWorkflowContext => {
+  const remoteById = new Map(
+    action.transactions.map((transaction) => [transaction.id, transaction])
+  );
+
+  return {
+    ...context,
+    batches: context.batches.map((batch, batchIndex) =>
+      batchIndex === context.currentBatchIndex
+        ? {
+            ...batch,
+            transactions: batch.transactions.map((transaction) => {
+              const remote =
+                transaction.source._tag === "Borrow"
+                  ? remoteById.get(transaction.source.transaction.id)
+                  : undefined;
+
+              return remote
+                ? {
+                    meta: {
+                      ...transaction.meta,
+                      done:
+                        transaction.meta.done ||
+                        isTransactionWorkflowDoneStatus(remote.status),
+                    },
+                    source: { _tag: "Borrow", transaction: remote },
+                  }
+                : transaction;
+            }),
+          }
+        : batch
+    ),
+    domain: { _tag: "Borrow", action },
   };
 };
 

@@ -1,10 +1,10 @@
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import { projectTransactionWorkflowStarted } from "../../services/events/widget-domain-events";
 import {
   borrowLandingPrimaryReadyAtom,
-  resetBorrowEntryIntentForOwnerAtom,
+  clearBorrowEntryAmountsForOwnerAtom,
 } from "./borrow-entry/index";
 import { resetBorrowMarketPositionIntentForOwnerAtom } from "./market-position/index";
 
@@ -14,7 +14,7 @@ export const borrowEntryIntentEventProjectionAtom = appRuntime
     projectTransactionWorkflowStarted(
       (event) =>
         Effect.sync(() =>
-          context.set(resetBorrowEntryIntentForOwnerAtom, event.owner)
+          context.set(clearBorrowEntryAmountsForOwnerAtom, event.owner)
         ),
       "Borrow Entry Intent projection failed."
     )

@@ -1,24 +1,19 @@
-import { DateTime, Effect, Random, Schema } from "effect";
-import { Arbitrary } from "effect/unstable/arbitrary";
+import { Arbitrary, DateTime, Effect, Random, Schema } from "effect";
 import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
-import type {
-  EarnBalance,
-  EarnProvider,
-  EarnValidator,
-} from "../../src/domain/earn/models";
+import type { EarnBalance, EarnProvider } from "../../src/domain/earn/models";
 import {
   EarnProvider as EarnProviderSchema,
   EarnYield,
 } from "../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
 import { exactDecimal } from "../../src/domain/finance/exact";
+import * as YieldApi from "../../src/generated/api/yield-schema";
+import type { TokenDto as LegacyTokenDto } from "../generated/legacy-api-types";
 import type {
-  TokenDto as LegacyTokenDto,
-  YieldDto as LegacyYieldDto,
-} from "../generated/legacy-api-types";
-import type { YieldDto as YieldApiYieldDto } from "../generated/yield-api-types";
+  ValidatorDto,
+  YieldDto as YieldApiYieldDto,
+} from "../generated/yield-api-types";
 
-type ValidatorDto = typeof EarnValidator.Encoded;
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
 // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for random APY values
 const apyFaker = () => Effect.runSync(Random.nextBetween(0, 0.05));
@@ -72,6 +67,12 @@ const yieldRewardRateDtoFixture = (): YieldApiYieldDto["rewardRate"] => ({
   components: [],
 });
 
+// The domain keeps reward sources open; wire fixtures must still carry a
+// source the generated client knows.
+const decodeWireYieldSource = Schema.decodeUnknownSync(
+  YieldApi.RewardDto.fields.yieldSource
+);
+
 export const encodeYieldRewardRateFixture = (
   rewardRate:
     | YieldRewardRateFixtureInput
@@ -84,6 +85,7 @@ export const encodeYieldRewardRateFixture = (
     components: (rewardRate.components ?? []).map((component) => ({
       ...component,
       rate: exactDecimal(component.rate).toNumber(),
+      yieldSource: decodeWireYieldSource(component.yieldSource),
     })),
   };
 };
@@ -106,11 +108,9 @@ export const yieldApiProviderFixture = (
   Schema.decodeSync(EarnProviderSchema)({
     id: "stakekit",
     name: "StakeKit",
-    description: "",
     logoURI: "https://assets.stakek.it/app/composition/providers/stakekit.svg",
     website: "https://stakek.it",
     tvlUsd: null,
-    type: "protocol",
     ...overrides,
   });
 
@@ -236,9 +236,47 @@ export const yieldBalanceFixture = (
   } as typeof EarnBalance.Encoded;
 };
 
+type LegacyYieldMetadataFixture = {
+  readonly name: string;
+  readonly description?: string;
+  readonly documentation?: string;
+  readonly logoURI?: string;
+  readonly provider?: {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string;
+    readonly externalLink: string;
+    readonly logoURI: string;
+  };
+  readonly rewardTokens?: ReadonlyArray<LegacyTokenDto>;
+  readonly supportsLedgerWalletApi?: boolean;
+  readonly type: string;
+  readonly [field: string]: unknown;
+};
+
+/**
+ * Seed data for journeys that still mock Legacy yield payloads. The widget no
+ * longer calls Legacy yield operations, so their schemas are not generated.
+ */
+export type LegacyYieldFixture = {
+  readonly id: string;
+  readonly token: LegacyTokenDto;
+  readonly tokens: ReadonlyArray<LegacyTokenDto>;
+  readonly rewardRate: number;
+  readonly rewardType: string;
+  readonly apy: number;
+  readonly metadata: LegacyYieldMetadataFixture;
+  readonly status: { readonly enter: boolean; readonly exit: boolean };
+  readonly validators: ReadonlyArray<{
+    readonly address: string;
+    readonly [field: string]: unknown;
+  }>;
+  readonly [field: string]: unknown;
+};
+
 export const legacyYieldFixture = (
-  overrides?: Partial<LegacyYieldDto>
-): LegacyYieldDto => {
+  overrides?: Partial<LegacyYieldFixture>
+): LegacyYieldFixture => {
   const token: LegacyTokenDto = {
     name: "Ethereum",
     symbol: "ETH",
@@ -300,7 +338,7 @@ export const legacyYieldFixture = (
     validators: [],
     isAvailable: true,
     ...overrides,
-  } as LegacyYieldDto;
+  } as LegacyYieldFixture;
 };
 
 export const yieldApiValidatorsFixture = (
@@ -314,14 +352,12 @@ export const yieldApiTransactionDtoFixture = (
   overrides?: Partial<typeof ActionTransaction.Encoded>
 ): typeof ActionTransaction.Encoded => ({
   id: uuidFaker(),
-  title: "Stake",
   network: "ethereum",
   status: "CREATED",
   type: "STAKE",
   hash: null,
   createdAt: "2100-01-01T00:00:00.000Z",
   broadcastedAt: null,
-  signedTransaction: null,
   unsignedTransaction: null,
   stepIndex: 0,
   annotatedTransaction: null,
@@ -368,7 +404,6 @@ export const yieldApiActionDtoFixture = (
         type: type as ActionTransaction["type"],
       }),
     ],
-    executionPattern: "synchronous",
     rawArguments: null,
     createdAt: "2100-01-01T00:00:00.000Z",
     completedAt: null,

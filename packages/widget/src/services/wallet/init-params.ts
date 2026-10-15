@@ -15,6 +15,12 @@ const SafeQueryParam = Schema.String.check(
   Schema.isPattern(/^(?!.*\.\.)[a-zA-Z0-9-_.+]*$/)
 );
 
+// Position balance keys (`default`, `validators`, `validator::<address>[:<subnet>]`)
+// contain `:`, which is safe inside a route segment; `/`, `%`, `?` and `..` stay out.
+const BalanceIdParam = Schema.String.check(
+  Schema.isPattern(/^(?!.*\.\.)[a-zA-Z0-9-_.+:]*$/)
+);
+
 const PendingActionType = SafeQueryParam.check(Schema.isPattern(/^[A-Z_]+$/));
 
 const InitTab = invalidAsNull(
@@ -45,7 +51,7 @@ const AccountId = Schema.String.pipe(
 
 export const InitParams = Schema.Struct({
   accountId: invalidAsNull(AccountId),
-  balanceId: invalidAsNull(SafeQueryParam),
+  balanceId: invalidAsNull(BalanceIdParam),
   network: invalidAsNull(SupportedNetwork),
   pendingaction: invalidAsNull(PendingActionType),
   tab: InitTab,

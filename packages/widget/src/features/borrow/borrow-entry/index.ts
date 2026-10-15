@@ -1,4 +1,4 @@
 export {
   borrowLandingPrimaryReadyAtom,
-  resetBorrowEntryIntentForOwnerAtom,
+  clearBorrowEntryAmountsForOwnerAtom,
 } from "./state/borrow-entry";

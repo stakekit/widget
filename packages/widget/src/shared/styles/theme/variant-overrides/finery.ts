@@ -36,13 +36,6 @@ export const getFineryThemeOverrides = (
       secondaryButtonBackground: palette.greyTwo,
       secondaryButtonColor: vars.color.text,
 
-      connectKit: {
-        modalBackground: palette.greyOne,
-        profileForeground: palette.greyOne,
-        profileAction: palette.greyTwo,
-        profileActionHover: palette.greyThree,
-      },
-
       positionsClaimRewardsBackground: utilaPalette.badgeTextSuccess,
 
       skeletonLoaderBase: palette.greyTwo,

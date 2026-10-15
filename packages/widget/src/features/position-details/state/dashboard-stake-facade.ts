@@ -1,21 +1,23 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
-import {
-  getInitSelectedValidators,
-  stakeTokenSameAsGasToken,
-} from "../../../domain/earn/stake";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/earn/models";
+import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
+import type { ValidatorKey } from "../../../domain/earn/validator";
 import {
   getYieldActionArg,
-  getYieldProviderYieldIds,
   isYieldValidatorSelectionRequired,
+  resolveYieldProviderOption,
 } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
+import { getBalanceValidators } from "../../../domain/portfolio/positions";
 import { equalTokens } from "../../../domain/token/token";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
@@ -29,15 +31,11 @@ import {
 } from "../../../resources/yield-opportunity/index";
 import {
   PositionBalancesKey,
+  positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { getPullResultItems } from "../../../shared/effect/pagination";
-import { formatUsd } from "../../../shared/lib/formatters";
-import {
-  defaultFormattedNumber,
-  formatNumber,
-} from "../../../shared/lib/number-format";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
 import { walletScopeAtom } from "../../wallet/index";
 import {
@@ -49,20 +47,6 @@ import {
   type PositionDetailsStakeEntryKey,
   positionDetailsStakeAtom,
 } from "./dashboard-stake-machine";
-
-const resolveProviderYieldId = (
-  selectedYield: EarnYieldWithProvider | null
-) => {
-  const argument = selectedYield
-    ? getYieldActionArg(selectedYield, "enter", "providerId")
-    : null;
-  const providerYieldIds = selectedYield
-    ? getYieldProviderYieldIds(selectedYield)
-    : [];
-  return argument?.required && providerYieldIds.length > 0
-    ? EArray.head(providerYieldIds).pipe(Option.getOrNull)
-    : null;
-};
 
 const resolveTronResource = (selectedYield: EarnYieldWithProvider | null) => {
   const argument = selectedYield
@@ -100,24 +84,37 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       yieldId: key.integrationId,
     });
     const positionsByTypeAtom = positionBalancesByTypeAtom(positionKey);
+    const positionBalancesResultAtom = positionBalancesAtom(positionKey);
+    // Staking more must target the validators already holding this position;
+    // the catalog only refreshes their display details.
     const selectedValidatorsAtom = Atom.make((get) => {
       const selectedYield = get(selectedYieldAtom);
       if (!selectedYield || !isYieldValidatorSelectionRequired(selectedYield)) {
-        return new Map();
+        return new Map<ValidatorKey, EarnValidator>();
       }
-      const result = get(
-        yieldValidatorsPullAtom(
-          new YieldValidatorsKey({
-            network: selectedYield.token.network,
-            search: null,
-            yieldId: selectedYield.id,
-          })
+      const balances =
+        get(positionBalancesResultAtom).pipe(
+          AsyncResult.value,
+          Option.getOrNull
+        )?.balances ?? [];
+      const catalog = getPullResultItems(
+        get(
+          yieldValidatorsPullAtom(
+            new YieldValidatorsKey({
+              network: selectedYield.token.network,
+              search: null,
+              yieldId: selectedYield.id,
+            })
+          )
         )
+      ).flatMap((page) => page.items);
+      return new Map(
+        balances.flatMap(getBalanceValidators).map((validator) => {
+          const current =
+            catalog.find((item) => item.key === validator.key) ?? validator;
+          return [current.key, current] as const;
+        })
       );
-      return getInitSelectedValidators({
-        initQueryParams: null,
-        validators: getPullResultItems(result).flatMap((page) => page.items),
-      });
     }).pipe(Atom.withLabel("positionDetailsStakeSelectedValidatorsAtom"));
     const yieldEntryInputAtom = Atom.make((get) => {
       const intent = get(intentAtom);
@@ -128,14 +125,20 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         AsyncResult.value,
         Option.getOrNull
       );
-      const availableAmount = selectedToken
-        ? (() => {
-            const balance = tokenBalanceValues?.find((item) =>
-              equalTokens(item.token, selectedToken)
-            );
-            return balance ? exactDecimal(balance.amount) : null;
-          })()
-        : null;
+      const currentScope = get(walletScopeAtom);
+      const ownerCurrent =
+        currentScope !== null &&
+        sameWalletScopeOwner(currentScope, key.walletScope);
+      // The scan covers the current wallet, so a token missing from it means a
+      // zero balance only when that wallet owns this position.
+      const availableAmount = (() => {
+        if (!selectedToken || tokenBalanceValues === null) return null;
+        const balance = tokenBalanceValues.find((item) =>
+          equalTokens(item.token, selectedToken)
+        );
+        if (balance) return exactDecimal(balance.amount);
+        return ownerCurrent ? exactZero() : null;
+      })();
       const positionsByType = get(positionsByTypeAtom).pipe(
         AsyncResult.value,
         Option.getOrNull
@@ -180,10 +183,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           AsyncResult.isInitial(tokenBalances.result)) ||
         AsyncResult.isInitial(validatorsResult);
       const symbol = selectedToken?.symbol ?? "";
-      const currentScope = get(walletScopeAtom);
-      const ownerCurrent =
-        currentScope !== null &&
-        sameWalletScopeOwner(currentScope, key.walletScope);
       const appLoading =
         AsyncResult.isInitial(
           get(
@@ -204,7 +203,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         availableAmount,
         entry: {
           amount,
-          selectedProviderYieldId: resolveProviderYieldId(selectedYield),
+          selectedProviderOption: selectedYield
+            ? resolveYieldProviderOption(selectedYield, null)
+            : null,
           token: selectedToken,
           tronResource,
           useMaxAmount: intent.useMaxAmount,
@@ -253,18 +254,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
-        formattedPrice:
-          input.prices && selectedYield && selectedToken
-            ? formatUsd(
-                getTokenPriceInUSD({
-                  amount: entry.amount,
-                  baseToken: selectedYield.token,
-                  pricePerShare: null,
-                  prices: input.prices,
-                  token: selectedToken,
-                })
-              )
-            : "",
         isFetching: input.isFetching,
         isStakeTokenSameAsGasToken:
           selectedYield && selectedToken
@@ -276,17 +265,21 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         kyc: entry.kyc,
         ownerCurrent: input.ownerCurrent,
         preparation: entry.preparation,
+        priceUsd:
+          input.prices && selectedYield && selectedToken
+            ? getTokenPriceInUSD({
+                amount: entry.amount,
+                baseToken: selectedYield.token,
+                pricePerShare: null,
+                prices: input.prices,
+                token: selectedToken,
+              })
+            : null,
         providers: entry.providers,
         selectedStake: selectedYield,
         selectedToken,
-        selectedTokenAvailableAmount: availableAmount
-          ? {
-              amount: availableAmount,
-              fullFormattedAmount: formatNumber(availableAmount),
-              shortFormattedAmount: defaultFormattedNumber(availableAmount),
-              symbol,
-            }
-          : null,
+        selectedTokenAvailableAmount:
+          availableAmount !== null ? { amount: availableAmount, symbol } : null,
         selectedValidators: input.selectedValidators,
         stakeAmount: entry.amount,
         stakeMaxAmount:

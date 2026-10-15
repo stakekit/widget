@@ -1,20 +1,16 @@
-import { type Cause, Data, Array as EArray, Effect, Stream } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
 import {
-  ActionStatus,
-  getActionValidatorAddresses,
-} from "../../../domain/action/rules";
+  type Cause,
+  Data,
+  Array as EArray,
+  Effect,
+  Option,
+  Stream,
+} from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import { appRuntime } from "../../../app/runtime/app-runtime";
+import { ActionStatus } from "../../../domain/action/rules";
 import { getActivityActionCapabilities } from "../../../domain/activity/action-capabilities";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../domain/earn/models";
-import type {
-  ValidatorAddress,
-  YieldId,
-} from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   type ActivityHistoryBatch,
@@ -23,19 +19,19 @@ import {
   activityCountResourceAtom,
   activityHistoryPullAtom,
 } from "../../../resources/activity-history/index";
-import {
-  ValidatorByAddressKey,
-  validatorByAddressAtom,
-} from "../../../resources/validator-directory/index";
-import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
 import { mapAsyncResultError } from "../../../shared/effect/async-result";
 import { withPullPageDone } from "../../../shared/effect/pagination";
 import type { ActivityActionItem } from "../model/activity-action";
+import { projectActivityActionItem } from "../model/activity-enrichment";
 import {
   type ActivityFilter,
   activityFilterCategories,
   getActivityFilterYieldTypes,
 } from "../model/filters";
+import {
+  ActivityEnrichmentKey,
+  activityEnrichmentFactsAtom,
+} from "./enrichment";
 
 const ACTIVITY_ACTION_STATUSES = Object.values(ActionStatus).filter(
   (status) => getActivityActionCapabilities(status).visibleInFeed
@@ -62,122 +58,9 @@ export const activityFilterAtom = Atom.make<ActivityFilter>("all").pipe(
   Atom.withLabel("activityFilterAtom")
 );
 
-type ActivityAction = ActivityHistoryBatch["actions"][number];
-
 type ActivityActionsBatch = Omit<ActivityHistoryBatch, "actions"> & {
   readonly actions: ReadonlyArray<ActivityActionItem>;
 };
-
-const ACTIVITY_ENRICHMENT_CONCURRENCY = 5;
-
-const validatorFactKey = ({
-  address,
-  yieldId,
-}: {
-  readonly address: ValidatorAddress;
-  readonly yieldId: YieldId;
-}) => JSON.stringify([yieldId, address]);
-
-class ActivityEnrichmentKey extends Data.Class<{
-  readonly validatorKeys: ReadonlyArray<ValidatorByAddressKey>;
-  readonly yieldIds: ReadonlyArray<YieldId>;
-}> {
-  constructor(actions: ReadonlyArray<ActivityAction>) {
-    const validatorKeys = new Map<string, ValidatorByAddressKey>();
-
-    for (const action of actions) {
-      for (const address of getActionValidatorAddresses(action) ?? []) {
-        const key = new ValidatorByAddressKey({
-          address,
-          yieldId: action.yieldId,
-        });
-        validatorKeys.set(validatorFactKey(key), key);
-      }
-    }
-
-    super({
-      validatorKeys: [...validatorKeys.values()].sort((first, second) =>
-        validatorFactKey(first).localeCompare(validatorFactKey(second))
-      ),
-      yieldIds: [...new Set(actions.map((action) => action.yieldId))].sort(),
-    });
-  }
-}
-
-type ActivityEnrichmentFacts = {
-  readonly validatorsByKey: ReadonlyMap<string, EarnValidator>;
-  readonly yieldsById: ReadonlyMap<YieldId, EarnYieldWithProvider | null>;
-};
-
-type ActivityEnrichmentFact =
-  | {
-      readonly _tag: "validator";
-      readonly key: ValidatorByAddressKey;
-      readonly value: EarnValidator | null;
-    }
-  | {
-      readonly _tag: "yield";
-      readonly value: EarnYieldWithProvider | null;
-      readonly yieldId: YieldId;
-    };
-
-const activityEnrichmentFactsAtom = Atom.family((key: ActivityEnrichmentKey) =>
-  appRuntime
-    .atom((context) => {
-      const requests = [
-        ...key.yieldIds.map((yieldId) => ({ _tag: "yield" as const, yieldId })),
-        ...key.validatorKeys.map((validatorKey) => ({
-          _tag: "validator" as const,
-          validatorKey,
-        })),
-      ];
-
-      return Effect.forEach(
-        requests,
-        (request): Effect.Effect<ActivityEnrichmentFact> =>
-          request._tag === "yield"
-            ? context
-                .resultOnce(
-                  enrichedYieldOpportunityResourceAtom.local(request.yieldId)
-                )
-                .pipe(
-                  Effect.catchCause(() => Effect.succeed(null)),
-                  Effect.map((value) => ({
-                    _tag: "yield" as const,
-                    value,
-                    yieldId: request.yieldId,
-                  }))
-                )
-            : context
-                .resultOnce(validatorByAddressAtom.local(request.validatorKey))
-                .pipe(
-                  Effect.catchCause(() => Effect.succeed(null)),
-                  Effect.map((value) => ({
-                    _tag: "validator" as const,
-                    key: request.validatorKey,
-                    value,
-                  }))
-                ),
-        { concurrency: ACTIVITY_ENRICHMENT_CONCURRENCY }
-      ).pipe(
-        Effect.map((facts): ActivityEnrichmentFacts => {
-          const validatorsByKey = new Map<string, EarnValidator>();
-          const yieldsById = new Map<YieldId, EarnYieldWithProvider | null>();
-
-          for (const fact of facts) {
-            if (fact._tag === "yield") {
-              yieldsById.set(fact.yieldId, fact.value);
-            } else if (fact.value) {
-              validatorsByKey.set(validatorFactKey(fact.key), fact.value);
-            }
-          }
-
-          return { validatorsByKey, yieldsById };
-        })
-      );
-    })
-    .pipe(Atom.withLabel("activityEnrichmentFactsAtom"))
-);
 
 class ActivityActionsError extends Data.TaggedError("ActivityActionsError")<{
   readonly cause: ActivityHistoryError | Cause.NoSuchElementError;
@@ -206,49 +89,54 @@ export const activityActionsPullAtom = Atom.family(
     const walletScope = key.scope;
     const source = activityHistoryPullAtom.foreground(historyKey);
 
-    return Atom.transform(source, (context) => {
-      const historyResult = mapAsyncResultError(
-        context.get(source),
-        toActivityActionsError
-      );
-
-      return AsyncResult.flatMap(
-        historyResult,
-        ({ done, items: batches }, historySuccess) => {
-          const actions = EArray.flatMap(batches, (batch) => batch.actions);
-          const enrichmentResult = context.get(
-            activityEnrichmentFactsAtom(new ActivityEnrichmentKey(actions))
-          );
-          const projected = enrichmentResult.pipe(
-            AsyncResult.map(({ validatorsByKey, yieldsById }) => ({
-              done,
-              items: EArray.map(batches, (batch) => ({
-                ...batch,
-                actions: EArray.map(batch.actions, (action) => ({
-                  actionData: action,
-                  validatorsData: EArray.flatMap(
-                    getActionValidatorAddresses(action) ?? [],
-                    (address) => {
-                      const validator = validatorsByKey.get(
-                        validatorFactKey({ address, yieldId: action.yieldId })
-                      );
-
-                      return validator ? [validator] : [];
-                    }
+    return Atom.transform(
+      source,
+      (context): Atom.PullResult<ActivityActionsBatch, ActivityActionsError> =>
+        AsyncResult.flatMap(
+          mapAsyncResultError(context.get(source), toActivityActionsError),
+          ({ done, items: batches }, historySuccess) => {
+            // Each page enriches under its own key, so a new page enriches only
+            // its own actions and never hides the pages already on screen.
+            const enriched: Array<ActivityActionsBatch> = [];
+            for (const batch of batches) {
+              const factsResult = context.get(
+                activityEnrichmentFactsAtom(
+                  new ActivityEnrichmentKey(batch.actions)
+                )
+              );
+              const facts = AsyncResult.value(factsResult);
+              if (Option.isSome(facts)) {
+                enriched.push({
+                  ...batch,
+                  actions: EArray.map(batch.actions, (entry) =>
+                    projectActivityActionItem(entry, walletScope, facts.value)
                   ),
-                  walletScope,
-                  yieldData: yieldsById.get(action.yieldId) ?? null,
-                })),
-              })),
-            }))
-          );
+                });
+                continue;
+              }
+              if (AsyncResult.isFailure(factsResult) && !factsResult.waiting) {
+                return AsyncResult.failure(factsResult.cause, {
+                  previousSuccess: EArray.isArrayNonEmpty(enriched)
+                    ? Option.some(
+                        AsyncResult.success({ done: false, items: enriched })
+                      )
+                    : Option.none(),
+                });
+              }
+              break;
+            }
 
-          return historySuccess.waiting
-            ? AsyncResult.waiting(projected)
-            : projected;
-        }
-      );
-    });
+            if (!EArray.isArrayNonEmpty(enriched)) {
+              return AsyncResult.initial(true);
+            }
+            const enriching = enriched.length < batches.length;
+            return AsyncResult.success(
+              { done: done && !enriching, items: enriched },
+              { waiting: historySuccess.waiting || enriching }
+            );
+          }
+        )
+    );
   }
 );
 

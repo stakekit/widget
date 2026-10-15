@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
@@ -8,6 +8,7 @@ import type {
 import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
+import type { InfiniteScrollProps } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import type { GroupedItem } from "./select-validator-list";
@@ -73,97 +74,14 @@ export const SelectValidator = ({
   const hasRequestedMoreValidators = _viewMore || !!rest.searchValue;
   const showExpandedValidators = multiSelect || hasRequestedMoreValidators;
 
-  const data = useMemo<{
-    tableData: EarnValidator[];
-    groupedItems: GroupedItem[];
-    groupCounts: number[];
-  }>(() => {
-    if (!validators.length && hasMore && !hasRequestedMoreValidators) {
-      return {
-        tableData: [],
-        groupedItems: [{ items: [], label: "view_more" }],
-        groupCounts: [1],
-      };
-    }
-
-    if (!validators.length) {
-      return {
-        tableData: [],
-        groupedItems: [],
-        groupCounts: [],
-      };
-    }
-
-    const groupedItems = validators.reduce<{
-      preferred: GroupedItem;
-      other: GroupedItem;
-    }>(
-      (acc, val) => {
-        if (val.preferred) {
-          acc.preferred.items.push(val);
-        } else if (showExpandedValidators) {
-          acc.other.items.push(val);
-        }
-
-        return acc;
-      },
-      {
-        preferred: {
-          items: [] as EarnValidator[],
-          label: t("details.validators_preferred"),
-        },
-        other: {
-          items: [] as EarnValidator[],
-          label: t("details.validators_other"),
-        },
-      }
-    );
-
-    // If we do not have preferred validators, show all other
-    if (!groupedItems.preferred.items.length && validators.length) {
-      const canViewMore = !hasRequestedMoreValidators && !!hasMore;
-
-      return {
-        tableData: validators,
-        groupedItems: [
-          {
-            items: validators,
-            label: t("details.validators_other"),
-          },
-          ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
-        ],
-        groupCounts: [validators.length, ...(canViewMore ? [1] : [])],
-      };
-    }
-
-    const canViewMore =
-      !hasRequestedMoreValidators &&
-      (!!hasMore ||
-        (!showExpandedValidators &&
-          groupedItems.preferred.items.length !== validators.length));
-
-    const groupedItemsValues = Object.values(groupedItems);
-
-    return {
-      tableData: groupedItemsValues.flatMap((val) => val.items),
-      groupedItems: [
-        ...groupedItemsValues.filter((val) => !!val.items.length),
-        ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
-      ],
-      groupCounts: [
-        ...groupedItemsValues
-          .filter((val) => !!val.items.length)
-          .map((val) => val.items.length),
-        ...(canViewMore ? [1] : []),
-      ],
-    };
-  }, [
-    hasMore,
+  const data = getValidatorGroups({
     validators,
-    t,
+    hasMore,
     hasRequestedMoreValidators,
     showExpandedValidators,
-  ]);
+    preferredLabel: t("details.validators_preferred"),
+    otherLabel: t("details.validators_other"),
+  });
 
   const searchProps = rest.onSearch
     ? {
@@ -171,7 +89,7 @@ export const SelectValidator = ({
         searchValue: rest.searchValue,
       }
     : {};
-  const infiniteScrollProps =
+  const infiniteScrollProps: InfiniteScrollProps =
     hasRequestedMoreValidators && onLoadMore
       ? {
           hasNextPage: !!hasMore,
@@ -222,4 +140,106 @@ export const SelectValidator = ({
       {children}
     </SelectModal>
   );
+};
+
+type ValidatorGroups = {
+  tableData: EarnValidator[];
+  groupedItems: GroupedItem[];
+  groupCounts: number[];
+};
+
+const getValidatorGroups = ({
+  validators,
+  hasMore,
+  hasRequestedMoreValidators,
+  showExpandedValidators,
+  preferredLabel,
+  otherLabel,
+}: {
+  validators: EarnValidator[];
+  hasMore: boolean | undefined;
+  hasRequestedMoreValidators: boolean;
+  showExpandedValidators: boolean;
+  preferredLabel: string;
+  otherLabel: string;
+}): ValidatorGroups => {
+  if (!validators.length && hasMore && !hasRequestedMoreValidators) {
+    return {
+      tableData: [],
+      groupedItems: [{ items: [], label: "view_more" }],
+      groupCounts: [1],
+    };
+  }
+
+  if (!validators.length) {
+    return {
+      tableData: [],
+      groupedItems: [],
+      groupCounts: [],
+    };
+  }
+
+  const groupedItems = validators.reduce<{
+    preferred: GroupedItem;
+    other: GroupedItem;
+  }>(
+    (acc, val) => {
+      if (val.preferred) {
+        acc.preferred.items.push(val);
+      } else if (showExpandedValidators) {
+        acc.other.items.push(val);
+      }
+
+      return acc;
+    },
+    {
+      preferred: {
+        items: [] as EarnValidator[],
+        label: preferredLabel,
+      },
+      other: {
+        items: [] as EarnValidator[],
+        label: otherLabel,
+      },
+    }
+  );
+
+  // If we do not have preferred validators, show all other
+  if (!groupedItems.preferred.items.length && validators.length) {
+    const canViewMore = !hasRequestedMoreValidators && !!hasMore;
+
+    return {
+      tableData: validators,
+      groupedItems: [
+        {
+          items: validators,
+          label: otherLabel,
+        },
+        ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
+      ],
+      groupCounts: [validators.length, ...(canViewMore ? [1] : [])],
+    };
+  }
+
+  const canViewMore =
+    !hasRequestedMoreValidators &&
+    (!!hasMore ||
+      (!showExpandedValidators &&
+        groupedItems.preferred.items.length !== validators.length));
+
+  const groupedItemsValues = Object.values(groupedItems);
+
+  return {
+    tableData: groupedItemsValues.flatMap((val) => val.items),
+    groupedItems: [
+      ...groupedItemsValues.filter((val) => !!val.items.length),
+      ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
+    ],
+    groupCounts: [
+      ...groupedItemsValues
+        .filter((val) => !!val.items.length)
+        .map((val) => val.items.length),
+      ...(canViewMore ? [1] : []),
+    ],
+  };
 };

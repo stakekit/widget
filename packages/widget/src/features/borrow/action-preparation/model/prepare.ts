@@ -1,3 +1,4 @@
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
 import { prepareCollateralToggleAction } from "./collateral-toggle";
 import { prepareOpenPositionAction } from "./open-position";
 import { prepareRepayAction } from "./repay";
@@ -53,3 +54,12 @@ export function prepareBorrowAction(
       return prepareWithdrawAction(input);
   }
 }
+
+/** The limit the Risk Gate says a prepared action would cross, if it blocks. */
+export const getBorrowActionRiskBlock = <P>(
+  preparation: BorrowActionPreparation<P> | null
+): RiskGateBlockReason | null =>
+  preparation?._tag === "Ready" &&
+  preparation.review.riskVerdict._tag === "Block"
+    ? preparation.review.riskVerdict.reason
+    : null;

@@ -1,11 +1,31 @@
 import { Option } from "effect";
 import type { Transaction } from "../../../domain/borrow/execution/transaction";
 import {
+  flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
+  getTransactionSignCustomMessage,
+  getTransactionStepProgress,
+  type TransactionStepProgress,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
+
+type BorrowExecutionStep = {
+  readonly done: boolean;
+  readonly explorerUrl: string | null;
+  readonly id: string;
+  readonly progress: TransactionStepProgress;
+  readonly type: Transaction["type"];
+};
+
+/** A submitted transaction of a completed action, for the completion page. */
+type BorrowCompletedTransaction = {
+  readonly explorerUrl: string;
+  readonly hash: string | null;
+  readonly id: string;
+  readonly type: Transaction["type"];
+};
 
 type BorrowExecutionPhase =
   | "advancing"
@@ -46,6 +66,20 @@ const getExecutionStatus = (
   }
 };
 
+const isWalletCancellation = (error: TransactionWorkflowError | null) =>
+  error?._tag === "TransactionSignError" &&
+  error.reason._tag === "WalletRequestCancelled";
+
+// A wallet cancellation is not a failure; the flow shows it as a notice.
+const getExecutionErrorMessage = (error: TransactionWorkflowError | null) => {
+  if (!error || isWalletCancellation(error)) return null;
+  const customMessage =
+    error._tag === "TransactionSignError"
+      ? getTransactionSignCustomMessage(error)
+      : null;
+  return customMessage ?? error.message;
+};
+
 export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   const currentBatch = getCurrentTransactionWorkflowBatch(state.context);
   const current = getCurrentTransactionWorkflowTransaction(state.context);
@@ -61,37 +95,73 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   return {
     action,
     batches: state.context.batches,
+    cancelled: isWalletCancellation(status.error),
     completionResult: completed
-      ? { action, submissions: state.context.submissions }
+      ? {
+          action,
+          transactions: state.context.submissions.flatMap(
+            (submission): ReadonlyArray<BorrowCompletedTransaction> =>
+              submission.source._tag === "Borrow" && submission.link
+                ? [
+                    {
+                      explorerUrl: submission.link,
+                      hash: submission.hash,
+                      id: submission.transactionId,
+                      type: submission.source.transaction.type,
+                    },
+                  ]
+                : []
+          ),
+        }
       : null,
-    currentBatchTransactionCount: currentBatch?.transactions.length ?? 0,
     currentStep: currentBatch?.currentStep ?? action.currentStep,
     currentTransaction,
-    currentTransactionIndex: state.context.currentTransactionIndex,
     error: status.error,
+    errorMessage: getExecutionErrorMessage(status.error),
     isDone: completed,
     isRunning: status.isRunning,
     phase: status.phase,
     state,
-    submissions: state.context.submissions,
+    steps: flattenTransactionWorkflowTransactions(state.context).flatMap(
+      (transaction): ReadonlyArray<BorrowExecutionStep> => {
+        if (transaction.source._tag !== "Borrow") return [];
+
+        const submission =
+          transaction.meta.submissionIndex === null
+            ? null
+            : state.context.submissions[transaction.meta.submissionIndex];
+
+        return [
+          {
+            done: transaction.meta.done,
+            explorerUrl: transaction.meta.url ?? submission?.link ?? null,
+            id: transaction.source.transaction.id,
+            progress: getTransactionStepProgress(state, transaction),
+            type: transaction.source.transaction.type,
+          },
+        ];
+      }
+    ),
     totalSteps: currentBatch?.totalSteps ?? action.totalSteps,
   } as const;
 };
 
+const noBorrowExecutionSteps: ReadonlyArray<BorrowExecutionStep> = [];
+
 export const emptyBorrowExecutionView = {
   action: null,
   batches: [],
+  cancelled: false,
   completionResult: null,
-  currentBatchTransactionCount: 0,
   currentStep: 0,
   currentTransaction: null,
-  currentTransactionIndex: null,
   error: null,
+  errorMessage: null,
   isDone: false,
   isRunning: false,
   phase: "disabled" as const,
   state: null,
-  submissions: [],
+  steps: noBorrowExecutionSteps,
   totalSteps: 0,
 };
 

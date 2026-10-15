@@ -23,7 +23,8 @@
     "powered_by": "Alimenté par <span0>{{name}}</span0>",
     "learn_more": "En savoir plus",
     "change": "Changer",
-    "manage_validators": "Gérer les validateurs"
+    "manage_validators": "Gérer les validateurs",
+    "fee": "Frais"
   },
   "errors": {
     "InvalidArgumentError": {
@@ -245,6 +246,31 @@
     "connect_wallet": "Connectez un portefeuille",
     "ledger_add_account": "Ajoutez un portefeuille"
   },
+  "wallet_modal": {
+    "account": "Compte",
+    "close": "Fermer",
+    "copy_address": "Copier l'adresse",
+    "copied": "Copié !",
+    "connected": "Connecté",
+    "confirm": "Confirmer dans le portefeuille",
+    "confirm_error": "Erreur de changement de réseau",
+    "wrong_network": "Mauvais réseau détecté, changez ou déconnectez-vous pour continuer.",
+    "chain_error": "Impossible de changer de réseau. Réessayez.",
+    "select_ecosystem": "Choisissez un écosystème",
+    "connect_wallet": "Connectez un portefeuille",
+    "change_ecosystem": "Choisissez un autre écosystème",
+    "connection_error": "Impossible de connecter le portefeuille. Réessayez.",
+    "wallet_not_available": "Ce portefeuille n'est plus disponible. Activez ou installez son extension, puis réessayez.",
+    "disconnect": "Déconnecter",
+    "network": "Changer de réseau",
+    "install": "Installer",
+    "checking": "Vérification",
+    "groups": {
+      "installed": "Installés",
+      "primary": "Principaux",
+      "other": "Autres"
+    }
+  },
   "activity": {
     "complete": {
       "continue": "Continuer"
@@ -269,7 +295,15 @@
       "unknown_error": "Erreur inconnue",
       "terms_of_use": "En cliquant sur {{action}} vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
       "in_progress": "En cours",
-      "view_transaction": "Voir la transaction"
+      "confirmed": "Confirmée",
+      "not_submitted": "Non soumise",
+      "transactions_all_confirmed_one": "{{count}} · confirmée",
+      "transactions_all_confirmed_other": "{{count}} · toutes confirmées",
+      "transactions_failed_one": "{{count}} échouée",
+      "transactions_failed_other": "{{count}} échouées",
+      "transactions_in_progress_one": "{{count}} en cours",
+      "transactions_in_progress_other": "{{count}} en cours",
+      "view_transaction": "Voir la transaction {{type}}"
     },
     "no_previous_activity": "Aucune activité précédente",
     "item": {
@@ -279,7 +313,23 @@
       "withdrew_without_token": "Retrait",
       "rewards": "Récompenses",
       "generic": "{{action}} {{token}}",
-      "generic_without_token": "{{action}}"
+      "generic_without_token": "{{action}}",
+      "borrow": {
+        "supply": "Fourniture de {{token}}",
+        "supply_without_token": "Fourniture",
+        "borrow": "Emprunt de {{token}}",
+        "borrow_without_token": "Emprunt",
+        "supplyAndBorrow": "Fourniture et emprunt de {{token}}",
+        "supplyAndBorrow_without_token": "Fourniture et emprunt",
+        "repay": "Remboursement de {{token}}",
+        "repay_without_token": "Remboursement",
+        "withdraw": "Retrait de {{token}}",
+        "withdraw_without_token": "Retrait",
+        "enableCollateral": "{{token}} activé comme garantie",
+        "enableCollateral_without_token": "Garantie activée",
+        "disableCollateral": "{{token}} désactivé comme garantie",
+        "disableCollateral_without_token": "Garantie désactivée"
+      }
     },
     "time": {
       "now": "à l'instant",
@@ -393,6 +443,7 @@
     },
     "vault": {
       "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
+      "description_with_fee_configuration": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
@@ -404,6 +455,7 @@
     },
     "lend": {
       "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
+      "description_with_fee_configuration": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
@@ -489,7 +541,8 @@
     "deposit_fee_explanation": "Une commission fixe déduite lors du dépôt, réduisant le capital investi.",
     "management_fee_explanation": "Une commission annuelle fixe déduite des dépôts du vault en émettant de nouvelles parts, ce qui dilue les participants. Calculée en fonction du temps écoulé depuis la dernière récolte et appliquée lors de la récolte.",
     "performance_fee_explanation": "Une commission déduite des gains lorsqu'un vault récolte une stratégie. Elle n'est appliquée qu'après avoir dépassé un seuil variable.",
-    "receive_token": "Jeton reçu"
+    "receive_token": "Jeton reçu",
+    "staking_fee": "Frais de staking"
   },
   "steps": {
     "title": "Suivi des étapes",
@@ -511,7 +564,9 @@
     "skipped": "Ignorée",
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
+    "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
     "approve_error": "Une erreur s'est produite",
+    "view_transaction": "Voir la transaction",
     "tx_type": {
       "SWAP": "ÉCHANGE",
       "DEPOSIT": "DÉPÔT",
@@ -675,6 +730,10 @@
     "no_enabled_yields": {
       "title": "Aucun rendement activé",
       "description": "Aucun rendement n'est activé pour cette clé API. Activez au moins un rendement pour commencer à générer des intérêts."
+    },
+    "widget_unavailable": {
+      "title": "Une erreur s'est produite",
+      "description": "Le widget n'a pas pu se charger. Veuillez actualiser la page ou réessayer plus tard."
     }
   },
   "positions": {
@@ -946,6 +1005,8 @@
     "n_available_opps": "{{count}} opportunités disponibles",
     "yields_available_one": "{{token_name}} · {{count}} rendement disponible",
     "yields_available_other": "{{token_name}} · {{count}} rendements disponibles",
+    "yields_count_one": "{{count}} rendement",
+    "yields_count_other": "{{count}} rendements",
     "up_to_rate_type": "JUSQU'À {{rateType}}"
   },
   "error_modal": {
@@ -1035,12 +1096,21 @@
     },
     "borrow": {
       "title": "Emprunter",
-      "review": "Vérifier l'emprunt",
+      "review_actions": {
+        "borrow": "Vérifier l'emprunt",
+        "repay": "Vérifier le remboursement",
+        "supply": "Vérifier l'apport",
+        "withdraw": "Vérifier le retrait"
+      },
       "enter_amounts": "Saisissez les montants",
       "connect_title": "Connecter un portefeuille",
       "connect_description": "Connectez un portefeuille pour consulter les marchés d'emprunt et démarrer une action d'emprunt.",
       "unsupported_network": "Réseau non pris en charge",
       "unsupported_network_description": "Passez à un réseau pris en charge pour consulter les marchés d'emprunt et les positions.",
+      "switch_network": "Changer de réseau",
+      "switch_network_error": "Le réseau n'a pas été changé. Réessayez ou changez de réseau dans votre portefeuille.",
+      "switch_network_manually": "Basculez votre portefeuille sur {{networks}} pour consulter les marchés d'emprunt et les positions.",
+      "network_unavailable": "L'emprunt n'est disponible sur aucun réseau pris en charge par ce portefeuille.",
       "empty_title": "Aucun marché d'emprunt",
       "empty_description": "Les marchés d'emprunt ne sont pas encore disponibles pour ce réseau.",
       "error_title": "Emprunt indisponible",
@@ -1060,13 +1130,20 @@
         "borrowable_assets": "Actifs empruntables",
         "collateral_assets": "Actifs de garantie",
         "no_assets": "Aucun actif trouvé",
-        "max_ltv": "LTV max. {{value}} %",
+        "collateral_terms": "LTV max. {{maxLtv}} · Liq. {{liquidationThreshold}}",
+        "collateral_earns": "Rapporte {{rate}}",
+        "balance_column": "Solde",
         "available": "{{amount}} {{symbol}} disponibles",
         "wallet_balance": "{{amount}} {{symbol}} dans le portefeuille",
         "ltv_ratio": "Ratio LTV",
         "collateral_value": "Valeur de la garantie",
         "loan": "Prêt",
         "borrow_rate": "Taux d'emprunt",
+        "rate_from": "dès {{rate}}",
+        "liquidity_available": "{{amount}} disponibles",
+        "origination_fee_value": "frais de {{value}}",
+        "pooled_collaterals_one": "Groupé · {{count}} garantie",
+        "pooled_collaterals_other": "Groupé · {{count}} garanties",
         "health_factor": "Facteur de santé",
         "ltv_note": "La liquidation peut survenir si le LTV dépasse le seuil du marché sélectionné.",
         "validation": {
@@ -1100,37 +1177,31 @@
         "isolated": "Marché isolé"
       },
       "review_page": {
-        "title": "Vérifier l'emprunt",
+        "titles": {
+          "borrow": "Emprunter {{symbol}}",
+          "borrowAndSupply": "Emprunter {{symbol}}",
+          "disableCollateral": "Désactiver {{symbol}} comme garantie",
+          "enableCollateral": "Activer {{symbol}} comme garantie",
+          "repay": "Rembourser {{symbol}}",
+          "supply": "Fournir {{symbol}} en garantie",
+          "withdraw": "Retirer {{symbol}}"
+        },
         "unavailable_title": "Vérification d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter et saisissez les montants pour vérifier cette action.",
         "back": "Retour à Emprunter",
-        "action": "Action",
-        "actions": {
-          "borrow": "Emprunter",
-          "borrowAndSupply": "Emprunter et fournir une garantie",
-          "disableCollateral": "Désactiver la garantie",
-          "enableCollateral": "Activer la garantie",
-          "repay": "Rembourser la dette",
-          "supply": "Fournir une garantie",
-          "withdraw": "Retirer la garantie"
-        },
         "borrow_amount": "Montant emprunté",
         "repay_amount": "Montant remboursé",
         "collateral_amount": "Montant de garantie",
         "effective_collateral": "Garantie effective",
         "market": "Marché",
-        "provider": "Fournisseur",
-        "network": "Réseau",
-        "requested_action": "Action demandée",
-        "market_id": "ID du marché",
-        "execution_pending": "La confirmation ouvrira le flux de transaction d'emprunt.",
         "confirm": "Confirmer",
         "back_to_position": "Retour à la position",
-        "projected_ltv": "LTV projeté",
-        "projected_health_factor": "Facteur de santé projeté",
-        "estimated_fee": "Frais estimés",
-        "estimated_fee_pending": "Affichés dans le portefeuille",
-        "confirmation_error_description": "Nous n'avons pas pu préparer votre transaction d'emprunt. Veuillez réessayer.",
+        "ltv": "LTV",
+        "health_factor": "Facteur de santé",
+        "collateral_fee": "Frais de garantie",
+        "origination_fee": "Frais d'ouverture",
+        "debt_principal": "Principal de la dette",
+        "confirmation_error_description": "Nous n'avons pas pu préparer cette transaction. Veuillez réessayer.",
         "warning_title": "Avertissement avant confirmation",
         "warnings": {
           "AmountExceedsAvailableLiquidity": "Le montant dépasse la liquidité actuellement disponible sur le marché. Le fournisseur ou la blockchain peut rejeter cette action.",
@@ -1150,32 +1221,62 @@
           "withdraw": "Retirer une garantie peut augmenter le LTV et le risque de liquidation."
         }
       },
+      "risk_block": {
+        "title": "Cette action ne peut pas être confirmée",
+        "healthFactor": "Le facteur de santé projeté passerait sous 1 : le protocole rejetterait cette action ou la position pourrait être liquidée. Réduisez le montant ou ajoutez une garantie.",
+        "ltv": "Le LTV projeté dépasserait le LTV maximal du marché : le protocole rejetterait cette action. Réduisez le montant ou ajoutez une garantie."
+      },
       "execution_page": {
-        "title": "Confirmer l'emprunt",
         "unavailable_title": "Exécution d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
-        "error_title": "La transaction d'emprunt a échoué",
-        "current_transaction": "Transaction {{current}} sur {{total}}",
-        "action_progress": "Étape d'action {{current}} sur {{total}}",
+        "error_titles": {
+          "borrow": "L'emprunt a échoué",
+          "borrowAndSupply": "L'emprunt a échoué",
+          "disableCollateral": "La désactivation de la garantie a échoué",
+          "enableCollateral": "L'activation de la garantie a échoué",
+          "repay": "Le remboursement a échoué",
+          "supply": "L'apport a échoué",
+          "withdraw": "Le retrait a échoué"
+        },
+        "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
         "batch_progress": "Étape {{current}} sur {{total}}",
-        "history_title": "Historique des transactions",
-        "transaction_complete": "Terminée",
-        "view_transaction": "Voir la transaction",
-        "status": {
-          "signing": "En attente de l'approbation du portefeuille",
-          "submitting": "Soumission de la transaction",
-          "confirming": "Confirmation de la transaction",
-          "advancing": "Préparation de l'étape d'action suivante",
-          "completed": "Action terminée",
-          "disabled": "Aucune transaction requise"
+        "preparing_next_step": "Préparation de l'étape suivante",
+        "tx_type": {
+          "APPROVAL": "Approbation du jeton",
+          "AUTHORIZE": "Autoriser",
+          "DEAUTHORIZE": "Révoquer l'autorisation",
+          "SUPPLY": "Fournir",
+          "BORROW": "Emprunter",
+          "REPAY": "Rembourser",
+          "WITHDRAW": "Retirer",
+          "ENABLE_COLLATERAL": "Activer la garantie",
+          "DISABLE_COLLATERAL": "Désactiver la garantie",
+          "BUNDLE": "Transaction groupée",
+          "WRAP": "Envelopper"
         }
       },
       "success_page": {
-        "title": "Emprunt terminé",
+        "titles": {
+          "borrow": "Emprunt terminé",
+          "borrowAndSupply": "Emprunt terminé",
+          "disableCollateral": "Garantie désactivée",
+          "enableCollateral": "Garantie activée",
+          "repay": "Remboursement terminé",
+          "supply": "Apport terminé",
+          "withdraw": "Retrait terminé"
+        },
         "unavailable_title": "Résultat d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter pour lancer une nouvelle action.",
-        "view_transaction": "Voir la transaction",
-        "done": "Terminé"
+        "transactions": "Transactions",
+        "view_transaction": "Voir la transaction : {{type}}",
+        "view_on_explorer": "Voir dans l'explorateur",
+        "collateral_supplied": "Garantie fournie",
+        "position": {
+          "estimated": "Position estimée",
+          "settled": "Position mise à jour"
+        },
+        "done": "Terminé",
+        "back_to_positions": "Retour aux positions"
       },
       "position_details": {
         "actions_title": "Actions",
@@ -1183,7 +1284,7 @@
         "collateral": "Garantie",
         "debt": "Dette",
         "details": "Détails de l'emprunt",
-        "empty": "Position d'emprunt indisponible",
+        "empty": "Aucune position ouverte sur ce marché.",
         "health_factor": "Facteur de santé",
         "liquidation_penalty": "Pénalité de liquidation",
         "liquidation_threshold": "Seuil de liquidation",
@@ -1198,7 +1299,6 @@
         "unsupported_network": "Les positions d'emprunt ne sont pas disponibles sur ce réseau.",
         "collateral_list": "Valeur de la garantie",
         "configure_action": "Gérer",
-        "selected": "Sélectionné",
         "select_withdraw_token": "Sélectionner la garantie à retirer",
         "outstanding_debt": "{{amount}} {{symbol}} dus",
         "withdrawable": "{{amount}} {{symbol}} retirable",
@@ -1209,6 +1309,10 @@
         "enable_collateral_warning": "Activer cet actif comme garantie peut améliorer le facteur de santé, mais l'actif fourni reste exposé au risque de marché.",
         "disable_collateral_warning": "Désactiver cet actif comme garantie peut réduire le facteur de santé et augmenter le risque de liquidation.",
         "validation": {
+          "collateral_toggle_risk": {
+            "healthFactor": "Désactiver cette garantie ferait passer le facteur de santé sous 1. Remboursez la dette ou ajoutez d'abord une autre garantie.",
+            "ltv": "Désactiver cette garantie porterait le LTV au-delà du LTV maximal du marché. Remboursez la dette ou ajoutez d'abord une autre garantie."
+          },
           "repay_debt": "Le montant dépasse la dette restante.",
           "repay_minimum": "Le remboursement laisserait une dette inférieure au minimum du marché. Remboursez tout ou réduisez le remboursement.",
           "wallet_balance": "Le montant dépasse le solde du portefeuille.",
@@ -1271,10 +1375,6 @@
     },
     "activity_details": {
       "your_position": "Votre Position"
-    },
-    "summary_item": {
-      "rewards_summary_zero_tooltip": "Résumé des récompenses bientôt disponible",
-      "rewards_summary_current_enabled_tooltip": "Résumé des récompenses actuellement activé pour :"
     },
     "enabled_rewards_summary_yield_names": {
       "polkadot_dot_validator_staking": "Staking natif DOT",

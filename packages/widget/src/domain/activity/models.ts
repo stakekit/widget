@@ -1,12 +1,16 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { YieldAction } from "../action/models";
-import { TolerantTopLevelArray } from "../decoding/response-schema";
+import { TolerantArray } from "../decoding/response-schema";
 
 export const ActivityActionsPage = Schema.Struct({
-  ...YieldApi.ActionsControllerGetActions200.fields,
+  ...Struct.pick(YieldApi.ActionsControllerGetActions200.fields, [
+    "total",
+    "offset",
+    "limit",
+  ]),
   items: Schema.optionalKey(
-    TolerantTopLevelArray(YieldAction, {
+    TolerantArray(YieldAction, {
       operation: "activity-actions",
     })
   ),

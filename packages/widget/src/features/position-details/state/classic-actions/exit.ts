@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
 import { TrackingService } from "../../../../services/tracking/tracking-service";

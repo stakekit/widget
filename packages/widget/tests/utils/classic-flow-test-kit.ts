@@ -66,6 +66,10 @@ export const makeClassicFlowTestKit = Effect.fn("makeClassicFlowTestKit")(
             ),
           submitTransactionHash: () =>
             unexpectedClassicFlowCall("YieldOperations.submitTransactionHash"),
+          submitTransactionHashInBackground: () =>
+            unexpectedClassicFlowCall(
+              "YieldOperations.submitTransactionHashInBackground"
+            ),
         })
       ),
       Layer.succeed(

@@ -1,4 +1,3 @@
-import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import {
   Cell,
   type CommonMessageInfoRelaxedInternal,
@@ -9,13 +8,20 @@ import {
   toUserFriendlyAddress,
   type Wallet,
 } from "@tonconnect/ui";
-import { Clock, Duration, Effect, Schema, Stream } from "effect";
+import { Clock, Duration, Effect, Option, Schema, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
+import type {
+  WalletDetailsParams,
+  WalletList,
+} from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import type { WalletModal } from "../../../wallet-modal";
 import { getWalletNetworkLogo } from "../../runtime/assets";
+import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { ton } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
   configMeta,
   type ExtraProps,
@@ -23,14 +29,26 @@ import {
 } from "./ton-connector-meta";
 import { unsignedTonTransactionTonConnectCodec } from "./transaction";
 
+type TonConnectorOptions = Readonly<{
+  runWalletEffect: RunWalletEffect;
+  tonConnectManifestUrl: string | undefined;
+  walletModal: WalletModal["Service"];
+}>;
+
+const ModalState = Schema.Struct({
+  status: Schema.Literals(["opened", "closed"]),
+});
+const decodeModalState = Schema.decodeUnknownOption(ModalState);
+
 const createTonConnector = (
   walletDetailsParams: WalletDetailsParams,
-  manifestUrl: string | undefined
+  { runWalletEffect, tonConnectManifestUrl, walletModal }: TonConnectorOptions
 ) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => {
     const tonconnectUI = new TonConnectUI({
       manifestUrl:
-        manifestUrl ?? "https://dapp.stakek.it/tonconnect-manifest.json",
+        tonConnectManifestUrl ??
+        "https://dapp.stakek.it/tonconnect-manifest.json",
     });
 
     let deferred: {
@@ -38,6 +56,14 @@ const createTonConnector = (
       reject: () => void;
     } | null = null;
     let connectedWallet: Wallet | null = null;
+    // TON releases only the picker suspension it started, never AppKit's.
+    let ownsSuspension = false;
+    let connecting = false;
+    const releaseSuspension = () => {
+      if (!ownsSuspension) return Promise.resolve();
+      ownsSuspension = false;
+      return runWalletEffect(walletModal.presentationOpen.set(false));
+    };
 
     tonconnectUI.onStatusChange((wallet) => {
       connectedWallet = wallet;
@@ -46,9 +72,18 @@ const createTonConnector = (
       }
     });
 
+    // TonConnect renders its modal outside the picker, so the picker steps
+    // aside while it is open. A connect in flight releases it once settled;
+    // any other close (e.g. a transaction prompt) releases it at once.
     tonconnectUI.onModalStateChange((state) => {
-      if (state.status === "closed") {
+      const status = Option.getOrUndefined(decodeModalState(state))?.status;
+      if (status === "opened") {
+        ownsSuspension = true;
+        void runWalletEffect(walletModal.presentationOpen.set(true));
+      }
+      if (status === "closed") {
         deferred?.reject();
+        if (!connecting) void releaseSuspension();
       }
     });
 
@@ -124,18 +159,20 @@ const createTonConnector = (
 
         const wallet: Wallet =
           connectedWallet ??
-          (await tonconnectUI
-            .openModal()
-            .then(
-              () =>
-                new Promise<Wallet>((resolve, reject) => {
-                  deferred = { resolve, reject };
-                })
-            )
-            .then((wallet) => {
+          (await (async () => {
+            connecting = true;
+            try {
+              await tonconnectUI.openModal();
+              return await new Promise<Wallet>((resolve, reject) => {
+                deferred = { resolve, reject };
+              });
+            } finally {
               deferred = null;
-              return wallet;
-            }));
+              connecting = false;
+              // A selected wallet keeps the picker aside until it connects.
+              await releaseSuspension();
+            }
+          })());
 
         const userFriendlyAddress = toUserFriendlyAddress(
           wallet.account.address
@@ -173,31 +210,15 @@ const createTonConnector = (
 
         return !!connectedWallet;
       },
-      onAccountsChanged: (accounts: string[]) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      },
-      onChainChanged: (chainId) => {
-        config.emitter.emit("change", {
-          chainId: chainId as unknown as number,
-        });
-      },
-      onDisconnect: () => {
-        config.emitter.emit("disconnect");
-      },
+      ...makeWagmiConnectorEvents(config.emitter),
       getProvider: async () => ({}),
       $filteredChains: Stream.succeed<Chain[]>([ton]),
     };
   });
 
-export const getTonConnectors = ({
-  tonConnectManifestUrl,
-}: {
-  tonConnectManifestUrl: string | undefined;
-}): WalletList[number] => ({
+export const getTonConnectors = (
+  options: TonConnectorOptions
+): WalletList[number] => ({
   groupName: "Ton",
   wallets: [
     () => ({
@@ -205,13 +226,14 @@ export const getTonConnectors = ({
       name: "TonConnect",
       iconUrl: getWalletNetworkLogo("ton"),
       iconBackground: "transparent",
+      availability: { _tag: "Remote" },
       chainGroup: {
         id: "ton",
         title: "Ton",
         iconUrl: getWalletNetworkLogo("ton"),
       },
       createConnector: (walletDetailsParams) =>
-        createTonConnector(walletDetailsParams, tonConnectManifestUrl),
+        createTonConnector(walletDetailsParams, options),
     }),
   ],
 });

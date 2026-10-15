@@ -1,3 +1,4 @@
+import { dashboardDetailsScroll } from "../../../../../shared/ui/components/dashboard-details/styles.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import * as styles from "../styles.css";
@@ -17,7 +18,7 @@ export const BorrowDetailsEmpty = ({
 }) => (
   <Box
     alignItems="center"
-    className={styles.detailsScroll}
+    className={dashboardDetailsScroll}
     display="flex"
     flexDirection="column"
     gap="2"

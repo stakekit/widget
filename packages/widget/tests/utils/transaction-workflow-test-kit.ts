@@ -87,6 +87,10 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
         stepAction: () => unexpectedWorkflowCall("BorrowOperations.stepAction"),
         submitTransaction: () =>
           unexpectedWorkflowCall("BorrowOperations.submitTransaction"),
+        submitTransactionInBackground: () =>
+          unexpectedWorkflowCall(
+            "BorrowOperations.submitTransactionInBackground"
+          ),
         ...options.borrow,
       })
     ),
@@ -104,6 +108,10 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
           unexpectedWorkflowCall("YieldOperations.submitSignedTransaction"),
         submitTransactionHash: () =>
           unexpectedWorkflowCall("YieldOperations.submitTransactionHash"),
+        submitTransactionHashInBackground: () =>
+          unexpectedWorkflowCall(
+            "YieldOperations.submitTransactionHashInBackground"
+          ),
         ...options.yieldOperations,
       })
     )

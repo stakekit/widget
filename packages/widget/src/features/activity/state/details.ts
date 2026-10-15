@@ -1,8 +1,6 @@
-import { Data, Array as EArray, Effect, Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import { Data, Effect, Option, Schema } from "effect";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import {
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
@@ -14,21 +12,24 @@ import {
   activityActionResourceAtom,
 } from "../../../resources/activity-history/index";
 import {
-  ValidatorByAddressKey,
-  validatorByAddressAtom,
-} from "../../../resources/validator-directory/index";
-import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
+  type Presentable,
+  toPresentable,
+} from "../../../shared/effect/async-result";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
-import {
-  currentYieldActionContinuationIdAtom,
-  startYieldActionContinuationAtom,
-} from "../../classic-transaction-flow/index";
 import {
   YieldSummaryKey,
   type YieldSummaryProvider,
   yieldSummaryAtom,
 } from "../../yield-summary/index";
-import type { ActivityActionItem } from "../model/activity-action";
+import type {
+  ActivityActionItem,
+  YieldActivityItem,
+} from "../model/activity-action";
+import { projectYieldActivityItem } from "../model/activity-enrichment";
+import {
+  ActivityEnrichmentKey,
+  loadActivityEnrichmentFacts,
+} from "./enrichment";
 import { type ActivityPageView, activityPageViewAtom } from "./page";
 
 class ActivityDetailsKey extends Data.Class<{
@@ -50,43 +51,24 @@ const activityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
         );
         if (!action) return null;
 
-        const yieldData = yield* context
-          .result(enrichedYieldOpportunityResourceAtom.local(action.yieldId))
-          .pipe(Effect.catchCause(() => Effect.succeed(null)));
-        if (
-          !isActivityActionOwnedByScope({
-            action,
-            scope: key.scope,
-            yieldData,
-          })
-        ) {
-          return null;
-        }
-        const validators = yield* Effect.forEach(
-          getActionValidatorAddresses(action) ?? [],
-          (address) =>
-            context
-              .result(
-                validatorByAddressAtom.local(
-                  new ValidatorByAddressKey({
-                    address,
-                    yieldId: action.yieldId,
-                  })
-                )
-              )
-              .pipe(Effect.catchCause(() => Effect.succeed(null))),
-          { concurrency: 5 }
-        );
-        const validatorsData = EArray.flatMap(validators, (validator) =>
-          validator ? [validator] : []
+        // Details tracks its Resources so a recovered Yield or validator
+        // re-projects the row (ADR 0003); the feed takes them once per page.
+        const item = projectYieldActivityItem(
+          action,
+          key.scope,
+          yield* loadActivityEnrichmentFacts(
+            new ActivityEnrichmentKey([{ _tag: "yield", action }]),
+            (resource) => context.result(resource)
+          )
         );
 
-        return {
-          actionData: action,
-          validatorsData,
-          walletScope: key.scope,
-          yieldData,
-        } satisfies ActivityActionItem;
+        return isActivityActionOwnedByScope({
+          action,
+          scope: key.scope,
+          yieldData: item.yieldData,
+        })
+          ? item
+          : null;
       })
     )
     .pipe(Atom.withLabel("activityActionDetailsAtom"))
@@ -136,10 +118,11 @@ type ActivitySelectedActionView =
   | { readonly status: "unavailable" }
   | { readonly status: "failed" }
   | {
-      readonly item: ActivityActionItem;
+      readonly item: YieldActivityItem;
       readonly status: "ready";
     };
 
+/** Borrow rows have no details, so Default selects the first Yield row. */
 export const resolveDefaultSelectedActionId = (
   view: Atom.Type<typeof activityPageViewAtom>
 ): ActionId | "loading" | null => {
@@ -147,11 +130,17 @@ export const resolveDefaultSelectedActionId = (
     if (view.status === "empty") return null;
     return "loading";
   }
-  if (view.refreshStatus !== "fresh") return "loading";
-  return view.actions[0]?.actionData.id ?? null;
+  return (
+    view.actions.find(
+      (item): item is YieldActivityItem => item._tag === "yield"
+    )?.actionData.id ?? null
+  );
 };
 
-/** URL intent wins; Default waits for a fresh feed and takes the first row. */
+/**
+ * URL intent wins; Default takes the first row of the feed on screen, so a
+ * background refetch never blanks the selection.
+ */
 export const resolveActivitySelection = (
   intent: ActivitySelectionIntent,
   view: Atom.Type<typeof activityPageViewAtom>
@@ -207,26 +196,23 @@ export const resolveUnavailableActivitySelection = (
   intent._tag === "default" ? "empty" : "clear-route";
 
 const projectDetailsResult = (
-  result: Atom.Type<ReturnType<typeof activityActionDetailsAtom>>
+  details: Presentable<YieldActivityItem | null, unknown>
 ): ActivitySelectedActionView => {
-  if (
-    AsyncResult.isInitial(result) ||
-    (result.waiting && Option.isNone(AsyncResult.value(result)))
-  ) {
-    return { status: "loading" };
+  switch (details._tag) {
+    case "Loading":
+      return { status: "loading" };
+    case "Failed":
+      return { status: "failed" };
+    case "Ready":
+      return details.value
+        ? { item: details.value, status: "ready" }
+        : { status: "unavailable" };
   }
-  if (AsyncResult.isFailure(result)) {
-    return { status: "failed" };
-  }
-  if (!result.value) {
-    return { status: "unavailable" };
-  }
-  return { item: result.value, status: "ready" };
 };
 
 /** Prefer the enriched feed row so selection does not wait on GET-by-id. */
 export const findActivityActionInFeed = (
-  actionId: ActionId,
+  actionId: string,
   view: ActivityPageView
 ): ActivityActionItem | null => {
   if (view.status !== "ready") return null;
@@ -248,14 +234,18 @@ const activitySelectedActionAtom = Atom.family((key: ActivitySelectionKey) =>
     if (actionId === null) return { status: "unavailable" };
 
     const fromFeed = findActivityActionInFeed(actionId, view);
+    // Borrow ids never reach the Yield GET-by-id endpoint.
+    if (fromFeed?._tag === "borrow") return { status: "unavailable" };
     if (fromFeed) {
       return { item: fromFeed, status: "ready" };
     }
 
     return projectDetailsResult(
-      context(
-        activityActionDetailsAtom(
-          new ActivityDetailsKey({ actionId, scope: key.scope })
+      toPresentable(
+        context(
+          activityActionDetailsAtom(
+            new ActivityDetailsKey({ actionId, scope: key.scope })
+          )
         )
       )
     );
@@ -286,8 +276,7 @@ type ActivityDetailsView =
   | { readonly status: "failed" }
   | {
       readonly canContinue: boolean;
-      readonly continuationReady: boolean;
-      readonly item: ActivityActionItem;
+      readonly item: YieldActivityItem;
       readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
       readonly status: "ready";
     };
@@ -304,16 +293,11 @@ export const activityDetailsViewAtom = Atom.family(
         context(
           yieldSummaryAtom(
             new YieldSummaryKey({
-              selectedProviderYieldId: null,
               validators: item.validatorsData,
               yield: item.yieldData,
             })
           )
         ).providers ?? [];
-      const continuationActionId = context(
-        currentYieldActionContinuationIdAtom
-      );
-      const matchingSession = continuationActionId === action.id;
       const presentationTime = context(presentationClockAtom);
       const selectedYield = item.yieldData;
       const canContinue =
@@ -323,35 +307,11 @@ export const activityDetailsViewAtom = Atom.family(
 
       return {
         canContinue: key.surface === "review" && canContinue,
-        continuationReady: matchingSession,
         item,
         providersDetails,
         status: "ready",
       };
     }).pipe(Atom.withLabel("activityDetailsViewAtom"))
-);
-
-export const activityActionContinuationMountAtom = Atom.family(
-  (key: ActivitySelectionKey) =>
-    Atom.make((context) => {
-      if (key.surface !== "review") return;
-
-      const view = context(activityDetailsViewAtom(key));
-      if (view.status !== "ready") return;
-      if (!view.canContinue || view.continuationReady) return;
-
-      const item = view.item;
-      const selectedYield = item.yieldData;
-      if (selectedYield === null) return;
-
-      context.set(startYieldActionContinuationAtom, {
-        action: item.actionData,
-        providersDetails: view.providersDetails,
-        selectedValidators: item.validatorsData,
-        selectedYield,
-        walletScope: item.walletScope,
-      });
-    }).pipe(Atom.withLabel("activityActionContinuationMountAtom"))
 );
 
 export const retryActivityActionRouteAtom = retryActivitySelectedActionAtom;

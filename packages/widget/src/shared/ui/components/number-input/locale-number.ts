@@ -1,25 +1,9 @@
 import type BigNumber from "bignumber.js";
 import { exactDecimal } from "../../../../domain/finance/exact";
-
-type LocaleNumberSymbols = {
-  readonly decimal: string;
-  readonly group: string;
-};
-
-const localeNumberSymbols = new Map<string, LocaleNumberSymbols>();
-
-const getLocaleNumberSymbols = (locale: string): LocaleNumberSymbols => {
-  const cached = localeNumberSymbols.get(locale);
-  if (cached) return cached;
-
-  const parts = new Intl.NumberFormat(locale).formatToParts(12_345.6);
-  const symbols = {
-    decimal: parts.find((part) => part.type === "decimal")?.value ?? ".",
-    group: parts.find((part) => part.type === "group")?.value ?? ",",
-  };
-  localeNumberSymbols.set(locale, symbols);
-  return symbols;
-};
+import {
+  formatNumber,
+  getLocaleNumberSymbols,
+} from "../../../lib/number-format";
 
 const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -68,18 +52,9 @@ export const formatLocalizedNumber = ({
   readonly useGrouping: boolean;
   readonly value: BigNumber;
 }) => {
-  const { decimal, group } = getLocaleNumberSymbols(locale);
-
   if (!useGrouping) {
-    return value.toFixed().replace(".", decimal);
+    return value.toFixed().replace(".", getLocaleNumberSymbols(locale).decimal);
   }
 
-  return value.toFormat({
-    decimalSeparator: decimal,
-    groupSeparator: group,
-    groupSize: 3,
-    secondaryGroupSize: 0,
-    fractionGroupSeparator: "",
-    fractionGroupSize: 0,
-  });
+  return formatNumber(value, locale);
 };

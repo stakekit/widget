@@ -61,37 +61,62 @@ export const rowValue = style({
 
 export const transactions = style({
   display: "grid",
-  gap: "16px",
+  gap: "4px",
   padding: "20px 0",
 });
 
-export const transaction = style({
-  display: "grid",
-  gap: "6px",
-});
-
-export const transactionTop = style({
-  alignItems: "start",
-  display: "grid",
+export const transactionsHeader = style({
+  alignItems: "baseline",
+  display: "flex",
   gap: "16px",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
+  justifyContent: "space-between",
+  marginBottom: "8px",
 });
 
-export const explorerButton = style({
+export const transaction = style({
+  alignItems: "center",
   background: "none",
   border: 0,
+  color: "inherit",
+  display: "grid",
+  font: "inherit",
+  gap: "12px",
+  gridTemplateColumns: "16px minmax(0, 1fr) auto",
+  padding: "8px 0",
+  textAlign: "left",
+  width: "100%",
+});
+
+export const transactionLink = style({
+  cursor: "pointer",
+  selectors: {
+    "&:hover": { opacity: 0.8 },
+  },
+});
+
+export const transactionText = style({
+  display: "grid",
+  gap: "2px",
+  minWidth: 0,
+});
+
+export const transactionExplorer = style({
+  alignItems: "center",
+  color: vars.color.textMuted,
+  display: "flex",
+  gap: "4px",
+});
+
+export const termsLink = style({
   color: vars.color.textMuted,
   cursor: "pointer",
-  font: "inherit",
-  padding: 0,
   textDecoration: "underline",
   textUnderlineOffset: "3px",
 });
 
 export const unavailable = style([
-  atoms({ background: "background" }),
+  atoms({ background: "background", borderRadius: "xl" }),
   {
-    borderRadius: "10px",
     marginTop: "16px",
     padding: "12px",
   },

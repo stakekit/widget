@@ -11,7 +11,7 @@ type CurrentBatch = NonNullable<
   ReturnType<typeof getCurrentTransactionWorkflowBatch>
 >;
 
-export type CurrentWorkflow =
+type CurrentWorkflow =
   | {
       readonly _tag: "Classic";
       readonly batch: CurrentBatch;
@@ -32,6 +32,13 @@ export type CurrentWorkflow =
       readonly transaction: TransactionWorkflowTransactionFor<"Borrow">;
       readonly workflowId: string;
     };
+
+export const getCurrentWorkflowTrackingYieldId = (
+  current: CurrentWorkflow
+): string =>
+  current._tag === "Classic"
+    ? current.domain.yieldId
+    : current.domain.action.integrationId;
 
 export const requireCurrentWorkflow = Effect.fn(
   "TransactionWorkflow.requireCurrent"

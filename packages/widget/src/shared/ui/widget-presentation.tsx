@@ -14,6 +14,8 @@ import type { WidgetVariant } from "../styles/recipe-variant";
 export type WidgetPresentation = {
   readonly disableInputAutoResize: boolean;
   readonly hideNetworkLogo: boolean;
+  /** Replace selected token icons with the host's icon set. */
+  readonly hostTokenIconMapping: boolean;
   readonly locale: string;
   readonly mapNetworkIconUrl: (network: Network) => string | undefined;
   readonly mapTokenIconUrl: (token: Token) => string | undefined;
@@ -26,6 +28,7 @@ const unmappedIconUrl = () => undefined;
 const defaultWidgetPresentation: WidgetPresentation = {
   disableInputAutoResize: false,
   hideNetworkLogo: false,
+  hostTokenIconMapping: false,
   locale: "en",
   mapNetworkIconUrl: unmappedIconUrl,
   mapTokenIconUrl: unmappedIconUrl,

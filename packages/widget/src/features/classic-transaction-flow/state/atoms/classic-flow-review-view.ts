@@ -1,6 +1,6 @@
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import type { YieldAction } from "../../../../domain/action/models";
 import { getTransactionGasEstimate } from "../../../../domain/action/rules";
 import { exactZero } from "../../../../domain/finance/exact";
@@ -15,6 +15,7 @@ import {
   PricesKey,
   pricesAtom,
 } from "../../../../resources/token-prices/index";
+import { toPresentable } from "../../../../shared/effect/async-result";
 import type { CurrentYieldKycGate } from "../../../yield-summary/index";
 import {
   type ClassicTransactionFlowIntake,
@@ -131,9 +132,7 @@ export const makeClassicFlowSessionReviewResources = ({
       confirmLoading: actionPreviewLoading || kyc.isLoading,
       gasAmount: get(gasAmountAtom),
       gasCheckLoading:
-        actionPreviewLoading ||
-        AsyncResult.isInitial(gasWarning) ||
-        gasWarning.waiting,
+        actionPreviewLoading || toPresentable(gasWarning)._tag === "Loading",
       isGasCheckWarning: gasWarning.pipe(
         AsyncResult.value,
         Option.match({ onNone: () => false, onSome: Boolean })

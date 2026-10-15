@@ -1,3 +1,4 @@
+import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import {
   AddressRow,
@@ -12,6 +13,7 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
@@ -42,17 +44,15 @@ const renderDetailValue = (value: DashboardPositionDetailValue) =>
 export const PositionDetailsInfo = () => {
   const positionDetails = usePositionDetails();
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   const rewardsYieldId = positionDetails.integrationData?.id ?? null;
-  const rewardsSummaries = AsyncResult.getOrElse(
-    useAtomValue(
-      currentRewardsSummaryAtom(
-        new CurrentRewardsSummaryKey({
-          yieldIds: rewardsYieldId ? [rewardsYieldId] : [],
-        })
-      )
-    ),
-    () => null
+  const rewardsSummaries = useAtomValue(
+    currentRewardsSummaryAtom(
+      new CurrentRewardsSummaryKey({
+        yieldIds: rewardsYieldId ? [rewardsYieldId] : [],
+      })
+    )
   );
 
   if (positionDetails.isLoading) {
@@ -65,15 +65,15 @@ export const PositionDetailsInfo = () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: positionDetails.canUnstake,
       integrationData,
+      locale,
       pendingActions: positionDetails.pendingActions ?? [],
       personalizedRewardRate: positionDetails.personalizedRewardRate,
       positionBalancesByType,
       providersDetails: positionDetails.providersDetails ?? [],
-      reducedStakedOrLiquidBalance:
-        positionDetails.reducedStakedOrLiquidBalance,
-      rewardsSummary: rewardsYieldId
-        ? (rewardsSummaries?.[rewardsYieldId] ?? undefined)
-        : undefined,
+      rewardsSummary:
+        rewardsYieldId && rewardsSummaries._tag === "Ready"
+          ? (rewardsSummaries.value?.[rewardsYieldId] ?? undefined)
+          : undefined,
       t,
     });
 
@@ -125,6 +125,3 @@ export const PositionDetailsInfo = () => {
     </PositionDetailsScrollArea>
   );
 };
-
-import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";

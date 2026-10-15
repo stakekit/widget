@@ -1,6 +1,6 @@
 import type { ActivityActionsQuery } from "../../../domain/activity/query";
+import type { DashboardYieldCategory } from "../../../domain/earn/contract";
 import { getApiYieldTypesForDashboardCategory } from "../../../domain/earn/yield";
-import type { DashboardYieldCategory } from "../../../public-api/types";
 
 export type ActivityFilter = "all" | DashboardYieldCategory;
 

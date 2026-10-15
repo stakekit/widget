@@ -6,10 +6,12 @@ import type {
   SupplyBalance,
 } from "../positions/borrow-account-snapshot";
 import {
+  deriveOracleRiskAnchor,
   getCollateralState,
   getDefinitions,
   getIsolatedPositionState,
 } from "./collateral-state";
+import { deriveMarketRiskLimits } from "./market-risk";
 import {
   collateralTotalMatchesSnapshot,
   makeAuthoritativeAccountCurrent,
@@ -19,9 +21,12 @@ import {
   projectState,
   type RiskPositionContract,
 } from "./risk-assessment";
-import { unavailable } from "./risk-model";
+import { type RiskValuation, unavailable } from "./risk-model";
 
 export type RiskPosition = RiskPositionContract;
+
+const displayValuation: RiskValuation = { type: "display" };
+const unanchoredValuation: RiskValuation = { type: "unanchored" };
 
 export const makeAccountRiskPosition = ({
   markets,
@@ -45,6 +50,7 @@ export const makeAccountRiskPosition = ({
       loanPrices: makeLoanPrices(markets),
       scope: "account",
       state: { collateral: [], debtUsd: totalDebtUsd },
+      valuation: displayValuation,
     });
   }
 
@@ -63,6 +69,7 @@ export const makeAccountRiskPosition = ({
       loanPrices: makeLoanPrices(markets),
       scope: "account",
       state: { collateral: [], debtUsd: totalDebtUsd },
+      valuation: displayValuation,
     });
   }
 
@@ -89,6 +96,7 @@ export const makeAccountRiskPosition = ({
       loanPrices: makeLoanPrices(markets),
       scope: "account",
       state,
+      valuation: displayValuation,
     });
   }
   const current =
@@ -102,6 +110,7 @@ export const makeAccountRiskPosition = ({
     loanPrices: makeLoanPrices(markets),
     scope: "account",
     state,
+    valuation: displayValuation,
   });
 };
 
@@ -134,6 +143,7 @@ export const makeMarketRiskPosition = ({
       loanPrices,
       scope: "market",
       state: { collateral: [], debtUsd: totalDebtUsd },
+      valuation: unanchoredValuation,
     });
   }
 
@@ -152,6 +162,7 @@ export const makeMarketRiskPosition = ({
       loanPrices,
       scope: "market",
       state: { collateral: [], debtUsd: totalDebtUsd },
+      valuation: unanchoredValuation,
     });
   }
 
@@ -172,6 +183,7 @@ export const makeMarketRiskPosition = ({
       loanPrices,
       scope: "market",
       state,
+      valuation: unanchoredValuation,
     });
   }
   const { positionState } = positionStateResult;
@@ -193,8 +205,18 @@ export const makeMarketRiskPosition = ({
       });
     }
 
-    return local;
+    return local.status === "available"
+      ? { ...local, maxLtv: deriveMarketRiskLimits(market).maxLtv }
+      : local;
   })();
+  const anchor = positionState
+    ? deriveOracleRiskAnchor({
+        debtBalance,
+        market,
+        positionState,
+        supplyBalances,
+      })
+    : null;
 
   return makeRiskPosition({
     current,
@@ -202,5 +224,6 @@ export const makeMarketRiskPosition = ({
     loanPrices,
     scope: "market",
     state,
+    valuation: anchor ? { anchor, type: "oracle" } : unanchoredValuation,
   });
 };

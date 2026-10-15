@@ -1,8 +1,13 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import { exactDecimal } from "../../../../../domain/finance/exact";
+import {
+  formatPercent,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
+import { dashboardDetailsScroll } from "../../../../../shared/ui/components/dashboard-details/styles.css";
 import {
   AddressRow,
   DetailRow,
@@ -11,9 +16,12 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useClassicFlowIntake } from "../../../../classic-transaction-flow/index";
 import { YieldDetailsHeader } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
+  useEarnFlowYield,
   useEarnRewardRateHistoryChart,
   useEarnTvlHistoryChart,
   useEarnYieldSelection,
@@ -21,36 +29,69 @@ import {
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
 import { HistoryChartSection } from "./components/history-chart-section";
 import { IntegrationDocsLink } from "./components/integration-docs-link";
-import { ProviderSelectionCard } from "./components/provider-selection-card";
+import {
+  ProviderSelectionCard,
+  ProviderSummary,
+} from "./components/provider-selection-card";
 import {
   canPresentRewardRateHistory,
   getEarnDetailsModel,
 } from "./earn-details-model";
-import * as styles from "./styles.css";
 
+/** Details of the Earn form's live selection; its selection controls edit it. */
 export const EarnDetails = () => {
   const { view: entry } = useEarnEntry();
   const { view: yieldSelection } = useEarnYieldSelection();
 
   return (
-    <EarnDetailsView
+    <EarnDetailsPanel
       isLoading={entry.appLoading || yieldSelection.isLoading}
+      providers={<ProviderSelectionCard />}
       selectedValidators={entry.selectedValidators}
       yieldDto={entry.selectedStake}
     />
   );
 };
 
-const EarnDetailsView = ({
+/**
+ * Details of the target a started Enter flow executes against, captured in its
+ * Session intake. It never follows the Earn form's live selection.
+ */
+export const EarnFlowDetails = () => {
+  const intake = useClassicFlowIntake("Enter");
+  const yieldDto = useEarnFlowYield(intake.selectedStake);
+  const selectedValidators = [...intake.selectedValidators.values()];
+
+  return (
+    <EarnDetailsPanel
+      isLoading={false}
+      providers={
+        <ProviderSummary
+          providerOption={intake.selectedProviderOption}
+          selectedValidators={selectedValidators}
+          yieldDto={yieldDto}
+        />
+      }
+      selectedValidators={selectedValidators}
+      yieldDto={yieldDto}
+    />
+  );
+};
+
+const EarnDetailsPanel = ({
   isLoading,
+  providers,
   selectedValidators,
   yieldDto,
 }: {
-  isLoading: boolean;
-  selectedValidators?: SelectedValidators | null;
-  yieldDto: EarnYieldWithProvider | null;
+  readonly isLoading: boolean;
+  /** The provider and validator section for `yieldDto`. */
+  readonly providers: ReactNode;
+  readonly selectedValidators: SelectedValidators | null;
+  readonly yieldDto: EarnYieldWithProvider | null;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const presentsRewardRateHistory = yieldDto
     ? canPresentRewardRateHistory(yieldDto)
     : false;
@@ -68,7 +109,7 @@ const EarnDetailsView = ({
     return (
       <Box
         alignItems="center"
-        className={styles.container}
+        className={dashboardDetailsScroll}
         display="flex"
         justifyContent="center"
       >
@@ -89,6 +130,7 @@ const EarnDetailsView = ({
     rewardRateFormatted,
     tvlChartValue,
   } = getEarnDetailsModel({
+    locale,
     selectedValidators,
     t,
     yieldDto,
@@ -96,7 +138,7 @@ const EarnDetailsView = ({
 
   return (
     <Box
-      className={styles.container}
+      className={dashboardDetailsScroll}
       display="flex"
       flexDirection="column"
       gap="4"
@@ -109,13 +151,15 @@ const EarnDetailsView = ({
 
       <EarnDetailsMetrics cards={metricCards} />
 
-      <ProviderSelectionCard />
+      {providers}
 
       {presentsRewardRateHistory && rewardRateChart.view.canRender && (
         <HistoryChartSection
           chartId="reward-rate"
           onPeriodChange={rewardRateChart.selectPeriod}
-          tickFormatter={(value) => `${formatNumber(value, 2)}%`}
+          tickFormatter={(value) =>
+            formatPercent(exactDecimal(value).div(100), locale)
+          }
           title={t("dashboard.earn_details.reward_rate")}
           value={rewardRateFormatted}
           view={rewardRateChart.view}
@@ -126,7 +170,7 @@ const EarnDetailsView = ({
         <HistoryChartSection
           chartId="tvl"
           onPeriodChange={tvlChart.selectPeriod}
-          tickFormatter={formatUsd}
+          tickFormatter={(value) => formatUsd(value, locale)}
           title={t("dashboard.earn_details.tvl")}
           value={tvlChartValue}
           view={tvlChart.view}

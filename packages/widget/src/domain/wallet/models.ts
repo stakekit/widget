@@ -1,26 +1,25 @@
 import { Schema, SchemaTransformation } from "effect";
-import * as YieldApi from "../../generated/api/yield-schema";
 import {
   isWalletNetwork,
   WalletNetwork,
   type WalletNetwork as WalletNetworkType,
 } from "./network";
 
-const EnabledWalletNetworkIds = Schema.Array(
-  Schema.Struct({ id: YieldApi.Networks })
-);
+// Network IDs stay open strings: the API adds networks independently of the
+// generated client, and only Wallet Networks matter to the widget.
+const EnabledNetworkIds = Schema.Array(Schema.Struct({ id: Schema.String }));
 
-export const EnabledWalletNetworksResponse = EnabledWalletNetworkIds.pipe(
+export const EnabledWalletNetworksResponse = EnabledNetworkIds.pipe(
   Schema.decodeTo(
     Schema.ReadonlySet(WalletNetwork),
     SchemaTransformation.transform({
       decode: (
-        networks: ReadonlyArray<{ readonly id: YieldApi.Networks }>
+        networks: ReadonlyArray<{ readonly id: string }>
       ): ReadonlySet<WalletNetworkType> =>
         new Set(networks.map(({ id }) => id).filter(isWalletNetwork)),
       encode: (
         networks: ReadonlySet<WalletNetworkType>
-      ): ReadonlyArray<{ readonly id: YieldApi.Networks }> =>
+      ): ReadonlyArray<{ readonly id: string }> =>
         Array.from(networks, (id) => ({ id })),
     })
   )

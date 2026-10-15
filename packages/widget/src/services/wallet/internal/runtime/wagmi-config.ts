@@ -1,10 +1,4 @@
 import type { Connection } from "@solana/web3.js";
-import type {
-  Chain as RainbowkitChain,
-  Wallet,
-  WalletList,
-} from "@stakekit/rainbowkit";
-import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { Array as EArray, Effect, FiberSet } from "effect";
 import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
@@ -16,28 +10,38 @@ import {
   applyWalletPolicy,
   type WalletPolicy,
 } from "../../../../domain/wallet/wallet-policy";
-import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
-import type { VariantProps } from "../../../../public-api/react-types";
-import type { SettingsProps } from "../../../../public-api/types";
 import { evmChainGroup } from "../../../../services/wallet/evm-chain-group";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import { config } from "../../../../shared/config/widget-defaults";
+import type { ExternalProviderSnapshot } from "../../../config/external-provider-snapshot";
+import type { HostProfile } from "../../../config/host-profile";
+import type { WidgetConfig } from "../../../config/widget-config-model";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { omitEnsUniversalResolver } from "../../default-wagmi-config";
 import type { CurrentRef } from "../../external-provider";
+import {
+  connectorsForWallets,
+  type Chain as WalletChain,
+  type WalletDescriptor,
+  type WalletList,
+} from "../../wallet-descriptors";
 import { WalletIntegrationError } from "../../wallet-errors";
+import type { WalletModal } from "../../wallet-modal";
 import { getConfig as getMiscConfig } from "../adapters/config";
 import type { MiscChainsMap } from "../adapters/configured-chains";
 import type { CosmosChainsMap } from "../adapters/cosmos/chains";
 import { getConfig as getCosmosConfig } from "../adapters/cosmos/config";
 import type { EvmChainsMap } from "../adapters/evm/chains";
 import { getConfig as getEvmConfig } from "../adapters/evm/config";
+import { announcedWalletAvailability } from "../adapters/evm/injected-availability";
 import { externalProviderConnector } from "../adapters/external-provider";
 import { getConfig as getLedgerLiveConfig } from "../adapters/ledger/config";
 import { getConfig as getSafeConnector } from "../adapters/safe/config";
 import type { SubstrateChainsMap } from "../adapters/substrate/chains";
 import { getConfig as getSubstrateConfig } from "../adapters/substrate/config";
 import type { StellarWalletsKitPlatformService } from "../platform/stellar-wallets-kit-platform";
+import type { WalletConnectPresentationPlatform } from "../platform/wallet-connect-presentation";
+import type { WalletConnectProtocolPlatform } from "../platform/wallet-connect-protocol";
 import { buildsEcosystemConnectors } from "./connector-mode";
 import type { RunWalletEffect } from "./effect-runner";
 import { getVariantNetworkUrl } from "./network-icon";
@@ -109,29 +113,18 @@ export const scopedMipdSubscription = ({
 
 export type BuildWagmiConfigOptions = {
   disableInjectedProviderDiscovery: boolean;
-  mapWalletFn?: (props: {
-    id: string;
-    iconUrl: string | (() => Promise<string>);
-    name: string;
-    iconBackground: string;
-  }) => {
-    iconUrl: string | (() => Promise<string>);
-    name: string;
-    iconBackground: string;
-  };
+  mapWalletFn?: WidgetConfig["mapWalletFn"];
   externalProviders?: CurrentRef<ExternalProviderSnapshot>;
   enabledNetworks: EnabledWalletNetworks;
-  forceWalletConnectOnly: boolean;
   walletListFactory?: (chains: Chain[]) => WalletList;
   isLedgerLive: boolean;
   isSafe: boolean;
-  chainIconMapping: SettingsProps["chainIconMapping"];
+  chainIconMapping: WidgetConfig["chainIconMapping"];
   institutionalWallets: boolean;
-  isMobileWallet: boolean;
-  variant: VariantProps["variant"];
+  walletCatalogue: HostProfile["walletCatalogue"];
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
-  walletPolicy?: SettingsProps["walletPolicy"];
+  walletPolicy?: WalletPolicy;
   persistPublicKey: WidgetPersistence["Service"]["upsertStoredPublicKey"];
   queryParams: InitParams;
   tonConnectManifestUrl: string | undefined;
@@ -157,11 +150,17 @@ const recoverEcosystemAdapter = <A, R>(
 export const buildWagmiConfig = (
   opts: BuildWagmiConfigOptions,
   buildActions: Effect.Success<typeof makeWagmiActions>,
-  stellarWalletsKitPlatform: StellarWalletsKitPlatformService
+  stellarWalletsKitPlatform: StellarWalletsKitPlatformService,
+  walletConnectPresentationPlatform: WalletConnectPresentationPlatform["Service"],
+  walletConnectProtocolPlatform: WalletConnectProtocolPlatform["Service"],
+  walletModal: WalletModal["Service"]
 ) =>
   Effect.gen(function* () {
     const runWalletEffect: RunWalletEffect =
       yield* FiberSet.makeRuntimePromise();
+    const walletConnectPresentation =
+      yield* walletConnectPresentationPlatform.make;
+    const walletConnectProtocol = yield* walletConnectProtocolPlatform.make;
 
     const buildConnectors = buildsEcosystemConnectors({
       hasCustomWalletList: !!opts.walletListFactory,
@@ -169,23 +168,24 @@ export const buildWagmiConfig = (
       institutionalWallets: opts.institutionalWallets,
       isLedgerDappBrowser: opts.isLedgerLive,
       isSafe: opts.isSafe,
-      variant: opts.variant,
     });
     const [evmConfig, cosmosConfig, miscConfig, substrateConfig] =
       yield* Effect.all(
         [
           getEvmConfig({
             enabledNetworks: opts.enabledNetworks,
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
             institutionalWallets: opts.institutionalWallets,
-            variant: opts.variant,
+            walletCatalogue: opts.walletCatalogue,
+            walletConnectPresentation,
+            runWalletEffect,
           }),
           recoverEcosystemAdapter(
             "cosmos",
             getCosmosConfig({
               buildConnectors,
               enabledNetworks: opts.enabledNetworks,
-              forceWalletConnectOnly: opts.forceWalletConnectOnly,
+              walletConnectProtocol,
+              runWalletEffect,
               persistPublicKey: (input) =>
                 runWalletEffect(opts.persistPublicKey(input)),
             })
@@ -195,14 +195,14 @@ export const buildWagmiConfig = (
             getMiscConfig({
               buildConnectors,
               enabledNetworks: opts.enabledNetworks,
-              forceWalletConnectOnly: opts.forceWalletConnectOnly,
               stellarWalletsKitPlatform,
-              isMobileWallet: opts.isMobileWallet,
               runWalletEffect,
+              walletConnectProtocol,
               solanaWallets: opts.solanaWallets,
               solanaConnection: opts.solanaConnection,
-              variant: opts.variant,
+              walletCatalogue: opts.walletCatalogue,
               tonConnectManifestUrl: opts.tonConnectManifestUrl,
+              walletModal,
             })
           ),
           recoverEcosystemAdapter(
@@ -210,7 +210,8 @@ export const buildWagmiConfig = (
             getSubstrateConfig({
               buildConnectors,
               enabledNetworks: opts.enabledNetworks,
-              forceWalletConnectOnly: opts.forceWalletConnectOnly,
+              walletConnectProtocol,
+              runWalletEffect,
             })
           ),
         ] as const,
@@ -261,7 +262,7 @@ export const buildWagmiConfig = (
       ? (() => {
           const chainIconMapping = opts.chainIconMapping;
           const mapWagmiChain = (val: {
-            wagmiChain: RainbowkitChain;
+            wagmiChain: WalletChain;
             network: Network;
           }) => {
             const res = getVariantNetworkUrl({
@@ -277,7 +278,7 @@ export const buildWagmiConfig = (
               ...val.wagmiChain,
               iconBackground: undefined,
               iconUrl: res,
-            } as RainbowkitChain;
+            } as WalletChain;
           };
 
           return Object.values({
@@ -285,7 +286,7 @@ export const buildWagmiConfig = (
             ...cosmos.cosmosChainsMap,
             ...misc.miscChainsMap,
             ...substrate.substrateChainsMap,
-          }).map(mapWagmiChain) as [RainbowkitChain, ...RainbowkitChain[]];
+          }).map(mapWagmiChain) as [WalletChain, ...WalletChain[]];
         })()
       : (() => {
           return [
@@ -293,15 +294,15 @@ export const buildWagmiConfig = (
             ...cosmos.cosmosWagmiChains,
             ...misc.miscChains,
             ...substrate.substrateChains,
-          ] as [RainbowkitChain, ...RainbowkitChain[]];
+          ] as [WalletChain, ...WalletChain[]];
         })();
 
     const chainsWithoutEnsProfileLookups = chains.map(
       omitEnsUniversalResolver
-    ) as [RainbowkitChain, ...RainbowkitChain[]];
+    ) as [WalletChain, ...WalletChain[]];
     const hasConfiguredWalletNetworks =
       chainsWithoutEnsProfileLookups.length > 0;
-    const wagmiChains: [RainbowkitChain, ...RainbowkitChain[]] =
+    const wagmiChains: [WalletChain, ...WalletChain[]] =
       hasConfiguredWalletNetworks
         ? chainsWithoutEnsProfileLookups
         : [omitEnsUniversalResolver(mainnet)];
@@ -311,14 +312,13 @@ export const buildWagmiConfig = (
       !opts.externalProviders &&
       !val.ledgerLiveConnector &&
       !val.safeConnector &&
-      opts.variant !== "porto";
+      opts.walletCatalogue !== "porto";
     const solanaConnectorMode =
       !!val.miscConfig.miscChainsMap.solana &&
       !opts.externalProviders &&
       !val.safeConnector &&
       !ledgerLiveConnector &&
-      !opts.walletListFactory &&
-      !opts.forceWalletConnectOnly;
+      !opts.walletListFactory;
 
     const connectorOptions = {
       appName: config.appName,
@@ -352,7 +352,7 @@ export const buildWagmiConfig = (
                       id: originalWallet.id,
                       name: originalWallet.name,
                     }),
-                  } satisfies Wallet)
+                  } satisfies WalletDescriptor)
                 : originalWallet;
 
               return {
@@ -473,13 +473,27 @@ export const buildWagmiConfig = (
 
             return [
               ...prev,
-              ...unseenProviders.map((provider) => ({
-                rkDetails: { chainGroup: evmChainGroup },
+              ...unseenProviders.map((provider, index) => ({
                 ...wagmiConfig._internal.connectors.setup(
                   wagmiConfig._internal.connectors.providerDetailToConnector(
                     provider
                   )
                 ),
+                walletDetails: {
+                  availability: announcedWalletAvailability({
+                    rdns: provider.info.rdns,
+                    store: mipdStore,
+                  }),
+                  chainGroup: evmChainGroup,
+                  groupIndex: 0,
+                  groupName: "Installed",
+                  iconBackground: "transparent",
+                  iconUrl: provider.info.icon,
+                  id: provider.info.rdns,
+                  index,
+                  name: provider.info.name,
+                  rdns: provider.info.rdns,
+                },
               })),
             ];
           });
@@ -504,8 +518,7 @@ export const buildWagmiConfig = (
       );
       const solanaGroup = getSolanaConnectors({
         connection: opts.solanaConnection,
-        forceWalletConnectOnly: opts.forceWalletConnectOnly,
-        variant: opts.variant,
+        walletCatalogue: opts.walletCatalogue,
         wallets: [wallet],
       });
       const dynamicWalletList = customizeWalletList([solanaGroup]);

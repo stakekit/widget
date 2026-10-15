@@ -1,15 +1,15 @@
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import { projectTransactionWorkflowStarted } from "../../services/events/widget-domain-events";
-import { resetEarnEntryIntentForOwnerAtom } from "./state/earn-selection/state/atoms";
+import { clearEarnEntryAmountsForOwnerAtom } from "./state/earn-selection/state/atoms";
 
 export const earnEntryIntentEventProjectionAtom = appRuntime
   .atom((context) =>
     projectTransactionWorkflowStarted(
       (event) =>
         Effect.sync(() =>
-          context.set(resetEarnEntryIntentForOwnerAtom, event.owner)
+          context.set(clearEarnEntryAmountsForOwnerAtom, event.owner)
         ),
       "Earn Entry Intent projection failed."
     )

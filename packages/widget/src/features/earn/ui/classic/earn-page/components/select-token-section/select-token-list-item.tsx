@@ -1,4 +1,9 @@
 import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../../../shared/lib/number-format";
 import {
   SelectModalItem,
   SelectModalItemContainer,
@@ -6,13 +11,14 @@ import {
 import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import type { EarnTokenOption } from "../../../../../state/earn-selection";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
+import type { EarnTokenSelectionItem } from "../../../../../state/token-selection";
 import { selectItemText } from "../../styles.css";
 
 type Props = {
-  item: EarnTokenOption;
+  item: EarnTokenSelectionItem;
   isSelected: boolean;
-  onTokenBalanceSelect: (tokenBalance: EarnTokenOption) => void;
+  onTokenBalanceSelect: (tokenBalance: EarnTokenSelectionItem) => void;
 };
 
 export const SelectTokenListItem = ({
@@ -20,12 +26,19 @@ export const SelectTokenListItem = ({
   isSelected,
   onTokenBalanceSelect,
 }: Props) => {
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+
   const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
     closeModal,
   }) => {
     onTokenBalanceSelect(item);
     closeModal();
   };
+
+  const yieldsCount = t("select_token.yields_count", {
+    count: item.availableYields.length,
+  });
 
   return (
     <SelectModalItemContainer>
@@ -52,6 +65,25 @@ export const SelectTokenListItem = ({
 
             <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
               {item.token.name}
+            </Text>
+          </Box>
+
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="flex-end"
+            flexShrink={0}
+            gap="1"
+          >
+            {item.fundedAmount && (
+              <Text variant={{ weight: "normal" }}>
+                {formatTokenAmount(item.fundedAmount, locale)}
+              </Text>
+            )}
+            <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
+              {item.fundedUsd
+                ? `${formatUsd(item.fundedUsd, locale)} · ${yieldsCount}`
+                : yieldsCount}
             </Text>
           </Box>
         </Box>

@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import {
   selectWidgetBootstrapSnapshot,
   WidgetConfigService,

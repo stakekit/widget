@@ -19,11 +19,7 @@ export {
   formatRewardTokenLabel,
 } from "./model/yield-details-formatters";
 export type { YieldSummaryProvider } from "./model/yield-summary";
-export {
-  MultiYieldsKey,
-  multiYieldsByIdAtom,
-  visibleMultiYieldsAtom,
-} from "./state/multi-yields";
+export { MultiYieldsKey, multiYieldsByIdAtom } from "./state/multi-yields";
 export {
   CurrentRewardsSummaryKey,
   type CurrentYieldKycGate,

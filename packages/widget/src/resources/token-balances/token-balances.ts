@@ -1,5 +1,5 @@
 import { Data, Duration, Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../domain/finance/models";
 import type { WalletScopeKey } from "../../domain/wallet/wallet-scope";
@@ -24,12 +24,7 @@ export class TokenBalancesError extends Data.TaggedError("TokenBalancesError")<{
 const toTokenBalancesScanCommand = (
   scope: WalletScopeKey
 ): TokenBalanceScanCommand => ({
-  addresses: {
-    address: scope.address,
-    ...(scope.additionalAddresses
-      ? { additionalAddresses: scope.additionalAddresses }
-      : {}),
-  },
+  address: scope.address,
   network: scope.network,
 });
 

@@ -44,7 +44,8 @@ export type SKEip712TypedData = {
   >;
 };
 
-type DecodedEVMTransactionFields = {
+/** EVM transaction. The host wallet selects the nonce. */
+type DecodedEVMTransaction = {
   to: Hex;
   from: Hex;
   data: Hex;
@@ -63,13 +64,25 @@ type DecodedEVMTransactionFields = {
     }
 );
 
-type DecodedEVMTransaction = DecodedEVMTransactionFields & {
-  nonce: Hex;
-};
-
-type DecodedBorrowEVMTransaction = DecodedEVMTransactionFields & {
-  nonce?: Hex;
-};
+/** Borrow EVM transaction. `type` follows the API; fee fields are `undefined` unless the API quotes them. The host wallet selects the nonce. */
+type DecodedBorrowEVMTransaction = {
+  to: Hex;
+  from: Hex;
+  data: Hex;
+  value: Hex | undefined;
+  gas: Hex;
+  chainId: Hex;
+} & (
+  | {
+      type: "0x0";
+      gasPrice: Hex | undefined;
+    }
+  | {
+      type: "0x2";
+      maxFeePerGas: Hex | undefined;
+      maxPriorityFeePerGas: Hex | undefined;
+    }
+);
 
 type DecodedSolanaTransaction = string;
 
@@ -120,9 +133,9 @@ type DecodedSubstrateTransaction = {
   readonly metadataRpc: Hex;
 };
 
-type EVMTx = { type: "evm"; tx: DecodedEVMTransaction };
-type SolanaTx = { type: "solana"; tx: DecodedSolanaTransaction };
-type TonTx = { type: "ton"; tx: DecodedTonTransaction };
+export type EvmTx = { type: "evm"; tx: DecodedEVMTransaction };
+export type SolanaTx = { type: "solana"; tx: DecodedSolanaTransaction };
+export type TonTx = { type: "ton"; tx: DecodedTonTransaction };
 
 export type TronTx = { type: "tron"; tx: DecodedTronTransaction };
 export type BittensorTx = {
@@ -130,13 +143,13 @@ export type BittensorTx = {
   tx: DecodedSubstrateTransaction;
 };
 
-export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
+export type SKTx = EvmTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
 export type SKBorrowTx = { type: "evm"; tx: DecodedBorrowEVMTransaction };
 
 export type SKNetwork = Network;
 
-type SKToken = {
+export type SKToken = {
   readonly symbol: string;
   readonly name: string;
   readonly decimals: number;
@@ -148,7 +161,7 @@ type SKToken = {
   readonly feeConfigurationId?: string;
 };
 
-type ActionArguments = {
+export type SKActionArguments = {
   readonly amount?: string;
   readonly amountRaw?: string;
   readonly amounts?: ReadonlyArray<string>;
@@ -184,7 +197,7 @@ type ActionArguments = {
   readonly tokenId?: string;
 };
 
-type ClassicActionType =
+export type SKActionType =
   | "STAKE"
   | "UNSTAKE"
   | "WITHDRAW_REQUEST"
@@ -208,7 +221,7 @@ type ClassicActionType =
   | "VERIFY_WITHDRAW_CREDENTIALS"
   | "DELEGATE";
 
-type ClassicTransactionType =
+export type SKTransactionType =
   | "SWAP"
   | "DEPOSIT"
   | "APPROVAL"
@@ -268,11 +281,11 @@ type ClassicTransactionType =
 
 export type ActionMeta = {
   actionId: string;
-  actionType: ClassicActionType;
+  actionType: SKActionType;
   address?: string;
   amount: string | null;
   amountRaw?: string | null;
-  rawArguments?: ActionArguments | null;
+  rawArguments?: SKActionArguments | null;
   yieldId?: string;
   inputToken: SKToken | undefined;
   providersDetails: Array<{
@@ -289,20 +302,34 @@ type NonNullishValue = NonNullable<unknown>;
 
 export type SKTxMeta = ActionMeta & {
   txId: string;
-  txType: ClassicTransactionType;
+  txType: SKTransactionType;
   structuredTransaction?: NonNullishValue | null;
   annotatedTransaction?: NonNullishValue | null;
   gasEstimate?: string;
 };
 
-type SKTransactionResult =
+/**
+ * Outcome of `SKWallet.sendTransaction`. A bare string is the broadcast hash.
+ * `cancelled` means the user declined in the wallet and nothing was broadcast.
+ */
+export type SKTransactionResult =
   | string
   | { type: "success"; txHash: string }
+  | { type: "cancelled" }
+  | { type: "error"; error: string };
+
+/**
+ * Outcome of `SKWallet.signMessage`. A bare string is the signature.
+ * `cancelled` means the user declined in the wallet.
+ */
+export type SKSignMessageResult =
+  | string
+  | { type: "success"; signature: string }
+  | { type: "cancelled" }
   | { type: "error"; error: string };
 
 export type SKWallet = {
-  signMessage: (message: string) => Promise<string>;
-  signTypedData?: (typedData: SKEip712TypedData) => Promise<string>;
+  signMessage: (message: string) => Promise<SKSignMessageResult>;
   switchChain: (chainId: number) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<SKTransactionResult>;
@@ -343,43 +370,94 @@ export type SKBorrowTxMeta = {
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
     | "DISABLE_COLLATERAL"
-    | "BUNDLE";
+    | "BUNDLE"
+    | "WRAP";
 };
 
+/**
+ * Outcome of `SKBorrowWallet.sendBorrowTransaction`.
+ *
+ * - `success`: the transaction was broadcast. Resolve as soon as it is
+ *   broadcast; do not wait for confirmation.
+ * - `cancelled`: the user declined in the wallet. Nothing was broadcast.
+ * - `error`: the request failed. Include `txHash` whenever the transaction
+ *   was broadcast before the failure (for example a receipt timeout): the
+ *   Widget then tracks that transaction instead of asking to sign it again.
+ *   Without `txHash`, the Widget treats the step as not broadcast and lets the
+ *   user retry it.
+ */
+export type SKBorrowTxResult =
+  | { readonly type: "success"; readonly txHash: string }
+  | { readonly type: "cancelled" }
+  | {
+      readonly type: "error";
+      readonly error: string;
+      readonly txHash?: string;
+    };
+
+/** Outcome of `SKBorrowWallet.signTypedData`. */
+export type SKBorrowSignatureResult =
+  | { readonly type: "success"; readonly signature: string }
+  | { readonly type: "cancelled" }
+  | { readonly type: "error"; readonly error: string };
+
+/**
+ * External provider wallet for Borrow. Report outcomes through the returned
+ * result; a rejected Promise is treated as an `error` without `txHash`.
+ */
 export type SKBorrowWallet = SKWallet & {
-  sendBorrowTransaction(
+  /** Signs a Borrow EIP-712 payload. */
+  readonly signTypedData: (
+    typedData: SKEip712TypedData,
+    txMeta: SKBorrowTxMeta
+  ) => Promise<SKBorrowSignatureResult>;
+  /** Broadcasts a Borrow transaction. */
+  readonly sendBorrowTransaction: (
     tx: SKBorrowTx,
     txMeta: SKBorrowTxMeta
-  ): Promise<SKTransactionResult>;
+  ) => Promise<SKBorrowTxResult>;
 };
 
 export type SKExternalProviders = {
   currentChain?: SupportedSKChainIds;
   currentAddress: string;
   initToken?: `${string}-${string}`;
+  /** @deprecated No effect. Borrow capability follows `borrowEnabled`. */
   readonly supportsBorrow?: false;
   supportedChainIds?: SupportedSKChainIds[];
   type: "generic";
   provider: SKWallet;
 };
 
-export type SKBorrowExternalProviders = Omit<
-  SKExternalProviders,
-  "provider" | "supportsBorrow"
-> & {
-  readonly supportsBorrow: true;
+/** External provider for hosts that set `borrowEnabled`. */
+export type SKBorrowExternalProviders = {
+  readonly currentChain?: SupportedSKChainIds;
+  readonly currentAddress: string;
+  readonly initToken?: `${string}-${string}`;
+  readonly supportedChainIds?: ReadonlyArray<SupportedSKChainIds>;
+  readonly type: "generic";
   readonly provider: SKBorrowWallet;
 };
 
-export type HostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
+export type SKHostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
 
-type TranslationTree = Readonly<{
-  [key: string]: string | TranslationTree;
+export type SKTranslationTree = Readonly<{
+  [key: string]: string | SKTranslationTree;
 }>;
 
-type Languages = "en" | "fr";
+export type SKLanguage = "en" | "fr";
 
-type TrackPage =
+/**
+ * Which Borrow markets the widget lists: `"enabled"` lists only markets
+ * enabled for the API key's project; `"all"` lists every supported market.
+ */
+export type SKBorrowMarketsScope = "all" | "enabled";
+
+export type SKCustomTranslations = Partial<
+  Record<SKLanguage, { translation: SKTranslationTree }>
+>;
+
+export type SKTrackPage =
   | "Earn"
   | "Borrow"
   | "Borrow review"
@@ -400,7 +478,7 @@ type TrackPage =
   | "Unstake complete"
   | "Pending action complete";
 
-type TrackEvent =
+export type SKTrackEvent =
   | "Tab clicked"
   | "Connect wallet clicked"
   | "Add ledger account clicked"
@@ -443,35 +521,40 @@ type TrackEvent =
   | "system/initYield"
   | "system/initToken";
 
-export type TrackingConfig = {
+export type SKTrackingConfig = {
   trackEvent?: (
-    event: TrackEvent,
+    event: SKTrackEvent,
     properties?: Record<string, unknown>
   ) => void;
   trackPageView?: (
-    page: TrackPage,
+    page: SKTrackPage,
     properties?: Record<string, unknown>
   ) => void;
 };
 
-export type PreferredTokenYieldsPerNetwork = Readonly<
+export type SKPreferredTokenYieldsPerNetwork = Readonly<
   Record<string, Readonly<Record<`${string}-${string}`, string>>>
 >;
 
 type SettingsPropsBase = {
+  /** StakeKit API key. Read at mount; remount the widget to change it. */
   apiKey: string;
+  /** StakeKit API base URL. Read at mount; remount the widget to change it. */
   baseUrl?: string;
+  /** Borrow API URL. Read at mount; remount the widget to change it. */
   borrowApiUrl?: string;
+  /** Borrow market catalog listed for new borrows. Defaults to `"all"`. */
+  borrowMarketsScope?: SKBorrowMarketsScope;
+  /** Yields API URL. Read at mount; remount the widget to change it. */
   yieldsApiUrl?: string;
   theme?: SKTheme;
-  tracking?: TrackingConfig;
+  tracking?: SKTrackingConfig;
   onMountAnimationComplete?: () => void;
-  forceWalletConnectOnly?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;
   disableAutoScrollToTop?: boolean;
-  language?: Languages;
+  language?: SKLanguage;
   isSafe?: boolean;
   disableInjectedProviderDiscovery?: boolean;
   mapWalletFn?: (props: {
@@ -485,9 +568,7 @@ type SettingsPropsBase = {
     iconBackground: string;
   };
   walletPolicy?: SKWalletPolicy;
-  customTranslations?: Partial<
-    Record<Languages, { translation: TranslationTree }>
-  >;
+  customTranslations?: SKCustomTranslations;
   /**
    * @deprecated Earn now always derives project-enabled, enterable options from
    * the canonical Earn Catalog. This setting has no effect.
@@ -512,7 +593,7 @@ type SettingsPropsBase = {
   institutionalWallets?: boolean;
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
-  preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
+  preferredTokenYieldsPerNetwork?: SKPreferredTokenYieldsPerNetwork;
   portalContainer?: HTMLElement;
   tonConnectManifestUrl?: string;
   initialChain?: SupportedSKChainIds;
@@ -520,10 +601,12 @@ type SettingsPropsBase = {
 
 type BorrowProviderSettings =
   | {
+      /** Enables Borrow. Read at mount; remount the widget to change it. */
       borrowEnabled?: false;
       externalProviders?: SKExternalProviders | SKBorrowExternalProviders;
     }
   | {
+      /** Enables Borrow. Read at mount; remount the widget to change it. */
       borrowEnabled?: boolean;
       externalProviders?: SKBorrowExternalProviders;
     };
@@ -531,7 +614,7 @@ type BorrowProviderSettings =
 export type SettingsProps = SettingsPropsBase & BorrowProviderSettings;
 
 type SKBundleVariantProps = {
-  readonly variant: Exclude<HostVariant, "zerion">;
+  readonly variant: Exclude<SKHostVariant, "zerion">;
 };
 
 export type BundledSKWidgetProps = SettingsProps &

@@ -1,8 +1,7 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { splitExpandedContainerQuery } from "../../../../shared/styles/tokens/breakpoints";
-import { DASHBOARD_OUTLET_PADDING } from "../../../../shared/styles/tokens/layout";
 
 const pane = style({
   minWidth: 0,
@@ -34,19 +33,6 @@ export const detailsPaneWrapper = style([
   },
 ]);
 
-export const detailsScroll = style({
-  bottom: 0,
-  boxSizing: "border-box",
-  left: 0,
-  marginRight: `calc(-1 * ${DASHBOARD_OUTLET_PADDING})`,
-  overflowY: "auto",
-  paddingRight: DASHBOARD_OUTLET_PADDING,
-  position: "absolute",
-  right: 0,
-  scrollbarGutter: "stable",
-  top: 0,
-});
-
 export const assetSelectorList = style({
   display: "flex",
   flexDirection: "column",
@@ -54,12 +40,16 @@ export const assetSelectorList = style({
   maxHeight: "min(520px, calc(100vh - 220px))",
   overflowY: "auto",
   paddingBottom: "8px",
-  paddingTop: "8px",
   scrollbarGutter: "stable",
 });
 
 export const assetSelectorSectionTitle = style({
-  padding: "8px 5px",
+  alignItems: "baseline",
+  display: "flex",
+  gap: "8px",
+  justifyContent: "space-between",
+  // Right inset matches row padding + border so the label sits over the rates.
+  padding: "8px 13px 8px 5px",
 });
 
 export const assetSelectorGroup = style({
@@ -116,6 +106,13 @@ export const assetSelectorText = style({
   minWidth: 0,
 });
 
+export const assetSelectorLabelLine = style({
+  alignItems: "baseline",
+  display: "flex",
+  gap: "8px",
+  minWidth: 0,
+});
+
 export const assetSelectorLabel = style([
   atoms({
     color: "tokenSelect",
@@ -159,23 +156,16 @@ export const detailCard = style([
   atoms({
     background: "stakeSectionBackground",
     borderRadius: "xl",
-    display: "flex",
-    flexDirection: "column",
-    gap: "1",
     px: "4",
     py: "4",
   }),
 ]);
 
-globalStyle(`${detailCard} > *:last-child`, {
-  borderBottom: 0,
-});
-
 export const infoNote = style([
   atoms({
     background: "stakeSectionBackground",
     borderColor: "backgroundMuted",
-    borderRadius: "base",
+    borderRadius: "xl",
     px: "3",
     py: "3",
   }),
@@ -191,18 +181,3 @@ export const detailsHeader = style({
   gap: "12px",
   minWidth: 0,
 });
-
-export const metricGrid = style({
-  display: "grid",
-  gap: "8px",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-});
-
-export const metricCard = style([
-  atoms({
-    background: "stakeSectionBackground",
-    borderRadius: "base",
-    px: "3",
-    py: "3",
-  }),
-]);

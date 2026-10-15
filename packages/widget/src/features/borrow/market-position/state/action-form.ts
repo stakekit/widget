@@ -1,6 +1,6 @@
 import { Data, Effect, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
@@ -333,7 +333,7 @@ export const borrowWithdrawFormAtom = Atom.family(
     ).pipe(Atom.withLabel("borrowWithdrawFormAtom"))
 );
 
-const borrowCollateralToggleFormAtom = Atom.family(
+export const borrowCollateralToggleFormAtom = Atom.family(
   (key: BorrowPositionActionRouteKey) =>
     Atom.make<BorrowCollateralToggleFormView | null>((get) => {
       const current = getCurrentPositionAction(get, key);
@@ -352,7 +352,8 @@ const borrowCollateralToggleFormAtom = Atom.family(
     }).pipe(Atom.withLabel("borrowCollateralToggleFormAtom"))
 );
 
-const getCurrentPreparation = (
+/** The current form for a position action; a form that cannot submit stops Review. */
+const getCurrentForm = (
   context: Atom.FnContext,
   key: BorrowPositionActionRouteKey
 ) => {
@@ -363,12 +364,12 @@ const getCurrentPreparation = (
 
   switch (current.action.pendingContext.type) {
     case "repay":
-      return context(borrowRepayFormAtom(key))?.preparation ?? null;
+      return context(borrowRepayFormAtom(key));
     case "withdraw":
-      return context(borrowWithdrawFormAtom(key))?.preparation ?? null;
+      return context(borrowWithdrawFormAtom(key));
     case "disableCollateral":
     case "enableCollateral":
-      return context(borrowCollateralToggleFormAtom(key))?.preparation ?? null;
+      return context(borrowCollateralToggleFormAtom(key));
   }
 };
 
@@ -381,16 +382,16 @@ export const startBorrowPositionActionReviewAtom = appRuntime
         });
       }
 
-      const preparation = getCurrentPreparation(context, key);
+      const form = getCurrentForm(context, key);
       const scope = context(walletScopeAtom);
-      if (preparation?._tag !== "Ready" || !scope) {
+      if (!form?.canSubmit || form.preparation._tag !== "Ready" || !scope) {
         return { _tag: "Unavailable" } as const;
       }
+      const preparation = form.preparation;
 
-      const entry = {
-        _tag: "MarketPosition" as const,
-        marketId: preparation.review.command.args.marketId,
-      };
+      // The page's market, not the command's: a pool collateral action
+      // targets its own reserve, which has no position page of its own.
+      const entry = { _tag: "MarketPosition" as const, marketId: key.marketId };
       return yield* context.setResult(startBorrowTransactionFlowAtom, {
         ...preparation.review,
         entry,

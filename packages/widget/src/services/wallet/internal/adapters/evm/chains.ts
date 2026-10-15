@@ -1,4 +1,3 @@
-import type { Chain } from "@stakekit/rainbowkit";
 import {
   arbitrum,
   avalanche,
@@ -28,6 +27,7 @@ import {
   type WalletEvmNetwork,
 } from "../../../../../domain/wallet/network";
 import { getNetworkLogo } from "../../../network-assets";
+import type { Chain } from "../../../wallet-descriptors";
 
 export type EvmChainsMap = {
   [Key in WalletEvmNetwork]: {

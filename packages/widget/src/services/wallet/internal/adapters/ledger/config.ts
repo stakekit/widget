@@ -1,6 +1,6 @@
-import type { WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import type { InitParams } from "../../../../../services/wallet/init-params";
+import type { WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import type { EnabledChainsMap } from "./ledger-connector";

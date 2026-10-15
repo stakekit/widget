@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
-import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -12,78 +10,13 @@ import {
   resolveSelectedPositionDetailsActionMode,
   shouldShowPositionDetailsActionTabs,
 } from "../../../model/hub";
-import { AmountBlock } from "../../classic/components/amount-block";
 import { PositionDetailsUnstakeActions } from "../../classic/components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "../../classic/components/position-details-validator-modal";
-import { StaticActionBlock } from "../../classic/components/static-action-block";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
+import { PositionDetailsPendingActions } from "../../components/position-details-pending-actions";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { PositionDetailsStakeActions } from "./position-details-stake-actions";
 import { container } from "./styles.css";
-
-const PositionDetailsPendingActions = ({
-  positionDetails,
-}: {
-  positionDetails: ReturnType<typeof usePositionDetails>;
-}) => {
-  const { t } = useTranslation();
-  const {
-    integrationData: integrationDataValue,
-    pendingActions: pendingActionsValue,
-    onPendingActionAmountChange,
-    onPendingActionClick,
-  } = positionDetails;
-
-  if (!integrationDataValue || !pendingActionsValue?.length) return null;
-
-  return (
-    <>
-      {pendingActionsValue.map((val) =>
-        val.amount ? (
-          <AmountBlock
-            key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
-            variant="action"
-            onAmountChange={(amount) =>
-              onPendingActionAmountChange({
-                balanceType: val.yieldBalance.type,
-                token: val.yieldBalance.token,
-                actionType: val.pendingAction.type,
-                passthrough: val.pendingAction.passthrough,
-                amount,
-              })
-            }
-            value={val.amount}
-            canChangeAmount
-            onClick={() =>
-              onPendingActionClick({
-                pendingAction: val.pendingAction,
-                yieldBalance: val.yieldBalance,
-              })
-            }
-            label={t(
-              `position_details.pending_action_button.${
-                val.pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
-              }`,
-              {
-                defaultValue: humanizePendingActionType(val.pendingAction.type),
-              }
-            )}
-            onMaxClick={null}
-            formattedAmount={val.formattedAmount}
-            balance={null}
-          />
-        ) : (
-          <StaticActionBlock
-            {...val}
-            key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
-            onPendingActionClick={onPendingActionClick}
-            yieldId={integrationDataValue.id}
-          />
-        )
-      )}
-    </>
-  );
-};
 
 export const PositionDetailsHub = () => {
   const { t } = useTranslation();
@@ -153,7 +86,10 @@ export const PositionDetailsHub = () => {
           />
         ) : null}
 
-        <PositionDetailsPendingActions positionDetails={positionDetails} />
+        <PositionDetailsPendingActions
+          positionDetails={positionDetails}
+          presentation="dashboard"
+        />
 
         {mode === "unstake" ? <PositionDetailsUnstakeActions /> : null}
         {mode === "stake" ? <PositionDetailsStakeActions /> : null}

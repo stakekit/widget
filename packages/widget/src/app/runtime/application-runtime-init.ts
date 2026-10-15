@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import type { RouteObject } from "react-router";
 import type { SKHostConfiguration } from "../../public-api/react-types";
 

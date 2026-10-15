@@ -6,6 +6,7 @@ import type {
   HistoryPeriod,
   HistoryPoint,
 } from "../../../../../domain/portfolio/models";
+import { formatDateTime } from "../../../../../shared/lib/date";
 import { useDelayedBusy } from "../../../../../shared/react/use-delayed-busy";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -33,6 +34,10 @@ type Props = {
   valueFormatter?: (value: number) => string;
 };
 
+// History is sampled per day, week, or month at UTC midnight; formatting in
+// any other zone would show the neighbouring calendar day.
+const historyTimeZone = DateTime.zoneMakeNamedUnsafe("UTC");
+
 const height = 150;
 
 const accentColor = vars.color.primaryButtonBackground;
@@ -42,6 +47,26 @@ type EndpointDotProps = {
   cy?: number;
   index?: number;
 };
+
+const ChartDotGlyph = ({
+  cx,
+  cy,
+}: {
+  readonly cx: number;
+  readonly cy: number;
+}) => (
+  <>
+    <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
+    <circle
+      cx={cx}
+      cy={cy}
+      fill={accentColor}
+      r={3.5}
+      stroke={vars.color.background}
+      strokeWidth={1.5}
+    />
+  </>
+);
 
 export type ChartTooltipProps = {
   active?: boolean;
@@ -77,7 +102,8 @@ export const ChartTooltip = ({
   const formattedValue = formatValue
     ? formatValue(point.value)
     : `${point.value}`;
-  const formattedDate = DateTime.formatUtc(point.timestamp, {
+  const formattedDate = formatDateTime(point.timestamp, {
+    timeZone: historyTimeZone,
     locale,
     month: "short",
     day: "numeric",
@@ -152,15 +178,7 @@ export const HistoryChart = ({
 
     return (
       <g key={`${chartId}-endpoint`}>
-        <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
-        <circle
-          cx={cx}
-          cy={cy}
-          fill={accentColor}
-          r={3.5}
-          stroke={vars.color.background}
-          strokeWidth={1.5}
-        />
+        <ChartDotGlyph cx={cx} cy={cy} />
       </g>
     );
   };
@@ -172,15 +190,7 @@ export const HistoryChart = ({
 
     return (
       <g key={`${chartId}-active-dot`}>
-        <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
-        <circle
-          cx={cx}
-          cy={cy}
-          fill={accentColor}
-          r={3.5}
-          stroke={vars.color.background}
-          strokeWidth={1.5}
-        />
+        <ChartDotGlyph cx={cx} cy={cy} />
       </g>
     );
   };

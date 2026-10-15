@@ -35,17 +35,20 @@ export const getLegacyApiMock = () => [
     ]);
   }),
 
-  http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-    await mockDelay();
+  http.get(
+    legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+    async () => {
+      await mockDelay();
 
-    return HttpResponse.json([
-      {
-        token: defaultToken,
-        amount: "0",
-        availableYields: [defaultYield.id],
-      },
-    ]);
-  }),
+      return HttpResponse.json([
+        {
+          token: defaultToken,
+          amount: "0",
+          availableYields: [defaultYield.id],
+        },
+      ]);
+    }
+  ),
 
   http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
     await mockDelay();

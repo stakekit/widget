@@ -1,17 +1,24 @@
 import { Duration, Option, Stream } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
+import type { DashboardYieldCategory } from "../../../domain/earn/contract";
 import type { EarnValidatorKey } from "../../../domain/earn/models";
-import { isYieldActionArgRequired } from "../../../domain/earn/yield";
-import type { YieldId } from "../../../domain/identity/identifiers";
+import { getMaxSelectedValidators } from "../../../domain/earn/validator";
+import {
+  getYieldProviderOptions,
+  isYieldActionArgRequired,
+} from "../../../domain/earn/yield";
+import type {
+  ProviderOption,
+  YieldId,
+} from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
   removeValidator,
   selectCategory,
-  selectProvider,
+  selectProviderOption,
   selectToken,
   selectTronResource,
   selectValidator,
@@ -28,6 +35,7 @@ import {
   loadMoreEarnValidatorsPageAtom,
 } from "./earn-selection/state/view-resources";
 import type { EarnTokenKey } from "./earn-selection/types";
+import { earnProviderOptionAtom } from "./flow-target";
 
 export type { EarnSelection, EarnTokenOption } from "./earn-selection/types";
 
@@ -132,6 +140,24 @@ export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
   } as const;
 }).pipe(Atom.withLabel("earnSelectionValidatorOptionsViewAtom"));
 
+/**
+ * Advertised `providerId` options in order. Provider metadata is display-only:
+ * an option without a matching provider stays listed under its raw value.
+ */
+export const earnSelectionProviderOptionsViewAtom = Atom.make((get) => {
+  const view = get(internalEarnSelectionViewAtom);
+  const options = view.selection.yield
+    ? getYieldProviderOptions(view.selection.yield)
+    : [];
+  const items = options.map((value) => get(earnProviderOptionAtom(value)));
+
+  return {
+    canSelect: items.length > 1,
+    items,
+    selected: view.form.providerOption,
+  } as const;
+}).pipe(Atom.withLabel("earnSelectionProviderOptionsViewAtom"));
+
 export const setEarnSelectionValidatorSearchAtom = Atom.fnSync(
   (search: string, context) => context.set(validatorSearchAtom, search)
 ).pipe(Atom.withLabel("setEarnSelectionValidatorSearchAtom"));
@@ -182,6 +208,7 @@ export const selectEarnSelectionValidatorAtom = Atom.fnSync(
       selectValidator({
         fallbackSelection: view.selected,
         intent: context(earnEntryIntentAtom),
+        maxSelected: getMaxSelectedValidators(selectedYield.token.network),
         multiselect: isYieldActionArgRequired(
           selectedYield,
           "enter",
@@ -208,10 +235,10 @@ export const removeEarnSelectionValidatorAtom = Atom.fnSync(
 ).pipe(Atom.withLabel("removeEarnSelectionValidatorAtom"));
 
 export const selectEarnSelectionProviderAtom = Atom.fnSync(
-  (providerYieldId: YieldId, context) =>
+  (providerOption: ProviderOption, context) =>
     context.set(
       earnEntryIntentAtom,
-      selectProvider(context(earnEntryIntentAtom), providerYieldId)
+      selectProviderOption(context(earnEntryIntentAtom), providerOption)
     )
 ).pipe(Atom.withLabel("selectEarnSelectionProviderAtom"));
 

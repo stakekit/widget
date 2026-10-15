@@ -43,18 +43,22 @@ const positionDetailsStakeHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;
 }) => val.integrationData?.status.enter ?? false;
 
+/**
+ * `exitBalance` is the single active token sum; it is absent when the position
+ * holds several active token identities, which have no scalar exit amount.
+ */
 export const positionDetailsExitHasContent = (val: {
   canChangeUnstakeAmount: boolean | null;
   canUnstake: boolean;
+  exitBalance?: unknown;
   integrationData?: unknown;
   positionBalancesByType?: unknown;
-  reducedStakedOrLiquidBalance?: unknown;
   unstakeToken?: unknown;
 }) =>
   !!val.integrationData &&
   !!val.positionBalancesByType &&
   val.canUnstake &&
-  !!val.reducedStakedOrLiquidBalance &&
+  !!val.exitBalance &&
   val.canChangeUnstakeAmount !== null &&
   !!val.unstakeToken;
 
@@ -66,9 +70,9 @@ export const positionDetailsExitHasContent = (val: {
 export const resolvePositionDetailsActionCapabilities = (val: {
   canChangeUnstakeAmount: boolean | null;
   canUnstake: boolean;
+  exitBalance?: unknown;
   integrationData?: { status: { enter: boolean } } | null;
   positionBalancesByType?: unknown;
-  reducedStakedOrLiquidBalance?: unknown;
   unstakeToken?: unknown;
 }): PositionDetailsActionCapabilities => ({
   canStake: positionDetailsStakeHasContent(val),

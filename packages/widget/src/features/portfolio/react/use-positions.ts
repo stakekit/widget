@@ -1,28 +1,24 @@
 import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useSKWallet } from "../../wallet/index";
 import {
   type PositionItem,
-  positionsTableDataAtom,
+  positionsViewAtom,
 } from "../state/read-models/positions";
 
+const noPositions: ReadonlyArray<PositionItem> = [];
+
 export const usePositions = () => {
-  const positionsResult = useAtomValue(positionsTableDataAtom);
-  const positions = AsyncResult.getOrElse(
-    positionsResult,
-    (): PositionItem[] => []
-  );
+  const positionsView = useAtomValue(positionsViewAtom);
+  const positions =
+    positionsView._tag === "Ready" ? positionsView.value : noPositions;
   const isConnected = useSKWallet()?.status === "connected";
-  const showPositions =
-    isConnected &&
-    (positions.length > 0 ||
-      (!positionsResult.waiting && !AsyncResult.isFailure(positionsResult)));
 
   return {
     listData: ["header" as const, ...positions],
     positions,
-    positionsResult,
-    showPositions,
+    positionsView,
+    // A refetch or a failed refetch keeps shown positions on screen.
+    showPositions: isConnected && positionsView._tag === "Ready",
   };
 };
 

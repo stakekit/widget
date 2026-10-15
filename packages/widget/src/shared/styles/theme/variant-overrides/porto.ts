@@ -57,12 +57,5 @@ export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
     summaryLabelApyColor: vars.color.white,
     summaryLabelAvailableBackground: portoPalette.greyThree,
     summaryLabelAvailableColor: vars.color.white,
-
-    connectKit: {
-      modalBackground: portoPalette.greyOne,
-      profileForeground: portoPalette.greyOne,
-      profileAction: portoPalette.greyTwo,
-      profileActionHover: portoPalette.greyThree,
-    },
   },
 };

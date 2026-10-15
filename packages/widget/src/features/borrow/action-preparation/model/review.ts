@@ -6,6 +6,7 @@ import type { BorrowTransactionFlowReview } from "../../../borrow-transaction-fl
 import type {
   BorrowRiskProjection,
   OpenPositionFinancialFacts,
+  OpenPositionOriginationFacts,
   PreparedActionCommonFacts,
   PreparedActionFacts,
 } from "./types";
@@ -16,20 +17,31 @@ export const makeOpenPositionFacts = ({
   collateralFeeAmount,
   collateralToken,
   common,
+  debtPrincipalAmount,
   effectiveCollateralAmount,
   market,
+  originationFeeAmount,
 }: {
   readonly borrowAmount: BigNumber;
   readonly collateralAmount: BigNumber;
   readonly collateralFeeAmount: BigNumber;
   readonly collateralToken: CollateralToken;
   readonly common: PreparedActionCommonFacts & OpenPositionFinancialFacts;
+  readonly debtPrincipalAmount: BigNumber;
   readonly effectiveCollateralAmount: BigNumber;
   readonly market: Market;
+  readonly originationFeeAmount: BigNumber;
 }): PreparedActionFacts => {
+  const origination = {
+    debtPrincipalAmount,
+    loanTokenPriceUsd: market.loanTokenPriceUsd,
+    originationFeeAmount,
+  };
+
   if (borrowAmount.gt(0) && collateralAmount.gt(0)) {
     return {
       ...common,
+      ...origination,
       _tag: "BorrowAndSupply",
       borrowAmount,
       collateralAmount,
@@ -45,6 +57,7 @@ export const makeOpenPositionFacts = ({
   if (borrowAmount.gt(0)) {
     return {
       ...common,
+      ...origination,
       _tag: "Borrow",
       amount: borrowAmount,
       loanTokenAddress: market.loanToken.address,
@@ -74,6 +87,9 @@ const getRiskSummary = (
   risk: BorrowRiskProjection
 ):
   | {
+      readonly currentHealthFactor?: string;
+      readonly currentLtv?: string;
+      readonly maxLtv?: string;
       readonly projectedHealthFactor?: string;
       readonly projectedLtv: string;
       readonly riskStatus: "available";
@@ -84,17 +100,41 @@ const getRiskSummary = (
   }
 
   return {
+    ...(risk.currentHealthFactor == null
+      ? {}
+      : { currentHealthFactor: risk.currentHealthFactor.toString(10) }),
+    ...(risk.currentLtv == null
+      ? {}
+      : { currentLtv: risk.currentLtv.toString(10) }),
+    ...(risk.maxLtv == null ? {} : { maxLtv: risk.maxLtv.toString(10) }),
     ...(risk.projectedHealthFactor == null
       ? {}
-      : { projectedHealthFactor: risk.projectedHealthFactor.toString() }),
-    projectedLtv: risk.projectedLtv.toString(),
+      : { projectedHealthFactor: risk.projectedHealthFactor.toString(10) }),
+    projectedLtv: risk.projectedLtv.toString(10),
     riskStatus: risk.status,
   };
 };
 
-export const toBorrowTransactionFlowReview = (
+const serializeOpenPositionFinancials = (
+  facts: OpenPositionFinancialFacts
+): { readonly [K in keyof OpenPositionFinancialFacts]: string } => ({
+  existingCollateralUsd: facts.existingCollateralUsd.toString(10),
+  existingDebtUsd: facts.existingDebtUsd.toString(10),
+  projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
+  projectedDebtUsd: facts.projectedDebtUsd.toString(10),
+});
+
+const serializeOrigination = (
+  facts: OpenPositionOriginationFacts
+): { readonly [K in keyof OpenPositionOriginationFacts]: string } => ({
+  debtPrincipalAmount: facts.debtPrincipalAmount.toString(10),
+  loanTokenPriceUsd: facts.loanTokenPriceUsd.toString(10),
+  originationFeeAmount: facts.originationFeeAmount.toString(10),
+});
+
+const toCommandAndSummary = (
   facts: PreparedActionFacts
-): BorrowTransactionFlowReview => {
+): Omit<BorrowTransactionFlowReview, "riskVerdict"> => {
   const commonSummary = {
     marketLabel: facts.marketLabel,
     network: facts.network,
@@ -118,13 +158,11 @@ export const toBorrowTransactionFlowReview = (
         },
         summary: {
           ...commonSummary,
+          ...serializeOpenPositionFinancials(facts),
+          ...serializeOrigination(facts),
           action: "borrow",
           borrowAmount: facts.amount.toString(10),
-          existingCollateralUsd: facts.existingCollateralUsd.toString(10),
-          existingDebtUsd: facts.existingDebtUsd.toString(10),
           loanTokenSymbol: facts.loanTokenSymbol,
-          projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
-          projectedDebtUsd: facts.projectedDebtUsd.toString(10),
         },
       };
     case "BorrowAndSupply":
@@ -143,6 +181,8 @@ export const toBorrowTransactionFlowReview = (
         },
         summary: {
           ...commonSummary,
+          ...serializeOpenPositionFinancials(facts),
+          ...serializeOrigination(facts),
           action: "borrowAndSupply",
           borrowAmount: facts.borrowAmount.toString(10),
           collateralAmount: facts.collateralAmount.toString(10),
@@ -150,11 +190,7 @@ export const toBorrowTransactionFlowReview = (
           collateralTokenSymbol: facts.collateralTokenSymbol,
           effectiveCollateralAmount:
             facts.effectiveCollateralAmount.toString(10),
-          existingCollateralUsd: facts.existingCollateralUsd.toString(10),
-          existingDebtUsd: facts.existingDebtUsd.toString(10),
           loanTokenSymbol: facts.loanTokenSymbol,
-          projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
-          projectedDebtUsd: facts.projectedDebtUsd.toString(10),
         },
       };
     case "Supply":
@@ -171,16 +207,13 @@ export const toBorrowTransactionFlowReview = (
         },
         summary: {
           ...commonSummary,
+          ...serializeOpenPositionFinancials(facts),
           action: "supply",
           collateralAmount: facts.amount.toString(10),
           collateralFeeAmount: facts.collateralFeeAmount.toString(10),
           collateralTokenSymbol: facts.collateralTokenSymbol,
           effectiveCollateralAmount:
             facts.effectiveCollateralAmount.toString(10),
-          existingCollateralUsd: facts.existingCollateralUsd.toString(10),
-          existingDebtUsd: facts.existingDebtUsd.toString(10),
-          projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
-          projectedDebtUsd: facts.projectedDebtUsd.toString(10),
         },
       };
     case "Repay":
@@ -254,3 +287,10 @@ export const toBorrowTransactionFlowReview = (
     }
   }
 };
+
+export const toBorrowTransactionFlowReview = (
+  facts: PreparedActionFacts
+): BorrowTransactionFlowReview => ({
+  ...toCommandAndSummary(facts),
+  riskVerdict: facts.riskVerdict,
+});

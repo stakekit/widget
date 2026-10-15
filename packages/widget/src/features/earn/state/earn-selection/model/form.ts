@@ -1,6 +1,9 @@
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
-import { getYieldActionArg } from "../../../../../domain/earn/yield";
+import {
+  getYieldActionArg,
+  resolveYieldProviderOption,
+} from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import {
   hasActivePositionForYield,
@@ -43,7 +46,7 @@ export const canSubmitEarnForm = ({
   }
 
   const providerArg = getYieldActionArg(selectedYield, "enter", "providerId");
-  if (providerArg?.required && form.providerYieldId === null) return false;
+  if (providerArg?.required && form.providerOption === null) return false;
 
   const tronArg = getYieldActionArg(selectedYield, "enter", "tronResource");
   if (tronArg?.required && form.tronResource === null) return false;
@@ -68,7 +71,10 @@ export const resolveForm = ({
   );
 
   return {
-    providerYieldId: resolveProviderYieldId(selectedYield, intent),
+    providerOption: resolveYieldProviderOption(
+      selectedYield,
+      intent.selectedProviderOption
+    ),
     stakeAmount: resolveStakeAmount({
       availableAmount,
       constraint,
@@ -77,27 +83,6 @@ export const resolveForm = ({
     tronResource: resolveTronResource(selectedYield, intent),
     useMaxAmount: constraint.type === "force-max" ? true : intent.useMaxAmount,
   };
-};
-
-const resolveProviderYieldId = (
-  selectedYield: EarnYieldWithProvider,
-  intent: EarnEntryIntent
-) => {
-  const providerArg = getYieldActionArg(selectedYield, "enter", "providerId");
-  const providerYieldIds = providerArg?.options ?? [];
-
-  if (
-    intent.selectedProviderYieldId &&
-    providerYieldIds.includes(intent.selectedProviderYieldId)
-  ) {
-    return intent.selectedProviderYieldId;
-  }
-
-  if (!providerArg?.required || providerYieldIds.length === 0) {
-    return null;
-  }
-
-  return providerYieldIds[0] ?? null;
 };
 
 const resolveTronResource = (

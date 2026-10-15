@@ -1,6 +1,6 @@
 import { Effect } from "effect";
+import { HttpClient } from "effect/http";
 import * as Schema from "effect/Schema";
-import { HttpClient } from "effect/unstable/http";
 import { describe, expect, it } from "vitest";
 import * as BorrowApi from "../../src/generated/api/borrow";
 import * as BorrowClient from "../../src/generated/api/borrow-client";
@@ -11,30 +11,27 @@ describe("generated Borrow API", () => {
     expect(Schema.isSchema(BorrowApi.MarketDto)).toBe(true);
     expect(Schema.isSchema(BorrowApi.PositionDto)).toBe(true);
     expect(Schema.isSchema(BorrowApi.ActionDto)).toBe(true);
+    expect(Schema.isSchema(BorrowApi.TokenDto)).toBe(true);
     expect(Schema.isSchema(BorrowApi.TransactionDto)).toBe(true);
     expect("make" in BorrowApi).toBe(false);
   });
 
-  it("exposes typed Effect client operations separately from schemas", () => {
+  it("exposes only allowlisted client operations", () => {
     const client = BorrowClient.make(
       HttpClient.make(() => Effect.die("operation must not execute"))
     );
 
-    expect(client).toEqual(
-      expect.objectContaining({
-        ActionsControllerExecuteActionV1: expect.any(Function),
-        ActionsControllerGetActionV1: expect.any(Function),
-        ActionsControllerGetActionsV1: expect.any(Function),
-        ActionsControllerStepV1: expect.any(Function),
-        HealthControllerHealth: expect.any(Function),
-        IntegrationsControllerGetIntegrationV1: expect.any(Function),
-        IntegrationsControllerGetIntegrationsV1: expect.any(Function),
-        MarketsControllerGetMarketByIdV1: expect.any(Function),
-        MarketsControllerGetMarketsV1: expect.any(Function),
-        PositionsControllerGetPositionsV1: expect.any(Function),
-        TransactionsControllerSubmitTransactionV1: expect.any(Function),
-      })
-    );
+    expect(Object.keys(client).sort()).toEqual([
+      "ActionsControllerExecuteActionV1",
+      "ActionsControllerGetActionV1",
+      "ActionsControllerGetActionsV1",
+      "ActionsControllerStepV1",
+      "IntegrationsControllerGetIntegrationsV1",
+      "MarketsControllerGetMarketsV1",
+      "PositionsControllerGetPositionsV1",
+      "TransactionsControllerSubmitTransactionV1",
+      "httpClient",
+    ]);
     expect(
       Effect.isEffect(client.IntegrationsControllerGetIntegrationsV1(undefined))
     ).toBe(true);

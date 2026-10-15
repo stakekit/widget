@@ -1,6 +1,6 @@
-import type { Chain } from "@stakekit/rainbowkit";
 import { mainnet } from "viem/chains";
 import type { Network } from "../../../../../../domain/network/network";
+import type { Chain } from "../../../../wallet-descriptors";
 import {
   getWalletNetworkLogo,
   getWalletTokenLogo,

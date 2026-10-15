@@ -6,7 +6,7 @@ export const Check = ({
   className,
 }: {
   hw?: number;
-  color?: Exclude<keyof (typeof vars)["color"], "connectKit">;
+  color?: keyof (typeof vars)["color"];
   className?: string;
 }) => (
   <svg

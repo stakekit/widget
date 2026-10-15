@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import {
   ActionCommand,
-  ActionTransaction,
+  ActionTransactionReceipt,
   ManageActionCommand,
   type SubmitSignedTransactionCommand,
   type SubmitTransactionHashCommand,
@@ -16,9 +16,10 @@ import {
   presentApiRequestError,
 } from "./api-operation";
 import type { ActionPreviewRequest } from "./operations";
+import type { ApiClients } from "./transport";
 
 export const makeYieldOperations = (
-  yieldApi: YieldApi.YieldApi,
+  yieldApi: ApiClients<YieldApi.YieldApi>,
   richErrors: RichErrorService["Service"]
 ) => {
   const presentRequestError = presentApiRequestError(richErrors);
@@ -32,7 +33,7 @@ export const makeYieldOperations = (
           "action-enter-request",
           ActionCommand
         )(request.command);
-        return yield* yieldApi
+        return yield* yieldApi.write
           .ActionsControllerEnterYield({ payload })
           .pipe(
             decodeApiResponse("action-enter-preview", YieldAction),
@@ -44,7 +45,7 @@ export const makeYieldOperations = (
           "action-exit-request",
           ActionCommand
         )(request.command);
-        return yield* yieldApi
+        return yield* yieldApi.write
           .ActionsControllerExitYield({ payload })
           .pipe(
             decodeApiResponse("action-exit-preview", YieldAction),
@@ -56,7 +57,7 @@ export const makeYieldOperations = (
           "action-manage-request",
           ManageActionCommand
         )(request.command);
-        return yield* yieldApi
+        return yield* yieldApi.write
           .ActionsControllerManageYield({ payload })
           .pipe(
             decodeApiResponse("action-manage-preview", YieldAction),
@@ -69,36 +70,47 @@ export const makeYieldOperations = (
   const getTransactionStatus = Effect.fn(
     "YieldOperations.getTransactionStatus"
   )(function* (command: TransactionStatusCommand) {
-    return yield* yieldApi
+    return yield* yieldApi.read
       .TransactionsControllerGetTransaction(command.transactionId, undefined)
       .pipe(
-        decodeApiResponse("get-transaction-status", ActionTransaction),
+        decodeApiResponse("get-transaction-status", ActionTransactionReceipt),
         presentRequestError
       );
   });
 
-  const submitTransactionHash = Effect.fn(
-    "YieldOperations.submitTransactionHash"
-  )(function* (command: SubmitTransactionHashCommand) {
-    return yield* yieldApi
+  const sendTransactionHash = (command: SubmitTransactionHashCommand) =>
+    yieldApi.write
       .TransactionsControllerSubmitTransactionHash(command.transactionId, {
         payload: command.payload,
       })
       .pipe(
-        decodeApiResponse("submit-transaction-hash", ActionTransaction),
-        presentRequestError
+        decodeApiResponse("submit-transaction-hash", ActionTransactionReceipt)
       );
+
+  const submitTransactionHash = Effect.fn(
+    "YieldOperations.submitTransactionHash"
+  )(function* (command: SubmitTransactionHashCommand) {
+    return yield* sendTransactionHash(command).pipe(presentRequestError);
+  });
+
+  const submitTransactionHashInBackground = Effect.fn(
+    "YieldOperations.submitTransactionHashInBackground"
+  )(function* (command: SubmitTransactionHashCommand) {
+    return yield* sendTransactionHash(command);
   });
 
   const submitSignedTransaction = Effect.fn(
     "YieldOperations.submitSignedTransaction"
   )(function* (command: SubmitSignedTransactionCommand) {
-    return yield* yieldApi
+    return yield* yieldApi.write
       .TransactionsControllerSubmitTransaction(command.transactionId, {
         payload: command.payload,
       })
       .pipe(
-        decodeApiResponse("submit-signed-transaction", ActionTransaction),
+        decodeApiResponse(
+          "submit-signed-transaction",
+          ActionTransactionReceipt
+        ),
         presentRequestError
       );
   });
@@ -108,5 +120,6 @@ export const makeYieldOperations = (
     previewAction,
     submitSignedTransaction,
     submitTransactionHash,
+    submitTransactionHashInBackground,
   } as const;
 };

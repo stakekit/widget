@@ -1,1 +1,4 @@
-export type { YieldDto } from "../../src/generated/api/yield-schema";
+export type {
+  ValidatorDto,
+  YieldDto,
+} from "../../src/generated/api/yield-schema";

@@ -16,17 +16,22 @@ import {
 } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import type { RewardsSummary } from "../../../domain/portfolio/models";
-import type {
-  PositionBalancesByType,
-  YieldBalanceType,
+import {
+  groupPositionBalanceRows,
+  type PositionBalancesByType,
+  type PositionTokenSum,
+  sumBalancesByToken,
+  type YieldBalanceType,
 } from "../../../domain/portfolio/positions";
 import {
   formatNetworkName,
-  formatUsd,
   humanizeEnumValue,
 } from "../../../shared/lib/formatters";
-import { APToPercentage } from "../../../shared/lib/general";
-import { defaultFormattedNumber } from "../../../shared/lib/number-format";
+import {
+  formatRoundedPercent,
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
 import {
   formatCooldownDays,
   formatMinStake,
@@ -45,7 +50,8 @@ type DashboardPositionMetricCard = {
   label: string;
   subValue?: string;
   tone?: DashboardPositionStatusTone;
-  value: string;
+  /** Several lines when a card lists one amount per token. */
+  value: string | ReadonlyArray<string>;
 };
 
 type DashboardPositionStatusSummary = {
@@ -96,7 +102,7 @@ type DashboardPositionDetailsModel = {
 
 type DashboardPositionPendingAction = {
   amount: BigNumber | null;
-  formattedAmount: string;
+  amountUsd: BigNumber | null;
   pendingAction: PendingAction;
   yieldBalance: EarnBalance;
 };
@@ -111,25 +117,21 @@ type ProviderDetail = {
 export const getDashboardPositionDetailsModel = ({
   canUnstake,
   integrationData,
+  locale,
   pendingActions,
   personalizedRewardRate,
   positionBalancesByType,
   providersDetails,
-  reducedStakedOrLiquidBalance,
   rewardsSummary,
   t,
 }: {
   canUnstake: boolean;
   integrationData: EarnYieldWithProvider;
+  locale: string;
   pendingActions: DashboardPositionPendingAction[];
   personalizedRewardRate?: YieldRewardRate | null;
   positionBalancesByType: PositionBalancesByType;
   providersDetails: ProviderDetail[];
-  reducedStakedOrLiquidBalance: {
-    amount: BigNumber;
-    amountUsd: BigNumber;
-    token: { readonly symbol: string };
-  } | null;
   rewardsSummary?: RewardsSummary;
   t: TFunction;
 }): DashboardPositionDetailsModel => {
@@ -146,12 +148,13 @@ export const getDashboardPositionDetailsModel = ({
     t,
   });
   const balanceMetric = getBalanceMetric({
+    locale,
     positionBalancesByType,
     promotedFactIds,
-    reducedStakedOrLiquidBalance,
     t,
   });
   const rewardsMetric = getRewardsMetric({
+    locale,
     pendingActions,
     positionBalancesByType,
     promotedFactIds,
@@ -160,6 +163,7 @@ export const getDashboardPositionDetailsModel = ({
   });
   const apyMetric = getApyMetric({
     integrationData,
+    locale,
     personalizedRewardRate,
     promotedFactIds,
     t,
@@ -189,10 +193,11 @@ export const getDashboardPositionDetailsModel = ({
 
   return {
     addressRows: getAddressRows(integrationData, t),
-    breakdownRows: getBreakdownRows({ positionBalancesByType, t }),
+    breakdownRows: getBreakdownRows({ locale, positionBalancesByType, t }),
     chartSections: [],
     detailRows: getDetailRows({
       integrationData,
+      locale,
       promotedFactIds,
       providerName,
       t,
@@ -257,30 +262,28 @@ const getPositionProviderName = ({
 };
 
 const getBalanceMetric = ({
+  locale,
   positionBalancesByType,
   promotedFactIds,
-  reducedStakedOrLiquidBalance,
   t,
 }: {
+  locale: string;
   positionBalancesByType: PositionBalancesByType;
   promotedFactIds: Set<string>;
-  reducedStakedOrLiquidBalance: {
-    amount: BigNumber;
-    amountUsd: BigNumber;
-    token: { readonly symbol: string };
-  } | null;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
-  if (reducedStakedOrLiquidBalance?.amount.isGreaterThan(0)) {
+  const activeSums = getPositiveTokenSums(
+    positionBalancesByType.get("active") ?? []
+  );
+
+  if (activeSums.length > 0) {
     promotedFactIds.add("balance");
 
     return {
       id: "balance",
       label: t("dashboard.position_details.balance"),
-      subValue: formatUsdSubValue(reducedStakedOrLiquidBalance.amountUsd),
-      value: `${defaultFormattedNumber(reducedStakedOrLiquidBalance.amount)} ${
-        reducedStakedOrLiquidBalance.token.symbol
-      }`,
+      subValue: formatUsdSubValue(sumUsd(activeSums), locale),
+      value: formatTokenSums(activeSums, locale),
     };
   }
 
@@ -296,39 +299,37 @@ const getBalanceMetric = ({
   return {
     id: "balance",
     label: t("dashboard.position_details.balance"),
-    value: formatUsd(totalUsd),
+    value: formatUsd(totalUsd, locale),
   };
 };
 
 const getRewardsMetric = ({
+  locale,
   pendingActions,
   positionBalancesByType,
   promotedFactIds,
   rewardsSummary,
   t,
 }: {
+  locale: string;
   pendingActions: DashboardPositionPendingAction[];
   positionBalancesByType: PositionBalancesByType;
   promotedFactIds: Set<string>;
   rewardsSummary?: RewardsSummary;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
-  const claimableBalance = getBalancesByPriority(positionBalancesByType)
-    .filter(
-      (balance) => balance.type === "claimable" && !balance.token.isPoints
-    )
-    .find((balance) => exactDecimal(balance.amount).isGreaterThan(0));
+  const claimableSums = getPositiveTokenSums(
+    positionBalancesByType.get("claimable") ?? []
+  );
 
-  if (claimableBalance) {
+  if (claimableSums.length > 0) {
     promotedFactIds.add("rewards");
 
     return {
       id: "rewards",
       label: t("dashboard.position_details.rewards"),
-      subValue: formatUsdSubValue(claimableBalance.amountUsd),
-      value: `${defaultFormattedNumber(claimableBalance.amount)} ${
-        claimableBalance.token.symbol
-      }`,
+      subValue: formatUsdSubValue(sumUsd(claimableSums), locale),
+      value: formatTokenSums(claimableSums, locale),
     };
   }
 
@@ -342,7 +343,7 @@ const getRewardsMetric = ({
       id: "rewards",
       label: t("dashboard.position_details.rewards"),
       subValue: t("dashboard.position_details.rewards_total"),
-      value: `${defaultFormattedNumber(rewardsSummary.rewards.total)} ${
+      value: `${formatTokenAmount(rewardsSummary.rewards.total, locale)} ${
         rewardsSummary.token.symbol
       }`,
     };
@@ -359,18 +360,22 @@ const getRewardsMetric = ({
   return {
     id: "rewards",
     label: t("dashboard.position_details.rewards"),
-    subValue: claimAction.formattedAmount || undefined,
+    subValue: claimAction.amountUsd
+      ? formatUsd(claimAction.amountUsd, locale)
+      : undefined,
     value: t("position_details.pending_action.claim_rewards"),
   };
 };
 
 const getApyMetric = ({
   integrationData,
+  locale,
   personalizedRewardRate,
   promotedFactIds,
   t,
 }: {
   integrationData: EarnYieldWithProvider;
+  locale: string;
   personalizedRewardRate?: YieldRewardRate | null;
   promotedFactIds: Set<string>;
   t: TFunction;
@@ -388,7 +393,7 @@ const getApyMetric = ({
     label: personalizedRewardRate
       ? t("position_details.personalized_apy")
       : formatRewardRateLabel(integrationData, t),
-    value: `${APToPercentage(amount)}%`,
+    value: formatRoundedPercent(amount, locale),
   };
 };
 
@@ -459,35 +464,41 @@ const getStatusSummary = ({
 };
 
 const getBreakdownRows = ({
+  locale,
   positionBalancesByType,
   t,
 }: {
+  locale: string;
   positionBalancesByType: PositionBalancesByType;
   t: TFunction;
 }): DashboardPositionBreakdownRow[] =>
-  getBalancesByPriority(positionBalancesByType).map((balance, index) => ({
-    id: `${balance.type}-${balance.token.symbol}-${index}`,
-    label: formatBalanceTypeLabel(balance.type, t),
-    subValue: balance.token.isPoints
-      ? t("shared.points")
-      : formatUsdSubValue(balance.amountUsd),
-    value: `${defaultFormattedNumber(balance.amount)} ${balance.token.symbol}`,
-  }));
+  groupPositionBalanceRows(getBalancesByPriority(positionBalancesByType)).map(
+    (row, index) => ({
+      id: `${row.type}-${row.token.symbol}-${index}`,
+      label: formatBalanceTypeLabel(row.type, t),
+      subValue: row.token.isPoints
+        ? t("shared.points")
+        : formatUsdSubValue(row.amountUsd, locale),
+      value: `${formatTokenAmount(row.amount, locale)} ${row.token.symbol}`,
+    })
+  );
 
 const getDetailRows = ({
   integrationData,
+  locale,
   promotedFactIds,
   providerName,
   t,
 }: {
   integrationData: EarnYieldWithProvider;
+  locale: string;
   promotedFactIds: Set<string>;
   providerName: string;
   t: TFunction;
 }): DashboardPositionDetailRow[] => {
   const risk = getYieldRiskDisplay(integrationData);
-  const minStake = formatMinStake(integrationData, t);
-  const pricePerShare = formatPricePerShare(integrationData);
+  const minStake = formatMinStake(integrationData, t, locale);
+  const pricePerShare = formatPricePerShare(integrationData, locale);
   const cooldown = formatCooldownDays(
     getYieldCooldownPeriod(integrationData)?.days ?? 0,
     t
@@ -546,7 +557,7 @@ const getDetailRows = ({
       : {
           id: "apy",
           label: formatRewardRateLabel(integrationData, t),
-          value: `${APToPercentage(integrationData.rewardRate.total)}%`,
+          value: formatRoundedPercent(integrationData.rewardRate.total, locale),
         },
     minStake
       ? {
@@ -634,6 +645,25 @@ const balanceTypePriority: YieldBalanceType[] = [
 const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
   t(`position_details.balance_type.${type}`);
 
+const getPositiveTokenSums = (balances: ReadonlyArray<EarnBalance>) =>
+  sumBalancesByToken(
+    balances.filter((balance) => !balance.token.isPoints)
+  ).filter((sum) => sum.amount.isGreaterThan(0));
+
+const sumUsd = (sums: ReadonlyArray<PositionTokenSum>) =>
+  sums.reduce((total, sum) => total.plus(sum.amountUsd), exactZero());
+
+const formatTokenSums = (
+  sums: ReadonlyArray<PositionTokenSum>,
+  locale: string
+) => {
+  const lines = sums.map(
+    (sum) => `${formatTokenAmount(sum.amount, locale)} ${sum.token.symbol}`
+  );
+
+  return lines.length === 1 ? (lines[0] ?? "") : lines;
+};
+
 // Pending action types come from the API and can outpace our translation map
 // (e.g. RWA-specific actions). Fall back to a humanized version of the type so
 // the card never renders a raw translation key.
@@ -643,13 +673,14 @@ const formatPendingActionLabel = (type: PendingAction["type"], t: TFunction) =>
   });
 
 const formatUsdSubValue = (
-  value: string | number | BigNumber | null | undefined
+  value: string | number | BigNumber | null | undefined,
+  locale: string
 ) => {
   if (value == null) return undefined;
 
   const amount = exactDecimal(value);
 
-  return amount.isGreaterThan(0) ? formatUsd(amount) : undefined;
+  return amount.isGreaterThan(0) ? formatUsd(amount, locale) : undefined;
 };
 
 export const getPositionHeaderBadges = (

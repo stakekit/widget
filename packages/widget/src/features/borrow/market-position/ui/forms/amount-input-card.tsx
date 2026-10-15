@@ -1,12 +1,16 @@
 import type BigNumber from "bignumber.js";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { MaxButton } from "../../../../../shared/ui/components/max-button";
-import { NumberInput } from "../../../../../shared/ui/components/number-input";
+import type { ReactNode } from "react";
+import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { selectTokenButton } from "../../../../../shared/ui/primitives/button/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
-import * as styles from "../../../amount-input/views";
+import { useWidgetConfig } from "../../../../widget-configuration/index";
+import { BorrowAmountField } from "../../../amount-input/views";
 
+/**
+ * Position action amount card; balances carry only a symbol, not a token, so
+ * the accessory is a symbol chip unless the form supplies a token selector.
+ */
 export const AmountInputCard = ({
   amount,
   balanceLabel,
@@ -14,6 +18,7 @@ export const AmountInputCard = ({
   label,
   onAmountChange,
   onMaxClick,
+  tokenSelector,
   tokenSymbol,
   usdValue,
   warning,
@@ -24,38 +29,41 @@ export const AmountInputCard = ({
   readonly label: string;
   readonly onAmountChange: (amount: BigNumber) => void;
   readonly onMaxClick?: (() => void) | null;
+  readonly tokenSelector?: ReactNode;
   readonly tokenSymbol: string;
   readonly usdValue?: BigNumber;
   readonly warning?: string | null;
-}) => (
-  <Box display="flex" flexDirection="column" gap="2">
-    <Text variant={{ weight: "bold" }}>{label}</Text>
-    <Box className={styles.amountCard}>
-      <Box className={styles.amountCardHeader}>
-        <NumberInput
-          disabled={disabled}
-          onChange={onAmountChange}
-          value={amount}
-        />
+}) => {
+  const variant = useWidgetConfig("variant");
 
-        <Box className={styles.amountTokenButton}>
-          <Text variant={{ weight: "bold" }}>{tokenSymbol}</Text>
-        </Box>
-      </Box>
-
-      <Box className={styles.amountCardFooter}>
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatUsd(usdValue)}
-        </Text>
-        <Box className={styles.amountBalanceGroup}>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {balanceLabel}
-          </Text>
-          {onMaxClick ? <MaxButton onMaxClick={onMaxClick} /> : null}
-        </Box>
-      </Box>
-
-      {warning ? <WarningBox text={warning} /> : null}
-    </Box>
-  </Box>
-);
+  return (
+    <BorrowAmountField
+      accessory={
+        tokenSelector ?? (
+          <Box
+            alignItems="center"
+            borderRadius="2xl"
+            className={combineRecipeWithVariant({
+              rec: selectTokenButton,
+              variant,
+            })}
+            display="flex"
+            px="2"
+            py="1"
+          >
+            <Text variant={{ weight: "bold" }}>{tokenSymbol}</Text>
+          </Box>
+        )
+      }
+      amount={amount}
+      balance={balanceLabel}
+      disabled={disabled}
+      label={label}
+      onAmountChange={onAmountChange}
+      onMaxClick={onMaxClick}
+      tone="action"
+      usdValue={usdValue}
+      warning={warning}
+    />
+  );
+};

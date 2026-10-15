@@ -1,10 +1,10 @@
-import type { WalletList } from "@stakekit/rainbowkit";
 import { type EIP1193Provider, numberToHex, SwitchChainError } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { ChainNotConfiguredError, custom } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import type { MockParameters } from "wagmi/connectors";
 import { mock as mockConnector } from "wagmi/connectors";
+import type { WalletList } from "../../src/services/wallet/wallet-descriptors";
 
 interface MyWalletOptions {
   accounts: MockParameters["accounts"];
@@ -12,7 +12,7 @@ interface MyWalletOptions {
   connectorParams?: Partial<ReturnType<CreateConnectorFn>>;
 }
 
-export const rkMockWallet =
+export const mockWalletListFactory =
   ({
     connectorParams,
     accounts,
@@ -23,16 +23,13 @@ export const rkMockWallet =
       groupName: "Mock Wallet",
       wallets: [
         () => ({
+          availability: { _tag: "Remote" },
           id: "mock-wallet",
           name: "Mock Wallet",
           iconUrl: "https://my-image.xyz",
           iconBackground: "#0c2f78",
-          downloadUrls: {
-            android: "https://fake-uri.com/android",
-            ios: "https://fake-uri.com/ios",
-            qrCode: "https://fake-uri.com/qr",
-          },
           chainGroup: {
+            availability: { _tag: "Remote" },
             id: "mock-wallet",
             title: "Mock Wallet",
             iconUrl: "https://my-image.xyz",

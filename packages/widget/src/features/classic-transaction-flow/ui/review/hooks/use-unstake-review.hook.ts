@@ -1,6 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { ComponentProps } from "react";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import {
@@ -9,7 +8,8 @@ import {
 } from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import type { RewardTokenDetails } from "../../../../yield-summary/views";
 import {
@@ -35,31 +35,23 @@ export const useUnstakeActionReview = () => {
 
   const prices = review.prices;
 
-  const amount = useMemo(
-    () => exactDecimal(exitFlow.request.arguments?.amount ?? 0),
-    [exitFlow.request.arguments?.amount]
-  );
+  const amount = exactDecimal(exitFlow.request.arguments?.amount ?? 0);
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
-  const formattedAmount = useMemo(
-    () => defaultFormattedNumber(amount),
-    [amount]
-  );
+  const formattedAmount = formatTokenAmount(amount, locale);
 
   const title = isUnstakeYieldType(getExtendedYieldType(integrationData))
     ? (t("position_details.unstake") as string)
     : t("position_details.withdraw");
 
-  const fee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: stakeExitTxGas,
-        prices,
-        yieldDto: integrationData,
-      }),
-    [integrationData, prices, stakeExitTxGas]
-  );
+  const fee = getGasFeeInUSD({
+    gas: stakeExitTxGas,
+    locale,
+    prices,
+    yieldDto: integrationData,
+  });
 
   const rewardTokenDetailsProps = integrationData.provider
     ? ({
@@ -72,7 +64,7 @@ export const useUnstakeActionReview = () => {
       } satisfies ComponentProps<typeof RewardTokenDetails>)
     : null;
 
-  const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
+  const metaInfo: MetaInfoProps = { showMetaInfo: false };
   const facts = exitFlow.receiveToken
     ? [
         {

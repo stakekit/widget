@@ -1,6 +1,6 @@
 import { Data, Duration, Effect } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import {
   type BorrowNetwork,
@@ -16,6 +16,7 @@ import {
 import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { combineAsyncResults } from "../../shared/effect/async-result";
 import { borrowIntegrationsResourceAtom } from "../borrow-integrations/index";
 import {
   BorrowMarketsKey,
@@ -92,13 +93,15 @@ const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
     );
   }
   const positionDataAtom = borrowPositionDataResourceAtom(key);
+  // Positions resolve against every market so a holding stays manageable when
+  // the host lists only project-enabled markets for new borrows.
   const marketsAtom = borrowMarketsResourceAtom.local(
-    new BorrowMarketsKey({ network })
+    new BorrowMarketsKey({ network, scope: "all" })
   );
 
   return Atom.readable(
     (get) =>
-      AsyncResult.all({
+      combineAsyncResults({
         integrationPositions: get(positionDataAtom),
         markets: get(marketsAtom),
       }).pipe(

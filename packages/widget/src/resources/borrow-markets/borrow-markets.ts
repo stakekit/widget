@@ -1,6 +1,7 @@
 import { Data, Duration, Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
@@ -16,6 +17,7 @@ const CONCURRENCY = 5;
 
 export class BorrowMarketsKey extends Data.TaggedClass("BorrowMarketsKey")<{
   readonly network: BorrowNetwork;
+  readonly scope: BorrowMarketsScope;
 }> {}
 
 const borrowMarketPolicy = withApiResourcePolicy({
@@ -33,7 +35,7 @@ const borrowMarketsCanonicalAtom = Atom.family((key: BorrowMarketsKey) =>
               limit: API_MAX_PAGE_SIZE,
               network: key.network,
               offset,
-              scope: "all",
+              scope: key.scope,
             }),
           pageSize: API_MAX_PAGE_SIZE,
         }).pipe(

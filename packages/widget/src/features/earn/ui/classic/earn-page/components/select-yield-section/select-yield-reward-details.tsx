@@ -14,6 +14,7 @@ import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
 import {
   EstimatedRewardAmounts,
   getRewardTokenSymbols,
@@ -31,9 +32,10 @@ type StrategyProvider = {
 
 export const SelectYieldRewardDetails = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
   const { t } = useTranslation();
-  const showYieldStrategyDetails = variant !== "zerion";
+  const { locale } = useWidgetPresentation();
+  const showYieldStrategyDetails = !earnPresentation.zerion;
 
   const { view } = useEarnEntry();
   const {
@@ -54,10 +56,10 @@ export const SelectYieldRewardDetails = () => {
     : null;
 
   const earnYearly = estimatedRewards
-    ? `${estimatedRewards.yearly} ${rewardsTokenSymbol}`
+    ? `${estimatedRewards.yearly ? formatNumber(estimatedRewards.yearly, locale) : "-"} ${rewardsTokenSymbol}`
     : "";
   const earnMonthly = estimatedRewards
-    ? `${estimatedRewards.monthly} ${rewardsTokenSymbol}`
+    ? `${estimatedRewards.monthly ? formatNumber(estimatedRewards.monthly, locale) : "-"} ${rewardsTokenSymbol}`
     : "";
   const strategyDetails = selectedStake
     ? (() => {
@@ -100,7 +102,7 @@ export const SelectYieldRewardDetails = () => {
             : stakeAmount;
 
         return {
-          outputAmount: formatNumber(outputAmount, 6),
+          outputAmount: formatNumber(outputAmount, locale, 6),
           outputToken,
           providers: strategyProviders,
           yieldType: getYieldTypeLabels(yieldDto, t).title,
@@ -122,7 +124,7 @@ export const SelectYieldRewardDetails = () => {
           </>
         )}
 
-        {variant === "zerion" && rewardToken ? (
+        {earnPresentation.zerion && rewardToken ? (
           <Box
             display="flex"
             justifyContent="space-between"

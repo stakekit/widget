@@ -1,5 +1,4 @@
 import { Effect, Schema } from "effect";
-import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/execution/action-command";
 import {
@@ -14,10 +13,16 @@ import {
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { MissingBorrowApiConfig } from "./resource-sources";
+import { requireBorrowTransport } from "./borrow-transport";
+import type { ApiClients } from "./transport";
+
+type SubmitTransactionRequest = {
+  readonly command: BorrowSubmitTransactionCommand;
+  readonly transactionId: string;
+};
 
 export const makeBorrowOperations = (
-  borrow: BorrowApi.BorrowApi | null,
+  borrow: ApiClients<BorrowApi.BorrowApi> | null,
   borrowEnabled: boolean,
   richErrors: RichErrorService["Service"]
 ) => {
@@ -25,17 +30,7 @@ export const makeBorrowOperations = (
 
   const requireTransport = Effect.fn("BorrowOperations.requireTransport")(
     function* () {
-      if (!borrowEnabled) {
-        return yield* new BorrowFeatureDisabled({
-          message: "Borrow is disabled by Widget configuration.",
-        });
-      }
-
-      if (borrow) return borrow;
-
-      return yield* new MissingBorrowApiConfig({
-        message: "Borrow API URL must be configured before using Borrow.",
-      });
+      return yield* requireBorrowTransport(borrow, borrowEnabled);
     }
   );
 
@@ -43,7 +38,7 @@ export const makeBorrowOperations = (
     command: BorrowActionCommand
   ) {
     const client = yield* requireTransport();
-    return yield* client
+    return yield* client.write
       .ActionsControllerExecuteActionV1({ payload: command })
       .pipe(
         decodeApiResponse("borrow-action-create", BorrowAction),
@@ -55,7 +50,7 @@ export const makeBorrowOperations = (
     actionId: string
   ) {
     const client = yield* requireTransport();
-    const response = yield* client
+    const response = yield* client.read
       .ActionsControllerGetActionV1(actionId, undefined)
       .pipe(withApiRequestError("borrow-action-status"), presentRequestError);
 
@@ -70,7 +65,7 @@ export const makeBorrowOperations = (
     actionId: string
   ) {
     const client = yield* requireTransport();
-    return yield* client
+    return yield* client.write
       .ActionsControllerStepV1(actionId, undefined)
       .pipe(
         decodeApiResponse("borrow-action-step", BorrowAction),
@@ -78,13 +73,10 @@ export const makeBorrowOperations = (
       );
   });
 
-  const submitTransaction = Effect.fn("BorrowOperations.submitTransaction")(
-    function* (request: {
-      readonly command: BorrowSubmitTransactionCommand;
-      readonly transactionId: string;
-    }) {
+  const sendTransaction = Effect.fn("BorrowOperations.sendTransaction")(
+    function* (request: SubmitTransactionRequest) {
       const client = yield* requireTransport();
-      return yield* client
+      return yield* client.write
         .TransactionsControllerSubmitTransactionV1(request.transactionId, {
           payload: request.command,
         })
@@ -92,16 +84,28 @@ export const makeBorrowOperations = (
           decodeApiResponse(
             "borrow-transaction-submit",
             BorrowSubmitTransactionResult
-          ),
-          presentRequestError
+          )
         );
     }
   );
+
+  const submitTransaction = Effect.fn("BorrowOperations.submitTransaction")(
+    function* (request: SubmitTransactionRequest) {
+      return yield* sendTransaction(request).pipe(presentRequestError);
+    }
+  );
+
+  const submitTransactionInBackground = Effect.fn(
+    "BorrowOperations.submitTransactionInBackground"
+  )(function* (request: SubmitTransactionRequest) {
+    return yield* sendTransaction(request);
+  });
 
   return {
     executeAction,
     getAction,
     stepAction,
     submitTransaction,
+    submitTransactionInBackground,
   } as const;
 };

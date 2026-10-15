@@ -5,13 +5,12 @@ import { WalletDecodeError } from "../../../wallet-errors";
 import type { WalletEvmTransactionInput } from "../../../wallet-transactions";
 import type { WagmiActions } from "../../runtime/wagmi-actions";
 import {
-  decodeUnsignedBorrowEvmTransactionJson,
   decodeUnsignedEvmTransactionJson,
-  type unsignedBorrowEVMTransactionCodec,
+  type unsignedEVMTransactionCodec,
 } from "./transaction";
 
 const prepareEvmTransaction = (
-  decodedTx: typeof unsignedBorrowEVMTransactionCodec.Type
+  decodedTx: typeof unsignedEVMTransactionCodec.Type
 ): WalletEvmTransactionInput => {
   const transaction = {
     chainId: decodedTx.chainId,
@@ -35,20 +34,23 @@ const prepareEvmTransaction = (
       };
 };
 
-const decodeEvmTransactionWith = (
-  decode: typeof decodeUnsignedBorrowEvmTransactionJson,
+export const decodeEvmTransaction = (
   tx: string
 ): Effect.Effect<WalletEvmTransactionInput, WalletDecodeError> =>
-  decode(tx).pipe(
+  decodeUnsignedEvmTransactionJson(tx).pipe(
     Effect.mapError((cause) => new WalletDecodeError({ cause })),
     Effect.map(prepareEvmTransaction)
   );
 
-export const decodeEvmTransaction = (tx: string) =>
-  decodeEvmTransactionWith(decodeUnsignedEvmTransactionJson, tx);
-
+/**
+ * Borrow omits the quoted gas limit so the wallet estimates it at signing
+ * time: the API quotes every step before earlier steps land, so its limit can
+ * fall short once approvals and supplies change the position.
+ */
 export const decodeBorrowEvmTransaction = (tx: string) =>
-  decodeEvmTransactionWith(decodeUnsignedBorrowEvmTransactionJson, tx);
+  decodeEvmTransaction(tx).pipe(
+    Effect.map(({ gas: _quotedGas, ...input }) => input)
+  );
 
 export const makeEvmWalletDriver = ({
   sendTransaction,

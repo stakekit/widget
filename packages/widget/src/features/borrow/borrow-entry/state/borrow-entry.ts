@@ -1,7 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { Effect, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
@@ -67,7 +67,12 @@ const getBorrowFormOwner = (
     ? { address: scope.address, network: scope.network }
     : null;
 
-export const resetBorrowEntryIntentForOwnerAtom = Atom.fnSync(
+/**
+ * A started Transaction Workflow consumes the entered amounts. The market and
+ * collateral stay selected so the details pane keeps describing the market the
+ * workflow executes against.
+ */
+export const clearBorrowEntryAmountsForOwnerAtom = Atom.fnSync(
   (owner: WalletScopeOwnerKey, context) => {
     const scope = context(walletScopeAtom);
     const currentOwner = getBorrowFormOwner(
@@ -75,9 +80,9 @@ export const resetBorrowEntryIntentForOwnerAtom = Atom.fnSync(
     );
     if (!currentOwner || !sameWalletScopeOwner(currentOwner, owner)) return;
 
-    context.set(borrowFormStateAtom, { type: "reset" });
+    context.set(borrowFormStateAtom, { type: "amounts/clear" });
   }
-).pipe(Atom.withLabel("resetBorrowEntryIntentForOwnerAtom"));
+).pipe(Atom.withLabel("clearBorrowEntryAmountsForOwnerAtom"));
 
 const borrowFormStateAtom = Atom.writable<
   BorrowFormState | null,
@@ -97,7 +102,10 @@ const borrowFormStateAtom = Atom.writable<
         : makeDefaultBorrowFormState(owner);
     const marketsResult = context.get(
       borrowMarketsResourceAtom.foreground(
-        new BorrowMarketsKey({ network: owner.network })
+        new BorrowMarketsKey({
+          network: owner.network,
+          scope: context.get(widgetConfigAtom).borrowMarketsScope,
+        })
       )
     );
     const shouldReset =
@@ -123,10 +131,6 @@ const borrowFormStateAtom = Atom.writable<
       context.setSelf(null);
       return;
     }
-    if (action.type === "reset") {
-      context.setSelf(makeDefaultBorrowFormState(owner));
-      return;
-    }
 
     const state = context.get(borrowFormStateAtom);
     const current =
@@ -135,7 +139,10 @@ const borrowFormStateAtom = Atom.writable<
         : makeDefaultBorrowFormState(owner);
     const marketsResult = context.get(
       borrowMarketsResourceAtom.foreground(
-        new BorrowMarketsKey({ network: owner.network })
+        new BorrowMarketsKey({
+          network: owner.network,
+          scope: context.get(widgetConfigAtom).borrowMarketsScope,
+        })
       )
     );
     const shouldPinDefaults = action.type !== "market/select";
@@ -144,6 +151,9 @@ const borrowFormStateAtom = Atom.writable<
         ? pinBorrowFormDefaults({
             intent: current.intent,
             markets: marketsResult.value,
+            tokenBalances: context
+              .get(tokenBalancesScanAtom)
+              .result.pipe(AsyncResult.value, Option.getOrNull),
           })
         : current.intent;
 
@@ -178,7 +188,10 @@ export const currentBorrowEntryAtom = Atom.writable<
     if (!key || !state) return null;
     const marketsResult = context.get(
       borrowMarketsResourceAtom.foreground(
-        new BorrowMarketsKey({ network: key.network })
+        new BorrowMarketsKey({
+          network: key.network,
+          scope: context.get(widgetConfigAtom).borrowMarketsScope,
+        })
       )
     );
     const tokenBalancesResult = context.get(tokenBalancesScanAtom).result;
@@ -215,14 +228,18 @@ export const currentBorrowEntryAtom = Atom.writable<
 
 /** True once borrow markets for the current scope have succeeded (or borrow N/A). */
 export const borrowLandingPrimaryReadyAtom = Atom.make((get) => {
-  if (!get(widgetConfigAtom).borrowEnabled) return true;
+  const config = get(widgetConfigAtom);
+  if (!config.borrowEnabled) return true;
 
   const scope = get(walletScopeAtom);
   if (!scope || !isBorrowNetwork(scope.network)) return true;
 
   const marketsResult = get(
     borrowMarketsResourceAtom.foreground(
-      new BorrowMarketsKey({ network: scope.network })
+      new BorrowMarketsKey({
+        network: scope.network,
+        scope: config.borrowMarketsScope,
+      })
     )
   );
 
@@ -320,7 +337,14 @@ export const startBorrowEntryReviewAtom = appRuntime
         return { _tag: "Unavailable" } as const;
       }
 
-      const entry = { _tag: "BorrowEntry" as const };
+      const entry = {
+        _tag: "BorrowEntry" as const,
+        details: {
+          collateralToken: view.selectedCollateralToken,
+          integration: view.selectedIntegration,
+          market: view.selectedMarket,
+        },
+      };
       const intake = {
         ...preparation.review,
         entry,

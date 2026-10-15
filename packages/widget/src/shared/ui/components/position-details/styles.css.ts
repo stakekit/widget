@@ -63,7 +63,7 @@ export const metricGrid = style({
 });
 
 export const metricCard = recipe({
-  base: [atoms({ borderRadius: "base", px: "3", py: "3" }), { minWidth: 0 }],
+  base: [atoms({ borderRadius: "xl", px: "3", py: "3" }), { minWidth: 0 }],
   variants: {
     tone: {
       action: { background: "#FEF2F2" },
@@ -102,7 +102,7 @@ export const breakdownRow = style([
     py: "2",
   }),
   {
-    borderBottom: `1px solid ${vars.color.backgroundMuted}`,
+    borderBottom: `1px solid ${vars.color.tabBorder}`,
     minWidth: 0,
   },
 ]);

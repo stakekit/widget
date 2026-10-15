@@ -5,6 +5,14 @@ import { vars } from "../../../styles/theme/contract.css";
 import { minMediaQuery } from "../../../styles/tokens/breakpoints";
 import type { Heading, Text } from "../../../styles/tokens/typography";
 
+const fontWeightVariants = {
+  normal: atoms({ fontWeight: "normal" }),
+  medium: atoms({ fontWeight: "medium" }),
+  semibold: atoms({ fontWeight: "semibold" }),
+  bold: atoms({ fontWeight: "bold" }),
+  extrabold: atoms({ fontWeight: "extrabold" }),
+};
+
 export const heading = recipe({
   base: atoms({ color: "text" }),
 
@@ -37,13 +45,7 @@ export const heading = recipe({
         >
       ),
     },
-    weight: {
-      normal: atoms({ fontWeight: "normal" }),
-      medium: atoms({ fontWeight: "medium" }),
-      semibold: atoms({ fontWeight: "semibold" }),
-      bold: atoms({ fontWeight: "bold" }),
-      extrabold: atoms({ fontWeight: "extrabold" }),
-    },
+    weight: fontWeightVariants,
   },
 
   defaultVariants: {
@@ -55,13 +57,7 @@ export type HeadingVariants = RecipeVariants<typeof heading>;
 
 export const textStyles = recipe({
   variants: {
-    weight: {
-      normal: atoms({ fontWeight: "normal" }),
-      medium: atoms({ fontWeight: "medium" }),
-      semibold: atoms({ fontWeight: "semibold" }),
-      bold: atoms({ fontWeight: "bold" }),
-      extrabold: atoms({ fontWeight: "extrabold" }),
-    },
+    weight: fontWeightVariants,
     type: {
       base: {},
       accent: atoms({ color: "accent" }),

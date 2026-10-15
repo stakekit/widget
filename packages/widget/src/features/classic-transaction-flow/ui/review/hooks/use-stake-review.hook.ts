@@ -1,10 +1,19 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import {
+  getFeesInUSD,
+  getGasFeeInUSD,
+} from "../../../../../shared/lib/formatters";
+import {
+  formatExactPercent,
+  formatNumber,
+  formatRewardRatePercent,
+  formatTokenAmount,
+} from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import {
   useClassicFlowIntake,
@@ -14,6 +23,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page.tsx";
 
 export const useStakeReview = () => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const enterFlow = useClassicFlowIntake("Enter");
   const facade = useClassicFlowReview();
   const confirmFlow = useAtomSet(facade.confirmAtom);
@@ -32,36 +42,39 @@ export const useStakeReview = () => {
   const estimatedRewards = stakeReview.estimatedRewards;
   const yieldType = getYieldTypeLabels(selectedStake, t).review;
 
-  const amount = useMemo(
-    () => defaultFormattedNumber(stakeAmount),
-    [stakeAmount]
-  );
-  const interestRate = useMemo(
-    () => estimatedRewards?.percentage.toString() ?? "",
-    [estimatedRewards]
-  );
+  const amount = formatTokenAmount(stakeAmount, locale);
+  const interestRate = estimatedRewards
+    ? formatRewardRatePercent(estimatedRewards.rewardRateAverage, locale)
+    : "";
 
   const rewardsTokenSymbol = stakeReview.rewardsTokenSymbol;
 
-  const estimatedRewardAmounts = useMemo(
-    () =>
-      estimatedRewards
-        ? {
-            earnYearly: `${estimatedRewards.yearly} ${rewardsTokenSymbol}`,
-            earnMonthly: `${estimatedRewards.monthly} ${rewardsTokenSymbol}`,
-          }
-        : null,
-    [estimatedRewards, rewardsTokenSymbol]
-  );
+  const estimatedRewardAmounts = estimatedRewards
+    ? {
+        earnYearly: `${estimatedRewards.yearly ? formatNumber(estimatedRewards.yearly, locale) : "-"} ${rewardsTokenSymbol}`,
+        earnMonthly: `${estimatedRewards.monthly ? formatNumber(estimatedRewards.monthly, locale) : "-"} ${rewardsTokenSymbol}`,
+      }
+    : null;
 
-  const fee = stakeReview.gasFee;
+  const fee = getGasFeeInUSD({
+    gas: stakeReview.gasAmount,
+    locale,
+    prices: stakeReview.prices,
+    yieldDto: selectedStake,
+  });
   const localizeFee = (
     value: typeof stakeReview.depositFee,
     type: "deposit" | "management" | "performance"
   ) =>
     value
       ? {
-          ...value,
+          inPercentage: formatExactPercent(value.ratio, locale),
+          inUSD: getFeesInUSD({
+            amount: value.amount,
+            locale,
+            prices: stakeReview.prices,
+            token: selectedToken,
+          }),
           explanation: t(`review.${type}_fee_explanation`),
           label: t(`review.${type}_fee`),
         }
@@ -87,22 +100,20 @@ export const useStakeReview = () => {
     onClick,
   });
 
-  const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
-  const metaInfo = useMemo(
-    () =>
-      (variant === "zerion"
-        ? {
-            showMetaInfo: true,
-            metaInfoProps: {
-              selectedStake,
-              selectedToken,
-              selectedValidators: new Map(enterFlow.selectedValidators),
-            },
-          }
-        : { showMetaInfo: false }) satisfies MetaInfoProps,
-    [selectedStake, selectedToken, enterFlow.selectedValidators, variant]
-  );
+  const metaInfo = (
+    earnPresentation.zerion
+      ? {
+          showMetaInfo: true,
+          metaInfoProps: {
+            selectedStake,
+            selectedToken,
+            selectedValidators: new Map(enterFlow.selectedValidators),
+          },
+        }
+      : { showMetaInfo: false }
+  ) satisfies MetaInfoProps;
 
   return {
     token: selectedToken,

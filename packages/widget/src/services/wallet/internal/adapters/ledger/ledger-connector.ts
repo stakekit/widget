@@ -4,11 +4,6 @@ import {
   WalletAPIClient,
   WindowMessageTransport,
 } from "@ledgerhq/wallet-api-client";
-import type {
-  Chain,
-  WalletDetailsParams,
-  WalletList,
-} from "@stakekit/rainbowkit";
 import { Effect, Result, Stream } from "effect";
 import type { Address } from "viem";
 import type { CreateConnectorFn } from "wagmi";
@@ -16,11 +11,17 @@ import { createConnector } from "wagmi";
 import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import type { InitParams } from "../../../../../services/wallet/init-params";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
+import type {
+  Chain,
+  WalletDetailsParams,
+  WalletList,
+} from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import { walletImages } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
   ledgerChainPriority,
   type SupportedLedgerLiveFamilies,
@@ -267,24 +268,8 @@ const createLedgerLiveConnector = ({
           )
         : Result.fail(new Error("Current chain not found"));
 
-    const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
-      (accounts) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      };
-
-    const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
-      chainId
-    ) => {
-      config.emitter.emit("change", { chainId: normalizeChainId(chainId) });
-    };
-
-    const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] = () => {
-      config.emitter.emit("disconnect");
-    };
+    const { onAccountsChanged, onChainChanged, onDisconnect } =
+      makeWagmiConnectorEvents(config.emitter, normalizeChainId);
 
     const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
       async () => ({});
@@ -443,7 +428,12 @@ export const ledgerLiveConnector = ({
             title: configMeta.name,
             iconUrl: walletImages.ledgerLogo,
           },
-          hidden: () => !isLedgerDappBrowser,
+          // Ledger Live's dapp browser provides the wallet; it has no
+          // extension to install, so the entry is hidden anywhere else.
+          availability: {
+            _tag: "Injected",
+            detect: Effect.succeed(isLedgerDappBrowser),
+          },
           createConnector: (walletDetailsParams) =>
             createLedgerLiveConnector({
               walletDetailsParams,

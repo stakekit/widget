@@ -7,10 +7,14 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+env:
+  HUSKY: "0"
+
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: write
       issues: write
@@ -28,13 +32,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install mise
-        run: |
-          curl https://mise.run | MISE_VERSION=v2026.7.17 sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
-          mise install
+      # Release-please and the publish check need only node and pnpm; publishing installs
+      # the tagged commit's own toolchain and dependencies.
+      - uses: ./.github/actions/setup
+        with:
+          install-dependencies: "false"
 
       - name: Run release-please
         id: release
@@ -79,7 +81,7 @@ jobs:
           tag="${{ steps.publish.outputs.tag }}"
           git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
           git checkout --detach "$tag"
-          mise install
+          mise install --locked
           pnpm install --frozen-lockfile
-          pnpm exec turbo --filter=@stakekit/widget build
+          pnpm --filter @stakekit/widget build
           pnpm publish "./$PACKAGE_DIR" --no-git-checks

@@ -246,6 +246,31 @@
     "connect_wallet": "Connect Wallet",
     "ledger_add_account": "Add account"
   },
+  "wallet_modal": {
+    "account": "Account",
+    "close": "Close",
+    "copy_address": "Copy Address",
+    "copied": "Copied!",
+    "connected": "Connected",
+    "confirm": "Confirm in Wallet",
+    "confirm_error": "Error switching chain",
+    "wrong_network": "Wrong network detected, switch or disconnect to continue.",
+    "chain_error": "Couldn't switch networks. Try again.",
+    "select_ecosystem": "Choose ecosystem",
+    "connect_wallet": "Connect wallet",
+    "change_ecosystem": "Choose another ecosystem",
+    "connection_error": "Couldn't connect to the wallet. Try again.",
+    "wallet_not_available": "This wallet is no longer available. Enable or install its extension and try again.",
+    "disconnect": "Disconnect",
+    "network": "Switch Networks",
+    "install": "Install",
+    "checking": "Checking",
+    "groups": {
+      "installed": "Installed",
+      "primary": "Primary",
+      "other": "Other"
+    }
+  },
   "activity": {
     "complete": {
       "continue": "Continue"
@@ -270,7 +295,15 @@
       "unknown_error": "Unknown error",
       "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
       "in_progress": "In Progress",
-      "view_transaction": "View transaction"
+      "confirmed": "Confirmed",
+      "not_submitted": "Not submitted",
+      "transactions_all_confirmed_one": "{{count}} · confirmed",
+      "transactions_all_confirmed_other": "{{count}} · all confirmed",
+      "transactions_failed_one": "{{count}} failed",
+      "transactions_failed_other": "{{count}} failed",
+      "transactions_in_progress_one": "{{count}} in progress",
+      "transactions_in_progress_other": "{{count}} in progress",
+      "view_transaction": "View {{type}} transaction"
     },
     "no_previous_activity": "No previous activity",
     "item": {
@@ -280,7 +313,23 @@
       "withdrew_without_token": "Withdrew",
       "rewards": "Rewards",
       "generic": "{{action}} {{token}}",
-      "generic_without_token": "{{action}}"
+      "generic_without_token": "{{action}}",
+      "borrow": {
+        "supply": "Supplied {{token}}",
+        "supply_without_token": "Supplied",
+        "borrow": "Borrowed {{token}}",
+        "borrow_without_token": "Borrowed",
+        "supplyAndBorrow": "Supplied and borrowed {{token}}",
+        "supplyAndBorrow_without_token": "Supplied and borrowed",
+        "repay": "Repaid {{token}}",
+        "repay_without_token": "Repaid",
+        "withdraw": "Withdrew {{token}}",
+        "withdraw_without_token": "Withdrew",
+        "enableCollateral": "Enabled {{token}} as collateral",
+        "enableCollateral_without_token": "Enabled collateral",
+        "disableCollateral": "Disabled {{token}} as collateral",
+        "disableCollateral_without_token": "Disabled collateral"
+      }
     },
     "time": {
       "now": "just now",
@@ -561,12 +610,21 @@
     },
     "borrow": {
       "title": "Borrow",
-      "review": "Review borrow",
+      "review_actions": {
+        "borrow": "Review borrow",
+        "repay": "Review repayment",
+        "supply": "Review supply",
+        "withdraw": "Review withdrawal"
+      },
       "enter_amounts": "Enter amounts",
       "connect_title": "Connect wallet",
       "connect_description": "Connect a wallet to view borrow markets and start a borrow action.",
       "unsupported_network": "Unsupported network",
       "unsupported_network_description": "Switch to a supported network to view borrow markets and positions.",
+      "switch_network": "Switch network",
+      "switch_network_error": "The network was not switched. Try again or switch networks in your wallet.",
+      "switch_network_manually": "Switch your wallet to {{networks}} to view borrow markets and positions.",
+      "network_unavailable": "Borrow is not available on any network this wallet supports.",
       "empty_title": "No borrow markets",
       "empty_description": "Borrow markets are not available for this network yet.",
       "error_title": "Borrow unavailable",
@@ -586,13 +644,20 @@
         "borrowable_assets": "Borrowable Assets",
         "collateral_assets": "Collateral Assets",
         "no_assets": "No assets found",
-        "max_ltv": "Max LTV {{value}}%",
+        "collateral_terms": "Max LTV {{maxLtv}} · Liq. {{liquidationThreshold}}",
+        "collateral_earns": "Earns {{rate}}",
+        "balance_column": "Balance",
         "available": "{{amount}} {{symbol}} available",
         "wallet_balance": "{{amount}} {{symbol}} in wallet",
         "ltv_ratio": "LTV ratio",
         "collateral_value": "Collateral value",
         "loan": "Loan",
         "borrow_rate": "Borrow rate",
+        "rate_from": "from {{rate}}",
+        "liquidity_available": "{{amount}} available",
+        "origination_fee_value": "{{value}} fee",
+        "pooled_collaterals_one": "Pooled · {{count}} collateral",
+        "pooled_collaterals_other": "Pooled · {{count}} collaterals",
         "health_factor": "Health factor",
         "ltv_note": "Liquidation can occur if LTV crosses the selected market threshold.",
         "validation": {
@@ -626,37 +691,31 @@
         "isolated": "Isolated market"
       },
       "review_page": {
-        "title": "Review borrow",
+        "titles": {
+          "borrow": "Borrow {{symbol}}",
+          "borrowAndSupply": "Borrow {{symbol}}",
+          "disableCollateral": "Disable {{symbol}} as collateral",
+          "enableCollateral": "Enable {{symbol}} as collateral",
+          "repay": "Repay {{symbol}}",
+          "supply": "Supply {{symbol}} as collateral",
+          "withdraw": "Withdraw {{symbol}}"
+        },
         "unavailable_title": "Borrow review unavailable",
         "unavailable_description": "Return to Borrow and enter amounts to review this action.",
         "back": "Back to Borrow",
-        "action": "Action",
-        "actions": {
-          "borrow": "Borrow",
-          "borrowAndSupply": "Borrow and supply collateral",
-          "disableCollateral": "Disable collateral",
-          "enableCollateral": "Enable collateral",
-          "repay": "Repay debt",
-          "supply": "Supply collateral",
-          "withdraw": "Withdraw collateral"
-        },
         "borrow_amount": "Borrow amount",
         "repay_amount": "Repay amount",
         "collateral_amount": "Collateral amount",
         "effective_collateral": "Effective collateral",
         "market": "Market",
-        "provider": "Provider",
-        "network": "Network",
-        "requested_action": "Requested action",
-        "market_id": "Market ID",
-        "execution_pending": "Confirming will open the borrow transaction flow.",
         "confirm": "Confirm",
         "back_to_position": "Back to position",
-        "projected_ltv": "Projected LTV",
-        "projected_health_factor": "Projected health factor",
-        "estimated_fee": "Estimated fee",
-        "estimated_fee_pending": "Shown in wallet",
-        "confirmation_error_description": "We couldn't prepare your borrow transaction. Please try again.",
+        "ltv": "LTV",
+        "health_factor": "Health factor",
+        "collateral_fee": "Collateral fee",
+        "origination_fee": "Origination fee",
+        "debt_principal": "Debt principal",
+        "confirmation_error_description": "We couldn't prepare this transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {
           "AmountExceedsAvailableLiquidity": "The amount exceeds the currently available market liquidity. The provider or blockchain may reject this action.",
@@ -676,32 +735,62 @@
           "withdraw": "Withdrawing collateral can increase LTV and liquidation risk."
         }
       },
+      "risk_block": {
+        "title": "This action can't be confirmed",
+        "healthFactor": "The projected health factor would fall below 1, so the protocol would reject this action or the position could be liquidated. Reduce the amount or add collateral.",
+        "ltv": "The projected LTV would exceed the market's max LTV, so the protocol would reject this action. Reduce the amount or add collateral."
+      },
       "execution_page": {
-        "title": "Confirm borrow",
         "unavailable_title": "Borrow execution unavailable",
         "unavailable_description": "Return to Borrow and review an action before confirming.",
-        "error_title": "Borrow transaction failed",
-        "current_transaction": "Transaction {{current}} of {{total}}",
-        "action_progress": "Action step {{current}} of {{total}}",
+        "error_titles": {
+          "borrow": "Borrow failed",
+          "borrowAndSupply": "Borrow failed",
+          "disableCollateral": "Disabling collateral failed",
+          "enableCollateral": "Enabling collateral failed",
+          "repay": "Repayment failed",
+          "supply": "Supply failed",
+          "withdraw": "Withdrawal failed"
+        },
+        "cancelled": "You cancelled this request in your wallet.",
         "batch_progress": "Step {{current}} of {{total}}",
-        "history_title": "Transaction history",
-        "transaction_complete": "Complete",
-        "view_transaction": "View transaction",
-        "status": {
-          "signing": "Waiting for wallet approval",
-          "submitting": "Submitting transaction",
-          "confirming": "Confirming transaction",
-          "advancing": "Preparing the next action step",
-          "completed": "Action complete",
-          "disabled": "No transactions required"
+        "preparing_next_step": "Preparing the next step",
+        "tx_type": {
+          "APPROVAL": "Token approval",
+          "AUTHORIZE": "Authorize",
+          "DEAUTHORIZE": "Revoke authorization",
+          "SUPPLY": "Supply",
+          "BORROW": "Borrow",
+          "REPAY": "Repay",
+          "WITHDRAW": "Withdraw",
+          "ENABLE_COLLATERAL": "Enable collateral",
+          "DISABLE_COLLATERAL": "Disable collateral",
+          "BUNDLE": "Batch transaction",
+          "WRAP": "Wrap"
         }
       },
       "success_page": {
-        "title": "Borrow complete",
+        "titles": {
+          "borrow": "Borrow complete",
+          "borrowAndSupply": "Borrow complete",
+          "disableCollateral": "Collateral disabled",
+          "enableCollateral": "Collateral enabled",
+          "repay": "Repayment complete",
+          "supply": "Supply complete",
+          "withdraw": "Withdrawal complete"
+        },
         "unavailable_title": "Borrow result unavailable",
         "unavailable_description": "Return to Borrow to start a new action.",
-        "view_transaction": "View transaction",
-        "done": "Done"
+        "transactions": "Transactions",
+        "view_transaction": "View {{type}} transaction",
+        "view_on_explorer": "View on explorer",
+        "collateral_supplied": "Collateral supplied",
+        "position": {
+          "estimated": "Estimated position",
+          "settled": "Updated position"
+        },
+        "done": "Done",
+        "back_to_positions": "Back to positions"
       },
       "position_details": {
         "actions_title": "Actions",
@@ -709,7 +798,7 @@
         "collateral": "Collateral",
         "debt": "Debt",
         "details": "Borrow details",
-        "empty": "Borrow position unavailable",
+        "empty": "No open position in this market.",
         "health_factor": "Health factor",
         "liquidation_penalty": "Liquidation penalty",
         "liquidation_threshold": "Liquidation threshold",
@@ -724,7 +813,6 @@
         "unsupported_network": "Borrow positions are not available on this network.",
         "collateral_list": "Collateral value",
         "configure_action": "Manage",
-        "selected": "Selected",
         "select_withdraw_token": "Select collateral to withdraw",
         "outstanding_debt": "{{amount}} {{symbol}} outstanding",
         "withdrawable": "{{amount}} {{symbol}} withdrawable",
@@ -735,6 +823,10 @@
         "enable_collateral_warning": "Enabling this asset as collateral can improve health factor, but the supplied asset remains exposed to market risk.",
         "disable_collateral_warning": "Disabling this asset as collateral can lower health factor and increase liquidation risk.",
         "validation": {
+          "collateral_toggle_risk": {
+            "healthFactor": "Disabling this collateral would drop the health factor below 1. Repay debt or add other collateral first.",
+            "ltv": "Disabling this collateral would push the LTV past the market's max LTV. Repay debt or add other collateral first."
+          },
           "repay_debt": "Amount exceeds outstanding debt.",
           "repay_minimum": "Repayment would leave debt below the market minimum. Repay all or reduce the repayment.",
           "wallet_balance": "Amount exceeds wallet balance.",
@@ -844,7 +936,9 @@
     "skipped": "Skipped",
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
+    "cancelled": "You cancelled this request in your wallet.",
     "approve_error": "Something went wrong",
+    "view_transaction": "View transaction",
     "tx_type": {
       "SWAP": "SWAP",
       "DEPOSIT": "DEPOSIT",
@@ -1008,6 +1102,10 @@
     "no_enabled_yields": {
       "title": "No yields enabled",
       "description": "There are no yields enabled for this API key. Enable at least one yield to start earning."
+    },
+    "widget_unavailable": {
+      "title": "Something went wrong",
+      "description": "The widget couldn't load. Please refresh the page or try again later."
     }
   },
   "positions": {
@@ -1279,6 +1377,8 @@
     "n_available_opps": "{{count}} available opportunities",
     "yields_available_one": "{{token_name}} · {{count}} yield available",
     "yields_available_other": "{{token_name}} · {{count}} yields available",
+    "yields_count_one": "{{count}} yield",
+    "yields_count_other": "{{count}} yields",
     "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {

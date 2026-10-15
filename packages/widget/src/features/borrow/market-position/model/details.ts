@@ -8,12 +8,14 @@ import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-ri
 import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
 import {
   formatBorrowProviderName,
-  formatHealthFactor,
   formatNetworkName,
+} from "../../../../shared/lib/formatters";
+import {
+  formatHealthFactor,
+  formatNumber,
   formatPercent,
   formatUsd,
-} from "../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../shared/lib/number-format";
+} from "../../../../shared/lib/number-format";
 import type {
   BorrowPositionPendingActionContext,
   BorrowWithdrawTokenOption,
@@ -200,9 +202,11 @@ export const findBorrowCollateralToggleAction = ({
 };
 
 export const getBorrowPositionDetailsModel = ({
+  locale,
   position,
   t,
 }: {
+  readonly locale: string;
   readonly position: MarketPosition;
   readonly t: TFunction;
 }) => {
@@ -215,7 +219,8 @@ export const getBorrowPositionDetailsModel = ({
     currentRisk.status === "available" ? currentRisk.healthFactor : null;
   const marketRisk = deriveMarketRiskLimits(position.market);
   const maxLtv =
-    currentRisk.status === "available" ? currentRisk.maxLtv : marketRisk.maxLtv;
+    (currentRisk.status === "available" ? currentRisk.maxLtv : null) ??
+    marketRisk.maxLtv;
   const liquidationThreshold =
     currentRisk.status === "available"
       ? currentRisk.liquidationThreshold
@@ -224,13 +229,13 @@ export const getBorrowPositionDetailsModel = ({
     {
       id: "net-worth",
       label: t("dashboard.borrow.position_details.net_worth"),
-      value: formatUsd(position.metrics.netWorthUsd),
+      value: formatUsd(position.metrics.netWorthUsd, locale),
     },
     {
       id: "debt",
       label: t("dashboard.borrow.position_details.debt"),
       subValue: debtBalance?.tokenSymbol,
-      value: formatUsd(position.metrics.totalBorrowedUsd),
+      value: formatUsd(position.metrics.totalBorrowedUsd, locale),
     },
     ...(currentLtv === null
       ? []
@@ -238,7 +243,7 @@ export const getBorrowPositionDetailsModel = ({
           {
             id: "ltv",
             label: t("dashboard.borrow.position_details.ltv"),
-            value: formatPercent(currentLtv),
+            value: formatPercent(currentLtv, locale),
           },
         ]),
     ...(healthFactor === null
@@ -247,7 +252,7 @@ export const getBorrowPositionDetailsModel = ({
           {
             id: "health-factor",
             label: t("dashboard.borrow.position_details.health_factor"),
-            value: formatHealthFactor(healthFactor),
+            value: formatHealthFactor(healthFactor, locale),
           },
         ]),
   ];
@@ -257,16 +262,16 @@ export const getBorrowPositionDetailsModel = ({
       label: balance.isCollateral
         ? t("dashboard.borrow.position_details.collateral")
         : t("dashboard.borrow.position_details.supplied"),
-      subValue: formatUsd(balance.balanceUsd),
-      value: `${formatNumber(balance.balance, 6)} ${balance.tokenSymbol}`,
+      subValue: formatUsd(balance.balanceUsd, locale),
+      value: `${formatNumber(balance.balance, locale, 6)} ${balance.tokenSymbol}`,
     })),
     ...(debtBalance
       ? [
           {
             id: `debt-${debtBalance.tokenAddress}`,
             label: t("dashboard.borrow.position_details.borrowed"),
-            subValue: formatUsd(debtBalance.balanceUsd),
-            value: `${formatNumber(debtBalance.balance, 6)} ${debtBalance.tokenSymbol}`,
+            subValue: formatUsd(debtBalance.balanceUsd, locale),
+            value: `${formatNumber(debtBalance.balance, locale, 6)} ${debtBalance.tokenSymbol}`,
           },
         ]
       : []),
@@ -290,22 +295,22 @@ export const getBorrowPositionDetailsModel = ({
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
-      value: formatPercent(maxLtv),
+      value: formatPercent(maxLtv, locale),
     },
     {
       id: "liquidation-threshold",
       label: t("dashboard.borrow.position_details.liquidation_threshold"),
-      value: formatPercent(liquidationThreshold),
+      value: formatPercent(liquidationThreshold, locale),
     },
     {
       id: "liquidation-penalty",
       label: t("dashboard.borrow.position_details.liquidation_penalty"),
-      value: formatPercent(marketRisk.liquidationPenalty),
+      value: formatPercent(marketRisk.liquidationPenalty, locale),
     },
     {
       id: "borrow-apy",
       label: t("dashboard.borrow.details.borrow_apy"),
-      value: formatPercent(position.metrics.borrowApy),
+      value: formatPercent(position.metrics.borrowApy, locale),
     },
   ];
   const collateralItems = supplyBalances.map((balance) => {
@@ -319,8 +324,8 @@ export const getBorrowPositionDetailsModel = ({
     );
 
     return {
-      balance: `${formatNumber(balance.balance, 6)} ${balance.tokenSymbol}`,
-      balanceUsd: formatUsd(balance.balanceUsd),
+      balance: `${formatNumber(balance.balance, locale, 6)} ${balance.tokenSymbol}`,
+      balanceUsd: formatUsd(balance.balanceUsd, locale),
       collateralToggleAction:
         collateralToggleAction && collateralToken
           ? ({
@@ -332,7 +337,7 @@ export const getBorrowPositionDetailsModel = ({
       id: balance.tokenAddress,
       isCollateral: balance.isCollateral,
       label: balance.tokenSymbol,
-      supplyRate: formatPercent(balance.apy),
+      supplyRate: formatPercent(balance.apy, locale),
     };
   });
 
@@ -350,7 +355,7 @@ export const getBorrowPositionDetailsModel = ({
     marketLabel: getBorrowMarketPairLabel(position.market),
     metricCards,
     providerName: formatBorrowProviderName(position.integration.name),
-    totalCollateralUsd: formatUsd(position.metrics.totalCollateralUsd),
+    totalCollateralUsd: formatUsd(position.metrics.totalCollateralUsd, locale),
     title: overview.title,
   };
 };

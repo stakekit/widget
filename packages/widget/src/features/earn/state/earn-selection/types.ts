@@ -1,23 +1,21 @@
 import { Data } from "effect";
-import type { AsyncResult } from "effect/unstable/reactivity/AsyncResult";
-import type {
-  Atom,
-  PullResult,
-  Writable,
-} from "effect/unstable/reactivity/Atom";
+import type { AsyncResult } from "effect/reactivity/AsyncResult";
+import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
 import type { TronResource } from "../../../../domain/action/tron-resource";
+import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
 import type {
+  EarnProvider,
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../domain/earn/models";
-import type { YieldId } from "../../../../domain/identity/identifiers";
+import type { PreferredTokenYieldsPerNetwork } from "../../../../domain/earn/yield";
+import type {
+  ProviderOption,
+  YieldId,
+} from "../../../../domain/identity/identifiers";
 import type { PositionsData } from "../../../../domain/portfolio/positions";
 import type { Token } from "../../../../domain/token/token";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
-import type {
-  DashboardYieldCategory,
-  PreferredTokenYieldsPerNetwork,
-} from "../../../../public-api/types";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import type { PullPage } from "../../../../shared/effect/pagination";
 import type {
@@ -61,7 +59,9 @@ export type EarnEntryIntent = {
   selectedTokenKey: EarnTokenKey | null;
   selectedYieldId: YieldId | null;
   selectedValidators: ReadonlyArray<EarnValidator> | null;
-  selectedProviderYieldId: YieldId | null;
+  /** Validator name or address requested by init params; resolved until the user picks one or changes yield. */
+  requestedValidator: string | null;
+  selectedProviderOption: ProviderOption | null;
   selectedCategory: DashboardYieldCategory | null;
   stakeAmount: string;
   useMaxAmount: boolean;
@@ -76,10 +76,15 @@ export type EarnSelection = {
 };
 
 export type EarnSelectionForm = {
-  providerYieldId: YieldId | null;
+  providerOption: ProviderOption | null;
   stakeAmount: string;
   useMaxAmount: boolean;
   tronResource: TronResource | null;
+};
+
+export type EarnProviderOption = {
+  readonly value: ProviderOption;
+  readonly provider: EarnProvider | null;
 };
 
 export type EarnTokenOptionsState = AsyncResult<
@@ -150,9 +155,12 @@ export type EarnSelectionView = {
   };
 };
 
-export const makeDefaultEarnIntent = (): EarnEntryIntent => ({
+export const makeDefaultEarnIntent = (
+  requestedValidator: string | null = null
+): EarnEntryIntent => ({
   amountInput: "untouched",
-  selectedProviderYieldId: null,
+  requestedValidator,
+  selectedProviderOption: null,
   selectedTokenKey: null,
   selectedValidators: null,
   selectedYieldId: null,

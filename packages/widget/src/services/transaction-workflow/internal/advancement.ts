@@ -12,6 +12,7 @@ import {
 import {
   appendTransactionWorkflowBatch,
   makeBorrowTransactionWorkflowBatch,
+  reconcileBorrowTransactionWorkflowBatch,
 } from "./model";
 
 type AdvanceResult =
@@ -161,10 +162,7 @@ export const makeAdvanceBatch = Effect.gen(function* () {
       Match.tag("Complete", ({ action }) =>
         Effect.succeed({
           _tag: "Complete" as const,
-          context: {
-            ...context,
-            domain: { _tag: "Borrow" as const, action },
-          },
+          context: reconcileBorrowTransactionWorkflowBatch({ action, context }),
         })
       ),
       Match.tag("NextBatch", ({ action }) => {

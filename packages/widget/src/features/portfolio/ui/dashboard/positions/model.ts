@@ -1,37 +1,32 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { Option } from "effect";
 import type { TFunction } from "i18next";
 import {
   deriveMarketPositionOverview,
   type MarketPosition,
 } from "../../../../../domain/borrow/positions/market-position";
-import type { BorrowResourceError } from "../../../../../resources/borrow-resource-error";
+import type { Presentable } from "../../../../../shared/effect/async-result";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
+import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
-  formatBorrowProviderName,
+  formatNumber,
   formatPercent,
   formatUsd,
-} from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+} from "../../../../../shared/lib/number-format";
 
 type UnifiedManagePositionsStateInput = {
-  readonly borrowPositionsResult: AsyncResult.AsyncResult<
-    ReadonlyArray<MarketPosition>,
-    BorrowResourceError
-  >;
+  readonly borrowPositions: Presentable<ReadonlyArray<MarketPosition>, unknown>;
   readonly borrowWalletIsConnected: boolean;
-  readonly earnIsError: boolean;
-  readonly earnIsFetching: boolean;
-  readonly earnIsLoading: boolean;
-  readonly earnPositionsCount: number;
+  readonly earnPositions: Presentable<ReadonlyArray<unknown>, unknown>;
   readonly isConnected: boolean;
   readonly isConnecting: boolean;
-  readonly showEarnPositions: boolean;
 };
 
 export const getBorrowMarketPositionListItemModel = ({
+  locale,
   position,
   t,
 }: {
+  readonly locale: string;
   readonly position: MarketPosition;
   readonly t: TFunction;
 }) => {
@@ -44,16 +39,17 @@ export const getBorrowMarketPositionListItemModel = ({
 
   return {
     balanceText: debtBalance
-      ? `${formatNumber(debtBalance.balance, 6)} ${debtBalance.tokenSymbol}`
-      : formatUsd(position.metrics.totalSuppliedUsd.toString()),
-    borrowApy: formatPercent(position.metrics.borrowApy),
+      ? `${formatNumber(debtBalance.balance, locale, 6)} ${debtBalance.tokenSymbol}`
+      : formatUsd(position.metrics.totalSuppliedUsd.toString(), locale),
+    borrowApy: formatPercent(position.metrics.borrowApy, locale),
     headerToken,
     providerName: formatBorrowProviderName(position.integration.name),
     subValue: debtBalance
-      ? `${formatPercent(overview.currentLtv)} ${t(
+      ? `${formatPercent(overview.currentLtv, locale)} ${t(
           "dashboard.borrow.position_details.ltv"
         )} · ${formatUsd(
-          debtBalance.balanceUsd.toString()
+          debtBalance.balanceUsd.toString(),
+          locale
         )} ${t("dashboard.borrow.position_details.debt").toLowerCase()}`
       : t("dashboard.borrow.position_details.supplied"),
     title: overview.title,
@@ -70,41 +66,47 @@ type UnifiedManagePositionsState = {
   readonly totalPositionsCount: number;
 };
 
+/**
+ * The Manage list combines Earn and Borrow positions. A source that failed
+ * with nothing to show counts as failed; one whose refetch failed keeps its
+ * positions and only flags the list as incomplete.
+ */
 export const getUnifiedManagePositionsState = ({
-  borrowPositionsResult,
+  borrowPositions,
   borrowWalletIsConnected,
-  earnIsError,
-  earnIsFetching,
-  earnIsLoading,
-  earnPositionsCount,
+  earnPositions,
   isConnected,
   isConnecting,
-  showEarnPositions,
 }: UnifiedManagePositionsStateInput): UnifiedManagePositionsState => {
-  const borrowPositions = AsyncResult.getOrElse(
-    borrowPositionsResult,
-    () => []
-  );
-  const borrowPositionsCount = borrowPositions.length;
+  const borrowPositionsCount =
+    borrowPositions._tag === "Ready" ? borrowPositions.value.length : 0;
+  const earnPositionsCount =
+    earnPositions._tag === "Ready" ? earnPositions.value.length : 0;
   const borrowIsLoading =
-    borrowWalletIsConnected && AsyncResult.isInitial(borrowPositionsResult);
-  const borrowIsError =
-    borrowWalletIsConnected && AsyncResult.isFailure(borrowPositionsResult);
-  const earnIsActive = isConnected;
+    borrowWalletIsConnected && borrowPositions._tag === "Loading";
   const activeSourceCount =
-    Number(earnIsActive) + Number(borrowWalletIsConnected);
+    Number(isConnected) + Number(borrowWalletIsConnected);
   const failedSourceCount =
-    Number(earnIsActive && earnIsError) + Number(borrowIsError);
+    Number(isConnected && earnPositions._tag === "Failed") +
+    Number(borrowWalletIsConnected && borrowPositions._tag === "Failed");
+  const refreshFailed =
+    (isConnected &&
+      earnPositions._tag === "Ready" &&
+      Option.isSome(earnPositions.refreshFailure)) ||
+    (borrowWalletIsConnected &&
+      borrowPositions._tag === "Ready" &&
+      Option.isSome(borrowPositions.refreshFailure));
   const totalPositionsCount = earnPositionsCount + borrowPositionsCount;
   const isAnyPositionsLoading =
-    (earnIsLoading && earnIsFetching) || borrowIsLoading;
+    earnPositions._tag === "Loading" || borrowIsLoading;
   const hasOnlyErrors =
-    activeSourceCount > 0 &&
-    failedSourceCount === activeSourceCount &&
-    totalPositionsCount === 0;
-  const hasPartialError = failedSourceCount > 0 && !hasOnlyErrors;
+    activeSourceCount > 0 && failedSourceCount === activeSourceCount;
+  const hasPartialError =
+    !hasOnlyErrors && (failedSourceCount > 0 || refreshFailed);
   const showPositionsList =
-    showEarnPositions || borrowPositionsCount > 0 || hasPartialError;
+    (isConnected && earnPositions._tag === "Ready") ||
+    borrowPositionsCount > 0 ||
+    hasPartialError;
 
   return {
     hasOnlyErrors,
@@ -114,7 +116,8 @@ export const getUnifiedManagePositionsState = ({
     showEmptyPositions:
       isConnected &&
       !isAnyPositionsLoading &&
-      failedSourceCount === 0 &&
+      !hasOnlyErrors &&
+      !hasPartialError &&
       totalPositionsCount === 0,
     showPositionsList,
     totalPositionsCount,

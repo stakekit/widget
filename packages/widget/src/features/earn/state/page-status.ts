@@ -1,5 +1,6 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import { toPresentable } from "../../../shared/effect/async-result";
 import {
   isMountAnimationFinished,
   mountAnimationStateAtom,
@@ -23,10 +24,11 @@ export const earnAppLoadingAtom = Atom.make((get) => {
   return {
     isLoading:
       !selectedToken ||
-      AsyncResult.isInitial(walletConfig) ||
-      walletConfig.waiting ||
+      toPresentable(walletConfig)._tag === "Loading" ||
       AsyncResult.isInitial(get(pendingActionDeepLinkViewAtom)) ||
       wallet.status === "connecting",
+    /** A loaded wallet config is revalidating: presentable, not submittable. */
+    isRefreshing: walletConfig.waiting,
     presentationFrozen,
   } as const;
 }).pipe(Atom.withLabel("earnAppLoadingAtom"));

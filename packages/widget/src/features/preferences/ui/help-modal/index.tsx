@@ -1,6 +1,6 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
-import { useEffect, useEffectEvent, useMemo } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
@@ -210,7 +210,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
     reportOpened();
   }, [isGeoBlock]);
 
-  const selectModalProps = useMemo<SelectModalProps>(() => {
+  const getSelectModalProps = (): SelectModalProps => {
     if (modal.type === "geoBlock") {
       return {
         dialogTitle: title,
@@ -234,7 +234,8 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
         </Trigger>
       ),
     };
-  }, [customTrigger, modal, title, trackEvent]);
+  };
+  const selectModalProps = getSelectModalProps();
 
   return (
     <SelectModal {...selectModalProps}>

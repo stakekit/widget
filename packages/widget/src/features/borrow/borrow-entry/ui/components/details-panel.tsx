@@ -1,9 +1,17 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
+import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
+import type { Integration } from "../../../../../domain/borrow/catalog/integration";
+import type { Market } from "../../../../../domain/borrow/catalog/market";
+import { exactZero } from "../../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
   formatNetworkName,
 } from "../../../../../shared/lib/formatters";
+import {
+  dashboardDetailsScroll,
+  dashboardMetricCard,
+  dashboardMetricGrid,
+} from "../../../../../shared/ui/components/dashboard-details/styles.css";
 import {
   AddressRow,
   DetailRow,
@@ -15,7 +23,11 @@ import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content
 import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { BorrowEntryView } from "../../model/borrow-entry";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import type {
+  BorrowEntryView,
+  BorrowFormProjection,
+} from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";
 import { toBorrowEntryToken } from "../../model/market-groups";
 import * as styles from "../styles.css";
@@ -26,10 +38,10 @@ const BorrowMetricGrid = ({
 }: {
   readonly cards: ReturnType<typeof getBorrowDetailsModel>["metricCards"];
 }) => (
-  <Box className={styles.metricGrid}>
+  <Box className={dashboardMetricGrid}>
     {cards.map((card) => (
       <Box
-        className={styles.metricCard}
+        className={dashboardMetricCard}
         display="flex"
         flexDirection="column"
         gap="1"
@@ -47,37 +59,27 @@ const BorrowMetricGrid = ({
   </Box>
 );
 
-export const BorrowDetailsPanel = ({
+/** The entry form's details pane: the live selection, with catalog states. */
+export const BorrowEntryDetailsPanel = ({
   view,
 }: {
   readonly view: BorrowEntryView;
 }) => {
   const { t } = useTranslation();
   const {
-    borrowAmount,
-    collateralAmount,
-    integrationsResult,
-    marketsResult,
+    integrationsView,
+    marketsView,
     projection,
     selectedIntegration,
     selectedMarket,
     walletBalances,
   } = view;
 
-  if (
-    (view.markets.length === 0 &&
-      (AsyncResult.isInitial(marketsResult) ||
-        AsyncResult.isWaiting(marketsResult))) ||
-    AsyncResult.isInitial(integrationsResult) ||
-    AsyncResult.isWaiting(integrationsResult)
-  ) {
+  if (marketsView._tag === "Loading" || integrationsView._tag === "Loading") {
     return <ContentLoaderSquare heightPx={430} />;
   }
 
-  if (
-    (view.markets.length === 0 && AsyncResult.isFailure(marketsResult)) ||
-    AsyncResult.isFailure(integrationsResult)
-  ) {
+  if (marketsView._tag === "Failed" || integrationsView._tag === "Failed") {
     return (
       <BorrowDetailsEmpty title={t("dashboard.borrow.error_title")}>
         {t("dashboard.borrow.error_description")}
@@ -93,26 +95,53 @@ export const BorrowDetailsPanel = ({
     );
   }
 
+  return (
+    <BorrowMarketDetails
+      collateralToken={
+        walletBalances?.selectedCollateralToken?.collateralToken ?? null
+      }
+      integration={selectedIntegration}
+      market={selectedMarket}
+      projection={projection}
+    />
+  );
+};
+
+/** Describes one market: rates, stats and protocol facts. */
+export const BorrowMarketDetails = ({
+  collateralToken,
+  integration,
+  market,
+  projection,
+}: {
+  readonly collateralToken: CollateralToken | null;
+  readonly integration: Integration | null;
+  readonly market: Market;
+  readonly projection?: BorrowFormProjection;
+}) => {
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const model = getBorrowDetailsModel({
-    balances: walletBalances,
-    borrowAmount,
-    collateralAmount,
-    integration: selectedIntegration,
-    market: selectedMarket,
+    borrowAmount: exactZero(),
+    collateralAmount: exactZero(),
+    collateralToken,
+    integration,
+    locale,
+    market,
     projection,
     t,
   });
   const loanToken = toBorrowEntryToken({
-    network: selectedMarket.network,
-    token: selectedMarket.loanToken,
+    network: market.network,
+    token: market.loanToken,
   });
   const providerName = formatBorrowProviderName(
-    selectedIntegration?.name ?? selectedMarket.integrationId
+    integration?.name ?? market.integrationId
   );
 
   return (
     <Box
-      className={styles.detailsScroll}
+      className={dashboardDetailsScroll}
       display="flex"
       flexDirection="column"
       gap="4"
@@ -126,16 +155,16 @@ export const BorrowDetailsPanel = ({
             <Image
               wrapperProps={{ hw: "5" }}
               imgProps={{ borderRadius: "base" }}
-              src={selectedIntegration?.metadata.logoURI}
+              src={integration?.metadata.logoURI}
               fallbackName={providerName}
             />
             <Text variant={{ type: "muted", weight: "normal" }}>
               {providerName}
               {" · "}
-              {formatNetworkName(selectedMarket.network)}
+              {formatNetworkName(market.network)}
             </Text>
             <HeaderBadge
-              label={t(`dashboard.borrow.market_type.${selectedMarket.type}`)}
+              label={t(`dashboard.borrow.market_type.${market.type}`)}
             />
           </Box>
         </Box>
@@ -145,7 +174,7 @@ export const BorrowDetailsPanel = ({
 
       <DetailsSection title={t("dashboard.borrow.details.about")}>
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {selectedIntegration?.metadata.description ??
+          {integration?.metadata.description ??
             t("dashboard.borrow.details.about_fallback", {
               market: model.title,
               provider: providerName,
@@ -164,10 +193,10 @@ export const BorrowDetailsPanel = ({
           <DetailRow key={row.id} {...row} />
         ))}
 
-        {selectedMarket.poolAddress ? (
+        {market.poolAddress ? (
           <Box marginTop="2">
             <AddressRow
-              address={selectedMarket.poolAddress}
+              address={market.poolAddress}
               label={t("dashboard.borrow.details.pool_address")}
             />
           </Box>

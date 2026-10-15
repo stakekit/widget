@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
+import { formatUsd } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import { KycGateCard } from "../../../../yield-summary/views";
 import { usePositionDetails } from "../hooks/use-position-details";
@@ -17,8 +19,8 @@ export const PositionDetailsUnstakeActions = () => {
     unstakeMinAmount: unstakeMinAmountValue,
     unstakeIsGreaterOrLessIntegrationLimitError,
     unstakeAmount,
-    unstakeFormattedAmount,
-    reducedStakedOrLiquidBalance: reducedStakedOrLiquidBalanceValue,
+    unstakeAmountUsd,
+    exitBalance,
     canChangeUnstakeAmount: canChangeUnstakeAmountValue,
     canUnstake,
     unstakeDisabled,
@@ -35,9 +37,10 @@ export const PositionDetailsUnstakeActions = () => {
   } = usePositionDetails();
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (
-    !reducedStakedOrLiquidBalanceValue ||
+    !exitBalance ||
     canChangeUnstakeAmountValue === null ||
     !unstakeTokenValue ||
     !integrationDataValue
@@ -84,8 +87,10 @@ export const PositionDetailsUnstakeActions = () => {
         label={t(
           `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
         )}
-        formattedAmount={unstakeFormattedAmount}
-        balance={reducedStakedOrLiquidBalanceValue}
+        formattedAmount={
+          unstakeAmountUsd ? formatUsd(unstakeAmountUsd, locale) : ""
+        }
+        balance={exitBalance}
         yieldDto={integrationDataValue}
         validators={providersDetails ?? []}
         showUnstakeInfo={false}

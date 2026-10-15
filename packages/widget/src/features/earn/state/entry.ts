@@ -1,7 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
@@ -12,7 +12,7 @@ import {
 } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
-import type { YieldId } from "../../../domain/identity/identifiers";
+import type { ProviderOption } from "../../../domain/identity/identifiers";
 import { hasActivePositionForYield } from "../../../domain/portfolio/positions";
 import {
   getTokensPricesRequest,
@@ -20,17 +20,12 @@ import {
   pricesAtom,
 } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import { formatUsd } from "../../../shared/lib/formatters";
-import {
-  defaultFormattedNumber,
-  formatNumber,
-} from "../../../shared/lib/number-format";
 import { makeYieldEntry } from "../../yield-entry/index";
 import {
+  earnSelectionProviderOptionsViewAtom,
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
   earnSelectionViewAtom,
-  earnSelectionYieldOptionsViewAtom,
   selectEarnSelectionProviderAtom,
   selectEarnSelectionTronResourceAtom,
   setEarnSelectionAmountAtom,
@@ -49,7 +44,6 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const earnSelection = get(earnSelectionViewAtom);
   const status = get(earnSelectionStatusViewAtom);
   const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
-  const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const input = get(earnPageInputAtom);
   const quote = get(earnPageQuoteAtom);
   const selection = get(earnPageSelectionAtom);
@@ -57,18 +51,22 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const selectedTokenOption = selection.token;
   const selectedToken = quote.selectedToken;
   const selectedValidators = get(selectedEarnValidatorsAtom);
-  const availableAmount = selectedTokenOption?.amount
-    ? exactDecimal(selectedTokenOption.amount)
-    : null;
+  const availableAmount =
+    selectedTokenOption && selectedTokenOption.amount !== null
+      ? exactDecimal(selectedTokenOption.amount)
+      : null;
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading = status.loading.yields || yieldOptions.waiting;
-  const appLoading = get(earnAppLoadingAtom).isLoading;
+  const yieldLoading = status.loading.yields;
+  const appStatus = get(earnAppLoadingAtom);
+  const appLoading = appStatus.isLoading;
   const hasNoYields = status.empty.yields;
   const readiness = (() => {
     if (hasNoYields) return { _tag: "Blocked" } as const;
     if (appLoading) return { _tag: "Loading" } as const;
-    if (status.isFetching) return { _tag: "Refreshing" } as const;
+    if (status.isFetching || appStatus.isRefreshing) {
+      return { _tag: "Refreshing" } as const;
+    }
     if (!earnSelection.canSubmit) return { _tag: "Blocked" } as const;
     return { _tag: "Ready" } as const;
   })();
@@ -81,7 +79,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     availableAmount,
     entry: {
       amount: quote.stakeAmount,
-      selectedProviderYieldId: quote.selectedProviderYieldId,
+      selectedProviderOption: quote.selectedProviderOption,
       token: selectedToken,
       tronResource: input.tronResource,
       useMaxAmount: input.useMaxAmount,
@@ -115,14 +113,13 @@ export const earnEntryViewAtom = Atom.make((get) => {
   ).pipe(AsyncResult.value, Option.getOrNull);
   const availableAmount = input.availableAmount;
   const symbol = selectedToken?.symbol ?? "";
-  const selectedTokenAvailableAmount = availableAmount
-    ? {
-        amount: availableAmount,
-        fullFormattedAmount: formatNumber(availableAmount),
-        shortFormattedAmount: defaultFormattedNumber(availableAmount),
-        symbol,
-      }
-    : null;
+  const selectedTokenAvailableAmount =
+    availableAmount !== null
+      ? {
+          amount: availableAmount,
+          symbol,
+        }
+      : null;
   const stakeMaxAmount =
     selectedYield && entry.constraints.maximum && !entry.constraints.forceMax
       ? entry.constraints.allowedMaximum
@@ -148,18 +145,16 @@ export const earnEntryViewAtom = Atom.make((get) => {
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,
     footerIsLoading: input.footerIsLoading,
-    formattedPrice:
+    priceUsd:
       prices && selectedToken && selectedYield
-        ? formatUsd(
-            getTokenPriceInUSD({
-              amount: entry.amount,
-              baseToken: selectedYield.token,
-              pricePerShare: null,
-              prices,
-              token: selectedToken,
-            })
-          )
-        : "",
+        ? getTokenPriceInUSD({
+            amount: entry.amount,
+            baseToken: selectedYield.token,
+            pricePerShare: null,
+            prices,
+            token: selectedToken,
+          })
+        : null,
     isFetching: entry.isFetching,
     isLedgerLiveAccountPlaceholder: entry.isLedgerAccountPlaceholder,
     isStakeTokenSameAsGasToken:
@@ -180,7 +175,6 @@ export const earnEntryViewAtom = Atom.make((get) => {
     preparation: entry.preparation,
     providers: entry.providers,
     rewardToken: entry.rewardToken,
-    selectedProviderYieldId: input.entry.selectedProviderYieldId,
     selectedStake: selectedYield,
     selectedToken,
     selectedTokenAvailableAmount,
@@ -200,10 +194,15 @@ export const setEarnAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
   context.set(setEarnSelectionAmountAtom, amount.toString(10))
 ).pipe(Atom.withLabel("setEarnAmountAtom"));
 
-export const selectEarnProviderAtom = Atom.fnSync(
-  (providerYieldId: YieldId, context) =>
-    context.set(selectEarnSelectionProviderAtom, providerYieldId)
-).pipe(Atom.withLabel("selectEarnProviderAtom"));
+export const earnProviderOptionsViewAtom = Atom.make((get) => ({
+  ...get(earnSelectionProviderOptionsViewAtom),
+  appLoading: get(earnAppLoadingAtom).isLoading,
+})).pipe(Atom.withLabel("earnProviderOptionsViewAtom"));
+
+export const selectEarnProviderOptionAtom = Atom.fnSync(
+  (providerOption: ProviderOption, context) =>
+    context.set(selectEarnSelectionProviderAtom, providerOption)
+).pipe(Atom.withLabel("selectEarnProviderOptionAtom"));
 
 export const selectEarnTronResourceAtom = Atom.fnSync(
   (tronResource: TronResource, context) =>

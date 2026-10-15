@@ -1,16 +1,15 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
-import type { Chain as RainbowKitChain } from "@stakekit/rainbowkit";
-import type { Chain } from "viem";
 import type { Connector } from "wagmi";
 import type { getConnection } from "wagmi/actions";
 import type { WalletAddress } from "../../domain/identity/identifiers";
 import type { AdditionalAddresses } from "../../domain/wallet/address";
 import type { WalletNetwork } from "../../domain/wallet/network";
+import type { Chain } from "./wallet-descriptors";
 
 export type LedgerConnectorState = {
   readonly accounts: Account[];
   readonly currentAccountId: string | undefined;
-  readonly disabledChains: RainbowKitChain[];
+  readonly disabledChains: Chain[];
 };
 
 export type WalletState = {

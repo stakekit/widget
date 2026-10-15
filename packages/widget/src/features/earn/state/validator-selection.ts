@@ -1,5 +1,5 @@
 import { Effect, Match } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type {
   EarnValidator,
@@ -60,10 +60,7 @@ export const earnValidatorSelectionViewAtom = Atom.make((get) => {
     enabled: Boolean(
       validatorOptions.selectedYield && validatorOptions.enabled
     ),
-    shouldSort:
-      Boolean(config.dashboardVariant) ||
-      config.variant === "utila" ||
-      config.variant === "porto",
+    shouldSort: config.hostProfile.earnPresentation.compact,
     validators: validatorOptions.items,
   });
   const tokenOptionsLoading =

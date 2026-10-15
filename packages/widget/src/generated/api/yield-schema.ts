@@ -25,6 +25,7 @@ export type Networks =
   | "robinhood"
   | "robinhood-testnet"
   | "arc-testnet"
+  | "arc"
   | "avalanche-c"
   | "avalanche-c-atomic"
   | "avalanche-p"
@@ -42,6 +43,7 @@ export type Networks =
   | "hyperevm"
   | "tempo"
   | "pharos"
+  | "xlayer"
   | "agoric"
   | "akash"
   | "axelar"
@@ -131,6 +133,7 @@ export const Networks = Schema.Literals([
   "robinhood",
   "robinhood-testnet",
   "arc-testnet",
+  "arc",
   "avalanche-c",
   "avalanche-c-atomic",
   "avalanche-p",
@@ -148,6 +151,7 @@ export const Networks = Schema.Literals([
   "hyperevm",
   "tempo",
   "pharos",
+  "xlayer",
   "agoric",
   "akash",
   "axelar",
@@ -451,6 +455,7 @@ export type TokenDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -468,6 +473,7 @@ export type TokenDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -575,6 +581,7 @@ export const TokenDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -592,6 +599,7 @@ export const TokenDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -1149,6 +1157,7 @@ export type AllocationDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1166,6 +1175,7 @@ export type AllocationDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1273,6 +1283,7 @@ export const AllocationDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -1290,6 +1301,7 @@ export const AllocationDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -1650,6 +1662,7 @@ export type TransactionDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1667,6 +1680,7 @@ export type TransactionDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1850,6 +1864,7 @@ export const TransactionDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -1867,6 +1882,7 @@ export const TransactionDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -2169,6 +2185,7 @@ export type ActionArgumentsDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2186,6 +2203,7 @@ export type ActionArgumentsDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2276,6 +2294,7 @@ export type ActionArgumentsDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2293,6 +2312,7 @@ export type ActionArgumentsDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2469,6 +2489,7 @@ export const ActionArgumentsDto = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -2486,6 +2507,7 @@ export const ActionArgumentsDto = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -2588,6 +2610,7 @@ export const ActionArgumentsDto = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -2605,6 +2628,7 @@ export const ActionArgumentsDto = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -2998,6 +3022,7 @@ export type NetworkDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -3015,6 +3040,7 @@ export type NetworkDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -3109,6 +3135,7 @@ export const NetworkDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -3126,6 +3153,7 @@ export const NetworkDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -4059,6 +4087,7 @@ export type ActionDto = {
       | "robinhood"
       | "robinhood-testnet"
       | "arc-testnet"
+      | "arc"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -4076,6 +4105,7 @@ export type ActionDto = {
       | "hyperevm"
       | "tempo"
       | "pharos"
+      | "xlayer"
       | "agoric"
       | "akash"
       | "axelar"
@@ -4166,6 +4196,7 @@ export type ActionDto = {
       | "robinhood"
       | "robinhood-testnet"
       | "arc-testnet"
+      | "arc"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -4183,6 +4214,7 @@ export type ActionDto = {
       | "hyperevm"
       | "tempo"
       | "pharos"
+      | "xlayer"
       | "agoric"
       | "akash"
       | "axelar"
@@ -4451,6 +4483,7 @@ export const ActionDto = Schema.Struct({
         "robinhood",
         "robinhood-testnet",
         "arc-testnet",
+        "arc",
         "avalanche-c",
         "avalanche-c-atomic",
         "avalanche-p",
@@ -4468,6 +4501,7 @@ export const ActionDto = Schema.Struct({
         "hyperevm",
         "tempo",
         "pharos",
+        "xlayer",
         "agoric",
         "akash",
         "axelar",
@@ -4570,6 +4604,7 @@ export const ActionDto = Schema.Struct({
         "robinhood",
         "robinhood-testnet",
         "arc-testnet",
+        "arc",
         "avalanche-c",
         "avalanche-c-atomic",
         "avalanche-p",
@@ -4587,6 +4622,7 @@ export const ActionDto = Schema.Struct({
         "hyperevm",
         "tempo",
         "pharos",
+        "xlayer",
         "agoric",
         "akash",
         "axelar",
@@ -6225,6 +6261,7 @@ export type YieldDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -6242,6 +6279,7 @@ export type YieldDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -6356,6 +6394,7 @@ export const YieldDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -6373,6 +6412,7 @@ export const YieldDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -6585,6 +6625,7 @@ export type YieldsControllerGetYieldsParams = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -6602,6 +6643,7 @@ export type YieldsControllerGetYieldsParams = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -6758,6 +6800,7 @@ export const YieldsControllerGetYieldsParams = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -6775,6 +6818,7 @@ export const YieldsControllerGetYieldsParams = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -6849,8 +6893,8 @@ export const YieldsControllerGetYieldsParams = Schema.Struct({
     Schema.String.annotate({
       examples: ["optimism-usdt-aave-v3-lending"],
     }).check(
-      Schema.isMaxLength(200).annotate({
-        expected: "a value with a length of at most 200",
+      Schema.isMaxCodePoints(200).annotate({
+        expected: "a string with at most 200 code points",
       })
     )
   ),
@@ -7892,6 +7936,7 @@ export type TokensControllerGetTokensParams = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -7909,6 +7954,7 @@ export type TokensControllerGetTokensParams = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -7993,15 +8039,15 @@ export type TokensControllerGetTokensParams = {
 export const TokensControllerGetTokensParams = Schema.Struct({
   address: Schema.optionalKey(
     Schema.String.check(
-      Schema.isMaxLength(256).annotate({
-        expected: "a value with a length of at most 256",
+      Schema.isMaxCodePoints(256).annotate({
+        expected: "a string with at most 256 code points",
       })
     )
   ),
   symbol: Schema.optionalKey(
     Schema.String.check(
-      Schema.isMaxLength(64).annotate({
-        expected: "a value with a length of at most 64",
+      Schema.isMaxCodePoints(64).annotate({
+        expected: "a string with at most 64 code points",
       })
     )
   ),
@@ -8032,6 +8078,7 @@ export const TokensControllerGetTokensParams = Schema.Struct({
         "robinhood",
         "robinhood-testnet",
         "arc-testnet",
+        "arc",
         "avalanche-c",
         "avalanche-c-atomic",
         "avalanche-p",
@@ -8049,6 +8096,7 @@ export const TokensControllerGetTokensParams = Schema.Struct({
         "hyperevm",
         "tempo",
         "pharos",
+        "xlayer",
         "agoric",
         "akash",
         "axelar",
@@ -8331,6 +8379,7 @@ export type ActionsControllerGetActionsParams = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -8348,6 +8397,7 @@ export type ActionsControllerGetActionsParams = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -8535,6 +8585,7 @@ export const ActionsControllerGetActionsParams = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -8552,6 +8603,7 @@ export const ActionsControllerGetActionsParams = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",

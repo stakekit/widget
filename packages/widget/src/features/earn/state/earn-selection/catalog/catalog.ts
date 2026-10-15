@@ -1,14 +1,14 @@
 import { Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
-import { exactDecimal } from "../../../../../domain/finance/exact";
+import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
 import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import {
   EarnTokenCatalogKey,
   earnTokenCatalogResourceAtom,
@@ -24,7 +24,10 @@ import {
   YieldDirectoryKey,
 } from "../../../../../resources/yield-directory/index";
 import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/index";
-import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
+import {
+  combineAsyncResults,
+  mapAsyncResultError,
+} from "../../../../../shared/effect/async-result";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
@@ -177,26 +180,27 @@ const enrichTokenOptions = (
   balances: ReadonlyMap<string, string> | null
 ) =>
   canonical
-    .map((option, index) => {
-      const amount = balances?.get(tokenString(option.token));
-      return {
-        index,
-        option:
-          amount === undefined
-            ? option
-            : ({ ...option, amount, source: "balance" } as EarnTokenOption),
-      };
-    })
+    .map((option, index) => ({
+      index,
+      option: balances
+        ? ({
+            ...option,
+            amount: balances.get(tokenString(option.token)) ?? "0",
+            source: "balance",
+          } satisfies EarnTokenOption)
+        : option,
+    }))
     .sort((left, right) => {
-      const leftHasBalance =
+      // Prices are not loaded in the catalog, so sorting uses the unit
+      // threshold of the funded-balance rule.
+      const leftFunded =
         left.option.amount !== null &&
-        exactDecimal(left.option.amount).isGreaterThan(0);
-      const rightHasBalance =
+        isFundedBalance({ amount: left.option.amount, priceUsd: null });
+      const rightFunded =
         right.option.amount !== null &&
-        exactDecimal(right.option.amount).isGreaterThan(0);
+        isFundedBalance({ amount: right.option.amount, priceUsd: null });
       return (
-        Number(rightHasBalance) - Number(leftHasBalance) ||
-        left.index - right.index
+        Number(rightFunded) - Number(leftFunded) || left.index - right.index
       );
     })
     .map(({ option }) => option);
@@ -210,7 +214,7 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
   return Atom.make<EarnTokenOptionsState>((get) => {
     const catalog = get(earnTokenCatalogAtom(catalogKey));
     const balances = tokenBalancesResult(get, key);
-    return AsyncResult.all({ balances, catalog }).pipe(
+    return combineAsyncResults({ balances, catalog }).pipe(
       AsyncResult.map(({ balances, catalog }) =>
         enrichTokenOptions(catalog, balances)
       )
@@ -269,7 +273,7 @@ export const yieldValidatorsAtom = Atom.family(
       );
     const initialValidatorsResultAtom = Atom.make((get) => {
       const validatorsConfig = get(widgetConfigAtom).validatorsConfig;
-      return AsyncResult.all({
+      return combineAsyncResults({
         defaults: get(defaultValidatorsResultAtom),
         preferred: get(preferredValidatorsAtom),
       }).pipe(

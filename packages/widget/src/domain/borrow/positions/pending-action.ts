@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { TolerantArray } from "../../decoding/response-schema";
 import { ExactBaseUnitAmount } from "../../finance/scalars";
 import { MarketId, TokenAddress } from "../ids";
 
@@ -52,5 +53,18 @@ export const PendingAction = Schema.Union([
 ]);
 export type PendingAction = typeof PendingAction.Type;
 
-export const PendingActions = Schema.Array(PendingAction);
+const SupportedPendingActionType = Schema.Struct({
+  type: Schema.Literals(
+    PendingAction.members.map((member) => member.fields.type.literal)
+  ),
+});
+const isSupportedPendingAction = Schema.is(SupportedPendingActionType);
+
+// The API advertises more pending actions than the widget implements. Those,
+// and actions added after the client was generated, are skipped instead of
+// rejecting the whole account snapshot.
+export const PendingActions = TolerantArray(PendingAction, {
+  operation: "borrow-pending-actions",
+  isSupported: isSupportedPendingAction,
+});
 export type PendingActions = typeof PendingActions.Type;

@@ -19,7 +19,11 @@ import {
 import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import { GlobalModals } from "../../../features/widget-shell/composition";
 import { BorrowFeatureRoute } from "./borrow-feature-route";
-import { DashboardOverview } from "./dashboard-overview";
+import {
+  DashboardEarnFlowOverview,
+  DashboardEarnTab,
+  DashboardOverview,
+} from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
 
 const borrowRouteComposition = {
@@ -41,18 +45,23 @@ export const DashboardRoutes = () => {
       <Routes>
         <Route element={<DashboardShell />}>
           {/* Earn Tab */}
-          <Route element={<DashboardOverview />}>
-            <Route
-              index
-              element={
-                <EarnPageContent
-                  registerFooterButton={registerEarnFooterButton}
-                />
-              }
-            />
+          <Route element={<DashboardEarnTab />}>
+            <Route element={<DashboardOverview />}>
+              <Route
+                index
+                element={
+                  <EarnPageContent
+                    registerFooterButton={registerEarnFooterButton}
+                  />
+                }
+              />
+            </Route>
 
             <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-              {createClassicFlowRoutes({ journey: "Enter" })}
+              {createClassicFlowRoutes({
+                journey: "Enter",
+                layout: <DashboardEarnFlowOverview />,
+              })}
             </Route>
           </Route>
 
@@ -84,7 +93,7 @@ export const DashboardRoutes = () => {
 
                 <Route
                   path="select-validator/:pendingActionType"
-                  element={<DashboardPositionDetailsPage />}
+                  element={<PositionDetailsHub />}
                 />
 
                 <Route path="unstake">

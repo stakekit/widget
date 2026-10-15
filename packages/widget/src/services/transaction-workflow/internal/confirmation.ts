@@ -1,11 +1,9 @@
-import { Data, Duration, Effect, Match, pipe, Ref, Schedule } from "effect";
-import type { ActionTransaction } from "../../../domain/action/models";
+import { Data, Duration, Effect, Match, Ref, Schedule } from "effect";
 import { isTransactionError } from "../../../domain/action/rules";
 import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
 } from "../../../domain/borrow/execution/action";
-import type { Transaction as BorrowTransaction } from "../../../domain/borrow/execution/transaction";
 import { BorrowOperations, YieldOperations } from "../../api/operations";
 import {
   TransactionConfirmationError,
@@ -15,6 +13,7 @@ import {
 import { requireCurrentWorkflow } from "./current";
 import {
   isTransactionWorkflowDoneStatus,
+  reconcileBorrowTransactionWorkflowBatch,
   selectNextTransactionWorkflowTransaction,
   updateCurrentTransactionWorkflowTransaction,
 } from "./model";
@@ -27,13 +26,11 @@ type ConfirmationCheckResult =
   | {
       readonly _tag: "Classic";
       readonly explorerUrl: string | null;
-      readonly transaction: ActionTransaction;
     }
   | {
       readonly _tag: "Borrow";
       readonly action: BorrowAction;
       readonly explorerUrl: null;
-      readonly transaction: BorrowTransaction;
     };
 
 export const makeConfirmCurrent = Effect.gen(function* () {
@@ -91,7 +88,6 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                   ? Effect.succeed({
                       _tag: "Classic",
                       explorerUrl: status.explorerUrl ?? null,
-                      transaction: source.transaction,
                     })
                   : Effect.fail(new ConfirmationPendingError());
               }
@@ -107,10 +103,12 @@ export const makeConfirmCurrent = Effect.gen(function* () {
           ),
           Effect.tap((action) =>
             action
-              ? Ref.update(latestContextRef, (latest) => ({
-                  ...latest,
-                  domain: { _tag: "Borrow" as const, action },
-                }))
+              ? Ref.update(latestContextRef, (latest) =>
+                  reconcileBorrowTransactionWorkflowBatch({
+                    action,
+                    context: latest,
+                  })
+                )
               : Effect.void
           ),
           Effect.flatMap(
@@ -139,7 +137,6 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                   _tag: "Borrow",
                   action,
                   explorerUrl: null,
-                  transaction: updated ?? source.transaction,
                 });
               }
 
@@ -162,13 +159,11 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                 );
               }
 
-              return updated.status === "CONFIRMED" ||
-                updated.status === "SKIPPED"
+              return isTransactionWorkflowDoneStatus(updated.status)
                 ? Effect.succeed({
                     _tag: "Borrow",
                     action,
                     explorerUrl: null,
-                    transaction: updated,
                   })
                 : Effect.fail(new ConfirmationPendingError());
             }
@@ -197,35 +192,38 @@ export const makeConfirmCurrent = Effect.gen(function* () {
       )
     );
 
-    const updated = pipe(
-      updateCurrentTransactionWorkflowTransaction({
-        context:
-          result._tag === "Borrow"
-            ? { ...context, domain: { _tag: "Borrow", action: result.action } }
-            : context,
-        update: (current) => ({
-          ...current,
-          source:
-            current.source._tag === "Borrow" && result._tag === "Borrow"
-              ? { _tag: "Borrow", transaction: result.transaction }
-              : current.source,
-          meta: {
-            ...current.meta,
-            confirmationError: null,
-            done: true,
-            signError: null,
-            url:
-              result.explorerUrl ??
-              (current.meta.submissionIndex === null
-                ? current.meta.url
-                : (context.submissions[current.meta.submissionIndex]?.link ??
-                  current.meta.url)),
-          },
-        }),
+    const reconciled =
+      result._tag === "Borrow"
+        ? reconcileBorrowTransactionWorkflowBatch({
+            action: result.action,
+            context,
+          })
+        : context;
+    const confirmed = updateCurrentTransactionWorkflowTransaction({
+      context: reconciled,
+      update: (current) => ({
+        ...current,
+        meta: {
+          ...current.meta,
+          confirmationError: null,
+          done: true,
+          signError: null,
+          url:
+            result.explorerUrl ??
+            (current.meta.submissionIndex === null
+              ? current.meta.url
+              : (context.submissions[current.meta.submissionIndex]?.link ??
+                current.meta.url)),
+        },
       }),
-      selectNextTransactionWorkflowTransaction
-    );
+    });
 
-    return { context: updated };
+    // A successful Borrow action is terminal: nothing in the batch is signed.
+    return {
+      context:
+        result._tag === "Borrow" && result.action.status === "SUCCESS"
+          ? { ...confirmed, currentTransactionIndex: null }
+          : selectNextTransactionWorkflowTransaction(confirmed),
+    };
   });
 });

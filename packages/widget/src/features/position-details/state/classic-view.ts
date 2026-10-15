@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import {
   getPendingActionStateKey,
   type PendingActionStateKey,
@@ -18,7 +18,10 @@ import {
 } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { YieldId } from "../../../domain/identity/identifiers";
-import type { PositionBalancesByType } from "../../../domain/portfolio/positions";
+import {
+  getSingleExitTokenSum,
+  type PositionBalancesByType,
+} from "../../../domain/portfolio/positions";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
 import {
   YieldOpportunityKey,
@@ -30,7 +33,6 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { config } from "../../../shared/config/widget-defaults";
-import { formatUsd } from "../../../shared/lib/formatters";
 import { getYieldAmountConstraints } from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
@@ -198,23 +200,13 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       ).pipe(AsyncResult.value, Option.getOrNull);
       const stakedOrLiquidBalances =
         positionBalancesByType?.get("active") ?? null;
-      const firstBalance = stakedOrLiquidBalances?.[0] ?? null;
-      const reducedStakedOrLiquidBalance = firstBalance
-        ? (stakedOrLiquidBalances?.reduce(
-            (total, balance) => ({
-              amount: total.amount.plus(balance.amount),
-              amountUsd: total.amountUsd.plus(balance.amountUsd ?? 0),
-              token: balance.token,
-            }),
-            {
-              amount: exactZero(),
-              amountUsd: exactZero(),
-              token: firstBalance.token,
-            }
-          ) ?? null)
+      // Several active token identities have no scalar exit amount; exit is
+      // then unavailable rather than built from a mixed-token sum.
+      const exitBalance = stakedOrLiquidBalances
+        ? getSingleExitTokenSum(stakedOrLiquidBalances)
         : null;
       const amountConstraints = getYieldAmountConstraints({
-        availableAmount: reducedStakedOrLiquidBalance?.amount ?? null,
+        availableAmount: exitBalance?.amount ?? null,
         pricePerShare: null,
         type: "exit",
         yield: integrationData,
@@ -232,14 +224,13 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       const resolvedUnstakeAmount = resolveUnstakeAmount({
         canChangeAmount: canChangeUnstakeAmount,
         forceMax: amountConstraints.forceMax,
-        liveBalance: reducedStakedOrLiquidBalance?.amount ?? null,
+        liveBalance: exitBalance?.amount ?? null,
         maximum: amountConstraints.allowedMaximum,
         storedAmount: workflow.unstakeAmount,
         useMax: workflow.unstakeUseMaxAmount,
       });
       const unstakeDecimals =
-        reducedStakedOrLiquidBalance?.token.decimals ??
-        integrationData?.token.decimals;
+        exitBalance?.token.decimals ?? integrationData?.token.decimals;
       const unstakeAmount =
         unstakeDecimals == null
           ? resolvedUnstakeAmount
@@ -280,6 +271,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         ...workflow,
         canChangeUnstakeAmount,
         currentWalletScope: key.scope,
+        exitBalance,
         exitReceiveTokenSelection,
         integrationData,
         maxUnstakeAmount: amountConstraints.allowedMaximum,
@@ -291,7 +283,6 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         positionBalances,
         positionBalancesByType,
         positionBalancesResult,
-        reducedStakedOrLiquidBalance,
         stakedOrLiquidBalances,
         unstakeAmount,
         unstakeAmountError,
@@ -303,7 +294,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
           unstakeAmount.isLessThanOrEqualTo(amountConstraints.allowedMaximum) &&
           !unstakeAmount.isZero(),
         unstakeIsGreaterOrLessIntegrationLimitError,
-        unstakeToken: firstBalance?.token ?? null,
+        unstakeToken: exitBalance?.token ?? null,
         yieldOpportunity,
       } as const;
     }).pipe(Atom.withLabel("positionDetailsWorkflowViewAtom"))
@@ -345,7 +336,7 @@ type PricedEarnBalance =
 
 type PositionDetailsPendingActionView = {
   readonly amount: BigNumber | null;
-  readonly formattedAmount: string;
+  readonly amountUsd: BigNumber | null;
   readonly pendingAction: PendingAction;
   readonly validation: PendingActionAmountValidation;
   readonly yieldBalance: PricedEarnBalance;
@@ -399,24 +390,19 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 const projection =
                   view.pendingActionProjections.get(pendingKey);
                 const amount = projection?.amount ?? null;
-                const formattedAmount =
-                  prices &&
-                  amount &&
-                  view.reducedStakedOrLiquidBalance &&
-                  baseToken
-                    ? formatUsd(
-                        getTokenPriceInUSD({
-                          amount,
-                          baseToken,
-                          pricePerShare: null,
-                          prices,
-                          token: view.reducedStakedOrLiquidBalance.token,
-                        })
-                      )
-                    : "";
+                const amountUsd =
+                  prices && amount && baseToken
+                    ? getTokenPriceInUSD({
+                        amount,
+                        baseToken,
+                        pricePerShare: null,
+                        prices,
+                        token: balance.token,
+                      })
+                    : null;
                 return {
                   amount,
-                  formattedAmount,
+                  amountUsd,
                   pendingAction,
                   validation: projection?.validation ?? null,
                   yieldBalance: balance,

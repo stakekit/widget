@@ -18,6 +18,8 @@ export const toBorrowRiskProjection = ({
   }
 
   return {
+    currentHealthFactor:
+      current.status === "available" ? current.healthFactor : null,
     currentLtv: current.status === "available" ? current.ltv : null,
     maxLtv: projected.maxLtv,
     projectedHealthFactor: projected.healthFactor,

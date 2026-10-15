@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
 import { ExactBaseUnitAmount, ExactDecimal } from "../../finance/scalars";
 import { IntegrationId, MarketId, TokenAddress, WalletAddress } from "../ids";
@@ -7,7 +7,6 @@ import { NonNegativeRiskValue, RiskRatio } from "../risk/risk-values";
 import { PendingActions } from "./pending-action";
 
 export const IsolatedRiskSnapshot = Schema.Struct({
-  ...BorrowApi.PositionStateDto.fields,
   availableToBorrowUsd: NonNegativeRiskValue,
   currentLtv: NonNegativeRiskValue,
   healthFactor: Schema.NullOr(NonNegativeRiskValue),
@@ -16,7 +15,10 @@ export const IsolatedRiskSnapshot = Schema.Struct({
 export type IsolatedRiskSnapshot = typeof IsolatedRiskSnapshot.Type;
 
 export const SupplyBalance = Schema.Struct({
-  ...BorrowApi.SupplyBalanceDto.fields,
+  ...Struct.pick(BorrowApi.SupplyBalanceDto.fields, [
+    "tokenSymbol",
+    "isCollateral",
+  ]),
   apy: ExactDecimal,
   balance: NonNegativeRiskValue,
   balanceRaw: ExactBaseUnitAmount,
@@ -29,7 +31,7 @@ export const SupplyBalance = Schema.Struct({
 export type SupplyBalance = typeof SupplyBalance.Type;
 
 export const DebtBalance = Schema.Struct({
-  ...BorrowApi.DebtBalanceDto.fields,
+  ...Struct.pick(BorrowApi.DebtBalanceDto.fields, ["tokenSymbol"]),
   apy: ExactDecimal,
   balance: NonNegativeRiskValue,
   balanceRaw: ExactBaseUnitAmount,
@@ -41,7 +43,6 @@ export const DebtBalance = Schema.Struct({
 export type DebtBalance = typeof DebtBalance.Type;
 
 export const BorrowAccountSnapshot = Schema.Struct({
-  ...BorrowApi.PositionDto.fields,
   address: WalletAddress,
   availableToBorrowUsd: Schema.NullOr(NonNegativeRiskValue),
   currentLtv: NonNegativeRiskValue,

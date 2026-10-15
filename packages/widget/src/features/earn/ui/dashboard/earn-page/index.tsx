@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
+import { amountTokenSectionTitleContainer } from "../../../../../shared/ui/components/amount-token-section/styles.css";
 import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -12,7 +13,7 @@ import { SelectTokenTitle } from "../../classic/earn-page/components/select-toke
 import { SelectYieldSection } from "../../classic/earn-page/components/select-yield-section";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";
-import { container, selectTokenTitleContainer } from "./styles.css";
+import { container } from "./styles.css";
 
 export const EarnPageContent = ({
   registerFooterButton = true,
@@ -20,7 +21,7 @@ export const EarnPageContent = ({
   readonly registerFooterButton?: boolean;
 }) => {
   const { t } = useTranslation();
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
   const variant = useWidgetConfig("variant");
   const { view: status } = useEarnPageStatus();
 
@@ -29,7 +30,7 @@ export const EarnPageContent = ({
       <Box>
         <Box
           className={combineRecipeWithVariant({
-            rec: selectTokenTitleContainer,
+            rec: amountTokenSectionTitleContainer,
             variant,
           })}
         >
@@ -45,9 +46,7 @@ export const EarnPageContent = ({
         <ExtraArgsSelection />
       </Box>
 
-      {(dashboardVariant || variant === "utila" || variant === "porto") && (
-        <Divider />
-      )}
+      {earnPresentation.compact && <Divider />}
 
       <Box>
         <Footer />

@@ -1,11 +1,8 @@
 import BigNumber from "bignumber.js";
-import { Array as EArray, Option } from "effect";
 import { exactDecimal, exactZero } from "../finance/exact";
-import type { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type Token } from "../token/token";
-import type { EarnValidator, EarnYieldWithProvider } from "./models";
-import type { ValidatorKey } from "./validator";
+import type { EarnYieldWithProvider } from "./models";
 import { getYieldActionArg, isBittensorStaking } from "./yield";
 
 export const stakeTokenSameAsGasToken = ({
@@ -32,31 +29,6 @@ export const getMaxAmount = ({
     ),
     exactZero()
   );
-
-type InitialSelectionParams = {
-  readonly validator: string | null;
-  readonly yieldId: YieldId | null;
-};
-
-export const getInitSelectedValidators = (args: {
-  initQueryParams: InitialSelectionParams | null;
-  validators: ReadonlyArray<EarnValidator>;
-}) => {
-  const initValidator = args.initQueryParams?.validator;
-  const selected =
-    (initValidator
-      ? EArray.findFirst(
-          args.validators,
-          (validator) =>
-            validator.name?.toLowerCase() === initValidator.toLowerCase() ||
-            validator.address === initValidator
-        ).pipe(Option.getOrUndefined)
-      : undefined) ?? EArray.head(args.validators).pipe(Option.getOrUndefined);
-
-  return selected
-    ? new Map<ValidatorKey, EarnValidator>([[selected.key, selected]])
-    : new Map<ValidatorKey, EarnValidator>();
-};
 
 export const isForceMaxAmount = (
   args:
@@ -116,23 +88,35 @@ const isYieldWithEnterMinBasedOnPosition = (yieldDto: EarnYieldWithProvider) =>
     .get(yieldDto.mechanics.gasFeeToken.network as Network)
     ?.has(yieldDto.id) ?? false;
 
+/**
+ * The amount argument minimum is the backend's `subsequentMinimum ?? minimum`,
+ * so first entries read `entryLimits.minimum` and holders read
+ * `entryLimits.subsequentMinimum`, each falling back toward the argument.
+ */
 export const getMinStakeAmount = (
   yieldDto: EarnYieldWithProvider,
   selectedYieldHasActivePosition: boolean
 ) => {
-  const integrationMin = exactDecimal(
-    getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0
+  const entryLimits = yieldDto.mechanics.entryLimits;
+  const firstEntryMin = exactDecimal(
+    entryLimits?.minimum ??
+      getYieldActionArg(yieldDto, "enter", "amount")?.minimum ??
+      0
   );
 
-  if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
-    if (selectedYieldHasActivePosition) {
-      return exactZero();
-    }
-
-    return integrationMin;
+  if (!selectedYieldHasActivePosition) {
+    return firstEntryMin;
   }
 
-  return integrationMin;
+  if (entryLimits?.subsequentMinimum != null) {
+    return exactDecimal(entryLimits.subsequentMinimum);
+  }
+
+  if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
+    return exactZero();
+  }
+
+  return firstEntryMin;
 };
 
 export const getMinUnstakeAmount = (

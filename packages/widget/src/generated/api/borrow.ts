@@ -91,36 +91,6 @@ export const ArgumentSchemaDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ArgumentSchemaDto" });
-export type TokenDto = {
-  readonly address?: string;
-  readonly symbol: string;
-  readonly name: string;
-  readonly decimals: number;
-  readonly logoURI?: string;
-};
-export const TokenDto = Schema.Struct({
-  address: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Token contract address",
-      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
-    })
-  ),
-  symbol: Schema.String.annotate({
-    description: "Token symbol",
-    examples: ["USDC"],
-  }),
-  name: Schema.String.annotate({
-    description: "Token name",
-    examples: ["USD Coin"],
-  }),
-  decimals: Schema.Number.annotate({
-    description: "Token decimals",
-    examples: [6],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  logoURI: Schema.optionalKey(
-    Schema.String.annotate({ description: "Token logo URI" })
-  ),
-}).annotate({ identifier: "TokenDto" });
 export type PositionStateDto = {
   readonly currentLtv: string;
   readonly liquidationThreshold: string;
@@ -254,6 +224,7 @@ export type TransactionDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -271,6 +242,7 @@ export type TransactionDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -348,7 +320,8 @@ export type TransactionDto = {
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
     | "DISABLE_COLLATERAL"
-    | "BUNDLE";
+    | "BUNDLE"
+    | "WRAP";
   readonly status:
     | "NOT_FOUND"
     | "CREATED"
@@ -396,6 +369,7 @@ export const TransactionDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -413,6 +387,7 @@ export const TransactionDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -492,6 +467,7 @@ export const TransactionDto = Schema.Struct({
     "ENABLE_COLLATERAL",
     "DISABLE_COLLATERAL",
     "BUNDLE",
+    "WRAP",
   ]).annotate({ description: "Transaction type", examples: ["SUPPLY"] }),
   status: Schema.Literals([
     "NOT_FOUND",
@@ -705,11 +681,36 @@ export const SubmitTransactionResponseDto = Schema.Struct({
     ).annotate({ description: "Additional details" })
   ),
 }).annotate({ identifier: "SubmitTransactionResponseDto" });
-export type HealthStatus = "OK" | "FAIL";
-export const HealthStatus = Schema.Literals(["OK", "FAIL"]).annotate({
-  description: "The health status of the service",
-  identifier: "HealthStatus",
-});
+export type TokenDto = {
+  readonly address?: string;
+  readonly symbol: string;
+  readonly name: string;
+  readonly decimals: number;
+  readonly logoURI?: string;
+};
+export const TokenDto = Schema.Struct({
+  address: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Token contract address",
+      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+    })
+  ),
+  symbol: Schema.String.annotate({
+    description: "Token symbol",
+    examples: ["USDC"],
+  }),
+  name: Schema.String.annotate({
+    description: "Token name",
+    examples: ["USD Coin"],
+  }),
+  decimals: Schema.Number.annotate({
+    description: "Token decimals",
+    examples: [6],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  logoURI: Schema.optionalKey(
+    Schema.String.annotate({ description: "Token logo URI" })
+  ),
+}).annotate({ identifier: "TokenDto" });
 export type ActionDefinitionDto = {
   readonly id:
     | "supply"
@@ -742,41 +743,6 @@ export const ActionDefinitionDto = Schema.Struct({
     description: "Argument schema for this action (JSON Schema format)",
   }),
 }).annotate({ identifier: "ActionDefinitionDto" });
-export type CollateralTokenDto = {
-  readonly token: TokenDto;
-  readonly priceUsd: string;
-  readonly maxLtv: string;
-  readonly liquidationThreshold: string;
-  readonly liquidationPenalty: string;
-  readonly supplyRate: string;
-};
-export const CollateralTokenDto = Schema.Struct({
-  token: Schema.suspend((): Schema.Codec<TokenDto> => TokenDto).annotate({
-    description: "Collateral token details",
-  }),
-  priceUsd: Schema.String.annotate({
-    description: "Token price in USD",
-    examples: ["2800.00"],
-  }),
-  maxLtv: Schema.String.annotate({
-    description:
-      'Maximum loan-to-value ratio as decimal (e.g. "0.80" = 80% borrowing power)',
-    examples: ["0.80"],
-  }),
-  liquidationThreshold: Schema.String.annotate({
-    description: "Liquidation threshold as decimal",
-    examples: ["0.825"],
-  }),
-  liquidationPenalty: Schema.String.annotate({
-    description: "Liquidation penalty as decimal",
-    examples: ["0.05"],
-  }),
-  supplyRate: Schema.String.annotate({
-    description:
-      'APY earned on this collateral while deposited (decimal, e.g. "0.02" = 2%)',
-    examples: ["0.02"],
-  }),
-}).annotate({ identifier: "CollateralTokenDto" });
 export type BorrowPendingActionDto = {
   readonly type:
     | "supply"
@@ -940,23 +906,41 @@ export const ActionDto = Schema.Struct({
     format: "date-time",
   }),
 }).annotate({ identifier: "ActionDto" });
-export type HealthStatusDto = {
-  readonly status: HealthStatus;
-  readonly timestamp: string;
+export type CollateralTokenDto = {
+  readonly token: TokenDto;
+  readonly priceUsd: string;
+  readonly maxLtv: string;
+  readonly liquidationThreshold: string;
+  readonly liquidationPenalty: string;
+  readonly supplyRate: string;
 };
-export const HealthStatusDto = Schema.Struct({
-  status: Schema.suspend(
-    (): Schema.Codec<HealthStatus> => HealthStatus
-  ).annotate({
-    description: "The health status of the service",
-    examples: ["OK"],
+export const CollateralTokenDto = Schema.Struct({
+  token: Schema.suspend((): Schema.Codec<TokenDto> => TokenDto).annotate({
+    description: "Collateral token details",
   }),
-  timestamp: Schema.String.annotate({
-    description: "Timestamp when the health check was performed",
-    examples: ["2024-01-15T10:30:00.000Z"],
-    format: "date-time",
+  priceUsd: Schema.String.annotate({
+    description: "Token price in USD",
+    examples: ["2800.00"],
   }),
-}).annotate({ identifier: "HealthStatusDto" });
+  maxLtv: Schema.String.annotate({
+    description:
+      'Maximum loan-to-value ratio as decimal (e.g. "0.80" = 80% borrowing power)',
+    examples: ["0.80"],
+  }),
+  liquidationThreshold: Schema.String.annotate({
+    description: "Liquidation threshold as decimal",
+    examples: ["0.825"],
+  }),
+  liquidationPenalty: Schema.String.annotate({
+    description: "Liquidation penalty as decimal",
+    examples: ["0.05"],
+  }),
+  supplyRate: Schema.String.annotate({
+    description:
+      'APY earned on this collateral while deposited (decimal, e.g. "0.02" = 2%)',
+    examples: ["0.02"],
+  }),
+}).annotate({ identifier: "CollateralTokenDto" });
 export type IntegrationDto = {
   readonly id: string;
   readonly providerId: string;
@@ -984,6 +968,7 @@ export type IntegrationDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1001,6 +986,7 @@ export type IntegrationDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1108,6 +1094,7 @@ export const IntegrationDto = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -1125,6 +1112,7 @@ export const IntegrationDto = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -1205,6 +1193,106 @@ export const IntegrationDto = Schema.Struct({
     description: "Supported actions with labels and argument schemas",
   }),
 }).annotate({ identifier: "IntegrationDto" });
+export type SupplyBalanceDto = {
+  readonly marketId: string;
+  readonly tokenAddress: string;
+  readonly tokenSymbol: string;
+  readonly balance: string;
+  readonly balanceRaw: string;
+  readonly balanceUsd: string;
+  readonly apy: string;
+  readonly isCollateral: boolean;
+  readonly positionState?: PositionStateDto;
+  readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
+};
+export const SupplyBalanceDto = Schema.Struct({
+  marketId: Schema.String.annotate({
+    description: "Market ID",
+    examples: ["aave-v3-ethereum-usdc"],
+  }),
+  tokenAddress: Schema.String.annotate({
+    description: "Token contract address",
+    examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+  }),
+  tokenSymbol: Schema.String.annotate({
+    description: "Token symbol",
+    examples: ["USDC"],
+  }),
+  balance: Schema.String.annotate({
+    description: "Supplied balance in human-readable token units",
+    examples: ["1000.00"],
+  }),
+  balanceRaw: Schema.String.annotate({
+    description: "Supplied balance in raw token units",
+    examples: ["1000000000"],
+  }),
+  balanceUsd: Schema.String.annotate({
+    description: "Supplied balance in USD",
+    examples: ["1000.00"],
+  }),
+  apy: Schema.String.annotate({
+    description: "Current supply APY as percentage",
+    examples: ["3.45"],
+  }),
+  isCollateral: Schema.Boolean.annotate({
+    description: "Whether this supply is being used as collateral",
+    examples: [true],
+  }),
+  positionState: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<PositionStateDto> => PositionStateDto
+    ).annotate({
+      description:
+        "Per-market risk state for isolated-market protocols (e.g. Morpho Blue), where borrowing power and liquidation are scoped to this market. Omitted for pool-based protocols (e.g. Aave), where the account-level fields apply.",
+    })
+  ),
+  pendingActions: Schema.Array(BorrowPendingActionDto).annotate({
+    description: "Available actions for this supply balance",
+  }),
+}).annotate({ identifier: "SupplyBalanceDto" });
+export type DebtBalanceDto = {
+  readonly marketId: string;
+  readonly tokenAddress: string;
+  readonly tokenSymbol: string;
+  readonly balance: string;
+  readonly balanceRaw: string;
+  readonly balanceUsd: string;
+  readonly apy: string;
+  readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
+};
+export const DebtBalanceDto = Schema.Struct({
+  marketId: Schema.String.annotate({
+    description: "Market ID",
+    examples: ["aave-v3-ethereum-weth"],
+  }),
+  tokenAddress: Schema.String.annotate({
+    description: "Token contract address",
+    examples: ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"],
+  }),
+  tokenSymbol: Schema.String.annotate({
+    description: "Token symbol",
+    examples: ["WETH"],
+  }),
+  balance: Schema.String.annotate({
+    description: "Borrowed balance in human-readable token units",
+    examples: ["0.5"],
+  }),
+  balanceRaw: Schema.String.annotate({
+    description: "Borrowed balance in raw token units",
+    examples: ["500000000000000000"],
+  }),
+  balanceUsd: Schema.String.annotate({
+    description: "Borrowed balance in USD",
+    examples: ["1500.00"],
+  }),
+  apy: Schema.String.annotate({
+    description: "Current borrow APY as percentage",
+    examples: ["5.67"],
+  }),
+  pendingActions: Schema.Array(BorrowPendingActionDto).annotate({
+    description: "Available actions for this debt balance",
+  }),
+}).annotate({ identifier: "DebtBalanceDto" });
 export type MarketDto = {
   readonly id: string;
   readonly integrationId: string;
@@ -1231,6 +1319,7 @@ export type MarketDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1248,6 +1337,7 @@ export type MarketDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1367,6 +1457,7 @@ export const MarketDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -1384,6 +1475,7 @@ export const MarketDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -1544,106 +1636,6 @@ export const MarketDto = Schema.Struct({
     examples: ["0.01"],
   }),
 }).annotate({ identifier: "MarketDto" });
-export type SupplyBalanceDto = {
-  readonly marketId: string;
-  readonly tokenAddress: string;
-  readonly tokenSymbol: string;
-  readonly balance: string;
-  readonly balanceRaw: string;
-  readonly balanceUsd: string;
-  readonly apy: string;
-  readonly isCollateral: boolean;
-  readonly positionState?: PositionStateDto;
-  readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
-};
-export const SupplyBalanceDto = Schema.Struct({
-  marketId: Schema.String.annotate({
-    description: "Market ID",
-    examples: ["aave-v3-ethereum-usdc"],
-  }),
-  tokenAddress: Schema.String.annotate({
-    description: "Token contract address",
-    examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
-  }),
-  tokenSymbol: Schema.String.annotate({
-    description: "Token symbol",
-    examples: ["USDC"],
-  }),
-  balance: Schema.String.annotate({
-    description: "Supplied balance in human-readable token units",
-    examples: ["1000.00"],
-  }),
-  balanceRaw: Schema.String.annotate({
-    description: "Supplied balance in raw token units",
-    examples: ["1000000000"],
-  }),
-  balanceUsd: Schema.String.annotate({
-    description: "Supplied balance in USD",
-    examples: ["1000.00"],
-  }),
-  apy: Schema.String.annotate({
-    description: "Current supply APY as percentage",
-    examples: ["3.45"],
-  }),
-  isCollateral: Schema.Boolean.annotate({
-    description: "Whether this supply is being used as collateral",
-    examples: [true],
-  }),
-  positionState: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<PositionStateDto> => PositionStateDto
-    ).annotate({
-      description:
-        "Per-market risk state for isolated-market protocols (e.g. Morpho Blue), where borrowing power and liquidation are scoped to this market. Omitted for pool-based protocols (e.g. Aave), where the account-level fields apply.",
-    })
-  ),
-  pendingActions: Schema.Array(BorrowPendingActionDto).annotate({
-    description: "Available actions for this supply balance",
-  }),
-}).annotate({ identifier: "SupplyBalanceDto" });
-export type DebtBalanceDto = {
-  readonly marketId: string;
-  readonly tokenAddress: string;
-  readonly tokenSymbol: string;
-  readonly balance: string;
-  readonly balanceRaw: string;
-  readonly balanceUsd: string;
-  readonly apy: string;
-  readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
-};
-export const DebtBalanceDto = Schema.Struct({
-  marketId: Schema.String.annotate({
-    description: "Market ID",
-    examples: ["aave-v3-ethereum-weth"],
-  }),
-  tokenAddress: Schema.String.annotate({
-    description: "Token contract address",
-    examples: ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"],
-  }),
-  tokenSymbol: Schema.String.annotate({
-    description: "Token symbol",
-    examples: ["WETH"],
-  }),
-  balance: Schema.String.annotate({
-    description: "Borrowed balance in human-readable token units",
-    examples: ["0.5"],
-  }),
-  balanceRaw: Schema.String.annotate({
-    description: "Borrowed balance in raw token units",
-    examples: ["500000000000000000"],
-  }),
-  balanceUsd: Schema.String.annotate({
-    description: "Borrowed balance in USD",
-    examples: ["1500.00"],
-  }),
-  apy: Schema.String.annotate({
-    description: "Current borrow APY as percentage",
-    examples: ["5.67"],
-  }),
-  pendingActions: Schema.Array(BorrowPendingActionDto).annotate({
-    description: "Available actions for this debt balance",
-  }),
-}).annotate({ identifier: "DebtBalanceDto" });
 export type PositionDto = {
   readonly address: string;
   readonly integrationId: string;
@@ -1670,6 +1662,7 @@ export type PositionDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1687,6 +1680,7 @@ export type PositionDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1759,6 +1753,8 @@ export type PositionDto = {
   readonly netWorthUsd: string;
   readonly healthFactor: string | null;
   readonly currentLtv: string;
+  readonly maxLtv: string;
+  readonly liquidationThreshold: string;
   readonly availableToBorrowUsd: string | null;
   readonly netApy: string;
   readonly supplyBalances: ReadonlyArray<SupplyBalanceDto>;
@@ -1796,6 +1792,7 @@ export const PositionDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -1813,6 +1810,7 @@ export const PositionDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -1906,6 +1904,16 @@ export const PositionDto = Schema.Struct({
     description: 'Current loan-to-value ratio as decimal (e.g., "0.55" = 55%)',
     examples: ["0.55"],
   }),
+  maxLtv: Schema.String.annotate({
+    description:
+      'Account-level max LTV as a decimal (e.g., "0.80" = 80%). For pooled protocols (Aave), the collateral-weighted blend from the pool (includes e-mode). For isolated-market protocols, a portfolio rollup — prefer each supply balance\'s market maxLtv / positionState for per-market sizing.',
+    examples: ["0.80"],
+  }),
+  liquidationThreshold: Schema.String.annotate({
+    description:
+      'Account-level liquidation threshold as a decimal (e.g., "0.825" = 82.5%). For pooled protocols (Aave), the collateral-weighted blend from the pool (includes e-mode). For isolated-market protocols, a portfolio rollup — prefer each supply balance\'s positionState.liquidationThreshold for per-market risk.',
+    examples: ["0.8250"],
+  }),
   availableToBorrowUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
     description:
       "Account-level available to borrow in USD based on collateral. Null for isolated-market protocols (e.g. Morpho), where headroom is per-market — read each supply balance's positionState.availableToBorrowUsd instead.",
@@ -1969,50 +1977,6 @@ export const IntegrationsControllerGetIntegrationsV1429 = Schema.Struct({
     )
   ),
 });
-export type IntegrationsControllerGetIntegrationV1200 = IntegrationDto;
-export const IntegrationsControllerGetIntegrationV1200 = IntegrationDto;
-export type IntegrationsControllerGetIntegrationV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const IntegrationsControllerGetIntegrationV1401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type IntegrationsControllerGetIntegrationV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const IntegrationsControllerGetIntegrationV1429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
 export type MarketsControllerGetMarketsV1Params = {
   readonly offset?: number;
   readonly limit?: number;
@@ -2040,6 +2004,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2057,6 +2022,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2176,6 +2142,7 @@ export const MarketsControllerGetMarketsV1Params = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -2193,6 +2160,7 @@ export const MarketsControllerGetMarketsV1Params = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -2331,50 +2299,6 @@ export const MarketsControllerGetMarketsV1429 = Schema.Struct({
     )
   ),
 });
-export type MarketsControllerGetMarketByIdV1200 = MarketDto;
-export const MarketsControllerGetMarketByIdV1200 = MarketDto;
-export type MarketsControllerGetMarketByIdV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const MarketsControllerGetMarketByIdV1401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type MarketsControllerGetMarketByIdV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const MarketsControllerGetMarketByIdV1429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
 export type PositionsControllerGetPositionsV1Params = {
   readonly integrationId: string;
   readonly network:
@@ -2400,6 +2324,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2417,6 +2342,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2510,6 +2436,7 @@ export const PositionsControllerGetPositionsV1Params = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -2527,6 +2454,7 @@ export const PositionsControllerGetPositionsV1Params = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -2625,323 +2553,6 @@ export type PositionsControllerGetPositionsV1429 = {
   readonly retryAfter?: number;
 };
 export const PositionsControllerGetPositionsV1429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type PositionsControllerGetLiquidationsV1Params = {
-  readonly offset?: number;
-  readonly limit?: number;
-  readonly integrationId: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly address: string;
-  readonly marketId?: string;
-};
-export const PositionsControllerGetLiquidationsV1Params = Schema.Struct({
-  offset: Schema.optionalKey(
-    Schema.Number.annotate({ default: 0, examples: [0] })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(0).annotate({
-          expected: "a value greater than or equal to 0",
-        })
-      )
-  ),
-  limit: Schema.optionalKey(
-    Schema.Number.annotate({ default: 25, examples: [25] })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(1).annotate({
-          expected: "a value greater than or equal to 1",
-        })
-      )
-      .check(
-        Schema.isLessThanOrEqualTo(100).annotate({
-          expected: "a value less than or equal to 100",
-        })
-      )
-  ),
-  integrationId: Schema.String.annotate({ examples: ["morpho-blue-borrow"] }),
-  network: Schema.Literals([
-    "ethereum",
-    "ethereum-goerli",
-    "ethereum-holesky",
-    "ethereum-sepolia",
-    "ethereum-hoodi",
-    "arbitrum",
-    "base",
-    "base-sepolia",
-    "gnosis",
-    "optimism",
-    "polygon",
-    "polygon-amoy",
-    "starknet",
-    "zksync",
-    "linea",
-    "unichain",
-    "plume",
-    "monad-testnet",
-    "monad",
-    "robinhood",
-    "robinhood-testnet",
-    "arc-testnet",
-    "avalanche-c",
-    "avalanche-c-atomic",
-    "avalanche-p",
-    "binance",
-    "celo",
-    "fantom",
-    "harmony",
-    "moonriver",
-    "okc",
-    "viction",
-    "core",
-    "sonic",
-    "plasma",
-    "katana",
-    "hyperevm",
-    "tempo",
-    "pharos",
-    "agoric",
-    "akash",
-    "axelar",
-    "band-protocol",
-    "bitsong",
-    "canto",
-    "chihuahua",
-    "comdex",
-    "coreum",
-    "cosmos",
-    "crescent",
-    "cronos",
-    "cudos",
-    "desmos",
-    "dydx",
-    "evmos",
-    "fetch-ai",
-    "gravity-bridge",
-    "injective",
-    "irisnet",
-    "juno",
-    "kava",
-    "ki-network",
-    "mars-protocol",
-    "nym",
-    "okex-chain",
-    "onomy",
-    "osmosis",
-    "persistence",
-    "quicksilver",
-    "regen",
-    "secret",
-    "sentinel",
-    "sommelier",
-    "stafi",
-    "stargaze",
-    "stride",
-    "teritori",
-    "tgrade",
-    "umee",
-    "sei",
-    "mantra",
-    "celestia",
-    "saga",
-    "zetachain",
-    "dymension",
-    "humansai",
-    "neutron",
-    "polkadot",
-    "kusama",
-    "westend",
-    "bittensor",
-    "aptos",
-    "binancebeacon",
-    "cardano",
-    "near",
-    "solana",
-    "solana-devnet",
-    "stellar",
-    "stellar-testnet",
-    "sui",
-    "tezos",
-    "tron",
-    "ton",
-    "ton-testnet",
-    "hyperliquid",
-  ]).annotate({ examples: ["ethereum"] }),
-  address: Schema.String.annotate({
-    examples: ["0x742d35Cc6634C0532925a3b844Bc9e7595f8fB28"],
-  }),
-  marketId: Schema.optionalKey(
-    Schema.String.annotate({
-      examples: ["morpho-blue-borrow-ethereum-cbbtc-usdc-0x0c6b..."],
-    })
-  ),
-});
-export type PositionsControllerGetLiquidationsV1200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export const PositionsControllerGetLiquidationsV1200 = Schema.Struct({
-  total: Schema.Number.annotate({
-    description: "Total number of items available",
-    examples: [150],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  offset: Schema.Number.annotate({
-    description: "Offset of the current page",
-    examples: [0],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  limit: Schema.Number.annotate({
-    description: "Limit of the current page",
-    examples: [100],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  items: Schema.optionalKey(Schema.Never),
-});
-export type PositionsControllerGetLiquidationsV1401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const PositionsControllerGetLiquidationsV1401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type PositionsControllerGetLiquidationsV1429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const PositionsControllerGetLiquidationsV1429 = Schema.Struct({
   message: Schema.optionalKey(
     Schema.String.annotate({ examples: ["Rate limit exceeded"] })
   ),
@@ -3303,5 +2914,3 @@ export const TransactionsControllerSubmitTransactionV1429 = Schema.Struct({
     )
   ),
 });
-export type HealthControllerHealth200 = HealthStatusDto;
-export const HealthControllerHealth200 = HealthStatusDto;

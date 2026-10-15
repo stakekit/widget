@@ -2,7 +2,8 @@ import { useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import type { YieldAction } from "../../../../../domain/action/models";
 import type { Token } from "../../../../../domain/token/token";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
@@ -36,18 +37,18 @@ export const useActivityCompleteView = <
   selectedYield,
   inputToken,
 }: ActivityCompleteView<Action>) => {
+  const { locale } = useWidgetPresentation();
   const yieldSummary = useAtomValue(
     yieldSummaryAtom(
       new YieldSummaryKey({
         yield: selectedYield,
         validators: selectedValidators,
-        selectedProviderYieldId: selectedAction.yieldId,
       })
     )
   );
 
   return {
-    amount: defaultFormattedNumber(selectedAction.amount ?? 0),
+    amount: formatTokenAmount(selectedAction.amount ?? 0, locale),
     inputToken: inputToken ?? null,
     metadata: selectedYield
       ? {

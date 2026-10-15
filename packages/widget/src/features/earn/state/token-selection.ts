@@ -1,7 +1,15 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type BigNumber from "bignumber.js";
+import { Option } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
+import { exactDecimal } from "../../../domain/finance/exact";
+import { isFundedBalance } from "../../../domain/finance/funded-balance";
+import type { Prices } from "../../../domain/health/models";
 import { tokenString } from "../../../domain/token/token";
+import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
+import { config } from "../../../shared/config/widget-defaults";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -10,11 +18,59 @@ import {
 } from "./earn-selection";
 import { earnPageSearchAtom } from "./page-workflow";
 
+export type EarnTokenSelectionItem = EarnTokenOption & {
+  /** Positive balance worth showing; the UI formats it. */
+  readonly fundedAmount: BigNumber | null;
+  /** USD value of `fundedAmount` when priced. */
+  readonly fundedUsd: BigNumber | null;
+};
+
+const positiveAmount = (option: EarnTokenOption) => {
+  if (option.amount === null) return null;
+  const amount = exactDecimal(option.amount);
+  return amount.isGreaterThan(0) ? amount : null;
+};
+
+const toSelectionItem = (
+  option: EarnTokenOption,
+  prices: Prices | null
+): EarnTokenSelectionItem => {
+  const amount = positiveAmount(option);
+  const price = amount
+    ? (prices?.getByToken(option.token)?.price ?? null)
+    : null;
+  const funded =
+    amount !== null && isFundedBalance({ amount, priceUsd: price });
+
+  return {
+    ...option,
+    fundedAmount: funded ? amount : null,
+    fundedUsd: funded && price?.isGreaterThan(0) ? amount.times(price) : null,
+  };
+};
+
 export const earnTokenSelectionViewAtom = Atom.make((get) => {
   const options = get(earnSelectionTokenOptionsViewAtom);
   const status = get(earnSelectionStatusViewAtom);
   const search = get(earnPageSearchAtom).token;
-  const all = [...options.items];
+  // Price every positive balance so the funded check can use its USD value.
+  const positive = options.items.filter(
+    (option) => positiveAmount(option) !== null
+  );
+  const prices = get(
+    pricesAtom.foreground(
+      new PricesKey({
+        request:
+          positive.length > 0
+            ? {
+                currency: config.currency,
+                tokenList: positive.map((option) => option.token),
+              }
+            : null,
+      })
+    )
+  ).pipe(AsyncResult.value, Option.getOrNull);
+  const all = options.items.map((option) => toSelectionItem(option, prices));
   const normalizedSearch = search.toLowerCase();
   const filtered = normalizedSearch
     ? all.filter(

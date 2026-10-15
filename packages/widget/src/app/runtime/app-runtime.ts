@@ -1,5 +1,5 @@
 import { Layer } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { widgetConfigAtom } from "../../features/widget-configuration/index";
 import { apiLayer } from "../../services/api/runtime";
 import { RichErrorService } from "../../services/errors/rich-error-service";
@@ -9,6 +9,7 @@ import { WidgetNavigation } from "../../services/navigation/widget-navigation";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
 import { WidgetTranslation } from "../../services/translation/widget-translation";
+import { WalletClipboard } from "../../services/wallet/wallet-clipboard";
 import { WalletModal } from "../../services/wallet/wallet-modal";
 import { applicationBaseRuntime } from "./application-base-runtime";
 
@@ -39,6 +40,7 @@ const makeAppLayer = (get: Atom.AtomContext) => {
     trackingLayer,
     navigationLayer,
     WidgetDomainEvents.layer,
+    WalletClipboard.layer,
     WalletModal.layer
   );
 };

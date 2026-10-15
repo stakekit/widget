@@ -9,6 +9,7 @@ import type {
 } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { BorrowPositions } from "../../../../domain/borrow/positions/borrow-positions";
+import type { RiskGateVerdict } from "../../../../domain/borrow/risk/risk-gate";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type {
@@ -26,6 +27,7 @@ export type BorrowConstraintWarning = BorrowFlowConstraintWarning;
 
 export type BorrowRiskProjection =
   | {
+      readonly currentHealthFactor: BigNumber | null;
       readonly currentLtv: BigNumber | null;
       readonly maxLtv: BigNumber | null;
       readonly projectedHealthFactor: BigNumber | null;
@@ -128,6 +130,7 @@ export type PreparedActionCommonFacts = {
   readonly network: BorrowNetwork;
   readonly providerName: string;
   readonly risk: BorrowRiskProjection;
+  readonly riskVerdict: RiskGateVerdict;
   readonly warnings: ReadonlyArray<BorrowConstraintWarning>;
 };
 
@@ -138,25 +141,34 @@ export type OpenPositionFinancialFacts = {
   readonly projectedDebtUsd: BigNumber;
 };
 
+/** The requested borrow is net; debt opens at the gross principal. */
+export type OpenPositionOriginationFacts = {
+  readonly debtPrincipalAmount: BigNumber;
+  readonly loanTokenPriceUsd: BigNumber;
+  readonly originationFeeAmount: BigNumber;
+};
+
 export type PreparedActionFacts = PreparedActionCommonFacts &
   (
-    | (OpenPositionFinancialFacts & {
-        readonly _tag: "Borrow";
-        readonly amount: BigNumber;
-        readonly loanTokenAddress: TokenAddress | undefined;
-        readonly loanTokenSymbol: string;
-      })
-    | (OpenPositionFinancialFacts & {
-        readonly _tag: "BorrowAndSupply";
-        readonly borrowAmount: BigNumber;
-        readonly collateralAmount: BigNumber;
-        readonly collateralFeeAmount: BigNumber;
-        readonly collateralTokenAddress: TokenAddress | undefined;
-        readonly collateralTokenSymbol: string;
-        readonly effectiveCollateralAmount: BigNumber;
-        readonly loanTokenAddress: TokenAddress | undefined;
-        readonly loanTokenSymbol: string;
-      })
+    | (OpenPositionFinancialFacts &
+        OpenPositionOriginationFacts & {
+          readonly _tag: "Borrow";
+          readonly amount: BigNumber;
+          readonly loanTokenAddress: TokenAddress | undefined;
+          readonly loanTokenSymbol: string;
+        })
+    | (OpenPositionFinancialFacts &
+        OpenPositionOriginationFacts & {
+          readonly _tag: "BorrowAndSupply";
+          readonly borrowAmount: BigNumber;
+          readonly collateralAmount: BigNumber;
+          readonly collateralFeeAmount: BigNumber;
+          readonly collateralTokenAddress: TokenAddress | undefined;
+          readonly collateralTokenSymbol: string;
+          readonly effectiveCollateralAmount: BigNumber;
+          readonly loanTokenAddress: TokenAddress | undefined;
+          readonly loanTokenSymbol: string;
+        })
     | (OpenPositionFinancialFacts & {
         readonly _tag: "Supply";
         readonly amount: BigNumber;

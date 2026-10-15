@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Route } from "react-router";
 import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
 import {
@@ -12,12 +13,15 @@ import { BorrowStepsPage } from "./steps";
 
 type BorrowTransactionFlowRouteMount = Readonly<{
   readonly entry: BorrowTransactionFlowEntry["_tag"];
+  /**
+   * Wraps the flow pages inside the mounted Flow Session, so a layout can
+   * render panes that describe the Session's own intake.
+   */
+  readonly layout?: ReactElement;
 }>;
 
-export const createBorrowTransactionFlowRoutes = ({
-  entry,
-}: BorrowTransactionFlowRouteMount) => (
-  <Route element={<BorrowTransactionFlowRoute expected={entry} />}>
+const flowPages = (
+  <>
     <Route element={<BorrowTransactionFlowReviewRoute />}>
       <Route path="review" element={<BorrowReviewPage />} />
     </Route>
@@ -27,5 +31,14 @@ export const createBorrowTransactionFlowRoutes = ({
         <Route path="complete" element={<BorrowCompletePage />} />
       </Route>
     </Route>
+  </>
+);
+
+export const createBorrowTransactionFlowRoutes = ({
+  entry,
+  layout,
+}: BorrowTransactionFlowRouteMount) => (
+  <Route element={<BorrowTransactionFlowRoute expected={entry} />}>
+    {layout ? <Route element={layout}>{flowPages}</Route> : flowPages}
   </Route>
 );

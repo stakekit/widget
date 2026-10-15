@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { formatPercent } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
-import { DetailRow } from "../../../../../shared/ui/components/details-section";
+import {
+  DetailRow,
+  DetailRowList,
+} from "../../../../../shared/ui/components/details-section";
 import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { PageCtaButton } from "../../../../widget-shell/views";
 import type { BorrowRepayActionContext } from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
@@ -12,6 +15,7 @@ import { useBorrowRepayForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormWarningMessage } from "./form-warning";
+import { LtvTransitionRow } from "./ltv-transition-row";
 import { useStartBorrowPositionReview } from "./use-start-review";
 
 export const RepayActionForm = ({
@@ -22,6 +26,7 @@ export const RepayActionForm = ({
   readonly context: BorrowRepayActionContext;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const startReview = useStartBorrowPositionReview(action);
   const [view, dispatch] = useBorrowRepayForm(action);
   const { debtBalance } = context;
@@ -40,7 +45,7 @@ export const RepayActionForm = ({
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.outstanding_debt", {
-          amount: formatNumber(debtBalance.balance, 6),
+          amount: formatNumber(debtBalance.balance, locale, 6),
           symbol: debtBalance.tokenSymbol,
         })}
         disabled={view.repayAll}
@@ -76,34 +81,28 @@ export const RepayActionForm = ({
 
         <Divider />
 
-        {view.projectedLtv === null ? null : (
-          <DetailRow
-            id="ltv"
-            label={t("dashboard.borrow.form.ltv_ratio")}
-            value={
-              view.currentLtv === null
-                ? formatPercent(view.projectedLtv)
-                : `${formatPercent(view.currentLtv)} -> ${formatPercent(
-                    view.projectedLtv
-                  )}`
-            }
+        <DetailRowList>
+          <LtvTransitionRow
+            currentLtv={view.currentLtv}
+            projectedLtv={view.projectedLtv}
           />
-        )}
-        <DetailRow
-          id="loan"
-          label={t("dashboard.borrow.form.loan")}
-          value={`${formatNumber(debtBalance.balance, 6)} -> ${formatNumber(
-            view.remainingDebt,
-            6
-          )} ${debtBalance.tokenSymbol}`}
-        />
+          <DetailRow
+            id="loan"
+            label={t("dashboard.borrow.form.loan")}
+            value={`${formatNumber(debtBalance.balance, locale, 6)} -> ${formatNumber(
+              view.remainingDebt,
+              locale,
+              6
+            )} ${debtBalance.tokenSymbol}`}
+          />
+        </DetailRowList>
       </Box>
 
       <PageCtaButton
         cta={{
           disabled: !view.canSubmit,
           isLoading: false,
-          label: t("dashboard.borrow.review"),
+          label: t("dashboard.borrow.review_actions.repay"),
           onClick: startReview,
         }}
       />

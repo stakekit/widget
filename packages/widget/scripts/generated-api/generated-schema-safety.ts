@@ -2,7 +2,10 @@
  * OpenAPI and generated-source checks shared by `gen:api` and the schema
  * safety script.
  */
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import ts from "typescript";
+import { widgetRoot } from "../paths";
 
 type JsonObject = Record<string, unknown>;
 
@@ -62,7 +65,7 @@ export const normalizeOpenApiUnionObjects = (document: unknown): number => {
 export const normalizeGeneratedTypeOnlySource = (sourceText: string): string =>
   sourceText.replaceAll("Schema.Json", "unknown");
 
-const schemaMemberName = (expression: ts.Expression): string | undefined => {
+const unwrapSchemaMember = (expression: ts.Expression): ts.Expression => {
   let current = expression;
 
   while (
@@ -73,6 +76,12 @@ const schemaMemberName = (expression: ts.Expression): string | undefined => {
   ) {
     current = current.expression.expression;
   }
+
+  return current;
+};
+
+const schemaMemberName = (expression: ts.Expression): string | undefined => {
+  const current = unwrapSchemaMember(expression);
 
   if (
     ts.isPropertyAccessExpression(current) &&
@@ -88,21 +97,6 @@ const schemaMemberName = (expression: ts.Expression): string | undefined => {
   ) {
     return current.expression.name.text;
   }
-};
-
-const unwrapSchemaMember = (expression: ts.Expression): ts.Expression => {
-  let current = expression;
-
-  while (
-    ts.isCallExpression(current) &&
-    ts.isPropertyAccessExpression(current.expression) &&
-    (current.expression.name.text === "annotate" ||
-      current.expression.name.text === "pipe")
-  ) {
-    current = current.expression.expression;
-  }
-
-  return current;
 };
 
 const isEmptyStruct = (expression: ts.Expression): boolean => {
@@ -196,4 +190,34 @@ export const findUnsafeGeneratedSchemaUnions = (
 
   visit(sourceFile);
   return issues;
+};
+
+const generatedSchemaFiles = [
+  "src/generated/api/borrow.ts",
+  "src/generated/api/legacy-schema.ts",
+  "src/generated/api/yield-schema.ts",
+];
+
+/** Fails when a generated schema file has an unsafe `Schema.Union` member. */
+export const assertGeneratedSchemasSafe = async (): Promise<void> => {
+  const diagnostics = (
+    await Promise.all(
+      generatedSchemaFiles.map(async (relativePath) => {
+        const sourceText = await readFile(
+          path.join(widgetRoot, relativePath),
+          "utf8"
+        );
+        return findUnsafeGeneratedSchemaUnions(sourceText, relativePath).map(
+          (issue) =>
+            `${relativePath}:${issue.line}:${issue.column} ${issue.message}`
+        );
+      })
+    )
+  ).flat();
+
+  if (diagnostics.length > 0) {
+    throw new Error(
+      `Generated schema safety check failed:\n${diagnostics.join("\n")}`
+    );
+  }
 };

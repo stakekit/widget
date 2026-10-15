@@ -9,7 +9,7 @@ const test = base.extend<{ worker: typeof server }>({
     // biome-ignore lint/correctness/noEmptyPattern: Vitest fixtures require object destructuring here.
     async ({}, use) => {
       if (!isServerStarted) {
-        server.listen({ onUnhandledRequest: "error" });
+        server.listen({ onUnhandledFrame: "error" });
         isServerStarted = true;
       }
 

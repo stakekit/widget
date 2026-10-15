@@ -1,6 +1,7 @@
-import type { Chain } from "@stakekit/rainbowkit";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { walletCommandIdentity } from "../../../services/wallet/wallet-command-identity";
+import type { WalletSwitchAccountInput } from "../../../services/wallet/wallet-commands";
+import type { Chain } from "../../../services/wallet/wallet-descriptors";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import { currentWalletStateAtom } from "./selectors";
 
@@ -14,9 +15,17 @@ export const addLedgerAccountAtom = walletRuntime.fn(
     return WalletService.use((wallet) =>
       wallet.addLedgerAccount({ expected, targetChain: command.chain })
     );
-  }
+  },
+  // WalletService serializes Ledger requests; a repeated click waits for the
+  // first and is rejected as stale once that request switched the account.
+  { concurrent: true }
 );
 
 export const logoutAtom = walletRuntime.fn(() =>
   WalletService.use((wallet) => wallet.logout)
+);
+
+export const switchAccountAtom = walletRuntime.fn(
+  (input: WalletSwitchAccountInput) =>
+    WalletService.use((wallet) => wallet.switchAccount(input))
 );

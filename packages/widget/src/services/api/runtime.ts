@@ -40,7 +40,7 @@ const borrowResourceSourceLayer = Layer.effect(
     const widgetConfig = yield* WidgetConfigService;
 
     return makeBorrowResourceSource(
-      transport.borrow,
+      transport.borrow?.read ?? null,
       (yield* widgetConfig.current).borrowEnabled
     );
   })
@@ -65,7 +65,7 @@ const yieldOperationsLayer = Layer.effect(
 const yieldResourceSourceLayer = Layer.effect(
   YieldResourceSource,
   Effect.map(ApiTransportService, (transport) =>
-    makeYieldResourceSource(transport.yield)
+    makeYieldResourceSource(transport.yield.read)
   )
 );
 

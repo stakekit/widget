@@ -1,4 +1,5 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
+import type { DashboardYieldCategory } from "../../../domain/earn/contract";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import {
   getDashboardYieldCategory,
@@ -8,7 +9,6 @@ import {
 } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
@@ -80,7 +80,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
   );
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading = status.loading.yields || yieldOptions.waiting;
+  const yieldLoading = status.loading.yields;
 
   return {
     all,

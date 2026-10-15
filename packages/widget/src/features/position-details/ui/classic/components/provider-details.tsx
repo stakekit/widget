@@ -20,7 +20,6 @@ export const ProviderDetails = ({
   integrationData: EarnYieldWithProvider;
   logo: string | undefined;
   name: string;
-  rewardRateFormatted: string;
   rewardType?: string | undefined;
 }) => {
   const { t } = useTranslation();

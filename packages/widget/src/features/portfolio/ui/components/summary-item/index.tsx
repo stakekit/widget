@@ -1,11 +1,14 @@
 import type BigNumber from "bignumber.js";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import {
+  formatPercent,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   type SummaryLabelContainerVariants,
   summaryItem,
@@ -26,14 +29,15 @@ export const SummaryItem = ({
   type: NonNullable<SummaryLabelContainerVariants>["type"];
 }) => {
   const variant = useWidgetConfig("variant");
+  const { locale } = useWidgetPresentation();
 
   const isApyType = type === "apy";
   const getFormattedValue = () => {
     if (!value) return "-";
     if (isApyType) {
-      return value.gt(0) ? `${formatNumber(value, 2)}%` : "-";
+      return value.gt(0) ? formatPercent(value.dividedBy(100), locale) : "-";
     }
-    return formatUsd(value);
+    return formatUsd(value, locale);
   };
   const formattedValue = getFormattedValue();
 

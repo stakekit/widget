@@ -12,10 +12,11 @@ import {
   getYieldWarmupPeriod,
 } from "../../../../../domain/earn/yield";
 import { humanizeEnumValue } from "../../../../../shared/lib/formatters";
-import { APToPercentage } from "../../../../../shared/lib/general";
+import { formatRoundedPercent } from "../../../../../shared/lib/number-format";
 import { SKAnchor } from "../../../../../shared/ui/primitives/anchor";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   formatMeaningfulCompactUsd,
   formatOptionalDays,
@@ -43,10 +44,12 @@ export const YieldDetails = ({
   showRewardRate: boolean;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const provider = integrationData.provider;
   const providerName = provider?.name ?? integrationData.metadata.name;
   const details = getYieldDetails({
     integrationData,
+    locale,
     showRewardRate,
     t,
   });
@@ -87,10 +90,12 @@ export const YieldDetails = ({
 
 const getYieldDetails = ({
   integrationData,
+  locale,
   showRewardRate,
   t,
 }: {
   integrationData: EarnYieldWithProvider;
+  locale: string;
   showRewardRate: boolean;
   t: TFunction;
 }): YieldDetail[] => {
@@ -98,7 +103,8 @@ const getYieldDetails = ({
   const rewardRate = showRewardRate
     ? formatRewardRate(
         getEffectiveYieldRewardRateDetails({ yieldDto: integrationData }),
-        integrationData
+        integrationData,
+        locale
       )
     : null;
   const warmup = formatOptionalDays(
@@ -112,7 +118,7 @@ const getYieldDetails = ({
   const rewardSchedule = humanizeEnumValue(
     integrationData.mechanics.rewardSchedule
   );
-  const additionalDetail = getAdditionalYieldDetail(integrationData, t);
+  const additionalDetail = getAdditionalYieldDetail(integrationData, t, locale);
 
   return [
     website
@@ -165,18 +171,19 @@ const getYieldDetails = ({
 
 const getAdditionalYieldDetail = (
   integrationData: EarnYieldWithProvider,
-  t: TFunction
+  t: TFunction,
+  locale: string
 ): YieldDetail | null => {
   const fee = getYieldFeePercent(integrationData);
   if (fee !== null) {
     return {
       id: "fees",
       label: t("shared.fees"),
-      value: `${APToPercentage(fee)}%`,
+      value: formatRoundedPercent(fee, locale),
     };
   }
 
-  const pricePerShare = formatPricePerShare(integrationData);
+  const pricePerShare = formatPricePerShare(integrationData, locale);
   if (pricePerShare) {
     return {
       id: "price-per-share",
@@ -185,7 +192,10 @@ const getAdditionalYieldDetail = (
     };
   }
 
-  const tvl = formatMeaningfulCompactUsd(getYieldTvlUsd(integrationData));
+  const tvl = formatMeaningfulCompactUsd(
+    getYieldTvlUsd(integrationData),
+    locale
+  );
   if (tvl) {
     return {
       id: "tvl",

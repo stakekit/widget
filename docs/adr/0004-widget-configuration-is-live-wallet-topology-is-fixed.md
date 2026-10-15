@@ -6,6 +6,15 @@ and connector-construction policy as fixed Wallet Topology. This supports normal
 host updates without rebuilding wallet infrastructure from mixed-era inputs;
 topology changes require a remount.
 
+The Application API Identity (API key, base, Yields and Borrow API URLs) and
+Borrow enablement are also fixed, at mount: API transports, Borrow sources and
+operations, and the initial route read them once for the Application Runtime
+Generation. When a Widget Configuration update changes any of them, the Widget
+Configuration service publishes the mount values for those fields, applies the
+rest of the update, and logs one warning naming the changed keys. The Wallet
+Topology warning stays in wallet synchronization, whose reference point is
+Wallet Bootstrap rather than mount. Changing these settings requires a remount.
+
 React composition supplies Host Configuration and other initialization values,
 but does not carry Effect Layers. Application-owned Atom runtimes compose their
 `layer` Atoms. The private Wallet Connector Source runtime provides the

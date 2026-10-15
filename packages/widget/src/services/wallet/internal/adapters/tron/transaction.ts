@@ -14,3 +14,25 @@ export const unsignedTronTransactionCodec = Schema.Struct({
   txID: Schema.String,
   visible: Schema.Boolean,
 });
+
+export type UnsignedTronTransaction = typeof unsignedTronTransactionCodec.Type;
+
+// Wallets may add fields (e.g. `ret`); the backend receives them unchanged.
+const undeclaredFields = [
+  Schema.Record(Schema.String, Schema.Unknown),
+] as const;
+
+export const signedTronTransactionCodec = Schema.StructWithRest(
+  Schema.Struct({
+    ...unsignedTronTransactionCodec.fields,
+    raw_data: Schema.StructWithRest(
+      unsignedTronTransactionCodec.fields.raw_data,
+      undeclaredFields
+    ),
+    signature: Schema.Array(Schema.String),
+    contract_address: Schema.optionalKey(Schema.String),
+  }),
+  undeclaredFields
+);
+
+export type SignedTronTransaction = typeof signedTronTransactionCodec.Type;

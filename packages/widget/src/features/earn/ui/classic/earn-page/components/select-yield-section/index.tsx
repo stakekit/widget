@@ -22,6 +22,7 @@ export const SelectYieldSection = () => {
   const { view: yieldSelection } = useEarnYieldSelection();
 
   const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
   const variant = useWidgetConfig("variant");
 
   const { t } = useTranslation();
@@ -33,10 +34,7 @@ export const SelectYieldSection = () => {
     <YieldRiskRatingSummary yieldDto={entry.selectedStake} />
   ) : null;
   const showSectionTitle =
-    !dashboardVariant &&
-    variant !== "zerion" &&
-    variant !== "utila" &&
-    variant !== "porto";
+    !earnPresentation.compact && !earnPresentation.zerion;
   const opportunityCount = yieldSelection.all.length;
 
   if (isLoading) {
@@ -75,7 +73,7 @@ export const SelectYieldSection = () => {
           variant,
         })}
       >
-        {variant === "zerion" && (
+        {earnPresentation.zerion && (
           <Box my="1">
             <Text>{t("details.earn")}</Text>
           </Box>
@@ -92,12 +90,12 @@ export const SelectYieldSection = () => {
           </Box>
         </Box>
 
-        {variant !== "zerion" && <SelectYieldRewardDetails />}
+        {!earnPresentation.zerion && <SelectYieldRewardDetails />}
       </Box>
 
-      {variant !== "zerion" && !dashboardVariant && riskSummary}
+      {!earnPresentation.zerion && !dashboardVariant && riskSummary}
 
-      {variant === "zerion" && (
+      {earnPresentation.zerion && (
         <Box display="flex" flexDirection="column" gap="3">
           <SelectYieldRewardDetails />
 

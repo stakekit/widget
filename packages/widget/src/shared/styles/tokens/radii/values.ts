@@ -1,6 +1,4 @@
 import type { CompleteTheme } from "../../../../public-api/theme";
-import { vars } from "../../theme/contract.css";
-import { connectKitTheme } from "../connect-kit";
 
 export const radii: CompleteTheme["borderRadius"] = {
   baseContract: {
@@ -18,10 +16,5 @@ export const radii: CompleteTheme["borderRadius"] = {
     primaryButton: "16px",
     secondaryButton: "16px",
     smallButton: "7.38px",
-  },
-
-  connectKit: {
-    ...connectKitTheme.lightMode.radii,
-    actionButton: vars.borderRadius.baseContract["2xl"],
   },
 };

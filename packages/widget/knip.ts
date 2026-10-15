@@ -4,8 +4,6 @@ export default {
   entry: [
     "src/index.package.ts!",
     "src/index.bundle.ts!",
-    "src/public-api/index.package.ts!",
-    "src/public-api/index.bundle.ts!",
     "vite/*.ts!",
     "tests/package-types/*.ts",
     "tests/utils/setup.browser.ts",

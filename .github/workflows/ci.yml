@@ -1,52 +1,93 @@
 name: "CI"
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
+  # Runs on main keep the dependency, toolchain and browser caches warm for pull requests:
+  # caches saved on a PR branch are visible only to that branch.
+  push:
+    branches:
+      - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: "0"
+
+# One job per check, so checks run in parallel and a failure names its check.
 jobs:
-  clean-code-stage:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       # actions/checkout@v6.0.2
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup
+      - run: mise run lint:widget
+      - run: mise run lint:ast
 
-      - name: Install mise
-        run: |
-          curl https://mise.run | MISE_VERSION=v2026.7.17 sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
-          mise install
+  hygiene:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup
+      - run: mise run check-hygiene
 
-      - run: pnpm install --frozen-lockfile
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup
+      - run: mise run test:unit
 
-      - run: pnpm -F @stakekit/widget exec playwright install
+  dom:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup
+      - run: mise run test:dom
 
-      - run: pnpm build
+  # Browser test files run serially (fileParallelism: false); shards split them across runners.
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    name: browser (${{ matrix.shard }}/2)
+    steps:
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/playwright
+      - run: mise run test:browser -- --shard=${{ matrix.shard }}/2
 
-      - run: pnpm lint
-
-      - run: pnpm test
-
-      - run: pnpm check-hygiene
+  # One invocation, so the widget build that both tasks depend on runs once.
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup
+      - run: "mise run build ::: lint:examples"
 
   production-consumer-smoke:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
+      # Secrets are unavailable to job-level `if`, and to fork pull requests.
       - name: Check smoke API key
         id: smoke-key
         env:
@@ -63,25 +104,15 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         if: steps.smoke-key.outputs.available == 'true'
 
-      - name: Install mise
+      - uses: ./.github/actions/setup
         if: steps.smoke-key.outputs.available == 'true'
-        run: |
-          curl https://mise.run | MISE_VERSION=v2026.7.17 sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
-          mise install
 
-      - if: steps.smoke-key.outputs.available == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Chromium
+      - uses: ./.github/actions/playwright
         if: steps.smoke-key.outputs.available == 'true'
-        run: pnpm -F @stakekit/widget exec playwright install --with-deps chromium
 
       - name: Run production-consumer smoke test
         if: steps.smoke-key.outputs.available == 'true'
         env:
           VITE_API_KEY: ${{ secrets.STAKEKIT_SMOKE_API_KEY }}
           NEXT_PUBLIC_API_KEY: ${{ secrets.STAKEKIT_SMOKE_API_KEY }}
-        run: pnpm test:smoke
+        run: mise run test:smoke

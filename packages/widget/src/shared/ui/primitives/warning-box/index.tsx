@@ -6,7 +6,7 @@ export const WarningBox = ({ text }: { text: string }) => (
   <Box
     borderRadius="md"
     px="2"
-    py="1"
+    py="3"
     display="inline-flex"
     justifyContent="center"
     alignItems="center"

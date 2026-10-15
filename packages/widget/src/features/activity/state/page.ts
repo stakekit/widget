@@ -1,8 +1,10 @@
 import { Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
-import { getPullResultItems } from "../../../shared/effect/pagination";
+import {
+  type Presentable,
+  toPresentable,
+} from "../../../shared/effect/async-result";
 import {
   walletConfigResultAtom,
   walletConnectionStateAtom,
@@ -31,7 +33,6 @@ type ActivityPageReadyView = {
   readonly actions: Array<ActivityActionItem>;
   readonly filterOptions: Array<ActivityFilterOption>;
   readonly pagination: ActivityPagePagination;
-  readonly refreshStatus: "failed" | "fresh" | "refreshing";
   readonly selectedFilter: ActivityFilter;
   readonly showingCount: number;
   readonly status: "ready";
@@ -65,9 +66,10 @@ export const resolveActivityPageWalletStatus = ({
   readonly configResult: Atom.Type<typeof walletConfigResultAtom>;
   readonly connectionStatus: NormalizedWalletState["status"];
 }): ActivityPageWalletStatus => {
+  const config = toPresentable(configResult);
   if (
-    AsyncResult.isInitial(configResult) ||
-    configResult.waiting ||
+    config._tag === "Loading" ||
+    (config._tag === "Ready" && config.refreshing) ||
     connectionStatus === "connecting"
   ) {
     return "connecting";
@@ -83,59 +85,46 @@ export const resolveActivityPageFilter = ({
   readonly filterOptionsResult: ActivityFilterOptionsResult;
   readonly selectedFilter: ActivityFilter;
 }): ActivityFilter => {
+  const options = toPresentable(filterOptionsResult);
   if (
     selectedFilter === "all" ||
-    filterOptionsResult.waiting ||
-    !AsyncResult.isSuccess(filterOptionsResult)
+    options._tag !== "Ready" ||
+    options.refreshing ||
+    Option.isSome(options.refreshFailure)
   ) {
     return selectedFilter;
   }
 
-  return filterOptionsResult.value.some(
-    (option) => option.filter === selectedFilter
-  )
+  return options.value.some((option) => option.filter === selectedFilter)
     ? selectedFilter
     : "all";
 };
 
 const getVisibleFilterOptions = (
-  result: ActivityFilterOptionsResult
-): Array<ActivityFilterOption> => {
-  if (AsyncResult.isFailure(result)) return [];
-
-  return result.pipe(
-    AsyncResult.value,
-    Option.map((options) => [...options]),
-    Option.getOrElse((): Array<ActivityFilterOption> => [])
-  );
-};
+  options: Presentable<ReadonlyArray<ActivityFilterOption>, unknown>
+): Array<ActivityFilterOption> =>
+  options._tag === "Ready" ? [...options.value] : [];
 
 const projectPagination = ({
-  actionsResult,
   hasActions,
   hasNextPage,
+  refreshFailed,
+  refreshing,
 }: {
-  readonly actionsResult: ActivityActionsResult;
   readonly hasActions: boolean;
   readonly hasNextPage: boolean;
+  readonly refreshFailed: boolean;
+  readonly refreshing: boolean;
 }): ActivityPagePagination => {
-  if (actionsResult.waiting && hasActions) {
+  if (refreshing && hasActions) {
     return { status: "loading-more" };
   }
 
-  if (AsyncResult.isFailure(actionsResult) && hasActions && hasNextPage) {
+  if (refreshFailed && hasActions && hasNextPage) {
     return { status: "load-more-failed" };
   }
 
   return hasNextPage ? { status: "idle" } : { status: "complete" };
-};
-
-const projectRefreshStatus = (
-  result: ActivityActionsResult
-): ActivityPageReadyView["refreshStatus"] => {
-  if (result.waiting) return "refreshing";
-  if (AsyncResult.isFailure(result)) return "failed";
-  return "fresh";
 };
 
 export const projectActivityPageView = ({
@@ -157,62 +146,48 @@ export const projectActivityPageView = ({
     return { status: "connecting" };
   }
 
-  const batches = getPullResultItems(actionsResult);
+  const history = toPresentable(actionsResult);
+  if (history._tag === "Loading") return { status: "loading" };
+  if (history._tag === "Failed") return { status: "failed" };
+
+  const { done, items: batches } = history.value;
   const actions = EArray.flatMap(batches, (batch) => batch.actions);
 
-  if (
-    (AsyncResult.isInitial(actionsResult) || actionsResult.waiting) &&
-    actions.length === 0
-  ) {
+  if (actions.length === 0 && history.refreshing) {
     return { status: "loading" };
   }
 
-  if (AsyncResult.isFailure(actionsResult) && actions.length === 0) {
+  if (actions.length === 0 && Option.isSome(history.refreshFailure)) {
     return { status: "failed" };
   }
 
-  const filterOptions = getVisibleFilterOptions(filterOptionsResult);
+  const filterOptionsView = toPresentable(filterOptionsResult);
+  const filterOptions = getVisibleFilterOptions(filterOptionsView);
   const hasReadyContent =
     actions.length > 0 || filterOptions.length > 0 || selectedFilter !== "all";
 
-  if (
-    !hasReadyContent &&
-    (filterOptionsResult.waiting || AsyncResult.isInitial(filterOptionsResult))
-  ) {
-    return { status: "loading" };
+  if (!hasReadyContent && filterOptionsView._tag !== "Failed") {
+    if (filterOptionsView._tag === "Loading" || filterOptionsView.refreshing) {
+      return { status: "loading" };
+    }
+    if (Option.isNone(filterOptionsView.refreshFailure)) {
+      return { status: "empty" };
+    }
   }
-
-  if (
-    !hasReadyContent &&
-    AsyncResult.isSuccess(filterOptionsResult) &&
-    !filterOptionsResult.waiting
-  ) {
-    return { status: "empty" };
-  }
-
-  const resultValue = actionsResult.pipe(
-    AsyncResult.value,
-    Option.getOrUndefined
-  );
-  const hasNextPage = resultValue?.done === false;
-  const total =
-    resultValue?.done === true
-      ? actions.length
-      : (batches.at(-1)?.total ?? actions.length);
 
   return {
     actions,
     filterOptions,
     pagination: projectPagination({
-      actionsResult,
       hasActions: actions.length > 0,
-      hasNextPage,
+      hasNextPage: !done,
+      refreshFailed: Option.isSome(history.refreshFailure),
+      refreshing: history.refreshing,
     }),
-    refreshStatus: projectRefreshStatus(actionsResult),
     selectedFilter,
     showingCount: actions.length,
     status: "ready",
-    total,
+    total: done ? actions.length : (batches.at(-1)?.total ?? actions.length),
   };
 };
 
@@ -249,7 +224,9 @@ function resolveActivityPageResources(context: Atom.FnContext) {
   const actionsKey = new ActivityActionsKey({ filter: selectedFilter, scope });
   const actions = activityActionsPullAtom(actionsKey);
 
-  for (const option of getVisibleFilterOptions(filterOptionsResult)) {
+  for (const option of getVisibleFilterOptions(
+    toPresentable(filterOptionsResult)
+  )) {
     context(
       activityActionsPullAtom(
         new ActivityActionsKey({ filter: option.filter, scope })

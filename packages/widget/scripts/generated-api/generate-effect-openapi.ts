@@ -1,8 +1,11 @@
 /**
  * Regenerates Effect OpenAPI clients under `src/generated/api`.
  *
- * Run via `pnpm gen:api`. Fetches StakeKit specs, applies patches, runs
- * openapigen, then formats the output.
+ * Run via `pnpm gen:api [SpecName…]`; without names every spec regenerates.
+ * Fetches StakeKit specs, prunes them to the allowlisted operations, applies
+ * patches, runs openapigen, formats the output, then runs the generated schema
+ * safety check. Adding an operation means adding its `operationId` to the
+ * spec's `prune.operations` and regenerating.
  */
 import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -11,10 +14,17 @@ import path from "node:path";
 import { parse, stringify } from "yaml";
 import { repositoryRoot, widgetRoot } from "../paths";
 import {
+  assertGeneratedSchemasSafe,
   findUnsafeGeneratedSchemaUnions,
   normalizeGeneratedTypeOnlySource,
   normalizeOpenApiUnionObjects,
 } from "./generated-schema-safety";
+import {
+  type OpenApiPruneConfig,
+  pruneOpenApiDocument,
+  stripExtraSchemaRoots,
+  withExtraSchemaRoots,
+} from "./prune-openapi-document";
 
 type JsonPatchOperation = {
   op: "replace";
@@ -51,6 +61,8 @@ type SpecConfig = {
   outputs: ReadonlyArray<SpecOutputConfig>;
   patches: JsonPatchOperation[];
   prepareSpec?: (contents: string) => string;
+  /** Operations used by `services/api`; everything else is pruned. */
+  prune: OpenApiPruneConfig;
   specFileName: string;
   url: string;
 };
@@ -90,15 +102,19 @@ const specs: SpecConfig[] = [
     // generates stable client method and DTO names without `V1` suffixes.
     prepareSpec: (contents) =>
       contents.replace(/operationId:\s*(.+?)_v\d+\b/g, "operationId: $1"),
-    patches: [
-      // Upstream currently declares regionCode as an object, but production
-      // payloads and widget geo-block handling use it as a string.
-      {
-        op: "replace",
-        path: "/components/schemas/GeolocationError/properties/regionCode/type",
-        value: "string",
-      },
-    ],
+    prune: {
+      operations: [
+        "NetworkAddressesTokenV2Controller_getTokenBalances",
+        "TokenController_getTokenBalances",
+        "TokenController_getTokenPrices",
+        "TokenController_getTokens",
+        "YieldController_getSingleYieldRewardsSummary",
+      ],
+      // Read by `domain/action` and `services/wallet` outside any kept
+      // operation response.
+      extraSchemas: ["TransactionDto", "TronResourceType"],
+    },
+    patches: [],
   },
   {
     name: "YieldApi",
@@ -120,6 +136,29 @@ const specs: SpecConfig[] = [
     // generates stable client method and DTO names without `V1` suffixes.
     prepareSpec: (contents) =>
       contents.replace(/operationId:\s*(.+?)_v\d+\b/g, "operationId: $1"),
+    prune: {
+      operations: [
+        "ActionsController_enterYield",
+        "ActionsController_exitYield",
+        "ActionsController_getAction",
+        "ActionsController_getActions",
+        "ActionsController_manageYield",
+        "HealthController_health",
+        "KycController_getStatus",
+        "NetworksController_getNetworks",
+        "ProvidersController_getProvider",
+        "TransactionsController_getTransaction",
+        "TransactionsController_submitTransaction",
+        "TransactionsController_submitTransactionHash",
+        "YieldsController_getAggregateBalances",
+        "YieldsController_getYield",
+        "YieldsController_getYieldBalances",
+        "YieldsController_getYieldRewardRateHistory",
+        "YieldsController_getYields",
+        "YieldsController_getYieldTvlHistory",
+        "YieldsController_getYieldValidators",
+      ],
+    },
     patches: [
       // These DTO properties have concrete scalar types in the Yield API
       // source, but their Swagger decorators omit the explicit property type.
@@ -212,139 +251,6 @@ const specs: SpecConfig[] = [
         description: "Curator logo URI",
         example: "https://example.com/curator.svg",
       }),
-      nullableScalarPatch({
-        schema: "YieldRiskCredoraDto",
-        property: "rating",
-        type: "string",
-        description: "Credora rating",
-        example: "A",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskCredoraDto",
-        property: "score",
-        type: "number",
-        description: "Credora score (1-5)",
-        example: 4.5,
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskCredoraDto",
-        property: "psl",
-        type: "number",
-        description: "Probability of Significant Loss (annualized)",
-        example: 0.01,
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskCredoraDto",
-        property: "publishDate",
-        type: "string",
-        description: "Credora publish date",
-        example: "2026-01-01",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskCredoraDto",
-        property: "curator",
-        type: "string",
-        description: "Credora curator name",
-        example: "Credora",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsMetricsDto",
-        property: "users",
-        type: "number",
-        description: "Users count from Staking Rewards risk metrics",
-        example: 1000,
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "rating",
-        type: "string",
-        description: "Staking Rewards rating",
-        example: "A",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "score",
-        type: "number",
-        description: "Staking Rewards score (1-5)",
-        example: 4,
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "potentialRating",
-        type: "string",
-        description: "Staking Rewards potential rating",
-        example: "A+",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "potentialScore",
-        type: "number",
-        description: "Staking Rewards potential score (1-5)",
-        example: 4.5,
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "ratedAt",
-        type: "string",
-        description: "Date when rating was assessed",
-        example: "2026-01-01",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "ratedSince",
-        type: "string",
-        description: "Date since product has been rated",
-        example: "2025-01-01",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "profileUrl",
-        type: "string",
-        description: "Staking Rewards product profile URL",
-        example: "https://stakingrewards.com/provider",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "reportUrl",
-        type: "string",
-        description: "Staking Rewards full report URL",
-        example: "https://stakingrewards.com/report",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "providerName",
-        type: "string",
-        description: "Staking Rewards provider name",
-        example: "Provider",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "version",
-        type: "string",
-        description: "Staking Rewards methodology version",
-        example: "v1",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "type",
-        type: "string",
-        description: "Staking Rewards product type",
-        example: "validator",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "chain",
-        type: "string",
-        description: "Chain label returned by Staking Rewards",
-        example: "ethereum",
-      }),
-      nullableScalarPatch({
-        schema: "YieldRiskStakingRewardsDto",
-        property: "contractAddress",
-        type: "string",
-        description: "Contract address returned by Staking Rewards",
-        example: "0x0000000000000000000000000000000000000001",
-      }),
       {
         op: "replace",
         path: "/components/schemas/BalanceDto/properties/priceRange",
@@ -424,6 +330,21 @@ const specs: SpecConfig[] = [
         schemaOnly: true,
       },
     ],
+    prune: {
+      operations: [
+        "ActionsController_executeAction_v1",
+        "ActionsController_getAction_v1",
+        "ActionsController_getActions_v1",
+        "ActionsController_step_v1",
+        "IntegrationsController_getIntegrations_v1",
+        "MarketsController_getMarkets_v1",
+        "PositionsController_getPositions_v1",
+        "TransactionsController_submitTransaction_v1",
+      ],
+      // Domain decodes markets and tokens by name; openapigen inlines
+      // components that only one kept response references.
+      extraSchemas: ["MarketDto", "TokenDto"],
+    },
     patches: [
       // Upstream declares these JSON Schema keywords as objects, but
       // production returns `type: "object"` and `additionalProperties: false`.
@@ -547,17 +468,20 @@ const closeOpenApiObjectSchemas = (document: unknown): void => {
   visit(document);
 };
 
-const prepareSpecContents = (spec: SpecConfig, contents: string) => {
+const prepareSpecDocument = (spec: SpecConfig, contents: string) => {
   const document = parse(spec.prepareSpec?.(contents) ?? contents) as unknown;
+  pruneOpenApiDocument(document, spec.prune);
   normalizeOpenApiUnionObjects(document);
   closeOpenApiObjectSchemas(document);
+  return document;
+};
 
-  return spec.specFileName.endsWith(".json")
+const serializeSpecDocument = (spec: SpecConfig, document: unknown) =>
+  spec.specFileName.endsWith(".json")
     ? `${JSON.stringify(document, null, 2)}\n`
     : // openapigen's YAML parser rejects folded plain scalars, so keep every
       // scalar on a single line instead of wrapping at the default width.
       stringify(document, { lineWidth: 0 });
-};
 
 const extractSchemaOnlyOutput = (output: string, specName: string) => {
   const clientMarker = "\nexport interface OperationConfig {";
@@ -575,7 +499,7 @@ const extractSchemaOnlyOutput = (output: string, specName: string) => {
     .replace(/^import \* as Effect from "effect\/Effect";?\r?\n/m, "")
     .replace(/^import type \{ SchemaError \} from "effect\/Schema";?\r?\n/m, "")
     .replace(
-      /^import(?: type)? \* as HttpClient[^\n]+"effect\/unstable\/http\/[^\n]+\r?\n/gm,
+      /^import(?: type)? \* as HttpClient[^\n]+"effect\/http\/[^\n]+\r?\n/gm,
       ""
     )
     .trimEnd()}\n`;
@@ -583,11 +507,17 @@ const extractSchemaOnlyOutput = (output: string, specName: string) => {
 
 const generateSpec = async (spec: SpecConfig, tempDir: string) => {
   const specPath = path.join(tempDir, spec.specFileName);
+  const schemaSpecPath = path.join(tempDir, `schema-${spec.specFileName}`);
   const patchPath = path.join(tempDir, `${spec.specFileName}.patch.json`);
+  const extraSchemas = spec.prune.extraSchemas ?? [];
 
   console.log(`Fetching ${spec.name} spec from ${spec.url}`);
-  const specContents = await fetchSpec(spec);
-  await writeFile(specPath, prepareSpecContents(spec, specContents));
+  const document = prepareSpecDocument(spec, await fetchSpec(spec));
+  await writeFile(specPath, serializeSpecDocument(spec, document));
+  await writeFile(
+    schemaSpecPath,
+    serializeSpecDocument(spec, withExtraSchemaRoots(document, extraSchemas))
+  );
   await writeFile(patchPath, `${JSON.stringify(spec.patches, null, 2)}\n`);
 
   for (const output of spec.outputs) {
@@ -598,7 +528,7 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
     );
     const { stdout, stderr } = await run(openApiGeneratorBin, [
       "--spec",
-      specPath,
+      output.schemaOnly ? schemaSpecPath : specPath,
       "--name",
       spec.name,
       "--format",
@@ -618,7 +548,10 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
     }
 
     const generatedOutput = output.schemaOnly
-      ? extractSchemaOnlyOutput(stdout, spec.name)
+      ? stripExtraSchemaRoots(
+          extractSchemaOnlyOutput(stdout, spec.name),
+          extraSchemas
+        )
       : normalizeGeneratedTypeOnlySource(stdout);
 
     if (output.schemaOnly) {
@@ -643,7 +576,6 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
 };
 
 const main = async () => {
-  const tempDir = await mkdtemp(path.join(tmpdir(), "stakekit-openapi-"));
   const requestedSpecs = new Set(process.argv.slice(2));
   const selectedSpecs = requestedSpecs.size
     ? specs.filter((spec) => requestedSpecs.has(spec.name))
@@ -655,6 +587,7 @@ const main = async () => {
     );
   }
 
+  const tempDir = await mkdtemp(path.join(tmpdir(), "stakekit-openapi-"));
   try {
     for (const spec of selectedSpecs) {
       await generateSpec(spec, tempDir);
@@ -673,6 +606,8 @@ const main = async () => {
   } finally {
     await rm(tempDir, { force: true, recursive: true });
   }
+
+  await assertGeneratedSchemasSafe();
 };
 
 main().catch((error: unknown) => {

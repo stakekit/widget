@@ -1,6 +1,4 @@
 import { useAtomSet } from "@effect/atom-react";
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../../tracking/index";
 import type { PageCta } from "../../../../widget-shell/views";
@@ -8,7 +6,7 @@ import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
-  const { dispatch, result, steps } = useTransactionWorkflow();
+  const { dispatch, setupError, steps } = useTransactionWorkflow();
   const facade = useClassicFlowExecution();
   const returnFlowToReview = useAtomSet(facade.backAtom);
 
@@ -20,7 +18,6 @@ export const useSteps = () => {
   };
 
   const retry = steps.retryable ? () => dispatch({ _tag: "Retry" }) : undefined;
-  const setupError = Option.getOrNull(AsyncResult.error(result));
 
   const { t } = useTranslation();
 
@@ -36,6 +33,7 @@ export const useSteps = () => {
       : null;
 
   return {
+    cancelled: steps.cancelled,
     retry,
     txStates: steps.txStates,
     cta: resolveCta(),

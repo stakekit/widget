@@ -1,5 +1,6 @@
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
+import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";
 import { toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
@@ -34,8 +35,8 @@ export const prepareCollateralToggleAction = (
     financials: { existingCollateralUsd },
     risk,
   };
-  const warnings =
-    assessment.decision === "block" ? (["RiskCapacityExceeded"] as const) : [];
+  const riskVerdict = assessRiskGate(assessment);
+  const warnings = riskVerdict._tag === "Warn" ? riskVerdict.warnings : [];
 
   return {
     _tag: "Ready",
@@ -55,6 +56,7 @@ export const prepareCollateralToggleAction = (
       network: position.market.network,
       providerName: position.integration.name,
       risk,
+      riskVerdict,
       warnings,
     }),
     warnings,

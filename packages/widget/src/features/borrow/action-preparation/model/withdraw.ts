@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
+import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";
 import {
   exactZero,
   truncateToTokenDecimals,
@@ -65,8 +66,9 @@ export const prepareWithdrawAction = (
   if (executableAmount.gt(token.availableAmount)) {
     warnings.push("AmountExceedsPositionBalance");
   }
-  if (assessment.decision === "block") {
-    warnings.push("RiskCapacityExceeded");
+  const riskVerdict = assessRiskGate(assessment);
+  if (riskVerdict._tag === "Warn") {
+    warnings.push(...riskVerdict.warnings);
   }
 
   return {
@@ -86,6 +88,7 @@ export const prepareWithdrawAction = (
       projectedCollateralUsd,
       providerName: position.integration.name,
       risk,
+      riskVerdict,
       warnings,
     }),
     warnings,

@@ -58,7 +58,7 @@ export const walletScopeOwnerKey = (
     network: scope.network,
   });
 
-type WalletScopeOwner = {
+export type WalletScopeOwner = {
   readonly address: string;
   readonly network: WalletNetwork;
 };

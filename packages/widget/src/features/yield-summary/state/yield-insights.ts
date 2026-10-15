@@ -1,6 +1,6 @@
 import { Data, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import {
   isKycGateBlocking,
   mapKycStatusToGate,
@@ -23,6 +23,7 @@ import {
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
 } from "../../../resources/yield-insights/index";
+import { toPresentable } from "../../../shared/effect/async-result";
 import {
   selectCurrentWalletAtom,
   walletConnectionStateAtom,
@@ -136,16 +137,12 @@ export const currentYieldKycGateAtom = Atom.family(
       const resourceKey = getCurrentYieldKycKey(key);
       const queryEnabled = get(currentYieldKycQueryEnabledAtom(resourceKey));
       const result = get(currentYieldKycStatusAtom(resourceKey));
-      const status = result.pipe(AsyncResult.value, Option.getOrUndefined);
+      // A failed refresh keeps the last known status; only a failure with no
+      // status ever read leaves the gate unknown.
+      const status = result.pipe(AsyncResult.value, Option.getOrNull);
       const isFetching = queryEnabled && result.waiting;
       const getGate = () => {
         if (!queryEnabled) return { state: "pass" } as const;
-        if (AsyncResult.isFailure(result)) {
-          return mapKycStatusToGate({
-            status: null,
-            yieldDto: key.yieldDto,
-          });
-        }
         return mapKycStatusToGate({ status, yieldDto: key.yieldDto });
       };
       const gate = getGate();
@@ -225,21 +222,24 @@ const currentRewardsAddressesAtom = selectCurrentWalletAtom((walletState) =>
     : null
 ).pipe(Atom.withLabel("currentRewardsAddressesAtom"));
 
+/** The wallet's reward summaries for the Yields, as the UI presents them. */
 export const currentRewardsSummaryAtom = Atom.family(
   (key: CurrentRewardsSummaryKey) =>
     Atom.make((get) => {
       const filteredIds = key.yieldIds.filter(isValidYieldIdForRewardsSummary);
       const addresses = get(currentRewardsAddressesAtom);
 
-      return addresses && filteredIds.length > 0
-        ? get(
-            rewardSummariesResourceAtom.foreground(
-              new RewardSummariesKey({
-                addresses,
-                yieldIds: filteredIds,
-              })
+      return toPresentable(
+        addresses && filteredIds.length > 0
+          ? get(
+              rewardSummariesResourceAtom.foreground(
+                new RewardSummariesKey({
+                  addresses,
+                  yieldIds: filteredIds,
+                })
+              )
             )
-          )
-        : AsyncResult.success(null);
+          : AsyncResult.success(null)
+      );
     })
 );

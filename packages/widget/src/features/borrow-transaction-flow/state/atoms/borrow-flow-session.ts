@@ -1,26 +1,33 @@
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type { BorrowFlowSession } from "../../model/borrow-transaction-flow";
 import { borrowTransactionFlowServiceAtom } from "./borrow-flow";
 import { makeBorrowFlowExecutionScopeAtom } from "./borrow-flow-execution";
+import { makeBorrowFlowSettledPositionAtom } from "./borrow-flow-position";
 import { makeBorrowFlowReviewScopeAtom } from "./borrow-flow-review";
 
-const makeBorrowFlowSessionModule = (session: BorrowFlowSession) =>
+/**
+ * One mounted Flow Session. The flow route creates an instance per mount, so
+ * the Session's operations live exactly as long as that Atom's Scope.
+ */
+export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) =>
   makeScopedEffectAtom({
     acquire: (context) =>
       context
         .result(borrowTransactionFlowServiceAtom)
-        .pipe(Effect.flatMap((service) => service.acquireSession(session))),
+        .pipe(Effect.flatMap((service) => service.openSession(session))),
     label: "borrowFlowSessionScope",
-    makeValue: (sessionOutcomeAtom) => ({
-      facade: { intake: session.intake },
+    makeValue: (sessionAtom) => ({
+      facade: {
+        intake: session.intake,
+        settledPositionAtom: makeBorrowFlowSettledPositionAtom(session),
+      },
       ports: {
         makeExecutionScopeAtom: () =>
-          makeBorrowFlowExecutionScopeAtom(sessionOutcomeAtom),
-        makeReviewScopeAtom: () =>
-          makeBorrowFlowReviewScopeAtom(sessionOutcomeAtom),
+          makeBorrowFlowExecutionScopeAtom(sessionAtom),
+        makeReviewScopeAtom: () => makeBorrowFlowReviewScopeAtom(sessionAtom),
       },
     }),
     runtime: walletRuntime,
@@ -45,7 +52,3 @@ type BorrowFlowExecutionModule = Atom.Type<
   ReturnType<typeof makeBorrowFlowExecutionScope>
 >;
 export type BorrowFlowExecutionFacade = BorrowFlowExecutionModule["facade"];
-
-export const borrowFlowSessionRootAtomFamily = Atom.family(
-  makeBorrowFlowSessionModule
-);

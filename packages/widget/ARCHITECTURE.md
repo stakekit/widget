@@ -2,7 +2,8 @@
 
 This document records stable ownership and dependency boundaries. Behavior,
 route topology, failure presentation, and detailed workflows belong in code and
-tests. Executable policy lives in Biome, dependency-cruiser, Knip, and ast-grep.
+tests. Executable policy lives in Biome, dependency-cruiser, Knip, jscpd, and
+ast-grep.
 
 ## Ownership
 
@@ -20,7 +21,8 @@ public-api/   host-facing types
 
 Code stays private to its owner unless another owner needs a deliberate
 interface. Shared is for neutral building blocks, not displaced feature logic.
-The application composes Modules; it does not absorb their behavior.
+Shared may depend on Domain types and rules, but not on features, resources, or
+services. The application composes Modules; it does not absorb their behavior.
 
 ## Dependency direction
 
@@ -50,6 +52,34 @@ files stay private.
 
 `src/index.package.ts` and `src/index.bundle.ts` are outbound-only package
 entries. Nothing under `src` imports them.
+
+## Public API
+
+Public types are a semver contract with host applications, not the
+application's model. They are hand-written in `public-api`, never aliased from
+generated API clients or internal implementation types, so a backend or
+refactoring change cannot silently alter what hosts compile against. The only
+derived exceptions are stable Domain contract re-exports and the theme token
+contract, which `public-api` owns.
+
+Every hand-written public type has a compile-time conformance site where an
+internal value crosses into or out of it: internal producers assign into the
+public type before handing it to a host callback, and host inputs are decoded at
+the configuration boundary with exhaustive literal lists. A new public type
+without such a site is incomplete.
+
+Host-facing types are imported only at host boundaries: raw Host Configuration
+composition and decoding in `services/config`, and the host wallet and tracking
+adapters. Every other Module uses Domain or owner types, so internal rules never
+depend on the shape hosts see. dependency-cruiser enforces this.
+
+`src/index.package.ts` and `src/index.bundle.ts` are both the runtime entries
+and the published declarations. Every exported value is annotated with a
+`public-api` type, and `build:types` transpiles each entry alone under
+`isolatedDeclarations`, so implementation types never reach hosts and `tsc`
+checks each implementation against its published signature. Every named type
+that appears in an entry's public signatures is exported by name from that
+entry.
 
 ## Module interfaces
 
@@ -123,6 +153,13 @@ Resource and workflow retention is an explicit ownership decision. Use the
 shared application-runtime lifecycle adapter for scoped handles rather than
 rebuilding mount graphs in Features.
 
+Relevance is a lifetime, not a counter. A Session, reservation, modal opening,
+or attempt owns a `Scope`; ending it closes the Scope and interrupts its work.
+Do not guard continuation with revision, epoch, or `isCurrent` checks. A
+lifetime consumed by a React subtree is owned by that subtree's scoped Atom
+instance, not by a service-held "current" slot. See
+[ADR 0011](../../docs/adr/0011-lifetimes-are-scopes-staleness-is-interruption.md).
+
 ## Trust boundaries
 
 The Module that owns a value-shaped input boundary owns its Effect Schema and
@@ -164,14 +201,22 @@ and Effect Atom registry.
 
 ## Enforcement
 
-- dependency-cruiser enforces cross-Module direction and keeps API internals
-  private.
+- dependency-cruiser enforces cross-Module direction, keeps API internals
+  private, keeps the `internal/` folders of `services/wallet` and
+  `services/transaction-workflow` private to their service, and keeps API
+  transport free of error presentation.
 - Biome constrains barrels and keeps React out of domain, Resource, and service
-  logic.
-- ast-grep rejects ad hoc Atom runtimes, direct Effect runtime execution, native
-  `Date`, global `fetch`, throws in Effect generators, and wildcard Module
-  exports.
+  logic and out of Feature `model/` and `state/`.
+- ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
+  Compiler memoizes, and only functions with a `"use no memo"` directive may
+  memoize by hand), ad hoc Atom runtimes, direct Effect runtime execution,
+  native `Date`, global `fetch`, throws in Effect generators, wildcard Module
+  exports, and Resources that read an API ResourceSource without
+  `makePresentableResource`.
+- Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
+- jscpd fails when duplicated source and tooling code (tests and generated API
+  clients excluded) exceeds 1% of lines.
 
 Run `mise exec -- pnpm check-hygiene` after changing the module graph. Change
 the implementation or the exact policy when the design changes; do not silence

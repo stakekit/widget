@@ -1,11 +1,16 @@
-import { Effect, Schema, SchemaTransformation } from "effect";
+import { Effect, Schema, SchemaTransformation, Struct } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
 import { ExactBaseUnitAmount } from "../../finance/scalars";
 import { TransactionId, WalletAddress } from "../ids";
 import { BorrowNetwork } from "../network";
 
 export const Transaction = Schema.Struct({
-  ...BorrowApi.TransactionDto.fields,
+  ...Struct.pick(BorrowApi.TransactionDto.fields, [
+    "type",
+    "status",
+    "signingFormat",
+    "signablePayload",
+  ]),
   address: WalletAddress,
   // ast-grep-ignore: no-financial-finite-from-string -- chain IDs stay safe integer numbers
   chainId: Schema.FiniteFromString,
@@ -29,14 +34,23 @@ const Countish = Schema.Union([
   )
 );
 
+// The API quotes legacy (0) or EIP-1559 (2) transactions only.
+const BorrowEvmTransactionType = Countish.check(
+  Schema.makeFilter((value) =>
+    value === 0 || value === 2 ? true : "expected EVM transaction type 0 or 2"
+  )
+);
+
 const BorrowWalletEvmSignablePayload = Schema.Struct({
   chainId: Schema.optionalKey(Countish),
   data: HexString,
   from: HexString,
   gasLimit: ExactBaseUnitAmount,
-  nonce: Schema.optionalKey(Countish),
+  gasPrice: Schema.optionalKey(ExactBaseUnitAmount),
+  maxFeePerGas: Schema.optionalKey(ExactBaseUnitAmount),
+  maxPriorityFeePerGas: Schema.optionalKey(ExactBaseUnitAmount),
   to: HexString,
-  type: Schema.optionalKey(Countish),
+  type: Schema.optionalKey(BorrowEvmTransactionType),
   value: Schema.optionalKey(ExactBaseUnitAmount),
 });
 
@@ -73,6 +87,11 @@ const BorrowEip712TypedDataInput = Schema.Union([
   Schema.fromJsonString(BorrowEip712TypedDataPayload),
 ]);
 
+const optionalBaseUnitAmount = <K extends string>(
+  key: K,
+  value: bigint | undefined
+) => (value === undefined ? {} : { [key]: value.toString() });
+
 export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
   Schema.decodeUnknownEffect(BorrowWalletEvmTransactionInput)(transaction).pipe(
     Effect.map(({ signablePayload: payload }) =>
@@ -81,7 +100,12 @@ export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
         data: payload.data,
         from: payload.from,
         gasLimit: payload.gasLimit.toString(),
-        ...(payload.nonce === undefined ? {} : { nonce: payload.nonce }),
+        ...optionalBaseUnitAmount("gasPrice", payload.gasPrice),
+        ...optionalBaseUnitAmount("maxFeePerGas", payload.maxFeePerGas),
+        ...optionalBaseUnitAmount(
+          "maxPriorityFeePerGas",
+          payload.maxPriorityFeePerGas
+        ),
         to: payload.to,
         type: payload.type ?? 0,
         value: (payload.value ?? 0n).toString(),
@@ -117,6 +141,10 @@ export const SubmitTransactionCommand = Schema.Struct(
 export type SubmitTransactionCommand = typeof SubmitTransactionCommand.Type;
 
 export const SubmitTransactionResult = Schema.Struct(
-  BorrowApi.SubmitTransactionResponseDto.fields
+  Struct.pick(BorrowApi.SubmitTransactionResponseDto.fields, [
+    "transactionHash",
+    "link",
+    "status",
+  ])
 );
 export type SubmitTransactionResult = typeof SubmitTransactionResult.Type;

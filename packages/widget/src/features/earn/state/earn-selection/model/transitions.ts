@@ -1,10 +1,13 @@
 import type { TronResource } from "../../../../../domain/action/tron-resource";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import type {
   EarnValidator,
   EarnValidatorKey,
 } from "../../../../../domain/earn/models";
-import type { YieldId } from "../../../../../domain/identity/identifiers";
-import type { DashboardYieldCategory } from "../../../../../public-api/types";
+import type {
+  ProviderOption,
+  YieldId,
+} from "../../../../../domain/identity/identifiers";
 import type { EarnEntryIntent, EarnTokenKey } from "../types";
 
 const resetYieldIntent = (
@@ -13,7 +16,8 @@ const resetYieldIntent = (
 ): EarnEntryIntent => ({
   ...intent,
   amountInput: "untouched",
-  selectedProviderYieldId: null,
+  requestedValidator: null,
+  selectedProviderOption: null,
   selectedValidators: null,
   selectedYieldId,
   stakeAmount: "0",
@@ -51,11 +55,13 @@ export const selectYield = (
 export const selectValidator = ({
   fallbackSelection,
   intent,
+  maxSelected,
   multiselect,
   validator,
 }: {
   readonly fallbackSelection: ReadonlyArray<EarnValidator>;
   readonly intent: EarnEntryIntent;
+  readonly maxSelected: number | null;
   readonly multiselect: boolean;
   readonly validator: EarnValidator;
 }): EarnEntryIntent => {
@@ -65,6 +71,13 @@ export const selectValidator = ({
   const alreadySelected = selected.some(
     (candidate) => candidate.key === validator.key
   );
+  if (
+    !alreadySelected &&
+    maxSelected !== null &&
+    selected.length >= maxSelected
+  ) {
+    return intent;
+  }
   const next = alreadySelected
     ? selected.filter((candidate) => candidate.key !== validator.key)
     : [...selected, validator];
@@ -90,10 +103,10 @@ export const removeValidator = ({
   };
 };
 
-export const selectProvider = (
+export const selectProviderOption = (
   intent: EarnEntryIntent,
-  selectedProviderYieldId: YieldId
-): EarnEntryIntent => ({ ...intent, selectedProviderYieldId });
+  selectedProviderOption: ProviderOption
+): EarnEntryIntent => ({ ...intent, selectedProviderOption });
 
 export const selectTronResource = (
   intent: EarnEntryIntent,

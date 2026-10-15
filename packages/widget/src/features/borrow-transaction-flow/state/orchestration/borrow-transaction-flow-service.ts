@@ -1,13 +1,4 @@
-import {
-  Context,
-  Effect,
-  Layer,
-  PubSub,
-  Ref,
-  type Scope,
-  Stream,
-  SubscriptionRef,
-} from "effect";
+import { Context, Effect, Layer, type Scope } from "effect";
 import {
   sameWalletScopeOwner,
   WalletScopeKey,
@@ -21,17 +12,16 @@ import { TrackingService } from "../../../../services/tracking/tracking-service"
 import type { WalletRuntimeInvariantError } from "../../../../services/wallet/wallet-errors";
 import { walletScopeFromState } from "../../../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../../../services/wallet/wallet-service";
-import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {
-  type BorrowFlowSession,
+  BorrowFlowSession,
   type BorrowTransactionFlowIntake,
   getBorrowReviewTrackingProperties,
   getBorrowTransactionFlowRoutes,
+  makeBorrowFlowNavigationState,
 } from "../../model/borrow-transaction-flow";
 import {
   type BorrowFlowSessionHandle,
   makeBorrowFlowSessionFactory,
-  type RunBorrowFlowCurrentOperation,
 } from "./borrow-flow-session";
 
 type StartBorrowTransactionFlowOutcome =
@@ -39,18 +29,18 @@ type StartBorrowTransactionFlowOutcome =
   | Readonly<{ readonly _tag: "RejectedDisabled" }>
   | Readonly<{ readonly _tag: "RejectedOwner" }>;
 
-export type AcquireBorrowFlowSessionOutcome =
-  | Readonly<{
-      readonly _tag: "Acquired";
-      readonly session: BorrowFlowSessionHandle;
-    }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
-
 type BorrowTransactionFlowServiceApi = Readonly<{
-  readonly acquireSession: (
+  /**
+   * Builds the Session's operations in the caller's Scope, which owns the
+   * Session: closing it ends the Session and interrupts its work. Each opening
+   * is a fresh Session without a reservation, so revisiting Review through
+   * browser history reopens Review rather than resuming execution. A Session
+   * for another Wallet Scope Owner is interrupted.
+   */
+  readonly openSession: (
     session: BorrowFlowSession
-  ) => Effect.Effect<AcquireBorrowFlowSessionOutcome, never, Scope.Scope>;
-  readonly currentSession: Stream.Stream<BorrowFlowSession | null>;
+  ) => Effect.Effect<BorrowFlowSessionHandle, never, Scope.Scope>;
+  /** Validates the intake and navigates to Review carrying a new Session. */
   readonly start: (
     intake: BorrowTransactionFlowIntake
   ) => Effect.Effect<
@@ -67,38 +57,18 @@ const makeBorrowTransactionFlowService = Effect.fn(
   const tracking = yield* TrackingService;
   const wallet = yield* WalletService;
   const makeSession = yield* makeBorrowFlowSessionFactory();
-  const stateRef = yield* SubscriptionRef.make<BorrowFlowSession | null>(null);
-  const nextEpochRef = yield* Ref.make(1);
-  const operations = yield* makeScopedSerialOperations();
-  yield* Effect.addFinalizer(() => PubSub.shutdown(stateRef.pubsub));
 
-  const isCurrent = (session: BorrowFlowSession) =>
-    SubscriptionRef.get(stateRef).pipe(
-      Effect.map((current) => current?.epoch === session.epoch)
-    );
+  // The connected Wallet Scope when it belongs to `owner`, otherwise null.
+  const ownedWalletScope = Effect.fn(
+    "BorrowTransactionFlowService.ownedWalletScope"
+  )(function* (owner: Parameters<typeof sameWalletScopeOwner>[1]) {
+    const walletScope = walletScopeFromState((yield* wallet.state).connection);
+    return walletScope && sameWalletScopeOwner(walletScope, owner)
+      ? walletScope
+      : null;
+  });
 
-  const clearCurrent = (session: BorrowFlowSession) =>
-    SubscriptionRef.modify(stateRef, (current) =>
-      current?.epoch === session.epoch ? [true, null] : [false, current]
-    );
-
-  const runCurrent =
-    (session: BorrowFlowSession): RunBorrowFlowCurrentOperation =>
-    (operation) =>
-      operations.run(
-        Effect.gen(function* () {
-          if (!(yield* isCurrent(session))) {
-            return { _tag: "Stale" } as const;
-          }
-          return { _tag: "Current", value: yield* operation } as const;
-        })
-      );
-
-  const commitTransition = (
-    command: Parameters<typeof navigation.execute>[0]
-  ) => navigation.execute(command);
-
-  const startOpen = Effect.fn("BorrowTransactionFlowService.start")(function* (
+  const start = Effect.fn("BorrowTransactionFlowService.start")(function* (
     intake: BorrowTransactionFlowIntake
   ): Effect.fn.Return<
     StartBorrowTransactionFlowOutcome,
@@ -107,35 +77,23 @@ const makeBorrowTransactionFlowService = Effect.fn(
     if (!(yield* config.current).borrowEnabled) {
       return { _tag: "RejectedDisabled" } as const;
     }
-    const walletScope = walletScopeFromState((yield* wallet.state).connection);
-    if (
-      !walletScope ||
-      !sameWalletScopeOwner(walletScope, {
-        address: intake.command.address,
-        network: intake.summary.network,
-      })
-    ) {
-      return { _tag: "RejectedOwner" } as const;
-    }
+    const walletScope = yield* ownedWalletScope({
+      address: intake.command.address,
+      network: intake.summary.network,
+    });
+    if (!walletScope) return { _tag: "RejectedOwner" } as const;
 
-    const session = yield* Effect.uninterruptible(
-      Effect.gen(function* () {
-        const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
-        const session: BorrowFlowSession = {
-          epoch,
-          intake: { ...intake },
-          walletScope: new WalletScopeKey(walletScope),
-        };
-        yield* SubscriptionRef.set(stateRef, session);
-        const rollback = clearCurrent(session).pipe(Effect.asVoid);
-        yield* navigation
-          .execute({
-            _tag: "Push",
-            path: getBorrowTransactionFlowRoutes(session.intake.entry)
-              .reviewPath,
-          })
-          .pipe(Effect.tapError(() => rollback));
-        return session;
+    const session = new BorrowFlowSession({
+      intake: { ...intake },
+      walletScope: new WalletScopeKey(walletScope),
+    });
+    // A started router navigation cannot be cancelled; an interrupted Start
+    // waits for it rather than abandoning it mid-flight.
+    yield* Effect.uninterruptible(
+      navigation.execute({
+        _tag: "Push",
+        path: getBorrowTransactionFlowRoutes(session.intake.entry).reviewPath,
+        state: makeBorrowFlowNavigationState(session),
       })
     );
     const trackingProperties = getBorrowReviewTrackingProperties(
@@ -147,51 +105,21 @@ const makeBorrowTransactionFlowService = Effect.fn(
     return { _tag: "Started", session } as const;
   });
 
-  const acquireSessionOpen = Effect.fn(
-    "BorrowTransactionFlowService.acquireSession"
-  )(function* (
-    session: BorrowFlowSession
-  ): Effect.fn.Return<AcquireBorrowFlowSessionOutcome, never, Scope.Scope> {
-    if (!(yield* isCurrent(session))) {
-      return { _tag: "RejectedStale" } as const;
+  const openSession = Effect.fn("BorrowTransactionFlowService.openSession")(
+    function* (
+      session: BorrowFlowSession
+    ): Effect.fn.Return<BorrowFlowSessionHandle, never, Scope.Scope> {
+      // Data validation, not lifetime: the wallet may have changed between
+      // Start and the route mounting this Session.
+      const owned = yield* ownedWalletScope(session.walletScope).pipe(
+        Effect.orDie
+      );
+      if (!owned) return yield* Effect.interrupt;
+      return yield* makeSession(session);
     }
-    const handle = yield* makeSession({
-      commitTransition,
-      release: operations.run(clearCurrent(session)).pipe(Effect.asVoid),
-      runCurrent: runCurrent(session),
-      session,
-    });
-    return { _tag: "Acquired", session: handle } as const;
-  });
-
-  yield* wallet.states.pipe(
-    Stream.runForEach((state) =>
-      operations.run(
-        Effect.gen(function* () {
-          const current = yield* SubscriptionRef.get(stateRef);
-          const walletScope = walletScopeFromState(state.connection);
-          if (
-            !current ||
-            (walletScope &&
-              sameWalletScopeOwner(walletScope, {
-                address: current.intake.command.address,
-                network: current.intake.summary.network,
-              }))
-          ) {
-            return;
-          }
-          yield* clearCurrent(current);
-        })
-      )
-    ),
-    Effect.forkScoped({ startImmediately: true })
   );
 
-  return {
-    acquireSession: (session) => operations.run(acquireSessionOpen(session)),
-    currentSession: SubscriptionRef.changes(stateRef),
-    start: (intake) => operations.run(startOpen(intake)),
-  } satisfies BorrowTransactionFlowServiceApi;
+  return { openSession, start } satisfies BorrowTransactionFlowServiceApi;
 });
 
 export class BorrowTransactionFlowService extends Context.Service<

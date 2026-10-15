@@ -1,94 +1,68 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useMemo } from "react";
 import { exactZero } from "../../../../../../domain/finance/exact";
 import { getPositionTotalAmount } from "../../../../../../domain/portfolio/positions";
 import {
-  YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../../../../resources/yield-opportunity/index";
-import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
+  formatRewardRatePercent,
+  formatTokenAmount,
+} from "../../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
 } from "../../../../../yield-summary/index";
+import { positionYieldAtom } from "../../../../state/read-models/position-list-item";
 import type { PositionItem } from "../../../../state/read-models/positions";
 
 export const usePositionListItem = (item: PositionItem) => {
-  const yieldOpportunityResult = useAtomValue(
-    yieldOpportunityAtom.foreground(
-      new YieldOpportunityKey({ yieldId: item.integrationId })
-    )
-  );
-  const integrationData = yieldOpportunityResult.pipe(
-    AsyncResult.value,
-    Option.getOrNull
-  );
+  const { locale } = useWidgetPresentation();
+  const positionYield = useAtomValue(positionYieldAtom(item.integrationId));
+  const integrationData =
+    positionYield._tag === "Ready" ? positionYield.value : null;
 
   const providersDetails = useAtomValue(
     yieldSummaryAtom(
       new YieldSummaryKey({
         yield: integrationData,
         validators: item.type === "validators" ? item.validators : [],
-        selectedProviderYieldId: null,
       })
     )
   ).providers;
 
-  const rewardRateAverage = useMemo(
-    () =>
-      providersDetails && integrationData
-        ? getRewardRateFormatted({
-            rewardRate: providersDetails
-              .reduce(
-                (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
-                exactZero()
-              )
-              .dividedBy(providersDetails.length),
-          })
-        : null,
-    [integrationData, providersDetails]
-  );
+  const rewardRateAverage =
+    providersDetails && integrationData
+      ? formatRewardRatePercent(
+          providersDetails
+            .reduce(
+              (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
+              exactZero()
+            )
+            .dividedBy(providersDetails.length),
+          locale
+        )
+      : null;
 
-  const inactiveValidator = useMemo(
-    () =>
-      providersDetails?.find((provider) => provider.status !== "active")
-        ?.status as Exclude<
-        NonNullable<NonNullable<typeof providersDetails>[number]["status"]>,
-        "active"
-      > | null,
-    [providersDetails]
-  );
+  const inactiveValidator = providersDetails?.find(
+    (provider) => provider.status !== "active"
+  )?.status as Exclude<
+    NonNullable<NonNullable<typeof providersDetails>[number]["status"]>,
+    "active"
+  > | null;
 
   const tokenToDisplay = item.token;
   const baseToken = integrationData?.token ?? null;
 
-  const amounts = useMemo(
-    () =>
-      baseToken
-        ? getPositionTotalAmount(item.balancesWithAmount, baseToken)
-        : null,
-    [item.balancesWithAmount, baseToken]
-  );
+  const amounts = baseToken
+    ? getPositionTotalAmount(item.balancesWithAmount, baseToken)
+    : null;
 
   const totalAmount = amounts?.amount ?? null;
 
-  const totalAmountUsd = useMemo(() => amounts?.amountUsd ?? null, [amounts]);
+  const amountUsd = amounts?.amountUsd ?? null;
+  const totalAmountUsd = amountUsd?.isGreaterThan(0) ? amountUsd : null;
 
-  const totalAmountFormatted = useMemo(
-    () => (totalAmount ? defaultFormattedNumber(totalAmount) : null),
-    [totalAmount]
-  );
-
-  const totalAmountPriceFormatted = useMemo(
-    () =>
-      totalAmountUsd?.isGreaterThan(0)
-        ? defaultFormattedNumber(totalAmountUsd)
-        : null,
-    [totalAmountUsd]
-  );
+  const totalAmountFormatted = totalAmount
+    ? formatTokenAmount(totalAmount, locale)
+    : null;
 
   return {
     integrationData,
@@ -98,7 +72,6 @@ export const usePositionListItem = (item: PositionItem) => {
     totalAmount,
     totalAmountUsd,
     totalAmountFormatted,
-    totalAmountPriceFormatted,
     baseToken,
     tokenToDisplay,
   };

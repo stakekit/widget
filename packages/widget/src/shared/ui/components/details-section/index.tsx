@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { ReactNode } from "react";
 import { formatAddress } from "../../../lib/general";
 import { Box } from "../../primitives/box";
@@ -11,11 +12,20 @@ import {
 } from "../collapsible";
 import * as styles from "./styles.css";
 
+export type DetailRowTone = "default" | "warning" | "danger";
+
 type DetailRowProps = Readonly<{
   readonly id?: string;
   readonly label: string;
+  readonly tone?: DetailRowTone;
   readonly value: ReactNode;
 }>;
+
+const valueTextType = {
+  danger: "danger",
+  default: "regular",
+  warning: "base",
+} as const;
 
 type AddressRowProps = Readonly<{
   readonly address: string;
@@ -48,7 +58,19 @@ export const DetailsSection = ({
   </CollapsibleRoot>
 );
 
-export const DetailRow = ({ label, value }: DetailRowProps) => (
+/**
+ * Stacks Detail Rows without a flex gap: a gap would sit on one side of each
+ * row separator only, pushing the separator off-centre between rows.
+ */
+export const DetailRowList = ({ children }: { children: ReactNode }) => (
+  <Box className={styles.detailRowList}>{children}</Box>
+);
+
+export const DetailRow = ({
+  label,
+  tone = "default",
+  value,
+}: DetailRowProps) => (
   <Box className={styles.detailRow}>
     <Text
       as="span"
@@ -60,8 +82,8 @@ export const DetailRow = ({ label, value }: DetailRowProps) => (
     {typeof value === "string" ? (
       <Text
         as="span"
-        className={styles.valueText}
-        variant={{ weight: "normal" }}
+        className={clsx(styles.valueText, styles.valueTone[tone])}
+        variant={{ type: valueTextType[tone], weight: "normal" }}
       >
         {value}
       </Text>

@@ -1,0 +1,20 @@
+id: presentable-resource-sources
+language: Tsx
+severity: error
+message: A Resource that reads an API ResourceSource must publish it through makePresentableResource or makePresentableResourceFamily, so failures are presented only while a foreground observer is mounted.
+files:
+  - packages/widget/src/resources/**/*.ts
+rule:
+  kind: import_statement
+  has:
+    stopBy: end
+    kind: import_specifier
+    regex: ResourceSource$
+  not:
+    inside:
+      stopBy: end
+      kind: program
+      has:
+        stopBy: end
+        kind: identifier
+        regex: ^makePresentableResource(?:Family)?$

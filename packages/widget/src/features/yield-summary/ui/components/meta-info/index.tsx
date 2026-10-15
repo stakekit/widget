@@ -1,4 +1,4 @@
-import { type JSX, type ReactNode, useMemo } from "react";
+import type { JSX, ReactNode } from "react";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -48,31 +48,17 @@ export const MetaInfo = ({
     tokenDto: selectedToken,
   });
 
-  const items = useMemo(
-    () =>
-      [
-        { text: description, icon: <ArrowsLeftRightIcon /> },
-        { text: earnPeriod, icon: <ClockClockWiseIcon /> },
-        { text: earnRewards, icon: <GifIcon /> },
-        { text: withdrawnNotAvailable, icon: <InfoIcon /> },
-        { text: withdrawnTime, icon: <InfoIcon /> },
-        { text: extra, icon: <InfoIcon /> },
-        { text: campaign, icon: <InfoIcon /> },
-        { text: lockupPeriod, icon: <InfoIcon /> },
-      ].filter(
-        (val): val is { text: string | ReactNode; icon: JSX.Element } =>
-          !!val.text
-      ),
-    [
-      campaign,
-      description,
-      earnPeriod,
-      earnRewards,
-      withdrawnNotAvailable,
-      withdrawnTime,
-      extra,
-      lockupPeriod,
-    ]
+  const items = [
+    { text: description, icon: <ArrowsLeftRightIcon /> },
+    { text: earnPeriod, icon: <ClockClockWiseIcon /> },
+    { text: earnRewards, icon: <GifIcon /> },
+    { text: withdrawnNotAvailable, icon: <InfoIcon /> },
+    { text: withdrawnTime, icon: <InfoIcon /> },
+    { text: extra, icon: <InfoIcon /> },
+    { text: campaign, icon: <InfoIcon /> },
+    { text: lockupPeriod, icon: <InfoIcon /> },
+  ].filter(
+    (val): val is { text: string | ReactNode; icon: JSX.Element } => !!val.text
   );
 
   return isLoading ? (

@@ -1,5 +1,4 @@
 import type { HTMLProps } from "react";
-import { useMemo } from "react";
 import type { BoxProps } from "../box";
 import { Box } from "../box";
 
@@ -16,10 +15,7 @@ export const Image = ({
   wrapperProps,
   imgProps,
 }: ImageProps) => {
-  const generatedFallbackSrc = useMemo(
-    () => createMonogramImageSrc(fallbackName),
-    [fallbackName]
-  );
+  const generatedFallbackSrc = createMonogramImageSrc(fallbackName);
 
   const onError: HTMLProps<HTMLImageElement>["onError"] = (e) => {
     if (generatedFallbackSrc) {
@@ -45,7 +41,7 @@ export const Image = ({
   );
 };
 
-const createMonogramImageSrc = (name?: string) => {
+export const createMonogramImageSrc = (name?: string) => {
   if (!name) return undefined;
 
   const [firstCharacter] = Array.from(name.trim());

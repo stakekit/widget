@@ -41,12 +41,12 @@ const loadingCta = {
 } satisfies PageCta;
 
 const EarnPageSkeleton = () => {
-  const variant = useWidgetConfig("variant");
+  const { hidesEarnLoadingSpinner } = useWidgetConfig("hostProfile");
 
   return (
     <PageContainer aria-hidden="true" data-rk="earn-mount-skeleton" inert>
       <Box>
-        {variant !== "zerion" && (
+        {!hidesEarnLoadingSpinner && (
           <Box display="flex" alignItems="center" my="1">
             <Spinner />
           </Box>
@@ -79,7 +79,7 @@ const EarnPageComponent = () => {
 
   const { t } = useTranslation();
 
-  const variant = useWidgetConfig("variant");
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
   const { view: status } = useEarnPageStatus();
 
@@ -97,7 +97,7 @@ const EarnPageComponent = () => {
       >
         <PageContainer>
           <Box>
-            {variant !== "zerion" && <SelectTokenTitle />}
+            {!earnPresentation.zerion && <SelectTokenTitle />}
 
             <ZerionChainModal />
 

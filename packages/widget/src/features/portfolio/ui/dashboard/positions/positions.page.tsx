@@ -1,5 +1,3 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
@@ -21,30 +19,26 @@ import { container, positionsTitle } from "./styles.css";
 export const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positions, positionsResult, showPositions } = usePositions();
+  const { positionsView } = usePositions();
   const variant = useWidgetConfig("variant");
   const borrowPositions = usePortfolioBorrowPositions();
   const wallet = useSKWallet();
   const isConnected = wallet?.status === "connected";
   const isConnecting = wallet === null || wallet.status === "connecting";
   const manageState = getUnifiedManagePositionsState({
-    borrowPositionsResult: borrowPositions.positionsResult,
+    borrowPositions: borrowPositions.positions,
     borrowWalletIsConnected:
       borrowPositions.enabled &&
       borrowPositions.connectionStatus === "connected",
-    earnIsError: AsyncResult.isFailure(positionsResult),
-    earnIsFetching: positionsResult.waiting,
-    earnIsLoading: AsyncResult.isInitial(positionsResult),
-    earnPositionsCount: positions.length,
+    earnPositions: positionsView,
     isConnected,
     isConnecting,
-    showEarnPositions: showPositions,
   });
 
   const listData = useGroupedPositions();
 
   const { t } = useTranslation();
-  const content = useMemo(() => {
+  const renderContent = () => {
     // Keep the list mounted while a source refreshes; only the first load with
     // nothing to show uses the full-page spinner.
     if (
@@ -76,11 +70,11 @@ export const PositionsPage = () => {
     }
 
     return null;
-  }, [isConnected, manageState, t]);
+  };
 
   return (
     <Box className={container} display="flex" flex={1} flexDirection="column">
-      {content}
+      {renderContent()}
 
       {manageState.showPositionsList && (
         <>

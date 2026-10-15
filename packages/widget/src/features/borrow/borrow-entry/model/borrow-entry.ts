@@ -1,10 +1,14 @@
 import type BigNumber from "bignumber.js";
 import { Data, Option } from "effect";
-import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/AsyncResult";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type { AsyncResult as AtomAsyncResult } from "effect/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../../domain/borrow/catalog/market";
+import {
+  getListedCollateralTokens,
+  isListedBorrowMarket,
+  type Market,
+} from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import {
@@ -12,18 +16,28 @@ import {
   emptyBorrowPositions,
 } from "../../../../domain/borrow/positions/borrow-positions";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
+import {
+  type Presentable,
+  toPresentable,
+} from "../../../../shared/effect/async-result";
 import {
   type BorrowActionPreparation,
   type BorrowConstraintWarning,
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
+  getBorrowActionRiskBlock,
   type OpenPositionProjection,
   prepareBorrowAction,
 } from "../../action-preparation/index";
 import type { BorrowAtomResultError } from "./errors";
+import {
+  type BorrowCollateralOption,
+  rankBorrowCollateralOptions,
+} from "./market-groups";
 
 export type BorrowFormIntent = {
   readonly borrowAmount: string;
@@ -50,15 +64,18 @@ export type BorrowFormAction =
       readonly marketId: string;
     }
   | {
-      readonly type: "reset";
+      readonly type: "amounts/clear";
     };
 
 type BorrowFormValidation = {
   readonly borrowAmountGreaterThanAvailable: boolean;
   readonly collateralAmountGreaterThanBalance: boolean;
   readonly hasAmounts: boolean;
-  readonly ltvGreaterThanMax: boolean;
   readonly projectedDebtBelowMinimum: boolean;
+  /** The limit the Risk Gate blocks on. */
+  readonly riskBlock: RiskGateBlockReason | null;
+  /** A risk overshoot the user can still submit; never set with a block. */
+  readonly riskWarning: boolean;
 };
 
 export type BorrowFormProjection = {
@@ -80,14 +97,18 @@ export type BorrowEntryView = {
   readonly borrowAmount: BigNumber;
   readonly canSelectCollateralMaxAmount: boolean;
   readonly catalogResetNotice: boolean;
+  /** Listed collateral for the selected market, default first. */
+  readonly collateralOptions: ReadonlyArray<BorrowCollateralOption>;
   readonly collateralAmount: BigNumber;
-  readonly integrationsResult: AtomAsyncResult<
+  readonly integrations: ReadonlyArray<Integration>;
+  readonly integrationsView: Presentable<
     ReadonlyArray<Integration>,
     BorrowAtomResultError
   >;
   readonly isActionReady: boolean;
+  /** Listed markets of the catalog, empty until it has a value. */
   readonly markets: ReadonlyArray<Market>;
-  readonly marketsResult: AtomAsyncResult<
+  readonly marketsView: Presentable<
     ReadonlyArray<Market>,
     BorrowAtomResultError
   >;
@@ -121,27 +142,29 @@ export const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
 export const pinBorrowFormDefaults = ({
   intent,
   markets,
+  tokenBalances,
 }: {
   readonly intent: BorrowFormIntent;
   readonly markets: ReadonlyArray<Market>;
+  readonly tokenBalances: ReadonlyArray<TokenBalance> | null;
 }): BorrowFormIntent => {
   const selectedMarket =
     markets.find((market) => market.id === intent.selectedMarketId) ??
-    markets.find((market) => market.isBorrowEnabled) ??
+    markets.find(isListedBorrowMarket) ??
     null;
-  const selectedCollateralToken =
-    selectedMarket?.collateralTokens.find(
-      (token) => decodeTokenId(token.token) === intent.selectedCollateralTokenId
-    ) ??
-    selectedMarket?.collateralTokens[0] ??
-    null;
+  const defaultCollateralToken = selectedMarket
+    ? (rankBorrowCollateralOptions({
+        balances: tokenBalances,
+        market: selectedMarket,
+      })[0]?.collateralToken ?? null)
+    : null;
 
   return {
     ...intent,
     selectedCollateralTokenId:
       intent.selectedCollateralTokenId ??
-      (selectedCollateralToken
-        ? decodeTokenId(selectedCollateralToken.token)
+      (defaultCollateralToken
+        ? decodeTokenId(defaultCollateralToken.token)
         : null),
     selectedMarketId: intent.selectedMarketId ?? selectedMarket?.id ?? null,
   };
@@ -182,8 +205,8 @@ export const applyBorrowFormAction = ({
         selectedCollateralTokenId: null,
         selectedMarketId: action.marketId,
       };
-    case "reset":
-      return makeDefaultBorrowFormIntent();
+    case "amounts/clear":
+      return { ...intent, borrowAmount: "0", collateralAmount: "0" };
   }
 };
 
@@ -204,26 +227,22 @@ const getSelectedMarket = ({
 };
 
 const getSelectedCollateralToken = ({
+  collateralOptions,
   intent,
-  selectedMarket,
 }: {
+  readonly collateralOptions: ReadonlyArray<BorrowCollateralOption>;
   readonly intent: BorrowFormIntent;
-  readonly selectedMarket: Market | null;
 }) => {
-  if (!selectedMarket) {
-    return null;
-  }
-
   if (intent.selectedCollateralTokenId === null) {
-    return selectedMarket.collateralTokens[0] ?? null;
+    return collateralOptions[0]?.collateralToken ?? null;
   }
 
   return (
-    selectedMarket.collateralTokens.find(
-      (collateralToken) =>
+    collateralOptions.find(
+      ({ collateralToken }) =>
         decodeTokenId(collateralToken.token) ===
         intent.selectedCollateralTokenId
-    ) ?? null
+    )?.collateralToken ?? null
   );
 };
 
@@ -242,7 +261,7 @@ export const shouldResetBorrowFormForCatalog = ({
     (market) => market.id === intent.selectedMarketId
   );
 
-  if (!selectedMarket?.isBorrowEnabled) {
+  if (!selectedMarket || !isListedBorrowMarket(selectedMarket)) {
     return true;
   }
 
@@ -250,7 +269,7 @@ export const shouldResetBorrowFormForCatalog = ({
     return false;
   }
 
-  return !selectedMarket.collateralTokens.some(
+  return !getListedCollateralTokens(selectedMarket).some(
     (collateralToken) =>
       decodeTokenId(collateralToken.token) === intent.selectedCollateralTokenId
   );
@@ -283,7 +302,7 @@ export const resolveBorrowEntryView = ({
   readonly tokenBalancesAvailable?: boolean;
 }): BorrowEntryView => {
   const markets = AsyncResult.getOrElse(marketsResult, () => []).filter(
-    (market) => market.isBorrowEnabled
+    isListedBorrowMarket
   );
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
   const positions = positionsResult.pipe(AsyncResult.value, Option.getOrNull);
@@ -295,9 +314,15 @@ export const resolveBorrowEntryView = ({
           (position) => position.id === selectedMarket.id
         ) ?? null)
       : null;
+  const collateralOptions = selectedMarket
+    ? rankBorrowCollateralOptions({
+        balances: tokenBalancesAvailable ? tokenBalances : null,
+        market: selectedMarket,
+      })
+    : [];
   const selectedCollateralToken = getSelectedCollateralToken({
+    collateralOptions,
     intent,
-    selectedMarket,
   });
   const selectedCollateralTokenId = selectedCollateralToken
     ? decodeTokenId(selectedCollateralToken.token)
@@ -357,12 +382,15 @@ export const resolveBorrowEntryView = ({
   const collateralAmountGreaterThanBalance = warnings.includes(
     "AmountExceedsWalletBalance"
   );
-  const ltvGreaterThanMax = warnings.includes("RiskCapacityExceeded");
+  const riskBlock = getBorrowActionRiskBlock(preparation);
+  const riskWarning = warnings.includes("RiskCapacityExceeded");
   const projectedDebtBelowMinimum = warnings.includes(
     "ProjectedDebtBelowMarketMinimum"
   );
   const isActionReady =
-    preparation?._tag === "Ready" && !AsyncResult.isFailure(marketsResult);
+    preparation?._tag === "Ready" &&
+    !AsyncResult.isFailure(marketsResult) &&
+    riskBlock === null;
   const projection: BorrowFormProjection = {
     borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? exactZero(),
     borrowUsd: preparedProjection?.borrowUsd ?? exactZero(),
@@ -384,10 +412,12 @@ export const resolveBorrowEntryView = ({
       !!selectedMarket && projection.collateralMaxAmount.gt(0),
     catalogResetNotice: false,
     collateralAmount,
-    integrationsResult,
+    collateralOptions,
+    integrations,
+    integrationsView: toPresentable(integrationsResult),
     isActionReady,
     markets,
-    marketsResult,
+    marketsView: toPresentable(marketsResult),
     preparation,
     projection,
     selectedCollateralBalance,
@@ -401,8 +431,9 @@ export const resolveBorrowEntryView = ({
       borrowAmountGreaterThanAvailable,
       collateralAmountGreaterThanBalance,
       hasAmounts,
-      ltvGreaterThanMax,
       projectedDebtBelowMinimum,
+      riskBlock,
+      riskWarning,
     },
     walletBalances,
   };

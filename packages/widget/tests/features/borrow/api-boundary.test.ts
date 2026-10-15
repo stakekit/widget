@@ -1,0 +1,340 @@
+import { describe, expect, it } from "@effect/vitest";
+import { Effect, Logger, Schema } from "effect";
+import { Integration } from "../../../src/domain/borrow/catalog/integration";
+import { Action } from "../../../src/domain/borrow/execution/action";
+import {
+  BorrowIntegrationPositionsResponse,
+  BorrowIntegrationsResponse,
+  BorrowMarketsResponse,
+} from "../../../src/domain/borrow/responses";
+
+const address = "0x0000000000000000000000000000000000000001";
+
+const integration = {
+  id: "aave-borrow",
+  providerId: "aave",
+  name: "Aave V3",
+  networks: ["ethereum"],
+  metadata: {
+    description: "Aave lending and borrowing",
+    externalLink: "https://aave.com",
+    logoURI: "https://assets.stakek.it/protocols/aave.svg",
+  },
+  actions: [],
+} as const;
+
+const market = {
+  id: "aave-v3-ethereum-usdc",
+  integrationId: "aave-borrow",
+  network: "ethereum",
+  type: "pool",
+  poolAddress: address,
+  loanToken: {
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    symbol: "USDC",
+    name: "USD Coin",
+    decimals: 6,
+  },
+  collateralTokens: [
+    {
+      token: {
+        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        symbol: "WETH",
+        name: "Wrapped Ether",
+        decimals: 18,
+      },
+      priceUsd: "2000",
+      maxLtv: "0.8",
+      liquidationThreshold: "0.85",
+      liquidationPenalty: "0.05",
+      supplyRate: "0.02",
+    },
+  ],
+  borrowRate: "0.06",
+  totalSupply: "1000000",
+  totalSupplyRaw: "1000000000000",
+  totalBorrow: "500000",
+  totalBorrowRaw: "500000000000",
+  availableLiquidity: "500000",
+  availableLiquidityRaw: "500000000000",
+  utilizationRate: "0.5",
+  loanTokenPriceUsd: "1",
+  isBorrowEnabled: true,
+  supplyCollateralFeeBps: "0",
+  feeWrapperAddress: null,
+  originationFeeBps: "0",
+  originationFeeWrapperAddress: null,
+  blueBundleOriginationFeeBps: null,
+  minLoan: null,
+} as const;
+
+const supplyBalance = {
+  apy: "0.02",
+  balance: "0.5",
+  balanceRaw: "500000000000000000",
+  balanceUsd: "1000",
+  isCollateral: true,
+  marketId: market.id,
+  pendingActions: [],
+  tokenAddress: market.collateralTokens[0].token.address,
+  tokenSymbol: "WETH",
+} as const;
+
+const accountPosition = {
+  address,
+  availableToBorrowUsd: "450",
+  currentLtv: "0.4",
+  debtBalances: [],
+  healthFactor: "2.125",
+  integrationId: integration.id,
+  netApy: "0.02",
+  netWorthUsd: "1000",
+  network: "ethereum",
+  supplyBalances: [supplyBalance],
+  totalBorrowedUsd: "0",
+  totalCollateralUsd: "1000",
+  totalSuppliedUsd: "1000",
+} as const;
+
+const transaction = {
+  address,
+  chainId: "1",
+  id: "transaction-1",
+  network: "ethereum",
+  status: "CREATED",
+  type: "BORROW",
+} as const;
+
+const action = {
+  id: "action-1",
+  integrationId: integration.id,
+  action: "borrow",
+  address,
+  status: "CREATED",
+  transactions: [transaction],
+  hasNextStep: false,
+  currentStep: 1,
+  totalSteps: 1,
+  createdAt: "2026-07-10T12:00:00.000Z",
+} as const;
+
+const decode = <S extends Schema.ConstraintDecoder<unknown>>(
+  schema: S,
+  input: unknown
+) =>
+  Schema.decodeUnknownEffect(schema)(input).pipe(
+    Effect.provide(Logger.layer([]))
+  );
+
+describe("Borrow API boundary policies", () => {
+  it.effect("omits an invalid integration while retaining valid siblings", () =>
+    Effect.gen(function* () {
+      const result = yield* decode(BorrowIntegrationsResponse, [
+        integration,
+        { ...integration, id: "invalid-integration", name: 1 },
+      ]);
+
+      expect(result.map((item) => item.id)).toEqual([integration.id]);
+    })
+  );
+
+  it.effect(
+    "keeps an integration whose advertised actions or networks are unknown",
+    () =>
+      Effect.gen(function* () {
+        const result = yield* decode(BorrowIntegrationsResponse, [
+          {
+            ...integration,
+            networks: ["ethereum", "network-added-later"],
+            actions: [{ id: "action-added-later", label: "New", schema: {} }],
+          },
+        ]);
+
+        expect(result.map((item) => item.networks)).toEqual([["ethereum"]]);
+      })
+  );
+
+  it.effect("omits a complete market when a nested token fails", () =>
+    Effect.gen(function* () {
+      const result = yield* decode(BorrowMarketsResponse, {
+        items: [
+          market,
+          {
+            ...market,
+            id: "invalid-market",
+            loanToken: { ...market.loanToken, decimals: "6" },
+          },
+        ],
+        limit: 100,
+        offset: 0,
+        total: 2,
+      });
+
+      expect(result.items?.map((item) => item.id)).toEqual([market.id]);
+      // Pagination reads `total` to fetch the remaining pages.
+      expect(result.total).toBe(2);
+    })
+  );
+
+  it.effect("omits an invalid complete position entry", () =>
+    Effect.gen(function* () {
+      const decodedIntegration =
+        yield* Schema.decodeEffect(Integration)(integration);
+      const result = yield* decode(BorrowIntegrationPositionsResponse, [
+        { integration: decodedIntegration, position: accountPosition },
+        {
+          integration: decodedIntegration,
+          position: { ...accountPosition, address: "invalid-address" },
+        },
+      ]);
+
+      expect(result).toHaveLength(1);
+    })
+  );
+
+  it.effect(
+    "keeps a position and drops only pending actions the widget cannot run",
+    () =>
+      Effect.gen(function* () {
+        const decodedIntegration =
+          yield* Schema.decodeEffect(Integration)(integration);
+        const withdraw = {
+          type: "withdraw",
+          label: "Withdraw",
+          args: {
+            amountRaw: "1",
+            tokenAddress: supplyBalance.tokenAddress,
+            marketId: market.id,
+          },
+        };
+        const result = yield* decode(BorrowIntegrationPositionsResponse, [
+          {
+            integration: decodedIntegration,
+            position: {
+              ...accountPosition,
+              supplyBalances: [
+                {
+                  ...supplyBalance,
+                  pendingActions: [
+                    withdraw,
+                    { ...withdraw, type: "supply", label: "Supply" },
+                    { ...withdraw, type: "action-added-later", label: "New" },
+                  ],
+                },
+              ],
+            },
+          },
+        ]);
+
+        expect(
+          result[0]?.position.supplyBalances[0]?.pendingActions.map(
+            ({ type }) => type
+          )
+        ).toEqual(["withdraw"]);
+      })
+  );
+
+  it.effect(
+    "rejects the complete position instead of salvaging valid balance siblings",
+    () =>
+      Effect.gen(function* () {
+        const decodedIntegration =
+          yield* Schema.decodeEffect(Integration)(integration);
+        const result = yield* decode(BorrowIntegrationPositionsResponse, [
+          {
+            integration: decodedIntegration,
+            position: {
+              ...accountPosition,
+              supplyBalances: [
+                supplyBalance,
+                { ...supplyBalance, tokenSymbol: "INVALID", balance: "NaN" },
+              ],
+            },
+          },
+        ]);
+
+        expect(result).toEqual([]);
+      })
+  );
+
+  it.effect("strictly rejects malformed single actions", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(
+        decode(Action, { ...action, currentStep: "1" })
+      );
+      expect(() => {
+        throw failure;
+      }).toThrow(/Expected number/);
+    })
+  );
+
+  it.effect(
+    "strictly rejects an action containing a malformed transaction",
+    () =>
+      Effect.gen(function* () {
+        const failure = yield* Effect.flip(
+          decode(Action, {
+            ...action,
+            transactions: [{ ...transaction, chainId: "not-a-number" }],
+          })
+        );
+        expect(() => {
+          throw failure;
+        }).toThrow();
+      })
+  );
+});
+
+describe("Borrow schemas decode only the fields the widget reads", () => {
+  const UNKNOWN = "value-added-after-generation";
+
+  it.effect(
+    "decodes integrations and markets whose unread fields are missing, renamed, or unknown",
+    () =>
+      Effect.gen(function* () {
+        const { providerId: _providerId, ...unreadIntegration } = integration;
+        const { feeWrapperAddress: _feeWrapperAddress, ...unreadMarket } =
+          market;
+        const integrations = yield* decode(BorrowIntegrationsResponse, [
+          { ...unreadIntegration, provider_id: "aave", actions: [UNKNOWN] },
+        ]);
+        const markets = yield* decode(BorrowMarketsResponse, {
+          items: [{ ...unreadMarket, fee_wrapper_address: address }],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        });
+
+        expect(integrations.map((item) => item.id)).toEqual([integration.id]);
+        expect(integrations[0]).not.toHaveProperty("actions");
+        expect(markets.items?.map((item) => item.id)).toEqual([market.id]);
+      })
+  );
+
+  it.effect(
+    "decodes actions whose unread fields are missing, renamed, or unknown",
+    () =>
+      Effect.gen(function* () {
+        const { createdAt: _createdAt, ...unreadAction } = action;
+        const result = yield* decode(Action, {
+          ...unreadAction,
+          created_at: action.createdAt,
+          metadata: {
+            currentHealthFactor: null,
+            predictedHealthFactor: null,
+            currentLtv: "0",
+            predictedLtv: "0.4",
+            liquidationThreshold: "0.85",
+            predictedTotalSupplyUsd: "1000",
+            predictedTotalDebtUsd: "400",
+            feeBps: UNKNOWN,
+            originationFeeBps: UNKNOWN,
+          },
+        });
+
+        expect(result.id).toBe(action.id);
+        expect(result.metadata?.predictedLtv.toFixed()).toBe("0.4");
+        expect(result.metadata).not.toHaveProperty("feeBps");
+      })
+  );
+});

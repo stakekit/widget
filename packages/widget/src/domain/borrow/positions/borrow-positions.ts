@@ -1,4 +1,6 @@
+import BigNumber from "bignumber.js";
 import { Schema } from "effect";
+import { exactZero, sumExact } from "../../finance/exact";
 import type { Integration } from "../catalog/integration";
 import type { Market } from "../catalog/market";
 import { IntegrationId, type MarketId, type TokenAddress } from "../ids";
@@ -13,7 +15,6 @@ import type {
   SupplyBalance,
 } from "./borrow-account-snapshot";
 import { type MarketPosition, makeMarketPosition } from "./market-position";
-import type { PendingAction } from "./pending-action";
 
 type IntegrationAccountSnapshot = {
   readonly accountSnapshot: BorrowAccountSnapshot;
@@ -29,9 +30,50 @@ type PoolRiskId = typeof PoolRiskId.Type;
 
 const decodePoolRiskId = Schema.decodeSync(PoolRiskId);
 
+/**
+ * Portfolio-wide borrow totals summed per account snapshot, so pool collateral
+ * shared by several debt positions is counted once.
+ */
+type BorrowAccountTotals = {
+  /** Net APY weighted by `netApyWeightUsd`. */
+  readonly netApy: BigNumber;
+  /** Sum of positive account net worth; accounts at or below zero earn nothing. */
+  readonly netApyWeightUsd: BigNumber;
+  readonly netWorthUsd: BigNumber;
+  readonly totalSuppliedUsd: BigNumber;
+};
+
 export type BorrowPositions = {
   readonly items: ReadonlyArray<MarketPosition>;
   readonly riskFor: (market: Market) => RiskPosition;
+  readonly totals: BorrowAccountTotals;
+};
+
+const deriveBorrowAccountTotals = (
+  accountSnapshots: ReadonlyArray<BorrowAccountSnapshot>
+): BorrowAccountTotals => {
+  const earningNetWorths = accountSnapshots.map((snapshot) =>
+    BigNumber.max(snapshot.netWorthUsd, exactZero())
+  );
+  const netApyWeightUsd = sumExact(earningNetWorths);
+  const weightedNetApy = sumExact(
+    accountSnapshots.map((snapshot, index) =>
+      snapshot.netApy.multipliedBy(earningNetWorths[index] ?? exactZero())
+    )
+  );
+
+  return {
+    netApy: netApyWeightUsd.isZero()
+      ? exactZero()
+      : weightedNetApy.dividedBy(netApyWeightUsd),
+    netApyWeightUsd,
+    netWorthUsd: sumExact(
+      accountSnapshots.map((snapshot) => snapshot.netWorthUsd)
+    ),
+    totalSuppliedUsd: sumExact(
+      accountSnapshots.map((snapshot) => snapshot.totalSuppliedUsd)
+    ),
+  };
 };
 
 const getPoolRiskId = ({
@@ -112,6 +154,19 @@ export const deriveBorrowPositions = ({
   for (const { accountSnapshot, integration } of integrationAccountSnapshots) {
     const debtBalances = accountSnapshot.debtBalances;
     const supplyBalances = accountSnapshot.supplyBalances;
+    // The API keys every Aave balance by its own reserve, and every enabled
+    // collateral backs every debt in the pool, so pool collateral is matched
+    // by the collateral flag instead of by market.
+    const poolCollateralBalances = supplyBalances.filter(
+      (balance) => balance.isCollateral
+    );
+    const poolAccountMetricsFor = (market: Market) =>
+      market.type === "pool"
+        ? {
+            netApy: accountSnapshot.netApy,
+            netWorthUsd: accountSnapshot.netWorthUsd,
+          }
+        : null;
     const supplyBalancesByMarketId = new Map<
       MarketId,
       Map<TokenAddress, SupplyBalance>
@@ -125,6 +180,16 @@ export const deriveBorrowPositions = ({
         balancesByTokenAddress
       );
     }
+    const isolatedCollateralBalancesFor = (market: Market) =>
+      market.collateralTokens.flatMap((collateralToken) => {
+        const supplyBalance = collateralToken.token.address
+          ? supplyBalancesByMarketId
+              .get(market.id)
+              ?.get(collateralToken.token.address)
+          : undefined;
+
+        return supplyBalance ? [supplyBalance] : [];
+      });
     const supplyBalancesAddedToDebtPositions = new Set<SupplyBalance>();
 
     for (const debtBalance of debtBalances) {
@@ -133,23 +198,11 @@ export const deriveBorrowPositions = ({
         continue;
       }
 
-      const positionSupplyBalances: SupplyBalance[] = [];
-      const supplyPendingActions: PendingAction[] = [];
-
-      for (const collateralToken of market.collateralTokens) {
-        if (!collateralToken.token.address) {
-          continue;
-        }
-
-        const supplyBalance = supplyBalancesByMarketId
-          .get(debtBalance.marketId)
-          ?.get(collateralToken.token.address);
-        if (!supplyBalance) {
-          continue;
-        }
-
-        positionSupplyBalances.push(supplyBalance);
-        supplyPendingActions.push(...supplyBalance.pendingActions);
+      const positionSupplyBalances =
+        market.type === "pool"
+          ? poolCollateralBalances
+          : isolatedCollateralBalancesFor(market);
+      for (const supplyBalance of positionSupplyBalances) {
         supplyBalancesAddedToDebtPositions.add(supplyBalance);
       }
 
@@ -160,9 +213,12 @@ export const deriveBorrowPositions = ({
           debtPendingActions: debtBalance.pendingActions,
           integration,
           market,
+          poolAccountMetrics: poolAccountMetricsFor(market),
           risk: riskFor(market),
           supplyBalances: positionSupplyBalances,
-          supplyPendingActions,
+          supplyPendingActions: positionSupplyBalances.flatMap(
+            (balance) => balance.pendingActions
+          ),
         })
       );
     }
@@ -186,6 +242,7 @@ export const deriveBorrowPositions = ({
             debtPendingActions: existingPosition.actions.debt,
             integration: existingPosition.integration,
             market: existingPosition.market,
+            poolAccountMetrics: poolAccountMetricsFor(existingPosition.market),
             risk: existingPosition.risk,
             supplyBalances: [
               ...existingPosition.balances.supply,
@@ -207,6 +264,7 @@ export const deriveBorrowPositions = ({
           debtPendingActions: [],
           integration,
           market,
+          poolAccountMetrics: poolAccountMetricsFor(market),
           risk: riskFor(market),
           supplyBalances: [supplyBalance],
           supplyPendingActions: supplyBalance.pendingActions,
@@ -218,6 +276,9 @@ export const deriveBorrowPositions = ({
   return {
     items: [...positionsByMarketId.values()],
     riskFor,
+    totals: deriveBorrowAccountTotals(
+      integrationAccountSnapshots.map(({ accountSnapshot }) => accountSnapshot)
+    ),
   };
 };
 
@@ -231,4 +292,5 @@ export const emptyBorrowPositions: BorrowPositions = {
           market,
           supplyBalances: [],
         }),
+  totals: deriveBorrowAccountTotals([]),
 };

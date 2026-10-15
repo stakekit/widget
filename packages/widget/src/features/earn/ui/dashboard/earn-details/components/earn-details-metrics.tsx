@@ -1,3 +1,4 @@
+import { dashboardMetricGrid } from "../../../../../../shared/ui/components/dashboard-details/styles.css";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import type { EarnDetailsMetricCard } from "../earn-details-model";
@@ -8,7 +9,7 @@ export const EarnDetailsMetrics = ({
 }: {
   cards: EarnDetailsMetricCard[];
 }) => (
-  <Box className={styles.metricGrid}>
+  <Box className={dashboardMetricGrid}>
     {cards.map((card) => (
       <MetricCard key={card.label} {...card} />
     ))}

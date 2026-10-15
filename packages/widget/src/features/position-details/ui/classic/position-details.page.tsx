@@ -1,22 +1,25 @@
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
-import type { YieldPendingActionType } from "../../../../domain/action/pending-action";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
-import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
+import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
+import {
+  formatRewardRatePercent,
+  formatTokenAmount,
+} from "../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
-import { AmountBlock } from "./components/amount-block";
+import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
 import { PositionBalances } from "./components/position-balances";
 import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
 import { ProviderDetails } from "./components/provider-details";
-import { StaticActionBlock } from "./components/static-action-block";
 import { YieldDetails } from "./components/yield-details";
 import { usePositionDetails } from "./hooks/use-position-details";
 import { container } from "./styles.css";
@@ -44,6 +47,7 @@ const PositionDetails = () => {
   });
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   if (!isLoading && positionLost) {
     return <Navigate replace to="/positions" />;
@@ -121,9 +125,10 @@ const PositionDetails = () => {
                     variant={{ level: "h4" }}
                     data-testid="personalized-reward-rate"
                   >
-                    {getRewardRateFormatted({
-                      rewardRate: personalizedRewardRate.total,
-                    })}
+                    {formatRewardRatePercent(
+                      personalizedRewardRate.total,
+                      locale
+                    )}
                   </Heading>
                 </Box>
 
@@ -176,16 +181,15 @@ const PositionDetails = () => {
             </Box>
 
             <Box py="3" gap="2" display="flex" flexDirection="column">
-              {[...positionBalancesByTypeValue.values()].flatMap(
-                (yieldBalance) =>
-                  yieldBalance.map((yb, i) => (
-                    <PositionBalances
-                      key={`${yb.type}-${i}`}
-                      integrationData={integrationDataValue}
-                      yieldBalance={yb}
-                    />
-                  ))
-              )}
+              {groupPositionBalanceRows(
+                [...positionBalancesByTypeValue.values()].flat()
+              ).map((row, i) => (
+                <PositionBalances
+                  key={`${row.type}-${i}`}
+                  integrationData={integrationDataValue}
+                  yieldBalance={row}
+                />
+              ))}
             </Box>
             {shareToAmountConversionsValue ? (
               <Box
@@ -195,11 +199,19 @@ const PositionDetails = () => {
                 flexDirection="column"
                 gap="1"
               >
-                {[...shareToAmountConversionsValue.values()].map((v) => (
-                  <Text variant={{ type: "muted", weight: "normal" }} key={v}>
-                    {v}
-                  </Text>
-                ))}
+                {[...shareToAmountConversionsValue].map(
+                  ([tokenKey, conversion]) => (
+                    <Text
+                      variant={{ type: "muted", weight: "normal" }}
+                      key={tokenKey}
+                    >
+                      {`1 ${conversion.symbol} = ${formatTokenAmount(
+                        conversion.rate,
+                        locale
+                      )} ${conversion.shareSymbol}`}
+                    </Text>
+                  )
+                )}
               </Box>
             ) : null}
 
@@ -212,47 +224,15 @@ const PositionDetails = () => {
               gap="2"
             >
               {/* Pending actions */}
-              {pendingActionsValue?.map((val) =>
-                val.amount ? (
-                  <AmountBlock
-                    key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
-                    variant="action"
-                    onAmountChange={(amount) =>
-                      onPendingActionAmountChange({
-                        balanceType: val.yieldBalance.type,
-                        token: val.yieldBalance.token,
-                        actionType: val.pendingAction.type,
-                        passthrough: val.pendingAction.passthrough,
-                        amount,
-                      })
-                    }
-                    value={val.amount}
-                    canChangeAmount
-                    onClick={() =>
-                      onPendingActionClick({
-                        pendingAction: val.pendingAction,
-                        yieldBalance: val.yieldBalance,
-                      })
-                    }
-                    label={t(
-                      `position_details.pending_action_button.${
-                        val.pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
-                      }`
-                    )}
-                    onMaxClick={null}
-                    formattedAmount={val.formattedAmount}
-                    balance={null}
-                    unstakeAmountError={val.validation !== null}
-                  />
-                ) : (
-                  <StaticActionBlock
-                    {...val}
-                    key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
-                    onPendingActionClick={onPendingActionClick}
-                    yieldId={integrationDataValue.id}
-                  />
-                )
-              )}
+              <PositionDetailsPendingActions
+                positionDetails={{
+                  integrationData: integrationDataValue,
+                  pendingActions: pendingActionsValue,
+                  onPendingActionAmountChange,
+                  onPendingActionClick,
+                }}
+                presentation="classic"
+              />
               {/* Unstake */}
               <PositionDetailsUnstakeActions />
             </Box>

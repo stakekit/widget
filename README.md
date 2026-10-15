@@ -132,10 +132,13 @@ Implement `wallet` using your wallet SDK:
 
 | Method | Contract |
 | --- | --- |
-| `signMessage(message)` | Return a promise resolving to the signature string. |
+| `signMessage(message)` | Return the signature string, `{ type: "success", signature }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
 | `switchChain(chainId)` | Switch the host wallet and resolve when the switch completes. Publish the new `currentChain` through props. |
-| `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, or `{ type: "error", error }`. |
-| `signTypedData(typedData)` | Optional EIP-712 signing callback. Required by flows that request typed-data signatures. |
+| `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
+
+`{ type: "cancelled" }` shows a cancellation notice with a retry instead of an
+error. `error` text, and the message of a rejected Promise, is shown to the
+user.
 
 Use `SKWallet` to type the adapter. Transaction inputs are the widget's `SKTx`
 and `SKTxMeta`, not a wallet SDK's transaction types. Narrow `tx.type` before
@@ -221,18 +224,49 @@ do not need a remount. Unmount the previous instance before mounting another.
 ### Borrow support
 
 For staking without Borrow, use `SKWallet` and `borrowEnabled: false`.
-`sendBorrowTransaction` is not required.
+The Borrow callbacks are not required.
 
-To enable Borrow with an external provider:
+To enable Borrow with an external provider, set `borrowEnabled: true` and pass
+an `SKBorrowWallet`. It extends `SKWallet` with two required callbacks, and the
+widget rejects the configuration when either is missing:
 
-- Set `borrowEnabled: true`.
-- Set `externalProviders.supportsBorrow: true`.
-- Implement `SKBorrowWallet`, which adds
-  `sendBorrowTransaction(tx, txMeta)` to `SKWallet`.
+- `sendBorrowTransaction(tx, txMeta)` receives `SKBorrowTx` and
+  `SKBorrowTxMeta` and resolves with an `SKBorrowTxResult`.
+- `signTypedData(typedData, txMeta)` receives an `SKEip712TypedData` Borrow
+  authorization and the same `SKBorrowTxMeta`, and resolves with an
+  `SKBorrowSignatureResult`.
 
-The Borrow callback receives `SKBorrowTx` and `SKBorrowTxMeta` and returns the
-same success or error shapes as `sendTransaction`. Do not cast a staking-only
-adapter to `SKBorrowWallet` to satisfy a compiler error.
+Both results are discriminated by `type`:
+
+| Result | Meaning | Widget behavior |
+|---|---|---|
+| `{ type: "success", txHash }` / `{ type: "success", signature }` | Broadcast or signed. Resolve as soon as the transaction is broadcast; do not wait for confirmation. | Continues the flow. |
+| `{ type: "cancelled" }` | The user declined in the wallet. | Shows a cancellation notice and lets the user try again. |
+| `{ type: "error", error }` | Failed; nothing was broadcast. | Shows `error` and lets the user retry the step. |
+| `{ type: "error", error, txHash }` | Broadcast, then failed (for example a receipt timeout). Transactions only. | Tracks `txHash` instead of asking to sign again. |
+
+Always include `txHash` once a transaction was broadcast; omitting it lets the
+user sign the same step again, which can send it twice. A rejected Promise is
+treated as an `error` without `txHash`, using the `Error` message or rejected
+string.
+
+The EVM `SKBorrowTx` keeps the API's transaction type: `"0x0"` (legacy, with
+`gasPrice`) or `"0x2"` (EIP-1559, with `maxFeePerGas` and
+`maxPriorityFeePerGas`). Fee fields are `undefined` when the API does not quote
+them; estimate them in the host wallet.
+
+EVM transactions (`SKTx` and `SKBorrowTx`) carry no `nonce`; the host wallet
+selects it when signing.
+
+`borrowEnabled` alone decides whether Borrow can use the provider; there is no
+separate provider flag. Do not cast a staking-only adapter to `SKBorrowWallet`
+to satisfy a compiler error.
+
+`borrowMarketsScope` selects the market catalog offered for new borrows:
+`"all"` (default) lists every supported market, and `"enabled"` lists only the
+markets enabled for your API key's project. Existing positions stay visible and
+manageable in either mode. Live updates switch the listed catalog without a
+remount.
 
 ## Styling
 

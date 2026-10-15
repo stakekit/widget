@@ -1,33 +1,42 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
-import { formatPercent, formatUsd } from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import {
+  formatNumber,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import {
   DetailRow,
-  DetailsSection,
+  DetailRowList,
 } from "../../../../../shared/ui/components/details-section";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
+import { SelectModal } from "../../../../../shared/ui/components/select-modal";
+import { SelectTokenTrigger } from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { ListItem } from "../../../../../shared/ui/primitives/list/list-item";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { PageCtaButton } from "../../../../widget-shell/views";
+import { BorrowNotice } from "../../../action-feedback/views";
 import type {
   BorrowWithdrawActionContext,
   BorrowWithdrawTokenOption,
 } from "../../../action-preparation/index";
+import {
+  BorrowAssetSelectorList,
+  BorrowAssetSelectorRow,
+} from "../../../borrow-entry/views";
 import type { BorrowPositionAction } from "../../model/details";
 import { useBorrowWithdrawForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormWarningMessage } from "./form-warning";
+import { LtvTransitionRow } from "./ltv-transition-row";
 import { useStartBorrowPositionReview } from "./use-start-review";
 
-const WithdrawTokenPicker = ({
+const WithdrawTokenSelect = ({
+  network,
   onSelect,
   selectedToken,
   tokens,
-  network,
 }: {
   readonly network: BorrowNetwork;
   readonly onSelect: (token: BorrowWithdrawTokenOption) => void;
@@ -35,55 +44,54 @@ const WithdrawTokenPicker = ({
   readonly tokens: ReadonlyArray<BorrowWithdrawTokenOption>;
 }) => {
   const { t } = useTranslation();
-
-  if (tokens.length <= 1) {
-    return null;
-  }
+  const { locale } = useWidgetPresentation();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <DetailsSection
+    <SelectModal
+      state={{ isOpen, setOpen: setIsOpen }}
       title={t("dashboard.borrow.position_details.select_withdraw_token")}
-    >
-      <Box display="flex" flexDirection="column" gap="2">
-        {tokens.map((token) => {
-          const selected =
-            token.action.args.tokenAddress ===
-            selectedToken.action.args.tokenAddress;
-          const tokenDto = borrowTokenToAppToken({
+      trigger={
+        <SelectTokenTrigger
+          testId="borrow-withdraw-token-select"
+          token={borrowTokenToAppToken({
             network,
-            token: token.collateralToken.token,
-          });
+            token: selectedToken.collateralToken.token,
+          })}
+        />
+      }
+    >
+      <BorrowAssetSelectorList
+        columnLabel={t("dashboard.borrow.form.balance_column")}
+        title={t("dashboard.borrow.form.collateral_assets")}
+      >
+        {tokens.map((token) => {
+          const { tokenAddress } = token.action.args;
 
           return (
-            <ListItem key={token.action.args.tokenAddress}>
-              <Box
-                as="button"
-                background="transparent"
-                display="flex"
-                gap="2"
-                onClick={() => onSelect(token)}
-                style={{ border: 0 }}
-                type="button"
-                width="full"
-              >
-                <TokenIcon token={tokenDto} />
-                <Box flex={1} textAlign="left">
-                  <Text variant={{ weight: "bold" }}>
-                    {token.supplyBalance.tokenSymbol}
-                  </Text>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {formatUsd(token.supplyBalance.balanceUsd.toString())}
-                  </Text>
-                </Box>
-                {selected ? (
-                  <Text>{t("dashboard.borrow.position_details.selected")}</Text>
-                ) : null}
-              </Box>
-            </ListItem>
+            <BorrowAssetSelectorRow
+              key={tokenAddress}
+              label={token.supplyBalance.tokenSymbol}
+              onClick={() => {
+                onSelect(token);
+                setIsOpen(false);
+              }}
+              rate={formatNumber(token.availableAmount, locale, 6)}
+              rateMeta={formatUsd(
+                token.supplyBalance.balanceUsd.toString(),
+                locale
+              )}
+              selected={tokenAddress === selectedToken.action.args.tokenAddress}
+              testId={`borrow-withdraw-token-select__item_${tokenAddress}`}
+              token={borrowTokenToAppToken({
+                network,
+                token: token.collateralToken.token,
+              })}
+            />
           );
         })}
-      </Box>
-    </DetailsSection>
+      </BorrowAssetSelectorList>
+    </SelectModal>
   );
 };
 
@@ -95,6 +103,7 @@ export const WithdrawActionForm = ({
   readonly context: BorrowWithdrawActionContext;
 }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const startReview = useStartBorrowPositionReview(action);
   const [view, dispatch] = useBorrowWithdrawForm(action);
 
@@ -111,22 +120,10 @@ export const WithdrawActionForm = ({
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
-      <WithdrawTokenPicker
-        network={position.market.network}
-        onSelect={(token) =>
-          dispatch({
-            tokenAddress: token.action.args.tokenAddress,
-            type: "token/select",
-          })
-        }
-        selectedToken={selectedToken}
-        tokens={context.tokens}
-      />
-
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.withdrawable", {
-          amount: formatNumber(selectedToken.availableAmount, 6),
+          amount: formatNumber(selectedToken.availableAmount, locale, 6),
           symbol: selectedToken.supplyBalance.tokenSymbol,
         })}
         label={t("dashboard.borrow.position_details.actions.withdraw")}
@@ -137,39 +134,57 @@ export const WithdrawActionForm = ({
             type: "amount/set",
           })
         }
+        tokenSelector={
+          context.tokens.length > 1 ? (
+            <WithdrawTokenSelect
+              network={position.market.network}
+              onSelect={(token) =>
+                dispatch({
+                  tokenAddress: token.action.args.tokenAddress,
+                  type: "token/select",
+                })
+              }
+              selectedToken={selectedToken}
+              tokens={context.tokens}
+            />
+          ) : undefined
+        }
         tokenSymbol={selectedToken.supplyBalance.tokenSymbol}
         usdValue={view.withdrawUsd}
         warning={warning}
       />
 
       <Box className={styles.formCard}>
-        {view.projectedLtv === null ? null : (
-          <DetailRow
-            id="ltv"
-            label={t("dashboard.borrow.form.ltv_ratio")}
-            value={
-              view.currentLtv === null
-                ? formatPercent(view.projectedLtv)
-                : `${formatPercent(view.currentLtv)} -> ${formatPercent(
-                    view.projectedLtv
-                  )}`
-            }
+        <DetailRowList>
+          <LtvTransitionRow
+            currentLtv={view.currentLtv}
+            projectedLtv={view.projectedLtv}
           />
-        )}
-        <DetailRow
-          id="collateral"
-          label={t("dashboard.borrow.form.collateral_value")}
-          value={`${formatUsd(
-            view.currentCollateralUsd.toString()
-          )} -> ${formatUsd(view.projectedCollateralUsd.toString())}`}
-        />
+          <DetailRow
+            id="collateral"
+            label={t("dashboard.borrow.form.collateral_value")}
+            value={`${formatUsd(
+              view.currentCollateralUsd.toString(),
+              locale
+            )} -> ${formatUsd(view.projectedCollateralUsd.toString(), locale)}`}
+          />
+        </DetailRowList>
       </Box>
+
+      {view.riskBlock ? (
+        <BorrowNotice
+          tone="error"
+          title={t("dashboard.borrow.risk_block.title")}
+        >
+          {t(`dashboard.borrow.risk_block.${view.riskBlock}`)}
+        </BorrowNotice>
+      ) : null}
 
       <PageCtaButton
         cta={{
           disabled: !view.canSubmit,
           isLoading: false,
-          label: t("dashboard.borrow.review"),
+          label: t("dashboard.borrow.review_actions.withdraw"),
           onClick: startReview,
         }}
       />

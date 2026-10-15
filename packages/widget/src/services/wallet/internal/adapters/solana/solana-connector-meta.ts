@@ -1,44 +1,15 @@
 import type { Adapter } from "@solana/wallet-adapter-base";
-import {
-  PhantomWalletAdapter,
-  TrustWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { SolanaWalletDescriptor } from "../../runtime/solana-runtime";
 import type { DecodedSolanaTransaction } from "./transaction";
 
-export const getConfigMeta = (adapter: Adapter) => {
-  if (adapter instanceof PhantomWalletAdapter) {
-    return {
-      downloadUrls: {
-        android: "https://play.google.com/store/apps/details?id=app.phantom",
-        ios: "https://apps.apple.com/us/app/phantom-crypto-wallet/id1598432977",
-        qrCode: "https://phantom.com/",
-        browserExtension:
-          "https://chromewebstore.google.com/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa",
-        chrome:
-          "https://chromewebstore.google.com/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa",
-      },
-    };
-  }
-
-  if (adapter instanceof TrustWalletAdapter) {
-    return {
-      downloadUrls: {
-        android:
-          "https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp",
-        ios: "https://apps.apple.com/us/app/trust-crypto-bitcoin-wallet/id1288339409",
-        qrCode: "https://trustwallet.com/",
-        browserExtension:
-          "https://chromewebstore.google.com/detail/trust-wallet/egjidjbpglichdcondbcbdnbeeppgdph",
-        chrome:
-          "https://chromewebstore.google.com/detail/trust-wallet/egjidjbpglichdcondbcbdnbeeppgdph",
-      },
-    };
-  }
-
-  return {};
+/** Desktop extension store pages, by wallet-adapter name. */
+export const extensionInstallUrls: Readonly<Record<string, string>> = {
+  Phantom:
+    "https://chromewebstore.google.com/detail/phantom/bfnaelmomeimhlpmgjnjophhpkkoljpa",
+  Trust:
+    "https://chromewebstore.google.com/detail/trust-wallet/egjidjbpglichdcondbcbdnbeeppgdph",
 };
 
 export type ExtraProps = ConnectorWithFilteredChains & {

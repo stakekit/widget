@@ -1,17 +1,19 @@
-import type { ChainWalletBase } from "@cosmos-kit/core";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
 import {
   WalletCapabilityUnavailableError,
   WalletSigningError,
 } from "../../../wallet-errors";
-import { isCosmosConnector } from "./cosmos-connector-meta";
+import {
+  type CosmosChainWallet,
+  isCosmosConnector,
+} from "./cosmos-connector-meta";
 
 export const makeCosmosWalletDriver = ({
   chainWallet,
   connector,
 }: {
-  readonly chainWallet: ChainWalletBase | null;
+  readonly chainWallet: CosmosChainWallet | null;
   readonly connector: Connector;
 }) => ({
   signTransaction: ({ tx }: { readonly tx: string }) =>

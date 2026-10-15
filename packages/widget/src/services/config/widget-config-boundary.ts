@@ -1,23 +1,23 @@
-import { Data, Result, Schema, SchemaIssue } from "effect";
-import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
+import { Data, Predicate, Result, Schema, SchemaIssue } from "effect";
+import { DashboardYieldCategory } from "../../domain/earn/contract";
+import {
+  EvmChainIds,
+  MiscChainIds,
+  SubstrateChainIds,
+  type SupportedSKChainIds,
+} from "../../domain/wallet/chain-ids";
 import type {
   SKHostConfiguration,
   VariantProps,
 } from "../../public-api/react-types";
-import {
-  decodeTheme,
-  type SKTheme,
-  type ThemeDecodeWarning,
-} from "../../public-api/theme";
-import {
-  DashboardYieldCategory,
-  EvmChainIds,
-  MiscChainIds,
-  type SettingsProps,
-  type SKWalletPolicy,
-  SubstrateChainIds,
-  type SupportedSKChainIds,
+import type { SKTheme } from "../../public-api/theme";
+import type {
+  SettingsProps,
+  SKBorrowExternalProviders,
+  SKExternalProviders,
 } from "../../public-api/types";
+import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
+import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
 
 const optional = <S extends Schema.Constraint>(schema: S) =>
   Schema.optionalKey(Schema.UndefinedOr(schema));
@@ -90,6 +90,9 @@ const hostYieldGroupingValues = exhaustiveLiterals<HostYieldGrouping>()([
   "flat",
   "category",
 ]);
+const borrowMarketsScopeValues = exhaustiveLiterals<
+  NonNullable<SettingsProps["borrowMarketsScope"]>
+>()(["all", "enabled"]);
 
 interface TranslationTree {
   readonly [key: string]: string | TranslationTree;
@@ -148,7 +151,6 @@ const externalProviderValueFields = {
     Schema.TemplateLiteral([Schema.String, Schema.Literal("-"), Schema.String])
   ),
   supportedChainIds: optional(Schema.Array(SupportedChainId)),
-  supportsBorrow: optional(Schema.Boolean),
   type: Schema.Literals(externalProviderTypeValues),
 } satisfies Record<ExternalProviderValueKey, Schema.Constraint>;
 
@@ -160,7 +162,10 @@ const walletPolicyFields = {
   groupOrder: optional(Schema.Array(Schema.String)),
   groups: optional(Schema.Record(Schema.String, Schema.String)),
   order: optional(Schema.Array(Schema.String)),
-} satisfies Record<keyof SKWalletPolicy, Schema.Constraint>;
+} satisfies Record<
+  keyof NonNullable<SettingsProps["walletPolicy"]>,
+  Schema.Constraint
+>;
 
 const WalletPolicy = Schema.Struct(walletPolicyFields);
 
@@ -179,6 +184,7 @@ const hostConfigurationValueFields = {
   baseUrl: optional(Schema.String),
   borrowApiUrl: optional(Schema.String),
   borrowEnabled: optional(Schema.Boolean),
+  borrowMarketsScope: optional(Schema.Literals(borrowMarketsScopeValues)),
   chainIconMapping: optional(IconMapping),
   customTranslations: optional(CustomTranslations),
   dashboardVariant: optional(Schema.Boolean),
@@ -190,7 +196,6 @@ const hostConfigurationValueFields = {
   disableInjectedProviderDiscovery: optional(Schema.Boolean),
   disableResizingInputFontSize: optional(Schema.Boolean),
   externalProviders: optional(ExternalProviderValues),
-  forceWalletConnectOnly: optional(Schema.Boolean),
   hideAccountAndChainSelector: optional(Schema.Boolean),
   hideChainSelector: optional(Schema.Boolean),
   hideNetworkLogo: optional(Schema.Boolean),
@@ -226,10 +231,26 @@ type TokenIconMapper = Extract<
   (...args: never[]) => unknown
 >;
 
+/**
+ * Host settings fixed at mount (ADR 0004). A decode given them uses them in
+ * place of the host's values, so cross-field rules hold for the published value.
+ */
+export type MountFixedHostSettings = Pick<
+  SKHostConfiguration,
+  "apiKey" | "baseUrl" | "borrowApiUrl" | "borrowEnabled" | "yieldsApiUrl"
+>;
+
+// Borrow follows `borrowEnabled`, which may be fixed at mount while the
+// provider comes from a later update, so its settings are not narrowed here.
+type ExternalProviderCapability = Readonly<{
+  borrow: boolean;
+  settings: SKExternalProviders | SKBorrowExternalProviders | undefined;
+}>;
+
 type HostCapabilities = Readonly<{
   chainIconMapper: ChainIconMapper | undefined;
   chainModal: ChainModal | undefined;
-  externalProviders: SKHostConfiguration["externalProviders"];
+  externalProviders: ExternalProviderCapability;
   mapWalletFn: SettingsProps["mapWalletFn"];
   onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
   portalContainer: SettingsProps["portalContainer"];
@@ -291,7 +312,8 @@ const issuePaths = (error: Schema.SchemaError): ReadonlyArray<string> => [
 ];
 
 const makeCapabilities = (
-  hostConfiguration: SKHostConfiguration
+  hostConfiguration: SKHostConfiguration,
+  borrowEnabled: boolean | undefined
 ): HostCapabilities => ({
   chainIconMapper:
     typeof hostConfiguration.chainIconMapping === "function"
@@ -301,7 +323,10 @@ const makeCapabilities = (
     hostConfiguration.variant === "zerion"
       ? hostConfiguration.chainModal
       : undefined,
-  externalProviders: hostConfiguration.externalProviders,
+  externalProviders: {
+    borrow: borrowEnabled === true,
+    settings: hostConfiguration.externalProviders,
+  },
   mapWalletFn: hostConfiguration.mapWalletFn,
   onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
   portalContainer: hostConfiguration.portalContainer,
@@ -312,7 +337,10 @@ const makeCapabilities = (
   tracking: hostConfiguration.tracking,
 });
 
-const projectValues = (hostConfiguration: SKHostConfiguration): unknown => {
+const projectValues = (
+  hostConfiguration: SKHostConfiguration,
+  mountFixed: MountFixedHostSettings | undefined
+): unknown => {
   if (typeof hostConfiguration !== "object" || hostConfiguration === null) {
     return hostConfiguration;
   }
@@ -327,6 +355,7 @@ const projectValues = (hostConfiguration: SKHostConfiguration): unknown => {
       typeof hostConfiguration.tokenIconMapping === "function"
         ? undefined
         : hostConfiguration.tokenIconMapping,
+    ...mountFixed,
   };
 };
 
@@ -350,15 +379,25 @@ const missingExternalProviderCapability = () =>
     })
   );
 
+const missingBorrowProviderCapability = () =>
+  Result.fail(
+    new InvalidHostConfiguration({
+      issuePaths: [semanticIssuePath["borrow-provider-capability-missing"]],
+      issues: ["borrow-provider-capability-missing"],
+    })
+  );
+
 const combineExternalProvider = (
   values: HostConfigurationValueData["externalProviders"],
-  capability: HostCapabilities["externalProviders"]
+  capability: ExternalProviderCapability
 ): Result.Result<
   ExternalProviderSnapshot | undefined,
   InvalidHostConfiguration
 > => {
   if (!values) return Result.succeed(undefined);
-  if (!capability?.provider) return missingExternalProviderCapability();
+  if (!capability.settings?.provider) {
+    return missingExternalProviderCapability();
+  }
 
   const common = {
     currentAddress: values.currentAddress,
@@ -370,23 +409,27 @@ const combineExternalProvider = (
     type: values.type,
   };
 
-  if (values.supportsBorrow === true) {
-    return capability.supportsBorrow === true
-      ? Result.succeed({
-          ...common,
-          provider: capability.provider,
-          supportsBorrow: true,
-        })
-      : missingExternalProviderCapability();
+  if (!capability.borrow) {
+    return Result.succeed({
+      ...common,
+      borrow: false,
+      provider: capability.settings.provider,
+    });
   }
 
-  return capability.supportsBorrow !== true
+  // Bundle hosts are untyped: confirm the provider is an object carrying the
+  // declared Borrow callbacks before Borrow can depend on them.
+  const { provider } = capability.settings;
+  return Predicate.hasProperty(provider, "sendBorrowTransaction") &&
+    typeof provider.sendBorrowTransaction === "function" &&
+    Predicate.hasProperty(provider, "signTypedData") &&
+    typeof provider.signTypedData === "function"
     ? Result.succeed({
         ...common,
-        provider: capability.provider,
-        supportsBorrow: values.supportsBorrow,
+        borrow: true,
+        provider,
       })
-    : missingExternalProviderCapability();
+    : missingBorrowProviderCapability();
 };
 
 type SemanticHostConfigurationIssue = Exclude<
@@ -411,13 +454,6 @@ const semanticIssues = (
   ) {
     issues.push("borrow-requires-category-grouping");
   }
-  if (
-    hostConfiguration.borrowEnabled === true &&
-    hostConfiguration.externalProviders &&
-    hostConfiguration.externalProviders.supportsBorrow !== true
-  ) {
-    issues.push("borrow-provider-capability-missing");
-  }
   if (hostConfiguration.variant === "zerion" && !hostConfiguration.chainModal) {
     issues.push("zerion-chain-modal-missing");
   }
@@ -433,15 +469,19 @@ const semanticIssuePath: Record<SemanticHostConfigurationIssue, string> = {
 };
 
 export const decodeHostConfiguration = (
-  hostConfiguration: SKHostConfiguration
+  hostConfiguration: SKHostConfiguration,
+  mountFixed?: MountFixedHostSettings
 ): Result.Result<HostConfigurationDecodeSuccess, InvalidHostConfiguration> => {
   const decoded = Schema.decodeUnknownResult(HostConfigurationValues)(
-    projectValues(hostConfiguration),
+    projectValues(hostConfiguration, mountFixed),
     { errors: "all" }
   );
   if (Result.isFailure(decoded)) return decodeFailure(decoded.failure);
 
-  const capabilities = makeCapabilities(hostConfiguration);
+  const capabilities = makeCapabilities(
+    hostConfiguration,
+    decoded.success.borrowEnabled
+  );
   const externalProviders = combineExternalProvider(
     decoded.success.externalProviders,
     capabilities.externalProviders

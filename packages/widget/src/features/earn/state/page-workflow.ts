@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { tokenString } from "../../../domain/token/token";
 import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
@@ -27,7 +27,7 @@ export const earnPageQuoteAtom = Atom.make((context) => {
   const view = context.get(earnSelectionViewAtom);
 
   return {
-    selectedProviderYieldId: view.form.providerYieldId,
+    selectedProviderOption: view.form.providerOption,
     selectedStake: view.selection.yield,
     selectedToken: view.selection.token?.token ?? null,
     selectedValidators: view.selection.validators,

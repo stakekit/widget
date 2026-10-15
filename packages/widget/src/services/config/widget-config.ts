@@ -3,33 +3,30 @@ import {
   Effect,
   Equal,
   Layer,
+  Ref,
   Result,
   Semaphore,
   Stream,
   SubscriptionRef,
 } from "effect";
+import type { DashboardYieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {
   dashboardYieldCategories,
+  type PreferredTokenYieldsPerNetwork,
   type ValidatorsConfig,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
-import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
-import type {
-  SKHostConfiguration,
-  VariantProps,
-} from "../../public-api/react-types";
-import type {
-  DashboardYieldCategory,
-  PreferredTokenYieldsPerNetwork,
-  SettingsProps,
-} from "../../public-api/types";
+import type { SKHostConfiguration } from "../../public-api/react-types";
 import { config } from "../../shared/config/widget-defaults";
+import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
+import { type HostProfile, resolveHostProfile } from "./host-profile";
 import {
   type DecodedHostConfiguration,
   decodeHostConfiguration,
   type HostConfigurationWarning,
   type InvalidHostConfiguration,
+  type MountFixedHostSettings,
 } from "./widget-config-boundary";
 import type { WidgetConfig } from "./widget-config-model";
 
@@ -49,23 +46,22 @@ export type ApplicationApiIdentity = {
 };
 
 type WidgetTrackingSnapshot = {
-  readonly tracking: SettingsProps["tracking"];
-  readonly variant: VariantProps["variant"];
+  readonly hostTracking: HostProfile["hostTracking"];
+  readonly tracking: WidgetConfig["tracking"];
 };
 
 type WidgetWalletSnapshot = {
-  readonly chainIconMapping: SettingsProps["chainIconMapping"];
+  readonly chainIconMapping: WidgetConfig["chainIconMapping"];
   readonly disableInjectedProviderDiscovery: boolean;
   readonly externalProviderInitToken: ExternalProviderSnapshot["initToken"];
   readonly hasExternalProvider: boolean;
-  readonly forceWalletConnectOnly: boolean;
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
-  readonly mapWalletFn: SettingsProps["mapWalletFn"];
+  readonly mapWalletFn: WidgetConfig["mapWalletFn"];
   readonly tonConnectManifestUrl: string | undefined;
-  readonly variant: VariantProps["variant"];
-  readonly walletPolicy: SettingsProps["walletPolicy"];
+  readonly walletCatalogue: HostProfile["walletCatalogue"];
+  readonly walletPolicy: WidgetConfig["walletPolicy"];
 };
 
 export type WidgetBootstrapSnapshot = {
@@ -84,21 +80,22 @@ export const selectWidgetBootstrapSnapshot = (
     yieldsApiUrl: settings.yieldsApiUrl,
   },
   tracking: {
+    hostTracking: settings.hostProfile.hostTracking,
     tracking: settings.tracking,
-    variant: settings.variant,
   },
   wallet: {
     chainIconMapping: settings.chainIconMapping,
     disableInjectedProviderDiscovery: settings.disableInjectedProviderDiscovery,
     externalProviderInitToken: settings.externalProviders?.initToken,
-    forceWalletConnectOnly: settings.forceWalletConnectOnly,
     hasExternalProvider: settings.externalProviders !== undefined,
-    institutionalWallets: settings.institutionalWallets,
+    institutionalWallets:
+      settings.institutionalWallets ||
+      settings.hostProfile.forcesInstitutionalWallets,
     isLedgerLive: settings.isLedgerLive,
     isSafe: settings.isSafe,
     mapWalletFn: settings.mapWalletFn,
     tonConnectManifestUrl: settings.tonConnectManifestUrl,
-    variant: settings.variant,
+    walletCatalogue: settings.hostProfile.walletCatalogue,
     walletPolicy: settings.walletPolicy,
   },
 });
@@ -107,14 +104,13 @@ const walletSnapshotKeys = [
   "chainIconMapping",
   "disableInjectedProviderDiscovery",
   "externalProviderInitToken",
-  "forceWalletConnectOnly",
   "hasExternalProvider",
   "institutionalWallets",
   "isLedgerLive",
   "isSafe",
   "mapWalletFn",
   "tonConnectManifestUrl",
-  "variant",
+  "walletCatalogue",
   "walletPolicy",
 ] as const satisfies ReadonlyArray<keyof WidgetWalletSnapshot>;
 
@@ -138,6 +134,22 @@ export const diffWidgetWalletConfig = (
     opaque: changed.filter(isOpaque),
   };
 };
+
+/**
+ * Widget Configuration fields the Application Runtime Generation reads once at
+ * mount (ADR 0004). Updates keep their mount values.
+ */
+const mountFixedKeys = [
+  "apiKey",
+  "baseUrl",
+  "borrowApiUrl",
+  "borrowEnabled",
+  "yieldsApiUrl",
+] as const satisfies ReadonlyArray<
+  keyof WidgetConfig & keyof MountFixedHostSettings
+>;
+
+type MountFixedKey = (typeof mountFixedKeys)[number];
 
 type WidgetConfigUpdateOutcome =
   | Readonly<{
@@ -165,6 +177,7 @@ const normalizeWidgetConfig = (
 ): WidgetConfig => {
   const borrowEnabled = hostConfiguration.borrowEnabled ?? false;
   const dashboardVariant = hostConfiguration.dashboardVariant ?? false;
+  const variant = hostConfiguration.variant ?? "default";
   const yieldGrouping =
     hostConfiguration.yieldGrouping ?? (dashboardVariant ? "category" : "flat");
 
@@ -197,17 +210,15 @@ const normalizeWidgetConfig = (
           network as Network | "*",
           {
             allowed: validators.allowed
-              ? new Set(validatorAddressIdentities(network, validators.allowed))
+              ? new Set(validatorAddressIdentities(validators.allowed))
               : undefined,
             blocked: validators.blocked
-              ? new Set(validatorAddressIdentities(network, validators.blocked))
+              ? new Set(validatorAddressIdentities(validators.blocked))
               : undefined,
             mergePreferredWithDefault:
               validators.mergePreferredWithDefault ?? true,
             preferred: validators.preferred
-              ? new Set(
-                  validatorAddressIdentities(network, validators.preferred)
-                )
+              ? new Set(validatorAddressIdentities(validators.preferred))
               : undefined,
             preferredOnly: validators.preferredOnly ?? false,
           },
@@ -231,6 +242,7 @@ const normalizeWidgetConfig = (
       .trim()
       .replace(/\/+$/, ""),
     borrowEnabled,
+    borrowMarketsScope: hostConfiguration.borrowMarketsScope ?? "all",
     chainIconMapping: hostConfiguration.chainIconMapping,
     chainModal:
       hostConfiguration.variant === "zerion"
@@ -247,11 +259,11 @@ const normalizeWidgetConfig = (
     disableResizingInputFontSize:
       hostConfiguration.disableResizingInputFontSize ?? false,
     externalProviders,
-    forceWalletConnectOnly: hostConfiguration.forceWalletConnectOnly ?? false,
     hideAccountAndChainSelector:
       hostConfiguration.hideAccountAndChainSelector ?? false,
     hideChainSelector: hostConfiguration.hideChainSelector ?? false,
     hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
+    hostProfile: resolveHostProfile(variant, dashboardVariant),
     initialChain: hostConfiguration.initialChain,
     institutionalWallets: hostConfiguration.institutionalWallets ?? false,
     isLedgerLive: environment.isLedgerLive,
@@ -270,7 +282,7 @@ const normalizeWidgetConfig = (
     tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
     tracking: hostConfiguration.tracking,
     validatorsConfig,
-    variant: hostConfiguration.variant ?? "default",
+    variant,
     walletPolicy: hostConfiguration.walletPolicy,
     yieldGrouping,
     yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
@@ -279,9 +291,10 @@ const normalizeWidgetConfig = (
 
 const prepareWidgetConfig = (
   hostConfiguration: SKHostConfiguration,
-  environment: WidgetConfigEnvironment
+  environment: WidgetConfigEnvironment,
+  mountFixed?: MountFixedHostSettings
 ): Result.Result<NormalizedWidgetConfiguration, InvalidHostConfiguration> => {
-  const decoded = decodeHostConfiguration(hostConfiguration);
+  const decoded = decodeHostConfiguration(hostConfiguration, mountFixed);
   if (Result.isFailure(decoded)) return Result.fail(decoded.failure);
 
   return Result.succeed({
@@ -347,29 +360,68 @@ export class WidgetConfigService extends Context.Service<
           SubscriptionRef.changes(state).pipe(
             Stream.changesWith((previous, next) => Equal.equals(previous, next))
           );
-        const update = Effect.fn("WidgetConfigService.update")(function* (
-          hostConfiguration: SKHostConfiguration
-        ) {
-          const nextResult = prepareWidgetConfig(
-            hostConfiguration,
-            environment
+        const reportedMountFixedKeys = yield* Ref.make<
+          ReadonlyArray<MountFixedKey>
+        >([]);
+        const reportIgnoredMountFixedKeys = Effect.fn(
+          "WidgetConfigService.reportIgnoredMountFixedKeys"
+        )(function* (keys: ReadonlyArray<MountFixedKey>) {
+          const reported = yield* Ref.get(reportedMountFixedKeys);
+          const fresh = keys.filter((key) => !reported.includes(key));
+          if (fresh.length === 0) return;
+
+          yield* Ref.set(reportedMountFixedKeys, [...reported, ...fresh]);
+          yield* Effect.logWarning(
+            "Mount-fixed Widget Configuration changed after mount and was ignored"
+          ).pipe(
+            Effect.annotateLogs({
+              event: "mount_fixed_configuration_changed",
+              keys: fresh,
+            })
           );
-          if (Result.isFailure(nextResult)) {
+        });
+        const rejectInvalid = Effect.fn("WidgetConfigService.rejectInvalid")(
+          function* (error: InvalidHostConfiguration) {
             yield* Effect.logWarning(
               "Widget Configuration update rejected"
             ).pipe(
               Effect.annotateLogs({
-                issuePaths: nextResult.failure.issuePaths,
+                issuePaths: error.issuePaths,
                 event: "invalid_widget_configuration_update",
-                issues: nextResult.failure.issues,
+                issues: error.issues,
               })
             );
-            return {
-              _tag: "RejectedInvalid",
-              error: nextResult.failure,
-            } as const;
+            return { _tag: "RejectedInvalid", error } as const;
+          }
+        );
+        const update = Effect.fn("WidgetConfigService.update")(function* (
+          hostConfiguration: SKHostConfiguration
+        ) {
+          const requested = prepareWidgetConfig(hostConfiguration, environment);
+          if (Result.isFailure(requested)) {
+            return yield* rejectInvalid(requested.failure);
           }
 
+          const changed = mountFixedKeys.filter(
+            (key) => !Equal.equals(requested.success.config[key], initial[key])
+          );
+          // Re-run the decode with the mount values so cross-field rules such
+          // as Borrow requiring the dashboard hold for the published value.
+          const nextResult =
+            changed.length === 0
+              ? requested
+              : prepareWidgetConfig(hostConfiguration, environment, {
+                  apiKey: initialHostConfiguration.apiKey,
+                  baseUrl: initialHostConfiguration.baseUrl,
+                  borrowApiUrl: initialHostConfiguration.borrowApiUrl,
+                  borrowEnabled: initialHostConfiguration.borrowEnabled,
+                  yieldsApiUrl: initialHostConfiguration.yieldsApiUrl,
+                });
+          if (Result.isFailure(nextResult)) {
+            return yield* rejectInvalid(nextResult.failure);
+          }
+
+          yield* reportIgnoredMountFixedKeys(changed);
           yield* logHostConfigurationWarnings(nextResult.success.warnings);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;

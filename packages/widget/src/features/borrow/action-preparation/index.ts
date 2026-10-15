@@ -13,6 +13,9 @@ export type {
   RepayProjection,
   WithdrawProjection,
 } from "./model/prepare";
-export { prepareBorrowAction } from "./model/prepare";
+export {
+  getBorrowActionRiskBlock,
+  prepareBorrowAction,
+} from "./model/prepare";
 export type { BorrowMarketWalletBalances } from "./model/wallet-balances";
 export { deriveBorrowMarketWalletBalances } from "./model/wallet-balances";

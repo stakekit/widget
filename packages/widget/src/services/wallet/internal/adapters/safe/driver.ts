@@ -1,5 +1,5 @@
-import { Data, Effect, Schedule } from "effect";
-import type { Address } from "viem";
+import { Data, Effect, Schedule, type Schema } from "effect";
+import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
 import {
   WalletBroadcastError,
@@ -48,11 +48,14 @@ export const makeSafeWalletDriver = ({
         });
       }
 
-      const decode =
+      const decode: Effect.Effect<
+        { readonly data: Hex; readonly to: Address; readonly value?: Hex },
+        Schema.SchemaError
+      > =
         family === "borrow"
-          ? decodeAndPrepareBorrowEvmTransaction
-          : decodeAndPrepareEvmTransaction;
-      const decodedTx = yield* decode({ address, tx }).pipe(
+          ? decodeAndPrepareBorrowEvmTransaction({ address, tx })
+          : decodeAndPrepareEvmTransaction({ address, tx });
+      const decodedTx = yield* decode.pipe(
         Effect.mapError((cause) => new WalletDecodeError({ cause }))
       );
       const response = yield* connector

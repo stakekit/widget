@@ -1,10 +1,10 @@
 import { Match } from "effect";
 import { startsWith } from "effect/String";
 import { useLocation, useNavigate } from "react-router";
+import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
 import { useEarnYieldSelection } from "../../../../features/earn/index";
 import { useTrackEvent } from "../../../../features/tracking/index";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../../public-api/types";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
@@ -25,7 +25,11 @@ const tabsMap: Record<RouteTab, string> = {
   manage: "/positions",
 };
 
-export const DashboardTabs = () => {
+export const DashboardTabs = ({
+  onYieldCategoryChange,
+}: {
+  readonly onYieldCategoryChange: () => void;
+}) => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
   const { selectCategory, view: yieldSelection } = useEarnYieldSelection();
@@ -52,6 +56,7 @@ export const DashboardTabs = () => {
     }
 
     trackEvent("tabClicked", { selected: category });
+    if (selectedDashboardYieldCategory !== category) onYieldCategoryChange();
     selectCategory(category);
     navigate("/");
   };

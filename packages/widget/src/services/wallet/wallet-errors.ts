@@ -41,6 +41,24 @@ export class WalletBroadcastError extends Data.TaggedError(
   readonly customMessage: string | null;
 }> {}
 
+/** The user declined the request in the wallet; nothing was signed or sent. */
+export class WalletRequestCancelledError extends Data.TaggedError(
+  "WalletRequestCancelledError"
+)<{
+  readonly operation: WalletSigningCommand;
+}> {}
+
+/**
+ * A signing command's Wallet Command Context does not belong to the Wallet
+ * Scope Owner its caller expected; nothing was signed or sent.
+ */
+export class WalletOwnerMismatchError extends Data.TaggedError(
+  "WalletOwnerMismatchError"
+)<{
+  readonly operation: WalletSigningCommand;
+  readonly reason: "account-changed" | "disconnected" | "network-changed";
+}> {}
+
 export class WalletCapabilityUnavailableError extends Data.TaggedError(
   "WalletCapabilityUnavailableError"
 )<{
@@ -65,4 +83,16 @@ export class WalletIntegrationError extends Data.TaggedError(
   readonly cause?: unknown;
   readonly message: string;
   readonly operation: string;
+}> {}
+
+/**
+ * A wallet connector's connect found no injected provider for its wallet, e.g.
+ * the extension was removed or disabled after the picker opened. Family
+ * connectors reject `connect` with this error so the picker can tell the user
+ * the wallet is not available instead of reporting a generic failure.
+ */
+export class WalletNotAvailableError extends Data.TaggedError(
+  "WalletNotAvailableError"
+)<{
+  readonly walletId: string;
 }> {}

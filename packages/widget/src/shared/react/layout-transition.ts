@@ -1,5 +1,5 @@
 import { useAtom } from "@effect/atom-react";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 
 /**
  * Set while a component animates its own height, so the surrounding animated

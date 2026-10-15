@@ -1,14 +1,14 @@
-import type { WalletList } from "@stakekit/rainbowkit";
 import { Array as EArray, Option } from "effect";
 import type { Address } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
-import type { ExternalProviderSnapshot } from "../../../../../public-api/external-provider-contract";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
+import type { ExternalProviderSnapshot } from "../../../../config/external-provider-snapshot";
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
+import type { WalletList } from "../../../wallet-descriptors";
 import { WalletRuntimeInvariantError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
@@ -29,7 +29,7 @@ type ExtraProps = ConnectorWithFilteredChains &
     | "signTypedData"
   > & {
     onSupportedChainsChanged: (args: {
-      supportedChainIds: number[] | undefined;
+      supportedChainIds: ReadonlyArray<number> | undefined;
       currentChainId: number;
     }) => void;
   };
@@ -51,6 +51,8 @@ export const externalProviderConnector = (
       name: configMeta.name,
       iconUrl: config.appIcon,
       iconBackground: "#fff",
+      // The host supplies the provider; nothing is injected into the page.
+      availability: { _tag: "Remote" },
       chainGroup: {
         id: configMeta.id,
         title: configMeta.name,
@@ -59,7 +61,7 @@ export const externalProviderConnector = (
       createConnector: () =>
         createConnector<unknown, ExtraProps>((connectorConfig) => {
           const resolveSupportedChains = (
-            supportedChainIds: number[] | undefined
+            supportedChainIds: ReadonlyArray<number> | undefined
           ) => {
             const supported =
               supportedChainIds === undefined

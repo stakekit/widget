@@ -8,7 +8,10 @@ export {
   BackButton,
   BackButtonProvider,
 } from "./dashboard/components/back-button";
-export { SplitView } from "./dashboard/components/split-view";
+export {
+  SplitView,
+  type SplitViewSide,
+} from "./dashboard/components/split-view";
 export {
   outletWrapper as dashboardOutletWrapper,
   wrapper as dashboardWrapper,
@@ -16,6 +19,7 @@ export {
 export { AnimationPage } from "./ui/animation-page";
 export { FallbackContent } from "./ui/fallback-content";
 export { container } from "./ui/layout.css";
+export { MountAnimatedPage } from "./ui/mount-animated-page";
 export { PageContainer } from "./ui/page-container";
 export type { PageCta } from "./ui/page-cta";
 export { PageCtaButton } from "./ui/page-cta";

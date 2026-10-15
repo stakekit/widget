@@ -1,28 +1,26 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
+import { formatNumber } from "../../../shared/lib/number-format";
 import {
-  formatBorrowProviderName,
-  formatHealthFactor,
-  formatNetworkName,
-  formatPercent,
-  formatUsd,
-} from "../../../shared/lib/formatters";
-import { DetailRow } from "../../../shared/ui/components/details-section";
+  DetailRow,
+  DetailRowList,
+} from "../../../shared/ui/components/details-section";
 import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Text } from "../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
+import { estimateBorrowPositionChange } from "../model/borrow-completion";
 import {
-  getBorrowTransactionFlowAmountLabelKey,
+  getBorrowReviewRiskBlock,
   projectBorrowTransactionFlowSummary,
 } from "../model/borrow-transaction-flow";
 import {
@@ -33,93 +31,37 @@ import {
   borrowReviewConfirmationErrorCopy,
   presentBorrowReviewConfirmationError,
 } from "./borrow-review-confirmation-error";
+import { BorrowFlowHeading } from "./flow-heading";
+import { BorrowFlowPositionChangeRows } from "./position-change-rows";
 import * as styles from "./styles.css";
-
-const formatOptionalSummary = (value: string | undefined) => {
-  if (!value) return null;
-
-  const formatted = formatUsd(value);
-
-  return formatted === "-" ? null : formatted;
-};
-
-const formatOptionalPercentSummary = (value: string | undefined) => {
-  if (!value) return null;
-
-  const formatted = formatPercent(value);
-
-  return formatted === "-" ? null : formatted;
-};
-
-const formatTransition = ({
-  current,
-  projected,
-}: {
-  readonly current: string | null;
-  readonly projected: string | null;
-}) => {
-  if (!projected) {
-    return null;
-  }
-
-  return current && current !== projected
-    ? `${current} -> ${projected}`
-    : projected;
-};
+import {
+  BorrowFlowAmountRows,
+  BorrowFlowOriginationRows,
+} from "./summary-rows";
 
 export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
   const review = useBorrowTransactionFlowReview();
-  const createActionResult = useAtomValue(review.confirmAtom);
+  const confirmation = useAtomValue(review.confirmAtom);
   const confirm = useAtomSet(review.confirmAtom);
   const back = useAtomSet(review.backAtom);
   const reviewState = flow.intake;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
-  const { command, summary } = reviewState;
+  const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
-  const createActionErrorCopy = (() => {
-    if (
-      !AsyncResult.isFailure(createActionResult) ||
-      AsyncResult.isWaiting(createActionResult)
-    ) {
-      return null;
-    }
-
-    const error = Cause.findErrorOption(createActionResult.cause);
-
-    return Option.match(error, {
-      onNone: () => borrowReviewConfirmationErrorCopy,
-      onSome: presentBorrowReviewConfirmationError,
-    });
-  })();
-  const projectedLtv = formatTransition({
-    current: null,
-    projected: formatOptionalPercentSummary(
-      projectedSummary.risk.projectedLtv ?? undefined
-    ),
-  });
-  const projectedHealthFactor = projectedSummary.risk.projectedHealthFactor
-    ? formatHealthFactor(projectedSummary.risk.projectedHealthFactor)
-    : null;
-  const collateralValue = formatTransition({
-    current: formatOptionalSummary(
-      projectedSummary.financials.existingCollateralUsd ?? undefined
-    ),
-    projected: formatOptionalSummary(
-      projectedSummary.financials.projectedCollateralUsd ?? undefined
-    ),
-  });
-  const debtValue = formatTransition({
-    current: formatOptionalSummary(
-      projectedSummary.financials.existingDebtUsd ?? undefined
-    ),
-    projected: formatOptionalSummary(
-      projectedSummary.financials.projectedDebtUsd ?? undefined
-    ),
+  const riskBlock = getBorrowReviewRiskBlock(reviewState);
+  const createActionErrorCopy = Option.match(confirmation.failure, {
+    onNone: () => null,
+    onSome: (cause) =>
+      Option.match(Cause.findErrorOption(cause), {
+        onNone: () => borrowReviewConfirmationErrorCopy,
+        onSome: presentBorrowReviewConfirmationError,
+      }),
   });
   const collateralFeeAmount =
     projectedSummary.collateral && "feeAmount" in projectedSummary.collateral
@@ -130,92 +72,14 @@ export const BorrowReviewPage = () => {
     exactDecimal(collateralFeeAmount).isGreaterThan(0);
   const collateralFee =
     hasCollateralFee && projectedSummary.collateral
-      ? `${collateralFeeAmount} ${projectedSummary.collateral.symbol}`
+      ? `${formatNumber(collateralFeeAmount, locale)} ${projectedSummary.collateral.symbol}`
       : null;
   const effectiveCollateral =
     hasCollateralFee &&
     projectedSummary.collateral &&
     "effectiveAmount" in projectedSummary.collateral
-      ? `${projectedSummary.collateral.effectiveAmount} ${projectedSummary.collateral.symbol}`
+      ? `${formatNumber(projectedSummary.collateral.effectiveAmount, locale)} ${projectedSummary.collateral.symbol}`
       : null;
-  const actionRows = [
-    {
-      id: "action",
-      label: t("dashboard.borrow.review_page.action"),
-      value: t(`dashboard.borrow.review_page.actions.${summary.action}`),
-    },
-    projectedSummary.borrow
-      ? {
-          id: "borrow-amount",
-          label: t(getBorrowTransactionFlowAmountLabelKey(summary.action)),
-          value: `${projectedSummary.borrow.amount} ${projectedSummary.borrow.symbol}`,
-        }
-      : null,
-    projectedSummary.collateral
-      ? {
-          id: "collateral-amount",
-          label: t("dashboard.borrow.review_page.collateral_amount"),
-          value: `${projectedSummary.collateral.amount} ${projectedSummary.collateral.symbol}`,
-        }
-      : null,
-    effectiveCollateral
-      ? {
-          id: "effective-collateral",
-          label: t("dashboard.borrow.review_page.effective_collateral"),
-          value: effectiveCollateral,
-        }
-      : null,
-    {
-      id: "market",
-      label: t("dashboard.borrow.review_page.market"),
-      value: summary.marketLabel,
-    },
-    {
-      id: "provider",
-      label: t("dashboard.borrow.review_page.provider"),
-      value: formatBorrowProviderName(summary.providerName),
-    },
-    {
-      id: "network",
-      label: t("dashboard.borrow.review_page.network"),
-      value: formatNetworkName(summary.network),
-    },
-    collateralValue
-      ? {
-          id: "collateral-value",
-          label: t("dashboard.borrow.form.collateral_value"),
-          value: collateralValue,
-        }
-      : null,
-    debtValue
-      ? {
-          id: "debt-value",
-          label: t("dashboard.borrow.position_details.debt"),
-          value: debtValue,
-        }
-      : null,
-    projectedLtv
-      ? {
-          id: "projected-ltv",
-          label: t("dashboard.borrow.review_page.projected_ltv"),
-          value: projectedLtv,
-        }
-      : null,
-    projectedHealthFactor
-      ? {
-          id: "projected-health-factor",
-          label: t("dashboard.borrow.review_page.projected_health_factor"),
-          value: projectedHealthFactor,
-        }
-      : null,
-    {
-      id: "estimated-fee",
-      label: t("dashboard.borrow.review_page.estimated_fee"),
-      value:
-        (hasCollateralFee ? collateralFee : null) ??
-        t("dashboard.borrow.review_page.estimated_fee_pending"),
-    },
-  ].filter((row): row is NonNullable<typeof row> => !!row);
 
   return (
     <AnimationPage>
@@ -236,43 +100,49 @@ export const BorrowReviewPage = () => {
               <CaretLeftIcon />
             </Box>
 
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.review_page.title")}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {summary.marketLabel}
-            </Text>
+            <BorrowFlowHeading summary={summary} />
           </Box>
 
           <Divider />
 
-          <Box display="flex" flexDirection="column" gap="1">
-            {actionRows.map((row) => (
-              <DetailRow key={row.id} {...row} />
-            ))}
-          </Box>
-
-          <Box display="flex" flexDirection="column" gap="1">
+          <DetailRowList>
             <DetailRow
-              id="requested-action"
-              label={t("dashboard.borrow.review_page.requested_action")}
-              value={command.action}
+              id="market"
+              label={t("dashboard.borrow.review_page.market")}
+              value={summary.marketLabel}
             />
-            <DetailRow
-              id="market-id"
-              label={t("dashboard.borrow.review_page.market_id")}
-              value={command.args.marketId}
+            <BorrowFlowAmountRows
+              action={summary.action}
+              projected={projectedSummary}
             />
-          </Box>
-
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("dashboard.borrow.review_page.execution_pending")}
-          </Text>
+            {effectiveCollateral ? (
+              <DetailRow
+                id="effective-collateral"
+                label={t("dashboard.borrow.review_page.effective_collateral")}
+                value={effectiveCollateral}
+              />
+            ) : null}
+            <BorrowFlowPositionChangeRows
+              change={estimateBorrowPositionChange(projectedSummary)}
+            />
+            {collateralFee ? (
+              <DetailRow
+                id="collateral-fee"
+                label={t("dashboard.borrow.review_page.collateral_fee")}
+                value={collateralFee}
+              />
+            ) : null}
+            <BorrowFlowOriginationRows
+              origination={projectedSummary.origination}
+            />
+          </DetailRowList>
 
           {createActionErrorCopy ? (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
-                {t(createActionErrorCopy.titleKey)}
+                {t(
+                  `dashboard.borrow.execution_page.error_titles.${summary.action}`
+                )}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {t(createActionErrorCopy.descriptionKey)}
@@ -291,6 +161,17 @@ export const BorrowReviewPage = () => {
             </Box>
           ))}
 
+          {riskBlock ? (
+            <Box className={styles.executionError}>
+              <Text variant={{ type: "danger" }}>
+                {t("dashboard.borrow.risk_block.title")}
+              </Text>
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t(`dashboard.borrow.risk_block.${riskBlock}`)}
+              </Text>
+            </Box>
+          ) : null}
+
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t(
               `dashboard.borrow.review_page.risk_disclosures.${summary.action}`
@@ -299,8 +180,8 @@ export const BorrowReviewPage = () => {
 
           <PageCtaButton
             cta={{
-              disabled: createActionResult.waiting,
-              isLoading: createActionResult.waiting,
+              disabled: confirmation.pending || riskBlock !== null,
+              isLoading: confirmation.pending,
               label: t("dashboard.borrow.review_page.confirm"),
               onClick: () => confirm(undefined),
             }}

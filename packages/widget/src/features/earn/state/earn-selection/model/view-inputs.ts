@@ -1,4 +1,5 @@
-import type { AsyncResult } from "effect/unstable/reactivity/AsyncResult";
+import type { AsyncResult } from "effect/reactivity/AsyncResult";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -6,7 +7,6 @@ import type {
 import type { ValidatorsConfig } from "../../../../../domain/earn/yield";
 import type { Network } from "../../../../../domain/network/network";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
-import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnCatalogError, EarnTokenOption } from "../types";
 
 export type EarnResourceResult<A> = AsyncResult<A, EarnCatalogError>;
@@ -35,6 +35,8 @@ export type ValidatorObservation =
       readonly _tag: "enabled";
       readonly complete: boolean;
       readonly options: ReadonlyArray<EarnValidator>;
+      /** Directory lookup for a requested validator missing from `options`; null when not needed. */
+      readonly requested: EarnResourceResult<EarnValidator | null> | null;
       readonly result: EarnResourceResult<ReadonlyArray<EarnValidator>>;
       readonly validatorsConfig: ValidatorsConfig;
     }>;

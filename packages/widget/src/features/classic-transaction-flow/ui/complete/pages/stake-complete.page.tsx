@@ -1,7 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
-import { getActionProviderYieldId } from "../../../../../domain/action/rules";
 import { exactDecimal } from "../../../../../domain/finance/exact";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
 import {
   YieldSummaryKey,
@@ -13,6 +13,7 @@ import { CompletePage } from "./common.page.tsx";
 export const StakeCompletePage = () => {
   useTrackPage("stakeComplete");
 
+  const { locale } = useWidgetPresentation();
   const enterFlow = useClassicFlowIntake("Enter");
   const selectedStake = enterFlow.selectedStake;
   const selectedToken = enterFlow.selectedToken;
@@ -21,15 +22,15 @@ export const StakeCompletePage = () => {
       new YieldSummaryKey({
         yield: selectedStake,
         validators: new Map(enterFlow.selectedValidators),
-        selectedProviderYieldId: getActionProviderYieldId(enterFlow.request),
       })
     )
   );
 
   return (
     <CompletePage
-      amount={defaultFormattedNumber(
-        exactDecimal(enterFlow.request.arguments?.amount ?? 0)
+      amount={formatTokenAmount(
+        exactDecimal(enterFlow.request.arguments?.amount ?? 0),
+        locale
       )}
       integrationId={selectedStake.id}
       metadata={{

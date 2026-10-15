@@ -1,16 +1,15 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
-import {
-  TolerantTopLevelArray,
-  TolerantTopLevelRecord,
-} from "../decoding/response-schema";
+import { TolerantArray, TolerantRecord } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { WalletAddress, YieldId } from "../identity/identifiers";
-import { Token } from "../token/token";
+import { LegacyToken } from "../token/token";
 import { AdditionalAddresses } from "../wallet/address";
 
-export const KycStatus = YieldApi.KycStatusResponseDto;
+export const KycStatus = YieldApi.KycStatusResponseDto.mapFields(
+  Struct.pick(["kycStatus", "authorizeUrl"])
+);
 export type KycStatus = typeof KycStatus.Type;
 
 export const HistoryPeriod = Schema.Literals(["30d", "90d", "1y", "all"]);
@@ -23,7 +22,6 @@ export const HistoryPoint = Schema.Struct({
 export type HistoryPoint = typeof HistoryPoint.Type;
 
 const RewardRateHistoryItem = Schema.Struct({
-  ...YieldApi.RewardRateSnapshotDto.fields,
   rewardRate: ExactDecimal,
   timestamp: UtcDateTimeFromString,
 });
@@ -36,37 +34,35 @@ const TvlHistoryItem = Schema.Struct({
 });
 export type TvlHistoryItem = typeof TvlHistoryItem.Type;
 
+// The response `interval` echoes the request and is unread, so it is not
+// decoded.
 export const RewardRateHistoryResponse = Schema.Struct({
-  ...YieldApi.RewardRateHistoryResponseDto.fields,
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
-  items: TolerantTopLevelArray(RewardRateHistoryItem, {
+  items: TolerantArray(RewardRateHistoryItem, {
     operation: "yield-reward-rate-history",
   }),
 });
 
 export const TvlHistoryResponse = Schema.Struct({
-  ...YieldApi.TvlHistoryResponseDto.fields,
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
-  items: TolerantTopLevelArray(TvlHistoryItem, {
+  items: TolerantArray(TvlHistoryItem, {
     operation: "yield-tvl-history",
   }),
 });
 
 export const RewardsSummary = Schema.Struct({
-  ...LegacyApi.YieldRewardsSummaryResponseDto.fields,
-  token: LegacyApi.TokenDto.pipe(Schema.decodeTo(Token)),
+  ...Struct.pick(LegacyApi.YieldRewardsSummaryResponseDto.fields, ["rewards"]),
+  token: LegacyToken,
 });
 export type RewardsSummary = typeof RewardsSummary.Type;
 
-export const RewardsSummaryRecord = TolerantTopLevelRecord(
-  YieldId,
-  RewardsSummary,
-  { operation: "yield-rewards-summary" }
-);
+export const RewardsSummaryRecord = TolerantRecord(YieldId, RewardsSummary, {
+  operation: "yield-rewards-summary",
+});
 
 export const RewardsAddresses = Schema.Struct({
   address: WalletAddress,

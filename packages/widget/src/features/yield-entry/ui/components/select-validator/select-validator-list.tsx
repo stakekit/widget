@@ -1,22 +1,22 @@
 import { Array as EArray, Option } from "effect";
 import type { ComponentProps } from "react";
-import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
 import type { ValidatorKey } from "../../../../../domain/earn/validator";
-import {
-  getRewardRateFormatted,
-  getRewardTypeFormatted,
-} from "../../../../../shared/lib/formatters";
+import { getRewardTypeFormatted } from "../../../../../shared/lib/formatters";
+import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../../../../shared/ui/components/select-modal";
-import { GroupedVirtualList } from "../../../../../shared/ui/components/virtual-list";
+import {
+  GroupedVirtualList,
+  type InfiniteScrollProps,
+} from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { CheckSteps } from "../../../../../shared/ui/primitives/icons/check-steps";
@@ -24,6 +24,7 @@ import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferr
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { textStyles } from "../../../../../shared/ui/primitives/typography/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { useMetaInfo } from "./meta-info";
 import {
   groupLabel,
@@ -32,7 +33,6 @@ import {
   noWrap,
   rewardRateLabel,
   rewardRateText,
-  validatorVirtuosoContainer,
 } from "./styles.css";
 
 export type GroupedItem = { items: EarnValidator[]; label: string };
@@ -46,6 +46,7 @@ export const SelectValidatorList = ({
   groupCounts,
   groupedItems,
   tableData,
+  ...infiniteScroll
 }: {
   multiSelect: boolean;
   selectedValidators: Set<ValidatorKey>;
@@ -55,14 +56,16 @@ export const SelectValidatorList = ({
   tableData: EarnValidator[];
   groupedItems: GroupedItem[];
   groupCounts: number[];
-}) => {
+} & InfiniteScrollProps) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
   return (
     <GroupedVirtualList
       increaseViewportBy={{ bottom: 50, top: 0 }}
       estimateSize={() => 140}
       groupCounts={groupCounts}
+      {...infiniteScroll}
       data-rk="select-validator-list"
       groupContent={(index) => {
         const group = EArray.get(groupedItems, index);
@@ -86,7 +89,6 @@ export const SelectValidatorList = ({
           </Box>
         );
       }}
-      className={validatorVirtuosoContainer}
       itemContent={(index, groupIndex) => {
         if (groupedItems[groupIndex]?.label === "view_more") {
           return (
@@ -139,7 +141,9 @@ export const SelectValidatorList = ({
                           : "selectValidatorMultiDefaultBackground"
                       }
                       hw="8"
-                      as="button"
+                      as="span"
+                      aria-hidden
+                      flexShrink={0}
                       borderRadius="full"
                       marginRight="2"
                       display="flex"
@@ -206,9 +210,10 @@ export const SelectValidatorList = ({
                           className={rewardRateText}
                           variant={{ weight: "bold" }}
                         >
-                          {getRewardRateFormatted({
-                            rewardRate: item.rewardRate?.total,
-                          })}
+                          {formatRewardRatePercent(
+                            item.rewardRate?.total,
+                            locale
+                          )}
                         </Text>
 
                         {rateTypeLabel ? (
@@ -251,7 +256,7 @@ export const SelectValidatorList = ({
   );
 };
 
-const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
+const ValidatorMeta = (props: Parameters<typeof useMetaInfo>[0]) => {
   const metaInfo = useMetaInfo(props);
 
   return (
@@ -279,4 +284,4 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
         })}
     </Box>
   );
-});
+};

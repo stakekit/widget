@@ -1,0 +1,29 @@
+id: no-manual-memo
+language: Tsx
+severity: error
+message: React Compiler memoizes components and hooks; remove useMemo, useCallback, and memo. Only functions that opt out with a "use no memo" directive may memoize by hand.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: ^(?:React\.)?(?:useMemo|useCallback|memo)$
+  not:
+    inside:
+      stopBy: end
+      any:
+        - kind: function_declaration
+        - kind: function_expression
+        - kind: arrow_function
+        - kind: method_definition
+      has:
+        field: body
+        has:
+          kind: expression_statement
+          has:
+            kind: string
+            regex: ^["']use no memo["']$

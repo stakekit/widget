@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Match } from "effect";
+import { Data, Match, Option, Schema } from "effect";
 import type {
   ActionCommand,
   ManageActionCommand,
@@ -9,11 +9,13 @@ import type { YieldPendingActionType } from "../../../domain/action/pending-acti
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import type {
+  EarnProvider,
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { exactDecimal } from "../../../domain/finance/exact";
+import type { ProviderOption } from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,
@@ -32,11 +34,18 @@ import {
 
 type ClassicFlowProviderDetail = ClassicTransactionWorkflowProviderDetail;
 
+/** The provider option an Enter executes with, and its details at start. */
+type ClassicFlowProviderOption = {
+  readonly provider: EarnProvider | null;
+  readonly value: ProviderOption;
+};
+
 type EnterClassicTransactionFlowIntake = {
   readonly _tag: "Enter";
   readonly gasFeeToken: EarnYieldWithProvider["token"];
   readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly request: ActionCommand;
+  readonly selectedProviderOption: ClassicFlowProviderOption | null;
   readonly selectedStake: EarnYieldWithProvider;
   readonly selectedToken: Token;
   readonly selectedValidators: ReadonlyMap<ValidatorKey, EarnValidator>;
@@ -152,19 +161,37 @@ export type StartClassicTransactionFlow =
       >;
     }>;
 
-export type ClassicFlowSession = Readonly<{
+/**
+ * A started Flow Session's immutable input. Start hands it to the flow route
+ * through Review navigation state (Activity mounts a Yield Action
+ * Continuation directly); the route that mounts it owns its lifetime.
+ */
+export class ClassicFlowSession extends Data.Class<{
   readonly destination: ClassicTransactionFlowDestination;
-  readonly epoch: number;
   readonly intake: ClassicTransactionFlowIntake;
   readonly mount: ClassicTransactionFlowMount;
-}>;
+}> {}
 
-type ClassicFlowSessionDraft = Omit<ClassicFlowSession, "epoch">;
+/** A Start that navigates to its own Review route. */
+export type NavigatingClassicTransactionFlowStart = Exclude<
+  StartClassicTransactionFlow,
+  { readonly mount: { readonly _tag: "YieldActionContinuation" } }
+>;
 
-type ClassicTransactionFlowStartNavigation = Readonly<{
-  readonly _tag: "Push";
-  readonly path: WidgetPath;
-}>;
+const ClassicFlowNavigationState = Schema.Struct({
+  classicFlowSession: Schema.instanceOf(ClassicFlowSession),
+});
+
+export const makeClassicFlowNavigationState = (
+  session: ClassicFlowSession
+): typeof ClassicFlowNavigationState.Type => ({ classicFlowSession: session });
+
+export const decodeClassicFlowNavigationState = (
+  state: unknown
+): Option.Option<ClassicFlowSession> =>
+  Schema.decodeUnknownOption(ClassicFlowNavigationState)(state).pipe(
+    Option.map((decoded) => decoded.classicFlowSession)
+  );
 
 type ClassicTransactionFlowRouteBase = "" | WidgetPathInput;
 
@@ -189,13 +216,10 @@ const copyClassicTransactionFlowIntake = (
   } as ClassicTransactionFlowIntake;
 };
 
-export const resolveClassicTransactionFlowStart = (
+export const makeClassicFlowSession = (
   command: StartClassicTransactionFlow,
   walletScope: WalletScopeKey
-): Readonly<{
-  readonly navigation: ClassicTransactionFlowStartNavigation | null;
-  readonly session: ClassicFlowSessionDraft;
-}> => {
+): ClassicFlowSession => {
   const destination = (() => {
     switch (command.mount._tag) {
       case "YieldActionContinuation": {
@@ -228,32 +252,45 @@ export const resolveClassicTransactionFlowStart = (
     }
   })();
 
-  return {
-    navigation:
-      command.mount._tag === "YieldActionContinuation"
-        ? null
-        : { _tag: "Push", path: destination.reviewPath },
-    session: {
-      destination,
-      intake: copyClassicTransactionFlowIntake(command.intake, walletScope),
-      mount: command.mount,
-    },
-  };
+  return new ClassicFlowSession({
+    destination,
+    intake: copyClassicTransactionFlowIntake(command.intake, walletScope),
+    mount: command.mount,
+  });
 };
+
+/** The Session Activity mounts for a Continuable Yield Action. */
+export const makeYieldActionContinuationSession = (
+  intake: YieldActionContinuationIntake
+): ClassicFlowSession =>
+  makeClassicFlowSession(
+    { intake, mount: { _tag: "YieldActionContinuation" } },
+    intake.walletScope
+  );
 
 const removeOptionalTrailingSlash = (pathname: string): string =>
   pathname.length > 1 && pathname.endsWith("/")
     ? pathname.slice(0, -1)
     : pathname;
 
-export const isClassicFlowSessionPath = (
-  session: ClassicFlowSession,
-  pathname: string
-): boolean => {
-  const normalizedPathname = removeOptionalTrailingSlash(pathname);
-  return Object.values(session.destination).some(
-    (destination) => destination === normalizedPathname
-  );
+const classicFlowRouteGroups = [
+  /^()\/(?:review|steps|complete)$/,
+  /^(\/positions\/[^/]+\/[^/]+\/(?:stake|unstake|pending-action))\/(?:review|steps|complete)$/,
+  /^(\/activity\/[^/]+)(?:\/steps|\/complete)?$/,
+];
+
+/**
+ * The flow mount a pathname belongs to: Review, Steps, and Complete of one
+ * mount share it, so a layout can keep that subtree (and its Session) mounted
+ * across the flow's own navigation. Null outside Classic flow routes.
+ */
+export const getClassicFlowRouteGroup = (pathname: string): string | null => {
+  const normalized = removeOptionalTrailingSlash(pathname);
+  for (const group of classicFlowRouteGroups) {
+    const match = group.exec(normalized);
+    if (match) return match[1] || "/";
+  }
+  return null;
 };
 
 type ClassicTransactionFlowReviewPricingInput = {

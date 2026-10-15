@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { widgetBootstrapSnapshotAtom } from "../../features/widget-configuration/index";
 import { decodeInitParams } from "../../services/wallet/init-params";
 import { getLocationHref } from "../../shared/lib/location";

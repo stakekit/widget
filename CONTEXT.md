@@ -15,9 +15,17 @@ from a Widget Instance's mount through its unmount.
 **Host Configuration**: The typed values supplied by the embedding host.
 
 **Widget Configuration**: The normalized, authoritative current configuration
-derived from Host Configuration.
+derived from Host Configuration. Application API Identity and Borrow enablement
+keep their mount values for the Application Runtime Generation; updates that
+change them are ignored with a warning.
 
-**Application API Identity**: The current normalized API key and endpoint set.
+**Application API Identity**: The normalized API key and endpoint set, fixed at
+mount for the Application Runtime Generation.
+
+**Host Profile**: The named capabilities a host variant enables, such as the
+Earn presentation, terms-of-service acknowledgement, or wallet catalogue,
+resolved once from the variant and dashboard flag and published with Widget
+Configuration. Features read capabilities, never variant names.
 
 **Widget Domain Event**: An immutable fact that a meaningful occurrence
 completed. It carries identity for observers but does not prescribe a mutation.
@@ -78,6 +86,13 @@ identity.
 
 **Wallet Command Context**: The wallet-routing snapshot captured when a command
 begins. A started command retains it even if current Wallet State changes.
+
+**WalletConnect Protocol Client**: The single Widget-owned WalletConnect client
+that proposes, restores, requests on, and disconnects non-EVM WalletConnect
+sessions. Each session belongs to one namespace and one topic.
+
+**WalletConnect Presentation**: The display of a pending pairing URI as a QR
+code, wallet explorer, or wallet deep link. It never owns protocol sessions.
 
 **External Provider Snapshot**: The latest host-supplied external wallet
 identity, supported networks, and operations.
@@ -177,6 +192,11 @@ projection. It is not a warning, blocker, or substitute metric.
 **Borrow Constraint Warning**: A known liquidity, balance, debt-minimum, or
 capacity violation attached to a constructible Action Command for review. The
 provider or blockchain remains authoritative at execution.
+
+**Risk Gate**: The single allow, warn, or block decision for a proposed Borrow
+change, made from its Risk Position projection. Only risk-increasing changes
+warn or block; oracle-anchored projections block exactly at protocol limits,
+display-priced projections within a tolerance. Risk Unavailable allows.
 
 ## Errors and portfolio
 

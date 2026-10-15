@@ -1,71 +1,89 @@
-import { useMemo } from "react";
 import type { YieldMetadata } from "../../../../../../domain/earn/yield";
 import type { Token } from "../../../../../../domain/token/token";
 import { config } from "../../../../../config/widget-defaults";
+import type { WidgetPresentation } from "../../../../widget-presentation";
 import { useWidgetPresentation } from "../../../../widget-presentation";
 
-export const useVariantTokenUrls = (
-  token: Token,
-  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">
-): {
+type VariantTokenUrls = {
   mainUrl: string | undefined;
   fallbackUrl: string | undefined;
   name: string;
   providerIcon: string | undefined;
-} => {
-  const { mapTokenIconUrl, variant } = useWidgetPresentation();
+};
 
-  return useMemo(() => {
-    if (metadata) {
-      const mainUrl =
-        variant === "zerion" &&
-        skETHIconUrlsSuffix.some((suffix) => metadata.logoURI.endsWith(suffix))
-          ? zerionETHIcon
-          : metadata.logoURI;
+export const useVariantTokenUrls = (
+  token: Token,
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">
+): VariantTokenUrls => {
+  const { hostTokenIconMapping, mapTokenIconUrl } = useWidgetPresentation();
 
-      return {
-        mainUrl,
-        fallbackUrl: metadata.logoURI ?? token.logoURI,
-        name: metadata.name,
-        providerIcon: metadata.provider?.logoURI,
-      };
-    }
+  return getVariantTokenUrls({
+    token,
+    metadata,
+    hostTokenIconMapping,
+    mapTokenIconUrl,
+  });
+};
 
-    const mappedUrl = mapTokenIconUrl(token);
-
-    if (mappedUrl) {
-      return {
-        mainUrl: mappedUrl,
-        fallbackUrl: mappedUrl,
-        name: token.name,
-        providerIcon: undefined,
-      };
-    }
-
+const getVariantTokenUrls = ({
+  token,
+  metadata,
+  hostTokenIconMapping,
+  mapTokenIconUrl,
+}: {
+  token: Token;
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
+  hostTokenIconMapping: WidgetPresentation["hostTokenIconMapping"];
+  mapTokenIconUrl: WidgetPresentation["mapTokenIconUrl"];
+}): VariantTokenUrls => {
+  if (metadata) {
     const mainUrl =
-      variant === "zerion"
-        ? (() => {
-            /**
-             * Use Zerion's token icons
-             */
-            if (token.address && token.symbol === "MATIC") {
-              return zerionMATICIcon(token.address);
-            }
-
-            if (token.symbol === "ETH") {
-              return zerionETHIcon;
-            }
-            return token.logoURI;
-          })()
-        : token.logoURI;
+      hostTokenIconMapping &&
+      skETHIconUrlsSuffix.some((suffix) => metadata.logoURI.endsWith(suffix))
+        ? zerionETHIcon
+        : metadata.logoURI;
 
     return {
       mainUrl,
-      fallbackUrl: token.logoURI,
+      fallbackUrl: metadata.logoURI ?? token.logoURI,
+      name: metadata.name,
+      providerIcon: metadata.provider?.logoURI,
+    };
+  }
+
+  const mappedUrl = mapTokenIconUrl(token);
+
+  if (mappedUrl) {
+    return {
+      mainUrl: mappedUrl,
+      fallbackUrl: mappedUrl,
       name: token.name,
       providerIcon: undefined,
     };
-  }, [token, metadata, variant, mapTokenIconUrl]);
+  }
+
+  const mainUrl = hostTokenIconMapping
+    ? (() => {
+        /**
+         * Use Zerion's token icons
+         */
+        if (token.address && token.symbol === "MATIC") {
+          return zerionMATICIcon(token.address);
+        }
+
+        if (token.symbol === "ETH") {
+          return zerionETHIcon;
+        }
+        return token.logoURI;
+      })()
+    : token.logoURI;
+
+  return {
+    mainUrl,
+    fallbackUrl: token.logoURI,
+    name: token.name,
+    providerIcon: undefined,
+  };
 };
 
 const skETHIconUrlsSuffix = ["/tokens/eth.svg", "/tokens/steth2.svg"];

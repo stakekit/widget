@@ -1,0 +1,13 @@
+id: no-direct-number-format
+valid:
+  - 'const label = formatNumber(value, locale, 6)'
+  - 'const label = formatUsd(value, locale)'
+  - 'const label = formatPercent(ratio, locale)'
+  - 'const wire = value.toFixed()'
+  - 'const label = DateTime.format(value, { locale })'
+invalid:
+  - 'const label = value.toFormat()'
+  - 'const label = exactDecimal(value).toFormat(2)'
+  - 'const label = value.toFormat({ decimalSeparator: "," })'
+  - 'const formatter = new Intl.NumberFormat("en-US", options)'
+  - 'const label = Intl.NumberFormat(locale).format(value)'

@@ -7,8 +7,6 @@ export const selectItemText = style({
   fontWeight: vars.fontWeight.tokenSelect,
 });
 
-export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
-
 export const apyYield = style([
   {
     color: vars.color.text,
