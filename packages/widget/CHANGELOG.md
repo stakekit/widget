@@ -1,5 +1,23 @@
 # @stakekit/widget
 
+## [0.0.290](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.289...@stakekit/widget@0.0.290) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **wallet:** the theme no longer accepts color.connectKit or borderRadius.connectKit, and the forceWalletConnectOnly setting is removed. Existing Tron, Cosmos and Polkadot WalletConnect sessions must reconnect once.
+
+### Features
+
+* **activity:** wire network-filtered Borrow activity with filter and details ([#584](https://github.com/stakekit/widget/issues/584)) ([5904937](https://github.com/stakekit/widget/commit/5904937ee6c346ec4577056d241fad5d228721a7))
+* **wallet:** replace RainbowKit with owned wallet dialogs and WalletConnect ([#580](https://github.com/stakekit/widget/issues/580)) ([b752356](https://github.com/stakekit/widget/commit/b752356728c12dba06ed8a79161f9805cd217084))
+* **widget:** add Zama confidential vaults ([#582](https://github.com/stakekit/widget/issues/582)) ([7b1185f](https://github.com/stakekit/widget/commit/7b1185fe64f6de3708ec8bb16afebf99641472d2))
+
+
+### Bug Fixes
+
+* **borrow:** dust-debt guard, protocol-accurate blocking, typed API errors ([#585](https://github.com/stakekit/widget/issues/585)) ([4d4959c](https://github.com/stakekit/widget/commit/4d4959cfa8e3281ebb4afb962ee4877823851aee))
+
 ## [0.0.289](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.288...@stakekit/widget@0.0.289) (2026-10-08)
 
 
