@@ -66,6 +66,7 @@ describe("Earn derived atoms after a failed refetch", () => {
                     ? Effect.fail(
                         new ApiRequestError({
                           cause: new Error("offline"),
+                          failure: { _tag: "Unreachable" },
                           operation: "token-balances-scan",
                         })
                       )
@@ -122,6 +123,7 @@ describe("Earn derived atoms after a failed refetch", () => {
         ? Effect.fail(
             new ApiRequestError({
               cause: new Error("offline"),
+              failure: { _tag: "Unreachable" },
               operation: "validators",
             })
           )

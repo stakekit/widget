@@ -1,5 +1,4 @@
-import { Cause, Context, type Effect, Predicate, Schema } from "effect";
-import { HttpClientError } from "effect/http";
+import { Context, type Effect, Option } from "effect";
 import type {
   ActionCommand,
   ActionTransactionReceipt,
@@ -17,7 +16,8 @@ import type {
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
 import {
-  ApiRequestError,
+  ApiFailure,
+  type ApiRequestError,
   type InputValidationError,
   type MissingBorrowApiConfig,
   type ResponseDecodeError,
@@ -36,7 +36,7 @@ export type ActionPreviewRequest =
     };
 
 type ApiOperationFailure = ApiRequestError | ResponseDecodeError;
-type BorrowOperationFailure =
+export type BorrowOperationFailure =
   | ApiOperationFailure
   | BorrowFeatureDisabled
   | MissingBorrowApiConfig;
@@ -102,26 +102,31 @@ const transientStatuses: ReadonlySet<number> = new Set([
 ]);
 
 /**
- * Whether repeating the request may succeed: it timed out, never reached the
- * API, or the API answered with a transient status. Every other failure,
- * including an undecodable response, is final.
+ * Whether repeating the request may succeed: it never reached the API, or the
+ * API answered with a transient status. Every other failure, including an
+ * unreadable response, is final.
  */
-export const isTransientApiFailure = (error: unknown): boolean => {
-  if (!Schema.is(ApiRequestError)(error)) return false;
-  const { cause } = error;
-  if (Cause.isTimeoutError(cause)) return true;
-  if (HttpClientError.isHttpClientError(cause)) {
-    return (
-      cause.reason._tag === "TransportError" ||
-      (cause.reason._tag === "StatusCodeError" &&
-        transientStatuses.has(cause.reason.response.status))
-    );
-  }
-  // Generated API clients fail declared error statuses with the response attached.
-  return (
-    Predicate.hasProperty(cause, "response") &&
-    Predicate.hasProperty(cause.response, "status") &&
-    typeof cause.response.status === "number" &&
-    transientStatuses.has(cause.response.status)
-  );
-};
+export const isTransientApiFailure = (
+  error: BorrowOperationFailure | InputValidationError
+): boolean =>
+  error._tag === "ApiRequestError" &&
+  ApiFailure.match(error.failure, {
+    ErrorStatus: ({ status }) => transientStatuses.has(status),
+    InvalidRequest: () => false,
+    Unreachable: () => true,
+    UnreadableResponse: () => false,
+  });
+
+/**
+ * The API's own explanation when it refused a request: the message of a 4xx
+ * response that carries one.
+ */
+export const getApiRejectionReason = (
+  failure: ApiFailure
+): Option.Option<string> =>
+  failure._tag === "ErrorStatus" &&
+  failure.status >= 400 &&
+  failure.status < 500 &&
+  failure.body !== null
+    ? Option.some(failure.body.message)
+    : Option.none();

@@ -1,86 +1,99 @@
 import { Effect, Option, Schema } from "effect";
+import * as HttpClientError from "effect/http/HttpClientError";
+import type * as HttpClientResponse from "effect/http/HttpClientResponse";
+import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import { RichError } from "../errors/rich-error";
 import type { RichErrorService } from "../errors/rich-error-service";
 import {
+  ApiFailure,
   ApiRequestError,
   InputValidationError,
+  type MissingBorrowApiConfig,
   ResponseDecodeError,
 } from "./resource-sources";
 
-const Request = Schema.Struct({ url: Schema.String });
-const DirectApiFailure = Schema.Struct({
-  cause: Schema.Unknown,
-  request: Request,
-});
-const EncodedResponseFailure = Schema.Struct({
-  reason: Schema.Struct({
-    description: Schema.String,
-    response: Schema.Struct({ request: Request }),
-  }),
-});
-const EncodedRequestFailure = Schema.Struct({
-  reason: Schema.Struct({
-    description: Schema.String,
-    request: Request,
-  }),
-});
-
-const decodeDescription = (description: string): RichError | null =>
-  Schema.decodeOption(Schema.fromJsonString(RichError))(description).pipe(
-    Option.getOrNull
-  );
-
-const richErrorFrom = (cause: unknown): RichError | null => {
-  const direct = Schema.decodeUnknownOption(DirectApiFailure)(cause).pipe(
-    Option.getOrNull
-  );
-  if (direct) {
-    return direct.request.url.includes("gas-estimate")
-      ? null
-      : Schema.decodeUnknownOption(RichError)(direct.cause).pipe(
-          Option.getOrNull
-        );
-  }
-
-  const responseFailure = Schema.decodeUnknownOption(EncodedResponseFailure)(
-    cause
-  ).pipe(Option.getOrNull);
-  if (responseFailure) {
-    return responseFailure.reason.response.request.url.includes("gas-estimate")
-      ? null
-      : decodeDescription(responseFailure.reason.description);
-  }
-
-  const requestFailure = Schema.decodeUnknownOption(EncodedRequestFailure)(
-    cause
-  ).pipe(Option.getOrNull);
-  if (!requestFailure) return null;
-
-  return requestFailure.reason.request.url.includes("gas-estimate")
-    ? null
-    : decodeDescription(requestFailure.reason.description);
+/**
+ * The failure a generated client raises for a status its OpenAPI operation
+ * declares: the status's tag, the response, and its JSON body as `cause`.
+ */
+type DeclaredStatusError = {
+  readonly _tag: string;
+  readonly cause: unknown;
+  readonly response: HttpClientResponse.HttpClientResponse;
 };
 
+/** Every failure a generated API client raises. */
+type ApiClientError = HttpClientError.HttpClientError | DeclaredStatusError;
+
+const decodeBody = (body: unknown): RichError | null =>
+  Schema.decodeUnknownOption(RichError)(body).pipe(Option.getOrNull);
+
+const decodeJsonBody = (description: string | undefined): RichError | null =>
+  Schema.decodeUnknownOption(Schema.fromJsonString(RichError))(
+    description
+  ).pipe(Option.getOrNull);
+
+const fromHttpClientError = ({
+  reason,
+}: HttpClientError.HttpClientError): ApiFailure => {
+  switch (reason._tag) {
+    case "TransportError":
+      return ApiFailure.cases.Unreachable.make({});
+    case "EncodeError":
+    case "InvalidUrlError":
+      return ApiFailure.cases.InvalidRequest.make({});
+    case "StatusCodeError":
+      // Generated clients keep an undeclared status's JSON body as the
+      // description.
+      return ApiFailure.cases.ErrorStatus.make({
+        body: decodeJsonBody(reason.description),
+        status: reason.response.status,
+      });
+    case "DecodeError":
+    case "EmptyBodyError":
+      return ApiFailure.cases.UnreadableResponse.make({
+        status: reason.response.status,
+      });
+  }
+};
+
+const toApiFailure = (error: ApiClientError): ApiFailure =>
+  HttpClientError.isHttpClientError(error)
+    ? fromHttpClientError(error)
+    : ApiFailure.cases.ErrorStatus.make({
+        body: decodeBody(error.cause),
+        status: error.response.status,
+      });
+
 export const withApiRequestError = (operation: string) =>
-  function mapApiRequestError<A, E, R>(effect: Effect.Effect<A, E, R>) {
+  function mapApiRequestError<A, E extends ApiClientError, R>(
+    effect: Effect.Effect<A, E, R>
+  ) {
     return effect.pipe(
       Effect.mapError(
         (cause) =>
           new ApiRequestError({
-            operation,
             cause,
-            richError: richErrorFrom(cause),
+            failure: toApiFailure(cause),
+            operation,
           })
       )
     );
   };
 
+type ApiOperationError =
+  | ApiRequestError
+  | BorrowFeatureDisabled
+  | InputValidationError
+  | MissingBorrowApiConfig
+  | ResponseDecodeError;
+
 export const presentApiRequestError =
   (richErrors: RichErrorService["Service"]) =>
-  <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  <A, E extends ApiOperationError, R>(effect: Effect.Effect<A, E, R>) =>
     effect.pipe(
       Effect.tapError((error) =>
-        Schema.is(ApiRequestError)(error)
+        error._tag === "ApiRequestError"
           ? richErrors.present(error)
           : Effect.void
       )
@@ -127,7 +140,9 @@ export const decodeApiResponse = <
   operation: string,
   schema: ResponseSchema
 ) =>
-  function decodeResponse<E, R>(effect: Effect.Effect<unknown, E, R>) {
+  function decodeResponse<E extends ApiClientError, R>(
+    effect: Effect.Effect<unknown, E, R>
+  ) {
     return effect.pipe(
       withApiRequestError(operation),
       Effect.flatMap((response) =>

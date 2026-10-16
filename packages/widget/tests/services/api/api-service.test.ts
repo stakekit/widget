@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Cause, Context, Effect, Layer, Option, Schema } from "effect";
+import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/http/HttpClientError";
 import { YieldAction } from "../../../src/domain/action/models";
 import { BorrowFeatureDisabled } from "../../../src/domain/borrow/availability";
@@ -11,6 +11,7 @@ import {
 } from "../../../src/domain/identity/identifiers";
 import { RewardsAddresses } from "../../../src/domain/portfolio/models";
 import { BorrowApiError } from "../../../src/generated/api/borrow-client";
+import { YieldApiError } from "../../../src/generated/api/yield";
 import { makeBorrowOperations } from "../../../src/services/api/borrow-operations";
 import { makeBorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
 import { makeLegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
@@ -270,10 +271,13 @@ describe("application API services", () => {
             read: {},
             write: {
               TransactionsControllerSubmitTransactionHash: () =>
-                Effect.fail({
-                  cause: { message: "Transaction hash was rejected" },
-                  request: { url: "https://yield.example.com/submit-hash" },
-                }),
+                Effect.fail(
+                  BorrowApiError(
+                    "400",
+                    { message: "Transaction hash was rejected" },
+                    { request: {}, status: 400 } as never
+                  )
+                ),
             },
           } as never,
           { present } as never
@@ -486,6 +490,25 @@ describe("application API services", () => {
   );
 
   it.effect(
+    "maps a Yield Activity action 404 to explicit absence at the source boundary",
+    () =>
+      Effect.gen(function* () {
+        const response = { request: {}, status: 404 } as never;
+        const expected = yield* Schema.decodeEffect(YieldAction)(
+          yieldApiActionDtoFixture()
+        );
+        const source = makeYieldResourceSource({
+          ActionsControllerGetAction: () =>
+            Effect.fail(YieldApiError("404", undefined, response)),
+        } as never);
+
+        expect(
+          Option.isNone(yield* source.getActivityAction(expected.id))
+        ).toBe(true);
+      })
+  );
+
+  it.effect(
     "maps single-Yield and gas balances through narrow read capabilities",
     () =>
       Effect.gen(function* () {
@@ -682,7 +705,13 @@ describe("application API services", () => {
       Effect.gen(function* () {
         const transportFailureSource = makeYieldResourceSource({
           KycControllerGetStatus: () =>
-            Effect.fail(new Cause.UnknownError("offline")),
+            Effect.fail(
+              new HttpClientError.HttpClientError({
+                reason: new HttpClientError.TransportError({
+                  request: {} as never,
+                }),
+              })
+            ),
         } as never);
         const malformedResponseSource = makeYieldResourceSource({
           KycControllerGetStatus: () =>
@@ -697,7 +726,10 @@ describe("application API services", () => {
           .pipe(Effect.flip);
 
         expect(requestError).toBeInstanceOf(ApiRequestError);
-        expect(requestError.operation).toBe("yield-kyc-status");
+        expect(requestError).toMatchObject({
+          failure: { _tag: "Unreachable" },
+          operation: "yield-kyc-status",
+        });
         expect(decodeError).toBeInstanceOf(ResponseDecodeError);
         expect(decodeError.operation).toBe("yield-kyc-status");
       })

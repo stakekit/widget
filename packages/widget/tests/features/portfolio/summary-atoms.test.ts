@@ -246,6 +246,7 @@ describe("summary atom derivations", () => {
                 ? Effect.fail(
                     new ApiRequestError({
                       cause: new Error("offline"),
+                      failure: { _tag: "Unreachable" },
                       operation: "yields",
                     })
                   )
@@ -340,6 +341,7 @@ describe("summary atom derivations", () => {
                 ? Effect.fail(
                     new ApiRequestError({
                       cause: new Error("offline"),
+                      failure: { _tag: "Unreachable" },
                       operation: "prices",
                     })
                   )

@@ -195,6 +195,7 @@ const makeRegistry = (account: Account) =>
                 ? Effect.fail(
                     new ApiRequestError({
                       cause: new Error("positions unavailable"),
+                      failure: { _tag: "Unreachable" },
                       operation: "borrow-positions",
                     })
                   )

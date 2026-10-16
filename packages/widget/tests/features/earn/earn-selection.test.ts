@@ -170,6 +170,7 @@ describe("Earn Selection", () => {
         Effect.fail(
           new ApiRequestError({
             cause: new Error("offline"),
+            failure: { _tag: "Unreachable" },
             operation: "token-balances-scan",
           })
         ),
@@ -792,6 +793,7 @@ describe("Earn Selection", () => {
         Effect.fail(
           new ApiRequestError({
             cause: new Error("offline"),
+            failure: { _tag: "Unreachable" },
             operation: "token-balances-scan",
           })
         )

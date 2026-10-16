@@ -44,6 +44,7 @@ describe("Widget Health resource", () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
+      failure: { _tag: "Unreachable" },
       operation: "yield-api-health",
     });
     const getHealth = Effect.suspend(() =>
@@ -76,6 +77,7 @@ describe("Widget Health resource", () => {
         ? Effect.fail(
             new ApiRequestError({
               cause: new Error("offline"),
+              failure: { _tag: "Unreachable" },
               operation: "yield-api-health",
             })
           )
@@ -107,6 +109,7 @@ describe("Widget Health resource", () => {
         ? Effect.fail(
             new ApiRequestError({
               cause: new Error("offline"),
+              failure: { _tag: "Unreachable" },
               operation: "yield-api-health",
             })
           )

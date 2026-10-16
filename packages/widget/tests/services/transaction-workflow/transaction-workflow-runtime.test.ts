@@ -27,6 +27,7 @@ import {
   WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../../src/domain/wallet/wallet-scope";
+import { BorrowApiError } from "../../../src/generated/api/borrow-client";
 import { makeBorrowOperations } from "../../../src/services/api/borrow-operations";
 import type {
   BorrowOperations,
@@ -416,6 +417,7 @@ describe("transaction workflow runtime", () => {
                   ? Effect.fail(
                       new ApiRequestError({
                         cause: new Error("submit failed"),
+                        failure: { _tag: "Unreachable" },
                         operation: "submitSignedTransaction",
                       })
                     )
@@ -1096,6 +1098,7 @@ describe("transaction workflow runtime", () => {
           Effect.fail(
             new ApiRequestError({
               cause: new Error("response lost"),
+              failure: { _tag: "Unreachable" },
               operation: "stepAction",
             })
           )
@@ -1171,6 +1174,7 @@ describe("transaction workflow runtime", () => {
           Effect.fail(
             new ApiRequestError({
               cause: new Error("response lost"),
+              failure: { _tag: "Unreachable" },
               operation: "stepAction",
             })
           )
@@ -1229,6 +1233,7 @@ describe("held broadcast hash registration", () => {
     cause: new HttpClientError.HttpClientError({
       reason: new HttpClientError.TransportError({ request: hashRequest }),
     }),
+    failure: { _tag: "Unreachable" },
     operation: "borrow-transaction-submit",
   });
   const rejectedFailure = new ApiRequestError({
@@ -1241,6 +1246,7 @@ describe("held broadcast hash registration", () => {
         ),
       }),
     }),
+    failure: { _tag: "ErrorStatus", body: null, status: 400 },
     operation: "borrow-transaction-submit",
   });
   const acknowledged = {
@@ -1435,10 +1441,16 @@ describe("held broadcast hash registration", () => {
     () =>
       Effect.gen(function* () {
         const submit = vi.fn(() =>
-          Effect.fail({
-            cause: { message: "Transaction hash was rejected" },
-            request: { url: hashRequest.url },
-          })
+          Effect.fail(
+            BorrowApiError(
+              "TransactionsControllerSubmitTransactionV1400",
+              { message: "Transaction hash was rejected" },
+              HttpClientResponse.fromWeb(
+                hashRequest,
+                new Response(null, { status: 400 })
+              )
+            )
+          )
         );
         const present = vi.fn(() => Effect.void);
         const operations = makeBorrowOperations(

@@ -21,7 +21,9 @@ The Risk Gate is the only widget-side block:
 
 Full repayment is not blocked when the scanned wallet balance falls short of
 the debt. The scan can be stale, and the API rechecks the live balance before
-it builds the action.
+it builds the action. When the API refuses an action, Review shows its
+Action Rejection Reason instead of generic copy and opens no error modal. That
+reason arrives in English only.
 
 The cost of this policy is that some doomed submissions reach the API or the
 chain. The alternative, blocking on every warning, rejects valid actions

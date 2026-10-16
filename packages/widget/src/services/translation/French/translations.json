@@ -105,6 +105,11 @@
       "details": "Le réseau blockchain n'a pas répondu à temps",
       "solution": "Réessayez plus tard ou contactez le support StakeKit"
     },
+    "ApiUnreachableError": {
+      "title": "Serveur injoignable",
+      "details": "La requête est restée sans réponse. Vous êtes peut-être hors ligne, ou le service est temporairement indisponible",
+      "solution": "Vérifiez votre connexion internet et réessayez"
+    },
     "WithdrawalLimitExceededError": {
       "title": "Limite de retrait dépassée",
       "details": "Le montant demandé dépasse la limite de retrait actuelle",

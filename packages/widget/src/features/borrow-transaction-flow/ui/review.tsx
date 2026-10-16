@@ -1,5 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Cause, Option } from "effect";
+import { Option } from "effect";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { formatNumber } from "../../../shared/lib/number-format";
@@ -27,10 +27,7 @@ import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
 } from "../react/borrow-flow-route";
-import {
-  borrowReviewConfirmationErrorCopy,
-  presentBorrowReviewConfirmationError,
-} from "./borrow-review-confirmation-error";
+import { BorrowReviewConfirmationFailure } from "../state/borrow-review-confirmation-error";
 import { BorrowFlowHeading } from "./flow-heading";
 import { BorrowFlowPositionChangeRows } from "./position-change-rows";
 import * as styles from "./styles.css";
@@ -55,14 +52,14 @@ export const BorrowReviewPage = () => {
   const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
   const riskBlock = getBorrowReviewRiskBlock(reviewState);
-  const createActionErrorCopy = Option.match(confirmation.failure, {
-    onNone: () => null,
-    onSome: (cause) =>
-      Option.match(Cause.findErrorOption(cause), {
-        onNone: () => borrowReviewConfirmationErrorCopy,
-        onSome: presentBorrowReviewConfirmationError,
-      }),
-  });
+  const createActionErrorDescription = Option.map(
+    confirmation.failure,
+    BorrowReviewConfirmationFailure.match({
+      Failed: () =>
+        t("dashboard.borrow.review_page.confirmation_error_description"),
+      Rejected: ({ reason }) => reason,
+    })
+  );
   const collateralFeeAmount =
     projectedSummary.collateral && "feeAmount" in projectedSummary.collateral
       ? projectedSummary.collateral.feeAmount
@@ -137,18 +134,21 @@ export const BorrowReviewPage = () => {
             />
           </DetailRowList>
 
-          {createActionErrorCopy ? (
-            <Box className={styles.executionError}>
-              <Text variant={{ type: "danger" }}>
-                {t(
-                  `dashboard.borrow.execution_page.error_titles.${summary.action}`
-                )}
-              </Text>
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t(createActionErrorCopy.descriptionKey)}
-              </Text>
-            </Box>
-          ) : null}
+          {Option.match(createActionErrorDescription, {
+            onNone: () => null,
+            onSome: (description) => (
+              <Box className={styles.executionError}>
+                <Text variant={{ type: "danger" }}>
+                  {t(
+                    `dashboard.borrow.execution_page.error_titles.${summary.action}`
+                  )}
+                </Text>
+                <Text variant={{ type: "muted", weight: "normal" }}>
+                  {description}
+                </Text>
+              </Box>
+            ),
+          })}
 
           {summary.warnings.map((warning) => (
             <Box className={styles.formCard} key={warning}>

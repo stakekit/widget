@@ -362,7 +362,7 @@ describe("WidgetTranslation resource ownership", () => {
   });
 
   it("defines complete local error fallbacks", () => {
-    expect(Object.keys(translationEN.errors)).toHaveLength(42);
+    expect(Object.keys(translationEN.errors)).toHaveLength(43);
 
     for (const fallback of [
       ...Object.values(translationEN.errors),

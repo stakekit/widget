@@ -105,6 +105,11 @@
       "details": "The blockchain network did not respond in time",
       "solution": "Try again later or contact StakeKit support"
     },
+    "ApiUnreachableError": {
+      "title": "Can't Reach the Server",
+      "details": "The request got no answer. You may be offline, or the service may be temporarily unavailable",
+      "solution": "Check your internet connection and try again"
+    },
     "WithdrawalLimitExceededError": {
       "title": "Withdrawal Limit Exceeded",
       "details": "The requested amount exceeds the current withdrawal limit",

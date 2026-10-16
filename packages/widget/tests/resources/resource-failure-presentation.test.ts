@@ -32,16 +32,26 @@ const makeRegistry = () =>
 const makeRequestError = (message: string) =>
   new ApiRequestError({
     cause: new Error(message),
+    failure: { _tag: "ErrorStatus", body: { message }, status: 400 },
     operation: "test-resource",
-    richError: { message },
   });
+
+type TestResourceError = {
+  readonly _tag: "TestResourceError";
+  readonly cause: ApiRequestError;
+};
+
+const resourceError = (cause: ApiRequestError): TestResourceError => ({
+  _tag: "TestResourceError",
+  cause,
+});
 
 const presentableFailure = (message: string) => {
   let acquisitions = 0;
   const requestError = makeRequestError(message);
   const canonical = Atom.make(() => {
     acquisitions += 1;
-    return AsyncResult.fail({ cause: requestError });
+    return AsyncResult.fail(resourceError(requestError));
   });
 
   return {
@@ -83,6 +93,35 @@ describe("resource failure presentation", () => {
     }
   });
 
+  it("presents the widget's no-answer copy when the API is unreachable", async () => {
+    const registry = makeRegistry();
+    const resource = makePresentableResource(
+      Atom.make(() =>
+        AsyncResult.fail(
+          resourceError(
+            new ApiRequestError({
+              cause: undefined,
+              failure: { _tag: "Unreachable" },
+              operation: "test-resource",
+            })
+          )
+        )
+      )
+    );
+    const unmount = registry.mount(resource.foreground);
+
+    try {
+      await vi.waitFor(() => {
+        expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toEqual({
+          message: "ApiUnreachableError",
+        });
+      });
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
   it.each(["local-first", "foreground-first"] as const)(
     "shares one canonical acquisition and presents for %s observation",
     async (order) => {
@@ -115,9 +154,9 @@ describe("resource failure presentation", () => {
     let attempts = 0;
     const canonical = Atom.make(() => {
       attempts += 1;
-      return AsyncResult.fail({
-        cause: makeRequestError(`Failure ${attempts}`),
-      });
+      return AsyncResult.fail(
+        resourceError(makeRequestError(`Failure ${attempts}`))
+      );
     });
     const resource = makePresentableResource(canonical);
     const unmountFirst = registry.mount(resource.foreground);
@@ -154,13 +193,11 @@ describe("resource failure presentation", () => {
     let attempts = 0;
     const canonical = Atom.make(() => {
       attempts += 1;
-      const previous = AsyncResult.success<string, { cause: ApiRequestError }>(
-        "loaded"
-      );
+      const previous = AsyncResult.success<string, TestResourceError>("loaded");
       return attempts === 1
         ? previous
         : AsyncResult.failure(
-            Cause.fail({ cause: makeRequestError("Refetch failure") }),
+            Cause.fail(resourceError(makeRequestError("Refetch failure"))),
             { previousSuccess: Option.some(previous) }
           );
     });

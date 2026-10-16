@@ -1,13 +1,13 @@
-import { Cause, Effect, Option, Schema } from "effect";
+import { Cause, Effect, Option } from "effect";
 import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../app/runtime/app-runtime";
 import type { BorrowFeatureDisabled } from "../domain/borrow/availability";
-import {
+import type {
   ApiRequestError,
-  type InputValidationError,
-  type MissingBorrowApiConfig,
-  type ResponseDecodeError,
+  InputValidationError,
+  MissingBorrowApiConfig,
+  ResponseDecodeError,
 } from "../services/api/resource-sources";
 import { RichErrorService } from "../services/errors/rich-error-service";
 import { toPresentable } from "../shared/effect/async-result";
@@ -60,21 +60,22 @@ type PresentableResourceFamily<
   readonly local: (key: Key) => ResourceAtom;
 };
 
-const ResourceFailure = Schema.Struct({ cause: Schema.Unknown });
+/** A resource failure: absence, or a resource error over a typed cause. */
+type PresentableResourceError =
+  | Cause.NoSuchElementError
+  | { readonly _tag: string; readonly cause: ResourceCause };
 
-const requestErrorFrom = (error: unknown): ApiRequestError | null => {
-  const failure = Schema.decodeUnknownOption(ResourceFailure)(error).pipe(
-    Option.getOrNull
-  );
+const requestErrorFrom = (
+  error: PresentableResourceError
+): ApiRequestError | null => {
+  if (Cause.isNoSuchElementError(error)) return null;
 
-  return failure && Schema.is(ApiRequestError)(failure.cause)
-    ? failure.cause
-    : null;
+  return error.cause._tag === "ApiRequestError" ? error.cause : null;
 };
 
 export const makePresentableResource = <
   Value,
-  Error,
+  Error extends PresentableResourceError,
   ResourceAtom extends Atom.Atom<AsyncResult.AsyncResult<Value, Error>>,
 >(
   local: PresentableAtom<ResourceAtom>
@@ -85,8 +86,9 @@ export const makePresentableResource = <
     const presentable = toPresentable(get(local));
     const requestError =
       presentable._tag === "Failed"
-        ? requestErrorFrom(
-            Cause.findErrorOption(presentable.cause).pipe(Option.getOrNull)
+        ? Cause.findErrorOption(presentable.cause).pipe(
+            Option.map(requestErrorFrom),
+            Option.getOrNull
           )
         : null;
 
@@ -106,7 +108,7 @@ export const makePresentableResource = <
 export const makePresentableResourceFamily = <
   Key,
   Value,
-  Error,
+  Error extends PresentableResourceError,
   ResourceAtom extends Atom.Atom<AsyncResult.AsyncResult<Value, Error>>,
 >(
   local: (key: Key) => PresentableAtom<ResourceAtom>

@@ -84,6 +84,7 @@ describe("Token Balances resource", () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
+      failure: { _tag: "Unreachable" },
       operation: "token-balances-scan",
     });
     const scanTokenBalances = vi.fn((_command: TokenBalanceScanCommand) =>

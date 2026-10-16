@@ -240,6 +240,7 @@ const makeBorrowApi = ({
       ? Effect.fail(
           new ApiRequestError({
             cause: new Error("Submission rejected"),
+            failure: { _tag: "Unreachable" },
             operation: "borrow-transaction-submit",
           })
         )
@@ -251,7 +252,7 @@ const makeBorrowApi = ({
   };
 
   return {
-    executeAction: vi.fn(() =>
+    executeAction: vi.fn<BorrowOperations["Service"]["executeAction"]>(() =>
       executeAction.pipe(
         Effect.flatMap((value) =>
           Schema.decodeEffect(BorrowAction)(value).pipe(
@@ -593,6 +594,48 @@ describe("borrow execution flow component", () => {
             .not.toBeInTheDocument()
         );
       })
+  );
+
+  it.live("shows the API's reason when it refuses to create the action", () =>
+    Effect.gen(function* () {
+      const reason =
+        "Insufficient WETH balance to repay the full debt: you have 0.0001 WETH but need at least 0.00010006 WETH.";
+      const borrow = makeBorrowApi({});
+      const app = yield* renderExecution(borrow, {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+      });
+      borrow.executeAction.mockImplementation(() =>
+        Effect.fail(
+          new ApiRequestError({
+            cause: undefined,
+            failure: {
+              _tag: "ErrorStatus",
+              body: { message: reason },
+              status: 412,
+            },
+            operation: "borrow-action-create",
+          })
+        )
+      );
+
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Confirm" }))
+      );
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText(reason)).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(
+            app.getByText(
+              "We couldn't prepare this transaction. Please try again."
+            )
+          )
+          .not.toBeInTheDocument()
+      );
+    })
   );
 
   it.live("labels a repayment amount on Review", () =>

@@ -67,6 +67,7 @@ describe("Yield opportunity and provider resources", () => {
   it("keeps the enriched opportunity when its provider fails", () => {
     const requestError = new ApiRequestError({
       cause: new Error("missing provider"),
+      failure: { _tag: "Unreachable" },
       operation: "yield-provider",
     });
     const getOpportunity = vi.fn(() => Effect.succeed(yieldModel));
@@ -116,6 +117,7 @@ describe("Yield opportunity and provider resources", () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
+      failure: { _tag: "Unreachable" },
       operation: "yield-opportunity",
     });
     const getOpportunity = vi.fn(() =>

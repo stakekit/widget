@@ -50,8 +50,12 @@ describe("rich error service", () => {
         yield* firstService.present(
           new ApiRequestError({
             cause: new Error("first"),
+            failure: {
+              _tag: "ErrorStatus",
+              body: { message: "First failure" },
+              status: 400,
+            },
             operation: "test",
-            richError: { message: "First failure" },
           })
         );
 
@@ -71,8 +75,12 @@ describe("rich error service", () => {
         yield* secondService.present(
           new ApiRequestError({
             cause: new Error("second"),
+            failure: {
+              _tag: "ErrorStatus",
+              body: { message: "Second failure" },
+              status: 400,
+            },
             operation: "test",
-            richError: { message: "Second failure" },
           })
         );
         expect(AsyncResult.getOrThrow(second.get(richErrorAtom))).toEqual({
@@ -100,8 +108,12 @@ describe("rich error service", () => {
           );
           const firstFailure = new ApiRequestError({
             cause: new Error("first"),
+            failure: {
+              _tag: "ErrorStatus",
+              body: { message: "First failure" },
+              status: 400,
+            },
             operation: "yield-directory",
-            richError: { message: "First failure" },
           });
           yield* Effect.all([
             service.present(firstFailure),
@@ -120,8 +132,12 @@ describe("rich error service", () => {
           yield* service.present(
             new ApiRequestError({
               cause: new Error("retry"),
+              failure: {
+                _tag: "ErrorStatus",
+                body: { message: "Retry failure" },
+                status: 400,
+              },
               operation: "yield-directory",
-              richError: { message: "Retry failure" },
             })
           );
           expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toEqual({

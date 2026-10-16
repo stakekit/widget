@@ -34,16 +34,14 @@ export const makeBorrowOperations = (
     }
   );
 
+  // Review presents creation failures inline, including the API's reason.
   const executeAction = Effect.fn("BorrowOperations.executeAction")(function* (
     command: BorrowActionCommand
   ) {
     const client = yield* requireTransport();
     return yield* client.write
       .ActionsControllerExecuteActionV1({ payload: command })
-      .pipe(
-        decodeApiResponse("borrow-action-create", BorrowAction),
-        presentRequestError
-      );
+      .pipe(decodeApiResponse("borrow-action-create", BorrowAction));
   });
 
   const getAction = Effect.fn("BorrowOperations.getAction")(function* (

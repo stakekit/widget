@@ -21,9 +21,9 @@ import {
   type BorrowTransactionFlowIntake,
   decodeBorrowFlowNavigationState,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
-import { BorrowActionCreationError } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review";
 import { BorrowTransactionFlowService } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { BorrowOperations } from "../../../src/services/api/operations";
+import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import {
   toWidgetPath,
@@ -455,7 +455,53 @@ describe("BorrowTransactionFlowService", () => {
             return yield* Effect.flip(review.confirm());
           })
         ).pipe(Effect.provide(flow.layer));
-        expect(error).toBeInstanceOf(BorrowActionCreationError);
+        expect(error).toMatchObject({ _tag: "BorrowActionCreationFailed" });
+      })
+  );
+
+  it.effect.each([
+    {
+      error: { _tag: "BorrowActionRejected", reason: "Insufficient WETH." },
+      failure: {
+        _tag: "ErrorStatus",
+        body: { message: "Insufficient WETH." },
+        status: 412,
+      },
+    },
+    {
+      error: { _tag: "BorrowActionCreationFailed" },
+      failure: {
+        _tag: "ErrorStatus",
+        body: { message: "Internal server error" },
+        status: 500,
+      },
+    },
+  ] as const)(
+    "creates $error._tag from an API $failure.status",
+    ({ error, failure }) =>
+      Effect.gen(function* () {
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            executeAction: () =>
+              Effect.fail(
+                new ApiRequestError({
+                  cause: undefined,
+                  failure,
+                  operation: "borrow-action-create",
+                })
+              ),
+          }
+        );
+        const confirmError = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const service = yield* BorrowTransactionFlowService;
+            const { session } = yield* acquireStartedSession(service);
+            const review = yield* session.acquireReview();
+            return yield* Effect.flip(review.confirm());
+          })
+        ).pipe(Effect.provide(flow.layer));
+        expect(confirmError).toMatchObject(error);
       })
   );
 
