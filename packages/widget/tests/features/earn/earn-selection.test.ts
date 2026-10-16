@@ -400,6 +400,69 @@ describe("Earn Selection", () => {
         registry.dispose();
       }
     });
+
+    it("prefers the exact symbol case for a symbol and network reference", async () => {
+      // Symbols are not unique: Ethereum lists distinct `USDA` and `USDa` tokens.
+      const usdaToken = {
+        ...secondYield.token,
+        address: "0x0000206329b97db379d5e1bf586bbdb969c63274",
+        name: "USDA",
+        symbol: "USDA",
+      };
+      const usdaLowerToken = {
+        ...secondYield.token,
+        address: "0x8a60e489004ca22d775c5f2c657598278d17d9c2",
+        name: "USDa",
+        symbol: "USDa",
+      };
+      const usdaYield = yieldApiYieldFixture({
+        id: "ethereum-usda-vault",
+        token: usdaToken,
+      });
+      const usdaLowerYield = yieldApiYieldFixture({
+        id: "ethereum-usda-lower-vault",
+        token: usdaLowerToken,
+      });
+      const { registry } = makeRegistry({
+        entry: {
+          ...classicEntry,
+          initParams: {
+            accountId: null,
+            balanceId: null,
+            network: "ethereum",
+            pendingaction: null,
+            tab: "earn",
+            token: "USDa",
+            validator: null,
+            yieldId: null,
+          },
+        },
+        listYields: () =>
+          Effect.succeed({
+            items: [usdaYield, usdaLowerYield],
+            limit: 100,
+            offset: 0,
+            total: 2,
+          }),
+        scanTokenBalances: () => Effect.succeed([]),
+        tokenOptions: [
+          { availableYields: [usdaYield.id], token: usdaYield.token },
+          { availableYields: [usdaLowerYield.id], token: usdaLowerYield.token },
+        ],
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(
+            registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+          ).toBe("USDa")
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
   });
 
   it("lists display-only yields closed to deposits without defaulting to them", async () => {

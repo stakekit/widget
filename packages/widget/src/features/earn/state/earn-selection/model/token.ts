@@ -85,6 +85,11 @@ const findTokenByKey = (
   tokenKey: EarnTokenKey
 ) => tokens.find((token) => tokenString(token.token) === tokenKey) ?? null;
 
+/**
+ * Matches `${network}-${address}` first: it is the only unique reference.
+ * A symbol needs the network and is not unique even then (Ethereum lists both
+ * `USDA` and `USDa`), so the exact symbol wins over a case-insensitive one.
+ */
 const findTokenByInitToken = ({
   network,
   token,
@@ -93,13 +98,17 @@ const findTokenByInitToken = ({
   network: string | null;
   token: string;
   tokenOptions: ReadonlyArray<EarnTokenOption>;
-}) =>
-  tokenOptions.find((option) => {
-    const tokenSymbolCompare =
-      token.toLowerCase() === option.token.symbol.toLowerCase();
-    const tokenNetworkCompare =
-      !!network && network.toLowerCase() === option.token.network.toLowerCase();
-    const hostKeyCompare = hostTokenKey(option.token) === token.toLowerCase();
+}) => {
+  const hostKey = token.toLowerCase();
+  const onNetwork = tokenOptions.filter(
+    (option) =>
+      !!network && network.toLowerCase() === option.token.network.toLowerCase()
+  );
 
-    return (tokenSymbolCompare && tokenNetworkCompare) || hostKeyCompare;
-  }) ?? null;
+  return (
+    tokenOptions.find((option) => hostTokenKey(option.token) === hostKey) ??
+    onNetwork.find((option) => option.token.symbol === token) ??
+    onNetwork.find((option) => option.token.symbol.toLowerCase() === hostKey) ??
+    null
+  );
+};
