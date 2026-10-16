@@ -44,14 +44,14 @@ type Consumer = {
 
 const consumers = [
   {
-    allowedExternalTypes: ["effect"],
+    allowedExternalTypes: [],
     declarationEntry: "dist/types/index.bundle.d.ts",
     fixture: "bundle-consumer.ts",
     label: "standalone bundle",
     reactPeers: false,
   },
   {
-    allowedExternalTypes: ["effect", "react"],
+    allowedExternalTypes: ["react"],
     declarationEntry: "dist/types/index.package.d.ts",
     fixture: "package-consumer.ts",
     label: "React package",
