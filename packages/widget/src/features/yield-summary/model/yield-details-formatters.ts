@@ -14,6 +14,7 @@ import {
   formatNumber,
   formatPercent,
   formatRoundedPercent,
+  formatTokenAmount,
   formatUsd,
 } from "../../../shared/lib/number-format";
 
@@ -83,9 +84,7 @@ export const formatMinStake = (
 
   return {
     kpiPrimaryEligible: true,
-    value: `${formatNumber(amount, locale, amount.isInteger() ? 0 : 6)} ${
-      yieldDto.token.symbol
-    }`,
+    value: `${formatTokenAmount(amount, locale, "up")} ${yieldDto.token.symbol}`,
   };
 };
 

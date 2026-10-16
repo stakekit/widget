@@ -12,8 +12,8 @@ import {
 } from "../../../../shared/lib/formatters";
 import {
   formatHealthFactor,
-  formatNumber,
   formatPercent,
+  formatTokenAmount,
   formatUsd,
 } from "../../../../shared/lib/number-format";
 import type {
@@ -263,7 +263,7 @@ export const getBorrowPositionDetailsModel = ({
         ? t("dashboard.borrow.position_details.collateral")
         : t("dashboard.borrow.position_details.supplied"),
       subValue: formatUsd(balance.balanceUsd, locale),
-      value: `${formatNumber(balance.balance, locale, 6)} ${balance.tokenSymbol}`,
+      value: `${formatTokenAmount(balance.balance, locale, "down")} ${balance.tokenSymbol}`,
     })),
     ...(debtBalance
       ? [
@@ -271,7 +271,7 @@ export const getBorrowPositionDetailsModel = ({
             id: `debt-${debtBalance.tokenAddress}`,
             label: t("dashboard.borrow.position_details.borrowed"),
             subValue: formatUsd(debtBalance.balanceUsd, locale),
-            value: `${formatNumber(debtBalance.balance, locale, 6)} ${debtBalance.tokenSymbol}`,
+            value: `${formatTokenAmount(debtBalance.balance, locale, "up")} ${debtBalance.tokenSymbol}`,
           },
         ]
       : []),
@@ -324,7 +324,7 @@ export const getBorrowPositionDetailsModel = ({
     );
 
     return {
-      balance: `${formatNumber(balance.balance, locale, 6)} ${balance.tokenSymbol}`,
+      balance: `${formatTokenAmount(balance.balance, locale, "down")} ${balance.tokenSymbol}`,
       balanceUsd: formatUsd(balance.balanceUsd, locale),
       collateralToggleAction:
         collateralToggleAction && collateralToken

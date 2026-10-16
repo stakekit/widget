@@ -20,8 +20,8 @@ import {
 import {
   formatHealthFactor,
   formatLtv,
-  formatNumber,
   formatPercent,
+  formatTokenAmount,
   formatUsd,
 } from "../../../../shared/lib/number-format";
 import type { DetailRowTone } from "../../../../shared/ui/components/details-section";
@@ -176,7 +176,7 @@ export const getBorrowDetailsModel = ({
     }
     return borrowAmount.isZero()
       ? "-"
-      : `${formatNumber(borrowAmount, locale, 6)} ${market.loanToken.symbol}`;
+      : `${formatTokenAmount(borrowAmount, locale, "up")} ${market.loanToken.symbol}`;
   };
   const loanValue = getLoanValue();
 
@@ -250,7 +250,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "available-liquidity",
       label: t("dashboard.borrow.details.available_liquidity"),
-      value: `${formatNumber(market.availableLiquidity, locale, 4)} ${
+      value: `${formatTokenAmount(market.availableLiquidity, locale, "down")} ${
         market.loanToken.symbol
       }`,
     },

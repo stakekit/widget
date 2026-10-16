@@ -17,7 +17,8 @@ export const UnstakeCompletePage = () => {
     <CompletePage
       amount={formatTokenAmount(
         exitFlow.request.arguments?.amount ?? 0,
-        locale
+        locale,
+        "down"
       )}
       integrationId={integrationData.id}
       metadata={{

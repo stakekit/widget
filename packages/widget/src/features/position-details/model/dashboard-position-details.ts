@@ -343,7 +343,7 @@ const getRewardsMetric = ({
       id: "rewards",
       label: t("dashboard.position_details.rewards"),
       subValue: t("dashboard.position_details.rewards_total"),
-      value: `${formatTokenAmount(rewardsSummary.rewards.total, locale)} ${
+      value: `${formatTokenAmount(rewardsSummary.rewards.total, locale, "down")} ${
         rewardsSummary.token.symbol
       }`,
     };
@@ -481,7 +481,7 @@ const getBreakdownRows = ({
         : formatUsdSubValue(row.amountUsd, locale),
       value: row.isEncrypted
         ? t("shared.confidential.hidden")
-        : `${formatTokenAmount(row.amount, locale)} ${row.token.symbol}`,
+        : `${formatTokenAmount(row.amount, locale, "down")} ${row.token.symbol}`,
     })
   );
 
@@ -660,7 +660,8 @@ const formatTokenSums = (
   locale: string
 ) => {
   const lines = sums.map(
-    (sum) => `${formatTokenAmount(sum.amount, locale)} ${sum.token.symbol}`
+    (sum) =>
+      `${formatTokenAmount(sum.amount, locale, "down")} ${sum.token.symbol}`
   );
 
   return lines.length === 1 ? (lines[0] ?? "") : lines;

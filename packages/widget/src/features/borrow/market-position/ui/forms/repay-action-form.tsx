@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import {
   DetailRow,
   DetailRowList,
@@ -45,7 +45,7 @@ export const RepayActionForm = ({
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.outstanding_debt", {
-          amount: formatNumber(debtBalance.balance, locale, 6),
+          amount: formatTokenAmount(debtBalance.balance, locale, "up"),
           symbol: debtBalance.tokenSymbol,
         })}
         disabled={view.repayAll}
@@ -89,10 +89,10 @@ export const RepayActionForm = ({
           <DetailRow
             id="loan"
             label={t("dashboard.borrow.form.loan")}
-            value={`${formatNumber(debtBalance.balance, locale, 6)} -> ${formatNumber(
+            value={`${formatTokenAmount(debtBalance.balance, locale, "up")} -> ${formatTokenAmount(
               view.remainingDebt,
               locale,
-              6
+              "up"
             )} ${debtBalance.tokenSymbol}`}
           />
         </DetailRowList>

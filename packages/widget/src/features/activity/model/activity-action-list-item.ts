@@ -305,7 +305,9 @@ const projectBorrowActivityListItem = ({
   const direction = BORROW_ACTIVITY_DIRECTION[borrowAction.action];
   const tokenSymbol = getReadableRawTokenSymbol(action.token?.symbol);
   const exactAmount = resolveBorrowActivityAmount(action);
-  const amount = exactAmount ? formatTokenAmount(exactAmount, locale) : null;
+  const amount = exactAmount
+    ? formatTokenAmount(exactAmount, locale, "down")
+    : null;
 
   return {
     amount,
@@ -344,7 +346,7 @@ export const projectActivityActionListItem = ({
   const amount =
     action.actionData.amount == null
       ? null
-      : formatTokenAmount(action.actionData.amount, locale);
+      : formatTokenAmount(action.actionData.amount, locale, "down");
 
   return {
     amount,

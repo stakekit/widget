@@ -237,10 +237,7 @@ const PositionDetails = () => {
                       variant={{ type: "muted", weight: "normal" }}
                       key={tokenKey}
                     >
-                      {`1 ${conversion.symbol} = ${formatTokenAmount(
-                        conversion.rate,
-                        locale
-                      )} ${conversion.shareSymbol}`}
+                      {`1 ${conversion.symbol} = ${formatTokenAmount(conversion.rate, locale, "nearest")} ${conversion.shareSymbol}`}
                     </Text>
                   )
                 )}

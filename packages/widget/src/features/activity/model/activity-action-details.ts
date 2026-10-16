@@ -10,7 +10,7 @@ import {
   formatFigureChange,
   formatHealthFactor,
   formatLtv,
-  formatNumber,
+  formatTokenAmount,
 } from "../../../shared/lib/number-format";
 import type {
   ActivityActionItem,
@@ -176,7 +176,7 @@ const projectYieldActivityDetails = ({
   );
   const statusLabel = projectActivityStatusLabel(action, presentationTime);
   const amount = action.amount
-    ? `${listItem.amountSign}${formatNumber(action.amount, locale)}`
+    ? `${listItem.amountSign}${formatTokenAmount(action.amount, locale, "down")}`
     : null;
   const transactions = action.transactions
     .toSorted(compareTransactionSteps)
@@ -227,7 +227,7 @@ const formatBorrowFee = (
   locale: string
 ) => {
   if (!amount || amount.isZero()) return null;
-  const formatted = formatNumber(amount, locale);
+  const formatted = formatTokenAmount(amount, locale, "up");
   return token ? `${formatted} ${token.symbol}` : formatted;
 };
 
@@ -277,7 +277,7 @@ const projectBorrowActivityDetails = ({
 
   return {
     amount: exactAmount
-      ? `${listItem.amountSign}${formatNumber(exactAmount, locale)}`
+      ? `${listItem.amountSign}${formatTokenAmount(exactAmount, locale, "down")}`
       : null,
     borrow: {
       collateralFee: formatBorrowFee(

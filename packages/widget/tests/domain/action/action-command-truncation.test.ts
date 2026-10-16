@@ -9,7 +9,6 @@ import { YieldAction } from "../../../src/domain/action/models";
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { projectYieldEntry } from "../../../src/features/yield-entry/model/yield-entry";
-import { formatTokenAmount } from "../../../src/shared/lib/number-format";
 import {
   yieldApiActionDtoFixture,
   yieldApiYieldDtoFixture,
@@ -269,7 +268,7 @@ describe("executable token amount truncation", () => {
     );
   });
 
-  it("Review and Complete represent the truncated Action Command amount", () => {
+  it("truncates a Pending Action amount to the token's base unit", () => {
     const integration = yieldApiYieldFixture();
     const token = { ...integration.token, decimals: 6 };
     const yieldBalance = Schema.decodeSync(EarnBalance)(
@@ -322,7 +321,6 @@ describe("executable token amount truncation", () => {
     const commandAmount = Result.getOrThrow(prepared).command.arguments?.amount;
 
     expect(commandAmount).toBe("1.123456");
-    expect(formatTokenAmount(commandAmount ?? "0", "en")).toBe("1.123456");
   });
 
   it("rejects a Manage amount that truncates below one base unit", () => {

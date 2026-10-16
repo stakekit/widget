@@ -82,16 +82,18 @@ export const AmountBlock = ({
   const min =
     unstakeProps?.unstakeMinAmount == null
       ? null
-      : `${t("shared.min")} ${formatNumber(
+      : `${t("shared.min")} ${formatTokenAmount(
           unstakeProps.unstakeMinAmount,
-          locale
+          locale,
+          "up"
         )} ${unstakeProps.unstakeToken.symbol}`;
   const max =
     unstakeProps?.unstakeMaxAmount == null
       ? null
-      : `${t("shared.max")} ${formatNumber(
+      : `${t("shared.max")} ${formatTokenAmount(
           unstakeProps.unstakeMaxAmount,
-          locale
+          locale,
+          "down"
         )} ${unstakeProps.unstakeToken.symbol}`;
   const hasMinMax =
     !!unstakeProps &&
@@ -145,7 +147,7 @@ export const AmountBlock = ({
               amount:
                 state === "full"
                   ? formatNumber(balance.amount, locale)
-                  : formatTokenAmount(balance.amount, locale),
+                  : formatTokenAmount(balance.amount, locale, "down"),
               symbol: balance.token?.symbol ?? "",
             })}
           </span>

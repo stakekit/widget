@@ -61,7 +61,7 @@ export const usePositionListItem = (item: PositionItem) => {
   const totalAmountUsd = amountUsd?.isGreaterThan(0) ? amountUsd : null;
 
   const totalAmountFormatted = totalAmount
-    ? formatTokenAmount(totalAmount, locale)
+    ? formatTokenAmount(totalAmount, locale, "down")
     : null;
 
   return {

@@ -249,7 +249,7 @@ export const EarnPositionListItem = ({
                       overflowWrap="anywhere"
                       variant={{ type: "muted", weight: "normal" }}
                     >
-                      {formatTokenAmount(val.amount, locale)}
+                      {formatTokenAmount(val.amount, locale, "down")}
                     </Text>
                   </Box>
                 ))}

@@ -3,7 +3,7 @@ import type { EarnYieldWithProvider } from "../../domain/earn/models";
 import { getTokenPriceInUSD } from "../../domain/finance/price";
 import { Prices } from "../../domain/health/models";
 import type { Token } from "../../domain/token/token";
-import { formatNumber, formatUsd } from "./number-format";
+import { formatTokenAmount, formatUsd } from "./number-format";
 
 export const formatCountryCode = ({
   language,
@@ -49,7 +49,7 @@ export const getGasFeeInUSD = ({
     baseToken: null,
   });
 
-  return `${formatNumber(gas, locale, 10)} ${
+  return `${formatTokenAmount(gas, locale, "up")} ${
     yieldDto.mechanics.gasFeeToken.symbol
   } ${gasFeeInUSD.isGreaterThan(0) ? ` (${formatUsd(gasFeeInUSD, locale)})` : ""}`;
 };
@@ -75,7 +75,7 @@ export const getFeesInUSD = ({
     baseToken: null,
   });
 
-  return `${formatNumber(amount, locale, 10)} ${token.symbol} ${
+  return `${formatTokenAmount(amount, locale, "up")} ${token.symbol} ${
     feeInUSD.isGreaterThan(0) ? ` (${formatUsd(feeInUSD, locale)})` : ""
   }`;
 };

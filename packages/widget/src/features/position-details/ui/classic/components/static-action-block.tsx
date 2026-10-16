@@ -55,7 +55,11 @@ export const StaticActionBlock = ({
             values={{
               amount: yieldBalance.isEncrypted
                 ? t("shared.confidential.hidden")
-                : formatTokenAmount(exactDecimal(yieldBalance.amount), locale),
+                : formatTokenAmount(
+                    exactDecimal(yieldBalance.amount),
+                    locale,
+                    "down"
+                  ),
               symbol: yieldBalance.token.symbol,
               pendingAction: t(
                 `position_details.pending_action.${

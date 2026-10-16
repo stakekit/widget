@@ -56,7 +56,11 @@ export const usePositionListItem = (item: PositionItem) => {
   const prices = pricesView._tag === "Ready" ? pricesView.value : null;
 
   const rewardsAmountFormatted = rewardsSummary
-    ? formatTokenAmount(exactDecimal(rewardsSummary.rewards.total), locale)
+    ? formatTokenAmount(
+        exactDecimal(rewardsSummary.rewards.total),
+        locale,
+        "down"
+      )
     : null;
 
   const rewardsAmountPriceFormatted =
@@ -69,7 +73,8 @@ export const usePositionListItem = (item: PositionItem) => {
             token: rewardsSummary.token,
             prices,
           }),
-          locale
+          locale,
+          "down"
         )
       : null;
 

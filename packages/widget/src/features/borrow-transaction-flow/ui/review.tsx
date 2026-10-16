@@ -2,7 +2,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
-import { formatNumber } from "../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../shared/lib/number-format";
 import {
   DetailRow,
   DetailRowList,
@@ -69,13 +69,13 @@ export const BorrowReviewPage = () => {
     exactDecimal(collateralFeeAmount).isGreaterThan(0);
   const collateralFee =
     hasCollateralFee && projectedSummary.collateral
-      ? `${formatNumber(collateralFeeAmount, locale)} ${projectedSummary.collateral.symbol}`
+      ? `${formatTokenAmount(collateralFeeAmount, locale, "up")} ${projectedSummary.collateral.symbol}`
       : null;
   const effectiveCollateral =
     hasCollateralFee &&
     projectedSummary.collateral &&
     "effectiveAmount" in projectedSummary.collateral
-      ? `${formatNumber(projectedSummary.collateral.effectiveAmount, locale)} ${projectedSummary.collateral.symbol}`
+      ? `${formatTokenAmount(projectedSummary.collateral.effectiveAmount, locale, "down")} ${projectedSummary.collateral.symbol}`
       : null;
 
   return (

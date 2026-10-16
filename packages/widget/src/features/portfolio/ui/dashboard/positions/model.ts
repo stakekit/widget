@@ -8,8 +8,8 @@ import type { Presentable } from "../../../../../shared/effect/async-result";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
-  formatNumber,
   formatPercent,
+  formatTokenAmount,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
 
@@ -39,7 +39,7 @@ export const getBorrowMarketPositionListItemModel = ({
 
   return {
     balanceText: debtBalance
-      ? `${formatNumber(debtBalance.balance, locale, 6)} ${debtBalance.tokenSymbol}`
+      ? `${formatTokenAmount(debtBalance.balance, locale, "up")} ${debtBalance.tokenSymbol}`
       : formatUsd(position.metrics.totalSuppliedUsd.toString(), locale),
     borrowApy: formatPercent(position.metrics.borrowApy, locale),
     headerToken,

@@ -66,11 +66,11 @@ const PositionDetailsStakeTokenSection = ({
   const min =
     stake.stakeMinAmount === null
       ? null
-      : `${t("shared.min")} ${formatNumber(stake.stakeMinAmount, locale)} ${stake.symbol}`;
+      : `${t("shared.min")} ${formatTokenAmount(stake.stakeMinAmount, locale, "up")} ${stake.symbol}`;
   const max =
     stake.stakeMaxAmount === null
       ? null
-      : `${t("shared.max")} ${formatNumber(stake.stakeMaxAmount, locale)} ${stake.symbol}`;
+      : `${t("shared.max")} ${formatTokenAmount(stake.stakeMaxAmount, locale, "down")} ${stake.symbol}`;
   const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
 
   if (isLoading) {
@@ -101,7 +101,7 @@ const PositionDetailsStakeTokenSection = ({
                 <span>
                   {state === "full"
                     ? formatNumber(available.amount, locale)
-                    : formatTokenAmount(available.amount, locale)}
+                    : formatTokenAmount(available.amount, locale, "down")}
                   &nbsp;{available.symbol}&nbsp;
                   {t("shared.available")}
                 </span>

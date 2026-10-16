@@ -99,7 +99,7 @@ export const PositionBalances = ({
               t("shared.confidential.hidden")
             ) : (
               <>
-                {formatTokenAmount(yieldBalance.amount, locale)}{" "}
+                {formatTokenAmount(yieldBalance.amount, locale, "down")}{" "}
                 {yieldBalance.token.symbol}
                 {!yieldBalance.token.isPoints &&
                   ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
