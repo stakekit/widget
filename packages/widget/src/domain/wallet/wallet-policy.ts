@@ -1,8 +1,17 @@
+/**
+ * Wallet list rules, by wallet ID: the `id` passed to `mapWalletFn`, or the
+ * EIP-6963 reverse-DNS ID for injected wallets.
+ */
 export type WalletPolicy = {
+  /** Shows only these wallet IDs. An empty list hides every wallet. */
   readonly allow?: ReadonlyArray<string>;
+  /** Hides these wallet IDs, even when allowed. */
   readonly deny?: ReadonlyArray<string>;
+  /** Lists these wallet IDs first within their group. */
   readonly order?: ReadonlyArray<string>;
+  /** Moves wallets into named groups: wallet ID to group name. */
   readonly groups?: Readonly<Record<string, string>>;
+  /** Lists these group names first. */
   readonly groupOrder?: ReadonlyArray<string>;
 };
 
