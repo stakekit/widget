@@ -454,7 +454,10 @@ export type SKExternalProviders = {
   currentChain?: SupportedSKChainIds;
   /** Connected account address. Pass `""` while disconnected; do not remove the provider. */
   currentAddress: string;
-  /** Token to preselect when the page URL has no `token` parameter; same format. Read at mount. */
+  /**
+   * Token to preselect when the page URL has no `token` parameter, as
+   * `${network}-${address}` (`${network}-` for a native token). Read at mount.
+   */
   initToken?: `${string}-${string}`;
   /** Chains the host wallet supports. Omit to allow every configured chain; `[]` is invalid. */
   supportedChainIds?: SupportedSKChainIds[];
@@ -573,8 +576,8 @@ export type SKTrackingConfig = {
 };
 
 /**
- * Preferred yield per token, keyed by network and then by token key
- * (`${network}-${symbol}-${address}`, `<no-address>` for native tokens).
+ * Preferred yield per token, keyed by network and then by
+ * `${network}-${address}` (`${network}-` for a native token; case-insensitive).
  * The value is a yield ID, or `"*"` for the widget's default choice.
  */
 export type SKPreferredTokenYieldsPerNetwork = Readonly<

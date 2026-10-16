@@ -50,6 +50,16 @@ export const tokenString = (token: TokenLike): TokenString => {
 export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b);
 
+/**
+ * Token key hosts write in `token`, `initToken` and
+ * `preferredTokenYieldsPerNetwork`: `${network}-${address}`, lowercase, with an
+ * empty address for native tokens. Compare it against lowercased host input.
+ */
+export const hostTokenKey = (
+  token: Omit<TokenLike, "symbol">
+): `${string}-${string}` =>
+  `${token.network.toLowerCase()}-${(token.address ?? "").toLowerCase()}`;
+
 /** Yield API sentinel for a network's native token in `inputToken`/`outputToken`. */
 export const NATIVE_TOKEN_ADDRESS = "0x";
 

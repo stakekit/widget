@@ -5,7 +5,7 @@ import {
   isYieldVisible,
 } from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
-import { tokenString } from "../../../../../domain/token/token";
+import { hostTokenKey } from "../../../../../domain/token/token";
 import { isWalletNetwork } from "../../../../../domain/wallet/network";
 import type { EarnEntry, EarnTokenOption } from "../types";
 
@@ -119,7 +119,7 @@ const getPreferredYieldId = ({
   preferredTokenYieldsPerNetwork: EarnEntry["preferredTokenYieldsPerNetwork"];
   selectedToken: EarnTokenOption;
 }) => {
-  const tokenKey = tokenString(selectedToken.token);
+  const tokenKey = hostTokenKey(selectedToken.token);
   const network = selectedToken.token.network;
 
   if (!isWalletNetwork(network)) return null;

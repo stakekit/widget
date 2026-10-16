@@ -1,7 +1,7 @@
 import { Option, Schema } from "effect";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
 import { YieldId } from "../../../../../domain/identity/identifiers";
-import { tokenString } from "../../../../../domain/token/token";
+import { hostTokenKey, tokenString } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({
@@ -61,7 +61,7 @@ export const resolveToken = ({
     : Object.values(entry.preferredTokenYieldsPerNetwork ?? {})[0];
   if (preferredTokens) {
     const selected = tokenOptions.find(
-      (option) => !!preferredTokens[tokenString(option.token)]
+      (option) => !!preferredTokens[hostTokenKey(option.token)]
     );
     if (selected) {
       return selected;
@@ -99,7 +99,7 @@ const findTokenByInitToken = ({
       token.toLowerCase() === option.token.symbol.toLowerCase();
     const tokenNetworkCompare =
       !!network && network.toLowerCase() === option.token.network.toLowerCase();
-    const tokenStringCompare = tokenString(option.token) === token;
+    const hostKeyCompare = hostTokenKey(option.token) === token.toLowerCase();
 
-    return (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare;
+    return (tokenSymbolCompare && tokenNetworkCompare) || hostKeyCompare;
   }) ?? null;

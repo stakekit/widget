@@ -303,6 +303,105 @@ describe("Earn Selection", () => {
     }
   });
 
+  describe("host token keys use network and address", () => {
+    const usdcVault = yieldApiYieldFixture({
+      id: "ethereum-usdc-vault",
+      token: secondYield.token,
+    });
+    const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+    const balances = () =>
+      Effect.succeed(
+        Schema.decodeSync(TokenBalancesResponse)([
+          {
+            amount: "2",
+            availableYields: [firstYield.id],
+            token: firstYield.token,
+          },
+          {
+            amount: "1",
+            availableYields: [secondYield.id, usdcVault.id],
+            token: secondYield.token,
+          },
+        ])
+      );
+    const listYields = () =>
+      Effect.succeed({
+        items: [firstYield, secondYield, usdcVault],
+        limit: 100,
+        offset: 0,
+        total: 3,
+      });
+    const tokenOptions = [
+      { availableYields: [firstYield.id], token: firstYield.token },
+      {
+        availableYields: [secondYield.id, usdcVault.id],
+        token: secondYield.token,
+      },
+    ];
+
+    it("preselects the token and yield a host prefers", async () => {
+      const { registry } = makeRegistry({
+        entry: {
+          ...classicEntry,
+          // Widget Configuration lowercases host keys.
+          preferredTokenYieldsPerNetwork: {
+            ethereum: {
+              [`ethereum-${usdcAddress.toLowerCase()}`]: usdcVault.id,
+            },
+          },
+        },
+        listYields,
+        scanTokenBalances: balances,
+        tokenOptions,
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).selection).toMatchObject({
+            token: { token: { symbol: "USDC" } },
+            yield: { id: usdcVault.id },
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("preselects the initial token, whatever the address case", async () => {
+      const { registry } = makeRegistry({
+        entry: {
+          ...classicEntry,
+          initParams: {
+            accountId: null,
+            balanceId: null,
+            network: "ethereum",
+            pendingaction: null,
+            tab: "earn",
+            token: `ethereum-${usdcAddress}`,
+            validator: null,
+            yieldId: null,
+          },
+        },
+        listYields,
+        scanTokenBalances: balances,
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(
+            registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+          ).toBe("USDC")
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+  });
+
   it("lists display-only yields closed to deposits without defaulting to them", async () => {
     const displayOnlyYield = yieldApiYieldFixture({
       id: "ethereum-usdc-midas-mglobal-vault",
