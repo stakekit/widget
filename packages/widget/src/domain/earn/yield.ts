@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import { exactDecimal } from "../finance/exact";
 import type { ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
-import { equalTokens, tokenString } from "../token/token";
+import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
 import {
   DashboardYieldCategory,
   type DashboardYieldCategory as DashboardYieldCategoryType,
@@ -70,9 +70,9 @@ type YieldTypeLabelsMap = {
   };
 };
 
-/** Preferred yield ID per lowercase `network-address` token key, per network. */
+/** Preferred yield ID per host token key, per network. */
 export type PreferredTokenYieldsPerNetwork = Readonly<
-  Record<string, Readonly<Record<`${string}-${string}`, string>>>
+  Record<string, Readonly<Record<HostTokenKey, string>>>
 >;
 
 export type ValidatorsConfig = ReadonlyMap<

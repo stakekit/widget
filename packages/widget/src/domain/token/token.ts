@@ -1,4 +1,4 @@
-import { Schema, Struct } from "effect";
+import { type Brand, Schema, SchemaTransformation, Struct } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { addressIdentity, TokenAddress } from "../identity/identifiers";
@@ -33,7 +33,8 @@ export const LegacyToken = LegacyApi.TokenDto.mapFields(
   ])
 ).pipe(Schema.decodeTo(Token));
 
-export type TokenString = `${Token["network"]}-${string}-${string}`;
+/** Internal token identity: `${network}-${symbol}-${address}`. Never host input. */
+export type TokenString = Brand.Branded<string, "TokenString">;
 
 type TokenLike = Pick<Token, "symbol"> & {
   network: string;
@@ -51,14 +52,22 @@ export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b);
 
 /**
- * Token key hosts write in `token`, `initToken` and
- * `preferredTokenYieldsPerNetwork`: `${network}-${address}`, lowercase, with an
- * empty address for native tokens. Compare it against lowercased host input.
+ * Token reference hosts write in `token`, `initToken` and
+ * `preferredTokenYieldsPerNetwork`: `${network}-${address}`, with an empty
+ * address for native tokens. Case-insensitive, so it is stored lowercase.
  */
-export const hostTokenKey = (
-  token: Omit<TokenLike, "symbol">
-): `${string}-${string}` =>
-  `${token.network.toLowerCase()}-${(token.address ?? "").toLowerCase()}`;
+export const HostTokenKey = Schema.String.pipe(
+  Schema.decodeTo(
+    Schema.String.pipe(Schema.brand("HostTokenKey")),
+    SchemaTransformation.toLowerCase()
+  )
+);
+export type HostTokenKey = typeof HostTokenKey.Type;
+
+const decodeHostTokenKey = Schema.decodeSync(HostTokenKey);
+
+export const hostTokenKey = (token: Omit<TokenLike, "symbol">) =>
+  decodeHostTokenKey(`${token.network}-${token.address ?? ""}`);
 
 /** Yield API sentinel for a network's native token in `inputToken`/`outputToken`. */
 export const NATIVE_TOKEN_ADDRESS = "0x";

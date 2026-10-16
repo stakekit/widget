@@ -31,6 +31,7 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
+import { decodeInitParams } from "../../../src/services/wallet/init-params";
 import {
   confidentialYieldFixture,
   yieldApiProviderFixture,
@@ -373,16 +374,10 @@ describe("Earn Selection", () => {
       const { registry } = makeRegistry({
         entry: {
           ...classicEntry,
-          initParams: {
-            accountId: null,
-            balanceId: null,
-            network: "ethereum",
-            pendingaction: null,
-            tab: "earn",
-            token: `ethereum-${usdcAddress}`,
-            validator: null,
-            yieldId: null,
-          },
+          initParams: decodeInitParams({
+            externalProviderInitToken: null,
+            href: `https://host.test/?tab=earn&token=ethereum-${usdcAddress}`,
+          }),
         },
         listYields,
         scanTokenBalances: balances,
@@ -426,16 +421,10 @@ describe("Earn Selection", () => {
       const { registry } = makeRegistry({
         entry: {
           ...classicEntry,
-          initParams: {
-            accountId: null,
-            balanceId: null,
-            network: "ethereum",
-            pendingaction: null,
-            tab: "earn",
-            token: "USDa",
-            validator: null,
-            yieldId: null,
-          },
+          initParams: decodeInitParams({
+            externalProviderInitToken: null,
+            href: "https://host.test/?tab=earn&token=USDa&network=ethereum",
+          }),
         },
         listYields: () =>
           Effect.succeed({

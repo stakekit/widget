@@ -4,6 +4,7 @@ import {
   WalletAddress,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
+import { tokenString } from "../../../src/domain/token/token";
 import type { EarnEntryState } from "../../../src/features/earn/state/earn-selection/state/owner";
 import { clearEarnEntryAmounts } from "../../../src/features/earn/state/earn-selection/state/owner";
 import { makeDefaultEarnIntent } from "../../../src/features/earn/state/earn-selection/types";
@@ -32,7 +33,7 @@ describe("Earn Entry amount clearing on workflow start", () => {
     const selection = {
       ...settledEntry.intent,
       selectedProviderOption: null,
-      selectedTokenKey: "ethereum-eth",
+      selectedTokenKey: tokenString({ network: "ethereum", symbol: "ETH" }),
       selectedYieldId: Schema.decodeSync(YieldId)("ethereum-eth-lido-staking"),
     };
     const touched: EarnEntryState = {

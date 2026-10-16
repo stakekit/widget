@@ -2,6 +2,7 @@ import { Option, Schema } from "effect";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { hostTokenKey, tokenString } from "../../../../../domain/token/token";
+import type { InitToken } from "../../../../../services/wallet/init-params";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({
@@ -86,9 +87,9 @@ const findTokenByKey = (
 ) => tokens.find((token) => tokenString(token.token) === tokenKey) ?? null;
 
 /**
- * Matches `${network}-${address}` first: it is the only unique reference.
- * A symbol needs the network and is not unique even then (Ethereum lists both
- * `USDA` and `USDa`), so the exact symbol wins over a case-insensitive one.
+ * A host key identifies one token. A symbol needs the network and is not
+ * unique even then (Ethereum lists both `USDA` and `USDa`), so the exact
+ * symbol wins over a case-insensitive one.
  */
 const findTokenByInitToken = ({
   network,
@@ -96,19 +97,24 @@ const findTokenByInitToken = ({
   tokenOptions,
 }: {
   network: string | null;
-  token: string;
+  token: InitToken;
   tokenOptions: ReadonlyArray<EarnTokenOption>;
 }) => {
-  const hostKey = token.toLowerCase();
+  if (token._tag === "HostKey") {
+    return (
+      tokenOptions.find((option) => hostTokenKey(option.token) === token.key) ??
+      null
+    );
+  }
+
   const onNetwork = tokenOptions.filter(
-    (option) =>
-      !!network && network.toLowerCase() === option.token.network.toLowerCase()
+    (option) => option.token.network === network
   );
+  const symbol = token.symbol.toLowerCase();
 
   return (
-    tokenOptions.find((option) => hostTokenKey(option.token) === hostKey) ??
-    onNetwork.find((option) => option.token.symbol === token) ??
-    onNetwork.find((option) => option.token.symbol.toLowerCase() === hostKey) ??
+    onNetwork.find((option) => option.token.symbol === token.symbol) ??
+    onNetwork.find((option) => option.token.symbol.toLowerCase() === symbol) ??
     null
   );
 };
