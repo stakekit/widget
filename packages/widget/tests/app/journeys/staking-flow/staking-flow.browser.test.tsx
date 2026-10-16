@@ -3,7 +3,7 @@ import { Array as EArray } from "effect";
 import { userEvent } from "vitest/browser";
 import { getYieldSummaryRewardToken } from "../../../../src/features/yield-summary/model/yield-summary";
 import { formatAddress } from "../../../../src/shared/lib/general";
-import { formatNumber } from "../../../../src/shared/lib/number-format";
+import { formatTokenAmount } from "../../../../src/shared/lib/number-format";
 import { describe, expect, it } from "../../../utils/test-extend";
 import { renderApp } from "../../../utils/test-utils";
 import { setup } from "./setup";
@@ -103,7 +103,7 @@ describe("Staking flow", () => {
         app
           .getByTestId("estimated_gas_fee")
           .getByText(
-            `${formatNumber(totalGasFee, "en", 10)} ${yieldOp.token.symbol}`,
+            `${formatTokenAmount(totalGasFee, "en", "up")} ${yieldOp.token.symbol}`,
             { exact: false }
           )
       )

@@ -9,7 +9,6 @@ import {
 } from "../../../../../shared/lib/formatters";
 import {
   formatExactPercent,
-  formatNumber,
   formatRewardRatePercent,
   formatTokenAmount,
 } from "../../../../../shared/lib/number-format";
@@ -42,7 +41,7 @@ export const useStakeReview = () => {
   const estimatedRewards = stakeReview.estimatedRewards;
   const yieldType = getYieldTypeLabels(selectedStake, t).review;
 
-  const amount = formatTokenAmount(stakeAmount, locale);
+  const amount = formatTokenAmount(stakeAmount, locale, "down");
   const interestRate = estimatedRewards
     ? formatRewardRatePercent(estimatedRewards.rewardRateAverage, locale)
     : "";
@@ -51,8 +50,8 @@ export const useStakeReview = () => {
 
   const estimatedRewardAmounts = estimatedRewards
     ? {
-        earnYearly: `${estimatedRewards.yearly ? formatNumber(estimatedRewards.yearly, locale) : "-"} ${rewardsTokenSymbol}`,
-        earnMonthly: `${estimatedRewards.monthly ? formatNumber(estimatedRewards.monthly, locale) : "-"} ${rewardsTokenSymbol}`,
+        earnYearly: `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`,
+        earnMonthly: `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`,
       }
     : null;
 

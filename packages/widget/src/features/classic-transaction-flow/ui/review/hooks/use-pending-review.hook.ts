@@ -67,7 +67,7 @@ export const usePendingActionReview = () => {
 
   const metaInfo: MetaInfoProps = { showMetaInfo: false };
 
-  const formattedAmount = formatTokenAmount(amount, locale);
+  const formattedAmount = formatTokenAmount(amount, locale, "down");
 
   return {
     integrationData,

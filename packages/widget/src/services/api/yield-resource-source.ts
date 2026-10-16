@@ -1,5 +1,5 @@
 import { Effect, Option, Schema } from "effect";
-import * as HttpClientError from "effect/http/HttpClientError";
+import type * as HttpClientError from "effect/http/HttpClientError";
 import { YieldAction } from "../../domain/action/models";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
@@ -38,10 +38,14 @@ import type {
   YieldDirectoryRequest,
 } from "./resource-sources";
 
-const isNotFoundHttpClientError = (cause: unknown): boolean =>
-  HttpClientError.isHttpClientError(cause) &&
-  cause.reason._tag === "StatusCodeError" &&
-  cause.reason.response.status === 404;
+/** A 404 means absence; any other client failure stays a failure. */
+const recoverNotFound =
+  <A>(absent: A) =>
+  (error: HttpClientError.HttpClientError) =>
+    error.reason._tag === "StatusCodeError" &&
+    error.reason.response.status === 404
+      ? Effect.succeed(absent)
+      : Effect.fail(error);
 
 const toYieldDirectoryParams = (request: YieldDirectoryRequest) => ({
   limit: request.limit,
@@ -59,7 +63,8 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
         .ActionsControllerGetAction(actionId, undefined)
         .pipe(
           Effect.asSome,
-          Effect.catchIf(isNotFoundHttpClientError, () =>
+          // The operation declares 404, so the client raises it by tag.
+          Effect.catchTag("404", () =>
             Effect.succeed(
               Option.none<YieldApi.ActionsControllerGetAction200>()
             )
@@ -230,8 +235,9 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       .ProvidersControllerGetProvider(providerId, undefined)
       .pipe(
         Effect.asSome,
-        Effect.catchIf(isNotFoundHttpClientError, () =>
-          Effect.succeed(
+        Effect.catchTag(
+          "HttpClientError",
+          recoverNotFound(
             Option.none<YieldApi.ProvidersControllerGetProvider200>()
           )
         ),

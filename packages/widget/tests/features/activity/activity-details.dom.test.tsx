@@ -93,7 +93,7 @@ const renderDetails = async () => {
 };
 
 describe("Activity details receipt", () => {
-  it("renders exact historical action data and opens a transaction link", async () => {
+  it("renders historical action data and opens a transaction link", async () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     route.current = {
       continuationReady: false,
@@ -110,9 +110,7 @@ describe("Activity details receipt", () => {
       'button[aria-label="View Stake transaction"]'
     );
 
-    expect(app.container.textContent).toContain(
-      "-1,000,000,000,000,000.123456789"
-    );
+    expect(app.container.textContent).toContain("-1,000,000,000,000,000.12");
     expect(app.container.textContent).toContain("1 failed");
     expect(app.container.textContent).not.toContain("Continue");
     expect(rows.map((row) => row.textContent)).toEqual([

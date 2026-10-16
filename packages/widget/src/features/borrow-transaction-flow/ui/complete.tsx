@@ -5,7 +5,7 @@ import {
   formatNetworkName,
 } from "../../../shared/lib/formatters";
 import { formatAddress } from "../../../shared/lib/general";
-import { formatNumber } from "../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../shared/lib/number-format";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import {
   DetailRow,
@@ -101,7 +101,7 @@ export const BorrowCompletePage = () => {
             <Heading variant={{ level: "h3" }}>
               {headline.amount === null
                 ? headline.symbol
-                : `${formatNumber(headline.amount, locale)} ${headline.symbol}`}
+                : `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`}
             </Heading>
             <Text variant={{ type: "muted", weight: "normal" }}>
               {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
@@ -114,14 +114,14 @@ export const BorrowCompletePage = () => {
                 <DetailRow
                   id="collateral-supplied"
                   label={t("dashboard.borrow.success_page.collateral_supplied")}
-                  value={`${formatNumber(collateralSupplied.amount, locale)} ${collateralSupplied.symbol}`}
+                  value={`${formatTokenAmount(collateralSupplied.amount, locale, "down")} ${collateralSupplied.symbol}`}
                 />
               ) : null}
               {collateralFee ? (
                 <DetailRow
                   id="collateral-fee"
                   label={t("dashboard.borrow.review_page.collateral_fee")}
-                  value={`${formatNumber(collateralFee.amount, locale)} ${collateralFee.symbol}`}
+                  value={`${formatTokenAmount(collateralFee.amount, locale, "up")} ${collateralFee.symbol}`}
                 />
               ) : null}
               <BorrowFlowOriginationRows origination={origination} />

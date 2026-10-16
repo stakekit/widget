@@ -1,23 +1,54 @@
-import { Data, Effect, type Scope } from "effect";
+import { Data, Effect, Option, type Scope } from "effect";
 import {
   type Action,
   isTerminalBorrowActionStatus,
 } from "../../../../domain/borrow/execution/action";
-import { BorrowOperations } from "../../../../services/api/operations";
+import {
+  type BorrowOperationFailure,
+  BorrowOperations,
+  getApiRejectionReason,
+} from "../../../../services/api/operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 
-export class BorrowActionCreationError extends Data.TaggedError(
-  "BorrowActionCreationError"
+/** The API refused to create the action and said why. */
+class BorrowActionRejected extends Data.TaggedError("BorrowActionRejected")<{
+  readonly reason: string;
+}> {}
+
+/** The action could not be created for a reason the user cannot act on. */
+class BorrowActionCreationFailed extends Data.TaggedError(
+  "BorrowActionCreationFailed"
 )<{
-  readonly cause?: unknown;
+  readonly cause?: BorrowOperationFailure;
   readonly message: string;
 }> {}
+
+export type BorrowActionCreationError =
+  | BorrowActionCreationFailed
+  | BorrowActionRejected;
+
+const toCreationError = (
+  cause: BorrowOperationFailure
+): BorrowActionCreationError =>
+  Option.match(
+    cause._tag === "ApiRequestError"
+      ? getApiRejectionReason(cause.failure)
+      : Option.none(),
+    {
+      onNone: () =>
+        new BorrowActionCreationFailed({
+          cause,
+          message: "Borrow action could not be created.",
+        }),
+      onSome: (reason) => new BorrowActionRejected({ reason }),
+    }
+  );
 
 const validateCreatedAction = (action: Action) =>
   isTerminalBorrowActionStatus(action.status)
     ? Effect.fail(
-        new BorrowActionCreationError({
+        new BorrowActionCreationFailed({
           message: `Borrow action ended with ${action.status} status.`,
         })
       )
@@ -63,13 +94,7 @@ export const makeBorrowFlowReviewFactory = Effect.fn(
     const createAction = Effect.suspend(() =>
       borrowOperations.executeAction(command)
     ).pipe(
-      Effect.mapError(
-        (cause) =>
-          new BorrowActionCreationError({
-            cause,
-            message: "Borrow action could not be created.",
-          })
-      ),
+      Effect.mapError(toCreationError),
       Effect.flatMap(validateCreatedAction)
     );
 

@@ -1,4 +1,4 @@
-import { Context, Data, Effect, type Option, Schema } from "effect";
+import { Context, Data, type Effect, type Option, Schema } from "effect";
 import type { YieldAction } from "../../domain/action/models";
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
@@ -96,16 +96,47 @@ export class MissingBorrowApiConfig extends Data.TaggedError(
   readonly message: string;
 }> {}
 
+/** How an API request failed, read once from the HTTP exchange. */
+export const ApiFailure = Schema.TaggedUnion({
+  /** The request never reached the API or got no answer. */
+  Unreachable: {},
+  /** The widget could not build the request (encoding or URL). */
+  InvalidRequest: {},
+  /** The API answered with an error status; `body` when it is presentable. */
+  ErrorStatus: { status: Schema.Int, body: Schema.NullOr(RichError) },
+  /** The API answered, but its body could not be read. */
+  UnreadableResponse: { status: Schema.Int },
+});
+export type ApiFailure = typeof ApiFailure.Type;
+
+/**
+ * The Rich Error Identity the widget owns for a request the API never
+ * answered; its Error Copy lives with the API's identities.
+ */
+const unreachableRichError: RichError = { message: "ApiUnreachableError" };
+
 export class ApiRequestError extends Schema.TaggedError<ApiRequestError>()(
   "ApiRequestError",
   {
     operation: Schema.String,
+    failure: ApiFailure,
+    /** The client's original error, kept for diagnostics only. */
     cause: Schema.Defect(),
-    richError: Schema.NullOr(RichError).pipe(
-      Schema.withConstructorDefault(Effect.succeed(null))
-    ),
   }
-) {}
+) {
+  /**
+   * What the user is told: the API's explanation when it answered with one,
+   * or the widget's no-answer copy.
+   */
+  get richError(): RichError | null {
+    return ApiFailure.match(this.failure, {
+      ErrorStatus: ({ body }) => body,
+      InvalidRequest: () => null,
+      Unreachable: () => unreachableRichError,
+      UnreadableResponse: () => null,
+    });
+  }
+}
 
 export class ResponseDecodeError extends Schema.TaggedError<ResponseDecodeError>()(
   "ResponseDecodeError",

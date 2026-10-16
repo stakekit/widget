@@ -309,6 +309,7 @@ const unprojected = ({
   readonly pricing: RiskPricing;
   readonly projection: RiskProjection;
 }): RiskAssessment => ({
+  addsDebt: changes.some((change) => change.type === "borrow"),
   capacity: "withinCapacity",
   pricing,
   projection,
@@ -396,13 +397,15 @@ const assessOracle = ({
     totalCollateralUsd: displayTotals.totalCollateralUsd,
     totalDebtUsd: displayTotals.totalDebtUsd,
   };
+  const addsDebt = debtAmount.isGreaterThan(baseline.debtAmount);
   const riskIncreasing =
-    debtAmount.isGreaterThan(baseline.debtAmount) ||
+    addsDebt ||
     collateralValue.isLessThan(
       oracleCollateralValue({ anchor, state: baseline })
     );
 
   return {
+    addsDebt,
     capacity: debtAmount.isGreaterThan(liquidationCapacity)
       ? "exceedsCapacity"
       : "withinCapacity",
@@ -512,11 +515,13 @@ export const makeRiskPosition = ({
             reason: "missingRiskAnchor",
             ...displayTotals,
           });
+    const addsDebt = changed.state.debtUsd.isGreaterThan(state.debtUsd);
     const riskIncreasing =
-      changed.state.debtUsd.isGreaterThan(state.debtUsd) ||
+      addsDebt ||
       projectedTotals.borrowCapacityUsd.isLessThan(baseline.borrowCapacityUsd);
 
     return {
+      addsDebt,
       capacity: changed.state.debtUsd.isGreaterThan(
         projectedTotals.borrowCapacityUsd
       )

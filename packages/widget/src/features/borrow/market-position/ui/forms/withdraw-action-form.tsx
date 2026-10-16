@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import {
-  formatNumber,
+  formatTokenAmount,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
 import {
@@ -76,7 +76,7 @@ const WithdrawTokenSelect = ({
                 onSelect(token);
                 setIsOpen(false);
               }}
-              rate={formatNumber(token.availableAmount, locale, 6)}
+              rate={formatTokenAmount(token.availableAmount, locale, "down")}
               rateMeta={formatUsd(
                 token.supplyBalance.balanceUsd.toString(),
                 locale
@@ -123,7 +123,11 @@ export const WithdrawActionForm = ({
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.withdrawable", {
-          amount: formatNumber(selectedToken.availableAmount, locale, 6),
+          amount: formatTokenAmount(
+            selectedToken.availableAmount,
+            locale,
+            "down"
+          ),
           symbol: selectedToken.supplyBalance.tokenSymbol,
         })}
         label={t("dashboard.borrow.position_details.actions.withdraw")}

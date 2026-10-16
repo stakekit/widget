@@ -1,8 +1,9 @@
 import type BigNumber from "bignumber.js";
 import { exactZero, sumExact } from "../../finance/exact";
 import type { Market } from "../catalog/market";
-import { decodeTokenId, type TokenId } from "../ids";
+import { decodeTokenId, type MarketId, type TokenId } from "../ids";
 import type {
+  BorrowAccountSnapshot,
   DebtBalance,
   IsolatedRiskSnapshot,
   SupplyBalance,
@@ -111,6 +112,51 @@ export const getCollateralState = ({
   }
 
   return { collateral, status: "available" };
+};
+
+/**
+ * Debt valued in USD. Like collateral, dust debt reads "0.00" from the API
+ * (interest left after a partial repayment); value it at the loan-token price
+ * so the protocol's remaining debt still bounds withdrawals.
+ */
+export const getDebtUsd = ({
+  debtBalance,
+  loanTokenPriceUsd,
+}: {
+  readonly debtBalance: DebtBalance;
+  readonly loanTokenPriceUsd: BigNumber;
+}): BigNumber =>
+  debtBalance.balanceUsd.isGreaterThan(0)
+    ? debtBalance.balanceUsd
+    : debtBalance.balance.multipliedBy(loanTokenPriceUsd);
+
+/**
+ * The account total covers the debt the API could price to the cent; dust it
+ * rounded to "0.00" is added at the loan-token price. Sub-cent dust the total
+ * already absorbed may count twice, which only errs toward more debt.
+ */
+export const getAccountDebtUsd = ({
+  loanPrices,
+  snapshot,
+}: {
+  readonly loanPrices: ReadonlyMap<MarketId, BigNumber>;
+  readonly snapshot: BorrowAccountSnapshot | null;
+}): BigNumber => {
+  if (!snapshot) return exactZero();
+
+  const dustUsd = sumExact(
+    snapshot.debtBalances
+      .filter((debtBalance) => !debtBalance.balanceUsd.isGreaterThan(0))
+      .map((debtBalance) =>
+        getDebtUsd({
+          debtBalance,
+          loanTokenPriceUsd:
+            loanPrices.get(debtBalance.marketId) ?? exactZero(),
+        })
+      )
+  );
+
+  return snapshot.totalBorrowedUsd.plus(dustUsd);
 };
 
 export const getIsolatedPositionState = (

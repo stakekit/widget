@@ -30,7 +30,8 @@ export const StakeCompletePage = () => {
     <CompletePage
       amount={formatTokenAmount(
         exactDecimal(enterFlow.request.arguments?.amount ?? 0),
-        locale
+        locale,
+        "down"
       )}
       integrationId={selectedStake.id}
       metadata={{

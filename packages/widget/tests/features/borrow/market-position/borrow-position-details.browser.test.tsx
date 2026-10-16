@@ -340,7 +340,8 @@ describe("Borrow position details", () => {
 
     await expect.element(app.getByText("Borrow details")).toBeInTheDocument();
     await expect.element(app.getByText("Health factor")).toBeInTheDocument();
-    await expect.element(app.getByText("2.125")).toBeInTheDocument();
+    // 2.125 truncates to two places, never rounding up.
+    await expect.element(app.getByText("2.12")).toBeInTheDocument();
     await expect.element(app.getByText("Loan to value")).toBeInTheDocument();
     await expect.element(app.getByText("Collateral value")).toBeInTheDocument();
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();

@@ -58,6 +58,7 @@ describe("Current Yield KYC gate", () => {
                   ? Effect.fail(
                       new ApiRequestError({
                         cause: new Error("offline"),
+                        failure: { _tag: "Unreachable" },
                         operation: "yield-api-kyc-status",
                       })
                     )
@@ -99,6 +100,7 @@ describe("Current Yield KYC gate", () => {
                 Effect.fail(
                   new ApiRequestError({
                     cause: new Error("offline"),
+                    failure: { _tag: "Unreachable" },
                     operation: "yield-api-kyc-status",
                   })
                 ),

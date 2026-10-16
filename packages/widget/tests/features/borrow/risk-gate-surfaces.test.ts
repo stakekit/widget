@@ -202,47 +202,59 @@ const verdictOf = (
 
 describe("Risk Gate across Borrow surfaces", () => {
   // Each borrow and withdrawal projects the same debt-to-collateral ratio,
-  // so the same LTV and health factor, from the same Risk Position.
+  // so the same LTV and health factor, from the same Risk Position. Max LTV
+  // binds only the borrow; the health factor binds both.
   it.each([
     {
       borrowAmount: "100",
+      borrowVerdict: { _tag: "Allow" },
       case: "LTV 0.5",
-      verdict: { _tag: "Allow" },
       withdrawAmount: "0.1",
+      withdrawVerdict: { _tag: "Allow" },
     },
     {
       borrowAmount: "433.333333",
+      borrowVerdict: { _tag: "Warn", warnings: ["RiskCapacityExceeded"] },
       case: "LTV 0.833, within the display tolerance",
-      verdict: { _tag: "Warn", warnings: ["RiskCapacityExceeded"] },
       withdrawAmount: "0.26",
+      withdrawVerdict: { _tag: "Warn", warnings: ["RiskCapacityExceeded"] },
     },
     {
       borrowAmount: "488.888888",
-      case: "LTV 0.889, past max LTV × 1.05",
-      verdict: { _tag: "Block", reason: "ltv" },
+      borrowVerdict: { _tag: "Block", reason: "ltv" },
+      case: "LTV 0.889, past max LTV × 1.05 with a tolerable health factor",
       withdrawAmount: "0.275",
+      withdrawVerdict: { _tag: "Warn", warnings: ["RiskCapacityExceeded"] },
+    },
+    {
+      borrowAmount: "550",
+      borrowVerdict: { _tag: "Block", reason: "healthFactor" },
+      case: "LTV 0.95, health factor × 1.05 below 1",
+      withdrawAmount: "0.289474",
+      withdrawVerdict: { _tag: "Block", reason: "healthFactor" },
     },
   ] as const)(
     "Entry, withdraw form, and Review agree at $case",
-    ({ borrowAmount, verdict, withdrawAmount }) => {
+    ({ borrowAmount, borrowVerdict, withdrawAmount, withdrawVerdict }) => {
       const entry = resolveEntry(borrowAmount);
       const withdraw = resolveWithdraw(withdrawAmount);
-      const blocked = verdict._tag === "Block";
-      const warned = verdict._tag === "Warn";
-      const riskBlock = verdict._tag === "Block" ? verdict.reason : null;
+      const blockOf = (verdict: RiskGateVerdict) =>
+        verdict._tag === "Block" ? verdict.reason : null;
 
-      expect(verdictOf(entry.preparation)).toEqual(verdict);
-      expect(verdictOf(withdraw.preparation)).toEqual(verdict);
+      expect(verdictOf(entry.preparation)).toEqual(borrowVerdict);
+      expect(verdictOf(withdraw.preparation)).toEqual(withdrawVerdict);
 
-      expect(entry.isActionReady).toBe(!blocked);
-      expect(withdraw.canSubmit).toBe(!blocked);
+      expect(entry.isActionReady).toBe(borrowVerdict._tag !== "Block");
+      expect(withdraw.canSubmit).toBe(withdrawVerdict._tag !== "Block");
 
       // A block names the limit it crosses; the softer warning is only for
       // overshoots that can still be submitted.
-      expect(entry.validation.riskBlock).toBe(riskBlock);
-      expect(entry.validation.riskWarning).toBe(warned);
-      expect(withdraw.riskBlock).toBe(riskBlock);
-      expect(withdraw.warning).toBe(warned ? "withdrawLtv" : null);
+      expect(entry.validation.riskBlock).toBe(blockOf(borrowVerdict));
+      expect(entry.validation.riskWarning).toBe(borrowVerdict._tag === "Warn");
+      expect(withdraw.riskBlock).toBe(blockOf(withdrawVerdict));
+      expect(withdraw.warning).toBe(
+        withdrawVerdict._tag === "Warn" ? "withdrawLtv" : null
+      );
 
       if (
         entry.preparation?._tag !== "Ready" ||
@@ -251,10 +263,10 @@ describe("Risk Gate across Borrow surfaces", () => {
         throw new Error("Expected ready preparations");
       }
       expect(getBorrowReviewRiskBlock(entry.preparation.review)).toBe(
-        riskBlock
+        blockOf(borrowVerdict)
       );
       expect(getBorrowReviewRiskBlock(withdraw.preparation.review)).toBe(
-        riskBlock
+        blockOf(withdrawVerdict)
       );
     }
   );

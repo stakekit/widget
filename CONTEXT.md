@@ -190,22 +190,33 @@ one integration and network.
 projection. It is not a warning, blocker, or substitute metric.
 
 **Borrow Constraint Warning**: A known liquidity, balance, debt-minimum, or
-capacity violation attached to a constructible Action Command for review. The
-provider or blockchain remains authoritative at execution.
+capacity violation attached to a constructible Action Command for review. It
+never blocks; the provider or blockchain remains authoritative at execution.
 
 **Risk Gate**: The single allow, warn, or block decision for a proposed Borrow
-change, made from its Risk Position projection. Only risk-increasing changes
-warn or block; oracle-anchored projections block exactly at protocol limits,
-display-priced projections within a tolerance. Risk Unavailable allows.
+change, made from its Risk Position projection. It is the only widget-side
+block, and blocks only changes the protocol rejects. Only risk-increasing
+changes warn or block; the health factor bounds every change, max LTV only
+changes that add debt. Oracle-anchored projections block past protocol limits
+by a 0.1% snapshot margin, display-priced projections by a 5% tolerance.
+Risk Unavailable allows.
+
+**Action Rejection Reason**: The API's own message when it refuses to create an
+action (a 4xx response). Review shows it in place of generic failure copy.
 
 ## Errors and portfolio
 
-**API Request Failure**: A normalized failure of one Effect API request.
+**API Request Failure**: A failure of one Effect API request, normalized once at
+the API boundary into a typed outcome: unreachable, invalid request, error
+status with its presentable body, or unreadable response. Consumers read that
+outcome, never the client's original error.
 
-**Rich Error**: A schema-validated, presentable API failure detail.
+**Rich Error**: A schema-validated, presentable failure detail: the API's body
+for an error status, or the widget's no-answer detail when the API never
+answered. Other API Request Failures are not presented.
 
-**Rich Error Identity**: A stable API error name used to find Error Copy; it is
-not user-facing text.
+**Rich Error Identity**: A stable error name used to find Error Copy; it is not
+user-facing text. The API names its own; the widget owns `ApiUnreachableError`.
 
 **Error Copy**: The user-facing title, details, and solution for one Rich Error
 Identity.

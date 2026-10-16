@@ -37,7 +37,7 @@ const presentationTime = {
 };
 
 describe("Activity action details projection", () => {
-  it("projects an exact receipt with transactions in step order", () => {
+  it("projects a receipt with transactions in step order", () => {
     const supply = yieldApiTransactionFixture({
       id: "supply",
       status: "FAILED",
@@ -65,7 +65,7 @@ describe("Activity action details projection", () => {
     });
 
     expect(view).toMatchObject({
-      amount: "-1,000,000,000,000,000.123456789",
+      amount: "-1,000,000,000,000,000.12",
       canContinue: false,
       statusLabel: "failed",
       transactions: [
@@ -82,15 +82,15 @@ describe("Activity action details projection", () => {
     });
   });
 
-  it("shows the exact amount with the Widget language separators", () => {
+  it("rounds the amount down with the Widget language separators", () => {
     const view = projectActivityActionDetails({
-      item: makeItem({ amount: "1234.000000000000000001", type: "STAKE" }),
+      item: makeItem({ amount: "1234.56789", type: "STAKE" }),
       locale: "fr",
       presentationTime,
     });
 
     // French groups digits with U+202F and uses a decimal comma.
-    expect(view.amount).toBe("+1\u202f234,000000000000000001");
+    expect(view.amount).toBe("+1\u202f234,56");
   });
 
   it("orders steps without a step index last, then by creation time", () => {

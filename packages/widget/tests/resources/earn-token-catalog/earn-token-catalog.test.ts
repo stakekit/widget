@@ -155,6 +155,7 @@ describe("Earn Token Catalog", () => {
         : Effect.fail(
             new ApiRequestError({
               cause: new Error("offline"),
+              failure: { _tag: "Unreachable" },
               operation: "legacy-token-options",
             })
           )
@@ -191,6 +192,7 @@ describe("Earn Token Catalog", () => {
         Effect.fail(
           new ApiRequestError({
             cause: new Error("offline"),
+            failure: { _tag: "Unreachable" },
             operation: "legacy-token-options",
           })
         )
@@ -274,6 +276,7 @@ describe("Earn Token Catalog", () => {
       Effect.fail(
         new ApiRequestError({
           cause: new Error("offline"),
+          failure: { _tag: "Unreachable" },
           operation: "legacy-token-options",
         })
       )

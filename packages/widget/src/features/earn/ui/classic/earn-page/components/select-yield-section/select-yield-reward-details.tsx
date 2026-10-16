@@ -8,7 +8,7 @@ import {
 import { exactDecimal } from "../../../../../../../domain/finance/exact";
 import type { Token } from "../../../../../../../domain/token/token";
 import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
-import { formatNumber } from "../../../../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../../../../shared/lib/number-format";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons/morpho-stars";
@@ -56,10 +56,10 @@ export const SelectYieldRewardDetails = () => {
     : null;
 
   const earnYearly = estimatedRewards
-    ? `${estimatedRewards.yearly ? formatNumber(estimatedRewards.yearly, locale) : "-"} ${rewardsTokenSymbol}`
+    ? `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`
     : "";
   const earnMonthly = estimatedRewards
-    ? `${estimatedRewards.monthly ? formatNumber(estimatedRewards.monthly, locale) : "-"} ${rewardsTokenSymbol}`
+    ? `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`
     : "";
   const strategyDetails = selectedStake
     ? (() => {
@@ -102,7 +102,7 @@ export const SelectYieldRewardDetails = () => {
             : stakeAmount;
 
         return {
-          outputAmount: formatNumber(outputAmount, locale, 6),
+          outputAmount: formatTokenAmount(outputAmount, locale, "nearest"),
           outputToken,
           providers: strategyProviders,
           yieldType: getYieldTypeLabels(yieldDto, t).title,

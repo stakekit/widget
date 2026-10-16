@@ -47,9 +47,11 @@ describe("Risk Gate", () => {
     readonly assessment: RiskAssessment;
     readonly verdict: RiskGateVerdict;
   }>([
-    // Oracle-anchored projections block exactly at protocol limits.
+    // Oracle-anchored projections block once clearly past protocol limits; a
+    // 0.1% margin absorbs a stale or rounded snapshot right at the limit.
     {
       assessment: {
+        addsDebt: true,
         capacity: "withinCapacity",
         pricing: "oracle",
         projection: available({
@@ -64,34 +66,67 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "oracle",
         projection: available({
           healthFactor: null,
-          ltv: "0.8601",
+          ltv: "0.8608",
           maxLtv: "0.86",
         }),
         riskIncreasing: true,
       },
-      case: "oracle just past max LTV",
+      case: "oracle past max LTV within the snapshot margin",
+      verdict: warn,
+    },
+    {
+      assessment: {
+        addsDebt: true,
+        capacity: "exceedsCapacity",
+        pricing: "oracle",
+        projection: available({
+          healthFactor: null,
+          ltv: "0.861",
+          maxLtv: "0.86",
+        }),
+        riskIncreasing: true,
+      },
+      case: "oracle past max LTV beyond the snapshot margin",
       verdict: blockLtv,
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "oracle",
         projection: available({
-          healthFactor: "0.9999",
+          healthFactor: "0.9992",
           ltv: "0.86",
           maxLtv: "0.86",
         }),
         riskIncreasing: true,
       },
-      case: "oracle health factor just below 1",
+      case: "oracle health factor below 1 within the snapshot margin",
+      verdict: warn,
+    },
+    {
+      assessment: {
+        addsDebt: true,
+        capacity: "exceedsCapacity",
+        pricing: "oracle",
+        projection: available({
+          healthFactor: "0.9989",
+          ltv: "0.86",
+          maxLtv: "0.86",
+        }),
+        riskIncreasing: true,
+      },
+      case: "oracle health factor below 1 beyond the snapshot margin",
       verdict: blockHealthFactor,
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "oracle",
         projection: available({
@@ -104,9 +139,57 @@ describe("Risk Gate", () => {
       case: "oracle within the display tolerance still blocks",
       verdict: blockHealthFactor,
     },
-    // Display-priced projections keep the 5% tolerance.
+    // Protocols check max LTV only when debt grows; collateral removals are
+    // bounded by the health factor alone.
     {
       assessment: {
+        addsDebt: false,
+        capacity: "exceedsCapacity",
+        pricing: "display",
+        projection: available({
+          healthFactor: "1.01",
+          ltv: "0.9",
+          maxLtv: "0.8",
+        }),
+        riskIncreasing: true,
+      },
+      case: "display collateral removal past max LTV with a healthy factor",
+      verdict: warn,
+    },
+    {
+      assessment: {
+        addsDebt: false,
+        capacity: "exceedsCapacity",
+        pricing: "display",
+        projection: available({
+          healthFactor: "0.99",
+          ltv: "1",
+          maxLtv: "0.8",
+        }),
+        riskIncreasing: true,
+      },
+      case: "display collateral removal at LTV 1 with health factor within tolerance",
+      verdict: warn,
+    },
+    {
+      assessment: {
+        addsDebt: false,
+        capacity: "exceedsCapacity",
+        pricing: "display",
+        projection: available({
+          healthFactor: "0",
+          ltv: "1",
+          maxLtv: "0.8",
+        }),
+        riskIncreasing: true,
+      },
+      case: "display removal of all collateral behind remaining debt",
+      verdict: blockHealthFactor,
+    },
+    // Display-priced projections keep the 5% tolerance; these add debt.
+    {
+      assessment: {
+        addsDebt: true,
         capacity: "withinCapacity",
         pricing: "display",
         projection: available({ healthFactor: "1", ltv: "0.8", maxLtv: "0.8" }),
@@ -117,6 +200,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({
@@ -131,6 +215,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({
@@ -145,6 +230,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({ healthFactor: null, ltv: "1", maxLtv: "0.99" }),
@@ -155,6 +241,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({
@@ -169,6 +256,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({
@@ -183,6 +271,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({
@@ -198,6 +287,7 @@ describe("Risk Gate", () => {
     // Risk-reducing changes never warn or block on risk.
     {
       assessment: {
+        addsDebt: false,
         capacity: "exceedsCapacity",
         pricing: "oracle",
         projection: available({
@@ -212,6 +302,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: false,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: available({
@@ -227,6 +318,7 @@ describe("Risk Gate", () => {
     // Risk Unavailable allows; the capacity warning still applies.
     {
       assessment: {
+        addsDebt: true,
         capacity: "withinCapacity",
         pricing: "display",
         projection: riskUnavailable,
@@ -237,6 +329,7 @@ describe("Risk Gate", () => {
     },
     {
       assessment: {
+        addsDebt: true,
         capacity: "exceedsCapacity",
         pricing: "display",
         projection: riskUnavailable,

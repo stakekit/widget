@@ -102,9 +102,55 @@ export const formatNumber = (
     : `<${formatExact(smallestUnit, locale)}`;
 };
 
-/** Token amounts: six decimals, truncated, with the dust marker. */
-export const formatTokenAmount = (number: NumericValue, locale: string) =>
-  formatNumber(number, locale, 6);
+/**
+ * Which way a token amount may move for display. `down` for amounts the user
+ * holds or moves (never overstate what Max fills), `up` for minimums, debt and
+ * fees (never understate what is owed), `nearest` for estimates.
+ */
+export type TokenAmountRounding = "down" | "up" | "nearest";
+
+const tokenAmountRoundingModes = {
+  down: BigNumber.ROUND_DOWN,
+  nearest: BigNumber.ROUND_HALF_UP,
+  up: BigNumber.ROUND_UP,
+} satisfies Record<TokenAmountRounding, BigNumber.RoundingMode>;
+
+const tokenAmountDustDecimals = 6;
+const tokenAmountDustFloor = exactDecimal(1).shiftedBy(
+  -tokenAmountDustDecimals
+);
+const tokenAmountSignificantDigits = 4;
+
+const roundTokenAmount = (value: BigNumber, mode: BigNumber.RoundingMode) => {
+  const magnitude = value.abs();
+
+  if (magnitude.gte(1000)) return value.decimalPlaces(2, mode);
+  if (magnitude.gte(1)) return value.decimalPlaces(4, mode);
+  return value.precision(tokenAmountSignificantDigits, mode);
+};
+
+/**
+ * Token amounts at a precision that follows their magnitude: two decimals from
+ * 1,000, four from 1, four significant digits below 1, and the dust marker
+ * below 0.000001. Display only; state keeps the exact amount.
+ */
+export const formatTokenAmount = (
+  number: NumericValue,
+  locale: string,
+  rounding: TokenAmountRounding
+) => {
+  const value = exactDecimal(number);
+
+  if (value.isZero()) return formatExact(value, locale);
+  if (value.abs().lt(tokenAmountDustFloor)) {
+    return formatNumber(value, locale, tokenAmountDustDecimals);
+  }
+
+  return formatExact(
+    roundTokenAmount(value, tokenAmountRoundingModes[rounding]),
+    locale
+  );
+};
 
 const isMissingNumericInput = (
   value: OptionalNumericValue
@@ -137,6 +183,11 @@ const intlFormatOptions = {
   compact: {
     notation: "compact",
     maximumFractionDigits: 0,
+  },
+  "compact-health-factor": {
+    notation: "compact",
+    maximumFractionDigits: 2,
+    roundingMode: "trunc",
   },
 } satisfies Record<string, Intl.NumberFormatOptions>;
 
@@ -240,8 +291,15 @@ export const formatLtv = (value: OptionalNumericValue, locale: string) => {
     : formatPercent(value, locale);
 };
 
-const minimumHealthFactor = exactDecimal("0.01");
+const healthFactorDecimals = 2;
+const minimumHealthFactor = exactDecimal(1).shiftedBy(-healthFactorDecimals);
+const compactHealthFactor = exactDecimal(1000);
 
+/**
+ * Truncated to two places, never rounded up: 0.996 must not read as a safe
+ * "1.00". From 1,000 up the digits only restate "far from liquidation" (dust
+ * debt reads in the millions), so it goes compact.
+ */
 export const formatHealthFactor = (
   value: OptionalNumericValue,
   locale: string
@@ -253,7 +311,15 @@ export const formatHealthFactor = (
     return `<${formatNumber(minimumHealthFactor, locale)}`;
   }
 
-  return formatNumber(amount, locale, 4);
+  if (amount.gte(compactHealthFactor)) {
+    // Compact shows at most tens of the integer part; truncate exactly first
+    // so the float conversion cannot round up across a unit boundary.
+    return getIntlFormatter("compact-health-factor", locale).format(
+      amount.decimalPlaces(0, BigNumber.ROUND_DOWN).toNumber()
+    );
+  }
+
+  return formatNumber(amount, locale, healthFactorDecimals);
 };
 
 /**

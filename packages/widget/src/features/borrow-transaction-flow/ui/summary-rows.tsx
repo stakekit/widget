@@ -1,6 +1,9 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { formatNumber, formatUsd } from "../../../shared/lib/number-format";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
 import { DetailRow } from "../../../shared/ui/components/details-section";
 import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import {
@@ -32,14 +35,14 @@ export const BorrowFlowAmountRows = ({
         <DetailRow
           id="borrow-amount"
           label={t(getBorrowTransactionFlowAmountLabelKey(action))}
-          value={`${formatNumber(projected.borrow.amount, locale)} ${projected.borrow.symbol}`}
+          value={`${formatTokenAmount(projected.borrow.amount, locale, "down")} ${projected.borrow.symbol}`}
         />
       ) : null}
       {projected.collateral ? (
         <DetailRow
           id="collateral-amount"
           label={t("dashboard.borrow.review_page.collateral_amount")}
-          value={`${formatNumber(projected.collateral.amount, locale)} ${projected.collateral.symbol}`}
+          value={`${formatTokenAmount(projected.collateral.amount, locale, "down")} ${projected.collateral.symbol}`}
         />
       ) : null}
     </>
@@ -64,7 +67,7 @@ export const BorrowFlowOriginationRows = ({
   const feeUsd = origination.feeUsd
     ? formatUsd(origination.feeUsd, locale)
     : "-";
-  const fee = `${formatNumber(origination.feeAmount, locale)} ${origination.symbol}`;
+  const fee = `${formatTokenAmount(origination.feeAmount, locale, "up")} ${origination.symbol}`;
 
   return (
     <>
@@ -76,7 +79,7 @@ export const BorrowFlowOriginationRows = ({
       <DetailRow
         id="debt-principal"
         label={t("dashboard.borrow.review_page.debt_principal")}
-        value={`${formatNumber(origination.principalAmount, locale)} ${origination.symbol}`}
+        value={`${formatTokenAmount(origination.principalAmount, locale, "up")} ${origination.symbol}`}
       />
     </>
   );

@@ -40,7 +40,7 @@ export const useUnstakeActionReview = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  const formattedAmount = formatTokenAmount(amount, locale);
+  const formattedAmount = formatTokenAmount(amount, locale, "down");
 
   const title = isUnstakeYieldType(getExtendedYieldType(integrationData))
     ? (t("position_details.unstake") as string)

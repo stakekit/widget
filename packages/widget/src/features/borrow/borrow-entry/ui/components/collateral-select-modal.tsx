@@ -130,7 +130,7 @@ export const CollateralSelectModal = ({
                 }}
                 rate={
                   walletAmount?.gt(0)
-                    ? formatTokenAmount(walletAmount, locale)
+                    ? formatTokenAmount(walletAmount, locale, "down")
                     : undefined
                 }
                 rateMeta={

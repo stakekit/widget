@@ -955,6 +955,7 @@ describe("ClassicTransactionFlowService", () => {
                   ? Effect.fail(
                       new ApiRequestError({
                         cause: new Error("temporarily unavailable"),
+                        failure: { _tag: "Unreachable" },
                         operation: "previewAction",
                       })
                     )
@@ -1159,6 +1160,7 @@ describe("ClassicTransactionFlowService", () => {
                 ? Effect.fail(
                     new ApiRequestError({
                       cause: new Error("temporarily unavailable"),
+                      failure: { _tag: "Unreachable" },
                       operation: "previewAction",
                     })
                   )
@@ -1425,6 +1427,7 @@ describe("ClassicTransactionFlowService", () => {
                   ? Effect.fail(
                       new ApiRequestError({
                         cause: new Error("temporarily unavailable"),
+                        failure: { _tag: "Unreachable" },
                         operation: "previewAction",
                       })
                     )

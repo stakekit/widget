@@ -25,7 +25,7 @@ export const BorrowBalanceLabel = ({
             amount:
               state === "full"
                 ? formatNumber(amount, locale)
-                : formatTokenAmount(amount, locale),
+                : formatTokenAmount(amount, locale, "down"),
             symbol,
           })
         }

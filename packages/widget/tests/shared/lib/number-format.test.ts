@@ -68,11 +68,58 @@ describe("formatNumber", () => {
 });
 
 describe("formatTokenAmount", () => {
-  it("truncates to six decimals and marks dust in each language", () => {
-    expect(formatTokenAmount("0.000000000000000001", "en")).toBe("<0.000001");
-    expect(formatTokenAmount("0.000000000000000001", "fr")).toBe("<0,000001");
-    expect(formatTokenAmount("12.3456789", "en")).toBe("12.345678");
-    expect(formatTokenAmount("12.3456789", "fr")).toBe("12,345678");
+  it.each([
+    ["two decimals from 1,000", "167408.872592", "167,408.87"],
+    ["four decimals from 1", "43.684851", "43.6848"],
+    ["four significant digits below 1", "0.0123456789", "0.01234"],
+    [
+      "four significant digits near the dust floor",
+      "0.0000012345",
+      "0.000001234",
+    ],
+    ["an integer", "100", "100"],
+    ["zero", "0", "0"],
+    ["1 wei of an 18-decimal token", "0.000000000000000001", "<0.000001"],
+    ["a negative amount toward zero", "-1234.5678", "-1,234.56"],
+    ["negative dust", "-0.000000518744", ">-0.000001"],
+  ])("rounds %s down", (_label, value, expected) => {
+    expect(formatTokenAmount(value, "en", "down")).toBe(expected);
+  });
+
+  it.each([
+    ["a minimum from 1,000", "167408.872592", "167,408.88"],
+    ["a fee from 1", "43.684851", "43.6849"],
+    ["a fee below 1", "0.0123456789", "0.01235"],
+    ["across the 1,000 boundary", "999.99999", "1,000"],
+    ["across the 1 boundary", "0.99999", "1"],
+    ["an exact amount", "12.5", "12.5"],
+    ["dust", "0.0000005", "<0.000001"],
+  ])("rounds %s up", (_label, value, expected) => {
+    expect(formatTokenAmount(value, "en", "up")).toBe(expected);
+  });
+
+  it.each([
+    ["an estimate from 1,000", "148148.148147", "148,148.15"],
+    ["an estimate below the half", "12438.47423", "12,438.47"],
+    ["an estimate from 1", "1.23455", "1.2346"],
+    ["an estimate below 1", "0.123449", "0.1234"],
+  ])("rounds %s to nearest", (_label, value, expected) => {
+    expect(formatTokenAmount(value, "en", "nearest")).toBe(expected);
+  });
+
+  it("uses the language separators", () => {
+    expect(formatTokenAmount("167408.872592", "fr", "down")).toBe(
+      `167${nnbsp}408,87`
+    );
+    expect(formatTokenAmount("0.000000000000000001", "fr", "down")).toBe(
+      "<0,000001"
+    );
+  });
+
+  it("formats values that cannot pass through JavaScript number", () => {
+    expect(formatTokenAmount("9007199254740993.123456789", "en", "down")).toBe(
+      "9,007,199,254,740,993.12"
+    );
   });
 });
 
@@ -198,12 +245,16 @@ describe("formatHealthFactor", () => {
     ["en", 0.0001, "<0.01"],
     ["en", 0.0099, "<0.01"],
     ["en", 0.01, "0.01"],
-    ["en", 0.9876, "0.9876"],
-    ["en", 4.37089, "4.3708"],
+    ["en", 0.9996, "0.99"],
+    ["en", 4.0828, "4.08"],
+    ["en", 999.99999, "999.99"],
+    ["en", 1000, "1K"],
+    ["en", 2_228_355.9814, "2.22M"],
+    ["en", "999999.999999999999", "999.99K"],
     ["en", null, "-"],
     ["fr", 0.0001, "<0,01"],
-    ["fr", 4.37089, "4,3708"],
-    ["fr", 1234.5, `1${nnbsp}234,5`],
+    ["fr", 4.0828, "4,08"],
+    ["fr", 1234.5, `1,23${nbsp}k`],
   ] as const)(
     "formats %s health factor %s as %s",
     (locale, value, expected) => {

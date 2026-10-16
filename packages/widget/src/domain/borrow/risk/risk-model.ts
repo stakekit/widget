@@ -78,6 +78,8 @@ export type RiskPricing = "display" | "oracle";
  * the Risk Gate decides whether the change may proceed.
  */
 export type RiskAssessment = {
+  /** The change grows debt; protocols check max LTV only then. */
+  readonly addsDebt: boolean;
   readonly capacity: RiskCapacity;
   readonly pricing: RiskPricing;
   readonly projection: RiskProjection;

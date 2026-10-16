@@ -212,6 +212,7 @@ describe("Yield Directory resource", () => {
           Effect.fail(
             new ApiRequestError({
               cause: new Error("provider unavailable"),
+              failure: { _tag: "Unreachable" },
               operation: "yield-provider",
             })
           ),
@@ -264,6 +265,7 @@ describe("Yield Directory resource", () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
+      failure: { _tag: "Unreachable" },
       operation: "yield-directory",
     });
     const listYields = vi.fn((request: YieldDirectoryRequest) =>

@@ -22,35 +22,45 @@ export type RiskGateVerdict =
  */
 const DISPLAY_PRICE_TOLERANCE = 1.05;
 
+/**
+ * Oracle-anchored projections rest on a snapshot that may be a minute old and
+ * whose LTV is rounded, so they block only once past a limit by this margin.
+ */
+const ORACLE_SNAPSHOT_TOLERANCE = 1.001;
+
 const blockReason = ({
+  addsDebt,
   healthFactor,
   ltv,
   maxLtv,
   tolerance,
 }: {
+  readonly addsDebt: boolean;
   readonly healthFactor: BigNumber | null;
   readonly ltv: BigNumber;
   readonly maxLtv: BigNumber | null;
   readonly tolerance: number;
 }): RiskGateBlockReason | null => {
   if (healthFactor?.multipliedBy(tolerance).lt(1)) return "healthFactor";
-  if (maxLtv?.multipliedBy(tolerance).lt(ltv)) return "ltv";
+  if (addsDebt && maxLtv?.multipliedBy(tolerance).lt(ltv)) return "ltv";
   return null;
 };
 
 /**
  * The Risk Gate: the single allow, warn, or block decision for a proposed
- * Borrow change.
+ * Borrow change. It blocks only changes it is sure the protocol rejects.
  *
  * - Only risk-increasing changes are warned about or blocked.
- * - Oracle-anchored projections block exactly at protocol limits: LTV above
- *   max LTV (the liquidation threshold) or health factor below 1.
- * - Display-priced projections block at LTV 1, past max LTV × 1.05, or at a
- *   health factor whose × 1.05 is below 1; smaller overshoots warn.
+ * - The health factor bounds every change. Max LTV bounds only changes that
+ *   add debt: protocols check it on borrow, not on collateral removal.
+ * - Oracle-anchored projections block past the limit by 0.1%; display-priced
+ *   ones past max LTV × 1.05, at LTV 1 when adding debt, or at a health
+ *   factor whose × 1.05 is below 1. Smaller overshoots warn.
  * - Exceeding borrow capacity without blocking warns.
  * - Risk Unavailable allows; the capacity warning still applies.
  */
 export const assessRiskGate = ({
+  addsDebt,
   capacity,
   pricing,
   projection,
@@ -62,15 +72,22 @@ export const assessRiskGate = ({
     const reason =
       blockReason({
         ...projection,
-        tolerance: pricing === "oracle" ? 1 : DISPLAY_PRICE_TOLERANCE,
-      }) ?? (pricing === "display" && projection.ltv.gte(1) ? "ltv" : null);
+        addsDebt,
+        tolerance:
+          pricing === "oracle"
+            ? ORACLE_SNAPSHOT_TOLERANCE
+            : DISPLAY_PRICE_TOLERANCE,
+      }) ??
+      (pricing === "display" && addsDebt && projection.ltv.gte(1)
+        ? "ltv"
+        : null);
     if (reason) return { _tag: "Block", reason };
   }
 
   const overshoots =
     capacity === "exceedsCapacity" ||
     (projection.status === "available" &&
-      blockReason({ ...projection, tolerance: 1 }) !== null);
+      blockReason({ ...projection, addsDebt: true, tolerance: 1 }) !== null);
 
   return overshoots
     ? { _tag: "Warn", warnings: ["RiskCapacityExceeded"] }

@@ -80,11 +80,11 @@ export const SelectTokenSection = ({
   const min =
     stakeMinAmount === null
       ? null
-      : `${t("shared.min")} ${formatNumber(stakeMinAmount, locale)} ${symbol}`;
+      : `${t("shared.min")} ${formatTokenAmount(stakeMinAmount, locale, "up")} ${symbol}`;
   const max =
     stakeMaxAmount === null
       ? null
-      : `${t("shared.max")} ${formatNumber(stakeMaxAmount, locale)} ${symbol}`;
+      : `${t("shared.max")} ${formatTokenAmount(stakeMaxAmount, locale, "down")} ${symbol}`;
   const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
   const getBalanceContent = (): ReactNode => {
     if (view.hiddenTokenBalance) {
@@ -106,7 +106,8 @@ export const SelectTokenSection = ({
     if (!selectedTokenAvailableAmount) return null;
     const shortFormattedAmount = formatTokenAmount(
       selectedTokenAvailableAmount.amount,
-      locale
+      locale,
+      "down"
     );
     if (earnPresentation.zerion) {
       return (

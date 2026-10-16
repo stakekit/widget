@@ -463,6 +463,7 @@ describe("Borrow Positions resource atoms", () => {
     const error = new BorrowAtomError({
       cause: new ApiRequestError({
         cause: new Error("refresh failed"),
+        failure: { _tag: "Unreachable" },
         operation: "borrow-positions",
       }),
       operation: "borrow-positions",

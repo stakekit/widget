@@ -191,6 +191,7 @@ describe("Validator resources", () => {
         ? Effect.fail(
             new ApiRequestError({
               cause: new Error("offline"),
+              failure: { _tag: "Unreachable" },
               operation: "validator-directory",
             })
           )
@@ -295,6 +296,7 @@ describe("Validator resources", () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
+      failure: { _tag: "Unreachable" },
       operation: "validator-directory",
     });
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>

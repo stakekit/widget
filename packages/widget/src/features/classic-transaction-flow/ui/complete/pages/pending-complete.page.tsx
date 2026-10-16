@@ -18,7 +18,9 @@ export const PendingCompletePage = () => {
   return (
     <CompletePage
       amount={
-        rawAmount ? formatTokenAmount(exactDecimal(rawAmount), locale) : ""
+        rawAmount
+          ? formatTokenAmount(exactDecimal(rawAmount), locale, "down")
+          : ""
       }
       integrationId={integrationData.id}
       metadata={{

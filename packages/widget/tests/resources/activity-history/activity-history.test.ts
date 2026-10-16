@@ -300,6 +300,7 @@ describe("Activity History resource", () => {
         ? Effect.fail(
             new ApiRequestError({
               cause: new Error("offline"),
+              failure: { _tag: "Unreachable" },
               operation: "activity-history",
             })
           )
@@ -347,6 +348,7 @@ describe("Activity History resource", () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
+      failure: { _tag: "Unreachable" },
       operation: "activity-history",
     });
     const listActivity = vi.fn((request: { readonly offset: number }) =>
@@ -542,6 +544,7 @@ describe("Activity History resource", () => {
         Effect.fail(
           new ApiRequestError({
             cause: new Error("offline"),
+            failure: { _tag: "Unreachable" },
             operation: "borrow-actions",
           })
         )) satisfies ListBorrowActions,

@@ -77,7 +77,7 @@ export const SelectTokenListItem = ({
           >
             {item.fundedAmount && (
               <Text variant={{ weight: "normal" }}>
-                {formatTokenAmount(item.fundedAmount, locale)}
+                {formatTokenAmount(item.fundedAmount, locale, "down")}
               </Text>
             )}
             <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
