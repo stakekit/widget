@@ -2,8 +2,8 @@ import { Data, Effect, Schema } from "effect";
 import type {
   SKBorrowTx,
   SKTx,
+  SKWallet,
   SKZamaPermitMeta,
-  SKZamaWallet,
 } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "../config/external-provider-snapshot";
 import type { Eip712TypedData } from "./wallet-commands";
@@ -207,8 +207,9 @@ export class ExternalProvider {
 
 const hasZamaPermitSigner = (
   provider: ExternalProviderSnapshot["provider"]
-): provider is ExternalProviderSnapshot["provider"] & SKZamaWallet =>
-  typeof (provider as Partial<SKZamaWallet>).signZamaPermit === "function";
+): provider is ExternalProviderSnapshot["provider"] &
+  Required<Pick<SKWallet, "signZamaPermit">> =>
+  typeof provider.signZamaPermit === "function";
 
 const HostCancelled = Schema.Struct({ type: Schema.Literal("cancelled") });
 

@@ -9,11 +9,15 @@ import type {
 } from "../../src/public-api/react-types";
 import type {
   BundledSKWidgetProps as PublicBundledSKWidgetProps,
+  SKBorrowExternalProviders,
   SKBorrowTx,
   SKBorrowTxMeta,
+  SKBorrowWallet,
   SKEip712TypedData,
+  SKExternalProviders,
   SKTx,
   SKTxMeta,
+  SKWallet,
 } from "../../src/public-api/types";
 
 /**
@@ -88,11 +92,6 @@ type DynamicBorrowProps = {
 describe("public external-provider props", () => {
   it("preserves classic hosts and makes Borrow capability follow borrowEnabled", () => {
     expectTypeOf<ClassicExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
-    expectTypeOf<
-      ClassicExternalProviderProps & {
-        readonly externalProviders: { readonly supportsBorrow: false };
-      }
-    >().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<BorrowExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<DynamicBorrowProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<
@@ -103,6 +102,43 @@ describe("public external-provider props", () => {
         Omit<BorrowProviderCallbacks, "signTypedData">
       >
     >().not.toMatchTypeOf<PublicSKAppProps>();
+  });
+
+  it("accepts an inline provider that also signs Zama permits", () => {
+    const signZamaPermit = async () =>
+      ({ type: "success", signature: "0xsignature" }) as const;
+    const provider = {
+      sendTransaction: async () => "0xhash",
+      signMessage: async () => "0xsignature",
+      switchChain: async () => {},
+    };
+    const borrow = {
+      sendBorrowTransaction: async () =>
+        ({ type: "success", txHash: "0xhash" }) as const,
+      signTypedData: async () =>
+        ({ type: "success", signature: "0xsignature" }) as const,
+    };
+    const externalProvider = {
+      currentAddress: "0x1",
+      type: "generic",
+    } as const;
+
+    // Spread members escape excess-property checks; the Zama callback must not.
+    expectTypeOf({
+      apiKey: "key",
+      externalProviders: {
+        ...externalProvider,
+        provider: { ...provider, signZamaPermit },
+      },
+    } satisfies PublicSKAppProps).toMatchTypeOf<PublicSKAppProps>();
+    expectTypeOf({
+      apiKey: "key",
+      borrowEnabled: true,
+      externalProviders: {
+        ...externalProvider,
+        provider: { ...provider, ...borrow, signZamaPermit },
+      },
+    } satisfies PublicSKAppProps).toMatchTypeOf<PublicSKAppProps>();
   });
 });
 
@@ -115,6 +151,21 @@ describe("removed public surface", () => {
     >().toEqualTypeOf<never>();
     expectTypeOf<
       Extract<keyof PublicBundledSKWidgetProps, RemovedConfigurationKey>
+    >().toEqualTypeOf<never>();
+  });
+
+  it("does not expose settings and callbacks the Widget never reads", () => {
+    expectTypeOf<
+      Extract<keyof PublicSKAppProps, "tokensForEnabledYieldsOnly">
+    >().toEqualTypeOf<never>();
+    expectTypeOf<
+      Extract<
+        keyof SKExternalProviders | keyof SKBorrowExternalProviders,
+        "supportsBorrow"
+      >
+    >().toEqualTypeOf<never>();
+    expectTypeOf<
+      Extract<keyof SKWallet | keyof SKBorrowWallet, "getTransactionReceipt">
     >().toEqualTypeOf<never>();
   });
 
@@ -178,7 +229,6 @@ const sharedEntryExports = [
   "SKWalletPolicy",
   "SKZamaPermitMeta",
   "SKZamaPermitResult",
-  "SKZamaWallet",
   "SolanaTx",
   "SubstrateChainIds",
   "SupportedSKChainIds",

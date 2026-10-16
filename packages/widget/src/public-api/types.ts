@@ -334,8 +334,15 @@ export type SKSignMessageResult =
 export type SKWallet = {
   signMessage: (message: string) => Promise<SKSignMessageResult>;
   switchChain: (chainId: number) => Promise<void>;
-  getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<SKTransactionResult>;
+  /**
+   * Signs the EIP-712 permit that reveals Zama confidential balances. Without
+   * it, Zama deposits are blocked: balances could not be revealed to withdraw.
+   */
+  readonly signZamaPermit?: (
+    typedData: SKEip712TypedData,
+    meta: SKZamaPermitMeta
+  ) => Promise<SKZamaPermitResult>;
 };
 
 export type SKBorrowTxMeta = {
@@ -428,27 +435,16 @@ export type SKZamaPermitMeta = {
   readonly contracts: ReadonlyArray<string>;
 };
 
-/** Outcome of `SKZamaWallet.signZamaPermit`. */
+/** Outcome of `SKWallet.signZamaPermit`. */
 export type SKZamaPermitResult =
   | { readonly type: "success"; readonly signature: string }
   | { readonly type: "cancelled" }
   | { readonly type: "error"; readonly error: string };
 
-/** Without `signZamaPermit`, Zama deposits are blocked: balances could not be revealed to withdraw. */
-export type SKZamaWallet = SKWallet & {
-  /** Signs the EIP-712 permit that reveals Zama confidential balances. */
-  readonly signZamaPermit: (
-    typedData: SKEip712TypedData,
-    meta: SKZamaPermitMeta
-  ) => Promise<SKZamaPermitResult>;
-};
-
 export type SKExternalProviders = {
   currentChain?: SupportedSKChainIds;
   currentAddress: string;
   initToken?: `${string}-${string}`;
-  /** @deprecated No effect. Borrow capability follows `borrowEnabled`. */
-  readonly supportsBorrow?: false;
   supportedChainIds?: SupportedSKChainIds[];
   type: "generic";
   provider: SKWallet;
@@ -594,11 +590,6 @@ type SettingsPropsBase = {
   };
   walletPolicy?: SKWalletPolicy;
   customTranslations?: SKCustomTranslations;
-  /**
-   * @deprecated Earn now always derives project-enabled, enterable options from
-   * the canonical Earn Catalog. This setting has no effect.
-   */
-  tokensForEnabledYieldsOnly?: boolean;
   validatorsConfig?: Record<
     string,
     {
@@ -631,7 +622,10 @@ type BorrowProviderSettings =
       externalProviders?: SKExternalProviders | SKBorrowExternalProviders;
     }
   | {
-      /** Enables Borrow. Read at mount; remount the widget to change it. */
+      /**
+       * Enables Borrow. Read at mount; remount the widget to change it.
+       * `boolean`, not `true`: a runtime flag must still type-check.
+       */
       borrowEnabled?: boolean;
       externalProviders?: SKBorrowExternalProviders;
     };

@@ -206,7 +206,6 @@ const hostConfigurationValueFields = {
   preferredTokenYieldsPerNetwork: optional(PreferredTokenYieldsPerNetwork),
   theme: optional(Schema.Unknown),
   tokenIconMapping: optional(IconMapping),
-  tokensForEnabledYieldsOnly: optional(Schema.Boolean),
   tonConnectManifestUrl: optional(Schema.String),
   validatorsConfig: optional(Schema.Record(Schema.String, ValidatorPolicy)),
   variant: optional(Schema.Literals(hostVariantValues)),
