@@ -118,13 +118,61 @@ describe("Deep link param validation", () => {
 
     expect(
       decodeInitParams({
-        externalProviderInitToken: "ethereum-eth",
+        externalProviderInitToken:
+          "ethereum-0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         href: url.href,
       })
     ).toMatchObject({
       accountId: "js:live:eth:0x123",
       network: "ethereum",
-      token: "ethereum-eth",
+      token: {
+        _tag: "HostKey",
+        key: "ethereum-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      },
+    });
+  });
+
+  it("decodes a token without a network prefix as a symbol", () => {
+    expect(
+      decodeHref("https://host.test/?token=USDa&network=ethereum")
+    ).toMatchObject({
+      network: "ethereum",
+      token: { _tag: "Symbol", symbol: "USDa" },
+    });
+    // Symbols may contain hyphens; only a network prefix makes a host key.
+    expect(
+      decodeHref("https://host.test/?token=pcs-v3-weth-usdc")
+    ).toMatchObject({
+      network: null,
+      token: { _tag: "Symbol", symbol: "pcs-v3-weth-usdc" },
+    });
+  });
+
+  it("decodes a native token key with an empty address", () => {
+    expect(decodeHref("https://host.test/?token=ethereum-")).toMatchObject({
+      network: "ethereum",
+      token: { _tag: "HostKey", key: "ethereum-" },
+    });
+  });
+
+  it("recognizes a network prefix in any case and keeps hyphens in the address", () => {
+    expect(
+      decodeHref("https://host.test/?token=ETHEREUM-0xAbCd")
+    ).toMatchObject({
+      network: "ethereum",
+      token: { _tag: "HostKey", key: "ethereum-0xabcd" },
+    });
+    expect(
+      decodeHref("https://host.test/?token=near-foo-bar.near")
+    ).toMatchObject({
+      network: "near",
+      token: { _tag: "HostKey", key: "near-foo-bar.near" },
+    });
+    expect(
+      decodeHref("https://host.test/?token=avalanche-c-0xAbCd")
+    ).toMatchObject({
+      network: "avalanche-c",
+      token: { _tag: "HostKey", key: "avalanche-c-0xabcd" },
     });
   });
 

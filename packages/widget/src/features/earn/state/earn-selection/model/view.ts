@@ -10,7 +10,7 @@ import {
   type PreferredTokenYieldsPerNetwork,
 } from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
-import { tokenString } from "../../../../../domain/token/token";
+import { hostTokenKey } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
 import { resolveToken } from "./token";
@@ -61,7 +61,7 @@ const findPreferredCategory = ({
     const options = getAvailableValue(result, []);
     return options.some((option) => {
       const network = preferred?.[option.token.network];
-      return !!network?.[tokenString(option.token)];
+      return !!network?.[hostTokenKey(option.token)];
     });
   })?.category ?? null;
 

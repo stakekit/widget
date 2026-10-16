@@ -1,5 +1,6 @@
 import { Data, Predicate, Result, Schema, SchemaIssue } from "effect";
 import { DashboardYieldCategory } from "../../domain/earn/contract";
+import { HostTokenKey } from "../../domain/token/token";
 import {
   EvmChainIds,
   MiscChainIds,
@@ -130,7 +131,7 @@ const ValidatorPolicy = Schema.Struct(validatorPolicyFields);
 const IconMapping = Schema.Record(Schema.String, Schema.String);
 const PreferredTokenYieldsPerNetwork = Schema.Record(
   Schema.String,
-  Schema.Record(Schema.String, Schema.String)
+  Schema.Record(HostTokenKey, Schema.String)
 );
 
 type ExternalProviderSettings = NonNullable<SettingsProps["externalProviders"]>;
@@ -206,7 +207,6 @@ const hostConfigurationValueFields = {
   preferredTokenYieldsPerNetwork: optional(PreferredTokenYieldsPerNetwork),
   theme: optional(Schema.Unknown),
   tokenIconMapping: optional(IconMapping),
-  tokensForEnabledYieldsOnly: optional(Schema.Boolean),
   tonConnectManifestUrl: optional(Schema.String),
   validatorsConfig: optional(Schema.Record(Schema.String, ValidatorPolicy)),
   variant: optional(Schema.Literals(hostVariantValues)),

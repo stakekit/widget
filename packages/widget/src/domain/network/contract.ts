@@ -1,1 +1,1 @@
-export type { Network } from "./network.js";
+export type { Network } from "./network-name.js";

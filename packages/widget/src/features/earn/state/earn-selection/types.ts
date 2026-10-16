@@ -14,7 +14,7 @@ import type {
   YieldId,
 } from "../../../../domain/identity/identifiers";
 import type { PositionsData } from "../../../../domain/portfolio/positions";
-import type { Token } from "../../../../domain/token/token";
+import type { Token, TokenString } from "../../../../domain/token/token";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import type { PullPage } from "../../../../shared/effect/pagination";
@@ -29,7 +29,7 @@ export type EarnTokenOption = {
   readonly amount: string | null;
   readonly source: "balance" | "default";
 };
-export type EarnTokenKey = string;
+export type EarnTokenKey = TokenString;
 
 export type EarnCatalogOperation =
   | "available-yield-categories"

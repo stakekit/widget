@@ -31,6 +31,7 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
+import { decodeInitParams } from "../../../src/services/wallet/init-params";
 import {
   confidentialYieldFixture,
   yieldApiProviderFixture,
@@ -301,6 +302,156 @@ describe("Earn Selection", () => {
       unmount();
       registry.dispose();
     }
+  });
+
+  describe("host token keys use network and address", () => {
+    const usdcVault = yieldApiYieldFixture({
+      id: "ethereum-usdc-vault",
+      token: secondYield.token,
+    });
+    const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+    const balances = () =>
+      Effect.succeed(
+        Schema.decodeSync(TokenBalancesResponse)([
+          {
+            amount: "2",
+            availableYields: [firstYield.id],
+            token: firstYield.token,
+          },
+          {
+            amount: "1",
+            availableYields: [secondYield.id, usdcVault.id],
+            token: secondYield.token,
+          },
+        ])
+      );
+    const listYields = () =>
+      Effect.succeed({
+        items: [firstYield, secondYield, usdcVault],
+        limit: 100,
+        offset: 0,
+        total: 3,
+      });
+    const tokenOptions = [
+      { availableYields: [firstYield.id], token: firstYield.token },
+      {
+        availableYields: [secondYield.id, usdcVault.id],
+        token: secondYield.token,
+      },
+    ];
+
+    it("preselects the token and yield a host prefers", async () => {
+      const { registry } = makeRegistry({
+        entry: {
+          ...classicEntry,
+          // Widget Configuration lowercases host keys.
+          preferredTokenYieldsPerNetwork: {
+            ethereum: {
+              [`ethereum-${usdcAddress.toLowerCase()}`]: usdcVault.id,
+            },
+          },
+        },
+        listYields,
+        scanTokenBalances: balances,
+        tokenOptions,
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).selection).toMatchObject({
+            token: { token: { symbol: "USDC" } },
+            yield: { id: usdcVault.id },
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("preselects the initial token, whatever the address case", async () => {
+      const { registry } = makeRegistry({
+        entry: {
+          ...classicEntry,
+          initParams: decodeInitParams({
+            externalProviderInitToken: null,
+            href: `https://host.test/?tab=earn&token=ethereum-${usdcAddress}`,
+          }),
+        },
+        listYields,
+        scanTokenBalances: balances,
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(
+            registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+          ).toBe("USDC")
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("prefers the exact symbol case for a symbol and network reference", async () => {
+      // Symbols are not unique: Ethereum lists distinct `USDA` and `USDa` tokens.
+      const usdaToken = {
+        ...secondYield.token,
+        address: "0x0000206329b97db379d5e1bf586bbdb969c63274",
+        name: "USDA",
+        symbol: "USDA",
+      };
+      const usdaLowerToken = {
+        ...secondYield.token,
+        address: "0x8a60e489004ca22d775c5f2c657598278d17d9c2",
+        name: "USDa",
+        symbol: "USDa",
+      };
+      const usdaYield = yieldApiYieldFixture({
+        id: "ethereum-usda-vault",
+        token: usdaToken,
+      });
+      const usdaLowerYield = yieldApiYieldFixture({
+        id: "ethereum-usda-lower-vault",
+        token: usdaLowerToken,
+      });
+      const { registry } = makeRegistry({
+        entry: {
+          ...classicEntry,
+          initParams: decodeInitParams({
+            externalProviderInitToken: null,
+            href: "https://host.test/?tab=earn&token=USDa&network=ethereum",
+          }),
+        },
+        listYields: () =>
+          Effect.succeed({
+            items: [usdaYield, usdaLowerYield],
+            limit: 100,
+            offset: 0,
+            total: 2,
+          }),
+        scanTokenBalances: () => Effect.succeed([]),
+        tokenOptions: [
+          { availableYields: [usdaYield.id], token: usdaYield.token },
+          { availableYields: [usdaLowerYield.id], token: usdaLowerYield.token },
+        ],
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(
+            registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+          ).toBe("USDa")
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
   });
 
   it("lists display-only yields closed to deposits without defaulting to them", async () => {
