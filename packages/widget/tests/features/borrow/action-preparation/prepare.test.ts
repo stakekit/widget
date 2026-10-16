@@ -1140,3 +1140,196 @@ describe("Borrow action preparation", () => {
     });
   });
 });
+
+describe("Withdrawal against dust debt", () => {
+  // The API rounds balanceUsd to cents, so interest left after a partial
+  // repayment reads as "0.00" debt while the protocol still holds it.
+  const dustDebt = {
+    ...accountSnapshot.debtBalances[0]!,
+    balance: new BigNumber("0.000001"),
+    balanceRaw: 1n,
+    balanceUsd: new BigNumber(0),
+  };
+  const dustSnapshot = {
+    ...accountSnapshot,
+    availableToBorrowUsd: new BigNumber(800),
+    currentLtv: new BigNumber(0),
+    debtBalances: [dustDebt],
+    healthFactor: new BigNumber("850000000"),
+    totalBorrowedUsd: new BigNumber(0),
+  };
+  const morpho = Schema.decodeSync(Integration)({
+    id: "morpho-blue-borrow",
+    metadata: {
+      description: "Morpho isolated markets",
+      externalLink: "https://morpho.org",
+      logoURI: "https://assets.stakek.it/protocols/morpho.svg",
+    },
+    name: "Morpho Blue",
+    networks: ["ethereum"],
+  });
+  const isolatedMarket = {
+    ...market,
+    id: Schema.decodeSync(MarketId)("morpho-blue-borrow-ethereum-weth-usdc"),
+    integrationId: morpho.id,
+    type: "isolated" as const,
+  };
+  const isolatedSnapshot = Schema.decodeSync(BorrowAccountSnapshot)({
+    address,
+    availableToBorrowUsd: null,
+    currentLtv: "0",
+    debtBalances: [
+      {
+        apy: "0.06",
+        balance: "0.000001",
+        balanceRaw: "1",
+        balanceUsd: "0.00",
+        marketId: isolatedMarket.id,
+        pendingActions: [],
+        tokenAddress: loanTokenAddress,
+        tokenSymbol: "USDC",
+      },
+    ],
+    healthFactor: null,
+    integrationId: morpho.id,
+    netApy: "0",
+    netWorthUsd: "1000",
+    network: "ethereum",
+    supplyBalances: [
+      {
+        apy: "0",
+        balance: "0.5",
+        balanceRaw: "500000000000000000",
+        balanceUsd: "1000",
+        isCollateral: true,
+        marketId: isolatedMarket.id,
+        pendingActions: [
+          {
+            args: {
+              amountRaw: "500000000000000000",
+              marketId: isolatedMarket.id,
+              tokenAddress: collateralTokenAddress,
+            },
+            label: "Withdraw",
+            type: "withdraw",
+          },
+        ],
+        positionState: {
+          availableToBorrowUsd: "850",
+          currentLtv: "0",
+          healthFactor: "850000000",
+          liquidationThreshold: "0.85",
+        },
+        tokenAddress: collateralTokenAddress,
+        tokenSymbol: "WETH",
+      },
+    ],
+    totalBorrowedUsd: "0.00",
+    totalCollateralUsd: "1000",
+    totalSuppliedUsd: "1000",
+  });
+
+  const withdraw = (
+    accountSnapshot: typeof dustSnapshot | typeof isolatedSnapshot,
+    integration: typeof morpho,
+    markets: ReadonlyArray<typeof market>,
+    amount: string
+  ) => {
+    const position = deriveBorrowPositions({
+      integrationAccountSnapshots: [{ accountSnapshot, integration }],
+      markets,
+    }).items.find((candidate) => candidate.id === markets[0]!.id)!;
+    const supplyBalance = position.balances.supply[0]!;
+    const token = {
+      action: position.actions.supply.find(
+        (action) => action.type === "withdraw"
+      )!,
+      availableAmount: supplyBalance.balance,
+      collateralToken: position.market.collateralTokens[0]!,
+      supplyBalance,
+    };
+
+    return prepareBorrowAction({
+      _tag: "WithdrawDraft",
+      address,
+      amount: new BigNumber(amount),
+      context: { position, tokens: [token], type: "withdraw" },
+      token,
+    });
+  };
+
+  it.each([
+    ["pooled", dustSnapshot, integration, market],
+    ["isolated", isolatedSnapshot, morpho, isolatedMarket],
+  ] as const)(
+    "blocks withdrawing all %s collateral while dust debt remains",
+    (_, snapshot, snapshotIntegration, snapshotMarket) => {
+      expect(
+        withdraw(snapshot, snapshotIntegration, [snapshotMarket], "0.5")
+      ).toMatchObject({
+        _tag: "Ready",
+        review: { riskVerdict: { _tag: "Block", reason: "healthFactor" } },
+      });
+    }
+  );
+
+  it.each([
+    ["pooled", dustSnapshot, integration, market],
+    ["isolated", isolatedSnapshot, morpho, isolatedMarket],
+  ] as const)(
+    "allows a %s withdrawal that leaves collateral covering dust debt",
+    (_, snapshot, snapshotIntegration, snapshotMarket) => {
+      expect(
+        withdraw(snapshot, snapshotIntegration, [snapshotMarket], "0.4999")
+      ).toMatchObject({
+        _tag: "Ready",
+        review: { riskVerdict: { _tag: "Allow" } },
+      });
+    }
+  );
+
+  it("counts dust in one pooled market alongside reported debt in another", () => {
+    const daiMarket = {
+      ...market,
+      id: Schema.decodeSync(MarketId)("aave-v3-ethereum-dai"),
+      loanToken: {
+        ...market.loanToken,
+        address: Schema.decodeSync(TokenAddress)(
+          "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        ),
+        name: "Dai",
+        symbol: "DAI",
+      },
+    };
+    // The account total reports only the cent of USDC debt; 0.004 DAI is dust.
+    const mixedSnapshot = {
+      ...dustSnapshot,
+      debtBalances: [
+        {
+          ...dustDebt,
+          balance: new BigNumber("0.01"),
+          balanceRaw: 10_000n,
+          balanceUsd: new BigNumber("0.01"),
+        },
+        {
+          ...dustDebt,
+          balance: new BigNumber("0.004"),
+          balanceRaw: 4_000n,
+          marketId: daiMarket.id,
+          pendingActions: [],
+          tokenAddress: daiMarket.loanToken.address,
+          tokenSymbol: "DAI",
+        },
+      ],
+      totalBorrowedUsd: new BigNumber("0.01"),
+    };
+
+    // Leaves $0.013 of collateral against $0.014 of actual debt.
+    expect(
+      withdraw(mixedSnapshot, integration, [market, daiMarket], "0.4999935")
+    ).toMatchObject({
+      _tag: "Ready",
+      review: { riskVerdict: { _tag: "Block", reason: "healthFactor" } },
+    });
+  });
+});

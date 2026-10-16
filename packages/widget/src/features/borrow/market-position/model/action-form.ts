@@ -157,11 +157,11 @@ export const resolveBorrowRepayFormView = ({
   readonly intent: BorrowRepayFormIntent;
   readonly tokenBalances: ReadonlyArray<TokenBalance> | null;
 }): BorrowRepayFormView => {
-  const amount = exactDecimal(intent.amount || 0);
+  const intentAmount = exactDecimal(intent.amount || 0);
   const preparation = prepareBorrowAction({
     _tag: "RepayDraft",
     address,
-    amount,
+    amount: intentAmount,
     context,
     repayAll: intent.repayAll,
     tokenBalances,
@@ -179,7 +179,8 @@ export const resolveBorrowRepayFormView = ({
   };
 
   return {
-    amount,
+    // Full repayment ignores the typed amount; show what it actually repays.
+    amount: intent.repayAll ? projection.effectiveAmount : intentAmount,
     canSubmit: preparation._tag === "Ready",
     currentLtv: projection.risk.currentLtv,
     preparation,

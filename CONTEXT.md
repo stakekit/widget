@@ -190,13 +190,16 @@ one integration and network.
 projection. It is not a warning, blocker, or substitute metric.
 
 **Borrow Constraint Warning**: A known liquidity, balance, debt-minimum, or
-capacity violation attached to a constructible Action Command for review. The
-provider or blockchain remains authoritative at execution.
+capacity violation attached to a constructible Action Command for review. It
+never blocks; the provider or blockchain remains authoritative at execution.
 
 **Risk Gate**: The single allow, warn, or block decision for a proposed Borrow
-change, made from its Risk Position projection. Only risk-increasing changes
-warn or block; oracle-anchored projections block exactly at protocol limits,
-display-priced projections within a tolerance. Risk Unavailable allows.
+change, made from its Risk Position projection. It is the only widget-side
+block, and blocks only changes the protocol rejects. Only risk-increasing
+changes warn or block; the health factor bounds every change, max LTV only
+changes that add debt. Oracle-anchored projections block past protocol limits
+by a 0.1% snapshot margin, display-priced projections by a 5% tolerance.
+Risk Unavailable allows.
 
 ## Errors and portfolio
 

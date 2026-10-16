@@ -138,6 +138,11 @@ const intlFormatOptions = {
     notation: "compact",
     maximumFractionDigits: 0,
   },
+  "compact-health-factor": {
+    notation: "compact",
+    maximumFractionDigits: 2,
+    roundingMode: "trunc",
+  },
 } satisfies Record<string, Intl.NumberFormatOptions>;
 
 const intlFormatters = new Map<string, Intl.NumberFormat>();
@@ -240,8 +245,15 @@ export const formatLtv = (value: OptionalNumericValue, locale: string) => {
     : formatPercent(value, locale);
 };
 
-const minimumHealthFactor = exactDecimal("0.01");
+const healthFactorDecimals = 2;
+const minimumHealthFactor = exactDecimal(1).shiftedBy(-healthFactorDecimals);
+const compactHealthFactor = exactDecimal(1000);
 
+/**
+ * Truncated to two places, never rounded up: 0.996 must not read as a safe
+ * "1.00". From 1,000 up the digits only restate "far from liquidation" (dust
+ * debt reads in the millions), so it goes compact.
+ */
 export const formatHealthFactor = (
   value: OptionalNumericValue,
   locale: string
@@ -253,7 +265,15 @@ export const formatHealthFactor = (
     return `<${formatNumber(minimumHealthFactor, locale)}`;
   }
 
-  return formatNumber(amount, locale, 4);
+  if (amount.gte(compactHealthFactor)) {
+    // Compact shows at most tens of the integer part; truncate exactly first
+    // so the float conversion cannot round up across a unit boundary.
+    return getIntlFormatter("compact-health-factor", locale).format(
+      amount.decimalPlaces(0, BigNumber.ROUND_DOWN).toNumber()
+    );
+  }
+
+  return formatNumber(amount, locale, healthFactorDecimals);
 };
 
 /**

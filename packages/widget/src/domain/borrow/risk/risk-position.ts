@@ -7,7 +7,9 @@ import type {
 } from "../positions/borrow-account-snapshot";
 import {
   deriveOracleRiskAnchor,
+  getAccountDebtUsd,
   getCollateralState,
+  getDebtUsd,
   getDefinitions,
   getIsolatedPositionState,
 } from "./collateral-state";
@@ -37,7 +39,8 @@ export const makeAccountRiskPosition = ({
 }): RiskPosition => {
   const definitionsResult = getDefinitions(markets);
   const totalCollateralUsd = snapshot?.totalCollateralUsd ?? exactZero();
-  const totalDebtUsd = snapshot?.totalBorrowedUsd ?? exactZero();
+  const loanPrices = makeLoanPrices(markets);
+  const totalDebtUsd = getAccountDebtUsd({ loanPrices, snapshot });
 
   if (definitionsResult.status === "unavailable") {
     return makeRiskPosition({
@@ -47,7 +50,7 @@ export const makeAccountRiskPosition = ({
         totalDebtUsd,
       }),
       definitions: new Map(),
-      loanPrices: makeLoanPrices(markets),
+      loanPrices,
       scope: "account",
       state: { collateral: [], debtUsd: totalDebtUsd },
       valuation: displayValuation,
@@ -66,7 +69,7 @@ export const makeAccountRiskPosition = ({
         totalDebtUsd,
       }),
       definitions: definitionsResult.definitions,
-      loanPrices: makeLoanPrices(markets),
+      loanPrices,
       scope: "account",
       state: { collateral: [], debtUsd: totalDebtUsd },
       valuation: displayValuation,
@@ -93,7 +96,7 @@ export const makeAccountRiskPosition = ({
         totalDebtUsd,
       }),
       definitions: definitionsResult.definitions,
-      loanPrices: makeLoanPrices(markets),
+      loanPrices,
       scope: "account",
       state,
       valuation: displayValuation,
@@ -107,7 +110,7 @@ export const makeAccountRiskPosition = ({
   return makeRiskPosition({
     current,
     definitions: definitionsResult.definitions,
-    loanPrices: makeLoanPrices(markets),
+    loanPrices,
     scope: "account",
     state,
     valuation: displayValuation,
@@ -129,7 +132,9 @@ export const makeMarketRiskPosition = ({
       .filter((balance) => balance.isCollateral)
       .map((balance) => balance.balanceUsd)
   );
-  const totalDebtUsd = debtBalance?.balanceUsd ?? exactZero();
+  const totalDebtUsd = debtBalance
+    ? getDebtUsd({ debtBalance, loanTokenPriceUsd: market.loanTokenPriceUsd })
+    : exactZero();
   const loanPrices = makeLoanPrices([market]);
 
   if (definitionsResult.status === "unavailable") {

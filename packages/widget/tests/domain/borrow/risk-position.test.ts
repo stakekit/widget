@@ -431,6 +431,7 @@ describe("BorrowPositions", () => {
       totalDebtUsd: new BigNumber(0),
     });
     expect(risk.assess([])).toEqual({
+      addsDebt: false,
       capacity: "withinCapacity",
       pricing: "display",
       projection: risk.current,
