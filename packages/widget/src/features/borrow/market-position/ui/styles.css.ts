@@ -95,7 +95,9 @@ export const collateralRow = style([
 
 export const switchButton = style({
   alignItems: "center",
-  background: vars.color.backgroundMuted,
+  // The row is `stakeSectionBackground`, which equals `backgroundMuted` in the
+  // light theme, so derive the off track from the text colour to keep it visible.
+  background: `color-mix(in oklab, ${vars.color.text} 30%, ${vars.color.stakeSectionBackground})`,
   border: 0,
   borderRadius: vars.borderRadius.baseContract.full,
   cursor: "pointer",
@@ -119,7 +121,7 @@ export const collateralRowNote = style({
 });
 
 export const switchThumb = style({
-  background: vars.color.text,
+  background: vars.color.white,
   borderRadius: vars.borderRadius.baseContract.full,
   height: "16px",
   transform: "translateX(0)",
