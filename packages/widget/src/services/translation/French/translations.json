@@ -724,6 +724,8 @@
       "verify_withdraw_credentials": "identifiants de retrait vérifiés",
       "delegate": "délégué",
       "cancel_pending": "demande en attente annulée",
+      "cancel_pending_deposit": "dépôt annulé",
+      "cancel_pending_withdrawal": "retrait annulé",
       "undelegate": "délégation annulée",
       "create_eigenpod": "eigenpod créé",
       "start_checkpoint": "checkpoint démarré",
@@ -854,6 +856,8 @@
     "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Récompenses",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> disponibles pour {{pendingAction, lowercase}}",
+    "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Dépôt en attente",
+    "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Retrait en attente",
     "claim": "Réclamer",
     "unstake": "Déstaker",
     "withdraw": "Retirer",
@@ -963,6 +967,8 @@
       "verify_withdraw_credentials": "Vérifier identifiants de retrait",
       "delegate": "Déléguer",
       "cancel_pending": "Annuler la demande en attente",
+      "cancel_pending_deposit": "Annuler le dépôt",
+      "cancel_pending_withdrawal": "Annuler le retrait",
       "undelegate": "Annuler délégation",
       "create_eigenpod": "Créer eigenpod",
       "start_checkpoint": "Démarrer checkpoint",
@@ -994,7 +1000,9 @@
       "migrate": "Migrer",
       "verify_withdraw_credentials": "Vérifier identifiants de retrait",
       "delegate": "Déléguer",
-      "cancel_pending": "Annuler la demande en attente"
+      "cancel_pending": "Annuler la demande en attente",
+      "cancel_pending_deposit": "Annuler le dépôt",
+      "cancel_pending_withdrawal": "Annuler le retrait"
     },
     "unstake_sign": {
       "title": "Vérifier la propriété",

@@ -1,7 +1,10 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
+import {
+  getPendingActionLabelContext,
+  type YieldPendingActionType,
+} from "../../../../../domain/action/pending-action";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
@@ -31,10 +34,15 @@ export const usePendingActionReview = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
+  const labelContext = getPendingActionLabelContext(
+    manageFlow.request.action,
+    manageFlow.balanceType
+  );
   const title = t(
     `position_details.pending_action_button.${
       manageFlow.request.action.toLowerCase() as Lowercase<YieldPendingActionType>
-    }` as const
+    }` as const,
+    { context: labelContext }
   );
 
   const fee = getGasFeeInUSD({

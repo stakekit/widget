@@ -1,3 +1,4 @@
+import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
@@ -29,6 +30,10 @@ export const PendingCompletePage = () => {
         provider: integrationData.provider,
       }}
       network={token.symbol}
+      pendingActionLabelContext={getPendingActionLabelContext(
+        manageFlow.pendingActionType,
+        manageFlow.balanceType
+      )}
       pendingActionType={manageFlow.pendingActionType}
       providersDetails={manageFlow.providersDetails}
       token={token}

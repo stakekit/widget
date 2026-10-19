@@ -59,13 +59,21 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "position_details.balance_type.claimable": "Claimable",
     "position_details.balance_type.exiting": "Exiting",
     "position_details.balance_type.locked": "Locked",
+    "position_details.pending_action.cancel_pending": "Cancel pending request",
+    "position_details.pending_action.cancel_pending_deposit": "Cancel deposit",
+    "position_details.pending_action.cancel_pending_withdrawal":
+      "Cancel withdrawal",
     "position_details.pending_action.claim_rewards": "Claim rewards",
+    "position_details.pending_action.withdraw": "Withdraw",
     "position_details.personalized_apy": "Personalized APY",
     "shared.points": "Points",
     "yield_types.staking.title": "Staking",
   };
 
-  return translations[key] ?? key;
+  const contextKey =
+    typeof options?.context === "string" ? `${key}_${options.context}` : key;
+
+  return translations[contextKey] ?? translations[key] ?? key;
 };
 
 const makeYield = (
@@ -461,6 +469,85 @@ describe("getDashboardPositionDetailsModel", () => {
     ).toMatchObject({
       subValue: "$862.00",
       value: "Claim rewards",
+    });
+  });
+
+  it.each([
+    ["entering", "Cancel deposit"],
+    ["exiting", "Cancel withdrawal"],
+    ["withdrawable", "Cancel pending request"],
+  ] as const)(
+    "names the optional cancel action by the %s request it cancels",
+    (balanceType, value) => {
+      const model = getDashboardPositionDetailsModel({
+        canUnstake: true,
+        locale: "en",
+        integrationData: makeYield(),
+        pendingActions: [
+          {
+            amount: null,
+            amountUsd: null,
+            pendingAction: {
+              intent: "manage",
+              passthrough: "cancel",
+              type: "CANCEL_PENDING",
+            },
+            yieldBalance: makeBalance({ type: balanceType }),
+          },
+        ],
+        personalizedRewardRate: null,
+        positionBalancesByType: new Map(),
+        providersDetails: [{ name: "Rocket Pool", status: "active" }],
+        rewardsSummary: undefined,
+        t: t as TFunction,
+      });
+
+      expect(model.statusSummary).toEqual({
+        label: "Action available",
+        tone: "default",
+        value,
+      });
+    }
+  );
+
+  it("lets a required action outrank an earlier optional cancellation", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: makeYield(),
+      pendingActions: [
+        {
+          amount: null,
+          amountUsd: null,
+          pendingAction: {
+            intent: "manage",
+            passthrough: "cancel",
+            type: "CANCEL_PENDING",
+          },
+          yieldBalance: makeBalance({ type: "entering" }),
+        },
+        {
+          amount: null,
+          amountUsd: null,
+          pendingAction: {
+            intent: "manage",
+            passthrough: "withdraw",
+            type: "WITHDRAW",
+          },
+          yieldBalance: makeBalance({ type: "withdrawable" }),
+        },
+      ],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map(),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.statusSummary).toEqual({
+      label: "Action required",
+      tone: "action",
+      value: "Withdraw",
     });
   });
 

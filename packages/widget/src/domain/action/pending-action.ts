@@ -1,9 +1,27 @@
 import type BigNumber from "bignumber.js";
+import type { YieldBalanceType } from "../portfolio/positions";
 import type { ManageActionCommand, PendingAction } from "./models";
 
 export type YieldPendingActionType =
   | PendingAction["type"]
   | NonNullable<ManageActionCommand["action"]>;
+
+/**
+ * i18n context naming what a pending action acts on when its type alone is
+ * ambiguous: CANCEL_PENDING cancels a deposit on an entering balance and a
+ * withdrawal on an exiting one.
+ */
+export type PendingActionLabelContext = "deposit" | "withdrawal";
+
+export const getPendingActionLabelContext = (
+  type: YieldPendingActionType,
+  balanceType: YieldBalanceType
+): PendingActionLabelContext | undefined => {
+  if (type !== "CANCEL_PENDING") return undefined;
+  if (balanceType === "entering") return "deposit";
+  if (balanceType === "exiting") return "withdrawal";
+  return undefined;
+};
 
 type PendingActionArgName =
   | "amount"

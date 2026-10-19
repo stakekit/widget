@@ -1096,6 +1096,8 @@
       "verify_withdraw_credentials": "verified withdraw credentials",
       "delegate": "delegated",
       "cancel_pending": "cancelled pending request",
+      "cancel_pending_deposit": "cancelled deposit",
+      "cancel_pending_withdrawal": "cancelled withdrawal",
       "undelegate": "undelegated",
       "create_eigenpod": "created eigenpod",
       "start_checkpoint": "started checkpoint",
@@ -1226,6 +1228,8 @@
     "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Rewards",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
+    "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Pending deposit",
+    "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Pending withdrawal",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
@@ -1335,6 +1339,8 @@
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
       "cancel_pending": "Cancel pending request",
+      "cancel_pending_deposit": "Cancel deposit",
+      "cancel_pending_withdrawal": "Cancel withdrawal",
       "undelegate": "Undelegate",
       "create_eigenpod": "Create eigenpod",
       "start_checkpoint": "Start checkpoint",
@@ -1366,7 +1372,9 @@
       "migrate": "Migrate",
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
-      "cancel_pending": "Cancel pending request"
+      "cancel_pending": "Cancel pending request",
+      "cancel_pending_deposit": "Cancel deposit",
+      "cancel_pending_withdrawal": "Cancel withdrawal"
     },
     "unstake_sign": {
       "title": "Verify Ownership",

@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import type { PendingAction } from "../../../domain/action/models";
+import { getPendingActionLabelContext } from "../../../domain/action/pending-action";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -425,16 +426,22 @@ const getStatusSummary = ({
     };
   }
 
-  const [pendingAction] = pendingActions;
+  // Cancelling a queued request is optional, so any other pending action
+  // outranks it for the status card.
+  const pendingAction =
+    pendingActions.find(
+      (action) => action.pendingAction.type !== "CANCEL_PENDING"
+    ) ?? pendingActions[0];
 
   if (pendingAction) {
+    const optional = pendingAction.pendingAction.type === "CANCEL_PENDING";
+
     return {
-      label: t("dashboard.position_details.action_required"),
-      tone:
-        pendingAction.pendingAction.type === "CLAIM_REWARDS"
-          ? "claim"
-          : "action",
-      value: formatPendingActionLabel(pendingAction.pendingAction.type, t),
+      label: optional
+        ? t("dashboard.position_details.action_available")
+        : t("dashboard.position_details.action_required"),
+      tone: getPendingActionTone(pendingAction.pendingAction.type),
+      value: formatPendingActionLabel(pendingAction, t),
     };
   }
 
@@ -667,12 +674,27 @@ const formatTokenSums = (
   return lines.length === 1 ? (lines[0] ?? "") : lines;
 };
 
+const getPendingActionTone = (
+  type: PendingAction["type"]
+): DashboardPositionStatusTone => {
+  if (type === "CLAIM_REWARDS") return "claim";
+  if (type === "CANCEL_PENDING") return "default";
+  return "action";
+};
+
 // Pending action types come from the API and can outpace our translation map
 // (e.g. RWA-specific actions). Fall back to a humanized version of the type so
 // the card never renders a raw translation key.
-const formatPendingActionLabel = (type: PendingAction["type"], t: TFunction) =>
-  t(`position_details.pending_action.${type.toLowerCase()}`, {
-    defaultValue: humanizeEnumValue(type),
+const formatPendingActionLabel = (
+  { pendingAction, yieldBalance }: DashboardPositionPendingAction,
+  t: TFunction
+) =>
+  t(`position_details.pending_action.${pendingAction.type.toLowerCase()}`, {
+    context: getPendingActionLabelContext(
+      pendingAction.type,
+      yieldBalance.type
+    ),
+    defaultValue: humanizeEnumValue(pendingAction.type),
   });
 
 const formatUsdSubValue = (

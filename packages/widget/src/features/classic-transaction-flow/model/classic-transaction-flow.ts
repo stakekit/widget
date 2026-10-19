@@ -25,6 +25,7 @@ import type {
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { ProviderOption } from "../../../domain/identity/identifiers";
+import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,
@@ -75,6 +76,8 @@ type ExitClassicTransactionFlowIntake = {
 
 type ManageClassicTransactionFlowIntake = {
   readonly _tag: "Manage";
+  /** Balance the pending action acts on; names e.g. which request is cancelled. */
+  readonly balanceType: YieldBalanceType;
   readonly confidentialHandle?: string;
   readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;

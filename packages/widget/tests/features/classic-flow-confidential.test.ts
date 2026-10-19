@@ -108,6 +108,7 @@ const withdrawUnwrapStart = (): NavigatingClassicTransactionFlowStart => {
   return {
     intake: {
       _tag: "Manage",
+      balanceType: "withdrawable",
       confidentialHandle: "0xrequest",
       gasFeeToken: integration.mechanics.gasFeeToken,
       integration,

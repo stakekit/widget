@@ -2,7 +2,10 @@ import { capitalize, toLowerCase } from "effect/String";
 import { motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
+import type {
+  PendingActionLabelContext,
+  YieldPendingActionType,
+} from "../../../../../domain/action/pending-action";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
@@ -31,6 +34,7 @@ type Props = {
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;
+  pendingActionLabelContext?: PendingActionLabelContext;
   providersDetails: ReadonlyArray<{
     logo?: string;
     name?: string;
@@ -47,6 +51,7 @@ export const CompletePageComponent = ({
   network,
   token,
   pendingActionType,
+  pendingActionLabelContext,
   yieldType,
   providersDetails,
   integrationId,
@@ -142,7 +147,7 @@ export const CompletePageComponent = ({
                       pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
                     }` as const,
                     {
-                      context: translationContext,
+                      context: pendingActionLabelContext ?? translationContext,
                     }
                   ),
                 })}
