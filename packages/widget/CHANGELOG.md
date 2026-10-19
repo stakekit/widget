@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.291](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.290...@stakekit/widget@0.0.291) (2026-10-19)
+
+
+### Features
+
+* **widget:** optional Zama permit callback, drop effect host dependency, document public props, fix and brand host token keys ([#586](https://github.com/stakekit/widget/issues/586)) ([b1d79ab](https://github.com/stakekit/widget/commit/b1d79abbe495a338bbbc8f9d076be0779f59749a))
+
 ## [0.0.290](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.289...@stakekit/widget@0.0.290) (2026-10-16)
 
 
