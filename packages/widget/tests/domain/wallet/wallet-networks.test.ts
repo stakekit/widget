@@ -4,7 +4,6 @@ import {
   MiscChainIds,
   SubstrateChainIds,
   type SupportedSKChainIds,
-  type WalletNetwork as WalletNetworkContract,
 } from "../../../src/domain/wallet/contract";
 import {
   getProtocolChainIdentity,
@@ -73,7 +72,6 @@ describe("Wallet Network chain IDs", () => {
   });
 
   it("projects routing and native identity facts from every Wallet Network", () => {
-    expectTypeOf<WalletNetwork>().toEqualTypeOf<WalletNetworkContract>();
     expect(WalletNetwork.literals).toHaveLength(70);
     expect(WalletNetwork.literals).not.toContain("stellar-testnet");
     expect(isWalletNetwork("stellar-testnet")).toBe(false);

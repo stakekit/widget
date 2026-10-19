@@ -13,7 +13,6 @@ import type { DashboardYieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {
   dashboardYieldCategories,
-  type PreferredTokenYieldsPerNetwork,
   type ValidatorsConfig,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
@@ -187,22 +186,6 @@ const normalizeWidgetConfig = (
       ...dashboardYieldCategories,
     ]),
   ] as DashboardYieldCategory[];
-  const preferredTokenYieldsPerNetwork =
-    hostConfiguration.preferredTokenYieldsPerNetwork
-      ? (Object.fromEntries(
-          Object.entries(hostConfiguration.preferredTokenYieldsPerNetwork).map(
-            ([network, preferences]) => [
-              network,
-              Object.fromEntries(
-                Object.entries(preferences).map(([token, yieldId]) => [
-                  token.toLowerCase(),
-                  yieldId,
-                ])
-              ),
-            ]
-          )
-        ) as PreferredTokenYieldsPerNetwork)
-      : undefined;
   const validatorsConfig: ValidatorsConfig = new Map(
     Object.entries(hostConfiguration.validatorsConfig ?? {}).map(
       ([network, validators]) =>
@@ -276,7 +259,8 @@ const normalizeWidgetConfig = (
         environment.mountAnimationStartsFinishedByDefault),
     onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
     portalContainer: hostConfiguration.portalContainer,
-    preferredTokenYieldsPerNetwork,
+    preferredTokenYieldsPerNetwork:
+      hostConfiguration.preferredTokenYieldsPerNetwork,
     theme: hostConfiguration.theme,
     tokenIconMapping: hostConfiguration.tokenIconMapping,
     tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,

@@ -1,7 +1,8 @@
 import { Option, Schema } from "effect";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
 import { YieldId } from "../../../../../domain/identity/identifiers";
-import { tokenString } from "../../../../../domain/token/token";
+import { hostTokenKey, tokenString } from "../../../../../domain/token/token";
+import type { InitToken } from "../../../../../services/wallet/init-params";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({
@@ -61,7 +62,7 @@ export const resolveToken = ({
     : Object.values(entry.preferredTokenYieldsPerNetwork ?? {})[0];
   if (preferredTokens) {
     const selected = tokenOptions.find(
-      (option) => !!preferredTokens[tokenString(option.token)]
+      (option) => !!preferredTokens[hostTokenKey(option.token)]
     );
     if (selected) {
       return selected;
@@ -85,21 +86,35 @@ const findTokenByKey = (
   tokenKey: EarnTokenKey
 ) => tokens.find((token) => tokenString(token.token) === tokenKey) ?? null;
 
+/**
+ * A host key identifies one token. A symbol needs the network and is not
+ * unique even then (Ethereum lists both `USDA` and `USDa`), so the exact
+ * symbol wins over a case-insensitive one.
+ */
 const findTokenByInitToken = ({
   network,
   token,
   tokenOptions,
 }: {
   network: string | null;
-  token: string;
+  token: InitToken;
   tokenOptions: ReadonlyArray<EarnTokenOption>;
-}) =>
-  tokenOptions.find((option) => {
-    const tokenSymbolCompare =
-      token.toLowerCase() === option.token.symbol.toLowerCase();
-    const tokenNetworkCompare =
-      !!network && network.toLowerCase() === option.token.network.toLowerCase();
-    const tokenStringCompare = tokenString(option.token) === token;
+}) => {
+  if (token._tag === "HostKey") {
+    return (
+      tokenOptions.find((option) => hostTokenKey(option.token) === token.key) ??
+      null
+    );
+  }
 
-    return (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare;
-  }) ?? null;
+  const onNetwork = tokenOptions.filter(
+    (option) => option.token.network === network
+  );
+  const symbol = token.symbol.toLowerCase();
+
+  return (
+    onNetwork.find((option) => option.token.symbol === token.symbol) ??
+    onNetwork.find((option) => option.token.symbol.toLowerCase() === symbol) ??
+    null
+  );
+};

@@ -30,6 +30,11 @@ describe("Network", () => {
   it("matches the private public transaction Network contract", () => {
     expectTypeOf<Network>().toEqualTypeOf<NetworkContract>();
     expectTypeOf<Network>().toEqualTypeOf<SKNetwork>();
+    // The runtime schema and the types-only union hosts compile against
+    // must list the same Networks.
+    expectTypeOf<
+      (typeof Network.literals)[number]
+    >().toEqualTypeOf<SKNetwork>();
   });
 
   it("limits Borrow Networks to Wallet Networks", () => {

@@ -10,14 +10,22 @@ type NonZerionVariant = Exclude<SKHostVariant, "zerion">;
  */
 export type VariantProps =
   | Readonly<{
+      /** Zerion preset. Requires `chainModal`. */
       variant: "zerion";
+      /** Renders the host's chain selector in place of the widget's. */
       chainModal: (args: {
+        /** Chain the connected wallet is on. */
         selectedChainId: number;
+        /** Chains the user can switch to. */
         chainIds: number[];
+        /** Switches the connected wallet to `chainId`. */
         onSwitchChain: (chainId: number) => void;
       }) => ReactNode;
     }>
-  | Readonly<{ variant: NonZerionVariant }>;
+  | Readonly<{
+      /** Host integration preset. Defaults to `"default"`. */
+      variant: NonZerionVariant;
+    }>;
 
 /** Host Configuration passed into the Application Runtime (never React children). */
 export type SKHostConfiguration = SettingsProps &
@@ -38,6 +46,8 @@ export type SKAppProps = SKHostConfiguration & {
  * itself and is not part of the host contract.
  */
 export type HelpModalProps = {
+  /** Help content to show. */
   modal: { type: "getInTouch" } | { type: "whatIsStakeKit" };
+  /** Element that opens the modal. Defaults to a help icon. */
   customTrigger?: ReactNode;
 };

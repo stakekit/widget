@@ -30,7 +30,11 @@ Dependency-cruiser restricts direct imports from `public-api` to Domain
 from the public entries with `src` as its root.
 
 Published declarations expose only dependencies that belong to the host
-contract. The package entry may reference `effect` and `react`; the standalone
-bundle may reference only `effect`. Packed consumers compile both entries under
-Bundler and NodeNext resolution, and an executable declaration-graph check
-enforces these dependency allowlists.
+contract. The package entry may reference only `react`; the standalone bundle
+may reference no external package. `effect` is bundled into both runtime
+entries and stays out of the declarations, so hosts do not install it to
+resolve types: a Domain contract that publishes a value derived from an Effect
+schema exposes it from a types-only module instead, such as the generated
+`Networks` unions behind `SKNetwork`. Packed consumers compile both entries
+under Bundler and NodeNext resolution, and an executable declaration-graph
+check enforces these dependency allowlists.

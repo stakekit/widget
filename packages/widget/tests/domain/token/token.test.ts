@@ -1,8 +1,11 @@
 import { Schema } from "effect";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   equalTokens,
+  type HostTokenKey,
+  hostTokenKey,
   Token,
+  type TokenString,
   tokenString,
 } from "../../../src/domain/token/token";
 
@@ -41,5 +44,18 @@ describe("Token", () => {
         { network: "ethereum", symbol: "ETH", address: "" }
       )
     ).toBe(false);
+  });
+
+  it("keys host references by network and address, ignoring symbol and case", () => {
+    expect(hostTokenKey(token())).toBe("ethereum-0xabcd");
+    expect(hostTokenKey(token({ symbol: "USDC.e" }))).toBe(
+      hostTokenKey(token())
+    );
+    expect(hostTokenKey({ network: "ethereum" })).toBe("ethereum-");
+  });
+
+  it("keeps internal token identities out of host-keyed lookups", () => {
+    expectTypeOf<TokenString>().not.toMatchTypeOf<HostTokenKey>();
+    expectTypeOf<HostTokenKey>().not.toMatchTypeOf<TokenString>();
   });
 });

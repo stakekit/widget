@@ -268,6 +268,14 @@ markets enabled for your API key's project. Existing positions stay visible and
 manageable in either mode. Live updates switch the listed catalog without a
 remount.
 
+### Zama confidential vaults
+
+Zama deposits need the optional `signZamaPermit(typedData, meta)` callback on
+`SKWallet` (and therefore on `SKBorrowWallet`). It signs the EIP-712 permit
+that reveals confidential balances and resolves with an `SKZamaPermitResult`.
+Without it, the widget blocks Zama deposits, because the balance could not be
+revealed to withdraw.
+
 ## Styling
 
 Import `@stakekit/widget/style.css` once. Start with `lightTheme` or `darkTheme`
