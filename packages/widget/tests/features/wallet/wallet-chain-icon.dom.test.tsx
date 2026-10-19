@@ -6,11 +6,6 @@ import { render } from "../../utils/test-utils.dom.tsx";
 
 const brokenUrl = "https://assets.example.invalid/networks/broken.svg";
 
-const monogramInitial = (src: string | null) =>
-  src?.startsWith("data:image/svg+xml")
-    ? decodeURIComponent(src).match(/>([^<]+)<\/text>/)?.[1]
-    : undefined;
-
 describe("WalletChainIcon", () => {
   it("replaces a chain icon that fails to load with the chain monogram", async () => {
     const { container } = await render(
@@ -24,7 +19,8 @@ describe("WalletChainIcon", () => {
       img?.dispatchEvent(new Event("error"));
     });
 
-    expect(monogramInitial(img?.getAttribute("src") ?? null)).toBe("E");
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("svg[role='img']")?.textContent).toBe("E");
   });
 
   it("shows the chain monogram when the chain has no icon", async () => {
@@ -34,10 +30,7 @@ describe("WalletChainIcon", () => {
       />
     );
 
-    expect(
-      monogramInitial(
-        container.querySelector("img")?.getAttribute("src") ?? null
-      )
-    ).toBe("Z");
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("svg[role='img']")?.textContent).toBe("Z");
   });
 });

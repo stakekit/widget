@@ -27,6 +27,13 @@ export const getFineryThemeOverrides = (
       tokenSelectHoverBackground: palette.greyThree,
       backgroundMuted: palette.greyTwo,
 
+      summaryLabelStakedBackground: palette.purpleOne,
+      summaryLabelStakedColor: palette.purpleTwo,
+      summaryLabelApyBackground: palette.blueOne,
+      summaryLabelApyColor: palette.blueTwo,
+      summaryLabelAvailableBackground: palette.greenThree,
+      summaryLabelAvailableColor: palette.greenOne,
+
       smallButtonBackground: palette.greyTwo,
       smallButtonColor: vars.color.white,
 

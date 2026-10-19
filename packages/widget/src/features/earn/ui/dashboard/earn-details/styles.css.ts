@@ -160,7 +160,7 @@ export const externalLinkIcon = style({
 });
 
 export const providerStatusText = style({
-  color: "#15803D",
+  color: vars.color.statusSuccess,
 });
 
 export const metricLabelText = style({

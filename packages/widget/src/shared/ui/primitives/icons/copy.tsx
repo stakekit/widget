@@ -1,3 +1,5 @@
+import { vars } from "../../../styles/theme/contract.css";
+
 export const Copy = ({
   hw = 24,
   className,
@@ -9,7 +11,7 @@ export const Copy = ({
     xmlns="http://www.w3.org/2000/svg"
     width={hw}
     height={hw}
-    fill="#909090"
+    fill={vars.color.textMuted}
     viewBox="0 0 256 256"
     className={className}
   >

@@ -11,7 +11,7 @@ export const ltvGauge = style([
 ]);
 
 export const ltvGaugeTrack = style({
-  background: `linear-gradient(90deg, #25a56a 0%, #f6b500 52%, ${vars.color.textDanger} 100%)`,
+  background: `linear-gradient(90deg, ${vars.color.statusSuccess} 0%, ${vars.color.statusWarning} 52%, ${vars.color.textDanger} 100%)`,
   borderRadius: vars.borderRadius.baseContract.full,
   height: "10px",
   overflow: "hidden",
@@ -45,11 +45,11 @@ export const ltvGaugeLabels = style({
 });
 
 export const healthValue = style({
-  color: "#25a56a",
+  color: vars.color.statusSuccess,
 });
 
 export const healthValueWarning = style({
-  color: "#f6b500",
+  color: vars.color.statusWarning,
 });
 
 export const healthValueDanger = style({
@@ -106,7 +106,7 @@ export const switchButton = style({
 });
 
 export const switchButtonChecked = style({
-  background: "#25a56a",
+  background: vars.color.statusSuccess,
 });
 
 export const switchButtonDisabled = style({

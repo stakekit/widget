@@ -124,7 +124,7 @@ export const selectorSummaryChangeButton = style([
 ]);
 
 export const selectorSummaryActive = style({
-  color: "#137333",
+  color: vars.color.statusSuccess,
   whiteSpace: "nowrap",
 });
 

@@ -9,7 +9,7 @@ const brokenSrcOne = "data:image/png;base64,Zm9vYmFy";
 const brokenSrcFour = "data:image/png;base64,YmFkMw==";
 
 describe("Image", () => {
-  it("swaps to the generated monogram when src fails and resets on src change", async () => {
+  it("swaps to the monogram when src fails and resets on src change", async () => {
     const app = await render(
       <Image
         src={brokenSrcOne}
@@ -25,7 +25,11 @@ describe("Image", () => {
 
     act(() => image?.dispatchEvent(new Event("error")));
 
-    expect(image?.getAttribute("src")).toContain("data:image/svg+xml");
+    expect(app.container.querySelector("img")).toBeNull();
+    expect(
+      app.container.querySelector("svg[role='img'][aria-label='icon']")
+        ?.textContent
+    ).toBe("A");
 
     await app.rerender(
       <Image src={validSrcTwo} fallbackName="Atom" imgProps={{ alt: "icon" }} />
@@ -40,36 +44,15 @@ describe("Image", () => {
     app.unmount();
   });
 
-  it("uses the generated monogram when src is missing", async () => {
+  it("renders the monogram when src is missing", async () => {
     const app = await render(
-      <Image fallbackName="Atom" imgProps={{ alt: "missing-src" }} />
+      <Image fallbackName="atom" imgProps={{ alt: "missing-src" }} />
     );
 
-    const image = app.container.querySelector<HTMLImageElement>(
-      "img[alt='missing-src']"
-    );
-
-    expect(image).not.toBeNull();
-    expect(image?.getAttribute("src")).toContain("data:image/svg+xml");
-  });
-
-  it("falls back to the generated monogram after src fails", async () => {
-    const app = await render(
-      <Image
-        src={brokenSrcOne}
-        fallbackName="Atom"
-        imgProps={{ alt: "monogram" }}
-      />
-    );
-
-    const image = app.container.querySelector<HTMLImageElement>(
-      "img[alt='monogram']"
-    );
-
-    expect(image).not.toBeNull();
-    act(() => image?.dispatchEvent(new Event("error")));
-
-    expect(image?.getAttribute("src")).toContain("data:image/svg+xml");
+    expect(
+      app.container.querySelector("svg[role='img'][aria-label='missing-src']")
+        ?.textContent
+    ).toBe("A");
   });
 
   it("keeps the broken src when there is no monogram fallback", async () => {
@@ -80,6 +63,11 @@ describe("Image", () => {
     const image = app.container.querySelector("img[alt='no-fallback']");
 
     expect(image).not.toBeNull();
-    expect(image?.getAttribute("src")).toBe(brokenSrcFour);
+
+    act(() => image?.dispatchEvent(new Event("error")));
+
+    expect(
+      app.container.querySelector("img[alt='no-fallback']")?.getAttribute("src")
+    ).toBe(brokenSrcFour);
   });
 });

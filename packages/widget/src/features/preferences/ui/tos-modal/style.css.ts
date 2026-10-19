@@ -1,5 +1,6 @@
 import { keyframes, style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
+import { vars } from "../../../../shared/styles/theme/contract.css";
 
 const fadeIn = keyframes({
   "0%": { opacity: 0 },
@@ -63,7 +64,7 @@ export const closeButton = style({
   alignItems: "center",
   justifyContent: "center",
   ":hover": {
-    backgroundColor: "rgba(100, 23, 23, 0.1)",
+    backgroundColor: `color-mix(in oklab, ${vars.color.text} 10%, transparent)`,
   },
 });
 
