@@ -1,66 +1,32 @@
 import { useTrackPage } from "../../../../tracking/index";
 import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
-import { ReviewPage } from "./common-page/common.page.tsx";
+import {
+  getPositionActionReviewProps,
+  ReviewPage,
+} from "./common-page/common.page.tsx";
 import { UnstakeSignPopup } from "./unstake-sign-popup";
 
 export const UnstakeReviewPage = () => {
-  const {
-    amount,
-    fee,
-    facts,
-    integrationData,
-    rewardTokenDetailsProps,
-    title,
-    token,
-    metaInfo,
-    onContinueUnstakeSignMessage,
-    onCloseUnstakeSignMessage,
-    showUnstakeSignMessagePopup,
-    gasCheckLoading,
-    isGasCheckWarning,
-    kycGate,
-    kycProviderName,
-    kycStatusIsChecking,
-    onKycStatusRefresh,
-    cta,
-  } = useUnstakeActionReview();
+  const review = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
 
   return (
     <>
       <ReviewPage
-        facts={facts}
-        rewardTokenDetailsProps={rewardTokenDetailsProps}
-        title={title}
-        fee={fee}
-        depositFee={null}
-        managementFee={null}
-        performanceFee={null}
-        feeConfigLoading={false}
-        info={`${amount} ${token.symbol}`}
-        metadata={{
-          logoURI: integrationData.metadata.logoURI,
-          name: integrationData.metadata.name,
-          provider: integrationData.provider,
-        }}
-        token={token}
-        isGasCheckError={isGasCheckWarning}
-        loading={gasCheckLoading}
-        commissionFee={null}
-        cta={cta}
+        {...getPositionActionReviewProps(review)}
         kyc={{
-          gate: kycGate,
-          isChecking: kycStatusIsChecking,
-          onCheckStatus: onKycStatusRefresh,
-          providerName: kycProviderName,
+          gate: review.kycGate,
+          isChecking: review.kycStatusIsChecking,
+          onCheckStatus: review.onKycStatusRefresh,
+          providerName: review.kycProviderName,
         }}
-        {...metaInfo}
+        {...review.metaInfo}
       />
       <UnstakeSignPopup
-        isOpen={showUnstakeSignMessagePopup}
-        onClick={onContinueUnstakeSignMessage}
-        onCancel={onCloseUnstakeSignMessage}
+        isOpen={review.showUnstakeSignMessagePopup}
+        onClick={review.onContinueUnstakeSignMessage}
+        onCancel={review.onCloseUnstakeSignMessage}
       />
     </>
   );

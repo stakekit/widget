@@ -5,6 +5,7 @@ import {
   getPendingActionLabelContext,
   type YieldPendingActionType,
 } from "../../../../../domain/action/pending-action";
+import { getCancelReturnToken } from "../../../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -28,20 +29,25 @@ type StaticActionBlockProps = {
   onPendingActionClick: ReturnType<
     typeof usePositionDetails
   >["onPendingActionClick"];
-  yieldId: EarnYieldWithProvider["id"];
+  integration: EarnYieldWithProvider;
 };
 
 export const StaticActionBlock = ({
   pendingAction,
   yieldBalance,
   onPendingActionClick,
-  yieldId,
+  integration,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const actionKey =
     pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>;
   const labelContext = getPendingActionLabelContext(
+    pendingAction.type,
+    yieldBalance.type
+  );
+  const returnToken = getCancelReturnToken(
+    integration,
     pendingAction.type,
     yieldBalance.type
   );
@@ -73,9 +79,9 @@ export const StaticActionBlock = ({
                     locale,
                     "down"
                   ),
-              symbol: yieldBalance.token.symbol,
+              symbol: (returnToken ?? yieldBalance.token).symbol,
               pendingAction: t(`position_details.pending_action.${actionKey}`, {
-                context: isEthenaUsdeStaking(yieldId)
+                context: isEthenaUsdeStaking(integration.id)
                   ? "ethena_usde"
                   : undefined,
                 defaultValue: humanizePendingActionType(pendingAction.type),
@@ -86,6 +92,13 @@ export const StaticActionBlock = ({
             }}
           />
         </Text>
+        {returnToken ? (
+          <Text variant={{ type: "muted", size: "small" }}>
+            {t("position_details.cancel_returns", {
+              symbol: returnToken.symbol,
+            })}
+          </Text>
+        ) : null}
       </Box>
 
       <Box className={actionBlockCta}>

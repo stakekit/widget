@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import {
   Deferred,
   Effect,
+  Option,
   Queue,
   Schema,
   type Scope,
@@ -31,6 +32,7 @@ import {
   confidentialFixture,
   confidentialYieldFixture,
   yieldApiActionFixture,
+  yieldApiTransactionFixture,
 } from "../fixtures";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
@@ -597,6 +599,41 @@ describe("confidential vault execution", () => {
       );
 
       expect(remaining.has(key)).toBe(false);
+    })
+  );
+
+  it.effect("labels the deposit until the API prepares its transactions", () =>
+    Effect.gen(function* () {
+      const prepared = yield* Deferred.make<void>();
+      const deposit = yieldApiTransactionFixture({ type: "DEPOSIT" });
+      const action = yieldApiActionFixture({ transactions: [deposit] });
+      const [before, after] = yield* withSession(
+        {
+          makeWorkflow: () => Effect.succeed(workflowFixture),
+          // Holds the encrypted preview the execution prepares its action from.
+          previewAction: () => Deferred.await(prepared).pipe(Effect.as(action)),
+          zama: convertingZama([]),
+        },
+        (session) =>
+          Effect.gen(function* () {
+            const execution = yield* confirmExecution(session);
+            const before = yield* awaitConversion(execution, () => true);
+            yield* Deferred.succeed(prepared, undefined);
+            const after = yield* awaitConversion(
+              execution,
+              (conversion) => conversion.pendingTransactionType === null
+            );
+            return [before, after] as const;
+          })
+      );
+
+      expect(Option.getOrNull(before)).toMatchObject({
+        pendingTransactionType: "DEPOSIT",
+        transactions: [],
+      });
+      expect(Option.getOrNull(after)?.transactions.map(({ id }) => id)).toEqual(
+        [deposit.id]
+      );
     })
   );
 });

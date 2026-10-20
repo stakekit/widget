@@ -1,3 +1,4 @@
+import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { useTrackPage } from "../../../../tracking/index";
 import {
   useActivityComplete,
@@ -42,6 +43,13 @@ const ActivityCompleteContent = ({
       network={network}
       amount={amount}
       pendingActionType={selectedAction.type}
+      batchedDeposit={
+        selectedAction.intent === "enter" &&
+        view.selectedYield &&
+        isConfidentialYield(view.selectedYield)
+          ? view.selectedYield
+          : null
+      }
       integrationId={selectedAction.yieldId}
     />
   );

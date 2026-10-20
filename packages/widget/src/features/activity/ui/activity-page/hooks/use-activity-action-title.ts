@@ -18,6 +18,11 @@ export const useActivityActionTitle = (title: ActivityActionTitle) => {
         ? t("activity.item.deposited", { token: tokenSymbol })
         : t("activity.item.deposited_without_token")
     ),
+    Match.when({ _tag: "deposit_submitted" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.deposit_submitted", { token: tokenSymbol })
+        : t("activity.item.deposit_submitted_without_token")
+    ),
     Match.when({ _tag: "withdrew" }, ({ tokenSymbol }) =>
       tokenSymbol
         ? t("activity.item.withdrew", { token: tokenSymbol })

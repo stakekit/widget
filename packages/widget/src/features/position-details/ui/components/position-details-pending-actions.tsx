@@ -45,7 +45,7 @@ export const PositionDetailsPendingActions = ({
               {...val}
               key={key}
               onPendingActionClick={onPendingActionClick}
-              yieldId={integrationData.id}
+              integration={integrationData}
             />
           );
         }

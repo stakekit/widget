@@ -5,6 +5,7 @@ import {
   getPendingActionLabelContext,
   type YieldPendingActionType,
 } from "../../../../../domain/action/pending-action";
+import { getCancelReturnToken } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
@@ -26,7 +27,13 @@ export const usePendingActionReview = () => {
 
   const amount = exactDecimal(manageFlow.request.arguments?.amount ?? 0);
 
-  const interactedToken = manageFlow.interactedToken;
+  // A cancelled confidential deposit refunds the wrapper token.
+  const returnToken = getCancelReturnToken(
+    manageFlow.integration,
+    manageFlow.request.action,
+    manageFlow.balanceType
+  );
+  const interactedToken = returnToken ?? manageFlow.interactedToken;
   const integrationData = manageFlow.integration;
 
   const prices = review.prices;
@@ -74,13 +81,20 @@ export const usePendingActionReview = () => {
   });
 
   const metaInfo: MetaInfoProps = { showMetaInfo: false };
+  const facts = returnToken
+    ? [{ label: t("review.receive_token"), value: returnToken.symbol }]
+    : [];
 
-  const formattedAmount = formatTokenAmount(amount, locale, "down");
+  // An encrypted balance has no known amount until it is revealed.
+  const formattedAmount = manageFlow.balanceHidden
+    ? t("shared.confidential.hidden")
+    : formatTokenAmount(amount, locale, "down");
 
   return {
     integrationData,
     title,
     amount: formattedAmount,
+    facts,
     fee,
     rewardTokenDetailsProps,
     token: interactedToken,

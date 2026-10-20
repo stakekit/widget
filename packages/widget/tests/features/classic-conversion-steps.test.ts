@@ -12,6 +12,7 @@ describe("confidential conversion steps view", () => {
 
     const view = getClassicConversionStepsView(
       {
+        pendingTransactionType: null,
         steps: [
           { status: "done", step: "encrypt" },
           { status: "confirming", step: "approve" },
@@ -42,9 +43,87 @@ describe("confidential conversion steps view", () => {
     expect(view.retryable).toBe(false);
   });
 
+  it("ends with an idle deposit before the API prepares the action", () => {
+    const view = getClassicConversionStepsView(
+      {
+        pendingTransactionType: "DEPOSIT",
+        steps: [
+          { status: "signing", step: "encrypt" },
+          { status: "idle", step: "approve" },
+          { status: "idle", step: "wrap" },
+        ],
+        transactions: [],
+      },
+      null,
+      yieldId
+    );
+
+    expect(view.txStates.map((txState) => txState.tx.type)).toEqual([
+      "ENCRYPT",
+      "APPROVAL",
+      "WRAP",
+      "DEPOSIT",
+    ]);
+    expect(view.txStates.at(-1)).toMatchObject({
+      meta: { done: false },
+      progress: {
+        phases: { broadcast: "idle", confirm: "idle", sign: "idle" },
+      },
+    });
+  });
+
+  it("replaces the placeholder with the prepared transactions", () => {
+    const approval = yieldApiTransactionFixture({
+      id: "approval-tx",
+      type: "APPROVAL",
+    });
+    const deposit = yieldApiTransactionFixture({
+      id: "deposit-tx",
+      type: "DEPOSIT",
+    });
+
+    const view = getClassicConversionStepsView(
+      {
+        pendingTransactionType: null,
+        steps: [{ status: "done", step: "encrypt" }],
+        transactions: [approval, deposit],
+      },
+      null,
+      yieldId
+    );
+
+    expect(view.txStates.map((txState) => txState.tx.id)).toEqual([
+      "conversion-encrypt",
+      "approval-tx",
+      "deposit-tx",
+    ]);
+  });
+
+  it("leaves headers unnumbered while the action is prepared lazily", () => {
+    const view = getClassicConversionStepsView(
+      {
+        pendingTransactionType: "WITHDRAW",
+        steps: [{ status: "idle", step: "encrypt" }],
+        transactions: [],
+      },
+      null,
+      yieldId
+    );
+
+    expect(view.numbered).toBe(false);
+    expect(view.txStates.map((txState) => txState.tx.type)).toEqual([
+      "ENCRYPT",
+      "WITHDRAW",
+    ]);
+  });
+
   it("offers retry once a client-side step fails", () => {
     const view = getClassicConversionStepsView(
-      { steps: [{ status: "failed", step: "encrypt" }], transactions: [] },
+      {
+        pendingTransactionType: "DEPOSIT",
+        steps: [{ status: "failed", step: "encrypt" }],
+        transactions: [],
+      },
       null,
       yieldId
     );
@@ -55,7 +134,11 @@ describe("confidential conversion steps view", () => {
 
   it("offers no retry when the API rejected the request itself", () => {
     const view = getClassicConversionStepsView(
-      { steps: [{ status: "rejected", step: "encrypt" }], transactions: [] },
+      {
+        pendingTransactionType: "DEPOSIT",
+        steps: [{ status: "rejected", step: "encrypt" }],
+        transactions: [],
+      },
       null,
       yieldId
     );

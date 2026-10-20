@@ -30,6 +30,7 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   formatCooldownDays,
+  formatDailyBatch,
   formatMeaningfulCompactNumber,
   formatMeaningfulCompactUsd,
   formatMinStake,
@@ -379,14 +380,16 @@ const getCooldownFact = (
   t: TFunction
 ): EarnDetailFact => {
   const days = getYieldCooldownPeriod(yieldDto)?.days ?? 0;
+  // Batched vaults redeem with a daily batch, not after a fixed cooldown.
+  const dailyBatch = formatDailyBatch({ side: "redemption", t, yieldDto });
 
   return {
     detailEligible: true,
     id: "cooldown",
     kpiEligible: true,
-    kpiPrimaryEligible: days > 0,
+    kpiPrimaryEligible: !!dailyBatch || days > 0,
     label: t("dashboard.earn_details.cooldown"),
-    value: formatCooldownDays(days, t),
+    value: dailyBatch ?? formatCooldownDays(days, t),
   };
 };
 
@@ -394,7 +397,9 @@ const getWarmupFact = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact | null => {
-  const value = formatOptionalDays(getYieldWarmupPeriod(yieldDto)?.days, t);
+  const value =
+    formatDailyBatch({ side: "subscription", t, yieldDto }) ??
+    formatOptionalDays(getYieldWarmupPeriod(yieldDto)?.days, t);
 
   if (!value) return null;
 

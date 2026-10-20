@@ -14,10 +14,10 @@ import {
   Box,
   type BoxProps,
 } from "../../../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
+import { ConfidentialTokenBalance } from "../../../../../../yield-entry/views";
 import {
   useEarnEntry,
   useEarnTokenSelection,
@@ -87,22 +87,6 @@ export const SelectTokenSection = ({
       : `${t("shared.max")} ${formatTokenAmount(stakeMaxAmount, locale, "down")} ${symbol}`;
   const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
   const getBalanceContent = (): ReactNode => {
-    if (view.hiddenTokenBalance) {
-      return (
-        <Button
-          variant={{ size: "small", color: "smallButtonLight" }}
-          disabled={revealTokenBalanceStatus.revealing}
-          isLoading={revealTokenBalanceStatus.revealing}
-          onClick={() => revealTokenBalance(undefined)}
-        >
-          <Text>
-            {revealTokenBalanceStatus.failed
-              ? t("shared.confidential.reveal_failed")
-              : t("shared.confidential.reveal")}
-          </Text>
-        </Button>
-      );
-    }
     if (!selectedTokenAvailableAmount) return null;
     const shortFormattedAmount = formatTokenAmount(
       selectedTokenAvailableAmount.amount,
@@ -143,19 +127,19 @@ export const SelectTokenSection = ({
       </AmountToggle.Root>
     );
   };
-  const balanceContent = view.revealedTokenBalance ? (
-    <>
-      {getBalanceContent()}
-      <Button
-        variant={{ size: "small", color: "smallButtonLight" }}
-        onClick={() => hideTokenBalance(undefined)}
+  const balanceContent =
+    view.hiddenTokenBalance || selectedTokenAvailableAmount ? (
+      <ConfidentialTokenBalance
+        hidden={view.hiddenTokenBalance}
+        revealed={view.revealedTokenBalance}
+        revealStatus={revealTokenBalanceStatus}
+        onReveal={() => revealTokenBalance(undefined)}
+        onHide={() => hideTokenBalance(undefined)}
+        symbol={symbol}
       >
-        <Text>{t("shared.confidential.hide")}</Text>
-      </Button>
-    </>
-  ) : (
-    getBalanceContent()
-  );
+        {getBalanceContent()}
+      </ConfidentialTokenBalance>
+    ) : null;
 
   if (isLoading) {
     return (
@@ -194,8 +178,11 @@ export const SelectTokenSection = ({
       formattedPrice={priceUsd ? formatUsd(priceUsd, locale) : ""}
       balance={balanceContent}
       balanceError={stakeAmountGreaterThanAvailableAmount}
+      // A hidden balance has no known maximum yet.
       onMaxClick={
-        isStakeTokenSameAsGasToken ? null : () => setMaxAmount(undefined)
+        isStakeTokenSameAsGasToken || view.hiddenTokenBalance
+          ? null
+          : () => setMaxAmount(undefined)
       }
       minMaxLabel={earnPresentation.zerion ? null : minMaxLabel}
       minMaxError={stakeAmountLessThanMin}

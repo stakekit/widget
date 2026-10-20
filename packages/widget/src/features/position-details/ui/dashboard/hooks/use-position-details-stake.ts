@@ -3,8 +3,11 @@ import type { YieldId } from "../../../../../domain/identity/identifiers";
 import { useWalletScopeRoute } from "../../../../wallet/index";
 import { usePositionDetailsStakeMatch } from "../../../react/use-position-details-stake-match";
 import {
+  hidePositionDetailsStakeTokenBalanceAtom,
   positionDetailsStakeViewAtom,
   refreshPositionDetailsStakeKycAtom,
+  revealPositionDetailsStakeTokenBalanceAtom,
+  selectPositionDetailsStakeTokenAtom,
   setPositionDetailsStakeAmountAtom,
   setPositionDetailsStakeMaxAmountAtom,
   setPositionDetailsStakeTronResourceAtom,
@@ -29,6 +32,13 @@ export const usePositionDetailsStake = () => {
     setPositionDetailsStakeTronResourceAtom(key)
   );
   const submit = useAtomSet(submitPositionDetailsStakeAtom(key));
+  const selectToken = useAtomSet(selectPositionDetailsStakeTokenAtom(key));
+  const revealTokenBalance = useAtomSet(
+    revealPositionDetailsStakeTokenBalanceAtom(key)
+  );
+  const hideTokenBalance = useAtomSet(
+    hidePositionDetailsStakeTokenBalanceAtom(key)
+  );
   const positionDetails = usePositionDetails();
 
   return {
@@ -36,10 +46,13 @@ export const usePositionDetailsStake = () => {
     kycGate: view.kyc.gate,
     kycGateIsChecking: view.kyc.isChecking,
     kycProviderName: view.kyc.providerName,
+    onHideTokenBalance: () => hideTokenBalance(undefined),
     onKycStatusRefresh: () => refreshKyc(undefined),
     onMaxClick: () => setMaxAmount(undefined),
     onPrimaryAction: () => submit(undefined),
+    onRevealTokenBalance: () => revealTokenBalance(undefined),
     onStakeAmountChange: setAmount,
+    onTokenSelect: selectToken,
     onTronResourceSelect: setTronResource,
     positionDetails,
   };

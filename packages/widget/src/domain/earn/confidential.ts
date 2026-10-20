@@ -336,6 +336,17 @@ export const getPendingActionDecryptHandle = (
     ? (balance.shareAmountRaw ?? null)
     : null;
 
+// A cancelled deposit refunds the wrapper, not the underlying the API
+// denominates the entering balance in.
+export const getCancelReturnToken = (
+  yieldDto: EarnYieldWithProvider,
+  pendingActionType: string,
+  balanceType: string
+): Token | null =>
+  pendingActionType === "CANCEL_PENDING" && balanceType === "entering"
+    ? getConfidentialAssetToken(yieldDto)
+    : null;
+
 // The API sends empty amounts for encrypted balances.
 export const zeroEncryptedBalance = <
   Balance extends Readonly<{ readonly isEncrypted?: boolean }>,

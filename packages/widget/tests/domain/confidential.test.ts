@@ -5,6 +5,7 @@ import {
   type ConfidentialEncryption,
   ConfidentialHandle,
   fillConfidentialBalance,
+  getCancelReturnToken,
   getConfidentialConversion,
   getConfidentialHandleContract,
   getPendingActionDecryptHandle,
@@ -56,6 +57,19 @@ describe("confidential vault rules", () => {
         { shareAmountRaw: "5", type: "withdrawable" },
         "WITHDRAW"
       )
+    ).toBeNull();
+  });
+
+  it("returns the confidential asset when a pending deposit is cancelled", () => {
+    expect(
+      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", "entering")
+        ?.symbol
+    ).toBe(cUsdc.symbol);
+    expect(
+      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", "exiting")
+    ).toBeNull();
+    expect(
+      getCancelReturnToken(yieldApiYieldFixture(), "CANCEL_PENDING", "entering")
     ).toBeNull();
   });
 

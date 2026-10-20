@@ -18,7 +18,11 @@ import {
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { getBalanceValidators } from "../../../domain/portfolio/positions";
-import { equalTokens } from "../../../domain/token/token";
+import {
+  equalTokens,
+  type Token,
+  tokenString,
+} from "../../../domain/token/token";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
   getTokensPricesRequest,
@@ -39,10 +43,18 @@ import { getPullResultItems } from "../../../shared/effect/pagination";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
 import { walletScopeAtom } from "../../wallet/index";
 import {
+  getYieldEntryPriceToken,
+  isHiddenTokenBalance,
+  makeConfidentialTokenBalance,
   makeYieldEntry,
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
 } from "../../yield-entry/index";
+import {
+  getPositionStakeTokens,
+  type PositionStakeTokenOption,
+  resolvePositionStakeToken,
+} from "../model/stake-token";
 import {
   type PositionDetailsStakeEntryKey,
   positionDetailsStakeAtom,
@@ -58,7 +70,8 @@ const resolveTronResource = (selectedYield: EarnYieldWithProvider | null) => {
 };
 
 const getPositionDetailsStakeValidationKey = (
-  key: PositionDetailsStakeEntryKey
+  key: PositionDetailsStakeEntryKey,
+  token: Token | null
 ): string =>
   JSON.stringify([
     key.integrationId,
@@ -66,6 +79,7 @@ const getPositionDetailsStakeValidationKey = (
     key.walletScope.network,
     key.walletScope.address,
     key.walletScope.additionalAddresses,
+    token ? tokenString(token) : null,
   ]);
 
 const positionDetailsStakeFacadeAtom = Atom.family(
@@ -116,10 +130,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         })
       );
     }).pipe(Atom.withLabel("positionDetailsStakeSelectedValidatorsAtom"));
-    const yieldEntryInputAtom = Atom.make((get) => {
+    const stakeTokenAtom = Atom.make((get) => {
       const intent = get(intentAtom);
       const selectedYield = get(selectedYieldAtom);
-      const selectedToken = selectedYield?.token ?? null;
       const tokenBalances = get(tokenBalancesScanAtom);
       const tokenBalanceValues = tokenBalances.result.pipe(
         AsyncResult.value,
@@ -131,14 +144,58 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         sameWalletScopeOwner(currentScope, key.walletScope);
       // The scan covers the current wallet, so a token missing from it means a
       // zero balance only when that wallet owns this position.
-      const availableAmount = (() => {
-        if (!selectedToken || tokenBalanceValues === null) return null;
+      const getPublicAmount = (token: Token) => {
+        if (tokenBalanceValues === null) return null;
         const balance = tokenBalanceValues.find((item) =>
-          equalTokens(item.token, selectedToken)
+          equalTokens(item.token, token)
         );
         if (balance) return exactDecimal(balance.amount);
         return ownerCurrent ? exactZero() : null;
-      })();
+      };
+      const selectedToken = selectedYield
+        ? resolvePositionStakeToken(selectedYield, intent.token)
+        : null;
+      const tokenOptions = selectedYield
+        ? getPositionStakeTokens(selectedYield).map(
+            (token): PositionStakeTokenOption => {
+              const hiddenBalance = isHiddenTokenBalance(selectedYield, token);
+              return {
+                amount: hiddenBalance ? null : getPublicAmount(token),
+                hiddenBalance,
+                selected:
+                  selectedToken !== null && equalTokens(token, selectedToken),
+                token,
+              };
+            }
+          )
+        : [];
+
+      return {
+        intent,
+        ownerCurrent,
+        publicAmount: selectedToken ? getPublicAmount(selectedToken) : null,
+        selectedToken,
+        selectedYield,
+        tokenBalancesLoading:
+          tokenBalances.enabled && AsyncResult.isInitial(tokenBalances.result),
+        tokenOptions,
+      } as const;
+    }).pipe(Atom.withLabel("positionDetailsStakeTokenAtom"));
+    const tokenBalance = makeConfidentialTokenBalance(
+      Atom.make((get) => {
+        const stake = get(stakeTokenAtom);
+        return {
+          owner: stake.ownerCurrent ? key.walletScope.address : null,
+          publicAmount: stake.publicAmount,
+          token: stake.selectedToken,
+          yield: stake.selectedYield,
+        };
+      }).pipe(Atom.withLabel("positionDetailsStakeTokenBalanceInputAtom"))
+    );
+    const yieldEntryInputAtom = Atom.make((get) => {
+      const { intent, ownerCurrent, selectedToken, selectedYield, ...stake } =
+        get(stakeTokenAtom);
+      const balance = get(tokenBalance.balanceAtom);
       const positionsByType = get(positionsByTypeAtom).pipe(
         AsyncResult.value,
         Option.getOrNull
@@ -151,8 +208,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       const validators = get(selectedValidatorsAtom);
       const tronResource =
         intent.tronResource ?? resolveTronResource(selectedYield);
+      const priceToken = getYieldEntryPriceToken(selectedYield, selectedToken);
       const pricesRequest = getTokensPricesRequest({
-        token: selectedToken,
+        token: priceToken,
         yieldDto: selectedYield,
       });
       const pricesResult = get(
@@ -179,8 +237,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
             )
           )
         ) ||
-        (tokenBalances.enabled &&
-          AsyncResult.isInitial(tokenBalances.result)) ||
+        stake.tokenBalancesLoading ||
         AsyncResult.isInitial(validatorsResult);
       const symbol = selectedToken?.symbol ?? "";
       const appLoading =
@@ -200,7 +257,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
 
       return {
         amountInitialization: "DefaultToMinimum",
-        availableAmount,
+        availableAmount: balance.availableAmount,
         entry: {
           amount,
           selectedProviderOption: selectedYield
@@ -213,6 +270,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           yield: selectedYield,
         },
         hasNoYields: false,
+        hiddenTokenBalance: balance.hiddenTokenBalance,
         isFetching,
         mount: {
           _tag: "PositionStake",
@@ -221,15 +279,18 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         },
         ownerCurrent,
         prices,
+        priceToken,
         readiness,
+        revealedTokenBalance: balance.revealedTokenBalance,
         selectedStake: selectedYield,
         selectedYieldHasActivePosition,
         selectedToken,
         selectedValidators: validators,
         stakeAmount: amount,
         symbol,
+        tokenOptions: stake.tokenOptions,
         tronResource,
-        validationKey: getPositionDetailsStakeValidationKey(key),
+        validationKey: getPositionDetailsStakeValidationKey(key, selectedToken),
       } as const;
     }).pipe(Atom.withLabel("positionDetailsStakeYieldEntryInputAtom"));
 
@@ -242,6 +303,13 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       const selectedToken = input.selectedToken;
       const availableAmount = input.availableAmount;
       const symbol = input.symbol;
+      const isStakeTokenSameAsGasToken =
+        selectedYield && selectedToken
+          ? stakeTokenSameAsGasToken({
+              stakeToken: selectedToken,
+              yieldDto: selectedYield,
+            })
+          : false;
       // Both yield-labelled actions wait for the selected yield, because their
       // label is derived from it.
       const cta =
@@ -251,31 +319,29 @@ const positionDetailsStakeFacadeAtom = Atom.family(
 
       return {
         appLoading: entry.appLoading,
+        // A hidden balance is unknown, so Max would clamp to zero.
+        canUseMax: !isStakeTokenSameAsGasToken && !input.hiddenTokenBalance,
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
+        hiddenTokenBalance: input.hiddenTokenBalance,
         isFetching: input.isFetching,
-        isStakeTokenSameAsGasToken:
-          selectedYield && selectedToken
-            ? stakeTokenSameAsGasToken({
-                stakeToken: selectedToken,
-                yieldDto: selectedYield,
-              })
-            : false,
         kyc: entry.kyc,
         ownerCurrent: input.ownerCurrent,
         preparation: entry.preparation,
         priceUsd:
-          input.prices && selectedYield && selectedToken
+          input.prices && selectedYield && input.priceToken
             ? getTokenPriceInUSD({
                 amount: entry.amount,
                 baseToken: selectedYield.token,
                 pricePerShare: null,
                 prices: input.prices,
-                token: selectedToken,
+                token: input.priceToken,
               })
             : null,
         providers: entry.providers,
+        revealedTokenBalance: input.revealedTokenBalance,
+        revealTokenBalanceStatus: get(tokenBalance.revealStatusAtom),
         selectedStake: selectedYield,
         selectedToken,
         selectedTokenAvailableAmount:
@@ -296,6 +362,11 @@ const positionDetailsStakeFacadeAtom = Atom.family(
             ? entry.constraints.allowedMinimum
             : null,
         symbol,
+        tokenSelection: {
+          // A lone token needs no picker.
+          selectable: input.tokenOptions.length > 1,
+          options: input.tokenOptions,
+        },
         tronResource: input.tronResource,
         validation: entry.validation,
       } as const;
@@ -314,6 +385,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           tronResource,
         })
     );
+    const selectTokenAtom = Atom.fnSync((token: Token, context) =>
+      context.set(intentAtom, { type: "token/select", token })
+    );
     const setMaxAmountAtom = appRuntime.fn((_input: undefined, context) => {
       const view = context(viewAtom);
       const maximum = context(yieldEntry.viewAtom).constraints.allowedMaximum;
@@ -328,7 +402,10 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       );
     });
     return Atom.make({
+      hideTokenBalanceAtom: tokenBalance.hideAtom,
       refreshKycAtom: yieldEntry.refreshKycAtom,
+      revealTokenBalanceAtom: tokenBalance.revealAtom,
+      selectTokenAtom,
       setAmountAtom,
       setMaxAmountAtom,
       setTronResourceAtom,
@@ -387,6 +464,40 @@ export const setPositionDetailsStakeTronResourceAtom = Atom.family(
         context(positionDetailsStakeFacadeAtom(key)).setTronResourceAtom,
         tronResource
       )
+    )
+);
+
+export const selectPositionDetailsStakeTokenAtom = Atom.family(
+  (key: PositionDetailsStakeEntryKey) =>
+    Atom.fnSync((token: Token, context) =>
+      context.set(
+        context(positionDetailsStakeFacadeAtom(key)).selectTokenAtom,
+        token
+      )
+    )
+);
+
+export const revealPositionDetailsStakeTokenBalanceAtom = Atom.family(
+  (key: PositionDetailsStakeEntryKey) =>
+    Atom.fnSync(
+      (_input: undefined, context) =>
+        context.set(
+          context(positionDetailsStakeFacadeAtom(key)).revealTokenBalanceAtom,
+          undefined
+        ),
+      { initialValue: undefined }
+    )
+);
+
+export const hidePositionDetailsStakeTokenBalanceAtom = Atom.family(
+  (key: PositionDetailsStakeEntryKey) =>
+    Atom.fnSync(
+      (_input: undefined, context) =>
+        context.set(
+          context(positionDetailsStakeFacadeAtom(key)).hideTokenBalanceAtom,
+          undefined
+        ),
+      { initialValue: undefined }
     )
 );
 

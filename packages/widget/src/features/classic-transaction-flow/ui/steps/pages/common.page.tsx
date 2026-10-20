@@ -45,8 +45,15 @@ export const StepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
-  const { cancelled, retry, txStates, cta, customSignErrorMessage, yieldId } =
-    useSteps();
+  const {
+    cancelled,
+    numbered,
+    retry,
+    txStates,
+    cta,
+    customSignErrorMessage,
+    yieldId,
+  } = useSteps();
 
   const { t } = useTranslation();
 
@@ -97,6 +104,7 @@ export const StepsPage = () => {
 
           <Box flex={1} display="flex">
             <TransactionSteps
+              numbered={numbered}
               steps={txStates.map((txState) => ({
                 done: txState.meta.done,
                 id: txState.tx.id,

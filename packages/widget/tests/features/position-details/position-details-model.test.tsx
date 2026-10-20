@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Schema } from "effect";
+import { DateTime, Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
@@ -29,6 +29,8 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.earn_details.auto_compound": "Auto-compound",
     "dashboard.earn_details.cooldown": "Redemption time",
     "dashboard.earn_details.cooldown_days": `${options?.count ?? ""} days`,
+    "dashboard.earn_details.daily_batch": `Daily batch · ${options?.time ?? ""} ${options?.timezone ?? ""}`,
+    "dashboard.earn_details.warmup": "Warmup",
     "dashboard.earn_details.instant": "Instant",
     "dashboard.earn_details.min_stake": "Min stake",
     "dashboard.earn_details.native": "Native",
@@ -57,7 +59,10 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "details.validators_inactive": "Inactive",
     "position_details.balance_type.active": "Active",
     "position_details.balance_type.claimable": "Claimable",
+    "position_details.balance_type.entering": "Entering",
     "position_details.balance_type.exiting": "Exiting",
+    "position_details.duration.hours": `${options?.count ?? ""} hours`,
+    "position_details.next_batch_in": `Next batch in ${options?.duration ?? ""}`,
     "position_details.balance_type.locked": "Locked",
     "position_details.pending_action.cancel_pending": "Cancel pending request",
     "position_details.pending_action.cancel_pending_deposit": "Cancel deposit",
@@ -311,6 +316,117 @@ describe("getDashboardPositionDetailsModel", () => {
       "$5.00",
       "$6.00",
     ]);
+  });
+
+  it("tells when a batched vault settles its undated pending balances", () => {
+    const token = yieldApiYieldFixture().token;
+    const balance = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
+      ...makeBalance(overrides),
+      tokenPriceInUsd: new BigNumber(1),
+    });
+    const dailyPath = (cutoffTime: string) => ({
+      cadence: "daily_cutoff",
+      cutoffTime,
+      kind: "standard",
+      status: "open",
+    });
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: makeYield({
+        investmentSchedule: {
+          redemption: { paths: [dailyPath("11:00")] },
+          subscription: { paths: [dailyPath("15:00")] },
+          timezone: "UTC",
+        },
+      }),
+      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        ["active", [balance({ amount: "1", amountUsd: "1", token })]],
+        [
+          "entering",
+          [balance({ amount: "2", amountUsd: "2", token, type: "entering" })],
+        ],
+        [
+          "exiting",
+          [
+            balance({
+              amount: "3",
+              amountUsd: "3",
+              date: "2026-10-25T00:00:00.000Z",
+              token,
+              type: "exiting",
+            }),
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      Object.fromEntries(
+        model.breakdownRows.map((row) => [row.label, row.subValue])
+      )
+    ).toEqual({
+      Active: "$1.00",
+      Entering: "$2.00 · Next batch in 3 hours",
+      // The API's own settlement date wins over the batch estimate.
+      Exiting: "$3.00",
+    });
+  });
+
+  it("describes redemption and warmup of a batched vault by its batches", () => {
+    const dailyPath = (cutoffTime: string) => ({
+      cadence: "daily_cutoff",
+      cutoffTime,
+      kind: "standard",
+      status: "open",
+    });
+    const integrationData = makeYield();
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: {
+        ...integrationData,
+        investmentSchedule: {
+          redemption: { paths: [dailyPath("11:00")] },
+          subscription: { paths: [dailyPath("15:00")] },
+          timezone: "UTC",
+        },
+        mechanics: {
+          ...integrationData.mechanics,
+          cooldownPeriod: { seconds: 86_400 },
+          warmupPeriod: { seconds: 86_400 },
+        },
+      },
+      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+    const facts = new Map(
+      [...model.metricCards, ...model.detailRows].map((fact) => [
+        fact.id,
+        fact.value,
+      ])
+    );
+
+    // The redemption fact is a metric card or a detail row, by layout.
+    expect(facts.get("unstaking-period") ?? facts.get("cooldown")).toBeOneOf([
+      "Next batch in 23 hours",
+      "Daily batch · 11:00 UTC",
+    ]);
+    expect(facts.get("warmup")).toBe("Daily batch · 15:00 UTC");
+    expect([...facts.values()]).not.toContain("1 days");
   });
 
   it("sums repeated claimable tokens and shows every reward token", () => {

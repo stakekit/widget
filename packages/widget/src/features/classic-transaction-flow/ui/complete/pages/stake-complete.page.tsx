@@ -1,4 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
+import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
@@ -33,6 +34,7 @@ export const StakeCompletePage = () => {
         locale,
         "down"
       )}
+      batchedDeposit={isConfidentialYield(selectedStake) ? selectedStake : null}
       integrationId={selectedStake.id}
       metadata={{
         logoURI: selectedStake.metadata.logoURI,

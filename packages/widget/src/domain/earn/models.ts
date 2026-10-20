@@ -476,6 +476,30 @@ const EarnYieldRisk = Schema.Struct({
   ),
 });
 
+// Cadence and status stay open so new API values only disable batch timing.
+const EarnSchedulePath = Schema.Struct({
+  ...Struct.pick(YieldApi.SchedulePathDto.fields, [
+    "businessDaysOnly",
+    "cutoffTime",
+    "currentWindow",
+    "nextWindow",
+  ]),
+  cadence: Schema.String,
+  kind: Schema.String,
+  status: Schema.String,
+});
+
+const EarnScheduleSide = Schema.Struct({
+  paths: Schema.Array(EarnSchedulePath),
+});
+
+const EarnInvestmentSchedule = Schema.Struct({
+  redemption: EarnScheduleSide,
+  subscription: EarnScheduleSide,
+  timezone: Schema.String,
+});
+export type EarnInvestmentSchedule = typeof EarnInvestmentSchedule.Type;
+
 export const EarnYield = Schema.Struct({
   ...Struct.pick(YieldApi.YieldDto.fields, ["network", "statistics", "status"]),
   // Malformed contracts leave the yield non-confidential.
@@ -488,6 +512,13 @@ export const EarnYield = Schema.Struct({
   id: YieldId,
   providerId: ProviderId,
   inputTokens: EarnYieldTokens,
+  // A malformed schedule only drops batch timing.
+  investmentSchedule: Schema.optionalKey(
+    TolerantNullOr(EarnInvestmentSchedule, {
+      operation: "yield",
+      field: "investmentSchedule",
+    })
+  ),
   mechanics: Schema.Struct({
     ...Struct.pick(YieldApi.YieldMechanicsDto.fields, [
       "type",

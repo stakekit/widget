@@ -103,6 +103,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
             : (engine ?? {
                 cancelled: false,
                 customSignErrorMessage: null,
+                numbered: true,
                 retryable: false,
                 txStates: [],
                 yieldId,

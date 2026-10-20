@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { DateTime, Match } from "effect";
+import { DateTime } from "effect";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
@@ -8,7 +8,6 @@ import {
 } from "../../../../../domain/earn/yield";
 import type { PositionBalanceRow } from "../../../../../domain/portfolio/positions";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
-import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
 import {
   formatTokenAmount,
   formatUsd,
@@ -17,6 +16,10 @@ import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import {
+  formatDurationUntil,
+  formatNextBatchIn,
+} from "../../../../yield-summary/index";
 
 export const PositionBalances = ({
   yieldBalance,
@@ -30,36 +33,32 @@ export const PositionBalances = ({
   const presentationTime = useAtomValue(presentationClockAtom);
 
   const date = yieldBalance.date;
+  const now = presentationTime?.now ?? null;
   const isPendingBalance =
     yieldBalance.type === "entering" || yieldBalance.type === "exiting";
-  const displayDuration =
-    date && isPendingBalance && presentationTime
-      ? getDisplayDurationUntil(date, presentationTime.now)
-      : undefined;
-  const duration = Match.value(displayDuration).pipe(
-    Match.when({ unit: "less-than-minute" }, () =>
-      t("position_details.duration.less_than_minute")
-    ),
-    Match.when({ unit: Match.any }, ({ unit, value }) =>
-      t(`position_details.duration.${unit}`, { count: value })
-    ),
-    Match.orElse(() => null)
-  );
-  const durationUntilDate = Match.value(
-    date && isPendingBalance && presentationTime
-      ? { date, now: presentationTime.now, duration }
-      : null
-  ).pipe(
-    Match.when(null, () => null),
-    Match.when(
-      ({ date, now }) => DateTime.isLessThanOrEqualTo(date, now),
-      () => t("position_details.unstaking_imminent")
-    ),
-    Match.when({ duration: Match.defined }, ({ duration }) =>
-      t("position_details.unstaking_duration", { duration })
-    ),
-    Match.orElse(() => null)
-  );
+  const getPendingTiming = () => {
+    if (!isPendingBalance || !now) return null;
+    if (date) {
+      if (DateTime.isLessThanOrEqualTo(date, now)) {
+        return t("position_details.unstaking_imminent");
+      }
+      const duration = formatDurationUntil(date, now, t);
+      return duration
+        ? t("position_details.unstaking_duration", { duration })
+        : null;
+    }
+    // Batched vaults settle pending balances with their next batch.
+    const nextBatchIn = formatNextBatchIn({
+      now,
+      side: yieldBalance.type === "entering" ? "subscription" : "redemption",
+      t,
+      yieldDto: integrationData,
+    });
+    return nextBatchIn
+      ? t("position_details.next_batch_in", { duration: nextBatchIn })
+      : null;
+  };
+  const durationUntilDate = getPendingTiming();
 
   const yieldType = getExtendedYieldType(integrationData);
 

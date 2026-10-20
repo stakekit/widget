@@ -5,8 +5,13 @@
       "decrypt_to_withdraw": "Votre solde est chiffré. Déchiffrez-le pour retirer.",
       "hidden": "Masqué",
       "hide": "Masquer le solde",
+      "hide_short": "Masquer",
+      "masked_amount": "•••• {{symbol}}",
+      "retry": "Réessayer",
       "reveal": "Afficher le solde",
-      "reveal_failed": "Impossible d'afficher le solde. Réessayez."
+      "reveal_failed": "Impossible d'afficher le solde. Réessayez.",
+      "reveal_short": "Afficher",
+      "revealing": "Affichage…"
     },
     "stake_kit": "Yield.xyz",
     "max": "Max",
@@ -327,6 +332,8 @@
     "item": {
       "deposited": "Dépôt de {{token}}",
       "deposited_without_token": "Dépôt",
+      "deposit_submitted": "Dépôt de {{token}} soumis",
+      "deposit_submitted_without_token": "Dépôt soumis",
       "withdrew": "Retrait de {{token}}",
       "withdrew_without_token": "Retrait",
       "rewards": "Récompenses",
@@ -463,13 +470,18 @@
       "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
       "description_with_fee_configuration": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
+      "description_confidential": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Votre solde reste chiffré on-chain",
+      "earn_after_batch": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot",
+      "earn_after_batch_timed": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, dans {{duration}}",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
       "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement",
       "earn_yield_manual": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et doit être réclamé manuellement",
       "withdrawn_time_immediately": "Après leur retrait, vos actifs seront disponibles immédiatement",
       "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour",
-      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours"
+      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours",
+      "withdrawn_time_confidential": "Retirez en privé au règlement du prochain lot, ou instantanément avec un montant public",
+      "withdrawn_time_confidential_timed": "Retirez en privé au règlement du prochain lot dans {{duration}}, ou instantanément avec un montant public"
     },
     "lend": {
       "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
@@ -660,6 +672,8 @@
   },
   "complete": {
     "successfully_staked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
+    "deposit_submitted": "Dépôt de {{amount}} {{tokenNetwork}} soumis",
+    "next_batch_in": "Rejoint le prochain lot dans {{duration}}",
     "successfully_unstaked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
     "successfully_pending_action": "{{amount}} {{tokenNetwork}} {{pendingAction}} avec succès",
     "view_transaction": "Voir la transaction {{type}}",
@@ -777,6 +791,7 @@
     "no_current_positions": "Aucune position",
     "claim_rewards": "Réclamer les récompenses",
     "action_required": "Action requise",
+    "in_progress": "En cours",
     "dont_see_position": "Vous ne voyez pas une position?",
     "import_validator": "Importez un validateur à qui vous avez délégué des fonds pour voir votre position",
     "import_button": "Importer",
@@ -858,6 +873,7 @@
     "available_to": "<bold>{{amount}} {{symbol}}</bold> disponibles pour {{pendingAction, lowercase}}",
     "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Dépôt en attente",
     "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Retrait en attente",
+    "cancel_returns": "L'annulation renvoie immédiatement du {{symbol}} vers votre portefeuille",
     "claim": "Réclamer",
     "unstake": "Déstaker",
     "withdraw": "Retirer",
@@ -868,8 +884,9 @@
       "select_title": "Sélectionner le jeton reçu",
       "note": "Vous recevrez {{symbol}} lors du retrait.",
       "note_with_address": "Vous recevrez {{symbol}} ({{address}}) lors du retrait.",
-      "confidential_batched": "{{symbol}} reste privé. Les retraits sont groupés et peuvent prendre du temps.",
-      "confidential_instant": "{{symbol}} arrive immédiatement, mais le montant est public on-chain."
+      "confidential_batched": "Retrait privé : {{symbol}} reste privé et est versé au règlement du prochain lot.",
+      "confidential_batched_timed": "Retrait privé : {{symbol}} reste privé et est versé au règlement du prochain lot, dans {{duration}}.",
+      "confidential_instant": "Retrait instantané : {{symbol}} arrive immédiatement, mais le montant est public on-chain."
     },
     "select_validators": {
       "submit": "Envoyer"
@@ -940,6 +957,7 @@
       "years_other": "{{count}} ans"
     },
     "unstaking_duration": "{{duration}} restant",
+    "next_batch_in": "Prochain lot dans {{duration}}",
     "unstaking_imminent": "Prochain",
     "pending_action": {
       "stake": "Staker",
@@ -1120,6 +1138,7 @@
       "cooldown": "Temps de rachat",
       "cooldown_days_one": "{{count}} jour",
       "cooldown_days_other": "{{count}} jours",
+      "daily_batch": "Lot quotidien · {{time}} {{timezone}}",
       "warmup": "Délai d'activation",
       "lockup": "Blocage",
       "withdrawal": "Retrait",
@@ -1379,10 +1398,6 @@
     "position_details": {
       "action_available": "Action disponible",
       "action_required": "Action requise",
-      "action_tabs": {
-        "stake": "Stake",
-        "unstake": "Unstake"
-      },
       "active": "Actif",
       "balance": "Solde",
       "breadcrumb_root": "Positions",
@@ -1405,7 +1420,8 @@
         "total_rewards": "Total des récompenses",
         "average_apy": "APY moyen",
         "available_balance": "Disponible",
-        "net_worth": "Valeur nette"
+        "net_worth": "Valeur nette",
+        "excludes_confidential": "Les totaux excluent les positions confidentielles, dont les montants restent privés."
       }
     },
     "rewards": {
