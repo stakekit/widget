@@ -1,5 +1,5 @@
 import { RegistryProvider } from "@effect/atom-react";
-import { Effect, Layer, Schema } from "effect";
+import { Schema } from "effect";
 import { act, StrictMode } from "react";
 import {
   MemoryRouter,
@@ -10,7 +10,6 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
@@ -19,8 +18,11 @@ import {
   type BorrowTransactionFlowEntry,
   makeBorrowFlowNavigationState,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
-import { BorrowTransactionFlowRoute } from "../../../src/features/borrow-transaction-flow/react/borrow-flow-route";
-import { BorrowTransactionFlowService } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
+import {
+  BorrowTransactionFlowRoute,
+  useBorrowTransactionFlow,
+} from "../../../src/features/borrow-transaction-flow/react/borrow-flow-route";
+import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   borrowEntryFlowEntry,
   withUnserializedState,
@@ -28,6 +30,11 @@ import {
 import { render } from "../../utils/test-utils.dom.tsx";
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
+const walletScope = new WalletScopeKey({ address, network: "base" });
+const otherWalletScope = new WalletScopeKey({
+  address: Schema.decodeSync(WalletAddress)("0xOther"),
+  network: "base",
+});
 
 const makeSession = (entry: BorrowTransactionFlowEntry) =>
   new BorrowFlowSession({
@@ -58,7 +65,7 @@ const makeSession = (entry: BorrowTransactionFlowEntry) =>
         warnings: [],
       },
     },
-    walletScope: new WalletScopeKey({ address, network: "base" }),
+    walletScope,
   });
 
 const LocationProbe = () => {
@@ -75,41 +82,39 @@ const NavigationCapture = ({
   return null;
 };
 
+/** A flow page that shows which Session it renders, numbered by first sight. */
+const SessionPage = ({
+  name,
+  sessions,
+}: {
+  readonly name: string;
+  readonly sessions: Array<BorrowFlowSession>;
+}) => {
+  const session = useBorrowTransactionFlow();
+  if (!sessions.includes(session)) sessions.push(session);
+  return (
+    <output data-testid="page">
+      {name}:{sessions.indexOf(session) + 1}
+    </output>
+  );
+};
+
 const renderFlow = async ({
+  connectedWalletScope = walletScope,
   entry,
   expected,
 }: {
+  readonly connectedWalletScope?: WalletScopeKey | null;
   readonly entry: { readonly pathname: string; readonly state?: unknown };
   readonly expected: BorrowTransactionFlowEntry["_tag"];
 }) => {
-  const opened: Array<BorrowFlowSession> = [];
-  const closed: Array<BorrowFlowSession> = [];
+  const sessions: Array<BorrowFlowSession> = [];
   const navigation: { current: NavigateFunction | null } = { current: null };
-  const service = BorrowTransactionFlowService.of({
-    openSession: (session) =>
-      Effect.acquireRelease(
-        Effect.sync(() => {
-          opened.push(session);
-          return {
-            acquireExecution: () => Effect.die("Not used"),
-            acquireReview: () => Effect.die("Not used"),
-            intake: session.intake,
-          };
-        }),
-        () => Effect.sync(() => closed.push(session))
-      ),
-    start: () => Effect.die("Not used"),
-  });
   // Production renders the widget in StrictMode with the default idle TTL.
   const app = await render(
     <StrictMode>
       <RegistryProvider
-        initialValues={[
-          [
-            walletRuntime.layer,
-            Layer.succeed(BorrowTransactionFlowService, service) as never,
-          ],
-        ]}
+        initialValues={[[walletScopeAtom, connectedWalletScope]]}
       >
         <MemoryRouter
           initialEntries={[withUnserializedState(entry, entry.state)]}
@@ -121,11 +126,17 @@ const renderFlow = async ({
           />
           <Routes>
             <Route element={<BorrowTransactionFlowRoute expected={expected} />}>
-              <Route path="/borrow/review" element={<div>Review</div>} />
-              <Route path="/borrow/steps" element={<div>Steps</div>} />
+              <Route
+                path="/borrow/review"
+                element={<SessionPage name="Review" sessions={sessions} />}
+              />
+              <Route
+                path="/borrow/steps"
+                element={<SessionPage name="Steps" sessions={sessions} />}
+              />
               <Route
                 path="/positions/borrow/:marketId/review"
-                element={<div>Review</div>}
+                element={<SessionPage name="Review" sessions={sessions} />}
               />
             </Route>
             <Route path="*" element={<LocationProbe />} />
@@ -138,20 +149,22 @@ const renderFlow = async ({
     act(async () => {
       await navigation.current?.(to, { state });
     });
-  return { app, closed, navigate, opened };
+  const location = () =>
+    app.container.querySelector('[data-testid="location"]')?.textContent;
+  const page = () =>
+    app.container.querySelector('[data-testid="page"]')?.textContent;
+  return { location, navigate, page, sessions };
 };
 
 describe("Borrow Flow route", () => {
   it("redirects to the entry when it was not navigated to with a Session", async () => {
-    const { app, opened } = await renderFlow({
+    const flow = await renderFlow({
       entry: { pathname: "/borrow/review" },
       expected: "BorrowEntry",
     });
 
-    expect(
-      app.container.querySelector('[data-testid="location"]')?.textContent
-    ).toBe("/borrow");
-    expect(opened).toEqual([]);
+    await expect.poll(flow.location).toBe("/borrow");
+    expect(flow.sessions).toEqual([]);
   });
 
   it("returns a mismatched Market Position Session to the routed market", async () => {
@@ -159,7 +172,7 @@ describe("Borrow Flow route", () => {
       _tag: "MarketPosition",
       marketId: Schema.decodeSync(MarketId)("market-a"),
     });
-    const { app, opened } = await renderFlow({
+    const flow = await renderFlow({
       entry: {
         pathname: "/positions/borrow/market-b/review",
         state: makeBorrowFlowNavigationState(session),
@@ -167,13 +180,35 @@ describe("Borrow Flow route", () => {
       expected: "MarketPosition",
     });
 
-    expect(
-      app.container.querySelector('[data-testid="location"]')?.textContent
-    ).toBe("/positions/borrow/market-b");
-    expect(opened).toEqual([]);
+    await expect.poll(flow.location).toBe("/positions/borrow/market-b");
+    expect(flow.sessions).toEqual([]);
   });
 
-  it("owns the navigated Session from Review through Steps and ends it on leave", async () => {
+  it.each([
+    ["another wallet", otherWalletScope],
+    ["no wallet", null],
+  ] as const)(
+    "redirects to where the flow began when %s is connected",
+    async (_, connectedWalletScope) => {
+      const session = makeSession({
+        _tag: "MarketPosition",
+        marketId: Schema.decodeSync(MarketId)("market-a"),
+      });
+      const flow = await renderFlow({
+        connectedWalletScope,
+        entry: {
+          pathname: "/positions/borrow/market-a/review",
+          state: makeBorrowFlowNavigationState(session),
+        },
+        expected: "MarketPosition",
+      });
+
+      await expect.poll(flow.location).toBe("/positions/borrow/market-a");
+      expect(flow.sessions).toEqual([]);
+    }
+  );
+
+  it("keeps the navigated Session from Review through Steps and drops it on leave", async () => {
     const session = makeSession(borrowEntryFlowEntry);
     const flow = await renderFlow({
       entry: {
@@ -182,16 +217,22 @@ describe("Borrow Flow route", () => {
       },
       expected: "BorrowEntry",
     });
-    await expect.poll(() => flow.app.container.textContent).toBe("Review");
+    await expect.poll(flow.page).toBe("Review:1");
 
     await flow.navigate("/borrow/steps");
-    await expect.poll(() => flow.app.container.textContent).toBe("Steps");
-    expect(flow.opened).toEqual([session]);
-    expect(flow.closed).toEqual([]);
+    await expect.poll(flow.page).toBe("Steps:1");
+    expect(flow.sessions).toEqual([session]);
+    expect(flow.sessions[0]).toBe(session);
 
     await flow.navigate("/borrow");
-    await expect.poll(() => flow.closed).toEqual([session]);
-    expect(flow.opened).toEqual([session]);
+    await expect.poll(flow.location).toBe("/borrow");
+    expect(flow.page()).toBeUndefined();
+
+    // Arriving again without a Start finds no Session to resume.
+    await flow.navigate("/borrow/steps");
+    await expect.poll(flow.location).toBe("/borrow");
+    expect(flow.page()).toBeUndefined();
+    expect(flow.sessions).toEqual([session]);
   });
 
   it("replaces its Session when a new Start navigates to it while mounted", async () => {
@@ -204,15 +245,18 @@ describe("Borrow Flow route", () => {
       },
       expected: "BorrowEntry",
     });
-    await expect.poll(() => flow.opened).toEqual([first]);
+    await expect.poll(flow.page).toBe("Review:1");
 
     await flow.navigate(
       "/borrow/review",
       makeBorrowFlowNavigationState(second)
     );
+    await expect.poll(flow.page).toBe("Review:2");
 
-    await expect.poll(() => flow.closed).toEqual([first]);
-    expect(flow.opened).toEqual([first, second]);
-    expect(flow.opened[1]).toBe(second);
+    await flow.navigate("/borrow/steps");
+    await expect.poll(flow.page).toBe("Steps:2");
+    expect(flow.sessions).toHaveLength(2);
+    expect(flow.sessions[0]).toBe(first);
+    expect(flow.sessions[1]).toBe(second);
   });
 });

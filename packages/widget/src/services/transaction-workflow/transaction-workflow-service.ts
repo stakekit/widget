@@ -4,6 +4,7 @@ import {
   Layer,
   PubSub,
   Queue,
+  Ref,
   type Scope,
   type Stream,
   SubscriptionRef,
@@ -18,7 +19,6 @@ import {
 } from "./internal/model";
 import { makeTransactionWorkflowProcessor } from "./internal/processor";
 import type {
-  TransactionWorkflowAction,
   TransactionWorkflowCommand,
   TransactionWorkflowInput,
   TransactionWorkflowInputError,
@@ -50,9 +50,14 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         const inputError = validateTransactionWorkflowInput(input);
         if (inputError) return yield* inputError;
 
-        const queue = yield* Queue.dropping<TransactionWorkflowAction>(16);
+        const queue = yield* Queue.dropping<TransactionWorkflowState>(16);
         const stateRef = yield* SubscriptionRef.make(
-          initializeTransactionWorkflow(input)
+          initializeTransactionWorkflow(
+            input,
+            input._tag === "Confidential"
+              ? yield* Ref.get(input.ledger)
+              : new Map()
+          )
         );
         yield* Effect.addFinalizer(() =>
           Effect.all(
@@ -65,6 +70,8 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         );
 
         const owner = walletScopeOwnerKey(input.walletScope);
+        // A confidential workflow is a Classic one once prepared.
+        const workflowKind = input._tag === "Borrow" ? "Borrow" : "Classic";
 
         // Registered before the processor forks, so it runs after the processor
         // is interrupted and reads the state the workflow was left in.
@@ -78,7 +85,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           resourcesChanged: events.publish({
             _tag: "TransactionWorkflowResourcesChanged",
             owner,
-            workflowKind: input._tag,
+            workflowKind,
           }),
           stateRef,
         }).pipe(Effect.forkScoped);
@@ -87,7 +94,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           events.publish({
             _tag: "TransactionWorkflowEnded",
             owner,
-            workflowKind: input._tag,
+            workflowKind,
           })
         ).pipe(
           Effect.andThen(
@@ -102,11 +109,11 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         return {
           dispatch: (command) =>
             SubscriptionRef.get(stateRef).pipe(
-              Effect.flatMap((state) => {
-                const action = getTransactionWorkflowAction({ command, state });
-
-                return action ? Queue.offer(queue, action) : Effect.void;
-              }),
+              Effect.flatMap((state) =>
+                getTransactionWorkflowAction({ command, state })
+                  ? Queue.offer(queue, state)
+                  : Effect.void
+              ),
               Effect.asVoid
             ),
           states: SubscriptionRef.changes(stateRef),

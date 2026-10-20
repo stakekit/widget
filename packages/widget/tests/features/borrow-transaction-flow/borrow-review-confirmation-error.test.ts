@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   BorrowReviewConfirmationFailure,
   toBorrowReviewConfirmation,
-} from "../../../src/features/borrow-transaction-flow/state/borrow-review-confirmation-error";
+} from "../../../src/features/borrow-transaction-flow/state/review-page";
 
 const rejected = BorrowReviewConfirmationFailure.cases.Rejected.make({
   reason: "Insufficient WETH.",

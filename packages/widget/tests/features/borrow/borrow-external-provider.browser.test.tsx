@@ -547,4 +547,55 @@ describe("Borrow on a network outside Borrow", () => {
 
     await app.unmount();
   });
+
+  it("interrupts a pending switch when the network picker closes", async ({
+    worker,
+  }) => {
+    worker.use(
+      http.get(yieldApiRoute("/v1/networks"), () =>
+        HttpResponse.json([{ id: "ethereum" }, { id: "base" }])
+      ),
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([{ ...integration, networks: ["base"] }])
+      )
+    );
+    // The host never finishes switching, so only closing the picker ends it.
+    const switchChain = vi.fn(
+      (_chainId: number) => new Promise<void>(() => {})
+    );
+    const app = await render(
+      <SKApp
+        apiKey={import.meta.env.VITE_API_KEY}
+        borrowEnabled
+        dashboardVariant
+        externalProviders={{
+          currentAddress: account,
+          currentChain: polygon.id,
+          provider: {
+            ...makeWallet({ sendBorrowTransaction: vi.fn() }),
+            switchChain,
+          },
+          supportedChainIds: [mainnet.id, base.id],
+          type: "generic",
+        }}
+      />
+    );
+    await userEvent.click(app.getByText("Borrow", { exact: true }));
+    const switchNetwork = app.getByRole("button", { name: "Switch network" });
+    await switchNetwork.click();
+    await app.getByTestId(`wallet-chain-${base.id}`).click();
+    await expect.poll(() => switchChain).toHaveBeenCalledWith(base.id);
+    await expect
+      .element(app.getByRole("status").getByText("Confirm in Wallet"))
+      .toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+
+    await expect
+      .element(app.getByTestId(`wallet-chain-${base.id}`))
+      .not.toBeInTheDocument();
+    await expect.element(switchNetwork).toBeEnabled();
+
+    await app.unmount();
+  });
 });

@@ -1,5 +1,5 @@
 import { RegistryProvider, useAtomValue } from "@effect/atom-react";
-import { Effect, Layer, Schema } from "effect";
+import { Schema } from "effect";
 import { act, StrictMode } from "react";
 import {
   MemoryRouter,
@@ -10,11 +10,13 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { YieldActivityItem } from "../../../src/features/activity/model/activity-action";
-import { ActivityActionRoute } from "../../../src/features/activity/react/activity-action-route";
+import {
+  ActivityActionRoute,
+  useActivityActionRoute,
+} from "../../../src/features/activity/react/activity-action-route";
 import {
   ActivityDefaultIntent,
   ActivityExplicitIntent,
@@ -22,7 +24,7 @@ import {
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";
 import type { ClassicFlowSession } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { ClassicTransactionFlowService } from "../../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import { useClassicFlowSession } from "../../../src/features/classic-transaction-flow/react/classic-flow-route";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
@@ -83,8 +85,10 @@ const seededDetails = [
 ] as const;
 
 // The registry drops idle nodes with their seeded values; holding the seeded
-// Activity details keeps them in place while the route switches surface.
-const SeededDetailsRetainer = () => {
+// wallet scope and Activity details keeps them in place while the route
+// switches surface or leaves Activity.
+const SeededValuesRetainer = () => {
+  useAtomValue(walletScopeAtom);
   useAtomValue(seededDetails[0][0]);
   useAtomValue(seededDetails[1][0]);
   useAtomValue(seededDetails[2][0]);
@@ -105,42 +109,43 @@ const NavigationCapture = ({
   return null;
 };
 
+type SessionPageProps = Readonly<{
+  readonly name: string;
+  readonly sessions: Array<ClassicFlowSession>;
+}>;
+
+/** A flow page that shows which Session it renders, numbered by first sight. */
+const SessionPage = ({ name, sessions }: SessionPageProps) => {
+  const session = useClassicFlowSession();
+  if (!sessions.includes(session)) sessions.push(session);
+  return (
+    <output data-testid="page">
+      {name}:{sessions.indexOf(session) + 1}
+    </output>
+  );
+};
+
+/** Review renders inside the continuation Session only when one is mounted. */
+const ReviewPage = ({ sessions }: Pick<SessionPageProps, "sessions">) =>
+  useActivityActionRoute().continuationReady ? (
+    <SessionPage name="Review" sessions={sessions} />
+  ) : (
+    <output data-testid="page">Review:none</output>
+  );
+
 const renderActivity = async (
   initialPath: string,
   presentation: "Classic" | "Dashboard" = "Classic"
 ) => {
-  const opened: Array<ClassicFlowSession> = [];
-  const closed: Array<ClassicFlowSession> = [];
+  const sessions: Array<ClassicFlowSession> = [];
   const navigation: { current: NavigateFunction | null } = { current: null };
-  const service = ClassicTransactionFlowService.of({
-    openSession: (session) =>
-      Effect.acquireRelease(
-        Effect.sync(() => {
-          opened.push(session);
-          return {
-            acquireExecution: () => Effect.die("Not used"),
-            acquireReview: () => Effect.die("Not used"),
-            intake: session.intake,
-          };
-        }),
-        () => Effect.sync(() => closed.push(session))
-      ),
-    start: () => Effect.die("Not used"),
-  });
   // Production renders the widget in StrictMode with the default idle TTL.
   const app = await render(
     <StrictMode>
       <RegistryProvider
-        initialValues={[
-          [walletScopeAtom, walletScope],
-          [
-            walletRuntime.layer,
-            Layer.succeed(ClassicTransactionFlowService, service) as never,
-          ],
-          ...seededDetails,
-        ]}
+        initialValues={[[walletScopeAtom, walletScope], ...seededDetails]}
       >
-        <SeededDetailsRetainer />
+        <SeededValuesRetainer />
         <MemoryRouter initialEntries={[initialPath]}>
           <NavigationCapture
             capture={(navigate) => {
@@ -173,8 +178,11 @@ const renderActivity = async (
                 />
               }
             >
-              <Route index element={<div>Review</div>} />
-              <Route path="steps" element={<div>Steps</div>} />
+              <Route index element={<ReviewPage sessions={sessions} />} />
+              <Route
+                path="steps"
+                element={<SessionPage name="Steps" sessions={sessions} />}
+              />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -183,79 +191,78 @@ const renderActivity = async (
   );
   const location = () =>
     app.container.querySelector('[data-testid="location"]')?.textContent;
+  const page = () =>
+    app.container.querySelector('[data-testid="page"]')?.textContent;
   const navigate = (to: string) =>
     act(async () => {
       await navigation.current?.(to);
     });
-  return { app, closed, location, navigate, opened };
+  return { app, location, navigate, page, sessions };
 };
 
 describe("Activity Yield Action Continuation route", () => {
-  it("owns one continuation Session from Review through Steps and ends it on leave", async () => {
+  it("keeps one continuation Session from Review through Steps and drops it on leave", async () => {
     const activity = await renderActivity(reviewPath);
-    await expect.poll(() => activity.opened.length).toBe(1);
-    const [session] = activity.opened;
+    await expect.poll(activity.page).toBe("Review:1");
+    const [session] = activity.sessions;
     expect(session?.intake).toMatchObject({
       _tag: "YieldActionContinuation",
       action: { id: actionId },
       walletScope,
     });
     expect(session?.destination.reviewPath).toBe(reviewPath);
-    expect(activity.app.container.textContent).toContain("Review");
 
     await activity.navigate(`${reviewPath}/steps`);
-    await expect
-      .poll(() => activity.app.container.textContent)
-      .toContain("Steps");
+    await expect.poll(activity.page).toBe("Steps:1");
     expect(activity.location()).toBe(`${reviewPath}/steps`);
-    expect(activity.opened).toEqual([session]);
-    expect(activity.closed).toEqual([]);
+    expect(activity.sessions).toEqual([session]);
 
     await activity.navigate("/activity");
-    await expect.poll(() => activity.closed).toEqual([session]);
-    expect(activity.opened).toEqual([session]);
-    expect(activity.location()).toBe("/activity");
+    await expect
+      .poll(() => activity.app.container.textContent)
+      .toContain("Activity list");
+    expect(activity.page()).toBeUndefined();
+
+    // Returning straight to Steps must not resume the dropped Session.
+    await activity.navigate(`${reviewPath}/steps`);
+    await expect.poll(activity.location).toBe(reviewPath);
+    await expect.poll(activity.page).toBe("Review:2");
   });
 
   it("redirects an execution URL without a mounted continuation to Review", async () => {
     const activity = await renderActivity(`${reviewPath}/steps`);
 
-    await expect.poll(() => activity.location()).toBe(reviewPath);
-    expect(activity.app.container.textContent).not.toContain("Steps");
-    await expect.poll(() => activity.opened.length).toBe(1);
-    expect(activity.opened[0]?.intake).toMatchObject({
+    await expect.poll(activity.location).toBe(reviewPath);
+    await expect.poll(activity.page).toBe("Review:1");
+    expect(activity.sessions[0]?.intake).toMatchObject({
       action: { id: actionId },
     });
   });
 
   it("drops the continuation when another action is selected", async () => {
     const activity = await renderActivity(reviewPath, "Dashboard");
-    await expect.poll(() => activity.opened.length).toBe(1);
-    const [first] = activity.opened;
+    await expect.poll(activity.page).toBe("Review:1");
 
     await activity.navigate(
       `/activity/${encodeURIComponent(otherItem.actionData.id)}`
     );
-    await expect.poll(() => activity.closed).toEqual([first]);
+    await expect.poll(activity.page).toBe("Review:none");
 
     // Returning straight to Steps must not resume the dropped continuation.
     await activity.navigate(`${reviewPath}/steps`);
-    await expect.poll(() => activity.location()).toBe(reviewPath);
-    expect(activity.app.container.textContent).not.toContain("Steps");
+    await expect.poll(activity.location).toBe(reviewPath);
+    await expect.poll(activity.page).toBe("Review:2");
+    expect(activity.sessions).toHaveLength(2);
   });
 
   it("moves a continuable default selection to its own action route", async () => {
     const activity = await renderActivity("/activity", "Dashboard");
 
-    await expect.poll(() => activity.location()).toBe(reviewPath);
-    await expect.poll(() => activity.opened.length).toBe(1);
-    expect(activity.app.container.textContent).toContain("Review");
+    await expect.poll(activity.location).toBe(reviewPath);
+    await expect.poll(activity.page).toBe("Review:1");
 
     await activity.navigate(`${reviewPath}/steps`);
-    await expect
-      .poll(() => activity.app.container.textContent)
-      .toContain("Steps");
-    expect(activity.opened).toHaveLength(1);
-    expect(activity.closed).toEqual([]);
+    await expect.poll(activity.page).toBe("Steps:1");
+    expect(activity.sessions).toHaveLength(1);
   });
 });

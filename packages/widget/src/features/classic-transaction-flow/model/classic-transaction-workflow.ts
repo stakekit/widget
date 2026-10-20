@@ -1,5 +1,4 @@
 import type { TFunction } from "i18next";
-import type { YieldAction } from "../../../domain/action/models";
 import type { TransactionType } from "../../../domain/action/rules";
 import type {
   ClassicTransactionWorkflowInput,
@@ -48,26 +47,85 @@ export const isClassicTransactionWorkflowFinished = (
   state: TransactionWorkflowState
 ) => state._tag === "Completed" || state._tag === "Disabled";
 
+/** One row of Steps: a transaction, or the step that prepares the action. */
+export type ClassicStepRow = Readonly<{
+  readonly done: boolean;
+  readonly id: string;
+  readonly phases: TransactionPhaseProgress;
+  /** A preparation the API rejected: only going back can change it. */
+  readonly rejected: boolean;
+  readonly type: TransactionType | "DECRYPT" | "ENCRYPT" | "RESET_APPROVAL";
+}>;
+
+const idle = { broadcast: "idle", confirm: "idle", sign: "idle" } as const;
+
+// A preparation runs in the browser: its one phase is shown as signing.
+const getPreparationPhases = (
+  state: TransactionWorkflowState,
+  done: boolean
+): TransactionPhaseProgress => {
+  if (done) return { broadcast: "done", confirm: "done", sign: "done" };
+  if (state._tag === "Preparing") return { ...idle, sign: "active" };
+  if (state._tag === "PrepareFailed") return { ...idle, sign: "failed" };
+  return idle;
+};
+
 export const getClassicTransactionStepsView = (
   machineState: TransactionWorkflowState,
-  workflowInput: Pick<ClassicTransactionWorkflowInput, "yieldId">
+  {
+    preparedTransactionType,
+    yieldId,
+  }: Pick<ClassicTransactionWorkflowInput, "yieldId"> & {
+    /** Labels the API action leg a confidential flow prepares, until it does. */
+    readonly preparedTransactionType: TransactionType | null;
+  }
 ) => {
-  const workflowTransactions = flattenTransactionWorkflowTransactions(
-    machineState.context
-  );
+  const { preparation } = machineState.context;
   const currentTransaction = getCurrentTransactionWorkflowTransaction(
     machineState.context
   );
-  const txStates = workflowTransactions.flatMap((transaction) =>
-    transaction.source._tag === "Classic"
+  const preparationRows: ReadonlyArray<ClassicStepRow> = preparation
+    ? [
+        {
+          done: preparation.done,
+          id: `prepare-${preparation.step}`,
+          phases: getPreparationPhases(machineState, preparation.done),
+          rejected:
+            machineState._tag === "PrepareFailed" &&
+            !machineState.error.retryable,
+          type: preparation.step === "encrypt" ? "ENCRYPT" : "DECRYPT",
+        },
+      ]
+    : [];
+  // Presentation only, never signed: the API returns its transactions later.
+  const preparedRows: ReadonlyArray<ClassicStepRow> =
+    preparation && !preparation.done && preparedTransactionType
       ? [
           {
-            meta: transaction.meta,
-            progress: getTransactionStepProgress(machineState, transaction),
-            tx: transaction.source.transaction,
+            done: false,
+            id: `prepared-${preparedTransactionType}`,
+            phases: idle,
+            rejected: false,
+            type: preparedTransactionType,
           },
         ]
-      : []
+      : [];
+  const transactionRows = flattenTransactionWorkflowTransactions(
+    machineState.context
+  ).flatMap(
+    (transaction): ReadonlyArray<ClassicStepRow> =>
+      transaction.source._tag === "Borrow"
+        ? []
+        : [
+            {
+              done: transaction.meta.done,
+              id: transaction.source.transaction.id,
+              phases: getTransactionStepProgress(machineState, transaction)
+                .phases,
+              rejected: false,
+              type: transaction.source.transaction.type,
+            },
+          ]
   );
   const signError = currentTransaction?.meta.signError ?? null;
   const customSignErrorMessage = signError
@@ -78,114 +136,15 @@ export const getClassicTransactionStepsView = (
       machineState._tag === "SignFailed" &&
       machineState.error.reason._tag === "WalletRequestCancelled",
     customSignErrorMessage,
-    /** Headers count the steps: the list is known upfront. */
-    numbered: true,
+    /** Headers count the steps only when the list is known upfront. */
+    numbered: preparation === null,
     retryable:
+      (machineState._tag === "PrepareFailed" && machineState.error.retryable) ||
       machineState._tag === "SignFailed" ||
       machineState._tag === "SubmissionFailed" ||
       machineState._tag === "ConfirmationFailed" ||
       machineState._tag === "AdvanceFailed",
-    txStates,
-    yieldId: workflowInput.yieldId,
+    txStates: [...preparationRows, ...transactionRows, ...preparedRows],
+    yieldId,
   } as const;
 };
-
-export type ClassicFlowConversionStepStatus =
-  | "confirming"
-  | "done"
-  | "failed"
-  | "idle"
-  | "rejected"
-  | "signing";
-
-export type ClassicFlowConversion = Readonly<{
-  /**
-   * Labels the API action leg until its transactions arrive; presentation
-   * only, never signed.
-   */
-  readonly pendingTransactionType: TransactionType | null;
-  readonly steps: ReadonlyArray<
-    Readonly<{
-      readonly status: ClassicFlowConversionStepStatus;
-      readonly step:
-        | "approve-reset"
-        | "approve"
-        | "decrypt"
-        | "encrypt"
-        | "wrap";
-    }>
-  >;
-  readonly transactions: YieldAction["transactions"];
-}>;
-
-const idle = { broadcast: "idle", confirm: "idle", sign: "idle" } as const;
-
-const conversionStepPhases: Record<
-  ClassicFlowConversionStepStatus,
-  TransactionPhaseProgress
-> = {
-  confirming: { broadcast: "done", confirm: "active", sign: "done" },
-  done: { broadcast: "done", confirm: "done", sign: "done" },
-  failed: { ...idle, sign: "failed" },
-  idle,
-  rejected: { ...idle, sign: "failed" },
-  signing: { ...idle, sign: "active" },
-};
-
-const conversionStepTypes = {
-  "approve-reset": "RESET_APPROVAL",
-  approve: "APPROVAL",
-  decrypt: "DECRYPT",
-  encrypt: "ENCRYPT",
-  wrap: "WRAP",
-} as const;
-
-// Before the engine starts, the API action's transactions wait idle.
-const getPreparedStepStates = (conversion: ClassicFlowConversion) => {
-  if (conversion.pendingTransactionType) {
-    return [
-      {
-        meta: { done: false },
-        progress: { disabled: false, phases: idle },
-        tx: {
-          id: `pending-${conversion.pendingTransactionType}`,
-          type: conversion.pendingTransactionType,
-        },
-      },
-    ];
-  }
-  return conversion.transactions.map((tx) => ({
-    meta: { done: false },
-    progress: { disabled: false, phases: idle },
-    tx,
-  }));
-};
-
-export const getClassicConversionStepsView = (
-  conversion: ClassicFlowConversion,
-  engine: ReturnType<typeof getClassicTransactionStepsView> | null,
-  yieldId: YieldAction["yieldId"]
-) => ({
-  cancelled: engine?.cancelled ?? false,
-  customSignErrorMessage: engine?.customSignErrorMessage ?? null,
-  /** The API action's steps are known only once prepared, so no count. */
-  numbered: false,
-  retryable:
-    conversion.steps.some((step) => step.status === "failed") ||
-    (engine?.retryable ?? false),
-  txStates: [
-    ...conversion.steps.map((step) => ({
-      meta: {
-        done: step.status === "done",
-        rejected: step.status === "rejected",
-      },
-      progress: { disabled: false, phases: conversionStepPhases[step.status] },
-      tx: {
-        id: `conversion-${step.step}`,
-        type: conversionStepTypes[step.step],
-      },
-    })),
-    ...(engine?.txStates ?? getPreparedStepStates(conversion)),
-  ],
-  yieldId,
-});

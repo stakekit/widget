@@ -1,5 +1,6 @@
-import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
+import { useAtomValue } from "@effect/atom-react";
 import { Option, Schema } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import {
   createContext,
   type PropsWithChildren,
@@ -11,51 +12,52 @@ import {
   type MarketId,
   MarketId as MarketIdSchema,
 } from "../../../domain/borrow/ids";
-import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
+import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
+import { walletScopeAtom } from "../../wallet/index";
 import {
   type BorrowFlowSession,
   type BorrowTransactionFlowEntry,
+  decodeBorrowFlowExecutionActionId,
   decodeBorrowFlowNavigationState,
   getBorrowTransactionFlowRoutes,
 } from "../model/borrow-transaction-flow";
 import {
-  type BorrowFlowExecutionFacade,
-  type BorrowFlowReviewFacade,
-  type BorrowFlowSessionFacade,
-  type BorrowFlowSessionModule,
-  makeBorrowFlowExecutionScope,
-  makeBorrowFlowReviewScope,
-  makeBorrowFlowSessionModule,
-} from "../state/atoms/borrow-flow-session";
+  BorrowFlowExecutionKey,
+  borrowFlowExecutionPage,
+} from "../state/execution-page";
+import {
+  BorrowFlowReviewVisit,
+  borrowFlowReviewPage,
+} from "../state/review-page";
 
-const BorrowFlowSessionContext = createContext<BorrowFlowSessionModule | null>(
-  null
-);
+const BorrowFlowSessionContext = createContext<BorrowFlowSession | null>(null);
 
-const useBorrowFlowSessionModule = (): BorrowFlowSessionModule => {
+export const useBorrowTransactionFlow = (): BorrowFlowSession => {
   const session = useContext(BorrowFlowSessionContext);
   if (!session) throw new Error("Borrow Flow Session is unavailable.");
   return session;
 };
 
-export const useBorrowTransactionFlow = (): BorrowFlowSessionFacade =>
-  useBorrowFlowSessionModule().facade;
+/** This visit's Review: the same Atoms for every render of it. */
+export const useBorrowTransactionFlowReview = () =>
+  useAtomValue(
+    borrowFlowReviewPage(
+      new BorrowFlowReviewVisit({
+        session: useBorrowTransactionFlow(),
+        visit: useLocation().key,
+      })
+    )
+  );
 
-const SessionScopedAtom = makeScopedAtom(makeBorrowFlowSessionModule);
-const ReviewScopedAtom = makeScopedAtom(makeBorrowFlowReviewScope);
-
-export const useBorrowTransactionFlowReview = (): BorrowFlowReviewFacade => {
-  const reviewAtom = useContext(ReviewScopedAtom.Context);
-  return useAtomValue(reviewAtom).facade;
+/** The Execution of the action Steps and Complete were navigated to run. */
+export const useBorrowTransactionFlowExecution = () => {
+  const actionId = decodeBorrowFlowExecutionActionId(useLocation().state);
+  const session = useBorrowTransactionFlow();
+  if (!actionId) throw new Error("Borrow Flow Execution is unavailable.");
+  return useAtomValue(
+    borrowFlowExecutionPage(new BorrowFlowExecutionKey({ actionId, session }))
+  );
 };
-
-const ExecutionScopedAtom = makeScopedAtom(makeBorrowFlowExecutionScope);
-
-export const useBorrowTransactionFlowExecution =
-  (): BorrowFlowExecutionFacade => {
-    const executionAtom = useContext(ExecutionScopedAtom.Context);
-    return useAtomValue(executionAtom).facade;
-  };
 
 const matchesEntry = (
   actual: BorrowTransactionFlowEntry,
@@ -109,18 +111,24 @@ export const BorrowTransactionFlowRoute = ({
   ) {
     return <Navigate replace to={getEntryFallbackPath(expected, marketId)} />;
   }
-  return (
-    <SessionScopedAtom.Provider key={mounted.key} value={mounted.session}>
-      <MountedSessionBinding />
-    </SessionScopedAtom.Provider>
-  );
+  return <BorrowFlowSessionRoute key={mounted.key} session={mounted.session} />;
 };
 
-const MountedSessionBinding = () => {
-  // Not `SessionScopedAtom.use()`: React Compiler does not treat a member named
-  // `use` as a hook and caches the call, which drops its useContext on rerender.
-  const sessionAtom = useContext(SessionScopedAtom.Context);
-  const session = useAtomValue(sessionAtom);
+/** Provides `session` to its pages while the connected wallet owns it. */
+const BorrowFlowSessionRoute = ({
+  session,
+}: {
+  readonly session: BorrowFlowSession;
+}) => {
+  const walletScope = useAtomValue(walletScopeAtom);
+  if (!walletScope || !sameWalletScopeOwner(walletScope, session.walletScope)) {
+    return (
+      <Navigate
+        replace
+        to={getBorrowTransactionFlowRoutes(session.intake.entry).basePath}
+      />
+    );
+  }
   return (
     <BorrowFlowSessionContext.Provider value={session}>
       <Outlet />
@@ -128,75 +136,61 @@ const MountedSessionBinding = () => {
   );
 };
 
-export const BorrowTransactionFlowReviewRoute = ({
+/**
+ * Shows Steps and Complete while their Execution runs. Leaving both ends its
+ * workflow; without an action handed off by Review, it leaves the flow.
+ */
+export const BorrowTransactionFlowExecutionRoute = ({
   children,
 }: PropsWithChildren) => {
-  const session = useBorrowFlowSessionModule();
-  return (
-    <ReviewScopedAtom.Provider value={session}>
-      <ReviewBinding>{children}</ReviewBinding>
-    </ReviewScopedAtom.Provider>
-  );
+  const { intake } = useBorrowTransactionFlow();
+  const actionId = decodeBorrowFlowExecutionActionId(useLocation().state);
+  if (!actionId) {
+    return (
+      <Navigate
+        replace
+        to={getBorrowTransactionFlowRoutes(intake.entry).basePath}
+      />
+    );
+  }
+  return <ExecutionStarted>{children}</ExecutionStarted>;
 };
 
-const ReviewBinding = ({ children }: PropsWithChildren) => {
-  const reviewAtom = useContext(ReviewScopedAtom.Context);
-  const review = useAtomValue(reviewAtom);
-  const availability = useAtomValue(review.availabilityAtom);
-  const { basePath } = getBorrowTransactionFlowRoutes(
-    useBorrowTransactionFlow().intake.entry
+const ExecutionStarted = ({ children }: PropsWithChildren) => {
+  const { intake } = useBorrowTransactionFlow();
+  const workflow = useAtomValue(
+    useBorrowTransactionFlowExecution().workflowAtom
   );
-  if (availability._tag === "Failure") {
-    return <Navigate replace to={basePath} />;
+  if (workflow._tag === "Failure") {
+    return (
+      <Navigate
+        replace
+        to={getBorrowTransactionFlowRoutes(intake.entry).basePath}
+      />
+    );
   }
-  if (availability._tag !== "Success") return null;
+  if (workflow._tag === "Initial") return null;
   return children ?? <Outlet />;
 };
 
-export const BorrowTransactionFlowExecutionScope = ({
+/** Steps until the workflow completes, then Complete, on the same Execution. */
+export const BorrowTransactionFlowExecutionPage = ({
   children,
-}: PropsWithChildren) => {
-  const session = useBorrowFlowSessionModule();
-  return (
-    <ExecutionScopedAtom.Provider value={session}>
-      <ExecutionBinding>{children}</ExecutionBinding>
-    </ExecutionScopedAtom.Provider>
+  page,
+}: PropsWithChildren<{ readonly page: "Complete" | "Steps" }>) => {
+  const { intake } = useBorrowTransactionFlow();
+  const location = useLocation();
+  const state = useAtomValue(useBorrowTransactionFlowExecution().stateAtom);
+  if (!AsyncResult.isSuccess(state)) return null;
+  const { completePath, stepsPath } = getBorrowTransactionFlowRoutes(
+    intake.entry
   );
-};
-
-const ExecutionBinding = ({ children }: PropsWithChildren) => {
-  const executionAtom = useContext(ExecutionScopedAtom.Context);
-  const execution = useAtomValue(executionAtom);
-  const availability = useAtomValue(execution.availabilityAtom);
-  const state = useAtomValue(execution.stateAtom);
-  const { basePath } = getBorrowTransactionFlowRoutes(
-    useBorrowTransactionFlow().intake.entry
-  );
-
-  if (availability._tag === "Failure") {
-    return <Navigate replace to={basePath} />;
+  const completed = state.value._tag === "Completed";
+  if (page === "Steps" && completed) {
+    return <Navigate replace state={location.state} to={completePath} />;
   }
-  if (availability._tag !== "Success") return null;
-  if (availability.value._tag !== "Acquired") {
-    return <Navigate replace to={basePath} />;
+  if (page === "Complete" && !completed) {
+    return <Navigate replace state={location.state} to={stepsPath} />;
   }
-  if (state._tag === "Initial") return null;
   return children ?? <Outlet />;
-};
-
-export const BorrowTransactionFlowCompletionGuard = () => {
-  const execution = useBorrowTransactionFlowExecution();
-  const [completionAtom] = useState(() => execution.makeCompletionStateAtom());
-  const result = useAtomValue(completionAtom);
-  const view = useAtomValue(execution.viewAtom);
-  const { stepsPath } = getBorrowTransactionFlowRoutes(
-    useBorrowTransactionFlow().intake.entry
-  );
-  if (result._tag === "Initial") return <LoadingSkeleton />;
-  if (result._tag === "Failure" || !result.value) {
-    return <Navigate replace to={stepsPath} />;
-  }
-  // Admission is authoritative; the page still needs its completion details.
-  if (!view.isDone) return <LoadingSkeleton />;
-  return <Outlet />;
 };

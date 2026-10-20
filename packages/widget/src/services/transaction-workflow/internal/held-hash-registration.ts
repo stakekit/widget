@@ -39,7 +39,10 @@ export const makeHeldHashRegistration = Effect.gen(function* () {
       transaction.meta.submissionIndex === null
         ? transaction.meta.signedTx
         : null;
-    if (!transaction || !hash) return Effect.void;
+    // No API records a Direct transaction; its Ledger holds the hash.
+    if (!transaction || !hash || transaction.source._tag === "Direct") {
+      return Effect.void;
+    }
 
     const register = Match.value(transaction.source).pipe(
       Match.tag("Classic", (source) =>

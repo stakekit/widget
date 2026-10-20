@@ -6,13 +6,10 @@ import { createClassicFlowRoutes } from "../../../src/features/classic-transacti
 vi.mock(
   "../../../src/features/classic-transaction-flow/react/classic-flow-route",
   () => ({
-    ClassicFlowCompletionGuard: function ClassicFlowCompletionGuard() {
+    ClassicFlowExecutionPage: function ClassicFlowExecutionPage() {
       return null;
     },
-    ClassicFlowExecutionScope: function ClassicFlowExecutionScope() {
-      return null;
-    },
-    ClassicFlowReviewScope: function ClassicFlowReviewScope() {
+    ClassicFlowExecutionRoute: function ClassicFlowExecutionRoute() {
       return null;
     },
     ClassicFlowRoute: function ClassicFlowRoute() {
@@ -148,7 +145,7 @@ const standardRouteContract = ({
     children: [
       {
         children: [],
-        element: `ClassicFlowReviewScope>${reviewPage}`,
+        element: reviewPage,
         index: false,
         path: "review",
       },
@@ -156,18 +153,18 @@ const standardRouteContract = ({
         children: [
           {
             children: [],
-            element: stepsPage,
+            element: `ClassicFlowExecutionPage>${stepsPage}`,
             index: false,
             path: "steps",
           },
           {
             children: [],
-            element: `ClassicFlowCompletionGuard>${completePage}`,
+            element: `ClassicFlowExecutionPage>${completePage}`,
             index: false,
             path: "complete",
           },
         ],
-        element: "ClassicFlowExecutionScope",
+        element: "ClassicFlowExecutionRoute",
         index: false,
         path: null,
       },

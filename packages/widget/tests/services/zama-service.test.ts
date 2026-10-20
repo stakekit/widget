@@ -1,28 +1,38 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
+import {
+  Effect,
+  HashMap,
+  Layer,
+  Schema,
+  Stream,
+  SubscriptionRef,
+} from "effect";
 import { decodeFunctionData, erc20Abi } from "viem";
 import { sepolia } from "viem/chains";
 import { vi } from "vitest";
-import { ConfidentialHandle } from "../../src/domain/earn/confidential";
 import {
-  ActionId,
-  WalletAddress,
-  YieldId,
-} from "../../src/domain/identity/identifiers";
-import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
+  ConfidentialHandle,
+  ConfidentialTokenBalanceKey,
+} from "../../src/domain/earn/confidential";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/domain/wallet/wallet-scope";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
-import type {
-  ClassicActionMeta,
-  WalletSignTransactionInput,
-} from "../../src/services/wallet/wallet-transactions";
-import { ConfidentialValues } from "../../src/services/zama/confidential-values";
-import { ZamaService } from "../../src/services/zama/zama-service";
-import { confidentialFixture } from "../fixtures";
+import { RevealedBalances } from "../../src/services/zama/revealed-balances";
+import {
+  type ConfidentialPreparation,
+  ZamaService,
+} from "../../src/services/zama/zama-service";
+import { confidentialFixture, confidentialYieldFixture } from "../fixtures";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestDomainEvents } from "../utils/transaction-workflow-test-kit";
 
 const sdk = vi.hoisted(() => ({
+  balanceOf: vi.fn(),
   configs: [] as Array<{
     readonly chains: ReadonlyArray<{
       readonly auth?: unknown;
@@ -31,6 +41,7 @@ const sdk = vi.hoisted(() => ({
     }>;
     readonly signer: { signTypedData: (data: unknown) => Promise<string> };
   }>,
+  decryptPublicValues: vi.fn(),
   decryptValues: vi.fn(),
   encrypt: vi.fn(),
 }));
@@ -39,16 +50,7 @@ const clientConfigs = vi.hoisted(
   () => [] as Array<{ readonly chain?: { readonly id: number } }>
 );
 const client = vi.hoisted(() => ({
-  estimateFeesPerGas: vi.fn(async () => ({
-    maxFeePerGas: 30n,
-    maxPriorityFeePerGas: 2n,
-  })),
-  estimateGas: vi.fn(async () => 100n),
-  getChainId: vi.fn(async () => 11155111),
-  getTransactionCount: vi.fn(async () => 7),
   readContract: vi.fn(),
-  sendRawTransaction: vi.fn(),
-  waitForTransactionReceipt: vi.fn(async () => ({ status: "success" })),
 }));
 
 vi.mock("viem", async (importOriginal) => ({
@@ -70,10 +72,16 @@ vi.mock("@zama-fhe/sdk", () => ({
   createConfig: (config: unknown) => config,
   memoryStorage: {},
   ZamaSDK: class {
-    decryption = { decryptValues: sdk.decryptValues };
+    decryption = {
+      decryptPublicValues: sdk.decryptPublicValues,
+      decryptValues: sdk.decryptValues,
+    };
     encrypt = sdk.encrypt;
     constructor(config: (typeof sdk.configs)[number]) {
       sdk.configs.push(config);
+    }
+    createToken() {
+      return { balanceOf: sdk.balanceOf };
     }
     terminate() {}
   },
@@ -82,22 +90,11 @@ vi.mock("@zama-fhe/sdk", () => ({
 const owner = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
-const { cUsdc, usdc } = confidentialFixture;
+const { cUsdc, router, usdc } = confidentialFixture;
 const conversion = {
   chainId: 11155111,
   underlying: usdc.address,
   wrapper: cUsdc.address,
-};
-const actionMeta: ClassicActionMeta = {
-  actionId: ActionId.make("action-1"),
-  actionType: "STAKE",
-  address: owner,
-  amount: "5",
-  amountRaw: null,
-  inputToken: undefined,
-  providersDetails: [],
-  rawArguments: null,
-  yieldId: YieldId.make("ethereum-sepolia-zama-vault"),
 };
 
 const revealedHandle = Schema.decodeSync(ConfidentialHandle)(
@@ -121,17 +118,16 @@ const otherScope = new WalletScopeKey({
 
 const makeLayer = Effect.fn("makeZamaTestLayer")(function* (options: {
   readonly apiKey?: string;
+  readonly canSignPermit?: boolean;
   readonly state?: SubscriptionRef.SubscriptionRef<WalletState>;
   readonly getClient?: (input: { readonly chainId: number }) => {
     readonly request: (args: unknown) => Promise<unknown>;
   };
   readonly wagmiChains?: ReadonlyArray<{ readonly id: number }>;
-  readonly signTransaction?: (
-    input: WalletSignTransactionInput
-  ) => Effect.Effect<{ broadcasted: true; signedTx: string }>;
   readonly signPermit?: (input: unknown) => Effect.Effect<`0x${string}`>;
 }) {
   const wallet = yield* makeTestWallet({
+    canSignPermit: Effect.succeed(options.canSignPermit ?? true),
     state:
       options.state ??
       (yield* SubscriptionRef.make<WalletState>(
@@ -141,283 +137,242 @@ const makeLayer = Effect.fn("makeZamaTestLayer")(function* (options: {
       chains: options.wagmiChains ?? [],
       getClient: options.getClient,
     } as never,
-    ...(options.signTransaction
-      ? { signTransaction: options.signTransaction }
-      : {}),
     ...(options.signPermit ? { signPermit: options.signPermit } : {}),
   });
+  const events = yield* makeTestDomainEvents();
   const dependencies = Layer.mergeAll(
     wallet.layer,
-    ConfidentialValues.layer,
+    events.layer,
+    RevealedBalances.layer,
     WidgetConfigService.layer({
       apiKey: options.apiKey ?? "test",
       yieldsApiUrl: "https://api.example.test/",
     })
   );
-  return Layer.merge(
-    dependencies,
-    ZamaService.layer.pipe(Layer.provide(dependencies))
-  );
+  return {
+    events: events.service,
+    layer: Layer.merge(
+      dependencies,
+      ZamaService.layer.pipe(Layer.provide(dependencies))
+    ),
+  };
 });
+
+const planConversion = (readAllowance: () => Promise<bigint>) =>
+  Effect.gen(function* () {
+    client.readContract.mockImplementationOnce(readAllowance);
+    const { layer } = yield* makeLayer({});
+    const planned = yield* ZamaService.use((zama) =>
+      zama.planConversion({
+        amount: 5_000_000n,
+        conversion,
+        network: "ethereum-sepolia",
+        owner,
+      })
+    ).pipe(Effect.provide(layer));
+
+    return planned.map((transaction) => ({
+      args:
+        transaction.type === "WRAP"
+          ? null
+          : decodeFunctionData({ abi: erc20Abi, data: transaction.data }).args,
+      to: transaction.to,
+      type: transaction.type,
+    }));
+  });
+
+const depositPreparation = (
+  pick: "asset" | "underlying"
+): Extract<ConfidentialPreparation, { readonly _tag: "Encrypt" }> => {
+  const yieldDto = confidentialYieldFixture();
+  const token = pick === "asset" ? yieldDto.inputTokens[0]! : yieldDto.token;
+  return {
+    _tag: "Encrypt",
+    amount: 5_000_000n,
+    assetAddress: cUsdc.address,
+    balance: pick === "asset" ? { chainId: 11155111, token } : null,
+    command: {
+      address: owner,
+      arguments: { amount: "5", inputToken: token.address },
+      yieldId: yieldDto.id,
+    },
+    conversion: pick === "asset" ? null : conversion,
+    instant: false,
+    intent: "enter",
+    requiresPermitSigner: true,
+    yieldDto,
+  };
+};
+
+const encryptAs = (handles: ReadonlyArray<string>, inputProof: string) =>
+  Promise.resolve({ encryptedValues: handles, inputProof });
 
 describe("ZamaService", () => {
   it.effect("plans only a wrap when the allowance already covers it", () =>
     Effect.gen(function* () {
-      client.readContract.mockResolvedValueOnce(10_000_000n);
-      const layer = yield* makeLayer({});
+      const planned = yield* planConversion(async () => 10_000_000n);
 
-      const steps = yield* ZamaService.use((zama) =>
-        zama.conversionSteps({ amount: 5_000_000n, conversion, owner })
-      ).pipe(Effect.provide(layer));
-
-      expect(steps).toEqual(["wrap"]);
+      expect(planned).toEqual([
+        { args: null, to: cUsdc.address, type: "WRAP" },
+      ]);
     })
   );
 
   it.effect("plans an approve first when the allowance is short", () =>
     Effect.gen(function* () {
-      client.readContract.mockResolvedValueOnce(0n);
-      const layer = yield* makeLayer({});
+      const planned = yield* planConversion(async () => 0n);
 
-      const steps = yield* ZamaService.use((zama) =>
-        zama.conversionSteps({ amount: 5_000_000n, conversion, owner })
-      ).pipe(Effect.provide(layer));
-
-      expect(steps).toEqual(["approve", "wrap"]);
+      expect(planned).toEqual([
+        {
+          args: [cUsdc.address, 5_000_000n],
+          to: usdc.address,
+          type: "APPROVAL",
+        },
+        { args: null, to: cUsdc.address, type: "WRAP" },
+      ]);
     })
   );
 
   it.effect("plans an allowance reset when a partial allowance is left", () =>
     Effect.gen(function* () {
-      client.readContract.mockResolvedValueOnce(1_000_000n);
-      const layer = yield* makeLayer({});
+      const planned = yield* planConversion(async () => 1_000_000n);
 
-      const steps = yield* ZamaService.use((zama) =>
-        zama.conversionSteps({ amount: 5_000_000n, conversion, owner })
-      ).pipe(Effect.provide(layer));
+      expect(planned.map(({ args, type }) => [type, args])).toEqual([
+        ["RESET_APPROVAL", [cUsdc.address, 0n]],
+        ["APPROVAL", [cUsdc.address, 5_000_000n]],
+        ["WRAP", null],
+      ]);
+    })
+  );
 
-      expect(steps).toEqual(["approve-reset", "approve", "wrap"]);
+  it.effect("resets an allowance it cannot read before approving", () =>
+    Effect.gen(function* () {
+      const planned = yield* planConversion(() =>
+        Promise.reject(new Error("rpc down"))
+      );
+
+      expect(planned.map(({ type }) => type)).toEqual([
+        "RESET_APPROVAL",
+        "APPROVAL",
+        "WRAP",
+      ]);
     })
   );
 
   it.effect(
-    "sends one conversion step and reports the broadcast before the receipt",
+    "encrypts a cUSDC deposit's amount and its zero-padded legs into the request",
     () =>
       Effect.gen(function* () {
-        const events: Array<string> = [];
-        client.readContract.mockResolvedValueOnce(0n);
-        client.waitForTransactionReceipt.mockImplementationOnce(async () => {
-          events.push("receipt");
-          return { status: "success" };
-        });
-        const sent: Array<WalletSignTransactionInput> = [];
-        const layer = yield* makeLayer({
-          signTransaction: (input) =>
-            Effect.sync(() => {
-              sent.push(input);
-              return { broadcasted: true, signedTx: "0xhash" } as const;
-            }),
-        });
+        sdk.balanceOf.mockResolvedValueOnce(5_000_000n);
+        sdk.encrypt
+          .mockImplementationOnce(() => encryptAs(["0xamount"], "0xap"))
+          .mockImplementationOnce(() =>
+            encryptAs(["0xleg0", "0xleg1"], "0xlp")
+          );
+        const { layer } = yield* makeLayer({});
 
-        yield* ZamaService.use((zama) =>
-          Effect.all([
-            zama.convertStep({
-              actionMeta,
-              amount: 5_000_000n,
-              conversion,
-              network: "ethereum-sepolia",
-              onBroadcast: Effect.sync(() => events.push("broadcast")),
-              owner,
-              step: "approve",
-              walletScope: scope,
-            }),
-            zama.convertStep({
-              actionMeta,
-              amount: 5_000_000n,
-              conversion,
-              network: "ethereum-sepolia",
-              onBroadcast: Effect.void,
-              owner,
-              step: "wrap",
-              walletScope: scope,
-            }),
-          ])
+        const command = yield* ZamaService.use((zama) =>
+          zama.encryptCommand(depositPreparation("asset"))
         ).pipe(Effect.provide(layer));
 
-        expect(events).toEqual(["broadcast", "receipt"]);
-        expect(sent.map((input) => input.txMeta.txId)).toEqual([
-          "action-1-approve",
-          "action-1-wrap",
+        expect(
+          sdk.encrypt.mock.calls.map(([input]) => [
+            input.contractAddress,
+            input.values.map(({ value }: { value: bigint }) => value),
+          ])
+        ).toEqual([
+          [cUsdc.address, [5_000_000n]],
+          [router, [0n, 5_000_000n]],
         ]);
-        expect(JSON.parse(sent[0]!.tx).to).toBe(usdc.address);
-        expect(JSON.parse(sent[1]!.tx)).toMatchObject({
-          chainId: 11155111,
-          from: owner,
-          gasLimit: "0x78",
-          to: cUsdc.address,
-          type: 2,
+        expect(command.arguments).toEqual({
+          encryptedAmount: "0xamount",
+          encryptedAmountProof: "0xap",
+          encryptedLegAmounts: ["0xleg0", "0xleg1"],
+          encryptedLegProof: "0xlp",
+          inputToken: cUsdc.address,
         });
       })
   );
 
-  it.effect("resets the allowance to zero and approves as separate steps", () =>
+  it.effect("encrypts the wrapped amount of an underlying deposit", () =>
     Effect.gen(function* () {
-      client.readContract
-        .mockResolvedValueOnce(1_000_000n)
-        .mockResolvedValueOnce(0n);
-      const sent: Array<WalletSignTransactionInput> = [];
-      const layer = yield* makeLayer({
-        signTransaction: (input) =>
-          Effect.sync(() => {
-            sent.push(input);
-            return { broadcasted: true, signedTx: "0xhash" } as const;
-          }),
-      });
+      client.readContract.mockResolvedValueOnce(2n);
+      sdk.encrypt.mockImplementation(() => encryptAs(["0xh"], "0xp"));
+      const { layer } = yield* makeLayer({});
 
       yield* ZamaService.use((zama) =>
-        Effect.forEach(["approve-reset", "approve"] as const, (step) =>
-          zama.convertStep({
-            actionMeta,
-            amount: 5_000_000n,
-            conversion,
-            network: "ethereum-sepolia",
-            onBroadcast: Effect.void,
-            owner,
-            step,
-            walletScope: scope,
-          })
-        )
+        zama.encryptCommand(depositPreparation("underlying"))
       ).pipe(Effect.provide(layer));
 
-      expect(sent.map((input) => input.txMeta.txId)).toEqual([
-        "action-1-approve-reset",
-        "action-1-approve",
-      ]);
       expect(
-        sent.map(
-          (input) =>
-            decodeFunctionData({
-              abi: erc20Abi,
-              data: JSON.parse(input.tx).data,
-            }).args
+        sdk.encrypt.mock.calls.map(([input]) =>
+          input.values.map(({ value }: { value: bigint }) => value)
         )
-      ).toEqual([
-        [cUsdc.address, 0n],
-        [cUsdc.address, 5_000_000n],
-      ]);
+      ).toEqual([[2_500_000n], [0n, 2_500_000n]]);
+      sdk.encrypt.mockReset();
     })
   );
 
-  const runApprovalStep = (
-    step: "approve-reset" | "approve",
-    allowance: bigint
-  ) =>
-    Effect.gen(function* () {
-      client.readContract.mockResolvedValueOnce(allowance);
-      const sent: Array<WalletSignTransactionInput> = [];
-      const layer = yield* makeLayer({
-        signTransaction: (input) =>
-          Effect.sync(() => {
-            sent.push(input);
-            return { broadcasted: true, signedTx: "0xhash" } as const;
-          }),
-      });
+  it.effect(
+    "rejects a cUSDC deposit above the hidden balance without encrypting",
+    () =>
+      Effect.gen(function* () {
+        sdk.balanceOf.mockResolvedValueOnce(4_999_999n);
+        const { layer } = yield* makeLayer({});
 
-      yield* ZamaService.use((zama) =>
-        zama.convertStep({
-          actionMeta,
-          amount: 5_000_000n,
-          conversion,
-          network: "ethereum-sepolia",
-          onBroadcast: Effect.void,
-          owner,
-          step,
-          walletScope: scope,
+        const error = yield* ZamaService.use((zama) =>
+          zama.encryptCommand(depositPreparation("asset"))
+        ).pipe(Effect.provide(layer), Effect.flip);
+
+        expect(error).toMatchObject({ retryable: false });
+        expect(sdk.encrypt).not.toHaveBeenCalled();
+      })
+  );
+
+  it.effect("rejects a deposit the wallet could never reveal again", () =>
+    Effect.gen(function* () {
+      const { layer } = yield* makeLayer({ canSignPermit: false });
+
+      const error = yield* ZamaService.use((zama) =>
+        zama.encryptCommand(depositPreparation("asset"))
+      ).pipe(Effect.provide(layer), Effect.flip);
+
+      expect(error).toMatchObject({
+        message: "This wallet cannot reveal confidential balances.",
+        retryable: false,
+      });
+    })
+  );
+
+  it.effect("withdraws an unwrap with its publicly decrypted amount", () =>
+    Effect.gen(function* () {
+      sdk.decryptPublicValues.mockResolvedValueOnce({
+        clearValues: { "0xrequest": 7_000_000n },
+        decryptionProof: "0xproof",
+      });
+      const { layer } = yield* makeLayer({});
+      const yieldDto = confidentialYieldFixture();
+
+      const command = yield* ZamaService.use((zama) =>
+        zama.decryptCommand({
+          _tag: "Decrypt",
+          chainId: 11155111,
+          command: {
+            action: "WITHDRAW",
+            address: owner,
+            passthrough: "unwrap",
+            yieldId: yieldDto.id,
+          },
+          handle: "0xrequest",
         })
       ).pipe(Effect.provide(layer));
 
-      return sent.map(
-        (input) =>
-          decodeFunctionData({
-            abi: erc20Abi,
-            data: JSON.parse(input.tx).data,
-          }).args
-      );
-    });
-
-  it.effect("skips approving once the allowance covers the amount", () =>
-    Effect.gen(function* () {
-      expect(yield* runApprovalStep("approve", 5_000_000n)).toEqual([]);
-      expect(yield* runApprovalStep("approve-reset", 5_000_000n)).toEqual([]);
+      expect(sdk.decryptPublicValues).toHaveBeenCalledWith(["0xrequest"]);
+      expect(command.arguments).toMatchObject({
+        decryptedAmount: "7000000",
+        decryptionProof: "0xproof",
+      });
     })
-  );
-
-  it.effect("skips the reset when no allowance is left to clear", () =>
-    Effect.gen(function* () {
-      expect(yield* runApprovalStep("approve-reset", 0n)).toEqual([]);
-    })
-  );
-
-  // The plan is read at confirm; an approval mined since then must not
-  // turn the approve into a nonzero-to-nonzero change, which USDT reverts.
-  it.effect("resets an allowance that appeared after the plan was made", () =>
-    Effect.gen(function* () {
-      expect(yield* runApprovalStep("approve", 1_000_000n)).toEqual([
-        [cUsdc.address, 0n],
-        [cUsdc.address, 5_000_000n],
-      ]);
-    })
-  );
-
-  it.effect(
-    "settles its earlier approval before deciding what a retry sends",
-    () =>
-      Effect.gen(function* () {
-        const sent: Array<WalletSignTransactionInput> = [];
-        const layer = yield* makeLayer({
-          signTransaction: (input) =>
-            Effect.sync(() => {
-              sent.push(input);
-              return {
-                broadcasted: true,
-                signedTx: `0x${sent.length}`,
-              } as const;
-            }),
-        });
-        const approve = ZamaService.use((zama) =>
-          zama.convertStep({
-            actionMeta,
-            amount: 5_000_000n,
-            conversion,
-            network: "ethereum-sepolia",
-            onBroadcast: Effect.void,
-            owner,
-            step: "approve",
-            walletScope: scope,
-          })
-        );
-        client.readContract
-          .mockResolvedValueOnce(0n)
-          // Another spender's partial allowance landed after the first approval.
-          .mockResolvedValueOnce(1_000_000n);
-        client.waitForTransactionReceipt.mockRejectedValueOnce(
-          new Error("receipt timeout")
-        );
-        yield* Effect.gen(function* () {
-          yield* Effect.flip(approve);
-          yield* approve;
-        }).pipe(Effect.provide(layer));
-
-        expect(
-          sent.map(
-            (input) =>
-              decodeFunctionData({
-                abi: erc20Abi,
-                data: JSON.parse(input.tx).data,
-              }).args[1]
-          )
-        ).toEqual([5_000_000n, 0n, 5_000_000n]);
-      })
   );
 
   it.effect(
@@ -427,7 +382,7 @@ describe("ZamaService", () => {
         const handle = permitHandle;
         sdk.decryptValues.mockResolvedValueOnce({ [handle]: 42n });
         const signed: Array<unknown> = [];
-        const layer = yield* makeLayer({
+        const { layer } = yield* makeLayer({
           apiKey: "yield-key",
           signPermit: (input) =>
             Effect.sync(() => {
@@ -458,7 +413,7 @@ describe("ZamaService", () => {
             signature: yield* Effect.promise(
               () => signer?.signTypedData(permit) ?? Promise.resolve(null)
             ),
-            values: yield* (yield* ConfidentialValues).current,
+            values: yield* (yield* RevealedBalances).current,
           };
         }).pipe(Effect.provide(layer));
 
@@ -466,7 +421,7 @@ describe("ZamaService", () => {
           auth: { __type: "ApiKeyHeader", value: "yield-key" },
           relayerUrl: "https://api.example.test/v1/zama/relayer/11155111/",
         });
-        expect(values.get(handle)).toBe(42n);
+        expect(values.handles.get(handle)).toBe(42n);
         expect(signature).toBe("0xsig");
         expect(signed).toEqual([
           {
@@ -485,40 +440,27 @@ describe("ZamaService", () => {
     "gives the SDK the widget's RPC for its own reads instead of the public preset",
     () =>
       Effect.gen(function* () {
-        sdk.encrypt.mockResolvedValue({
-          encryptedValues: ["0xhandle"],
-          inputProof: "0xproof",
-        });
+        sdk.decryptValues.mockResolvedValue({});
         const forwarded: Array<unknown> = [];
-        const encrypt = ZamaService.use((zama) =>
-          zama.encrypt({
-            owner,
-            plan: {
-              amount: { contract: cUsdc.address, value: 1n },
-              chainId: 11155111,
-              legs: null,
-            },
-          })
+        const reveal = ZamaService.use((zama) =>
+          zama.revealHandles({ chainId: 11155111, handles: [], owner })
         );
 
-        yield* encrypt.pipe(
-          Effect.provide(
-            yield* makeLayer({
-              getClient: () => ({
-                request: async (args) => {
-                  forwarded.push(args);
-                  return "0xaa36a7";
-                },
-              }),
-              wagmiChains: [sepolia],
-            })
-          )
-        );
+        const own = yield* makeLayer({
+          getClient: () => ({
+            request: async (args) => {
+              forwarded.push(args);
+              return "0xaa36a7";
+            },
+          }),
+          wagmiChains: [sepolia],
+        });
+        yield* reveal.pipe(Effect.provide(own.layer));
         const network = sdk.configs.at(-1)?.chains[0]?.network as {
           readonly request: (args: unknown) => Promise<unknown>;
         };
         yield* Effect.promise(() => network.request({ method: "eth_chainId" }));
-        yield* encrypt.pipe(Effect.provide(yield* makeLayer({})));
+        yield* reveal.pipe(Effect.provide((yield* makeLayer({})).layer));
 
         expect(forwarded).toEqual([{ method: "eth_chainId" }]);
         expect(sdk.configs.at(-1)?.chains[0]?.network).toBe("https://rpc.test");
@@ -530,25 +472,71 @@ describe("ZamaService", () => {
       const state = yield* SubscriptionRef.make<WalletState>(
         makeConnectedWalletState(scope)
       );
-      const layer = yield* makeLayer({ state });
+      const { layer } = yield* makeLayer({ state });
 
       const { after, before } = yield* Effect.gen(function* () {
         yield* ZamaService;
-        const values = yield* ConfidentialValues;
-        yield* values.add([[revealedHandle, 1n]]);
+        const values = yield* RevealedBalances;
+        yield* values.addHandles([[revealedHandle, 1n]]);
         yield* SubscriptionRef.set(state, makeConnectedWalletState(scope));
         yield* Effect.yieldNow;
         const before = yield* values.current;
         yield* SubscriptionRef.set(state, makeConnectedWalletState(otherScope));
         const after = yield* values.changes.pipe(
-          Stream.filter((current) => current.size === 0),
+          Stream.filter((current) => current.handles.size === 0),
           Stream.runHead
         );
         return { after, before };
       }).pipe(Effect.provide(layer));
 
-      expect(before.get(revealedHandle)).toBe(1n);
+      expect(before.handles.get(revealedHandle)).toBe(1n);
       expect(after._tag).toBe("Some");
     })
+  );
+
+  it.effect(
+    "forgets the owner's revealed balances once a Classic workflow moves funds",
+    () =>
+      Effect.gen(function* () {
+        const { events, layer } = yield* makeLayer({});
+        const [token] = confidentialYieldFixture().inputTokens;
+        const ownBalance = new ConfidentialTokenBalanceKey({
+          owner,
+          token: token!,
+        });
+        const otherBalance = new ConfidentialTokenBalanceKey({
+          owner: otherScope.address,
+          token: token!,
+        });
+
+        const remaining = yield* Effect.gen(function* () {
+          yield* ZamaService;
+          const values = yield* RevealedBalances;
+          yield* values.addTokenBalance(ownBalance, 1n);
+          yield* values.addTokenBalance(otherBalance, 2n);
+          yield* values.addHandles([[revealedHandle, 3n]]);
+          yield* Effect.yieldNow;
+          yield* events.publish({
+            _tag: "TransactionWorkflowResourcesChanged",
+            owner: walletScopeOwnerKey(scope),
+            workflowKind: "Classic",
+          });
+          return yield* values.changes.pipe(
+            Stream.filter(
+              (current) => !HashMap.has(current.tokenBalances, ownBalance)
+            ),
+            Stream.runHead
+          );
+        }).pipe(Effect.provide(layer));
+
+        expect(
+          remaining._tag === "Some"
+            ? {
+                handles: [...remaining.value.handles.keys()],
+                tokenBalances: [...HashMap.keys(remaining.value.tokenBalances)],
+              }
+            : null
+        ).toEqual({ handles: [revealedHandle], tokenBalances: [otherBalance] });
+      })
   );
 });

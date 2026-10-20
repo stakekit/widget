@@ -1,8 +1,11 @@
-import { Data, Option, Schema } from "effect";
+import { Equal, Option, Ref, Schema } from "effect";
 import type { CollateralToken } from "../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
-import type { ActionMetadata } from "../../../domain/borrow/execution/action";
+import type {
+  Action,
+  ActionMetadata,
+} from "../../../domain/borrow/execution/action";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
@@ -365,27 +368,65 @@ export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
 };
 
 /**
- * A started Flow Session's immutable input. Start hands it to the flow route
- * through Review navigation state; the route that mounts it owns its lifetime.
+ * The action Review created and handed off: waiting for Steps to start it,
+ * then running until its Execution ends.
  */
-export class BorrowFlowSession extends Data.Class<{
+export type BorrowFlowHandoff = Readonly<{
+  readonly _tag: "Running" | "Waiting";
+  readonly action: Action;
+}>;
+
+/**
+ * A started Flow Session: its immutable input and its handoff, if any. Start
+ * hands it to the flow route through Review navigation state; the route that
+ * mounts it owns its lifetime.
+ */
+export class BorrowFlowSession {
+  readonly handoff = Ref.makeUnsafe<BorrowFlowHandoff | null>(null);
   readonly intake: BorrowTransactionFlowIntake;
   readonly walletScope: WalletScopeKey;
-}> {}
+
+  constructor(input: {
+    readonly intake: BorrowTransactionFlowIntake;
+    readonly walletScope: WalletScopeKey;
+  }) {
+    this.intake = input.intake;
+    this.walletScope = input.walletScope;
+    // Each Start is its own Session, even with an equal intake: Atom family
+    // keys compare it by identity.
+    Equal.byReferenceUnsafe(this);
+  }
+}
 
 const BorrowFlowNavigationState = Schema.Struct({
   borrowFlowSession: Schema.instanceOf(BorrowFlowSession),
+  /** On Steps and Complete: the handed-off action their Execution runs. */
+  executionActionId: Schema.optional(Schema.String),
 });
 
 export const makeBorrowFlowNavigationState = (
-  session: BorrowFlowSession
-): typeof BorrowFlowNavigationState.Type => ({ borrowFlowSession: session });
+  session: BorrowFlowSession,
+  executionActionId?: string
+): typeof BorrowFlowNavigationState.Type =>
+  executionActionId === undefined
+    ? { borrowFlowSession: session }
+    : { borrowFlowSession: session, executionActionId };
 
 export const decodeBorrowFlowNavigationState = (
   state: unknown
 ): Option.Option<BorrowFlowSession> =>
   Schema.decodeUnknownOption(BorrowFlowNavigationState)(state).pipe(
     Option.map((decoded) => decoded.borrowFlowSession)
+  );
+
+export const decodeBorrowFlowExecutionActionId = (
+  state: unknown
+): string | null =>
+  Schema.decodeUnknownOption(BorrowFlowNavigationState)(state).pipe(
+    Option.flatMap((decoded) =>
+      Option.fromUndefinedOr(decoded.executionActionId)
+    ),
+    Option.getOrNull
   );
 
 export const getBorrowReviewTrackingProperties = (

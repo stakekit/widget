@@ -152,7 +152,8 @@ export const architecturePolicy = {
       interfaces: {
         "resource-sources": ["src/resources"],
         operations: [
-          "src/features/*/state/orchestration",
+          // Feature state: page modules and Atom-free operations.
+          "src/features/*/state",
           "src/services/transaction-workflow/internal",
         ],
         runtime: ["src/app/runtime"],
@@ -356,7 +357,7 @@ const makeCollectionRules = (
         name: `${prefix}-views-stay-out-of-runtimes`,
         severity: "error",
         from: {
-          path: "^(?:src/app/runtime/|src/features/.+/runtime\\.ts$|src/features/.+/state/orchestration/)",
+          path: "^(?:src/app/runtime/|src/features/.+/runtime\\.ts$)",
         },
         to: { path: viewsPath },
       },

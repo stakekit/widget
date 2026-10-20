@@ -1,6 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Context, Effect, Exit, Layer, Ref } from "effect";
-import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { YieldOperations } from "../../src/services/api/operations";
 import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { WalletService } from "../../src/services/wallet/wallet-service";
@@ -12,22 +11,23 @@ import { makeClassicFlowTestKit } from "./classic-flow-test-kit";
 const disconnectedWalletState: WalletState = makeDisconnectedWalletState();
 
 describe("makeClassicFlowTestKit", () => {
-  it.effect("provides a fresh Classic Flow layer and adapter controls", () =>
-    Effect.gen(function* () {
-      const kit = yield* makeClassicFlowTestKit({
-        initialWalletState: disconnectedWalletState,
-      });
-      const context = yield* Layer.build(kit.layer);
-      const navigation = Context.get(context, WidgetNavigation);
-      const wallet = Context.get(context, WalletService);
+  it.effect(
+    "provides fresh Classic Flow dependencies and adapter controls",
+    () =>
+      Effect.gen(function* () {
+        const kit = yield* makeClassicFlowTestKit({
+          initialWalletState: disconnectedWalletState,
+        });
+        const context = yield* Layer.build(kit.layer);
+        const navigation = Context.get(context, WidgetNavigation);
+        const wallet = Context.get(context, WalletService);
 
-      expect(Context.get(context, ClassicTransactionFlowService)).toBeDefined();
-      expect(yield* wallet.state).toEqual(disconnectedWalletState);
+        expect(yield* wallet.state).toEqual(disconnectedWalletState);
 
-      yield* navigation.execute({ _tag: "Back" });
+        yield* navigation.execute({ _tag: "Back" });
 
-      expect(yield* kit.navigation.commands).toEqual([{ _tag: "Back" }]);
-    })
+        expect(yield* kit.navigation.commands).toEqual([{ _tag: "Back" }]);
+      })
   );
 
   it.effect("dies when an unconfigured Classic Flow dependency is called", () =>

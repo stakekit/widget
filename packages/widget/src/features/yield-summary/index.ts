@@ -29,7 +29,6 @@ export type { YieldSummaryProvider } from "./model/yield-summary";
 export { MultiYieldsKey, multiYieldsByIdAtom } from "./state/multi-yields";
 export {
   CurrentRewardsSummaryKey,
-  type CurrentYieldKycGate,
   CurrentYieldKycGateKey,
   currentRewardsSummaryAtom,
   currentYieldKycGateAtom,

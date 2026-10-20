@@ -2,7 +2,7 @@ import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { HttpResponse, http } from "msw";
-import { act, useEffect, useState } from "react";
+import { act, StrictMode, useEffect, useState } from "react";
 import {
   createMemoryRouter,
   type DataRouter,
@@ -18,6 +18,7 @@ import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { applicationBaseRuntime } from "../../../src/app/runtime/application-base-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../../src/domain/action/models";
+import { TransactionWorkflowId } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   getClassicFlowRouteGroup,
@@ -25,15 +26,13 @@ import {
 } from "../../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
-  ClassicFlowCompletionGuard,
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
+  ClassicFlowExecutionPage,
+  ClassicFlowExecutionRoute,
   ClassicFlowRoute,
   useClassicFlowExecution,
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { ClassicTransactionFlowService } from "../../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../../src/features/wallet/react/wallet-scope-route";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -86,14 +85,16 @@ const connectedWalletState: NormalizedWalletState = {
   network: "ethereum",
   status: "connected",
 };
-// The latest Execution's workflow state; tests drive it directly.
-const workflowChannel: {
-  state: SubscriptionRef.SubscriptionRef<TransactionWorkflowState> | null;
-} = { state: null };
+// Each Execution's workflow state, in start order; tests drive the latest.
+const workflows: Array<
+  SubscriptionRef.SubscriptionRef<TransactionWorkflowState>
+> = [];
+// How many of those workflows their Execution has ended.
+const ended = { workflows: 0 };
 const setWorkflowState = (
   next: (state: TransactionWorkflowState) => TransactionWorkflowState
 ) => {
-  const state = workflowChannel.state;
+  const state = workflows.at(-1);
   if (!state) throw new Error("Expected a running Execution workflow");
   return act(async () => {
     // ast-grep-ignore: no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
@@ -124,8 +125,15 @@ const walletLayer = Layer.merge(
     TransactionWorkflowService.of({
       make: (input) =>
         SubscriptionRef.make(initializeTransactionWorkflow(input)).pipe(
+          Effect.tap(() =>
+            Effect.addFinalizer(() =>
+              Effect.sync(() => {
+                ended.workflows += 1;
+              })
+            )
+          ),
           Effect.map((state) => {
-            workflowChannel.state = state;
+            workflows.push(state);
             return {
               dispatch: () => Effect.void,
               states: SubscriptionRef.changes(state),
@@ -155,14 +163,6 @@ const intake: ClassicTransactionFlowIntake = {
   selectedToken: selectedStake.token,
   selectedValidators: new Map(),
   walletScope,
-};
-
-const executionFacades: Array<object> = [];
-const getExecutionFacadeId = (facade: object) => {
-  const existing = executionFacades.indexOf(facade);
-  if (existing >= 0) return existing + 1;
-  executionFacades.push(facade);
-  return executionFacades.length;
 };
 
 type TestNavigationChannel = {
@@ -251,20 +251,20 @@ const StepsPage = () => {
   const execution = useClassicFlowExecution();
   const back = useAtomSet(execution.backAtom);
   const navigate = useNavigate();
+  // Moving within this Execution keeps its navigation state.
+  const { state } = useLocation();
 
   return (
     <>
       <output data-testid="steps-session">present</output>
-      <output data-testid="steps-execution">
-        {getExecutionFacadeId(execution)}
-      </output>
+      <output data-testid="steps-execution">{workflows.length}</output>
       <button type="button" onClick={() => back(undefined)}>
         Back
       </button>
       <button type="button" onClick={() => navigate(-1)}>
         Browser Back
       </button>
-      <button type="button" onClick={() => navigate("/complete")}>
+      <button type="button" onClick={() => navigate("/complete", { state })}>
         Complete
       </button>
       <button type="button" onClick={() => navigate("/review")}>
@@ -275,16 +275,17 @@ const StepsPage = () => {
 };
 
 const CompletePage = () => {
-  const execution = useClassicFlowExecution();
+  useClassicFlowExecution();
   const navigate = useNavigate();
 
   return (
     <>
-      <output data-testid="complete-execution">
-        {getExecutionFacadeId(execution)}
-      </output>
+      <output data-testid="complete-execution">{workflows.length}</output>
       <button type="button" onClick={() => navigate(-1)}>
-        Back to Steps
+        History Back
+      </button>
+      <button type="button" onClick={() => navigate("/steps")}>
+        Host Steps
       </button>
     </>
   );
@@ -314,22 +315,22 @@ const FlowRoutes = ({
           }
         >
           <Route element={<ClassicFlowRoute expected="Enter" />}>
-            <Route
-              path="review"
-              element={
-                <ClassicFlowReviewScope>
-                  <ReviewPage />
-                </ClassicFlowReviewScope>
-              }
-            />
-            <Route element={<ClassicFlowExecutionScope />}>
-              <Route path="steps" element={<StepsPage />} />
+            <Route path="review" element={<ReviewPage />} />
+            <Route element={<ClassicFlowExecutionRoute />}>
+              <Route
+                path="steps"
+                element={
+                  <ClassicFlowExecutionPage page="Steps">
+                    <StepsPage />
+                  </ClassicFlowExecutionPage>
+                }
+              />
               <Route
                 path="complete"
                 element={
-                  <ClassicFlowCompletionGuard>
+                  <ClassicFlowExecutionPage page="Complete">
                     <CompletePage />
-                  </ClassicFlowCompletionGuard>
+                  </ClassicFlowExecutionPage>
                 }
               />
             </Route>
@@ -390,32 +391,32 @@ const FlowTestApp = ({
       Effect.map((testNavigation) => testNavigation.layer)
     )
   );
-  const classicDependencies = Layer.mergeAll(
+  const classicWalletLayer = Layer.mergeAll(
     apiLayer,
     navigationLayer,
     trackingLayer,
     walletLayer,
     makeTestZamaLayer()
   );
-  const classicWalletLayer = Layer.merge(
-    classicDependencies,
-    ClassicTransactionFlowService.layer.pipe(Layer.provide(classicDependencies))
-  );
+  // Production renders the widget in StrictMode; Execution must still take
+  // its confirmed action exactly once.
   return (
-    <RegistryProvider
-      initialValues={[
-        [walletScopeAtom, walletScope],
-        [walletRuntime.layer, classicWalletLayer as never],
-        [applicationBaseRuntime.layer, applicationRouterLayer],
-      ]}
-    >
-      <WalletStateBridge />
-      <FlowRouter
-        navigationChannel={testNavigationChannel}
-        router={router}
-        walletState={walletState}
-      />
-    </RegistryProvider>
+    <StrictMode>
+      <RegistryProvider
+        initialValues={[
+          [walletScopeAtom, walletScope],
+          [walletRuntime.layer, classicWalletLayer as never],
+          [applicationBaseRuntime.layer, applicationRouterLayer],
+        ]}
+      >
+        <WalletStateBridge />
+        <FlowRouter
+          navigationChannel={testNavigationChannel}
+          router={router}
+          walletState={walletState}
+        />
+      </RegistryProvider>
+    </StrictMode>
   );
 };
 
@@ -657,10 +658,11 @@ describe("Classic Transaction Flow navigation", () => {
     return { button, executionId: output("steps-execution"), output };
   };
 
-  it("admits Complete only once the Execution's workflow completes", async ({
+  it("shows Complete only once the Execution's workflow finishes", async ({
     worker,
   }) => {
     const { button, executionId, output } = await renderExecution(worker);
+    const endedBefore = ended.workflows;
 
     await act(async () => button("Complete").click());
     await vi.waitFor(() => expect(output("steps-execution")).toBe(executionId));
@@ -674,7 +676,7 @@ describe("Classic Transaction Flow navigation", () => {
         network: "ethereum",
         reason: { _tag: "WalletUnavailable", detail: "disconnected" },
         transactionId: null,
-        workflowId: "classic-workflow",
+        workflowId: TransactionWorkflowId.make("classic-workflow"),
       }),
     }));
     await act(async () => button("Complete").click());
@@ -688,8 +690,34 @@ describe("Classic Transaction Flow navigation", () => {
     await vi.waitFor(() =>
       expect(output("complete-execution")).toBe(executionId)
     );
-    await act(async () => button("Back to Steps").click());
-    await vi.waitFor(() => expect(output("steps-execution")).toBe(executionId));
+    // Steps of a finished Execution belongs to Complete.
+    await act(async () => button("History Back").click());
+    await vi.waitFor(() =>
+      expect(output("complete-execution")).toBe(executionId)
+    );
+    expect(output("steps-execution")).toBeUndefined();
+    // Steps and Complete share one Execution.
+    expect(ended.workflows).toBe(endedBefore);
+
+    // Without its Execution's action id, Steps leaves the flow.
+    await act(async () => button("Host Steps").click());
+    await vi.waitFor(() => expect(button("Start")).toBeDefined());
+    expect(output("complete-execution")).toBeUndefined();
+    expect(output("steps-execution")).toBeUndefined();
+  });
+
+  it("ends the Execution's workflow when the user leaves Steps", async ({
+    worker,
+  }) => {
+    const { button, output } = await renderExecution(worker);
+    const started = workflows.length;
+    const endedBefore = ended.workflows;
+
+    await act(async () => button("Browser Back").click());
+    await vi.waitFor(() => expect(ended.workflows).toBe(endedBefore + 1));
+    expect(output("review-session")).toBe("present");
+    expect(output("steps-execution")).toBeUndefined();
+    expect(workflows.length).toBe(started);
   });
 
   it("admits Complete once every transaction was skipped", async ({

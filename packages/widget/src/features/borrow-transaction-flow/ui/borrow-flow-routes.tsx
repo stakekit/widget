@@ -2,9 +2,8 @@ import type { ReactElement } from "react";
 import { Route } from "react-router";
 import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
 import {
-  BorrowTransactionFlowCompletionGuard,
-  BorrowTransactionFlowExecutionScope,
-  BorrowTransactionFlowReviewRoute,
+  BorrowTransactionFlowExecutionPage,
+  BorrowTransactionFlowExecutionRoute,
   BorrowTransactionFlowRoute,
 } from "../react/borrow-flow-route";
 import { BorrowCompletePage } from "./complete";
@@ -22,14 +21,24 @@ type BorrowTransactionFlowRouteMount = Readonly<{
 
 const flowPages = (
   <>
-    <Route element={<BorrowTransactionFlowReviewRoute />}>
-      <Route path="review" element={<BorrowReviewPage />} />
-    </Route>
-    <Route element={<BorrowTransactionFlowExecutionScope />}>
-      <Route path="steps" element={<BorrowStepsPage />} />
-      <Route element={<BorrowTransactionFlowCompletionGuard />}>
-        <Route path="complete" element={<BorrowCompletePage />} />
-      </Route>
+    <Route path="review" element={<BorrowReviewPage />} />
+    <Route element={<BorrowTransactionFlowExecutionRoute />}>
+      <Route
+        path="steps"
+        element={
+          <BorrowTransactionFlowExecutionPage page="Steps">
+            <BorrowStepsPage />
+          </BorrowTransactionFlowExecutionPage>
+        }
+      />
+      <Route
+        path="complete"
+        element={
+          <BorrowTransactionFlowExecutionPage page="Complete">
+            <BorrowCompletePage />
+          </BorrowTransactionFlowExecutionPage>
+        }
+      />
     </Route>
   </>
 );

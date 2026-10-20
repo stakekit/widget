@@ -4,7 +4,15 @@ import {
   useAtomValue,
 } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Deferred, Effect, Equal, Layer, Schema } from "effect";
+import {
+  Deferred,
+  Effect,
+  Equal,
+  Layer,
+  MutableRef,
+  Schema,
+  Stream,
+} from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { act } from "react";
@@ -17,14 +25,16 @@ import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
+  ClassicFlowHandoff,
   type ClassicTransactionFlowIntake,
   makeYieldActionContinuationSession,
 } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { makeClassicFlowSessionModule } from "../../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
-import { ClassicTransactionFlowService } from "../../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import { walletScopeAtom } from "../../../src/features/wallet/index";
+import { makeClassicFlowExecutionPage } from "../../../src/features/classic-transaction-flow/state/execution-page";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
+import type { TransactionWorkflowHandle } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
+import { makeConnectedWalletState } from "../../fixtures/wallet-state";
+import { makeClassicFlowTestKit } from "../../utils/classic-flow-test-kit";
 import { render } from "../../utils/test-utils.dom.tsx";
 import { widgetConfigAtom } from "../../utils/widget-config";
 
@@ -156,47 +166,46 @@ const activityIntake = (): Extract<
   };
 };
 
-const sessionLifetime = { closed: 0, opened: 0 };
+const executionLifetime = { finalized: 0, started: 0 };
 const continuationIntake = activityIntake();
-const continuationSession =
-  makeYieldActionContinuationSession(continuationIntake);
-const continuationSessionAtom =
-  makeClassicFlowSessionModule(continuationSession);
+const classicFlowDependencies = Layer.unwrap(
+  makeClassicFlowTestKit({
+    initialWalletState: makeConnectedWalletState(
+      continuationIntake.walletScope
+    ),
+    makeWorkflow: () =>
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          executionLifetime.started += 1;
+          return { dispatch: () => Effect.void, states: Stream.never };
+        }),
+        () =>
+          Effect.sync(() => {
+            executionLifetime.finalized += 1;
+          })
+      ),
+  }).pipe(Effect.map((kit) => kit.layer))
+);
 
-/** Owns one Flow Session in the wallet runtime, recording its lifetime. */
-const ClassicFlowRuntimeHarness = () => {
+/**
+ * Shows one Flow Execution in the wallet runtime. It takes the waiting
+ * handoff once, so a restart would end in interruption.
+ */
+const ClassicFlowRuntimeHarness = ({
+  executionAtom,
+}: {
+  readonly executionAtom: Atom.Atom<
+    AsyncResult.AsyncResult<TransactionWorkflowHandle, unknown>
+  >;
+}) => {
   useAtomInitialValues([
-    [walletScopeAtom, continuationSession.intake.walletScope],
-    [
-      walletRuntime.layer,
-      Layer.succeed(
-        ClassicTransactionFlowService,
-        ClassicTransactionFlowService.of({
-          openSession: (session) =>
-            Effect.acquireRelease(
-              Effect.sync(() => {
-                sessionLifetime.opened += 1;
-                return {
-                  acquireExecution: () => Effect.die("Not used"),
-                  acquireReview: () => Effect.die("Not used"),
-                  intake: session.intake,
-                };
-              }),
-              () =>
-                Effect.sync(() => {
-                  sessionLifetime.closed += 1;
-                })
-            ),
-          start: () => Effect.die("Not used"),
-        })
-      ) as never,
-    ],
+    [walletRuntime.layer, classicFlowDependencies as never],
   ]);
-  const session = useAtomValue(continuationSessionAtom);
+  const workflow = useAtomValue(executionAtom);
 
   return (
-    <output data-testid="classic-flow-session">
-      {session.facade.getIntake("YieldActionContinuation").action.id}
+    <output data-testid="classic-flow-workflow">
+      {AsyncResult.isSuccess(workflow) ? "started" : workflow._tag}
     </output>
   );
 };
@@ -368,32 +377,40 @@ describe("dynamic Widget Configuration", () => {
       })
   );
 
-  it("keeps an open Flow Session while live settings change", async () => {
+  it("keeps an open Flow Execution while live settings change", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
-    sessionLifetime.closed = 0;
-    sessionLifetime.opened = 0;
+    executionLifetime.finalized = 0;
+    executionLifetime.started = 0;
+    const session = makeYieldActionContinuationSession(continuationIntake);
+    // As Review's handoff would leave it.
+    const handoff = new ClassicFlowHandoff({
+      _tag: "Action",
+      action: continuationIntake.action,
+    });
+    MutableRef.set(session.handoff.ref, { _tag: "Waiting", handoff });
+    const { executionAtom } = makeClassicFlowExecutionPage(session, handoff);
     const app = await render(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
         hostConfiguration={settings(firstTrack)}
       >
-        <ClassicFlowRuntimeHarness />
+        <ClassicFlowRuntimeHarness executionAtom={executionAtom} />
       </SKAtomRegistryProvider>
     );
+    const workflow = () =>
+      app.container.querySelector('[data-testid="classic-flow-workflow"]')
+        ?.textContent;
 
-    await expect.poll(() => sessionLifetime.opened).toBe(1);
-    expect(
-      app.container.querySelector('[data-testid="classic-flow-session"]')
-        ?.textContent
-    ).toBe(continuationIntake.action.id);
+    await expect.poll(workflow).toBe("started");
+    expect(executionLifetime).toEqual({ finalized: 0, started: 1 });
 
     await app.rerender(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
         hostConfiguration={settings(secondTrack)}
       >
-        <ClassicFlowRuntimeHarness />
+        <ClassicFlowRuntimeHarness executionAtom={executionAtom} />
       </SKAtomRegistryProvider>
     );
     await act(async () => {
@@ -402,11 +419,12 @@ describe("dynamic Widget Configuration", () => {
       await settled.promise;
     });
 
-    expect(sessionLifetime).toEqual({ closed: 0, opened: 1 });
+    expect(workflow()).toBe("started");
+    expect(executionLifetime).toEqual({ finalized: 0, started: 1 });
 
     app.unmount();
-    await expect.poll(() => sessionLifetime.closed).toBe(1);
-    expect(sessionLifetime.opened).toBe(1);
+    await expect.poll(() => executionLifetime.finalized).toBe(1);
+    expect(executionLifetime.started).toBe(1);
   });
 
   it.live(

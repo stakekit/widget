@@ -12,7 +12,7 @@ import {
   BorrowFlowSession,
   type BorrowTransactionFlowReview,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
-import { makeBorrowFlowSettledPositionAtom } from "../../../src/features/borrow-transaction-flow/state/atoms/borrow-flow-position";
+import { makeBorrowFlowSettledPositionAtom } from "../../../src/features/borrow-transaction-flow/state/execution-page";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,

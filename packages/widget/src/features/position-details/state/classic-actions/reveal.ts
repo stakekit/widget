@@ -8,11 +8,10 @@ import {
   getConfidentialChainId,
   getConfidentialHandleContract,
   getEncryptedHandle,
-  isConfidentialHandle,
   isUserRevealableBalance,
 } from "../../../../domain/earn/confidential";
 import { resourceInvalidationKeys } from "../../../../services/resource-invalidation";
-import { ConfidentialValues } from "../../../../services/zama/confidential-values";
+import { RevealedBalances } from "../../../../services/zama/revealed-balances";
 import { ZamaService } from "../../../../services/zama/zama-service";
 import { positionDetailsWorkflowViewAtom } from "../classic-view";
 import type { PositionDetailsWorkflowKey } from "../workflow";
@@ -63,7 +62,7 @@ export const hidePositionDetailsBalancesAtom = Atom.family(
     appRuntime
       .fn(() =>
         Effect.gen(function* () {
-          yield* (yield* ConfidentialValues).remove(isConfidentialHandle);
+          yield* (yield* RevealedBalances).forgetHandles;
           const reactivity = yield* Reactivity.Reactivity;
           yield* reactivity.invalidate([
             ...resourceInvalidationKeys.yieldPositions(key.scope),

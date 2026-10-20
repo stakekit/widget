@@ -1,6 +1,6 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Context, Deferred, Effect, Layer, Schema } from "effect";
+import { Deferred, Effect, Layer, Schema } from "effect";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import {
@@ -29,14 +29,12 @@ import {
   makeBorrowFlowNavigationState,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
-  BorrowTransactionFlowCompletionGuard,
-  BorrowTransactionFlowExecutionScope,
-  BorrowTransactionFlowReviewRoute,
+  BorrowTransactionFlowExecutionPage,
+  BorrowTransactionFlowExecutionRoute,
   BorrowTransactionFlowRoute,
   useBorrowTransactionFlowExecution,
   useBorrowTransactionFlowReview,
 } from "../../../src/features/borrow-transaction-flow/react/borrow-flow-route";
-import { BorrowTransactionFlowService } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { BorrowCompletePage } from "../../../src/features/borrow-transaction-flow/ui/complete";
 import { BorrowReviewPage } from "../../../src/features/borrow-transaction-flow/ui/review";
 import { BorrowStepsPage } from "../../../src/features/borrow-transaction-flow/ui/steps";
@@ -49,7 +47,7 @@ import { WidgetConfigService } from "../../../src/services/config/widget-config"
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { WalletOwnerMismatchError } from "../../../src/services/wallet/wallet-errors";
-import { WalletService } from "../../../src/services/wallet/wallet-service";
+import type { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
@@ -402,10 +400,6 @@ const renderExecution = (
     borrow.executeAction.mockImplementation(() =>
       Effect.succeed(workflowAction)
     );
-    const walletLayer = Layer.succeed(
-      WalletService,
-      activeWallet as WalletService["Service"]
-    );
     const flowWallet = yield* makeTestWallet({
       addLedgerAccount: activeWallet.addLedgerAccount,
       enabledNetworks: activeWallet.enabledNetworks,
@@ -427,7 +421,9 @@ const renderExecution = (
       borrow,
       walletService: activeWallet as WalletService["Service"],
     });
-    const workflowLayer = workflow.layer;
+    // Review, Steps, and Complete run their page modules on the wallet
+    // runtime. The flow wallet answers the route's wallet-scope check; the
+    // workflow signs with the case's wallet.
     const flowDependencies = Layer.mergeAll(
       Layer.succeed(BorrowOperations, borrow as never),
       tracking.layer,
@@ -438,13 +434,9 @@ const renderExecution = (
         variant: "default",
       }),
       testNavigation.layer,
-      workflowLayer,
+      workflow.layer,
       flowWallet.layer
     );
-    const flowContext = yield* Layer.build(
-      BorrowTransactionFlowService.layer.pipe(Layer.provide(flowDependencies))
-    );
-    const flowService = Context.get(flowContext, BorrowTransactionFlowService);
     // Start hands its Session to the flow route through navigation state.
     const flowState = makeBorrowFlowNavigationState(options.session ?? session);
     const initialEntries = (
@@ -481,14 +473,7 @@ const renderExecution = (
                     })
                   ).pipe(Layer.fresh),
                 ],
-                [
-                  walletRuntime.layer,
-                  Layer.mergeAll(
-                    workflowLayer,
-                    walletLayer,
-                    Layer.succeed(BorrowTransactionFlowService, flowService)
-                  ).pipe(Layer.fresh),
-                ],
+                [walletRuntime.layer, flowDependencies.pipe(Layer.fresh)],
               ]}
             >
               <MemoryRouter
@@ -514,29 +499,29 @@ const renderExecution = (
                         <BorrowTransactionFlowRoute expected="BorrowEntry" />
                       }
                     >
-                      <Route element={<BorrowTransactionFlowReviewRoute />}>
-                        <Route
-                          path="/borrow/review"
-                          element={
-                            options.reviewElement ?? <StartExecutionProbe />
-                          }
-                        />
-                      </Route>
-                      <Route element={<BorrowTransactionFlowExecutionScope />}>
+                      <Route
+                        path="/borrow/review"
+                        element={
+                          options.reviewElement ?? <StartExecutionProbe />
+                        }
+                      />
+                      <Route element={<BorrowTransactionFlowExecutionRoute />}>
                         <Route
                           path="/borrow/steps"
-                          element={options.stepsElement ?? <ExecutionProbe />}
+                          element={
+                            <BorrowTransactionFlowExecutionPage page="Steps">
+                              {options.stepsElement ?? <ExecutionProbe />}
+                            </BorrowTransactionFlowExecutionPage>
+                          }
                         />
                         <Route
-                          element={<BorrowTransactionFlowCompletionGuard />}
-                        >
-                          <Route
-                            path="/borrow/complete"
-                            element={
-                              options.completeElement ?? <CompleteProbe />
-                            }
-                          />
-                        </Route>
+                          path="/borrow/complete"
+                          element={
+                            <BorrowTransactionFlowExecutionPage page="Complete">
+                              {options.completeElement ?? <CompleteProbe />}
+                            </BorrowTransactionFlowExecutionPage>
+                          }
+                        />
                       </Route>
                     </Route>
                   </Route>

@@ -1,6 +1,6 @@
 import { RegistryProvider } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Schema } from "effect";
+import { Schema } from "effect";
 import { act, StrictMode } from "react";
 import {
   MemoryRouter,
@@ -11,7 +11,6 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
@@ -19,13 +18,20 @@ import {
   makeClassicFlowNavigationState,
   makeClassicFlowSession,
 } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { ClassicFlowRoute } from "../../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { ClassicTransactionFlowService } from "../../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import {
+  ClassicFlowRoute,
+  useClassicFlowSession,
+} from "../../../src/features/classic-transaction-flow/react/classic-flow-route";
+import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
+const otherWalletScope = new WalletScopeKey({
+  address: Schema.decodeSync(WalletAddress)("0xOther"),
+  network: "ethereum",
+});
 
 const makeEnterSession = () => {
   const selectedStake = yieldApiYieldFixture();
@@ -95,38 +101,37 @@ const NavigationCapture = ({
   return null;
 };
 
-const renderFlow = async (entry: {
-  readonly pathname: string;
-  readonly state?: unknown;
+/** A flow page that shows which Session it renders, numbered by first sight. */
+const SessionPage = ({
+  name,
+  sessions,
+}: {
+  readonly name: string;
+  readonly sessions: Array<ClassicFlowSession>;
 }) => {
-  const opened: Array<ClassicFlowSession> = [];
-  const closed: Array<ClassicFlowSession> = [];
+  const session = useClassicFlowSession();
+  if (!sessions.includes(session)) sessions.push(session);
+  return (
+    <output data-testid="page">
+      {name}:{sessions.indexOf(session) + 1}
+    </output>
+  );
+};
+
+const renderFlow = async (
+  entry: {
+    readonly pathname: string;
+    readonly state?: unknown;
+  },
+  connectedWalletScope: WalletScopeKey | null = walletScope
+) => {
+  const sessions: Array<ClassicFlowSession> = [];
   const navigation: { current: NavigateFunction | null } = { current: null };
-  const service = ClassicTransactionFlowService.of({
-    openSession: (session) =>
-      Effect.acquireRelease(
-        Effect.sync(() => {
-          opened.push(session);
-          return {
-            acquireExecution: () => Effect.die("Not used"),
-            acquireReview: () => Effect.die("Not used"),
-            intake: session.intake,
-          };
-        }),
-        () => Effect.sync(() => closed.push(session))
-      ),
-    start: () => Effect.die("Not used"),
-  });
   // Production renders the widget in StrictMode with the default idle TTL.
   const app = await render(
     <StrictMode>
       <RegistryProvider
-        initialValues={[
-          [
-            walletRuntime.layer,
-            Layer.succeed(ClassicTransactionFlowService, service) as never,
-          ],
-        ]}
+        initialValues={[[walletScopeAtom, connectedWalletScope]]}
       >
         <MemoryRouter initialEntries={[entry]}>
           <NavigationCapture
@@ -136,8 +141,14 @@ const renderFlow = async (entry: {
           />
           <Routes>
             <Route element={<ClassicFlowRoute expected="Enter" />}>
-              <Route path="/review" element={<div>Review</div>} />
-              <Route path="/steps" element={<div>Steps</div>} />
+              <Route
+                path="/review"
+                element={<SessionPage name="Review" sessions={sessions} />}
+              />
+              <Route
+                path="/steps"
+                element={<SessionPage name="Steps" sessions={sessions} />}
+              />
             </Route>
             <Route path="*" element={<LocationProbe />} />
           </Routes>
@@ -151,7 +162,9 @@ const renderFlow = async (entry: {
     });
   const location = () =>
     app.container.querySelector('[data-testid="location"]')?.textContent;
-  return { app, closed, location, navigate, opened };
+  const page = () =>
+    app.container.querySelector('[data-testid="page"]')?.textContent;
+  return { location, navigate, page, sessions };
 };
 
 describe("Classic Flow route", () => {
@@ -159,7 +172,7 @@ describe("Classic Flow route", () => {
     const flow = await renderFlow({ pathname: "/review" });
 
     await expect.poll(flow.location).toBe("/");
-    expect(flow.opened).toEqual([]);
+    expect(flow.sessions).toEqual([]);
   });
 
   it("redirects home when the navigated Session has another intake variant", async () => {
@@ -169,25 +182,44 @@ describe("Classic Flow route", () => {
     });
 
     await expect.poll(flow.location).toBe("/");
-    expect(flow.opened).toEqual([]);
+    expect(flow.sessions).toEqual([]);
   });
 
-  it("owns the navigated Session from Review through Steps and ends it on leave", async () => {
+  it("redirects home when the connected wallet does not own the Session", async () => {
+    const flow = await renderFlow(
+      {
+        pathname: "/review",
+        state: makeClassicFlowNavigationState(makeEnterSession()),
+      },
+      otherWalletScope
+    );
+
+    await expect.poll(flow.location).toBe("/");
+    expect(flow.sessions).toEqual([]);
+  });
+
+  it("keeps the navigated Session from Review through Steps and drops it on leave", async () => {
     const session = makeEnterSession();
     const flow = await renderFlow({
       pathname: "/review",
       state: makeClassicFlowNavigationState(session),
     });
-    await expect.poll(() => flow.app.container.textContent).toBe("Review");
+    await expect.poll(flow.page).toBe("Review:1");
 
     await flow.navigate("/steps");
-    await expect.poll(() => flow.app.container.textContent).toBe("Steps");
-    expect(flow.opened).toEqual([session]);
-    expect(flow.closed).toEqual([]);
+    await expect.poll(flow.page).toBe("Steps:1");
+    expect(flow.sessions).toHaveLength(1);
+    expect(flow.sessions[0]).toBe(session);
 
     await flow.navigate("/");
-    await expect.poll(() => flow.closed).toEqual([session]);
-    expect(flow.opened).toEqual([session]);
+    await expect.poll(flow.location).toBe("/");
+    expect(flow.page()).toBeUndefined();
+
+    // Arriving again without a Start finds no Session to resume.
+    await flow.navigate("/steps");
+    await expect.poll(flow.location).toBe("/");
+    expect(flow.page()).toBeUndefined();
+    expect(flow.sessions).toEqual([session]);
   });
 
   it("replaces its Session when a new Start navigates to it while mounted", async () => {
@@ -197,14 +229,15 @@ describe("Classic Flow route", () => {
       pathname: "/review",
       state: makeClassicFlowNavigationState(first),
     });
-    await expect.poll(() => flow.opened).toEqual([first]);
+    await expect.poll(flow.page).toBe("Review:1");
 
     await flow.navigate("/review", makeClassicFlowNavigationState(second));
+    await expect.poll(flow.page).toBe("Review:2");
 
-    await expect.poll(() => flow.closed).toEqual([first]);
-    expect(flow.opened).toHaveLength(2);
-    expect(flow.opened[0]).toBe(first);
-    expect(flow.opened[1]).toBe(second);
-    expect(flow.app.container.textContent).toBe("Review");
+    await flow.navigate("/steps");
+    await expect.poll(flow.page).toBe("Steps:2");
+    expect(flow.sessions).toHaveLength(2);
+    expect(flow.sessions[0]).toBe(first);
+    expect(flow.sessions[1]).toBe(second);
   });
 });

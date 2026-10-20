@@ -6,7 +6,7 @@ import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
-  const { dispatch, setupError, steps } = useTransactionWorkflow();
+  const { dispatch, steps } = useTransactionWorkflow();
   const facade = useClassicFlowExecution();
   const returnFlowToReview = useAtomSet(facade.backAtom);
 
@@ -38,7 +38,7 @@ export const useSteps = () => {
     retry,
     txStates: steps.txStates,
     cta: resolveCta(),
-    customSignErrorMessage: setupError?.message ?? steps.customSignErrorMessage,
+    customSignErrorMessage: steps.customSignErrorMessage,
     yieldId: steps.yieldId,
   };
 };

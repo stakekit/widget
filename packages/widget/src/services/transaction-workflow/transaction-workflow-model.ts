@@ -1,13 +1,16 @@
 import type BigNumber from "bignumber.js";
-import { Data, Match, type Schema } from "effect";
+import { Data, Match, Ref, type Schema } from "effect";
+import type { DirectTransaction } from "../../domain/action/direct-transaction";
 import type {
   ActionTransaction,
   YieldAction,
 } from "../../domain/action/models";
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
+import type { TransactionWorkflowId } from "../../domain/identity/identifiers";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
+import type { EvmRpcError } from "../evm-rpc/evm-rpc";
 import { ExternalProviderError } from "../wallet/external-provider";
 import type {
   WalletBroadcastError,
@@ -18,6 +21,27 @@ import type {
   WalletSigningError,
 } from "../wallet/wallet-errors";
 import type { ClassicActionMeta } from "../wallet/wallet-transactions";
+import type { ConfidentialPreparation } from "../zama/zama-service";
+
+export type DirectTransactionRecord = Readonly<{
+  readonly _tag: "Confirmed" | "Sent";
+  readonly hash: `0x${string}`;
+  /** What was sent, so a later confirm can resume it without planning again. */
+  readonly transaction: DirectTransaction;
+}>;
+
+/**
+ * The Direct transactions a Flow Session already broadcast. It outlives each
+ * workflow, so confirming again resumes them instead of signing them again.
+ */
+export type DirectTransactionLedger = Ref.Ref<
+  ReadonlyMap<DirectTransaction["id"], DirectTransactionRecord>
+>;
+
+export const makeDirectTransactionLedger = (): DirectTransactionLedger =>
+  Ref.makeUnsafe<ReadonlyMap<DirectTransaction["id"], DirectTransactionRecord>>(
+    new Map()
+  );
 
 type ClassicTransactionWorkflowInputFields = {
   readonly actionMeta: ClassicActionMeta;
@@ -48,18 +72,21 @@ export type ClassicTransactionWorkflowProviderDetail = {
   readonly website?: string;
 };
 
-export const makeClassicTransactionWorkflowInput = ({
-  action,
-  inputToken,
-  providersDetails,
-  walletScope,
-}: {
-  readonly action: YieldAction;
+type ClassicActionFacts = {
   readonly inputToken: ClassicActionMeta["inputToken"];
   readonly providersDetails:
     | ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
     | null
     | undefined;
+};
+
+export const makeClassicTransactionWorkflowInput = ({
+  action,
+  inputToken,
+  providersDetails,
+  walletScope,
+}: ClassicActionFacts & {
+  readonly action: YieldAction;
   readonly walletScope: WalletScopeKey;
 }) =>
   new ClassicTransactionWorkflowInput({
@@ -90,6 +117,35 @@ export const makeClassicTransactionWorkflowInput = ({
     yieldId: action.yieldId,
   });
 
+type ConfidentialTransactionWorkflowInputFields = ClassicActionFacts & {
+  /** Run after preparation, before the action's own transactions. */
+  readonly conversion: ReadonlyArray<DirectTransaction>;
+  readonly ledger: DirectTransactionLedger;
+  readonly preparation: ConfidentialPreparation;
+  readonly walletScope: WalletScopeKey;
+  readonly yieldId: YieldAction["yieldId"];
+};
+
+/**
+ * A Classic workflow for a confidential vault: its action exists only once
+ * the workflow has encrypted or decrypted the amount and previewed it.
+ */
+export class ConfidentialTransactionWorkflowInput extends Data.TaggedClass(
+  "Confidential"
+)<ConfidentialTransactionWorkflowInputFields> {
+  constructor(input: ConfidentialTransactionWorkflowInputFields) {
+    super({
+      conversion: [...input.conversion],
+      inputToken: input.inputToken,
+      ledger: input.ledger,
+      preparation: input.preparation,
+      providersDetails: input.providersDetails,
+      walletScope: new WalletScopeKey(input.walletScope),
+      yieldId: input.yieldId,
+    });
+  }
+}
+
 type BorrowTransactionWorkflowInputFields = {
   readonly action: BorrowAction;
   readonly walletScope: WalletScopeKey;
@@ -108,19 +164,35 @@ export class BorrowTransactionWorkflowInput extends Data.TaggedClass(
 
 export type TransactionWorkflowInput =
   | ClassicTransactionWorkflowInput
+  | ConfidentialTransactionWorkflowInput
   | BorrowTransactionWorkflowInput;
 
 export class TransactionWorkflowInputError extends Data.TaggedError(
   "TransactionWorkflowInputError"
 )<{
   readonly message: string;
-  readonly workflowId: string;
+  readonly workflowId: TransactionWorkflowId;
+}> {}
+
+/** The workflow could not prepare its action. */
+export class TransactionPrepareError extends Data.TaggedError(
+  "TransactionPrepareError"
+)<{
+  readonly cause: unknown;
+  readonly message: string;
+  /** False when the request itself is invalid, so retrying cannot help. */
+  readonly retryable: boolean;
+  readonly workflowId: TransactionWorkflowId;
 }> {}
 
 type TransactionWorkflowSource =
   | {
       readonly _tag: "Classic";
       readonly transaction: ActionTransaction;
+    }
+  | {
+      readonly _tag: "Direct";
+      readonly transaction: DirectTransaction;
     }
   | {
       readonly _tag: "Borrow";
@@ -132,7 +204,7 @@ type WorkflowErrorFields = {
   readonly cause?: unknown;
   readonly message: string;
   readonly transactionId: string | null;
-  readonly workflowId: string;
+  readonly workflowId: TransactionWorkflowId;
 };
 
 export type TransactionSignWalletOperationCause =
@@ -162,6 +234,8 @@ export type TransactionSignFailureReason =
       >;
     }
   | { readonly _tag: "DecodeFailed"; readonly cause: Schema.SchemaError }
+  /** A Direct transaction's gas or fees could not be estimated. */
+  | { readonly _tag: "EstimateFailed"; readonly cause: EvmRpcError }
   /** The user declined in the wallet; nothing was signed or sent. */
   | {
       readonly _tag: "WalletRequestCancelled";
@@ -203,6 +277,7 @@ const transactionSignFailureMessage = (
     UnsupportedBorrowSigningFormat: () =>
       "This borrow transaction requires an unsupported signing method.",
     DecodeFailed: () => "Borrow transaction payload could not be decoded.",
+    EstimateFailed: () => "The transaction could not be estimated.",
     WalletRequestCancelled: () => "The request was cancelled in the wallet.",
     WalletOperationFailed: ({ operation }) =>
       Match.value(operation).pipe(
@@ -221,7 +296,7 @@ export class TransactionSignError extends Data.TaggedError(
   readonly network: string;
   readonly reason: TransactionSignFailureReason;
   readonly transactionId: string | null;
-  readonly workflowId: string;
+  readonly workflowId: TransactionWorkflowId;
 }> {}
 
 export const makeTransactionSignError = (input: {
@@ -229,7 +304,7 @@ export const makeTransactionSignError = (input: {
   readonly network: string;
   readonly reason: TransactionSignFailureReason;
   readonly transactionId: string | null;
-  readonly workflowId: string;
+  readonly workflowId: TransactionWorkflowId;
 }): TransactionSignError =>
   new TransactionSignError({
     ...input,
@@ -272,10 +347,11 @@ export class TransactionWorkflowInvariantError extends Data.TaggedError(
   "TransactionWorkflowInvariantError"
 )<{
   readonly message: string;
-  readonly workflowId: string;
+  readonly workflowId: TransactionWorkflowId;
 }> {}
 
 export type TransactionWorkflowError =
+  | TransactionPrepareError
   | TransactionSignError
   | TransactionSubmissionError
   | TransactionConfirmationError
@@ -322,7 +398,8 @@ type TransactionWorkflowBatch = {
 type TransactionWorkflowDomainContext =
   | {
       readonly _tag: "Classic";
-      readonly actionMeta: ClassicActionMeta;
+      /** Null only while a confidential workflow prepares its action. */
+      readonly actionMeta: ClassicActionMeta | null;
       readonly yieldId: YieldAction["yieldId"];
     }
   | {
@@ -330,11 +407,18 @@ type TransactionWorkflowDomainContext =
       readonly action: BorrowAction;
     };
 
+/** The step a confidential workflow runs to create its action. */
+type TransactionWorkflowPreparation = Readonly<{
+  readonly done: boolean;
+  readonly step: "decrypt" | "encrypt";
+}>;
+
 export type TransactionWorkflowContext = {
   readonly batches: ReadonlyArray<TransactionWorkflowBatch>;
   readonly currentBatchIndex: number | null;
   readonly currentTransactionIndex: number | null;
   readonly domain: TransactionWorkflowDomainContext;
+  readonly preparation: TransactionWorkflowPreparation | null;
   readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
 };
 
@@ -345,6 +429,10 @@ type WorkflowState<Tag extends string> = {
 
 export type TransactionWorkflowState =
   | WorkflowState<"Disabled">
+  | WorkflowState<"Preparing">
+  | (WorkflowState<"PrepareFailed"> & {
+      readonly error: TransactionPrepareError;
+    })
   | WorkflowState<"Signing">
   | (WorkflowState<"SignFailed"> & { readonly error: TransactionSignError })
   | WorkflowState<"Submitting">
@@ -364,6 +452,7 @@ export type TransactionWorkflowState =
 export type TransactionWorkflowCommand = { readonly _tag: "Retry" };
 
 export type TransactionWorkflowAction =
+  | "prepare"
   | "sign"
   | "submit"
   | "confirm"
@@ -420,6 +509,8 @@ const getCurrentTransactionPhases = (
 ): TransactionPhaseProgress => {
   switch (tag) {
     case "Disabled":
+    case "Preparing":
+    case "PrepareFailed":
       return notStarted;
     case "Signing":
       return toPhaseProgress("active", "idle", "idle");

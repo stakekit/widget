@@ -1,7 +1,6 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import * as Atom from "effect/reactivity/Atom";
 import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
@@ -11,13 +10,7 @@ import {
   type ClassicTransactionFlowIntake,
   makeClassicFlowSession,
 } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import {
-  type ClassicFlowSessionModule,
-  makeClassicFlowExecutionScope,
-  makeClassicFlowReviewScope,
-  makeClassicFlowSessionModule,
-} from "../../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
-import { ClassicTransactionFlowService } from "../../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import { makeClassicFlowReviewPage } from "../../../src/features/classic-transaction-flow/state/review-page";
 import {
   walletScopeAtom,
   walletStateResultAtom,
@@ -81,16 +74,12 @@ const classicDependencies = Layer.mergeAll(
     })
   )
 );
-const classicWalletLayer = Layer.merge(
-  classicDependencies,
-  ClassicTransactionFlowService.layer.pipe(Layer.provide(classicDependencies))
-);
 
 const Wrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
     initialValues={[
       [walletScopeAtom, walletScope],
-      [walletRuntime.layer, classicWalletLayer as never],
+      [walletRuntime.layer, classicDependencies as never],
     ]}
     settings={getTestWidgetConfig({
       apiKey: "test-key",
@@ -110,55 +99,18 @@ const settings = getTestWidgetConfig({
   yieldsApiUrl: yieldApiUrl,
 });
 
-// The route owns one Session module per mount; each module's Review and
-// Execution scopes are created once and live as long as it does.
-const reviewScopeAtomFamily = Atom.family((session: ClassicFlowSessionModule) =>
-  makeClassicFlowReviewScope(session)
-);
-const executionScopeAtomFamily = Atom.family(
-  (session: ClassicFlowSessionModule) => makeClassicFlowExecutionScope(session)
-);
-
-/** Mounts an Earn Flow Session for `intake`, as the Classic flow route does. */
-const makeEarnSessionAtoms = (
+/** Opens an Earn Flow Session and its Review page, as the flow routes do. */
+const makeEarnReviewPage = (
   intake: Extract<ClassicTransactionFlowIntake, { readonly _tag: "Enter" }>
-) => {
-  const sessionAtom = makeClassicFlowSessionModule(
+) =>
+  makeClassicFlowReviewPage(
     makeClassicFlowSession({ intake, mount: { _tag: "Earn" } }, walletScope)
   );
-  const reviewFacadeAtom = Atom.make(
-    (get) => get(reviewScopeAtomFamily(get(sessionAtom))).facade
-  );
-  const reviewViewAtom = Atom.make((get) =>
-    get(get(reviewFacadeAtom).reviewViewAtom)
-  );
-
-  return {
-    attachedActionAtom: Atom.make((get) => {
-      const execution = get(executionScopeAtomFamily(get(sessionAtom)));
-      return AsyncResult.getOrElse(get(execution.availabilityAtom), () => null);
-    }),
-    confirmAtom: Atom.fnSync(
-      (_input: undefined, get) => {
-        get.set(get(reviewFacadeAtom).confirmAtom, undefined);
-      },
-      { initialValue: undefined }
-    ),
-    kycGateAtom: Atom.make((get) => get(reviewViewAtom).kyc),
-    refreshKycAtom: Atom.fnSync(
-      (_input: undefined, get) => {
-        get.set(get(reviewFacadeAtom).refreshKycAtom, undefined);
-      },
-      { initialValue: undefined }
-    ),
-    reviewViewAtom,
-  } as const;
-};
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
     initialValues={[
-      [walletRuntime.layer, classicWalletLayer as never],
+      [walletRuntime.layer, classicDependencies as never],
       [
         walletStateResultAtom,
         AsyncResult.success({
@@ -211,7 +163,7 @@ describe("action preview", () => {
       )
     );
 
-    const session = makeEarnSessionAtoms({
+    const review = makeEarnReviewPage({
       _tag: "Enter",
       gasFeeToken: stake.mechanics.gasFeeToken,
       providersDetails: [],
@@ -223,7 +175,7 @@ describe("action preview", () => {
       walletScope,
     });
     const { result } = await renderHook(
-      () => useAtomValue(session.reviewViewAtom),
+      () => useAtomValue(review.reviewViewAtom),
       { wrapper: Wrapper }
     );
 
@@ -261,7 +213,7 @@ describe("action preview", () => {
       })
     );
 
-    const session = makeEarnSessionAtoms({
+    const review = makeEarnReviewPage({
       _tag: "Enter",
       gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
       providersDetails: [],
@@ -273,13 +225,15 @@ describe("action preview", () => {
       walletScope,
     });
     const { act, result } = await renderHook(
-      () => ({
-        kyc: useAtomValue(session.kycGateAtom),
-        review: useAtomValue(session.reviewViewAtom),
-        refreshKyc: useAtomSet(session.refreshKycAtom),
-        confirmFlow: useAtomSet(session.confirmAtom),
-        attachedAction: useAtomValue(session.attachedActionAtom),
-      }),
+      () => {
+        const [confirmation, confirm] = useAtom(review.confirmAtom);
+        return {
+          confirm,
+          confirmation: AsyncResult.getOrElse(confirmation, () => undefined),
+          refreshKyc: useAtomSet(review.refreshKycAtom),
+          view: useAtomValue(review.reviewViewAtom),
+        };
+      },
       { wrapper: ConnectedWrapper }
     );
 
@@ -288,11 +242,13 @@ describe("action preview", () => {
     });
     const initialKycStatusCalls = kycStatusCalls;
     expect(actionPreviewCalls).toBe(0);
-    expect(result.current.kyc?.isBlocking).toBe(true);
-    expect(result.current.review?.action).toBeNull();
-    await act(async () => result.current.confirmFlow(undefined));
-    expect(result.current.attachedAction).toBeNull();
-
+    expect(result.current.view.kyc.isBlocking).toBe(true);
+    expect(result.current.view.action).toBeNull();
+    await act(async () => result.current.confirm(undefined));
+    await expect
+      .poll(() => result.current.confirmation)
+      .toEqual({ _tag: "RejectedBlocked" });
+    expect(actionPreviewCalls).toBe(0);
     kycStatus = "approved";
     await act(async () => {
       result.current.refreshKyc(undefined);
@@ -301,7 +257,8 @@ describe("action preview", () => {
         .toBeGreaterThan(initialKycStatusCalls);
       await expect.poll(() => actionPreviewCalls).toBe(1);
     });
-    await expect.poll(() => result.current.review?.action).not.toBeNull();
-    expect(result.current.kyc?.isBlocking).toBe(false);
+    await expect.poll(() => result.current.view.action).not.toBeNull();
+    expect(result.current.view.kyc.isBlocking).toBe(false);
+    expect(actionPreviewCalls).toBe(1);
   });
 });

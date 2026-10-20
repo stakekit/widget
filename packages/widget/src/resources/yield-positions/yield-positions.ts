@@ -23,8 +23,8 @@ import type {
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
-import { fillRevealedPositions } from "../confidential-values/index";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
+import { fillRevealedPositions } from "../revealed-balances/index";
 
 const yieldPositionsPolicy = withApiResourcePolicy({
   staleTime: Duration.minutes(1),

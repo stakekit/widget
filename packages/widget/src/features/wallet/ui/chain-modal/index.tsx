@@ -12,11 +12,8 @@ import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useTrackEvent } from "../../../tracking/index";
 import { useLedgerDisabledChain } from "../../react/use-ledger-disabled-chains";
+import { useScopedWalletChainSelection } from "../../react/use-scoped-wallet-chain-selection";
 import { useSKWallet } from "../../react/use-wallet";
-import {
-  useScopedWalletChainSelection,
-  WalletChainSelectionScope,
-} from "../../react/wallet-chain-selection-scope";
 import {
   selectWalletChainAtom,
   walletChainSelectionAtom,
@@ -168,9 +165,7 @@ export const WalletChainPicker = ({
   readonly open: boolean;
 }) =>
   open ? (
-    <WalletChainSelectionScope>
-      <ScopedWalletChainPicker chains={chains} onOpenChange={onOpenChange} />
-    </WalletChainSelectionScope>
+    <ScopedWalletChainPicker chains={chains} onOpenChange={onOpenChange} />
   ) : null;
 
 const ScopedWalletChainPicker = ({

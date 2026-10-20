@@ -7,13 +7,10 @@ import {
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import {
-  makeClassicFlowSession,
-  type NavigatingClassicTransactionFlowStart,
-} from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { ClassicTransactionFlowService } from "../../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import type { ClassicFlowSession } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { findPendingActionDeepLinkTarget } from "../../../src/features/earn/model/pending-action-deep-link";
 import {
+  type WidgetNavigationCommand,
   WidgetNavigationError,
   type WidgetNavigationOptions,
   type WidgetPath,
@@ -69,7 +66,6 @@ type CoordinatorTestOptions = Readonly<{
   ) => Effect.Effect<void, WidgetNavigationError>;
   readonly owner?: typeof address;
   readonly ownerScopes?: ReadonlyArray<WalletScopeKey>;
-  readonly start: ClassicTransactionFlowService["Service"]["start"];
 }>;
 
 const disconnectedWalletState: WalletState = {
@@ -77,18 +73,11 @@ const disconnectedWalletState: WalletState = {
   ledger: disconnectedLedgerConnectorState,
 };
 
-const startFlow = (input: NavigatingClassicTransactionFlowStart) =>
-  Effect.succeed({
-    _tag: "Started",
-    session: makeClassicFlowSession(input, input.intake.walletScope),
-  } as const);
-
 const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
   connected = true,
   navigate = () => Effect.void,
   owner = address,
   ownerScopes,
-  start,
 }: CoordinatorTestOptions) {
   const scopes = ownerScopes ?? [
     new WalletScopeKey({ address: owner, network: "ethereum" }),
@@ -102,31 +91,34 @@ const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
     execute: (command) =>
       command._tag === "Push" ? navigate(command.path, command) : Effect.void,
   });
-  const dependencies = Layer.mergeAll(
-    navigation.layer,
-    wallet.layer,
-    Layer.succeed(
-      ClassicTransactionFlowService,
-      ClassicTransactionFlowService.of({
-        openSession: () =>
-          Effect.die(
-            "makeCoordinatorTestKit: unexpected call to ClassicTransactionFlowService.openSession"
-          ),
-        start,
-      })
-    )
-  );
 
   return {
-    layer: DeepLinkCoordinator.layer.pipe(Layer.provide(dependencies)),
+    layer: DeepLinkCoordinator.layer.pipe(
+      Layer.provide(Layer.mergeAll(navigation.layer, wallet.layer))
+    ),
+    navigation,
     scopes,
     wallet,
   } as const;
 });
 
+/** The navigation state Start carries to Review. */
+type ClassicFlowNavigationState = Readonly<{
+  readonly classicFlowSession?: ClassicFlowSession;
+}>;
+
+/** The Flow Sessions Start navigated to Review with. */
+const startedSessions = (commands: ReadonlyArray<WidgetNavigationCommand>) =>
+  commands.flatMap((command) => {
+    const state = command.state as ClassicFlowNavigationState | undefined;
+    return command._tag === "Push" && state?.classicFlowSession
+      ? [{ path: command.path, session: state.classicFlowSession }]
+      : [];
+  });
+
 const runObservations = Effect.fn("runObservations")(function* (
   observations: ReadonlyArray<DeepLinkRouteObservation>,
-  options: CoordinatorTestOptions
+  options: CoordinatorTestOptions = {}
 ) {
   const kit = yield* makeCoordinatorTestKit(options);
   const observationStream = Stream.fromIterable(
@@ -150,41 +142,42 @@ const runObservations = Effect.fn("runObservations")(function* (
       coordinator.observe(observationStream)
     ).pipe(Effect.provide(kit.layer))
   );
+  return { started: startedSessions(yield* kit.navigation.commands) };
 });
 
 describe("DeepLinkCoordinator", () => {
   it.effect("waits for readiness and starts a pending-action Flow once", () =>
     Effect.gen(function* () {
-      const start = vi.fn(startFlow);
       const pending = pendingObservation();
 
-      yield* runObservations(
-        [
-          { ...pending, ready: false },
-          pending,
-          { ...pending, ready: false },
-          pending,
-        ],
-        { start }
-      );
+      const { started } = yield* runObservations([
+        { ...pending, ready: false },
+        pending,
+        { ...pending, ready: false },
+        pending,
+      ]);
 
-      expect(start).toHaveBeenCalledOnce();
       expect(pending.pendingAction?._tag).toBe("StartClassicFlow");
-      if (pending.pendingAction?._tag === "StartClassicFlow") {
-        expect(start).toHaveBeenCalledWith(pending.pendingAction.input);
-      }
+      expect(started).toHaveLength(1);
+      expect(started[0]?.path).toBe(
+        "/positions/yield-1/balance-1/pending-action/review"
+      );
+      expect(started[0]?.session.mount).toEqual({
+        _tag: "PositionManage",
+        balanceId: "balance-1",
+        integrationId: "yield-1",
+      });
+      expect(started[0]?.session.intake.walletScope).toEqual(scope);
     })
   );
 
   it.effect("does not start a pending-action Flow during maintenance", () =>
     Effect.gen(function* () {
-      const start = vi.fn(startFlow);
+      const { started } = yield* runObservations([
+        { ...pendingObservation(), maintenance: true },
+      ]);
 
-      yield* runObservations([{ ...pendingObservation(), maintenance: true }], {
-        start,
-      });
-
-      expect(start).not.toHaveBeenCalled();
+      expect(started).toEqual([]);
     })
   );
 
@@ -192,14 +185,11 @@ describe("DeepLinkCoordinator", () => {
     "rejects a pending-action intent after its wallet owner changes",
     () =>
       Effect.gen(function* () {
-        const start = vi.fn(startFlow);
-
-        yield* runObservations([pendingObservation()], {
+        const { started } = yield* runObservations([pendingObservation()], {
           owner: otherAddress,
-          start,
         });
 
-        expect(start).not.toHaveBeenCalled();
+        expect(started).toEqual([]);
       })
   );
 
@@ -217,14 +207,15 @@ describe("DeepLinkCoordinator", () => {
         address: secondAddress,
         network: "solana",
       });
-      const start = vi.fn(startFlow);
 
-      yield* runObservations(
+      const { started } = yield* runObservations(
         [pendingObservation(firstScope), pendingObservation(secondScope)],
-        { ownerScopes: [firstScope, secondScope], start }
+        { ownerScopes: [firstScope, secondScope] }
       );
 
-      expect(start).toHaveBeenCalledTimes(2);
+      expect(
+        started.map(({ session }) => session.intake.walletScope.address)
+      ).toEqual([firstAddress, secondAddress]);
     })
   );
 
@@ -232,7 +223,6 @@ describe("DeepLinkCoordinator", () => {
     "retries an unclaimed position intent on the next meaningful observation",
     () =>
       Effect.gen(function* () {
-        const start = vi.fn();
         const navigate = vi
           .fn<
             (path: WidgetPath) => Effect.Effect<void, WidgetNavigationError>
@@ -260,7 +250,7 @@ describe("DeepLinkCoordinator", () => {
             { ...position, ready: false },
             position,
           ],
-          { navigate, start }
+          { navigate }
         );
 
         expect(navigate).toHaveBeenCalledTimes(2);
@@ -274,7 +264,6 @@ describe("DeepLinkCoordinator", () => {
   it.effect("revalidates the current wallet before position navigation", () =>
     Effect.gen(function* () {
       const navigate = vi.fn(() => Effect.void);
-      const start = vi.fn();
 
       yield* runObservations(
         [
@@ -285,7 +274,7 @@ describe("DeepLinkCoordinator", () => {
             ready: true,
           },
         ],
-        { connected: false, navigate, start }
+        { connected: false, navigate }
       );
 
       expect(navigate).not.toHaveBeenCalled();

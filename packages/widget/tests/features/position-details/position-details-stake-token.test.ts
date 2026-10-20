@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
-import { confidentialTokenBalanceKey } from "../../../src/domain/earn/confidential";
+import { ConfidentialTokenBalanceKey } from "../../../src/domain/earn/confidential";
 import type { EarnYield } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
@@ -28,7 +28,7 @@ import {
   yieldOpportunityAtom,
 } from "../../../src/resources/yield-opportunity/provider";
 import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
-import { ConfidentialValues } from "../../../src/services/zama/confidential-values";
+import { RevealedBalances } from "../../../src/services/zama/revealed-balances";
 import {
   confidentialFixture,
   confidentialYieldFixture,
@@ -60,9 +60,9 @@ const connectedWalletState = {
 // The live API lists both the underlying and its confidential wrapper.
 const vault = confidentialYieldFixture({ inputTokens: [usdc, cUsdc] });
 
-const addConfidentialValuesAtom = appRuntime.fn(
-  (entries: ReadonlyArray<readonly [string, bigint]>) =>
-    ConfidentialValues.use((values) => values.add(entries as never))
+const addTokenBalanceAtom = appRuntime.fn(
+  ({ balance, key }: { balance: bigint; key: ConfidentialTokenBalanceKey }) =>
+    RevealedBalances.use((values) => values.addTokenBalance(key, balance))
 );
 
 const makeRegistry = (selectedYield: EarnYield) => {
@@ -85,7 +85,7 @@ const makeRegistry = (selectedYield: EarnYield) => {
       ),
       Atom.initialValue(
         appRuntime.layer,
-        Layer.mergeAll(Reactivity.layer, ConfidentialValues.layer) as never
+        Layer.mergeAll(Reactivity.layer, RevealedBalances.layer) as never
       ),
       Atom.initialValue(
         walletRuntime.layer,
@@ -93,9 +93,10 @@ const makeRegistry = (selectedYield: EarnYield) => {
           revealTokenBalance: ({ chainId, owner, token }) =>
             Effect.sync(() => {
               reveals.push({ chainId, owner, token: token.symbol });
-              registry.set(addConfidentialValuesAtom, [
-                [confidentialTokenBalanceKey({ owner, token }), 5_000_000n],
-              ]);
+              registry.set(addTokenBalanceAtom, {
+                balance: 5_000_000n,
+                key: new ConfidentialTokenBalanceKey({ owner, token }),
+              });
               return 5_000_000n;
             }),
         }) as never

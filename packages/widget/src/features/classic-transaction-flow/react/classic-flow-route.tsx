@@ -1,5 +1,6 @@
-import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
+import { useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import {
   createContext,
   type PropsWithChildren,
@@ -7,51 +8,54 @@ import {
   useState,
 } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
+import { walletScopeAtom } from "../../wallet/index";
 import {
   type ClassicFlowSession,
   type ClassicTransactionFlowIntake,
+  decodeClassicFlowExecutionHandoff,
   decodeClassicFlowNavigationState,
   getClassicTransactionFlowIntakeVariant,
+  isClassicTransactionFlowWalletScopeValid,
 } from "../model/classic-transaction-flow";
 import { isClassicTransactionWorkflowFinished } from "../model/classic-transaction-workflow";
 import {
-  type ClassicFlowExecutionFacade,
-  type ClassicFlowReviewFacade,
-  type ClassicFlowSessionFacade,
-  type ClassicFlowSessionModule,
-  makeClassicFlowExecutionScope,
-  makeClassicFlowReviewScope,
-  makeClassicFlowSessionModule,
-} from "../state/atoms/classic-flow-session";
+  ClassicFlowExecutionKey,
+  classicFlowExecutionPage,
+} from "../state/execution-page";
+import {
+  ClassicFlowReviewVisit,
+  classicFlowReviewPage,
+} from "../state/review-page";
 
-const useClassicFlowSessionModule = (): ClassicFlowSessionModule => {
+const ClassicFlowSessionContext = createContext<ClassicFlowSession | null>(
+  null
+);
+
+export const useClassicFlowSession = (): ClassicFlowSession => {
   const session = useContext(ClassicFlowSessionContext);
   if (!session) throw new Error("Classic Flow Session is unavailable.");
   return session;
 };
 
-const ClassicFlowSessionContext =
-  createContext<ClassicFlowSessionModule | null>(null);
+/** This visit's Review: the same Atoms for every render of it. */
+export const useClassicFlowReview = () =>
+  useAtomValue(
+    classicFlowReviewPage(
+      new ClassicFlowReviewVisit({
+        session: useClassicFlowSession(),
+        visit: useLocation().key,
+      })
+    )
+  );
 
-export const useClassicFlowSession = (): ClassicFlowSessionFacade => {
-  const session = useClassicFlowSessionModule();
-  return session.facade;
-};
-
-const SessionScopedAtom = makeScopedAtom(makeClassicFlowSessionModule);
-const ReviewScopedAtom = makeScopedAtom(makeClassicFlowReviewScope);
-
-export const useClassicFlowReview = (): ClassicFlowReviewFacade => {
-  const reviewAtom = useContext(ReviewScopedAtom.Context);
-  return useAtomValue(reviewAtom).facade;
-};
-
-const ExecutionScopedAtom = makeScopedAtom(makeClassicFlowExecutionScope);
-
-export const useClassicFlowExecution = (): ClassicFlowExecutionFacade => {
-  const executionAtom = useContext(ExecutionScopedAtom.Context);
-  return useAtomValue(executionAtom).facade;
+/** The Execution of the handoff Steps and Complete were navigated to run. */
+export const useClassicFlowExecution = () => {
+  const handoff = decodeClassicFlowExecutionHandoff(useLocation().state);
+  const session = useClassicFlowSession();
+  if (!handoff) throw new Error("Classic Flow Execution is unavailable.");
+  return useAtomValue(
+    classicFlowExecutionPage(new ClassicFlowExecutionKey({ handoff, session }))
+  );
 };
 
 export const useClassicFlowIntake = <
@@ -59,8 +63,12 @@ export const useClassicFlowIntake = <
 >(
   variant: Variant
 ): Extract<ClassicTransactionFlowIntake, { readonly _tag: Variant }> => {
-  const session = useClassicFlowSession();
-  return session.getIntake(variant);
+  const intake = getClassicTransactionFlowIntakeVariant(
+    useClassicFlowSession().intake,
+    variant
+  );
+  if (!intake) throw new Error(`Expected Classic Flow ${variant} intake.`);
+  return intake;
 };
 
 type MountedClassicFlowSession = Readonly<{
@@ -70,9 +78,8 @@ type MountedClassicFlowSession = Readonly<{
 }>;
 
 /**
- * Owns the Flow Session it was navigated to: the Session lives while this
- * route stays mounted and ends when it unmounts. A Start that navigates here
- * again carries a new Session, which replaces the mounted one.
+ * Holds the Flow Session it was navigated to while this route stays mounted.
+ * A Start that navigates here again carries a new Session, which replaces it.
  */
 export const ClassicFlowRoute = ({
   expected,
@@ -104,26 +111,16 @@ export const ClassicFlowRoute = ({
   );
 };
 
-/**
- * Owns `session` for as long as it stays mounted. Callers remount it (by key)
- * to replace the Session.
- */
+/** Provides `session` to its pages while the connected wallet owns it. */
 export const ClassicFlowSessionRoute = ({
   session,
 }: {
   readonly session: ClassicFlowSession;
-}) => (
-  <SessionScopedAtom.Provider value={session}>
-    <MountedSessionBinding />
-  </SessionScopedAtom.Provider>
-);
-
-const MountedSessionBinding = () => {
-  // Not `SessionScopedAtom.use()`: React Compiler does not treat a member named
-  // `use` as a hook and caches the call, which drops its useContext on rerender.
-  const sessionAtom = useContext(SessionScopedAtom.Context);
-  const session = useAtomValue(sessionAtom);
-
+}) => {
+  const walletScope = useAtomValue(walletScopeAtom);
+  if (!isClassicTransactionFlowWalletScopeValid(session.intake, walletScope)) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <ClassicFlowSessionContext.Provider value={session}>
       <Outlet />
@@ -131,62 +128,50 @@ const MountedSessionBinding = () => {
   );
 };
 
-export const ClassicFlowReviewScope = ({ children }: PropsWithChildren) => {
-  const session = useClassicFlowSessionModule();
-
-  return (
-    <ReviewScopedAtom.Provider value={session}>
-      <ReviewBinding>{children}</ReviewBinding>
-    </ReviewScopedAtom.Provider>
-  );
-};
-
-const ReviewBinding = ({ children }: PropsWithChildren) => {
-  const reviewAtom = useContext(ReviewScopedAtom.Context);
-  const review = useAtomValue(reviewAtom);
-  const availability = useAtomValue(review.availabilityAtom);
-  if (availability._tag === "Failure") return <Navigate to="/" replace />;
-  if (availability._tag !== "Success") return null;
-  return children ?? <Outlet />;
-};
-
-export const ClassicFlowExecutionScope = ({ children }: PropsWithChildren) => {
-  const session = useClassicFlowSessionModule();
-
-  return (
-    <ExecutionScopedAtom.Provider value={session}>
-      <ExecutionBinding>{children}</ExecutionBinding>
-    </ExecutionScopedAtom.Provider>
-  );
-};
-
-const ExecutionBinding = ({ children }: PropsWithChildren) => {
-  const executionAtom = useContext(ExecutionScopedAtom.Context);
-  const execution = useAtomValue(executionAtom);
-  const availability = useAtomValue(execution.availabilityAtom);
-  if (availability._tag === "Failure") return <Navigate to="/" replace />;
-  if (availability._tag !== "Success") return null;
-
-  return children ?? <Outlet />;
-};
-
 /**
- * Admits Complete only once the Execution's workflow finished; until then
- * Complete belongs to Steps.
+ * Shows Steps and Complete while their Execution runs. Leaving both ends its
+ * workflow; without an action handed off by Review, it leaves the flow.
  */
-export const ClassicFlowCompletionGuard = ({ children }: PropsWithChildren) => {
-  const execution = useClassicFlowExecution();
-  const [completionAtom] = useState(() => execution.makeCompletionStateAtom());
-  const result = useAtomValue(completionAtom);
-  const { state } = useAtomValue(execution.workflow.viewAtom);
-  const { stepsPath } = useClassicFlowSession().destination;
-  if (result._tag === "Initial") return <LoadingSkeleton />;
-  if (result._tag === "Failure" || !result.value) {
-    return <Navigate replace to={stepsPath} />;
+export const ClassicFlowExecutionRoute = ({ children }: PropsWithChildren) => {
+  const handoff = decodeClassicFlowExecutionHandoff(useLocation().state);
+  if (!handoff) return <Navigate to="/" replace />;
+  return <ExecutionStarted>{children}</ExecutionStarted>;
+};
+
+// A handoff that cannot start, or whose workflow input proves invalid after
+// its confidential steps, leaves the flow.
+const ExecutionStarted = ({ children }: PropsWithChildren) => {
+  const { executionAtom, stateAtom } = useClassicFlowExecution();
+  const execution = useAtomValue(executionAtom);
+  const state = useAtomValue(stateAtom);
+  if (AsyncResult.isFailure(execution) || AsyncResult.isFailure(state)) {
+    return <Navigate to="/" replace />;
   }
-  // Admission is authoritative; the page still needs its completion details.
-  if (!state || !isClassicTransactionWorkflowFinished(state)) {
-    return <LoadingSkeleton />;
+  if (AsyncResult.isInitial(execution)) return null;
+  return children ?? <Outlet />;
+};
+
+/** Steps until the workflow finishes, then Complete, on the same Execution. */
+export const ClassicFlowExecutionPage = ({
+  children,
+  page,
+}: PropsWithChildren<{ readonly page: "Complete" | "Steps" }>) => {
+  const { destination } = useClassicFlowSession();
+  const location = useLocation();
+  const state = useAtomValue(useClassicFlowExecution().stateAtom);
+  // Confidential steps run before the workflow has a state.
+  const finished =
+    AsyncResult.isSuccess(state) &&
+    isClassicTransactionWorkflowFinished(state.value);
+  if (page === "Steps" && finished) {
+    return (
+      <Navigate replace state={location.state} to={destination.completePath} />
+    );
+  }
+  if (page === "Complete" && !finished) {
+    return (
+      <Navigate replace state={location.state} to={destination.stepsPath} />
+    );
   }
   return children ?? <Outlet />;
 };
