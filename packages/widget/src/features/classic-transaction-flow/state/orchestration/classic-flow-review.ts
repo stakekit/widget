@@ -422,8 +422,24 @@ export const makeClassicFlowReviewFactory = Effect.fn(
         );
 
       if (confidential || decrypt) {
+        const conversionSteps =
+          intake._tag === "Enter" && confidential?.conversion
+            ? yield* zama
+                .conversionSteps({
+                  amount: confidential.amount,
+                  conversion: confidential.conversion,
+                  owner: intake.request.address,
+                })
+                // An unknown allowance costs at most a redundant reset and approve.
+                .pipe(
+                  Effect.orElseSucceed(
+                    () => ["approve-reset", "approve", "wrap"] as const
+                  )
+                )
+            : [];
         return yield* promote({
           _tag: "Prepare",
+          conversionSteps,
           prepare: prepareConfidentialAction,
           step: decrypt ? "decrypt" : "encrypt",
         });

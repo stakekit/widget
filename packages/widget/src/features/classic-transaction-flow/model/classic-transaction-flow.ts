@@ -483,6 +483,12 @@ export const getClassicFlowPreparedTransactionType = (
     case "Enter":
       return "DEPOSIT";
     case "Exit":
+      return isConfidentialInstantExit(
+        intake.integration,
+        intake.request.arguments?.outputToken
+      )
+        ? "UNWRAP"
+        : "REDEEM";
     // Only a WITHDRAW pending action carries a handle to decrypt.
     case "Manage":
       return "WITHDRAW";

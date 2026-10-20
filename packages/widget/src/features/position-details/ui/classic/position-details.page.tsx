@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
@@ -17,6 +18,7 @@ import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
+import { PendingBatchDetails } from "./components/pending-batch-details";
 import { PositionBalances } from "./components/position-balances";
 import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
@@ -191,11 +193,13 @@ const PositionDetails = () => {
               {groupPositionBalanceRows(
                 [...positionBalancesByTypeValue.values()].flat()
               ).map((row, i) => (
-                <PositionBalances
-                  key={`${row.type}-${i}`}
-                  integrationData={integrationDataValue}
-                  yieldBalance={row}
-                />
+                <Fragment key={`${row.type}-${i}`}>
+                  <PositionBalances
+                    integrationData={integrationDataValue}
+                    yieldBalance={row}
+                  />
+                  <PendingBatchDetails balance={row} />
+                </Fragment>
               ))}
               {hasHiddenBalances ? (
                 <Box display="flex" flexDirection="column" gap="1">

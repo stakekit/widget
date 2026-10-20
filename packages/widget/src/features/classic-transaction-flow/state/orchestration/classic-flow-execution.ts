@@ -33,7 +33,10 @@ import {
   TransactionWorkflowService,
 } from "../../../../services/transaction-workflow/transaction-workflow-service";
 import { ConfidentialValues } from "../../../../services/zama/confidential-values";
-import { ZamaService } from "../../../../services/zama/zama-service";
+import {
+  type ConfidentialConversionStep,
+  ZamaService,
+} from "../../../../services/zama/zama-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {
   type ClassicTransactionFlowIntake,
@@ -64,6 +67,7 @@ export type ClassicFlowExecutionSource =
   // Confidential actions exist only once the amount is encrypted.
   | Readonly<{
       readonly _tag: "Prepare";
+      readonly conversionSteps: ReadonlyArray<ConfidentialConversionStep>;
       readonly prepare: Effect.Effect<YieldAction, ClassicFlowPrepareError>;
       readonly step: "decrypt" | "encrypt";
     }>;
@@ -123,6 +127,7 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
     const confidential = getClassicFlowConfidentialInput(intake);
     const conversion =
       intake._tag === "Enter" &&
+      source._tag === "Prepare" &&
       confidential?.conversion &&
       !(yield* Ref.get(convertedRef))
         ? {
@@ -157,7 +162,19 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
       source._tag === "Action" ? source.action : null
     );
     const conversionRef =
-      yield* SubscriptionRef.make<ClassicFlowConversion | null>(null);
+      yield* SubscriptionRef.make<ClassicFlowConversion | null>(
+        source._tag === "Prepare"
+          ? {
+              pendingTransactionType:
+                getClassicFlowPreparedTransactionType(intake),
+              steps: [
+                source.step,
+                ...(conversion ? source.conversionSteps : []),
+              ].map((step) => ({ status: "idle" as const, step })),
+              transactions: [],
+            }
+          : null
+      );
     yield* Effect.addFinalizer(() => PubSub.shutdown(conversionRef.pubsub));
     const scope = yield* Effect.scope;
     const startWorkflow = (action: YieldAction) =>
@@ -185,35 +202,8 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
           : current
       );
 
-    const planSteps = Effect.gen(function* () {
-      const conversionSteps = conversion
-        ? yield* zama
-            .conversionSteps({
-              amount: conversion.amount,
-              conversion: conversion.target,
-              owner: conversion.owner,
-            })
-            // An unknown allowance only costs a redundant approve.
-            .pipe(Effect.orElseSucceed(() => ["approve", "wrap"] as const))
-        : [];
-      return [
-        ...(source._tag === "Prepare" ? [source.step] : []),
-        ...conversionSteps,
-      ].map((step) => ({ status: "idle" as const, step }));
-    });
-
     const runSteps = Effect.gen(function* () {
-      const steps =
-        (yield* SubscriptionRef.get(conversionRef))?.steps ??
-        (yield* planSteps);
-      const prepared = yield* Ref.get(actionRef);
-      yield* SubscriptionRef.set(conversionRef, {
-        pendingTransactionType: prepared
-          ? null
-          : getClassicFlowPreparedTransactionType(intake),
-        steps,
-        transactions: prepared?.transactions ?? [],
-      });
+      const steps = (yield* SubscriptionRef.get(conversionRef))?.steps ?? [];
 
       for (const [index, { status, step }] of steps.entries()) {
         if (status === "done") continue;

@@ -17,6 +17,7 @@ import {
   ExactDecimal,
   ExactDecimalInput,
   TolerantOptionalUtcDateTimeFromString,
+  UtcDateTimeFromString,
 } from "../finance/scalars";
 import {
   ProviderId,
@@ -476,15 +477,20 @@ const EarnYieldRisk = Schema.Struct({
   ),
 });
 
+const EarnScheduleWindow = Schema.Struct({
+  closesAt: Schema.String,
+  opensAt: Schema.String,
+});
+
 // Cadence and status stay open so new API values only disable batch timing.
 const EarnSchedulePath = Schema.Struct({
   ...Struct.pick(YieldApi.SchedulePathDto.fields, [
     "businessDaysOnly",
     "cutoffTime",
-    "currentWindow",
-    "nextWindow",
   ]),
   cadence: Schema.String,
+  currentWindow: Schema.optionalKey(Schema.NullOr(EarnScheduleWindow)),
+  nextWindow: Schema.optionalKey(Schema.NullOr(EarnScheduleWindow)),
   kind: Schema.String,
   status: Schema.String,
 });
@@ -563,6 +569,19 @@ const OptionalKeyFromNullOr = <S extends Schema.Top>(schema: S) =>
     })
   );
 
+const EarnBalanceBatch = Schema.Struct({
+  address: Schema.String,
+  explorerUrl: Schema.String,
+  id: Schema.String,
+  requests: Schema.Array(
+    Schema.Struct({
+      explorerUrl: Schema.String,
+      submittedAt: UtcDateTimeFromString,
+      transactionHash: Schema.String,
+    })
+  ),
+});
+
 export const EarnBalance = Schema.Struct({
   ...Struct.pick(YieldApi.BalanceDto.fields, [
     "address",
@@ -575,6 +594,12 @@ export const EarnBalance = Schema.Struct({
   amount: ExactDecimal,
   amountRaw: ExactBaseUnitAmount,
   amountUsd: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
+  batch: Schema.optionalKey(
+    TolerantNullOr(EarnBalanceBatch, {
+      operation: "yield-balance",
+      field: "batch",
+    })
+  ),
   date: Schema.optionalKey(
     TolerantOptionalUtcDateTimeFromString({
       operation: "yield-balance",

@@ -982,6 +982,7 @@
       "SWAP": "SWAP",
       "DEPOSIT": "DEPOSIT",
       "APPROVAL": "APPROVAL",
+      "RESET_APPROVAL": "RESET APPROVAL",
       "STAKE": "STAKE",
       "SET_OPERATOR": "SET OPERATOR",
       "STAKE_ETHENA_USDE": "DEPOSIT",
@@ -1333,6 +1334,15 @@
     "unstaking_duration": "{{duration}} remaining",
     "next_batch_in": "Next batch in {{duration}}",
     "unstaking_imminent": "Imminent",
+    "batch": {
+      "title": "Batch #{{id}}",
+      "batcher": "Batcher",
+      "deposits_one": "{{count}} deposit in this batch",
+      "deposits_other": "{{count}} deposits in this batch",
+      "withdrawals_one": "{{count}} withdrawal in this batch",
+      "withdrawals_other": "{{count}} withdrawals in this batch",
+      "cancel_returns": "Cancelling returns the whole batch amount as {{symbol}}."
+    },
     "pending_action": {
       "stake": "Stake",
       "unstake": "Unstake",

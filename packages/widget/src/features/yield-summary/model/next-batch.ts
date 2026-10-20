@@ -4,6 +4,7 @@ import {
   type BatchSide,
   getDailyBatchCutoff,
   getNextBatchCutoff,
+  getPublishedBatchCutoff,
   isPublishedBatchDue,
 } from "../../../domain/earn/batch-schedule";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
@@ -44,14 +45,15 @@ export const formatNextBatchTiming = ({
 }): NextBatchTiming | null => {
   const schedule = yieldDto.investmentSchedule;
   if (!schedule || !now) return null;
+  const confidential = isConfidentialYield(yieldDto);
   // A confidential batch past its live window dispatches any moment.
-  if (
-    isConfidentialYield(yieldDto) &&
-    isPublishedBatchDue(schedule, side, now)
-  ) {
+  if (confidential && isPublishedBatchDue(schedule, side, now)) {
     return { _tag: "due" };
   }
-  const cutoff = getNextBatchCutoff(schedule, side, now);
+  // Confidential batches run on their live window, not a fixed daily cutoff.
+  const cutoff = confidential
+    ? getPublishedBatchCutoff(schedule, side, now)
+    : getNextBatchCutoff(schedule, side, now);
   const duration = cutoff ? formatDurationUntil(cutoff, now, t) : null;
   return duration ? { _tag: "in", duration } : null;
 };
@@ -81,6 +83,7 @@ export const formatDailyBatch = ({
   readonly t: TFunction;
   readonly yieldDto: EarnYieldWithProvider;
 }): string | null => {
+  if (isConfidentialYield(yieldDto)) return null;
   const schedule = yieldDto.investmentSchedule;
   const cutoff = schedule ? getDailyBatchCutoff(schedule, side) : null;
   return cutoff

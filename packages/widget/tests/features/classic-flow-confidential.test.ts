@@ -17,7 +17,10 @@ import {
 } from "../../src/domain/earn/confidential";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type { NavigatingClassicTransactionFlowStart } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  getClassicFlowPreparedTransactionType,
+  type NavigatingClassicTransactionFlowStart,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import type { ClassicFlowConversion } from "../../src/features/classic-transaction-flow/model/classic-transaction-workflow";
 import type { ClassicFlowExecutionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-execution";
 import type { ClassicFlowSessionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-session";
@@ -231,6 +234,15 @@ const runReview = ({
   });
 
 describe("confidential vault Classic Transaction Flow", () => {
+  it("labels the waiting exit leg by the chosen withdrawal mode", () => {
+    expect(getClassicFlowPreparedTransactionType(exitStart().intake)).toBe(
+      "REDEEM"
+    );
+    expect(
+      getClassicFlowPreparedTransactionType(exitStart(usdc.address).intake)
+    ).toBe("UNWRAP");
+  });
+
   it.effect(
     "previews a cUSDC deposit with encrypted inputs instead of the amount",
     () =>
@@ -521,6 +533,46 @@ const awaitConversion = (
   );
 
 describe("confidential vault execution", () => {
+  it.effect(
+    "lists every conversion step and the deposit as soon as Steps opens",
+    () =>
+      Effect.gen(function* () {
+        const events: Array<string> = [];
+        const conversion = yield* withSession(
+          {
+            makeWorkflow: () => Effect.succeed(workflowFixture),
+            previewAction: () => Effect.succeed(yieldApiActionFixture()),
+            zama: {
+              ...convertingZama(events),
+              conversionSteps: () =>
+                Effect.sync(() => events.push("plan")).pipe(
+                  Effect.as(["approve-reset", "approve", "wrap"] as const)
+                ),
+              encrypt: () => Effect.never,
+            },
+          },
+          (session) =>
+            confirmExecution(session).pipe(
+              Effect.tap(() => Effect.sync(() => events.push("confirmed"))),
+              Effect.flatMap((execution) =>
+                awaitConversion(execution, () => true)
+              )
+            )
+        );
+
+        expect(events).toEqual(["plan", "confirmed"]);
+        expect(Option.getOrNull(conversion)).toMatchObject({
+          pendingTransactionType: "DEPOSIT",
+          steps: [
+            { step: "encrypt" },
+            { step: "approve-reset" },
+            { step: "approve" },
+            { step: "wrap" },
+          ],
+        });
+      })
+  );
+
   it.effect("does not wrap again when the user confirms a second time", () =>
     Effect.gen(function* () {
       const events: Array<string> = [];

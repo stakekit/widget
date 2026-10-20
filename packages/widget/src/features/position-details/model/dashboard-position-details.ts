@@ -3,6 +3,7 @@ import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 import type { PendingAction } from "../../../domain/action/models";
 import { getPendingActionLabelContext } from "../../../domain/action/pending-action";
+import { isConfidentialYield } from "../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -20,6 +21,7 @@ import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import type { RewardsSummary } from "../../../domain/portfolio/models";
 import {
   groupPositionBalanceRows,
+  type PositionBalanceRow,
   type PositionBalancesByType,
   type PositionTokenSum,
   sumBalancesByToken,
@@ -37,6 +39,7 @@ import {
 import {
   formatCooldownDays,
   formatDailyBatch,
+  formatDurationUntil,
   formatMinStake,
   formatMinStakeLabel,
   formatNextBatchLabel,
@@ -101,6 +104,7 @@ type DashboardPositionDetailsModel = {
   chartSections: DashboardPositionChartSection[];
   detailRows: DashboardPositionDetailRow[];
   metricCards: DashboardPositionMetricCard[];
+  pendingBatches: ReadonlyArray<PositionBalanceRow>;
   providerName: string;
   statusSummary: DashboardPositionStatusSummary;
 };
@@ -208,6 +212,9 @@ export const getDashboardPositionDetailsModel = ({
       positionBalancesByType,
       t,
     }),
+    pendingBatches: groupPositionBalanceRows(
+      getBalancesByPriority(positionBalancesByType)
+    ).filter((row) => row.batch),
     chartSections: [],
     detailRows: getDetailRows({
       integrationData,
@@ -243,7 +250,7 @@ const getFillerMetric = ({
   const cooldownDays = getYieldCooldownPeriod(integrationData)?.days ?? 0;
   const getRedemptionValue = () => {
     if (nextBatch) return formatNextBatchLabel(nextBatch, t);
-    return cooldownDays > 0
+    return cooldownDays > 0 && !isConfidentialYield(integrationData)
       ? t("dashboard.earn_details.cooldown_days", { count: cooldownDays })
       : null;
   };
@@ -508,11 +515,19 @@ const getPendingBatchTiming = ({
 }: {
   integrationData: EarnYieldWithProvider;
   now: DateTime.Utc | null;
-  row: { date?: DateTime.Utc | null; type: YieldBalanceType };
+  row: Pick<PositionBalanceRow, "batch" | "date" | "type">;
   t: TFunction;
 }) => {
   const { type } = row;
-  if (row.date || (type !== "entering" && type !== "exiting")) return null;
+  if (type !== "entering" && type !== "exiting") return null;
+  if (row.date) {
+    if (!now) return null;
+    const duration = formatDurationUntil(row.date, now, t);
+    return duration
+      ? t("position_details.unstaking_duration", { duration })
+      : t("position_details.unstaking_imminent");
+  }
+  if (row.batch) return null;
   const nextBatch = formatNextBatchTiming({
     now,
     side: type === "entering" ? "subscription" : "redemption",
@@ -576,12 +591,21 @@ const getDetailRows = ({
   const risk = getYieldRiskDisplay(integrationData);
   const minStake = formatMinStake(integrationData, t, locale);
   const pricePerShare = formatPricePerShare(integrationData, locale);
-  const cooldown =
-    formatDailyBatch({ side: "redemption", t, yieldDto: integrationData }) ??
-    formatCooldownDays(getYieldCooldownPeriod(integrationData)?.days ?? 0, t);
-  const warmup =
-    formatDailyBatch({ side: "subscription", t, yieldDto: integrationData }) ??
-    formatOptionalDays(getYieldWarmupPeriod(integrationData)?.days, t);
+  const confidential = isConfidentialYield(integrationData);
+  const cooldown = confidential
+    ? null
+    : (formatDailyBatch({ side: "redemption", t, yieldDto: integrationData }) ??
+      formatCooldownDays(
+        getYieldCooldownPeriod(integrationData)?.days ?? 0,
+        t
+      ));
+  const warmup = confidential
+    ? null
+    : (formatDailyBatch({
+        side: "subscription",
+        t,
+        yieldDto: integrationData,
+      }) ?? formatOptionalDays(getYieldWarmupPeriod(integrationData)?.days, t));
   const lockup = formatOptionalDays(
     getYieldLockupPeriod(integrationData)?.days,
     t
@@ -641,7 +665,7 @@ const getDetailRows = ({
           value: minStake.value,
         }
       : null,
-    promotedFactIds.has("cooldown")
+    promotedFactIds.has("cooldown") || !cooldown
       ? null
       : {
           id: "cooldown",

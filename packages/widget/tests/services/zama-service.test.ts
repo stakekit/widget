@@ -187,6 +187,19 @@ describe("ZamaService", () => {
     })
   );
 
+  it.effect("plans an allowance reset when a partial allowance is left", () =>
+    Effect.gen(function* () {
+      client.readContract.mockResolvedValueOnce(1_000_000n);
+      const layer = yield* makeLayer({});
+
+      const steps = yield* ZamaService.use((zama) =>
+        zama.conversionSteps({ amount: 5_000_000n, conversion, owner })
+      ).pipe(Effect.provide(layer));
+
+      expect(steps).toEqual(["approve-reset", "approve", "wrap"]);
+    })
+  );
+
   it.effect(
     "sends one conversion step and reports the broadcast before the receipt",
     () =>
@@ -247,9 +260,8 @@ describe("ZamaService", () => {
       })
   );
 
-  it.effect("resets a partial allowance to zero before approving", () =>
+  it.effect("resets the allowance to zero and approves as separate steps", () =>
     Effect.gen(function* () {
-      client.readContract.mockResolvedValueOnce(1_000_000n);
       const sent: Array<WalletSignTransactionInput> = [];
       const layer = yield* makeLayer({
         signTransaction: (input) =>
@@ -260,18 +272,24 @@ describe("ZamaService", () => {
       });
 
       yield* ZamaService.use((zama) =>
-        zama.convertStep({
-          actionMeta,
-          amount: 5_000_000n,
-          conversion,
-          network: "ethereum-sepolia",
-          onBroadcast: Effect.void,
-          owner,
-          step: "approve",
-          walletScope: scope,
-        })
+        Effect.forEach(["approve-reset", "approve"] as const, (step) =>
+          zama.convertStep({
+            actionMeta,
+            amount: 5_000_000n,
+            conversion,
+            network: "ethereum-sepolia",
+            onBroadcast: Effect.void,
+            owner,
+            step,
+            walletScope: scope,
+          })
+        )
       ).pipe(Effect.provide(layer));
 
+      expect(sent.map((input) => input.txMeta.txId)).toEqual([
+        "action-1-approve-reset",
+        "action-1-approve",
+      ]);
       expect(
         sent.map(
           (input) =>

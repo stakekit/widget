@@ -32,7 +32,7 @@ import { WalletService } from "../wallet/wallet-service";
 import type { ClassicActionMeta } from "../wallet/wallet-transactions";
 import { ConfidentialValues } from "./confidential-values";
 
-type ConfidentialConversionStep = "approve" | "wrap";
+export type ConfidentialConversionStep = "approve-reset" | "approve" | "wrap";
 
 class ZamaError extends Data.TaggedError("ZamaError")<{
   readonly cause: unknown;
@@ -514,7 +514,11 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
       conversion,
       owner as Address
     );
-    return allowance < amount ? ["approve", "wrap"] : ["wrap"];
+    if (allowance >= amount) return ["wrap"];
+    // USDT reverts when changing one non-zero allowance to another.
+    return allowance > 0n
+      ? ["approve-reset", "approve", "wrap"]
+      : ["approve", "wrap"];
   });
 
   const convertStep: ZamaServiceApi["convertStep"] = Effect.fn(
@@ -532,50 +536,9 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     const client = yield* getPublicClient(conversion.chainId);
     const account = owner as Address;
     const wrapper = conversion.wrapper as Address;
-    if (step === "approve") {
-      const allowance = yield* readAllowance(client, conversion, account);
-      // USDT reverts when changing one non-zero allowance to another.
-      if (
-        allowance > 0n &&
-        !sentTransactions.has(`${actionMeta.actionId}-${step}`)
-      ) {
-        yield* sendStep({
-          actionMeta,
-          client,
-          data: encodeFunctionData({
-            abi: erc20Abi,
-            args: [wrapper, 0n],
-            functionName: "approve",
-          }),
-          network,
-          onBroadcast: Effect.void,
-          owner: account,
-          step: "approve-reset",
-          to: conversion.underlying as Address,
-          txType: "APPROVAL",
-          walletScope,
-        });
-      }
-    }
     return yield* sendStep(
-      step === "approve"
+      step === "wrap"
         ? {
-            actionMeta,
-            client,
-            data: encodeFunctionData({
-              abi: erc20Abi,
-              args: [wrapper, amount],
-              functionName: "approve",
-            }),
-            network,
-            onBroadcast,
-            owner: account,
-            step,
-            to: conversion.underlying as Address,
-            txType: "APPROVAL",
-            walletScope,
-          }
-        : {
             actionMeta,
             client,
             data: encodeFunctionData({
@@ -589,6 +552,22 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
             step,
             to: wrapper,
             txType: "WRAP",
+            walletScope,
+          }
+        : {
+            actionMeta,
+            client,
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              args: [wrapper, step === "approve" ? amount : 0n],
+              functionName: "approve",
+            }),
+            network,
+            onBroadcast,
+            owner: account,
+            step,
+            to: conversion.underlying as Address,
+            txType: "APPROVAL",
             walletScope,
           }
     );

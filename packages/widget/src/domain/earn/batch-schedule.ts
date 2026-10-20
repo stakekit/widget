@@ -94,6 +94,16 @@ export const isPublishedBatchDue = (
   });
 };
 
+/** The next batch run from the live schedule window only. */
+export const getPublishedBatchCutoff = (
+  schedule: EarnInvestmentSchedule,
+  side: BatchSide,
+  now: DateTime.Utc
+): DateTime.Utc | null => {
+  const path = getBatchPath(schedule, side);
+  return path ? getPublishedCutoff(path, now) : null;
+};
+
 /** The local cutoff time of a daily batch, e.g. 11:00 UTC; null otherwise. */
 export const getDailyBatchCutoff = (
   schedule: EarnInvestmentSchedule,

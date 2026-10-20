@@ -10,6 +10,7 @@ import type { PositionBalancesByType } from "../../../src/domain/portfolio/posit
 
 import { getDashboardPositionDetailsModel } from "../../../src/features/position-details/model/dashboard-position-details";
 import {
+  confidentialYieldFixture,
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
@@ -61,7 +62,9 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "position_details.balance_type.claimable": "Claimable",
     "position_details.balance_type.entering": "Entering",
     "position_details.balance_type.exiting": "Exiting",
+    "position_details.duration.days": `${options?.count ?? ""} days`,
     "position_details.duration.hours": `${options?.count ?? ""} hours`,
+    "position_details.unstaking_duration": `${options?.duration ?? ""} remaining`,
     "position_details.next_batch_in": `Next batch in ${options?.duration ?? ""}`,
     "position_details.balance_type.locked": "Locked",
     "position_details.pending_action.cancel_pending": "Cancel pending request",
@@ -155,6 +158,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions: [],
       personalizedRewardRate: yieldRewardRateFixture({ total: 0.025 }),
@@ -213,6 +217,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: false,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions: [],
       personalizedRewardRate: null,
@@ -258,6 +263,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions: [],
       personalizedRewardRate: null,
@@ -376,8 +382,87 @@ describe("getDashboardPositionDetailsModel", () => {
       Active: "$1.00",
       Entering: "$2.00 · Next batch in 3 hours",
       // The API's own settlement date wins over the batch estimate.
-      Exiting: "$3.00",
+      Exiting: "$3.00 · 5 days remaining",
     });
+  });
+
+  it("shows no next batch for a balance whose batch is already dispatched", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: false,
+      locale: "en",
+      integrationData: makeYield({
+        investmentSchedule: {
+          redemption: { paths: [] },
+          subscription: {
+            paths: [
+              {
+                cadence: "daily_cutoff",
+                cutoffTime: "15:00",
+                kind: "standard",
+                status: "open",
+              },
+            ],
+          },
+          timezone: "UTC",
+        },
+      }),
+      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "entering",
+          [
+            {
+              ...makeBalance({
+                amount: "2",
+                amountUsd: "2",
+                batch: {
+                  address: "0x084f",
+                  explorerUrl: "https://etherscan.io/address/0x084f",
+                  id: "37",
+                  requests: [],
+                },
+                type: "entering",
+              }),
+              tokenPriceInUsd: new BigNumber(1),
+            },
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.breakdownRows.map(({ subValue }) => subValue)).toEqual([
+      "$2.00",
+    ]);
+  });
+
+  it("shows no static redemption or warmup for a confidential vault", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: {
+        ...confidentialYieldFixture(),
+        provider: yieldApiProviderFixture({ name: "Zama" }),
+      } as EarnYieldWithProvider,
+      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      model.detailRows.filter((row) => ["cooldown", "warmup"].includes(row.id))
+    ).toEqual([]);
+    expect(
+      model.metricCards.some((card) => card.id === "unstaking-period")
+    ).toBe(false);
   });
 
   it("describes redemption and warmup of a batched vault by its batches", () => {
@@ -456,6 +541,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions: [],
       personalizedRewardRate: null,
@@ -516,6 +602,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: false,
       locale: "en",
+      now: null,
       integrationData: makeYield({
         status: { enter: false, exit: false },
       }),
@@ -566,6 +653,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions,
       personalizedRewardRate: null,
@@ -689,6 +777,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield({
         mechanics: {
           ...makeYield().mechanics,
@@ -722,6 +811,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions: [],
       personalizedRewardRate: null,
@@ -778,6 +868,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield(),
       pendingActions: [],
       personalizedRewardRate: null,
@@ -799,6 +890,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield({
         mechanics: {
           ...makeYield().mechanics,
@@ -845,6 +937,7 @@ describe("getDashboardPositionDetailsModel", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,
       locale: "en",
+      now: null,
       integrationData: makeYield({
         state: {
           pricePerShareState: {

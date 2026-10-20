@@ -48,6 +48,7 @@ export const PositionBalances = ({
         ? t("position_details.unstaking_duration", { duration })
         : null;
     }
+    if (yieldBalance.batch) return null;
     // Batched vaults settle pending balances with their next batch.
     const nextBatch = formatNextBatchTiming({
       now,
