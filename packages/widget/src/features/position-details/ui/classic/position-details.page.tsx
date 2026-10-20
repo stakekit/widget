@@ -17,6 +17,7 @@ import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
+import { getPendingBatchRows } from "../../model/pending-balance-batch";
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
 import { PendingBatchDetails } from "./components/pending-batch-details";
 import { PositionBalances } from "./components/position-balances";
@@ -61,6 +62,11 @@ const PositionDetails = () => {
   if (!isLoading && positionLost) {
     return <Navigate replace to="/positions" />;
   }
+
+  const balanceRows = positionBalancesByTypeValue
+    ? groupPositionBalanceRows([...positionBalancesByTypeValue.values()].flat())
+    : [];
+  const batchRows = getPendingBatchRows(balanceRows);
 
   return (
     <AnimationPage>
@@ -190,15 +196,15 @@ const PositionDetails = () => {
             </Box>
 
             <Box py="3" gap="2" display="flex" flexDirection="column">
-              {groupPositionBalanceRows(
-                [...positionBalancesByTypeValue.values()].flat()
-              ).map((row, i) => (
+              {balanceRows.map((row, i) => (
                 <Fragment key={`${row.type}-${i}`}>
                   <PositionBalances
                     integrationData={integrationDataValue}
                     yieldBalance={row}
                   />
-                  <PendingBatchDetails balance={row} />
+                  {batchRows.includes(row) ? (
+                    <PendingBatchDetails balance={row} />
+                  ) : null}
                 </Fragment>
               ))}
               {hasHiddenBalances ? (

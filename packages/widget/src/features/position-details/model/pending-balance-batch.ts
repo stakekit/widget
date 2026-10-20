@@ -1,4 +1,4 @@
-import type { DateTime } from "effect";
+import { type DateTime, Array as EArray } from "effect";
 import type { TFunction } from "i18next";
 import type { PositionBalanceRow } from "../../../domain/portfolio/positions";
 import { formatDateTime } from "../../../shared/lib/date";
@@ -16,6 +16,14 @@ export type PendingBalanceBatchDetails = Readonly<{
   readonly requestsLabel: string;
   readonly title: string;
 }>;
+
+/** The first balance row of each batch; rows sharing one differ only by token or date. */
+export const getPendingBatchRows = (rows: ReadonlyArray<PositionBalanceRow>) =>
+  EArray.dedupeWith(
+    rows.filter((row) => row.batch),
+    (a, b) =>
+      a.batch?.address === b.batch?.address && a.batch?.id === b.batch?.id
+  );
 
 export const getPendingBalanceBatchDetails = ({
   balance,

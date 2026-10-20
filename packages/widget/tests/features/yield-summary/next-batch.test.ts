@@ -1,15 +1,14 @@
 import { DateTime } from "effect";
-import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import type { EarnInvestmentSchedule } from "../../../src/domain/earn/models";
 import {
   formatDailyBatch,
   formatNextBatchTiming,
 } from "../../../src/features/yield-summary/index";
+import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { confidentialYieldFixture, yieldApiYieldFixture } from "../../fixtures";
 
-const t = ((key: string, options?: Record<string, unknown>) =>
-  `${key}:${JSON.stringify(options ?? {})}`) as TFunction;
+const t = createWidgetI18nInstance().getFixedT("en");
 
 const now = DateTime.makeUnsafe("2026-10-19T12:00:00Z");
 
@@ -55,10 +54,7 @@ describe("next batch timing", () => {
           })
         ),
       })
-    ).toEqual({
-      _tag: "in",
-      duration: 'position_details.duration.hours:{"count":3}',
-    });
+    ).toEqual({ _tag: "in", duration: "3 hours" });
   });
 
   it("marks a confidential batch due once its live window has closed", () => {
@@ -89,10 +85,7 @@ describe("next batch timing", () => {
 
     expect(
       formatNextBatchTiming({ now, side: "subscription", t, yieldDto })
-    ).toEqual({
-      _tag: "in",
-      duration: 'position_details.duration.hours:{"count":3}',
-    });
+    ).toEqual({ _tag: "in", duration: "3 hours" });
     expect(
       formatDailyBatch({ side: "subscription", t, yieldDto })
     ).not.toBeNull();

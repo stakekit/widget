@@ -440,6 +440,39 @@ describe("getDashboardPositionDetailsModel", () => {
     ]);
   });
 
+  it("details each pending batch once, however many balances share it", () => {
+    const batch = {
+      address: "0x084f",
+      explorerUrl: "https://etherscan.io/address/0x084f",
+      id: "37",
+      requests: [],
+    };
+    const balance = (date: string) => ({
+      ...makeBalance({ amount: "1", batch, date, type: "entering" }),
+      tokenPriceInUsd: new BigNumber(1),
+    });
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: false,
+      locale: "en",
+      integrationData: makeYield(),
+      now: null,
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "entering",
+          [balance("2026-10-20T12:00:00Z"), balance("2026-10-21T12:00:00Z")],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.breakdownRows).toHaveLength(2);
+    expect(model.pendingBatches.map((row) => row.batch?.id)).toEqual(["37"]);
+  });
+
   it("shows no static redemption or warmup for a confidential vault", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: true,

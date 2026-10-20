@@ -536,41 +536,62 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     const client = yield* getPublicClient(conversion.chainId);
     const account = owner as Address;
     const wrapper = conversion.wrapper as Address;
-    return yield* sendStep(
-      step === "wrap"
-        ? {
-            actionMeta,
-            client,
-            data: encodeFunctionData({
-              abi: wrapperAbi,
-              args: [account, amount],
-              functionName: "wrap",
-            }),
-            network,
-            onBroadcast,
-            owner: account,
-            step,
-            to: wrapper,
-            txType: "WRAP",
-            walletScope,
-          }
-        : {
-            actionMeta,
-            client,
-            data: encodeFunctionData({
-              abi: erc20Abi,
-              args: [wrapper, step === "approve" ? amount : 0n],
-              functionName: "approve",
-            }),
-            network,
-            onBroadcast,
-            owner: account,
-            step,
-            to: conversion.underlying as Address,
-            txType: "APPROVAL",
-            walletScope,
-          }
-    );
+    if (step === "wrap") {
+      return yield* sendStep({
+        actionMeta,
+        client,
+        data: encodeFunctionData({
+          abi: wrapperAbi,
+          args: [account, amount],
+          functionName: "wrap",
+        }),
+        network,
+        onBroadcast,
+        owner: account,
+        step,
+        to: wrapper,
+        txType: "WRAP",
+        walletScope,
+      });
+    }
+    const approve = (
+      value: bigint,
+      approveStep: ConfidentialConversionStep,
+      broadcast: Effect.Effect<void>
+    ) =>
+      sendStep({
+        actionMeta,
+        client,
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          args: [wrapper, value],
+          functionName: "approve",
+        }),
+        network,
+        onBroadcast: broadcast,
+        owner: account,
+        step: approveStep,
+        to: conversion.underlying as Address,
+        txType: "APPROVAL",
+        walletScope,
+      });
+    // A retry settles the approval it already sent before reading what it left.
+    const txId = `${actionMeta.actionId}-${step}`;
+    const pending = sentTransactions.get(txId);
+    if (pending) {
+      yield* onBroadcast;
+      yield* awaitReceipt(client, pending, "APPROVAL", txId);
+    }
+    // The plan was read at confirm; an approval may have landed since.
+    const allowance = yield* readAllowance(client, conversion, account);
+    if (allowance >= amount) return;
+    if (step === "approve-reset") {
+      if (allowance > 0n) yield* approve(0n, step, onBroadcast);
+      return;
+    }
+    // USDT reverts when changing one non-zero allowance to another.
+    if (allowance > 0n) yield* approve(0n, "approve-reset", Effect.void);
+    yield* approve(amount, step, onBroadcast);
   });
 
   const publicDecrypt: ZamaServiceApi["publicDecrypt"] = Effect.fn(

@@ -1,13 +1,12 @@
 import { DateTime, Schema } from "effect";
-import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { groupPositionBalanceRows } from "../../../src/domain/portfolio/positions";
 import { getPendingBalanceBatchDetails } from "../../../src/features/position-details/model/pending-balance-batch";
+import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldBalanceFixture } from "../../fixtures";
 
-const t = ((key: string, options?: Record<string, unknown>) =>
-  `${key}:${JSON.stringify(options ?? {})}`) as TFunction;
+const t = createWidgetI18nInstance().getFixedT("en");
 
 const batch = (id: string) => ({
   address: "0x084fd3a5000000000000000000000000000eEc1",
@@ -99,8 +98,8 @@ describe("pending balance batch", () => {
           url: "https://etherscan.io/tx/0xb",
         },
       ],
-      requestsLabel: 'position_details.batch.deposits:{"count":2}',
-      title: 'position_details.batch.title:{"id":"37"}',
+      requestsLabel: "2 deposits in this batch",
+      title: "Batch #37",
     });
   });
 });

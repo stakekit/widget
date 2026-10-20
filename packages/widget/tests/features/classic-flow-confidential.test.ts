@@ -573,29 +573,39 @@ describe("confidential vault execution", () => {
       })
   );
 
-  it.effect("does not wrap again when the user confirms a second time", () =>
-    Effect.gen(function* () {
-      const events: Array<string> = [];
-      const workflows = yield* Queue.unbounded<void>();
-      yield* withSession(
-        {
-          makeWorkflow: () =>
-            Queue.offer(workflows, undefined).pipe(Effect.as(workflowFixture)),
-          previewAction: () => Effect.succeed(yieldApiActionFixture()),
-          zama: convertingZama(events),
-        },
-        (session) =>
-          Effect.gen(function* () {
-            yield* confirmExecution(session);
-            yield* Queue.take(workflows);
-            events.push("back");
-            yield* confirmExecution(session);
-            yield* Queue.take(workflows);
-          })
-      );
+  it.effect(
+    "neither re-reads the allowance nor wraps again on a second confirm",
+    () =>
+      Effect.gen(function* () {
+        const events: Array<string> = [];
+        const workflows = yield* Queue.unbounded<void>();
+        yield* withSession(
+          {
+            makeWorkflow: () =>
+              Queue.offer(workflows, undefined).pipe(
+                Effect.as(workflowFixture)
+              ),
+            previewAction: () => Effect.succeed(yieldApiActionFixture()),
+            zama: {
+              ...convertingZama(events),
+              conversionSteps: () =>
+                Effect.sync(() => events.push("plan")).pipe(
+                  Effect.as(["approve", "wrap"] as const)
+                ),
+            },
+          },
+          (session) =>
+            Effect.gen(function* () {
+              yield* confirmExecution(session);
+              yield* Queue.take(workflows);
+              events.push("back");
+              yield* confirmExecution(session);
+              yield* Queue.take(workflows);
+            })
+        );
 
-      expect(events).toEqual(["approve", "wrap", "back"]);
-    })
+        expect(events).toEqual(["plan", "approve", "wrap", "back"]);
+      })
   );
 
   it.effect(

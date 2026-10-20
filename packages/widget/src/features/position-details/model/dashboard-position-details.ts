@@ -39,7 +39,6 @@ import {
 import {
   formatCooldownDays,
   formatDailyBatch,
-  formatDurationUntil,
   formatMinStake,
   formatMinStakeLabel,
   formatNextBatchLabel,
@@ -50,6 +49,8 @@ import {
   formatRewardRateLabel,
   formatRewardTokenLabel,
 } from "../../yield-summary/index";
+import { getPendingBatchRows } from "./pending-balance-batch";
+import { formatPendingBalanceTiming } from "./pending-balance-timing";
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
 
@@ -212,9 +213,9 @@ export const getDashboardPositionDetailsModel = ({
       positionBalancesByType,
       t,
     }),
-    pendingBatches: groupPositionBalanceRows(
-      getBalancesByPriority(positionBalancesByType)
-    ).filter((row) => row.batch),
+    pendingBatches: getPendingBatchRows(
+      groupPositionBalanceRows(getBalancesByPriority(positionBalancesByType))
+    ),
     chartSections: [],
     detailRows: getDetailRows({
       integrationData,
@@ -506,37 +507,6 @@ const getStatusSummary = ({
   };
 };
 
-// Undated pending balances of batched vaults settle with the next batch.
-const getPendingBatchTiming = ({
-  integrationData,
-  now,
-  row,
-  t,
-}: {
-  integrationData: EarnYieldWithProvider;
-  now: DateTime.Utc | null;
-  row: Pick<PositionBalanceRow, "batch" | "date" | "type">;
-  t: TFunction;
-}) => {
-  const { type } = row;
-  if (type !== "entering" && type !== "exiting") return null;
-  if (row.date) {
-    if (!now) return null;
-    const duration = formatDurationUntil(row.date, now, t);
-    return duration
-      ? t("position_details.unstaking_duration", { duration })
-      : t("position_details.unstaking_imminent");
-  }
-  if (row.batch) return null;
-  const nextBatch = formatNextBatchTiming({
-    now,
-    side: type === "entering" ? "subscription" : "redemption",
-    t,
-    yieldDto: integrationData,
-  });
-  return nextBatch ? formatNextBatchLabel(nextBatch, t) : null;
-};
-
 const getBreakdownRows = ({
   integrationData,
   locale,
@@ -555,7 +525,7 @@ const getBreakdownRows = ({
       const amountSubValue = row.token.isPoints
         ? t("shared.points")
         : formatUsdSubValue(row.amountUsd, locale);
-      const batchTiming = getPendingBatchTiming({
+      const batchTiming = formatPendingBalanceTiming({
         integrationData,
         now,
         row,
