@@ -12,6 +12,7 @@ import {
 } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
+import { nodeBuiltinImportsPlugin } from "./node-builtin-imports.ts";
 
 declare module "vite" {
   interface UserConfig {
@@ -61,6 +62,7 @@ export const getConfig = (
           ],
         }),
         vanillaExtractPlugin(),
+        nodeBuiltinImportsPlugin(),
       ],
       css: {
         postcss: {

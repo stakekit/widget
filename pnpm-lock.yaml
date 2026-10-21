@@ -374,6 +374,9 @@ catalogs:
     effect:
       specifier: 4.0.5
       version: 4.0.5
+    esbuild:
+      specifier: ^0.28.2
+      version: 0.28.2
     husky:
       specifier: ^9.1.7
       version: 9.1.7
@@ -781,6 +784,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.0.5
+      esbuild:
+        specifier: 'catalog:'
+        version: 0.28.2
       i18next:
         specifier: 'catalog:'
         version: 26.4.2(typescript@6.0.3)
