@@ -5,6 +5,7 @@ export { Details } from "./details/details.page.tsx";
 export { Header } from "./header";
 export { AnimationLayout } from "./ui/animation-layout";
 export { GlobalModals } from "./ui/global-modals";
+export { NetworkNotSupported } from "./ui/network-not-supported";
 export { NoEnabledYields } from "./ui/no-enabled-yields";
 export { PoweredBy } from "./ui/powered-by";
 export { WidgetUnavailable } from "./ui/widget-unavailable";

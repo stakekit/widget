@@ -22,6 +22,7 @@ import { WagmiConfigProvider } from "../../../src/features/wallet/composition";
 import {
   useSKWallet,
   useWalletConfig,
+  walletExternalProviderChainsEnabledResultAtom,
   walletScopeAtom,
   walletStateResultAtom,
 } from "../../../src/features/wallet/index";
@@ -34,6 +35,9 @@ import { renderHook } from "../../utils/test-utils.dom";
 const firstAddress = "0x0000000000000000000000000000000000000001";
 const secondAddress = "0x0000000000000000000000000000000000000002";
 const thirdAddress = "0x0000000000000000000000000000000000000003";
+const plasmaChainId = 9745;
+const ignoredChainsWarning =
+  "External provider chains are not enabled for this widget and were ignored";
 
 const externalProvider = (
   currentAddress: string,
@@ -123,6 +127,9 @@ const mountWallet = async (
       const account = useAccount();
       const config = useWalletConfig();
       const scope = useAtomValue(walletScopeAtom);
+      const chainsEnabled = useAtomValue(
+        walletExternalProviderChainsEnabledResultAtom
+      );
       useEffect(() => {
         if (wallet?.status === "connected") {
           connectedIdentities.push({
@@ -131,7 +138,7 @@ const mountWallet = async (
           });
         }
       }, [wallet]);
-      return { account, config, scope, wallet };
+      return { account, chainsEnabled, config, scope, wallet };
     },
     {
       wrapper: ({ children }) => {
@@ -180,7 +187,9 @@ type MountedWallet = {
   readonly result: {
     readonly current: {
       readonly account: UseConnectionReturnType;
+      readonly chainsEnabled: AsyncResult.AsyncResult<boolean, unknown>;
       readonly config: AsyncResult.AsyncResult<Config, unknown>;
+      readonly scope: unknown;
       readonly wallet: NormalizedWalletState | null;
     };
   };
@@ -226,6 +235,28 @@ const waitForDisconnected = (mounted: MountedWallet) =>
         walletAddress: null,
         walletStatus: "disconnected",
       });
+  });
+
+const waitForChainsEnabled = (mounted: MountedWallet, enabled: boolean) =>
+  mounted.act(async () => {
+    await expect
+      .poll(() =>
+        Option.getOrNull(
+          AsyncResult.value(mounted.result.current.chainsEnabled)
+        )
+      )
+      .toBe(enabled);
+  });
+
+const waitForUnsupported = (mounted: MountedWallet) =>
+  mounted.act(async () => {
+    await expect
+      .poll(() => ({
+        network: mounted.result.current.wallet?.network,
+        scope: mounted.result.current.scope,
+        status: mounted.result.current.wallet?.status,
+      }))
+      .toEqual({ network: null, scope: null, status: "unsupported" });
   });
 
 const getConnector = async (mounted: MountedWallet) => {
@@ -409,6 +440,9 @@ describe("external provider runtime generations", () => {
       expect(mounted.result.current.scope).toBeNull();
       expect(mounted.connectedIdentities).toEqual([]);
       expect(connect).not.toHaveBeenCalled();
+      // The chain is enabled for the key; only the host's own list excludes
+      // it, so the in-widget unsupported state handles it, not the notice.
+      await waitForChainsEnabled(mounted, true);
 
       await mounted.updateProvider(
         externalProvider(firstAddress, mainnet.id, [mainnet.id, optimism.id])
@@ -429,30 +463,30 @@ describe("external provider runtime generations", () => {
     name: string;
     supportedChainIds: SKExternalProviders["supportedChainIds"];
   }[]) {
-    it(`fails bootstrap for ${name}`, async ({ worker }) => {
+    it(`starts with the host chain unsupported for ${name} and recovers when the host sends an enabled chain`, async ({
+      worker,
+    }) => {
       worker.use(enabledNetworks);
       const mounted = await mountWallet(
         externalProvider(firstAddress, mainnet.id, supportedChainIds)
       );
 
-      await mounted.act(async () => {
-        await expect
-          .poll(() => AsyncResult.isFailure(mounted.runtimeResult.config))
-          .toBe(true);
-      });
-      expect(
-        Option.isNone(AsyncResult.value(mounted.runtimeResult.config))
-      ).toBe(true);
-      expect(mounted.connectedIdentities).toEqual([]);
-      expect(
-        document.querySelector('[data-testid="wallet-runtime-error"]')
-      ).not.toBeNull();
+      await waitForChainsEnabled(mounted, false);
+      await waitForUnsupported(mounted);
+      expect(AsyncResult.isSuccess(mounted.runtimeResult.config)).toBe(true);
+      expect(mounted.errors).toEqual([]);
       expect(
         document.querySelector('[data-testid="wallet-runtime-ready"]')
-      ).toBeNull();
+      ).not.toBeNull();
+
+      await mounted.updateProvider(
+        externalProvider(firstAddress, mainnet.id, [mainnet.id])
+      );
+      await waitForIdentity(mounted, firstAddress, mainnet.id);
+      await waitForChainsEnabled(mounted, true);
     });
 
-    it(`fails the live wallet and removes its usable view for ${name}`, async ({
+    it(`keeps the live wallet and reports the host chain unsupported for ${name} until the host sends an enabled chain`, async ({
       worker,
     }) => {
       worker.use(enabledNetworks);
@@ -460,39 +494,111 @@ describe("external provider runtime generations", () => {
         externalProvider(firstAddress, mainnet.id, [mainnet.id, optimism.id])
       );
       await waitForIdentity(mounted, firstAddress, mainnet.id);
+      await waitForChainsEnabled(mounted, true);
+
+      await mounted.updateProvider(
+        externalProvider(firstAddress, mainnet.id, supportedChainIds)
+      );
+      await waitForChainsEnabled(mounted, false);
+      await waitForUnsupported(mounted);
+      expect(
+        Option.isNone(AsyncResult.error(mounted.runtimeResult.wallet))
+      ).toBe(true);
+      expect(mounted.errors).toEqual([]);
       expect(
         document.querySelector('[data-testid="wallet-runtime-ready"]')
       ).not.toBeNull();
 
       await mounted.updateProvider(
-        externalProvider(firstAddress, mainnet.id, supportedChainIds)
+        externalProvider(firstAddress, optimism.id, [mainnet.id, optimism.id])
       );
-      await mounted.act(async () => {
-        await expect
-          .poll(() =>
-            Option.getOrNull(AsyncResult.error(mounted.runtimeResult.wallet))
-          )
-          .toMatchObject({
-            _tag: "WalletRuntimeInvariantError",
-            reason: "external-provider-no-supported-chains",
-          });
-        await expect
-          .poll(() => mounted.errors)
-          .toContainEqual(
-            expect.objectContaining({
-              _tag: "WalletRuntimeInvariantError",
-              reason: "external-provider-no-supported-chains",
-            })
-          );
-      });
-      expect(
-        document.querySelector('[data-testid="wallet-runtime-error"]')
-      ).not.toBeNull();
-      expect(
-        document.querySelector('[data-testid="wallet-runtime-ready"]')
-      ).toBeNull();
+      await waitForIdentity(mounted, firstAddress, optimism.id);
+      await waitForChainsEnabled(mounted, true);
     });
   }
+
+  it("drops host chains that are not enabled, uses the remaining ones, and warns once per dropped chain", async ({
+    worker,
+  }) => {
+    worker.use(enabledNetworks);
+    const consoleLog = vi.spyOn(console, "log");
+    const ignoredChainWarnings = () =>
+      consoleLog.mock.calls.flatMap((args) =>
+        args.includes(ignoredChainsWarning) ? [args.at(-1)] : []
+      );
+    const withoutCurrentChain = (
+      supportedChainIds: SKExternalProviders["supportedChainIds"]
+    ): SKExternalProviders => ({
+      ...externalProvider(firstAddress, mainnet.id, supportedChainIds),
+      currentChain: undefined,
+    });
+
+    try {
+      const mounted = await mountWallet(
+        withoutCurrentChain([base.id, optimism.id])
+      );
+      await waitForIdentity(mounted, firstAddress, optimism.id);
+      await waitForChainsEnabled(mounted, true);
+
+      await mounted.updateProvider(withoutCurrentChain([optimism.id, base.id]));
+      await mounted.updateProvider(
+        withoutCurrentChain([base.id, plasmaChainId, optimism.id])
+      );
+      await waitForIdentity(mounted, firstAddress, optimism.id);
+      await mounted.act(async () => {
+        await expect
+          .poll(ignoredChainWarnings)
+          .toEqual([
+            expect.objectContaining({ keys: [String(base.id)] }),
+            expect.objectContaining({ keys: [String(plasmaChainId)] }),
+          ]);
+      });
+    } finally {
+      consoleLog.mockRestore();
+    }
+  });
+
+  it("recovers onto the first enabled chain when a host without a current chain adds one", async ({
+    worker,
+  }) => {
+    worker.use(enabledNetworks);
+    const mounted = await mountWallet({
+      ...externalProvider(firstAddress, mainnet.id, [plasmaChainId]),
+      currentChain: undefined,
+    });
+
+    await waitForChainsEnabled(mounted, false);
+    await waitForUnsupported(mounted);
+
+    await mounted.updateProvider({
+      ...externalProvider(firstAddress, mainnet.id, [
+        plasmaChainId,
+        optimism.id,
+      ]),
+      currentChain: undefined,
+    });
+    await waitForIdentity(mounted, firstAddress, optimism.id);
+    await waitForChainsEnabled(mounted, true);
+  });
+
+  it("reports a host current chain that is not enabled as unsupported while other chains remain, and recovers when the host switches", async ({
+    worker,
+  }) => {
+    worker.use(enabledNetworks);
+    const mounted = await mountWallet(
+      externalProvider(firstAddress, plasmaChainId, [plasmaChainId, mainnet.id])
+    );
+
+    await waitForChainsEnabled(mounted, false);
+    await waitForUnsupported(mounted);
+    expect(mounted.errors).toEqual([]);
+
+    await mounted.updateProvider(
+      externalProvider(firstAddress, mainnet.id, [plasmaChainId, mainnet.id])
+    );
+    await waitForIdentity(mounted, firstAddress, mainnet.id);
+    await waitForChainsEnabled(mounted, true);
+  });
 
   it("uses every configured chain when supportedChainIds is omitted", async ({
     worker,

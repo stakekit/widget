@@ -5,7 +5,10 @@ import {
   WidgetConfigService,
 } from "../../../config/widget-config";
 import { WalletRuntimeInvariantError } from "../../wallet-errors";
-import { isExternalProviderConnector } from "../adapters/external-provider";
+import {
+  ignoredExternalProviderChainIds,
+  isExternalProviderConnector,
+} from "../adapters/external-provider";
 import type { WalletBootstrapResult } from "./bootstrap";
 import type { WalletStateContext, WalletStateRuntime } from "./state";
 
@@ -143,12 +146,9 @@ export const installExternalProviderSynchronization = Effect.fn(
         })
       ).pipe(Effect.result);
       if (Result.isFailure(notification)) {
-        const cause = notification.failure.cause;
         return yield* failInvariant(
-          cause instanceof WalletRuntimeInvariantError
-            ? cause.reason
-            : "external-provider-supported-chains-update-failed",
-          { cause }
+          "external-provider-supported-chains-update-failed",
+          { cause: notification.failure.cause }
         );
       }
     }
@@ -269,6 +269,15 @@ export const installExternalProviderSynchronization = Effect.fn(
 
         if (snapshot && bootstrap.externalProviders) {
           bootstrap.externalProviders.current = snapshot;
+          yield* reportIgnoredWalletProps({
+            event: "external_provider_chains_ignored",
+            keys: ignoredExternalProviderChainIds(
+              bootstrap.controller.wagmiConfig.chains,
+              snapshot
+            ).map(String),
+            message:
+              "External provider chains are not enabled for this widget and were ignored",
+          });
         }
 
         return snapshot;

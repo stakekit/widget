@@ -9,7 +9,6 @@ import type { ExternalProviderSnapshot } from "../../../../config/external-provi
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { WalletList } from "../../../wallet-descriptors";
-import { WalletRuntimeInvariantError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
@@ -42,6 +41,56 @@ export const isExternalProviderConnector = (
   connector: Connector
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
+/**
+ * The configured chains the host's supported chain IDs keep, in configured
+ * order. Every configured chain is kept when the host names none; host chain
+ * IDs that are not configured, such as networks not enabled for the API key,
+ * are dropped.
+ */
+const selectExternalProviderChains = (
+  configured: ReadonlyArray<Chain>,
+  supportedChainIds: ReadonlyArray<number> | undefined
+): Chain[] => {
+  if (supportedChainIds === undefined) return [...configured];
+  const supported = new Set(supportedChainIds);
+  return configured.filter((chain) => supported.has(chain.id));
+};
+
+/**
+ * Whether the host's chains are enabled for the Widget: at least one supported
+ * chain remains, and the host's current chain, when set, is configured. A
+ * configured current chain the host left out of its own supported list is
+ * still enabled; the wallet reports it as unsupported and can switch away.
+ */
+export const areExternalProviderChainsEnabled = (
+  configured: ReadonlyArray<Chain>,
+  {
+    currentChain,
+    supportedChainIds,
+  }: Pick<ExternalProviderSnapshot, "currentChain" | "supportedChainIds">
+): boolean =>
+  selectExternalProviderChains(configured, supportedChainIds).length > 0 &&
+  (currentChain === undefined ||
+    configured.some((chain) => chain.id === currentChain));
+
+/**
+ * Host chain IDs, current or supported, that are not configured, such as
+ * networks not enabled for the API key.
+ */
+export const ignoredExternalProviderChainIds = (
+  configured: ReadonlyArray<Chain>,
+  {
+    currentChain,
+    supportedChainIds = [],
+  }: Pick<ExternalProviderSnapshot, "currentChain" | "supportedChainIds">
+): number[] => {
+  const hostChainIds = new Set(supportedChainIds);
+  if (currentChain !== undefined) hostChainIds.add(currentChain);
+  return [...hostChainIds].filter(
+    (chainId) => !configured.some((chain) => chain.id === chainId)
+  );
+};
+
 export const externalProviderConnector = (
   variant: CurrentRef<ExternalProviderSnapshot>,
   runWalletEffect: RunWalletEffect
@@ -62,36 +111,20 @@ export const externalProviderConnector = (
       },
       createConnector: () =>
         createConnector<unknown, ExtraProps>((connectorConfig) => {
-          const resolveSupportedChains = (
-            supportedChainIds: ReadonlyArray<number> | undefined
-          ) => {
-            const supported =
-              supportedChainIds === undefined
-                ? null
-                : new Set(supportedChainIds);
-            const chains = supported
-              ? connectorConfig.chains.filter((chain) =>
-                  supported.has(chain.id)
-                )
-              : (connectorConfig.chains as [Chain, ...Chain[]]);
-            if (chains.length === 0) {
-              throw new WalletRuntimeInvariantError({
-                reason: "external-provider-no-supported-chains",
-              });
-            }
-            return chains;
-          };
           const filteredChains = makeCurrentValueStream(
-            resolveSupportedChains(variant.current.supportedChainIds)
+            selectExternalProviderChains(
+              connectorConfig.chains,
+              variant.current.supportedChainIds
+            )
           );
 
           const provider = new ExternalProvider(variant);
 
-          const getFirstFilteredChain = () =>
+          // With no supported chain left, connect on a configured chain; the
+          // wallet state reports it as unsupported until the host recovers.
+          const getFallbackChain = () =>
             EArray.head(filteredChains.get()).pipe(
-              Option.getOrThrowWith(
-                () => new Error("No supported chains found!")
-              )
+              Option.getOrElse(() => connectorConfig.chains[0])
             );
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
@@ -102,8 +135,7 @@ export const externalProviderConnector = (
 
           // Preserve the host's identity even when the topology cannot route it.
           const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-            async () =>
-              variant.current.currentChain ?? getFirstFilteredChain().id;
+            async () => variant.current.currentChain ?? getFallbackChain().id;
 
           const connect: ReturnType<CreateConnectorFn>["connect"] = async (
             args
@@ -175,13 +207,20 @@ export const externalProviderConnector = (
 
           const onSupportedChainsChanged: ExtraProps["onSupportedChainsChanged"] =
             ({ currentChainId, supportedChainIds }) => {
-              filteredChains.set(resolveSupportedChains(supportedChainIds));
+              filteredChains.set(
+                selectExternalProviderChains(
+                  connectorConfig.chains,
+                  supportedChainIds
+                )
+              );
 
+              const chains = filteredChains.get();
               if (
                 variant.current.currentChain === undefined &&
-                filteredChains.get().every((c) => c.id !== currentChainId)
+                chains.length > 0 &&
+                chains.every((c) => c.id !== currentChainId)
               ) {
-                onChainChanged(getFirstFilteredChain().id.toString());
+                onChainChanged(getFallbackChain().id.toString());
               }
             };
 

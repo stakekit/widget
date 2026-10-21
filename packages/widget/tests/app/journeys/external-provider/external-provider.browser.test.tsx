@@ -166,4 +166,56 @@ describe("External Provider", () => {
       .toBeInTheDocument();
     await app.unmount();
   });
+
+  it("shows a recoverable notice while the host's chain is not enabled", async ({
+    worker,
+  }) => {
+    setup(worker);
+
+    const plasmaChainId = 9745;
+    const skProps = {
+      apiKey: import.meta.env.VITE_API_KEY,
+      externalProviders: {
+        type: "generic",
+        provider: {
+          signMessage: async () => "hash",
+          switchChain: async () => {},
+          sendTransaction: async () => "hash",
+        },
+        currentAddress: "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7",
+        currentChain: plasmaChainId,
+        supportedChainIds: [plasmaChainId],
+      },
+    } satisfies SKAppProps;
+
+    const app = await renderApp({ skProps });
+
+    await expect
+      .element(
+        app
+          .getByTestId("network-not-supported")
+          .getByText("Network not supported")
+      )
+      .toBeInTheDocument();
+    expect(app.getByTestId("widget-unavailable").elements()).toHaveLength(0);
+
+    await app.rerender(
+      <SKApp
+        {...skProps}
+        externalProviders={{
+          ...skProps.externalProviders,
+          currentChain: mainnet.id,
+          supportedChainIds: [plasmaChainId, mainnet.id],
+        }}
+      />
+    );
+
+    await expect
+      .element(
+        app.getByText(formatAddress(skProps.externalProviders.currentAddress))
+      )
+      .toBeInTheDocument();
+    expect(app.getByTestId("network-not-supported").elements()).toHaveLength(0);
+    await app.unmount();
+  });
 });

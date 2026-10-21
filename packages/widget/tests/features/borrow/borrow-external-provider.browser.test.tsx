@@ -552,8 +552,14 @@ describe("Borrow on a network outside Borrow", () => {
     worker,
   }) => {
     worker.use(
+      // The host's chain is enabled for the key but outside its own supported
+      // list, so Borrow offers the in-widget network switch.
       http.get(yieldApiRoute("/v1/networks"), () =>
-        HttpResponse.json([{ id: "ethereum" }, { id: "base" }])
+        HttpResponse.json([
+          { id: "ethereum" },
+          { id: "base" },
+          { id: "polygon" },
+        ])
       ),
       http.get(borrowApiRoute("/v1/integrations"), () =>
         HttpResponse.json([{ ...integration, networks: ["base"] }])

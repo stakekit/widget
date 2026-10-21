@@ -12,8 +12,10 @@ import {
   type WalletScopeOwner,
 } from "../../domain/wallet/wallet-scope";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
+import { WidgetConfigService } from "../config/widget-config";
 import { WidgetPersistence } from "../persistence/widget-persistence";
 import { ExternalProviderError } from "./external-provider";
+import { areExternalProviderChainsEnabled } from "./internal/adapters/external-provider";
 import { isLedgerLiveConnector } from "./internal/adapters/ledger/ledger-live-connector-meta";
 import { SolanaPlatform } from "./internal/platform/solana-platform";
 import { WagmiPlatform } from "./internal/platform/wagmi-platform";
@@ -130,6 +132,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     )
   );
   const lifecycle = yield* makeWalletLifecyclePolicy;
+  const widgetConfig = yield* WidgetConfigService;
 
   yield* installExternalProviderSynchronization({ bootstrap, state });
   yield* state.contexts.pipe(
@@ -334,6 +337,24 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
       Stream.map((attempt) => ({ _tag: attempt._tag }) as const)
     ),
     enabledNetworks: bootstrap.snapshot.enabledNetworks,
+    /**
+     * Whether the host's External Provider chains are enabled for the Widget.
+     * External Provider presence is Wallet Topology, so a Widget bootstrapped
+     * without one always reports true.
+     */
+    externalProviderChainsEnabled: bootstrap.externalProviders
+      ? widgetConfig.values.pipe(
+          Stream.map(
+            ({ externalProviders }) =>
+              externalProviders === undefined ||
+              areExternalProviderChainsEnabled(
+                bootstrap.controller.wagmiConfig.chains,
+                externalProviders
+              )
+          ),
+          Stream.changes
+        )
+      : Stream.succeed(true),
     logout,
     signMessage: Effect.fn("signMessage")(function* ({
       expectedOwner,

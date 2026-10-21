@@ -12,10 +12,14 @@ import { useApplicationRouteEffects } from "./app/routes/react/use-application-r
 import { ClassicRoutes } from "./app/routes/ui/classic-routes";
 import { DashboardRoutes } from "./app/routes/ui/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router";
-import { walletEnabledNetworksResultAtom } from "./features/wallet/index";
+import {
+  walletEnabledNetworksResultAtom,
+  walletExternalProviderChainsEnabledResultAtom,
+} from "./features/wallet/index";
 import { useWidgetConfig } from "./features/widget-configuration/index";
 import {
   AppContainer,
+  NetworkNotSupported,
   NoEnabledYields,
 } from "./features/widget-shell/composition";
 import { useUnderMaintenance } from "./features/widget-shell/index";
@@ -30,13 +34,20 @@ preloadImages();
 const App = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const enabledNetworks = useAtomValue(walletEnabledNetworksResultAtom);
+  const externalProviderChainsEnabled = useAtomValue(
+    walletExternalProviderChainsEnabledResultAtom
+  );
   const underMaintenance = useUnderMaintenance();
   const noEnabledYields =
     AsyncResult.isSuccess(enabledNetworks) && enabledNetworks.value.size === 0;
+  const networkNotSupported =
+    AsyncResult.isSuccess(externalProviderChainsEnabled) &&
+    !externalProviderChainsEnabled.value;
 
   useApplicationRouteEffects();
 
   if (noEnabledYields && !underMaintenance) return <NoEnabledYields />;
+  if (networkNotSupported && !underMaintenance) return <NetworkNotSupported />;
 
   const routeContent = (() => {
     if (underMaintenance) return <UnderMaintenance />;
