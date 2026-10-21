@@ -1,0 +1,30 @@
+{
+  "name": "@stakekit/with-angular",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "ng serve --define \"SK_API_KEY='$VITE_API_KEY'\"",
+    "start": "pnpm dev",
+    "build": "ng build --define \"SK_API_KEY='$VITE_API_KEY'\"",
+    "preview": "serve --no-clipboard dist/browser",
+    "lint": "tsc && biome check .",
+    "format": "biome check --write ."
+  },
+  "dependencies": {
+    "@angular/common": "catalog:",
+    "@angular/compiler": "catalog:",
+    "@angular/core": "catalog:",
+    "@angular/platform-browser": "catalog:",
+    "@stakekit/widget": "workspace:*",
+    "rxjs": "catalog:",
+    "tslib": "catalog:"
+  },
+  "devDependencies": {
+    "@angular/build": "catalog:",
+    "@angular/cli": "catalog:",
+    "@angular/compiler-cli": "catalog:",
+    "serve": "catalog:",
+    "typescript": "catalog:"
+  }
+}

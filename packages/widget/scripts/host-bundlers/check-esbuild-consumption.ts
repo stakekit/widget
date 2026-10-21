@@ -1,11 +1,12 @@
 /**
  * Checks that an esbuild host can resolve every import in the built Widget.
  *
- * Angular's application builder and dev-server prebundler bundle with esbuild,
- * which resolves every string-literal `import()` at build time and ignores the
- * bundler-ignore comments that `vite/node-builtin-imports.ts` explains. The
- * example apps cover Vite and Next.js; this covers module resolution under
- * esbuild for the browser. It does not reproduce Angular's other build options.
+ * Angular's application builder and dev server bundle with esbuild, which
+ * resolves every string-literal `import()` at build time and ignores the
+ * bundler-ignore comments that `vite/node-builtin-imports.ts` explains.
+ * `test:smoke` builds a real Angular host but needs an API key and runs
+ * separately; this check runs in every `build` and covers module resolution
+ * under esbuild for the browser, not Angular's other build options.
  *
  * Bundles both entries plus the scripts emitted under `assets/`, such as the
  * Zama encrypt worker. Run via `pnpm check:host-bundlers` after

@@ -6,7 +6,10 @@
  * only show up after `build:package` / `build:bundle` / `build:types`. This
  * script is that missing check: it asserts example apps resolve
  * `@stakekit/widget` (and `./bundle`) into `packages/widget/dist`, builds those
- * hosts, then loads Vite preview and `next start` in Chromium.
+ * hosts, then loads Vite preview, `next start`, the static Angular build and
+ * the Angular dev server in Chromium. The dev server excludes the widget from
+ * pre-bundling, so Angular's esbuild bundles `dist` itself, as hosts that
+ * exclude the widget from pre-bundling do.
  *
  * Green means the widget shell mounted and a catalog-backed control appeared
  * against a live API, with no `pageerror` and no fatal console errors (TDZ,
@@ -18,7 +21,7 @@
 
 import { type ChildProcess, spawn } from "node:child_process";
 import { once } from "node:events";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { join, relative, sep } from "node:path";
@@ -51,6 +54,12 @@ const hosts = {
     packageName: "@stakekit/with-nextjs",
     directory: join(repositoryRoot, "packages/examples/with-nextjs"),
     widgetSpecifiers: ["@stakekit/widget"],
+  },
+  angular: {
+    label: "Angular bundle entry",
+    packageName: "@stakekit/with-angular",
+    directory: join(repositoryRoot, "packages/examples/with-angular"),
+    widgetSpecifiers: ["@stakekit/widget/bundle"],
   },
 } as const satisfies Record<string, Host>;
 
@@ -93,7 +102,7 @@ type RunningServer = {
 
 const runningServers = new Set<RunningServer>();
 
-// Vite and Next both announce the port they actually bound, which is the only
+// Every host server announces the port it actually bound, which is the only
 // trustworthy value: a free port can be taken between reservation and bind.
 const announcedUrlPattern =
   /\bhttps?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):(\d+)\b/u;
@@ -574,6 +583,17 @@ const main = async () => {
     ["--filter", hosts.next.packageName, "run", "build"],
     env
   );
+  // Angular caches build and pre-bundle output across runs; start clean so the
+  // Angular stages consume this run's `dist`.
+  await rm(join(hosts.angular.directory, ".angular"), {
+    force: true,
+    recursive: true,
+  });
+  await runCommand(
+    `${hosts.angular.label} production build`,
+    ["--filter", hosts.angular.packageName, "run", "build"],
+    env
+  );
 
   const browser = await chromium.launch();
 
@@ -623,6 +643,39 @@ const main = async () => {
         "next",
         "start",
         "--hostname",
+        "127.0.0.1",
+        "--port",
+        String(port),
+      ],
+    });
+    await withServer({
+      browser,
+      label: `${hosts.angular.label} production`,
+      env,
+      args: (port) => [
+        "--filter",
+        hosts.angular.packageName,
+        "exec",
+        "serve",
+        "--no-clipboard",
+        "--listen",
+        `tcp://127.0.0.1:${port}`,
+        "dist/browser",
+      ],
+    });
+    await withServer({
+      browser,
+      label: `${hosts.angular.label} dev server`,
+      env,
+      args: (port) => [
+        "--filter",
+        hosts.angular.packageName,
+        "exec",
+        "ng",
+        "serve",
+        "--define",
+        `SK_API_KEY=${JSON.stringify(apiKey)}`,
+        "--host",
         "127.0.0.1",
         "--port",
         String(port),
