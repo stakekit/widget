@@ -12,7 +12,7 @@ import {
 } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
-import { nodeBuiltinImportsPlugin } from "./node-builtin-imports.ts";
+import { hostBundlerOutputPlugin } from "./host-bundler-output.ts";
 
 declare module "vite" {
   interface UserConfig {
@@ -20,10 +20,17 @@ declare module "vite" {
   }
 }
 
-// A literal chunk-relative URL lets host bundlers re-emit the Zama worker.
+// Emits `new URL("./assets/…", import.meta.url)`, the form webpack, Turbopack
+// and Vite hosts detect and copy into their own output. It resolves against
+// the chunk, so it stays correct wherever the host serves `dist`. Worker sites
+// wrap it once more; `hostBundlerOutputPlugin` collapses those.
 export const chunkRelativeAssetUrls: UserConfig["experimental"] = {
   renderBuiltUrl: (filename, { hostType }) =>
-    hostType === "js" ? `./${filename}` : undefined,
+    hostType === "js"
+      ? {
+          runtime: `new URL(${JSON.stringify(`./${filename}`)}, import.meta.url).href`,
+        }
+      : undefined,
 };
 
 export const getConfig = (
@@ -62,7 +69,7 @@ export const getConfig = (
           ],
         }),
         vanillaExtractPlugin(),
-        nodeBuiltinImportsPlugin(),
+        hostBundlerOutputPlugin(),
       ],
       css: {
         postcss: {

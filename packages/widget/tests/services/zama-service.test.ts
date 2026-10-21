@@ -64,6 +64,10 @@ vi.mock("@zama-fhe/sdk/chains", () => ({
   chains: { 11155111: { id: 11155111, network: "https://rpc.test" } },
 }));
 vi.mock("@zama-fhe/sdk/web", () => ({ web: () => ({ type: "web" }) }));
+// Probes the page's origin, which Node does not have.
+vi.mock("../../src/services/zama/encrypt-worker", () => ({
+  loadEncryptWorker: () => Effect.succeed("encrypt.worker.js"),
+}));
 vi.mock("@zama-fhe/sdk/viem", () => ({
   ViemProvider: class {},
 }));

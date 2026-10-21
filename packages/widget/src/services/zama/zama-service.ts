@@ -10,6 +10,7 @@ import {
   Schema,
   Stream,
 } from "effect";
+import { FetchHttpClient, HttpClient } from "effect/http";
 import {
   type Address,
   createPublicClient,
@@ -47,6 +48,7 @@ import { WidgetConfigService } from "../config/widget-config";
 import { WidgetDomainEvents } from "../events/widget-domain-events";
 import type { Eip712TypedData } from "../wallet/wallet-commands";
 import { WalletService } from "../wallet/wallet-service";
+import type { EncryptWorkerSource } from "./encrypt-worker";
 import { RevealedBalances } from "./revealed-balances";
 
 class ZamaError extends Data.TaggedError("ZamaError")<{
@@ -121,6 +123,7 @@ const PermitTypedData = Schema.Struct({
 type ZamaModules = Readonly<{
   readonly chains: Record<number, FheChain>;
   readonly core: typeof import("@zama-fhe/sdk");
+  readonly encryptWorker: EncryptWorkerSource;
   readonly viem: typeof import("@zama-fhe/sdk/viem");
   readonly web: typeof import("@zama-fhe/sdk/web");
 }>;
@@ -182,18 +185,37 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const values = yield* RevealedBalances;
   const events = yield* WidgetDomainEvents;
   const runPromise = yield* FiberSet.makeRuntimePromise();
+  const httpClient = yield* HttpClient.HttpClient;
 
   // Lazy: the SDK pulls in FHE WASM.
   const modules = yield* Effect.cached(
-    tryZama("load-sdk", async () => {
-      const [core, viem, web, chains] = await Promise.all([
-        import("@zama-fhe/sdk"),
-        import("@zama-fhe/sdk/viem"),
-        import("@zama-fhe/sdk/web"),
-        import("@zama-fhe/sdk/chains"),
-      ]);
-      return { chains: chains.chains, core, viem, web } satisfies ZamaModules;
-    })
+    Effect.all(
+      [
+        tryZama("load-sdk", () =>
+          Promise.all([
+            import("@zama-fhe/sdk"),
+            import("@zama-fhe/sdk/viem"),
+            import("@zama-fhe/sdk/web"),
+            import("@zama-fhe/sdk/chains"),
+          ])
+        ),
+        tryZama("load-sdk", () => import("./encrypt-worker")).pipe(
+          Effect.flatMap((worker) => worker.loadEncryptWorker(httpClient))
+        ),
+      ],
+      { concurrency: "unbounded" }
+    ).pipe(
+      Effect.map(
+        ([[core, viem, web, chains], encryptWorker]) =>
+          ({
+            chains: chains.chains,
+            core,
+            encryptWorker,
+            viem,
+            web,
+          }) satisfies ZamaModules
+      )
+    )
   );
 
   // Cleartext belongs to one account.
@@ -340,7 +362,9 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
         provider: new zama.viem.ViemProvider({
           publicClient: publicClientFor(chain),
         }),
-        relayers: { [chain.id]: zama.web.web() },
+        relayers: {
+          [chain.id]: zama.web.web({ offloadWorker: zama.encryptWorker }),
+        },
         signer: makeSigner(zama.core.BaseSigner, owner, chainId),
         // The default IndexedDB would keep keys and cleartexts for 30 days.
         storage: zama.core.memoryStorage,
@@ -636,5 +660,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
 export class ZamaService extends Context.Service<ZamaService, ZamaServiceApi>()(
   "stakekit/widget/ZamaService"
 ) {
-  static readonly layer = Layer.effect(ZamaService, makeZamaService());
+  static readonly layer = Layer.effect(ZamaService, makeZamaService()).pipe(
+    Layer.provide(FetchHttpClient.layer)
+  );
 }

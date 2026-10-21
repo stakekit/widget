@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 import { describe, expect, it } from "vitest";
-import { hideNodeBuiltinImports } from "../../vite/node-builtin-imports";
+import { hideNodeBuiltinImports } from "../../vite/host-bundler-output";
 
 // The shapes Zama's tfhe loader takes after Vite builds it: minified string
 // literals and unminified template literals, behind bundler ignore comments.

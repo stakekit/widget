@@ -3,7 +3,7 @@
  *
  * Angular's application builder and dev server bundle with esbuild, which
  * resolves every string-literal `import()` at build time and ignores the
- * bundler-ignore comments that `vite/node-builtin-imports.ts` explains.
+ * bundler-ignore comments that `vite/host-bundler-output.ts` explains.
  * `test:smoke` builds a real Angular host but needs an API key and runs
  * separately; this check runs in every `build` and covers module resolution
  * under esbuild for the browser, not Angular's other build options.

@@ -276,6 +276,14 @@ that reveals confidential balances and resolves with an `SKZamaPermitResult`.
 Without it, the widget blocks Zama deposits, because the balance could not be
 revealed to withdraw.
 
+Zama encryption runs in a Web Worker. Hosts built with webpack, Turbopack or
+Vite copy its script from `dist` automatically, and the widget starts it from
+that copy after a same-origin `HEAD` request finds it (`connect-src 'self'`).
+Otherwise, for example in Angular, with a CDN-hosted bundle or a cross-origin
+Next.js `assetPrefix`, it starts a copy inlined into a lazy chunk from a `blob:`
+URL, which needs `worker-src blob:` (or `data:`). If neither works, encryption
+runs on the page's main thread.
+
 ## Styling
 
 Import `@stakekit/widget/style.css` once. Start with `lightTheme` or `darkTheme`
