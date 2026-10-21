@@ -150,6 +150,8 @@ minimumReleaseAgeExclude:
 
 overrides:
   "@reown/appkit": 1.8.24
+  # @angular/build pins vite 8.3.0 (GHSA-587h-7wmj-h5pm, fixed in 8.3.3).
+  "@angular/build>vite": ^8.3.4
 
 packageExtensions:
   "@fractalwagmi/solana-wallet-adapter@0.1.1":

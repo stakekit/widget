@@ -294,8 +294,9 @@ const assertEncryptWorkerStarts = async (
     worker.addEventListener("error", (event) => {
       resolve(`error: ${event.message}`);
     });
-    setTimeout(() => resolve("timed out"), 30_000);
+    const timeout = setTimeout(() => resolve("timed out"), 30_000);
     const result = await promise;
+    clearTimeout(timeout);
     worker.terminate();
     return result;
   }, target);
