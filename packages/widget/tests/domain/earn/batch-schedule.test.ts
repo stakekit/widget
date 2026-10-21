@@ -1,6 +1,9 @@
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
-import { getNextBatchCutoff } from "../../../src/domain/earn/batch-schedule";
+import {
+  getNextBatchCutoff,
+  isPublishedBatchDue,
+} from "../../../src/domain/earn/batch-schedule";
 import type { EarnInvestmentSchedule } from "../../../src/domain/earn/models";
 
 type Path = EarnInvestmentSchedule["subscription"]["paths"][number];
@@ -109,5 +112,34 @@ describe("getNextBatchCutoff", () => {
     ).toBeNull();
     expect(cutoff(schedule(dailyPath({ cutoffTime: "3pm" })), now)).toBeNull();
     expect(cutoff(schedule(dailyPath(), "Not/AZone"), now)).toBeNull();
+  });
+});
+
+describe("isPublishedBatchDue", () => {
+  const window = {
+    closesAt: "2026-10-19T12:00:00Z",
+    opensAt: "2026-10-18T12:00:00Z",
+  };
+  const due = (path: Path, now: string) =>
+    isPublishedBatchDue(schedule(path), "subscription", at(now));
+
+  it("is due from the live window's close until the batch dispatches", () => {
+    const path = dailyPath({ currentWindow: window });
+
+    expect(due(path, "2026-10-19T11:59:00Z")).toBe(false);
+    expect(due(path, "2026-10-19T12:00:00Z")).toBe(true);
+    expect(due(path, "2026-10-20T09:00:00Z")).toBe(true);
+  });
+
+  it("is not due without a readable live window on an open path", () => {
+    const now = "2026-10-19T13:00:00Z";
+
+    expect(due(dailyPath(), now)).toBe(false);
+    expect(
+      due(dailyPath({ currentWindow: { ...window, closesAt: "soon" } }), now)
+    ).toBe(false);
+    expect(
+      due(dailyPath({ currentWindow: window, status: "closed" }), now)
+    ).toBe(false);
   });
 });

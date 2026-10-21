@@ -17,7 +17,10 @@ import {
 import type { Token } from "../../../domain/token/token";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import { SKAnchor } from "../../../shared/ui/primitives/anchor";
-import { formatNextBatchIn } from "../model/next-batch";
+import {
+  formatNextBatchTiming,
+  getNextBatchCopyOptions,
+} from "../model/next-batch";
 
 export const useYieldMetaInfo = ({
   selectedStake,
@@ -132,20 +135,21 @@ export const useYieldMetaInfo = ({
     if (isEthenaUsdeStaking(y.id)) return "ethena_usde" as const;
     return undefined;
   };
-  const nextBatchIn = (side: "subscription" | "redemption") =>
-    formatNextBatchIn({
-      now: presentationTime?.now ?? null,
-      side,
-      t,
-      yieldDto: y,
-    });
+  const nextBatchCopyOptions = (side: "subscription" | "redemption") =>
+    getNextBatchCopyOptions(
+      formatNextBatchTiming({
+        now: presentationTime?.now ?? null,
+        side,
+        t,
+        yieldDto: y,
+      })
+    );
   const getVaultEarnPeriod = () => {
     if (confidential) {
-      const duration = nextBatchIn("subscription");
-      return t("details.vault.earn_after_batch", {
-        context: duration ? "timed" : undefined,
-        duration,
-      });
+      return t(
+        "details.vault.earn_after_batch",
+        nextBatchCopyOptions("subscription")
+      );
     }
     return warmupPeriodDays > 0
       ? t("details.vault.earn_after_warmup", { count: warmupPeriodDays })
@@ -153,11 +157,10 @@ export const useYieldMetaInfo = ({
   };
   const getVaultWithdrawnTime = () => {
     if (confidential) {
-      const duration = nextBatchIn("redemption");
-      return t("details.vault.withdrawn_time_confidential", {
-        context: duration ? "timed" : undefined,
-        duration,
-      });
+      return t(
+        "details.vault.withdrawn_time_confidential",
+        nextBatchCopyOptions("redemption")
+      );
     }
     return cooldownPeriodDays > 0
       ? t("details.vault.withdrawn_time", { count: cooldownPeriodDays })

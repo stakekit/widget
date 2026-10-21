@@ -472,6 +472,7 @@
       "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
       "description_confidential": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Votre solde reste chiffré on-chain",
       "earn_after_batch": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot",
+      "earn_after_batch_imminent": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, attendu d'un instant à l'autre",
       "earn_after_batch_timed": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, dans {{duration}}",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
@@ -481,6 +482,7 @@
       "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour",
       "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours",
       "withdrawn_time_confidential": "Retirez en privé au règlement du prochain lot, ou instantanément avec un montant public",
+      "withdrawn_time_confidential_imminent": "Retirez en privé au règlement du prochain lot, attendu d'un instant à l'autre, ou instantanément avec un montant public",
       "withdrawn_time_confidential_timed": "Retirez en privé au règlement du prochain lot dans {{duration}}, ou instantanément avec un montant public"
     },
     "lend": {
@@ -674,6 +676,7 @@
     "successfully_staked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
     "deposit_submitted": "Dépôt de {{amount}} {{tokenNetwork}} soumis",
     "next_batch_in": "Rejoint le prochain lot dans {{duration}}",
+    "next_batch_imminent": "Rejoint le prochain lot, attendu d'un instant à l'autre",
     "successfully_unstaked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
     "successfully_pending_action": "{{amount}} {{tokenNetwork}} {{pendingAction}} avec succès",
     "view_transaction": "Voir la transaction {{type}}",
@@ -885,6 +888,7 @@
       "note": "Vous recevrez {{symbol}} lors du retrait.",
       "note_with_address": "Vous recevrez {{symbol}} ({{address}}) lors du retrait.",
       "confidential_batched": "Retrait privé : {{symbol}} reste privé et est versé au règlement du prochain lot.",
+      "confidential_batched_imminent": "Retrait privé : {{symbol}} reste privé et est versé au règlement du prochain lot, attendu d'un instant à l'autre.",
       "confidential_batched_timed": "Retrait privé : {{symbol}} reste privé et est versé au règlement du prochain lot, dans {{duration}}.",
       "confidential_instant": "Retrait instantané : {{symbol}} arrive immédiatement, mais le montant est public on-chain."
     },

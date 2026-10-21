@@ -77,6 +77,23 @@ export const getNextBatchCutoff = (
   );
 };
 
+/**
+ * Whether the live `side` window has closed without its batch dispatching:
+ * the batch may run any moment.
+ */
+export const isPublishedBatchDue = (
+  schedule: EarnInvestmentSchedule,
+  side: BatchSide,
+  now: DateTime.Utc
+): boolean => {
+  const window = getBatchPath(schedule, side)?.currentWindow;
+  if (!window) return false;
+  return Option.match(DateTime.make(window.closesAt), {
+    onNone: () => false,
+    onSome: (closesAt) => !DateTime.isGreaterThan(closesAt, now),
+  });
+};
+
 /** The local cutoff time of a daily batch, e.g. 11:00 UTC; null otherwise. */
 export const getDailyBatchCutoff = (
   schedule: EarnInvestmentSchedule,

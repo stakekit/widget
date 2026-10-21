@@ -18,7 +18,8 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import {
   formatDurationUntil,
-  formatNextBatchIn,
+  formatNextBatchLabel,
+  formatNextBatchTiming,
 } from "../../../../yield-summary/index";
 
 export const PositionBalances = ({
@@ -48,15 +49,13 @@ export const PositionBalances = ({
         : null;
     }
     // Batched vaults settle pending balances with their next batch.
-    const nextBatchIn = formatNextBatchIn({
+    const nextBatch = formatNextBatchTiming({
       now,
       side: yieldBalance.type === "entering" ? "subscription" : "redemption",
       t,
       yieldDto: integrationData,
     });
-    return nextBatchIn
-      ? t("position_details.next_batch_in", { duration: nextBatchIn })
-      : null;
+    return nextBatch ? formatNextBatchLabel(nextBatch, t) : null;
   };
   const durationUntilDate = getPendingTiming();
 

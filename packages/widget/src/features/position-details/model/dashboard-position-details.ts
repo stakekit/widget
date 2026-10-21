@@ -39,7 +39,8 @@ import {
   formatDailyBatch,
   formatMinStake,
   formatMinStakeLabel,
-  formatNextBatchIn,
+  formatNextBatchLabel,
+  formatNextBatchTiming,
   formatOptionalDays,
   formatPricePerShare,
   formatRewardClaiming,
@@ -233,7 +234,7 @@ const getFillerMetric = ({
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
   // Batched vaults redeem with their next batch, not after a fixed cooldown.
-  const nextBatchIn = formatNextBatchIn({
+  const nextBatch = formatNextBatchTiming({
     now,
     side: "redemption",
     t,
@@ -241,9 +242,7 @@ const getFillerMetric = ({
   });
   const cooldownDays = getYieldCooldownPeriod(integrationData)?.days ?? 0;
   const getRedemptionValue = () => {
-    if (nextBatchIn) {
-      return t("position_details.next_batch_in", { duration: nextBatchIn });
-    }
+    if (nextBatch) return formatNextBatchLabel(nextBatch, t);
     return cooldownDays > 0
       ? t("dashboard.earn_details.cooldown_days", { count: cooldownDays })
       : null;
@@ -514,15 +513,13 @@ const getPendingBatchTiming = ({
 }) => {
   const { type } = row;
   if (row.date || (type !== "entering" && type !== "exiting")) return null;
-  const nextBatchIn = formatNextBatchIn({
+  const nextBatch = formatNextBatchTiming({
     now,
     side: type === "entering" ? "subscription" : "redemption",
     t,
     yieldDto: integrationData,
   });
-  return nextBatchIn
-    ? t("position_details.next_batch_in", { duration: nextBatchIn })
-    : null;
+  return nextBatch ? formatNextBatchLabel(nextBatch, t) : null;
 };
 
 const getBreakdownRows = ({

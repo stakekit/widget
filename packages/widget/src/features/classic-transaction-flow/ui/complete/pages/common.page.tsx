@@ -25,7 +25,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
-import { formatNextBatchIn } from "../../../../yield-summary/index";
+import { formatNextBatchTiming } from "../../../../yield-summary/index";
 import { formatTransactionTypeLabel } from "../../../model/classic-transaction-workflow";
 import { useComplete } from "../hooks/use-complete.hook";
 
@@ -99,14 +99,21 @@ export const CompletePageComponent = ({
     });
   };
   const action = getAction();
-  const nextBatchIn = batchedDeposit
-    ? formatNextBatchIn({
+  const nextBatch = batchedDeposit
+    ? formatNextBatchTiming({
         now: presentationTime?.now ?? null,
         side: "subscription",
         t,
         yieldDto: batchedDeposit,
       })
     : null;
+  const getNextBatchNote = () => {
+    if (!nextBatch) return null;
+    return nextBatch._tag === "due"
+      ? t("complete.next_batch_imminent")
+      : t("complete.next_batch_in", { duration: nextBatch.duration });
+  };
+  const nextBatchNote = getNextBatchNote();
 
   return (
     <AnimationPage>
@@ -171,9 +178,9 @@ export const CompletePageComponent = ({
               </Heading>
             </motion.div>
 
-            {nextBatchIn ? (
+            {nextBatchNote ? (
               <Text marginTop="2" variant={{ type: "muted" }}>
-                {t("complete.next_batch_in", { duration: nextBatchIn })}
+                {nextBatchNote}
               </Text>
             ) : null}
 

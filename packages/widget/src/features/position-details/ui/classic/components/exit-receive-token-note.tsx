@@ -6,7 +6,10 @@ import { presentationClockAtom } from "../../../../../shared/effect/presentation
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { formatNextBatchIn } from "../../../../yield-summary/index";
+import {
+  formatNextBatchTiming,
+  getNextBatchCopyOptions,
+} from "../../../../yield-summary/index";
 import {
   type PositionDetailsExitReceiveTokenSelection,
   resolveExitReceiveTokenNote,
@@ -27,9 +30,9 @@ export const ExitReceiveTokenNote = ({
   if (!selection) return null;
 
   if (selection.confidentialExit) {
-    const duration =
+    const nextBatch =
       selection.confidentialExit === "batched"
-        ? formatNextBatchIn({
+        ? formatNextBatchTiming({
             now: presentationTime?.now ?? null,
             side: "redemption",
             t,
@@ -51,8 +54,7 @@ export const ExitReceiveTokenNote = ({
           {t(
             `position_details.receive_token.confidential_${selection.confidentialExit}`,
             {
-              context: duration ? "timed" : undefined,
-              duration,
+              ...getNextBatchCopyOptions(nextBatch),
               symbol: selection.selected.symbol,
             }
           )}
