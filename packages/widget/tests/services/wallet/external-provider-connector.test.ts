@@ -61,11 +61,7 @@ const makeHarness = (
 };
 
 const latestFilteredChains = (connector: ConnectorWithFilteredChains) =>
-  Effect.runPromise(
-    Stream.runHead(connector.$filteredChains).pipe(
-      Effect.map(Option.getOrThrow)
-    )
-  );
+  Stream.runHead(connector.$filteredChains).pipe(Effect.map(Option.getOrThrow));
 
 describe("external-provider connector", () => {
   it.each([arbitrum, polygon, solana])(
@@ -253,7 +249,7 @@ describe("external-provider connector", () => {
     }
   });
 
-  it.each([
+  it.effect.each([
     { supportedChainIds: [], currentChain: undefined, chainId: mainnet.id },
     { supportedChainIds: [], currentChain: polygon.id, chainId: polygon.id },
     {
@@ -268,40 +264,40 @@ describe("external-provider connector", () => {
     },
   ])(
     "connects with no supported chains for an empty configured intersection: $supportedChainIds / $currentChain",
-    async ({ chainId, ...snapshot }) => {
+    ({ chainId, ...snapshot }) => {
       const { config, connector } = makeHarness(snapshot, [mainnet, polygon]);
-      try {
-        await expect(connect(config, { connector })).resolves.toMatchObject({
-          chainId,
-        });
-        expect(await latestFilteredChains(connector)).toEqual([]);
-      } finally {
-        await disconnect(config);
-      }
+      return Effect.gen(function* () {
+        const connection = yield* Effect.promise(() =>
+          connect(config, { connector })
+        );
+        expect(connection).toMatchObject({ chainId });
+        expect(yield* latestFilteredChains(connector)).toEqual([]);
+      }).pipe(Effect.ensuring(Effect.promise(() => disconnect(config))));
     }
   );
 
-  it("publishes an empty live chain list instead of widening it to all chains", async () => {
-    const { config, connector } = makeHarness({
-      supportedChainIds: [mainnet.id],
-    });
-    const changes: Array<number | undefined> = [];
-    connector.emitter.on("change", (change) => changes.push(change.chainId));
-
-    try {
-      await connect(config, { connector });
-      connector.onSupportedChainsChanged({
-        currentChainId: mainnet.id,
-        supportedChainIds: [],
+  it.effect(
+    "publishes an empty live chain list instead of widening it to all chains",
+    () => {
+      const { config, connector } = makeHarness({
+        supportedChainIds: [mainnet.id],
       });
+      const changes: Array<number | undefined> = [];
+      connector.emitter.on("change", (change) => changes.push(change.chainId));
 
-      expect(await latestFilteredChains(connector)).toEqual([]);
-      expect(changes).toEqual([]);
-      expect(getConnection(config).chainId).toBe(mainnet.id);
-    } finally {
-      await disconnect(config);
+      return Effect.gen(function* () {
+        yield* Effect.promise(() => connect(config, { connector }));
+        connector.onSupportedChainsChanged({
+          currentChainId: mainnet.id,
+          supportedChainIds: [],
+        });
+
+        expect(yield* latestFilteredChains(connector)).toEqual([]);
+        expect(changes).toEqual([]);
+        expect(getConnection(config).chainId).toBe(mainnet.id);
+      }).pipe(Effect.ensuring(Effect.promise(() => disconnect(config))));
     }
-  });
+  );
 
   it("does not reconnect an external provider without a host account", async () => {
     const { config, connector } = makeHarness({
