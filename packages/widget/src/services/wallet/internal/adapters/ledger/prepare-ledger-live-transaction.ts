@@ -65,12 +65,12 @@ export type PrepareLedgerLiveTransaction = (
   params: PrepareLedgerLiveTransactionParams
 ) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
 
-export class LedgerTransactionPreparationError extends Schema.TaggedError<LedgerTransactionPreparationError>()(
-  "LedgerTransactionPreparationError",
-  {
-    message: Schema.String,
-  }
-) {}
+export class LedgerTransactionPreparationError extends Schema.TaggedError<
+  LedgerTransactionPreparationError,
+  { readonly brand: unique symbol }
+>()("LedgerTransactionPreparationError", {
+  message: Schema.String,
+}) {}
 
 const transactionPreparationError = (
   message: string
