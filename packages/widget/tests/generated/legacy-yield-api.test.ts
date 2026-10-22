@@ -75,6 +75,7 @@ describe("generated Yield API", () => {
         depositFeeBps: 0,
         allocatorVaultContractAddress:
           "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
+        merklRewardsClaiming: false,
       })
     ).toEqual({
       id: "66f299cd-aaaa-4bbb-8ccc-d1f26e3a02db",
@@ -84,6 +85,7 @@ describe("generated Yield API", () => {
       depositFeeBps: 0,
       allocatorVaultContractAddress:
         "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
+      merklRewardsClaiming: false,
     });
 
     expect(

@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/http/HttpClientError";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
+import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import { YieldAction } from "../../../src/domain/action/models";
 import { BorrowFeatureDisabled } from "../../../src/domain/borrow/availability";
 import { ActionId as BorrowActionId } from "../../../src/domain/borrow/ids";
 import {
+  ActionId,
   TransactionId,
   WalletAddress,
   YieldId,
@@ -274,8 +277,14 @@ describe("application API services", () => {
                 Effect.fail(
                   BorrowApiError(
                     "400",
-                    { message: "Transaction hash was rejected" },
-                    { request: {}, status: 400 } as never
+                    undefined,
+                    HttpClientResponse.fromWeb(
+                      HttpClientRequest.put("https://api.test/submit-hash"),
+                      Response.json(
+                        { message: "Transaction hash was rejected" },
+                        { status: 400 }
+                      )
+                    )
                   )
                 ),
             },
@@ -490,25 +499,6 @@ describe("application API services", () => {
   );
 
   it.effect(
-    "maps a Yield Activity action 404 to explicit absence at the source boundary",
-    () =>
-      Effect.gen(function* () {
-        const response = { request: {}, status: 404 } as never;
-        const expected = yield* Schema.decodeEffect(YieldAction)(
-          yieldApiActionDtoFixture()
-        );
-        const source = makeYieldResourceSource({
-          ActionsControllerGetAction: () =>
-            Effect.fail(YieldApiError("404", undefined, response)),
-        } as never);
-
-        expect(
-          Option.isNone(yield* source.getActivityAction(expected.id))
-        ).toBe(true);
-      })
-  );
-
-  it.effect(
     "maps single-Yield and gas balances through narrow read capabilities",
     () =>
       Effect.gen(function* () {
@@ -640,49 +630,77 @@ describe("application API services", () => {
       })
   );
 
-  it.effect(
-    "maps a provider 404 to explicit absence at the source boundary",
-    () =>
-      Effect.gen(function* () {
-        const provider = yieldApiProviderFixture();
-        const getProvider = vi.fn(() =>
-          Effect.fail(
-            new HttpClientError.HttpClientError({
-              reason: new HttpClientError.StatusCodeError({
-                request: {} as never,
-                response: { status: 404 } as never,
-              }),
-            })
-          )
-        );
-        const source = makeYieldResourceSource({
-          ProvidersControllerGetProvider: getProvider,
-        } as never);
+  const notFound = () =>
+    HttpClientResponse.fromWeb(
+      HttpClientRequest.get("https://api.test/missing"),
+      new Response(null, { status: 404 })
+    );
+  const undeclaredNotFound = () =>
+    new HttpClientError.HttpClientError({
+      reason: new HttpClientError.StatusCodeError({
+        request: HttpClientRequest.get("https://api.test/missing"),
+        response: notFound(),
+      }),
+    });
+  const yieldNotFound = {
+    declared: () => YieldApiError("404", undefined, notFound()),
+    undeclared: undeclaredNotFound,
+  };
+  const borrowNotFound = {
+    declared: () => BorrowApiError("404", undefined, notFound()),
+    undeclared: undeclaredNotFound,
+  };
 
-        expect(Option.isNone(yield* source.getProvider(provider.id))).toBe(
-          true
-        );
-      })
-  );
-
-  it.effect(
-    "maps a Borrow action 404 to explicit absence at the source boundary",
-    () =>
-      Effect.gen(function* () {
-        const response = { request: {}, status: 404 } as never;
-        const source = makeBorrowResourceSource(
-          {
-            ActionsControllerGetActionV1: () =>
-              Effect.fail(BorrowApiError("404", undefined, response)),
-          } as never,
-          true
-        );
-
-        const actionId =
-          yield* Schema.decodeEffect(BorrowActionId)("missing-action");
-
-        expect(Option.isNone(yield* source.getAction(actionId))).toBe(true);
-      })
+  it.effect.each(
+    (["declared", "undeclared"] as const).flatMap((spec) => [
+      {
+        read: "Yield Activity action",
+        spec,
+        isAbsent: Effect.gen(function* () {
+          const source = makeYieldResourceSource({
+            ActionsControllerGetAction: () =>
+              Effect.fail(yieldNotFound[spec]()),
+          } as never);
+          return Option.isNone(
+            yield* source.getActivityAction(
+              yield* Schema.decodeEffect(ActionId)("missing-action")
+            )
+          );
+        }),
+      },
+      {
+        read: "provider",
+        spec,
+        isAbsent: makeYieldResourceSource({
+          ProvidersControllerGetProvider: () =>
+            Effect.fail(yieldNotFound[spec]()),
+        } as never)
+          .getProvider(yieldApiProviderFixture().id)
+          .pipe(Effect.map(Option.isNone)),
+      },
+      {
+        read: "Borrow action",
+        spec,
+        isAbsent: Effect.gen(function* () {
+          const source = makeBorrowResourceSource(
+            {
+              ActionsControllerGetActionV1: () =>
+                Effect.fail(borrowNotFound[spec]()),
+            } as never,
+            true
+          );
+          return Option.isNone(
+            yield* source.getAction(
+              yield* Schema.decodeEffect(BorrowActionId)("missing-action")
+            )
+          );
+        }),
+      },
+    ])
+  )("maps a $read 404 to explicit absence when $spec", ({ isAbsent }) =>
+    Effect.gen(function* () {
+      expect(yield* isAbsent).toBe(true);
+    })
   );
 
   it.effect("maps token balance scans to the v2 network address endpoint", () =>

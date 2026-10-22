@@ -788,6 +788,36 @@ describe("getDashboardPositionDetailsModel", () => {
     });
   });
 
+  it("keeps a stake account merge optional in the status summary", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: makeYield(),
+      pendingActions: [
+        {
+          amount: null,
+          amountUsd: null,
+          pendingAction: {
+            intent: "manage",
+            passthrough: "merge",
+            type: "MERGE",
+          },
+          yieldBalance: makeBalance({ type: "active" }),
+        },
+      ],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map(),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.statusSummary).toMatchObject({
+      label: "Action available",
+      tone: "default",
+    });
+  });
+
   it("fills an odd card count with a fallback fact and removes it from the details list", () => {
     const token = yieldApiYieldFixture().token;
     const positionBalancesByType: PositionBalancesByType = new Map([

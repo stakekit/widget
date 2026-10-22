@@ -319,6 +319,7 @@ describe("Activity action list item projection", () => {
     "VOTE_LOCKED",
     "REVOTE",
     "MIGRATE",
+    "MERGE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
   ] as const)("projects %s as neutral", (type) => {

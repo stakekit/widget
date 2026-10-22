@@ -752,6 +752,26 @@ export const ValidatorSubnetDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ValidatorSubnetDto" });
+export type BalanceBatchRequestDto = {
+  readonly transactionHash: string;
+  readonly submittedAt: string;
+  readonly explorerUrl: string;
+};
+export const BalanceBatchRequestDto = Schema.Struct({
+  transactionHash: Schema.String.annotate({
+    description: "Transaction that submitted the request",
+    examples: ["0xabc..."],
+  }),
+  submittedAt: Schema.String.annotate({
+    description:
+      "When the request was recorded, at or shortly after confirmation",
+    examples: ["2026-10-19T15:10:00Z"],
+    format: "date-time",
+  }),
+  explorerUrl: Schema.String.annotate({
+    description: "Block explorer URL of the transaction",
+  }),
+}).annotate({ identifier: "BalanceBatchRequestDto" });
 export type YieldErrorDto = {
   readonly yieldId: string;
   readonly error: string;
@@ -796,12 +816,7 @@ export const YieldStatisticsDto = Schema.Struct({
     })
   ),
   uniqueUsers: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
       description:
         "Number of wallets with an active position on the underlying vault share token. Null when the yield is not ERC4626, no precomputed data exists, or indexing has not run yet. Partner-specific stats are not included.",
       examples: [348],
@@ -1532,68 +1547,6 @@ export const ExecutionContractsDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ExecutionContractsDto" });
-export type YieldRiskCredoraDto = {
-  readonly rating?: string | null;
-  readonly score?: number | null;
-  readonly psl?: number | null;
-  readonly publishDate?: string | null;
-  readonly curator?: string | null;
-};
-export const YieldRiskCredoraDto = Schema.Struct({
-  rating: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Credora rating",
-      examples: ["A"],
-    })
-  ),
-  score: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({ description: "Credora score (1-5)", examples: [4.5] })
-  ),
-  psl: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({
-      description: "Probability of Significant Loss (annualized)",
-      examples: [0.01],
-    })
-  ),
-  publishDate: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Credora publish date",
-      examples: ["2026-01-01"],
-    })
-  ),
-  curator: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Credora curator name",
-      examples: ["Credora"],
-    })
-  ),
-}).annotate({ identifier: "YieldRiskCredoraDto" });
-export type YieldRiskStakingRewardsMetricsDto = {
-  readonly users?: number | null;
-};
-export const YieldRiskStakingRewardsMetricsDto = Schema.Struct({
-  users: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({
-      description: "Users count from Staking Rewards risk metrics",
-      examples: [1000],
-    })
-  ),
-}).annotate({ identifier: "YieldRiskStakingRewardsMetricsDto" });
 export type RewardRateSnapshotDto = {
   readonly timestamp: string;
   readonly rewardRate: string;
@@ -1647,13 +1600,6 @@ export const TvlHistoryResponseDto = Schema.Struct({
     examples: ["2025-07-12T00:00:00.000Z"],
   }),
 }).annotate({ identifier: "TvlHistoryResponseDto" });
-export type CampaignStatus = "draft" | "active" | "paused" | "ended";
-export const CampaignStatus = Schema.Literals([
-  "draft",
-  "active",
-  "paused",
-  "ended",
-]).annotate({ identifier: "CampaignStatus" });
 export type TransactionDto = {
   readonly id: string;
   readonly title: string;
@@ -2416,17 +2362,17 @@ export type ActionArgumentsDto = {
   readonly skipPrechecks?: boolean;
   readonly useMaxAllowance?: boolean;
   readonly feePayerAddress?: string;
-  readonly receiverAddress?: string;
-  readonly rangeMin?: string;
-  readonly rangeMax?: string;
-  readonly percentage?: number;
-  readonly tokenId?: string;
   readonly encryptedAmount?: string;
   readonly encryptedAmountProof?: string;
   readonly encryptedLegAmounts?: ReadonlyArray<string>;
   readonly encryptedLegProof?: string;
   readonly decryptedAmount?: string;
   readonly decryptionProof?: string;
+  readonly receiverAddress?: string;
+  readonly rangeMin?: string;
+  readonly rangeMax?: string;
+  readonly percentage?: number;
+  readonly tokenId?: string;
 };
 export const ActionArgumentsDto = Schema.Struct({
   amount: Schema.optionalKey(
@@ -2821,6 +2767,54 @@ export const ActionArgumentsDto = Schema.Struct({
       examples: ["7Qo3awoTH4y5Vui1FQwsncq2arYDzUuivdeWhwgnAvVo"],
     })
   ),
+  encryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
+      examples: [
+        "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+      ],
+    })
+  ),
+  encryptedAmountProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Input proof returned by the Zama SDK alongside encryptedAmount.",
+      examples: ["0x01"],
+    })
+  ),
+  encryptedLegAmounts: Schema.optionalKey(
+    Schema.Array(Schema.String).annotate({
+      description:
+        "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
+      examples: [
+        [
+          "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+        ],
+      ],
+    })
+  ),
+  encryptedLegProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
+      examples: ["0x01"],
+    })
+  ),
+  decryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
+      examples: ["5000000"],
+    })
+  ),
+  decryptionProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
+      examples: ["0x01"],
+    })
+  ),
   receiverAddress: Schema.optionalKey(
     Schema.String.annotate({
       description:
@@ -2866,162 +2860,7 @@ export const ActionArgumentsDto = Schema.Struct({
       examples: ["12345"],
     })
   ),
-  encryptedAmount: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
-    })
-  ),
-  encryptedAmountProof: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Input proof returned by the Zama SDK alongside encryptedAmount.",
-    })
-  ),
-  encryptedLegAmounts: Schema.optionalKey(
-    Schema.Array(Schema.String).annotate({
-      description:
-        "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
-    })
-  ),
-  encryptedLegProof: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
-    })
-  ),
-  decryptedAmount: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
-    })
-  ),
-  decryptionProof: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
-    })
-  ),
 }).annotate({ identifier: "ActionArgumentsDto" });
-export type TransactionType =
-  | "SWAP"
-  | "DEPOSIT"
-  | "APPROVAL"
-  | "STAKE"
-  | "SET_OPERATOR"
-  | "CLAIM_UNSTAKED"
-  | "CLAIM_REWARDS"
-  | "RESTAKE_REWARDS"
-  | "UNSTAKE"
-  | "SPLIT"
-  | "MERGE"
-  | "LOCK"
-  | "UNLOCK"
-  | "SUPPLY"
-  | "ADD_LIQUIDITY"
-  | "REMOVE_LIQUIDITY"
-  | "BRIDGE"
-  | "VOTE"
-  | "REVOKE"
-  | "RESTAKE"
-  | "REBOND"
-  | "WITHDRAW"
-  | "WITHDRAW_ALL"
-  | "CREATE_ACCOUNT"
-  | "REVEAL"
-  | "MIGRATE"
-  | "DELEGATE"
-  | "UNDELEGATE"
-  | "UTXO_P_TO_C_IMPORT"
-  | "UTXO_C_TO_P_IMPORT"
-  | "WRAP"
-  | "UNWRAP"
-  | "UNFREEZE_LEGACY"
-  | "UNFREEZE_LEGACY_BANDWIDTH"
-  | "UNFREEZE_LEGACY_ENERGY"
-  | "UNFREEZE_BANDWIDTH"
-  | "UNFREEZE_ENERGY"
-  | "FREEZE_BANDWIDTH"
-  | "FREEZE_ENERGY"
-  | "UNDELEGATE_BANDWIDTH"
-  | "UNDELEGATE_ENERGY"
-  | "P2P_NODE_REQUEST"
-  | "CREATE_EIGENPOD"
-  | "VERIFY_WITHDRAW_CREDENTIALS"
-  | "START_CHECKPOINT"
-  | "VERIFY_CHECKPOINT_PROOFS"
-  | "QUEUE_WITHDRAWALS"
-  | "COMPLETE_QUEUED_WITHDRAWALS"
-  | "LZ_DEPOSIT"
-  | "LZ_WITHDRAW"
-  | "LUGANODES_PROVISION"
-  | "LUGANODES_EXIT_REQUEST"
-  | "INFSTONES_PROVISION"
-  | "INFSTONES_EXIT_REQUEST"
-  | "INFSTONES_CLAIM_REQUEST"
-  | "BATCH"
-  | "REDEEM"
-  | "CANCEL_PENDING";
-export const TransactionType = Schema.Literals([
-  "SWAP",
-  "DEPOSIT",
-  "APPROVAL",
-  "STAKE",
-  "SET_OPERATOR",
-  "CLAIM_UNSTAKED",
-  "CLAIM_REWARDS",
-  "RESTAKE_REWARDS",
-  "UNSTAKE",
-  "SPLIT",
-  "MERGE",
-  "LOCK",
-  "UNLOCK",
-  "SUPPLY",
-  "ADD_LIQUIDITY",
-  "REMOVE_LIQUIDITY",
-  "BRIDGE",
-  "VOTE",
-  "REVOKE",
-  "RESTAKE",
-  "REBOND",
-  "WITHDRAW",
-  "WITHDRAW_ALL",
-  "CREATE_ACCOUNT",
-  "REVEAL",
-  "MIGRATE",
-  "DELEGATE",
-  "UNDELEGATE",
-  "UTXO_P_TO_C_IMPORT",
-  "UTXO_C_TO_P_IMPORT",
-  "WRAP",
-  "UNWRAP",
-  "UNFREEZE_LEGACY",
-  "UNFREEZE_LEGACY_BANDWIDTH",
-  "UNFREEZE_LEGACY_ENERGY",
-  "UNFREEZE_BANDWIDTH",
-  "UNFREEZE_ENERGY",
-  "FREEZE_BANDWIDTH",
-  "FREEZE_ENERGY",
-  "UNDELEGATE_BANDWIDTH",
-  "UNDELEGATE_ENERGY",
-  "P2P_NODE_REQUEST",
-  "CREATE_EIGENPOD",
-  "VERIFY_WITHDRAW_CREDENTIALS",
-  "START_CHECKPOINT",
-  "VERIFY_CHECKPOINT_PROOFS",
-  "QUEUE_WITHDRAWALS",
-  "COMPLETE_QUEUED_WITHDRAWALS",
-  "LZ_DEPOSIT",
-  "LZ_WITHDRAW",
-  "LUGANODES_PROVISION",
-  "LUGANODES_EXIT_REQUEST",
-  "INFSTONES_PROVISION",
-  "INFSTONES_EXIT_REQUEST",
-  "INFSTONES_CLAIM_REQUEST",
-  "BATCH",
-  "REDEEM",
-  "CANCEL_PENDING",
-]).annotate({ identifier: "TransactionType" });
 export type SubmitHashDto = { readonly hash: string };
 export const SubmitHashDto = Schema.Struct({
   hash: Schema.String.annotate({
@@ -3365,7 +3204,7 @@ export const BalancesQueryDto = Schema.Struct({
   yieldId: Schema.optionalKey(
     Schema.String.annotate({
       description:
-        "The unique identifier of the yield (optional for chain scanning)",
+        "The unique identifier of the yield. Omit it to query the enabled yields this address has used through yield.xyz on this network",
       examples: ["ethereum-eth-lido-staking"],
     })
   ),
@@ -3426,6 +3265,7 @@ export type PendingActionDto = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly passthrough: string;
   readonly arguments?: {
@@ -3462,6 +3302,7 @@ export const PendingActionDto = Schema.Struct({
     "MIGRATE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
+    "MERGE",
     "CANCEL_PENDING",
   ]).annotate({
     description: "Specific action type",
@@ -3614,30 +3455,15 @@ export const ConcentratedLiquidityPoolStateDto = Schema.Struct({
     description: "Maximum tick bound for the pool",
     examples: [887272],
   }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  volume24hUsd: Schema.Union([
-    Schema.Number.check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    ),
-    Schema.Null,
-  ]).annotate({
+  volume24hUsd: Schema.Union([Schema.Finite, Schema.Null]).annotate({
     description: "24-hour trading volume in USD",
     examples: [149550871.99],
   }),
-  fee24hUsd: Schema.Union([
-    Schema.Number.check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    ),
-    Schema.Null,
-  ]).annotate({
+  fee24hUsd: Schema.Union([Schema.Finite, Schema.Null]).annotate({
     description: "24-hour fees earned by LPs in USD",
     examples: [14955.09],
   }),
-  tvlUsd: Schema.Union([
-    Schema.Number.check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    ),
-    Schema.Null,
-  ]).annotate({
+  tvlUsd: Schema.Union([Schema.Finite, Schema.Null]).annotate({
     description: "Total value locked in USD",
     examples: [9213550.2],
   }),
@@ -3674,6 +3500,29 @@ export const RevShareTiersDto = Schema.Struct({
     ).annotate({ description: "Pro tier revenue share details" })
   ),
 }).annotate({ identifier: "RevShareTiersDto" });
+export type BalanceBatchDto = {
+  readonly id: string;
+  readonly address: string;
+  readonly explorerUrl: string;
+  readonly requests: ReadonlyArray<BalanceBatchRequestDto>;
+};
+export const BalanceBatchDto = Schema.Struct({
+  id: Schema.String.annotate({
+    description: "Batch number on the batch contract",
+    examples: ["37"],
+  }),
+  address: Schema.String.annotate({
+    description: "Contract that collects and settles the batch",
+    examples: ["0x084fd3a517D6DaE1f8E3E5481b65107fd7e5eEc1"],
+  }),
+  explorerUrl: Schema.String.annotate({
+    description: "Block explorer URL of the batch contract",
+  }),
+  requests: Schema.Array(BalanceBatchRequestDto).annotate({
+    description:
+      "The user's requests merged into this balance, oldest first. The batch keeps one combined amount per user, so they are cancelled together.",
+  }),
+}).annotate({ identifier: "BalanceBatchDto" });
 export type YieldFeeConfigurationDto = {
   readonly id: string;
   readonly default: boolean;
@@ -3681,6 +3530,7 @@ export type YieldFeeConfigurationDto = {
   readonly performanceFeeBps?: number | null;
   readonly depositFeeBps?: number | null;
   readonly allocatorVaultContractAddress?: string | null;
+  readonly merklRewardsClaiming: boolean;
   readonly statistics?: YieldStatisticsDto;
 };
 export const YieldFeeConfigurationDto = Schema.Struct({
@@ -3694,34 +3544,22 @@ export const YieldFeeConfigurationDto = Schema.Struct({
     examples: [true],
   }),
   managementFeeBps: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
       description: "Management fee in basis points",
       examples: [100],
     })
   ),
   performanceFeeBps: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
       description: "Performance fee in basis points",
       examples: [1000],
     })
   ),
   depositFeeBps: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({ description: "Deposit fee in basis points", examples: [0] })
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
+      description: "Deposit fee in basis points",
+      examples: [0],
+    })
   ),
   allocatorVaultContractAddress: Schema.optionalKey(
     Schema.Union([Schema.String, Schema.Null]).annotate({
@@ -3729,6 +3567,11 @@ export const YieldFeeConfigurationDto = Schema.Struct({
       examples: ["0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b"],
     })
   ),
+  merklRewardsClaiming: Schema.Boolean.annotate({
+    description:
+      "Whether Yield collects unclaimed Merkl rewards for this allocator vault",
+    examples: [true],
+  }),
   statistics: Schema.optionalKey(
     Schema.suspend(
       (): Schema.Codec<YieldStatisticsDto> => YieldStatisticsDto
@@ -3941,110 +3784,6 @@ export const SelfAttestationDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "SelfAttestationDto" });
-export type YieldRiskStakingRewardsDto = {
-  readonly rating?: string | null;
-  readonly score?: number | null;
-  readonly potentialRating?: string | null;
-  readonly potentialScore?: number | null;
-  readonly ratedAt?: string | null;
-  readonly ratedSince?: string | null;
-  readonly profileUrl?: string | null;
-  readonly reportUrl?: string | null;
-  readonly providerName?: string | null;
-  readonly version?: string | null;
-  readonly type?: string | null;
-  readonly chain?: string | null;
-  readonly contractAddress?: string | null;
-  readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
-};
-export const YieldRiskStakingRewardsDto = Schema.Struct({
-  rating: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards rating",
-      examples: ["A"],
-    })
-  ),
-  score: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({ description: "Staking Rewards score (1-5)", examples: [4] })
-  ),
-  potentialRating: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards potential rating",
-      examples: ["A+"],
-    })
-  ),
-  potentialScore: Schema.optionalKey(
-    Schema.Union([
-      Schema.Number.check(
-        Schema.isFinite().annotate({ expected: "a finite number" })
-      ),
-      Schema.Null,
-    ]).annotate({
-      description: "Staking Rewards potential score (1-5)",
-      examples: [4.5],
-    })
-  ),
-  ratedAt: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Date when rating was assessed",
-      examples: ["2026-01-01"],
-    })
-  ),
-  ratedSince: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Date since product has been rated",
-      examples: ["2025-01-01"],
-    })
-  ),
-  profileUrl: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards product profile URL",
-      examples: ["https://stakingrewards.com/provider"],
-    })
-  ),
-  reportUrl: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards full report URL",
-      examples: ["https://stakingrewards.com/report"],
-    })
-  ),
-  providerName: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards provider name",
-      examples: ["Provider"],
-    })
-  ),
-  version: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards methodology version",
-      examples: ["v1"],
-    })
-  ),
-  type: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Staking Rewards product type",
-      examples: ["validator"],
-    })
-  ),
-  chain: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Chain label returned by Staking Rewards",
-      examples: ["ethereum"],
-    })
-  ),
-  contractAddress: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Contract address returned by Staking Rewards",
-      examples: ["0x0000000000000000000000000000000000000001"],
-    })
-  ),
-  riskMetrics: Schema.optionalKey(YieldRiskStakingRewardsMetricsDto),
-}).annotate({ identifier: "YieldRiskStakingRewardsDto" });
 export type RewardRateHistoryResponseDto = {
   readonly total: number;
   readonly offset: number;
@@ -4114,12 +3853,15 @@ export type ActionDto = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly yieldId: string;
   readonly address: string;
   readonly amount: string | null;
   readonly amountRaw: string | null;
   readonly amountUsd: string | null;
+  readonly isEncrypted?: boolean;
+  readonly encryptedAmount?: string;
   readonly entryReserveEstimate?: string;
   readonly transactions: ReadonlyArray<TransactionDto>;
   readonly events?: ReadonlyArray<ActionEventDto>;
@@ -4367,17 +4109,17 @@ export type ActionDto = {
     readonly skipPrechecks?: boolean;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
-    readonly receiverAddress?: string;
-    readonly rangeMin?: string;
-    readonly rangeMax?: string;
-    readonly percentage?: number;
-    readonly tokenId?: string;
     readonly encryptedAmount?: string;
     readonly encryptedAmountProof?: string;
     readonly encryptedLegAmounts?: ReadonlyArray<string>;
     readonly encryptedLegProof?: string;
     readonly decryptedAmount?: string;
     readonly decryptionProof?: string;
+    readonly receiverAddress?: string;
+    readonly rangeMin?: string;
+    readonly rangeMax?: string;
+    readonly percentage?: number;
+    readonly tokenId?: string;
   };
   readonly createdAt: string;
   readonly completedAt: string | null;
@@ -4389,8 +4131,6 @@ export type ActionDto = {
     | "FAILED"
     | "SUCCESS"
     | "STALE";
-  readonly isEncrypted?: boolean;
-  readonly encryptedAmount?: string;
 };
 export const ActionDto = Schema.Struct({
   id: Schema.String.annotate({
@@ -4424,6 +4164,7 @@ export const ActionDto = Schema.Struct({
     "MIGRATE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
+    "MERGE",
     "CANCEL_PENDING",
   ]).annotate({
     description: "Specific action type",
@@ -4450,6 +4191,21 @@ export const ActionDto = Schema.Struct({
     description: "USD value of the amount",
     examples: ["1500.50"],
   }),
+  isEncrypted: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "True when the amount was submitted encrypted: amount, amountRaw and amountUsd are null and encryptedAmount holds the ERC-7984 input handle.",
+    })
+  ),
+  encryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "ERC-7984 input handle for the action amount. Set only when isEncrypted is true.",
+      examples: [
+        "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+      ],
+    })
+  ),
   entryReserveEstimate: Schema.optionalKey(
     Schema.String.annotate({
       description:
@@ -4868,6 +4624,54 @@ export const ActionDto = Schema.Struct({
         examples: ["7Qo3awoTH4y5Vui1FQwsncq2arYDzUuivdeWhwgnAvVo"],
       })
     ),
+    encryptedAmount: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
+        examples: [
+          "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+        ],
+      })
+    ),
+    encryptedAmountProof: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "Input proof returned by the Zama SDK alongside encryptedAmount.",
+        examples: ["0x01"],
+      })
+    ),
+    encryptedLegAmounts: Schema.optionalKey(
+      Schema.Array(Schema.String).annotate({
+        description:
+          "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
+        examples: [
+          [
+            "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+          ],
+        ],
+      })
+    ),
+    encryptedLegProof: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
+        examples: ["0x01"],
+      })
+    ),
+    decryptedAmount: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
+        examples: ["5000000"],
+      })
+    ),
+    decryptionProof: Schema.optionalKey(
+      Schema.String.annotate({
+        description:
+          "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
+        examples: ["0x01"],
+      })
+    ),
     receiverAddress: Schema.optionalKey(
       Schema.String.annotate({
         description:
@@ -4913,45 +4717,9 @@ export const ActionDto = Schema.Struct({
         examples: ["12345"],
       })
     ),
-    encryptedAmount: Schema.optionalKey(
-      Schema.String.annotate({
-        description:
-          "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
-      })
-    ),
-    encryptedAmountProof: Schema.optionalKey(
-      Schema.String.annotate({
-        description:
-          "Input proof returned by the Zama SDK alongside encryptedAmount.",
-      })
-    ),
-    encryptedLegAmounts: Schema.optionalKey(
-      Schema.Array(Schema.String).annotate({
-        description:
-          "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
-      })
-    ),
-    encryptedLegProof: Schema.optionalKey(
-      Schema.String.annotate({
-        description:
-          "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
-      })
-    ),
-    decryptedAmount: Schema.optionalKey(
-      Schema.String.annotate({
-        description:
-          "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
-      })
-    ),
-    decryptionProof: Schema.optionalKey(
-      Schema.String.annotate({
-        description:
-          "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
-      })
-    ),
   }).annotate({
     description:
-      "Raw arguments exactly as submitted by the user for this action",
+      "Validated and normalized arguments used to construct this action",
   }),
   createdAt: Schema.String.annotate({
     description: "When the action was created",
@@ -4969,18 +4737,6 @@ export const ActionDto = Schema.Struct({
     "SUCCESS",
     "STALE",
   ]).annotate({ description: "Current status of the action" }),
-  isEncrypted: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description:
-        "True when the amount was submitted encrypted: amount, amountRaw and amountUsd are null and encryptedAmount holds the ERC-7984 input handle.",
-    })
-  ),
-  encryptedAmount: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "ERC-7984 input handle for the action amount. Set only when isEncrypted is true.",
-    })
-  ),
 }).annotate({ identifier: "ActionDto" });
 export type CreateActionDto = {
   readonly yieldId: string;
@@ -5029,6 +4785,7 @@ export type CreateManageActionDto = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly passthrough: string;
 };
@@ -5069,6 +4826,7 @@ export const CreateManageActionDto = Schema.Struct({
     "MIGRATE",
     "VERIFY_WITHDRAW_CREDENTIALS",
     "DELEGATE",
+    "MERGE",
     "CANCEL_PENDING",
   ]).annotate({
     description: "Pending action type (required for manage actions)",
@@ -5080,22 +4838,6 @@ export const CreateManageActionDto = Schema.Struct({
     examples: ["eyJhZGRyZXNzZXMiOnsiYWRkcmVzcyI6ImNvc21vczF5ZXk..."],
   }),
 }).annotate({ identifier: "CreateManageActionDto" });
-export type TransactionGasEstimateDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly stepIndex: number;
-  readonly type: TransactionType;
-};
-export const TransactionGasEstimateDto = Schema.Struct({
-  amount: Schema.Union([Schema.String, Schema.Null]),
-  token: TokenDto,
-  gasLimit: Schema.optionalKey(Schema.String),
-  stepIndex: Schema.Number.check(
-    Schema.isFinite().annotate({ expected: "a finite number" })
-  ),
-  type: TransactionType,
-}).annotate({ identifier: "TransactionGasEstimateDto" });
 export type HealthStatusDto = {
   readonly status: HealthStatus;
   readonly timestamp: string;
@@ -5472,31 +5214,6 @@ export const KycMetadataDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "KycMetadataDto" });
-export type YieldRiskDto = {
-  readonly updatedAt: string;
-  readonly credora?: YieldRiskCredoraDto;
-  readonly stakingRewards?: YieldRiskStakingRewardsDto;
-};
-export const YieldRiskDto = Schema.Struct({
-  updatedAt: Schema.String.annotate({
-    description:
-      "Timestamp of when StakeKit last computed risk data for this yield (ISO 8601)",
-  }),
-  credora: Schema.optionalKey(YieldRiskCredoraDto),
-  stakingRewards: Schema.optionalKey(YieldRiskStakingRewardsDto),
-}).annotate({ identifier: "YieldRiskDto" });
-export type SimulationGasDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
-};
-export const SimulationGasDto = Schema.Struct({
-  amount: Schema.Union([Schema.String, Schema.Null]),
-  token: TokenDto,
-  gasLimit: Schema.optionalKey(Schema.String),
-  transactions: Schema.Array(TransactionGasEstimateDto),
-}).annotate({ identifier: "SimulationGasDto" });
 export type ValidatorDto = {
   readonly address: string;
   readonly name?: string;
@@ -5526,19 +5243,19 @@ export const ValidatorDto = Schema.Struct({
   name: Schema.optionalKey(
     Schema.String.annotate({
       description: "Validator display name",
-      examples: ["StakeKit Validator"],
+      examples: ["Example Validator"],
     })
   ),
   logoURI: Schema.optionalKey(
     Schema.String.annotate({
       description: "Validator logo URI",
-      examples: ["https://stakekit.com/logo.png"],
+      examples: ["https://example.com/logo.png"],
     })
   ),
   website: Schema.optionalKey(
     Schema.String.annotate({
       description: "Link to validator website",
-      examples: ["https://stakekit.com"],
+      examples: ["https://example.com"],
     })
   ),
   rewardRate: Schema.optionalKey(
@@ -5617,7 +5334,7 @@ export const ValidatorDto = Schema.Struct({
   status: Schema.optionalKey(
     Schema.String.annotate({
       description:
-        "Validator status description (active, jailed, unbonding, etc.)",
+        "Validator status: active, jailed, deactivating, inactive, full or not_found",
       examples: ["active"],
     })
   ),
@@ -5662,24 +5379,6 @@ export const YieldRequirementsDto = Schema.Struct({
     )
   ),
 }).annotate({ identifier: "YieldRequirementsDto" });
-export type ActionSimulationDto = {
-  readonly gas: SimulationGasDto;
-  readonly entryReserveEstimate?: string;
-};
-export const ActionSimulationDto = Schema.Struct({
-  gas: Schema.suspend(
-    (): Schema.Codec<SimulationGasDto> => SimulationGasDto
-  ).annotate({
-    description:
-      "Estimated gas cost of the action, aggregated and per transaction.",
-  }),
-  entryReserveEstimate: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Total SOL side-reserve required for enter validation: account rent plus ~0.005 SOL priority-fee buffer. For max native-SOL deposit use balance minus this value; do not also subtract the gas amount. Only returned on enter simulations; omitted for exits and when unavailable.",
-    })
-  ),
-}).annotate({ identifier: "ActionSimulationDto" });
 export type BalanceDto = {
   readonly address: string;
   readonly type: BalanceType;
@@ -5721,6 +5420,7 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
+  readonly batch?: BalanceBatchDto;
 };
 export const BalanceDto = Schema.Struct({
   address: Schema.String.annotate({
@@ -5766,19 +5466,19 @@ export const BalanceDto = Schema.Struct({
       name: Schema.optionalKey(
         Schema.String.annotate({
           description: "Validator display name",
-          examples: ["StakeKit Validator"],
+          examples: ["Example Validator"],
         })
       ),
       logoURI: Schema.optionalKey(
         Schema.String.annotate({
           description: "Validator logo URI",
-          examples: ["https://stakekit.com/logo.png"],
+          examples: ["https://example.com/logo.png"],
         })
       ),
       website: Schema.optionalKey(
         Schema.String.annotate({
           description: "Link to validator website",
-          examples: ["https://stakekit.com"],
+          examples: ["https://example.com"],
         })
       ),
       rewardRate: Schema.optionalKey(
@@ -5860,7 +5560,7 @@ export const BalanceDto = Schema.Struct({
       status: Schema.optionalKey(
         Schema.String.annotate({
           description:
-            "Validator status description (active, jailed, unbonding, etc.)",
+            "Validator status: active, jailed, deactivating, inactive, full or not_found",
           examples: ["active"],
         })
       ),
@@ -5939,6 +5639,14 @@ export const BalanceDto = Schema.Struct({
     Schema.Boolean.annotate({
       description:
         "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
+    })
+  ),
+  batch: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<BalanceBatchDto> => BalanceBatchDto
+    ).annotate({
+      description:
+        "The settlement batch a pending balance joined, for yields that settle requests in batches. `date` is when the batch is expected to execute.",
     })
   ),
 }).annotate({ identifier: "BalanceDto" });
@@ -6112,6 +5820,7 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
+    readonly batch?: BalanceBatchDto;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -6172,19 +5881,19 @@ export const YieldBalancesDto = Schema.Struct({
           name: Schema.optionalKey(
             Schema.String.annotate({
               description: "Validator display name",
-              examples: ["StakeKit Validator"],
+              examples: ["Example Validator"],
             })
           ),
           logoURI: Schema.optionalKey(
             Schema.String.annotate({
               description: "Validator logo URI",
-              examples: ["https://stakekit.com/logo.png"],
+              examples: ["https://example.com/logo.png"],
             })
           ),
           website: Schema.optionalKey(
             Schema.String.annotate({
               description: "Link to validator website",
-              examples: ["https://stakekit.com"],
+              examples: ["https://example.com"],
             })
           ),
           rewardRate: Schema.optionalKey(
@@ -6277,7 +5986,7 @@ export const YieldBalancesDto = Schema.Struct({
           status: Schema.optionalKey(
             Schema.String.annotate({
               description:
-                "Validator status description (active, jailed, unbonding, etc.)",
+                "Validator status: active, jailed, deactivating, inactive, full or not_found",
               examples: ["active"],
             })
           ),
@@ -6356,6 +6065,14 @@ export const YieldBalancesDto = Schema.Struct({
         Schema.Boolean.annotate({
           description:
             "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
+        })
+      ),
+      batch: Schema.optionalKey(
+        Schema.suspend(
+          (): Schema.Codec<BalanceBatchDto> => BalanceBatchDto
+        ).annotate({
+          description:
+            "The settlement batch a pending balance joined, for yields that settle requests in batches. `date` is when the batch is expected to execute.",
         })
       ),
     }).annotate({ description: "Balance for the output token" })
@@ -6652,7 +6369,7 @@ export const YieldDto = Schema.Struct({
   feeConfigurations: Schema.optionalKey(
     Schema.Array(YieldFeeConfigurationDto).annotate({
       description:
-        "Live partner fee configurations for this yield. Each entry includes partner-scoped statistics for the allocator vault when available.",
+        "Live partner fee configurations for this yield. Allocator-vault statistics are included only when the configuration has an allocator vault. Solana performance-fee configurations are included without that address.",
     })
   ),
   statistics: Schema.optionalKey(
@@ -7366,86 +7083,6 @@ export const YieldsControllerGetYield500 = Schema.Struct({
     )
   ),
 });
-export type YieldsControllerGetYieldRisk200 = YieldRiskDto;
-export const YieldsControllerGetYieldRisk200 = YieldRiskDto;
-export type YieldsControllerGetYieldRisk400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const YieldsControllerGetYieldRisk400 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Validation failed"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Bad Request"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [400] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type YieldsControllerGetYieldRisk401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const YieldsControllerGetYieldRisk401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type YieldsControllerGetYieldRisk429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const YieldsControllerGetYieldRisk429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type YieldsControllerGetYieldRisk500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const YieldsControllerGetYieldRisk500 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal server error"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal Server Error"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [500] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
 export type YieldsControllerGetYieldBalancesRequestJson =
   YieldBalancesRequestDto;
 export const YieldsControllerGetYieldBalancesRequestJson =
@@ -7922,527 +7559,6 @@ export const YieldsControllerGetYieldValidators500 = Schema.Struct({
     )
   ),
 });
-export type YieldsControllerGetYieldCampaignsParams = {
-  readonly offset?: number;
-  readonly limit?: number;
-  readonly status?: CampaignStatus;
-};
-export const YieldsControllerGetYieldCampaignsParams = Schema.Struct({
-  offset: Schema.optionalKey(
-    Schema.Number.annotate({ default: 0, examples: [0] })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(0).annotate({
-          expected: "a value greater than or equal to 0",
-        })
-      )
-  ),
-  limit: Schema.optionalKey(
-    Schema.Number.annotate({ default: 20, examples: [20] })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(1).annotate({
-          expected: "a value greater than or equal to 1",
-        })
-      )
-      .check(
-        Schema.isLessThanOrEqualTo(100).annotate({
-          expected: "a value less than or equal to 100",
-        })
-      )
-  ),
-  status: Schema.optionalKey(CampaignStatus),
-});
-export type YieldsControllerGetYieldCampaigns200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export const YieldsControllerGetYieldCampaigns200 = Schema.Struct({
-  total: Schema.Number.annotate({
-    description: "Total number of items available",
-    examples: [100],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  offset: Schema.Number.annotate({
-    description: "Offset of the current page",
-    examples: [0],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  limit: Schema.Number.annotate({
-    description: "Limit of the current page",
-    examples: [20],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  items: Schema.optionalKey(Schema.Never),
-});
-export type YieldsControllerGetYieldCampaigns400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const YieldsControllerGetYieldCampaigns400 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Validation failed"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Bad Request"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [400] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type YieldsControllerGetYieldCampaigns401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const YieldsControllerGetYieldCampaigns401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type YieldsControllerGetYieldCampaigns429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const YieldsControllerGetYieldCampaigns429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type YieldsControllerGetYieldCampaigns500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const YieldsControllerGetYieldCampaigns500 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal server error"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal Server Error"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [500] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type TokensControllerGetTokensParams = {
-  readonly address?: string;
-  readonly symbol?: string;
-  readonly enter?: boolean;
-  readonly exit?: boolean;
-  readonly networks?: ReadonlyArray<
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid"
-  >;
-  readonly yieldTypes?: ReadonlyArray<
-    | "staking"
-    | "restaking"
-    | "lending"
-    | "vault"
-    | "fixed_yield"
-    | "real_world_asset"
-    | "concentrated_liquidity_pool"
-    | "liquidity_pool"
-    | "liquid_staking"
-  >;
-  readonly offset?: number;
-  readonly limit?: number;
-};
-export const TokensControllerGetTokensParams = Schema.Struct({
-  address: Schema.optionalKey(
-    Schema.String.check(
-      Schema.isMaxCodePoints(256).annotate({
-        expected: "a string with at most 256 code points",
-      })
-    )
-  ),
-  symbol: Schema.optionalKey(
-    Schema.String.check(
-      Schema.isMaxCodePoints(64).annotate({
-        expected: "a string with at most 64 code points",
-      })
-    )
-  ),
-  enter: Schema.optionalKey(Schema.Boolean),
-  exit: Schema.optionalKey(Schema.Boolean),
-  networks: Schema.optionalKey(
-    Schema.Array(
-      Schema.Literals([
-        "ethereum",
-        "ethereum-goerli",
-        "ethereum-holesky",
-        "ethereum-sepolia",
-        "ethereum-hoodi",
-        "arbitrum",
-        "base",
-        "base-sepolia",
-        "gnosis",
-        "optimism",
-        "polygon",
-        "polygon-amoy",
-        "starknet",
-        "zksync",
-        "linea",
-        "unichain",
-        "plume",
-        "monad-testnet",
-        "monad",
-        "robinhood",
-        "robinhood-testnet",
-        "arc-testnet",
-        "arc",
-        "avalanche-c",
-        "avalanche-c-atomic",
-        "avalanche-p",
-        "binance",
-        "celo",
-        "fantom",
-        "harmony",
-        "moonriver",
-        "okc",
-        "viction",
-        "core",
-        "sonic",
-        "plasma",
-        "katana",
-        "hyperevm",
-        "tempo",
-        "pharos",
-        "xlayer",
-        "agoric",
-        "akash",
-        "axelar",
-        "band-protocol",
-        "bitsong",
-        "canto",
-        "chihuahua",
-        "comdex",
-        "coreum",
-        "cosmos",
-        "crescent",
-        "cronos",
-        "cudos",
-        "desmos",
-        "dydx",
-        "evmos",
-        "fetch-ai",
-        "gravity-bridge",
-        "injective",
-        "irisnet",
-        "juno",
-        "kava",
-        "ki-network",
-        "mars-protocol",
-        "nym",
-        "okex-chain",
-        "onomy",
-        "osmosis",
-        "persistence",
-        "quicksilver",
-        "regen",
-        "secret",
-        "sentinel",
-        "sommelier",
-        "stafi",
-        "stargaze",
-        "stride",
-        "teritori",
-        "tgrade",
-        "umee",
-        "sei",
-        "mantra",
-        "celestia",
-        "saga",
-        "zetachain",
-        "dymension",
-        "humansai",
-        "neutron",
-        "polkadot",
-        "kusama",
-        "westend",
-        "bittensor",
-        "aptos",
-        "binancebeacon",
-        "cardano",
-        "near",
-        "solana",
-        "solana-devnet",
-        "stellar",
-        "stellar-testnet",
-        "sui",
-        "tezos",
-        "tron",
-        "ton",
-        "ton-testnet",
-        "hyperliquid",
-      ])
-    )
-  ),
-  yieldTypes: Schema.optionalKey(
-    Schema.Array(
-      Schema.Literals([
-        "staking",
-        "restaking",
-        "lending",
-        "vault",
-        "fixed_yield",
-        "real_world_asset",
-        "concentrated_liquidity_pool",
-        "liquidity_pool",
-        "liquid_staking",
-      ])
-    )
-  ),
-  offset: Schema.optionalKey(
-    Schema.Number.annotate({ default: 0 })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(0).annotate({
-          expected: "a value greater than or equal to 0",
-        })
-      )
-  ),
-  limit: Schema.optionalKey(
-    Schema.Number.check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    ).check(
-      Schema.isGreaterThanOrEqualTo(1).annotate({
-        expected: "a value greater than or equal to 1",
-      })
-    )
-  ),
-});
-export type TokensControllerGetTokens200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export const TokensControllerGetTokens200 = Schema.Struct({
-  total: Schema.Number.annotate({
-    description: "Total number of items available",
-    examples: [100],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  offset: Schema.Number.annotate({
-    description: "Offset of the current page",
-    examples: [0],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  limit: Schema.Number.annotate({
-    description: "Limit of the current page",
-    examples: [20],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  items: Schema.optionalKey(Schema.Never),
-});
-export type TokensControllerGetTokens400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const TokensControllerGetTokens400 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Validation failed"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Bad Request"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [400] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type TokensControllerGetTokens401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const TokensControllerGetTokens401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type TokensControllerGetTokens429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const TokensControllerGetTokens429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type TokensControllerGetTokens500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const TokensControllerGetTokens500 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal server error"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal Server Error"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [500] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
 export type ActionsControllerGetActionsParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -8488,6 +7604,7 @@ export type ActionsControllerGetActionsParams = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly yieldId?: string;
   readonly yieldTypes?: ReadonlyArray<
@@ -8686,6 +7803,7 @@ export const ActionsControllerGetActionsParams = Schema.Struct({
       "MIGRATE",
       "VERIFY_WITHDRAW_CREDENTIALS",
       "DELEGATE",
+      "MERGE",
       "CANCEL_PENDING",
     ])
   ),
@@ -9198,206 +8316,6 @@ export const ActionsControllerExitYield500 = Schema.Struct({
     )
   ),
 });
-export type ActionsControllerSimulateEnterRequestJson = CreateActionDto;
-export const ActionsControllerSimulateEnterRequestJson = CreateActionDto;
-export type ActionsControllerSimulateEnter200 = ActionSimulationDto;
-export const ActionsControllerSimulateEnter200 = ActionSimulationDto;
-export type ActionsControllerSimulateEnter400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateEnter400 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Validation failed"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Bad Request"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [400] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateEnter401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateEnter401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateEnter403 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateEnter403 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Access denied from US (US-CA)"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Forbidden"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [403] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateEnter429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const ActionsControllerSimulateEnter429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateEnter500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateEnter500 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal server error"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal Server Error"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [500] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateExitRequestJson = CreateActionDto;
-export const ActionsControllerSimulateExitRequestJson = CreateActionDto;
-export type ActionsControllerSimulateExit200 = ActionSimulationDto;
-export const ActionsControllerSimulateExit200 = ActionSimulationDto;
-export type ActionsControllerSimulateExit400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateExit400 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Validation failed"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Bad Request"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [400] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateExit401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateExit401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateExit403 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateExit403 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Access denied from US (US-CA)"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Forbidden"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [403] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateExit429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const ActionsControllerSimulateExit429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ActionsControllerSimulateExit500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ActionsControllerSimulateExit500 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal server error"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal Server Error"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [500] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
 export type ActionsControllerManageYieldRequestJson = CreateManageActionDto;
 export const ActionsControllerManageYieldRequestJson = CreateManageActionDto;
 export type ActionsControllerManageYield201 = ActionDto;
@@ -9568,8 +8486,8 @@ export type TransactionsControllerSubmitTransactionRequestJson =
   SubmitTransactionDto;
 export const TransactionsControllerSubmitTransactionRequestJson =
   SubmitTransactionDto;
-export type TransactionsControllerSubmitTransaction200 = TransactionDto;
-export const TransactionsControllerSubmitTransaction200 = TransactionDto;
+export type TransactionsControllerSubmitTransaction201 = TransactionDto;
+export const TransactionsControllerSubmitTransaction201 = TransactionDto;
 export type TransactionsControllerSubmitTransaction401 = {
   readonly message?: string;
   readonly error?: string;
@@ -9826,134 +8744,6 @@ export type NetworksControllerGetNetworks500 = {
   readonly statusCode?: number;
 };
 export const NetworksControllerGetNetworks500 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal server error"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Internal Server Error"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [500] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ProvidersControllerGetProvidersParams = {
-  readonly offset?: number;
-  readonly limit?: number;
-};
-export const ProvidersControllerGetProvidersParams = Schema.Struct({
-  offset: Schema.optionalKey(
-    Schema.Number.annotate({ default: 0, examples: [0] })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(0).annotate({
-          expected: "a value greater than or equal to 0",
-        })
-      )
-  ),
-  limit: Schema.optionalKey(
-    Schema.Number.annotate({ default: 20, examples: [20] })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(1).annotate({
-          expected: "a value greater than or equal to 1",
-        })
-      )
-      .check(
-        Schema.isLessThanOrEqualTo(100).annotate({
-          expected: "a value less than or equal to 100",
-        })
-      )
-  ),
-});
-export type ProvidersControllerGetProviders200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export const ProvidersControllerGetProviders200 = Schema.Struct({
-  total: Schema.Number.annotate({
-    description: "Total number of items available",
-    examples: [100],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  offset: Schema.Number.annotate({
-    description: "Offset of the current page",
-    examples: [0],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  limit: Schema.Number.annotate({
-    description: "Limit of the current page",
-    examples: [20],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  items: Schema.optionalKey(Schema.Never),
-});
-export type ProvidersControllerGetProviders400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ProvidersControllerGetProviders400 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Validation failed"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Bad Request"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [400] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ProvidersControllerGetProviders401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ProvidersControllerGetProviders401 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Invalid API key"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Unauthorized"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [401] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ProvidersControllerGetProviders429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export const ProvidersControllerGetProviders429 = Schema.Struct({
-  message: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
-  ),
-  error: Schema.optionalKey(
-    Schema.String.annotate({ examples: ["Too Many Requests"] })
-  ),
-  statusCode: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [429] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  retryAfter: Schema.optionalKey(
-    Schema.Number.annotate({ examples: [30] }).check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-});
-export type ProvidersControllerGetProviders500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export const ProvidersControllerGetProviders500 = Schema.Struct({
   message: Schema.optionalKey(
     Schema.String.annotate({ examples: ["Internal server error"] })
   ),

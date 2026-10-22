@@ -309,6 +309,11 @@ export type ValidatorSubnetDto = {
   readonly tvl?: string;
   readonly pricePerShare?: string;
 };
+export type BalanceBatchRequestDto = {
+  readonly transactionHash: string;
+  readonly submittedAt: string;
+  readonly explorerUrl: string;
+};
 export type YieldErrorDto = {
   readonly yieldId: string;
   readonly error: string;
@@ -555,16 +560,6 @@ export type ExecutionContractsDto = {
   readonly enter?: ReadonlyArray<string>;
   readonly exit?: ReadonlyArray<string>;
 };
-export type YieldRiskCredoraDto = {
-  readonly rating?: string | null;
-  readonly score?: number | null;
-  readonly psl?: number | null;
-  readonly publishDate?: string | null;
-  readonly curator?: string | null;
-};
-export type YieldRiskStakingRewardsMetricsDto = {
-  readonly users?: number | null;
-};
 export type RewardRateSnapshotDto = {
   readonly timestamp: string;
   readonly rewardRate: string;
@@ -578,7 +573,6 @@ export type TvlHistoryResponseDto = {
   readonly from: string;
   readonly to: string;
 };
-export type CampaignStatus = "draft" | "active" | "paused" | "ended";
 export type TransactionDto = {
   readonly id: string;
   readonly title: string;
@@ -1026,77 +1020,18 @@ export type ActionArgumentsDto = {
   readonly skipPrechecks?: boolean;
   readonly useMaxAllowance?: boolean;
   readonly feePayerAddress?: string;
-  readonly receiverAddress?: string;
-  readonly rangeMin?: string;
-  readonly rangeMax?: string;
-  readonly percentage?: number;
-  readonly tokenId?: string;
   readonly encryptedAmount?: string;
   readonly encryptedAmountProof?: string;
   readonly encryptedLegAmounts?: ReadonlyArray<string>;
   readonly encryptedLegProof?: string;
   readonly decryptedAmount?: string;
   readonly decryptionProof?: string;
+  readonly receiverAddress?: string;
+  readonly rangeMin?: string;
+  readonly rangeMax?: string;
+  readonly percentage?: number;
+  readonly tokenId?: string;
 };
-export type TransactionType =
-  | "SWAP"
-  | "DEPOSIT"
-  | "APPROVAL"
-  | "STAKE"
-  | "SET_OPERATOR"
-  | "CLAIM_UNSTAKED"
-  | "CLAIM_REWARDS"
-  | "RESTAKE_REWARDS"
-  | "UNSTAKE"
-  | "SPLIT"
-  | "MERGE"
-  | "LOCK"
-  | "UNLOCK"
-  | "SUPPLY"
-  | "ADD_LIQUIDITY"
-  | "REMOVE_LIQUIDITY"
-  | "BRIDGE"
-  | "VOTE"
-  | "REVOKE"
-  | "RESTAKE"
-  | "REBOND"
-  | "WITHDRAW"
-  | "WITHDRAW_ALL"
-  | "CREATE_ACCOUNT"
-  | "REVEAL"
-  | "MIGRATE"
-  | "DELEGATE"
-  | "UNDELEGATE"
-  | "UTXO_P_TO_C_IMPORT"
-  | "UTXO_C_TO_P_IMPORT"
-  | "WRAP"
-  | "UNWRAP"
-  | "UNFREEZE_LEGACY"
-  | "UNFREEZE_LEGACY_BANDWIDTH"
-  | "UNFREEZE_LEGACY_ENERGY"
-  | "UNFREEZE_BANDWIDTH"
-  | "UNFREEZE_ENERGY"
-  | "FREEZE_BANDWIDTH"
-  | "FREEZE_ENERGY"
-  | "UNDELEGATE_BANDWIDTH"
-  | "UNDELEGATE_ENERGY"
-  | "P2P_NODE_REQUEST"
-  | "CREATE_EIGENPOD"
-  | "VERIFY_WITHDRAW_CREDENTIALS"
-  | "START_CHECKPOINT"
-  | "VERIFY_CHECKPOINT_PROOFS"
-  | "QUEUE_WITHDRAWALS"
-  | "COMPLETE_QUEUED_WITHDRAWALS"
-  | "LZ_DEPOSIT"
-  | "LZ_WITHDRAW"
-  | "LUGANODES_PROVISION"
-  | "LUGANODES_EXIT_REQUEST"
-  | "INFSTONES_PROVISION"
-  | "INFSTONES_EXIT_REQUEST"
-  | "INFSTONES_CLAIM_REQUEST"
-  | "BATCH"
-  | "REDEEM"
-  | "CANCEL_PENDING";
 export type SubmitHashDto = { readonly hash: string };
 export type SubmitTransactionDto = { readonly signedTransaction: string };
 export type KycStatusResponseDto = {
@@ -1267,6 +1202,7 @@ export type PendingActionDto = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly passthrough: string;
   readonly arguments?: {
@@ -1319,6 +1255,12 @@ export type RevShareTiersDto = {
   readonly standard?: RevShareDetailsDto;
   readonly pro?: RevShareDetailsDto;
 };
+export type BalanceBatchDto = {
+  readonly id: string;
+  readonly address: string;
+  readonly explorerUrl: string;
+  readonly requests: ReadonlyArray<BalanceBatchRequestDto>;
+};
 export type YieldFeeConfigurationDto = {
   readonly id: string;
   readonly default: boolean;
@@ -1326,6 +1268,7 @@ export type YieldFeeConfigurationDto = {
   readonly performanceFeeBps?: number | null;
   readonly depositFeeBps?: number | null;
   readonly allocatorVaultContractAddress?: string | null;
+  readonly merklRewardsClaiming: boolean;
   readonly statistics?: YieldStatisticsDto;
 };
 export type YieldRiskSummaryDto = {
@@ -1373,22 +1316,6 @@ export type SelfAttestationDto = {
   readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
   readonly notes?: string;
 };
-export type YieldRiskStakingRewardsDto = {
-  readonly rating?: string | null;
-  readonly score?: number | null;
-  readonly potentialRating?: string | null;
-  readonly potentialScore?: number | null;
-  readonly ratedAt?: string | null;
-  readonly ratedSince?: string | null;
-  readonly profileUrl?: string | null;
-  readonly reportUrl?: string | null;
-  readonly providerName?: string | null;
-  readonly version?: string | null;
-  readonly type?: string | null;
-  readonly chain?: string | null;
-  readonly contractAddress?: string | null;
-  readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
-};
 export type RewardRateHistoryResponseDto = {
   readonly total: number;
   readonly offset: number;
@@ -1425,12 +1352,15 @@ export type ActionDto = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly yieldId: string;
   readonly address: string;
   readonly amount: string | null;
   readonly amountRaw: string | null;
   readonly amountUsd: string | null;
+  readonly isEncrypted?: boolean;
+  readonly encryptedAmount?: string;
   readonly entryReserveEstimate?: string;
   readonly transactions: ReadonlyArray<TransactionDto>;
   readonly events?: ReadonlyArray<ActionEventDto>;
@@ -1678,17 +1608,17 @@ export type ActionDto = {
     readonly skipPrechecks?: boolean;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
-    readonly receiverAddress?: string;
-    readonly rangeMin?: string;
-    readonly rangeMax?: string;
-    readonly percentage?: number;
-    readonly tokenId?: string;
     readonly encryptedAmount?: string;
     readonly encryptedAmountProof?: string;
     readonly encryptedLegAmounts?: ReadonlyArray<string>;
     readonly encryptedLegProof?: string;
     readonly decryptedAmount?: string;
     readonly decryptionProof?: string;
+    readonly receiverAddress?: string;
+    readonly rangeMin?: string;
+    readonly rangeMax?: string;
+    readonly percentage?: number;
+    readonly tokenId?: string;
   };
   readonly createdAt: string;
   readonly completedAt: string | null;
@@ -1700,8 +1630,6 @@ export type ActionDto = {
     | "FAILED"
     | "SUCCESS"
     | "STALE";
-  readonly isEncrypted?: boolean;
-  readonly encryptedAmount?: string;
 };
 export type CreateActionDto = {
   readonly yieldId: string;
@@ -1735,15 +1663,9 @@ export type CreateManageActionDto = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly passthrough: string;
-};
-export type TransactionGasEstimateDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly stepIndex: number;
-  readonly type: TransactionType;
 };
 export type HealthStatusDto = {
   readonly status: HealthStatus;
@@ -1822,17 +1744,6 @@ export type KycMetadataDto = {
   readonly selfAttestation?: SelfAttestationDto;
   readonly mandatoryDisclosureUrl?: string;
 };
-export type YieldRiskDto = {
-  readonly updatedAt: string;
-  readonly credora?: YieldRiskCredoraDto;
-  readonly stakingRewards?: YieldRiskStakingRewardsDto;
-};
-export type SimulationGasDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
-};
 export type ValidatorDto = {
   readonly address: string;
   readonly name?: string;
@@ -1860,10 +1771,6 @@ export type SideScheduleDto = {
 export type YieldRequirementsDto = {
   readonly kycRequired: boolean;
   readonly kyc?: KycMetadataDto;
-};
-export type ActionSimulationDto = {
-  readonly gas: SimulationGasDto;
-  readonly entryReserveEstimate?: string;
 };
 export type BalanceDto = {
   readonly address: string;
@@ -1906,6 +1813,7 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
+  readonly batch?: BalanceBatchDto;
 };
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -1974,6 +1882,7 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
+    readonly batch?: BalanceBatchDto;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -2342,28 +2251,6 @@ export type YieldsControllerGetYield500 = {
   readonly error?: string;
   readonly statusCode?: number;
 };
-export type YieldsControllerGetYieldRisk200 = YieldRiskDto;
-export type YieldsControllerGetYieldRisk400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldRisk401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldRisk429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type YieldsControllerGetYieldRisk500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
 export type YieldsControllerGetYieldBalancesRequestJson =
   YieldBalancesRequestDto;
 export type YieldsControllerGetYieldBalances200 = YieldBalancesDto;
@@ -2486,193 +2373,6 @@ export type YieldsControllerGetYieldValidators500 = {
   readonly error?: string;
   readonly statusCode?: number;
 };
-export type YieldsControllerGetYieldCampaignsParams = {
-  readonly offset?: number;
-  readonly limit?: number;
-  readonly status?: CampaignStatus;
-};
-export type YieldsControllerGetYieldCampaigns200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export type YieldsControllerGetYieldCampaigns400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldCampaigns401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldCampaigns429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type YieldsControllerGetYieldCampaigns500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type TokensControllerGetTokensParams = {
-  readonly address?: string;
-  readonly symbol?: string;
-  readonly enter?: boolean;
-  readonly exit?: boolean;
-  readonly networks?: ReadonlyArray<
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid"
-  >;
-  readonly yieldTypes?: ReadonlyArray<
-    | "staking"
-    | "restaking"
-    | "lending"
-    | "vault"
-    | "fixed_yield"
-    | "real_world_asset"
-    | "concentrated_liquidity_pool"
-    | "liquidity_pool"
-    | "liquid_staking"
-  >;
-  readonly offset?: number;
-  readonly limit?: number;
-};
-export type TokensControllerGetTokens200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export type TokensControllerGetTokens400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type TokensControllerGetTokens401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type TokensControllerGetTokens429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type TokensControllerGetTokens500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
 export type ActionsControllerGetActionsParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -2718,6 +2418,7 @@ export type ActionsControllerGetActionsParams = {
     | "MIGRATE"
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE"
+    | "MERGE"
     | "CANCEL_PENDING";
   readonly yieldId?: string;
   readonly yieldTypes?: ReadonlyArray<
@@ -2945,62 +2646,6 @@ export type ActionsControllerExitYield500 = {
   readonly error?: string;
   readonly statusCode?: number;
 };
-export type ActionsControllerSimulateEnterRequestJson = CreateActionDto;
-export type ActionsControllerSimulateEnter200 = ActionSimulationDto;
-export type ActionsControllerSimulateEnter400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateEnter401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateEnter403 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateEnter429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type ActionsControllerSimulateEnter500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateExitRequestJson = CreateActionDto;
-export type ActionsControllerSimulateExit200 = ActionSimulationDto;
-export type ActionsControllerSimulateExit400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateExit401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateExit403 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ActionsControllerSimulateExit429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type ActionsControllerSimulateExit500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
 export type ActionsControllerManageYieldRequestJson = CreateManageActionDto;
 export type ActionsControllerManageYield201 = ActionDto;
 export type ActionsControllerManageYield400 = {
@@ -3050,7 +2695,7 @@ export type TransactionsControllerSubmitTransactionHash500 = {
 };
 export type TransactionsControllerSubmitTransactionRequestJson =
   SubmitTransactionDto;
-export type TransactionsControllerSubmitTransaction200 = TransactionDto;
+export type TransactionsControllerSubmitTransaction201 = TransactionDto;
 export type TransactionsControllerSubmitTransaction401 = {
   readonly message?: string;
   readonly error?: string;
@@ -3120,37 +2765,6 @@ export type NetworksControllerGetNetworks429 = {
   readonly retryAfter?: number;
 };
 export type NetworksControllerGetNetworks500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ProvidersControllerGetProvidersParams = {
-  readonly offset?: number;
-  readonly limit?: number;
-};
-export type ProvidersControllerGetProviders200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: never;
-};
-export type ProvidersControllerGetProviders400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ProvidersControllerGetProviders401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type ProvidersControllerGetProviders429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type ProvidersControllerGetProviders500 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
@@ -3430,30 +3044,6 @@ export const make = (
           )
         )
       ),
-    YieldsControllerGetYieldRisk: (
-      yieldId,
-      options: Parameters<YieldApi["YieldsControllerGetYieldRisk"]>[1]
-    ) =>
-      __makePathRequest(
-        HttpClientRequest.get,
-        [yieldId],
-        () => "/v1/yields/" + __encodePathParam(yieldId) + "/risk"
-      ).pipe(
-        Effect.flatMap((request) =>
-          request.pipe(
-            onRequest(options?.config)(
-              ["2xx"],
-              {
-                "400": "YieldsControllerGetYieldRisk400",
-                "401": "YieldsControllerGetYieldRisk401",
-                "429": "YieldsControllerGetYieldRisk429",
-                "500": "YieldsControllerGetYieldRisk500",
-              },
-              { binary: [], voidSuccess: [], voidError: ["404"] }
-            )
-          )
-        )
-      ),
     YieldsControllerGetYieldBalances: (
       yieldId,
       options: Parameters<YieldApi["YieldsControllerGetYieldBalances"]>[1]
@@ -3582,56 +3172,6 @@ export const make = (
           )
         )
       ),
-    YieldsControllerGetYieldCampaigns: (
-      yieldId,
-      options: Parameters<YieldApi["YieldsControllerGetYieldCampaigns"]>[1]
-    ) =>
-      __makePathRequest(
-        HttpClientRequest.get,
-        [yieldId],
-        () => "/v1/yields/" + __encodePathParam(yieldId) + "/campaigns"
-      ).pipe(
-        Effect.flatMap((request) =>
-          request.pipe(
-            HttpClientRequest.setUrlParams({
-              offset: options?.params?.["offset"] as any,
-              limit: options?.params?.["limit"] as any,
-              status: options?.params?.["status"] as any,
-            }),
-            onRequest(options?.config)(
-              ["2xx"],
-              {
-                "400": "YieldsControllerGetYieldCampaigns400",
-                "401": "YieldsControllerGetYieldCampaigns401",
-                "429": "YieldsControllerGetYieldCampaigns429",
-                "500": "YieldsControllerGetYieldCampaigns500",
-              },
-              { binary: [], voidSuccess: [], voidError: ["404"] }
-            )
-          )
-        )
-      ),
-    TokensControllerGetTokens: (
-      options: Parameters<YieldApi["TokensControllerGetTokens"]>[0]
-    ) =>
-      HttpClientRequest.get("/v1/tokens").pipe(
-        HttpClientRequest.setUrlParams({
-          address: options?.params?.["address"] as any,
-          symbol: options?.params?.["symbol"] as any,
-          enter: options?.params?.["enter"] as any,
-          exit: options?.params?.["exit"] as any,
-          networks: options?.params?.["networks"] as any,
-          yieldTypes: options?.params?.["yieldTypes"] as any,
-          offset: options?.params?.["offset"] as any,
-          limit: options?.params?.["limit"] as any,
-        }),
-        onRequest(options?.config)(["2xx"], {
-          "400": "TokensControllerGetTokens400",
-          "401": "TokensControllerGetTokens401",
-          "429": "TokensControllerGetTokens429",
-          "500": "TokensControllerGetTokens500",
-        })
-      ),
     ActionsControllerGetActions: (
       options: Parameters<YieldApi["ActionsControllerGetActions"]>[0]
     ) =>
@@ -3693,7 +3233,7 @@ export const make = (
             "429": "ActionsControllerEnterYield429",
             "500": "ActionsControllerEnterYield500",
           },
-          { binary: [], voidSuccess: [], voidError: ["404"] }
+          { binary: [], voidSuccess: [], voidError: ["404", "412"] }
         )
       ),
     ActionsControllerExitYield: (
@@ -3709,40 +3249,6 @@ export const make = (
             "403": "ActionsControllerExitYield403",
             "429": "ActionsControllerExitYield429",
             "500": "ActionsControllerExitYield500",
-          },
-          { binary: [], voidSuccess: [], voidError: ["404"] }
-        )
-      ),
-    ActionsControllerSimulateEnter: (
-      options: Parameters<YieldApi["ActionsControllerSimulateEnter"]>[0]
-    ) =>
-      HttpClientRequest.post("/v1/actions/enter/simulate").pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(
-          ["2xx"],
-          {
-            "400": "ActionsControllerSimulateEnter400",
-            "401": "ActionsControllerSimulateEnter401",
-            "403": "ActionsControllerSimulateEnter403",
-            "429": "ActionsControllerSimulateEnter429",
-            "500": "ActionsControllerSimulateEnter500",
-          },
-          { binary: [], voidSuccess: [], voidError: ["404", "412"] }
-        )
-      ),
-    ActionsControllerSimulateExit: (
-      options: Parameters<YieldApi["ActionsControllerSimulateExit"]>[0]
-    ) =>
-      HttpClientRequest.post("/v1/actions/exit/simulate").pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(
-          ["2xx"],
-          {
-            "400": "ActionsControllerSimulateExit400",
-            "401": "ActionsControllerSimulateExit401",
-            "403": "ActionsControllerSimulateExit403",
-            "429": "ActionsControllerSimulateExit429",
-            "500": "ActionsControllerSimulateExit500",
           },
           { binary: [], voidSuccess: [], voidError: ["404", "412"] }
         )
@@ -3788,7 +3294,7 @@ export const make = (
                 "429": "TransactionsControllerSubmitTransactionHash429",
                 "500": "TransactionsControllerSubmitTransactionHash500",
               },
-              { binary: [], voidSuccess: [], voidError: ["400", "404"] }
+              { binary: [], voidSuccess: [], voidError: ["400", "404", "412"] }
             )
           )
         )
@@ -3814,7 +3320,7 @@ export const make = (
                 "429": "TransactionsControllerSubmitTransaction429",
                 "500": "TransactionsControllerSubmitTransaction500",
               },
-              { binary: [], voidSuccess: [], voidError: ["400", "404"] }
+              { binary: [], voidSuccess: [], voidError: ["400", "404", "412"] }
             )
           )
         )
@@ -3879,21 +3385,6 @@ export const make = (
           "500": "NetworksControllerGetNetworks500",
         })
       ),
-    ProvidersControllerGetProviders: (
-      options: Parameters<YieldApi["ProvidersControllerGetProviders"]>[0]
-    ) =>
-      HttpClientRequest.get("/v1/providers").pipe(
-        HttpClientRequest.setUrlParams({
-          offset: options?.params?.["offset"] as any,
-          limit: options?.params?.["limit"] as any,
-        }),
-        onRequest(options?.config)(["2xx"], {
-          "400": "ProvidersControllerGetProviders400",
-          "401": "ProvidersControllerGetProviders401",
-          "429": "ProvidersControllerGetProviders429",
-          "500": "ProvidersControllerGetProviders500",
-        })
-      ),
     ProvidersControllerGetProvider: (
       providerId,
       options: Parameters<YieldApi["ProvidersControllerGetProvider"]>[1]
@@ -3926,7 +3417,7 @@ export const make = (
 export interface YieldApi {
   readonly httpClient: HttpClient.HttpClient;
   /**
-   * Retrieve a paginated list of available yield opportunities across all supported networks and protocols.
+   * Retrieve a paginated list of the yield opportunities enabled for the project that owns the API key. Yields that are not enabled for your project are not returned.
    */
   readonly YieldsControllerGetYields: {
     <Config extends OperationConfig | undefined = undefined>(options: {
@@ -4083,59 +3574,6 @@ export interface YieldApi {
       | YieldApiError<
           "YieldsControllerGetYield500",
           YieldsControllerGetYield500
-        >
-      | YieldApiError<"404", undefined>
-    >;
-  };
-  /**
-   * Retrieve consolidated risk ratings from third-party providers for a yield.
-   */
-  readonly YieldsControllerGetYieldRisk: {
-    <Config extends OperationConfig | undefined = undefined>(
-      yieldId: string,
-      options: { readonly config: Config }
-    ): Effect.Effect<
-      WithOptionalResponse<YieldsControllerGetYieldRisk200, Config>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk400",
-          YieldsControllerGetYieldRisk400
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk401",
-          YieldsControllerGetYieldRisk401
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk429",
-          YieldsControllerGetYieldRisk429
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk500",
-          YieldsControllerGetYieldRisk500
-        >
-      | YieldApiError<"404", undefined>
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      yieldId: string,
-      options: { readonly config?: Config | undefined } | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<YieldsControllerGetYieldRisk200, Config | undefined>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk400",
-          YieldsControllerGetYieldRisk400
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk401",
-          YieldsControllerGetYieldRisk401
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk429",
-          YieldsControllerGetYieldRisk429
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldRisk500",
-          YieldsControllerGetYieldRisk500
         >
       | YieldApiError<"404", undefined>
     >;
@@ -4406,127 +3844,6 @@ export interface YieldApi {
     >;
   };
   /**
-   * Returns campaign metadata for the given yield opportunity within the API key project scope.
-   */
-  readonly YieldsControllerGetYieldCampaigns: {
-    <Config extends OperationConfig | undefined = undefined>(
-      yieldId: string,
-      options: {
-        readonly params?: YieldsControllerGetYieldCampaignsParams | undefined;
-        readonly config: Config;
-      }
-    ): Effect.Effect<
-      WithOptionalResponse<YieldsControllerGetYieldCampaigns200, Config>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns400",
-          YieldsControllerGetYieldCampaigns400
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns401",
-          YieldsControllerGetYieldCampaigns401
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns429",
-          YieldsControllerGetYieldCampaigns429
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns500",
-          YieldsControllerGetYieldCampaigns500
-        >
-      | YieldApiError<"404", undefined>
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      yieldId: string,
-      options:
-        | {
-            readonly params?:
-              | YieldsControllerGetYieldCampaignsParams
-              | undefined;
-            readonly config?: Config | undefined;
-          }
-        | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<
-        YieldsControllerGetYieldCampaigns200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns400",
-          YieldsControllerGetYieldCampaigns400
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns401",
-          YieldsControllerGetYieldCampaigns401
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns429",
-          YieldsControllerGetYieldCampaigns429
-        >
-      | YieldApiError<
-          "YieldsControllerGetYieldCampaigns500",
-          YieldsControllerGetYieldCampaigns500
-        >
-      | YieldApiError<"404", undefined>
-    >;
-  };
-  /**
-   * Retrieve tokens that have at least one enabled yield available for this project. Optionally filter by exact token identity, enter/exit availability, networks, and yield types. Returns the full list by default; callers should respect `total` and use `offset`/`limit`, as a default page size may be introduced in future. Maintenance, deprecated, and decommissioned yields are always excluded.
-   */
-  readonly TokensControllerGetTokens: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly params?: TokensControllerGetTokensParams | undefined;
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<TokensControllerGetTokens200, Config>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "TokensControllerGetTokens400",
-          TokensControllerGetTokens400
-        >
-      | YieldApiError<
-          "TokensControllerGetTokens401",
-          TokensControllerGetTokens401
-        >
-      | YieldApiError<
-          "TokensControllerGetTokens429",
-          TokensControllerGetTokens429
-        >
-      | YieldApiError<
-          "TokensControllerGetTokens500",
-          TokensControllerGetTokens500
-        >
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      options:
-        | {
-            readonly params?: TokensControllerGetTokensParams | undefined;
-            readonly config?: Config | undefined;
-          }
-        | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<TokensControllerGetTokens200, Config | undefined>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "TokensControllerGetTokens400",
-          TokensControllerGetTokens400
-        >
-      | YieldApiError<
-          "TokensControllerGetTokens401",
-          TokensControllerGetTokens401
-        >
-      | YieldApiError<
-          "TokensControllerGetTokens429",
-          TokensControllerGetTokens429
-        >
-      | YieldApiError<
-          "TokensControllerGetTokens500",
-          TokensControllerGetTokens500
-        >
-    >;
-  };
-  /**
    * Retrieve all actions performed by a user, with optional filtering by yield, status, category, etc. STALE actions that never reached the chain are excluded unless a status filter is provided. In the future, this may include personalized action recommendations.
    */
   readonly ActionsControllerGetActions: {
@@ -4661,6 +3978,7 @@ export interface YieldApi {
           ActionsControllerEnterYield500
         >
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
     <Config extends OperationConfig | undefined = undefined>(options: {
       readonly payload: ActionsControllerEnterYieldRequestJson;
@@ -4689,6 +4007,7 @@ export interface YieldApi {
           ActionsControllerEnterYield500
         >
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
   };
   /**
@@ -4722,6 +4041,7 @@ export interface YieldApi {
           ActionsControllerExitYield500
         >
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
     <Config extends OperationConfig | undefined = undefined>(options: {
       readonly payload: ActionsControllerExitYieldRequestJson;
@@ -4748,137 +4068,6 @@ export interface YieldApi {
       | YieldApiError<
           "ActionsControllerExitYield500",
           ActionsControllerExitYield500
-        >
-      | YieldApiError<"404", undefined>
-    >;
-  };
-  /**
-   * Simulates an enter action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas` (and `entryReserveEstimate` for Solana enters); fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
-   */
-  readonly ActionsControllerSimulateEnter: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly payload: ActionsControllerSimulateEnterRequestJson;
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<ActionsControllerSimulateEnter200, Config>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "ActionsControllerSimulateEnter400",
-          ActionsControllerSimulateEnter400
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter401",
-          ActionsControllerSimulateEnter401
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter403",
-          ActionsControllerSimulateEnter403
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter429",
-          ActionsControllerSimulateEnter429
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter500",
-          ActionsControllerSimulateEnter500
-        >
-      | YieldApiError<"404", undefined>
-      | YieldApiError<"412", undefined>
-    >;
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly payload: ActionsControllerSimulateEnterRequestJson;
-      readonly config?: Config | undefined;
-    }): Effect.Effect<
-      WithOptionalResponse<
-        ActionsControllerSimulateEnter200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "ActionsControllerSimulateEnter400",
-          ActionsControllerSimulateEnter400
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter401",
-          ActionsControllerSimulateEnter401
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter403",
-          ActionsControllerSimulateEnter403
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter429",
-          ActionsControllerSimulateEnter429
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateEnter500",
-          ActionsControllerSimulateEnter500
-        >
-      | YieldApiError<"404", undefined>
-      | YieldApiError<"412", undefined>
-    >;
-  };
-  /**
-   * Simulates an exit action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas`; fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
-   */
-  readonly ActionsControllerSimulateExit: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly payload: ActionsControllerSimulateExitRequestJson;
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<ActionsControllerSimulateExit200, Config>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "ActionsControllerSimulateExit400",
-          ActionsControllerSimulateExit400
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit401",
-          ActionsControllerSimulateExit401
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit403",
-          ActionsControllerSimulateExit403
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit429",
-          ActionsControllerSimulateExit429
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit500",
-          ActionsControllerSimulateExit500
-        >
-      | YieldApiError<"404", undefined>
-      | YieldApiError<"412", undefined>
-    >;
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly payload: ActionsControllerSimulateExitRequestJson;
-      readonly config?: Config | undefined;
-    }): Effect.Effect<
-      WithOptionalResponse<
-        ActionsControllerSimulateExit200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "ActionsControllerSimulateExit400",
-          ActionsControllerSimulateExit400
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit401",
-          ActionsControllerSimulateExit401
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit403",
-          ActionsControllerSimulateExit403
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit429",
-          ActionsControllerSimulateExit429
-        >
-      | YieldApiError<
-          "ActionsControllerSimulateExit500",
-          ActionsControllerSimulateExit500
         >
       | YieldApiError<"404", undefined>
       | YieldApiError<"412", undefined>
@@ -4975,6 +4164,7 @@ export interface YieldApi {
         >
       | YieldApiError<"400", undefined>
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
     <Config extends OperationConfig | undefined = undefined>(
       transactionId: string,
@@ -5002,6 +4192,7 @@ export interface YieldApi {
         >
       | YieldApiError<"400", undefined>
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
   };
   /**
@@ -5015,7 +4206,7 @@ export interface YieldApi {
         readonly config: Config;
       }
     ): Effect.Effect<
-      WithOptionalResponse<TransactionsControllerSubmitTransaction200, Config>,
+      WithOptionalResponse<TransactionsControllerSubmitTransaction201, Config>,
       | HttpClientError.HttpClientError
       | YieldApiError<
           "TransactionsControllerSubmitTransaction401",
@@ -5031,6 +4222,7 @@ export interface YieldApi {
         >
       | YieldApiError<"400", undefined>
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
     <Config extends OperationConfig | undefined = undefined>(
       transactionId: string,
@@ -5040,7 +4232,7 @@ export interface YieldApi {
       }
     ): Effect.Effect<
       WithOptionalResponse<
-        TransactionsControllerSubmitTransaction200,
+        TransactionsControllerSubmitTransaction201,
         Config | undefined
       >,
       | HttpClientError.HttpClientError
@@ -5058,6 +4250,7 @@ export interface YieldApi {
         >
       | YieldApiError<"400", undefined>
       | YieldApiError<"404", undefined>
+      | YieldApiError<"412", undefined>
     >;
   };
   /**
@@ -5198,64 +4391,6 @@ export interface YieldApi {
       | YieldApiError<
           "NetworksControllerGetNetworks500",
           NetworksControllerGetNetworks500
-        >
-    >;
-  };
-  /**
-   * Returns a paginated list of all providers, including both protocol and validator providers.
-   */
-  readonly ProvidersControllerGetProviders: {
-    <Config extends OperationConfig | undefined = undefined>(options: {
-      readonly params?: ProvidersControllerGetProvidersParams | undefined;
-      readonly config: Config;
-    }): Effect.Effect<
-      WithOptionalResponse<ProvidersControllerGetProviders200, Config>,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "ProvidersControllerGetProviders400",
-          ProvidersControllerGetProviders400
-        >
-      | YieldApiError<
-          "ProvidersControllerGetProviders401",
-          ProvidersControllerGetProviders401
-        >
-      | YieldApiError<
-          "ProvidersControllerGetProviders429",
-          ProvidersControllerGetProviders429
-        >
-      | YieldApiError<
-          "ProvidersControllerGetProviders500",
-          ProvidersControllerGetProviders500
-        >
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      options:
-        | {
-            readonly params?: ProvidersControllerGetProvidersParams | undefined;
-            readonly config?: Config | undefined;
-          }
-        | undefined
-    ): Effect.Effect<
-      WithOptionalResponse<
-        ProvidersControllerGetProviders200,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | YieldApiError<
-          "ProvidersControllerGetProviders400",
-          ProvidersControllerGetProviders400
-        >
-      | YieldApiError<
-          "ProvidersControllerGetProviders401",
-          ProvidersControllerGetProviders401
-        >
-      | YieldApiError<
-          "ProvidersControllerGetProviders429",
-          ProvidersControllerGetProviders429
-        >
-      | YieldApiError<
-          "ProvidersControllerGetProviders500",
-          ProvidersControllerGetProviders500
         >
     >;
   };
