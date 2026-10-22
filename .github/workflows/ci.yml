@@ -87,32 +87,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      # Secrets are unavailable to job-level `if`, and to fork pull requests.
-      - name: Check smoke API key
-        id: smoke-key
-        env:
-          STAKEKIT_SMOKE_API_KEY: ${{ secrets.STAKEKIT_SMOKE_API_KEY }}
-        run: |
-          if [ -n "$STAKEKIT_SMOKE_API_KEY" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping production-consumer smoke test because STAKEKIT_SMOKE_API_KEY is unavailable."
-          fi
-
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        if: steps.smoke-key.outputs.available == 'true'
-
       - uses: ./.github/actions/setup
-        if: steps.smoke-key.outputs.available == 'true'
-
       - uses: ./.github/actions/playwright
-        if: steps.smoke-key.outputs.available == 'true'
-
-      - name: Run production-consumer smoke test
-        if: steps.smoke-key.outputs.available == 'true'
-        env:
-          VITE_API_KEY: ${{ secrets.STAKEKIT_SMOKE_API_KEY }}
-          NEXT_PUBLIC_API_KEY: ${{ secrets.STAKEKIT_SMOKE_API_KEY }}
-        run: mise run test:smoke
+      - run: mise run test:smoke
