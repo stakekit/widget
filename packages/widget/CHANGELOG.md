@@ -1,5 +1,20 @@
 # @stakekit/widget
 
+## [0.0.292](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.291...@stakekit/widget@0.0.292) (2026-10-22)
+
+
+### Features
+
+* **confidential:** add Zama campaign URL generation ([#592](https://github.com/stakekit/widget/issues/592)) ([f731ce9](https://github.com/stakekit/widget/commit/f731ce9ba1d4e6d3ad93270c68090ac26e633afd))
+* **widget:** sync the Yield API client with production ([#596](https://github.com/stakekit/widget/issues/596)) ([83d3c50](https://github.com/stakekit/widget/commit/83d3c50309ce8104e17762bd6f40ff9e0b827e3c))
+* **zama:** confidential vault QA fixes, pending-action labels and theme tokens ([#588](https://github.com/stakekit/widget/issues/588)) ([6fcf3ab](https://github.com/stakekit/widget/commit/6fcf3ab04c275e19a59134fb435a0ebd10f840ed))
+
+
+### Bug Fixes
+
+* **build:** make the widget consumable by Angular hosts and ship the Zama worker to every host ([#593](https://github.com/stakekit/widget/issues/593)) ([d51e566](https://github.com/stakekit/widget/commit/d51e5668c0a238dffbcb7fad0b9be6b277f63784))
+* **wallet:** show a recoverable notice when host chains are not enabled ([#594](https://github.com/stakekit/widget/issues/594)) ([fb431ae](https://github.com/stakekit/widget/commit/fb431aec1d1137c14e25bfe4537766aa947d773b))
+
 ## [0.0.291](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.290...@stakekit/widget@0.0.291) (2026-10-19)
 
 
