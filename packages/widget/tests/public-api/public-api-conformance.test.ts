@@ -227,6 +227,7 @@ const sharedEntryExports = [
   "SKTxMeta",
   "SKWallet",
   "SKWalletPolicy",
+  "SKYieldProviderOrder",
   "SKZamaPermitMeta",
   "SKZamaPermitResult",
   "SolanaTx",
@@ -234,6 +235,7 @@ const sharedEntryExports = [
   "SupportedSKChainIds",
   "TonTx",
   "TronTx",
+  "YieldProviderId",
   "darkTheme",
   "lightTheme",
 ];

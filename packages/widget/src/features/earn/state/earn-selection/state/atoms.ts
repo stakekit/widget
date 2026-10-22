@@ -39,15 +39,17 @@ const earnWalletSnapshotAtom = Atom.make((context) => {
 export const earnEntryAtom = Atom.make<EarnEntry>((context) => {
   const config = context.get(widgetConfigAtom);
   const wallet = context.get(earnWalletSnapshotAtom);
+  const categoryGrouping =
+    config.dashboardVariant && config.yieldGrouping === "category";
 
   return {
     categoryOrder: config.dashboardYieldCategoryOrder,
-    dashboardVariant:
-      config.dashboardVariant && config.yieldGrouping === "category",
+    dashboardVariant: categoryGrouping,
     initParams: context.get(initParamsAtom),
     preferredTokenYieldsPerNetwork: config.preferredTokenYieldsPerNetwork,
     walletScope: wallet.walletScope,
     walletResolution: wallet.walletResolution,
+    yieldProviderOrder: categoryGrouping ? config.yieldProviderOrder : {},
   };
 }).pipe(Atom.withLabel("earnEntryAtom"));
 

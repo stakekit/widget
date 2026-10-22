@@ -9,6 +9,7 @@ import {
   filterValidators,
   type PreferredTokenYieldsPerNetwork,
 } from "../../../../../domain/earn/yield";
+import { orderYieldsByProvider } from "../../../../../domain/earn/yield-provider-order";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { hostTokenKey } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
@@ -232,7 +233,13 @@ export const resolveEarnView = ({
     loading: { ...tokenFacts.loading, yields: yieldLoading },
     resources: {
       ...tokenFacts.resources,
-      yields: { items: yieldOptions, waiting: yieldResult.waiting },
+      yields: {
+        items: orderYieldsByProvider(
+          yieldOptions,
+          entry.yieldProviderOrder ?? {}
+        ),
+        waiting: yieldResult.waiting,
+      },
     },
     selection: { category: category.category, token: selectedToken },
   };

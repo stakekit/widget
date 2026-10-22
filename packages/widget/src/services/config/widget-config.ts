@@ -269,6 +269,7 @@ const normalizeWidgetConfig = (
     variant,
     walletPolicy: hostConfiguration.walletPolicy,
     yieldGrouping,
+    yieldProviderOrder: hostConfiguration.yieldProviderOrder ?? {},
     yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
   };
 };

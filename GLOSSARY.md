@@ -149,6 +149,10 @@ is distinct from a known zero balance.
 **Validator Policy**: Host Configuration that constrains eligible or preferred
 validators for a network.
 
+**Yield Provider Order**: Host Configuration that ranks yield providers within
+each dashboard category, ordering that category's yields and its default yield.
+It ranks yields, never validators.
+
 **Eligible Validator**: A validator satisfying the selected yield's
 requirements and current Validator Policy.
 

@@ -47,6 +47,7 @@ export type {
   SKTxMeta,
   SKWallet,
   SKWalletPolicy,
+  SKYieldProviderOrder,
   SKZamaPermitMeta,
   SKZamaPermitResult,
   SolanaTx,
@@ -59,6 +60,7 @@ export {
   EvmChainIds,
   MiscChainIds,
   SubstrateChainIds,
+  YieldProviderId,
 } from "./public-api/types.js";
 
 export const SKApp: (props: SKAppProps) => ReactElement = SKAppImplementation;

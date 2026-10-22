@@ -16,6 +16,7 @@ source of truth for behavior.
 | A decision that constrains the change | The relevant current file in `docs/adr/` |
 | Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
 | Local issues, domain docs, and triage | `docs/agents/` |
+| Backend API behavior | The backend source, if available: resolve its path with `mise exec -- printenv YIELD_BACKEND_DIR` (set in the gitignored `mise.local.toml`). Otherwise the OpenAPI specs `gen:api` fetches |
 | Publishing | `docs/releases.md` |
 
 ## Commands
@@ -29,6 +30,10 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
 - `pnpm --filter @stakekit/widget test:browser:diagnostic` — Chromium tests with trace replay in `packages/widget/.vitest/index.html`; serve that directory over HTTP to view the report.
 - `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication; run after changing the import graph or copying code between Modules.
+- `pnpm --filter @stakekit/widget gen:yield-providers` — regenerates the
+  public `YieldProviderId` constants from the backend's yield provider enum,
+  read from `YIELD_PROVIDERS_ENUM_PATH` (set in `mise.local.toml`) or
+  `--source <enum file>`. Commit the regenerated file.
 - `pnpm lint` — all workspaces plus the root ast-grep rules.
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild

@@ -26,6 +26,7 @@ import {
 import { earnEntryAtom } from "../../../src/features/earn/state/earn-selection/state/atoms";
 import type { EarnEntry } from "../../../src/features/earn/state/earn-selection/types";
 import { earnEntryViewAtom } from "../../../src/features/earn/state/entry";
+import { earnYieldSelectionViewAtom } from "../../../src/features/earn/state/yield-selection";
 import {
   ApiRequestError,
   LegacyResourceSource,
@@ -509,6 +510,196 @@ describe("Earn Selection", () => {
       unmount();
       registry.dispose();
     }
+  });
+
+  describe("Yield Provider Order", () => {
+    const usdcToken = secondYield.token;
+    const usdcYield = ({
+      id,
+      providerId,
+      total,
+      type,
+    }: {
+      readonly id: string;
+      readonly providerId: string;
+      readonly total: number;
+      readonly type: "lending" | "vault";
+    }) =>
+      yieldApiYieldFixture({
+        id,
+        mechanics: { ...yieldApiYieldDtoFixture().mechanics, type },
+        providerId,
+        rewardRate: { total },
+        token: usdcToken,
+      });
+    const makeYields = ({ morphoRates = [0.03, 0.02] } = {}) => [
+      usdcYield({
+        id: "ethereum-usdc-upshift-vault",
+        providerId: "upshift",
+        total: 0.06,
+        type: "vault",
+      }),
+      usdcYield({
+        id: "ethereum-usdc-morpho-vault",
+        providerId: "morpho",
+        total: morphoRates[0] ?? 0,
+        type: "vault",
+      }),
+      usdcYield({
+        id: "ethereum-usdc-morpho-low-vault",
+        providerId: "morpho",
+        total: morphoRates[1] ?? 0,
+        type: "vault",
+      }),
+      usdcYield({
+        id: "ethereum-usdc-aave-lending",
+        providerId: "aave",
+        total: 0.05,
+        type: "lending",
+      }),
+    ];
+    const renderYieldSelection = async ({
+      entry,
+      yields = makeYields(),
+    }: {
+      readonly entry: EarnEntry;
+      readonly yields?: ReadonlyArray<EarnYield>;
+    }) => {
+      const { registry } = makeRegistry({
+        entry,
+        listYields: () =>
+          Effect.succeed({
+            items: yields,
+            limit: 100,
+            offset: 0,
+            total: yields.length,
+          }),
+        scanTokenBalances: () =>
+          Effect.succeed(
+            Schema.decodeSync(TokenBalancesResponse)([
+              {
+                amount: "1",
+                availableYields: yields.map(({ id }) => id),
+                token: usdcToken,
+              },
+            ])
+          ),
+        tokenOptions: [
+          { availableYields: yields.map(({ id }) => id), token: usdcToken },
+        ],
+      });
+      const unmount = registry.mount(earnYieldSelectionViewAtom);
+      await vi.waitFor(() =>
+        expect(registry.get(earnYieldSelectionViewAtom).selected).not.toBeNull()
+      );
+      const view = registry.get(earnYieldSelectionViewAtom);
+      unmount();
+      registry.dispose();
+      return {
+        listed: view.filtered.map(({ id }) => id),
+        selected: view.selected?.id,
+      };
+    };
+
+    it("lists and selects ranked providers first, keeping type groups together", async () => {
+      await expect(
+        renderYieldSelection({
+          entry: {
+            ...classicEntry,
+            yieldProviderOrder: { defi: ["morpho", "aave"] },
+          },
+        })
+      ).resolves.toEqual({
+        listed: [
+          "ethereum-usdc-morpho-vault",
+          "ethereum-usdc-morpho-low-vault",
+          "ethereum-usdc-upshift-vault",
+          "ethereum-usdc-aave-lending",
+        ],
+        selected: "ethereum-usdc-morpho-vault",
+      });
+    });
+
+    it("keeps the default order for a category without a ranking", async () => {
+      await expect(
+        renderYieldSelection({
+          entry: { ...classicEntry, yieldProviderOrder: { stake: ["morpho"] } },
+        })
+      ).resolves.toEqual({
+        listed: [
+          "ethereum-usdc-aave-lending",
+          "ethereum-usdc-upshift-vault",
+          "ethereum-usdc-morpho-vault",
+          "ethereum-usdc-morpho-low-vault",
+        ],
+        selected: "ethereum-usdc-upshift-vault",
+      });
+    });
+
+    it("defaults to the next ranked provider when the first has no reward rate", async () => {
+      const { selected } = await renderYieldSelection({
+        entry: {
+          ...classicEntry,
+          yieldProviderOrder: { defi: ["morpho", "aave"] },
+        },
+        yields: makeYields({ morphoRates: [0, 0] }),
+      });
+
+      expect(selected).toBe("ethereum-usdc-aave-lending");
+    });
+
+    it("defaults to the best-ranked provider even in a later type group", async () => {
+      const { listed, selected } = await renderYieldSelection({
+        entry: {
+          ...classicEntry,
+          yieldProviderOrder: { defi: ["morpho", "aave"] },
+        },
+        yields: [
+          usdcYield({
+            id: "ethereum-usdc-morpho-lending",
+            providerId: "morpho",
+            total: 0,
+            type: "lending",
+          }),
+          usdcYield({
+            id: "ethereum-usdc-aave-lending",
+            providerId: "aave",
+            total: 0.05,
+            type: "lending",
+          }),
+          usdcYield({
+            id: "ethereum-usdc-morpho-vault",
+            providerId: "morpho",
+            total: 0.03,
+            type: "vault",
+          }),
+        ],
+      });
+
+      expect(listed).toEqual([
+        "ethereum-usdc-morpho-lending",
+        "ethereum-usdc-aave-lending",
+        "ethereum-usdc-morpho-vault",
+      ]);
+      expect(selected).toBe("ethereum-usdc-morpho-vault");
+    });
+
+    it("lets a host-preferred yield win over the ranking", async () => {
+      const { selected } = await renderYieldSelection({
+        entry: {
+          ...classicEntry,
+          preferredTokenYieldsPerNetwork: {
+            ethereum: {
+              [`ethereum-${usdcToken.address?.toLowerCase()}`]:
+                "ethereum-usdc-aave-lending",
+            },
+          },
+          yieldProviderOrder: { defi: ["morpho", "aave"] },
+        },
+      });
+
+      expect(selected).toBe("ethereum-usdc-aave-lending");
+    });
   });
 
   it("does not reopen initialization after user intent completes it", async () => {

@@ -4,6 +4,7 @@ import type {
   PreferredTokenYieldsPerNetwork,
   ValidatorsConfig,
 } from "../../domain/earn/yield";
+import type { YieldProviderOrder } from "../../domain/earn/yield-provider-order";
 import type { SupportedSKChainIds } from "../../domain/wallet/chain-ids";
 import type { WalletPolicy } from "../../domain/wallet/wallet-policy";
 import type { VariantProps } from "../../public-api/react-types";
@@ -68,5 +69,6 @@ export type WidgetConfig = {
   readonly variant: WidgetVariant;
   readonly walletPolicy?: WalletPolicy;
   readonly yieldGrouping: YieldGrouping;
+  readonly yieldProviderOrder: YieldProviderOrder;
   readonly yieldsApiUrl: string;
 };
