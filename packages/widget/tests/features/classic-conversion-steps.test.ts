@@ -72,6 +72,31 @@ describe("confidential conversion steps view", () => {
     });
   });
 
+  it("lists the allowance reset as its own step", () => {
+    const view = getClassicConversionStepsView(
+      {
+        pendingTransactionType: "DEPOSIT",
+        steps: [
+          { status: "idle", step: "encrypt" },
+          { status: "idle", step: "approve-reset" },
+          { status: "idle", step: "approve" },
+          { status: "idle", step: "wrap" },
+        ],
+        transactions: [],
+      },
+      null,
+      yieldId
+    );
+
+    expect(view.txStates.map((txState) => txState.tx.type)).toEqual([
+      "ENCRYPT",
+      "RESET_APPROVAL",
+      "APPROVAL",
+      "WRAP",
+      "DEPOSIT",
+    ]);
+  });
+
   it("replaces the placeholder with the prepared transactions", () => {
     const approval = yieldApiTransactionFixture({
       id: "approval-tx",

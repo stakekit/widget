@@ -187,6 +187,19 @@ describe("ZamaService", () => {
     })
   );
 
+  it.effect("plans an allowance reset when a partial allowance is left", () =>
+    Effect.gen(function* () {
+      client.readContract.mockResolvedValueOnce(1_000_000n);
+      const layer = yield* makeLayer({});
+
+      const steps = yield* ZamaService.use((zama) =>
+        zama.conversionSteps({ amount: 5_000_000n, conversion, owner })
+      ).pipe(Effect.provide(layer));
+
+      expect(steps).toEqual(["approve-reset", "approve", "wrap"]);
+    })
+  );
+
   it.effect(
     "sends one conversion step and reports the broadcast before the receipt",
     () =>
@@ -247,9 +260,60 @@ describe("ZamaService", () => {
       })
   );
 
-  it.effect("resets a partial allowance to zero before approving", () =>
+  it.effect("resets the allowance to zero and approves as separate steps", () =>
     Effect.gen(function* () {
-      client.readContract.mockResolvedValueOnce(1_000_000n);
+      client.readContract
+        .mockResolvedValueOnce(1_000_000n)
+        .mockResolvedValueOnce(0n);
+      const sent: Array<WalletSignTransactionInput> = [];
+      const layer = yield* makeLayer({
+        signTransaction: (input) =>
+          Effect.sync(() => {
+            sent.push(input);
+            return { broadcasted: true, signedTx: "0xhash" } as const;
+          }),
+      });
+
+      yield* ZamaService.use((zama) =>
+        Effect.forEach(["approve-reset", "approve"] as const, (step) =>
+          zama.convertStep({
+            actionMeta,
+            amount: 5_000_000n,
+            conversion,
+            network: "ethereum-sepolia",
+            onBroadcast: Effect.void,
+            owner,
+            step,
+            walletScope: scope,
+          })
+        )
+      ).pipe(Effect.provide(layer));
+
+      expect(sent.map((input) => input.txMeta.txId)).toEqual([
+        "action-1-approve-reset",
+        "action-1-approve",
+      ]);
+      expect(
+        sent.map(
+          (input) =>
+            decodeFunctionData({
+              abi: erc20Abi,
+              data: JSON.parse(input.tx).data,
+            }).args
+        )
+      ).toEqual([
+        [cUsdc.address, 0n],
+        [cUsdc.address, 5_000_000n],
+      ]);
+    })
+  );
+
+  const runApprovalStep = (
+    step: "approve-reset" | "approve",
+    allowance: bigint
+  ) =>
+    Effect.gen(function* () {
+      client.readContract.mockResolvedValueOnce(allowance);
       const sent: Array<WalletSignTransactionInput> = [];
       const layer = yield* makeLayer({
         signTransaction: (input) =>
@@ -267,24 +331,93 @@ describe("ZamaService", () => {
           network: "ethereum-sepolia",
           onBroadcast: Effect.void,
           owner,
-          step: "approve",
+          step,
           walletScope: scope,
         })
       ).pipe(Effect.provide(layer));
 
-      expect(
-        sent.map(
-          (input) =>
-            decodeFunctionData({
-              abi: erc20Abi,
-              data: JSON.parse(input.tx).data,
-            }).args
-        )
-      ).toEqual([
+      return sent.map(
+        (input) =>
+          decodeFunctionData({
+            abi: erc20Abi,
+            data: JSON.parse(input.tx).data,
+          }).args
+      );
+    });
+
+  it.effect("skips approving once the allowance covers the amount", () =>
+    Effect.gen(function* () {
+      expect(yield* runApprovalStep("approve", 5_000_000n)).toEqual([]);
+      expect(yield* runApprovalStep("approve-reset", 5_000_000n)).toEqual([]);
+    })
+  );
+
+  it.effect("skips the reset when no allowance is left to clear", () =>
+    Effect.gen(function* () {
+      expect(yield* runApprovalStep("approve-reset", 0n)).toEqual([]);
+    })
+  );
+
+  // The plan is read at confirm; an approval mined since then must not
+  // turn the approve into a nonzero-to-nonzero change, which USDT reverts.
+  it.effect("resets an allowance that appeared after the plan was made", () =>
+    Effect.gen(function* () {
+      expect(yield* runApprovalStep("approve", 1_000_000n)).toEqual([
         [cUsdc.address, 0n],
         [cUsdc.address, 5_000_000n],
       ]);
     })
+  );
+
+  it.effect(
+    "settles its earlier approval before deciding what a retry sends",
+    () =>
+      Effect.gen(function* () {
+        const sent: Array<WalletSignTransactionInput> = [];
+        const layer = yield* makeLayer({
+          signTransaction: (input) =>
+            Effect.sync(() => {
+              sent.push(input);
+              return {
+                broadcasted: true,
+                signedTx: `0x${sent.length}`,
+              } as const;
+            }),
+        });
+        const approve = ZamaService.use((zama) =>
+          zama.convertStep({
+            actionMeta,
+            amount: 5_000_000n,
+            conversion,
+            network: "ethereum-sepolia",
+            onBroadcast: Effect.void,
+            owner,
+            step: "approve",
+            walletScope: scope,
+          })
+        );
+        client.readContract
+          .mockResolvedValueOnce(0n)
+          // Another spender's partial allowance landed after the first approval.
+          .mockResolvedValueOnce(1_000_000n);
+        client.waitForTransactionReceipt.mockRejectedValueOnce(
+          new Error("receipt timeout")
+        );
+        yield* Effect.gen(function* () {
+          yield* Effect.flip(approve);
+          yield* approve;
+        }).pipe(Effect.provide(layer));
+
+        expect(
+          sent.map(
+            (input) =>
+              decodeFunctionData({
+                abi: erc20Abi,
+                data: JSON.parse(input.tx).data,
+              }).args[1]
+          )
+        ).toEqual([5_000_000n, 0n, 5_000_000n]);
+      })
   );
 
   it.effect(

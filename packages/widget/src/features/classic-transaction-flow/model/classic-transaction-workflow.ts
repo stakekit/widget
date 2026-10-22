@@ -20,7 +20,7 @@ export type ClassicTransactionCompletionUrl = {
 };
 
 export const formatTransactionTypeLabel = (
-  type: TransactionType | "DECRYPT" | "ENCRYPT",
+  type: TransactionType | "DECRYPT" | "ENCRYPT" | "RESET_APPROVAL",
   t: TFunction,
   options?: { readonly context?: "ETHENA_USDE" }
 ) =>
@@ -107,7 +107,12 @@ export type ClassicFlowConversion = Readonly<{
   readonly steps: ReadonlyArray<
     Readonly<{
       readonly status: ClassicFlowConversionStepStatus;
-      readonly step: "approve" | "decrypt" | "encrypt" | "wrap";
+      readonly step:
+        | "approve-reset"
+        | "approve"
+        | "decrypt"
+        | "encrypt"
+        | "wrap";
     }>
   >;
   readonly transactions: YieldAction["transactions"];
@@ -128,6 +133,7 @@ const conversionStepPhases: Record<
 };
 
 const conversionStepTypes = {
+  "approve-reset": "RESET_APPROVAL",
   approve: "APPROVAL",
   decrypt: "DECRYPT",
   encrypt: "ENCRYPT",

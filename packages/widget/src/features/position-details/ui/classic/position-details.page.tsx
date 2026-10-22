@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
@@ -16,7 +17,9 @@ import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
+import { getPendingBatchRows } from "../../model/pending-balance-batch";
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
+import { PendingBatchDetails } from "./components/pending-batch-details";
 import { PositionBalances } from "./components/position-balances";
 import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
@@ -59,6 +62,11 @@ const PositionDetails = () => {
   if (!isLoading && positionLost) {
     return <Navigate replace to="/positions" />;
   }
+
+  const balanceRows = positionBalancesByTypeValue
+    ? groupPositionBalanceRows([...positionBalancesByTypeValue.values()].flat())
+    : [];
+  const batchRows = getPendingBatchRows(balanceRows);
 
   return (
     <AnimationPage>
@@ -188,14 +196,16 @@ const PositionDetails = () => {
             </Box>
 
             <Box py="3" gap="2" display="flex" flexDirection="column">
-              {groupPositionBalanceRows(
-                [...positionBalancesByTypeValue.values()].flat()
-              ).map((row, i) => (
-                <PositionBalances
-                  key={`${row.type}-${i}`}
-                  integrationData={integrationDataValue}
-                  yieldBalance={row}
-                />
+              {balanceRows.map((row, i) => (
+                <Fragment key={`${row.type}-${i}`}>
+                  <PositionBalances
+                    integrationData={integrationDataValue}
+                    yieldBalance={row}
+                  />
+                  {batchRows.includes(row) ? (
+                    <PendingBatchDetails balance={row} />
+                  ) : null}
+                </Fragment>
               ))}
               {hasHiddenBalances ? (
                 <Box display="flex" flexDirection="column" gap="1">

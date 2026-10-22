@@ -612,6 +612,7 @@
       "SWAP": "ÉCHANGE",
       "DEPOSIT": "DÉPÔT",
       "APPROVAL": "APPROBATION",
+      "RESET_APPROVAL": "RÉINITIALISER L'APPROBATION",
       "STAKE": "MISE",
       "SET_OPERATOR": "DÉFINIR OPÉRATEUR",
       "STAKE_ETHENA_USDE": "DÉPÔT",
@@ -963,6 +964,15 @@
     "unstaking_duration": "{{duration}} restant",
     "next_batch_in": "Prochain lot dans {{duration}}",
     "unstaking_imminent": "Prochain",
+    "batch": {
+      "title": "Lot n°{{id}}",
+      "batcher": "Batcher",
+      "deposits_one": "{{count}} dépôt dans ce lot",
+      "deposits_other": "{{count}} dépôts dans ce lot",
+      "withdrawals_one": "{{count}} retrait dans ce lot",
+      "withdrawals_other": "{{count}} retraits dans ce lot",
+      "cancel_returns": "L'annulation restitue le montant total du lot en {{symbol}}."
+    },
     "pending_action": {
       "stake": "Staker",
       "unstake": "Déstaker",

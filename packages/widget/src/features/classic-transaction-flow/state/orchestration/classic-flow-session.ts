@@ -156,6 +156,7 @@ export const makeClassicFlowSessionFactory = Effect.fn(
             acquireInChildScope(
               sessionScope,
               makeReview({
+                converted: Ref.get(convertedRef),
                 eligibilityStates,
                 intake: session.intake,
                 promoteToExecution,

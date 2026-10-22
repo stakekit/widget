@@ -192,10 +192,12 @@ export const AmountBlock = ({
 };
 
 export const UnstakeInfo = ({
+  hideWithdrawnTime = false,
   validators,
   yieldDto,
   unstakeToken,
 }: {
+  hideWithdrawnTime?: boolean;
   yieldDto: EarnYieldWithProvider;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
@@ -209,9 +211,11 @@ export const UnstakeInfo = ({
       tokenDto: unstakeToken,
     });
 
-  const values = [withdrawnTime, withdrawnNotAvailable, positionLocked].filter(
-    Boolean
-  );
+  const values = [
+    hideWithdrawnTime ? null : withdrawnTime,
+    withdrawnNotAvailable,
+    positionLocked,
+  ].filter(Boolean);
   return values.length > 0 ? (
     <Box display="flex" flexDirection="column" gap="2">
       {values.map((v, i) => (

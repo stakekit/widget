@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { DateTime } from "effect";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
@@ -16,11 +15,7 @@ import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
-import {
-  formatDurationUntil,
-  formatNextBatchLabel,
-  formatNextBatchTiming,
-} from "../../../../yield-summary/index";
+import { formatPendingBalanceTiming } from "../../../model/pending-balance-timing";
 
 export const PositionBalances = ({
   yieldBalance,
@@ -33,31 +28,12 @@ export const PositionBalances = ({
   const { locale } = useWidgetPresentation();
   const presentationTime = useAtomValue(presentationClockAtom);
 
-  const date = yieldBalance.date;
-  const now = presentationTime?.now ?? null;
-  const isPendingBalance =
-    yieldBalance.type === "entering" || yieldBalance.type === "exiting";
-  const getPendingTiming = () => {
-    if (!isPendingBalance || !now) return null;
-    if (date) {
-      if (DateTime.isLessThanOrEqualTo(date, now)) {
-        return t("position_details.unstaking_imminent");
-      }
-      const duration = formatDurationUntil(date, now, t);
-      return duration
-        ? t("position_details.unstaking_duration", { duration })
-        : null;
-    }
-    // Batched vaults settle pending balances with their next batch.
-    const nextBatch = formatNextBatchTiming({
-      now,
-      side: yieldBalance.type === "entering" ? "subscription" : "redemption",
-      t,
-      yieldDto: integrationData,
-    });
-    return nextBatch ? formatNextBatchLabel(nextBatch, t) : null;
-  };
-  const durationUntilDate = getPendingTiming();
+  const durationUntilDate = formatPendingBalanceTiming({
+    integrationData,
+    now: presentationTime?.now ?? null,
+    row: yieldBalance,
+    t,
+  });
 
   const yieldType = getExtendedYieldType(integrationData);
 

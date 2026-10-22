@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
+import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
@@ -378,7 +379,8 @@ const getMinStakeFact = (
 const getCooldownFact = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
-): EarnDetailFact => {
+): EarnDetailFact | null => {
+  if (isConfidentialYield(yieldDto)) return null;
   const days = getYieldCooldownPeriod(yieldDto)?.days ?? 0;
   // Batched vaults redeem with a daily batch, not after a fixed cooldown.
   const dailyBatch = formatDailyBatch({ side: "redemption", t, yieldDto });
@@ -397,6 +399,7 @@ const getWarmupFact = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact | null => {
+  if (isConfidentialYield(yieldDto)) return null;
   const value =
     formatDailyBatch({ side: "subscription", t, yieldDto }) ??
     formatOptionalDays(getYieldWarmupPeriod(yieldDto)?.days, t);

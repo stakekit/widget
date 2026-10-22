@@ -155,13 +155,12 @@ export const PositionDetailsUnstakeActions = () => {
           selection={exitReceiveTokenSelection}
         />
         {/* The mode note already states confidential timing. */}
-        {exitReceiveTokenSelection?.confidentialExit ? null : (
-          <UnstakeInfo
-            unstakeToken={unstakeTokenValue}
-            validators={providersDetails ?? []}
-            yieldDto={integrationDataValue}
-          />
-        )}
+        <UnstakeInfo
+          hideWithdrawnTime={!!exitReceiveTokenSelection?.confidentialExit}
+          unstakeToken={unstakeTokenValue}
+          validators={providersDetails ?? []}
+          yieldDto={integrationDataValue}
+        />
       </Box>
 
       <PageCtaButton cta={unstakeCta} />

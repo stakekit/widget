@@ -170,10 +170,13 @@ export const makeClassicFlowReviewFactory = Effect.fn(
   const wallet = yield* WalletService;
 
   return Effect.fn("makeClassicFlowReview")(function* ({
+    converted,
     eligibilityStates,
     intake,
     promoteToExecution,
   }: {
+    /** True once an earlier execution's wrap confirmed. */
+    readonly converted: Effect.Effect<boolean>;
     readonly eligibilityStates: Stream.Stream<ClassicFlowReviewEligibility>;
     readonly intake: ClassicTransactionFlowIntake;
     readonly promoteToExecution: PromoteToExecution;
@@ -422,8 +425,26 @@ export const makeClassicFlowReviewFactory = Effect.fn(
         );
 
       if (confidential || decrypt) {
+        const conversionSteps =
+          intake._tag === "Enter" &&
+          confidential?.conversion &&
+          !(yield* converted)
+            ? yield* zama
+                .conversionSteps({
+                  amount: confidential.amount,
+                  conversion: confidential.conversion,
+                  owner: intake.request.address,
+                })
+                // Each approval step rechecks the allowance before signing.
+                .pipe(
+                  Effect.orElseSucceed(
+                    () => ["approve-reset", "approve", "wrap"] as const
+                  )
+                )
+            : [];
         return yield* promote({
           _tag: "Prepare",
+          conversionSteps,
           prepare: prepareConfidentialAction,
           step: decrypt ? "decrypt" : "encrypt",
         });

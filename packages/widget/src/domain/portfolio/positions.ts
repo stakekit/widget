@@ -168,6 +168,7 @@ export const sumBalancesByToken = (
 
 export type PositionBalanceRow = PositionTokenSum &
   Readonly<{
+    readonly batch?: EarnBalance["batch"];
     readonly date: EarnBalance["date"];
     readonly isEncrypted?: boolean;
     readonly type: YieldBalanceType;
@@ -183,7 +184,13 @@ export const groupPositionBalanceRows = (
   balances: ReadonlyArray<
     Pick<
       EarnBalance,
-      "amount" | "amountUsd" | "date" | "isEncrypted" | "token" | "type"
+      | "amount"
+      | "amountUsd"
+      | "batch"
+      | "date"
+      | "isEncrypted"
+      | "token"
+      | "type"
     >
   >
 ): ReadonlyArray<PositionBalanceRow> => [
@@ -191,7 +198,7 @@ export const groupPositionBalanceRows = (
     .reduce((rows, balance) => {
       const key = `${balance.type}::${tokenString(balance.token)}::${
         balance.date ? DateTime.toEpochMillis(balance.date) : ""
-      }`;
+      }::${balance.batch?.address ?? ""}::${balance.batch?.id ?? ""}`;
       const previous = rows.get(key);
 
       rows.set(key, {
@@ -199,6 +206,7 @@ export const groupPositionBalanceRows = (
         amountUsd: (previous?.amountUsd ?? exactZero()).plus(
           balance.amountUsd ?? 0
         ),
+        batch: balance.batch,
         date: balance.date,
         isEncrypted: previous?.isEncrypted || balance.isEncrypted,
         token: previous?.token ?? balance.token,
