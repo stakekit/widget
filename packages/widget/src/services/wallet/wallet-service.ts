@@ -13,6 +13,7 @@ import {
 } from "../../domain/wallet/wallet-scope";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 import { WidgetPersistence } from "../persistence/widget-persistence";
+import { ExternalProviderError } from "./external-provider";
 import { isLedgerLiveConnector } from "./internal/adapters/ledger/ledger-live-connector-meta";
 import { SolanaPlatform } from "./internal/platform/solana-platform";
 import { WagmiPlatform } from "./internal/platform/wagmi-platform";
@@ -37,7 +38,7 @@ import {
 } from "./internal/runtime/router";
 import { makeWalletStateRuntime } from "./internal/runtime/state";
 import { WalletStorageCleanup } from "./internal/runtime/wallet-storage-cleanup";
-import { isWalletCancellation } from "./wallet-cancellation";
+import { isWalletCancellation, isWalletRejection } from "./wallet-cancellation";
 import {
   sameWalletCommandIdentity,
   type WalletCommandIdentity,
@@ -58,10 +59,13 @@ import {
   walletAvailabilityKey,
 } from "./wallet-descriptors";
 import {
+  WalletBroadcastError,
   type WalletIntegrationError,
   WalletNotAvailableError,
   WalletOwnerMismatchError,
+  WalletRequestCancelledError,
   type WalletRuntimeInvariantError,
+  WalletSigningError,
 } from "./wallet-errors";
 import { WalletModal, type WalletModalOpening } from "./wallet-modal";
 import type { WalletSignTransactionInput } from "./wallet-transactions";
@@ -81,6 +85,22 @@ const connectionFailure = (cause: unknown) => {
   if (cause instanceof WalletNotAvailableError) return "WalletNotAvailable";
   return "Failed";
 };
+
+/**
+ * A signing command's failure as its caller should see it: a request the user
+ * declined in the wallet is a cancellation, whichever wallet reported it. A
+ * host provider reports its own outcome, so its errors stay errors.
+ */
+const classifySigningFailure =
+  (operation: WalletRequestCancelledError["operation"]) =>
+  <E>(error: E): E | WalletRequestCancelledError => {
+    const declined =
+      (error instanceof WalletSigningError ||
+        error instanceof WalletBroadcastError) &&
+      !(error.cause instanceof ExternalProviderError) &&
+      isWalletRejection(error.cause);
+    return declined ? new WalletRequestCancelledError({ operation }) : error;
+  };
 
 const makeWalletService = Effect.fn("makeWalletService")(function* () {
   const modal = yield* WalletModal;
@@ -201,7 +221,9 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
         reason: "account-changed",
       });
     }
-    return yield* use(routing);
+    return yield* use(routing).pipe(
+      Effect.mapError(classifySigningFailure(operation))
+    );
   });
   const logout = yield* Effect.cachedWithTTL(
     withContext((routing) => routing.actions.disconnect()).pipe(

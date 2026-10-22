@@ -5,7 +5,6 @@ import type { Chain } from "../../../../../services/wallet/wallet-descriptors";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   useScopedWalletChainSelection,
-  WalletChainSelectionScope,
   walletChainSelectionAtom,
 } from "../../../../wallet/index";
 import { ConnectButton, WalletChainPicker } from "../../../../wallet/views";
@@ -22,11 +21,7 @@ export const BorrowNetworkRecoveryPanel = ({
 
   if (recovery._tag === "SwitchChain") {
     // Leaving the notice interrupts a switch its command started.
-    return (
-      <WalletChainSelectionScope>
-        <BorrowNetworkSwitch chains={recovery.chains} />
-      </WalletChainSelectionScope>
-    );
+    return <BorrowNetworkSwitch chains={recovery.chains} />;
   }
 
   if (recovery._tag === "SwitchManually") {

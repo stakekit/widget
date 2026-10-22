@@ -4,6 +4,7 @@ import type { ActionTransaction } from "../../../src/domain/action/models";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
 import {
+  TransactionWorkflowId,
   WalletAddress,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
@@ -286,7 +287,7 @@ describe("transaction workflow model", () => {
       batchId: "classic",
       message: "failed",
       transactionId: "classic-1",
-      workflowId: "action-1",
+      workflowId: TransactionWorkflowId.make("action-1"),
     };
     const states = [
       {
@@ -359,7 +360,7 @@ describe("transaction workflow model", () => {
         operation: "transaction",
       },
       transactionId: "classic-1",
-      workflowId: "action-1",
+      workflowId: TransactionWorkflowId.make("action-1"),
     });
     expect(withCustom.message).toBe("Transaction signing failed.");
     expect(getTransactionSignCustomMessage(withCustom)).toBe(
@@ -371,7 +372,7 @@ describe("transaction workflow model", () => {
       network: "ethereum",
       reason: { _tag: "WalletUnavailable", detail: "disconnected" },
       transactionId: "classic-1",
-      workflowId: "action-1",
+      workflowId: TransactionWorkflowId.make("action-1"),
     });
     expect(withoutCustom.message).toBe(
       "Wallet is not connected for transaction signing."
@@ -395,7 +396,7 @@ describe("transaction workflow model", () => {
         operation: "message",
       },
       transactionId: "classic-1",
-      workflowId: "action-1",
+      workflowId: TransactionWorkflowId.make("action-1"),
     });
 
     expect(error.message).toBe("Message signing failed.");
@@ -423,7 +424,7 @@ describe("transaction workflow model", () => {
       batchId: "classic",
       message: "failed",
       transactionId: "classic-1",
-      workflowId: "action-1",
+      workflowId: TransactionWorkflowId.make("action-1"),
     };
     const phases = (
       sign: TransactionPhaseStatus,

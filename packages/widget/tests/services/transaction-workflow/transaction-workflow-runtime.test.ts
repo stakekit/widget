@@ -951,7 +951,9 @@ describe("transaction workflow runtime", () => {
             signedTx: null,
             submissionIndex: null,
           });
-          expect(second?.source.transaction.status).toBe(remoteStatus);
+          expect(
+            second?.source._tag === "Borrow" && second.source.transaction.status
+          ).toBe(remoteStatus);
         }
       })
   );

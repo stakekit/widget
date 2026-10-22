@@ -21,8 +21,8 @@ vi.mock("../../../src/features/classic-transaction-flow/views", () => ({
     function YieldActionContinuationCompletePage() {
       return null;
     },
-  YieldActionContinuationExecutionScope:
-    function YieldActionContinuationExecutionScope() {
+  YieldActionContinuationExecution:
+    function YieldActionContinuationExecution() {
       return null;
     },
   YieldActionContinuationStepsPage:
@@ -98,7 +98,7 @@ const actionIdRoute = (presentation: string): RouteDescription => ({
           path: "complete",
         },
       ],
-      element: "YieldActionContinuationExecutionScope",
+      element: "YieldActionContinuationExecution",
       index: false,
       path: null,
     },

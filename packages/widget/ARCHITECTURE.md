@@ -24,6 +24,10 @@ interface. Shared is for neutral building blocks, not displaced feature logic.
 Shared may depend on Domain types and rules, but not on features, resources, or
 services. The application composes Modules; it does not absorb their behavior.
 
+Activity owns the activity feed, action lookup, action details, and their
+variant layouts. A Yield Action Continuation starts from Activity but runs as a
+Classic Transaction Flow; completed and failed details never start one.
+
 ## Dependency direction
 
 Dependencies point toward narrow interfaces and stable lower-level concepts:
@@ -93,12 +97,14 @@ A Feature Module may publish:
   hooks.
 - `composition.ts` for screens, routes, layouts, providers, guards, and mounts.
 - `views.ts` for rendered elements intentionally reused outside the Feature.
-- `runtime.ts` for Effect services and Layers used in runtime assembly.
+- `runtime.ts` for operations used in runtime assembly.
 
 Create only the entries with consumers. Internal code normally lives under
-`model/`, `state/`, `react/`, and `ui/`. Orchestration-heavy features separate
-Atom-independent services in `state/orchestration/` from reactive adapters in
-`state/atoms/`.
+`model/`, `state/`, `react/`, and `ui/`. `state/` is organized by page: a page
+module holds its page's Atom family and the Effect functions only that page
+runs; what several pages share, such as starting or leaving a flow, lives in a
+module of its own. An operation a runtime service also runs does not import the
+application runtime, since that import would cycle.
 
 Each immediate child of `resources/` is a Resource Module and publishes
 `index.ts`. A nested Module Collection consumes child interfaces and publishes
@@ -120,21 +126,31 @@ test is intentionally about that machinery.
 ## Application logic
 
 Plain TypeScript owns deterministic domain state, transitions, invariants, and
-projections. Effect services own asynchronous orchestration, side effects,
-concurrency, retry, rollback, and scoped lifetimes. Effect Atom owns reactive
-composition and the adapter between services and rendering. React renders
-published state and dispatches semantic commands. See
+projections. Effect owns side effects, concurrency, retry, and rollback. Effect
+Atom owns reactive composition, including page view models, and the adapter
+between Effect and rendering. React renders published state and dispatches
+semantic commands. See
 [ADR 0002](../../docs/adr/0002-effect-and-effect-atom-own-application-logic.md).
 
-An orchestration-heavy Feature exposes one feature-owned Effect service. The
-application or wallet runtime composes it once and resolves static dependencies
-during Layer construction. Runtime operations do not accept Atoms, registries,
-or Atom contexts.
+Effect work is expressed as operations: Effect functions whose services come
+from the runtime that runs them, or that resolve them once when a runtime
+service builds on them during Layer construction. Operations do not accept
+Atoms, registries, or Atom contexts.
 
-Command Atoms are deliberately shallow. A command may read a snapshot,
-normalize it through a pure function, and perform one state transition, scoped
-handle operation, or tail delegation. Multi-step coordination belongs in the
-owning Effect service.
+Context services live in `services/`; Features do not define them. A Feature
+keeps its own state in Atoms: writable Atoms in the page's family for page
+state, and `Atom.keepAlive` Atoms for state that outlives a page. State that
+describes an external system, or that code outside React reads or writes, is a
+service in `services/`, which Features project into Atoms.
+
+A page's view model is a set of Atoms from an `Atom.family`, keyed by data every
+render of the page shares (a Session, a history entry, a handoff). React may
+discard a render after it read an Atom, so Atoms are never created per render or
+per mount. Effect Atoms own the page's work, so it ends when the page stops
+showing it; derived Atoms project its view. Command Atoms are deliberately
+shallow: a command reads a snapshot, decides through a pure function, and
+performs one state transition or delegates to one Effect operation. Multi-step
+side effects, such as a handoff with its navigation, belong in that operation.
 
 ## Resources and state
 
@@ -149,15 +165,17 @@ state but does not maintain a second writable copy or invent a lifecycle state
 before its scoped source exists. Local synchronous presentation state such as
 focus, hover, disclosure, and DOM refs may remain in React.
 
-Resource and workflow retention is an explicit ownership decision. Use the
-shared application-runtime lifecycle adapter for scoped handles rather than
-rebuilding mount graphs in Features.
+Resource and workflow retention is an explicit ownership decision: an effect
+Atom's work lives while something subscribes to it, directly or through an Atom
+that reads it. Features do not mount Atoms through the registry; a value that
+must keep a scoped handle open without reading it uses the shared
+application-runtime adapter (`makeScopedEffectAtom`).
 
-Relevance is a lifetime, not a counter. A Session, reservation, modal opening,
-or attempt owns a `Scope`; ending it closes the Scope and interrupts its work.
+Relevance is a lifetime, not a counter. A page, modal opening, or attempt owns
+a `Scope`; ending it closes the Scope and interrupts its work.
 Do not guard continuation with revision, epoch, or `isCurrent` checks. A
-lifetime consumed by a React subtree is owned by that subtree's scoped Atom
-instance, not by a service-held "current" slot. See
+lifetime consumed by a React subtree is owned by the Atoms that subtree
+subscribes to, not by a service-held "current" slot. See
 [ADR 0011](../../docs/adr/0011-lifetimes-are-scopes-staleness-is-interruption.md).
 
 ## Trust boundaries

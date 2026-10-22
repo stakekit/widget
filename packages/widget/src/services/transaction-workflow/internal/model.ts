@@ -1,7 +1,12 @@
+import { Match, Predicate } from "effect";
+import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type { YieldAction } from "../../../domain/action/models";
 import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
+import { TransactionWorkflowId } from "../../../domain/identity/identifiers";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
+  type ClassicTransactionWorkflowInput,
+  type DirectTransactionRecord,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
   type TransactionWorkflowAction,
@@ -26,7 +31,7 @@ const isBroadcastStatus = (status: string) =>
   status === "BROADCASTED" || status === "CONFIRMED";
 
 const toTransaction = (
-  source: TransactionWorkflowSource
+  source: Exclude<TransactionWorkflowSource, { readonly _tag: "Direct" }>
 ): TransactionWorkflowTransaction => ({
   source,
   meta: {
@@ -42,6 +47,40 @@ const toTransaction = (
         : null,
   },
 });
+
+/**
+ * A Direct transaction resumes from what its Ledger recorded: a sent one is
+ * confirmed by its hash, a confirmed one is done. Until a wrap was sent, an
+ * approval that confirmed earlier proves nothing about the allowance now, so
+ * it is checked again; once one was, the wrap spent what the approval set.
+ */
+const toDirectTransaction = ({
+  recorded,
+  transaction,
+  wrapped,
+}: {
+  readonly recorded: DirectTransactionRecord | undefined;
+  readonly transaction: DirectTransaction;
+  readonly wrapped: boolean;
+}): TransactionWorkflowTransaction => {
+  const record =
+    recorded?._tag === "Confirmed" && transaction.approval && !wrapped
+      ? undefined
+      : recorded;
+
+  return {
+    source: { _tag: "Direct", transaction },
+    meta: {
+      broadcasted: record ? true : null,
+      confirmationError: null,
+      done: record?._tag === "Confirmed",
+      signError: null,
+      signedTx: record?.hash ?? null,
+      submissionIndex: null,
+      url: null,
+    },
+  };
+};
 
 const makeClassicTransactionWorkflowBatch = (
   transactions: YieldAction["transactions"]
@@ -65,19 +104,76 @@ export const makeBorrowTransactionWorkflowBatch = (
   ),
 });
 
+/** A confidential workflow is named after its yield until its action exists. */
 export const getTransactionWorkflowId = (
+  domain: TransactionWorkflowDomainContext
+): TransactionWorkflowId =>
+  TransactionWorkflowId.make(
+    Match.value(domain).pipe(
+      Match.tag(
+        "Classic",
+        ({ actionMeta, yieldId }) =>
+          actionMeta?.actionId ?? `confidential:${yieldId}`
+      ),
+      Match.tag("Borrow", ({ action }) => action.id),
+      Match.exhaustive
+    )
+  );
+
+const toTransactionWorkflowDomain = (
   input: TransactionWorkflowInput
-): string =>
-  input._tag === "Classic" ? input.actionMeta.actionId : input.action.id;
+): TransactionWorkflowDomainContext =>
+  Match.value(input).pipe(
+    Match.tag(
+      "Classic",
+      ({ actionMeta, yieldId }): TransactionWorkflowDomainContext => ({
+        _tag: "Classic",
+        actionMeta,
+        yieldId,
+      })
+    ),
+    Match.tag(
+      "Confidential",
+      ({ yieldId }): TransactionWorkflowDomainContext => ({
+        _tag: "Classic",
+        actionMeta: null,
+        yieldId,
+      })
+    ),
+    Match.tag(
+      "Borrow",
+      ({ action }): TransactionWorkflowDomainContext => ({
+        _tag: "Borrow",
+        action,
+      })
+    ),
+    Match.exhaustive
+  );
 
 export const validateTransactionWorkflowInput = (
   input: TransactionWorkflowInput
 ): TransactionWorkflowInputError | null => {
-  const workflowId = getTransactionWorkflowId(input);
+  const workflowId = getTransactionWorkflowId(
+    toTransactionWorkflowDomain(input)
+  );
   const fail = (message: string) =>
     new TransactionWorkflowInputError({ message, workflowId });
-  const actionAddress =
-    input._tag === "Classic" ? input.actionMeta.address : input.action.address;
+  const { actionAddress, networks } = Match.value(input).pipe(
+    Match.tag("Classic", ({ actionMeta, transactions }) => ({
+      actionAddress: actionMeta.address,
+      networks: transactions.map(({ network }) => network),
+    })),
+    // Its transactions are validated once it has prepared them.
+    Match.tag("Confidential", ({ preparation }) => ({
+      actionAddress: preparation.command.address,
+      networks: [],
+    })),
+    Match.tag("Borrow", ({ action }) => ({
+      actionAddress: action.address,
+      networks: action.transactions.map(({ network }) => network),
+    })),
+    Match.exhaustive
+  );
 
   if (!actionAddress) {
     return fail("The transaction workflow has no action wallet address.");
@@ -94,16 +190,7 @@ export const validateTransactionWorkflowInput = (
     );
   }
 
-  const mismatchedNetwork =
-    input._tag === "Classic"
-      ? input.transactions.find(
-          (transaction) => transaction.network !== input.walletScope.network
-        )
-      : input.action.transactions.find(
-          (transaction) => transaction.network !== input.walletScope.network
-        );
-
-  if (mismatchedNetwork) {
+  if (networks.some((network) => network !== input.walletScope.network)) {
     return fail(
       "The transaction workflow contains a transaction outside its captured wallet network."
     );
@@ -128,34 +215,75 @@ export const validateTransactionWorkflowInput = (
   return null;
 };
 
-const initializeTransactionWorkflowContext = (
-  input: TransactionWorkflowInput
+const withCurrentTransaction = (
+  context: Omit<
+    TransactionWorkflowContext,
+    "currentBatchIndex" | "currentTransactionIndex"
+  > & { readonly batches: readonly [TransactionWorkflowBatch] }
 ): TransactionWorkflowContext => {
-  const batch =
-    input._tag === "Classic"
-      ? makeClassicTransactionWorkflowBatch(input.transactions)
-      : makeBorrowTransactionWorkflowBatch(input.action);
-  const domain: TransactionWorkflowDomainContext =
-    input._tag === "Classic"
-      ? {
-          _tag: "Classic",
-          actionMeta: input.actionMeta,
-          yieldId: input.yieldId,
-        }
-      : { _tag: "Borrow", action: input.action };
-  const currentTransactionIndex = batch.transactions.findIndex(
+  const currentTransactionIndex = context.batches[0].transactions.findIndex(
     ({ meta }) => !meta.done
   );
 
   return {
-    batches: [batch],
+    ...context,
     currentBatchIndex: currentTransactionIndex === -1 ? null : 0,
     currentTransactionIndex:
       currentTransactionIndex === -1 ? null : currentTransactionIndex,
-    domain,
-    submissions: [],
   };
 };
+
+const initializeTransactionWorkflowContext = (
+  input: TransactionWorkflowInput,
+  recorded: ReadonlyMap<DirectTransaction["id"], DirectTransactionRecord>
+): TransactionWorkflowContext =>
+  Match.value(input).pipe(
+    Match.tag("Classic", (input) =>
+      withCurrentTransaction({
+        batches: [makeClassicTransactionWorkflowBatch(input.transactions)],
+        domain: toTransactionWorkflowDomain(input),
+        preparation: null,
+        submissions: [],
+      })
+    ),
+    // Nothing is current until the action is prepared.
+    Match.tag("Confidential", (input): TransactionWorkflowContext => {
+      const wrapped = input.conversion.some(
+        ({ id, type }) => type === "WRAP" && recorded.has(id)
+      );
+      return {
+        batches: [
+          {
+            ...makeClassicTransactionWorkflowBatch([]),
+            transactions: input.conversion.map((transaction) =>
+              toDirectTransaction({
+                recorded: recorded.get(transaction.id),
+                transaction,
+                wrapped,
+              })
+            ),
+          },
+        ],
+        currentBatchIndex: null,
+        currentTransactionIndex: null,
+        domain: toTransactionWorkflowDomain(input),
+        preparation: {
+          done: false,
+          step: input.preparation._tag === "Encrypt" ? "encrypt" : "decrypt",
+        },
+        submissions: [],
+      };
+    }),
+    Match.tag("Borrow", (input) =>
+      withCurrentTransaction({
+        batches: [makeBorrowTransactionWorkflowBatch(input.action)],
+        domain: toTransactionWorkflowDomain(input),
+        preparation: null,
+        submissions: [],
+      })
+    ),
+    Match.exhaustive
+  );
 
 const shouldConfirmWithoutSigning = (
   transaction: TransactionWorkflowTransaction
@@ -164,10 +292,20 @@ const shouldConfirmWithoutSigning = (
   (transaction.source._tag === "Borrow" &&
     transaction.source.transaction.signablePayload == null);
 
+/**
+ * The state a workflow starts in. A confidential one resumes the Direct
+ * transactions its Ledger `recorded`.
+ */
 export const initializeTransactionWorkflow = (
-  input: TransactionWorkflowInput
+  input: TransactionWorkflowInput,
+  recorded: ReadonlyMap<
+    DirectTransaction["id"],
+    DirectTransactionRecord
+  > = new Map()
 ): TransactionWorkflowState => {
-  const context = initializeTransactionWorkflowContext(input);
+  const context = initializeTransactionWorkflowContext(input, recorded);
+
+  if (input._tag === "Confidential") return { _tag: "Preparing", context };
 
   if (input._tag === "Borrow" && input.action.status === "SUCCESS") {
     return { _tag: "Completed", context };
@@ -188,10 +326,51 @@ export const initializeTransactionWorkflow = (
     : { _tag: "Signing", context };
 };
 
+/**
+ * A confidential workflow's context once it prepared its action: the action's
+ * transactions follow the ones the workflow already holds.
+ */
+export const attachPreparedClassicAction = ({
+  context,
+  prepared,
+}: {
+  readonly context: TransactionWorkflowContext;
+  readonly prepared: ClassicTransactionWorkflowInput;
+}): TransactionWorkflowContext => {
+  const held = context.batches[0] ?? makeClassicTransactionWorkflowBatch([]);
+
+  return withCurrentTransaction({
+    ...context,
+    batches: [
+      {
+        ...held,
+        transactions: [
+          ...held.transactions,
+          ...makeClassicTransactionWorkflowBatch(prepared.transactions)
+            .transactions,
+        ],
+      },
+    ],
+    domain: {
+      _tag: "Classic",
+      actionMeta: prepared.actionMeta,
+      yieldId: prepared.yieldId,
+    },
+    preparation: context.preparation && {
+      ...context.preparation,
+      done: true,
+    },
+  });
+};
+
 export function getCurrentTransactionWorkflowTransactionFor(
   context: TransactionWorkflowContext,
   kind: "Classic"
 ): TransactionWorkflowTransactionFor<"Classic"> | null;
+export function getCurrentTransactionWorkflowTransactionFor(
+  context: TransactionWorkflowContext,
+  kind: "Direct"
+): TransactionWorkflowTransactionFor<"Direct"> | null;
 export function getCurrentTransactionWorkflowTransactionFor(
   context: TransactionWorkflowContext,
   kind: "Borrow"
@@ -304,6 +483,51 @@ export const selectNextTransactionWorkflowTransaction = (
   };
 };
 
+/** Moves past the current transaction without signing it: nothing needs it. */
+export const skipCurrentTransactionWorkflowTransaction = (
+  context: TransactionWorkflowContext
+): TransactionWorkflowContext =>
+  selectNextTransactionWorkflowTransaction(
+    updateCurrentTransactionWorkflowTransaction({
+      context,
+      update: (current) => ({
+        ...current,
+        meta: { ...current.meta, done: true },
+      }),
+    })
+  );
+
+/** Runs `transaction` before the current one; it becomes current. */
+export const insertBeforeCurrentTransactionWorkflowTransaction = (
+  context: TransactionWorkflowContext,
+  transaction: DirectTransaction
+): TransactionWorkflowContext => {
+  const { currentBatchIndex, currentTransactionIndex } = context;
+  if (currentBatchIndex === null || currentTransactionIndex === null) {
+    return context;
+  }
+
+  return {
+    ...context,
+    batches: context.batches.map((batch, batchIndex) =>
+      batchIndex === currentBatchIndex
+        ? {
+            ...batch,
+            transactions: batch.transactions.toSpliced(
+              currentTransactionIndex,
+              0,
+              toDirectTransaction({
+                recorded: undefined,
+                transaction,
+                wrapped: false,
+              })
+            ),
+          }
+        : batch
+    ),
+  };
+};
+
 export const appendTransactionWorkflowBatch = ({
   batch,
   context,
@@ -345,15 +569,26 @@ export const getTransactionWorkflowAction = ({
   if (command._tag !== "Retry") return null;
 
   switch (state._tag) {
+    case "PrepareFailed":
+      return state.error.retryable ? "prepare" : null;
     case "SignFailed":
       return "sign";
     case "SubmissionFailed":
-      return "submit";
-    case "ConfirmationFailed":
-      return "confirm";
+      // A Direct broadcast the node refused cannot be sent again as signed.
+      return Predicate.isTagged(state.error.cause, "EvmBroadcastRejectedError")
+        ? "sign"
+        : "submit";
+    case "ConfirmationFailed": {
+      // A reverted or dropped Direct transaction left no hash to wait on.
+      const current = getCurrentTransactionWorkflowTransaction(state.context);
+      return current?.source._tag === "Direct" && current.meta.signedTx === null
+        ? "sign"
+        : "confirm";
+    }
     case "AdvanceFailed":
       return "advance";
     case "Disabled":
+    case "Preparing":
     case "Signing":
     case "Submitting":
     case "Confirming":

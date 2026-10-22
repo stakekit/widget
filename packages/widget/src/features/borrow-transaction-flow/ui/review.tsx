@@ -27,7 +27,7 @@ import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
 } from "../react/borrow-flow-route";
-import { BorrowReviewConfirmationFailure } from "../state/borrow-review-confirmation-error";
+import { BorrowReviewConfirmationFailure } from "../state/review-page";
 import { BorrowFlowHeading } from "./flow-heading";
 import { BorrowFlowPositionChangeRows } from "./position-change-rows";
 import * as styles from "./styles.css";

@@ -3,6 +3,7 @@ import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
 } from "../../../domain/borrow/execution/action";
+import type { TransactionWorkflowId } from "../../../domain/identity/identifiers";
 import { BorrowOperations } from "../../api/operations";
 import {
   getCurrentTransactionWorkflowBatch,
@@ -11,6 +12,7 @@ import {
 } from "../transaction-workflow-model";
 import {
   appendTransactionWorkflowBatch,
+  getTransactionWorkflowId,
   makeBorrowTransactionWorkflowBatch,
   reconcileBorrowTransactionWorkflowBatch,
 } from "./model";
@@ -49,7 +51,7 @@ export const makeAdvanceBatch = Effect.gen(function* () {
     readonly batchId: string;
     readonly previousAction: BorrowAction;
     readonly reconcile: boolean;
-    readonly workflowId: string;
+    readonly workflowId: TransactionWorkflowId;
   }): Effect.fn.Return<BorrowAdvanceResolution, TransactionAdvanceError> {
     const fail = (message: string, cause?: unknown) =>
       new TransactionAdvanceError({
@@ -128,10 +130,7 @@ export const makeAdvanceBatch = Effect.gen(function* () {
     readonly reconcile: boolean;
   }): Effect.fn.Return<AdvanceResult, TransactionAdvanceError> {
     const batch = getCurrentTransactionWorkflowBatch(context);
-    const workflowId =
-      context.domain._tag === "Classic"
-        ? context.domain.actionMeta.actionId
-        : context.domain.action.id;
+    const workflowId = getTransactionWorkflowId(context.domain);
     const fail = (message: string, cause?: unknown) =>
       new TransactionAdvanceError({
         batchId: batch?.id ?? "unknown",

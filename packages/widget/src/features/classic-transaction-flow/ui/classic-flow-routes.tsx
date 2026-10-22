@@ -2,9 +2,8 @@ import { Match } from "effect";
 import type { ComponentType, ReactNode } from "react";
 import { Route } from "react-router";
 import {
-  ClassicFlowCompletionGuard,
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
+  ClassicFlowExecutionPage,
+  ClassicFlowExecutionRoute,
   ClassicFlowRoute,
 } from "../react/classic-flow-route";
 import { PendingCompletePage } from "./complete/pages/pending-complete.page.tsx";
@@ -38,22 +37,22 @@ const createStandardClassicFlowRoutes = (
 ) => {
   const pages = (
     <>
-      <Route
-        path="review"
-        element={
-          <ClassicFlowReviewScope>
-            <ReviewPage />
-          </ClassicFlowReviewScope>
-        }
-      />
-      <Route element={<ClassicFlowExecutionScope />}>
-        <Route path="steps" element={<StepsPage />} />
+      <Route path="review" element={<ReviewPage />} />
+      <Route element={<ClassicFlowExecutionRoute />}>
+        <Route
+          path="steps"
+          element={
+            <ClassicFlowExecutionPage page="Steps">
+              <StepsPage />
+            </ClassicFlowExecutionPage>
+          }
+        />
         <Route
           path="complete"
           element={
-            <ClassicFlowCompletionGuard>
+            <ClassicFlowExecutionPage page="Complete">
               <CompletePage />
-            </ClassicFlowCompletionGuard>
+            </ClassicFlowExecutionPage>
           }
         />
       </Route>

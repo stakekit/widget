@@ -31,10 +31,9 @@ export const BorrowStepsPage = () => {
   const { t } = useTranslation();
   const flow = useBorrowTransactionFlow();
   const executionFlow = useBorrowTransactionFlowExecution();
-  const back = useAtomSet(executionFlow.backAtom);
+  const back = useAtomSet(executionFlow.leaveAtom);
   const execution = useBorrowExecution();
-  const executionErrorMessage =
-    execution.errorMessage ?? execution.setupError?.message ?? null;
+  const executionErrorMessage = execution.errorMessage;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
   return (

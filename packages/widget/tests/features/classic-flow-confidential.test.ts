@@ -3,33 +3,41 @@ import BigNumber from "bignumber.js";
 import {
   Deferred,
   Effect,
+  Exit,
+  Layer,
   Option,
-  Queue,
+  Ref,
   Schema,
-  type Scope,
+  Scope,
   Stream,
   SubscriptionRef,
 } from "effect";
-import type { YieldAction } from "../../src/domain/action/models";
-import {
-  type ConfidentialEncryption,
-  confidentialTokenBalanceKey,
-} from "../../src/domain/earn/confidential";
+import { Atom, AtomRegistry } from "effect/reactivity";
+import * as Reactivity from "effect/reactivity/Reactivity";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
+import type { DirectTransaction } from "../../src/domain/action/direct-transaction";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
+  type ClassicFlowHandoff,
   getClassicFlowPreparedTransactionType,
+  makeClassicFlowSession,
   type NavigatingClassicTransactionFlowStart,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import type { ClassicFlowConversion } from "../../src/features/classic-transaction-flow/model/classic-transaction-workflow";
-import type { ClassicFlowExecutionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-execution";
-import type { ClassicFlowSessionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-session";
-import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import { getClassicTransactionStepsView } from "../../src/features/classic-transaction-flow/model/classic-transaction-workflow";
+import { startClassicFlowExecution } from "../../src/features/classic-transaction-flow/state/execution-page";
+import { makeClassicFlowReviewPage } from "../../src/features/classic-transaction-flow/state/review-page";
 import type { ActionPreviewRequest } from "../../src/services/api/operations";
-import { InputValidationError } from "../../src/services/api/resource-sources";
-import { TransactionWorkflowInputError } from "../../src/services/transaction-workflow/transaction-workflow-model";
+import {
+  LegacyResourceSource,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
+import type { EvmRpc } from "../../src/services/evm-rpc/evm-rpc";
+import type { TransactionWorkflowHandle } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import { WalletRequestCancelledError } from "../../src/services/wallet/wallet-errors";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
-import { ConfidentialValues } from "../../src/services/zama/confidential-values";
+import type { WalletSignTransactionInput } from "../../src/services/wallet/wallet-transactions";
 import type { ZamaService } from "../../src/services/zama/zama-service";
 import {
   confidentialFixture,
@@ -40,19 +48,11 @@ import {
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 
-const { cUsdc, router, usdc } = confidentialFixture;
+const { cUsdc, usdc } = confidentialFixture;
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
-const readyEligibility = Stream.succeed({
-  activityExpired: false,
-  kycBlocking: false,
-});
-const encryption: ConfidentialEncryption = {
-  amount: { handle: "0xamount", proof: "0xamountproof" },
-  legs: { handles: ["0xleg0", "0xleg1"], proof: "0xlegproof" },
-};
 
 const enterStart = (
   pick: "asset" | "underlying"
@@ -132,106 +132,169 @@ const withdrawUnwrapStart = (): NavigatingClassicTransactionFlowStart => {
   };
 };
 
-const runReview = ({
-  confirm,
-  previewAction,
-  retryFailedConversion = false,
-  retryRejectedConversion = false,
+// Review's resources (prices, gas balances, KYC) run on the app runtime and
+// never answer: a confidential vault's Confirm needs none of them.
+const silentAppLayer = Layer.mergeAll(
+  Reactivity.layer,
+  Layer.succeed(
+    LegacyResourceSource,
+    LegacyResourceSource.of({
+      getGasTokenBalances: () => Effect.never,
+      getPrices: () => Effect.never,
+    } as never)
+  ),
+  Layer.succeed(
+    YieldResourceSource,
+    YieldResourceSource.of({ getKycStatus: () => Effect.never } as never)
+  )
+);
+
+const direct = (type: DirectTransaction["type"]): DirectTransaction => ({
+  approval: null,
+  chainId: 11155111,
+  data: "0x00",
+  id: `conversion-${type.toLowerCase()}`,
+  network: "ethereum",
+  to: cUsdc.address as `0x${string}`,
+  type,
+});
+
+const depositAction = yieldApiActionFixture({
+  address,
+  transactions: [
+    yieldApiTransactionFixture({
+      id: "deposit",
+      network: "ethereum",
+      status: "CREATED",
+      stepIndex: 0,
+      unsignedTransaction: "unsigned-deposit",
+    }),
+  ],
+});
+
+/**
+ * One confidential Flow Session on the real workflow engine: Review's Confirm
+ * through its page, then the Execution Steps would open for the handoff, each
+ * in its own Scope as Steps' lifetime.
+ */
+const openConfidentialFlow = Effect.fn("test.openConfidentialFlow")(function* ({
+  evmRpc = {},
+  previewAction = () => Effect.succeed(depositAction),
+  signTransaction = () =>
+    Effect.succeed({ broadcasted: false, signedTx: "0x02aa" }),
   start,
-  zama,
+  zama = {},
 }: {
-  readonly confirm: boolean;
+  readonly evmRpc?: Partial<EvmRpc["Service"]>;
   readonly previewAction?: (
     request: ActionPreviewRequest
-  ) => Effect.Effect<YieldAction, InputValidationError>;
-  readonly retryFailedConversion?: boolean;
-  readonly retryRejectedConversion?: boolean;
+  ) => Effect.Effect<typeof depositAction>;
+  readonly signTransaction?: (
+    input: WalletSignTransactionInput
+  ) => Effect.Effect<
+    { broadcasted: boolean; signedTx: string },
+    WalletRequestCancelledError
+  >;
   readonly start: NavigatingClassicTransactionFlowStart;
-  readonly zama: Partial<ZamaService["Service"]>;
-}) =>
-  Effect.gen(function* () {
-    const events: Array<string> = [];
-    const requests: Array<ActionPreviewRequest> = [];
-    const workflowStarted = yield* Deferred.make<void>();
-    const walletState = yield* SubscriptionRef.make<WalletState>(
-      makeConnectedWalletState(walletScope)
-    );
-    const kit = yield* makeClassicFlowTestKit({
-      makeWorkflow: () =>
-        Effect.sync(() => events.push("workflow")).pipe(
-          Effect.andThen(Deferred.succeed(workflowStarted, undefined)),
-          Effect.as({ dispatch: () => Effect.void, states: Stream.never })
-        ),
-      previewAction: (request) =>
-        Effect.sync(() => {
-          events.push("preview");
-          requests.push(request);
-        }).pipe(
-          Effect.andThen(
-            previewAction?.(request) ?? Effect.succeed(yieldApiActionFixture())
-          )
-        ),
-      walletState,
-      zama: {
-        ...zama,
-        convertStep: (input) =>
-          Effect.sync(() => events.push(input.step)).pipe(
-            Effect.andThen(input.onBroadcast),
-            Effect.andThen(zama.convertStep?.(input) ?? Effect.succeed(0))
+  readonly zama?: Partial<ZamaService["Service"]>;
+}) {
+  const walletState = yield* SubscriptionRef.make<WalletState>(
+    makeConnectedWalletState(walletScope)
+  );
+  const previews: Array<ActionPreviewRequest> = [];
+  const kit = yield* makeClassicFlowTestKit({
+    engine: {
+      evmRpc,
+      yieldOperations: {
+        getTransactionStatus: () =>
+          Effect.succeed({ explorerUrl: null, status: "CONFIRMED" } as never),
+        previewAction: (request) =>
+          Effect.sync(() => previews.push(request)).pipe(
+            Effect.andThen(previewAction(request))
           ),
+        submitSignedTransaction: () =>
+          Effect.succeed({
+            explorerUrl: null,
+            hash: null,
+            status: "BROADCASTED",
+          } as never),
       },
-    });
-
-    yield* Effect.scoped(
-      Effect.gen(function* () {
-        const service = yield* ClassicTransactionFlowService;
-        const started = yield* service.start(start);
-        if (started._tag !== "Started") return yield* Effect.die(started);
-        const session = yield* service.openSession(started.session);
-        const review = yield* session.acquireReview(readyEligibility);
-        yield* review.states.pipe(
-          Stream.filter((state) => state.preview._tag === "Success"),
-          Stream.runHead
-        );
-        if (!confirm) return;
-
-        yield* review.confirm();
-        events.push("confirmed");
-        const outcome = yield* session.acquireExecution();
-        if (outcome._tag !== "Acquired") return yield* Effect.die(outcome);
-        if (retryRejectedConversion) {
-          yield* outcome.execution.conversion.pipe(
-            Stream.filter(
-              (conversion) =>
-                conversion?.steps.some((step) => step.status === "rejected") ??
-                false
-            ),
-            Stream.runHead
-          );
-          events.push("retry");
-          yield* outcome.execution.runWorkflow({ _tag: "Retry" });
-          yield* Effect.yieldNow;
-          yield* Effect.yieldNow;
-          return;
-        }
-        if (retryFailedConversion) {
-          yield* outcome.execution.conversion.pipe(
-            Stream.filter(
-              (conversion) =>
-                conversion?.steps.some((step) => step.status === "failed") ??
-                false
-            ),
-            Stream.runHead
-          );
-          events.push("retry");
-          yield* outcome.execution.runWorkflow({ _tag: "Retry" });
-        }
-        yield* Deferred.await(workflowStarted);
-      })
-    ).pipe(Effect.provide(kit.layer));
-
-    return { events, requests };
+    },
+    wallet: { signTransaction },
+    walletState,
+    zama: {
+      decryptCommand: (preparation) => Effect.succeed(preparation.command),
+      encryptCommand: (preparation) => Effect.succeed(preparation.command),
+      ...zama,
+    },
   });
+  // Review and Execution share one set of services, as in the wallet runtime.
+  const context = yield* Layer.build(kit.layer);
+  const registry = AtomRegistry.make({
+    initialValues: [
+      Atom.initialValue(appRuntime.layer, silentAppLayer as never),
+      Atom.initialValue(
+        walletRuntime.layer,
+        Layer.succeedContext(context) as never
+      ),
+    ],
+  });
+  yield* Effect.addFinalizer(() => Effect.sync(() => registry.dispose()));
+  const session = makeClassicFlowSession(start, walletScope);
+
+  // Each Confirm is from a fresh arrival at Review.
+  const confirm = Effect.gen(function* () {
+    const page = makeClassicFlowReviewPage(session);
+    registry.set(page.confirmAtom, undefined);
+    const outcome = yield* AtomRegistry.getResult(registry, page.confirmAtom, {
+      suspendOnWaiting: true,
+    });
+    const held = yield* Ref.get(session.handoff);
+    if (outcome._tag !== "Confirmed" || held?._tag !== "Waiting") {
+      return yield* Effect.die(outcome);
+    }
+    return held.handoff;
+  });
+
+  // Steps' Execution for `handoff`, until `close` as leaving Steps would.
+  const startExecution = Effect.fnUntraced(function* (
+    handoff: ClassicFlowHandoff
+  ) {
+    const scope = yield* Scope.make();
+    const execution = yield* startClassicFlowExecution(session, handoff).pipe(
+      Scope.provide(scope),
+      Effect.provideContext(context)
+    );
+    return { close: Scope.close(scope, Exit.void), execution } as const;
+  });
+
+  return { confirm, previews, startExecution } as const;
+});
+
+const preparationOf = (handoff: ClassicFlowHandoff) =>
+  handoff.source._tag === "Prepare" ? handoff.source.preparation : null;
+
+const awaitState = (
+  execution: TransactionWorkflowHandle,
+  tag: "Completed" | "SignFailed"
+) =>
+  execution.states.pipe(
+    Stream.filter((state) => state._tag === tag),
+    Stream.runHead,
+    Effect.map(Option.getOrThrow)
+  );
+
+const signedIds =
+  (signed: Array<string>) => (input: WalletSignTransactionInput) =>
+    Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
+      Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+    );
+
+const convertingRpc: Partial<EvmRpc["Service"]> = {
+  awaitOutcome: () => Effect.succeed("Confirmed"),
+  broadcast: () => Effect.void,
+  prepare: () => Effect.succeed("unsigned-direct"),
+};
 
 describe("confidential vault Classic Transaction Flow", () => {
   it("labels the waiting exit leg by the chosen withdrawal mode", () => {
@@ -244,69 +307,158 @@ describe("confidential vault Classic Transaction Flow", () => {
   });
 
   it.effect(
-    "previews a cUSDC deposit with encrypted inputs instead of the amount",
+    "hands Steps a cUSDC deposit's encryption, checked against its hidden balance",
     () =>
       Effect.gen(function* () {
-        const plans: Array<unknown> = [];
-        const { events, requests } = yield* runReview({
-          confirm: true,
+        const flow = yield* openConfidentialFlow({
           start: enterStart("asset"),
+        });
+
+        const handoff = yield* flow.confirm;
+
+        expect(preparationOf(handoff)).toMatchObject({
+          _tag: "Encrypt",
+          amount: 5_000_000n,
+          assetAddress: cUsdc.address,
+          balance: { chainId: 11155111, token: { address: cUsdc.address } },
+          conversion: null,
+          intent: "enter",
+          requiresPermitSigner: true,
+        });
+        // A confidential vault's action is prepared on Steps, not previewed.
+        expect(flow.previews).toEqual([]);
+      })
+  );
+
+  it.effect("hands Steps the conversion of an underlying deposit", () =>
+    Effect.gen(function* () {
+      const flow = yield* openConfidentialFlow({
+        start: enterStart("underlying"),
+        zama: { planConversion: () => Effect.succeed([direct("WRAP")]) },
+      });
+
+      const handoff = yield* flow.confirm;
+
+      expect(preparationOf(handoff)).toMatchObject({
+        _tag: "Encrypt",
+        balance: null,
+        conversion: {
+          chainId: 11155111,
+          underlying: usdc.address,
+          wrapper: cUsdc.address,
+        },
+      });
+      expect(
+        handoff.source._tag === "Prepare" && handoff.source.conversion
+      ).toEqual([direct("WRAP")]);
+    })
+  );
+
+  it.effect("hands Steps the encryption of an exit's shares", () =>
+    Effect.gen(function* () {
+      const flow = yield* openConfidentialFlow({ start: exitStart() });
+
+      const handoff = yield* flow.confirm;
+
+      expect(preparationOf(handoff)).toMatchObject({
+        _tag: "Encrypt",
+        amount: 7_000_000n,
+        balance: null,
+        conversion: null,
+        instant: false,
+        intent: "exit",
+        requiresPermitSigner: false,
+      });
+    })
+  );
+
+  it.effect("hands Steps the public decryption of an unwrap withdrawal", () =>
+    Effect.gen(function* () {
+      const flow = yield* openConfidentialFlow({
+        start: withdrawUnwrapStart(),
+      });
+
+      const handoff = yield* flow.confirm;
+
+      expect(preparationOf(handoff)).toMatchObject({
+        _tag: "Decrypt",
+        chainId: 11155111,
+        handle: "0xrequest",
+        command: { action: "WITHDRAW", passthrough: "unwrap" },
+      });
+    })
+  );
+});
+
+describe("confidential vault execution", () => {
+  it.effect(
+    "plans the conversion when the user confirms, so Steps lists it at once",
+    () =>
+      Effect.gen(function* () {
+        const events: Array<string> = [];
+        const flow = yield* openConfidentialFlow({
+          start: enterStart("underlying"),
           zama: {
-            revealTokenBalance: () => Effect.succeed(5_000_000n),
-            encrypt: ({ plan }) =>
-              Effect.sync(() => {
-                plans.push(plan);
-                return encryption;
-              }),
+            encryptCommand: () => Effect.never,
+            planConversion: () =>
+              Effect.sync(() => events.push("plan")).pipe(
+                Effect.as([
+                  direct("RESET_APPROVAL"),
+                  direct("APPROVAL"),
+                  direct("WRAP"),
+                ])
+              ),
           },
         });
 
-        expect(plans).toEqual([
-          {
-            amount: { contract: cUsdc.address, value: 5_000_000n },
-            chainId: 11155111,
-            legs: { contract: router, values: [0n, 5_000_000n] },
-          },
-        ]);
-        expect(requests[0]?.command.arguments).toEqual({
-          encryptedAmount: "0xamount",
-          encryptedAmountProof: "0xamountproof",
-          encryptedLegAmounts: ["0xleg0", "0xleg1"],
-          encryptedLegProof: "0xlegproof",
-          inputToken: cUsdc.address,
-        });
-        // cUSDC needs no conversion: the deposit starts straight after confirm.
-        expect(events).toEqual(["confirmed", "preview", "workflow"]);
+        const handoff = yield* flow.confirm;
+        events.push("confirmed");
+        const { close, execution } = yield* flow.startExecution(handoff);
+        const preparing = yield* execution.states.pipe(
+          Stream.runHead,
+          Effect.map(Option.getOrThrow)
+        );
+        yield* close;
+
+        expect(events).toEqual(["plan", "confirmed"]);
+        expect(
+          getClassicTransactionStepsView(preparing, {
+            preparedTransactionType: "DEPOSIT",
+            yieldId: confidentialYieldFixture().id,
+          }).txStates.map(({ type }) => type)
+        ).toEqual(["ENCRYPT", "RESET_APPROVAL", "APPROVAL", "WRAP", "DEPOSIT"]);
       })
   );
 
   it.effect(
-    "runs approve and wrap as steps after confirm, then starts the deposit",
+    "previews the prepared request, then approves, wraps, and deposits",
     () =>
       Effect.gen(function* () {
-        const plans: Array<{
-          readonly legs: { readonly values: unknown } | null;
-        }> = [];
+        const signed: Array<string> = [];
         const planned: Array<unknown> = [];
-        const { events } = yield* runReview({
-          confirm: true,
+        const flow = yield* openConfidentialFlow({
+          evmRpc: convertingRpc,
+          signTransaction: signedIds(signed),
           start: enterStart("underlying"),
           zama: {
-            conversionSteps: ({ amount, conversion }) =>
-              Effect.sync(() => {
-                planned.push({ amount, conversion });
-                return ["approve", "wrap"] as const;
+            planConversion: (input) =>
+              Effect.sync(() => planned.push(input)).pipe(
+                Effect.as([direct("APPROVAL"), direct("WRAP")])
+              ),
+            encryptCommand: ({ command }) =>
+              Effect.succeed({
+                ...command,
+                arguments: { encryptedAmount: "0xamount" },
               }),
-            encrypt: ({ plan }) =>
-              Effect.sync(() => {
-                plans.push(plan);
-                return encryption;
-              }),
-            wrappedAmount: ({ amount }) => Effect.succeed(amount / 2n),
           },
         });
 
-        expect(plans[0]?.legs?.values).toEqual([0n, 2_500_000n]);
+        const { close, execution } = yield* flow.startExecution(
+          yield* flow.confirm
+        );
+        yield* awaitState(execution, "Completed");
+        yield* close;
+
         expect(planned).toEqual([
           {
             amount: 5_000_000n,
@@ -315,387 +467,99 @@ describe("confidential vault Classic Transaction Flow", () => {
               underlying: usdc.address,
               wrapper: cUsdc.address,
             },
+            network: confidentialYieldFixture().network,
+            owner: address,
           },
         ]);
-        expect(events).toEqual([
-          "confirmed",
-          "preview",
-          "approve",
-          "wrap",
-          "workflow",
+        expect(flow.previews.map(({ command }) => command.arguments)).toEqual([
+          { encryptedAmount: "0xamount" },
+        ]);
+        expect(signed).toEqual([
+          "conversion-approval",
+          "conversion-wrap",
+          "deposit",
         ]);
       })
   );
 
   it.effect(
-    "retries only the failed conversion step before starting the deposit",
+    "neither re-reads the allowance nor wraps again when the user confirms after leaving Steps mid-wrap",
     () =>
       Effect.gen(function* () {
-        let wrapAttempts = 0;
-        const { events } = yield* runReview({
-          confirm: true,
-          retryFailedConversion: true,
+        const signed: Array<string> = [];
+        const waiting = yield* Deferred.make<void>();
+        let plans = 0;
+        const flow = yield* openConfidentialFlow({
+          evmRpc: {
+            ...convertingRpc,
+            // The first Steps is left while the wrap waits for its receipt.
+            awaitOutcome: () =>
+              Deferred.isDone(waiting).pipe(
+                Effect.flatMap((resumed) =>
+                  resumed
+                    ? Effect.succeed("Confirmed" as const)
+                    : Deferred.succeed(waiting, undefined).pipe(
+                        Effect.andThen(Effect.never)
+                      )
+                )
+              ),
+          },
+          signTransaction: signedIds(signed),
           start: enterStart("underlying"),
           zama: {
-            conversionSteps: () => Effect.succeed(["approve", "wrap"] as const),
-            convertStep: ({ step }) =>
-              step === "wrap" && wrapAttempts++ === 0
-                ? Effect.fail({ _tag: "ZamaError" } as never)
-                : Effect.succeed(0),
-            encrypt: () => Effect.succeed(encryption),
-            wrappedAmount: ({ amount }) => Effect.succeed(amount),
+            planConversion: () =>
+              Effect.sync(() => ++plans).pipe(Effect.as([direct("WRAP")])),
           },
         });
 
-        expect(events).toEqual([
-          "confirmed",
-          "preview",
-          "approve",
-          "wrap",
-          "retry",
-          "wrap",
-          "workflow",
+        const first = yield* flow.startExecution(yield* flow.confirm);
+        yield* Deferred.await(waiting);
+        yield* first.close;
+        const second = yield* flow.startExecution(yield* flow.confirm);
+        yield* awaitState(second.execution, "Completed");
+        yield* second.close;
+
+        expect(plans).toBe(1);
+        expect(signed).toEqual(["conversion-wrap", "deposit"]);
+      })
+  );
+
+  it.effect(
+    "does not wrap again when the user confirms after the deposit was cancelled",
+    () =>
+      Effect.gen(function* () {
+        const signed: Array<string> = [];
+        const flow = yield* openConfidentialFlow({
+          evmRpc: convertingRpc,
+          signTransaction: (input) =>
+            input.txMeta.txId === "deposit" &&
+            !signed.includes("cancelled-deposit")
+              ? Effect.sync(() => signed.push("cancelled-deposit")).pipe(
+                  Effect.andThen(
+                    Effect.fail(
+                      new WalletRequestCancelledError({
+                        operation: "transaction",
+                      })
+                    )
+                  )
+                )
+              : signedIds(signed)(input),
+          start: enterStart("underlying"),
+          zama: { planConversion: () => Effect.succeed([direct("WRAP")]) },
+        });
+
+        const first = yield* flow.startExecution(yield* flow.confirm);
+        yield* awaitState(first.execution, "SignFailed");
+        yield* first.close;
+        const second = yield* flow.startExecution(yield* flow.confirm);
+        yield* awaitState(second.execution, "Completed");
+        yield* second.close;
+
+        expect(signed).toEqual([
+          "conversion-wrap",
+          "cancelled-deposit",
+          "deposit",
         ]);
       })
-  );
-
-  it.effect(
-    "does not retry an action the API rejected as invalid after encryption",
-    () =>
-      Effect.gen(function* () {
-        const { events } = yield* runReview({
-          confirm: true,
-          previewAction: () =>
-            Effect.fail(
-              new InputValidationError({
-                cause: null,
-                issue: "invalid encrypted amount",
-                operation: "preview-action",
-              })
-            ),
-          retryRejectedConversion: true,
-          start: enterStart("asset"),
-          zama: {
-            encrypt: () => Effect.succeed(encryption),
-            revealTokenBalance: () => Effect.succeed(5_000_000n),
-          },
-        });
-
-        expect(events).toEqual(["confirmed", "preview", "retry"]);
-      })
-  );
-
-  it.effect("exits with encrypted share legs and no plain amounts", () =>
-    Effect.gen(function* () {
-      const plans: Array<unknown> = [];
-      const { requests } = yield* runReview({
-        confirm: true,
-        start: exitStart(),
-        zama: {
-          encrypt: ({ plan }) =>
-            Effect.sync(() => {
-              plans.push(plan);
-              return { ...encryption, amount: null };
-            }),
-        },
-      });
-
-      expect(plans).toEqual([
-        {
-          amount: null,
-          chainId: 11155111,
-          legs: { contract: router, values: [0n, 7_000_000n] },
-        },
-      ]);
-      expect(requests[0]).toMatchObject({ intent: "exit" });
-      expect(requests[0]?.command.arguments).toEqual({
-        encryptedLegAmounts: ["0xleg0", "0xleg1"],
-        encryptedLegProof: "0xlegproof",
-      });
-    })
-  );
-
-  it.effect(
-    "publicly decrypts the unwrap after confirm and withdraws with the proof",
-    () =>
-      Effect.gen(function* () {
-        const decrypted: Array<unknown> = [];
-        const { events, requests } = yield* runReview({
-          confirm: true,
-          start: withdrawUnwrapStart(),
-          zama: {
-            publicDecrypt: (input) =>
-              Effect.sync(() => {
-                decrypted.push(input);
-                return { cleartext: 7_000_000n, decryptionProof: "0xproof" };
-              }),
-          },
-        });
-
-        expect(events).toEqual(["confirmed", "preview", "workflow"]);
-        expect(decrypted).toEqual([
-          { chainId: 11155111, owner: address, requestId: "0xrequest" },
-        ]);
-        expect(requests[0]?.command.arguments).toMatchObject({
-          decryptedAmount: "7000000",
-          decryptionProof: "0xproof",
-        });
-      })
-  );
-
-  it.effect(
-    "rejects a cUSDC deposit above the decrypted balance before encrypting",
-    () =>
-      Effect.gen(function* () {
-        const { events, requests } = yield* runReview({
-          confirm: true,
-          retryRejectedConversion: true,
-          start: enterStart("asset"),
-          zama: {
-            encrypt: () => Effect.die("encrypted an over-balance deposit"),
-            revealTokenBalance: () => Effect.succeed(4_999_999n),
-          },
-        });
-
-        expect(requests).toEqual([]);
-        expect(events).toEqual(["confirmed", "retry"]);
-      })
-  );
-});
-
-const workflowFixture = {
-  dispatch: () => Effect.void,
-  states: Stream.never,
-};
-
-const convertingZama = (
-  events: Array<string>,
-  convertStep: ZamaService["Service"]["convertStep"] = () => Effect.succeed(0)
-): Partial<ZamaService["Service"]> => ({
-  conversionSteps: () => Effect.succeed(["approve", "wrap"] as const),
-  convertStep: (input) =>
-    Effect.sync(() => events.push(input.step)).pipe(
-      Effect.andThen(input.onBroadcast),
-      Effect.andThen(convertStep(input))
-    ),
-  encrypt: () => Effect.succeed(encryption),
-  wrappedAmount: ({ amount }) => Effect.succeed(amount),
-});
-
-const withSession = <A, E>(
-  options: Pick<
-    Parameters<typeof makeClassicFlowTestKit>[0],
-    "makeWorkflow" | "previewAction" | "zama"
-  >,
-  use: (
-    session: ClassicFlowSessionHandle
-  ) => Effect.Effect<
-    A,
-    E,
-    ClassicTransactionFlowService | ConfidentialValues | Scope.Scope
-  >
-) =>
-  Effect.gen(function* () {
-    const walletState = yield* SubscriptionRef.make<WalletState>(
-      makeConnectedWalletState(walletScope)
-    );
-    const kit = yield* makeClassicFlowTestKit({ ...options, walletState });
-    return yield* Effect.scoped(
-      Effect.gen(function* () {
-        const service = yield* ClassicTransactionFlowService;
-        const started = yield* service.start(enterStart("underlying"));
-        if (started._tag !== "Started") return yield* Effect.die(started);
-        return yield* use(yield* service.openSession(started.session));
-      })
-    ).pipe(Effect.provide(kit.layer));
-  });
-
-const confirmExecution = (session: ClassicFlowSessionHandle) =>
-  Effect.gen(function* () {
-    const review = yield* session.acquireReview(readyEligibility);
-    yield* review.states.pipe(
-      Stream.filter((state) => state.preview._tag === "Success"),
-      Stream.runHead
-    );
-    yield* review.confirm();
-    const outcome = yield* session.acquireExecution();
-    if (outcome._tag !== "Acquired") return yield* Effect.die(outcome);
-    return outcome.execution;
-  });
-
-const awaitConversion = (
-  execution: ClassicFlowExecutionHandle,
-  predicate: (conversion: ClassicFlowConversion) => boolean
-) =>
-  execution.conversion.pipe(
-    Stream.filter((conversion) => conversion !== null && predicate(conversion)),
-    Stream.runHead
-  );
-
-describe("confidential vault execution", () => {
-  it.effect(
-    "lists every conversion step and the deposit as soon as Steps opens",
-    () =>
-      Effect.gen(function* () {
-        const events: Array<string> = [];
-        const conversion = yield* withSession(
-          {
-            makeWorkflow: () => Effect.succeed(workflowFixture),
-            previewAction: () => Effect.succeed(yieldApiActionFixture()),
-            zama: {
-              ...convertingZama(events),
-              conversionSteps: () =>
-                Effect.sync(() => events.push("plan")).pipe(
-                  Effect.as(["approve-reset", "approve", "wrap"] as const)
-                ),
-              encrypt: () => Effect.never,
-            },
-          },
-          (session) =>
-            confirmExecution(session).pipe(
-              Effect.tap(() => Effect.sync(() => events.push("confirmed"))),
-              Effect.flatMap((execution) =>
-                awaitConversion(execution, () => true)
-              )
-            )
-        );
-
-        expect(events).toEqual(["plan", "confirmed"]);
-        expect(Option.getOrNull(conversion)).toMatchObject({
-          pendingTransactionType: "DEPOSIT",
-          steps: [
-            { step: "encrypt" },
-            { step: "approve-reset" },
-            { step: "approve" },
-            { step: "wrap" },
-          ],
-        });
-      })
-  );
-
-  it.effect(
-    "neither re-reads the allowance nor wraps again on a second confirm",
-    () =>
-      Effect.gen(function* () {
-        const events: Array<string> = [];
-        const workflows = yield* Queue.unbounded<void>();
-        yield* withSession(
-          {
-            makeWorkflow: () =>
-              Queue.offer(workflows, undefined).pipe(
-                Effect.as(workflowFixture)
-              ),
-            previewAction: () => Effect.succeed(yieldApiActionFixture()),
-            zama: {
-              ...convertingZama(events),
-              conversionSteps: () =>
-                Effect.sync(() => events.push("plan")).pipe(
-                  Effect.as(["approve", "wrap"] as const)
-                ),
-            },
-          },
-          (session) =>
-            Effect.gen(function* () {
-              yield* confirmExecution(session);
-              yield* Queue.take(workflows);
-              events.push("back");
-              yield* confirmExecution(session);
-              yield* Queue.take(workflows);
-            })
-        );
-
-        expect(events).toEqual(["plan", "approve", "wrap", "back"]);
-      })
-  );
-
-  it.effect(
-    "surfaces a workflow setup error raised after the conversion steps",
-    () =>
-      Effect.gen(function* () {
-        const error = yield* withSession(
-          {
-            makeWorkflow: () =>
-              Effect.fail(
-                new TransactionWorkflowInputError({
-                  message: "bad input",
-                  workflowId: "w",
-                })
-              ),
-            previewAction: () => Effect.succeed(yieldApiActionFixture()),
-            zama: convertingZama([]),
-          },
-          (session) =>
-            confirmExecution(session).pipe(
-              Effect.flatMap((execution) =>
-                execution.states.pipe(Stream.runHead, Effect.flip)
-              )
-            )
-        );
-
-        expect(error).toMatchObject({ message: "bad input" });
-      })
-  );
-
-  it.effect("forgets the revealed cUSDC balance once the wrap lands", () =>
-    Effect.gen(function* () {
-      const key = confidentialTokenBalanceKey({
-        owner: address,
-        token: confidentialYieldFixture().inputTokens[0]!,
-      });
-      const remaining = yield* withSession(
-        {
-          makeWorkflow: () => Effect.succeed(workflowFixture),
-          previewAction: () => Effect.succeed(yieldApiActionFixture()),
-          zama: convertingZama([]),
-        },
-        (session) =>
-          Effect.gen(function* () {
-            const values = yield* ConfidentialValues;
-            yield* values.add([[key, 1n]]);
-            const execution = yield* confirmExecution(session);
-            yield* awaitConversion(execution, (conversion) =>
-              conversion.steps.every((step) => step.status === "done")
-            );
-            return yield* values.current;
-          })
-      );
-
-      expect(remaining.has(key)).toBe(false);
-    })
-  );
-
-  it.effect("labels the deposit until the API prepares its transactions", () =>
-    Effect.gen(function* () {
-      const prepared = yield* Deferred.make<void>();
-      const deposit = yieldApiTransactionFixture({ type: "DEPOSIT" });
-      const action = yieldApiActionFixture({ transactions: [deposit] });
-      const [before, after] = yield* withSession(
-        {
-          makeWorkflow: () => Effect.succeed(workflowFixture),
-          // Holds the encrypted preview the execution prepares its action from.
-          previewAction: () => Deferred.await(prepared).pipe(Effect.as(action)),
-          zama: convertingZama([]),
-        },
-        (session) =>
-          Effect.gen(function* () {
-            const execution = yield* confirmExecution(session);
-            const before = yield* awaitConversion(execution, () => true);
-            yield* Deferred.succeed(prepared, undefined);
-            const after = yield* awaitConversion(
-              execution,
-              (conversion) => conversion.pendingTransactionType === null
-            );
-            return [before, after] as const;
-          })
-      );
-
-      expect(Option.getOrNull(before)).toMatchObject({
-        pendingTransactionType: "DEPOSIT",
-        transactions: [],
-      });
-      expect(Option.getOrNull(after)?.transactions.map(({ id }) => id)).toEqual(
-        [deposit.id]
-      );
-    })
   );
 });

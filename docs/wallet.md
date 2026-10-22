@@ -23,13 +23,14 @@ flowchart TB
   subgraph State["features/wallet/state (Effect Atom adapters)"]
     PickerAtom["connectPickerAtom<br/>picker rows from connectors + availability"]
     ConnectCmd["connectWalletAtom<br/>connect with initialChain"]
-    PresSvc["WalletPresentationService<br/>account / chain dialog workflows"]
+    PresAtoms["account-presentation<br/>copied feedback, chain selection Atoms"]
     Model["model/connect-picker.ts<br/>availability policy, grouping, initialChain"]
   end
 
   subgraph Svc["services/wallet (WalletService and friends)"]
     WS["WalletService<br/>connect, logout, sign*, switchChain,<br/>state stream, connectors, availability"]
     Modal["WalletModal<br/>connectOpen, chainOpen, presentationOpen"]
+    ChainSel["WalletChainSelection<br/>one chain switch at a time,<br/>pending / failed selection"]
     Desc["wallet-descriptors<br/>WalletDescriptor, WalletAvailability,<br/>connectorsForWallets"]
     Errors["wallet-errors<br/>WalletNotAvailableError, ..."]
   end
@@ -68,12 +69,13 @@ flowchart TB
   User --> Btn & Picker & Account & Chain
   Btn & Picker & Account & Chain --> Dialog
   Picker --> PickerAtom & ConnectCmd
-  Account & Chain --> PresSvc
+  Account & Chain --> PresAtoms
   PickerAtom --> Model
   ConnectCmd --> Model
   PickerAtom --> WS
   ConnectCmd --> WS
-  PresSvc --> WS
+  PresAtoms --> WS & ChainSel
+  ChainSel --> WS & Modal
   PickerAtom & Account & Chain --> Modal
 
   WS --> Boot & Proj & Router
@@ -107,7 +109,8 @@ flowchart TB
 | `ui/account-modal`, `ui/chain-modal` | Account actions and network switching; Ledger chains not yet added route to "add Ledger account". |
 | `model/connect-picker.ts` | Plain functions: the availability policy, grouping, first-paint placement, and `connectionChainId` (host `initialChain` when the wallet supports it). |
 | `state/wallet-modal.ts` | `connectPickerAtom` and `connectWalletAtom`: shallow adapters between the picker and `WalletService`. |
-| `WalletPresentationService` | Feature service for account and chain dialog workflows. |
+| `state/account-presentation.ts` | Copied-address feedback, held in Atoms, and the Atoms that project `WalletChainSelection` for the chain dialogs. |
+| `WalletChainSelection` | Chain switching from the header network dialog or a surface's own picker. Runs one switch at a time and publishes the current wallet's pending or failed selection, which every surface reads. A selection ends with the dialog or Scope that started it. |
 | `WalletService` | The wallet runtime's single entry point: `connect`, `logout`, `signMessage`, `signTypedData`, `signTransaction`, `switchChain`, `switchAccount`, `addLedgerAccount`, the Wallet State stream, `connectors`, and the per-wallet `availability` cache with `detectAvailability`. |
 | `WalletModal` | Open state of the connect and chain dialogs, plus `presentationOpen` while AppKit or TonConnect's modal is visible. |
 | `wallet-descriptors.ts` | The owned wallet catalogue format. Each wallet declares `availability`: `Remote` or `Injected { detect, installUrl? }`. `connectorsForWallets` turns descriptors into wagmi connectors. |

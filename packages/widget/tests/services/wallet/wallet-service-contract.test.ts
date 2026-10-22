@@ -8,7 +8,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
-import { zeroAddress } from "viem";
+import { BaseError, UserRejectedRequestError, zeroAddress } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import { expectTypeOf } from "vitest";
 import type { Connector } from "wagmi";
@@ -19,6 +19,7 @@ import { WidgetConfigService } from "../../../src/services/config/widget-config"
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
+import { ExternalProviderError } from "../../../src/services/wallet/external-provider";
 import {
   SolanaPlatform,
   type SolanaRuntime,
@@ -28,9 +29,11 @@ import { WalletEnvironment } from "../../../src/services/wallet/internal/platfor
 import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
 import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
 import { WalletConnectorSource } from "../../../src/services/wallet/wallet-connector-source";
-import type {
+import {
+  WalletBroadcastError,
   WalletIntegrationError,
-  WalletRuntimeInvariantError,
+  type WalletRuntimeInvariantError,
+  WalletSigningError,
 } from "../../../src/services/wallet/wallet-errors";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
@@ -94,9 +97,12 @@ const transaction = JSON.stringify({
 
 const makeOwnerLayer = ({
   core,
+  failure,
   signMessage = () => Effect.succeed("0xmessage"),
 }: {
   readonly core: SubscriptionRef.SubscriptionRef<WalletCoreState>;
+  /** The wallet's own error, as its adapter reports it, for every signing action. */
+  readonly failure?: Readonly<{ readonly cause: unknown }>;
   readonly signMessage?: (input: {
     readonly message: string;
   }) => Effect.Effect<string>;
@@ -108,12 +114,37 @@ const makeOwnerLayer = ({
   };
   const configLayer = WidgetConfigService.layer(settings);
   const controller = makeWalletTestController({
-    actions: {
-      sendEvmTransaction: () =>
-        Effect.succeed({ broadcasted: true, signedTx: transactionHash }),
-      signMessage,
-      signTypedData: () => Effect.succeed("0xtyped"),
-    },
+    actions:
+      failure === undefined
+        ? {
+            sendEvmTransaction: () =>
+              Effect.succeed({ broadcasted: true, signedTx: transactionHash }),
+            signMessage,
+            signTypedData: () => Effect.succeed("0xtyped"),
+          }
+        : {
+            sendEvmTransaction: () =>
+              Effect.fail(
+                new WalletBroadcastError({
+                  cause: failure.cause,
+                  customMessage: null,
+                })
+              ),
+            signMessage: () =>
+              Effect.fail(
+                new WalletSigningError({
+                  cause: failure.cause,
+                  operation: "message",
+                })
+              ),
+            signTypedData: () =>
+              Effect.fail(
+                new WalletSigningError({
+                  cause: failure.cause,
+                  operation: "typed-data",
+                })
+              ),
+          },
     evmConfig: {
       evmChains: [mainnet, optimism],
       evmChainsMap: {
@@ -234,6 +265,11 @@ const mismatch = (
   failure: { _tag: "WalletOwnerMismatchError", operation, reason },
 });
 
+const cancelled = (operation: "message" | "transaction" | "typed-data") => ({
+  _tag: "Failure",
+  failure: { _tag: "WalletRequestCancelledError", operation },
+});
+
 describe("wallet service contract", () => {
   it("defines Effect commands without a React dependency", () => {
     expectTypeOf<
@@ -343,6 +379,81 @@ describe("wallet service contract", () => {
           return yield* Fiber.join(signing);
         }).pipe(Effect.scoped, Effect.provide(layer))
       ).toBe("0xstarted");
+    })
+  );
+
+  it.effect.each([
+    [
+      "an EVM wallet",
+      // Wagmi wraps the wallet's EIP-1193 rejection in its own error.
+      new BaseError("Transaction failed.", {
+        cause: new UserRejectedRequestError(
+          new Error("User denied transaction signature.")
+        ),
+      }),
+    ],
+    [
+      "TonConnect",
+      new WalletIntegrationError({
+        cause: new Error(
+          "[TON_CONNECT_SDK_ERROR] UserRejectsError: User rejects the action in the wallet."
+        ),
+        message: "User rejects the action in the wallet.",
+        operation: "ton-send-transaction",
+      }),
+    ],
+  ])("reports a request the user rejected in %s as cancelled", ([, cause]) =>
+    Effect.gen(function* () {
+      const core = yield* SubscriptionRef.make<WalletCoreState>({
+        connection: connection(),
+        connectors: [connector],
+      });
+
+      expect(
+        yield* signEach.pipe(
+          Effect.scoped,
+          Effect.provide(makeOwnerLayer({ core, failure: { cause } }))
+        )
+      ).toMatchObject({
+        message: cancelled("message"),
+        transaction: cancelled("transaction"),
+        typedData: cancelled("typed-data"),
+      });
+    })
+  );
+
+  it.effect.each([
+    [
+      "a wallet failure",
+      new BaseError("Transaction failed.", {
+        cause: new Error("insufficient funds for gas * price + value"),
+      }),
+    ],
+    ["a wallet failure without detail", undefined],
+    [
+      "a host provider's own error",
+      new ExternalProviderError({
+        customMessage: "Request rejected by host policy",
+        message: "Request rejected by host policy",
+      }),
+    ],
+  ])("keeps %s a failure", ([, cause]) =>
+    Effect.gen(function* () {
+      const core = yield* SubscriptionRef.make<WalletCoreState>({
+        connection: connection(),
+        connectors: [connector],
+      });
+
+      expect(
+        yield* signEach.pipe(
+          Effect.scoped,
+          Effect.provide(makeOwnerLayer({ core, failure: { cause } }))
+        )
+      ).toMatchObject({
+        message: { failure: { _tag: "WalletSigningError" } },
+        transaction: { failure: { _tag: "WalletBroadcastError" } },
+        typedData: { failure: { _tag: "WalletSigningError" } },
+      });
     })
   );
 });

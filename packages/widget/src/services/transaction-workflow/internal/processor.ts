@@ -3,6 +3,7 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
+  makeDirectTransactionLedger,
   type TransactionWorkflowAction,
   type TransactionWorkflowContext,
   type TransactionWorkflowInput,
@@ -10,18 +11,22 @@ import {
   type TransactionWorkflowState,
 } from "../transaction-workflow-model";
 import { makeAdvanceBatch } from "./advancement";
+import { makeCheckApproval } from "./approval-check";
 import { makeConfirmCurrent } from "./confirmation";
 import {
   getTransactionWorkflowAction,
   getTransactionWorkflowId,
   updateCurrentTransactionWorkflowTransaction,
 } from "./model";
+import { makePrepareAction } from "./preparation";
 import { makePrepareAndSign } from "./signing";
 import { makeSubmitCurrent } from "./submission";
 
 export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
   const advanceBatch = yield* makeAdvanceBatch;
+  const checkApproval = yield* makeCheckApproval;
   const confirmCurrent = yield* makeConfirmCurrent;
+  const prepareAction = yield* makePrepareAction;
   const prepareAndSign = yield* makePrepareAndSign;
   const submitCurrent = yield* makeSubmitCurrent;
 
@@ -32,11 +37,17 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
     stateRef,
   }: {
     readonly input: TransactionWorkflowInput;
-    readonly queue: Queue.Queue<TransactionWorkflowAction>;
+    /** The failed states Retry was dispatched from, oldest first. */
+    readonly queue: Queue.Queue<TransactionWorkflowState>;
     /** Announces that on-chain state owned by the workflow wallet changed. */
     readonly resourcesChanged: Effect.Effect<void>;
     readonly stateRef: SubscriptionRef.SubscriptionRef<TransactionWorkflowState>;
   }) => {
+    // Only a confidential workflow holds Direct transactions.
+    const ledger =
+      input._tag === "Confidential"
+        ? input.ledger
+        : makeDirectTransactionLedger();
     const complete = (context: TransactionWorkflowContext) =>
       SubscriptionRef.set(stateRef, { _tag: "Completed", context });
 
@@ -93,6 +104,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
           context,
           input,
           latestContextRef,
+          ledger,
         }).pipe(
           Effect.matchEffect({
             onFailure: (error) =>
@@ -127,7 +139,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
       context: TransactionWorkflowContext
     ): Effect.Effect<void> =>
       SubscriptionRef.set(stateRef, { _tag: "Submitting", context }).pipe(
-        Effect.andThen(submitCurrent(context)),
+        Effect.andThen(submitCurrent({ context, ledger })),
         Effect.matchEffect({
           onFailure: (error) =>
             SubscriptionRef.set(stateRef, {
@@ -143,8 +155,17 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
       context: TransactionWorkflowContext
     ): Effect.Effect<void> =>
       SubscriptionRef.set(stateRef, { _tag: "Signing", context }).pipe(
-        Effect.andThen(
-          prepareAndSign({ context, expectedOwner: input.walletScope })
+        Effect.andThen(checkApproval(context)),
+        Effect.filterOrElse(
+          (check) => check._tag === "Continue",
+          () =>
+            prepareAndSign({
+              context,
+              expectedOwner: input.walletScope,
+              ledger,
+            }).pipe(
+              Effect.map((signed) => ({ _tag: "Signed", signed }) as const)
+            )
         ),
         Effect.matchEffect({
           onFailure: (error) =>
@@ -163,7 +184,10 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
               }),
               error,
             }),
-          onSuccess: (signed) => {
+          onSuccess: (result) => {
+            // An approval that was skipped, or now resets first, moves on.
+            if (result._tag === "Continue") return runCurrent(result.context);
+            const { signed } = result;
             const current = getCurrentTransactionWorkflowTransaction(signed);
             const batch = getCurrentTransactionWorkflowBatch(signed);
 
@@ -171,7 +195,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
               return Effect.die(
                 new TransactionWorkflowInvariantError({
                   message: "Signing completed without a current transaction.",
-                  workflowId: getTransactionWorkflowId(input),
+                  workflowId: getTransactionWorkflowId(signed.domain),
                 })
               );
             }
@@ -195,11 +219,36 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
         : runSigning(context);
     };
 
+    const runPreparation = (
+      context: TransactionWorkflowContext
+    ): Effect.Effect<void> =>
+      input._tag === "Confidential"
+        ? SubscriptionRef.set(stateRef, { _tag: "Preparing", context }).pipe(
+            Effect.andThen(prepareAction({ context, input })),
+            Effect.matchEffect({
+              onFailure: (error) =>
+                SubscriptionRef.set(stateRef, {
+                  _tag: "PrepareFailed",
+                  context,
+                  error,
+                }),
+              onSuccess: runCurrent,
+            })
+          )
+        : Effect.die(
+            new TransactionWorkflowInvariantError({
+              message: "Only a confidential workflow prepares its action.",
+              workflowId: getTransactionWorkflowId(context.domain),
+            })
+          );
+
     const execute = (
       action: TransactionWorkflowAction,
       context: TransactionWorkflowContext
     ) => {
       switch (action) {
+        case "prepare":
+          return runPreparation(context);
         case "sign":
           return runSigning(context);
         case "submit":
@@ -214,6 +263,8 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
     const initial = SubscriptionRef.get(stateRef).pipe(
       Effect.flatMap((state) => {
         switch (state._tag) {
+          case "Preparing":
+            return runPreparation(state.context);
           case "Signing":
             return runSigning(state.context);
           case "Confirming":
@@ -223,6 +274,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
           case "Completed":
             return complete(state.context);
           case "Disabled":
+          case "PrepareFailed":
           case "SignFailed":
           case "Submitting":
           case "SubmissionFailed":
@@ -233,18 +285,20 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
       })
     );
 
+    // A Retry answers the failure it saw; a later failure needs its own.
     const commands = Queue.take(queue).pipe(
-      Effect.flatMap((queuedAction) =>
+      Effect.flatMap((retried) =>
         SubscriptionRef.get(stateRef).pipe(
           Effect.flatMap((state) => {
-            const action = getTransactionWorkflowAction({
-              command: { _tag: "Retry" },
-              state,
-            });
+            const action =
+              state === retried
+                ? getTransactionWorkflowAction({
+                    command: { _tag: "Retry" },
+                    state,
+                  })
+                : null;
 
-            return action === queuedAction
-              ? execute(action, state.context)
-              : Effect.void;
+            return action ? execute(action, state.context) : Effect.void;
           })
         )
       ),

@@ -39,10 +39,10 @@ export const BorrowCompletePage = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
-  const settled = useAtomValue(flow.settledPositionAtom);
-  const execution = useBorrowExecution();
   const executionFlow = useBorrowTransactionFlowExecution();
-  const done = useAtomSet(executionFlow.finishAtom);
+  const settled = useAtomValue(executionFlow.settledPositionAtom);
+  const execution = useBorrowExecution();
+  const done = useAtomSet(executionFlow.leaveAtom);
   const result = execution.completionResult;
   const { summary } = flow.intake;
   const completion = projectBorrowCompletion({

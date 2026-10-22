@@ -12,7 +12,7 @@ source of truth for behavior.
 | Work | Read |
 | --- | --- |
 | Ownership, dependency direction, and Module interfaces | `packages/widget/ARCHITECTURE.md` |
-| Project vocabulary | `CONTEXT.md` |
+| Project vocabulary | `GLOSSARY.md` |
 | A decision that constrains the change | The relevant current file in `docs/adr/` |
 | Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
 | Local issues, domain docs, and triage | `docs/agents/` |

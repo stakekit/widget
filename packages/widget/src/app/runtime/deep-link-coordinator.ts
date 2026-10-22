@@ -4,7 +4,7 @@ import {
   type WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
-import { ClassicTransactionFlowService as ClassicFlow } from "../../features/classic-transaction-flow/runtime";
+import { makeStartClassicTransactionFlow } from "../../features/classic-transaction-flow/runtime";
 import { getPositionDetailsHubPath } from "../../features/position-details/index";
 import {
   toWidgetPath,
@@ -16,7 +16,9 @@ import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 
-type ClassicFlowStartInput = Parameters<ClassicFlow["Service"]["start"]>[0];
+type ClassicFlowStartInput = Parameters<
+  Effect.Success<typeof makeStartClassicTransactionFlow>
+>[0];
 
 type PendingActionIntent = Readonly<{
   readonly address: WalletScopeKey["address"];
@@ -93,7 +95,7 @@ export class DeepLinkCoordinator extends Context.Service<
   static readonly layer = Layer.effect(
     DeepLinkCoordinator,
     Effect.gen(function* () {
-      const classicFlow = yield* ClassicFlow;
+      const startClassicFlow = yield* makeStartClassicTransactionFlow;
       const navigation = yield* WidgetNavigation;
       const serial = yield* makeScopedSerialOperations();
       const wallet = yield* WalletService;
@@ -172,9 +174,9 @@ export class DeepLinkCoordinator extends Context.Service<
             .pipe(Effect.as(true));
         }
 
-        return classicFlow
-          .start(pendingAction.input)
-          .pipe(Effect.map((outcome) => outcome._tag === "Started"));
+        return startClassicFlow(pendingAction.input).pipe(
+          Effect.map((outcome) => outcome._tag === "Started")
+        );
       };
 
       const consider = Effect.fn("DeepLinkCoordinator.consider")(function* (

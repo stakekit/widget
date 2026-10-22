@@ -11,16 +11,16 @@ import { TrackingService } from "../../services/tracking/tracking-service";
 import { WidgetTranslation } from "../../services/translation/widget-translation";
 import { WalletClipboard } from "../../services/wallet/wallet-clipboard";
 import { WalletModal } from "../../services/wallet/wallet-modal";
-import { ConfidentialValues } from "../../services/zama/confidential-values";
+import { RevealedBalances } from "../../services/zama/revealed-balances";
 import { applicationBaseRuntime } from "./application-base-runtime";
 
 const makeAppLayer = (get: Atom.AtomContext) => {
   const baseLayer = get(applicationBaseRuntime.layer);
   const richErrorLayer = RichErrorService.layer.pipe(Layer.provide(baseLayer));
   const geoBlockLayer = GeoBlockService.layer;
-  const confidentialValuesLayer = ConfidentialValues.layer;
+  const revealedBalancesLayer = RevealedBalances.layer;
   const applicationApiLayer = apiLayer.pipe(
-    Layer.provide(confidentialValuesLayer),
+    Layer.provide(revealedBalancesLayer),
     Layer.provide(geoBlockLayer),
     Layer.provide(richErrorLayer),
     Layer.provide(baseLayer)
@@ -45,7 +45,7 @@ const makeAppLayer = (get: Atom.AtomContext) => {
     WidgetDomainEvents.layer,
     WalletClipboard.layer,
     WalletModal.layer,
-    confidentialValuesLayer
+    revealedBalancesLayer
   );
 };
 

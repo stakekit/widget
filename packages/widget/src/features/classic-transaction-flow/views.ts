@@ -1,7 +1,6 @@
 export {
   YieldActionContinuationCompletePage,
-  YieldActionContinuationExecutionScope,
-  YieldActionContinuationReviewScope,
+  YieldActionContinuationExecution,
   YieldActionContinuationSessionRoute,
   YieldActionContinuationStepsPage,
 } from "./ui/yield-action-continuation";

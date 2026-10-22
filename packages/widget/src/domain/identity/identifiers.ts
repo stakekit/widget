@@ -22,6 +22,11 @@ export const TransactionId = Schema.NonEmptyString.pipe(
 );
 export type TransactionId = typeof TransactionId.Type;
 
+export const TransactionWorkflowId = Schema.NonEmptyString.pipe(
+  Schema.brand("TransactionWorkflowId")
+);
+export type TransactionWorkflowId = typeof TransactionWorkflowId.Type;
+
 export const WalletAddress = Schema.NonEmptyString.pipe(
   Schema.brand("WalletAddress")
 );

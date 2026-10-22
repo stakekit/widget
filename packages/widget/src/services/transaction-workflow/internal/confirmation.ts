@@ -5,12 +5,15 @@ import {
   isUnsuccessfulBorrowActionStatus,
 } from "../../../domain/borrow/execution/action";
 import { BorrowOperations, YieldOperations } from "../../api/operations";
+import { EvmRpc } from "../../evm-rpc/evm-rpc";
 import {
+  type DirectTransactionLedger,
   TransactionConfirmationError,
   type TransactionWorkflowContext,
   type TransactionWorkflowInput,
 } from "../transaction-workflow-model";
 import { requireCurrentWorkflow } from "./current";
+import { recordDirectTransaction } from "./ledger";
 import {
   isTransactionWorkflowDoneStatus,
   reconcileBorrowTransactionWorkflowBatch,
@@ -34,8 +37,9 @@ type ConfirmationCheckResult =
     };
 
 export const makeConfirmCurrent = Effect.gen(function* () {
-  const [borrowOperations, yieldOperations] = yield* Effect.all([
+  const [borrowOperations, evmRpc, yieldOperations] = yield* Effect.all([
     BorrowOperations,
+    EvmRpc,
     YieldOperations,
   ]);
 
@@ -43,10 +47,12 @@ export const makeConfirmCurrent = Effect.gen(function* () {
     context,
     input,
     latestContextRef,
+    ledger,
   }: {
     readonly context: TransactionWorkflowContext;
     readonly input: TransactionWorkflowInput;
     readonly latestContextRef: Ref.Ref<TransactionWorkflowContext>;
+    readonly ledger: DirectTransactionLedger;
   }) {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
@@ -60,6 +66,66 @@ export const makeConfirmCurrent = Effect.gen(function* () {
         transactionId: source.transaction.id,
         workflowId,
       });
+
+    if (current._tag === "Direct") {
+      const direct = current.transaction.source.transaction;
+      const { chainId } = direct;
+      const hash = current.transaction.meta.signedTx as `0x${string}` | null;
+      if (!hash) return yield* fail("The transaction hash is not available.");
+      const outcome = yield* evmRpc
+        .awaitOutcome({ chainId, hash })
+        .pipe(
+          Effect.mapError((cause) =>
+            fail("The transaction receipt could not be read.", cause)
+          )
+        );
+
+      if (outcome !== "Confirmed") {
+        // Nothing was spent, so Retry signs it again.
+        yield* recordDirectTransaction(ledger, direct, null);
+        yield* Ref.update(latestContextRef, (latest) =>
+          updateCurrentTransactionWorkflowTransaction({
+            context: latest,
+            update: (current) => ({
+              ...current,
+              meta: {
+                ...current.meta,
+                broadcasted: null,
+                signedTx: null,
+                submissionIndex: null,
+              },
+            }),
+          })
+        );
+        return yield* fail(
+          outcome === "Reverted"
+            ? "The transaction reverted."
+            : "The transaction was dropped."
+        );
+      }
+
+      yield* recordDirectTransaction(ledger, direct, {
+        _tag: "Confirmed",
+        hash,
+      });
+      return {
+        context: selectNextTransactionWorkflowTransaction(
+          updateCurrentTransactionWorkflowTransaction({
+            context,
+            update: (current) => ({
+              ...current,
+              meta: {
+                ...current.meta,
+                confirmationError: null,
+                done: true,
+                signError: null,
+                url: evmRpc.explorerUrl({ chainId, hash }),
+              },
+            }),
+          })
+        ),
+      };
+    }
 
     const check = Match.value(current).pipe(
       Match.tag("Classic", ({ transaction }) => {
@@ -173,13 +239,13 @@ export const makeConfirmCurrent = Effect.gen(function* () {
       Match.exhaustive
     );
 
-    const pollAttempts = input._tag === "Classic" ? 75 : 20;
+    const pollAttempts = input._tag === "Borrow" ? 20 : 75;
     const result = yield* check.pipe(
       Effect.retry({
         schedule: Schedule.spaced(
           Duration.max(
             Duration.zero,
-            input._tag === "Classic" ? Duration.seconds(4) : Duration.seconds(2)
+            input._tag === "Borrow" ? Duration.seconds(2) : Duration.seconds(4)
           )
         ),
         times: pollAttempts - 1,

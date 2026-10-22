@@ -1,6 +1,15 @@
 import type { BaseSigner, EIP712TypedData, ZamaSDK } from "@zama-fhe/sdk";
 import type { FheChain } from "@zama-fhe/sdk/chains";
-import { Context, Data, Effect, FiberSet, Layer, Schema, Stream } from "effect";
+import {
+  Context,
+  Data,
+  Effect,
+  FiberSet,
+  Layer,
+  Option,
+  Schema,
+  Stream,
+} from "effect";
 import {
   type Address,
   createPublicClient,
@@ -10,33 +19,81 @@ import {
   erc20Abi,
   type Hex,
   http,
-  numberToHex,
   type PublicClient,
   parseAbi,
 } from "viem";
+import {
+  type DirectTransaction,
+  makeErc20Approval,
+} from "../../domain/action/direct-transaction";
+import type {
+  ActionCommand,
+  ManageActionCommand,
+} from "../../domain/action/models";
 import {
   type ConfidentialConversion,
   type ConfidentialEncryption,
   type ConfidentialEncryptionPlan,
   type ConfidentialHandle,
-  confidentialTokenBalanceKey,
+  ConfidentialTokenBalanceKey,
   getConfidentialNetwork,
+  planConfidentialEncryption,
+  toConfidentialArguments,
 } from "../../domain/earn/confidential";
-import { TransactionId } from "../../domain/identity/identifiers";
+import type { EarnYieldWithProvider } from "../../domain/earn/models";
 import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
-import type { WalletScopeOwner } from "../../domain/wallet/wallet-scope";
 import { WidgetConfigService } from "../config/widget-config";
+import { WidgetDomainEvents } from "../events/widget-domain-events";
 import type { Eip712TypedData } from "../wallet/wallet-commands";
 import { WalletService } from "../wallet/wallet-service";
-import type { ClassicActionMeta } from "../wallet/wallet-transactions";
-import { ConfidentialValues } from "./confidential-values";
-
-export type ConfidentialConversionStep = "approve-reset" | "approve" | "wrap";
+import { RevealedBalances } from "./revealed-balances";
 
 class ZamaError extends Data.TaggedError("ZamaError")<{
   readonly cause: unknown;
   readonly operation: string;
+}> {}
+
+/**
+ * How a confidential vault's action command gets its hidden amount: the
+ * amount encrypted for the signing wallet, or a withdrawal decrypted publicly.
+ */
+export type ConfidentialPreparation =
+  | ConfidentialEncryptPreparation
+  | ConfidentialDecryptPreparation;
+
+type ConfidentialEncryptPreparation = Readonly<{
+  readonly _tag: "Encrypt";
+  readonly amount: bigint;
+  readonly assetAddress: string | null;
+  /** The hidden balance `amount` must not exceed, if it is not wrapped first. */
+  readonly balance: Readonly<{
+    readonly chainId: number;
+    readonly token: Token;
+  }> | null;
+  readonly command: ActionCommand;
+  readonly conversion: ConfidentialConversion | null;
+  readonly instant: boolean;
+  readonly intent: "enter" | "exit";
+  /** A deposit whose balance the wallet could never reveal to withdraw. */
+  readonly requiresPermitSigner: boolean;
+  readonly yieldDto: EarnYieldWithProvider;
+}>;
+
+type ConfidentialDecryptPreparation = Readonly<{
+  readonly _tag: "Decrypt";
+  readonly chainId: number;
+  readonly command: ManageActionCommand;
+  readonly handle: string;
+}>;
+
+export class ConfidentialPreparationError extends Data.TaggedError(
+  "ConfidentialPreparationError"
+)<{
+  readonly cause: unknown;
+  readonly message: string;
+  /** False when the request itself cannot be prepared, so retrying cannot help. */
+  readonly retryable: boolean;
 }> {}
 
 const wrapperAbi = parseAbi([
@@ -73,36 +130,25 @@ type HandleInput = Readonly<{
   readonly handle: ConfidentialHandle;
 }>;
 
-type PublicDecryption = Readonly<{
-  readonly cleartext: bigint;
-  readonly decryptionProof: string;
-}>;
 type ZamaServiceApi = Readonly<{
-  readonly conversionSteps: (input: {
-    readonly amount: bigint;
-    readonly conversion: ConfidentialConversion;
-    readonly owner: string;
-  }) => Effect.Effect<ReadonlyArray<ConfidentialConversionStep>, ZamaError>;
-  readonly convertStep: (input: {
-    readonly actionMeta: ClassicActionMeta;
+  /**
+   * The approve and wrap that turn `amount` of the underlying token into its
+   * confidential wrapper, by the owner's current allowance.
+   */
+  readonly planConversion: (input: {
     readonly amount: bigint;
     readonly conversion: ConfidentialConversion;
     readonly network: Network;
-    /** Runs once the wallet has signed or broadcast, before the receipt arrives. */
-    readonly onBroadcast: Effect.Effect<void>;
     readonly owner: string;
-    readonly step: ConfidentialConversionStep;
-    readonly walletScope: WalletScopeOwner;
-  }) => Effect.Effect<void, ZamaError>;
-  readonly publicDecrypt: (input: {
-    readonly chainId: number;
-    readonly owner: string;
-    readonly requestId: string;
-  }) => Effect.Effect<PublicDecryption, ZamaError>;
-  readonly encrypt: (input: {
-    readonly owner: string;
-    readonly plan: ConfidentialEncryptionPlan;
-  }) => Effect.Effect<ConfidentialEncryption, ZamaError>;
+  }) => Effect.Effect<ReadonlyArray<DirectTransaction>>;
+  /** A deposit's or exit's command with its amount encrypted instead. */
+  readonly encryptCommand: (
+    preparation: ConfidentialEncryptPreparation
+  ) => Effect.Effect<ActionCommand, ConfidentialPreparationError>;
+  /** An unwrap withdrawal's command with its publicly decrypted amount. */
+  readonly decryptCommand: (
+    preparation: ConfidentialDecryptPreparation
+  ) => Effect.Effect<ManageActionCommand, ConfidentialPreparationError>;
   readonly revealHandles: (input: {
     readonly chainId: number;
     readonly handles: ReadonlyArray<HandleInput>;
@@ -112,10 +158,6 @@ type ZamaServiceApi = Readonly<{
     readonly chainId: number;
     readonly owner: string;
     readonly token: Token;
-  }) => Effect.Effect<bigint, ZamaError>;
-  readonly wrappedAmount: (input: {
-    readonly amount: bigint;
-    readonly conversion: ConfidentialConversion;
   }) => Effect.Effect<bigint, ZamaError>;
 }>;
 
@@ -137,7 +179,8 @@ const tryZama = <A>(operation: string, run: () => Promise<A>) =>
 const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const wallet = yield* WalletService;
   const widgetConfig = yield* WidgetConfigService;
-  const values = yield* ConfidentialValues;
+  const values = yield* RevealedBalances;
+  const events = yield* WidgetDomainEvents;
   const runPromise = yield* FiberSet.makeRuntimePromise();
 
   // Lazy: the SDK pulls in FHE WASM.
@@ -162,6 +205,18 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     Stream.changes,
     Stream.drop(1),
     Stream.runForEach(() => values.clear),
+    Effect.forkScoped
+  );
+
+  // A revealed balance is stale once a Classic workflow moved funds.
+  yield* events.events.pipe(
+    Stream.runForEach((event) =>
+      (event._tag === "TransactionWorkflowResourcesChanged" ||
+        event._tag === "TransactionWorkflowEnded") &&
+      event.workflowKind === "Classic"
+        ? values.forgetTokenBalancesOf(event.owner)
+        : Effect.void
+    ),
     Effect.forkScoped
   );
 
@@ -301,39 +356,43 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     return publicClientFor(yield* getChain(yield* modules, chainId));
   });
 
-  const encrypt: ZamaServiceApi["encrypt"] = Effect.fn("ZamaService.encrypt")(
-    function* ({ owner, plan }) {
-      const sdk = yield* getSdk(plan.chainId, owner);
-      const encryptValues = (contract: string, inputs: ReadonlyArray<bigint>) =>
-        tryZama("encrypt", () =>
-          sdk.encrypt({
-            contractAddress: contract as Address,
-            userAddress: owner as Address,
-            values: inputs.map((value) => ({ type: "euint64", value })),
-          })
-        );
+  const encrypt = Effect.fn("ZamaService.encrypt")(function* ({
+    owner,
+    plan,
+  }: {
+    readonly owner: string;
+    readonly plan: ConfidentialEncryptionPlan;
+  }): Effect.fn.Return<ConfidentialEncryption, ZamaError> {
+    const sdk = yield* getSdk(plan.chainId, owner);
+    const encryptValues = (contract: string, inputs: ReadonlyArray<bigint>) =>
+      tryZama("encrypt", () =>
+        sdk.encrypt({
+          contractAddress: contract as Address,
+          userAddress: owner as Address,
+          values: inputs.map((value) => ({ type: "euint64", value })),
+        })
+      );
 
-      const [amount, legs] = yield* Effect.all([
-        plan.amount
-          ? encryptValues(plan.amount.contract, [plan.amount.value])
-          : Effect.succeed(null),
-        plan.legs
-          ? encryptValues(plan.legs.contract, plan.legs.values)
-          : Effect.succeed(null),
-      ]);
-      const amountHandle = amount?.encryptedValues[0];
+    const [amount, legs] = yield* Effect.all([
+      plan.amount
+        ? encryptValues(plan.amount.contract, [plan.amount.value])
+        : Effect.succeed(null),
+      plan.legs
+        ? encryptValues(plan.legs.contract, plan.legs.values)
+        : Effect.succeed(null),
+    ]);
+    const amountHandle = amount?.encryptedValues[0];
 
-      return {
-        amount:
-          amount && amountHandle
-            ? { handle: amountHandle, proof: amount.inputProof }
-            : null,
-        legs: legs
-          ? { handles: legs.encryptedValues, proof: legs.inputProof }
+    return {
+      amount:
+        amount && amountHandle
+          ? { handle: amountHandle, proof: amount.inputProof }
           : null,
-      } satisfies ConfidentialEncryption;
-    }
-  );
+      legs: legs
+        ? { handles: legs.encryptedValues, proof: legs.inputProof }
+        : null,
+    } satisfies ConfidentialEncryption;
+  });
 
   const revealHandles: ZamaServiceApi["revealHandles"] = Effect.fn(
     "ZamaService.revealHandles"
@@ -353,7 +412,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
         value,
       ])
     );
-    yield* values.add(
+    yield* values.addHandles(
       handles.flatMap(({ handle }) => {
         const value = cleartexts.get(handle);
         return typeof value === "bigint" ? [[handle, value] as const] : [];
@@ -375,15 +434,20 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     const balance = yield* tryZama("decrypt", () =>
       sdk.createToken(address as Address).balanceOf(owner as Address)
     );
-    yield* values.add([
-      [confidentialTokenBalanceKey({ owner, token }), balance],
-    ]);
+    yield* values.addTokenBalance(
+      new ConfidentialTokenBalanceKey({ owner, token }),
+      balance
+    );
     return balance;
   }, logRevealFailure);
 
-  const wrappedAmount: ZamaServiceApi["wrappedAmount"] = Effect.fn(
-    "ZamaService.wrappedAmount"
-  )(function* ({ amount, conversion }) {
+  const wrappedAmount = Effect.fn("ZamaService.wrappedAmount")(function* ({
+    amount,
+    conversion,
+  }: {
+    readonly amount: bigint;
+    readonly conversion: ConfidentialConversion;
+  }) {
     const client = yield* getPublicClient(conversion.chainId);
     // `rate()` rebases underlying decimals to the wrapper's.
     const rate = yield* tryZama("read-rate", () =>
@@ -396,207 +460,69 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     return amount / rate;
   });
 
-  // A retry waits on the sent tx instead of signing again.
-  const sentTransactions = new Map<string, Hex>();
-
-  const awaitReceipt = Effect.fn("ZamaService.awaitReceipt")(function* (
-    client: PublicClient,
-    hash: Hex,
-    txType: "APPROVAL" | "WRAP",
-    txId: string
-  ) {
-    const receipt = yield* tryZama("wait-receipt", () =>
-      client.waitForTransactionReceipt({ hash })
-    );
-    sentTransactions.delete(txId);
-    if (receipt.status !== "success") {
-      return yield* new ZamaError({ cause: receipt, operation: txType });
-    }
-  });
-
-  const sendStep = Effect.fn("ZamaService.sendStep")(function* ({
-    actionMeta,
-    client,
-    data,
-    network,
-    onBroadcast,
-    owner,
-    step,
-    to,
-    txType,
-    walletScope,
-  }: {
-    readonly actionMeta: ClassicActionMeta;
-    readonly client: PublicClient;
-    readonly data: Hex;
-    readonly network: Network;
-    readonly onBroadcast: Effect.Effect<void>;
-    readonly owner: Address;
-    readonly step: string;
-    readonly to: Address;
-    readonly txType: "APPROVAL" | "WRAP";
-    readonly walletScope: WalletScopeOwner;
-  }) {
-    const txId = `${actionMeta.actionId}-${step}`;
-    const pending = sentTransactions.get(txId);
-    if (pending) {
-      yield* onBroadcast;
-      return yield* awaitReceipt(client, pending, txType, txId);
-    }
-    const [chainId, gas, fees] = yield* tryZama("prepare-transaction", () =>
-      Promise.all([
-        client.getChainId(),
-        client.estimateGas({ account: owner, data, to }),
-        client.estimateFeesPerGas(),
-      ])
-    );
-    const tx = JSON.stringify({
-      chainId,
-      data,
-      from: owner,
-      gasLimit: numberToHex((gas * 12n) / 10n),
-      maxFeePerGas: numberToHex(fees.maxFeePerGas),
-      maxPriorityFeePerGas: numberToHex(fees.maxPriorityFeePerGas),
-      to,
-      type: 2,
-    });
-    const result = yield* wallet
-      .signTransaction({
-        expectedOwner: walletScope,
-        family: "classic",
-        ledgerHwAppId: null,
+  const planConversion: ZamaServiceApi["planConversion"] = Effect.fn(
+    "ZamaService.planConversion"
+  )(function* ({ amount, conversion, network, owner }) {
+    const allowance = {
+      owner: owner as Address,
+      spender: conversion.wrapper as Address,
+      token: conversion.underlying as Address,
+    };
+    const approve = (type: "APPROVAL" | "RESET_APPROVAL") =>
+      makeErc20Approval({
+        amount,
+        chainId: conversion.chainId,
+        id: "conversion-approval",
         network,
-        tx,
-        txMeta: {
-          ...actionMeta,
-          annotatedTransaction: null,
-          gasEstimate: undefined,
-          structuredTransaction: null,
-          txId: TransactionId.make(txId),
-          txType,
-        },
-      })
-      .pipe(
-        Effect.mapError((cause) => new ZamaError({ cause, operation: txType }))
-      );
-    const hash = result.broadcasted
-      ? (result.signedTx as Hex)
-      : yield* tryZama("broadcast", () =>
-          client.sendRawTransaction({
-            serializedTransaction: result.signedTx as Hex,
+        type,
+        ...allowance,
+      });
+    const wrap: DirectTransaction = {
+      approval: null,
+      chainId: conversion.chainId,
+      data: encodeFunctionData({
+        abi: wrapperAbi,
+        args: [allowance.owner, amount],
+        functionName: "wrap",
+      }),
+      id: "conversion-wrap",
+      network,
+      to: allowance.spender,
+      type: "WRAP",
+    };
+    const current = yield* getPublicClient(conversion.chainId).pipe(
+      Effect.flatMap((client) =>
+        tryZama("read-allowance", () =>
+          client.readContract({
+            abi: erc20Abi,
+            address: allowance.token,
+            args: [allowance.owner, allowance.spender],
+            functionName: "allowance",
           })
-        );
-    sentTransactions.set(txId, hash);
-    yield* onBroadcast;
-    return yield* awaitReceipt(client, hash, txType, txId);
-  });
-
-  const readAllowance = (
-    client: PublicClient,
-    conversion: ConfidentialConversion,
-    owner: Address
-  ) =>
-    tryZama("read-allowance", () =>
-      client.readContract({
-        abi: erc20Abi,
-        address: conversion.underlying as Address,
-        args: [owner, conversion.wrapper as Address],
-        functionName: "allowance",
-      })
+        )
+      ),
+      Effect.option
     );
 
-  const conversionSteps: ZamaServiceApi["conversionSteps"] = Effect.fn(
-    "ZamaService.conversionSteps"
-  )(function* ({ amount, conversion, owner }) {
-    const client = yield* getPublicClient(conversion.chainId);
-    const allowance = yield* readAllowance(
-      client,
-      conversion,
-      owner as Address
-    );
-    if (allowance >= amount) return ["wrap"];
-    // USDT reverts when changing one non-zero allowance to another.
-    return allowance > 0n
-      ? ["approve-reset", "approve", "wrap"]
-      : ["approve", "wrap"];
+    if (Option.isSome(current) && current.value >= amount) return [wrap];
+    if (Option.isSome(current) && current.value === 0n) {
+      return [approve("APPROVAL"), wrap];
+    }
+    // USDT reverts when changing one non-zero allowance to another, and an
+    // unknown allowance may be one: reset it first. Each approval reads the
+    // allowance again before signing.
+    return [approve("RESET_APPROVAL"), approve("APPROVAL"), wrap];
   });
 
-  const convertStep: ZamaServiceApi["convertStep"] = Effect.fn(
-    "ZamaService.convertStep"
-  )(function* ({
-    actionMeta,
-    amount,
-    conversion,
-    network,
-    onBroadcast,
+  const publicDecrypt = Effect.fn("ZamaService.publicDecrypt")(function* ({
+    chainId,
     owner,
-    step,
-    walletScope,
+    requestId,
+  }: {
+    readonly chainId: number;
+    readonly owner: string;
+    readonly requestId: string;
   }) {
-    const client = yield* getPublicClient(conversion.chainId);
-    const account = owner as Address;
-    const wrapper = conversion.wrapper as Address;
-    if (step === "wrap") {
-      return yield* sendStep({
-        actionMeta,
-        client,
-        data: encodeFunctionData({
-          abi: wrapperAbi,
-          args: [account, amount],
-          functionName: "wrap",
-        }),
-        network,
-        onBroadcast,
-        owner: account,
-        step,
-        to: wrapper,
-        txType: "WRAP",
-        walletScope,
-      });
-    }
-    const approve = (
-      value: bigint,
-      approveStep: ConfidentialConversionStep,
-      broadcast: Effect.Effect<void>
-    ) =>
-      sendStep({
-        actionMeta,
-        client,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          args: [wrapper, value],
-          functionName: "approve",
-        }),
-        network,
-        onBroadcast: broadcast,
-        owner: account,
-        step: approveStep,
-        to: conversion.underlying as Address,
-        txType: "APPROVAL",
-        walletScope,
-      });
-    // A retry settles the approval it already sent before reading what it left.
-    const txId = `${actionMeta.actionId}-${step}`;
-    const pending = sentTransactions.get(txId);
-    if (pending) {
-      yield* onBroadcast;
-      yield* awaitReceipt(client, pending, "APPROVAL", txId);
-    }
-    // The plan was read at confirm; an approval may have landed since.
-    const allowance = yield* readAllowance(client, conversion, account);
-    if (allowance >= amount) return;
-    if (step === "approve-reset") {
-      if (allowance > 0n) yield* approve(0n, step, onBroadcast);
-      return;
-    }
-    // USDT reverts when changing one non-zero allowance to another.
-    if (allowance > 0n) yield* approve(0n, "approve-reset", Effect.void);
-    yield* approve(amount, step, onBroadcast);
-  });
-
-  const publicDecrypt: ZamaServiceApi["publicDecrypt"] = Effect.fn(
-    "ZamaService.publicDecrypt"
-  )(function* ({ chainId, owner, requestId }) {
     const sdk = yield* getSdk(chainId, owner);
     const decrypted = yield* tryZama("public-decrypt", () =>
       sdk.decryption.decryptPublicValues([requestId as Hex])
@@ -611,14 +537,99 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     return { cleartext, decryptionProof: decrypted.decryptionProof };
   });
 
+  const retryableFailure = (error: ZamaError) =>
+    new ConfidentialPreparationError({
+      cause: error,
+      message: `Zama ${error.operation} failed.`,
+      retryable: true,
+    });
+  const unpreparable = (message: string, cause: unknown = null) =>
+    new ConfidentialPreparationError({ cause, message, retryable: false });
+
+  const encryptCommand: ZamaServiceApi["encryptCommand"] = Effect.fn(
+    "ZamaService.encryptCommand"
+  )(function* (preparation) {
+    const { amount, command } = preparation;
+    const owner = command.address;
+    if (preparation.requiresPermitSigner) {
+      const canSignPermit = yield* wallet.canSignPermit.pipe(
+        Effect.mapError(
+          (cause) =>
+            new ConfidentialPreparationError({
+              cause,
+              message: "Wallet state is unavailable.",
+              retryable: true,
+            })
+        )
+      );
+      if (!canSignPermit) {
+        return yield* unpreparable(
+          "This wallet cannot reveal confidential balances."
+        );
+      }
+    }
+    if (preparation.balance) {
+      const balance = yield* revealTokenBalance({
+        chainId: preparation.balance.chainId,
+        owner,
+        token: preparation.balance.token,
+      }).pipe(Effect.mapError(retryableFailure));
+      if (balance < amount) {
+        return yield* unpreparable("Amount exceeds the confidential balance.", {
+          amount,
+          balance,
+        });
+      }
+    }
+    const value = preparation.conversion
+      ? yield* wrappedAmount({
+          amount,
+          conversion: preparation.conversion,
+        }).pipe(Effect.mapError(retryableFailure))
+      : amount;
+    const plan = planConfidentialEncryption({
+      instant: preparation.instant,
+      intent: preparation.intent,
+      value,
+      yieldDto: preparation.yieldDto,
+    });
+    if (!plan) return command;
+    const encryption = yield* encrypt({ owner, plan }).pipe(
+      Effect.mapError(retryableFailure)
+    );
+    return {
+      ...command,
+      arguments: toConfidentialArguments(
+        command.arguments ?? {},
+        encryption,
+        preparation.assetAddress
+      ),
+    };
+  });
+
+  const decryptCommand: ZamaServiceApi["decryptCommand"] = ({
+    chainId,
+    command,
+    handle,
+  }) =>
+    publicDecrypt({ chainId, owner: command.address, requestId: handle }).pipe(
+      Effect.map(({ cleartext, decryptionProof }) => ({
+        ...command,
+        arguments: {
+          ...command.arguments,
+          decryptedAmount: cleartext.toString(),
+          decryptionProof,
+        },
+      })),
+      Effect.mapError(retryableFailure)
+    );
+
   return {
-    conversionSteps,
-    publicDecrypt,
-    convertStep,
-    encrypt,
+    decryptCommand,
+    encryptCommand,
+    planConversion,
     revealHandles,
     revealTokenBalance,
-    wrappedAmount,
   } satisfies ZamaServiceApi;
 });
 

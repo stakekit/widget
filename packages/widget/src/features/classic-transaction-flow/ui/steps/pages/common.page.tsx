@@ -16,27 +16,27 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
-import { formatTransactionTypeLabel } from "../../../model/classic-transaction-workflow";
+import {
+  type ClassicStepRow,
+  formatTransactionTypeLabel,
+} from "../../../model/classic-transaction-workflow";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 
-type StepsTxState = ReturnType<typeof useSteps>["txStates"][number];
-
-const getStepPhases = (t: TFunction, txState: StepsTxState) => {
-  if (txState.tx.type !== "ENCRYPT" && txState.tx.type !== "DECRYPT") {
-    return getTransactionStepPhases(t, txState.progress.phases);
+const getStepPhases = (t: TFunction, row: ClassicStepRow) => {
+  if (row.type !== "ENCRYPT" && row.type !== "DECRYPT") {
+    return getTransactionStepPhases(t, row.phases);
   }
   // Runs in the browser: no wallet or broadcast phases.
-  const kind = txState.tx.type === "DECRYPT" ? "decrypt" : "encrypt";
-  const rejected = "rejected" in txState.meta && txState.meta.rejected;
+  const kind = row.type === "DECRYPT" ? "decrypt" : "encrypt";
   return [
     {
       description: t(`steps.${kind}_desc`),
-      failureMessage: rejected
+      failureMessage: row.rejected
         ? t("steps.prepare_rejected")
         : t(`steps.${kind}_error`),
       label: t(`steps.${kind}`),
-      status: txState.progress.phases.sign,
+      status: row.phases.sign,
     },
   ];
 };
@@ -105,11 +105,11 @@ export const StepsPage = () => {
           <Box flex={1} display="flex">
             <TransactionSteps
               numbered={numbered}
-              steps={txStates.map((txState) => ({
-                done: txState.meta.done,
-                id: txState.tx.id,
-                phases: getStepPhases(t, txState),
-                type: formatTransactionTypeLabel(txState.tx.type, t, {
+              steps={txStates.map((row) => ({
+                done: row.done,
+                id: row.id,
+                phases: getStepPhases(t, row),
+                type: formatTransactionTypeLabel(row.type, t, {
                   context: isEthenaUsdeStaking(yieldId)
                     ? "ETHENA_USDE"
                     : undefined,

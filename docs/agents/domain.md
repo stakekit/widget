@@ -1,9 +1,9 @@
 # Domain documentation
 
-Read `CONTEXT.md` before naming or changing domain concepts. Read only the ADRs
+Read `GLOSSARY.md` before naming or changing domain concepts. Read only the ADRs
 in `docs/adr/` that constrain the area being changed.
 
-`CONTEXT.md` is the vocabulary source of truth. Use its terms in code, tests,
+`GLOSSARY.md` is the vocabulary source of truth. Use its terms in code, tests,
 issues, and proposals; update an existing definition when the owned concept
 changes.
 

@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 import { Route } from "react-router";
 import {
   YieldActionContinuationCompletePage,
-  YieldActionContinuationExecutionScope,
+  YieldActionContinuationExecution,
   YieldActionContinuationStepsPage,
 } from "../classic-transaction-flow/views";
 import {
@@ -14,7 +14,7 @@ import { ActivityDetailsPage } from "./ui/activity-details/activity-details.page
 const activityActionChildRoutes = (
   <>
     <Route index element={<ActivityDetailsPage />} />
-    <Route element={<YieldActionContinuationExecutionScope />}>
+    <Route element={<YieldActionContinuationExecution />}>
       <Route path="steps" element={<YieldActionContinuationStepsPage />} />
       <Route
         path="complete"

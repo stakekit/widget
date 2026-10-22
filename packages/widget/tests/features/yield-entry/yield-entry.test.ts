@@ -18,8 +18,7 @@ import {
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { makeYieldEntry } from "../../../src/features/yield-entry/index";
 import { getYieldEntryCta } from "../../../src/features/yield-entry/model/yield-entry";
-import type { YieldEntryFacadeInput } from "../../../src/features/yield-entry/state/atoms/yield-entry";
-import { YieldEntrySubmissionService } from "../../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
+import type { YieldEntryFacadeInput } from "../../../src/features/yield-entry/state/yield-entry";
 import {
   makeWidgetNavigation,
   type WidgetNavigationOptions,
@@ -157,18 +156,9 @@ const makeObservableRegistry = (
         addLedgerAccount: () => Effect.succeed({ _tag: "Added" }),
       },
     }).pipe(
-      Effect.map((kit) => {
-        const yieldEntryDependencies = Layer.mergeAll(
-          ports.layer,
-          kit.wallet.layer
-        );
-        return Layer.merge(
-          kit.layer,
-          YieldEntrySubmissionService.layer.pipe(
-            Layer.provide(yieldEntryDependencies)
-          )
-        );
-      })
+      // The observable ports replace the kit's tracking and add the wallet
+      // modal a submission reaches.
+      Effect.map((kit) => Layer.merge(kit.layer, ports.layer))
     )
   );
 

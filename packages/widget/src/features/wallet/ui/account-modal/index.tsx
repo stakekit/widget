@@ -125,7 +125,7 @@ export const AccountModal = () => {
             <button
               type="button"
               className={action}
-              onClick={() => copyAddress()}
+              onClick={() => copyAddress(undefined)}
               data-testid="wallet-account-copy"
             >
               <span className={actionContent}>

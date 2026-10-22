@@ -1,4 +1,3 @@
-import { Option } from "effect";
 import type { Transaction } from "../../../domain/borrow/execution/transaction";
 import {
   flattenTransactionWorkflowTransactions,
@@ -62,6 +61,9 @@ const getExecutionStatus = (
     case "Completed":
       return { error: null, isRunning: false, phase: "completed" };
     case "Disabled":
+    // Only a confidential Classic workflow prepares its action.
+    case "Preparing":
+    case "PrepareFailed":
       return { error: null, isRunning: false, phase: "disabled" };
   }
 };
@@ -164,6 +166,3 @@ export const emptyBorrowExecutionView = {
   steps: noBorrowExecutionSteps,
   totalSteps: 0,
 };
-
-export const getBorrowExecutionSetupError = <E>(error: Option.Option<E>) =>
-  Option.getOrNull(error);

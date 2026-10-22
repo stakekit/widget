@@ -27,7 +27,6 @@ import {
   formatTransactionTypeLabel,
   useYieldActionContinuationReview,
 } from "../../../classic-transaction-flow/index";
-import { YieldActionContinuationReviewScope } from "../../../classic-transaction-flow/views";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
 import { PageCtaButton } from "../../../widget-shell/views";
 import type {
@@ -449,11 +448,7 @@ const YieldReceipt = ({
         </Text>
       ) : null}
 
-      {view.canContinue && continuationReady ? (
-        <YieldActionContinuationReviewScope>
-          <ContinuationControls />
-        </YieldActionContinuationReviewScope>
-      ) : null}
+      {view.canContinue && continuationReady ? <ContinuationControls /> : null}
     </Receipt>
   );
 };

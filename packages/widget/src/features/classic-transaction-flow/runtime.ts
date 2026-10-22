@@ -1,1 +1,1 @@
-export { ClassicTransactionFlowService } from "./state/orchestration/classic-transaction-flow-service";
+export { makeStartClassicTransactionFlow } from "./state/start-flow";

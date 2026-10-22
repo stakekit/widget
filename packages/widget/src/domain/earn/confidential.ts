@@ -1,9 +1,17 @@
 import type BigNumber from "bignumber.js";
-import { Option, Schema, SchemaTransformation, Struct } from "effect";
+import {
+  Data,
+  type HashMap,
+  Option,
+  Schema,
+  SchemaTransformation,
+  Struct,
+} from "effect";
 import { exactDecimal, truncateToTokenDecimals } from "../finance/exact";
 import type { Network } from "../network/network";
 import type { Token } from "../token/token";
 import { getWalletRoutingId } from "../wallet/network";
+import type { WalletScopeOwner } from "../wallet/wallet-scope";
 import type { EarnYieldWithProvider } from "./models";
 import { getYieldActionArg } from "./yield";
 
@@ -234,17 +242,42 @@ export const ConfidentialHandle = Schema.String.pipe(
 );
 export type ConfidentialHandle = typeof ConfidentialHandle.Type;
 
-const ConfidentialTokenBalanceKey = Schema.String.pipe(
-  Schema.brand("ConfidentialTokenBalanceKey")
-);
-type ConfidentialTokenBalanceKey = typeof ConfidentialTokenBalanceKey.Type;
+/** A token balance its owner revealed; EVM addresses compare lowercased. */
+export class ConfidentialTokenBalanceKey extends Data.Class<{
+  readonly network: Network;
+  readonly owner: string;
+  readonly token: string | null;
+}> {
+  constructor({
+    owner,
+    token,
+  }: {
+    readonly owner: string;
+    readonly token: Token;
+  }) {
+    super({
+      network: token.network,
+      owner: owner.toLowerCase(),
+      token: token.address?.toLowerCase() ?? null,
+    });
+  }
 
-export type ConfidentialValues = ReadonlyMap<
-  ConfidentialHandle | ConfidentialTokenBalanceKey,
-  bigint
->;
+  isOwnedBy(owner: WalletScopeOwner) {
+    return (
+      this.network === owner.network &&
+      this.owner === owner.address.toLowerCase()
+    );
+  }
+}
 
-export const isConfidentialHandle = Schema.is(ConfidentialHandle);
+/**
+ * Revealed balances, held in memory only: position balances by the handle the
+ * API returned, wallet token balances by owner and token.
+ */
+export type RevealedBalances = Readonly<{
+  readonly handles: ReadonlyMap<ConfidentialHandle, bigint>;
+  readonly tokenBalances: HashMap.HashMap<ConfidentialTokenBalanceKey, bigint>;
+}>;
 
 // The API puts an encrypted balance's handle in `shareAmountRaw`.
 export const getEncryptedHandle = (
@@ -258,17 +291,6 @@ export const getEncryptedHandle = (
         Schema.decodeOption(ConfidentialHandle)(balance.shareAmountRaw)
       )
     : null;
-
-export const confidentialTokenBalanceKey = ({
-  owner,
-  token,
-}: {
-  readonly owner: string;
-  readonly token: Token;
-}) =>
-  ConfidentialTokenBalanceKey.make(
-    `${token.network}:${token.address ?? ""}:${owner}`.toLowerCase()
-  );
 
 type ConfidentialBalance = Readonly<{
   readonly amount: BigNumber;
@@ -304,18 +326,20 @@ export type ConfidentialValuation = Readonly<{
   readonly usdPrice: BigNumber | null;
 }>;
 
+type RevealedHandles = RevealedBalances["handles"];
+
 const isRevealedBalance = (
   balance: ConfidentialBalance,
-  values: ConfidentialValues
+  handles: RevealedHandles
 ) => {
   const handle = getEncryptedHandle(balance);
-  return handle !== null && values.has(handle);
+  return handle !== null && handles.has(handle);
 };
 
 export const hasRevealedBalance = (
   position: Readonly<{ readonly balances: ReadonlyArray<ConfidentialBalance> }>,
-  values: ConfidentialValues
-) => position.balances.some((balance) => isRevealedBalance(balance, values));
+  handles: RevealedHandles
+) => position.balances.some((balance) => isRevealedBalance(balance, handles));
 
 // Withdrawable unwraps are publicly decrypted by WITHDRAW, not revealed.
 export const isUserRevealableBalance = (
@@ -359,11 +383,11 @@ export const zeroEncryptedBalance = <
 
 export const fillConfidentialBalance = <Balance extends ConfidentialBalance>(
   balance: Balance,
-  values: ConfidentialValues,
+  handles: RevealedHandles,
   valuation: ConfidentialValuation | null = null
 ): Balance => {
   const handle = getEncryptedHandle(balance);
-  const revealed = handle === null ? undefined : values.get(handle);
+  const revealed = handle === null ? undefined : handles.get(handle);
   if (revealed === undefined) return balance;
 
   const shareDecimals = balance.shareToken?.decimals ?? balance.token.decimals;
@@ -395,12 +419,12 @@ export const fillConfidentialPosition = <
   Position extends Readonly<{ readonly balances: ReadonlyArray<Balance> }>,
 >(
   position: Position,
-  values: ConfidentialValues,
+  handles: RevealedHandles,
   valuation: ConfidentialValuation | null = null
 ): Position => ({
   ...position,
   balances: position.balances.map((balance) =>
-    fillConfidentialBalance(balance, values, valuation)
+    fillConfidentialBalance(balance, handles, valuation)
   ),
 });
 

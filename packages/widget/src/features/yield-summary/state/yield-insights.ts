@@ -159,10 +159,6 @@ export const currentYieldKycGateAtom = Atom.family(
     })
 );
 
-export type CurrentYieldKycGate = Atom.Type<
-  ReturnType<typeof currentYieldKycGateAtom>
->;
-
 export class YieldHistoryKey extends Data.Class<{
   readonly period: HistoryPeriod;
   readonly yieldId: YieldId | null;

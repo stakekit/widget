@@ -4,8 +4,10 @@ import {
   decodeBorrowTransactionForWallet,
   decodeBorrowTypedDataForWallet,
 } from "../../../domain/borrow/execution/transaction";
+import { TransactionId } from "../../../domain/identity/identifiers";
 import type { Network } from "../../../domain/network/network";
 import type { WalletScopeOwner } from "../../../domain/wallet/wallet-scope";
+import { EvmRpc } from "../../evm-rpc/evm-rpc";
 import { TrackingService } from "../../tracking/tracking-service";
 import type {
   WalletOwnerMismatchError,
@@ -14,6 +16,7 @@ import type {
 import { WalletService } from "../../wallet/wallet-service";
 import type { BorrowTransactionMeta } from "../../wallet/wallet-transactions";
 import {
+  type DirectTransactionLedger,
   makeTransactionSignError,
   type TransactionSignFailureReason,
   type TransactionSignWalletOperationCause,
@@ -23,6 +26,7 @@ import {
   getCurrentWorkflowTrackingYieldId,
   requireCurrentWorkflow,
 } from "./current";
+import { recordDirectTransaction } from "./ledger";
 import { updateCurrentTransactionWorkflowTransaction } from "./model";
 
 type WalletSignFailure =
@@ -71,7 +75,8 @@ const walletSignFailureReason = (
   });
 
 export const makePrepareAndSign = Effect.gen(function* () {
-  const [tracking, wallet] = yield* Effect.all([
+  const [evmRpc, tracking, wallet] = yield* Effect.all([
+    EvmRpc,
     TrackingService,
     WalletService,
   ]);
@@ -133,10 +138,12 @@ export const makePrepareAndSign = Effect.gen(function* () {
   return Effect.fn("TransactionWorkflow.prepareAndSign")(function* ({
     context,
     expectedOwner,
+    ledger,
   }: {
     readonly context: TransactionWorkflowContext;
     /** The workflow's Wallet Scope Owner; the wallet signs only for it. */
     readonly expectedOwner: WalletScopeOwner;
+    readonly ledger: DirectTransactionLedger;
   }) {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
@@ -152,6 +159,59 @@ export const makePrepareAndSign = Effect.gen(function* () {
       });
 
     const signed = yield* Match.value(current).pipe(
+      Match.tag("Direct", ({ domain, transaction }) => {
+        const direct = transaction.source.transaction;
+
+        return evmRpc
+          .prepare({
+            chainId: direct.chainId,
+            data: direct.data,
+            from: expectedOwner.address as `0x${string}`,
+            to: direct.to,
+          })
+          .pipe(
+            Effect.mapError((cause) => fail({ _tag: "EstimateFailed", cause })),
+            Effect.flatMap((tx) =>
+              // A hash the wallet broadcast must reach the Ledger, even if the
+              // workflow ends meanwhile.
+              Effect.uninterruptibleMask((restore) =>
+                restore(
+                  wallet
+                    .signTransaction({
+                      expectedOwner,
+                      family: "classic",
+                      ledgerHwAppId: null,
+                      network: direct.network,
+                      tx,
+                      txMeta: {
+                        ...domain.actionMeta,
+                        annotatedTransaction: null,
+                        gasEstimate: undefined,
+                        structuredTransaction: null,
+                        txId: TransactionId.make(direct.id),
+                        // The wallet labels a reset as the approval it is.
+                        txType: direct.type === "WRAP" ? "WRAP" : "APPROVAL",
+                      },
+                    })
+                    .pipe(
+                      Effect.mapError((cause) =>
+                        fail(walletSignFailureReason(cause, "transaction"))
+                      )
+                    )
+                ).pipe(
+                  Effect.tap((signed) =>
+                    signed.broadcasted
+                      ? recordDirectTransaction(ledger, direct, {
+                          _tag: "Sent",
+                          hash: signed.signedTx as `0x${string}`,
+                        })
+                      : Effect.void
+                  )
+                )
+              )
+            )
+          );
+      }),
       Match.tag("Classic", ({ domain, transaction }) => {
         const { source } = transaction;
 

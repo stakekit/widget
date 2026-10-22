@@ -7,18 +7,23 @@ import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../src/services/events/widget-domain-events";
+import { EvmRpc } from "../../src/services/evm-rpc/evm-rpc";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
+import type { ZamaService } from "../../src/services/zama/zama-service";
 import { makeTestTracking } from "./services/tracking-service";
 import {
   makeTestWallet,
   type TestWalletBehaviorOptions,
 } from "./services/wallet-service";
+import { makeTestZamaLayer } from "./services/zama-service";
 
 type TransactionWorkflowTestKitBehavior = Readonly<{
   readonly borrow?: Partial<BorrowOperations["Service"]>;
+  readonly evmRpc?: Partial<EvmRpc["Service"]>;
   readonly yieldOperations?: Partial<YieldOperations["Service"]>;
+  readonly zama?: Partial<ZamaService["Service"]>;
 }>;
 
 export type TransactionWorkflowTestKitOptions =
@@ -39,25 +44,29 @@ export type TransactionWorkflowTestKitOptions =
 const unexpectedWorkflowCall = <A>(method: string): Effect.Effect<A> =>
   Effect.die(`makeTransactionWorkflowTestKit: unexpected call to ${method}`);
 
-const makeTestDomainEvents = Effect.fn("makeTestDomainEvents")(function* () {
-  const publishedEvents = yield* Ref.make<ReadonlyArray<WidgetDomainEvent>>([]);
-  const pubsub = yield* PubSub.unbounded<WidgetDomainEvent>();
-  yield* Effect.addFinalizer(() => PubSub.shutdown(pubsub));
-  const service = WidgetDomainEvents.of({
-    events: Stream.fromPubSub(pubsub),
-    publish: (event) =>
-      Ref.update(publishedEvents, (current) => [...current, event]).pipe(
-        Effect.andThen(PubSub.publish(pubsub, event)),
-        Effect.asVoid
-      ),
-  });
+export const makeTestDomainEvents = Effect.fn("makeTestDomainEvents")(
+  function* () {
+    const publishedEvents = yield* Ref.make<ReadonlyArray<WidgetDomainEvent>>(
+      []
+    );
+    const pubsub = yield* PubSub.unbounded<WidgetDomainEvent>();
+    yield* Effect.addFinalizer(() => PubSub.shutdown(pubsub));
+    const service = WidgetDomainEvents.of({
+      events: Stream.fromPubSub(pubsub),
+      publish: (event) =>
+        Ref.update(publishedEvents, (current) => [...current, event]).pipe(
+          Effect.andThen(PubSub.publish(pubsub, event)),
+          Effect.asVoid
+        ),
+    });
 
-  return {
-    layer: Layer.succeed(WidgetDomainEvents, service),
-    publishedEvents: Ref.get(publishedEvents),
-    service,
-  } as const;
-});
+    return {
+      layer: Layer.succeed(WidgetDomainEvents, service),
+      publishedEvents: Ref.get(publishedEvents),
+      service,
+    } as const;
+  }
+);
 
 export const makeTransactionWorkflowTestKit = Effect.fn(
   "makeTransactionWorkflowTestKit"
@@ -94,6 +103,18 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
         ...options.borrow,
       })
     ),
+    Layer.succeed(
+      EvmRpc,
+      EvmRpc.of({
+        awaitOutcome: () => unexpectedWorkflowCall("EvmRpc.awaitOutcome"),
+        broadcast: () => unexpectedWorkflowCall("EvmRpc.broadcast"),
+        explorerUrl: () => null,
+        prepare: () => unexpectedWorkflowCall("EvmRpc.prepare"),
+        readAllowance: () => unexpectedWorkflowCall("EvmRpc.readAllowance"),
+        ...options.evmRpc,
+      })
+    ),
+    makeTestZamaLayer(options.zama),
     events.layer,
     tracking.layer,
     wallet.layer,

@@ -1,10 +1,9 @@
 id: no-effect-atom-in-feature-logic
 language: Tsx
 severity: error
-message: Feature model and orchestration modules must stay independent of Effect Atom.
+message: Feature models must stay independent of Effect Atom.
 files:
   - packages/widget/src/features/**/model/**/*.ts
-  - packages/widget/src/features/**/state/orchestration/**/*.ts
 rule:
   kind: string
   regex: ^["']effect/reactivity/(?:Atom|AtomRegistry)["']$

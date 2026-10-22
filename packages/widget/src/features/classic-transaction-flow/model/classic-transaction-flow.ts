@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
-import { Data, Match, Option, Schema } from "effect";
+import { Equal, Match, Option, Ref, Schema } from "effect";
+import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type {
   ActionCommand,
   ManageActionCommand,
@@ -12,7 +13,6 @@ import type {
 } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import {
-  type ConfidentialConversion,
   getConfidentialAssetToken,
   getConfidentialChainId,
   getConfidentialConversion,
@@ -40,10 +40,13 @@ import {
   type WidgetPathInput,
 } from "../../../services/navigation/widget-navigation";
 import {
-  type ClassicTransactionWorkflowInput,
   type ClassicTransactionWorkflowProviderDetail,
+  ConfidentialTransactionWorkflowInput,
   makeClassicTransactionWorkflowInput,
+  makeDirectTransactionLedger,
+  type TransactionWorkflowInput,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
+import type { ConfidentialPreparation } from "../../../services/zama/zama-service";
 
 type ClassicFlowProviderDetail = ClassicTransactionWorkflowProviderDetail;
 
@@ -180,15 +183,65 @@ export type StartClassicTransactionFlow =
     }>;
 
 /**
- * A started Flow Session's immutable input. Start hands it to the flow route
- * through Review navigation state (Activity mounts a Yield Action
- * Continuation directly); the route that mounts it owns its lifetime.
+ * What an Execution runs: Review's previewed action, or, for a confidential
+ * vault, the preparation its workflow creates the action from once the
+ * amount is encrypted or decrypted.
  */
-export class ClassicFlowSession extends Data.Class<{
+export type ClassicFlowExecutionSource =
+  | Readonly<{ readonly _tag: "Action"; readonly action: YieldAction }>
+  | Readonly<{
+      readonly _tag: "Prepare";
+      /**
+       * The approve and wrap before it, planned when the user confirmed so
+       * Steps lists them at once.
+       */
+      readonly conversion: ReadonlyArray<DirectTransaction>;
+      readonly preparation: ConfidentialPreparation;
+    }>;
+
+/**
+ * One confirmation Review handed to the Execution Steps opens. Each is its
+ * own, even for the same action: Steps' navigation state names it.
+ */
+export class ClassicFlowHandoff {
+  constructor(readonly source: ClassicFlowExecutionSource) {
+    Equal.byReferenceUnsafe(this);
+  }
+}
+
+/** A handoff waiting for Steps to start it, then running until its Execution ends. */
+export type ClassicFlowHandoffState = Readonly<{
+  readonly _tag: "Running" | "Waiting";
+  readonly handoff: ClassicFlowHandoff;
+}>;
+
+/**
+ * A started Flow Session: its immutable input and its handoff, if any. Start
+ * hands it to the flow route through Review navigation state (Activity mounts
+ * a Yield Action Continuation directly); the route that mounts it owns its
+ * lifetime.
+ */
+export class ClassicFlowSession {
+  /** What the Session's executions broadcast, so confirming again resumes it. */
+  readonly ledger = makeDirectTransactionLedger();
+  readonly handoff = Ref.makeUnsafe<ClassicFlowHandoffState | null>(null);
   readonly destination: ClassicTransactionFlowDestination;
   readonly intake: ClassicTransactionFlowIntake;
   readonly mount: ClassicTransactionFlowMount;
-}> {}
+
+  constructor(input: {
+    readonly destination: ClassicTransactionFlowDestination;
+    readonly intake: ClassicTransactionFlowIntake;
+    readonly mount: ClassicTransactionFlowMount;
+  }) {
+    this.destination = input.destination;
+    this.intake = input.intake;
+    this.mount = input.mount;
+    // Each Start is its own Session, even with an equal intake: Atom family
+    // keys compare it by identity.
+    Equal.byReferenceUnsafe(this);
+  }
+}
 
 /** A Start that navigates to its own Review route. */
 export type NavigatingClassicTransactionFlowStart = Exclude<
@@ -198,17 +251,33 @@ export type NavigatingClassicTransactionFlowStart = Exclude<
 
 const ClassicFlowNavigationState = Schema.Struct({
   classicFlowSession: Schema.instanceOf(ClassicFlowSession),
+  /** On Steps and Complete: the handoff their Execution runs. */
+  executionHandoff: Schema.optional(Schema.instanceOf(ClassicFlowHandoff)),
 });
 
 export const makeClassicFlowNavigationState = (
-  session: ClassicFlowSession
-): typeof ClassicFlowNavigationState.Type => ({ classicFlowSession: session });
+  session: ClassicFlowSession,
+  executionHandoff?: ClassicFlowHandoff
+): typeof ClassicFlowNavigationState.Type =>
+  executionHandoff === undefined
+    ? { classicFlowSession: session }
+    : { classicFlowSession: session, executionHandoff };
 
 export const decodeClassicFlowNavigationState = (
   state: unknown
 ): Option.Option<ClassicFlowSession> =>
   Schema.decodeUnknownOption(ClassicFlowNavigationState)(state).pipe(
     Option.map((decoded) => decoded.classicFlowSession)
+  );
+
+export const decodeClassicFlowExecutionHandoff = (
+  state: unknown
+): ClassicFlowHandoff | null =>
+  Schema.decodeUnknownOption(ClassicFlowNavigationState)(state).pipe(
+    Option.flatMap((decoded) =>
+      Option.fromUndefinedOr(decoded.executionHandoff)
+    ),
+    Option.getOrNull
   );
 
 type ClassicTransactionFlowRouteBase = "" | WidgetPathInput;
@@ -397,56 +466,79 @@ export const getClassicTransactionFlowIntakeVariant = <
       >)
     : null;
 
-export const getClassicTransactionWorkflowInput = (
-  intake: ClassicTransactionFlowIntake,
-  action: YieldAction
-): ClassicTransactionWorkflowInput => {
-  const inputToken = Match.value(intake).pipe(
+const getClassicFlowInputToken = (intake: ClassicTransactionFlowIntake) =>
+  Match.value(intake).pipe(
     Match.tag("Enter", ({ selectedToken }) => selectedToken),
     Match.tag("Exit", ({ unstakeToken }) => unstakeToken),
     Match.tag("Manage", ({ interactedToken }) => interactedToken),
-    Match.tag("YieldActionContinuation", ({ selectedYield }) =>
+    Match.tag("YieldActionContinuation", ({ action, selectedYield }) =>
       getActionInputToken({ actionDto: action, yieldDto: selectedYield })
     ),
     Match.exhaustive
   );
 
-  return makeClassicTransactionWorkflowInput({
-    action,
-    inputToken,
+/**
+ * The workflow an Execution of `source` runs. A confidential one converts the
+ * deposit's token first and resumes what the Session's Ledger recorded.
+ */
+export const getClassicFlowWorkflowInput = ({
+  session: { intake, ledger },
+  source,
+}: {
+  readonly session: ClassicFlowSession;
+  readonly source: ClassicFlowExecutionSource;
+}): TransactionWorkflowInput => {
+  const facts = {
+    inputToken: getClassicFlowInputToken(intake),
     providersDetails: intake.providersDetails,
     walletScope: intake.walletScope,
-  });
+  };
+
+  return source._tag === "Action"
+    ? makeClassicTransactionWorkflowInput({ ...facts, action: source.action })
+    : new ConfidentialTransactionWorkflowInput({
+        ...facts,
+        conversion: source.conversion,
+        ledger,
+        preparation: source.preparation,
+        yieldId: source.preparation.command.yieldId,
+      });
 };
 
-export type ClassicFlowConfidentialInput = Readonly<{
-  readonly amount: bigint;
-  readonly assetAddress: string | null;
-  readonly conversion: ConfidentialConversion | null;
-  readonly instant?: boolean;
-  readonly intent: "enter" | "exit";
-  readonly yieldDto: EarnYieldWithProvider;
-}>;
-
-export const getClassicFlowConfidentialInput = (
+/**
+ * How a confidential vault's Execution creates its action, once confirmed:
+ * its amount encrypted, or its withdrawal decrypted. Null for other vaults.
+ */
+export const getClassicFlowConfidentialPreparation = (
   intake: ClassicTransactionFlowIntake
-): ClassicFlowConfidentialInput | null => {
+): ConfidentialPreparation | null => {
   switch (intake._tag) {
     case "Enter": {
       const asset = getConfidentialAssetToken(intake.selectedStake);
       const amount = intake.request.arguments?.amount;
       if (!asset?.address || amount === undefined) return null;
+      const conversion = getConfidentialConversion(
+        intake.selectedStake,
+        intake.selectedToken
+      );
+      const chainId = getConfidentialChainId(intake.selectedStake);
       return {
+        _tag: "Encrypt",
         amount: toBaseUnits(
           exactDecimal(amount),
           intake.selectedToken.decimals
         ),
         assetAddress: asset.address,
-        conversion: getConfidentialConversion(
-          intake.selectedStake,
-          intake.selectedToken
-        ),
+        // A hidden balance is checked only once confirmed, not on the form.
+        balance:
+          conversion || chainId === null
+            ? null
+            : { chainId, token: intake.selectedToken },
+        conversion,
+        instant: false,
+        command: intake.request,
         intent: "enter",
+        requiresPermitSigner: true,
         yieldDto: intake.selectedStake,
       };
     }
@@ -456,18 +548,33 @@ export const getClassicFlowConfidentialInput = (
         return null;
       }
       return {
+        _tag: "Encrypt",
         amount: BigInt(shares),
         assetAddress: null,
+        balance: null,
         conversion: null,
         instant: isConfidentialInstantExit(
           intake.integration,
           intake.request.arguments?.outputToken
         ),
+        command: intake.request,
         intent: "exit",
+        requiresPermitSigner: false,
         yieldDto: intake.integration,
       };
     }
-    default:
+    case "Manage": {
+      const chainId = getConfidentialChainId(intake.integration);
+      return intake.confidentialHandle && chainId !== null
+        ? {
+            _tag: "Decrypt",
+            chainId,
+            handle: intake.confidentialHandle,
+            command: intake.request,
+          }
+        : null;
+    }
+    case "YieldActionContinuation":
       return null;
   }
 };
@@ -495,18 +602,4 @@ export const getClassicFlowPreparedTransactionType = (
     case "YieldActionContinuation":
       return null;
   }
-};
-
-export const getClassicFlowDecryptInput = (
-  intake: ClassicTransactionFlowIntake
-) => {
-  if (intake._tag !== "Manage" || !intake.confidentialHandle) return null;
-  const chainId = getConfidentialChainId(intake.integration);
-  return chainId === null
-    ? null
-    : {
-        chainId,
-        handle: intake.confidentialHandle,
-        owner: intake.request.address,
-      };
 };

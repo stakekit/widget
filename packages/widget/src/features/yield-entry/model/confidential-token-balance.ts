@@ -1,8 +1,9 @@
 import type BigNumber from "bignumber.js";
+import { HashMap, Option } from "effect";
 import {
-  type ConfidentialValues,
-  confidentialTokenBalanceKey,
+  ConfidentialTokenBalanceKey,
   getConfidentialAssetToken,
+  type RevealedBalances,
   sameTokenContract,
 } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
@@ -49,7 +50,7 @@ export const resolveYieldEntryTokenBalance = ({
   values,
   yield: yieldDto,
 }: YieldEntryTokenBalanceInput & {
-  readonly values: ConfidentialValues | null;
+  readonly values: RevealedBalances | null;
 }): YieldEntryTokenBalance => {
   if (!token || !isHiddenTokenBalance(yieldDto, token)) {
     return {
@@ -58,10 +59,14 @@ export const resolveYieldEntryTokenBalance = ({
       revealedTokenBalance: false,
     };
   }
-  const revealed = owner
-    ? values?.get(confidentialTokenBalanceKey({ owner, token }))
-    : undefined;
-  if (revealed === undefined) {
+  const revealed =
+    owner && values
+      ? HashMap.get(
+          values.tokenBalances,
+          new ConfidentialTokenBalanceKey({ owner, token })
+        )
+      : Option.none();
+  if (Option.isNone(revealed)) {
     return {
       availableAmount: null,
       hiddenTokenBalance: true,
@@ -69,7 +74,7 @@ export const resolveYieldEntryTokenBalance = ({
     };
   }
   return {
-    availableAmount: exactDecimal(revealed.toString()).shiftedBy(
+    availableAmount: exactDecimal(revealed.value.toString()).shiftedBy(
       -token.decimals
     ),
     hiddenTokenBalance: false,

@@ -1,9 +1,8 @@
-import { type PropsWithChildren, useState } from "react";
+import { useState } from "react";
 import { makeYieldActionContinuationSession } from "../model/classic-transaction-flow";
 import {
-  ClassicFlowCompletionGuard,
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
+  ClassicFlowExecutionPage,
+  ClassicFlowExecutionRoute,
   ClassicFlowSessionRoute,
   useClassicFlowIntake,
 } from "../react/classic-flow-route";
@@ -36,17 +35,12 @@ export const YieldActionContinuationSessionRoute = ({
   return <ClassicFlowSessionRoute session={session} />;
 };
 
-export const YieldActionContinuationReviewScope = ({
-  children,
-}: PropsWithChildren) => (
-  <ClassicFlowReviewScope>{children}</ClassicFlowReviewScope>
+/** The continuation's Steps and Complete, which share one Execution. */
+export const YieldActionContinuationExecution = () => (
+  <ClassicFlowExecutionRoute />
 );
 
-export const YieldActionContinuationExecutionScope = () => (
-  <ClassicFlowExecutionScope />
-);
-
-export const YieldActionContinuationStepsPage = () => {
+const ContinuationStepsPage = () => {
   const { action } = useClassicFlowIntake("YieldActionContinuation");
 
   switch (action.intent) {
@@ -59,8 +53,14 @@ export const YieldActionContinuationStepsPage = () => {
   }
 };
 
+export const YieldActionContinuationStepsPage = () => (
+  <ClassicFlowExecutionPage page="Steps">
+    <ContinuationStepsPage />
+  </ClassicFlowExecutionPage>
+);
+
 export const YieldActionContinuationCompletePage = () => (
-  <ClassicFlowCompletionGuard>
+  <ClassicFlowExecutionPage page="Complete">
     <ActivityCompletePage />
-  </ClassicFlowCompletionGuard>
+  </ClassicFlowExecutionPage>
 );
