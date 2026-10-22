@@ -7,6 +7,13 @@ export type YieldPendingActionType =
   | NonNullable<ManageActionCommand["action"]>;
 
 /**
+ * Pending actions a position never needs: cancelling a queued request, or
+ * merging stake accounts.
+ */
+export const isOptionalPendingAction = (type: YieldPendingActionType) =>
+  type === "CANCEL_PENDING" || type === "MERGE";
+
+/**
  * i18n context naming what a pending action acts on when its type alone is
  * ambiguous: CANCEL_PENDING cancels a deposit on an entering balance and a
  * withdrawal on an exiting one.

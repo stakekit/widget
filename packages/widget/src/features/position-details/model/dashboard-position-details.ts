@@ -2,7 +2,10 @@ import type BigNumber from "bignumber.js";
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 import type { PendingAction } from "../../../domain/action/models";
-import { getPendingActionLabelContext } from "../../../domain/action/pending-action";
+import {
+  getPendingActionLabelContext,
+  isOptionalPendingAction,
+} from "../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import type {
   EarnBalance,
@@ -463,15 +466,14 @@ const getStatusSummary = ({
     };
   }
 
-  // Cancelling a queued request is optional, so any other pending action
-  // outranks it for the status card.
+  // Optional pending actions are outranked by any other for the status card.
   const pendingAction =
     pendingActions.find(
-      (action) => action.pendingAction.type !== "CANCEL_PENDING"
+      (action) => !isOptionalPendingAction(action.pendingAction.type)
     ) ?? pendingActions[0];
 
   if (pendingAction) {
-    const optional = pendingAction.pendingAction.type === "CANCEL_PENDING";
+    const optional = isOptionalPendingAction(pendingAction.pendingAction.type);
 
     return {
       label: optional
@@ -738,7 +740,7 @@ const getPendingActionTone = (
   type: PendingAction["type"]
 ): DashboardPositionStatusTone => {
   if (type === "CLAIM_REWARDS") return "claim";
-  if (type === "CANCEL_PENDING") return "default";
+  if (isOptionalPendingAction(type)) return "default";
   return "action";
 };
 

@@ -14,6 +14,7 @@ import type { WalletAddress } from "../../domain/identity/identifiers";
 import type * as BorrowApi from "../../generated/api/borrow-client";
 import {
   decodeApiResponse,
+  recoverNotFound,
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
@@ -92,8 +93,8 @@ export const makeBorrowResourceSource = (
       .ActionsControllerGetActionV1(actionId, undefined)
       .pipe(
         Effect.asSome,
-        Effect.catchTag("404", () =>
-          Effect.succeed(
+        Effect.catch(
+          recoverNotFound(
             Option.none<BorrowApi.ActionsControllerGetActionV1200>()
           )
         ),

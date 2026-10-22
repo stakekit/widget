@@ -1,5 +1,6 @@
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+import { isOptionalPendingAction } from "../../../../domain/action/pending-action";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
@@ -76,9 +77,9 @@ export const toPositionItems = (
         const pendingTypes = balancesWithAmount.flatMap((balance) =>
           balance.pendingActions.map((action) => action.type)
         );
-        // Claims have their own badge; cancelling a request is optional.
+        // Claims have their own badge; optional actions require nothing.
         const hasRequiredPendingAction = pendingTypes.some(
-          (type) => type !== "CLAIM_REWARDS" && type !== "CANCEL_PENDING"
+          (type) => type !== "CLAIM_REWARDS" && !isOptionalPendingAction(type)
         );
         const actionRequired =
           balancesWithAmount.some((balance) => balance.type === "locked") ||

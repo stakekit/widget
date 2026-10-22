@@ -16,16 +16,22 @@ import {
 } from "../../../src/services/api/resource-sources";
 
 const request = HttpClientRequest.post("https://borrow.test/v1/actions");
-const response = (status: number) =>
-  HttpClientResponse.fromWeb(request, new Response(null, { status }));
-const statusError = (status: number, description?: string) =>
+const response = (status: number, body?: unknown) =>
+  HttpClientResponse.fromWeb(
+    request,
+    new Response(body === undefined ? null : JSON.stringify(body), { status })
+  );
+// Generated clients keep an undeclared status's JSON body as the description.
+const statusError = (status: number, body?: unknown) =>
   new HttpClientError.HttpClientError({
     reason: new HttpClientError.StatusCodeError({
-      description,
+      description: body === undefined ? undefined : JSON.stringify(body),
       request,
-      response: response(status),
+      response: response(status, body),
     }),
   });
+
+const kycRequired = { message: "KYC required", statusCode: 412 };
 
 const normalize = (
   error: HttpClientError.HttpClientError | BorrowApiError<string, unknown>
@@ -60,20 +66,25 @@ describe("API request failures", () => {
       }),
       failure: { _tag: "InvalidRequest" },
     },
+    // However the spec declares a status, the body comes from the response.
     {
       case: "an undeclared status keeps its JSON body",
-      error: statusError(
-        412,
-        JSON.stringify({
-          message: "Insufficient WETH balance.",
-          statusCode: 412,
-        })
+      error: statusError(412, kycRequired),
+      failure: { _tag: "ErrorStatus", body: kycRequired, status: 412 },
+    },
+    {
+      case: "a status declared with a body keeps its JSON body",
+      error: BorrowApiError(
+        "ActionsControllerExecuteActionV1412",
+        kycRequired,
+        response(412, kycRequired)
       ),
-      failure: {
-        _tag: "ErrorStatus",
-        body: { message: "Insufficient WETH balance.", statusCode: 412 },
-        status: 412,
-      },
+      failure: { _tag: "ErrorStatus", body: kycRequired, status: 412 },
+    },
+    {
+      case: "a status declared without a body keeps its JSON body",
+      error: BorrowApiError("412", undefined, response(412, kycRequired)),
+      failure: { _tag: "ErrorStatus", body: kycRequired, status: 412 },
     },
     {
       case: "a status without a body",
@@ -81,25 +92,37 @@ describe("API request failures", () => {
       failure: { _tag: "ErrorStatus", body: null, status: 500 },
     },
     {
-      case: "a geo-block body is not presentable",
-      error: statusError(
-        403,
-        JSON.stringify({ message: "Access denied", type: "GEO_LOCATION" })
+      case: "a non-JSON body is not presentable",
+      error: BorrowApiError(
+        "502",
+        undefined,
+        HttpClientResponse.fromWeb(
+          request,
+          new Response("<html>Bad Gateway</html>", { status: 502 })
+        )
       ),
-      failure: { _tag: "ErrorStatus", body: null, status: 403 },
+      failure: { _tag: "ErrorStatus", body: null, status: 502 },
     },
     {
-      case: "a declared status keeps its decoded body",
-      error: BorrowApiError(
-        "ActionsControllerExecuteActionV1429",
-        { message: "Too many requests" },
-        response(429)
-      ),
-      failure: {
-        _tag: "ErrorStatus",
-        body: { message: "Too many requests" },
-        status: 429,
-      },
+      case: "a declared error body the client cannot decode is still an error status",
+      error: new HttpClientError.HttpClientError({
+        reason: new HttpClientError.DecodeError({
+          request,
+          response: HttpClientResponse.fromWeb(
+            request,
+            new Response("<html>Too Many Requests</html>", { status: 429 })
+          ),
+        }),
+      }),
+      failure: { _tag: "ErrorStatus", body: null, status: 429 },
+    },
+    {
+      case: "a geo-block body is not presentable",
+      error: statusError(403, {
+        message: "Access denied",
+        type: "GEO_LOCATION",
+      }),
+      failure: { _tag: "ErrorStatus", body: null, status: 403 },
     },
     {
       case: "an undecodable success body is unreadable",

@@ -570,14 +570,18 @@ const OptionalKeyFromNullOr = <S extends Schema.Top>(schema: S) =>
   );
 
 const EarnBalanceBatch = Schema.Struct({
-  address: Schema.String,
-  explorerUrl: Schema.String,
-  id: Schema.String,
+  ...Struct.pick(YieldApi.BalanceBatchDto.fields, [
+    "address",
+    "explorerUrl",
+    "id",
+  ]),
   requests: Schema.Array(
     Schema.Struct({
-      explorerUrl: Schema.String,
+      ...Struct.pick(YieldApi.BalanceBatchRequestDto.fields, [
+        "explorerUrl",
+        "transactionHash",
+      ]),
       submittedAt: UtcDateTimeFromString,
-      transactionHash: Schema.String,
     })
   ),
 });

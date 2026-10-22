@@ -220,6 +220,7 @@ export type SKActionType =
   | "MIGRATE"
   | "VERIFY_WITHDRAW_CREDENTIALS"
   | "DELEGATE"
+  | "MERGE"
   | "CANCEL_PENDING";
 
 export type SKTransactionType =

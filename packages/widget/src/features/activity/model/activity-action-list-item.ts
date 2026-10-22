@@ -98,6 +98,7 @@ const getActivityDirection = (type: ActionType): ActivityDirection => {
     case "VOTE_LOCKED":
     case "REVOTE":
     case "MIGRATE":
+    case "MERGE":
     case "VERIFY_WITHDRAW_CREDENTIALS":
     case "DELEGATE":
     case "CANCEL_PENDING":

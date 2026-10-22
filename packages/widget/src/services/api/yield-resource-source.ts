@@ -1,5 +1,4 @@
 import { Effect, Option, Schema } from "effect";
-import type * as HttpClientError from "effect/http/HttpClientError";
 import { YieldAction } from "../../domain/action/models";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
@@ -30,6 +29,7 @@ import { EnabledWalletNetworksResponse } from "../../domain/wallet/models";
 import type * as YieldApi from "../../generated/api/yield";
 import {
   decodeApiResponse,
+  recoverNotFound,
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
@@ -37,15 +37,6 @@ import type {
   ValidatorDirectoryRequest,
   YieldDirectoryRequest,
 } from "./resource-sources";
-
-/** A 404 means absence; any other client failure stays a failure. */
-const recoverNotFound =
-  <A>(absent: A) =>
-  (error: HttpClientError.HttpClientError) =>
-    error.reason._tag === "StatusCodeError" &&
-    error.reason.response.status === 404
-      ? Effect.succeed(absent)
-      : Effect.fail(error);
 
 const toYieldDirectoryParams = (request: YieldDirectoryRequest) => ({
   limit: request.limit,
@@ -63,9 +54,8 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
         .ActionsControllerGetAction(actionId, undefined)
         .pipe(
           Effect.asSome,
-          // The operation declares 404, so the client raises it by tag.
-          Effect.catchTag("404", () =>
-            Effect.succeed(
+          Effect.catch(
+            recoverNotFound(
               Option.none<YieldApi.ActionsControllerGetAction200>()
             )
           ),
@@ -235,8 +225,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       .ProvidersControllerGetProvider(providerId, undefined)
       .pipe(
         Effect.asSome,
-        Effect.catchTag(
-          "HttpClientError",
+        Effect.catch(
           recoverNotFound(
             Option.none<YieldApi.ProvidersControllerGetProvider200>()
           )
