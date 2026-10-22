@@ -4,26 +4,26 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
-import { confidentialTokenBalanceKey } from "../../../domain/earn/confidential";
 import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
 import {
   getExtendedYieldType,
   getYieldRewardTokens,
   isBittensorStaking,
 } from "../../../domain/earn/yield";
-import { exactDecimal } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { ProviderOption } from "../../../domain/identity/identifiers";
 import { hasActivePositionForYield } from "../../../domain/portfolio/positions";
-import { confidentialValuesAtom } from "../../../resources/confidential-values/index";
 import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
 } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import { makeYieldEntry } from "../../yield-entry/index";
-import { isHiddenTokenBalance } from "./confidential";
+import {
+  getYieldEntryPriceToken,
+  makeYieldEntry,
+} from "../../yield-entry/index";
+import { earnTokenBalanceAtom } from "./confidential";
 import {
   earnSelectionProviderOptionsViewAtom,
   earnSelectionStatusViewAtom,
@@ -34,7 +34,6 @@ import {
   setEarnSelectionAmountAtom,
   setEarnSelectionMaxAmountAtom,
 } from "./earn-selection";
-import { earnEntryAtom } from "./earn-selection/state/atoms";
 import { earnAppLoadingAtom } from "./page-status";
 import {
   earnPageInputAtom,
@@ -55,32 +54,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const selectedTokenOption = selection.token;
   const selectedToken = quote.selectedToken;
   const selectedValidators = get(selectedEarnValidatorsAtom);
-  const owner = get(earnEntryAtom).walletScope?.address ?? null;
-  const hiddenTokenBalance = isHiddenTokenBalance(selectedYield, selectedToken);
-  const revealedTokenBalance =
-    hiddenTokenBalance && owner && selectedToken
-      ? get(confidentialValuesAtom).pipe(
-          AsyncResult.value,
-          Option.map((values) =>
-            values.get(
-              confidentialTokenBalanceKey({ owner, token: selectedToken })
-            )
-          ),
-          Option.getOrUndefined
-        )
-      : undefined;
-  // Unrevealed balances stay unknown so an over-balance transfer cannot clamp to zero.
-  const availableAmount = (() => {
-    if (!hiddenTokenBalance) {
-      return selectedTokenOption && selectedTokenOption.amount !== null
-        ? exactDecimal(selectedTokenOption.amount)
-        : null;
-    }
-    if (revealedTokenBalance === undefined || !selectedToken) return null;
-    return exactDecimal(revealedTokenBalance.toString()).shiftedBy(
-      -selectedToken.decimals
-    );
-  })();
+  const tokenBalance = get(earnTokenBalanceAtom);
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading = status.loading.yields;
@@ -102,11 +76,9 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
 
   return {
     amountInitialization: "PreserveIntent",
-    availableAmount,
-    hiddenTokenBalance:
-      hiddenTokenBalance && revealedTokenBalance === undefined,
-    revealedTokenBalance:
-      hiddenTokenBalance && revealedTokenBalance !== undefined,
+    availableAmount: tokenBalance.availableAmount,
+    hiddenTokenBalance: tokenBalance.hiddenTokenBalance,
+    revealedTokenBalance: tokenBalance.revealedTokenBalance,
     entry: {
       amount: quote.stakeAmount,
       selectedProviderOption: quote.selectedProviderOption,
@@ -134,11 +106,7 @@ export const earnEntryViewAtom = Atom.make((get) => {
   const selectedYield = input.entry.yield;
   const selectedToken = input.entry.token;
   const selectedValidators = input.entry.validators;
-  // Confidential wrappers are unpriced; 1:1 with the underlying.
-  const priceToken =
-    selectedYield && isHiddenTokenBalance(selectedYield, selectedToken)
-      ? selectedYield.token
-      : selectedToken;
+  const priceToken = getYieldEntryPriceToken(selectedYield, selectedToken);
   const pricesRequest = getTokensPricesRequest({
     token: priceToken,
     yieldDto: selectedYield,

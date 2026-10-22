@@ -5,6 +5,7 @@ import {
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
+import { isConfidentialYield } from "../../../domain/earn/confidential";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatDateTime,
@@ -34,6 +35,8 @@ type BorrowActivityActionType = BorrowActivityItem["actionData"]["action"];
 
 export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
+  /** Confidential deposits only settle when a later batch runs. */
+  | { readonly _tag: "deposit_submitted"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
   | { readonly _tag: "rewards" }
   | {
@@ -229,7 +232,9 @@ const resolveTitle = ({
 }): ActivityActionTitle => {
   switch (direction) {
     case "deposit":
-      return { _tag: "deposited", tokenSymbol };
+      return action.yieldData && isConfidentialYield(action.yieldData)
+        ? { _tag: "deposit_submitted", tokenSymbol }
+        : { _tag: "deposited", tokenSymbol };
     case "withdraw":
       return { _tag: "withdrew", tokenSymbol };
     case "rewards":

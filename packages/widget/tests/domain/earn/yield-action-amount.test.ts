@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { isYieldActionAmountEditable } from "../../../src/domain/earn/stake";
-import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../../fixtures";
+import {
+  confidentialYieldFixture,
+  yieldApiYieldDtoFixture,
+  yieldApiYieldFixture,
+} from "../../fixtures";
 
 const yieldWithExitAmount = ({
   maximum,
@@ -71,5 +75,11 @@ describe("isYieldActionAmountEditable", () => {
         "exit"
       )
     ).toBe(false);
+  });
+
+  it("allows a partial Exit on confidential vaults, which take an encrypted amount", () => {
+    expect(
+      isYieldActionAmountEditable(confidentialYieldFixture(), "exit")
+    ).toBe(true);
   });
 });

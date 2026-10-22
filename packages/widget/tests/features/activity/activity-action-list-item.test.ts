@@ -13,7 +13,11 @@ import type {
   YieldActivityItem,
 } from "../../../src/features/activity/model/activity-action";
 import { projectActivityActionListItem } from "../../../src/features/activity/model/activity-action-list-item";
-import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
+import {
+  confidentialYieldFixture,
+  yieldApiActionFixture,
+  yieldApiYieldFixture,
+} from "../../fixtures";
 
 const makeItem = (
   actionData: YieldActivityItem["actionData"],
@@ -292,6 +296,22 @@ describe("Activity action list item projection", () => {
       });
     }
   );
+
+  it("titles a confidential deposit as submitted, since it settles in a later batch", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({ amount: "1", type: "STAKE" }),
+        confidentialYieldFixture()
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection.title).toEqual({
+      _tag: "deposit_submitted",
+      tokenSymbol: "USDC",
+    });
+  });
 
   it.each([
     "VOTE",

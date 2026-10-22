@@ -2,6 +2,7 @@ import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
+import { statusTint } from "../../../styles/theme/status-tint";
 import { splitExpandedContainerQuery } from "../../../styles/tokens/breakpoints";
 import { DASHBOARD_OUTLET_PADDING } from "../../../styles/tokens/layout";
 
@@ -62,12 +63,19 @@ export const metricGrid = style({
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 });
 
+// Tones tint the theme's own card surface with its status colour, so they stay
+// legible in light, dark, and variant themes instead of forcing a light pastel.
+const tintedCard = (color: string) => ({
+  background: statusTint(color, vars.color.stakeSectionBackground, 10),
+  boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 24%, transparent)`,
+});
+
 export const metricCard = recipe({
   base: [atoms({ borderRadius: "xl", px: "3", py: "3" }), { minWidth: 0 }],
   variants: {
     tone: {
-      action: { background: "#FEF2F2" },
-      claim: { background: "#F0FDF4" },
+      action: tintedCard(vars.color.textDanger),
+      claim: tintedCard(vars.color.statusSuccess),
       default: atoms({ background: "stakeSectionBackground" }),
     },
   },
@@ -80,8 +88,8 @@ export const metricValueText = recipe({
   base: { fontSize: "16px", lineHeight: "20px" },
   variants: {
     tone: {
-      action: { color: "#B91C1C" },
-      claim: { color: "#15803D" },
+      action: { color: vars.color.textDanger },
+      claim: { color: vars.color.statusSuccess },
       default: {},
     },
   },
@@ -95,7 +103,7 @@ export const metricSubValueText = style({
 
 export const breakdownRow = style([
   atoms({
-    alignItems: "flex-start",
+    alignItems: "center",
     display: "flex",
     gap: "4",
     justifyContent: "space-between",

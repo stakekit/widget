@@ -1,5 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
+import { vars } from "../../../../../shared/styles/theme/contract.css";
 
 export const riskRatingBadge = recipe({
   base: {
@@ -23,11 +24,13 @@ export const riskRatingBadge = recipe({
         padding: "4px 12px",
       },
     },
+    // A rating scale reads by solid hue, so badges stay filled; the fills follow
+    // the theme's status tokens.
     tone: {
-      positive: { background: "#35C96F" },
-      warning: { background: "#F6B500" },
-      danger: { background: "#FF3B1F" },
-      neutral: { background: "#6E6E6E" },
+      positive: { background: vars.color.statusSuccess },
+      warning: { background: vars.color.statusWarning },
+      danger: { background: vars.color.textDanger },
+      neutral: { background: vars.color.textMuted },
     },
   },
   defaultVariants: {
@@ -52,10 +55,13 @@ export const riskRatingBadgeText = recipe({
       },
     },
     tone: {
-      positive: { color: "#FFFFFF" },
-      warning: { color: "#1F1F1F" },
-      danger: { color: "#FFFFFF" },
-      neutral: { color: "#FFFFFF" },
+      positive: { color: vars.color.white },
+      // Amber needs dark ink in every theme for contrast.
+      warning: {
+        color: `color-mix(in oklab, ${vars.color.statusWarning} 20%, black)`,
+      },
+      danger: { color: vars.color.white },
+      neutral: { color: vars.color.white },
     },
   },
   defaultVariants: {

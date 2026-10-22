@@ -24,6 +24,7 @@ import {
   averageApySummaryAtom,
   getPositionsAverageApy,
   getPositionsTotal,
+  hasConfidentialPositions,
   summaryViewAtom,
 } from "../../../src/features/portfolio/state/read-models/summary";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
@@ -45,6 +46,7 @@ import {
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import {
+  confidentialYieldFixture,
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
@@ -112,6 +114,29 @@ describe("summary atom derivations", () => {
     expect(getPositionsAverageApy([position.item], new Map()).toFixed()).toBe(
       "0"
     );
+  });
+
+  it("keeps revealed confidential positions out of the totals", () => {
+    const plain = makePosition({
+      amountUsd: "4",
+      rewardRate: 0.05,
+      yieldId: "plain-vault",
+    });
+    const confidential = makePosition({
+      amountUsd: "6",
+      rewardRate: 0.12,
+      yieldId: confidentialYieldFixture().id,
+    });
+    const yields = new Map([
+      [plain.yieldDto.id, plain.yieldDto],
+      [confidential.yieldDto.id, confidentialYieldFixture()],
+    ]);
+    const positions = [plain.item, confidential.item];
+
+    expect(getPositionsTotal(positions, yields).toFixed()).toBe("4");
+    expect(getPositionsAverageApy(positions, yields).toFixed()).toBe("5");
+    expect(hasConfidentialPositions(positions, yields)).toBe(true);
+    expect(hasConfidentialPositions([plain.item], yields)).toBe(false);
   });
 
   it("recomputes position total and weighted APY when source state changes", () => {

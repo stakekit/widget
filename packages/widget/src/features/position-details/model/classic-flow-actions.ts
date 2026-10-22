@@ -300,24 +300,29 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
   const shareToken = shareBalances[0]?.shareToken;
   // The API rejects plain amounts for confidential vaults.
   if (confidential && !shareToken) return null;
-  const confidentialArguments = shareToken
-    ? {
-        // Exact share count; converting back could leave dust.
-        shareAmountRaw: facts.useMaxAmount
-          ? shareBalances
-              .reduce(
-                (total, balance) => total + BigInt(balance.shareAmountRaw ?? 0),
-                0n
-              )
-              .toString()
-          : toBaseUnits(
-              facts.amount.dividedBy(
-                getConfidentialPricePerShare(facts.integration, shareToken)
-              ),
-              shareToken.decimals
-            ).toString(),
-      }
-    : {};
+  const getShareAmountRaw = () => {
+    if (!shareToken) return null;
+    // Exact share count; converting back could leave dust.
+    if (facts.useMaxAmount) {
+      return shareBalances.reduce(
+        (total, balance) => total + BigInt(balance.shareAmountRaw ?? 0),
+        0n
+      );
+    }
+    return toBaseUnits(
+      facts.amount.dividedBy(
+        getConfidentialPricePerShare(facts.integration, shareToken)
+      ),
+      shareToken.decimals
+    );
+  };
+  const shareAmountRaw = getShareAmountRaw();
+  // Below one share unit the encrypted redeem would be zero.
+  if (shareAmountRaw === 0n) return null;
+  const confidentialArguments =
+    shareAmountRaw === null
+      ? {}
+      : { shareAmountRaw: shareAmountRaw.toString() };
 
   return {
     gasFeeToken: facts.integration.mechanics.gasFeeToken,

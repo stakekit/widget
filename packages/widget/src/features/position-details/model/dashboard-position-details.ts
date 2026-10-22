@@ -1,6 +1,8 @@
 import type BigNumber from "bignumber.js";
+import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 import type { PendingAction } from "../../../domain/action/models";
+import { getPendingActionLabelContext } from "../../../domain/action/pending-action";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -34,8 +36,11 @@ import {
 } from "../../../shared/lib/number-format";
 import {
   formatCooldownDays,
+  formatDailyBatch,
   formatMinStake,
   formatMinStakeLabel,
+  formatNextBatchLabel,
+  formatNextBatchTiming,
   formatOptionalDays,
   formatPricePerShare,
   formatRewardClaiming,
@@ -118,6 +123,7 @@ export const getDashboardPositionDetailsModel = ({
   canUnstake,
   integrationData,
   locale,
+  now = null,
   pendingActions,
   personalizedRewardRate,
   positionBalancesByType,
@@ -128,6 +134,8 @@ export const getDashboardPositionDetailsModel = ({
   canUnstake: boolean;
   integrationData: EarnYieldWithProvider;
   locale: string;
+  /** Presentation time; batch timing is omitted without it. */
+  now?: DateTime.Utc | null;
   pendingActions: DashboardPositionPendingAction[];
   personalizedRewardRate?: YieldRewardRate | null;
   positionBalancesByType: PositionBalancesByType;
@@ -188,12 +196,18 @@ export const getDashboardPositionDetailsModel = ({
   // surface the next most useful fact so the layout never leaves an empty cell.
   const fillerMetric =
     baseCards.length % 2 === 1
-      ? getFillerMetric({ integrationData, promotedFactIds, t })
+      ? getFillerMetric({ integrationData, now, promotedFactIds, t })
       : null;
 
   return {
     addressRows: getAddressRows(integrationData, t),
-    breakdownRows: getBreakdownRows({ locale, positionBalancesByType, t }),
+    breakdownRows: getBreakdownRows({
+      integrationData,
+      locale,
+      now,
+      positionBalancesByType,
+      t,
+    }),
     chartSections: [],
     detailRows: getDetailRows({
       integrationData,
@@ -210,22 +224,38 @@ export const getDashboardPositionDetailsModel = ({
 
 const getFillerMetric = ({
   integrationData,
+  now,
   promotedFactIds,
   t,
 }: {
   integrationData: EarnYieldWithProvider;
+  now: DateTime.Utc | null;
   promotedFactIds: Set<string>;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
+  // Batched vaults redeem with their next batch, not after a fixed cooldown.
+  const nextBatch = formatNextBatchTiming({
+    now,
+    side: "redemption",
+    t,
+    yieldDto: integrationData,
+  });
   const cooldownDays = getYieldCooldownPeriod(integrationData)?.days ?? 0;
+  const getRedemptionValue = () => {
+    if (nextBatch) return formatNextBatchLabel(nextBatch, t);
+    return cooldownDays > 0
+      ? t("dashboard.earn_details.cooldown_days", { count: cooldownDays })
+      : null;
+  };
+  const redemptionValue = getRedemptionValue();
 
-  if (cooldownDays > 0) {
+  if (redemptionValue) {
     promotedFactIds.add("cooldown");
 
     return {
       id: "unstaking-period",
       label: t("dashboard.earn_details.cooldown"),
-      value: t("dashboard.earn_details.cooldown_days", { count: cooldownDays }),
+      value: redemptionValue,
     };
   }
 
@@ -425,16 +455,22 @@ const getStatusSummary = ({
     };
   }
 
-  const [pendingAction] = pendingActions;
+  // Cancelling a queued request is optional, so any other pending action
+  // outranks it for the status card.
+  const pendingAction =
+    pendingActions.find(
+      (action) => action.pendingAction.type !== "CANCEL_PENDING"
+    ) ?? pendingActions[0];
 
   if (pendingAction) {
+    const optional = pendingAction.pendingAction.type === "CANCEL_PENDING";
+
     return {
-      label: t("dashboard.position_details.action_required"),
-      tone:
-        pendingAction.pendingAction.type === "CLAIM_REWARDS"
-          ? "claim"
-          : "action",
-      value: formatPendingActionLabel(pendingAction.pendingAction.type, t),
+      label: optional
+        ? t("dashboard.position_details.action_available")
+        : t("dashboard.position_details.action_required"),
+      tone: getPendingActionTone(pendingAction.pendingAction.type),
+      value: formatPendingActionLabel(pendingAction, t),
     };
   }
 
@@ -463,26 +499,65 @@ const getStatusSummary = ({
   };
 };
 
+// Undated pending balances of batched vaults settle with the next batch.
+const getPendingBatchTiming = ({
+  integrationData,
+  now,
+  row,
+  t,
+}: {
+  integrationData: EarnYieldWithProvider;
+  now: DateTime.Utc | null;
+  row: { date?: DateTime.Utc | null; type: YieldBalanceType };
+  t: TFunction;
+}) => {
+  const { type } = row;
+  if (row.date || (type !== "entering" && type !== "exiting")) return null;
+  const nextBatch = formatNextBatchTiming({
+    now,
+    side: type === "entering" ? "subscription" : "redemption",
+    t,
+    yieldDto: integrationData,
+  });
+  return nextBatch ? formatNextBatchLabel(nextBatch, t) : null;
+};
+
 const getBreakdownRows = ({
+  integrationData,
   locale,
+  now,
   positionBalancesByType,
   t,
 }: {
+  integrationData: EarnYieldWithProvider;
   locale: string;
+  now: DateTime.Utc | null;
   positionBalancesByType: PositionBalancesByType;
   t: TFunction;
 }): DashboardPositionBreakdownRow[] =>
   groupPositionBalanceRows(getBalancesByPriority(positionBalancesByType)).map(
-    (row, index) => ({
-      id: `${row.type}-${row.token.symbol}-${index}`,
-      label: formatBalanceTypeLabel(row.type, t),
-      subValue: row.token.isPoints
+    (row, index) => {
+      const amountSubValue = row.token.isPoints
         ? t("shared.points")
-        : formatUsdSubValue(row.amountUsd, locale),
-      value: row.isEncrypted
-        ? t("shared.confidential.hidden")
-        : `${formatTokenAmount(row.amount, locale, "down")} ${row.token.symbol}`,
-    })
+        : formatUsdSubValue(row.amountUsd, locale);
+      const batchTiming = getPendingBatchTiming({
+        integrationData,
+        now,
+        row,
+        t,
+      });
+      const subValue = [amountSubValue, batchTiming]
+        .filter((part) => !!part)
+        .join(" · ");
+      return {
+        id: `${row.type}-${row.token.symbol}-${index}`,
+        label: formatBalanceTypeLabel(row.type, t),
+        subValue: subValue || undefined,
+        value: row.isEncrypted
+          ? t("shared.confidential.hidden")
+          : `${formatTokenAmount(row.amount, locale, "down")} ${row.token.symbol}`,
+      };
+    }
   );
 
 const getDetailRows = ({
@@ -501,14 +576,12 @@ const getDetailRows = ({
   const risk = getYieldRiskDisplay(integrationData);
   const minStake = formatMinStake(integrationData, t, locale);
   const pricePerShare = formatPricePerShare(integrationData, locale);
-  const cooldown = formatCooldownDays(
-    getYieldCooldownPeriod(integrationData)?.days ?? 0,
-    t
-  );
-  const warmup = formatOptionalDays(
-    getYieldWarmupPeriod(integrationData)?.days,
-    t
-  );
+  const cooldown =
+    formatDailyBatch({ side: "redemption", t, yieldDto: integrationData }) ??
+    formatCooldownDays(getYieldCooldownPeriod(integrationData)?.days ?? 0, t);
+  const warmup =
+    formatDailyBatch({ side: "subscription", t, yieldDto: integrationData }) ??
+    formatOptionalDays(getYieldWarmupPeriod(integrationData)?.days, t);
   const lockup = formatOptionalDays(
     getYieldLockupPeriod(integrationData)?.days,
     t
@@ -667,12 +740,27 @@ const formatTokenSums = (
   return lines.length === 1 ? (lines[0] ?? "") : lines;
 };
 
+const getPendingActionTone = (
+  type: PendingAction["type"]
+): DashboardPositionStatusTone => {
+  if (type === "CLAIM_REWARDS") return "claim";
+  if (type === "CANCEL_PENDING") return "default";
+  return "action";
+};
+
 // Pending action types come from the API and can outpace our translation map
 // (e.g. RWA-specific actions). Fall back to a humanized version of the type so
 // the card never renders a raw translation key.
-const formatPendingActionLabel = (type: PendingAction["type"], t: TFunction) =>
-  t(`position_details.pending_action.${type.toLowerCase()}`, {
-    defaultValue: humanizeEnumValue(type),
+const formatPendingActionLabel = (
+  { pendingAction, yieldBalance }: DashboardPositionPendingAction,
+  t: TFunction
+) =>
+  t(`position_details.pending_action.${pendingAction.type.toLowerCase()}`, {
+    context: getPendingActionLabelContext(
+      pendingAction.type,
+      yieldBalance.type
+    ),
+    defaultValue: humanizeEnumValue(pendingAction.type),
   });
 
 const formatUsdSubValue = (

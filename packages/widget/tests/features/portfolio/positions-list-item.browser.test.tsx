@@ -69,7 +69,10 @@ const createDetails = (overrides: Partial<RowDetails> = {}): RowDetails => ({
 
 const createItem = (
   overrides: Partial<
-    Pick<PositionItem, "actionRequired" | "hasPendingClaimRewards">
+    Pick<
+      PositionItem,
+      "actionRequired" | "hasPendingClaimRewards" | "hasPendingRequest"
+    >
   > = {}
 ): PositionItem => ({
   integrationId: integrationData.id as YieldId,
@@ -77,6 +80,7 @@ const createItem = (
   allBalances: [],
   balanceId: "balance-1",
   actionRequired: false,
+  hasPendingRequest: false,
   pointsRewardTokenBalances: [],
   hasPendingClaimRewards: false,
   token: integrationData.token,
@@ -171,7 +175,12 @@ describe("Earn position list item", () => {
       {
         expected: "Claim rewards",
         inactiveValidator: null,
-        item: { hasPendingClaimRewards: true },
+        item: { hasPendingClaimRewards: true, hasPendingRequest: true },
+      },
+      {
+        expected: "In progress",
+        inactiveValidator: null,
+        item: { hasPendingRequest: true },
       },
     ])(
       "shows the $expected badge first",
@@ -185,6 +194,7 @@ describe("Earn position list item", () => {
           "Jailed",
           "Inactive",
           "Claim rewards",
+          "In progress",
         ].filter((label) => label !== expected)) {
           await expect.element(app.getByText(other)).not.toBeInTheDocument();
         }

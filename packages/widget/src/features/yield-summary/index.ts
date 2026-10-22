@@ -1,5 +1,12 @@
 export { getYieldEstimatedRewards } from "./model/estimated-rewards";
 export {
+  formatDailyBatch,
+  formatDurationUntil,
+  formatNextBatchLabel,
+  formatNextBatchTiming,
+  getNextBatchCopyOptions,
+} from "./model/next-batch";
+export {
   formatCommission,
   formatCooldownDays,
   formatMeaningfulCompactNumber,

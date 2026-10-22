@@ -1,5 +1,10 @@
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import {
+  getExtendedYieldType,
+  getYieldTypeLabels,
+} from "../../../../../domain/earn/yield";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../../shared/ui/primitives/button/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -12,9 +17,11 @@ import * as styles from "./styles.css";
 export const PositionDetailsActionTabs = ({
   canStake,
   canUnstake,
+  integration,
   selectedMode,
   onSelectMode,
 }: PositionDetailsActionCapabilities & {
+  integration: EarnYieldWithProvider;
   selectedMode: PositionDetailsActionMode;
   onSelectMode: (mode: PositionDetailsActionMode) => void;
 }) => {
@@ -24,13 +31,15 @@ export const PositionDetailsActionTabs = ({
     canUnstake
       ? {
           id: "unstake" as const,
-          label: t("dashboard.position_details.action_tabs.unstake"),
+          label: t(
+            `position_details.unstake_label.${getExtendedYieldType(integration)}`
+          ),
         }
       : null,
     canStake
       ? {
           id: "stake" as const,
-          label: t("dashboard.position_details.action_tabs.stake"),
+          label: getYieldTypeLabels(integration, t).cta,
         }
       : null,
   ].filter((tab): tab is NonNullable<typeof tab> => !!tab);

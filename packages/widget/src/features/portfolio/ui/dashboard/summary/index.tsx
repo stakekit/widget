@@ -4,6 +4,7 @@ import { exactZero } from "../../../../../domain/finance/exact";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { useSummary } from "../../../react/use-summary";
 import { SummaryItem } from "../../components/summary-item";
@@ -73,46 +74,53 @@ export const Summary = () => {
   const variant = useWidgetConfig("variant");
 
   return (
-    <Box
-      className={combineRecipeWithVariant({ rec: summaryContainer, variant })}
-    >
-      <SummaryItem
-        type="staked"
-        label={t(
-          hasBorrowPositions
-            ? "dashboard.overview.summary.total_supplied"
-            : "dashboard.overview.summary.total_staked"
-        )}
-        value={totalPositionsValue}
-        isLoading={
-          summary.allPositions._tag === "Loading" || borrowPositionsAreLoading
-        }
-      />
+    <Box display="flex" flexDirection="column" gap="2">
+      <Box
+        className={combineRecipeWithVariant({ rec: summaryContainer, variant })}
+      >
+        <SummaryItem
+          type="staked"
+          label={t(
+            hasBorrowPositions
+              ? "dashboard.overview.summary.total_supplied"
+              : "dashboard.overview.summary.total_staked"
+          )}
+          value={totalPositionsValue}
+          isLoading={
+            summary.allPositions._tag === "Loading" || borrowPositionsAreLoading
+          }
+        />
 
-      <SummaryItem
-        type="apy"
-        label={t("dashboard.overview.summary.average_apy")}
-        value={averageApyValue}
-        isLoading={
-          summary.averageApy._tag === "Loading" || borrowPositionsAreLoading
-        }
-      />
+        <SummaryItem
+          type="apy"
+          label={t("dashboard.overview.summary.average_apy")}
+          value={averageApyValue}
+          isLoading={
+            summary.averageApy._tag === "Loading" || borrowPositionsAreLoading
+          }
+        />
 
-      <SummaryItem
-        type="available"
-        label={t(
-          hasBorrowPositions
-            ? "dashboard.overview.summary.net_worth"
-            : "dashboard.overview.summary.available_balance"
-        )}
-        value={availableOrNetWorthValue}
-        isLoading={
-          hasBorrowPositions
-            ? summary.allPositions._tag === "Loading" ||
-              borrowPositionsAreLoading
-            : summary.availableBalance._tag === "Loading"
-        }
-      />
+        <SummaryItem
+          type="available"
+          label={t(
+            hasBorrowPositions
+              ? "dashboard.overview.summary.net_worth"
+              : "dashboard.overview.summary.available_balance"
+          )}
+          value={availableOrNetWorthValue}
+          isLoading={
+            hasBorrowPositions
+              ? summary.allPositions._tag === "Loading" ||
+                borrowPositionsAreLoading
+              : summary.availableBalance._tag === "Loading"
+          }
+        />
+      </Box>
+      {allPositions?.excludesConfidential ? (
+        <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
+          {t("dashboard.overview.summary.excludes_confidential")}
+        </Text>
+      ) : null}
     </Box>
   );
 };

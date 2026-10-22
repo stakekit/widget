@@ -83,3 +83,53 @@ describe("Transaction step circles", () => {
     await app.unmount();
   });
 });
+
+describe("Transaction step headers", () => {
+  const renderSteps = (numbered: boolean) =>
+    render(
+      <I18nextProvider i18n={i18nInstance}>
+        <TestWidgetConfigProvider
+          apiKey="test-key"
+          baseUrl="https://api.example.com"
+          variant="default"
+        >
+          <TransactionSteps
+            numbered={numbered}
+            steps={["ENCRYPT AMOUNT", "DEPOSIT"].map((type) => ({
+              done: false,
+              id: type,
+              phases: getTransactionStepPhases(i18nInstance.t, {
+                broadcast: "idle",
+                confirm: "idle",
+                sign: "idle",
+              }),
+              type,
+            }))}
+          />
+        </TestWidgetConfigProvider>
+      </I18nextProvider>
+    );
+
+  it("counts the steps when numbered", async () => {
+    const app = await renderSteps(true);
+
+    await expect
+      .element(app.getByText("Transaction 2 / 2 - DEPOSIT"))
+      .toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("omits the count when unnumbered", async () => {
+    const app = await renderSteps(false);
+
+    await expect
+      .element(app.getByText("Transaction - ENCRYPT AMOUNT"))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("Transaction - DEPOSIT"))
+      .toBeInTheDocument();
+
+    await app.unmount();
+  });
+});

@@ -81,6 +81,7 @@ export const PositionDetailsHub = () => {
         {shouldShowPositionDetailsActionTabs(capabilities) ? (
           <PositionDetailsActionTabs
             {...capabilities}
+            integration={positionDetails.integrationData}
             selectedMode={mode ?? "unstake"}
             onSelectMode={setSelectedMode}
           />

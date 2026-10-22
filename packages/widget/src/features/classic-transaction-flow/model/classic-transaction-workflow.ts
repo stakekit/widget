@@ -78,6 +78,8 @@ export const getClassicTransactionStepsView = (
       machineState._tag === "SignFailed" &&
       machineState.error.reason._tag === "WalletRequestCancelled",
     customSignErrorMessage,
+    /** Headers count the steps: the list is known upfront. */
+    numbered: true,
     retryable:
       machineState._tag === "SignFailed" ||
       machineState._tag === "SubmissionFailed" ||
@@ -97,6 +99,11 @@ export type ClassicFlowConversionStepStatus =
   | "signing";
 
 export type ClassicFlowConversion = Readonly<{
+  /**
+   * Labels the API action leg until its transactions arrive; presentation
+   * only, never signed.
+   */
+  readonly pendingTransactionType: TransactionType | null;
   readonly steps: ReadonlyArray<
     Readonly<{
       readonly status: ClassicFlowConversionStepStatus;
@@ -127,6 +134,27 @@ const conversionStepTypes = {
   wrap: "WRAP",
 } as const;
 
+// Before the engine starts, the API action's transactions wait idle.
+const getPreparedStepStates = (conversion: ClassicFlowConversion) => {
+  if (conversion.pendingTransactionType) {
+    return [
+      {
+        meta: { done: false },
+        progress: { disabled: false, phases: idle },
+        tx: {
+          id: `pending-${conversion.pendingTransactionType}`,
+          type: conversion.pendingTransactionType,
+        },
+      },
+    ];
+  }
+  return conversion.transactions.map((tx) => ({
+    meta: { done: false },
+    progress: { disabled: false, phases: idle },
+    tx,
+  }));
+};
+
 export const getClassicConversionStepsView = (
   conversion: ClassicFlowConversion,
   engine: ReturnType<typeof getClassicTransactionStepsView> | null,
@@ -134,6 +162,8 @@ export const getClassicConversionStepsView = (
 ) => ({
   cancelled: engine?.cancelled ?? false,
   customSignErrorMessage: engine?.customSignErrorMessage ?? null,
+  /** The API action's steps are known only once prepared, so no count. */
+  numbered: false,
   retryable:
     conversion.steps.some((step) => step.status === "failed") ||
     (engine?.retryable ?? false),
@@ -149,12 +179,7 @@ export const getClassicConversionStepsView = (
         type: conversionStepTypes[step.step],
       },
     })),
-    ...(engine?.txStates ??
-      conversion.transactions.map((tx) => ({
-        meta: { done: false },
-        progress: { disabled: false, phases: idle },
-        tx,
-      }))),
+    ...(engine?.txStates ?? getPreparedStepStates(conversion)),
   ],
   yieldId,
 });

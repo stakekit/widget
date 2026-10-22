@@ -1,9 +1,12 @@
 import { useAtomValue } from "@effect/atom-react";
-import type { SyntheticEvent } from "react";
+import { useState } from "react";
 import { walletChainIcon } from "../../../../services/wallet/wallet-chain-icons";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { createMonogramImageSrc } from "../../../../shared/ui/primitives/image";
+import {
+  Monogram,
+  monogramInitial,
+} from "../../../../shared/ui/primitives/image";
 import { walletIconUrlAtom } from "../../state/wallet-icon";
 
 export const WalletChainIcon = ({
@@ -16,22 +19,26 @@ export const WalletChainIcon = ({
   readonly size?: number;
 }) => {
   const icon = walletChainIcon(chain);
-  const fallbackSrc = createMonogramImageSrc(chain.name);
-  const src = useAtomValue(walletIconUrlAtom(icon.iconUrl)) ?? fallbackSrc;
-  if (!src) return null;
+  const src = useAtomValue(walletIconUrlAtom(icon.iconUrl));
+  const [failedSrc, setFailedSrc] = useState<string>();
+  const initial = monogramInitial(chain.name);
 
-  const onError = (event: SyntheticEvent<HTMLImageElement>) => {
-    if (fallbackSrc && event.currentTarget.src !== fallbackSrc) {
-      event.currentTarget.src = fallbackSrc;
-    }
-  };
+  if (src === undefined || src === failedSrc) {
+    return initial === undefined ? null : (
+      <Monogram
+        initial={initial}
+        className={className}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
 
   return (
     <Box
       as="img"
       src={src}
       alt=""
-      onError={onError}
+      onError={() => setFailedSrc(src)}
       className={className}
       style={{
         background: icon.iconBackground,

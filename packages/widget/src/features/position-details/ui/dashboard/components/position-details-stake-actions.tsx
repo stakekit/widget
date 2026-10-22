@@ -8,14 +8,17 @@ import {
 } from "../../../../../shared/lib/number-format";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
 import { AmountTokenSection } from "../../../../../shared/ui/components/amount-token-section";
-import { SelectedToken } from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
-import { TronResourceSelection } from "../../../../yield-entry/views";
+import {
+  ConfidentialTokenBalance,
+  TronResourceSelection,
+} from "../../../../yield-entry/views";
 import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
 import { usePositionDetailsStake } from "../hooks/use-position-details-stake";
+import { PositionDetailsStakeTokenSelect } from "./position-details-stake-token-select";
 
 type PositionDetailsStakeState = ReturnType<typeof usePositionDetailsStake>;
 
@@ -81,6 +84,22 @@ const PositionDetailsStakeTokenSection = ({
     );
   }
 
+  const availableContent = available ? (
+    <AmountToggle.Root>
+      <AmountToggle.Amount>
+        {({ state }) => (
+          <span>
+            {state === "full"
+              ? formatNumber(available.amount, locale)
+              : formatTokenAmount(available.amount, locale, "down")}
+            &nbsp;{available.symbol}&nbsp;
+            {t("shared.available")}
+          </span>
+        )}
+      </AmountToggle.Amount>
+    </AmountToggle.Root>
+  ) : null;
+
   return (
     <AmountTokenSection
       value={stake.stakeAmount}
@@ -88,29 +107,31 @@ const PositionDetailsStakeTokenSection = ({
       isInvalid={errorInput}
       accessory={
         stake.selectedToken ? (
-          <SelectedToken token={stake.selectedToken} />
+          <PositionDetailsStakeTokenSelect
+            onSelect={stake.onTokenSelect}
+            options={stake.tokenSelection.options}
+            selectable={stake.tokenSelection.selectable}
+            token={stake.selectedToken}
+          />
         ) : null
       }
       formattedPrice={stake.priceUsd ? formatUsd(stake.priceUsd, locale) : ""}
       balanceError={errorBalance}
       balance={
-        available ? (
-          <AmountToggle.Root>
-            <AmountToggle.Amount>
-              {({ state }) => (
-                <span>
-                  {state === "full"
-                    ? formatNumber(available.amount, locale)
-                    : formatTokenAmount(available.amount, locale, "down")}
-                  &nbsp;{available.symbol}&nbsp;
-                  {t("shared.available")}
-                </span>
-              )}
-            </AmountToggle.Amount>
-          </AmountToggle.Root>
+        stake.hiddenTokenBalance || availableContent ? (
+          <ConfidentialTokenBalance
+            hidden={stake.hiddenTokenBalance}
+            revealed={stake.revealedTokenBalance}
+            revealStatus={stake.revealTokenBalanceStatus}
+            onReveal={stake.onRevealTokenBalance}
+            onHide={stake.onHideTokenBalance}
+            symbol={stake.selectedToken?.symbol ?? ""}
+          >
+            {availableContent}
+          </ConfidentialTokenBalance>
         ) : null
       }
-      onMaxClick={stake.isStakeTokenSameAsGasToken ? null : stake.onMaxClick}
+      onMaxClick={stake.canUseMax ? stake.onMaxClick : null}
       minMaxLabel={minMaxLabel}
       minMaxError={stakeAmountLessThanMin}
       state={submitted && stakeAmountIsZero ? "danger" : "default"}

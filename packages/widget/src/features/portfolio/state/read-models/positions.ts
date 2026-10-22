@@ -32,6 +32,8 @@ export type PositionItem = {
   readonly allBalances: EarnBalance[];
   readonly balanceId: string;
   readonly actionRequired: boolean;
+  /** Only optional cancellations are pending: the request is in progress. */
+  readonly hasPendingRequest: boolean;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
   readonly hasPendingClaimRewards: boolean;
   readonly token: EarnBalance["token"] | null;
@@ -71,11 +73,16 @@ export const toPositionItems = (
 
         if (balancesWithAmount.length === 0) continue;
 
-        const hasPendingNonClaimAction = balancesWithAmount.some((balance) =>
-          balance.pendingActions.some(
-            (action) => action.type !== "CLAIM_REWARDS"
-          )
+        const pendingTypes = balancesWithAmount.flatMap((balance) =>
+          balance.pendingActions.map((action) => action.type)
         );
+        // Claims have their own badge; cancelling a request is optional.
+        const hasRequiredPendingAction = pendingTypes.some(
+          (type) => type !== "CLAIM_REWARDS" && type !== "CANCEL_PENDING"
+        );
+        const actionRequired =
+          balancesWithAmount.some((balance) => balance.type === "locked") ||
+          hasRequiredPendingAction;
 
         items.push({
           ...value,
@@ -88,9 +95,9 @@ export const toPositionItems = (
             [...value.balances].sort(
               (a, b) => priorityOrder[a.type] - priorityOrder[b.type]
             )[0]?.token ?? null,
-          actionRequired:
-            balancesWithAmount.some((balance) => balance.type === "locked") ||
-            hasPendingNonClaimAction,
+          actionRequired,
+          hasPendingRequest:
+            !actionRequired && pendingTypes.includes("CANCEL_PENDING"),
           pointsRewardTokenBalances: balancesWithAmount.filter(
             (balance) => !!balance.token.isPoints
           ),

@@ -1,7 +1,11 @@
 import type BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
 import type { PendingAction } from "../../../../../domain/action/models";
-import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
+import {
+  getPendingActionLabelContext,
+  type YieldPendingActionType,
+} from "../../../../../domain/action/pending-action";
+import { getCancelReturnToken } from "../../../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -15,6 +19,7 @@ import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
 import type { usePositionDetails } from "../hooks/use-position-details";
+import { actionBlockCta, actionBlockText, noWrap } from "../styles.css";
 
 type StaticActionBlockProps = {
   pendingAction: PendingAction;
@@ -24,23 +29,36 @@ type StaticActionBlockProps = {
   onPendingActionClick: ReturnType<
     typeof usePositionDetails
   >["onPendingActionClick"];
-  yieldId: EarnYieldWithProvider["id"];
+  integration: EarnYieldWithProvider;
 };
 
 export const StaticActionBlock = ({
   pendingAction,
   yieldBalance,
   onPendingActionClick,
-  yieldId,
+  integration,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const actionKey =
+    pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>;
+  const labelContext = getPendingActionLabelContext(
+    pendingAction.type,
+    yieldBalance.type
+  );
+  const returnToken = getCancelReturnToken(
+    integration,
+    pendingAction.type,
+    yieldBalance.type
+  );
 
   return (
     <Box
       display="flex"
+      flexWrap="wrap"
       justifyContent="space-between"
       alignItems="center"
+      gap="3"
       px="4"
       py="4"
       borderRadius="xl"
@@ -48,10 +66,11 @@ export const StaticActionBlock = ({
       borderWidth={1}
       borderStyle="solid"
     >
-      <Box flex={2}>
+      <Box className={actionBlockText}>
         <Text variant={{ weight: "normal" }}>
           <Trans
             i18nKey="position_details.available_to"
+            context={labelContext}
             values={{
               amount: yieldBalance.isEncrypted
                 ? t("shared.confidential.hidden")
@@ -60,33 +79,29 @@ export const StaticActionBlock = ({
                     locale,
                     "down"
                   ),
-              symbol: yieldBalance.token.symbol,
-              pendingAction: t(
-                `position_details.pending_action.${
-                  pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
-                }`,
-                {
-                  context: isEthenaUsdeStaking(yieldId)
-                    ? "ethena_usde"
-                    : undefined,
-                  defaultValue: humanizePendingActionType(pendingAction.type),
-                }
-              ),
+              symbol: (returnToken ?? yieldBalance.token).symbol,
+              pendingAction: t(`position_details.pending_action.${actionKey}`, {
+                context: isEthenaUsdeStaking(integration.id)
+                  ? "ethena_usde"
+                  : undefined,
+                defaultValue: humanizePendingActionType(pendingAction.type),
+              }),
             }}
             components={{
               bold: <Box as="span" fontWeight="bold" display="block" />,
             }}
           />
         </Text>
+        {returnToken ? (
+          <Text variant={{ type: "muted", size: "small" }}>
+            {t("position_details.cancel_returns", {
+              symbol: returnToken.symbol,
+            })}
+          </Text>
+        ) : null}
       </Box>
 
-      <Box
-        flex={1}
-        maxWidth="24"
-        justifyContent="flex-end"
-        display="flex"
-        alignItems="center"
-      >
+      <Box className={actionBlockCta}>
         <Button
           variant={{
             size: "small",
@@ -99,15 +114,11 @@ export const StaticActionBlock = ({
             })
           }
         >
-          <Text>
-            {t(
-              `position_details.pending_action_button.${
-                pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
-              }`,
-              {
-                defaultValue: humanizePendingActionType(pendingAction.type),
-              }
-            )}
+          <Text className={noWrap}>
+            {t(`position_details.pending_action_button.${actionKey}`, {
+              context: labelContext,
+              defaultValue: humanizePendingActionType(pendingAction.type),
+            })}
           </Text>
         </Button>
       </Box>

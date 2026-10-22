@@ -273,6 +273,10 @@ const runPositionPendingActionAtom = Atom.family(
           .setResult(startClassicTransactionFlowAtom, {
             intake: {
               _tag: "Manage",
+              balanceType: decision.selection.yieldBalance.type,
+              ...(decision.selection.yieldBalance.isEncrypted
+                ? { balanceHidden: true }
+                : {}),
               ...(confidentialHandle ? { confidentialHandle } : {}),
               gasFeeToken: value.gasFeeToken,
               integration: value.integrationData,

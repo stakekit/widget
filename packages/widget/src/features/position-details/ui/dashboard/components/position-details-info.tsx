@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import {
   AddressRow,
   DetailRow,
@@ -46,6 +47,7 @@ export const PositionDetailsInfo = () => {
   const positionDetails = usePositionDetails();
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const presentationTime = useAtomValue(presentationClockAtom);
 
   const rewardsYieldId = positionDetails.integrationData?.id ?? null;
   const rewardsSummaries = useAtomValue(
@@ -67,6 +69,7 @@ export const PositionDetailsInfo = () => {
       canUnstake: positionDetails.canUnstake,
       integrationData,
       locale,
+      now: presentationTime?.now ?? null,
       pendingActions: positionDetails.pendingActions ?? [],
       personalizedRewardRate: positionDetails.personalizedRewardRate,
       positionBalancesByType,

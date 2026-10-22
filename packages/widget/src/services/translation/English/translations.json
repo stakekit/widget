@@ -5,8 +5,13 @@
       "decrypt_to_withdraw": "Your balance is encrypted. Decrypt it to withdraw.",
       "hidden": "Hidden",
       "hide": "Hide balance",
+      "hide_short": "Hide",
+      "masked_amount": "•••• {{symbol}}",
+      "retry": "Retry",
       "reveal": "Reveal balance",
-      "reveal_failed": "Could not reveal the balance. Try again."
+      "reveal_failed": "Could not reveal the balance. Try again.",
+      "reveal_short": "Reveal",
+      "revealing": "Revealing…"
     },
     "stake_kit": "Yield.xyz",
     "max": "Max",
@@ -327,6 +332,8 @@
     "item": {
       "deposited": "Deposited {{token}}",
       "deposited_without_token": "Deposited",
+      "deposit_submitted": "{{token}} deposit submitted",
+      "deposit_submitted_without_token": "Deposit submitted",
       "withdrew": "Withdrew {{token}}",
       "withdrew_without_token": "Withdrew",
       "rewards": "Rewards",
@@ -463,13 +470,20 @@
       "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
       "description_with_fee_configuration": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. This token accumulates yield and represents your share in the vault.",
       "description_ethena_usde": "When you deposit {{stakeToken}} you'll receive {{depositToken}}.",
+      "description_confidential": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. Your balance stays encrypted on-chain",
+      "earn_after_batch": "You'll start earning once the batcher settles your deposit in the next batch",
+      "earn_after_batch_imminent": "You'll start earning once the batcher settles your deposit in the next batch, due any moment",
+      "earn_after_batch_timed": "You'll start earning once the batcher settles your deposit in the next batch, in {{duration}}",
       "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
       "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically",
       "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
       "withdrawn_time_immediately": "After withdrawing, your assets will be available immediately",
       "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day",
-      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days"
+      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days",
+      "withdrawn_time_confidential": "Withdraw privately when the next batch settles, or instantly with a public amount",
+      "withdrawn_time_confidential_imminent": "Withdraw privately when the next batch settles, due any moment, or instantly with a public amount",
+      "withdrawn_time_confidential_timed": "Withdraw privately when the next batch settles in {{duration}}, or instantly with a public amount"
     },
     "lend": {
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
@@ -609,6 +623,7 @@
       "cooldown": "Redemption time",
       "cooldown_days_one": "{{count}} day",
       "cooldown_days_other": "{{count}} days",
+      "daily_batch": "Daily batch · {{time}} {{timezone}}",
       "warmup": "Warmup",
       "lockup": "Lockup",
       "withdrawal": "Withdrawal",
@@ -868,10 +883,6 @@
     "position_details": {
       "action_available": "Action available",
       "action_required": "Action required",
-      "action_tabs": {
-        "stake": "Stake",
-        "unstake": "Unstake"
-      },
       "active": "Active",
       "balance": "Balance",
       "breadcrumb_root": "Positions",
@@ -894,7 +905,8 @@
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
         "available_balance": "Available",
-        "net_worth": "Net worth"
+        "net_worth": "Net worth",
+        "excludes_confidential": "Totals exclude confidential positions, whose amounts stay private."
       }
     },
     "rewards": {
@@ -1032,6 +1044,9 @@
   },
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
+    "deposit_submitted": "Deposit of {{amount}} {{tokenNetwork}} submitted",
+    "next_batch_in": "Joins the next batch in {{duration}}",
+    "next_batch_imminent": "Joins the next batch, due any moment",
     "successfully_unstaked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View {{type}} transaction",
@@ -1096,6 +1111,8 @@
       "verify_withdraw_credentials": "verified withdraw credentials",
       "delegate": "delegated",
       "cancel_pending": "cancelled pending request",
+      "cancel_pending_deposit": "cancelled deposit",
+      "cancel_pending_withdrawal": "cancelled withdrawal",
       "undelegate": "undelegated",
       "create_eigenpod": "created eigenpod",
       "start_checkpoint": "started checkpoint",
@@ -1147,6 +1164,7 @@
     "no_current_positions": "No active positions",
     "claim_rewards": "Claim rewards",
     "action_required": "Action required",
+    "in_progress": "In progress",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
     "import_button": "Import",
@@ -1226,6 +1244,9 @@
     "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Rewards",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
+    "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Pending deposit",
+    "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Pending withdrawal",
+    "cancel_returns": "Cancelling returns {{symbol}} to your wallet right away",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
@@ -1236,8 +1257,10 @@
       "select_title": "Select receive token",
       "note": "You will receive {{symbol}} when you withdraw.",
       "note_with_address": "You will receive {{symbol}} ({{address}}) when you withdraw.",
-      "confidential_batched": "{{symbol}} stays private. Withdrawals are batched and can take a while.",
-      "confidential_instant": "{{symbol}} arrives right away, but the amount is public on-chain."
+      "confidential_batched": "Private withdrawal: {{symbol}} stays private and is paid out when the next batch settles.",
+      "confidential_batched_imminent": "Private withdrawal: {{symbol}} stays private and is paid out when the next batch settles, due any moment.",
+      "confidential_batched_timed": "Private withdrawal: {{symbol}} stays private and is paid out when the next batch settles, in {{duration}}.",
+      "confidential_instant": "Instant withdrawal: {{symbol}} arrives right away, but the amount is public on-chain."
     },
     "select_validators": {
       "submit": "Submit"
@@ -1308,6 +1331,7 @@
       "years_other": "{{count}} years"
     },
     "unstaking_duration": "{{duration}} remaining",
+    "next_batch_in": "Next batch in {{duration}}",
     "unstaking_imminent": "Imminent",
     "pending_action": {
       "stake": "Stake",
@@ -1335,6 +1359,8 @@
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
       "cancel_pending": "Cancel pending request",
+      "cancel_pending_deposit": "Cancel deposit",
+      "cancel_pending_withdrawal": "Cancel withdrawal",
       "undelegate": "Undelegate",
       "create_eigenpod": "Create eigenpod",
       "start_checkpoint": "Start checkpoint",
@@ -1366,7 +1392,9 @@
       "migrate": "Migrate",
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
-      "cancel_pending": "Cancel pending request"
+      "cancel_pending": "Cancel pending request",
+      "cancel_pending_deposit": "Cancel deposit",
+      "cancel_pending_withdrawal": "Cancel withdrawal"
     },
     "unstake_sign": {
       "title": "Verify Ownership",

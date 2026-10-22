@@ -6,7 +6,10 @@ import type {
   YieldAction,
 } from "../../../domain/action/models";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
-import type { ExitReceiveToken } from "../../../domain/action/rules";
+import type {
+  ExitReceiveToken,
+  TransactionType,
+} from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import {
   type ConfidentialConversion,
@@ -25,6 +28,7 @@ import type {
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { ProviderOption } from "../../../domain/identity/identifiers";
+import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,
@@ -75,6 +79,10 @@ type ExitClassicTransactionFlowIntake = {
 
 type ManageClassicTransactionFlowIntake = {
   readonly _tag: "Manage";
+  /** Balance the pending action acts on; names e.g. which request is cancelled. */
+  readonly balanceType: YieldBalanceType;
+  /** The balance is still encrypted, so its amount is unknown here. */
+  readonly balanceHidden?: boolean;
   readonly confidentialHandle?: string;
   readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;
@@ -460,6 +468,25 @@ export const getClassicFlowConfidentialInput = (
       };
     }
     default:
+      return null;
+  }
+};
+
+/**
+ * The API action leg a confidential flow prepares only after encrypting or
+ * decrypting its amount; it labels that step until the API returns it.
+ */
+export const getClassicFlowPreparedTransactionType = (
+  intake: ClassicTransactionFlowIntake
+): TransactionType | null => {
+  switch (intake._tag) {
+    case "Enter":
+      return "DEPOSIT";
+    case "Exit":
+    // Only a WITHDRAW pending action carries a handle to decrypt.
+    case "Manage":
+      return "WITHDRAW";
+    case "YieldActionContinuation":
       return null;
   }
 };

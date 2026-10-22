@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import type { EarnYieldWithProvider } from "../../../../../../domain/earn/models";
 import type { Token } from "../../../../../../domain/token/token";
 import { Divider } from "../../../../../../shared/ui/components/divider";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
@@ -50,6 +51,42 @@ type ReviewPageProps = {
   feeConfigLoading?: boolean;
   cta: PageCta;
 } & MetaInfoProps;
+
+type PositionActionReview = {
+  readonly amount: string;
+  readonly cta: PageCta;
+  readonly facts: ReviewPageProps["facts"];
+  readonly fee: string;
+  readonly gasCheckLoading: boolean;
+  readonly integrationData: EarnYieldWithProvider;
+  readonly isGasCheckWarning: boolean;
+  readonly rewardTokenDetailsProps: ReviewPageProps["rewardTokenDetailsProps"];
+  readonly title: string;
+  readonly token: Token;
+};
+
+/** Review props for acting on a held position, where no entry fees apply. */
+export const getPositionActionReviewProps = (review: PositionActionReview) => ({
+  commissionFee: null,
+  cta: review.cta,
+  depositFee: null,
+  facts: review.facts,
+  fee: review.fee,
+  feeConfigLoading: false,
+  info: `${review.amount} ${review.token.symbol}`,
+  isGasCheckError: review.isGasCheckWarning,
+  loading: review.gasCheckLoading,
+  managementFee: null,
+  metadata: {
+    logoURI: review.integrationData.metadata.logoURI,
+    name: review.integrationData.metadata.name,
+    provider: review.integrationData.provider,
+  },
+  performanceFee: null,
+  rewardTokenDetailsProps: review.rewardTokenDetailsProps,
+  title: review.title,
+  token: review.token,
+});
 
 export const ReviewPage = ({
   facts,

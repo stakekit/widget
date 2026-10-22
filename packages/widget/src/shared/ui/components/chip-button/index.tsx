@@ -1,6 +1,5 @@
 import clsx from "clsx";
-import type { PropsWithChildren } from "react";
-import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { Box, type BoxProps } from "../../primitives/box";
 import { pressAnimation } from "../../primitives/button/styles.css";
@@ -8,25 +7,28 @@ import { Text } from "../../primitives/typography/text";
 import { useWidgetPresentation } from "../../widget-presentation";
 import { container, text } from "./styles.css";
 
-type MaxButtonProps = PropsWithChildren<{
-  onMaxClick: () => void;
-}> &
-  BoxProps;
+type ChipButtonProps = {
+  readonly disabled?: boolean;
+  readonly label: ReactNode;
+  readonly onClick: () => void;
+} & Omit<BoxProps, "children" | "onClick">;
 
-export const MaxButton = ({
-  onMaxClick,
+/** Compact inline action beside an amount, e.g. Max or Reveal. */
+export const ChipButton = ({
   className,
+  disabled = false,
+  label,
+  onClick,
   ...rest
-}: MaxButtonProps) => {
-  const { t } = useTranslation();
-
+}: ChipButtonProps) => {
   const { variant } = useWidgetPresentation();
 
   return (
     <Box
-      data-rk="stake-token-section-max-button"
       as="button"
-      onClick={onMaxClick}
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
       className={clsx(
         pressAnimation,
         combineRecipeWithVariant({ rec: container, variant }),
@@ -38,7 +40,7 @@ export const MaxButton = ({
         variant={{ type: "regular" }}
         className={combineRecipeWithVariant({ rec: text, variant })}
       >
-        {t("shared.max")}
+        {label}
       </Text>
     </Box>
   );

@@ -19,16 +19,16 @@ const stateStyles = {
     borderColor: "transparent",
   },
   start_kyc: {
-    background: "color-mix(in oklab, #5147f3 8%, transparent)",
-    borderColor: "#5147f3",
+    background: `color-mix(in oklab, ${vars.color.accent} 8%, transparent)`,
+    borderColor: vars.color.accent,
   },
   pending: {
-    background: "color-mix(in oklab, #ffc21b 16%, transparent)",
-    borderColor: "#ffc21b",
+    background: `color-mix(in oklab, ${vars.color.statusWarning} 16%, transparent)`,
+    borderColor: vars.color.statusWarning,
   },
   rejected: {
-    background: "color-mix(in oklab, #ff3b1f 10%, transparent)",
-    borderColor: "#ff3b1f",
+    background: `color-mix(in oklab, ${vars.color.textDanger} 10%, transparent)`,
+    borderColor: vars.color.textDanger,
   },
   unknown: {
     background: vars.color.backgroundMuted,

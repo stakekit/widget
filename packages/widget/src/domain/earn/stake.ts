@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { Network } from "../network/network";
 import { equalTokens, type Token } from "../token/token";
+import { isConfidentialYield } from "./confidential";
 import type { EarnYieldWithProvider } from "./models";
 import { getYieldActionArg, isBittensorStaking } from "./yield";
 
@@ -48,6 +49,10 @@ export const isYieldActionAmountEditable = (
   yieldDto: EarnYieldWithProvider,
   type: "enter" | "exit"
 ) => {
+  // Confidential vaults take the amount encrypted, never as plain `amount`.
+  if (isConfidentialYield(yieldDto)) {
+    return getYieldActionArg(yieldDto, type, "encryptedAmount") != null;
+  }
   const amountArgument = getYieldActionArg(yieldDto, type, "amount");
   return amountArgument != null && !isForceMaxAmount(amountArgument);
 };

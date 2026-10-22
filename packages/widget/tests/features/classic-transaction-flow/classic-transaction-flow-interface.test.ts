@@ -94,6 +94,7 @@ const makeManageIntake = (): Intake<"Manage"> => {
 
   return {
     _tag: "Manage",
+    balanceType: "claimable",
     gasFeeToken: integration.mechanics.gasFeeToken,
     integration,
     interactedToken: integration.token,

@@ -38,6 +38,7 @@ import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-ser
 import {
   type ClassicTransactionFlowIntake,
   getClassicFlowConfidentialInput,
+  getClassicFlowPreparedTransactionType,
   getClassicTransactionWorkflowInput,
 } from "../../model/classic-transaction-flow";
 import {
@@ -205,9 +206,13 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
       const steps =
         (yield* SubscriptionRef.get(conversionRef))?.steps ??
         (yield* planSteps);
+      const prepared = yield* Ref.get(actionRef);
       yield* SubscriptionRef.set(conversionRef, {
+        pendingTransactionType: prepared
+          ? null
+          : getClassicFlowPreparedTransactionType(intake),
         steps,
-        transactions: (yield* Ref.get(actionRef))?.transactions ?? [],
+        transactions: prepared?.transactions ?? [],
       });
 
       for (const [index, { status, step }] of steps.entries()) {
@@ -235,7 +240,11 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
             yield* Ref.set(actionRef, action);
             yield* SubscriptionRef.update(conversionRef, (current) =>
               current
-                ? { ...current, transactions: action.transactions }
+                ? {
+                    ...current,
+                    pendingTransactionType: null,
+                    transactions: action.transactions,
+                  }
                 : current
             );
           }

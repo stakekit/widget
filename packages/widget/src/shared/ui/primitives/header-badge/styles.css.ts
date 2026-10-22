@@ -1,5 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { vars } from "../../../styles/theme/contract.css";
+import { statusInk, statusTint } from "../../../styles/theme/status-tint";
 
 const headerBadgeBase = style({
   alignItems: "center",
@@ -12,16 +13,16 @@ const headerBadgeBase = style({
 export const headerBadge = style([
   headerBadgeBase,
   {
-    background: "#FEF1CF",
-    color: "#9A4F0E",
+    background: statusTint(vars.color.statusWarning),
+    color: statusInk(vars.color.statusWarning),
   },
 ]);
 
 export const headerAutoBadge = style([
   headerBadgeBase,
   {
-    background: "#E8F9EF",
-    color: "#15803D",
+    background: statusTint(vars.color.statusSuccess),
+    color: statusInk(vars.color.statusSuccess),
   },
 ]);
 

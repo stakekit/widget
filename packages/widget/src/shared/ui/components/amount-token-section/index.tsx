@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { Box, type BoxProps } from "../../primitives/box";
 import { Spinner } from "../../primitives/spinner";
 import { Text } from "../../primitives/typography/text";
 import { useWidgetPresentation } from "../../widget-presentation";
-import { MaxButton } from "../max-button";
+import { ChipButton } from "../chip-button";
 import { NumberInput, type NumberInputProps } from "../number-input";
 import {
   amountTokenSection,
@@ -87,6 +88,7 @@ export const AmountTokenSection = ({
   header,
   children,
 }: AmountTokenSectionProps) => {
+  const { t } = useTranslation();
   const { variant } = useWidgetPresentation();
 
   const stakeToneProps: BoxProps =
@@ -198,7 +200,13 @@ export const AmountTokenSection = ({
           </Box>
 
           {onMaxClick ? (
-            <MaxButton onMaxClick={onMaxClick} {...maxButtonProps} />
+            <ChipButton
+              data-rk="stake-token-section-max-button"
+              label={t("shared.max")}
+              marginLeft="2"
+              onClick={onMaxClick}
+              {...maxButtonProps}
+            />
           ) : null}
         </Box>
       </Box>

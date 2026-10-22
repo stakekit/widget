@@ -1,6 +1,8 @@
+import { useAtomValue } from "@effect/atom-react";
 import { Array as EArray, Option } from "effect";
 import type { ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { isConfidentialYield } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { ValidatorInput as ValidatorDto } from "../../../domain/earn/validator";
 import {
@@ -13,7 +15,12 @@ import {
   isEthenaUsdeStaking,
 } from "../../../domain/earn/yield";
 import type { Token } from "../../../domain/token/token";
+import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import { SKAnchor } from "../../../shared/ui/primitives/anchor";
+import {
+  formatNextBatchTiming,
+  getNextBatchCopyOptions,
+} from "../model/next-batch";
 
 export const useYieldMetaInfo = ({
   selectedStake,
@@ -27,6 +34,7 @@ export const useYieldMetaInfo = ({
   tokenDto: Token | null;
 }) => {
   const { t } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
 
   const validatorsFormatted =
     EArray.findFirst(validators, (v) => !!(v.name ?? v.address)).pipe(
@@ -117,12 +125,46 @@ export const useYieldMetaInfo = ({
     extra: y.token.network === "tezos" ? t("details.extra_tezos") : undefined,
   };
 
+  // Confidential vaults settle deposits and private withdrawals in batches.
+  const confidential = isConfidentialYield(y);
   const getVaultDescriptionContext = () => {
+    if (confidential) return "confidential" as const;
     if (haveFeeConfigurationEnabled) {
       return "with_fee_configuration" as const;
     }
     if (isEthenaUsdeStaking(y.id)) return "ethena_usde" as const;
     return undefined;
+  };
+  const nextBatchCopyOptions = (side: "subscription" | "redemption") =>
+    getNextBatchCopyOptions(
+      formatNextBatchTiming({
+        now: presentationTime?.now ?? null,
+        side,
+        t,
+        yieldDto: y,
+      })
+    );
+  const getVaultEarnPeriod = () => {
+    if (confidential) {
+      return t(
+        "details.vault.earn_after_batch",
+        nextBatchCopyOptions("subscription")
+      );
+    }
+    return warmupPeriodDays > 0
+      ? t("details.vault.earn_after_warmup", { count: warmupPeriodDays })
+      : null;
+  };
+  const getVaultWithdrawnTime = () => {
+    if (confidential) {
+      return t(
+        "details.vault.withdrawn_time_confidential",
+        nextBatchCopyOptions("redemption")
+      );
+    }
+    return cooldownPeriodDays > 0
+      ? t("details.vault.withdrawn_time", { count: cooldownPeriodDays })
+      : t("details.vault.withdrawn_time_immediately");
   };
   const vaultDescriptionContext = getVaultDescriptionContext();
   const restakingWithdrawnTime =
@@ -210,22 +252,12 @@ export const useYieldMetaInfo = ({
           depositToken: rewardTokens,
           context: vaultDescriptionContext,
         }),
-        earnPeriod:
-          warmupPeriodDays > 0
-            ? t("details.vault.earn_after_warmup", {
-                count: warmupPeriodDays,
-              })
-            : null,
+        earnPeriod: getVaultEarnPeriod(),
         earnRewards:
           rewardClaiming === "manual"
             ? t("details.vault.earn_yield_manual", { rewardSchedule })
             : t("details.vault.earn_yield_auto", { rewardSchedule }),
-        withdrawnTime:
-          cooldownPeriodDays > 0
-            ? t("details.vault.withdrawn_time", {
-                count: cooldownPeriodDays,
-              })
-            : t("details.vault.withdrawn_time_immediately"),
+        withdrawnTime: getVaultWithdrawnTime(),
         withdrawnNotAvailable: null,
         ...def,
       };

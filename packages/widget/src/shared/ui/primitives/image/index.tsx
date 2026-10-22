@@ -1,4 +1,7 @@
-import type { HTMLProps } from "react";
+import clsx from "clsx";
+import type { CSSProperties, HTMLProps } from "react";
+import { useState } from "react";
+import { vars } from "../../../styles/theme/contract.css";
 import type { BoxProps } from "../box";
 import { Box } from "../box";
 
@@ -15,12 +18,13 @@ export const Image = ({
   wrapperProps,
   imgProps,
 }: ImageProps) => {
-  const generatedFallbackSrc = createMonogramImageSrc(fallbackName);
+  const [failedSrc, setFailedSrc] = useState<string>();
+  const initial = monogramInitial(fallbackName);
+  const showMonogram =
+    initial !== undefined && (src === undefined || src === failedSrc);
 
   const onError: HTMLProps<HTMLImageElement>["onError"] = (e) => {
-    if (generatedFallbackSrc) {
-      e.currentTarget.src = generatedFallbackSrc;
-    }
+    setFailedSrc(src);
     imgProps?.onError?.(e);
   };
 
@@ -31,33 +35,65 @@ export const Image = ({
       display="flex"
       justifyContent="center"
     >
-      <Box
-        {...imgProps}
-        src={src ?? generatedFallbackSrc}
-        as="img"
-        onError={onError}
-      />
+      {showMonogram ? (
+        <Monogram
+          initial={initial}
+          label={imgProps?.alt}
+          className={clsx(imgProps?.className)}
+          style={{ width: "100%", height: "100%" }}
+        />
+      ) : (
+        <Box {...imgProps} src={src} as="img" onError={onError} />
+      )}
     </Box>
   );
 };
 
-export const createMonogramImageSrc = (name?: string) => {
-  if (!name) return undefined;
-
-  const [firstCharacter] = Array.from(name.trim());
-  if (!firstCharacter) return undefined;
-
-  const initial = escapeForSvg(firstCharacter.toUpperCase());
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="49" fill="#FFFFFF" stroke="rgba(0,0,0,0.08)" stroke-width="2" /><text x="50" y="50" fill="#000000" font-family="Arial, sans-serif" font-size="48" font-weight="700" text-anchor="middle" dominant-baseline="central">${initial}</text></svg>`;
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+/** Upper-cased first character of a display name, used as the image fallback. */
+export const monogramInitial = (name?: string) => {
+  const [firstCharacter] = Array.from(name?.trim() ?? "");
+  return firstCharacter?.toUpperCase();
 };
 
-const escapeForSvg = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
+/** Themed round initial badge rendered in place of a missing or broken image. */
+export const Monogram = ({
+  initial,
+  label,
+  className,
+  style,
+}: {
+  initial: string;
+  label?: string;
+  className?: string;
+  style?: CSSProperties;
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 100 100"
+    role="img"
+    aria-label={label ?? initial}
+    className={className}
+    style={{ display: "block", flexShrink: 0, ...style }}
+  >
+    <circle
+      cx={50}
+      cy={50}
+      r={49}
+      fill={vars.color.backgroundMuted}
+      stroke={vars.color.tabBorder}
+      strokeWidth={2}
+    />
+    <text
+      x={50}
+      y={50}
+      fill={vars.color.text}
+      fontFamily={vars.font.body}
+      fontSize={48}
+      fontWeight={700}
+      textAnchor="middle"
+      dominantBaseline="central"
+    >
+      {initial}
+    </text>
+  </svg>
+);

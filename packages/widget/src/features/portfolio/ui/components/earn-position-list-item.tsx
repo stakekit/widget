@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
+import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { PositionDetailsLabelType } from "../../../../domain/portfolio/positions";
 import {
@@ -56,6 +57,12 @@ const EarnPositionAmount = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
+  // Confidential amounts stay hidden here, even after a reveal in details.
+  const hidden =
+    details.hasHiddenBalance ||
+    (details.integrationData !== null &&
+      isConfidentialYield(details.integrationData));
+
   if (details.totalAmountFormatted && item.token) {
     return (
       <Box
@@ -66,12 +73,12 @@ const EarnPositionAmount = ({
         gap="1"
       >
         <Text className={noWrap}>
-          {details.hasHiddenBalance
+          {hidden
             ? t("shared.confidential.hidden")
             : `${details.totalAmountFormatted} ${item.token.symbol}`}
         </Text>
 
-        {details.totalAmountUsd ? (
+        {details.totalAmountUsd && !hidden ? (
           <Text
             className={noWrap}
             variant={{ type: "muted", weight: "normal" }}
@@ -107,17 +114,33 @@ export const EarnPositionListItem = ({
     rewardRateAverage,
   } = details;
   const isDashboard = presentation === "dashboard";
-  const actionBadgeType =
-    item.actionRequired || inactiveValidator ? "actionRequired" : "claim";
-  const getActionBadgeLabel = () => {
-    if (item.actionRequired) return t("positions.action_required");
-    if (inactiveValidator === "jailed") {
-      return t("details.validators_jailed");
+  const actionBadge = (() => {
+    if (item.actionRequired) {
+      return {
+        label: t("positions.action_required"),
+        type: "actionRequired",
+      } as const;
     }
-    if (inactiveValidator) return t("details.validators_inactive");
-    return t("positions.claim_rewards");
-  };
-  const actionBadgeLabel = getActionBadgeLabel();
+    if (inactiveValidator === "jailed") {
+      return {
+        label: t("details.validators_jailed"),
+        type: "actionRequired",
+      } as const;
+    }
+    if (inactiveValidator) {
+      return {
+        label: t("details.validators_inactive"),
+        type: "actionRequired",
+      } as const;
+    }
+    if (item.hasPendingClaimRewards) {
+      return { label: t("positions.claim_rewards"), type: "claim" } as const;
+    }
+    if (item.hasPendingRequest) {
+      return { label: t("positions.in_progress"), type: "pending" } as const;
+    }
+    return null;
+  })();
 
   return (
     <SKLink
@@ -187,15 +210,15 @@ export const EarnPositionListItem = ({
                       </ToolTip>
                     ) : null}
 
-                    {(item.actionRequired ||
-                      item.hasPendingClaimRewards ||
-                      !!inactiveValidator) && (
-                      <Box className={positionBadge({ type: actionBadgeType })}>
+                    {actionBadge ? (
+                      <Box
+                        className={positionBadge({ type: actionBadge.type })}
+                      >
                         <Text variant={{ type: "white" }} className={noWrap}>
-                          {actionBadgeLabel}
+                          {actionBadge.label}
                         </Text>
                       </Box>
-                    )}
+                    ) : null}
                   </Box>
 
                   {providersDetails?.[0] ? (

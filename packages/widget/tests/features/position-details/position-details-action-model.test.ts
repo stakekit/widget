@@ -766,6 +766,20 @@ describe("Position Details action model", () => {
       })
     ).toEqual({ _tag: "Invalid" });
   });
+
+  it("offers no partial confidential exit worth less than one share unit", () => {
+    expect(
+      confidentialExitDecision({
+        amount: "0.000000001",
+        balance: {
+          amount: "12.345678",
+          amountRaw: "12345678",
+          shareAmountRaw: "1234567891",
+        },
+        useMaxAmount: false,
+      })
+    ).toEqual({ _tag: "Invalid" });
+  });
 });
 
 const makeWorkflowRegistry = (

@@ -1,7 +1,6 @@
 import { type RecipeVariants, recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
-import { fineryLightPalette } from "../../../../../shared/styles/theme/variant-overrides/palettes";
 
 export const summaryContainer = recipe({
   base: atoms({
@@ -164,104 +163,6 @@ export const summaryLabelContainer = recipe({
       },
     },
   },
-  compoundVariants: [
-    {
-      variants: {
-        variant: "utila",
-        type: "staked",
-      },
-      style: {
-        background: vars.color.summaryLabelStakedBackground,
-        color: vars.color.summaryLabelStakedColor,
-      },
-    },
-    {
-      variants: {
-        variant: "utila",
-        type: "apy",
-      },
-      style: {
-        background: vars.color.summaryLabelApyBackground,
-        color: vars.color.summaryLabelApyColor,
-      },
-    },
-    {
-      variants: {
-        variant: "utila",
-        type: "available",
-      },
-      style: {
-        background: vars.color.summaryLabelAvailableBackground,
-        color: vars.color.summaryLabelAvailableColor,
-      },
-    },
-    {
-      variants: {
-        variant: "finery",
-        type: "staked",
-      },
-      style: {
-        background: fineryLightPalette.purpleOne,
-        color: fineryLightPalette.purpleTwo,
-      },
-    },
-    {
-      variants: {
-        variant: "finery",
-        type: "apy",
-      },
-      style: {
-        background: fineryLightPalette.blueOne,
-        color: fineryLightPalette.blueTwo,
-      },
-    },
-    {
-      variants: {
-        variant: "finery",
-        type: "available",
-      },
-      style: {
-        background: fineryLightPalette.greenThree,
-        color: fineryLightPalette.greenOne,
-      },
-    },
-    {
-      variants: {
-        variant: "porto",
-        type: "staked",
-      },
-      style: [
-        {
-          color: vars.color.summaryLabelStakedColor,
-          background: vars.color.summaryLabelStakedBackground,
-        },
-      ],
-    },
-    {
-      variants: {
-        variant: "porto",
-        type: "apy",
-      },
-      style: [
-        {
-          color: vars.color.summaryLabelApyColor,
-          background: vars.color.summaryLabelApyBackground,
-        },
-      ],
-    },
-    {
-      variants: {
-        variant: "porto",
-        type: "available",
-      },
-      style: [
-        {
-          color: vars.color.summaryLabelAvailableColor,
-          background: vars.color.summaryLabelAvailableBackground,
-        },
-      ],
-    },
-  ],
 });
 
 export const summaryLabel = recipe({

@@ -71,7 +71,11 @@ const Harness = () => {
         positionToken={usds}
         selection={selection}
       />
-      <ExitReceiveTokenNote positionToken={usds} selection={selection} />
+      <ExitReceiveTokenNote
+        integration={integration}
+        positionToken={usds}
+        selection={selection}
+      />
     </>
   );
 };

@@ -5,7 +5,7 @@ import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 
 const lighterBackground = (background: string) =>
-  `color-mix(in oklab, ${background} 88%, white)`;
+  `color-mix(in oklab, ${background} 88%, ${vars.color.white})`;
 
 export const pressAnimation = style({
   transition: "transform 0.1s ease-in-out",

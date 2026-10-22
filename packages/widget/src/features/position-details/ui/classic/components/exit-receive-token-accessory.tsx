@@ -12,9 +12,7 @@ import {
   SelectedToken,
   SelectTokenTrigger,
 } from "../../../../../shared/ui/components/selected-token";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useTrackEvent } from "../../../../tracking/index";
 import {
   buildExitReceiveTokensByAddress,
@@ -23,6 +21,7 @@ import {
   projectExitReceiveTokenOption,
   resolveExitReceiveTokenAccessory,
 } from "../../../model/exit-receive-token";
+import { TokenOptionRow } from "../../components/token-option-row";
 
 export const ExitReceiveTokenAccessory = ({
   integration,
@@ -99,25 +98,10 @@ export const ExitReceiveTokenAccessory = ({
                 closeModal();
               }}
             >
-              <TokenIcon token={option.token} />
-              <Box
-                display="flex"
-                flex={1}
-                justifyContent="space-between"
-                alignItems="center"
-                marginLeft="2"
-                minWidth="0"
-                gap="2"
-              >
-                <Box display="flex" flexDirection="column" minWidth="0" gap="1">
-                  <Text variant={{ weight: "bold" }}>{option.symbol}</Text>
-                  <Text
-                    variant={{ type: "muted", weight: "normal", size: "small" }}
-                  >
-                    {option.formattedAddress}
-                  </Text>
-                </Box>
-              </Box>
+              <TokenOptionRow
+                detail={option.formattedAddress}
+                token={option.token}
+              />
             </SelectModalItem>
           </SelectModalItemContainer>
         ))}

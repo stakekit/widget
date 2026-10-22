@@ -1,5 +1,8 @@
 import { useTranslation } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../domain/action/pending-action";
+import {
+  getPendingActionLabelContext,
+  type YieldPendingActionType,
+} from "../../../../domain/action/pending-action";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
@@ -42,21 +45,28 @@ export const PositionDetailsPendingActions = ({
               {...val}
               key={key}
               onPendingActionClick={onPendingActionClick}
-              yieldId={integrationData.id}
+              integration={integrationData}
             />
           );
         }
 
         const labelKey =
           `position_details.pending_action_button.${val.pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>}` as const;
+        const labelOptions = {
+          context: getPendingActionLabelContext(
+            val.pendingAction.type,
+            val.yieldBalance.type
+          ),
+        };
         // Classic flags invalid amounts; dashboard falls back to a humanized
         // label for action types without a translation.
         const label =
           presentation === "dashboard"
             ? t(labelKey, {
+                ...labelOptions,
                 defaultValue: humanizePendingActionType(val.pendingAction.type),
               })
-            : t(labelKey);
+            : t(labelKey, labelOptions);
         const unstakeAmountError =
           presentation === "classic" ? val.validation !== null : undefined;
 

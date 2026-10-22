@@ -26,7 +26,7 @@ describe("TokenIconImage", () => {
     expect(image?.getAttribute("src")).toBe(validSrc);
   });
 
-  it("falls through to the generated monogram after mainUrl fails", async () => {
+  it("falls through to the monogram after mainUrl fails", async () => {
     const app = await render(
       <TokenIconImage
         mainUrl={brokenSrcOne}
@@ -41,6 +41,9 @@ describe("TokenIconImage", () => {
     expect(image).not.toBeNull();
     act(() => image?.dispatchEvent(new Event("error")));
 
-    expect(image?.getAttribute("src")).toContain("data:image/svg+xml");
+    expect(app.container.querySelector("img")).toBeNull();
+    expect(app.container.querySelector("svg[role='img']")?.textContent).toBe(
+      "A"
+    );
   });
 });

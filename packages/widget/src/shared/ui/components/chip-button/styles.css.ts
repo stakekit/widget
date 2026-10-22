@@ -6,8 +6,8 @@ export const container = recipe({
     atoms({
       px: "2",
       py: "1",
-      marginLeft: "2",
     }),
+    { whiteSpace: "nowrap", selectors: { "&:disabled": { opacity: 0.6 } } },
   ],
   variants: {
     variant: {

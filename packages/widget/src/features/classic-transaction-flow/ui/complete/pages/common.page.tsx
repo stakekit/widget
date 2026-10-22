@@ -1,13 +1,19 @@
+import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import { motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
+import type {
+  PendingActionLabelContext,
+  YieldPendingActionType,
+} from "../../../../../domain/action/pending-action";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
 } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
+import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CheckCircleIcon } from "../../../../../shared/ui/primitives/icons/check-circle";
@@ -19,6 +25,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
+import { formatNextBatchTiming } from "../../../../yield-summary/index";
 import { formatTransactionTypeLabel } from "../../../model/classic-transaction-workflow";
 import { useComplete } from "../hooks/use-complete.hook";
 
@@ -31,6 +38,9 @@ type Props = {
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;
+  pendingActionLabelContext?: PendingActionLabelContext;
+  /** The deposit was queued into this vault's next batch, not settled. */
+  batchedDeposit?: EarnYieldWithProvider | null;
   providersDetails: ReadonlyArray<{
     logo?: string;
     name?: string;
@@ -47,12 +57,15 @@ export const CompletePageComponent = ({
   network,
   token,
   pendingActionType,
+  pendingActionLabelContext,
+  batchedDeposit = null,
   yieldType,
   providersDetails,
   integrationId,
   completion,
 }: Props) => {
   const { t } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
 
   const {
     cta,
@@ -69,6 +82,7 @@ export const CompletePageComponent = ({
     if (pendingActionMatch) {
       return "complete.successfully_pending_action" as const;
     }
+    if (batchedDeposit) return "complete.deposit_submitted" as const;
     return "complete.successfully_staked" as const;
   };
   const successKey = getSuccessKey();
@@ -85,6 +99,21 @@ export const CompletePageComponent = ({
     });
   };
   const action = getAction();
+  const nextBatch = batchedDeposit
+    ? formatNextBatchTiming({
+        now: presentationTime?.now ?? null,
+        side: "subscription",
+        t,
+        yieldDto: batchedDeposit,
+      })
+    : null;
+  const getNextBatchNote = () => {
+    if (!nextBatch) return null;
+    return nextBatch._tag === "due"
+      ? t("complete.next_batch_imminent")
+      : t("complete.next_batch_in", { duration: nextBatch.duration });
+  };
+  const nextBatchNote = getNextBatchNote();
 
   return (
     <AnimationPage>
@@ -142,12 +171,18 @@ export const CompletePageComponent = ({
                       pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
                     }` as const,
                     {
-                      context: translationContext,
+                      context: pendingActionLabelContext ?? translationContext,
                     }
                   ),
                 })}
               </Heading>
             </motion.div>
+
+            {nextBatchNote ? (
+              <Text marginTop="2" variant={{ type: "muted" }}>
+                {nextBatchNote}
+              </Text>
+            ) : null}
 
             {!unstakeMatch && !pendingActionMatch
               ? providersDetails?.map((v, i) => (

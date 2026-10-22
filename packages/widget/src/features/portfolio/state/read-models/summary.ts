@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { exactZero } from "../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../domain/finance/price";
@@ -34,12 +35,30 @@ const summaryYieldsResultAtom = Atom.make((get) => {
   return get(multiYieldsByIdAtom(new MultiYieldsKey({ yieldIds })));
 });
 
+// Confidential amounts stay hidden in the list, so totals must not leak them.
+const getSummableYield = (
+  position: PositionItem,
+  yields: ReadonlyMap<YieldId, EarnYieldWithProvider>
+) => {
+  const yieldDto = yields.get(position.integrationId);
+  return yieldDto && !isConfidentialYield(yieldDto) ? yieldDto : null;
+};
+
+export const hasConfidentialPositions = (
+  positions: ReadonlyArray<PositionItem>,
+  yields: ReadonlyMap<YieldId, EarnYieldWithProvider>
+) =>
+  positions.some((position) => {
+    const yieldDto = yields.get(position.integrationId);
+    return !!yieldDto && isConfidentialYield(yieldDto);
+  });
+
 export const getPositionsTotal = (
   positions: ReadonlyArray<PositionItem>,
   yields: ReadonlyMap<YieldId, EarnYieldWithProvider>
 ) =>
   positions.reduce((sum, position) => {
-    const yieldDto = yields.get(position.integrationId);
+    const yieldDto = getSummableYield(position, yields);
     if (!yieldDto) return sum;
 
     return sum.plus(
@@ -54,7 +73,7 @@ export const getPositionsAverageApy = (
 ) => {
   const weighted = positions.reduce(
     (summary, position) => {
-      const yieldDto = yields.get(position.integrationId);
+      const yieldDto = getSummableYield(position, yields);
       if (!yieldDto) return summary;
 
       const value = getPositionTotalAmount(
@@ -87,6 +106,7 @@ export const allPositionsSummaryAtom = Atom.make((get) =>
   }).pipe(
     AsyncResult.map(({ positions, yields }) => ({
       allPositionsSum: getPositionsTotal(positions, yields),
+      excludesConfidential: hasConfidentialPositions(positions, yields),
     }))
   )
 );

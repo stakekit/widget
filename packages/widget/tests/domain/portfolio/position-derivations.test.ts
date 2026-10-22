@@ -274,6 +274,44 @@ describe("position derivations", () => {
     expect(row?.actionRequired).toBe(false);
   });
 
+  it.each([
+    ["only an optional cancellation", ["CANCEL_PENDING"], false, true],
+    [
+      "a required action next to a cancellation",
+      ["CANCEL_PENDING", "WITHDRAW"],
+      true,
+      false,
+    ],
+  ] as const)(
+    "flags %s as in progress rather than required",
+    (_, types, actionRequired, hasPendingRequest) => {
+      const yieldDto = yieldApiYieldFixture();
+      const position = Schema.decodeSync(EarnPosition)({
+        balances: [
+          yieldBalanceFixture({
+            amount: "1",
+            amountRaw: "1000000000000000000",
+            amountUsd: "1",
+            pendingActions: types.map((type) => ({
+              intent: "manage",
+              passthrough: type,
+              type,
+            })),
+            token: yieldDto.token,
+            type: "entering",
+          }),
+        ],
+        outputTokenBalance: null,
+        yieldId: yieldDto.id,
+      });
+
+      const [row] = toPositionItems(toPositionsData([position]), false);
+
+      expect(row?.actionRequired).toBe(actionRequired);
+      expect(row?.hasPendingRequest).toBe(hasPendingRequest);
+    }
+  );
+
   it("deduplicates derived atom families by value-equal domain keys", () => {
     const { yieldId } = makePosition();
     const scope = new WalletScopeKey({

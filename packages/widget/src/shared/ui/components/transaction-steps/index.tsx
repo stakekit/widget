@@ -78,10 +78,15 @@ const getPosition = (length: number, index: number): Position => {
   return "ELSE";
 };
 
-/** Transactions as a vertical timeline; finished ones collapse. */
+/**
+ * Transactions as a vertical timeline; finished ones collapse. Headers omit
+ * the "x / N" count unless `numbered`, for lists that grow while running.
+ */
 export const TransactionSteps = ({
+  numbered = true,
   steps,
 }: {
+  readonly numbered?: boolean;
   readonly steps: ReadonlyArray<TransactionStepItem>;
 }) => (
   <Box
@@ -95,7 +100,7 @@ export const TransactionSteps = ({
   >
     {steps.map((step, index) => (
       <TransactionStep
-        count={{ current: index + 1, total: steps.length }}
+        count={numbered ? { current: index + 1, total: steps.length } : null}
         key={step.id}
         position={getPosition(steps.length, index)}
         step={step}
@@ -105,7 +110,10 @@ export const TransactionSteps = ({
 );
 
 type StepProps = {
-  readonly count: { readonly current: number; readonly total: number };
+  readonly count: {
+    readonly current: number;
+    readonly total: number;
+  } | null;
   readonly position: Position;
   readonly step: TransactionStepItem;
 };
@@ -277,9 +285,10 @@ const TransactionStepContent = ({
           as={canCollapse ? "button" : "div"}
         >
           <Text>
+            {/* Unnumbered: the singular form shows no index. */}
             {t("steps.tx_of", {
-              count: count.total,
-              current: count.current,
+              count: count?.total ?? 1,
+              current: count?.current,
               type: step.type,
             })}
           </Text>
