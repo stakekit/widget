@@ -204,17 +204,27 @@ type EncryptWorkerExpectation = {
   readonly source: "host copy" | "inline copy";
 };
 
+// Requires exactly one match: a marker that also lands in a shared chunk must
+// fail here by name instead of testing whichever chunk readdir lists first.
 const findChunk = async (
   directory: string,
   description: string,
   matches: (code: string) => boolean
 ) => {
+  const found: { code: string; file: string }[] = [];
   for (const file of await readdir(directory)) {
     if (!file.endsWith(".js")) continue;
     const code = await readFile(join(directory, file), "utf8");
-    if (matches(code)) return { code, file };
+    if (matches(code)) found.push({ code, file });
   }
-  throw new Error(`No ${description} chunk in ${directory}`);
+  const [chunk, ...others] = found;
+  if (!chunk) throw new Error(`No ${description} chunk in ${directory}`);
+  if (others.length > 0) {
+    throw new Error(
+      `Several ${description} chunks in ${directory}: ${found.map(({ file }) => file).join(", ")}`
+    );
+  }
+  return chunk;
 };
 
 const workerScriptPattern =
@@ -228,8 +238,10 @@ const encryptWorkerTarget = async (expectation: EncryptWorkerExpectation) => {
     const { file } = await findChunk(
       expectation.directory,
       "inline Zama encrypt worker",
+      // The ready message also appears in the SDK's main-thread code; the
+      // data URL fallback only appears in Vite's `?worker&inline` wrapper.
       (code) =>
-        code.includes("createObjectURL") &&
+        code.includes("data:text/javascript;charset=utf-8,") &&
         code.includes("zama-encrypt-worker-ready")
     );
     return { chunk: `${expectation.urlPath}${file}`, script: null };
