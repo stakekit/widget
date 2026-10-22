@@ -6,6 +6,7 @@ import {
   ConfidentialHandle,
   fillConfidentialBalance,
   getCancelReturnToken,
+  getConfidentialCampaignUrl,
   getConfidentialConversion,
   getConfidentialHandleContract,
   getPendingActionDecryptHandle,
@@ -192,6 +193,19 @@ describe("confidential vault rules", () => {
     expect(
       getConfidentialConversion(yieldDto, yieldDto.inputTokens[0]!)
     ).toBeNull();
+  });
+
+  it("links a mainnet vault to its Zama campaign page", () => {
+    expect(
+      getConfidentialCampaignUrl(
+        confidentialYield({
+          id: "ethereum-usdc-zama-rockawayx-usdc-rwa-confidential-vault",
+        })
+      )
+    ).toBe(
+      "https://app.zama.org/earn/ethereum/0xc207d3f66537D7F66456808379A0E560cF20Da36/rockawayx-usdc-rwa"
+    );
+    expect(getConfidentialCampaignUrl(confidentialYield())).toBeNull();
   });
 
   it("names the contract that holds each hidden balance's handle", () => {

@@ -2,7 +2,10 @@ import { useAtomValue } from "@effect/atom-react";
 import { Array as EArray, Option } from "effect";
 import type { ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { isConfidentialYield } from "../../../domain/earn/confidential";
+import {
+  getConfidentialCampaignUrl,
+  isConfidentialYield,
+} from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { ValidatorInput as ValidatorDto } from "../../../domain/earn/validator";
 import {
@@ -103,20 +106,38 @@ export const useYieldMetaInfo = ({
     };
   }
 
-  const def = {
-    campaign:
-      rewardSchedule === "campaign" ? (
+  const confidentialCampaignUrl = getConfidentialCampaignUrl(y);
+  const getCampaign = () => {
+    if (confidentialCampaignUrl) {
+      return (
         <Trans
-          i18nKey="details.campaign"
+          i18nKey="details.confidential_campaign"
           components={{
             link0: (
-              <SKAnchor href="https://420.synthetix.io/?collateral=SNX">
+              <SKAnchor href={confidentialCampaignUrl}>
                 {t("shared.learn_more")}
               </SKAnchor>
             ),
           }}
         />
-      ) : null,
+      );
+    }
+    return rewardSchedule === "campaign" ? (
+      <Trans
+        i18nKey="details.campaign"
+        components={{
+          link0: (
+            <SKAnchor href="https://420.synthetix.io/?collateral=SNX">
+              {t("shared.learn_more")}
+            </SKAnchor>
+          ),
+        }}
+      />
+    ) : null;
+  };
+
+  const def = {
+    campaign: getCampaign(),
     lockupPeriod: lockupPeriodDays
       ? t("details.lockup_period", {
           count: lockupPeriodDays,

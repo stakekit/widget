@@ -454,6 +454,7 @@
     "campaign_susd_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
     "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>",
     "campaign_susd": "Learn more about sUSD staking program <link0>here</link0>",
+    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>",
     "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>",
     "lockup_period_one": "Minimum lock up time is {{count}} day",
     "lockup_period_other": "Minimum lock up time is {{count}} days",
