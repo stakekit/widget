@@ -8,7 +8,7 @@
 #
 # POSIX sh only: this file is sourced into whatever shell the caller uses.
 
-MISE_SETUP_VERSION=v2026.10.6
+MISE_SETUP_VERSION=v2026.10.14
 
 export PATH="$HOME/.local/bin:${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
 

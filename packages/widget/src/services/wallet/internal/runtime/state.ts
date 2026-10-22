@@ -24,10 +24,10 @@ import {
 } from "./state-projection";
 import type { WalletController } from "./wagmi-config";
 
-class WalletStateInitializationError extends Schema.TaggedError<WalletStateInitializationError>()(
-  "WalletStateInitializationError",
-  { cause: Schema.Defect() }
-) {}
+class WalletStateInitializationError extends Schema.TaggedError<
+  WalletStateInitializationError,
+  { readonly brand: unique symbol }
+>()("WalletStateInitializationError", { cause: Schema.Defect() }) {}
 
 export type WalletStateContext = {
   readonly core: WalletCoreState;

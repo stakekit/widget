@@ -28,20 +28,20 @@ import { WalletEnvironment } from "../platform/wallet-environment";
 import { installSolanaConnectorMembership } from "./solana-connector-membership";
 import type { WalletController } from "./wagmi-config";
 
-export class WalletBootstrapError extends Schema.TaggedError<WalletBootstrapError>()(
-  "WalletBootstrapError",
-  {
-    cause: Schema.Defect(),
-    stage: Schema.Literals([
-      "enabled-networks",
-      "initial-parameters",
-      "solana",
-      "wallet-state",
-      "wagmi-config",
-      "wagmi-observation",
-    ]),
-  }
-) {}
+export class WalletBootstrapError extends Schema.TaggedError<
+  WalletBootstrapError,
+  { readonly brand: unique symbol }
+>()("WalletBootstrapError", {
+  cause: Schema.Defect(),
+  stage: Schema.Literals([
+    "enabled-networks",
+    "initial-parameters",
+    "solana",
+    "wallet-state",
+    "wagmi-config",
+    "wagmi-observation",
+  ]),
+}) {}
 
 type MutableExternalProviderRef = {
   current: ExternalProviderSnapshot;

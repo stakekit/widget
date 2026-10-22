@@ -33,7 +33,8 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild
   hosts such as Angular can resolve the built `dist`; part of `build`.
-- `pnpm test:smoke` — built package consumption; requires a configured API key.
+- `pnpm test:smoke` — builds the example hosts against `dist` and loads them in
+  Chromium with the API mocked by the widget's MSW fixtures.
 
 Install dependencies only when manifests, the lockfile, or the task require it.
 Use the normal pnpm store rather than creating a project-local store.

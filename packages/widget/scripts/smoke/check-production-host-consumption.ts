@@ -11,12 +11,13 @@
  * pre-bundling, so Angular's esbuild bundles `dist` itself, as hosts that
  * exclude the widget from pre-bundling do.
  *
- * Green means the widget shell mounted and a catalog-backed control appeared
- * against a live API, with no `pageerror` and no fatal console errors (TDZ,
- * missing modules, chunk load, minified React). It is not a journey test.
+ * Green means the widget shell mounted and a catalog-backed control appeared,
+ * with no `pageerror` and no fatal console errors (TDZ, missing modules, chunk
+ * load, minified React). It is not a journey test. Every page answers API
+ * calls from the widget's MSW fixtures and fails other cross-origin requests,
+ * so the hosts run with a placeholder API key and never reach a live API.
  *
- * Run via `pnpm test:smoke`. Requires `VITE_API_KEY` or `NEXT_PUBLIC_API_KEY`
- * (or an example env file). Not part of `check`, `test`, or `test:changed`.
+ * Run via `pnpm test:smoke`. Not part of `check`, `test`, or `test:changed`.
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -26,7 +27,12 @@ import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { join, relative, sep } from "node:path";
 import type { Readable } from "node:stream";
+import { stripVTControlCharacters } from "node:util";
+import { defineNetworkFixture } from "@msw/playwright";
+import { WebSocketNetworkFrame } from "msw/experimental";
 import { type Browser, chromium, type Page } from "playwright";
+import { runnerImport } from "vite";
+import type * as MockHandlers from "../../tests/mocks/handlers";
 import { repositoryRoot, widgetRoot } from "../paths";
 
 type Host = {
@@ -63,15 +69,6 @@ const hosts = {
   },
 } as const satisfies Record<string, Host>;
 
-const envFileNames = [
-  ".env.production.local",
-  ".env.development.local",
-  ".env.local",
-  ".env.production",
-  ".env.development",
-  ".env",
-] as const;
-
 const fatalConsolePatterns = [
   /\bCannot access ['"].+['"] before initialization\b/i,
   /\bReferenceError:.*before initialization\b/i,
@@ -87,6 +84,26 @@ const fatalConsolePatterns = [
   /\bMinified React error #\d+\b/i,
   /\bInvalid hook call\b/i,
 ];
+
+// The hosts embed it; every API call it would authenticate is mocked.
+const placeholderApiKey = "smoke-test";
+
+type GetMockHandlers = typeof MockHandlers.getHandlers;
+
+// Loads the fixtures through Vite in production mode, so `import.meta.env`
+// resolves the API URLs the same way the widget's production build did.
+const loadMockHandlers = async (): Promise<GetMockHandlers> => {
+  const { module } = await runnerImport<typeof MockHandlers>(
+    join(widgetRoot, "tests/mocks/handlers.ts"),
+    {
+      configFile: false,
+      root: widgetRoot,
+      mode: "production",
+      logLevel: "error",
+    }
+  );
+  return module.getHandlers;
+};
 
 type ProcessEnv = Record<string, string | undefined>;
 
@@ -104,6 +121,7 @@ const runningServers = new Set<RunningServer>();
 
 // Every host server announces the port it actually bound, which is the only
 // trustworthy value: a free port can be taken between reservation and bind.
+// Matched after stripping colors: on CI, Vite styles the port separately.
 const announcedUrlPattern =
   /\bhttps?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):(\d+)\b/u;
 
@@ -204,17 +222,27 @@ type EncryptWorkerExpectation = {
   readonly source: "host copy" | "inline copy";
 };
 
+// Requires exactly one match: a marker that also lands in a shared chunk must
+// fail here by name instead of testing whichever chunk readdir lists first.
 const findChunk = async (
   directory: string,
   description: string,
   matches: (code: string) => boolean
 ) => {
+  const found: { code: string; file: string }[] = [];
   for (const file of await readdir(directory)) {
     if (!file.endsWith(".js")) continue;
     const code = await readFile(join(directory, file), "utf8");
-    if (matches(code)) return { code, file };
+    if (matches(code)) found.push({ code, file });
   }
-  throw new Error(`No ${description} chunk in ${directory}`);
+  const [chunk, ...others] = found;
+  if (!chunk) throw new Error(`No ${description} chunk in ${directory}`);
+  if (others.length > 0) {
+    throw new Error(
+      `Several ${description} chunks in ${directory}: ${found.map(({ file }) => file).join(", ")}`
+    );
+  }
+  return chunk;
 };
 
 const workerScriptPattern =
@@ -228,8 +256,10 @@ const encryptWorkerTarget = async (expectation: EncryptWorkerExpectation) => {
     const { file } = await findChunk(
       expectation.directory,
       "inline Zama encrypt worker",
+      // The ready message also appears in the SDK's main-thread code; the
+      // data URL fallback only appears in Vite's `?worker&inline` wrapper.
       (code) =>
-        code.includes("createObjectURL") &&
+        code.includes("data:text/javascript;charset=utf-8,") &&
         code.includes("zama-encrypt-worker-ready")
     );
     return { chunk: `${expectation.urlPath}${file}`, script: null };
@@ -311,81 +341,6 @@ const assertEncryptWorkerStarts = async (
   );
 };
 
-const parseEnvValue = (contents: string, variableName: string) => {
-  for (const line of contents.split(/\r?\n/u)) {
-    const match = line.match(
-      /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/u
-    );
-    if (!match || match[1] !== variableName) {
-      continue;
-    }
-
-    const rawValue = match[2]?.trim() ?? "";
-    const quote = rawValue.at(0);
-    if ((quote === '"' || quote === "'") && rawValue.at(-1) === quote) {
-      return rawValue.slice(1, -1).trim();
-    }
-
-    return rawValue.replace(/\s+#.*$/u, "").trim();
-  }
-
-  return "";
-};
-
-const readEnvCandidate = async (path: string, variableName: string) => {
-  try {
-    const contents = await readFile(path, "utf8");
-    return parseEnvValue(contents, variableName);
-  } catch (error) {
-    if (hasErrorCode(error) && error.code === "ENOENT") {
-      return "";
-    }
-    throw error;
-  }
-};
-
-const reportApiKeySource = (source: string) => {
-  console.log(`[smoke] Using StakeKit API key from ${source}`);
-};
-
-const resolveApiKey = async () => {
-  const processCandidates = [
-    ["VITE_API_KEY", process.env.VITE_API_KEY],
-    ["NEXT_PUBLIC_API_KEY", process.env.NEXT_PUBLIC_API_KEY],
-  ] as const;
-
-  for (const [source, value] of processCandidates) {
-    const trimmed = value?.trim();
-    if (trimmed) {
-      reportApiKeySource(`environment variable ${source}`);
-      return trimmed;
-    }
-  }
-
-  for (const host of Object.values(hosts)) {
-    for (const fileName of envFileNames) {
-      const path = join(host.directory, fileName);
-      for (const variableName of ["VITE_API_KEY", "NEXT_PUBLIC_API_KEY"]) {
-        const value = await readEnvCandidate(path, variableName);
-        if (value) {
-          reportApiKeySource(
-            `${path.slice(repositoryRoot.length + 1)} (${variableName})`
-          );
-          return value;
-        }
-      }
-    }
-  }
-
-  throw new Error(
-    [
-      "Production-consumer smoke test requires a non-empty StakeKit API key.",
-      "Set VITE_API_KEY or NEXT_PUBLIC_API_KEY, or add one to an example .env file.",
-      "The resolved value is passed to every host as both variables.",
-    ].join(" ")
-  );
-};
-
 const runCommand = async (
   label: string,
   args: ReadonlyArray<string>,
@@ -464,7 +419,7 @@ const startServer = ({
     announceBoundUrl = resolve;
   });
   const handleLine = (line: string) => {
-    const match = line.match(announcedUrlPattern);
+    const match = stripVTControlCharacters(line).match(announcedUrlPattern);
     const port = match?.[1];
     if (port) {
       announceBoundUrl(`http://127.0.0.1:${port}`);
@@ -605,13 +560,41 @@ const waitForServer = async (
   );
 };
 
-const assertWidgetLoads = async (
-  browser: Browser,
-  label: string,
-  url: string,
-  encryptWorker: EncryptWorkerExpectation | undefined
-) => {
+const assertWidgetLoads = async ({
+  browser,
+  getMockHandlers,
+  label,
+  url,
+  encryptWorker,
+}: {
+  readonly browser: Browser;
+  readonly getMockHandlers: GetMockHandlers;
+  readonly label: string;
+  readonly url: string;
+  readonly encryptWorker: EncryptWorkerExpectation | undefined;
+}) => {
   const context = await browser.newContext();
+  const origin = new URL(url).origin;
+  const unmockedRequests: Array<string> = [];
+  const network = defineNetworkFixture({
+    context,
+    handlers: getMockHandlers(() => origin),
+    // HTTP never goes unhandled: the fixtures' catch-all answers it. Fail
+    // cross-origin WebSockets the same way; the host's own (the Angular dev
+    // server's live reload) still connect.
+    onUnhandledFrame: ({ frame }) => {
+      if (!(frame instanceof WebSocketNetworkFrame)) return;
+      const socketUrl = frame.data.connection.client.url;
+      if (socketUrl.host !== new URL(url).host) {
+        unmockedRequests.push(`WebSocket ${socketUrl.href}`);
+        throw new Error(`Unhandled smoke WebSocket: ${socketUrl.href}`);
+      }
+    },
+    // Route asset requests too, so the catch-all fails third-party fetches
+    // instead of letting them reach the network.
+    skipAssetRequests: false,
+  });
+  await network.enable();
   const page = await context.newPage();
   const pageErrors: Array<string> = [];
   const fatalConsoleErrors: Array<string> = [];
@@ -631,6 +614,14 @@ const assertWidgetLoads = async (
     }
   });
 
+  // Only the fixtures' catch-all answers 500, for unmocked requests; a host
+  // server that answers 500 has failed too.
+  page.on("response", (response) => {
+    if (response.status() === 500) {
+      unmockedRequests.push(`${response.request().method()} ${response.url()}`);
+    }
+  });
+
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 120_000 });
     await page
@@ -646,27 +637,36 @@ const assertWidgetLoads = async (
       await assertEncryptWorkerStarts(page, label, encryptWorker);
     }
 
-    if (pageErrors.length > 0 || fatalConsoleErrors.length > 0) {
+    if (
+      pageErrors.length > 0 ||
+      fatalConsoleErrors.length > 0 ||
+      unmockedRequests.length > 0
+    ) {
       const failures = [
         ...pageErrors.map((error) => `pageerror: ${error}`),
         ...fatalConsoleErrors.map((error) => `fatal console error: ${error}`),
+        ...unmockedRequests.map((request) => `unmocked request: ${request}`),
       ];
       throw new Error(`${label} browser failures:\n${failures.join("\n")}`);
     }
     console.log(`[smoke] PASS ${label}`);
   } finally {
+    // Closing the context drops its routes; unrouting first would let
+    // in-flight requests reach the network.
     await context.close();
   }
 };
 
 const withServer = async ({
   browser,
+  getMockHandlers,
   label,
   args,
   env,
   encryptWorker,
 }: {
   readonly browser: Browser;
+  readonly getMockHandlers: GetMockHandlers;
   readonly label: string;
   readonly args: (port: number) => ReadonlyArray<string>;
   readonly env: ProcessEnv;
@@ -678,7 +678,13 @@ const withServer = async ({
   try {
     const url = await resolveBoundUrl(server, port);
     await waitForServer(server, url);
-    await assertWidgetLoads(browser, label, url, encryptWorker);
+    await assertWidgetLoads({
+      browser,
+      getMockHandlers,
+      label,
+      url,
+      encryptWorker,
+    });
   } finally {
     await stopServer(server);
   }
@@ -689,16 +695,10 @@ const main = async () => {
   if (process.argv.includes("--check-dependencies")) {
     return;
   }
-  const apiKey = await resolveApiKey();
-
-  if (process.argv.includes("--check-key")) {
-    return;
-  }
-
   const env = {
     ...process.env,
-    VITE_API_KEY: apiKey,
-    NEXT_PUBLIC_API_KEY: apiKey,
+    VITE_API_KEY: placeholderApiKey,
+    NEXT_PUBLIC_API_KEY: placeholderApiKey,
   };
 
   await assertBuiltWidgetArtifacts();
@@ -732,13 +732,18 @@ const main = async () => {
   );
   await assertNextCopiesEncryptWorker();
 
+  const getMockHandlers = await loadMockHandlers();
   const browser = await chromium.launch();
+  const loadHost = (
+    options: Omit<
+      Parameters<typeof withServer>[0],
+      "browser" | "env" | "getMockHandlers"
+    >
+  ) => withServer({ ...options, browser, env, getMockHandlers });
 
   try {
-    await withServer({
-      browser,
+    await loadHost({
       label: hosts.vitePackage.label,
-      env,
       encryptWorker: {
         directory: join(hosts.vitePackage.directory, "dist/assets"),
         urlPath: "/assets/",
@@ -757,10 +762,8 @@ const main = async () => {
         "--strictPort",
       ],
     });
-    await withServer({
-      browser,
+    await loadHost({
       label: hosts.viteBundle.label,
-      env,
       encryptWorker: {
         directory: join(hosts.viteBundle.directory, "dist/assets"),
         urlPath: "/assets/",
@@ -779,10 +782,8 @@ const main = async () => {
         "--strictPort",
       ],
     });
-    await withServer({
-      browser,
+    await loadHost({
       label: `${hosts.next.label} production`,
-      env,
       args: (port) => [
         "--filter",
         hosts.next.packageName,
@@ -795,10 +796,8 @@ const main = async () => {
         String(port),
       ],
     });
-    await withServer({
-      browser,
+    await loadHost({
       label: `${hosts.angular.label} production`,
-      env,
       encryptWorker: {
         directory: join(hosts.angular.directory, "dist/browser"),
         urlPath: "/",
@@ -815,10 +814,8 @@ const main = async () => {
         "dist/browser",
       ],
     });
-    await withServer({
-      browser,
+    await loadHost({
       label: `${hosts.angular.label} dev server`,
-      env,
       args: (port) => [
         "--filter",
         hosts.angular.packageName,
@@ -826,7 +823,7 @@ const main = async () => {
         "ng",
         "serve",
         "--define",
-        `SK_API_KEY=${JSON.stringify(apiKey)}`,
+        `SK_API_KEY=${JSON.stringify(placeholderApiKey)}`,
         "--host",
         "127.0.0.1",
         "--port",

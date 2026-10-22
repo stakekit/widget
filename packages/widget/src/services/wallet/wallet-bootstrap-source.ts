@@ -3,12 +3,12 @@ import type { EarnYield } from "../../domain/earn/models";
 import type { YieldId } from "../../domain/identity/identifiers";
 import type { EnabledWalletNetworks } from "../../domain/wallet/models";
 
-export class WalletBootstrapSourceReadError extends Schema.TaggedError<WalletBootstrapSourceReadError>()(
-  "WalletBootstrapSourceReadError",
-  {
-    cause: Schema.Defect(),
-  }
-) {}
+export class WalletBootstrapSourceReadError extends Schema.TaggedError<
+  WalletBootstrapSourceReadError,
+  { readonly brand: unique symbol }
+>()("WalletBootstrapSourceReadError", {
+  cause: Schema.Defect(),
+}) {}
 
 type WalletBootstrapSourceService = {
   readonly getEnabledWalletNetworks: Effect.Effect<

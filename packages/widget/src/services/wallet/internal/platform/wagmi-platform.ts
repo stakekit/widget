@@ -29,13 +29,13 @@ import { ownWagmiConnections, WagmiOperations } from "./wagmi-operations";
 import { WalletConnectPresentationPlatform } from "./wallet-connect-presentation";
 import { WalletConnectProtocolPlatform } from "./wallet-connect-protocol";
 
-class WagmiPlatformError extends Schema.TaggedError<WagmiPlatformError>()(
-  "WagmiPlatformError",
-  {
-    cause: Schema.Defect(),
-    operation: Schema.Literals(["build-config", "observe-core"]),
-  }
-) {}
+class WagmiPlatformError extends Schema.TaggedError<
+  WagmiPlatformError,
+  { readonly brand: unique symbol }
+>()("WagmiPlatformError", {
+  cause: Schema.Defect(),
+  operation: Schema.Literals(["build-config", "observe-core"]),
+}) {}
 
 export type WagmiCoreObservation = {
   readonly current: Effect.Effect<WalletCoreState>;

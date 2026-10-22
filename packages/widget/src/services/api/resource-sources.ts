@@ -115,15 +115,15 @@ export type ApiFailure = typeof ApiFailure.Type;
  */
 const unreachableRichError: RichError = { message: "ApiUnreachableError" };
 
-export class ApiRequestError extends Schema.TaggedError<ApiRequestError>()(
-  "ApiRequestError",
-  {
-    operation: Schema.String,
-    failure: ApiFailure,
-    /** The client's original error, kept for diagnostics only. */
-    cause: Schema.Defect(),
-  }
-) {
+export class ApiRequestError extends Schema.TaggedError<
+  ApiRequestError,
+  { readonly brand: unique symbol }
+>()("ApiRequestError", {
+  operation: Schema.String,
+  failure: ApiFailure,
+  /** The client's original error, kept for diagnostics only. */
+  cause: Schema.Defect(),
+}) {
   /**
    * What the user is told: the API's explanation when it answered with one,
    * or the widget's no-answer copy.
@@ -138,23 +138,23 @@ export class ApiRequestError extends Schema.TaggedError<ApiRequestError>()(
   }
 }
 
-export class ResponseDecodeError extends Schema.TaggedError<ResponseDecodeError>()(
-  "ResponseDecodeError",
-  {
-    operation: Schema.String,
-    issue: Schema.String,
-    cause: Schema.Defect(),
-  }
-) {}
+export class ResponseDecodeError extends Schema.TaggedError<
+  ResponseDecodeError,
+  { readonly brand: unique symbol }
+>()("ResponseDecodeError", {
+  operation: Schema.String,
+  issue: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
-export class InputValidationError extends Schema.TaggedError<InputValidationError>()(
-  "InputValidationError",
-  {
-    operation: Schema.String,
-    issue: Schema.String,
-    cause: Schema.Defect(),
-  }
-) {}
+export class InputValidationError extends Schema.TaggedError<
+  InputValidationError,
+  { readonly brand: unique symbol }
+>()("InputValidationError", {
+  operation: Schema.String,
+  issue: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
 type ApiReadFailure = ApiRequestError | ResponseDecodeError;
 type BorrowReadFailure =

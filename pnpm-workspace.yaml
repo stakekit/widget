@@ -29,10 +29,11 @@ catalog:
   "@angular/compiler-cli": 22.2.3
   "@angular/core": 22.2.3
   "@angular/platform-browser": 22.2.3
-  "@ast-grep/cli": 0.45.3
+  "@ast-grep/cli": 0.51.0
   "@biomejs/biome": ^2.5.15
-  "@commitlint/cli": ^21.2.3
-  "@commitlint/config-conventional": ^21.2.3
+  "@commitlint/cli": ^21.2.4
+  "@commitlint/config-conventional": ^21.2.4
+  # @cosmos-kit/core 2.18 depends on @cosmjs 0.36 and cosmjs-types 0.10; newer lines duplicate its types.
   "@cosmjs/amino": ^0.36.2
   "@cosmjs/encoding": 0.36.2
   "@cosmos-kit/core": 2.18.1
@@ -44,21 +45,22 @@ catalog:
   "@effect/openapi-generator": 4.0.5
   "@effect/platform-browser": 4.0.5
   "@effect/platform-node": 4.0.5
-  "@effect/tsgo": 0.51.1
+  "@effect/tsgo": 0.56.0
   "@effect/vitest": 4.0.5
   "@ledgerhq/wallet-api-client": ^1.16.0
   "@ledgerhq/wallet-api-core": ^2.1.0
   "@luno-kit/core": ^0.0.13
   "@meshsdk/wallet": 1.9.1
+  "@msw/playwright": ^0.7.0
   "@polkadot/types": ^17.0.2
   "@polkadot/util": ^14.0.3
-  "@radix-ui/react-dismissable-layer": ^1.1.20
-  "@radix-ui/react-focus-guards": ^1.1.6
-  "@radix-ui/react-focus-scope": ^1.2.0
-  "@radix-ui/react-dialog": ^1.2.0
-  "@radix-ui/react-dropdown-menu": ^2.1.25
-  "@radix-ui/react-tooltip": ^1.3.0
-  "@radix-ui/react-visually-hidden": ^1.2.12
+  "@radix-ui/react-dismissable-layer": ^1.2.1
+  "@radix-ui/react-focus-guards": ^1.2.0
+  "@radix-ui/react-focus-scope": ^1.3.1
+  "@radix-ui/react-dialog": ^1.3.1
+  "@radix-ui/react-dropdown-menu": ^2.2.1
+  "@radix-ui/react-tooltip": ^1.4.1
+  "@radix-ui/react-visually-hidden": ^1.2.13
   "@reown/appkit": 1.8.24
   "@safe-global/safe-apps-provider": ^0.18.6
   "@safe-global/safe-apps-sdk": ^9.1.0
@@ -66,18 +68,19 @@ catalog:
   "@solana/wallet-adapter-base": ^0.9.28
   "@solana/wallet-adapter-wallets": ^0.19.40
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
+  # The Solana wallet adapters peer on @solana/web3.js ^1.99.0.
   "@solana/web3.js": ^1.99.0
-  "@tanstack/react-virtual": ^3.14.13
+  "@tanstack/react-virtual": ^3.14.21
   "@ton/core": ^0.63.1
-  "@tonconnect/ui": ^3.0.2
+  "@tonconnect/ui": ^5.0.1
   "@tronweb3/tronwallet-abstract-adapter": ^1.3.0
   "@tronweb3/tronwallet-adapter-bitkeep": ^1.3.0
   "@tronweb3/tronwallet-adapter-ledger": ^1.1.15
   "@tronweb3/tronwallet-adapter-tronlink": ^1.3.0
-  "@types/node": ^26.6.4
+  "@types/node": ^26.6.5
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
-  "@types/react-is": ^19.2.0
+  "@types/react-is": ^19.3.0
   "@typescript/native": npm:typescript@7.0.2
   "@vanilla-extract/css": ^1.21.3
   "@vanilla-extract/dynamic": ^2.1.5
@@ -85,42 +88,46 @@ catalog:
   "@vanilla-extract/sprinkles": ^1.7.1
   "@vanilla-extract/vite-plugin": ^5.2.6
   "@vitejs/plugin-react": ^6.1.2
-  "@vitest/browser-playwright": 5.0.3
-  "@vitest/ui": 5.0.3
+  "@vitest/browser-playwright": 5.0.5
+  "@vitest/ui": 5.0.5
   "@wallet-standard/app": ^1.1.1
   "@wallet-standard/base": ^1.1.1
   "@walletconnect/sign-client": 2.26.0
   # Must equal the exact version @reown/appkit depends on: createAppKit types its universalProvider option against it.
   "@walletconnect/universal-provider": 2.23.7
-  "@zama-fhe/sdk": 3.6.0
+  "@zama-fhe/sdk": 3.7.0
   aria-hidden: ^1.2.6
   autoprefixer: ^10.6.1
   bignumber.js: ^11.1.5
   bs58: 6.0.0
+  # @cosmos-kit/core 2.18 types its chains against the old registry schema. From 1.69.720 (and
+  # @chain-registry/types 0.50.441) chain_id is optional and codebase is restructured; 2.x is camelCase.
   chain-registry: 1.69.674
   clsx: ^2.1.1
+  # Held with @cosmjs for @cosmos-kit/core 2.18 (see the @cosmjs note).
   cosmjs-types: ^0.10.1
-  dependency-cruiser: ^18.5.0
+  dependency-cruiser: ^18.6.0
   effect: 4.0.5
   esbuild: ^0.28.2
   husky: ^9.1.7
-  i18next: ^26.4.2
+  i18next: ^26.5.2
   i18next-browser-languagedetector: ^8.2.1
-  jscpd: 5.4.0
-  jsdom: ^30.1.2
-  knip: ^6.41.0
+  jscpd: 5.4.1
+  jsdom: ^30.1.3
+  knip: ^6.42.0
   mipd: ^0.0.7
   mixpanel-browser: ^2.84.0
-  motion: 14.0.0
-  msw: ^3.0.2
-  next: ^16.4.0
+  motion: 14.3.1
+  msw: ^3.0.3
+  next: ^16.4.2
+  # Must satisfy the @vitejs/plugin-react peer range.
   oxc-transform-react: ^0.152.0
-  playwright: ^1.64.0
-  postcss: ^8.5.29
-  react: ^19.3.0
-  react-dom: ^19.3.0
-  react-i18next: ^17.0.16
-  react-is: ^19.2.0
+  playwright: ^1.64.1
+  postcss: ^8.5.31
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  react-i18next: ^17.1.0
+  react-is: ^19.3.1
   react-loading-skeleton: ^3.5.0
   react-remove-scroll: ^2.7.2
   react-router: ^8.4.0
@@ -130,12 +137,13 @@ catalog:
   serve: ^14.2.6
   tslib: ^2.8.1
   tsx: ^4.23.15
-  typescript: ^6.0.3
-  unplugin-macros: ^0.23.2
-  viem: ^2.57.4
+  # @angular/compiler-cli and @angular/build 22 peer on typescript >=6.0 <6.1.
+  typescript: ~6.0.3
+  unplugin-macros: ^0.23.3
+  viem: ^2.57.7
   vite: ^8.3.4
   vite-plugin-node-polyfills: ^0.28.0
-  vitest: 5.0.3
+  vitest: 5.0.5
   vitest-browser-react: ^2.3.0
   wagmi: 3.7.7
   yaml: ^2.9.1
@@ -152,6 +160,8 @@ overrides:
   "@reown/appkit": 1.8.24
   # @angular/build pins vite 8.3.0 (GHSA-587h-7wmj-h5pm, fixed in 8.3.3).
   "@angular/build>vite": ^8.3.4
+  # chain-registry's own range would drift onto the new schema (see the chain-registry catalog note).
+  "chain-registry>@chain-registry/types": 0.50.410
 
 packageExtensions:
   "@fractalwagmi/solana-wallet-adapter@0.1.1":

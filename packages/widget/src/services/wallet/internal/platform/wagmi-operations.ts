@@ -24,21 +24,21 @@ import type {
 } from "../../wallet-commands";
 import type { WalletEvmTransactionInput } from "../../wallet-transactions";
 
-export class WagmiOperationsError extends Schema.TaggedError<WagmiOperationsError>()(
-  "WagmiOperationsError",
-  {
-    cause: Schema.Defect(),
-    operation: Schema.Literals([
-      "connect",
-      "disconnect",
-      "reconnect",
-      "send-transaction",
-      "sign-message",
-      "sign-typed-data",
-      "switch-chain",
-    ]),
-  }
-) {}
+export class WagmiOperationsError extends Schema.TaggedError<
+  WagmiOperationsError,
+  { readonly brand: unique symbol }
+>()("WagmiOperationsError", {
+  cause: Schema.Defect(),
+  operation: Schema.Literals([
+    "connect",
+    "disconnect",
+    "reconnect",
+    "send-transaction",
+    "sign-message",
+    "sign-typed-data",
+    "switch-chain",
+  ]),
+}) {}
 
 const connectionOwners = new WeakMap<
   Config,

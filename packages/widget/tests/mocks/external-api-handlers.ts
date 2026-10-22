@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { mockDelay } from "./delay";
 
-export const getExternalApiMock = () => [
+export const getExternalApiMock = (appOrigin: () => string) => [
   http.all(
     "https://assets.stakek.it/*",
     () => new HttpResponse(null, { status: 204 })
@@ -45,7 +45,7 @@ export const getExternalApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json({
-      allowedOrigins: [window.location.origin],
+      allowedOrigins: [appOrigin()],
     });
   }),
 
@@ -53,7 +53,7 @@ export const getExternalApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json({
-      url: window.location.origin,
+      url: appOrigin(),
       name: "StakeKit Widget Test",
       iconUrl: "https://assets.stakek.it/stakekit/sk-icon_320x320.png",
     });

@@ -3,13 +3,13 @@ import type { Connector, createConfig } from "wagmi";
 import { configMeta as safeConfigMeta } from "../adapters/safe/safe-connector-meta";
 import { WagmiOperations } from "../platform/wagmi-operations";
 
-class WalletInitialConnectionError extends Schema.TaggedError<WalletInitialConnectionError>()(
-  "WalletInitialConnectionError",
-  {
-    cause: Schema.Defect(),
-    operation: Schema.Literals(["connect", "reconnect", "switch-chain"]),
-  }
-) {}
+class WalletInitialConnectionError extends Schema.TaggedError<
+  WalletInitialConnectionError,
+  { readonly brand: unique symbol }
+>()("WalletInitialConnectionError", {
+  cause: Schema.Defect(),
+  operation: Schema.Literals(["connect", "reconnect", "switch-chain"]),
+}) {}
 
 export type WalletInitialConnectionInput = {
   readonly hasExternalProvider: boolean;
