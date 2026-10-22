@@ -55,6 +55,7 @@ export const makeTestWallet = Effect.fn("makeTestWallet")(function* (
     connectors: Stream.succeed([]),
     detectAvailability: Effect.void,
     enabledNetworks: options.enabledNetworks ?? new Set(),
+    externalProviderChainsEnabled: Stream.succeed(true),
     logout: options.logout ?? unexpectedWalletCommand("logout"),
     signMessage:
       options.signMessage ?? (() => unexpectedWalletCommand("signMessage")),

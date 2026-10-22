@@ -20,15 +20,21 @@ declare module "vite" {
   }
 }
 
+// A path from the chunk that references an asset to the asset.
+const chunkRelativePath = (filename: string, hostId: string) => {
+  const relative = path.posix.relative(path.posix.dirname(hostId), filename);
+  return relative.startsWith("../") ? relative : `./${relative}`;
+};
+
 // Emits `new URL("./assets/…", import.meta.url)`, the form webpack, Turbopack
 // and Vite hosts detect and copy into their own output. It resolves against
 // the chunk, so it stays correct wherever the host serves `dist`. Worker sites
 // wrap it once more; `hostBundlerOutputPlugin` collapses those.
 export const chunkRelativeAssetUrls: UserConfig["experimental"] = {
-  renderBuiltUrl: (filename, { hostType }) =>
+  renderBuiltUrl: (filename, { hostId, hostType }) =>
     hostType === "js"
       ? {
-          runtime: `new URL(${JSON.stringify(`./${filename}`)}, import.meta.url).href`,
+          runtime: `new URL(${JSON.stringify(chunkRelativePath(filename, hostId))}, import.meta.url).href`,
         }
       : undefined,
 };

@@ -27,3 +27,14 @@ export const currentWalletConfigResultAtom = walletRuntime
 export const currentWalletEnabledNetworksResultAtom = walletRuntime
   .atom(WalletService.use((wallet) => Effect.succeed(wallet.enabledNetworks)))
   .pipe(Atom.withLabel("currentWalletEnabledNetworksResultAtom"));
+
+export const currentWalletExternalProviderChainsEnabledResultAtom =
+  walletRuntime
+    .atom(
+      WalletService.use((wallet) =>
+        Effect.succeed(wallet.externalProviderChainsEnabled)
+      ).pipe(Stream.unwrap)
+    )
+    .pipe(
+      Atom.withLabel("currentWalletExternalProviderChainsEnabledResultAtom")
+    );

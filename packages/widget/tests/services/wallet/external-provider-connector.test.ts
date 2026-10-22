@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
+import { Effect, Option, Stream } from "effect";
 import { type Chain, createClient } from "viem";
 import { arbitrum, mainnet, polygon } from "viem/chains";
 import { createConfig, http } from "wagmi";
@@ -17,8 +18,8 @@ import {
   isExternalProviderConnector,
 } from "../../../src/services/wallet/internal/adapters/external-provider";
 import { normalizeWalletState } from "../../../src/services/wallet/internal/runtime/state-projection";
+import type { ConnectorWithFilteredChains } from "../../../src/services/wallet/wallet-connectors";
 import { connectorsForWallets } from "../../../src/services/wallet/wallet-descriptors";
-import { WalletRuntimeInvariantError } from "../../../src/services/wallet/wallet-errors";
 import { disconnectedLedgerConnectorState } from "../../../src/services/wallet/wallet-state";
 import { runWalletEffect } from "../../utils/run-wallet-effect";
 
@@ -58,6 +59,9 @@ const makeHarness = (
   }
   return { config, connector, variant };
 };
+
+const latestFilteredChains = (connector: ConnectorWithFilteredChains) =>
+  Stream.runHead(connector.$filteredChains).pipe(Effect.map(Option.getOrThrow));
 
 describe("external-provider connector", () => {
   it.each([arbitrum, polygon, solana])(
@@ -245,29 +249,55 @@ describe("external-provider connector", () => {
     }
   });
 
-  it.each([
-    { supportedChainIds: [], currentChain: undefined },
-    { supportedChainIds: [], currentChain: mainnet.id },
-    { supportedChainIds: [arbitrum.id], currentChain: undefined },
-    { supportedChainIds: [arbitrum.id], currentChain: arbitrum.id },
+  it.effect.each([
+    { supportedChainIds: [], currentChain: undefined, chainId: mainnet.id },
+    { supportedChainIds: [], currentChain: polygon.id, chainId: polygon.id },
+    {
+      supportedChainIds: [arbitrum.id],
+      currentChain: undefined,
+      chainId: mainnet.id,
+    },
+    {
+      supportedChainIds: [arbitrum.id],
+      currentChain: arbitrum.id,
+      chainId: arbitrum.id,
+    },
   ])(
-    "rejects an empty configured intersection: $supportedChainIds / $currentChain",
-    (snapshot) => {
-      expect(() => makeHarness(snapshot, [mainnet])).toThrow(
-        WalletRuntimeInvariantError
-      );
+    "connects with no supported chains for an empty configured intersection: $supportedChainIds / $currentChain",
+    ({ chainId, ...snapshot }) => {
+      const { config, connector } = makeHarness(snapshot, [mainnet, polygon]);
+      return Effect.gen(function* () {
+        const connection = yield* Effect.promise(() =>
+          connect(config, { connector })
+        );
+        expect(connection).toMatchObject({ chainId });
+        expect(yield* latestFilteredChains(connector)).toEqual([]);
+      }).pipe(Effect.ensuring(Effect.promise(() => disconnect(config))));
     }
   );
 
-  it("rejects empty live chain lists instead of widening them to all chains", () => {
-    const { connector } = makeHarness({ currentChain: mainnet.id });
-    expect(() =>
-      connector.onSupportedChainsChanged({
-        currentChainId: mainnet.id,
-        supportedChainIds: [],
-      })
-    ).toThrow(WalletRuntimeInvariantError);
-  });
+  it.effect(
+    "publishes an empty live chain list instead of widening it to all chains",
+    () => {
+      const { config, connector } = makeHarness({
+        supportedChainIds: [mainnet.id],
+      });
+      const changes: Array<number | undefined> = [];
+      connector.emitter.on("change", (change) => changes.push(change.chainId));
+
+      return Effect.gen(function* () {
+        yield* Effect.promise(() => connect(config, { connector }));
+        connector.onSupportedChainsChanged({
+          currentChainId: mainnet.id,
+          supportedChainIds: [],
+        });
+
+        expect(yield* latestFilteredChains(connector)).toEqual([]);
+        expect(changes).toEqual([]);
+        expect(getConnection(config).chainId).toBe(mainnet.id);
+      }).pipe(Effect.ensuring(Effect.promise(() => disconnect(config))));
+    }
+  );
 
   it("does not reconnect an external provider without a host account", async () => {
     const { config, connector } = makeHarness({
