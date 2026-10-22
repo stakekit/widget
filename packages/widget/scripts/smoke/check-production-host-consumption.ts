@@ -6,7 +6,10 @@
  * only show up after `build:package` / `build:bundle` / `build:types`. This
  * script is that missing check: it asserts example apps resolve
  * `@stakekit/widget` (and `./bundle`) into `packages/widget/dist`, builds those
- * hosts, then loads Vite preview and `next start` in Chromium.
+ * hosts, then loads Vite preview, `next start`, the static Angular build and
+ * the Angular dev server in Chromium. The dev server excludes the widget from
+ * pre-bundling, so Angular's esbuild bundles `dist` itself, as hosts that
+ * exclude the widget from pre-bundling do.
  *
  * Green means the widget shell mounted and a catalog-backed control appeared
  * against a live API, with no `pageerror` and no fatal console errors (TDZ,
@@ -18,12 +21,12 @@
 
 import { type ChildProcess, spawn } from "node:child_process";
 import { once } from "node:events";
-import { access, readFile } from "node:fs/promises";
+import { access, readdir, readFile, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { join, relative, sep } from "node:path";
 import type { Readable } from "node:stream";
-import { type Browser, chromium } from "playwright";
+import { type Browser, chromium, type Page } from "playwright";
 import { repositoryRoot, widgetRoot } from "../paths";
 
 type Host = {
@@ -51,6 +54,12 @@ const hosts = {
     packageName: "@stakekit/with-nextjs",
     directory: join(repositoryRoot, "packages/examples/with-nextjs"),
     widgetSpecifiers: ["@stakekit/widget"],
+  },
+  angular: {
+    label: "Angular bundle entry",
+    packageName: "@stakekit/with-angular",
+    directory: join(repositoryRoot, "packages/examples/with-angular"),
+    widgetSpecifiers: ["@stakekit/widget/bundle"],
   },
 } as const satisfies Record<string, Host>;
 
@@ -93,7 +102,7 @@ type RunningServer = {
 
 const runningServers = new Set<RunningServer>();
 
-// Vite and Next both announce the port they actually bound, which is the only
+// Every host server announces the port it actually bound, which is the only
 // trustworthy value: a free port can be taken between reservation and bind.
 const announcedUrlPattern =
   /\bhttps?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):(\d+)\b/u;
@@ -169,6 +178,135 @@ const assertBuiltWidgetArtifacts = async () => {
         );
       }
     })
+  );
+};
+
+// Turbopack chunks cannot be imported on their own, so for Next.js the smoke
+// test checks the build output: the widget only starts the worker from the
+// copy Next serves.
+const assertNextCopiesEncryptWorker = async () => {
+  const directory = ".next/static/media";
+  const files = await readdir(join(hosts.next.directory, directory));
+  if (!files.some((file) => /^encrypt\.worker-.+\.js$/u.test(file))) {
+    throw new Error(
+      `${hosts.next.label} build did not copy the Zama encrypt worker into ${directory}`
+    );
+  }
+  console.log(`[smoke] ${hosts.next.label} copies the Zama encrypt worker`);
+};
+
+type EncryptWorkerExpectation = {
+  /** Host output directory that holds the widget's chunks. */
+  readonly directory: string;
+  /** URL path the host serves that directory under. */
+  readonly urlPath: string;
+  /** Where the widget must start the Zama encrypt worker in this host. */
+  readonly source: "host copy" | "inline copy";
+};
+
+const findChunk = async (
+  directory: string,
+  description: string,
+  matches: (code: string) => boolean
+) => {
+  for (const file of await readdir(directory)) {
+    if (!file.endsWith(".js")) continue;
+    const code = await readFile(join(directory, file), "utf8");
+    if (matches(code)) return { code, file };
+  }
+  throw new Error(`No ${description} chunk in ${directory}`);
+};
+
+const workerScriptPattern =
+  /new URL\(\s*(["'`])([^"'`]*encrypt\.worker[^"'`]*\.js)\1/u;
+
+// Resolves the worker the widget would start in this host from the host's own
+// build: the copy its loader chunk points at, or the inlined Blob worker. The
+// widget's choice between them is covered by its unit tests.
+const encryptWorkerTarget = async (expectation: EncryptWorkerExpectation) => {
+  if (expectation.source === "inline copy") {
+    const { file } = await findChunk(
+      expectation.directory,
+      "inline Zama encrypt worker",
+      (code) =>
+        code.includes("createObjectURL") &&
+        code.includes("zama-encrypt-worker-ready")
+    );
+    return { chunk: `${expectation.urlPath}${file}`, script: null };
+  }
+  const { code, file } = await findChunk(
+    expectation.directory,
+    "Zama encrypt worker loader",
+    (code) => /\bas loadEncryptWorker\b/u.test(code)
+  );
+  const script = code.match(workerScriptPattern)?.[2];
+  if (!script) {
+    throw new Error(`${file} does not reference the Zama encrypt worker`);
+  }
+  return { chunk: `${expectation.urlPath}${file}`, script };
+};
+
+// Starts the worker the way the Zama SDK does, so a host that stops serving
+// the copy, or a broken inline fallback, fails here instead of silently
+// encrypting on the page's main thread.
+const assertEncryptWorkerStarts = async (
+  page: Page,
+  label: string,
+  expectation: EncryptWorkerExpectation
+) => {
+  const target = await encryptWorkerTarget(expectation);
+  // No named function bindings in here: tsx would wrap them in a `__name`
+  // helper that does not exist in the page.
+  const state = await page.evaluate(async ({ chunk, script }) => {
+    const scriptUrl =
+      script === null
+        ? null
+        : new URL(script, new URL(chunk, location.href)).href;
+    if (scriptUrl !== null) {
+      const head = await fetch(scriptUrl, { method: "HEAD" });
+      const contentType = head.headers.get("content-type") ?? "";
+      if (!head.ok || !/javascript/u.test(contentType)) {
+        return `${scriptUrl} answered ${head.status} ${contentType}`;
+      }
+    }
+    const inlineChunk: unknown =
+      scriptUrl === null ? await import(chunk) : undefined;
+    const InlineWorker =
+      typeof inlineChunk === "object" &&
+      inlineChunk !== null &&
+      "default" in inlineChunk &&
+      typeof inlineChunk.default === "function"
+        ? // Vite's `?worker&inline` default export is a Worker constructor.
+          (inlineChunk.default as new (options: {
+            name: string;
+          }) => Worker)
+        : undefined;
+    if (scriptUrl === null && InlineWorker === undefined) {
+      return `${chunk} does not export an inline worker constructor`;
+    }
+    const worker = InlineWorker
+      ? new InlineWorker({ name: "zama-fhe-encrypt" })
+      : new Worker(scriptUrl!, { name: "zama-fhe-encrypt", type: "module" });
+    const { promise, resolve } = Promise.withResolvers<string>();
+    worker.addEventListener("message", (event) => {
+      if (event.data === "zama-encrypt-worker-ready") resolve("ready");
+    });
+    worker.addEventListener("error", (event) => {
+      resolve(`error: ${event.message}`);
+    });
+    setTimeout(() => resolve("timed out"), 30_000);
+    const result = await promise;
+    worker.terminate();
+    return result;
+  }, target);
+
+  if (state !== "ready") {
+    throw new Error(
+      `${label} Zama encrypt worker (${expectation.source}) did not start: ${state}`
+    );
+  }
+  console.log(
+    `[smoke] ${label} starts the Zama encrypt worker from the ${expectation.source}`
   );
 };
 
@@ -469,7 +607,8 @@ const waitForServer = async (
 const assertWidgetLoads = async (
   browser: Browser,
   label: string,
-  url: string
+  url: string,
+  encryptWorker: EncryptWorkerExpectation | undefined
 ) => {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -502,6 +641,9 @@ const assertWidgetLoads = async (
       )
       .waitFor({ state: "visible", timeout: 90_000 });
     await page.waitForTimeout(500);
+    if (encryptWorker) {
+      await assertEncryptWorkerStarts(page, label, encryptWorker);
+    }
 
     if (pageErrors.length > 0 || fatalConsoleErrors.length > 0) {
       const failures = [
@@ -521,11 +663,13 @@ const withServer = async ({
   label,
   args,
   env,
+  encryptWorker,
 }: {
   readonly browser: Browser;
   readonly label: string;
   readonly args: (port: number) => ReadonlyArray<string>;
   readonly env: ProcessEnv;
+  readonly encryptWorker?: EncryptWorkerExpectation;
 }) => {
   const port = await getFreePort();
   const server = startServer({ label, args: args(port), env });
@@ -533,7 +677,7 @@ const withServer = async ({
   try {
     const url = await resolveBoundUrl(server, port);
     await waitForServer(server, url);
-    await assertWidgetLoads(browser, label, url);
+    await assertWidgetLoads(browser, label, url, encryptWorker);
   } finally {
     await stopServer(server);
   }
@@ -574,6 +718,18 @@ const main = async () => {
     ["--filter", hosts.next.packageName, "run", "build"],
     env
   );
+  // Angular caches build and pre-bundle output across runs; start clean so the
+  // Angular stages consume this run's `dist`.
+  await rm(join(hosts.angular.directory, ".angular"), {
+    force: true,
+    recursive: true,
+  });
+  await runCommand(
+    `${hosts.angular.label} production build`,
+    ["--filter", hosts.angular.packageName, "run", "build"],
+    env
+  );
+  await assertNextCopiesEncryptWorker();
 
   const browser = await chromium.launch();
 
@@ -582,6 +738,11 @@ const main = async () => {
       browser,
       label: hosts.vitePackage.label,
       env,
+      encryptWorker: {
+        directory: join(hosts.vitePackage.directory, "dist/assets"),
+        urlPath: "/assets/",
+        source: "host copy",
+      },
       args: (port) => [
         "--filter",
         hosts.vitePackage.packageName,
@@ -599,6 +760,11 @@ const main = async () => {
       browser,
       label: hosts.viteBundle.label,
       env,
+      encryptWorker: {
+        directory: join(hosts.viteBundle.directory, "dist/assets"),
+        urlPath: "/assets/",
+        source: "host copy",
+      },
       args: (port) => [
         "--filter",
         hosts.viteBundle.packageName,
@@ -623,6 +789,44 @@ const main = async () => {
         "next",
         "start",
         "--hostname",
+        "127.0.0.1",
+        "--port",
+        String(port),
+      ],
+    });
+    await withServer({
+      browser,
+      label: `${hosts.angular.label} production`,
+      env,
+      encryptWorker: {
+        directory: join(hosts.angular.directory, "dist/browser"),
+        urlPath: "/",
+        source: "inline copy",
+      },
+      args: (port) => [
+        "--filter",
+        hosts.angular.packageName,
+        "exec",
+        "serve",
+        "--no-clipboard",
+        "--listen",
+        `tcp://127.0.0.1:${port}`,
+        "dist/browser",
+      ],
+    });
+    await withServer({
+      browser,
+      label: `${hosts.angular.label} dev server`,
+      env,
+      args: (port) => [
+        "--filter",
+        hosts.angular.packageName,
+        "exec",
+        "ng",
+        "serve",
+        "--define",
+        `SK_API_KEY=${JSON.stringify(apiKey)}`,
+        "--host",
         "127.0.0.1",
         "--port",
         String(port),

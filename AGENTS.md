@@ -31,6 +31,8 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication; run after changing the import graph or copying code between Modules.
 - `pnpm lint` — all workspaces plus the root ast-grep rules.
 - `pnpm check` — lint, hygiene, tests, and builds.
+- `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild
+  hosts such as Angular can resolve the built `dist`; part of `build`.
 - `pnpm test:smoke` — built package consumption; requires a configured API key.
 
 Install dependencies only when manifests, the lockfile, or the task require it.
