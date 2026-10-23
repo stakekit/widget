@@ -17,7 +17,6 @@ import {
   ExactDecimal,
   ExactDecimalInput,
   TolerantOptionalUtcDateTimeFromString,
-  UtcDateTimeFromString,
 } from "../finance/scalars";
 import {
   ProviderId,
@@ -569,23 +568,6 @@ const OptionalKeyFromNullOr = <S extends Schema.Top>(schema: S) =>
     })
   );
 
-const EarnBalanceBatch = Schema.Struct({
-  ...Struct.pick(YieldApi.BalanceBatchDto.fields, [
-    "address",
-    "explorerUrl",
-    "id",
-  ]),
-  requests: Schema.Array(
-    Schema.Struct({
-      ...Struct.pick(YieldApi.BalanceBatchRequestDto.fields, [
-        "explorerUrl",
-        "transactionHash",
-      ]),
-      submittedAt: UtcDateTimeFromString,
-    })
-  ),
-});
-
 export const EarnBalance = Schema.Struct({
   ...Struct.pick(YieldApi.BalanceDto.fields, [
     "address",
@@ -593,17 +575,11 @@ export const EarnBalance = Schema.Struct({
     "isEncrypted",
     "shareAmount",
     "shareAmountRaw",
-    "shareToken",
   ]),
+  shareToken: Schema.optionalKey(Token),
   amount: ExactDecimal,
   amountRaw: ExactBaseUnitAmount,
   amountUsd: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
-  batch: Schema.optionalKey(
-    TolerantNullOr(EarnBalanceBatch, {
-      operation: "yield-balance",
-      field: "batch",
-    })
-  ),
   date: Schema.optionalKey(
     TolerantOptionalUtcDateTimeFromString({
       operation: "yield-balance",
@@ -619,7 +595,13 @@ export const EarnBalance = Schema.Struct({
     TolerantArray(EarnValidator, { operation: "balance-validators" })
   ),
 });
-export type EarnBalance = typeof EarnBalance.Type;
+/**
+ * `revealedHandle` is set by the widget, never by the API: the handle a
+ * revealed balance was decrypted from, which its `shareAmountRaw` no longer holds.
+ */
+export type EarnBalance = typeof EarnBalance.Type & {
+  readonly revealedHandle?: string;
+};
 
 export const EarnPosition = Schema.Struct({
   yieldId: YieldId,

@@ -2,6 +2,7 @@ import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import {
+  type ConfidentialHandle,
   isConfidentialYield,
   isUserRevealableBalance,
 } from "../../../domain/earn/confidential";
@@ -13,6 +14,11 @@ import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { type TokenString, tokenString } from "../../../domain/token/token";
+import { walletScopeOwnerKey } from "../../../domain/wallet/wallet-scope";
+import {
+  InFlightCancelsKey,
+  inFlightCancelsResourceAtom,
+} from "../../../resources/in-flight-cancels/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { positionDetailsExitActions } from "./classic-actions/exit";
 import {
@@ -38,18 +44,17 @@ export type PositionDetailsShareConversion = {
   readonly symbol: string;
 };
 
-const getUnstakeAmountUsd = ({
-  amount,
-  amountUsd,
-  unstakeAmount,
+/** The share of `value` that `part` of `whole` holds. */
+const prorate = ({
+  part,
+  value,
+  whole,
 }: {
-  readonly amount: BigNumber;
-  readonly amountUsd: BigNumber;
-  readonly unstakeAmount: BigNumber;
+  readonly part: BigNumber;
+  readonly value: BigNumber;
+  readonly whole: BigNumber;
 }) =>
-  amount.isZero()
-    ? exactDecimal(0)
-    : amountUsd.dividedBy(amount).multipliedBy(unstakeAmount);
+  whole.isZero() ? exactDecimal(0) : value.dividedBy(whole).multipliedBy(part);
 
 const getExitResourcesKey = (
   view: Atom.Type<ReturnType<typeof positionDetailsWorkflowViewAtom>>
@@ -124,6 +129,28 @@ export const positionDetailsClassicViewAtom = Atom.family(
         ...(workflow.positionBalancesByType?.values() ?? []),
       ].flat();
       const hasHiddenBalances = positionBalances.some(isUserRevealableBalance);
+      // Only a confidential vault's pending balances can be mid-cancel. Read
+      // locally: a failed lookup, even after an earlier success, just leaves
+      // them looking pending.
+      const inFlightCancels =
+        integration &&
+        isConfidentialYield(integration) &&
+        positionBalances.some(
+          (balance) => balance.type === "entering" || balance.type === "exiting"
+        )
+          ? get(
+              inFlightCancelsResourceAtom.local(
+                new InFlightCancelsKey({
+                  scope: walletScopeOwnerKey(key.scope),
+                  yieldId: integration.id,
+                })
+              )
+            )
+          : null;
+      const cancellingHandles: ReadonlySet<ConfidentialHandle> =
+        inFlightCancels && AsyncResult.isSuccess(inFlightCancels)
+          ? inFlightCancels.value
+          : new Set();
       const action = get(positionDetailsExitActions.view(key));
       const submittedBelowMinimum =
         action.submissionError &&
@@ -138,6 +165,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
             (balance) => !balance.isEncrypted && balance.type !== "withdrawable"
           ),
         apyCompositionRewardRate: personalizedRewardRate ?? fallbackRewardRate,
+        cancellingHandles,
         apyCompositionShowsUpToCampaign:
           !personalizedRewardRate && Boolean(fallbackRewardRate),
         canChangeUnstakeAmount: workflow.canChangeUnstakeAmount,
@@ -175,10 +203,22 @@ export const positionDetailsClassicViewAtom = Atom.family(
           !canUnstake ||
           exitResources.kyc.isBlocking,
         unstakeAmountUsd: workflow.exitBalance
-          ? getUnstakeAmountUsd({
-              ...workflow.exitBalance,
-              unstakeAmount: workflow.unstakeAmount,
+          ? prorate({
+              part: workflow.unstakeAmount,
+              value: workflow.exitBalance.amountUsd,
+              whole: workflow.exitBalance.amount,
             })
+          : null,
+        // A confidential exit in shares, restated in the underlying it redeems to.
+        unstakeAmountUnderlying: workflow.exitBalance?.underlying
+          ? {
+              amount: prorate({
+                part: workflow.unstakeAmount,
+                value: workflow.exitBalance.underlying.amount,
+                whole: workflow.exitBalance.amount,
+              }),
+              token: workflow.exitBalance.underlying.token,
+            }
           : null,
         unstakeIsGreaterOrLessIntegrationLimitError:
           workflow.unstakeIsGreaterOrLessIntegrationLimitError ||

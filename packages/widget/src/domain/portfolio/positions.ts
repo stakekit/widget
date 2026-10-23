@@ -168,17 +168,22 @@ export const sumBalancesByToken = (
 
 export type PositionBalanceRow = PositionTokenSum &
   Readonly<{
-    readonly batch?: EarnBalance["batch"];
+    /** A cancel for this pending balance is broadcast but not yet confirmed. */
+    readonly cancelling: boolean;
     readonly date: EarnBalance["date"];
     readonly isEncrypted?: boolean;
+    /** The share token's amount, for balances denominated in shares. */
+    readonly shareAmount?: BigNumber;
+    readonly shareToken?: EarnBalance["shareToken"];
     readonly type: YieldBalanceType;
   }>;
 
 /**
  * Display rows for raw balances: equal status, token identity, and date are
  * summed exactly; different maturity/unlock dates stay apart so countdowns
- * remain correct. Order follows first appearance. Raw balances (and their
- * pending actions) are left untouched for execution.
+ * remain correct, and a balance being cancelled stays apart from the rest.
+ * Order follows first appearance. Raw balances (and their pending actions)
+ * are left untouched for execution.
  */
 export const groupPositionBalanceRows = (
   balances: ReadonlyArray<
@@ -186,19 +191,31 @@ export const groupPositionBalanceRows = (
       EarnBalance,
       | "amount"
       | "amountUsd"
-      | "batch"
       | "date"
       | "isEncrypted"
+      | "revealedHandle"
+      | "shareAmount"
+      | "shareAmountRaw"
+      | "shareToken"
       | "token"
       | "type"
     >
-  >
+  >,
+  isCancelling: (
+    balance: Pick<
+      EarnBalance,
+      "isEncrypted" | "revealedHandle" | "shareAmountRaw"
+    >
+  ) => boolean
 ): ReadonlyArray<PositionBalanceRow> => [
   ...balances
     .reduce((rows, balance) => {
+      const cancelling = isCancelling(balance);
       const key = `${balance.type}::${tokenString(balance.token)}::${
         balance.date ? DateTime.toEpochMillis(balance.date) : ""
-      }::${balance.batch?.address ?? ""}::${balance.batch?.id ?? ""}`;
+      }::${cancelling}::${
+        balance.shareToken ? tokenString(balance.shareToken) : ""
+      }`;
       const previous = rows.get(key);
 
       rows.set(key, {
@@ -206,9 +223,17 @@ export const groupPositionBalanceRows = (
         amountUsd: (previous?.amountUsd ?? exactZero()).plus(
           balance.amountUsd ?? 0
         ),
-        batch: balance.batch,
+        cancelling,
         date: balance.date,
         isEncrypted: previous?.isEncrypted || balance.isEncrypted,
+        ...(balance.shareToken
+          ? {
+              shareAmount: (previous?.shareAmount ?? exactZero()).plus(
+                exactDecimal(balance.shareAmount || 0)
+              ),
+              shareToken: balance.shareToken,
+            }
+          : {}),
         token: previous?.token ?? balance.token,
         type: balance.type,
       });

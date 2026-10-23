@@ -16,14 +16,22 @@ export const isOptionalPendingAction = (type: YieldPendingActionType) =>
 /**
  * i18n context naming what a pending action acts on when its type alone is
  * ambiguous: CANCEL_PENDING cancels a deposit on an entering balance and a
- * withdrawal on an exiting one.
+ * withdrawal on an exiting one. A confidential vault's WITHDRAW on a
+ * withdrawable balance completes an instant withdrawal its unwrap began.
  */
-export type PendingActionLabelContext = "deposit" | "withdrawal";
+export type PendingActionLabelContext =
+  | "deposit"
+  | "instant_withdrawal"
+  | "withdrawal";
 
 export const getPendingActionLabelContext = (
   type: YieldPendingActionType,
-  balanceType: YieldBalanceType
+  balanceType: YieldBalanceType,
+  { confidential = false }: { readonly confidential?: boolean } = {}
 ): PendingActionLabelContext | undefined => {
+  if (confidential && type === "WITHDRAW" && balanceType === "withdrawable") {
+    return "instant_withdrawal";
+  }
   if (type !== "CANCEL_PENDING") return undefined;
   if (balanceType === "entering") return "deposit";
   if (balanceType === "exiting") return "withdrawal";

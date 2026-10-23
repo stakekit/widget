@@ -120,6 +120,12 @@ export const makeClassicTransactionWorkflowInput = ({
 type ConfidentialTransactionWorkflowInputFields = ClassicActionFacts & {
   /** Run after preparation, before the action's own transactions. */
   readonly conversion: ReadonlyArray<DirectTransaction>;
+  /**
+   * An instant exit's unwrap is finalized in the same workflow: once it
+   * confirms, the workflow decrypts the unwrapped amount on this chain and
+   * withdraws it.
+   */
+  readonly finalizeUnwrap?: Readonly<{ readonly chainId: number }> | null;
   readonly ledger: DirectTransactionLedger;
   readonly preparation: ConfidentialPreparation;
   readonly walletScope: WalletScopeKey;
@@ -136,6 +142,7 @@ export class ConfidentialTransactionWorkflowInput extends Data.TaggedClass(
   constructor(input: ConfidentialTransactionWorkflowInputFields) {
     super({
       conversion: [...input.conversion],
+      finalizeUnwrap: input.finalizeUnwrap ?? null,
       inputToken: input.inputToken,
       ledger: input.ledger,
       preparation: input.preparation,
@@ -413,14 +420,29 @@ type TransactionWorkflowPreparation = Readonly<{
   readonly step: "decrypt" | "encrypt";
 }>;
 
+/**
+ * The finalize of a confidential instant exit's unwrap: it decrypts the
+ * request once the unwrap confirms. Its action's transactions follow the
+ * `position` transactions held when it began.
+ */
+type TransactionWorkflowFinalize = Readonly<{
+  readonly done: boolean;
+  readonly position: number;
+}>;
+
 export type TransactionWorkflowContext = {
   readonly batches: ReadonlyArray<TransactionWorkflowBatch>;
   readonly currentBatchIndex: number | null;
   readonly currentTransactionIndex: number | null;
   readonly domain: TransactionWorkflowDomainContext;
+  readonly finalize: TransactionWorkflowFinalize | null;
   readonly preparation: TransactionWorkflowPreparation | null;
   readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
 };
+
+/** An instant exit's finalize has begun but not yet prepared its action. */
+export const isFinalizePending = (context: TransactionWorkflowContext) =>
+  context.finalize !== null && !context.finalize.done;
 
 type WorkflowState<Tag extends string> = {
   readonly _tag: Tag;

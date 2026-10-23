@@ -15,7 +15,6 @@ import {
 } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import {
-  getConfidentialPricePerShare,
   isConfidentialYield,
   toBaseUnits,
 } from "../../../domain/earn/confidential";
@@ -309,12 +308,8 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
         0n
       );
     }
-    return toBaseUnits(
-      facts.amount.dividedBy(
-        getConfidentialPricePerShare(facts.integration, shareToken)
-      ),
-      shareToken.decimals
-    );
+    // The exit form is denominated in the vault share.
+    return toBaseUnits(facts.amount, shareToken.decimals);
   };
   const shareAmountRaw = getShareAmountRaw();
   // Below one share unit the encrypted redeem would be zero.

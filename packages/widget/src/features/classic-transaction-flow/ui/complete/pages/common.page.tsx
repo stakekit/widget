@@ -39,8 +39,8 @@ type Props = {
   amount: string;
   pendingActionType?: YieldPendingActionType;
   pendingActionLabelContext?: PendingActionLabelContext;
-  /** The deposit was queued into this vault's next batch, not settled. */
-  batchedDeposit?: EarnYieldWithProvider | null;
+  /** The request was queued into this vault's next batch, not settled. */
+  batched?: BatchedRequest | null;
   providersDetails: ReadonlyArray<{
     logo?: string;
     name?: string;
@@ -48,6 +48,11 @@ type Props = {
   yieldType: ExtendedYieldType | null;
   integrationId: string;
 };
+
+type BatchedRequest = Readonly<{
+  readonly side: "redemption" | "subscription";
+  readonly yieldDto: EarnYieldWithProvider;
+}>;
 
 type CompletePageProps = Omit<Props, "completion">;
 
@@ -58,7 +63,7 @@ export const CompletePageComponent = ({
   token,
   pendingActionType,
   pendingActionLabelContext,
-  batchedDeposit = null,
+  batched = null,
   yieldType,
   providersDetails,
   integrationId,
@@ -78,11 +83,14 @@ export const CompletePageComponent = ({
     ? "ethena_usde"
     : undefined;
   const getSuccessKey = () => {
+    if (batched?.side === "redemption") {
+      return "complete.withdrawal_submitted" as const;
+    }
     if (unstakeMatch) return "complete.successfully_unstaked" as const;
     if (pendingActionMatch) {
       return "complete.successfully_pending_action" as const;
     }
-    if (batchedDeposit) return "complete.deposit_submitted" as const;
+    if (batched) return "complete.deposit_submitted" as const;
     return "complete.successfully_staked" as const;
   };
   const successKey = getSuccessKey();
@@ -99,12 +107,12 @@ export const CompletePageComponent = ({
     });
   };
   const action = getAction();
-  const nextBatch = batchedDeposit
+  const nextBatch = batched
     ? formatNextBatchTiming({
         now: presentationTime?.now ?? null,
-        side: "subscription",
+        side: batched.side,
         t,
-        yieldDto: batchedDeposit,
+        yieldDto: batched.yieldDto,
       })
     : null;
   const getNextBatchNote = () => {

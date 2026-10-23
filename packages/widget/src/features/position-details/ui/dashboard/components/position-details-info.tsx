@@ -31,7 +31,6 @@ import {
   getDashboardPositionDetailsModel,
   getPositionHeaderBadges,
 } from "../../../model/dashboard-position-details";
-import { PendingBatchDetails } from "../../classic/components/pending-batch-details";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 
 const renderDetailValue = (value: DashboardPositionDetailValue) =>
@@ -67,6 +66,7 @@ export const PositionDetailsInfo = () => {
   const positionBalancesByType = positionDetails.positionBalancesByType;
   if (integrationData && positionBalancesByType) {
     const model = getDashboardPositionDetailsModel({
+      cancellingHandles: positionDetails.cancellingHandles,
       canUnstake: positionDetails.canUnstake,
       integrationData,
       locale,
@@ -95,11 +95,6 @@ export const PositionDetailsInfo = () => {
         {model.breakdownRows.length > 0 && (
           <DetailsSection title={t("dashboard.position_details.breakdown")}>
             <PositionBreakdownRows rows={model.breakdownRows} />
-            {model.pendingBatches.map((row) => (
-              <Box key={`${row.batch?.address}-${row.batch?.id}`} marginTop="3">
-                <PendingBatchDetails balance={row} />
-              </Box>
-            ))}
             {positionDetails.hasHiddenBalances ? (
               <Box display="flex" flexDirection="column" gap="1" marginTop="2">
                 <Button

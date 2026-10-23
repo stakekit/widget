@@ -11,6 +11,11 @@ import {
   getPendingActionAmountConfig,
   isPendingActionAmountRequired,
 } from "../../../domain/action/pending-action";
+import {
+  type ConfidentialExitBalance,
+  getConfidentialExitBalance,
+  isConfidentialYield,
+} from "../../../domain/earn/confidential";
 import { isYieldActionAmountEditable } from "../../../domain/earn/stake";
 import {
   exactZero,
@@ -21,6 +26,7 @@ import { YieldId } from "../../../domain/identity/identifiers";
 import {
   getSingleExitTokenSum,
   type PositionBalancesByType,
+  type PositionTokenSum,
 } from "../../../domain/portfolio/positions";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
 import {
@@ -145,6 +151,19 @@ const projectPendingActionAmount = ({
   return { amount, validation };
 };
 
+/** A confidential exit also carries its value in the underlying. */
+type ExitBalance = PositionTokenSum &
+  Partial<Pick<ConfidentialExitBalance, "underlying">>;
+
+const getExitBalance = (
+  integration: Parameters<typeof isConfidentialYield>[0] | null,
+  activeBalances: Parameters<typeof getSingleExitTokenSum>[0] &
+    Parameters<typeof getConfidentialExitBalance>[0]
+): ExitBalance | null =>
+  integration && isConfidentialYield(integration)
+    ? getConfidentialExitBalance(activeBalances)
+    : getSingleExitTokenSum(activeBalances);
+
 const resolveUnstakeAmount = ({
   canChangeAmount,
   forceMax,
@@ -203,7 +222,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       // Several active token identities have no scalar exit amount; exit is
       // then unavailable rather than built from a mixed-token sum.
       const exitBalance = stakedOrLiquidBalances
-        ? getSingleExitTokenSum(stakedOrLiquidBalances)
+        ? getExitBalance(integrationData, stakedOrLiquidBalances)
         : null;
       const amountConstraints = getYieldAmountConstraints({
         availableAmount: exitBalance?.amount ?? null,

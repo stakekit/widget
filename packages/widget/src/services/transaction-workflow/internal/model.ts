@@ -242,6 +242,7 @@ const initializeTransactionWorkflowContext = (
       withCurrentTransaction({
         batches: [makeClassicTransactionWorkflowBatch(input.transactions)],
         domain: toTransactionWorkflowDomain(input),
+        finalize: null,
         preparation: null,
         submissions: [],
       })
@@ -267,6 +268,7 @@ const initializeTransactionWorkflowContext = (
         currentBatchIndex: null,
         currentTransactionIndex: null,
         domain: toTransactionWorkflowDomain(input),
+        finalize: null,
         preparation: {
           done: false,
           step: input.preparation._tag === "Encrypt" ? "encrypt" : "decrypt",
@@ -278,6 +280,7 @@ const initializeTransactionWorkflowContext = (
       withCurrentTransaction({
         batches: [makeBorrowTransactionWorkflowBatch(input.action)],
         domain: toTransactionWorkflowDomain(input),
+        finalize: null,
         preparation: null,
         submissions: [],
       })
@@ -328,7 +331,8 @@ export const initializeTransactionWorkflow = (
 
 /**
  * A confidential workflow's context once it prepared its action: the action's
- * transactions follow the ones the workflow already holds.
+ * transactions follow the ones the workflow already holds. An instant exit's
+ * finalize only extends the exit's action with its own transactions.
  */
 export const attachPreparedClassicAction = ({
   context,
@@ -338,6 +342,8 @@ export const attachPreparedClassicAction = ({
   readonly prepared: ClassicTransactionWorkflowInput;
 }): TransactionWorkflowContext => {
   const held = context.batches[0] ?? makeClassicTransactionWorkflowBatch([]);
+  const { finalize } = context;
+  const finalizing = finalize !== null && !finalize.done;
 
   return withCurrentTransaction({
     ...context,
@@ -351,15 +357,18 @@ export const attachPreparedClassicAction = ({
         ],
       },
     ],
-    domain: {
-      _tag: "Classic",
-      actionMeta: prepared.actionMeta,
-      yieldId: prepared.yieldId,
-    },
-    preparation: context.preparation && {
-      ...context.preparation,
-      done: true,
-    },
+    domain: finalizing
+      ? context.domain
+      : {
+          _tag: "Classic",
+          actionMeta: prepared.actionMeta,
+          yieldId: prepared.yieldId,
+        },
+    finalize: finalizing ? { ...finalize, done: true } : finalize,
+    preparation:
+      finalizing || !context.preparation
+        ? context.preparation
+        : { ...context.preparation, done: true },
   });
 };
 

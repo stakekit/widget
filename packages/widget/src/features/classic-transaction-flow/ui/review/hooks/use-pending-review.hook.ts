@@ -5,7 +5,7 @@ import {
   getPendingActionLabelContext,
   type YieldPendingActionType,
 } from "../../../../../domain/action/pending-action";
-import { getCancelReturnToken } from "../../../../../domain/earn/confidential";
+import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
@@ -25,14 +25,11 @@ export const usePendingActionReview = () => {
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;
 
-  const amount = exactDecimal(manageFlow.request.arguments?.amount ?? 0);
-
-  // A cancelled confidential deposit refunds the wrapper token.
-  const returnToken = getCancelReturnToken(
-    manageFlow.integration,
-    manageFlow.request.action,
-    manageFlow.balanceType
-  );
+  // A confidential cancel refunds the wrapper or the vault shares.
+  const returnToken = manageFlow.cancelReturn?.token ?? null;
+  const amount =
+    manageFlow.cancelReturn?.amount ??
+    exactDecimal(manageFlow.request.arguments?.amount ?? 0);
   const interactedToken = returnToken ?? manageFlow.interactedToken;
   const integrationData = manageFlow.integration;
 
@@ -43,7 +40,8 @@ export const usePendingActionReview = () => {
 
   const labelContext = getPendingActionLabelContext(
     manageFlow.request.action,
-    manageFlow.balanceType
+    manageFlow.balanceType,
+    { confidential: isConfidentialYield(integrationData) }
   );
   const title = t(
     `position_details.pending_action_button.${

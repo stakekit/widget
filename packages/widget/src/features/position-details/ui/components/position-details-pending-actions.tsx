@@ -3,6 +3,7 @@ import {
   getPendingActionLabelContext,
   type YieldPendingActionType,
 } from "../../../../domain/action/pending-action";
+import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
@@ -55,7 +56,8 @@ export const PositionDetailsPendingActions = ({
         const labelOptions = {
           context: getPendingActionLabelContext(
             val.pendingAction.type,
-            val.yieldBalance.type
+            val.yieldBalance.type,
+            { confidential: isConfidentialYield(integrationData) }
           ),
         };
         // Classic flags invalid amounts; dashboard falls back to a humanized

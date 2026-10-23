@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
-import { formatUsd } from "../../../../../shared/lib/number-format";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -22,6 +25,7 @@ export const PositionDetailsUnstakeActions = () => {
     unstakeIsGreaterOrLessIntegrationLimitError,
     unstakeAmount,
     unstakeAmountUsd,
+    unstakeAmountUnderlying,
     exitBalance,
     canChangeUnstakeAmount: canChangeUnstakeAmountValue,
     canUnstake,
@@ -99,6 +103,29 @@ export const PositionDetailsUnstakeActions = () => {
     ),
     onClick: onUnstakeClick,
   };
+  // A confidential exit is typed in vault shares and chooses its payout apart.
+  const confidentialExit = !!exitReceiveTokenSelection?.confidentialExit;
+  const receiveTokenAccessory = (
+    <ExitReceiveTokenAccessory
+      integration={integrationDataValue}
+      onSelect={onReceiveTokenSelect}
+      positionToken={unstakeTokenValue}
+      selection={exitReceiveTokenSelection}
+    />
+  );
+  const getFormattedAmount = () => {
+    if (unstakeAmountUnderlying) {
+      return t("position_details.underlying_amount", {
+        amount: formatTokenAmount(
+          unstakeAmountUnderlying.amount,
+          locale,
+          "down"
+        ),
+        symbol: unstakeAmountUnderlying.token.symbol,
+      });
+    }
+    return unstakeAmountUsd ? formatUsd(unstakeAmountUsd, locale) : "";
+  };
 
   return (
     <>
@@ -130,23 +157,29 @@ export const PositionDetailsUnstakeActions = () => {
         label={t(
           `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
         )}
-        formattedAmount={
-          unstakeAmountUsd ? formatUsd(unstakeAmountUsd, locale) : ""
-        }
+        formattedAmount={getFormattedAmount()}
         balance={exitBalance}
         yieldDto={integrationDataValue}
         validators={providersDetails ?? []}
         showUnstakeInfo={false}
         ctaPlacement="footer"
-        tokenAccessory={
-          <ExitReceiveTokenAccessory
-            integration={integrationDataValue}
-            onSelect={onReceiveTokenSelect}
-            positionToken={unstakeTokenValue}
-            selection={exitReceiveTokenSelection}
-          />
-        }
+        tokenAccessory={confidentialExit ? undefined : receiveTokenAccessory}
       />
+
+      {confidentialExit ? (
+        <Box
+          data-testid="position-details-exit-receive-row"
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="3"
+        >
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {t("position_details.receive_token.label")}
+          </Text>
+          {receiveTokenAccessory}
+        </Box>
+      ) : null}
 
       <Box display="flex" flexDirection="column" gap="2">
         <ExitReceiveTokenNote
