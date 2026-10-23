@@ -48,6 +48,7 @@ export type WidgetConfig = {
   readonly externalProviders?: ExternalProviderSnapshot;
   readonly hideAccountAndChainSelector: boolean;
   readonly hideChainSelector: boolean;
+  readonly hideGasFee: boolean;
   readonly hideNetworkLogo: boolean;
   /** Capabilities resolved once from `variant` and `dashboardVariant`. */
   readonly hostProfile: HostProfile;

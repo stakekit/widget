@@ -208,6 +208,7 @@ const hostConfigurationValueFields = {
   externalProviders: optional(ExternalProviderValues),
   hideAccountAndChainSelector: optional(Schema.Boolean),
   hideChainSelector: optional(Schema.Boolean),
+  hideGasFee: optional(Schema.Boolean),
   hideNetworkLogo: optional(Schema.Boolean),
   initialChain: optional(SupportedChainId),
   institutionalWallets: optional(Schema.Boolean),

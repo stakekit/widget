@@ -245,6 +245,7 @@ const normalizeWidgetConfig = (
     hideAccountAndChainSelector:
       hostConfiguration.hideAccountAndChainSelector ?? false,
     hideChainSelector: hostConfiguration.hideChainSelector ?? false,
+    hideGasFee: hostConfiguration.hideGasFee ?? false,
     hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
     hostProfile: resolveHostProfile(variant, dashboardVariant),
     initialChain: hostConfiguration.initialChain,

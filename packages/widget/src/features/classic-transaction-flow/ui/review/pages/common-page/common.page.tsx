@@ -10,6 +10,7 @@ import { InfoIcon } from "../../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../../shared/ui/primitives/warning-box";
 import { useTrackEvent } from "../../../../../tracking/index";
+import { useWidgetConfig } from "../../../../../widget-configuration/index";
 import {
   AnimationPage,
   PageContainer,
@@ -110,8 +111,17 @@ export const ReviewPage = ({
 }: ReviewPageProps) => {
   const trackEvent = useTrackEvent();
   const { t } = useTranslation();
+  const hideGasFee = useWidgetConfig("hideGasFee");
 
   const isLoading = loading || feeConfigLoading;
+  const configFees = isLoading
+    ? []
+    : [depositFee, managementFee, performanceFee].filter(
+        (configFee) => configFee !== null
+      );
+  // Hiding the gas estimate can leave no fee to show once fees have loaded.
+  const showFees =
+    !hideGasFee || isLoading || !!commissionFee || configFees.length > 0;
 
   return (
     <AnimationPage>
@@ -132,30 +142,43 @@ export const ReviewPage = ({
           </Box>
         )}
 
-        <Divider />
-
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          marginTop="4"
-        >
-          <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
-        </Box>
-
-        <GasFee
-          label={t("review.estimated_gas_fee")}
-          price={fee}
-          loading={isLoading}
-        />
-
-        {commissionFee ? <CommissionFee commissionFee={commissionFee} /> : null}
-
-        {!isLoading && (
+        {showFees && (
           <>
-            {depositFee ? <ConfigFee feesBps={depositFee} /> : null}
-            {managementFee ? <ConfigFee feesBps={managementFee} /> : null}
-            {performanceFee ? <ConfigFee feesBps={performanceFee} /> : null}
+            <Divider />
+
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              marginTop="4"
+            >
+              <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
+            </Box>
+
+            {hideGasFee ? null : (
+              <GasFee
+                label={t("review.estimated_gas_fee")}
+                price={fee}
+                loading={isLoading}
+              />
+            )}
+
+            {hideGasFee && isLoading ? (
+              <Box marginTop="2" marginBottom="2" height="4" width="40">
+                <ContentLoaderSquare
+                  heightPx={16}
+                  variant={{ size: "medium" }}
+                />
+              </Box>
+            ) : null}
+
+            {commissionFee ? (
+              <CommissionFee commissionFee={commissionFee} />
+            ) : null}
+
+            {configFees.map((configFee) => (
+              <ConfigFee key={configFee.label} feesBps={configFee} />
+            ))}
           </>
         )}
 
@@ -244,6 +267,7 @@ const GasFee = ({
     </Box>
   );
 };
+
 const CommissionFee = ({ commissionFee }: { commissionFee: string }) => {
   const { t } = useTranslation();
   return (
@@ -273,7 +297,7 @@ const ConfigFee = ({ feesBps }: { feesBps: FeesBps }) => {
       display="flex"
       justifyContent="space-between"
       alignItems="center"
-      data-testid="estimated_gas_fee"
+      data-testid="protocol_fee"
       marginBottom="2"
     >
       <Box display="flex" alignItems="center" justifyContent="center" gap="1">
