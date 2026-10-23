@@ -261,6 +261,7 @@ describe("makeStartClassicTransactionFlow", () => {
         );
         expect(second.session.destination).toEqual({
           completePath: toWidgetPath("/complete"),
+          finishPath: toWidgetPath("/"),
           reviewPath: toWidgetPath("/review"),
           stepsPath: toWidgetPath("/steps"),
         });
@@ -946,6 +947,38 @@ describe("leaveClassicFlowExecution", () => {
       expect(
         yield* leave(makeClassicFlowSession(enterStart(), walletScope), "Exit")
       ).toEqual([{ _tag: "Push", path: toWidgetPath("/") }]);
+    })
+  );
+
+  it.effect.each([
+    ["exit", exitStart],
+    [
+      "pending action",
+      (): NavigatingClassicTransactionFlowStart => ({
+        intake: makeManageIntake(),
+        mount: {
+          _tag: "PositionManage",
+          balanceId: "balance",
+          integrationId: "integration",
+        },
+      }),
+    ],
+    [
+      "position stake",
+      (): NavigatingClassicTransactionFlowStart => ({
+        intake: makeEnterIntake(),
+        mount: {
+          _tag: "PositionStake",
+          balanceId: "balance",
+          integrationId: "integration",
+        },
+      }),
+    ],
+  ] as const)("leaves a finished %s flow for Positions", ([, start]) =>
+    Effect.gen(function* () {
+      expect(
+        yield* leave(makeClassicFlowSession(start(), walletScope), "Exit")
+      ).toEqual([{ _tag: "Push", path: toWidgetPath("/positions") }]);
     })
   );
 

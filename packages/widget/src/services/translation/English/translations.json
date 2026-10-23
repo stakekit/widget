@@ -1059,7 +1059,7 @@
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View {{type}} transaction",
     "via": "via {{providerName}}",
-    "continue": "Go to Overview Dashboard",
+    "continue": "Done",
     "continue_ledger": "Go to Earn dashboard",
     "stake": {
       "staking": "staked",

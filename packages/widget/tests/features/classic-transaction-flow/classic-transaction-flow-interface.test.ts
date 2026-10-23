@@ -171,10 +171,12 @@ const startCases: ReadonlyArray<
     readonly reviewPath: string;
     readonly stepsPath: string;
     readonly completePath: string;
+    readonly finishPath: string;
   }>
 > = [
   {
     completePath: "/complete",
+    finishPath: "/",
     makeCommand: () => ({ intake: makeEnterIntake(), mount: { _tag: "Earn" } }),
     name: "root Enter",
     reviewPath: "/review",
@@ -182,6 +184,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/balance/stake/complete",
+    finishPath: "/positions",
     makeCommand: () => ({
       intake: makeEnterIntake(),
       mount: {
@@ -196,6 +199,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/balance/unstake/complete",
+    finishPath: "/positions",
     makeCommand: () => ({
       intake: makeExitIntake(),
       mount: {
@@ -210,6 +214,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/balance/pending-action/complete",
+    finishPath: "/positions",
     makeCommand: () => ({
       intake: makeManageIntake(),
       mount: {
@@ -246,7 +251,13 @@ describe("Classic Transaction Flow interface", () => {
 
   it.each(startCases)(
     "starts $name by pushing its Review route with the new Session",
-    async ({ completePath, makeCommand, reviewPath, stepsPath }) => {
+    async ({
+      completePath,
+      finishPath,
+      makeCommand,
+      reviewPath,
+      stepsPath,
+    }) => {
       const push =
         vi.fn<(path: WidgetPath, options?: WidgetNavigationOptions) => void>();
       const registry = makeRegistry(push);
@@ -268,6 +279,7 @@ describe("Classic Transaction Flow interface", () => {
         expect(session.mount).toEqual(command.mount);
         expect(session.destination).toEqual({
           completePath,
+          finishPath,
           reviewPath,
           stepsPath,
         });
