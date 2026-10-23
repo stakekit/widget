@@ -5,17 +5,23 @@ import {
   type ConfidentialEncryption,
   ConfidentialHandle,
   fillConfidentialBalance,
+  getCancellingHandles,
+  getCancelReturn,
   getCancelReturnToken,
   getConfidentialCampaignUrl,
   getConfidentialConversion,
   getConfidentialHandleContract,
+  getConfidentialRedeemOperators,
   getPendingActionDecryptHandle,
+  isCancellingBalance,
   isConfidentialInstantExit,
   isConfidentialYield,
   isUserRevealableBalance,
   planConfidentialEncryption,
   toConfidentialArguments,
 } from "../../src/domain/earn/confidential";
+import type { EarnBalance } from "../../src/domain/earn/models";
+import { Token } from "../../src/domain/token/token";
 import {
   confidentialFixture,
   confidentialYieldFixture,
@@ -25,6 +31,7 @@ import {
 const { cShare, cUsdc, depositBatcher, redeemBatcher, router, usdc } =
   confidentialFixture;
 const confidentialYield = confidentialYieldFixture;
+const shareToken = Schema.decodeSync(Token)(cShare);
 
 const encryption: ConfidentialEncryption = {
   amount: { handle: "0xamount", proof: "0xamountproof" },
@@ -38,15 +45,16 @@ describe("confidential vault rules", () => {
   });
 
   it("publicly decrypts only an unwrap's WITHDRAW, never a batch cancel", () => {
-    const hidden = (type: string) => ({
+    const requestId = `0x${"cd".repeat(32)}`;
+    const hidden = (type: EarnBalance["type"]) => ({
       isEncrypted: true,
-      shareAmountRaw: "0xhandle",
+      shareAmountRaw: requestId,
       type,
     });
 
     expect(
       getPendingActionDecryptHandle(hidden("withdrawable"), "WITHDRAW")
-    ).toBe("0xhandle");
+    ).toBe(requestId);
     expect(
       getPendingActionDecryptHandle(hidden("entering"), "CANCEL_PENDING")
     ).toBeNull();
@@ -61,17 +69,41 @@ describe("confidential vault rules", () => {
     ).toBeNull();
   });
 
-  it("returns the confidential asset when a pending deposit is cancelled", () => {
+  it("returns what a cancelled pending request refunds: the confidential asset for a deposit, the vault share for a withdrawal", () => {
     expect(
-      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", "entering")
-        ?.symbol
+      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", {
+        type: "entering",
+      })?.symbol
     ).toBe(cUsdc.symbol);
     expect(
-      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", "exiting")
-    ).toBeNull();
+      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", {
+        shareToken,
+        type: "exiting",
+      })?.symbol
+    ).toBe(cShare.symbol);
     expect(
-      getCancelReturnToken(yieldApiYieldFixture(), "CANCEL_PENDING", "entering")
+      getCancelReturnToken(yieldApiYieldFixture(), "CANCEL_PENDING", {
+        type: "entering",
+      })
     ).toBeNull();
+  });
+
+  it("counts a cancelled withdrawal's refund in vault shares, not the underlying it is valued in", () => {
+    const refund = getCancelReturn(confidentialYield(), "CANCEL_PENDING", {
+      amount: new BigNumber("0.1"),
+      shareAmount: "0.097168",
+      shareToken,
+      type: "exiting",
+    });
+
+    expect(refund?.token.symbol).toBe(cShare.symbol);
+    expect(refund?.amount.toFixed()).toBe("0.097168");
+    expect(
+      getCancelReturn(confidentialYield(), "CANCEL_PENDING", {
+        amount: new BigNumber("2"),
+        type: "entering",
+      })?.amount.toFixed()
+    ).toBe("2");
   });
 
   it("needs the API to list the router among the enter execution contracts", () => {
@@ -137,6 +169,15 @@ describe("confidential vault rules", () => {
     expect(isConfidentialInstantExit(confidentialYield(), undefined)).toBe(
       false
     );
+  });
+
+  it("names the router as operator on every redeem leg's share token for a private exit", () => {
+    expect(getConfidentialRedeemOperators(confidentialYield())).toEqual({
+      chainId: 11155111,
+      operator: router,
+      tokens: [cShare.address],
+    });
+    expect(getConfidentialRedeemOperators(yieldApiYieldFixture())).toBeNull();
   });
 
   it("leaves withdrawable unwraps out of user reveal", () => {
@@ -213,19 +254,19 @@ describe("confidential vault rules", () => {
 
     expect(
       getConfidentialHandleContract(yieldDto, {
-        shareToken: cShare,
+        shareToken,
         type: "active",
       })
     ).toBe(cShare.address);
     expect(
       getConfidentialHandleContract(yieldDto, {
-        shareToken: cUsdc,
+        shareToken: Schema.decodeSync(Token)(cUsdc),
         type: "entering",
       })
     ).toBe(depositBatcher);
     expect(
       getConfidentialHandleContract(yieldDto, {
-        shareToken: cShare,
+        shareToken,
         type: "exiting",
       })
     ).toBe(redeemBatcher);
@@ -240,7 +281,7 @@ describe("confidential vault rules", () => {
       isEncrypted: true,
       shareAmount: "0",
       shareAmountRaw: handle,
-      shareToken: cShare,
+      shareToken,
       token: usdc,
     };
     const revealedShares = (shares: bigint) =>
@@ -272,5 +313,48 @@ describe("confidential vault rules", () => {
       expect(filled.amountUsd?.toFixed()).toBe("5");
       expect(filled.shareAmountRaw).toBe("2000000");
     });
+
+    it("stays recognisable as its pending position once revealed", () => {
+      const filled = fillConfidentialBalance(hidden, revealedShares(1n));
+      const cancelling = getCancellingHandles([
+        {
+          encryptedAmount: handle.toUpperCase(),
+          status: "PROCESSING",
+          type: "CANCEL_PENDING",
+        },
+      ]);
+
+      expect(filled.isEncrypted).toBeUndefined();
+      expect(
+        [hidden, filled].map((balance) =>
+          isCancellingBalance(balance, cancelling)
+        )
+      ).toEqual([true, true]);
+    });
+  });
+
+  it("counts only a broadcast cancel as cancelling its position", () => {
+    const handle = (byte: string) => `0x${byte.repeat(64)}`;
+    const cancelling = getCancellingHandles([
+      {
+        encryptedAmount: handle("a"),
+        status: "PROCESSING",
+        type: "CANCEL_PENDING",
+      },
+      {
+        encryptedAmount: handle("b"),
+        status: "SUCCESS",
+        type: "CANCEL_PENDING",
+      },
+      {
+        encryptedAmount: handle("c"),
+        status: "CREATED",
+        type: "CANCEL_PENDING",
+      },
+      { encryptedAmount: handle("d"), status: "PROCESSING", type: "STAKE" },
+      { status: "PROCESSING", type: "CANCEL_PENDING" },
+    ]);
+
+    expect([...cancelling]).toEqual([handle("a")]);
   });
 });

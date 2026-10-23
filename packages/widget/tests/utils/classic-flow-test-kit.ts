@@ -69,6 +69,8 @@ export const makeClassicFlowTestKit = Effect.fn("makeClassicFlowTestKit")(
         YieldOperations.of({
           getTransactionStatus: () =>
             unexpectedClassicFlowCall("YieldOperations.getTransactionStatus"),
+          getYieldBalances: () =>
+            unexpectedClassicFlowCall("YieldOperations.getYieldBalances"),
           previewAction:
             options.previewAction ??
             (() => unexpectedClassicFlowCall("YieldOperations.previewAction")),

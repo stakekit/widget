@@ -8,6 +8,7 @@ import {
   getValidStakeSessionTx,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
+import { getConfidentialRedeemOperators } from "../../../domain/earn/confidential";
 import { exactZero } from "../../../domain/finance/exact";
 import { checkGasAmount } from "../../../domain/finance/gas";
 import {
@@ -45,6 +46,7 @@ import {
   type ClassicFlowSession,
   type ClassicTransactionFlowIntake,
   getClassicFlowConfidentialPreparation,
+  getClassicFlowPreparedTransactionTypes,
   getClassicTransactionFlowGasWarningInput,
   getClassicTransactionFlowKycYield,
   getClassicTransactionFlowReviewPricingInput,
@@ -300,6 +302,57 @@ const planClassicFlowConversion = Effect.fn("planClassicFlowConversion")(
   }
 );
 
+/**
+ * The API legs Steps lists until the prepared action returns them. A private
+ * exit's operator grants are read when the user confirms, as the API reads
+ * them when it builds the action.
+ */
+const planClassicFlowPreparedSteps = Effect.fn("planClassicFlowPreparedSteps")(
+  function* (
+    intake: ClassicTransactionFlowIntake,
+    preparation: ConfidentialPreparation
+  ) {
+    const operators =
+      preparation._tag === "Encrypt" &&
+      preparation.intent === "exit" &&
+      !preparation.instant
+        ? getConfidentialRedeemOperators(preparation.yieldDto)
+        : null;
+    const missingOperatorGrants = operators
+      ? yield* ZamaService.use((zama) =>
+          zama.countMissingOperatorGrants({
+            ...operators,
+            owner: preparation.command.address,
+          })
+        )
+      : 0;
+    return getClassicFlowPreparedTransactionTypes(intake, {
+      missingOperatorGrants,
+    });
+  }
+);
+
+/**
+ * What Steps runs for a confidential vault, planned when the user confirms
+ * so Steps lists every step at once.
+ */
+const planClassicFlowPreparation = Effect.fn("planClassicFlowPreparation")(
+  function* (
+    session: ClassicFlowSession,
+    preparation: ConfidentialPreparation
+  ) {
+    return {
+      _tag: "Prepare",
+      conversion: yield* planClassicFlowConversion(session, preparation),
+      preparation,
+      preparedTransactionTypes: yield* planClassicFlowPreparedSteps(
+        session.intake,
+        preparation
+      ),
+    } satisfies ClassicFlowExecutionSource;
+  }
+);
+
 /** One arrival at a Session's Review: its history entry's key. */
 export class ClassicFlowReviewVisit extends Data.Class<{
   readonly session: ClassicFlowSession;
@@ -459,14 +512,10 @@ export const makeClassicFlowReviewPage = (session: ClassicFlowSession) => {
               preview: get(previewAtom),
             });
             if (decision._tag === "Prepare") {
-              return yield* handOffClassicFlowSource(session, {
-                _tag: "Prepare",
-                conversion: yield* planClassicFlowConversion(
-                  session,
-                  decision.preparation
-                ),
-                preparation: decision.preparation,
-              });
+              return yield* handOffClassicFlowSource(
+                session,
+                yield* planClassicFlowPreparation(session, decision.preparation)
+              );
             }
             if (decision._tag === "HandOff") {
               return yield* handOffClassicFlowSource(session, decision.source);

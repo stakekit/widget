@@ -15,6 +15,8 @@ import type {
   SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
+import type { EarnYieldBalancesResponse } from "../../domain/earn/models";
+import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
 import {
   ApiFailure,
   type ApiRequestError,
@@ -64,6 +66,11 @@ type BorrowOperationsService = {
 };
 
 type YieldOperationsService = {
+  /** A wallet's balances in one yield, read for a workflow in progress. */
+  readonly getYieldBalances: (request: {
+    readonly address: WalletAddress;
+    readonly yieldId: YieldId;
+  }) => Effect.Effect<EarnYieldBalancesResponse, ApiOperationFailure>;
   readonly getTransactionStatus: (
     command: TransactionStatusCommand
   ) => Effect.Effect<ActionTransactionReceipt, ApiOperationFailure>;

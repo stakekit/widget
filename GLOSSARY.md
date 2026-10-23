@@ -199,6 +199,22 @@ some tokens refuse to change one non-zero allowance to another.
 Steps, after confirmation, from an Action Command with its amount encrypted or
 its withdrawal decrypted. It takes the place of an Action Preview.
 
+**Instant Exit**: A Confidential Vault exit paid out in the underlying token
+right away, its amount public: it unwraps the vault shares, then an Unwrap
+Finalize withdraws and redeems them. A **Private Exit** instead joins the next
+redemption batch and pays out the Confidential Token.
+
+**Unwrap Finalize**: The second Action Preparation of an Instant Exit, in the
+same workflow once its unwrap confirms: it waits for the API to list the unwrap
+request, decrypts its amount, and prepares the WITHDRAW that completes it.
+_Avoid_: follow-up
+
+**Planned Step**: A step Steps lists before the API returns it, so the whole
+confidential flow shows from confirmation; it never signs.
+
+**In-flight Cancel**: A CANCEL_PENDING action broadcast but not yet confirmed;
+its pending balance shows as cancelling, matched by the position's handle.
+
 ### Borrow
 
 **Borrow Network**: A Wallet Network on which the Widget offers Borrow markets

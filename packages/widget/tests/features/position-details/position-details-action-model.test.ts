@@ -658,7 +658,63 @@ describe("Position Details action model", () => {
     registry.dispose();
   });
 
-  it("converts a partial confidential exit amount to shares at the share price", () => {
+  it("withdraws a confidential position in its revealed vault shares, valued in the underlying", () => {
+    const { cShare, usdc } = confidentialFixture;
+    const view = readWorkflowView(
+      "confidential-shares",
+      [
+        Schema.decodeSync(EarnBalance)(
+          yieldBalanceFixture({
+            amount: "0.151",
+            amountRaw: "151000",
+            amountUsd: "0.151",
+            shareAmount: "0.146787",
+            shareAmountRaw: "146787",
+            shareToken: cShare,
+            token: usdc,
+            type: "active",
+          })
+        ),
+      ],
+      confidentialYieldFixture()
+    );
+
+    expect(view.unstakeToken?.symbol).toBe(cShare.symbol);
+    expect(view.exitBalance?.amount.toFixed()).toBe("0.146787");
+    expect(view.maxUnstakeAmount.toFixed()).toBe("0.146787");
+    expect(view.exitBalance?.underlying?.amount.toFixed()).toBe("0.151");
+    expect(view.exitBalance?.underlying?.token.symbol).toBe(usdc.symbol);
+  });
+
+  it("keeps withdrawing available while the share balance is hidden, so the user can decrypt it there", () => {
+    const { cShare, usdc } = confidentialFixture;
+    const view = readWorkflowView(
+      "confidential-hidden",
+      [
+        Schema.decodeSync(EarnBalance)(
+          yieldBalanceFixture({
+            amount: "0",
+            amountRaw: "0",
+            isEncrypted: true,
+            shareAmount: "0",
+            shareAmountRaw: `0x${"ab".repeat(32)}`,
+            shareToken: cShare,
+            token: usdc,
+            type: "active",
+          })
+        ),
+      ],
+      confidentialYieldFixture()
+    );
+
+    expect(
+      resolvePositionDetailsActionCapabilities({ ...view, canUnstake: true })
+        .canUnstake
+    ).toBe(true);
+    expect(view.unstakeToken?.symbol).toBe(cShare.symbol);
+  });
+
+  it("redeems the typed share amount on a partial confidential exit", () => {
     const { cShare, usdc } = confidentialFixture;
     const shareToken = { ...cShare, decimals: 8 };
     const integration = confidentialYieldFixture({
@@ -681,6 +737,8 @@ describe("Position Details action model", () => {
             yieldBalanceFixture({
               amount: "12.5",
               amountRaw: "12500000",
+              shareAmount: "10",
+              shareAmountRaw: "1000000000",
               shareToken,
               token: usdc,
             })
@@ -695,7 +753,7 @@ describe("Position Details action model", () => {
 
     expect(decision).toMatchObject({
       _tag: "Start",
-      prepared: { request: { arguments: { shareAmountRaw: "200000000" } } },
+      prepared: { request: { arguments: { shareAmountRaw: "250000000" } } },
     });
   });
 
@@ -785,7 +843,8 @@ describe("Position Details action model", () => {
 const makeWorkflowRegistry = (
   balanceId: string,
   balances: ReadonlyArray<EarnBalance>,
-  prices: Prices = new Prices(new Map())
+  prices: Prices = new Prices(new Map()),
+  integration: typeof selectedYield = selectedYield
 ) => {
   const scope = new WalletScopeKey({
     address: Schema.decodeSync(WalletAddress)(balance.address),
@@ -793,23 +852,23 @@ const makeWorkflowRegistry = (
   });
   const workflowKey = new PositionDetailsWorkflowKey({
     balanceId,
-    integrationId: selectedYield.id,
+    integrationId: integration.id,
     pendingActionType: null,
     scope,
   });
   const positionKey = new PositionBalancesKey({
     balanceId,
     scope,
-    yieldId: selectedYield.id,
+    yieldId: integration.id,
   });
   const registry = AtomRegistry.make({
     initialValues: [
       applicationRuntimeInitInitialValue(),
       [
         yieldOpportunityAtom(
-          new YieldOpportunityKey({ yieldId: selectedYield.id })
+          new YieldOpportunityKey({ yieldId: integration.id })
         ),
-        AsyncResult.success(selectedYield),
+        AsyncResult.success(integration),
       ],
       [
         positionBalancesAtom(positionKey),
@@ -832,9 +891,15 @@ const makeWorkflowRegistry = (
 
 const readWorkflowView = (
   balanceId: string,
-  balances: ReadonlyArray<EarnBalance>
+  balances: ReadonlyArray<EarnBalance>,
+  integration: typeof selectedYield = selectedYield
 ) => {
-  const { registry, workflowKey } = makeWorkflowRegistry(balanceId, balances);
+  const { registry, workflowKey } = makeWorkflowRegistry(
+    balanceId,
+    balances,
+    undefined,
+    integration
+  );
   const view = registry.get(positionDetailsWorkflowViewAtom(workflowKey));
   registry.dispose();
   return view;

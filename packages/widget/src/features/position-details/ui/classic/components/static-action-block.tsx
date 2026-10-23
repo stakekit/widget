@@ -5,7 +5,10 @@ import {
   getPendingActionLabelContext,
   type YieldPendingActionType,
 } from "../../../../../domain/action/pending-action";
-import { getCancelReturnToken } from "../../../../../domain/earn/confidential";
+import {
+  getCancelReturn,
+  isConfidentialYield,
+} from "../../../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -44,12 +47,13 @@ export const StaticActionBlock = ({
     pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>;
   const labelContext = getPendingActionLabelContext(
     pendingAction.type,
-    yieldBalance.type
+    yieldBalance.type,
+    { confidential: isConfidentialYield(integration) }
   );
-  const returnToken = getCancelReturnToken(
+  const cancelReturn = getCancelReturn(
     integration,
     pendingAction.type,
-    yieldBalance.type
+    yieldBalance
   );
 
   return (
@@ -75,11 +79,11 @@ export const StaticActionBlock = ({
               amount: yieldBalance.isEncrypted
                 ? t("shared.confidential.hidden")
                 : formatTokenAmount(
-                    exactDecimal(yieldBalance.amount),
+                    cancelReturn?.amount ?? exactDecimal(yieldBalance.amount),
                     locale,
                     "down"
                   ),
-              symbol: (returnToken ?? yieldBalance.token).symbol,
+              symbol: (cancelReturn?.token ?? yieldBalance.token).symbol,
               pendingAction: t(`position_details.pending_action.${actionKey}`, {
                 context: isEthenaUsdeStaking(integration.id)
                   ? "ethena_usde"
@@ -92,10 +96,10 @@ export const StaticActionBlock = ({
             }}
           />
         </Text>
-        {returnToken ? (
+        {cancelReturn ? (
           <Text variant={{ type: "muted", size: "small" }}>
             {t("position_details.cancel_returns", {
-              symbol: returnToken.symbol,
+              symbol: cancelReturn.token.symbol,
             })}
           </Text>
         ) : null}

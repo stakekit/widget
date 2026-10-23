@@ -17,12 +17,14 @@ import {
 } from "./api-operation";
 import type { ActionPreviewRequest } from "./operations";
 import type { ApiClients } from "./transport";
+import { makeYieldResourceSource } from "./yield-resource-source";
 
 export const makeYieldOperations = (
   yieldApi: ApiClients<YieldApi.YieldApi>,
   richErrors: RichErrorService["Service"]
 ) => {
   const presentRequestError = presentApiRequestError(richErrors);
+  const { getSingleYieldBalances } = makeYieldResourceSource(yieldApi.read);
 
   const previewAction = Effect.fn("YieldOperations.previewAction")(function* (
     request: ActionPreviewRequest
@@ -117,6 +119,7 @@ export const makeYieldOperations = (
 
   return {
     getTransactionStatus,
+    getYieldBalances: getSingleYieldBalances,
     previewAction,
     submitSignedTransaction,
     submitTransactionHash,

@@ -351,7 +351,7 @@ describe("ZamaService", () => {
   it.effect("withdraws an unwrap with its publicly decrypted amount", () =>
     Effect.gen(function* () {
       sdk.decryptPublicValues.mockResolvedValueOnce({
-        clearValues: { "0xrequest": 7_000_000n },
+        clearValues: { [`0x${"ab".repeat(32)}`]: 7_000_000n },
         decryptionProof: "0xproof",
       });
       const { layer } = yield* makeLayer({});
@@ -367,11 +367,13 @@ describe("ZamaService", () => {
             passthrough: "unwrap",
             yieldId: yieldDto.id,
           },
-          handle: "0xrequest",
+          handle: Schema.decodeSync(ConfidentialHandle)(`0x${"ab".repeat(32)}`),
         })
       ).pipe(Effect.provide(layer));
 
-      expect(sdk.decryptPublicValues).toHaveBeenCalledWith(["0xrequest"]);
+      expect(sdk.decryptPublicValues).toHaveBeenCalledWith([
+        `0x${"ab".repeat(32)}`,
+      ]);
       expect(command.arguments).toMatchObject({
         decryptedAmount: "7000000",
         decryptionProof: "0xproof",
