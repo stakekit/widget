@@ -13,21 +13,24 @@ import {
 import { makeAdvanceBatch } from "./advancement";
 import { makeCheckApproval } from "./approval-check";
 import { makeConfirmCurrent } from "./confirmation";
+import type { HeldHashRegistration } from "./held-hash-registration";
 import {
   getTransactionWorkflowAction,
   getTransactionWorkflowId,
   updateCurrentTransactionWorkflowTransaction,
 } from "./model";
 import { makePrepareAction } from "./preparation";
-import { makePrepareAndSign } from "./signing";
+import { makePrepareAndSign, withSignedTransaction } from "./signing";
 import { makeSubmitCurrent } from "./submission";
 
-export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
+export const makeTransactionWorkflowProcessor = Effect.fn(
+  "makeTransactionWorkflowProcessor"
+)(function* (heldHashes: HeldHashRegistration) {
   const advanceBatch = yield* makeAdvanceBatch;
   const checkApproval = yield* makeCheckApproval;
   const confirmCurrent = yield* makeConfirmCurrent;
   const prepareAction = yield* makePrepareAction;
-  const prepareAndSign = yield* makePrepareAndSign;
+  const prepareAndSign = yield* makePrepareAndSign(heldHashes);
   const submitCurrent = yield* makeSubmitCurrent;
 
   return ({
@@ -163,6 +166,14 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
               context,
               expectedOwner: input.walletScope,
               ledger,
+              // The wallet's answer is the workflow's at once: a workflow
+              // ending before Submitting still holds a broadcast hash to
+              // register as a Held Hash.
+              recordSigned: (signed) =>
+                SubscriptionRef.update(stateRef, (state) => ({
+                  ...state,
+                  context: withSignedTransaction(state.context, signed),
+                })),
             }).pipe(
               Effect.map((signed) => ({ _tag: "Signed", signed }) as const)
             )

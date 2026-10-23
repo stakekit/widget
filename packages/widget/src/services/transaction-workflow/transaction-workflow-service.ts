@@ -6,7 +6,7 @@ import {
   Queue,
   Ref,
   type Scope,
-  type Stream,
+  Stream,
   SubscriptionRef,
 } from "effect";
 import { walletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
@@ -18,11 +18,12 @@ import {
   validateTransactionWorkflowInput,
 } from "./internal/model";
 import { makeTransactionWorkflowProcessor } from "./internal/processor";
-import type {
-  TransactionWorkflowCommand,
-  TransactionWorkflowInput,
-  TransactionWorkflowInputError,
-  TransactionWorkflowState,
+import {
+  isTransactionWorkflowLeaveGuarded,
+  type TransactionWorkflowCommand,
+  type TransactionWorkflowInput,
+  type TransactionWorkflowInputError,
+  type TransactionWorkflowState,
 } from "./transaction-workflow-model";
 
 export type TransactionWorkflowHandle = {
@@ -36,9 +37,20 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
   "stakekit/widget/workflow/TransactionWorkflowService",
   {
     make: Effect.gen(function* () {
-      const process = yield* makeTransactionWorkflowProcessor;
-      const registerHeldHash = yield* makeHeldHashRegistration;
+      const heldHashes = yield* makeHeldHashRegistration;
+      const process = yield* makeTransactionWorkflowProcessor(heldHashes);
       const events = yield* WidgetDomainEvents;
+      // The live workflows that are leave-guarded now.
+      const leaveGuarded = yield* SubscriptionRef.make<ReadonlySet<object>>(
+        new Set()
+      );
+      const setLeaveGuarded = (workflow: object, guarded: boolean) =>
+        SubscriptionRef.update(leaveGuarded, (current) => {
+          const next = new Set(current);
+          if (guarded) next.add(workflow);
+          else next.delete(workflow);
+          return next;
+        });
 
       const make = Effect.fn("TransactionWorkflowService.make")(function* (
         input: TransactionWorkflowInput
@@ -76,7 +88,20 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         // Registered before the processor forks, so it runs after the processor
         // is interrupted and reads the state the workflow was left in.
         yield* Effect.addFinalizer(() =>
-          SubscriptionRef.get(stateRef).pipe(Effect.flatMap(registerHeldHash))
+          SubscriptionRef.get(stateRef).pipe(
+            Effect.flatMap(heldHashes.registerHeldState)
+          )
+        );
+
+        // Registered before the tracker forks, so it runs after the tracker is
+        // interrupted: an ended workflow never stays leave-guarded.
+        const workflow = {};
+        yield* Effect.addFinalizer(() => setLeaveGuarded(workflow, false));
+        yield* SubscriptionRef.changes(stateRef).pipe(
+          Stream.map(isTransactionWorkflowLeaveGuarded),
+          Stream.changes,
+          Stream.runForEach((guarded) => setLeaveGuarded(workflow, guarded)),
+          Effect.forkScoped
         );
 
         yield* process({
@@ -120,7 +145,14 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         };
       });
 
-      return { make };
+      return {
+        /** Whether any live workflow is leave-guarded, as that changes. */
+        leaveGuarded: SubscriptionRef.changes(leaveGuarded).pipe(
+          Stream.map((workflows) => workflows.size > 0),
+          Stream.changes
+        ),
+        make,
+      };
     }),
   }
 ) {

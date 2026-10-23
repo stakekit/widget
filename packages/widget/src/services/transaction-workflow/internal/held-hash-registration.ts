@@ -1,24 +1,43 @@
-import { Duration, Effect, FiberMap, Match, Schedule } from "effect";
+import {
+  Duration,
+  Effect,
+  Exit,
+  Fiber,
+  FiberMap,
+  FiberSet,
+  Match,
+  Schedule,
+} from "effect";
 import {
   BorrowOperations,
   isTransientApiFailure,
   YieldOperations,
 } from "../../api/operations";
+import type {
+  WalletBroadcastResult,
+  WalletSignedPayloadResult,
+} from "../../wallet/wallet-transactions";
 import {
   getCurrentTransactionWorkflowTransaction,
   type TransactionWorkflowState,
+  type TransactionWorkflowTransactionFor,
 } from "../transaction-workflow-model";
 
 /** Retries after the first attempt: five attempts in all, 1s, 2s, 4s, 8s apart. */
 const registrationRetries = 4;
 const registrationBackoff = Duration.seconds(1);
 
+/** A transaction whose broadcast hash an API records; Direct ones it does not. */
+export type ApiRecordedSource = TransactionWorkflowTransactionFor<
+  "Borrow" | "Classic"
+>["source"];
+
 /**
- * Registers broadcast hashes a closed workflow still held. A wallet that
- * broadcast a transaction returns its hash; until the API acknowledges it, the
- * transaction can land on-chain with no record. Leaving the Transaction Flow
- * must not drop that hash, so registration is owned by the service's Scope —
- * the Application Runtime Generation — rather than the workflow's.
+ * Registers Held Hashes. A wallet that broadcast a transaction returns its
+ * hash; until the API acknowledges it, the transaction can land on-chain with
+ * no record. Leaving the Transaction Flow must not drop that hash, so
+ * registration is owned by the service's Scope — the Application Runtime
+ * Generation — rather than the workflow's.
  *
  * This is an engine policy keyed by the hash, not a transport retry: one hash
  * registers once at a time, a bounded number of attempts, and only while the
@@ -30,21 +49,13 @@ export const makeHeldHashRegistration = Effect.gen(function* () {
     YieldOperations,
   ]);
   const registrations = yield* FiberMap.make<string>();
+  const walletRequests = yield* FiberSet.make();
 
-  return (state: TransactionWorkflowState): Effect.Effect<void> => {
-    const transaction = getCurrentTransactionWorkflowTransaction(state.context);
-    // A wallet-returned hash the API has not acknowledged for this transaction.
-    const hash =
-      transaction?.meta.broadcasted === true &&
-      transaction.meta.submissionIndex === null
-        ? transaction.meta.signedTx
-        : null;
-    // No API records a Direct transaction; its Ledger holds the hash.
-    if (!transaction || !hash || transaction.source._tag === "Direct") {
-      return Effect.void;
-    }
-
-    const register = Match.value(transaction.source).pipe(
+  const registerHash = (
+    source: ApiRecordedSource,
+    hash: string
+  ): Effect.Effect<void> => {
+    const register = Match.value(source).pipe(
       Match.tag("Classic", (source) =>
         yieldOperations.submitTransactionHashInBackground({
           payload: { hash },
@@ -62,8 +73,8 @@ export const makeHeldHashRegistration = Effect.gen(function* () {
     const annotations = {
       event: "held_broadcast_hash_registration",
       hash,
-      transactionId: transaction.source.transaction.id,
-      workflowKind: transaction.source._tag,
+      transactionId: source.transaction.id,
+      workflowKind: source._tag,
     };
 
     return register.pipe(
@@ -88,4 +99,71 @@ export const makeHeldHashRegistration = Effect.gen(function* () {
       Effect.asVoid
     );
   };
+
+  /** Registers the hash a closed workflow's state still held. */
+  const registerHeldState = (
+    state: TransactionWorkflowState
+  ): Effect.Effect<void> => {
+    const transaction = getCurrentTransactionWorkflowTransaction(state.context);
+    // A wallet-returned hash the API has not acknowledged for this transaction.
+    const hash =
+      transaction?.meta.broadcasted === true &&
+      transaction.meta.submissionIndex === null
+        ? transaction.meta.signedTx
+        : null;
+    // No API records a Direct transaction; its Ledger holds the hash.
+    if (!transaction || !hash || transaction.source._tag === "Direct") {
+      return Effect.void;
+    }
+    return registerHash(transaction.source, hash);
+  };
+
+  /**
+   * Runs a wallet request under the Application Runtime Generation and awaits
+   * it. A wallet can keep signing after the user leaves the Transaction Flow;
+   * if the workflow ends first, a hash the wallet still broadcasts is
+   * registered as a Held Hash. A payload it only signed is dropped.
+   *
+   * `record` hands the answer to the workflow's state before the workflow can
+   * be interrupted again, so a workflow ending right after it still holds the
+   * hash for `registerHeldState`.
+   */
+  const runWalletRequest = <E>(
+    source: ApiRecordedSource,
+    request: Effect.Effect<
+      WalletBroadcastResult | WalletSignedPayloadResult,
+      E
+    >,
+    record: (
+      result: WalletBroadcastResult | WalletSignedPayloadResult
+    ) => Effect.Effect<void>
+  ) =>
+    // The hand-off is attached before the workflow can be interrupted, so no
+    // request is forked without it.
+    Effect.uninterruptibleMask((restore) =>
+      FiberSet.run(walletRequests, request).pipe(
+        Effect.flatMap((pending) =>
+          restore(Fiber.join(pending)).pipe(
+            Effect.onInterrupt(() =>
+              Fiber.await(pending).pipe(
+                Effect.flatMap((exit) =>
+                  Exit.isSuccess(exit) && exit.value.broadcasted
+                    ? registerHash(source, exit.value.signedTx)
+                    : Effect.void
+                ),
+                FiberSet.run(walletRequests),
+                Effect.asVoid
+              )
+            ),
+            Effect.tap(record)
+          )
+        )
+      )
+    );
+
+  return { registerHeldState, runWalletRequest } as const;
 });
+
+export type HeldHashRegistration = Effect.Success<
+  typeof makeHeldHashRegistration
+>;

@@ -1,5 +1,5 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
+import { Effect, Layer, Option, Schema, Stream, SubscriptionRef } from "effect";
 import { act, StrictMode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -188,6 +188,7 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({
+        leaveGuarded: Stream.make(false),
         make: (input) =>
           invalidInput
             ? Effect.fail(

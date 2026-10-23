@@ -11,6 +11,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
   AnimationPage,
   PageContainer,
@@ -52,6 +53,7 @@ export const StepsPage = () => {
     txStates,
     cta,
     customSignErrorMessage,
+    leaveConfirmationDialog,
     yieldId,
   } = useSteps();
 
@@ -129,8 +131,9 @@ export const StepsPage = () => {
               </Button>
             </Box>
           )}
-
           <PageCtaButton cta={cta} />
+
+          <LeaveConfirmationDialog {...leaveConfirmationDialog} />
         </PageContainer>
       </motion.div>
     </AnimationPage>

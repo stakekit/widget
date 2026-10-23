@@ -278,6 +278,9 @@ const invalidationsBeforeTeardown = Effect.fn("invalidationsBeforeTeardown")(
     );
     yield* Effect.yieldNow;
 
+    // The service outlives the workflow, as the Application Runtime Generation
+    // does.
+    const services = yield* Layer.build(kit.layer);
     const workflowScope = yield* Scope.make();
     const workflow = yield* TransactionWorkflowService.use(({ make }) =>
       make(
@@ -293,7 +296,7 @@ const invalidationsBeforeTeardown = Effect.fn("invalidationsBeforeTeardown")(
         })
       )
     ).pipe(
-      Effect.provide(kit.layer),
+      Effect.provide(services),
       Effect.provideService(Scope.Scope, workflowScope)
     );
 

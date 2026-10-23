@@ -10,12 +10,15 @@ import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
+import { useExecutionLeaveConfirmation } from "../../leave-confirmation/index";
+import { LeaveConfirmationDialog } from "../../leave-confirmation/views";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
+import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
@@ -32,6 +35,10 @@ export const BorrowStepsPage = () => {
   const flow = useBorrowTransactionFlow();
   const executionFlow = useBorrowTransactionFlowExecution();
   const back = useAtomSet(executionFlow.leaveAtom);
+  const leaveConfirmation = useExecutionLeaveConfirmation(
+    getBorrowTransactionFlowRoutes(flow.intake.entry).completePath
+  );
+  const leave = () => leaveConfirmation.confirm(() => back(undefined));
   const execution = useBorrowExecution();
   const executionErrorMessage = execution.errorMessage;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
@@ -51,7 +58,7 @@ export const BorrowStepsPage = () => {
                 aria-label={t("dashboard.borrow.review_page.back_to_position")}
                 as="button"
                 className={styles.flowBackButton}
-                onClick={() => back(undefined)}
+                onClick={leave}
                 type="button"
               >
                 <CaretLeftIcon />
@@ -125,10 +132,12 @@ export const BorrowStepsPage = () => {
               disabled: false,
               isLoading: false,
               label: t("shared.cancel"),
-              onClick: () => back(undefined),
+              onClick: leave,
               variant: "secondary",
             }}
           />
+
+          <LeaveConfirmationDialog {...leaveConfirmation.dialog} />
         </Box>
       </PageContainer>
     </AnimationPage>

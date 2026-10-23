@@ -17,6 +17,7 @@ import type {
   SKBorrowTx,
   SKBorrowTxResult,
   SKBorrowWallet,
+  SKTransactionResult,
   SKTx,
   SKWallet,
 } from "../../../src/public-api/types";
@@ -232,6 +233,54 @@ describe("generic external provider callback contract", () => {
           customMessage: "Transaction blocked by host policy",
         });
       })
+  );
+
+  it.effect(
+    "tracks the hash of a transaction the host broadcast before failing",
+    () =>
+      Effect.gen(function* () {
+        const provider = new ExternalProvider(
+          makeProviderRef({
+            signMessage: async () => "signed-message",
+            switchChain: async () => undefined,
+            sendTransaction: async () => ({
+              type: "error",
+              error: "Receipt timed out",
+              txHash: "broadcast-hash",
+            }),
+          })
+        );
+
+        expect(
+          yield* provider.sendTransaction(transaction, transactionMeta)
+        ).toBe("broadcast-hash");
+      })
+  );
+
+  it.effect("keeps the host error message when its txHash is undefined", () =>
+    Effect.gen(function* () {
+      const provider = new ExternalProvider(
+        makeProviderRef({
+          signMessage: async () => "signed-message",
+          switchChain: async () => undefined,
+          // A host without exactOptionalPropertyTypes may spell "no hash" so.
+          sendTransaction: async () =>
+            ({
+              type: "error",
+              error: "Transaction blocked by host policy",
+              txHash: undefined,
+            }) as unknown as SKTransactionResult,
+        })
+      );
+
+      const error = yield* Effect.flip(
+        provider.sendTransaction(transaction, transactionMeta)
+      );
+      expect(error).toMatchObject({
+        _tag: "ExternalProviderError",
+        customMessage: "Transaction blocked by host policy",
+      });
+    })
   );
 
   it.effect("reports wallet cancellations from transactions and messages", () =>

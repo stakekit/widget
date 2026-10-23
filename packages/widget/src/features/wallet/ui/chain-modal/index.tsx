@@ -10,6 +10,8 @@ import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-varia
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useLeaveConfirmation } from "../../../leave-confirmation/index";
+import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
 import { useLedgerDisabledChain } from "../../react/use-ledger-disabled-chains";
 import { useScopedWalletChainSelection } from "../../react/use-scoped-wallet-chain-selection";
@@ -61,6 +63,8 @@ type ChainDialogProps = {
   readonly onOpenChange: (open: boolean) => void;
   readonly onSelect: (chain: Chain) => void;
   readonly open: boolean;
+  /** Hidden, without closing, while another surface asks over it. */
+  readonly suspended?: boolean;
 };
 
 const ChainDialog = ({
@@ -72,6 +76,7 @@ const ChainDialog = ({
   onOpenChange,
   onSelect,
   open,
+  suspended,
 }: ChainDialogProps) => {
   const { t } = useTranslation();
   const selection = useAtomValue(walletChainSelectionAtom);
@@ -80,6 +85,7 @@ const ChainDialog = ({
     <WalletDialog
       open={open}
       onOpenChange={onOpenChange}
+      suspended={suspended}
       testId="wallet-chain-dialog"
     >
       <div className={chainBody}>
@@ -202,6 +208,7 @@ export const ChainModal = () => {
   const chainOpen = useAtomValue(walletChainModalOpenAtom);
   const setChainOpen = useAtomSet(setWalletChainModalOpenAtom);
   const selectChain = useAtomSet(selectWalletChainAtom);
+  const leaveConfirmation = useLeaveConfirmation();
 
   // A connecting wallet keeps its scope owner while a network switch settles.
   if (!wallet?.network) return null;
@@ -260,10 +267,12 @@ export const ChainModal = () => {
               <button
                 type="button"
                 className={clsx(menuButton, disconnectRow)}
-                onClick={() => {
-                  setChainOpen(false);
-                  logout();
-                }}
+                onClick={() =>
+                  leaveConfirmation.confirm(() => {
+                    setChainOpen(false);
+                    logout();
+                  })
+                }
               >
                 <span className={chainLabel}>
                   <DisconnectSquareIcon />
@@ -279,13 +288,17 @@ export const ChainModal = () => {
           )
         }
         onOpenChange={setChainOpen}
-        onSelect={(chain) => {
-          const addLedgerAccount = disabledChainIds.has(chain.id);
-          if (addLedgerAccount) trackEvent("addLedgerAccountClicked");
-          selectChain({ addLedgerAccount, chain });
-        }}
+        onSelect={(chain) =>
+          leaveConfirmation.confirm(() => {
+            const addLedgerAccount = disabledChainIds.has(chain.id);
+            if (addLedgerAccount) trackEvent("addLedgerAccountClicked");
+            selectChain({ addLedgerAccount, chain });
+          })
+        }
         open={chainOpen}
+        suspended={leaveConfirmation.pending}
       />
+      <LeaveConfirmationDialog {...leaveConfirmation.dialog} />
     </>
   );
 };

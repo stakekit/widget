@@ -48,7 +48,11 @@ import {
   WalletSigningError,
 } from "../../../src/services/wallet/wallet-errors";
 import type { WalletState } from "../../../src/services/wallet/wallet-state";
-import type { ClassicActionMeta } from "../../../src/services/wallet/wallet-transactions";
+import type {
+  ClassicActionMeta,
+  WalletBroadcastResult,
+  WalletSignedPayloadResult,
+} from "../../../src/services/wallet/wallet-transactions";
 import { yieldApiTransactionFixture } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
 import type { TestWalletBehaviorOptions } from "../../utils/services/wallet-service";
@@ -214,9 +218,12 @@ const makeWorkflowFromService = ({
     | BorrowTransactionWorkflowInput;
 }) =>
   makeTransactionWorkflowTestKit(capabilities).pipe(
-    Effect.flatMap((kit) =>
+    // Built in the caller's Scope: the service outlives the workflow, as the
+    // Application Runtime Generation does.
+    Effect.flatMap((kit) => Layer.build(kit.layer)),
+    Effect.flatMap((services) =>
       TransactionWorkflowService.use(({ make }) => make(key)).pipe(
-        Effect.provide(kit.layer)
+        Effect.provide(services)
       )
     )
   );
@@ -1227,6 +1234,48 @@ describe("transaction workflow runtime", () => {
   );
 });
 
+describe("transaction workflow leave guard", () => {
+  it.effect(
+    "is leave-guarded while a signature is in flight, until its Scope closes",
+    () =>
+      Effect.scoped(
+        Effect.gen(function* () {
+          const key = new ClassicTransactionWorkflowInput({
+            actionMeta,
+            transactions: [classicTransaction("leave-guard")],
+            walletScope: classicWalletScope,
+            yieldId,
+          });
+          const kit = yield* makeTransactionWorkflowTestKit(
+            makeCapabilities({
+              wallet: { signTransaction: () => Effect.never },
+            })
+          );
+          const services = yield* Layer.build(kit.layer);
+          const leaveGuarded = yield* TransactionWorkflowService.use(
+            (workflows) => Effect.succeed(workflows.leaveGuarded)
+          ).pipe(Effect.provide(services));
+          const current = Stream.runHead(leaveGuarded).pipe(
+            Effect.map(Option.getOrThrow)
+          );
+
+          expect(yield* current).toBe(false);
+
+          const workflowScope = yield* Scope.make();
+          yield* TransactionWorkflowService.use(({ make }) => make(key)).pipe(
+            Effect.provide(services),
+            Effect.provideService(Scope.Scope, workflowScope)
+          );
+          yield* leaveGuarded.pipe(Stream.filter(Boolean), Stream.runHead);
+
+          yield* Scope.close(workflowScope, Exit.void);
+
+          expect(yield* current).toBe(false);
+        })
+      )
+  );
+});
+
 describe("held broadcast hash registration", () => {
   const hashRequest = HttpClientRequest.post(
     "https://borrow.test/v1/transactions/borrow-1/submit"
@@ -1326,6 +1375,24 @@ describe("held broadcast hash registration", () => {
     signTransaction: () =>
       Effect.succeed({ broadcasted: true, signedTx: transactionHash }),
   } satisfies TestWalletBehaviorOptions;
+
+  /**
+   * A wallet still answering when the user leaves: it announces the request,
+   * then answers only once the test releases it, as a host wallet that keeps
+   * signing after the Transaction Flow closed.
+   */
+  const answerLater = Effect.fn("test.answerLater")(function* () {
+    const requested = yield* Deferred.make<void>();
+    const answer = yield* Deferred.make<
+      WalletBroadcastResult | WalletSignedPayloadResult
+    >();
+    const signTransaction = vi.fn(() =>
+      Deferred.succeed(requested, undefined).pipe(
+        Effect.andThen(Deferred.await(answer))
+      )
+    );
+    return { answer, requested, signTransaction } as const;
+  });
 
   const leaveBorrowWorkflow = ({
     leaveAfter,
@@ -1439,6 +1506,43 @@ describe("held broadcast hash registration", () => {
   );
 
   it.effect(
+    "registers a held hash when leaving after the wallet broadcast, before submission",
+    () =>
+      Effect.gen(function* () {
+        const reportingSignature = yield* Deferred.make<void>();
+        const { sent, submit } = scriptedSubmit([Effect.succeed(acknowledged)]);
+        yield* leaveWorkflow({
+          capabilities: {
+            ...makeCapabilities({
+              borrow: {
+                submitTransaction: submit,
+                submitTransactionInBackground: submit,
+              },
+              initialWalletState: makeConnectedWalletState(borrowWalletScope),
+              wallet: broadcastingWallet,
+            }),
+            // The wallet has broadcast; the workflow is still reporting it.
+            tracking: {
+              trackEvent: (event) =>
+                event === "txSigned"
+                  ? Deferred.succeed(reportingSignature, undefined).pipe(
+                      Effect.andThen(Effect.never)
+                    )
+                  : Effect.void,
+            },
+          },
+          key: new BorrowTransactionWorkflowInput({
+            action: borrowAction(),
+            walletScope: borrowWalletScope,
+          }),
+          leaveAfter: Deferred.await(reportingSignature),
+        });
+
+        expect(sent).toEqual([hashSubmission]);
+      })
+  );
+
+  it.effect(
     "registers a held hash without presenting the API's Rich Error",
     () =>
       Effect.gen(function* () {
@@ -1520,6 +1624,128 @@ describe("held broadcast hash registration", () => {
         };
         expect(sent).toEqual([classicHash, classicHash]);
       })
+  );
+
+  it.effect(
+    "registers a Classic hash the wallet broadcasts after the user left mid-signing",
+    () =>
+      Effect.gen(function* () {
+        const wallet = yield* answerLater();
+        const registered = yield* Deferred.make<void>();
+        const submitHash = vi.fn(() =>
+          Deferred.succeed(registered, undefined).pipe(
+            Effect.as({
+              explorerUrl: null,
+              hash: transactionHash,
+              status: "BROADCASTED",
+            } as never)
+          )
+        );
+        yield* leaveWorkflow({
+          capabilities: makeCapabilities({
+            wallet: { signTransaction: wallet.signTransaction },
+            yieldOperations: {
+              submitTransactionHash: submitHash,
+              submitTransactionHashInBackground: submitHash,
+            },
+          }),
+          key: new ClassicTransactionWorkflowInput({
+            actionMeta,
+            transactions: [classicTransaction("classic-late")],
+            walletScope: classicWalletScope,
+            yieldId,
+          }),
+          leaveAfter: Deferred.await(wallet.requested),
+        });
+        expect(submitHash).not.toHaveBeenCalled();
+
+        yield* Deferred.succeed(wallet.answer, {
+          broadcasted: true,
+          signedTx: transactionHash,
+        });
+        yield* Deferred.await(registered);
+
+        expect(submitHash).toHaveBeenCalledExactlyOnceWith({
+          payload: { hash: transactionHash },
+          transactionId: "classic-late",
+        });
+      })
+  );
+
+  it.effect(
+    "registers a Borrow hash the wallet broadcasts after the user left mid-signing",
+    () =>
+      Effect.gen(function* () {
+        const wallet = yield* answerLater();
+        const registered = yield* Deferred.make<void>();
+        const submit = vi.fn(() =>
+          Deferred.succeed(registered, undefined).pipe(Effect.as(acknowledged))
+        );
+        yield* leaveWorkflow({
+          capabilities: makeCapabilities({
+            borrow: {
+              submitTransaction: submit,
+              submitTransactionInBackground: submit,
+            },
+            initialWalletState: makeConnectedWalletState(borrowWalletScope),
+            wallet: { signTransaction: wallet.signTransaction },
+          }),
+          key: new BorrowTransactionWorkflowInput({
+            action: borrowAction(),
+            walletScope: borrowWalletScope,
+          }),
+          leaveAfter: Deferred.await(wallet.requested),
+        });
+        expect(submit).not.toHaveBeenCalled();
+
+        yield* Deferred.succeed(wallet.answer, {
+          broadcasted: true,
+          signedTx: transactionHash,
+        });
+        yield* Deferred.await(registered);
+
+        expect(submit).toHaveBeenCalledExactlyOnceWith(hashSubmission);
+      })
+  );
+
+  it.effect(
+    "drops a payload the wallet only signed after the user left mid-signing",
+    () =>
+      Effect.gen(function* () {
+        const wallet = yield* answerLater();
+        const submitSigned = vi.fn(() =>
+          Effect.die("unexpected signed payload submission")
+        );
+        const submitHash = vi.fn(() =>
+          Effect.die("unexpected hash submission")
+        );
+        yield* leaveWorkflow({
+          capabilities: makeCapabilities({
+            wallet: { signTransaction: wallet.signTransaction },
+            yieldOperations: {
+              submitSignedTransaction: submitSigned,
+              submitTransactionHash: submitHash,
+              submitTransactionHashInBackground: submitHash,
+            },
+          }),
+          key: new ClassicTransactionWorkflowInput({
+            actionMeta,
+            transactions: [classicTransaction("classic-late-signed")],
+            walletScope: classicWalletScope,
+            yieldId,
+          }),
+          leaveAfter: Deferred.await(wallet.requested),
+        });
+
+        yield* Deferred.succeed(wallet.answer, {
+          broadcasted: false,
+          signedTx: signedPayload,
+        });
+        yield* TestClock.adjust("10 minutes");
+
+        expect(submitSigned).not.toHaveBeenCalled();
+        expect(submitHash).not.toHaveBeenCalled();
+      }).pipe(Effect.provide(TestClock.layer()))
   );
 
   it.effect(

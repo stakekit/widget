@@ -4,6 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useNavigate } from "react-router";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
+import { useLeaveConfirmation } from "../../leave-confirmation/index";
 import { useTrackEvent } from "../../tracking/index";
 import { useSKWallet, useWalletConfig } from "../../wallet/index";
 import { useDetailsMatch } from "../react/use-details-match";
@@ -44,16 +45,19 @@ export const useHeader = () => {
   };
 
   const disconnectWidget = useAtomSet(disconnectWidgetAtom);
+  const leaveConfirmation = useLeaveConfirmation();
 
-  const onXPress = () => {
-    trackEvent("widgetDisconnectClicked");
-    disconnectWidget(undefined);
-  };
+  const onXPress = () =>
+    leaveConfirmation.confirm(() => {
+      trackEvent("widgetDisconnectClicked");
+      disconnectWidget(undefined);
+    });
 
   return {
     onLeftIconPress,
     onXPress,
     headerRef,
+    leaveConfirmationDialog: leaveConfirmation.dialog,
     walletConfigReady,
     hidesHeaderWalletControl,
     hideChainSelector,

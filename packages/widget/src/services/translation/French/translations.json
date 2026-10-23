@@ -577,6 +577,12 @@
     "receive_token": "Jeton reçu",
     "staking_fee": "Frais de staking"
   },
+  "leave_confirmation": {
+    "title": "Quitter cette transaction ?",
+    "description": "Votre transaction est en cours. Si vous quittez maintenant, les étapes restantes ne seront pas effectuées et vous devrez recommencer.",
+    "stay": "Rester",
+    "leave": "Quitter"
+  },
   "steps": {
     "title": "Suivi des étapes",
     "sign_transaction": "Signez la transaction",

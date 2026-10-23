@@ -406,6 +406,8 @@ describe("Borrow with an external provider", () => {
       .toBeEnabled();
 
     await app.getByRole("button", { name: "Cancel" }).click();
+    // The host broadcast the transaction, so leaving asks first.
+    await app.getByRole("button", { name: "Leave" }).click();
     await expect.poll(() => stepsPageShown(app)).toBe(false);
     await expect
       .poll(() => api.submitted.get(withdrawTransaction.id))

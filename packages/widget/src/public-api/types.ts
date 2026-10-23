@@ -317,13 +317,16 @@ export type SKTxMeta = ActionMeta & {
 
 /**
  * Outcome of `SKWallet.sendTransaction`. A bare string is the broadcast hash.
- * `cancelled` means the user declined in the wallet and nothing was broadcast.
+ * - `cancelled`: the user declined in the wallet. Nothing was broadcast.
+ * - `error`: the request failed. Include `txHash` whenever the transaction
+ *   was broadcast before the failure (for example a receipt timeout): the
+ *   Widget then tracks that transaction instead of asking to sign it again.
  */
 export type SKTransactionResult =
   | string
   | { type: "success"; txHash: string }
   | { type: "cancelled" }
-  | { type: "error"; error: string };
+  | { type: "error"; error: string; txHash?: string };
 
 /**
  * Outcome of `SKWallet.signMessage`. A bare string is the signature.

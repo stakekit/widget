@@ -10,6 +10,8 @@ import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-varia
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useLeaveConfirmation } from "../../../leave-confirmation/index";
+import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
 import { useSKWallet } from "../../react/use-wallet";
 import { getOtherAccounts } from "../../state/account-identities";
@@ -50,6 +52,7 @@ export const AccountModal = () => {
   const switchAccount = useAtomSet(switchAccountAtom);
   const copyAddress = useAtomSet(copyWalletAddressAtom);
   const copied = useAtomValue(walletAddressCopiedAtom);
+  const leaveConfirmation = useLeaveConfirmation();
 
   // A connecting wallet keeps its scope owner while a network switch settles.
   if (!wallet?.network) return null;
@@ -95,6 +98,7 @@ export const AccountModal = () => {
       <WalletDialog
         open={isOpen}
         onOpenChange={setOpen}
+        suspended={leaveConfirmation.pending}
         testId="wallet-account-dialog"
       >
         <div className={profile}>
@@ -110,10 +114,12 @@ export const AccountModal = () => {
                 type="button"
                 className={clsx(menuButton, accountOption)}
                 data-testid={`wallet-account-${account.address}`}
-                onClick={() => {
-                  switchAccount({ account, connector: wallet.connector });
-                  setOpen(false);
-                }}
+                onClick={() =>
+                  leaveConfirmation.confirm(() => {
+                    switchAccount({ account, connector: wallet.connector });
+                    setOpen(false);
+                  })
+                }
               >
                 <span className={heading}>
                   {formatAddress(account.address)}
@@ -144,10 +150,12 @@ export const AccountModal = () => {
                 type="button"
                 className={action}
                 data-testid="wallet-account-disconnect"
-                onClick={() => {
-                  setOpen(false);
-                  logout();
-                }}
+                onClick={() =>
+                  leaveConfirmation.confirm(() => {
+                    setOpen(false);
+                    logout();
+                  })
+                }
               >
                 <span className={actionContent}>
                   <span className={actionIcon}>
@@ -160,6 +168,7 @@ export const AccountModal = () => {
           </div>
         </div>
       </WalletDialog>
+      <LeaveConfirmationDialog {...leaveConfirmation.dialog} />
     </>
   );
 };

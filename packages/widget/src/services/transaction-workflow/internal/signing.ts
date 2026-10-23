@@ -14,7 +14,11 @@ import type {
   WalletRuntimeInvariantError,
 } from "../../wallet/wallet-errors";
 import { WalletService } from "../../wallet/wallet-service";
-import type { BorrowTransactionMeta } from "../../wallet/wallet-transactions";
+import type {
+  BorrowTransactionMeta,
+  WalletBroadcastResult,
+  WalletSignedPayloadResult,
+} from "../../wallet/wallet-transactions";
 import {
   type DirectTransactionLedger,
   makeTransactionSignError,
@@ -26,6 +30,10 @@ import {
   getCurrentWorkflowTrackingYieldId,
   requireCurrentWorkflow,
 } from "./current";
+import type {
+  ApiRecordedSource,
+  HeldHashRegistration,
+} from "./held-hash-registration";
 import { recordDirectTransaction } from "./ledger";
 import { updateCurrentTransactionWorkflowTransaction } from "./model";
 
@@ -74,7 +82,28 @@ const walletSignFailureReason = (
     }),
   });
 
-export const makePrepareAndSign = Effect.gen(function* () {
+/** `context` with its current transaction holding what the wallet returned. */
+export const withSignedTransaction = (
+  context: TransactionWorkflowContext,
+  signed: WalletBroadcastResult | WalletSignedPayloadResult
+): TransactionWorkflowContext =>
+  updateCurrentTransactionWorkflowTransaction({
+    context,
+    update: (current) => ({
+      ...current,
+      meta: {
+        ...current.meta,
+        broadcasted: signed.broadcasted,
+        confirmationError: null,
+        signError: null,
+        signedTx: signed.signedTx,
+      },
+    }),
+  });
+
+export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
+  heldHashes: HeldHashRegistration
+) {
   const [evmRpc, tracking, wallet] = yield* Effect.all([
     EvmRpc,
     TrackingService,
@@ -139,11 +168,16 @@ export const makePrepareAndSign = Effect.gen(function* () {
     context,
     expectedOwner,
     ledger,
+    recordSigned,
   }: {
     readonly context: TransactionWorkflowContext;
     /** The workflow's Wallet Scope Owner; the wallet signs only for it. */
     readonly expectedOwner: WalletScopeOwner;
     readonly ledger: DirectTransactionLedger;
+    /** Records what the wallet returned in the workflow's state at once. */
+    readonly recordSigned: (
+      signed: WalletBroadcastResult | WalletSignedPayloadResult
+    ) => Effect.Effect<void>;
   }) {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
@@ -157,6 +191,18 @@ export const makePrepareAndSign = Effect.gen(function* () {
         transactionId: source.transaction.id,
         workflowId,
       });
+    /** Asks the wallet for a transaction an API records once broadcast. */
+    const signRecordedTransaction = (
+      recorded: ApiRecordedSource,
+      input: Parameters<typeof wallet.signTransaction>[0]
+    ) =>
+      heldHashes
+        .runWalletRequest(recorded, wallet.signTransaction(input), recordSigned)
+        .pipe(
+          Effect.mapError((cause) =>
+            fail(walletSignFailureReason(cause, "transaction"))
+          )
+        );
 
     const signed = yield* Match.value(current).pipe(
       Match.tag("Direct", ({ domain, transaction }) => {
@@ -234,28 +280,21 @@ export const makePrepareAndSign = Effect.gen(function* () {
                 fail(walletSignFailureReason(cause, "message"))
               )
             )
-          : wallet
-              .signTransaction({
-                expectedOwner,
-                family: "classic",
-                ledgerHwAppId: null,
-                network: network as Network,
-                tx: payload,
-                txMeta: {
-                  ...domain.actionMeta,
-                  annotatedTransaction: source.transaction.annotatedTransaction,
-                  gasEstimate: source.transaction.gasEstimate,
-                  structuredTransaction:
-                    source.transaction.structuredTransaction,
-                  txId: source.transaction.id,
-                  txType: source.transaction.type,
-                },
-              })
-              .pipe(
-                Effect.mapError((cause) =>
-                  fail(walletSignFailureReason(cause, "transaction"))
-                )
-              );
+          : signRecordedTransaction(source, {
+              expectedOwner,
+              family: "classic",
+              ledgerHwAppId: null,
+              network: network as Network,
+              tx: payload,
+              txMeta: {
+                ...domain.actionMeta,
+                annotatedTransaction: source.transaction.annotatedTransaction,
+                gasEstimate: source.transaction.gasEstimate,
+                structuredTransaction: source.transaction.structuredTransaction,
+                txId: source.transaction.id,
+                txType: source.transaction.type,
+              },
+            });
       }),
       Match.tag("Borrow", ({ domain, transaction }) => {
         const { source } = transaction;
@@ -299,20 +338,14 @@ export const makePrepareAndSign = Effect.gen(function* () {
         return decodeBorrowTransactionForWallet(source.transaction).pipe(
           Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
           Effect.flatMap((tx) =>
-            wallet
-              .signTransaction({
-                expectedOwner,
-                family: "borrow",
-                ledgerHwAppId: null,
-                network: network as Network,
-                tx,
-                txMeta,
-              })
-              .pipe(
-                Effect.mapError((cause) =>
-                  fail(walletSignFailureReason(cause, "transaction"))
-                )
-              )
+            signRecordedTransaction(source, {
+              expectedOwner,
+              family: "borrow",
+              ledgerHwAppId: null,
+              network: network as Network,
+              tx,
+              txMeta,
+            })
           )
         );
       }),
@@ -325,18 +358,6 @@ export const makePrepareAndSign = Effect.gen(function* () {
       yieldId: getCurrentWorkflowTrackingYieldId(current),
     });
 
-    return updateCurrentTransactionWorkflowTransaction({
-      context,
-      update: (current) => ({
-        ...current,
-        meta: {
-          ...current.meta,
-          broadcasted: signed.broadcasted,
-          confirmationError: null,
-          signError: null,
-          signedTx: signed.signedTx,
-        },
-      }),
-    });
+    return withSignedTransaction(context, signed);
   });
 });

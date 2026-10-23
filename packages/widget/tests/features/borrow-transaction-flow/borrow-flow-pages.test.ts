@@ -130,6 +130,7 @@ const makeHarness = Effect.fn("test.makeBorrowPageHarness")(function* ({
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({
+        leaveGuarded: Stream.make(false),
         make: (input) =>
           Effect.addFinalizer(() =>
             Deferred.succeed(workflowClosed, undefined)

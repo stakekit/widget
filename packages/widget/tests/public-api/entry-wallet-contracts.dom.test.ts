@@ -60,7 +60,7 @@ describe("package and bundled wallet entry contracts", () => {
         | string
         | { type: "success"; txHash: string }
         | { type: "cancelled" }
-        | { type: "error"; error: string }
+        | { type: "error"; error: string; txHash?: string }
       >
     >();
     expectTypeOf(packageProps).toMatchTypeOf<PackageSKAppProps>();
