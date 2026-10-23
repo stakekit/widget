@@ -49,6 +49,7 @@
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
     "gen:api": "tsx scripts/generated-api/generate-effect-openapi.ts",
+    "gen:yield-providers": "tsx scripts/yield-providers/generate-yield-provider-ids.ts",
     "test": "pnpm test:unit && pnpm test:dom && pnpm test:browser",
     "test:unit": "vitest -c vite/vitest.config.ts --project unit run",
     "test:unit:watch": "vitest -c vite/vitest.config.ts --project unit",

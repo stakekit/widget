@@ -1,3 +1,5 @@
+export { YieldProviderId } from "../../generated/yield-provider-ids.js";
+
 export const DashboardYieldCategory = {
   RWA: "rwa",
   DeFi: "defi",

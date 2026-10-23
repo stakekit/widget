@@ -5,7 +5,6 @@ import {
   getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldRewardTokens,
-  getYieldTypesSortRank,
 } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
@@ -42,15 +41,8 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
   const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
   const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const selected = yieldOptions.selected;
-  const availableYields = yieldOptions.items;
-  const combined =
-    selected && !availableYields.some((item) => item.id === selected.id)
-      ? [selected, ...availableYields]
-      : [...availableYields];
-  const all = combined.sort(
-    (left, right) =>
-      right.rewardRate.total.comparedTo(left.rewardRate.total) ?? 0
-  );
+  // Earn Selection orders the options, and resolves the selection among them.
+  const all = yieldOptions.items;
   const search = get(earnPageSearchAtom).stake;
   const normalizedSearch = search.toLowerCase();
   const searchFiltered = normalizedSearch
@@ -69,15 +61,12 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
   const categoryGrouping =
     config.dashboardVariant && config.yieldGrouping === "category";
   const category = yieldOptions.selectedCategory;
-  const categoryFiltered =
+  const filtered =
     categoryGrouping && category
       ? searchFiltered.filter(
           (item) => getDashboardYieldCategory(item) === category
         )
       : searchFiltered;
-  const filtered = [...categoryFiltered].sort(
-    (left, right) => getYieldTypesSortRank(left) - getYieldTypesSortRank(right)
-  );
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading = status.loading.yields;

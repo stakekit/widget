@@ -4,6 +4,10 @@ import {
   isNonZeroRewardRateYield,
   isYieldVisible,
 } from "../../../../../domain/earn/yield";
+import {
+  getRankedDefaultYield,
+  type YieldProviderOrder,
+} from "../../../../../domain/earn/yield-provider-order";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { hostTokenKey } from "../../../../../domain/token/token";
 import { isWalletNetwork } from "../../../../../domain/wallet/network";
@@ -78,7 +82,7 @@ export const resolveYield = ({
   });
   if (preferredYieldId) {
     if (preferredYieldId === "*") {
-      return getDefaultYield(yieldOptions);
+      return getDefaultYield(yieldOptions, entry.yieldProviderOrder);
     }
 
     const decodedPreferredYieldId = Schema.decodeOption(YieldId)(
@@ -92,7 +96,7 @@ export const resolveYield = ({
     }
   }
 
-  return getDefaultYield(yieldOptions);
+  return getDefaultYield(yieldOptions, entry.yieldProviderOrder);
 };
 
 const findYieldById = (
@@ -103,7 +107,11 @@ const findYieldById = (
     (yieldOption) => yieldOption.id.toLowerCase() === yieldId.toLowerCase()
   ) ?? null;
 
-const getDefaultYield = (yieldOptions: ReadonlyArray<EarnYieldWithProvider>) =>
+const getDefaultYield = (
+  yieldOptions: ReadonlyArray<EarnYieldWithProvider>,
+  providerOrder: YieldProviderOrder = {}
+) =>
+  getRankedDefaultYield(yieldOptions, providerOrder) ??
   yieldOptions.find(
     (yieldOption) =>
       yieldOption.status.enter && isNonZeroRewardRateYield(yieldOption)

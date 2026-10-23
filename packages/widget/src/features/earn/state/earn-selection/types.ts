@@ -9,6 +9,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../../domain/earn/models";
 import type { PreferredTokenYieldsPerNetwork } from "../../../../domain/earn/yield";
+import type { YieldProviderOrder } from "../../../../domain/earn/yield-provider-order";
 import type {
   ProviderOption,
   YieldId,
@@ -52,6 +53,8 @@ export type EarnEntry = {
   readonly categoryOrder: ReadonlyArray<DashboardYieldCategory>;
   readonly initParams?: InitParams | null;
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork | null;
+  /** Empty unless yields are grouped by dashboard category. */
+  readonly yieldProviderOrder?: YieldProviderOrder;
 };
 
 export type EarnEntryIntent = {

@@ -1,6 +1,8 @@
 import {
   type DashboardYieldCategory,
   DashboardYieldCategory as DomainDashboardYieldCategory,
+  YieldProviderId as DomainYieldProviderId,
+  type YieldProviderId,
 } from "../domain/earn/contract.js";
 import type { Network } from "../domain/network/contract.js";
 import {
@@ -19,6 +21,7 @@ export type {
 export type { SKTheme } from "./theme.js";
 export {
   DomainDashboardYieldCategory as DashboardYieldCategory,
+  DomainYieldProviderId as YieldProviderId,
   EvmChainIds,
   MiscChainIds,
   SubstrateChainIds,
@@ -585,6 +588,16 @@ export type SKPreferredTokenYieldsPerNetwork = Readonly<
   Record<string, Readonly<Record<`${string}-${string}`, string>>>
 >;
 
+/**
+ * Yield provider IDs to list first in each dashboard category tab, in rank
+ * order. Matches a yield's provider, not the validators it stakes with.
+ * Known IDs are in `YieldProviderId`; other strings are accepted so newer
+ * providers work before the widget lists them.
+ */
+export type SKYieldProviderOrder = Partial<
+  Record<DashboardYieldCategory, Array<YieldProviderId | (string & {})>>
+>;
+
 type SettingsPropsBase = {
   /** StakeKit API key. Read at mount; remount the widget to change it. */
   apiKey: string;
@@ -656,6 +669,11 @@ type SettingsPropsBase = {
   dashboardVariant?: boolean;
   /** Order of yield categories. Omitted categories follow in the default order. */
   dashboardYieldCategoryOrder?: DashboardYieldCategory[];
+  /**
+   * Lists these yield providers first within each category tab, and selects
+   * the first one by default. Applies only with category yield grouping.
+   */
+  yieldProviderOrder?: SKYieldProviderOrder;
   /** Lists yields flat or grouped by category. Defaults to `"category"` with `dashboardVariant`, else `"flat"`. */
   yieldGrouping?: "flat" | "category";
   /** Offers institutional wallets instead of the regular wallet list. Read at mount. */

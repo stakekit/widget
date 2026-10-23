@@ -23,6 +23,7 @@ next-env.d.ts
 .env.*
 !.env.example
 *.local
+mise.local.toml
 
 # Logs and diagnostics
 logs/

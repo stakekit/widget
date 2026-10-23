@@ -170,6 +170,15 @@ const walletPolicyFields = {
 
 const WalletPolicy = Schema.Struct(walletPolicyFields);
 
+const yieldProviderOrderFields = {
+  [DashboardYieldCategory.RWA]: optional(Schema.Array(Schema.String)),
+  [DashboardYieldCategory.DeFi]: optional(Schema.Array(Schema.String)),
+  [DashboardYieldCategory.Stake]: optional(Schema.Array(Schema.String)),
+} satisfies Record<
+  keyof NonNullable<SettingsProps["yieldProviderOrder"]>,
+  Schema.Constraint
+>;
+
 type OpaqueHostConfigurationKey =
   | "mapWalletFn"
   | "onMountAnimationComplete"
@@ -212,6 +221,7 @@ const hostConfigurationValueFields = {
   variant: optional(Schema.Literals(hostVariantValues)),
   walletPolicy: optional(WalletPolicy),
   yieldGrouping: optional(Schema.Literals(hostYieldGroupingValues)),
+  yieldProviderOrder: optional(Schema.Struct(yieldProviderOrderFields)),
   yieldsApiUrl: optional(Schema.String),
 } satisfies Record<HostConfigurationValueKey, Schema.Constraint>;
 
