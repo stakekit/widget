@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## [0.0.293](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.292...@stakekit/widget@0.0.293) (2026-10-23)
+
+
+### Features
+
+* **earn:** let hosts rank yield providers per dashboard category ([#598](https://github.com/stakekit/widget/issues/598)) ([ca0111d](https://github.com/stakekit/widget/commit/ca0111d05808c84e46c54cc21731c1aaf3e5d266))
+* **transaction-flow:** confirm leaving Steps, keep late wallet hashes ([#600](https://github.com/stakekit/widget/issues/600)) ([3e73f7b](https://github.com/stakekit/widget/commit/3e73f7b0d66f71227fef79ac1cba0e38d3c20428))
+* **transaction-flow:** Done returns to the flow's tab; hosts can hide the gas estimate ([#602](https://github.com/stakekit/widget/issues/602)) ([110fb84](https://github.com/stakekit/widget/commit/110fb8401da73629631549ecb8cda840e0650e3b))
+
 ## [0.0.292](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.291...@stakekit/widget@0.0.292) (2026-10-22)
 
 
