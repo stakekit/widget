@@ -4,7 +4,6 @@ import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { getActionInputToken } from "../../../domain/action/rules";
 import {
-  toWidgetPath,
   WidgetNavigation,
   type WidgetNavigationCommand,
 } from "../../../services/navigation/widget-navigation";
@@ -66,19 +65,12 @@ export const startClassicFlowExecution = Effect.fn("startClassicFlowExecution")(
 
 /** Leaves Execution: back to Review, or out of the finished flow. */
 export const leaveClassicFlowExecution = (
-  { destination, intake }: ClassicFlowSession,
+  { destination }: ClassicFlowSession,
   to: "Exit" | "Review"
-) => {
-  if (to === "Review") {
-    return navigate({ _tag: "Replace", path: destination.reviewPath });
-  }
-  return navigate({
-    _tag: "Push",
-    path: toWidgetPath(
-      intake._tag === "YieldActionContinuation" ? "/activity" : "/"
-    ),
-  });
-};
+) =>
+  to === "Review"
+    ? navigate({ _tag: "Replace", path: destination.reviewPath })
+    : navigate({ _tag: "Push", path: destination.finishPath });
 
 /** One handoff's Execution in a Session. */
 export class ClassicFlowExecutionKey extends Data.Class<{

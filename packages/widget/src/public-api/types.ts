@@ -620,6 +620,8 @@ type SettingsPropsBase = {
   onMountAnimationComplete?: () => void;
   /** Hides the network badge on token icons. */
   hideNetworkLogo?: boolean;
+  /** Hides the estimated gas fee on the review screen. Commission and protocol fees stay visible. */
+  hideGasFee?: boolean;
   /** Skips the initial layout and reveal animation. */
   disableInitLayoutAnimation?: boolean;
   /** Keeps the amount input font size fixed instead of shrinking it for long values. */

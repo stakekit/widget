@@ -16,7 +16,8 @@ export const useComplete = () => {
   const finish = useAtomSet(execution.finishAtom);
   const workflowView = useAtomValue(execution.workflow.viewAtom);
 
-  const isLedgerLive = useSKWallet()?.isLedgerLive ?? false;
+  // Ledger Live desktop leaves for its Earn dashboard; elsewhere the flow finishes in the widget.
+  const opensLedgerEarn = (useSKWallet()?.isLedgerLive ?? false) && !isMobile();
 
   const urls = workflowView.state
     ? getClassicTransactionCompletionUrls(workflowView.state.context)
@@ -25,7 +26,7 @@ export const useComplete = () => {
   const onViewTransactionClick = useViewTransaction();
 
   const onClick = () => {
-    if (isLedgerLive && !isMobile()) {
+    if (opensLedgerEarn) {
       window.location.assign("ledgerlive://earn");
 
       return;
@@ -51,7 +52,7 @@ export const useComplete = () => {
     label:
       activityAction === null
         ? t("complete.continue", {
-            context: isLedgerLive ? "ledger" : undefined,
+            context: opensLedgerEarn ? "ledger" : undefined,
           })
         : t("activity.complete.continue"),
     onClick,

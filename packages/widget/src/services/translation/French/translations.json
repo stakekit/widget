@@ -689,7 +689,7 @@
     "successfully_pending_action": "{{amount}} {{tokenNetwork}} {{pendingAction}} avec succès",
     "view_transaction": "Voir la transaction {{type}}",
     "via": "via {{providerName}}",
-    "continue": "Aller au tableau de bord Aperçu",
+    "continue": "Terminé",
     "continue_ledger": "Aller au tableau de bord Earn",
     "stake": {
       "staking": "staké",

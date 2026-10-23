@@ -113,6 +113,8 @@ export type ClassicTransactionFlowIntake =
 
 type ClassicTransactionFlowDestination = Readonly<{
   readonly completePath: WidgetPath;
+  /** Where finishing the flow returns: the tab its mount belongs to. */
+  readonly finishPath: WidgetPath;
   readonly reviewPath: WidgetPath;
   readonly stepsPath: WidgetPath;
 }>;
@@ -282,12 +284,21 @@ export const decodeClassicFlowExecutionHandoff = (
 
 type ClassicTransactionFlowRouteBase = "" | WidgetPathInput;
 
+const positionFlowSegments = {
+  PositionExit: "unstake",
+  PositionManage: "pending-action",
+  PositionStake: "stake",
+} as const;
+
 const makeClassicTransactionFlowDestination = ({
+  finishPath,
   routeBase,
 }: {
+  readonly finishPath: WidgetPathInput;
   readonly routeBase: ClassicTransactionFlowRouteBase;
 }): ClassicTransactionFlowDestination => ({
   completePath: toWidgetPath(`${routeBase}/complete`),
+  finishPath: toWidgetPath(finishPath),
   reviewPath: toWidgetPath(`${routeBase}/review`),
   stepsPath: toWidgetPath(`${routeBase}/steps`),
 });
@@ -318,23 +329,22 @@ export const makeClassicFlowSession = (
         )}` as WidgetPathInput;
         return {
           completePath: toWidgetPath(`${routeBase}/complete`),
+          finishPath: toWidgetPath("/activity"),
           reviewPath: toWidgetPath(routeBase),
           stepsPath: toWidgetPath(`${routeBase}/steps`),
         };
       }
       case "Earn":
-        return makeClassicTransactionFlowDestination({ routeBase: "" });
-      case "PositionStake":
         return makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/stake`,
+          finishPath: "/",
+          routeBase: "",
         });
       case "PositionExit":
-        return makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/unstake`,
-        });
       case "PositionManage":
+      case "PositionStake":
         return makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/pending-action`,
+          finishPath: "/positions",
+          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/${positionFlowSegments[command.mount._tag]}`,
         });
     }
   })();
