@@ -7,18 +7,18 @@ import type {
   YieldAction,
 } from "../../../domain/action/models";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
-import type {
-  ExitReceiveToken,
-  TransactionType,
-} from "../../../domain/action/rules";
+import type { ExitReceiveToken } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import {
+  type CancelReturn,
+  type ConfidentialHandle,
   getConfidentialAssetToken,
   getConfidentialChainId,
   getConfidentialConversion,
   isConfidentialInstantExit,
   isConfidentialYield,
   toBaseUnits,
+  toConfidentialUnderlyingAmount,
 } from "../../../domain/earn/confidential";
 import type {
   EarnProvider,
@@ -47,6 +47,7 @@ import {
   type TransactionWorkflowInput,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { ConfidentialPreparation } from "../../../services/zama/zama-service";
+import type { PlannedStepType } from "./classic-transaction-workflow";
 
 type ClassicFlowProviderDetail = ClassicTransactionWorkflowProviderDetail;
 
@@ -86,7 +87,9 @@ type ManageClassicTransactionFlowIntake = {
   readonly balanceType: YieldBalanceType;
   /** The balance is still encrypted, so its amount is unknown here. */
   readonly balanceHidden?: boolean;
-  readonly confidentialHandle?: string;
+  /** What a confidential cancel refunds, presented instead of the request. */
+  readonly cancelReturn?: CancelReturn;
+  readonly confidentialHandle?: ConfidentialHandle;
   readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;
   readonly interactedToken: Token;
@@ -199,6 +202,8 @@ export type ClassicFlowExecutionSource =
        */
       readonly conversion: ReadonlyArray<DirectTransaction>;
       readonly preparation: ConfidentialPreparation;
+      /** Presentation only: the API legs Steps lists until it returns them. */
+      readonly preparedTransactionTypes: ReadonlyArray<PlannedStepType>;
     }>;
 
 /**
@@ -504,15 +509,69 @@ export const getClassicFlowWorkflowInput = ({
     walletScope: intake.walletScope,
   };
 
-  return source._tag === "Action"
-    ? makeClassicTransactionWorkflowInput({ ...facts, action: source.action })
-    : new ConfidentialTransactionWorkflowInput({
-        ...facts,
-        conversion: source.conversion,
-        ledger,
-        preparation: source.preparation,
-        yieldId: source.preparation.command.yieldId,
-      });
+  if (source._tag === "Action") {
+    return makeClassicTransactionWorkflowInput({
+      ...facts,
+      action: source.action,
+    });
+  }
+  const { preparation } = source;
+  const chainId =
+    preparation._tag === "Encrypt" && preparation.instant
+      ? getConfidentialChainId(preparation.yieldDto)
+      : null;
+  return new ConfidentialTransactionWorkflowInput({
+    ...facts,
+    conversion: source.conversion,
+    finalizeUnwrap: chainId === null ? null : { chainId },
+    ledger,
+    preparation,
+    yieldId: preparation.command.yieldId,
+  });
+};
+
+export type ClassicFlowExitCompletion = Readonly<{
+  readonly amount: BigNumber;
+  /** The payout is valued at the share price, not read back from chain. */
+  readonly approximate: boolean;
+  /** The exit only joined the next redemption batch. */
+  readonly batched: boolean;
+  readonly token: Token;
+}>;
+
+/**
+ * What a finished exit reports: an instant confidential exit the underlying
+ * it paid out, a private one the shares it queued, others what they withdrew.
+ */
+export const getClassicFlowExitCompletion = (
+  intake: ExitClassicTransactionFlowIntake
+): ClassicFlowExitCompletion => {
+  const amount = exactDecimal(intake.request.arguments?.amount ?? 0);
+  const plain = {
+    amount,
+    approximate: false,
+    batched: false,
+    token: intake.unstakeToken,
+  };
+  if (!isConfidentialYield(intake.integration)) return plain;
+  if (
+    !isConfidentialInstantExit(
+      intake.integration,
+      intake.request.arguments?.outputToken
+    )
+  ) {
+    return { ...plain, batched: true };
+  }
+  return {
+    amount: toConfidentialUnderlyingAmount(
+      intake.integration,
+      intake.unstakeToken,
+      amount
+    ),
+    approximate: true,
+    batched: false,
+    token: intake.integration.token,
+  };
 };
 
 /**
@@ -590,26 +649,36 @@ export const getClassicFlowConfidentialPreparation = (
 };
 
 /**
- * The API action leg a confidential flow prepares only after encrypting or
- * decrypting its amount; it labels that step until the API returns it.
+ * The steps a confidential flow prepares only after encrypting or decrypting
+ * its amount; they label those steps until the API returns them. A private
+ * exit first grants the router on each share token not yet granted; an
+ * instant exit then finalizes its unwrap in the same flow.
  */
-export const getClassicFlowPreparedTransactionType = (
-  intake: ClassicTransactionFlowIntake
-): TransactionType | null => {
+export const getClassicFlowPreparedTransactionTypes = (
+  intake: ClassicTransactionFlowIntake,
+  { missingOperatorGrants }: { readonly missingOperatorGrants: number }
+): ReadonlyArray<PlannedStepType> => {
   switch (intake._tag) {
     case "Enter":
-      return "DEPOSIT";
+      return ["DEPOSIT"];
     case "Exit":
       return isConfidentialInstantExit(
         intake.integration,
         intake.request.arguments?.outputToken
       )
-        ? "UNWRAP"
-        : "REDEEM";
-    // Only a WITHDRAW pending action carries a handle to decrypt.
+        ? ["UNWRAP", "DECRYPT", "WITHDRAW", "REDEEM"]
+        : [
+            ...Array.from(
+              { length: missingOperatorGrants },
+              () => "SET_OPERATOR" as const
+            ),
+            "REDEEM",
+          ];
+    // Only a WITHDRAW pending action carries a handle to decrypt; it
+    // finalizes the unwrap, then redeems the vault shares.
     case "Manage":
-      return "WITHDRAW";
+      return ["WITHDRAW", "REDEEM"];
     case "YieldActionContinuation":
-      return null;
+      return [];
   }
 };

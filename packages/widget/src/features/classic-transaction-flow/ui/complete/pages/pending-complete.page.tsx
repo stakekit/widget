@@ -1,4 +1,5 @@
 import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
+import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
@@ -11,18 +12,21 @@ export const PendingCompletePage = () => {
   const { locale } = useWidgetPresentation();
   const manageFlow = useClassicFlowIntake("Manage");
   const integrationData = manageFlow.integration;
-  const token = manageFlow.interactedToken;
+  const token = manageFlow.cancelReturn?.token ?? manageFlow.interactedToken;
 
   useTrackPage("pendingActionCompelete");
   const rawAmount = manageFlow.request.arguments?.amount;
+  // An encrypted balance's amount is unknown, not zero.
+  const getAmount = () => {
+    if (manageFlow.balanceHidden) return null;
+    if (manageFlow.cancelReturn) return manageFlow.cancelReturn.amount;
+    return rawAmount ? exactDecimal(rawAmount) : null;
+  };
+  const amount = getAmount();
 
   return (
     <CompletePage
-      amount={
-        rawAmount
-          ? formatTokenAmount(exactDecimal(rawAmount), locale, "down")
-          : ""
-      }
+      amount={amount ? formatTokenAmount(amount, locale, "down") : ""}
       integrationId={integrationData.id}
       metadata={{
         logoURI: integrationData.metadata.logoURI,
@@ -32,7 +36,8 @@ export const PendingCompletePage = () => {
       network={token.symbol}
       pendingActionLabelContext={getPendingActionLabelContext(
         manageFlow.pendingActionType,
-        manageFlow.balanceType
+        manageFlow.balanceType,
+        { confidential: isConfidentialYield(integrationData) }
       )}
       pendingActionType={manageFlow.pendingActionType}
       providersDetails={manageFlow.providersDetails}

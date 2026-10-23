@@ -1,5 +1,6 @@
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
+import { isConfidentialYield } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { PositionBalanceRow } from "../../../domain/portfolio/positions";
 import {
@@ -10,7 +11,8 @@ import {
 
 /**
  * When a pending balance settles: its own date first, else the vault's next
- * batch. Null for settled balances or without presentation time.
+ * batch. A balance being cancelled shows that instead. Null for settled
+ * balances or without presentation time.
  */
 export const formatPendingBalanceTiming = ({
   integrationData,
@@ -20,19 +22,22 @@ export const formatPendingBalanceTiming = ({
 }: {
   readonly integrationData: EarnYieldWithProvider;
   readonly now: DateTime.Utc | null;
-  readonly row: Pick<PositionBalanceRow, "batch" | "date" | "type">;
+  readonly row: Pick<PositionBalanceRow, "cancelling" | "date" | "type">;
   readonly t: TFunction;
 }): string | null => {
   const { type } = row;
-  if ((type !== "entering" && type !== "exiting") || !now) return null;
+  if (type !== "entering" && type !== "exiting") return null;
+  if (row.cancelling) return t("position_details.cancelling");
+  if (!now) return null;
   if (row.date) {
     const duration = formatDurationUntil(row.date, now, t);
     return duration
       ? t("position_details.unstaking_duration", { duration })
       : t("position_details.unstaking_imminent");
   }
-  // A balance already in a dispatched batch no longer waits for the next one.
-  if (row.batch) return null;
+  // Only the API knows which batch a confidential balance is in; without its
+  // date, the vault's next window would be a guess.
+  if (isConfidentialYield(integrationData)) return null;
   const nextBatch = formatNextBatchTiming({
     now,
     side: type === "entering" ? "subscription" : "redemption",

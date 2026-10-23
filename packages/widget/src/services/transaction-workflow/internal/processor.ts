@@ -3,6 +3,7 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
+  isFinalizePending,
   makeDirectTransactionLedger,
   type TransactionWorkflowAction,
   type TransactionWorkflowContext,
@@ -29,7 +30,7 @@ export const makeTransactionWorkflowProcessor = Effect.fn(
   const advanceBatch = yield* makeAdvanceBatch;
   const checkApproval = yield* makeCheckApproval;
   const confirmCurrent = yield* makeConfirmCurrent;
-  const prepareAction = yield* makePrepareAction;
+  const { finalizeUnwrap, prepareAction } = yield* makePrepareAction;
   const prepareAndSign = yield* makePrepareAndSign(heldHashes);
   const submitCurrent = yield* makeSubmitCurrent;
 
@@ -89,8 +90,27 @@ export const makeTransactionWorkflowProcessor = Effect.fn(
           onFailure: (error) =>
             settleFailed({ _tag: "AdvanceFailed", context, error }),
           onSuccess: Match.valueTags({
+            // An instant exit finalizes its confirmed unwrap before completing.
             Complete: (result) =>
-              complete(result.context).pipe(Effect.andThen(resourcesChanged)),
+              input._tag === "Confidential" &&
+              input.finalizeUnwrap &&
+              !result.context.finalize?.done
+                ? resourcesChanged.pipe(
+                    Effect.andThen(
+                      runPreparation({
+                        ...result.context,
+                        finalize: {
+                          done: false,
+                          position: flattenTransactionWorkflowTransactions(
+                            result.context
+                          ).length,
+                        },
+                      })
+                    )
+                  )
+                : complete(result.context).pipe(
+                    Effect.andThen(resourcesChanged)
+                  ),
             Continue: (result) => runCurrent(result.context),
           }),
         })
@@ -230,28 +250,39 @@ export const makeTransactionWorkflowProcessor = Effect.fn(
         : runSigning(context);
     };
 
+    // A pending finalize prepares the unwrap's WITHDRAW; else the action.
     const runPreparation = (
       context: TransactionWorkflowContext
-    ): Effect.Effect<void> =>
-      input._tag === "Confidential"
-        ? SubscriptionRef.set(stateRef, { _tag: "Preparing", context }).pipe(
-            Effect.andThen(prepareAction({ context, input })),
-            Effect.matchEffect({
-              onFailure: (error) =>
-                SubscriptionRef.set(stateRef, {
-                  _tag: "PrepareFailed",
-                  context,
-                  error,
-                }),
-              onSuccess: runCurrent,
+    ): Effect.Effect<void> => {
+      if (input._tag !== "Confidential") {
+        return Effect.die(
+          new TransactionWorkflowInvariantError({
+            message: "Only a confidential workflow prepares its action.",
+            workflowId: getTransactionWorkflowId(context.domain),
+          })
+        );
+      }
+      const prepare =
+        isFinalizePending(context) && input.finalizeUnwrap
+          ? finalizeUnwrap({
+              chainId: input.finalizeUnwrap.chainId,
+              context,
+              input,
             })
-          )
-        : Effect.die(
-            new TransactionWorkflowInvariantError({
-              message: "Only a confidential workflow prepares its action.",
-              workflowId: getTransactionWorkflowId(context.domain),
-            })
-          );
+          : prepareAction({ context, input });
+      return SubscriptionRef.set(stateRef, { _tag: "Preparing", context }).pipe(
+        Effect.andThen(prepare),
+        Effect.matchEffect({
+          onFailure: (error) =>
+            SubscriptionRef.set(stateRef, {
+              _tag: "PrepareFailed",
+              context,
+              error,
+            }),
+          onSuccess: runCurrent,
+        })
+      );
+    };
 
     const execute = (
       action: TransactionWorkflowAction,

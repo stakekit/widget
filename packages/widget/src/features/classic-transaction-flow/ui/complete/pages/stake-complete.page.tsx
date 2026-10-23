@@ -34,7 +34,11 @@ export const StakeCompletePage = () => {
         locale,
         "down"
       )}
-      batchedDeposit={isConfidentialYield(selectedStake) ? selectedStake : null}
+      batched={
+        isConfidentialYield(selectedStake)
+          ? { side: "subscription", yieldDto: selectedStake }
+          : null
+      }
       integrationId={selectedStake.id}
       metadata={{
         logoURI: selectedStake.metadata.logoURI,

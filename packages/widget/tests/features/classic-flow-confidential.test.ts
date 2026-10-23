@@ -17,11 +17,15 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { DirectTransaction } from "../../src/domain/action/direct-transaction";
+import { ConfidentialHandle } from "../../src/domain/earn/confidential";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { Token } from "../../src/domain/token/token";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   type ClassicFlowHandoff,
-  getClassicFlowPreparedTransactionType,
+  getClassicFlowExitCompletion,
+  getClassicFlowPreparedTransactionTypes,
+  getClassicFlowWorkflowInput,
   makeClassicFlowSession,
   type NavigatingClassicTransactionFlowStart,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
@@ -114,7 +118,9 @@ const withdrawUnwrapStart = (): NavigatingClassicTransactionFlowStart => {
     intake: {
       _tag: "Manage",
       balanceType: "withdrawable",
-      confidentialHandle: "0xrequest",
+      confidentialHandle: Schema.decodeSync(ConfidentialHandle)(
+        `0x${"ab".repeat(32)}`
+      ),
       gasFeeToken: integration.mechanics.gasFeeToken,
       integration,
       interactedToken: integration.token,
@@ -223,6 +229,7 @@ const openConfidentialFlow = Effect.fn("test.openConfidentialFlow")(function* ({
     wallet: { signTransaction },
     walletState,
     zama: {
+      countMissingOperatorGrants: () => Effect.succeed(0),
       decryptCommand: (preparation) => Effect.succeed(preparation.command),
       encryptCommand: (preparation) => Effect.succeed(preparation.command),
       ...zama,
@@ -297,14 +304,117 @@ const convertingRpc: Partial<EvmRpc["Service"]> = {
 };
 
 describe("confidential vault Classic Transaction Flow", () => {
-  it("labels the waiting exit leg by the chosen withdrawal mode", () => {
-    expect(getClassicFlowPreparedTransactionType(exitStart().intake)).toBe(
-      "REDEEM"
-    );
-    expect(
-      getClassicFlowPreparedTransactionType(exitStart(usdc.address).intake)
-    ).toBe("UNWRAP");
+  it("reports an instant exit in the underlying it pays out, and a private exit in the shares it queued", () => {
+    const shareToken = Schema.decodeSync(Token)(confidentialFixture.cShare);
+    const integration = confidentialYieldFixture({
+      state: {
+        pricePerShareState: {
+          price: 1.25,
+          quoteToken: usdc,
+          shareToken: confidentialFixture.cShare,
+        },
+      },
+    });
+    const intake = (outputToken?: string) => {
+      const start = exitStart(outputToken);
+      if (start.intake._tag !== "Exit") throw new Error("not an exit");
+      return {
+        ...start.intake,
+        integration,
+        request: {
+          ...start.intake.request,
+          arguments: { ...start.intake.request.arguments, amount: "2" },
+        },
+        unstakeAmount: new BigNumber(2),
+        unstakeToken: shareToken,
+      };
+    };
+    const instant = getClassicFlowExitCompletion(intake(usdc.address));
+    const queued = getClassicFlowExitCompletion(intake());
+
+    expect(instant).toMatchObject({
+      approximate: true,
+      batched: false,
+      token: { symbol: usdc.symbol },
+    });
+    expect(instant.amount.toFixed()).toBe("2.5");
+    expect(queued).toMatchObject({
+      approximate: false,
+      batched: true,
+      token: { symbol: confidentialFixture.cShare.symbol },
+    });
+    expect(queued.amount.toFixed()).toBe("2");
   });
+
+  it("lists a private exit's operator grants before its redeem, and an instant exit's unwrap", () => {
+    expect(
+      getClassicFlowPreparedTransactionTypes(exitStart().intake, {
+        missingOperatorGrants: 2,
+      })
+    ).toEqual(["SET_OPERATOR", "SET_OPERATOR", "REDEEM"]);
+    expect(
+      getClassicFlowPreparedTransactionTypes(exitStart().intake, {
+        missingOperatorGrants: 0,
+      })
+    ).toEqual(["REDEEM"]);
+    expect(
+      getClassicFlowPreparedTransactionTypes(exitStart(usdc.address).intake, {
+        missingOperatorGrants: 0,
+      })
+    ).toEqual(["UNWRAP", "DECRYPT", "WITHDRAW", "REDEEM"]);
+  });
+
+  it.effect(
+    "finalizes an instant exit's unwrap in its own workflow, and leaves a private exit to its batch",
+    () =>
+      Effect.gen(function* () {
+        const finalizeOf = (start: NavigatingClassicTransactionFlowStart) =>
+          Effect.gen(function* () {
+            const flow = yield* openConfidentialFlow({ start });
+            const handoff = yield* flow.confirm;
+            const input = getClassicFlowWorkflowInput({
+              session: makeClassicFlowSession(start, walletScope),
+              source: handoff.source,
+            });
+            return input._tag === "Confidential" ? input.finalizeUnwrap : null;
+          });
+
+        expect(yield* finalizeOf(exitStart(usdc.address))).toEqual({
+          chainId: 11155111,
+        });
+        expect(yield* finalizeOf(exitStart())).toBeNull();
+      })
+  );
+
+  it.effect(
+    "plans a private exit's missing operator grants when the user confirms, so Steps lists them at once",
+    () =>
+      Effect.gen(function* () {
+        const checked: Array<unknown> = [];
+        const flow = yield* openConfidentialFlow({
+          start: exitStart(),
+          zama: {
+            countMissingOperatorGrants: (input) =>
+              Effect.sync(() => checked.push(input)).pipe(Effect.as(2)),
+          },
+        });
+
+        const handoff = yield* flow.confirm;
+
+        expect(checked).toEqual([
+          {
+            chainId: 11155111,
+            operator: confidentialFixture.router,
+            owner: address,
+            tokens: [confidentialFixture.cShare.address],
+          },
+        ]);
+        expect(
+          handoff.source._tag === "Prepare" &&
+            handoff.source.preparedTransactionTypes
+        ).toEqual(["SET_OPERATOR", "SET_OPERATOR", "REDEEM"]);
+      })
+  );
 
   it.effect(
     "hands Steps a cUSDC deposit's encryption, checked against its hidden balance",
@@ -383,7 +493,7 @@ describe("confidential vault Classic Transaction Flow", () => {
       expect(preparationOf(handoff)).toMatchObject({
         _tag: "Decrypt",
         chainId: 11155111,
-        handle: "0xrequest",
+        handle: `0x${"ab".repeat(32)}`,
         command: { action: "WITHDRAW", passthrough: "unwrap" },
       });
     })
@@ -423,7 +533,7 @@ describe("confidential vault execution", () => {
         expect(events).toEqual(["plan", "confirmed"]);
         expect(
           getClassicTransactionStepsView(preparing, {
-            preparedTransactionType: "DEPOSIT",
+            preparedTransactionTypes: ["DEPOSIT"],
             yieldId: confidentialYieldFixture().id,
           }).txStates.map(({ type }) => type)
         ).toEqual(["ENCRYPT", "RESET_APPROVAL", "APPROVAL", "WRAP", "DEPOSIT"]);

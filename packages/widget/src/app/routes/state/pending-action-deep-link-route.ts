@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+import { getCancelReturn } from "../../../domain/earn/confidential";
 import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/index";
@@ -40,12 +41,18 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
         };
       }
 
+      const cancelReturn = getCancelReturn(
+        pendingActionValue.pendingAction.integrationData,
+        pendingActionValue.pendingAction.command.action,
+        pendingActionValue.balance
+      );
       return {
         _tag: "StartClassicFlow",
         input: {
           intake: {
             _tag: "Manage",
             balanceType: pendingActionValue.balance.type,
+            ...(cancelReturn ? { cancelReturn } : {}),
             request: pendingActionValue.pendingAction.command,
             gasFeeToken: pendingActionValue.pendingAction.gasFeeToken,
             integration: pendingActionValue.pendingAction.integrationData,

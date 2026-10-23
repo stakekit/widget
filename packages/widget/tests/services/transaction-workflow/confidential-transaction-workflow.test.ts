@@ -3,6 +3,7 @@ import {
   Deferred,
   Effect,
   Exit,
+  Fiber,
   Layer,
   Option,
   Ref,
@@ -10,11 +11,17 @@ import {
   Scope,
   Stream,
 } from "effect";
+import { TestClock } from "effect/testing";
 import {
   type DirectTransaction,
   makeErc20Approval,
 } from "../../../src/domain/action/direct-transaction";
 import type { ActionTransaction } from "../../../src/domain/action/models";
+import {
+  ConfidentialHandle,
+  zeroEncryptedBalance,
+} from "../../../src/domain/earn/confidential";
+import { EarnPosition } from "../../../src/domain/earn/models";
 import {
   WalletAddress,
   YieldId,
@@ -44,6 +51,7 @@ import {
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldBalanceFixture,
 } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
 import {
@@ -72,7 +80,7 @@ const preparation: ConfidentialPreparation = {
   _tag: "Decrypt",
   chainId: 11155111,
   command,
-  handle: "0xhandle",
+  handle: Schema.decodeSync(ConfidentialHandle)(`0x${"ab".repeat(32)}`),
 };
 
 const deposit = (overrides: Partial<ActionTransaction> = {}) =>
@@ -928,4 +936,208 @@ describe("confidential transaction workflow", () => {
         expect(reads).toBe(2);
       }).pipe(Effect.scoped)
   );
+
+  describe("instant exit", () => {
+    const requestId = Schema.decodeSync(ConfidentialHandle)(
+      `0x${"ab".repeat(32)}`
+    );
+    const exitCommand = { address, arguments: {}, yieldId } as const;
+    const instantInput = new ConfidentialTransactionWorkflowInput({
+      conversion: [],
+      finalizeUnwrap: { chainId: 11155111 },
+      inputToken: undefined,
+      ledger: makeDirectTransactionLedger(),
+      preparation: {
+        _tag: "Encrypt",
+        amount: 7n,
+        assetAddress: null,
+        balance: null,
+        command: exitCommand,
+        conversion: null,
+        instant: true,
+        intent: "exit",
+        requiresPermitSigner: false,
+        yieldDto: {} as never,
+      },
+      providersDetails: [],
+      walletScope,
+      yieldId,
+    });
+    const step = (id: string, type: ActionTransaction["type"], index: number) =>
+      yieldApiTransactionFixture({
+        id,
+        network: "ethereum",
+        status: "CREATED",
+        stepIndex: index,
+        type,
+        unsignedTransaction: "unsigned-payload",
+      });
+    const withdrawable = (shareAmountRaw: string) =>
+      Schema.decodeSync(EarnPosition)({
+        balances: [
+          yieldBalanceFixture({
+            amount: "",
+            amountRaw: "",
+            isEncrypted: true,
+            pendingActions: [
+              {
+                intent: "manage",
+                passthrough: `withdraw-${shareAmountRaw}`,
+                type: "WITHDRAW",
+              },
+            ],
+            shareAmountRaw,
+            type: "withdrawable",
+          }),
+        ].map(zeroEncryptedBalance),
+        yieldId,
+      });
+
+    it.effect(
+      "finalizes the unwrap it requested in the same workflow: decrypts it, then withdraws and redeems",
+      () =>
+        Effect.gen(function* () {
+          const previews: Array<ActionPreviewRequest> = [];
+          const decrypted: Array<ConfidentialPreparation> = [];
+          const read: Array<unknown> = [];
+          const workflow = yield* startWorkflow(
+            capabilities({
+              yieldOperations: {
+                getYieldBalances: () =>
+                  Effect.succeed(withdrawable(`0x${"cd".repeat(32)}`)).pipe(
+                    Effect.map((older) => ({
+                      ...older,
+                      balances: [
+                        ...older.balances,
+                        ...withdrawable(requestId).balances,
+                      ],
+                    }))
+                  ),
+                previewAction: (request) =>
+                  Effect.sync(() => previews.push(request)).pipe(
+                    Effect.as(
+                      request.intent === "exit"
+                        ? preparedAction([step("unwrap", "UNWRAP", 0)])
+                        : preparedAction([
+                            step("withdraw", "WITHDRAW", 0),
+                            step("redeem", "REDEEM", 1),
+                          ])
+                    )
+                  ),
+                submitSignedTransaction: ({ transactionId }) =>
+                  Effect.succeed({
+                    explorerUrl: null,
+                    hash: `0x${transactionId}`,
+                    status: "BROADCASTED",
+                  } as never),
+              },
+              zama: {
+                decryptCommand: (preparation) =>
+                  Effect.sync(() => decrypted.push(preparation)).pipe(
+                    Effect.as(preparation.command)
+                  ),
+                encryptCommand: ({ command }) => Effect.succeed(command),
+                readUnwrapRequest: (input) =>
+                  Effect.sync(() => read.push(input)).pipe(
+                    Effect.as(requestId)
+                  ),
+              },
+            }),
+            instantInput
+          );
+
+          const completed = yield* awaitState(
+            workflow,
+            (state) => state._tag === "Completed"
+          );
+
+          expect(read).toEqual([
+            { chainId: 11155111, hash: "0xunwrap", owner: address },
+          ]);
+          expect(decrypted).toEqual([
+            {
+              _tag: "Decrypt",
+              chainId: 11155111,
+              command: {
+                action: "WITHDRAW",
+                address,
+                arguments: {},
+                passthrough: `withdraw-${requestId}`,
+                yieldId,
+              },
+              handle: requestId,
+            },
+          ]);
+          expect(previews.map(({ intent }) => intent)).toEqual([
+            "exit",
+            "manage",
+          ]);
+          expect(
+            completed.context.batches.flatMap((batch) =>
+              batch.transactions.map(({ meta, source }) => [
+                source.transaction.id,
+                meta.done,
+              ])
+            )
+          ).toEqual([
+            ["unwrap", true],
+            ["withdraw", true],
+            ["redeem", true],
+          ]);
+          expect(completed.context.finalize).toEqual({
+            done: true,
+            position: 1,
+          });
+        }).pipe(Effect.scoped)
+    );
+
+    it.effect(
+      "waits until the API lists the unwrap it requested before finalizing it",
+      () =>
+        Effect.gen(function* () {
+          let reads = 0;
+          const workflow = yield* startWorkflow(
+            capabilities({
+              yieldOperations: {
+                getYieldBalances: () =>
+                  Effect.sync(() => ++reads).pipe(
+                    Effect.map((count) =>
+                      count < 3
+                        ? withdrawable(`0x${"cd".repeat(32)}`)
+                        : withdrawable(requestId)
+                    )
+                  ),
+                previewAction: (request) =>
+                  Effect.succeed(
+                    request.intent === "exit"
+                      ? preparedAction([step("unwrap", "UNWRAP", 0)])
+                      : preparedAction([step("withdraw", "WITHDRAW", 0)])
+                  ),
+                submitSignedTransaction: ({ transactionId }) =>
+                  Effect.succeed({
+                    explorerUrl: null,
+                    hash: `0x${transactionId}`,
+                    status: "BROADCASTED",
+                  } as never),
+              },
+              zama: {
+                decryptCommand: ({ command }) => Effect.succeed(command),
+                encryptCommand: ({ command }) => Effect.succeed(command),
+                readUnwrapRequest: () => Effect.succeed(requestId),
+              },
+            }),
+            instantInput
+          );
+
+          const completion = yield* awaitState(
+            workflow,
+            (state) => state._tag === "Completed"
+          ).pipe(Effect.forkScoped);
+          yield* TestClock.adjust("1 minute");
+          yield* Fiber.join(completion);
+
+          expect(reads).toBe(3);
+        }).pipe(Effect.scoped)
+    );
+  });
 });

@@ -1,6 +1,6 @@
-import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
+import { isCancellingBalance } from "../../../../domain/earn/confidential";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
 import {
@@ -17,9 +17,7 @@ import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
-import { getPendingBatchRows } from "../../model/pending-balance-batch";
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
-import { PendingBatchDetails } from "./components/pending-batch-details";
 import { PositionBalances } from "./components/position-balances";
 import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
@@ -44,6 +42,7 @@ const PositionDetails = () => {
     personalizedRewardRate,
     apyCompositionRewardRate,
     apyCompositionShowsUpToCampaign,
+    cancellingHandles,
     hasHiddenBalances,
     hasRevealedBalances,
     onHideBalances,
@@ -64,9 +63,11 @@ const PositionDetails = () => {
   }
 
   const balanceRows = positionBalancesByTypeValue
-    ? groupPositionBalanceRows([...positionBalancesByTypeValue.values()].flat())
+    ? groupPositionBalanceRows(
+        [...positionBalancesByTypeValue.values()].flat(),
+        (balance) => isCancellingBalance(balance, cancellingHandles)
+      )
     : [];
-  const batchRows = getPendingBatchRows(balanceRows);
 
   return (
     <AnimationPage>
@@ -197,15 +198,11 @@ const PositionDetails = () => {
 
             <Box py="3" gap="2" display="flex" flexDirection="column">
               {balanceRows.map((row, i) => (
-                <Fragment key={`${row.type}-${i}`}>
-                  <PositionBalances
-                    integrationData={integrationDataValue}
-                    yieldBalance={row}
-                  />
-                  {batchRows.includes(row) ? (
-                    <PendingBatchDetails balance={row} />
-                  ) : null}
-                </Fragment>
+                <PositionBalances
+                  key={`${row.type}-${i}`}
+                  integrationData={integrationDataValue}
+                  yieldBalance={row}
+                />
               ))}
               {hasHiddenBalances ? (
                 <Box display="flex" flexDirection="column" gap="1">

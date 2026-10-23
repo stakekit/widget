@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { ConfidentialHandle } from "../../../src/domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { TokenAddress } from "../../../src/domain/identity/identifiers";
@@ -10,6 +11,7 @@ import type { PositionBalancesByType } from "../../../src/domain/portfolio/posit
 
 import { getDashboardPositionDetailsModel } from "../../../src/features/position-details/model/dashboard-position-details";
 import {
+  confidentialFixture,
   confidentialYieldFixture,
   yieldApiProviderFixture,
   yieldApiYieldFixture,
@@ -49,7 +51,10 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.earn_details.vault": "Vault",
     "dashboard.position_details.action_available": "Action available",
     "dashboard.position_details.action_required": "Action required",
+    "dashboard.position_details.actions_available": `${options?.count ?? ""} actions available`,
     "dashboard.position_details.active": "Active",
+    "dashboard.position_details.instant_withdrawal_in_progress":
+      "Instant withdrawal in progress",
     "dashboard.position_details.balance": "Balance",
     "dashboard.position_details.rewards": "Rewards",
     "dashboard.position_details.rewards_total": "Total earned",
@@ -66,6 +71,7 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "position_details.duration.hours": `${options?.count ?? ""} hours`,
     "position_details.unstaking_duration": `${options?.duration ?? ""} remaining`,
     "position_details.next_batch_in": `Next batch in ${options?.duration ?? ""}`,
+    "position_details.cancelling": "Cancelling…",
     "position_details.balance_type.locked": "Locked",
     "position_details.pending_action.cancel_pending": "Cancel pending request",
     "position_details.pending_action.cancel_pending_deposit": "Cancel deposit",
@@ -386,17 +392,22 @@ describe("getDashboardPositionDetailsModel", () => {
     });
   });
 
-  it("shows no next batch for a balance whose batch is already dispatched", () => {
+  it("gives a confidential vault's undated pending balance no next-batch estimate", () => {
     const model = getDashboardPositionDetailsModel({
       canUnstake: false,
       locale: "en",
-      integrationData: makeYield({
+      integrationData: {
+        ...confidentialYieldFixture(),
         investmentSchedule: {
           redemption: { paths: [] },
           subscription: {
             paths: [
               {
                 cadence: "daily_cutoff",
+                currentWindow: {
+                  closesAt: "2026-10-19T15:00:00.000Z",
+                  opensAt: "2026-10-18T15:00:00.000Z",
+                },
                 cutoffTime: "15:00",
                 kind: "standard",
                 status: "open",
@@ -405,7 +416,8 @@ describe("getDashboardPositionDetailsModel", () => {
           },
           timezone: "UTC",
         },
-      }),
+        provider: yieldApiProviderFixture({ name: "Zama" }),
+      } as EarnYieldWithProvider,
       now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
       pendingActions: [],
       personalizedRewardRate: null,
@@ -414,17 +426,7 @@ describe("getDashboardPositionDetailsModel", () => {
           "entering",
           [
             {
-              ...makeBalance({
-                amount: "2",
-                amountUsd: "2",
-                batch: {
-                  address: "0x084f",
-                  explorerUrl: "https://etherscan.io/address/0x084f",
-                  id: "37",
-                  requests: [],
-                },
-                type: "entering",
-              }),
+              ...makeBalance({ amount: "2", amountUsd: "2", type: "entering" }),
               tokenPriceInUsd: new BigNumber(1),
             },
           ],
@@ -440,28 +442,59 @@ describe("getDashboardPositionDetailsModel", () => {
     ]);
   });
 
-  it("details each pending batch once, however many balances share it", () => {
-    const batch = {
-      address: "0x084f",
-      explorerUrl: "https://etherscan.io/address/0x084f",
-      id: "37",
-      requests: [],
-    };
-    const balance = (date: string) => ({
-      ...makeBalance({ amount: "1", batch, date, type: "entering" }),
+  it("shows a pending balance whose cancel is in flight as cancelling, hidden or revealed", () => {
+    const cancelling = Schema.decodeSync(ConfidentialHandle)(
+      `0x${"a".repeat(64)}`
+    );
+    const other = Schema.decodeSync(ConfidentialHandle)(`0x${"b".repeat(64)}`);
+    const balance = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
+      ...makeBalance({
+        amount: "0",
+        amountUsd: "0",
+        date: "2026-10-20T15:00:00.000Z",
+        ...overrides,
+      }),
       tokenPriceInUsd: new BigNumber(1),
     });
     const model = getDashboardPositionDetailsModel({
-      canUnstake: false,
+      cancellingHandles: new Set([cancelling]),
+      canUnstake: true,
       locale: "en",
-      integrationData: makeYield(),
-      now: null,
+      integrationData: {
+        ...confidentialYieldFixture(),
+        provider: yieldApiProviderFixture({ name: "Zama" }),
+      } as EarnYieldWithProvider,
+      now: DateTime.makeUnsafe("2026-10-19T15:00:00Z"),
       pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
           "entering",
-          [balance("2026-10-20T12:00:00Z"), balance("2026-10-21T12:00:00Z")],
+          [
+            balance({
+              isEncrypted: true,
+              shareAmountRaw: cancelling,
+              type: "entering",
+            }),
+          ],
+        ],
+        [
+          "exiting",
+          [
+            // A revealed balance keeps the handle it was decrypted from.
+            {
+              ...balance({ amount: "1", amountUsd: "1", type: "exiting" }),
+              revealedHandle: cancelling,
+            },
+            balance({
+              amount: "2",
+              amountUsd: "2",
+              date: "2026-10-21T15:00:00.000Z",
+              isEncrypted: true,
+              shareAmountRaw: other,
+              type: "exiting",
+            }),
+          ],
         ],
       ]),
       providersDetails: [],
@@ -469,8 +502,16 @@ describe("getDashboardPositionDetailsModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.breakdownRows).toHaveLength(2);
-    expect(model.pendingBatches.map((row) => row.batch?.id)).toEqual(["37"]);
+    expect(model.breakdownRows.map(({ subValue }) => subValue)).toEqual([
+      "Cancelling…",
+      "$1.00 · Cancelling…",
+      "$2.00 · 2 days remaining",
+    ]);
+    expect(model.statusSummary).toEqual({
+      label: "Status",
+      tone: "default",
+      value: "Cancelling…",
+    });
   });
 
   it("shows no static redemption or warmup for a confidential vault", () => {
@@ -496,6 +537,46 @@ describe("getDashboardPositionDetailsModel", () => {
     expect(
       model.metricCards.some((card) => card.id === "unstaking-period")
     ).toBe(false);
+  });
+
+  it("shows a confidential vault's pending withdrawal in the vault shares it redeems", () => {
+    const { cShare, usdc } = confidentialFixture;
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: {
+        ...confidentialYieldFixture(),
+        provider: yieldApiProviderFixture({ name: "Zama" }),
+      } as EarnYieldWithProvider,
+      now: null,
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "exiting",
+          [
+            {
+              ...makeBalance({
+                amount: "0.1",
+                amountUsd: "0.1",
+                shareAmount: "0.097168",
+                shareToken: cShare,
+                token: usdc,
+                type: "exiting",
+              }),
+              tokenPriceInUsd: new BigNumber(1),
+            },
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.breakdownRows.map(({ value }) => value)).toEqual([
+      `0.09716 ${cShare.symbol}`,
+    ]);
   });
 
   it("describes redemption and warmup of a batched vault by its batches", () => {
@@ -786,6 +867,124 @@ describe("getDashboardPositionDetailsModel", () => {
       tone: "action",
       value: "Withdraw",
     });
+  });
+
+  it("names a confidential vault's unfinished instant withdrawal as in progress, not as required", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: {
+        ...confidentialYieldFixture(),
+        provider: yieldApiProviderFixture({ name: "Zama" }),
+      } as EarnYieldWithProvider,
+      pendingActions: [
+        {
+          amount: null,
+          amountUsd: null,
+          pendingAction: {
+            intent: "manage",
+            passthrough: "unwrap",
+            type: "WITHDRAW",
+          },
+          yieldBalance: makeBalance({
+            isEncrypted: true,
+            type: "withdrawable",
+          }),
+        },
+      ],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map(),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.statusSummary).toEqual({
+      label: "Status",
+      tone: "default",
+      value: "Instant withdrawal in progress",
+    });
+  });
+
+  it("summarises several optional actions by their count rather than picking one", () => {
+    const cancel = (type: "entering" | "exiting") => ({
+      amount: null,
+      amountUsd: null,
+      pendingAction: {
+        intent: "manage" as const,
+        passthrough: `cancel-${type}`,
+        type: "CANCEL_PENDING" as const,
+      },
+      yieldBalance: makeBalance({ type }),
+    });
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: makeYield(),
+      pendingActions: [cancel("entering"), cancel("exiting")],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map(),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.statusSummary).toEqual({
+      label: "Status",
+      tone: "default",
+      value: "2 actions available",
+    });
+  });
+
+  it("times redemption by the user's own pending withdrawal, not the vault's next batch", () => {
+    const token = yieldApiYieldFixture().token;
+    const balance = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
+      ...makeBalance({ amountUsd: "1", token, ...overrides }),
+      tokenPriceInUsd: new BigNumber(1),
+    });
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      locale: "en",
+      integrationData: makeYield({
+        investmentSchedule: {
+          redemption: {
+            paths: [
+              {
+                cadence: "daily_cutoff",
+                cutoffTime: "11:00",
+                kind: "standard",
+                status: "open",
+              },
+            ],
+          },
+          subscription: { paths: [] },
+          timezone: "UTC",
+        },
+      }),
+      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        ["active", [balance({ amount: "1" })]],
+        [
+          "exiting",
+          [
+            balance({
+              amount: "1",
+              date: "2026-10-19T15:00:00.000Z",
+              type: "exiting",
+            }),
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      model.metricCards.find((card) => card.id === "unstaking-period")
+    ).toMatchObject({ label: "Redemption time", value: "3 hours remaining" });
   });
 
   it("keeps a stake account merge optional in the status summary", () => {

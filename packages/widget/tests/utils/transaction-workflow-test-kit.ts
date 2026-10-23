@@ -127,6 +127,8 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
       YieldOperations.of({
         getTransactionStatus: () =>
           unexpectedWorkflowCall("YieldOperations.getTransactionStatus"),
+        getYieldBalances: () =>
+          unexpectedWorkflowCall("YieldOperations.getYieldBalances"),
         previewAction: () =>
           unexpectedWorkflowCall("YieldOperations.previewAction"),
         submitSignedTransaction: () =>

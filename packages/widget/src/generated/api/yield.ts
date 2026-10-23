@@ -309,11 +309,6 @@ export type ValidatorSubnetDto = {
   readonly tvl?: string;
   readonly pricePerShare?: string;
 };
-export type BalanceBatchRequestDto = {
-  readonly transactionHash: string;
-  readonly submittedAt: string;
-  readonly explorerUrl: string;
-};
 export type YieldErrorDto = {
   readonly yieldId: string;
   readonly error: string;
@@ -1255,12 +1250,6 @@ export type RevShareTiersDto = {
   readonly standard?: RevShareDetailsDto;
   readonly pro?: RevShareDetailsDto;
 };
-export type BalanceBatchDto = {
-  readonly id: string;
-  readonly address: string;
-  readonly explorerUrl: string;
-  readonly requests: ReadonlyArray<BalanceBatchRequestDto>;
-};
 export type YieldFeeConfigurationDto = {
   readonly id: string;
   readonly default: boolean;
@@ -1813,7 +1802,6 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
-  readonly batch?: BalanceBatchDto;
 };
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -1882,7 +1870,6 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
-    readonly batch?: BalanceBatchDto;
   };
   readonly rewardRate?: {
     readonly total: number;

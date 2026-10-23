@@ -57,6 +57,9 @@ export type ClassicStepRow = Readonly<{
   readonly type: TransactionType | "DECRYPT" | "ENCRYPT" | "RESET_APPROVAL";
 }>;
 
+/** A step Steps lists before the API returns it: an API leg or a finalize. */
+export type PlannedStepType = TransactionType | "DECRYPT";
+
 const idle = { broadcast: "idle", confirm: "idle", sign: "idle" } as const;
 
 // A preparation runs in the browser: its one phase is shown as signing.
@@ -70,46 +73,68 @@ const getPreparationPhases = (
   return idle;
 };
 
+const toPreparationRow = (
+  state: TransactionWorkflowState,
+  { done, id, type }: Pick<ClassicStepRow, "done" | "id" | "type">
+): ClassicStepRow => ({
+  done,
+  id,
+  phases: getPreparationPhases(state, done),
+  rejected: !done && state._tag === "PrepareFailed" && !state.error.retryable,
+  type,
+});
+
+/**
+ * The planned steps still to come: all until the action is prepared, then an
+ * instant exit's finalize and what follows it until that is prepared too.
+ */
+const getPendingPlannedSteps = (
+  context: TransactionWorkflowContext,
+  planned: ReadonlyArray<PlannedStepType>
+) => {
+  const { finalize, preparation } = context;
+  if (preparation && !preparation.done) return planned;
+  const finalizeIndex = planned.indexOf("DECRYPT");
+  if (finalizeIndex === -1 || finalize?.done) return [];
+  return planned.slice(finalize ? finalizeIndex + 1 : finalizeIndex);
+};
+
 export const getClassicTransactionStepsView = (
   machineState: TransactionWorkflowState,
   {
-    preparedTransactionType,
+    preparedTransactionTypes,
     yieldId,
   }: Pick<ClassicTransactionWorkflowInput, "yieldId"> & {
-    /** Labels the API action leg a confidential flow prepares, until it does. */
-    readonly preparedTransactionType: TransactionType | null;
+    /** Labels the steps a confidential flow prepares, until it does. */
+    readonly preparedTransactionTypes: ReadonlyArray<PlannedStepType>;
   }
 ) => {
-  const { preparation } = machineState.context;
+  const { finalize, preparation } = machineState.context;
   const currentTransaction = getCurrentTransactionWorkflowTransaction(
     machineState.context
   );
   const preparationRows: ReadonlyArray<ClassicStepRow> = preparation
     ? [
-        {
+        toPreparationRow(machineState, {
           done: preparation.done,
           id: `prepare-${preparation.step}`,
-          phases: getPreparationPhases(machineState, preparation.done),
-          rejected:
-            machineState._tag === "PrepareFailed" &&
-            !machineState.error.retryable,
           type: preparation.step === "encrypt" ? "ENCRYPT" : "DECRYPT",
-        },
+        }),
       ]
     : [];
   // Presentation only, never signed: the API returns its transactions later.
-  const preparedRows: ReadonlyArray<ClassicStepRow> =
-    preparation && !preparation.done && preparedTransactionType
-      ? [
-          {
-            done: false,
-            id: `prepared-${preparedTransactionType}`,
-            phases: idle,
-            rejected: false,
-            type: preparedTransactionType,
-          },
-        ]
-      : [];
+  const plannedRows = getPendingPlannedSteps(
+    machineState.context,
+    preparedTransactionTypes
+  ).map(
+    (type, index): ClassicStepRow => ({
+      done: false,
+      id: `prepared-${index}-${type}`,
+      phases: idle,
+      rejected: false,
+      type,
+    })
+  );
   const transactionRows = flattenTransactionWorkflowTransactions(
     machineState.context
   ).flatMap(
@@ -127,6 +152,18 @@ export const getClassicTransactionStepsView = (
             },
           ]
   );
+  // A finalize sits after the unwrap it decrypts, before what it prepared.
+  const actionRows = finalize
+    ? [
+        ...transactionRows.slice(0, finalize.position),
+        toPreparationRow(machineState, {
+          done: finalize.done,
+          id: "finalize-decrypt",
+          type: "DECRYPT",
+        }),
+        ...transactionRows.slice(finalize.position),
+      ]
+    : transactionRows;
   const signError = currentTransaction?.meta.signError ?? null;
   const customSignErrorMessage = signError
     ? getTransactionSignCustomMessage(signError)
@@ -144,7 +181,7 @@ export const getClassicTransactionStepsView = (
       machineState._tag === "SubmissionFailed" ||
       machineState._tag === "ConfirmationFailed" ||
       machineState._tag === "AdvanceFailed",
-    txStates: [...preparationRows, ...transactionRows, ...preparedRows],
+    txStates: [...preparationRows, ...actionRows, ...plannedRows],
     yieldId,
   } as const;
 };
