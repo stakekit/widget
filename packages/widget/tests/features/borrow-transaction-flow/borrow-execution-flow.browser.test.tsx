@@ -4,9 +4,11 @@ import { Deferred, Effect, Layer, Schema } from "effect";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import {
-  MemoryRouter,
+  createMemoryRouter,
+  createRoutesFromElements,
+  Outlet,
   Route,
-  Routes,
+  RouterProvider,
   useLocation,
   useNavigate,
 } from "react-router";
@@ -40,13 +42,17 @@ import { BorrowReviewPage } from "../../../src/features/borrow-transaction-flow/
 import { BorrowStepsPage } from "../../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../../src/features/wallet/react/wallet-scope-route";
+import { AccountModal } from "../../../src/features/wallet/views";
 import { withResponseDecodeError } from "../../../src/services/api/api-operation";
 import { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
-import { WalletOwnerMismatchError } from "../../../src/services/wallet/wallet-errors";
+import {
+  WalletOwnerMismatchError,
+  WalletRequestCancelledError,
+} from "../../../src/services/wallet/wallet-errors";
 import type { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedNormalizedWalletState,
@@ -447,6 +453,61 @@ const renderExecution = (
         : withUnserializedState({ pathname }, flowState)
     );
 
+    // Steps guards leaving through a blocker, which needs a data router.
+    const router = createMemoryRouter(
+      createRoutesFromElements(
+        <Route
+          element={
+            <>
+              <NavigationCapture
+                capture={(navigate) => (navigation.current = navigate)}
+              />
+              {options.historyControls ? <HistoryControls /> : null}
+              <Outlet />
+            </>
+          }
+        >
+          <Route
+            element={
+              <WalletScopeRoute
+                fallbackPath="/borrow"
+                walletState={connectedWalletState}
+              />
+            }
+          >
+            <Route path="/borrow" element={<div>Borrow home</div>} />
+            <Route
+              element={<BorrowTransactionFlowRoute expected="BorrowEntry" />}
+            >
+              <Route
+                path="/borrow/review"
+                element={options.reviewElement ?? <StartExecutionProbe />}
+              />
+              <Route element={<BorrowTransactionFlowExecutionRoute />}>
+                <Route
+                  path="/borrow/steps"
+                  element={
+                    <BorrowTransactionFlowExecutionPage page="Steps">
+                      {options.stepsElement ?? <ExecutionProbe />}
+                    </BorrowTransactionFlowExecutionPage>
+                  }
+                />
+                <Route
+                  path="/borrow/complete"
+                  element={
+                    <BorrowTransactionFlowExecutionPage page="Complete">
+                      {options.completeElement ?? <CompleteProbe />}
+                    </BorrowTransactionFlowExecutionPage>
+                  }
+                />
+              </Route>
+            </Route>
+          </Route>
+        </Route>
+      ),
+      { initialEntries, initialIndex: options.initialIndex }
+    );
+
     const app = yield* Effect.acquireRelease(
       Effect.promise(() =>
         render(
@@ -476,57 +537,7 @@ const renderExecution = (
                 [walletRuntime.layer, flowDependencies.pipe(Layer.fresh)],
               ]}
             >
-              <MemoryRouter
-                initialEntries={initialEntries}
-                initialIndex={options.initialIndex}
-              >
-                <NavigationCapture
-                  capture={(navigate) => (navigation.current = navigate)}
-                />
-                {options.historyControls ? <HistoryControls /> : null}
-                <Routes>
-                  <Route
-                    element={
-                      <WalletScopeRoute
-                        fallbackPath="/borrow"
-                        walletState={connectedWalletState}
-                      />
-                    }
-                  >
-                    <Route path="/borrow" element={<div>Borrow home</div>} />
-                    <Route
-                      element={
-                        <BorrowTransactionFlowRoute expected="BorrowEntry" />
-                      }
-                    >
-                      <Route
-                        path="/borrow/review"
-                        element={
-                          options.reviewElement ?? <StartExecutionProbe />
-                        }
-                      />
-                      <Route element={<BorrowTransactionFlowExecutionRoute />}>
-                        <Route
-                          path="/borrow/steps"
-                          element={
-                            <BorrowTransactionFlowExecutionPage page="Steps">
-                              {options.stepsElement ?? <ExecutionProbe />}
-                            </BorrowTransactionFlowExecutionPage>
-                          }
-                        />
-                        <Route
-                          path="/borrow/complete"
-                          element={
-                            <BorrowTransactionFlowExecutionPage page="Complete">
-                              {options.completeElement ?? <CompleteProbe />}
-                            </BorrowTransactionFlowExecutionPage>
-                          }
-                        />
-                      </Route>
-                    </Route>
-                  </Route>
-                </Routes>
-              </MemoryRouter>
+              <RouterProvider router={router} />
             </RegistryProvider>
           </I18nextProvider>
         )
@@ -967,7 +978,169 @@ describe("borrow execution flow component", () => {
       })
   );
 
-  it.live("leaves Steps while the wallet holds the transaction", () =>
+  it.live(
+    "asks before Cancel leaves Steps while the wallet holds the transaction",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          stepsElement: <BorrowStepsPage />,
+          wallet: {
+            ...wallet,
+            signTransaction: () => Effect.never,
+          },
+        });
+        const cancel = () =>
+          Effect.promise(() =>
+            userEvent.click(app.getByRole("button", { name: "Cancel" }))
+          );
+
+        yield* cancel();
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Stay" }))
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByText("Leave this transaction?"))
+            .not.toBeInTheDocument()
+        );
+        expect(app.getByText("Borrow home").query()).toBeNull();
+
+        yield* cancel();
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Leave" }))
+        );
+        yield* Effect.promise(() =>
+          expect.element(app.getByText("Borrow home")).toBeInTheDocument()
+        );
+      })
+  );
+
+  it.live("asks before history navigation leaves a signing Steps", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        historyControls: true,
+        stepsElement: <BorrowStepsPage />,
+        wallet: {
+          ...wallet,
+          signTransaction: () => Effect.never,
+        },
+      });
+      const back = () =>
+        Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Back" }))
+        );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByTestId("history-path"))
+          .toHaveTextContent("/borrow/steps")
+      );
+
+      yield* back();
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Stay" }))
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("Leave this transaction?"))
+          .not.toBeInTheDocument()
+      );
+      expect(app.getByTestId("history-path").element()).toHaveTextContent(
+        "/borrow/steps"
+      );
+
+      yield* back();
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Leave" }))
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByTestId("history-path"))
+          .toHaveTextContent("/borrow/review")
+      );
+    })
+  );
+
+  it.live(
+    "drops a held question once the wallet declines, and never asks it again on retry",
+    () =>
+      Effect.gen(function* () {
+        const declined = yield* Deferred.make<void>();
+        let signAttempts = 0;
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          historyControls: true,
+          stepsElement: <BorrowStepsPage />,
+          wallet: {
+            ...wallet,
+            signTransaction: () =>
+              Effect.suspend(() => {
+                signAttempts += 1;
+                return signAttempts === 1
+                  ? Deferred.await(declined).pipe(
+                      Effect.andThen(
+                        Effect.fail(
+                          new WalletRequestCancelledError({
+                            operation: "transaction",
+                          })
+                        )
+                      )
+                    )
+                  : Effect.never;
+              }),
+          },
+        });
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("history-path"))
+            .toHaveTextContent("/borrow/steps")
+        );
+
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Back" }))
+        );
+        yield* Effect.promise(() =>
+          expect.element(app.getByTestId("leave-confirmation")).toBeVisible()
+        );
+
+        // Nothing was signed, so the question no longer applies.
+        yield* Deferred.succeed(declined, undefined);
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("leave-confirmation"))
+            .not.toBeInTheDocument()
+        );
+
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Try Again" }))
+        );
+        yield* Effect.promise(() => expect.poll(() => signAttempts).toBe(2));
+        // Wait until Steps is guarded again before checking nothing reopened.
+        yield* Effect.promise(() =>
+          expect
+            .poll(() => {
+              const event = new Event("beforeunload", { cancelable: true });
+              window.dispatchEvent(event);
+              return event.defaultPrevented;
+            })
+            .toBe(true)
+        );
+        expect(app.getByTestId("leave-confirmation").query()).toBeNull();
+
+        // A new navigation asks again, and Leave carries that one out.
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Back" }))
+        );
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Leave" }))
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("history-path"))
+            .toHaveTextContent("/borrow/review")
+        );
+      })
+  );
+
+  it.live("asks the browser before unloading only while signing", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(makeBorrowApi({}), {
         stepsElement: <BorrowStepsPage />,
@@ -976,13 +1149,99 @@ describe("borrow execution flow component", () => {
           signTransaction: () => Effect.never,
         },
       });
+      const unload = () => {
+        const event = new Event("beforeunload", { cancelable: true });
+        window.dispatchEvent(event);
+        return event.defaultPrevented;
+      };
 
+      yield* Effect.promise(() => expect.poll(unload).toBe(true));
+
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Cancel" }))
+      );
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Leave" }))
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Borrow home")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() => expect.poll(unload).toBe(false));
+    })
+  );
+
+  it.live("leaves at once when the user declined before signing anything", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        stepsElement: <BorrowStepsPage />,
+        wallet: {
+          ...wallet,
+          signTransaction: () =>
+            Effect.fail(
+              new WalletRequestCancelledError({ operation: "transaction" })
+            ),
+        },
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("button", { name: "Try Again" }))
+          .toBeInTheDocument()
+      );
       yield* Effect.promise(() =>
         userEvent.click(app.getByRole("button", { name: "Cancel" }))
       );
       yield* Effect.promise(() =>
         expect.element(app.getByText("Borrow home")).toBeInTheDocument()
       );
+      expect(app.getByText("Leave this transaction?").query()).toBeNull();
+    })
+  );
+
+  it.live("asks before a wallet disconnect ends a signing Steps", () =>
+    Effect.gen(function* () {
+      let logouts = 0;
+      const logout = Effect.sync(() => {
+        logouts += 1;
+      });
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        stepsElement: (
+          <>
+            <AccountModal />
+            <BorrowStepsPage />
+          </>
+        ),
+        wallet: {
+          ...wallet,
+          logout,
+          signTransaction: () => Effect.never,
+        },
+      });
+      const disconnect = () =>
+        Effect.promise(() =>
+          userEvent.click(app.getByTestId("wallet-account-disconnect"))
+        );
+
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: /0001$/ }))
+      );
+      yield* disconnect();
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Stay" }))
+      );
+      // Staying returns to the account dialog without disconnecting.
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByTestId("wallet-account-dialog"))
+          .toBeInTheDocument()
+      );
+      expect(logouts).toBe(0);
+
+      yield* disconnect();
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByRole("button", { name: "Leave" }))
+      );
+      yield* Effect.promise(() => expect.poll(() => logouts).toBe(1));
     })
   );
 
@@ -1004,6 +1263,10 @@ describe("borrow execution flow component", () => {
         );
         yield* Effect.promise(() =>
           userEvent.click(app.getByRole("button", { name: "Cancel" }))
+        );
+        // A sent transaction is guarded even after its submission failed.
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Leave" }))
         );
         yield* Effect.promise(() =>
           expect.element(app.getByText("Borrow home")).toBeInTheDocument()
@@ -1134,6 +1397,32 @@ describe("borrow execution flow component", () => {
           .toHaveTextContent("/borrow/complete action-1")
       );
     })
+  );
+
+  it.live(
+    "moves on to Complete without asking once the workflow completes",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(
+          makeBorrowApi({
+            getActions: [
+              action({
+                status: "SUCCESS",
+                transactions: [transaction({ status: "CONFIRMED" })],
+              }),
+            ],
+          }),
+          // Steps is leave-guarded from signing through confirming.
+          { stepsElement: <BorrowStepsPage /> }
+        );
+
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("complete"))
+            .toHaveTextContent("/borrow/complete action-1")
+        );
+        expect(app.getByText("Leave this transaction?").query()).toBeNull();
+      })
   );
 
   it.live("labels every completed transaction with its type", () =>
@@ -1453,6 +1742,10 @@ describe("borrow execution flow component", () => {
 
         yield* Effect.promise(() =>
           userEvent.click(app.getByRole("button", { name: "Back" }))
+        );
+        // The broadcast transaction is confirming, so leaving asks first.
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Leave" }))
         );
         yield* Effect.promise(() =>
           expect

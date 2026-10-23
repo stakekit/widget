@@ -1,5 +1,6 @@
 import { Box } from "../../../../shared/ui/primitives/box";
 import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
+import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { AccountModal, ChainModal } from "../../../wallet/views";
 import { useHeader } from "../../header/use-header";
 import { disconnectButton, headerContainer, middleItem } from "./styles.css";
@@ -14,6 +15,7 @@ export const Header = () => {
     showDisconnect,
     headerRef,
     hideAccountAndChainSelector,
+    leaveConfirmationDialog,
   } = useHeader();
 
   if (
@@ -49,6 +51,7 @@ export const Header = () => {
           <XIcon hw={24} />
         </Box>
       )}
+      <LeaveConfirmationDialog {...leaveConfirmationDialog} />
     </Box>
   );
 };

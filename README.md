@@ -134,11 +134,18 @@ Implement `wallet` using your wallet SDK:
 | --- | --- |
 | `signMessage(message)` | Return the signature string, `{ type: "success", signature }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
 | `switchChain(chainId)` | Switch the host wallet and resolve when the switch completes. Publish the new `currentChain` through props. |
-| `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
+| `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, `{ type: "cancelled" }` when the user declines, `{ type: "error", error }`, or `{ type: "error", error, txHash }` when it was broadcast before failing. |
 
 `{ type: "cancelled" }` shows a cancellation notice with a retry instead of an
 error. `error` text, and the message of a rejected Promise, is shown to the
 user.
+
+Always return the hash once a transaction was broadcast, even if the user left
+the transaction steps meanwhile: while it stays mounted, the widget still
+registers that hash with the API. Include `txHash` with an `error` when the
+transaction was broadcast before the failure (for example a receipt timeout);
+without it, the widget treats the step as not broadcast and lets the user sign
+it again.
 
 Use `SKWallet` to type the adapter. Transaction inputs are the widget's `SKTx`
 and `SKTxMeta`, not a wallet SDK's transaction types. Narrow `tx.type` before

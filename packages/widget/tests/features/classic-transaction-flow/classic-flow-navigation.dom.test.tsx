@@ -123,6 +123,7 @@ const walletLayer = Layer.merge(
   Layer.succeed(
     TransactionWorkflowService,
     TransactionWorkflowService.of({
+      leaveGuarded: Stream.make(false),
       make: (input) =>
         SubscriptionRef.make(initializeTransactionWorkflow(input)).pipe(
           Effect.tap(() =>

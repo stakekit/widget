@@ -12,7 +12,10 @@ import { TransactionWorkflowService } from "../../src/services/transaction-workf
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
 import type { ZamaService } from "../../src/services/zama/zama-service";
-import { makeTestTracking } from "./services/tracking-service";
+import {
+  makeTestTracking,
+  type TestTrackingOptions,
+} from "./services/tracking-service";
 import {
   makeTestWallet,
   type TestWalletBehaviorOptions,
@@ -22,6 +25,7 @@ import { makeTestZamaLayer } from "./services/zama-service";
 type TransactionWorkflowTestKitBehavior = Readonly<{
   readonly borrow?: Partial<BorrowOperations["Service"]>;
   readonly evmRpc?: Partial<EvmRpc["Service"]>;
+  readonly tracking?: TestTrackingOptions;
   readonly yieldOperations?: Partial<YieldOperations["Service"]>;
   readonly zama?: Partial<ZamaService["Service"]>;
 }>;
@@ -72,7 +76,7 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
   "makeTransactionWorkflowTestKit"
 )(function* (options: TransactionWorkflowTestKitOptions) {
   const events = yield* makeTestDomainEvents();
-  const tracking = yield* makeTestTracking();
+  const tracking = yield* makeTestTracking(options.tracking);
   const wallet = yield* Effect.gen(function* () {
     if (options.walletService) {
       return {

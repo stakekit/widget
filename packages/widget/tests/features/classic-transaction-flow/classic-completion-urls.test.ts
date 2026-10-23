@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Fiber, Option, Schema, Stream } from "effect";
+import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import type { TransactionType } from "../../../src/domain/action/rules";
 import {
   WalletAddress,
@@ -67,6 +67,9 @@ const runClassicToCompletion = (
           ...yieldOperations,
         },
       });
+      // The service outlives the workflow, as the Application Runtime
+      // Generation does.
+      const services = yield* Layer.build(kit.layer);
       const workflow = yield* TransactionWorkflowService.use(({ make }) =>
         make(
           new ClassicTransactionWorkflowInput({
@@ -84,7 +87,7 @@ const runClassicToCompletion = (
             yieldId,
           })
         )
-      ).pipe(Effect.provide(kit.layer));
+      ).pipe(Effect.provide(services));
       const completed = yield* workflow.states.pipe(
         Stream.filter((state) => state._tag === "Completed"),
         Stream.runHead,

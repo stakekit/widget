@@ -1,4 +1,4 @@
-import { Effect, Layer, type SubscriptionRef } from "effect";
+import { Effect, Layer, Stream, type SubscriptionRef } from "effect";
 import {
   BorrowOperations,
   YieldOperations,
@@ -118,6 +118,7 @@ export const makeClassicFlowTestKit = Effect.fn("makeClassicFlowTestKit")(
       : Layer.succeed(
           TransactionWorkflowService,
           TransactionWorkflowService.of({
+            leaveGuarded: Stream.make(false),
             make:
               options.makeWorkflow ??
               (() =>

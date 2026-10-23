@@ -54,7 +54,7 @@ export class ExternalProvider {
 
       return callHost(
         () => sendTransaction(tx, txMeta),
-        TransactionResult
+        LegacyTransactionOutcome
       ).pipe(
         // A bare string is the legacy success shape.
         Effect.map((result) =>
@@ -62,12 +62,7 @@ export class ExternalProvider {
             ? { type: "success" as const, txHash: result }
             : result
         ),
-        Effect.flatMap(
-          (result): HostOutcome =>
-            result.type === "success"
-              ? Effect.succeed(result.txHash)
-              : failHost(result)
-        )
+        Effect.flatMap(toTransactionHash("classic"))
       );
     });
   }
@@ -89,22 +84,8 @@ export class ExternalProvider {
 
       return callHost(
         () => config.provider.sendBorrowTransaction(tx, txMeta),
-        BorrowTransactionResult
-      ).pipe(
-        Effect.flatMap((result): HostOutcome => {
-          if (result.type === "success") return Effect.succeed(result.txHash);
-          // Broadcast before failing: track it rather than sign again.
-          if (result.type === "error" && result.txHash !== undefined) {
-            return Effect.logWarning(
-              "External provider failed after broadcasting a Borrow transaction"
-            ).pipe(
-              Effect.annotateLogs({ error: result.error }),
-              Effect.as(result.txHash)
-            );
-          }
-          return failHost(result);
-        })
-      );
+        TransactionOutcome
+      ).pipe(Effect.flatMap(toTransactionHash("borrow")));
     });
   }
 
@@ -124,7 +105,7 @@ export class ExternalProvider {
     return Effect.suspend(() =>
       callHost(
         () => this.variantProvider.current.provider.signMessage(messageHash),
-        SignMessageResult
+        LegacySignatureOutcome
       ).pipe(
         // A bare string is the legacy success shape.
         Effect.map((result) =>
@@ -132,12 +113,7 @@ export class ExternalProvider {
             ? { type: "success" as const, signature: result }
             : result
         ),
-        Effect.flatMap(
-          (result): HostOutcome =>
-            result.type === "success"
-              ? Effect.succeed(result.signature)
-              : failHost(result)
-        )
+        Effect.flatMap(toSignature)
       )
     );
   }
@@ -159,15 +135,8 @@ export class ExternalProvider {
 
       return callHost(
         () => config.provider.signTypedData(typedData, txMeta),
-        BorrowSignatureResult
-      ).pipe(
-        Effect.flatMap(
-          (result): HostOutcome =>
-            result.type === "success"
-              ? Effect.succeed(result.signature)
-              : failHost(result)
-        )
-      );
+        SignatureOutcome
+      ).pipe(Effect.flatMap(toSignature));
     });
   }
 
@@ -192,15 +161,8 @@ export class ExternalProvider {
 
       return callHost(
         () => provider.signZamaPermit(typedData, meta),
-        BorrowSignatureResult
-      ).pipe(
-        Effect.flatMap(
-          (result): HostOutcome =>
-            result.type === "success"
-              ? Effect.succeed(result.signature)
-              : failHost(result)
-        )
-      );
+        SignatureOutcome
+      ).pipe(Effect.flatMap(toSignature));
     });
   }
 }
@@ -213,52 +175,78 @@ const hasZamaPermitSigner = (
 
 const HostCancelled = Schema.Struct({ type: Schema.Literal("cancelled") });
 
-const HostError = Schema.Struct({
+/** A failed signature request: nothing was signed or broadcast. */
+const SignatureError = Schema.Struct({
   type: Schema.Literal("error"),
   error: Schema.String,
 });
 
-const TransactionResult = Schema.Union([
+/**
+ * A failed transaction request. `txHash` reports one broadcast before the
+ * failure; hosts may spell its absence as `undefined`.
+ */
+const TransactionError = Schema.Struct({
+  ...SignatureError.fields,
+  txHash: Schema.optional(Schema.NonEmptyString),
+});
+
+const TransactionSuccess = Schema.Struct({
+  type: Schema.Literal("success"),
+  txHash: Schema.NonEmptyString,
+});
+
+const SignatureSuccess = Schema.Struct({
+  type: Schema.Literal("success"),
+  signature: Schema.NonEmptyString,
+});
+
+const TransactionOutcome = Schema.Union([
+  TransactionSuccess,
+  HostCancelled,
+  TransactionError,
+]);
+
+const SignatureOutcome = Schema.Union([
+  SignatureSuccess,
+  HostCancelled,
+  SignatureError,
+]);
+
+/** Classic callbacks also accept the legacy bare string. */
+const LegacyTransactionOutcome = Schema.Union([
   Schema.NonEmptyString,
-  Schema.Struct({
-    type: Schema.Literal("success"),
-    txHash: Schema.NonEmptyString,
-  }),
-  HostCancelled,
-  HostError,
+  ...TransactionOutcome.members,
 ]);
 
-const SignMessageResult = Schema.Union([
+const LegacySignatureOutcome = Schema.Union([
   Schema.NonEmptyString,
-  Schema.Struct({
-    type: Schema.Literal("success"),
-    signature: Schema.NonEmptyString,
-  }),
-  HostCancelled,
-  HostError,
+  ...SignatureOutcome.members,
 ]);
 
-const BorrowTransactionResult = Schema.Union([
-  Schema.Struct({
-    type: Schema.Literal("success"),
-    txHash: Schema.NonEmptyString,
-  }),
-  HostCancelled,
-  Schema.Struct({
-    type: Schema.Literal("error"),
-    error: Schema.String,
-    txHash: Schema.optionalKey(Schema.NonEmptyString),
-  }),
-]);
+/**
+ * The hash of a transaction the host broadcast. A host that broadcast before
+ * failing reports the hash with its error, so the transaction is tracked
+ * rather than signed again.
+ */
+const toTransactionHash =
+  (family: "borrow" | "classic") =>
+  (result: typeof TransactionOutcome.Type): HostOutcome => {
+    if (result.type === "success") return Effect.succeed(result.txHash);
+    if (result.type === "error" && result.txHash !== undefined) {
+      return Effect.logWarning(
+        "External provider failed after broadcasting a transaction"
+      ).pipe(
+        Effect.annotateLogs({ error: result.error, family }),
+        Effect.as(result.txHash)
+      );
+    }
+    return failHost(result);
+  };
 
-const BorrowSignatureResult = Schema.Union([
-  Schema.Struct({
-    type: Schema.Literal("success"),
-    signature: Schema.NonEmptyString,
-  }),
-  HostCancelled,
-  HostError,
-]);
+const toSignature = (result: typeof SignatureOutcome.Type): HostOutcome =>
+  result.type === "success"
+    ? Effect.succeed(result.signature)
+    : failHost(result);
 
 /** Calls a host callback and decodes its result; rejections are errors. */
 const callHost = <S extends Schema.Top>(
@@ -281,7 +269,7 @@ const callHost = <S extends Schema.Top>(
   );
 
 const failHost = (
-  result: typeof HostCancelled.Type | typeof HostError.Type
+  result: typeof HostCancelled.Type | typeof SignatureError.Type
 ): HostOutcome =>
   result.type === "cancelled"
     ? Effect.fail(new ExternalProviderCancelled())

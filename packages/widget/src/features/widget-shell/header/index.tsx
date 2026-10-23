@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { XIcon } from "../../../shared/ui/primitives/icons/x-icon";
+import { LeaveConfirmationDialog } from "../../leave-confirmation/views";
 import { AccountModal, ChainModal } from "../../wallet/views";
 import { animationContainer } from "./styles.css";
 import { useHeader } from "./use-header";
@@ -18,6 +19,7 @@ export const Header = () => {
     showDisconnect,
     onXPress,
     isConnecting,
+    leaveConfirmationDialog,
   } = useHeader();
 
   return (
@@ -72,6 +74,7 @@ export const Header = () => {
           </motion.div>
         ) : null}
       </Box>
+      <LeaveConfirmationDialog {...leaveConfirmationDialog} />
     </Box>
   );
 };

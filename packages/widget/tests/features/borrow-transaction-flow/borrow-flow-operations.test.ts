@@ -190,6 +190,7 @@ const makeKit = Effect.fn("test.makeBorrowFlowKit")(function* (
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({
+        leaveGuarded: Stream.make(false),
         make:
           overrides.makeWorkflow ??
           ((input) => Effect.succeed(idleWorkflow(input))),

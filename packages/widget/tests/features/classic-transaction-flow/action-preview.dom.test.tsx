@@ -1,5 +1,5 @@
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
@@ -67,6 +67,7 @@ const classicDependencies = Layer.mergeAll(
   Layer.succeed(
     TransactionWorkflowService,
     TransactionWorkflowService.of({
+      leaveGuarded: Stream.make(false),
       make: () =>
         Effect.die(
           "action-preview test: unexpected TransactionWorkflowService.make"

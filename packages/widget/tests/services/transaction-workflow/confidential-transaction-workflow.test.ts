@@ -3,6 +3,7 @@ import {
   Deferred,
   Effect,
   Exit,
+  Layer,
   Option,
   Ref,
   Schema,
@@ -170,9 +171,12 @@ const startWorkflow = (
   input = makeInput()
 ) =>
   makeTransactionWorkflowTestKit(options).pipe(
-    Effect.flatMap((kit) =>
+    // Built in the caller's Scope: the service outlives the workflow, as the
+    // Application Runtime Generation does.
+    Effect.flatMap((kit) => Layer.build(kit.layer)),
+    Effect.flatMap((services) =>
       TransactionWorkflowService.use(({ make }) => make(input)).pipe(
-        Effect.provide(kit.layer)
+        Effect.provide(services)
       )
     )
   );
@@ -410,9 +414,10 @@ describe("confidential transaction workflow", () => {
           until: (workflow: TransactionWorkflowHandle) => Effect.Effect<A, E>
         ) {
           const scope = yield* Scope.make();
+          const services = yield* Layer.buildWithScope(kit.layer, scope);
           const workflow = yield* TransactionWorkflowService.use(({ make }) =>
             make(makeInput({ conversion: [wrap], ledger }))
-          ).pipe(Effect.provide(kit.layer), Scope.provide(scope));
+          ).pipe(Effect.provide(services), Scope.provide(scope));
           yield* until(workflow);
           yield* Scope.close(scope, Exit.void);
         });

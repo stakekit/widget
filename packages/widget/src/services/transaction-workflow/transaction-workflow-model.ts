@@ -480,6 +480,38 @@ export const flattenTransactionWorkflowTransactions = (
 ): ReadonlyArray<TransactionWorkflowTransaction> =>
   context.batches.flatMap((batch) => batch.transactions);
 
+/**
+ * Whether ending the workflow now abandons work already under way: a wallet
+ * request or broadcast in flight, or a transaction signed, sent, or done.
+ * Nothing is lost by leaving before the first signature.
+ */
+export const isTransactionWorkflowLeaveGuarded = (
+  state: TransactionWorkflowState
+): boolean => {
+  switch (state._tag) {
+    case "Disabled":
+    case "Completed":
+      return false;
+    case "Signing":
+    case "Submitting":
+    case "SubmissionFailed":
+    case "Confirming":
+    case "ConfirmationFailed":
+    case "Advancing":
+    case "AdvanceFailed":
+      return true;
+    case "Preparing":
+    case "PrepareFailed":
+    case "SignFailed":
+      return (
+        state.context.submissions.length > 0 ||
+        flattenTransactionWorkflowTransactions(state.context).some(
+          ({ meta }) => meta.done || meta.broadcasted === true
+        )
+      );
+  }
+};
+
 export type TransactionPhaseStatus = "idle" | "active" | "failed" | "done";
 
 /** One transaction's progress through its sign, broadcast and confirm phases. */

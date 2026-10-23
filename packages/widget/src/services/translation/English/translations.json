@@ -947,6 +947,12 @@
     "receive_token": "Receive token",
     "staking_fee": "Staking fee"
   },
+  "leave_confirmation": {
+    "title": "Leave this transaction?",
+    "description": "Your transaction is in progress. If you leave now, its remaining steps won't be completed and you'll need to start again.",
+    "stay": "Stay",
+    "leave": "Leave"
+  },
   "steps": {
     "title": "Follow Steps",
     "sign_transaction": "Sign transaction",

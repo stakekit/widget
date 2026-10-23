@@ -318,6 +318,11 @@ _Avoid_: confirmation, source
 Handoff.
 _Avoid_: Execution Attempt
 
+**Leave Confirmation**: The question asked before a user action in the Widget
+ends a leave-guarded Execution, one whose Transaction Workflow has work under
+way: a wallet request in flight, or a transaction signed, sent, or done.
+Leaving abandons its remaining transactions.
+
 **Transaction Workflow**: One execution of a transaction plan, including Action
 Preparation, signing, submission or broadcast, confirmation, advancement,
 retry, and completion.
@@ -331,9 +336,9 @@ _Avoid_: conversion step, widget transaction
 Transactions it sent and confirmed, so a later Execution resumes them instead
 of sending them again.
 
-**Held Hash**: A broadcast hash a wallet returned that the API had not yet
-acknowledged when its Transaction Workflow ended. The Widget still registers
-it.
+**Held Hash**: A broadcast hash the API had not yet acknowledged when its
+Transaction Workflow ended, including one a wallet returns only after the
+workflow ended. The Widget still registers it.
 
 **Post-Transaction Reconciliation**: A Wallet Scope Owner-bound refresh of
 authoritative balances and positions after a Transaction Workflow ends.

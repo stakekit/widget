@@ -23,6 +23,7 @@ import {
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
   getTransactionStepProgress,
+  isTransactionWorkflowLeaveGuarded,
   makeTransactionSignError,
   TransactionAdvanceError,
   TransactionConfirmationError,
@@ -533,6 +534,81 @@ describe("transaction workflow model", () => {
         disabled: true,
         phases: phases("done", "done", "done"),
       });
+    });
+  });
+
+  describe("leave guard", () => {
+    const context = initializeTransactionWorkflow(
+      new ClassicTransactionWorkflowInput({
+        actionMeta,
+        transactions: [
+          classicTransaction("classic-1", "CREATED", 0),
+          classicTransaction("classic-2", "CREATED", 1),
+        ],
+        walletScope: classicWalletScope,
+        yieldId,
+      })
+    ).context;
+    const firstDone = {
+      ...context,
+      batches: context.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction, index) =>
+          index === 0
+            ? { ...transaction, meta: { ...transaction.meta, done: true } }
+            : transaction
+        ),
+      })),
+    };
+    const signError = new TransactionSignError({
+      batchId: "classic",
+      message: "declined",
+      network: "ethereum",
+      reason: { _tag: "WalletRequestCancelled", operation: "transaction" },
+      transactionId: "classic-2",
+      workflowId: TransactionWorkflowId.make("action-1"),
+    });
+
+    it.each(["Signing", "Submitting", "Confirming", "Advancing"] as const)(
+      "asks before leaving while %s",
+      (_tag) => {
+        expect(isTransactionWorkflowLeaveGuarded({ _tag, context })).toBe(true);
+      }
+    );
+
+    it("lets the user leave before the wallet signed anything", () => {
+      expect(
+        isTransactionWorkflowLeaveGuarded({ _tag: "Preparing", context })
+      ).toBe(false);
+      expect(
+        isTransactionWorkflowLeaveGuarded({
+          _tag: "SignFailed",
+          context,
+          error: signError,
+        })
+      ).toBe(false);
+    });
+
+    it("asks when a later signature fails after an earlier transaction is done", () => {
+      expect(
+        isTransactionWorkflowLeaveGuarded({
+          _tag: "SignFailed",
+          context: firstDone,
+          error: signError,
+        })
+      ).toBe(true);
+    });
+
+    it("lets the user leave a workflow with nothing left to run", () => {
+      expect(
+        isTransactionWorkflowLeaveGuarded({ _tag: "Completed", context })
+      ).toBe(false);
+      expect(
+        isTransactionWorkflowLeaveGuarded({
+          _tag: "Disabled",
+          context: firstDone,
+        })
+      ).toBe(false);
     });
   });
 });

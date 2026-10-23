@@ -18,6 +18,7 @@ vi.mock("../../../src/features/widget-shell/header/use-header", () => ({
     hideChainSelector: false,
     isConnected: true,
     isConnecting: false,
+    leaveConfirmationDialog: { onLeave: vi.fn(), onStay: vi.fn(), open: false },
     onXPress: vi.fn(),
     showDisconnect: true,
     walletConfigReady: true,
