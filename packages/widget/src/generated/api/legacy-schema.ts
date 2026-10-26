@@ -473,11 +473,7 @@ export const StructuredTransactionTronDto = Schema.Struct({
     Schema.Array(
       Schema.Struct({
         vote_address: Schema.optionalKey(Schema.String),
-        vote_count: Schema.optionalKey(
-          Schema.Number.check(
-            Schema.isFinite().annotate({ expected: "a finite number" })
-          )
-        ),
+        vote_count: Schema.optionalKey(Schema.Finite),
       })
     )
   ),
@@ -543,9 +539,7 @@ export const TokenDto = Schema.Struct({
   name: Schema.String,
   network: Networks,
   symbol: Schema.String,
-  decimals: Schema.Number.check(
-    Schema.isFinite().annotate({ expected: "a finite number" })
-  ),
+  decimals: Schema.Finite,
   address: Schema.optionalKey(Schema.String),
   coinGeckoId: Schema.optionalKey(Schema.String),
   logoURI: Schema.optionalKey(Schema.String),
@@ -693,9 +687,7 @@ export const TransactionDto = Schema.Struct({
   annotatedTransaction: Schema.Struct({
     fields: Schema.Array(AnnotatedFieldDto),
   }),
-  stepIndex: Schema.Number.check(
-    Schema.isFinite().annotate({ expected: "a finite number" })
-  ),
+  stepIndex: Schema.Finite,
   error: Schema.Union([Schema.String, Schema.Null]),
   gasEstimate: Schema.Struct({
     amount: Schema.Union([Schema.String, Schema.Null]),

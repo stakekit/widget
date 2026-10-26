@@ -132,6 +132,7 @@ export type ArgumentFieldDto = {
   readonly name:
     | "amount"
     | "amountRaw"
+    | "slippageBps"
     | "amounts"
     | "shareAmount"
     | "shareAmountRaw"
@@ -1013,6 +1014,7 @@ export type ActionArgumentsDto = {
   readonly useInstantExecution?: boolean;
   readonly useAutoClaim?: boolean;
   readonly skipPrechecks?: boolean;
+  readonly slippageBps?: number;
   readonly useMaxAllowance?: boolean;
   readonly feePayerAddress?: string;
   readonly encryptedAmount?: string;
@@ -1595,6 +1597,7 @@ export type ActionDto = {
     readonly useInstantExecution?: boolean;
     readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
+    readonly slippageBps?: number;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
     readonly encryptedAmount?: string;

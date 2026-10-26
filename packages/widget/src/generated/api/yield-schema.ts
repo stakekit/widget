@@ -286,6 +286,7 @@ export type ArgumentFieldDto = {
   readonly name:
     | "amount"
     | "amountRaw"
+    | "slippageBps"
     | "amounts"
     | "shareAmount"
     | "shareAmountRaw"
@@ -339,6 +340,7 @@ export const ArgumentFieldDto = Schema.Struct({
   name: Schema.Literals([
     "amount",
     "amountRaw",
+    "slippageBps",
     "amounts",
     "shareAmount",
     "shareAmountRaw",
@@ -2340,6 +2342,7 @@ export type ActionArgumentsDto = {
   readonly useInstantExecution?: boolean;
   readonly useAutoClaim?: boolean;
   readonly skipPrechecks?: boolean;
+  readonly slippageBps?: number;
   readonly useMaxAllowance?: boolean;
   readonly feePayerAddress?: string;
   readonly encryptedAmount?: string;
@@ -2732,6 +2735,12 @@ export const ActionArgumentsDto = Schema.Struct({
       description: "Skip pre-flight balance and rent checks",
       examples: [false],
     })
+  ),
+  slippageBps: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Slippage tolerance in basis points (e.g. 50 = 0.50%)",
+      examples: [50],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
   ),
   useMaxAllowance: Schema.optionalKey(
     Schema.Boolean.annotate({
@@ -4064,6 +4073,7 @@ export type ActionDto = {
     readonly useInstantExecution?: boolean;
     readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
+    readonly slippageBps?: number;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
     readonly encryptedAmount?: string;
@@ -4566,6 +4576,12 @@ export const ActionDto = Schema.Struct({
         description: "Skip pre-flight balance and rent checks",
         examples: [false],
       })
+    ),
+    slippageBps: Schema.optionalKey(
+      Schema.Number.annotate({
+        description: "Slippage tolerance in basis points (e.g. 50 = 0.50%)",
+        examples: [50],
+      }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
     ),
     useMaxAllowance: Schema.optionalKey(
       Schema.Boolean.annotate({
