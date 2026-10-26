@@ -20,15 +20,38 @@ const decodeConnectionSettings = Schema.decodeUnknownOption(
   Schema.fromJsonString(ConnectionSettingsSchema)
 );
 
-export const readConnectionSettings = (): ConnectionSettings =>
-  decodeConnectionSettings(localStorage.getItem(storageKey) ?? "").pipe(
-    Option.getOrElse(() => ({
-      apiKey: "",
-      apiUrl: "",
-      yieldsApiUrl: "",
-      borrowApiUrl: "",
-    }))
-  );
+/** Widget props that carry connection settings. They come only from here, never from a link. */
+export const connectionProps: ReadonlyArray<string> = [
+  "apiKey",
+  "baseUrl",
+  "yieldsApiUrl",
+  "borrowApiUrl",
+];
 
-export const saveConnectionSettings = (settings: ConnectionSettings) =>
-  localStorage.setItem(storageKey, JSON.stringify(settings));
+const noOverrides: ConnectionSettings = {
+  apiKey: "",
+  apiUrl: "",
+  yieldsApiUrl: "",
+  borrowApiUrl: "",
+};
+
+// Storage can be blocked (privacy settings, sandboxed frames); the playground
+// then runs on the env defaults instead of failing to start.
+export const readConnectionSettings = (): ConnectionSettings => {
+  try {
+    return decodeConnectionSettings(
+      localStorage.getItem(storageKey) ?? ""
+    ).pipe(Option.getOrElse(() => noOverrides));
+  } catch (error) {
+    console.warn("[playground] Cannot read connection settings", error);
+    return noOverrides;
+  }
+};
+
+export const saveConnectionSettings = (settings: ConnectionSettings) => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(settings));
+  } catch (error) {
+    console.warn("[playground] Cannot save connection settings", error);
+  }
+};

@@ -1,5 +1,8 @@
 import { darkTheme, lightTheme, type SKAppProps } from "../src/index.package";
-import type { ConnectionSettings } from "./connection-settings";
+import {
+  type ConnectionSettings,
+  connectionProps,
+} from "./connection-settings";
 import type { PlaygroundConfig } from "./playground-config";
 
 /** Widget mount props for a playground config; the host wallet is added by the caller. */
@@ -36,6 +39,20 @@ export const toWidgetProps = (
     }),
   };
 
-  // Extra props are unchecked JSON from the panel, applied last on purpose.
-  return Object.assign({}, props, config.extraProps);
+  // Extra props come from the link, so a crafted link could point the API URL
+  // elsewhere and receive the API key. Connection props come only from storage.
+  const extraProps = Object.fromEntries(
+    Object.entries(config.extraProps).filter(([prop]) => {
+      const isConnectionProp = connectionProps.includes(prop);
+      if (isConnectionProp) {
+        console.warn(
+          `[playground] Ignoring ${prop} from the link's extra props`
+        );
+      }
+      return !isConnectionProp;
+    })
+  );
+
+  // Extra props are unchecked JSON, applied last on purpose.
+  return Object.assign({}, props, extraProps);
 };

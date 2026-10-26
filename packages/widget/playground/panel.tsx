@@ -3,6 +3,7 @@ import { useState, useSyncExternalStore } from "react";
 import { DashboardYieldCategory, YieldProviderId } from "../src/index.package";
 import {
   type ConnectionSettings,
+  connectionProps,
   saveConnectionSettings,
 } from "./connection-settings";
 import {
@@ -26,9 +27,6 @@ const connectionFields = [
   { key: "yieldsApiUrl", label: "Yields API URL", env: "VITE_YIELDS_API_URL" },
   { key: "borrowApiUrl", label: "Borrow API URL", env: "VITE_BORROW_API_URL" },
 ] as const;
-
-// Widget props that carry connection settings; the link must not.
-const connectionProps = ["apiKey", "baseUrl", "yieldsApiUrl", "borrowApiUrl"];
 
 const Choice = <Value extends string>({
   label,
