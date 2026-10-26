@@ -41,7 +41,11 @@ export const chunkRelativeAssetUrls: UserConfig["experimental"] = {
 
 export const getConfig = (
   overides?: Partial<UserConfig>,
-  options?: { plugins?: Plugin[] }
+  options?: {
+    plugins?: Plugin[];
+    /** Keeps `console` calls in minified output; the playground logs to the console. */
+    keepConsole?: boolean;
+  }
 ): UserConfigFnObject =>
   defineConfig(({ command }) => {
     const isBuild = command === "build";
@@ -94,7 +98,7 @@ export const getConfig = (
             output: {
               minify: {
                 compress: {
-                  dropConsole: true,
+                  dropConsole: !options?.keepConsole,
                 },
               },
             },

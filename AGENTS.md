@@ -24,6 +24,10 @@ source of truth for behavior.
 Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 `pnpm <script>` commands alias the `mise run <task>` tasks in `mise.toml`.
 
+- `pnpm dev` — the playground (`packages/widget/playground`): the widget
+  mounted as a host against the real API, configured from its panel and the
+  page link, with a scripted host wallet on `window.skDev`. See the README's
+  Development section. API mocking belongs to tests only.
 - `pnpm --filter @stakekit/widget lint` — widget formatting and type checks.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.

@@ -322,6 +322,24 @@ mise exec -- pnpm install
 mise exec -- pnpm dev
 ```
 
+`pnpm dev` serves the playground (`packages/widget/playground`), which is also
+the page `build:website` produces for preview deployments. It mounts the widget
+the way a host does, against the real API. Its **Playground** panel sets
+widget props and the wallet mode. **Apply** writes them to the page link and
+reloads the page, so the link reproduces the setup. API key and URL overrides
+stay in the browser's localStorage; the defaults come from `VITE_API_KEY`,
+`VITE_API_URL`, `VITE_YIELDS_API_URL` and `VITE_BORROW_API_URL` (see
+`packages/widget/.env.example`).
+
+**Wallet `scripted`** passes a host wallet through `externalProviders` that
+signs nothing and returns fake hashes. **Wallet `injected`** wraps the
+browser's EVM wallet (`window.ethereum`), so transactions are really signed and
+broadcast. In both modes `window.skDev.wallet` decides how each wallet request
+is answered (`success`, `cancelled`, `error`, `errorWithHash`, `reject`,
+`hold`), can release a held answer, and changes the account or chain without
+remounting. Every request is logged. Run `skDev.wallet.help()` in the console
+for the full list.
+
 Useful checks are `mise exec -- pnpm lint`, `mise exec -- pnpm test`, and
 `mise exec -- pnpm check`. Contributor workflow and codebase conventions live
 in [`AGENTS.md`](AGENTS.md).

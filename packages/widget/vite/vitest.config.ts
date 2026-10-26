@@ -61,6 +61,13 @@ export default defineConfig(
         {
           extends: true,
           cacheDir: testCacheDir("browser"),
+          // MSW's service worker script is test infrastructure: only the
+          // browser tests serve it, never the playground or its builds.
+          publicDir: path.resolve(
+            import.meta.dirname,
+            "..",
+            "tests/mocks/public"
+          ),
           test: {
             name: "browser",
             fileParallelism: false,

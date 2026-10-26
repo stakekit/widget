@@ -13,6 +13,7 @@ export default {
   ],
   project: [
     "src/**/*.{ts,tsx}!",
+    "playground/**/*.{ts,tsx}",
     "scripts/**/*.{ts,mts}",
     "tests/**/*.{ts,tsx}",
     "vite/**/*.ts!",

@@ -10,7 +10,6 @@ ignores:
   - packages/widget/src/services/config/**
   - packages/widget/src/**/*.css.ts
   - packages/widget/src/app/composition/providers/theme-wrapper.tsx
-  - packages/widget/src/main.tsx
 utils:
   host-variant-literal:
     kind: string
