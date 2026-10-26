@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { getActionInputToken } from "../../../domain/action/rules";
+import { getConfidentialActionBatchSide } from "../../../domain/earn/confidential";
 import {
   WidgetNavigation,
   type WidgetNavigationCommand,
@@ -18,7 +19,6 @@ import {
 import {
   type ClassicFlowHandoff,
   type ClassicFlowSession,
-  getClassicFlowPreparedTransactionType,
   getClassicFlowWorkflowInput,
   getClassicTransactionFlowIntakeVariant,
 } from "../model/classic-transaction-flow";
@@ -102,7 +102,8 @@ export const makeClassicFlowExecutionPage = (
     intake._tag === "YieldActionContinuation"
       ? intake.action.yieldId
       : intake.request.yieldId;
-  const preparedTransactionType = getClassicFlowPreparedTransactionType(intake);
+  const plannedStepTypes =
+    handoff.source._tag === "Prepare" ? handoff.source.plannedStepTypes : [];
 
   const executionAtom = walletRuntime
     .atom(startClassicFlowExecution(session, handoff))
@@ -123,7 +124,7 @@ export const makeClassicFlowExecutionPage = (
       state,
       steps: state
         ? getClassicTransactionStepsView(state, {
-            preparedTransactionType,
+            plannedStepTypes,
             yieldId,
           })
         : {
@@ -148,6 +149,10 @@ export const makeClassicFlowExecutionPage = (
       if (!activity) return null;
       const { action } = activity;
       return {
+        batchSide: getConfidentialActionBatchSide(
+          activity.selectedYield,
+          action
+        ),
         inputToken:
           getActionInputToken({
             actionDto: action,

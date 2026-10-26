@@ -1,12 +1,18 @@
 import type BigNumber from "bignumber.js";
-import type { DateTime } from "effect";
+import { DateTime } from "effect";
 import type { TFunction } from "i18next";
 import type { PendingAction } from "../../../domain/action/models";
 import {
   getPendingActionLabelContext,
   isOptionalPendingAction,
 } from "../../../domain/action/pending-action";
-import { isConfidentialYield } from "../../../domain/earn/confidential";
+import {
+  type ConfidentialHandle,
+  getBalanceRowDisplayAmount,
+  isCancellingBalance,
+  isConfidentialYield,
+  isUnfinishedInstantExit,
+} from "../../../domain/earn/confidential";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -52,7 +58,6 @@ import {
   formatRewardRateLabel,
   formatRewardTokenLabel,
 } from "../../yield-summary/index";
-import { getPendingBatchRows } from "./pending-balance-batch";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
@@ -108,7 +113,6 @@ type DashboardPositionDetailsModel = {
   chartSections: DashboardPositionChartSection[];
   detailRows: DashboardPositionDetailRow[];
   metricCards: DashboardPositionMetricCard[];
-  pendingBatches: ReadonlyArray<PositionBalanceRow>;
   providerName: string;
   statusSummary: DashboardPositionStatusSummary;
 };
@@ -128,6 +132,7 @@ type ProviderDetail = {
 };
 
 export const getDashboardPositionDetailsModel = ({
+  cancellingHandles = new Set(),
   canUnstake,
   integrationData,
   locale,
@@ -139,6 +144,8 @@ export const getDashboardPositionDetailsModel = ({
   rewardsSummary,
   t,
 }: {
+  /** Handles of pending balances whose cancel is in flight. */
+  cancellingHandles?: ReadonlySet<ConfidentialHandle>;
   canUnstake: boolean;
   integrationData: EarnYieldWithProvider;
   locale: string;
@@ -152,12 +159,17 @@ export const getDashboardPositionDetailsModel = ({
   t: TFunction;
 }): DashboardPositionDetailsModel => {
   const promotedFactIds = new Set<string>();
+  const balanceRows = groupPositionBalanceRows(
+    getBalancesByPriority(positionBalancesByType),
+    (balance) => isCancellingBalance(balance, cancellingHandles)
+  );
   const providerName = getPositionProviderName({
     integrationData,
     providersDetails,
   });
   const statusSummary = getStatusSummary({
     canUnstake,
+    cancelling: balanceRows.some((row) => row.cancelling),
     pendingActions,
     positionBalancesByType,
     providersDetails,
@@ -204,21 +216,24 @@ export const getDashboardPositionDetailsModel = ({
   // surface the next most useful fact so the layout never leaves an empty cell.
   const fillerMetric =
     baseCards.length % 2 === 1
-      ? getFillerMetric({ integrationData, now, promotedFactIds, t })
+      ? getFillerMetric({
+          balanceRows,
+          integrationData,
+          now,
+          promotedFactIds,
+          t,
+        })
       : null;
 
   return {
     addressRows: getAddressRows(integrationData, t),
     breakdownRows: getBreakdownRows({
+      balanceRows,
       integrationData,
       locale,
       now,
-      positionBalancesByType,
       t,
     }),
-    pendingBatches: getPendingBatchRows(
-      groupPositionBalanceRows(getBalancesByPriority(positionBalancesByType))
-    ),
     chartSections: [],
     detailRows: getDetailRows({
       integrationData,
@@ -234,17 +249,39 @@ export const getDashboardPositionDetailsModel = ({
 };
 
 const getFillerMetric = ({
+  balanceRows,
   integrationData,
   now,
   promotedFactIds,
   t,
 }: {
+  balanceRows: ReadonlyArray<PositionBalanceRow>;
   integrationData: EarnYieldWithProvider;
   now: DateTime.Utc | null;
   promotedFactIds: Set<string>;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
-  // Batched vaults redeem with their next batch, not after a fixed cooldown.
+  // A dated pending withdrawal settles on its own date, whatever the vault's
+  // next batch; batched vaults otherwise redeem with that batch. One being
+  // cancelled will not settle at all.
+  const ownWithdrawal = balanceRows.reduce<PositionBalanceRow | null>(
+    (earliest, row) =>
+      row.type === "exiting" &&
+      !row.cancelling &&
+      row.date &&
+      (!earliest?.date || DateTime.isLessThan(row.date, earliest.date))
+        ? row
+        : earliest,
+    null
+  );
+  const ownWithdrawalTiming = ownWithdrawal
+    ? formatPendingBalanceTiming({
+        integrationData,
+        now,
+        row: ownWithdrawal,
+        t,
+      })
+    : null;
   const nextBatch = formatNextBatchTiming({
     now,
     side: "redemption",
@@ -253,6 +290,7 @@ const getFillerMetric = ({
   });
   const cooldownDays = getYieldCooldownPeriod(integrationData)?.days ?? 0;
   const getRedemptionValue = () => {
+    if (ownWithdrawalTiming) return ownWithdrawalTiming;
     if (nextBatch) return formatNextBatchLabel(nextBatch, t);
     return cooldownDays > 0 && !isConfidentialYield(integrationData)
       ? t("dashboard.earn_details.cooldown_days", { count: cooldownDays })
@@ -440,12 +478,14 @@ const getApyMetric = ({
 
 const getStatusSummary = ({
   canUnstake,
+  cancelling,
   pendingActions,
   positionBalancesByType,
   providersDetails,
   t,
 }: {
   canUnstake: boolean;
+  cancelling: boolean;
   pendingActions: DashboardPositionPendingAction[];
   positionBalancesByType: PositionBalancesByType;
   providersDetails: ProviderDetail[];
@@ -467,10 +507,35 @@ const getStatusSummary = ({
   }
 
   // Optional pending actions are outranked by any other for the status card.
-  const pendingAction =
-    pendingActions.find(
-      (action) => !isOptionalPendingAction(action.pendingAction.type)
-    ) ?? pendingActions[0];
+  const requiredAction = pendingActions.find(
+    (action) => !isOptionalPendingAction(action.pendingAction.type)
+  );
+  // Several optional requests are counted; none is singled out over another.
+  if (!requiredAction && pendingActions.length > 1) {
+    return {
+      label: t("dashboard.position_details.status"),
+      tone: "default",
+      value: t("dashboard.position_details.actions_available", {
+        count: pendingActions.length,
+      }),
+    };
+  }
+  const pendingAction = requiredAction ?? pendingActions[0];
+
+  // Finalizing an Instant Exit finishes work already under way.
+  if (
+    pendingAction &&
+    isUnfinishedInstantExit(
+      pendingAction.yieldBalance,
+      pendingAction.pendingAction.type
+    )
+  ) {
+    return {
+      label: t("dashboard.position_details.status"),
+      tone: "default",
+      value: t("dashboard.position_details.instant_withdrawal_in_progress"),
+    };
+  }
 
   if (pendingAction) {
     const optional = isOptionalPendingAction(pendingAction.pendingAction.type);
@@ -481,6 +546,14 @@ const getStatusSummary = ({
         : t("dashboard.position_details.action_required"),
       tone: getPendingActionTone(pendingAction.pendingAction.type),
       value: formatPendingActionLabel(pendingAction, t),
+    };
+  }
+
+  if (cancelling) {
+    return {
+      label: t("dashboard.position_details.status"),
+      tone: "default",
+      value: t("position_details.cancelling"),
     };
   }
 
@@ -510,42 +583,41 @@ const getStatusSummary = ({
 };
 
 const getBreakdownRows = ({
+  balanceRows,
   integrationData,
   locale,
   now,
-  positionBalancesByType,
   t,
 }: {
+  balanceRows: ReadonlyArray<PositionBalanceRow>;
   integrationData: EarnYieldWithProvider;
   locale: string;
   now: DateTime.Utc | null;
-  positionBalancesByType: PositionBalancesByType;
   t: TFunction;
 }): DashboardPositionBreakdownRow[] =>
-  groupPositionBalanceRows(getBalancesByPriority(positionBalancesByType)).map(
-    (row, index) => {
-      const amountSubValue = row.token.isPoints
-        ? t("shared.points")
-        : formatUsdSubValue(row.amountUsd, locale);
-      const batchTiming = formatPendingBalanceTiming({
-        integrationData,
-        now,
-        row,
-        t,
-      });
-      const subValue = [amountSubValue, batchTiming]
-        .filter((part) => !!part)
-        .join(" · ");
-      return {
-        id: `${row.type}-${row.token.symbol}-${index}`,
-        label: formatBalanceTypeLabel(row.type, t),
-        subValue: subValue || undefined,
-        value: row.isEncrypted
-          ? t("shared.confidential.hidden")
-          : `${formatTokenAmount(row.amount, locale, "down")} ${row.token.symbol}`,
-      };
-    }
-  );
+  balanceRows.map((row, index) => {
+    const amountSubValue = row.token.isPoints
+      ? t("shared.points")
+      : formatUsdSubValue(row.amountUsd, locale);
+    const batchTiming = formatPendingBalanceTiming({
+      integrationData,
+      now,
+      row,
+      t,
+    });
+    const subValue = [amountSubValue, batchTiming]
+      .filter((part) => !!part)
+      .join(" · ");
+    const display = getBalanceRowDisplayAmount(integrationData, row);
+    return {
+      id: `${row.type}-${row.token.symbol}-${index}`,
+      label: formatBalanceTypeLabel(row.type, t),
+      subValue: subValue || undefined,
+      value: row.isEncrypted
+        ? t("shared.confidential.hidden")
+        : `${formatTokenAmount(display.amount, locale, "down")} ${display.token.symbol}`,
+    };
+  });
 
 const getDetailRows = ({
   integrationData,

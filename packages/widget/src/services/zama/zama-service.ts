@@ -22,6 +22,7 @@ import {
   http,
   type PublicClient,
   parseAbi,
+  parseEventLogs,
 } from "viem";
 import {
   type DirectTransaction,
@@ -35,7 +36,7 @@ import {
   type ConfidentialConversion,
   type ConfidentialEncryption,
   type ConfidentialEncryptionPlan,
-  type ConfidentialHandle,
+  ConfidentialHandle,
   ConfidentialTokenBalanceKey,
   getConfidentialNetwork,
   planConfidentialEncryption,
@@ -86,7 +87,7 @@ type ConfidentialDecryptPreparation = Readonly<{
   readonly _tag: "Decrypt";
   readonly chainId: number;
   readonly command: ManageActionCommand;
-  readonly handle: string;
+  readonly handle: ConfidentialHandle;
 }>;
 
 export class ConfidentialPreparationError extends Data.TaggedError(
@@ -101,6 +102,8 @@ export class ConfidentialPreparationError extends Data.TaggedError(
 const wrapperAbi = parseAbi([
   "function wrap(address to, uint256 amount) returns (bytes32)",
   "function rate() view returns (uint256)",
+  "function isOperator(address holder, address spender) view returns (bool)",
+  "event UnwrapRequested(address indexed receiver, bytes32 indexed unwrapRequestId, bytes32 amount)",
 ]);
 
 const PermitTypedData = Schema.Struct({
@@ -144,6 +147,16 @@ type ZamaServiceApi = Readonly<{
     readonly network: Network;
     readonly owner: string;
   }) => Effect.Effect<ReadonlyArray<DirectTransaction>>;
+  /**
+   * How many of `tokens` the owner has not yet made `operator` an operator
+   * on; a grant whose status cannot be read counts as missing.
+   */
+  readonly countMissingOperatorGrants: (input: {
+    readonly chainId: number;
+    readonly operator: string;
+    readonly owner: string;
+    readonly tokens: ReadonlyArray<string>;
+  }) => Effect.Effect<number>;
   /** A deposit's or exit's command with its amount encrypted instead. */
   readonly encryptCommand: (
     preparation: ConfidentialEncryptPreparation
@@ -152,6 +165,15 @@ type ZamaServiceApi = Readonly<{
   readonly decryptCommand: (
     preparation: ConfidentialDecryptPreparation
   ) => Effect.Effect<ManageActionCommand, ConfidentialPreparationError>;
+  /**
+   * The unwrap request an instant exit's mined transaction opened for the
+   * owner: the handle its WITHDRAW publicly decrypts.
+   */
+  readonly readUnwrapRequest: (input: {
+    readonly chainId: number;
+    readonly hash: string;
+    readonly owner: string;
+  }) => Effect.Effect<ConfidentialHandle, ConfidentialPreparationError>;
   readonly revealHandles: (input: {
     readonly chainId: number;
     readonly handles: ReadonlyArray<HandleInput>;
@@ -538,6 +560,31 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     return [approve("RESET_APPROVAL"), approve("APPROVAL"), wrap];
   });
 
+  const countMissingOperatorGrants: ZamaServiceApi["countMissingOperatorGrants"] =
+    Effect.fn("ZamaService.countMissingOperatorGrants")(function* ({
+      chainId,
+      operator,
+      owner,
+      tokens,
+    }) {
+      const client = yield* getPublicClient(chainId).pipe(Effect.option);
+      if (Option.isNone(client)) return tokens.length;
+      const granted = yield* Effect.forEach(
+        tokens,
+        (token) =>
+          tryZama("read-operator", () =>
+            client.value.readContract({
+              abi: wrapperAbi,
+              address: token as Address,
+              args: [owner as Address, operator as Address],
+              functionName: "isOperator",
+            })
+          ).pipe(Effect.orElseSucceed(() => false)),
+        { concurrency: "unbounded" }
+      );
+      return granted.filter((isGranted) => !isGranted).length;
+    });
+
   const publicDecrypt = Effect.fn("ZamaService.publicDecrypt")(function* ({
     chainId,
     owner,
@@ -545,7 +592,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   }: {
     readonly chainId: number;
     readonly owner: string;
-    readonly requestId: string;
+    readonly requestId: ConfidentialHandle;
   }) {
     const sdk = yield* getSdk(chainId, owner);
     const decrypted = yield* tryZama("public-decrypt", () =>
@@ -648,10 +695,35 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
       Effect.mapError(retryableFailure)
     );
 
+  const readUnwrapRequest: ZamaServiceApi["readUnwrapRequest"] = Effect.fn(
+    "ZamaService.readUnwrapRequest"
+  )(function* ({ chainId, hash, owner }) {
+    const client = yield* getPublicClient(chainId).pipe(
+      Effect.mapError(retryableFailure)
+    );
+    const receipt = yield* tryZama("read-unwrap-receipt", () =>
+      client.getTransactionReceipt({ hash: hash as Hex })
+    ).pipe(Effect.mapError(retryableFailure));
+    const [requested] = parseEventLogs({
+      abi: wrapperAbi,
+      args: { receiver: owner as Address },
+      eventName: "UnwrapRequested",
+      logs: receipt.logs,
+    });
+    const requestId = requested
+      ? Schema.decodeOption(ConfidentialHandle)(requested.args.unwrapRequestId)
+      : Option.none();
+    return Option.isSome(requestId)
+      ? requestId.value
+      : yield* unpreparable("The transaction requested no unwrap.", receipt);
+  });
+
   return {
+    countMissingOperatorGrants,
     decryptCommand,
     encryptCommand,
     planConversion,
+    readUnwrapRequest,
     revealHandles,
     revealTokenBalance,
   } satisfies ZamaServiceApi;

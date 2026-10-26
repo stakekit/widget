@@ -132,6 +132,7 @@ export type ArgumentFieldDto = {
   readonly name:
     | "amount"
     | "amountRaw"
+    | "slippageBps"
     | "amounts"
     | "shareAmount"
     | "shareAmountRaw"
@@ -308,11 +309,6 @@ export type ValidatorSubnetDto = {
   readonly tokenSymbol?: string;
   readonly tvl?: string;
   readonly pricePerShare?: string;
-};
-export type BalanceBatchRequestDto = {
-  readonly transactionHash: string;
-  readonly submittedAt: string;
-  readonly explorerUrl: string;
 };
 export type YieldErrorDto = {
   readonly yieldId: string;
@@ -1018,6 +1014,7 @@ export type ActionArgumentsDto = {
   readonly useInstantExecution?: boolean;
   readonly useAutoClaim?: boolean;
   readonly skipPrechecks?: boolean;
+  readonly slippageBps?: number;
   readonly useMaxAllowance?: boolean;
   readonly feePayerAddress?: string;
   readonly encryptedAmount?: string;
@@ -1254,12 +1251,6 @@ export type RevShareTiersDto = {
   readonly trial?: RevShareDetailsDto;
   readonly standard?: RevShareDetailsDto;
   readonly pro?: RevShareDetailsDto;
-};
-export type BalanceBatchDto = {
-  readonly id: string;
-  readonly address: string;
-  readonly explorerUrl: string;
-  readonly requests: ReadonlyArray<BalanceBatchRequestDto>;
 };
 export type YieldFeeConfigurationDto = {
   readonly id: string;
@@ -1606,6 +1597,7 @@ export type ActionDto = {
     readonly useInstantExecution?: boolean;
     readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
+    readonly slippageBps?: number;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
     readonly encryptedAmount?: string;
@@ -1813,7 +1805,6 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
-  readonly batch?: BalanceBatchDto;
 };
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -1882,7 +1873,6 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
-    readonly batch?: BalanceBatchDto;
   };
   readonly rewardRate?: {
     readonly total: number;

@@ -141,7 +141,7 @@ describe("position derivations", () => {
       }),
     ];
 
-    const rows = groupPositionBalanceRows(balances);
+    const rows = groupPositionBalanceRows(balances, () => false);
 
     expect(
       rows.map((row) => ({
@@ -311,6 +311,32 @@ describe("position derivations", () => {
       expect(row?.hasPendingRequest).toBe(hasPendingRequest);
     }
   );
+
+  it("flags an encrypted unwrap still to withdraw as in progress, since its instant withdrawal already began", () => {
+    const yieldDto = yieldApiYieldFixture();
+    const position = Schema.decodeSync(EarnPosition)({
+      balances: [
+        yieldBalanceFixture({
+          amount: "0",
+          amountRaw: "0",
+          isEncrypted: true,
+          pendingActions: [
+            { intent: "manage", passthrough: "unwrap", type: "WITHDRAW" },
+          ],
+          shareAmountRaw: `0x${"ab".repeat(32)}`,
+          token: yieldDto.token,
+          type: "withdrawable",
+        }),
+      ],
+      outputTokenBalance: null,
+      yieldId: yieldDto.id,
+    });
+
+    const [row] = toPositionItems(toPositionsData([position]), false);
+
+    expect(row?.actionRequired).toBe(false);
+    expect(row?.hasPendingRequest).toBe(true);
+  });
 
   it("deduplicates derived atom families by value-equal domain keys", () => {
     const { yieldId } = makePosition();

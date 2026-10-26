@@ -86,7 +86,7 @@ const makeInput = (conversion: ReadonlyArray<DirectTransaction>) =>
 
 const view = (state: TransactionWorkflowState) =>
   getClassicTransactionStepsView(state, {
-    preparedTransactionType: "DEPOSIT",
+    plannedStepTypes: ["DEPOSIT"],
     yieldId,
   });
 
@@ -217,5 +217,91 @@ describe("Classic Steps view", () => {
         ["DEPOSIT", "idle", "idle", false, false],
       ],
     });
+  });
+
+  it("lists an instant exit's finalize from the start, and keeps it while the unwrap confirms", () => {
+    const planned = ["UNWRAP", "DECRYPT", "WITHDRAW", "REDEEM"] as const;
+    const instantRows = (state: TransactionWorkflowState) =>
+      getClassicTransactionStepsView(state, {
+        plannedStepTypes: planned,
+        yieldId,
+      }).txStates.map(({ done, phases, type }) => [type, phases.sign, done]);
+    const preparing = initializeTransactionWorkflow(makeInput([]));
+    const step = (id: string, type: "REDEEM" | "UNWRAP" | "WITHDRAW") =>
+      yieldApiTransactionFixture({
+        id,
+        network: "ethereum",
+        status: "CREATED",
+        type,
+      });
+    const attach = (
+      context: TransactionWorkflowState["context"],
+      transactions: ReadonlyArray<ReturnType<typeof step>>
+    ) =>
+      attachPreparedClassicAction({
+        context,
+        prepared: makeClassicTransactionWorkflowInput({
+          action: yieldApiActionFixture({
+            address,
+            transactions: [...transactions],
+            yieldId,
+          }),
+          inputToken: undefined,
+          providersDetails: [],
+          walletScope,
+        }),
+      });
+    const unwrapped = attach(preparing.context, [step("unwrap", "UNWRAP")]);
+    const confirmedUnwrap = {
+      ...unwrapped,
+      batches: unwrapped.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) => ({
+          ...transaction,
+          meta: { ...transaction.meta, done: true },
+        })),
+      })),
+    };
+    const finalizing = {
+      ...confirmedUnwrap,
+      finalize: { done: false, position: 1 },
+    };
+
+    expect(instantRows(preparing)).toEqual([
+      ["ENCRYPT", "active", false],
+      ["UNWRAP", "idle", false],
+      ["DECRYPT", "idle", false],
+      ["WITHDRAW", "idle", false],
+      ["REDEEM", "idle", false],
+    ]);
+    expect(instantRows({ _tag: "Signing", context: unwrapped })).toEqual([
+      ["ENCRYPT", "done", true],
+      ["UNWRAP", "active", false],
+      ["DECRYPT", "idle", false],
+      ["WITHDRAW", "idle", false],
+      ["REDEEM", "idle", false],
+    ]);
+    expect(instantRows({ _tag: "Preparing", context: finalizing })).toEqual([
+      ["ENCRYPT", "done", true],
+      ["UNWRAP", "done", true],
+      ["DECRYPT", "active", false],
+      ["WITHDRAW", "idle", false],
+      ["REDEEM", "idle", false],
+    ]);
+    expect(
+      instantRows({
+        _tag: "Signing",
+        context: attach(finalizing, [
+          step("withdraw", "WITHDRAW"),
+          step("redeem", "REDEEM"),
+        ]),
+      })
+    ).toEqual([
+      ["ENCRYPT", "done", true],
+      ["UNWRAP", "done", true],
+      ["DECRYPT", "done", true],
+      ["WITHDRAW", "active", false],
+      ["REDEEM", "idle", false],
+    ]);
   });
 });

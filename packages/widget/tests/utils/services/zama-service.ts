@@ -14,8 +14,11 @@ export const makeTestZamaLayer = (
       ZamaService,
       ZamaService.of({
         planConversion: () => unexpected("planConversion"),
+        countMissingOperatorGrants: () =>
+          unexpected("countMissingOperatorGrants"),
         decryptCommand: () => unexpected("decryptCommand"),
         encryptCommand: () => unexpected("encryptCommand"),
+        readUnwrapRequest: () => unexpected("readUnwrapRequest"),
         revealHandles: () => unexpected("revealHandles"),
         revealTokenBalance: () => unexpected("revealTokenBalance"),
         ...overrides,

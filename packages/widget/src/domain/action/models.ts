@@ -82,7 +82,12 @@ export type ActionTransactionReceipt = typeof ActionTransactionReceipt.Type;
 
 // `executionPattern` and `events` are unread, so they are not decoded.
 export const YieldAction = Schema.Struct({
-  ...Struct.pick(YieldApi.ActionDto.fields, ["intent", "type", "status"]),
+  ...Struct.pick(YieldApi.ActionDto.fields, [
+    "encryptedAmount",
+    "intent",
+    "type",
+    "status",
+  ]),
   address: WalletAddress,
   amount: Schema.NullOr(ExactDecimal),
   amountRaw: Schema.NullOr(ExactBaseUnitAmount),

@@ -286,6 +286,7 @@ export type ArgumentFieldDto = {
   readonly name:
     | "amount"
     | "amountRaw"
+    | "slippageBps"
     | "amounts"
     | "shareAmount"
     | "shareAmountRaw"
@@ -339,6 +340,7 @@ export const ArgumentFieldDto = Schema.Struct({
   name: Schema.Literals([
     "amount",
     "amountRaw",
+    "slippageBps",
     "amounts",
     "shareAmount",
     "shareAmountRaw",
@@ -752,26 +754,6 @@ export const ValidatorSubnetDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ValidatorSubnetDto" });
-export type BalanceBatchRequestDto = {
-  readonly transactionHash: string;
-  readonly submittedAt: string;
-  readonly explorerUrl: string;
-};
-export const BalanceBatchRequestDto = Schema.Struct({
-  transactionHash: Schema.String.annotate({
-    description: "Transaction that submitted the request",
-    examples: ["0xabc..."],
-  }),
-  submittedAt: Schema.String.annotate({
-    description:
-      "When the request was recorded, at or shortly after confirmation",
-    examples: ["2026-10-19T15:10:00Z"],
-    format: "date-time",
-  }),
-  explorerUrl: Schema.String.annotate({
-    description: "Block explorer URL of the transaction",
-  }),
-}).annotate({ identifier: "BalanceBatchRequestDto" });
 export type YieldErrorDto = {
   readonly yieldId: string;
   readonly error: string;
@@ -2360,6 +2342,7 @@ export type ActionArgumentsDto = {
   readonly useInstantExecution?: boolean;
   readonly useAutoClaim?: boolean;
   readonly skipPrechecks?: boolean;
+  readonly slippageBps?: number;
   readonly useMaxAllowance?: boolean;
   readonly feePayerAddress?: string;
   readonly encryptedAmount?: string;
@@ -2752,6 +2735,12 @@ export const ActionArgumentsDto = Schema.Struct({
       description: "Skip pre-flight balance and rent checks",
       examples: [false],
     })
+  ),
+  slippageBps: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Slippage tolerance in basis points (e.g. 50 = 0.50%)",
+      examples: [50],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
   ),
   useMaxAllowance: Schema.optionalKey(
     Schema.Boolean.annotate({
@@ -3500,29 +3489,6 @@ export const RevShareTiersDto = Schema.Struct({
     ).annotate({ description: "Pro tier revenue share details" })
   ),
 }).annotate({ identifier: "RevShareTiersDto" });
-export type BalanceBatchDto = {
-  readonly id: string;
-  readonly address: string;
-  readonly explorerUrl: string;
-  readonly requests: ReadonlyArray<BalanceBatchRequestDto>;
-};
-export const BalanceBatchDto = Schema.Struct({
-  id: Schema.String.annotate({
-    description: "Batch number on the batch contract",
-    examples: ["37"],
-  }),
-  address: Schema.String.annotate({
-    description: "Contract that collects and settles the batch",
-    examples: ["0x084fd3a517D6DaE1f8E3E5481b65107fd7e5eEc1"],
-  }),
-  explorerUrl: Schema.String.annotate({
-    description: "Block explorer URL of the batch contract",
-  }),
-  requests: Schema.Array(BalanceBatchRequestDto).annotate({
-    description:
-      "The user's requests merged into this balance, oldest first. The batch keeps one combined amount per user, so they are cancelled together.",
-  }),
-}).annotate({ identifier: "BalanceBatchDto" });
 export type YieldFeeConfigurationDto = {
   readonly id: string;
   readonly default: boolean;
@@ -4107,6 +4073,7 @@ export type ActionDto = {
     readonly useInstantExecution?: boolean;
     readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
+    readonly slippageBps?: number;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
     readonly encryptedAmount?: string;
@@ -4609,6 +4576,12 @@ export const ActionDto = Schema.Struct({
         description: "Skip pre-flight balance and rent checks",
         examples: [false],
       })
+    ),
+    slippageBps: Schema.optionalKey(
+      Schema.Number.annotate({
+        description: "Slippage tolerance in basis points (e.g. 50 = 0.50%)",
+        examples: [50],
+      }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
     ),
     useMaxAllowance: Schema.optionalKey(
       Schema.Boolean.annotate({
@@ -5420,7 +5393,6 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
-  readonly batch?: BalanceBatchDto;
 };
 export const BalanceDto = Schema.Struct({
   address: Schema.String.annotate({
@@ -5641,14 +5613,6 @@ export const BalanceDto = Schema.Struct({
         "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
     })
   ),
-  batch: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<BalanceBatchDto> => BalanceBatchDto
-    ).annotate({
-      description:
-        "The settlement batch a pending balance joined, for yields that settle requests in batches. `date` is when the batch is expected to execute.",
-    })
-  ),
 }).annotate({ identifier: "BalanceDto" });
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -5820,7 +5784,6 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
-    readonly batch?: BalanceBatchDto;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -6065,14 +6028,6 @@ export const YieldBalancesDto = Schema.Struct({
         Schema.Boolean.annotate({
           description:
             "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
-        })
-      ),
-      batch: Schema.optionalKey(
-        Schema.suspend(
-          (): Schema.Codec<BalanceBatchDto> => BalanceBatchDto
-        ).annotate({
-          description:
-            "The settlement batch a pending balance joined, for yields that settle requests in batches. `date` is when the batch is expected to execute.",
         })
       ),
     }).annotate({ description: "Balance for the output token" })

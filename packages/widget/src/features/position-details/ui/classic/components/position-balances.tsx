@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+import { getBalanceRowDisplayAmount } from "../../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getExtendedYieldType,
@@ -36,6 +37,7 @@ export const PositionBalances = ({
   });
 
   const yieldType = getExtendedYieldType(integrationData);
+  const display = getBalanceRowDisplayAmount(integrationData, yieldBalance);
 
   const balanceTypeContext = isDepositYieldType(yieldType)
     ? "yearn_or_deposit"
@@ -73,8 +75,8 @@ export const PositionBalances = ({
               t("shared.confidential.hidden")
             ) : (
               <>
-                {formatTokenAmount(yieldBalance.amount, locale, "down")}{" "}
-                {yieldBalance.token.symbol}
+                {formatTokenAmount(display.amount, locale, "down")}{" "}
+                {display.token.symbol}
                 {!yieldBalance.token.isPoints &&
                   ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
               </>
