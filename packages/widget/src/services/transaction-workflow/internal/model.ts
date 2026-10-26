@@ -331,8 +331,8 @@ export const initializeTransactionWorkflow = (
 
 /**
  * A confidential workflow's context once it prepared its action: the action's
- * transactions follow the ones the workflow already holds. An instant exit's
- * finalize only extends the exit's action with its own transactions.
+ * transactions follow the ones the workflow already holds, and sign with its
+ * meta. An instant exit's finalize prepares a second action this way.
  */
 export const attachPreparedClassicAction = ({
   context,
@@ -357,13 +357,11 @@ export const attachPreparedClassicAction = ({
         ],
       },
     ],
-    domain: finalizing
-      ? context.domain
-      : {
-          _tag: "Classic",
-          actionMeta: prepared.actionMeta,
-          yieldId: prepared.yieldId,
-        },
+    domain: {
+      _tag: "Classic",
+      actionMeta: prepared.actionMeta,
+      yieldId: prepared.yieldId,
+    },
     finalize: finalizing ? { ...finalize, done: true } : finalize,
     preparation:
       finalizing || !context.preparation

@@ -453,10 +453,10 @@ export const isUserRevealableBalance = (
 ) => !!balance.isEncrypted && balance.type !== "withdrawable";
 
 /**
- * An instant withdrawal its unwrap began, still to withdraw: an encrypted
+ * An Instant Exit its unwrap began, still to finalize: an encrypted
  * withdrawable balance's WITHDRAW, which decrypts the unwrapped amount.
  */
-export const isUnfinishedInstantWithdrawal = (
+export const isUnfinishedInstantExit = (
   balance: Pick<EarnBalance, "isEncrypted" | "type">,
   pendingActionType: YieldPendingActionType
 ) =>
@@ -468,7 +468,7 @@ export const getPendingActionDecryptHandle = (
   balance: Pick<EarnBalance, "isEncrypted" | "shareAmountRaw" | "type">,
   pendingActionType: YieldPendingActionType
 ): ConfidentialHandle | null =>
-  isUnfinishedInstantWithdrawal(balance, pendingActionType)
+  isUnfinishedInstantExit(balance, pendingActionType)
     ? getEncryptedHandle(balance)
     : null;
 

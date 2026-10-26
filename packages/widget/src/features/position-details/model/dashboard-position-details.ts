@@ -11,6 +11,7 @@ import {
   getBalanceRowDisplayAmount,
   isCancellingBalance,
   isConfidentialYield,
+  isUnfinishedInstantExit,
 } from "../../../domain/earn/confidential";
 import type {
   EarnBalance,
@@ -169,7 +170,6 @@ export const getDashboardPositionDetailsModel = ({
   const statusSummary = getStatusSummary({
     canUnstake,
     cancelling: balanceRows.some((row) => row.cancelling),
-    confidential: isConfidentialYield(integrationData),
     pendingActions,
     positionBalancesByType,
     providersDetails,
@@ -479,7 +479,6 @@ const getApyMetric = ({
 const getStatusSummary = ({
   canUnstake,
   cancelling,
-  confidential,
   pendingActions,
   positionBalancesByType,
   providersDetails,
@@ -487,7 +486,6 @@ const getStatusSummary = ({
 }: {
   canUnstake: boolean;
   cancelling: boolean;
-  confidential: boolean;
   pendingActions: DashboardPositionPendingAction[];
   positionBalancesByType: PositionBalancesByType;
   providersDetails: ProviderDetail[];
@@ -524,14 +522,13 @@ const getStatusSummary = ({
   }
   const pendingAction = requiredAction ?? pendingActions[0];
 
-  // Completing an instant withdrawal finishes work already under way.
+  // Finalizing an Instant Exit finishes work already under way.
   if (
     pendingAction &&
-    getPendingActionLabelContext(
-      pendingAction.pendingAction.type,
-      pendingAction.yieldBalance.type,
-      { confidential }
-    ) === "instant_withdrawal"
+    isUnfinishedInstantExit(
+      pendingAction.yieldBalance,
+      pendingAction.pendingAction.type
+    )
   ) {
     return {
       label: t("dashboard.position_details.status"),

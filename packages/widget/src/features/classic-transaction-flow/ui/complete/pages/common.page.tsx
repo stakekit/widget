@@ -7,6 +7,7 @@ import type {
   PendingActionLabelContext,
   YieldPendingActionType,
 } from "../../../../../domain/action/pending-action";
+import type { ConfidentialBatchSide } from "../../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   type ExtendedYieldType,
@@ -50,7 +51,7 @@ type Props = {
 };
 
 type BatchedRequest = Readonly<{
-  readonly side: "redemption" | "subscription";
+  readonly side: ConfidentialBatchSide;
   readonly yieldDto: EarnYieldWithProvider;
 }>;
 

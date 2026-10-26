@@ -1000,6 +1000,7 @@ describe("confidential transaction workflow", () => {
           const previews: Array<ActionPreviewRequest> = [];
           const decrypted: Array<ConfidentialPreparation> = [];
           const read: Array<unknown> = [];
+          const signed: Array<readonly [string, string, string]> = [];
           const workflow = yield* startWorkflow(
             capabilities({
               yieldOperations: {
@@ -1017,11 +1018,23 @@ describe("confidential transaction workflow", () => {
                   Effect.sync(() => previews.push(request)).pipe(
                     Effect.as(
                       request.intent === "exit"
-                        ? preparedAction([step("unwrap", "UNWRAP", 0)])
-                        : preparedAction([
-                            step("withdraw", "WITHDRAW", 0),
-                            step("redeem", "REDEEM", 1),
-                          ])
+                        ? yieldApiActionFixture({
+                            address,
+                            id: "unwrap-action",
+                            transactions: [step("unwrap", "UNWRAP", 0)],
+                            type: "UNSTAKE",
+                            yieldId,
+                          })
+                        : yieldApiActionFixture({
+                            address,
+                            id: "withdraw-action",
+                            transactions: [
+                              step("withdraw", "WITHDRAW", 0),
+                              step("redeem", "REDEEM", 1),
+                            ],
+                            type: "WITHDRAW",
+                            yieldId,
+                          })
                     )
                   ),
                 submitSignedTransaction: ({ transactionId }) =>
@@ -1042,6 +1055,10 @@ describe("confidential transaction workflow", () => {
                     Effect.as(requestId)
                   ),
               },
+              signTransaction: ({ txMeta }) =>
+                Effect.sync(() =>
+                  signed.push([txMeta.txId, txMeta.actionId, txMeta.actionType])
+                ).pipe(Effect.as({ broadcasted: false, signedTx: "0x02aa" })),
             }),
             instantInput
           );
@@ -1083,6 +1100,12 @@ describe("confidential transaction workflow", () => {
             ["unwrap", true],
             ["withdraw", true],
             ["redeem", true],
+          ]);
+          // Each transaction reaches the wallet with its own action's meta.
+          expect(signed).toEqual([
+            ["unwrap", "unwrap-action", "UNSTAKE"],
+            ["withdraw", "withdraw-action", "WITHDRAW"],
+            ["redeem", "withdraw-action", "WITHDRAW"],
           ]);
           expect(completed.context.finalize).toEqual({
             done: true,

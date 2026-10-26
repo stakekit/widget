@@ -102,10 +102,8 @@ export const makeClassicFlowExecutionPage = (
     intake._tag === "YieldActionContinuation"
       ? intake.action.yieldId
       : intake.request.yieldId;
-  const preparedTransactionTypes =
-    handoff.source._tag === "Prepare"
-      ? handoff.source.preparedTransactionTypes
-      : [];
+  const plannedStepTypes =
+    handoff.source._tag === "Prepare" ? handoff.source.plannedStepTypes : [];
 
   const executionAtom = walletRuntime
     .atom(startClassicFlowExecution(session, handoff))
@@ -126,7 +124,7 @@ export const makeClassicFlowExecutionPage = (
       state,
       steps: state
         ? getClassicTransactionStepsView(state, {
-            preparedTransactionTypes,
+            plannedStepTypes,
             yieldId,
           })
         : {

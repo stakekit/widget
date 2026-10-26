@@ -102,11 +102,11 @@ const getPendingPlannedSteps = (
 export const getClassicTransactionStepsView = (
   machineState: TransactionWorkflowState,
   {
-    preparedTransactionTypes,
+    plannedStepTypes,
     yieldId,
   }: Pick<ClassicTransactionWorkflowInput, "yieldId"> & {
-    /** Labels the steps a confidential flow prepares, until it does. */
-    readonly preparedTransactionTypes: ReadonlyArray<PlannedStepType>;
+    /** The Planned Steps a confidential flow lists until it prepares them. */
+    readonly plannedStepTypes: ReadonlyArray<PlannedStepType>;
   }
 ) => {
   const { finalize, preparation } = machineState.context;
@@ -125,11 +125,11 @@ export const getClassicTransactionStepsView = (
   // Presentation only, never signed: the API returns its transactions later.
   const plannedRows = getPendingPlannedSteps(
     machineState.context,
-    preparedTransactionTypes
+    plannedStepTypes
   ).map(
     (type, index): ClassicStepRow => ({
       done: false,
-      id: `prepared-${index}-${type}`,
+      id: `planned-${index}-${type}`,
       phases: idle,
       rejected: false,
       type,

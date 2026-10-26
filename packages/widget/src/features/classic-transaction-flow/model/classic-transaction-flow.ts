@@ -202,8 +202,8 @@ export type ClassicFlowExecutionSource =
        */
       readonly conversion: ReadonlyArray<DirectTransaction>;
       readonly preparation: ConfidentialPreparation;
-      /** Presentation only: the API legs Steps lists until it returns them. */
-      readonly preparedTransactionTypes: ReadonlyArray<PlannedStepType>;
+      /** Presentation only: the Planned Steps Steps lists until it prepares them. */
+      readonly plannedStepTypes: ReadonlyArray<PlannedStepType>;
     }>;
 
 /**
@@ -649,12 +649,12 @@ export const getClassicFlowConfidentialPreparation = (
 };
 
 /**
- * The steps a confidential flow prepares only after encrypting or decrypting
- * its amount; they label those steps until the API returns them. A private
- * exit first grants the router on each share token not yet granted; an
- * instant exit then finalizes its unwrap in the same flow.
+ * The Planned Steps of a confidential flow: what it prepares only after
+ * encrypting or decrypting its amount, listed until the API returns them. A
+ * private exit first grants the router on each share token not yet granted;
+ * an instant exit then finalizes its unwrap in the same flow.
  */
-export const getClassicFlowPreparedTransactionTypes = (
+export const getClassicFlowPlannedStepTypes = (
   intake: ClassicTransactionFlowIntake,
   { missingOperatorGrants }: { readonly missingOperatorGrants: number }
 ): ReadonlyArray<PlannedStepType> => {

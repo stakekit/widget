@@ -3,7 +3,7 @@ import * as Atom from "effect/reactivity/Atom";
 import { isOptionalPendingAction } from "../../../../domain/action/pending-action";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import { isUnfinishedInstantWithdrawal } from "../../../../domain/earn/confidential";
+import { isUnfinishedInstantExit } from "../../../../domain/earn/confidential";
 import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
 import type { EarnBalance } from "../../../../domain/earn/models";
 import { getDashboardYieldCategory } from "../../../../domain/earn/yield";
@@ -34,7 +34,10 @@ export type PositionItem = {
   readonly allBalances: EarnBalance[];
   readonly balanceId: string;
   readonly actionRequired: boolean;
-  /** Only optional cancellations are pending: the request is in progress. */
+  /**
+   * Only optional cancellations are pending, or an Instant Exit is still to
+   * finalize: the request is in progress.
+   */
   readonly hasPendingRequest: boolean;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
   readonly hasPendingClaimRewards: boolean;
@@ -78,12 +81,11 @@ export const toPositionItems = (
         const pendingTypes = balancesWithAmount.flatMap((balance) =>
           balance.pendingActions.map((action) => action.type)
         );
-        // An instant withdrawal already began; completing it is in progress.
-        const hasUnfinishedInstantWithdrawal = balancesWithAmount.some(
-          (balance) =>
-            balance.pendingActions.some(({ type }) =>
-              isUnfinishedInstantWithdrawal(balance, type)
-            )
+        // An Instant Exit already began; finalizing it is in progress.
+        const hasUnfinishedInstantExit = balancesWithAmount.some((balance) =>
+          balance.pendingActions.some(({ type }) =>
+            isUnfinishedInstantExit(balance, type)
+          )
         );
         // Claims have their own badge; optional actions require nothing.
         const hasRequiredPendingAction = balancesWithAmount.some((balance) =>
@@ -91,7 +93,7 @@ export const toPositionItems = (
             ({ type }) =>
               type !== "CLAIM_REWARDS" &&
               !isOptionalPendingAction(type) &&
-              !isUnfinishedInstantWithdrawal(balance, type)
+              !isUnfinishedInstantExit(balance, type)
           )
         );
         const actionRequired =
@@ -113,7 +115,7 @@ export const toPositionItems = (
           hasPendingRequest:
             !actionRequired &&
             (pendingTypes.includes("CANCEL_PENDING") ||
-              hasUnfinishedInstantWithdrawal),
+              hasUnfinishedInstantExit),
           pointsRewardTokenBalances: balancesWithAmount.filter(
             (balance) => !!balance.token.isPoints
           ),

@@ -86,7 +86,7 @@ const makeInput = (conversion: ReadonlyArray<DirectTransaction>) =>
 
 const view = (state: TransactionWorkflowState) =>
   getClassicTransactionStepsView(state, {
-    preparedTransactionTypes: ["DEPOSIT"],
+    plannedStepTypes: ["DEPOSIT"],
     yieldId,
   });
 
@@ -223,7 +223,7 @@ describe("Classic Steps view", () => {
     const planned = ["UNWRAP", "DECRYPT", "WITHDRAW", "REDEEM"] as const;
     const instantRows = (state: TransactionWorkflowState) =>
       getClassicTransactionStepsView(state, {
-        preparedTransactionTypes: planned,
+        plannedStepTypes: planned,
         yieldId,
       }).txStates.map(({ done, phases, type }) => [type, phases.sign, done]);
     const preparing = initializeTransactionWorkflow(makeInput([]));

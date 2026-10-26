@@ -46,7 +46,7 @@ import {
   type ClassicFlowSession,
   type ClassicTransactionFlowIntake,
   getClassicFlowConfidentialPreparation,
-  getClassicFlowPreparedTransactionTypes,
+  getClassicFlowPlannedStepTypes,
   getClassicTransactionFlowGasWarningInput,
   getClassicTransactionFlowKycYield,
   getClassicTransactionFlowReviewPricingInput,
@@ -303,11 +303,11 @@ const planClassicFlowConversion = Effect.fn("planClassicFlowConversion")(
 );
 
 /**
- * The API legs Steps lists until the prepared action returns them. A private
- * exit's operator grants are read when the user confirms, as the API reads
- * them when it builds the action.
+ * The Planned Steps Steps lists until the prepared action returns them. A
+ * private exit's operator grants are read when the user confirms, as the API
+ * reads them when it builds the action.
  */
-const planClassicFlowPreparedSteps = Effect.fn("planClassicFlowPreparedSteps")(
+const readClassicFlowPlannedSteps = Effect.fn("readClassicFlowPlannedSteps")(
   function* (
     intake: ClassicTransactionFlowIntake,
     preparation: ConfidentialPreparation
@@ -326,7 +326,7 @@ const planClassicFlowPreparedSteps = Effect.fn("planClassicFlowPreparedSteps")(
           })
         )
       : 0;
-    return getClassicFlowPreparedTransactionTypes(intake, {
+    return getClassicFlowPlannedStepTypes(intake, {
       missingOperatorGrants,
     });
   }
@@ -345,7 +345,7 @@ const planClassicFlowPreparation = Effect.fn("planClassicFlowPreparation")(
       _tag: "Prepare",
       conversion: yield* planClassicFlowConversion(session, preparation),
       preparation,
-      preparedTransactionTypes: yield* planClassicFlowPreparedSteps(
+      plannedStepTypes: yield* readClassicFlowPlannedSteps(
         session.intake,
         preparation
       ),

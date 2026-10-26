@@ -24,7 +24,7 @@ import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   type ClassicFlowHandoff,
   getClassicFlowExitCompletion,
-  getClassicFlowPreparedTransactionTypes,
+  getClassicFlowPlannedStepTypes,
   getClassicFlowWorkflowInput,
   makeClassicFlowSession,
   type NavigatingClassicTransactionFlowStart,
@@ -348,17 +348,17 @@ describe("confidential vault Classic Transaction Flow", () => {
 
   it("lists a private exit's operator grants before its redeem, and an instant exit's unwrap", () => {
     expect(
-      getClassicFlowPreparedTransactionTypes(exitStart().intake, {
+      getClassicFlowPlannedStepTypes(exitStart().intake, {
         missingOperatorGrants: 2,
       })
     ).toEqual(["SET_OPERATOR", "SET_OPERATOR", "REDEEM"]);
     expect(
-      getClassicFlowPreparedTransactionTypes(exitStart().intake, {
+      getClassicFlowPlannedStepTypes(exitStart().intake, {
         missingOperatorGrants: 0,
       })
     ).toEqual(["REDEEM"]);
     expect(
-      getClassicFlowPreparedTransactionTypes(exitStart(usdc.address).intake, {
+      getClassicFlowPlannedStepTypes(exitStart(usdc.address).intake, {
         missingOperatorGrants: 0,
       })
     ).toEqual(["UNWRAP", "DECRYPT", "WITHDRAW", "REDEEM"]);
@@ -410,8 +410,7 @@ describe("confidential vault Classic Transaction Flow", () => {
           },
         ]);
         expect(
-          handoff.source._tag === "Prepare" &&
-            handoff.source.preparedTransactionTypes
+          handoff.source._tag === "Prepare" && handoff.source.plannedStepTypes
         ).toEqual(["SET_OPERATOR", "SET_OPERATOR", "REDEEM"]);
       })
   );
@@ -533,7 +532,7 @@ describe("confidential vault execution", () => {
         expect(events).toEqual(["plan", "confirmed"]);
         expect(
           getClassicTransactionStepsView(preparing, {
-            preparedTransactionTypes: ["DEPOSIT"],
+            plannedStepTypes: ["DEPOSIT"],
             yieldId: confidentialYieldFixture().id,
           }).txStates.map(({ type }) => type)
         ).toEqual(["ENCRYPT", "RESET_APPROVAL", "APPROVAL", "WRAP", "DEPOSIT"]);
