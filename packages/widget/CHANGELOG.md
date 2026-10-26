@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.294](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.293...@stakekit/widget@0.0.294) (2026-10-26)
+
+
+### Bug Fixes
+
+* **zama:** withdraw in vault shares, finish instant exits, show in-flight cancels ([#601](https://github.com/stakekit/widget/issues/601)) ([8df957c](https://github.com/stakekit/widget/commit/8df957c96f06b96247920668c0a84e4a01a2d4c9))
+
 ## [0.0.293](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.292...@stakekit/widget@0.0.293) (2026-10-23)
 
 
