@@ -28,7 +28,9 @@ body[data-theme="light"][data-variant="porto"] {
 }
 
 .pg-badge {
-  padding: 4px 8px;
+  /* Same box as the toolbar button: padding, 1px border, radius. */
+  padding: 6px 10px;
+  border: 1px solid transparent;
   border-radius: 6px;
   background: rgba(128, 128, 128, 0.25);
   color: #e6e6e6;
