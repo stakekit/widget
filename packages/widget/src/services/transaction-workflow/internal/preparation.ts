@@ -1,4 +1,5 @@
 import { Data, Duration, Effect, Result, Schedule } from "effect";
+import { keccak256 } from "viem";
 import type { ManageActionCommand } from "../../../domain/action/models";
 import { getValidStakeSessionTx } from "../../../domain/action/rules";
 import {
@@ -144,10 +145,17 @@ export const makePrepareAction = Effect.gen(function* () {
           source.transaction.type === "UNWRAP" &&
           meta.done
       );
-      const hash =
+      const submission =
         unwrap?.meta.submissionIndex == null
           ? null
-          : (context.submissions[unwrap.meta.submissionIndex]?.hash ?? null);
+          : (context.submissions[unwrap.meta.submissionIndex] ?? null);
+      // The API may not return the hash; a signed EVM transaction's keccak256
+      // is its hash.
+      const hash =
+        submission?.hash ??
+        (submission?.signedPayload
+          ? keccak256(submission.signedPayload as `0x${string}`)
+          : null);
       if (!hash) {
         return yield* fail("The unwrap transaction is unknown.", null, false);
       }

@@ -12,6 +12,7 @@ import {
   Stream,
 } from "effect";
 import { TestClock } from "effect/testing";
+import { keccak256 } from "viem";
 import {
   type DirectTransaction,
   makeErc20Approval,
@@ -1160,6 +1161,44 @@ describe("confidential transaction workflow", () => {
           yield* Fiber.join(completion);
 
           expect(reads).toBe(3);
+        }).pipe(Effect.scoped)
+    );
+
+    it.effect(
+      "finalizes an unwrap whose submission returned no hash, from its signed transaction",
+      () =>
+        Effect.gen(function* () {
+          const read: Array<string> = [];
+          const workflow = yield* startWorkflow(
+            capabilities({
+              yieldOperations: {
+                getYieldBalances: () => Effect.succeed(withdrawable(requestId)),
+                previewAction: (request) =>
+                  Effect.succeed(
+                    request.intent === "exit"
+                      ? preparedAction([step("unwrap", "UNWRAP", 0)])
+                      : preparedAction([step("withdraw", "WITHDRAW", 0)])
+                  ),
+                submitSignedTransaction: () =>
+                  Effect.succeed({
+                    explorerUrl: null,
+                    status: "BROADCASTED",
+                  } as never),
+              },
+              zama: {
+                decryptCommand: ({ command }) => Effect.succeed(command),
+                encryptCommand: ({ command }) => Effect.succeed(command),
+                readUnwrapRequest: ({ hash }) =>
+                  Effect.sync(() => read.push(hash)).pipe(Effect.as(requestId)),
+              },
+            }),
+            instantInput
+          );
+
+          yield* awaitState(workflow, (state) => state._tag === "Completed");
+
+          // The signed EVM transaction's keccak256 is its hash.
+          expect(read).toEqual([keccak256("0x02aa")]);
         }).pipe(Effect.scoped)
     );
   });
