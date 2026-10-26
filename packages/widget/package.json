@@ -190,7 +190,7 @@
   },
   "msw": {
     "workerDirectory": [
-      "public"
+      "tests/mocks/public"
     ]
   }
 }

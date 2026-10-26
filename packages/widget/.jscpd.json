@@ -1,5 +1,5 @@
 {
-  "path": ["src", "scripts", "vite"],
+  "path": ["src", "playground", "scripts", "vite"],
   "format": ["typescript", "tsx"],
   "ignore": ["**/src/generated/**"],
   "minTokens": 50,

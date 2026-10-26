@@ -3,7 +3,8 @@
  *
  * Run via `pnpm check-hygiene:architecture`. Cruises `src` with the
  * dependency-cruiser config, then fails on owned-Module cycles that are not
- * listed in the baseline and on test directories that mirror no `src` owner.
+ * listed in the baseline and on test directories that mirror no `src` or
+ * `playground` directory.
  */
 import { readdirSync } from "node:fs";
 import { join, sep } from "node:path";
@@ -70,14 +71,22 @@ const listRelativePaths = (
         .join("/")
     );
 
+// The playground is the dev page's host app outside `src`; its tests mirror
+// it under `tests/playground`.
 const misplacedTestDirectories = findMisplacedTestDirectories({
-  sourceDirectories: new Set(listRelativePaths("src", "directories")),
+  sourceDirectories: new Set([
+    ...listRelativePaths("src", "directories"),
+    "playground",
+    ...listRelativePaths("playground", "directories").map(
+      (directory) => `playground/${directory}`
+    ),
+  ]),
   testFiles: listRelativePaths("tests", "files"),
 });
 
 if (misplacedTestDirectories.length > 0) {
   process.stderr.write(
-    `Test directories must mirror a src directory or be a support directory:\n${misplacedTestDirectories
+    `Test directories must mirror a src or playground directory, or be a support directory:\n${misplacedTestDirectories
       .map((directory) => `  tests/${directory}`)
       .join("\n")}\n`
   );
