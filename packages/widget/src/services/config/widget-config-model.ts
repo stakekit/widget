@@ -1,5 +1,5 @@
 import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
-import type { DashboardYieldCategory } from "../../domain/earn/contract";
+import type { YieldCategory } from "../../domain/earn/contract";
 import type {
   PreferredTokenYieldsPerNetwork,
   ValidatorsConfig,
@@ -40,7 +40,7 @@ export type WidgetConfig = {
   readonly chainModal?: ZerionChainModal;
   readonly customTranslations?: CustomTranslations;
   readonly dashboardVariant: boolean;
-  readonly dashboardYieldCategoryOrder: ReadonlyArray<DashboardYieldCategory>;
+  readonly yieldCategoryOrder: ReadonlyArray<YieldCategory>;
   readonly disableAutoScrollToTop: boolean;
   readonly disableInitLayoutAnimation: boolean;
   readonly disableInjectedProviderDiscovery: boolean;

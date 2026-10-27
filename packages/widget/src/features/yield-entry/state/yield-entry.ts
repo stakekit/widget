@@ -14,10 +14,6 @@ import {
 } from "../../../services/wallet/wallet-command-identity";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import {
-  type ClassicTransactionFlowEnterMount,
-  startClassicTransactionFlowAtom,
-} from "../../classic-transaction-flow/index";
 import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
 import { widgetConfigAtom } from "../../widget-configuration/index";
 import {
@@ -26,6 +22,10 @@ import {
   makeYieldSummary,
   refreshCurrentYieldKycAtom,
 } from "../../yield-summary/index";
+import {
+  startYieldTransactionFlowAtom,
+  type YieldTransactionFlowEnterMount,
+} from "../../yield-transaction-flow/index";
 import {
   projectYieldEntry,
   type YieldEntryAmountInitialization,
@@ -108,7 +108,7 @@ export type YieldEntryFacadeInput = Readonly<{
   readonly availableAmount: BigNumber | null;
   readonly entry: YieldEntryProjectionInput["entry"];
   readonly hasNoYields: boolean;
-  readonly mount: ClassicTransactionFlowEnterMount;
+  readonly mount: YieldTransactionFlowEnterMount;
   readonly readiness: YieldEntryReadiness;
   readonly selectedYieldHasActivePosition: boolean;
   readonly validationKey: string;
@@ -266,7 +266,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
               return "kyc-blocked" as const;
             case "Unavailable":
               return "unavailable" as const;
-            case "StartClassicFlow": {
+            case "StartYieldFlow": {
               if (!view.preparation || !input.walletScope) {
                 return yield* Effect.die(
                   "Yield Entry submission invariant violated"
@@ -274,7 +274,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
               }
               const providerOption = view.preparation.selectedProviderOption;
               const outcome = yield* context.setResult(
-                startClassicTransactionFlowAtom,
+                startYieldTransactionFlowAtom,
                 {
                   intake: {
                     _tag: "Enter",

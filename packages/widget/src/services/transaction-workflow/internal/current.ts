@@ -1,6 +1,6 @@
 import { Effect, Match } from "effect";
 import type { TransactionWorkflowId } from "../../../domain/identity/identifiers";
-import type { ClassicActionMeta } from "../../wallet/wallet-transactions";
+import type { YieldActionMeta } from "../../wallet/wallet-transactions";
 import {
   getCurrentTransactionWorkflowBatch,
   type TransactionWorkflowContext,
@@ -16,24 +16,24 @@ type CurrentBatch = NonNullable<
   ReturnType<typeof getCurrentTransactionWorkflowBatch>
 >;
 
-/** A current transaction exists only once a Classic action is prepared. */
-type PreparedClassicDomain = Extract<
+/** A current transaction exists only once a Yield action is prepared. */
+type PreparedYieldDomain = Extract<
   TransactionWorkflowContext["domain"],
-  { readonly _tag: "Classic" }
-> & { readonly actionMeta: ClassicActionMeta };
+  { readonly _tag: "Yield" }
+> & { readonly actionMeta: YieldActionMeta };
 
 type CurrentWorkflow =
   | {
-      readonly _tag: "Classic";
+      readonly _tag: "Yield";
       readonly batch: CurrentBatch;
-      readonly domain: PreparedClassicDomain;
-      readonly transaction: TransactionWorkflowTransactionFor<"Classic">;
+      readonly domain: PreparedYieldDomain;
+      readonly transaction: TransactionWorkflowTransactionFor<"Yield">;
       readonly workflowId: TransactionWorkflowId;
     }
   | {
       readonly _tag: "Direct";
       readonly batch: CurrentBatch;
-      readonly domain: PreparedClassicDomain;
+      readonly domain: PreparedYieldDomain;
       readonly transaction: TransactionWorkflowTransactionFor<"Direct">;
       readonly workflowId: TransactionWorkflowId;
     }
@@ -69,25 +69,25 @@ export const requireCurrentWorkflow = Effect.fn(
     );
 
   return yield* Match.value(context.domain).pipe(
-    Match.tag("Classic", (domain) => {
+    Match.tag("Yield", (domain) => {
       const { actionMeta } = domain;
       if (!batch || !actionMeta) return missingCurrent();
       const prepared = { ...domain, actionMeta };
-      const classic = getCurrentTransactionWorkflowTransactionFor(
+      const yieldTransaction = getCurrentTransactionWorkflowTransactionFor(
         context,
-        "Classic"
+        "Yield"
       );
       const direct = getCurrentTransactionWorkflowTransactionFor(
         context,
         "Direct"
       );
 
-      if (classic) {
+      if (yieldTransaction) {
         return Effect.succeed({
-          _tag: "Classic" as const,
+          _tag: "Yield" as const,
           batch,
           domain: prepared,
-          transaction: classic,
+          transaction: yieldTransaction,
           workflowId,
         });
       }

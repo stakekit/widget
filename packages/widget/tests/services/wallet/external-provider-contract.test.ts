@@ -28,7 +28,7 @@ import {
 } from "../../../src/services/wallet/external-provider";
 import type {
   BorrowTransactionMeta,
-  ClassicTransactionMeta,
+  YieldTransactionMeta,
 } from "../../../src/services/wallet/wallet-transactions";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -78,7 +78,7 @@ const transactionMeta = {
   txId: Schema.decodeSync(TransactionId)("transaction-id"),
   txType: "STAKE",
   yieldId: Schema.decodeSync(YieldId)("solana-sol-native-staking"),
-} satisfies ClassicTransactionMeta;
+} satisfies YieldTransactionMeta;
 
 const borrowTransactionMeta = {
   actionId: Schema.decodeSync(BorrowActionId)("borrow-action-id"),
@@ -345,7 +345,7 @@ describe("generic external provider callback contract", () => {
     "sends Borrow transactions and typed data with Borrow metadata",
     () =>
       Effect.gen(function* () {
-        const sendTransaction = vi.fn(async () => "classic-hash");
+        const sendTransaction = vi.fn(async () => "yield-hash");
         const sendBorrowTransaction = vi.fn(
           async (): Promise<SKBorrowTxResult> => ({
             type: "success",
@@ -400,7 +400,7 @@ describe("generic external provider callback contract", () => {
             signature: "typed-signature",
           }),
           switchChain: async () => undefined,
-          sendTransaction: async () => "classic-hash",
+          sendTransaction: async () => "yield-hash",
           sendBorrowTransaction: vi.fn(
             async (): Promise<SKBorrowTxResult> => ({
               type: "success",
@@ -435,7 +435,7 @@ describe("generic external provider callback contract", () => {
             signature: "typed-signature",
           }),
           switchChain: async () => undefined,
-          sendTransaction: async () => "classic-hash",
+          sendTransaction: async () => "yield-hash",
           sendBorrowTransaction,
         });
         const rejected = new ExternalProvider(

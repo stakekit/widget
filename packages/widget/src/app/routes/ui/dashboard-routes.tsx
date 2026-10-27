@@ -8,8 +8,6 @@ import {
   createBorrowMarketPositionRoutes,
 } from "../../../features/borrow/composition";
 import { createBorrowTransactionFlowRoutes } from "../../../features/borrow-transaction-flow/composition";
-// import { RewardsTabPage } from "../../../domain/portfolio/rewards";
-import { createClassicFlowRoutes } from "../../../features/classic-transaction-flow/composition";
 import { EarnPageContent } from "../../../features/earn/composition";
 import { ManagePage } from "../../../features/portfolio/composition";
 import {
@@ -18,6 +16,8 @@ import {
 } from "../../../features/position-details/composition";
 import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import { GlobalModals } from "../../../features/widget-shell/composition";
+// import { RewardsTabPage } from "../../../domain/portfolio/rewards";
+import { createYieldFlowRoutes } from "../../../features/yield-transaction-flow/composition";
 import { BorrowFeatureRoute } from "./borrow-feature-route";
 import {
   DashboardEarnFlowOverview,
@@ -58,7 +58,7 @@ export const DashboardRoutes = () => {
             </Route>
 
             <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-              {createClassicFlowRoutes({
+              {createYieldFlowRoutes({
                 journey: "Enter",
                 layout: <DashboardEarnFlowOverview />,
               })}
@@ -87,7 +87,7 @@ export const DashboardRoutes = () => {
 
                 <Route path="stake">
                   <Route index element={<Navigate replace to=".." />} />
-                  {createClassicFlowRoutes({ journey: "Enter" })}
+                  {createYieldFlowRoutes({ journey: "Enter" })}
                   <Route path="*" element={<Navigate replace to="../.." />} />
                 </Route>
 
@@ -98,13 +98,13 @@ export const DashboardRoutes = () => {
 
                 <Route path="unstake">
                   <Route index element={<Navigate replace to=".." />} />
-                  {createClassicFlowRoutes({ journey: "Exit" })}
+                  {createYieldFlowRoutes({ journey: "Exit" })}
                   <Route path="*" element={<Navigate replace to="../.." />} />
                 </Route>
 
                 <Route path="pending-action">
                   <Route index element={<Navigate replace to=".." />} />
-                  {createClassicFlowRoutes({ journey: "Manage" })}
+                  {createYieldFlowRoutes({ journey: "Manage" })}
                   <Route path="*" element={<Navigate replace to="../.." />} />
                 </Route>
 

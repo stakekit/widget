@@ -95,7 +95,7 @@ export const makeSubmitCurrent = Effect.gen(function* () {
           } satisfies TransactionWorkflowSubmission)
         );
       }),
-      Match.tag("Classic", ({ transaction }) => {
+      Match.tag("Yield", ({ transaction }) => {
         const { source } = transaction;
         const submit = broadcasted
           ? yieldOperations.submitTransactionHash({

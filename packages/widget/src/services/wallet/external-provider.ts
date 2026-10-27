@@ -9,7 +9,7 @@ import type { ExternalProviderSnapshot } from "../config/external-provider-snaps
 import type { Eip712TypedData } from "./wallet-commands";
 import type {
   BorrowTransactionMeta,
-  ClassicTransactionMeta,
+  YieldTransactionMeta,
 } from "./wallet-transactions";
 
 export class ExternalProviderError extends Data.TaggedError(
@@ -38,7 +38,7 @@ type HostOutcome = Effect.Effect<
 export class ExternalProvider {
   constructor(private variantProvider: CurrentRef<ExternalProviderSnapshot>) {}
 
-  sendTransaction(tx: SKTx, txMeta: ClassicTransactionMeta): HostOutcome {
+  sendTransaction(tx: SKTx, txMeta: YieldTransactionMeta): HostOutcome {
     return Effect.suspend(() => {
       const sendTransaction =
         this.variantProvider.current.provider.sendTransaction;
@@ -62,7 +62,7 @@ export class ExternalProvider {
             ? { type: "success" as const, txHash: result }
             : result
         ),
-        Effect.flatMap(toTransactionHash("classic"))
+        Effect.flatMap(toTransactionHash("yield"))
       );
     });
   }
@@ -212,7 +212,7 @@ const SignatureOutcome = Schema.Union([
   SignatureError,
 ]);
 
-/** Classic callbacks also accept the legacy bare string. */
+/** Yield callbacks also accept the legacy bare string. */
 const LegacyTransactionOutcome = Schema.Union([
   Schema.NonEmptyString,
   ...TransactionOutcome.members,
@@ -229,7 +229,7 @@ const LegacySignatureOutcome = Schema.Union([
  * rather than signed again.
  */
 const toTransactionHash =
-  (family: "borrow" | "classic") =>
+  (family: "borrow" | "yield") =>
   (result: typeof TransactionOutcome.Type): HostOutcome => {
     if (result.type === "success") return Effect.succeed(result.txHash);
     if (result.type === "error" && result.txHash !== undefined) {

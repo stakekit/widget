@@ -25,8 +25,8 @@ import {
 import type { WalletOwnerCheckedInput } from "../../../src/services/wallet/wallet-commands";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type {
-  ClassicTransactionMeta,
   WalletSignTransactionInput,
+  YieldTransactionMeta,
 } from "../../../src/services/wallet/wallet-transactions";
 import { yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
@@ -86,7 +86,7 @@ const waitForWalletConnection = (
 const solanaAddress = "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ";
 const tonAddress = "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy";
 
-const createClassicTxMeta = ({
+const createYieldTxMeta = ({
   address,
   network,
   yieldId,
@@ -94,7 +94,7 @@ const createClassicTxMeta = ({
   readonly address: string;
   readonly network: "solana" | "ton";
   readonly yieldId: string;
-}): ClassicTransactionMeta => ({
+}): YieldTransactionMeta => ({
   txId: Schema.decodeSync(TransactionId)("transaction-id"),
   actionId: Schema.decodeSync(ActionId)("action-id"),
   actionType: "STAKE",
@@ -117,14 +117,14 @@ const createClassicTxMeta = ({
 });
 
 const createSolanaTxMeta = () =>
-  createClassicTxMeta({
+  createYieldTxMeta({
     address: solanaAddress,
     network: "solana",
     yieldId: "solana-sol-native-multivalidator-staking",
   });
 
 const createTonTxMeta = () =>
-  createClassicTxMeta({
+  createYieldTxMeta({
     address: tonAddress,
     network: "ton",
     yieldId: "ton-ton-chorus-one-pools-staking",
@@ -187,7 +187,7 @@ describe("SK Wallet", () => {
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
       expectedOwner: { address: solanaAddress, network: "solana" },
-      family: "classic",
+      family: "yield",
       network: "solana",
       tx: "AQIDBA==",
       txMeta: createSolanaTxMeta(),
@@ -236,7 +236,7 @@ describe("SK Wallet", () => {
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
       expectedOwner: { address: solanaAddress, network: "solana" },
-      family: "classic",
+      family: "yield",
       network: "solana",
       tx: "0xA1B2",
       txMeta: createSolanaTxMeta(),
@@ -289,7 +289,7 @@ describe("SK Wallet", () => {
 
     const solanaRes = solanaWallet.result.current.signTransaction({
       expectedOwner: { address: solanaAddress, network: "solana" },
-      family: "classic",
+      family: "yield",
       network: "solana",
       tx: "12345",
       txMeta: createSolanaTxMeta(),
@@ -329,7 +329,7 @@ describe("SK Wallet", () => {
     const tonFixture = createDefaultTonTransactionFixture();
     const tonRes = await tonWallet.result.current.signTransaction({
       expectedOwner: { address: tonAddress, network: "ton" },
-      family: "classic",
+      family: "yield",
       network: "ton",
       tx: tonFixture.tx,
       txMeta: createTonTxMeta(),
@@ -384,7 +384,7 @@ describe("SK Wallet", () => {
 
     const tonRes = await tonWallet.result.current.signTransaction({
       expectedOwner: { address: tonAddress, network: "ton" },
-      family: "classic",
+      family: "yield",
       network: "ton",
       tx: JSON.stringify(rawTx),
       txMeta: createTonTxMeta(),

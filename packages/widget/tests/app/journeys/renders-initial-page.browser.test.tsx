@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
-import { DashboardYieldCategory } from "../../../src/public-api/types";
+import { YieldCategory } from "../../../src/public-api/types";
 import { legacyYieldFixture, yieldApiYieldDtoFixture } from "../../fixtures";
 import {
   borrowApiRoute,
@@ -30,7 +30,7 @@ const emptyBorrowPosition = {
   totalSuppliedUsd: "0",
 } as const;
 
-const dashboardCategoryYieldsHandler = () => {
+const yieldCategoryYieldsHandler = () => {
   const stakeYield = yieldApiYieldDtoFixture({
     id: "ethereum-eth-native-staking",
   });
@@ -215,7 +215,7 @@ describe("Renders initial page", () => {
   it("uses category dashboard yield grouping by default with Borrow disabled", async ({
     worker,
   }) => {
-    worker.use(dashboardCategoryYieldsHandler());
+    worker.use(yieldCategoryYieldsHandler());
 
     const app = await renderApp({
       skProps: {
@@ -245,7 +245,7 @@ describe("Renders initial page", () => {
   it("shows Borrow when enabled with dashboard category grouping", async ({
     worker,
   }) => {
-    worker.use(dashboardCategoryYieldsHandler());
+    worker.use(yieldCategoryYieldsHandler());
 
     const app = await renderApp({
       skProps: {
@@ -294,17 +294,17 @@ describe("Renders initial page", () => {
   });
 
   it("uses the configured dashboard category tab order", async ({ worker }) => {
-    worker.use(dashboardCategoryYieldsHandler());
+    worker.use(yieldCategoryYieldsHandler());
 
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
         dashboardVariant: true,
-        dashboardYieldCategoryOrder: [
-          DashboardYieldCategory.Stake,
-          DashboardYieldCategory.DeFi,
-          DashboardYieldCategory.RWA,
+        yieldCategoryOrder: [
+          YieldCategory.Stake,
+          YieldCategory.DeFi,
+          YieldCategory.RWA,
         ],
       },
     });
@@ -345,7 +345,7 @@ describe("Renders initial page", () => {
   it("updates the selected dashboard category after route tab changes", async ({
     worker,
   }) => {
-    worker.use(dashboardCategoryYieldsHandler());
+    worker.use(yieldCategoryYieldsHandler());
 
     const app = await renderApp({
       skProps: {

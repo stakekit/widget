@@ -11,7 +11,7 @@ import {
 } from "../../../../../yield-summary/index";
 import { positionPricesAtom } from "../../../../state/read-models/position-list-item";
 import type { PositionItem } from "../../../../state/read-models/positions";
-import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
+import { usePositionListItem as useBasePositionListItem } from "../../../compact/positions-page/hooks/use-position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {
   const { locale } = useWidgetPresentation();

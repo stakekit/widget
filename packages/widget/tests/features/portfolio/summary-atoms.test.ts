@@ -6,7 +6,7 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../../src/domain/earn/models";
-import { getDashboardYieldCategory } from "../../../src/domain/earn/yield";
+import { getYieldCategory } from "../../../src/domain/earn/yield";
 import type { exactDecimal } from "../../../src/domain/finance/exact";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { Prices } from "../../../src/domain/health/models";
@@ -425,7 +425,7 @@ describe("summary atom derivations", () => {
       rewardRate: 0.05,
       yieldId: "yield-1",
     });
-    const category = getDashboardYieldCategory(position.yieldDto);
+    const category = getYieldCategory(position.yieldDto);
     if (!category) throw new Error("expected a dashboard Yield category");
     const listYields = vi.fn(() =>
       Effect.succeed({

@@ -2,7 +2,6 @@ import {
   type ActionMeta,
   type BittensorTx,
   type BundledSKWidgetProps,
-  DashboardYieldCategory,
   EvmChainIds,
   type EvmTx,
   MiscChainIds,
@@ -17,6 +16,7 @@ import {
   type SupportedSKChainIds,
   type TonTx,
   type TronTx,
+  YieldCategory,
 } from "@stakekit/widget/bundle";
 
 type Equal<Left, Right> =
@@ -52,7 +52,7 @@ export type BundleTypeAssertions = [
 ];
 
 export const bundleValueAssertions = {
-  category: DashboardYieldCategory.Stake,
+  category: YieldCategory.Stake,
   evmChainId: EvmChainIds.Ethereum satisfies SupportedSKChainIds,
   miscChainId: MiscChainIds.Solana satisfies SupportedSKChainIds,
   network: "ethereum" satisfies PublicNetwork,

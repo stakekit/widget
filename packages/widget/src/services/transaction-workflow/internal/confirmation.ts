@@ -27,7 +27,7 @@ class ConfirmationPendingError extends Data.TaggedError(
 
 type ConfirmationCheckResult =
   | {
-      readonly _tag: "Classic";
+      readonly _tag: "Yield";
       readonly explorerUrl: string | null;
     }
   | {
@@ -128,7 +128,7 @@ export const makeConfirmCurrent = Effect.gen(function* () {
     }
 
     const check = Match.value(current).pipe(
-      Match.tag("Classic", ({ transaction }) => {
+      Match.tag("Yield", ({ transaction }) => {
         const { source } = transaction;
 
         return yieldOperations
@@ -152,7 +152,7 @@ export const makeConfirmCurrent = Effect.gen(function* () {
 
                 return isTransactionWorkflowDoneStatus(status.status)
                   ? Effect.succeed({
-                      _tag: "Classic",
+                      _tag: "Yield",
                       explorerUrl: status.explorerUrl ?? null,
                     })
                   : Effect.fail(new ConfirmationPendingError());

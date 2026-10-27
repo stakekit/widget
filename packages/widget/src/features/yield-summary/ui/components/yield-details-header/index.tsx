@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import { getDashboardYieldCategory } from "../../../../../domain/earn/yield";
+import { getYieldCategory } from "../../../../../domain/earn/yield";
 import { formatNetworkName } from "../../../../../shared/lib/formatters";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -112,7 +112,7 @@ const formatDetailsTitle = ({
   const name = yieldDto.metadata.name;
 
   if (
-    getDashboardYieldCategory(yieldDto) !== "stake" ||
+    getYieldCategory(yieldDto) !== "stake" ||
     name.toLowerCase().includes(providerName.toLowerCase())
   ) {
     return name;

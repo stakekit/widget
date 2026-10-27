@@ -5,7 +5,7 @@ import {
 } from "../../../src/app/routes/model/tab-resources-prefetch-gate";
 
 describe("tab resources prefetch gate", () => {
-  it("maps dashboard and classic tab paths to landing tabs", () => {
+  it("maps dashboard and compact tab paths to landing tabs", () => {
     expect(resolveTabResourcesPrefetchLanding("/")).toBe("earn");
     expect(resolveTabResourcesPrefetchLanding("/borrow")).toBe("borrow");
     expect(resolveTabResourcesPrefetchLanding("/borrow/markets/1")).toBe(

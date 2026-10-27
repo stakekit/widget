@@ -16,7 +16,7 @@ vi.mock(
     },
   })
 );
-vi.mock("../../../src/features/classic-transaction-flow/views", () => ({
+vi.mock("../../../src/features/yield-transaction-flow/views", () => ({
   YieldActionContinuationCompletePage:
     function YieldActionContinuationCompletePage() {
       return null;
@@ -113,14 +113,14 @@ const ActionScopeGuard = function ActionScopeGuard() {
 };
 
 describe("Activity routes", () => {
-  it("uses Classic details only under an action id", () => {
+  it("uses Compact details only under an action id", () => {
     const routes = createRoutesFromElements(
-      createActivityActionRoutes("Classic")
+      createActivityActionRoutes("Compact")
     );
 
     expect(routes.map(describeRoute)).toEqual([
-      borrowActionIdRoute("Classic"),
-      actionIdRoute("Classic"),
+      borrowActionIdRoute("Compact"),
+      actionIdRoute("Compact"),
     ]);
   });
 

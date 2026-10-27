@@ -2,6 +2,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
 import { useWalletScopeRoute } from "../../../../wallet/index";
 import { usePositionDetailsStakeMatch } from "../../../react/use-position-details-stake-match";
+import { PositionDetailsStakeEntryKey } from "../../../state/stake-entry";
 import {
   hidePositionDetailsStakeTokenBalanceAtom,
   positionDetailsStakeViewAtom,
@@ -12,9 +13,8 @@ import {
   setPositionDetailsStakeMaxAmountAtom,
   setPositionDetailsStakeTronResourceAtom,
   submitPositionDetailsStakeAtom,
-} from "../../../state/dashboard-stake-facade";
-import { PositionDetailsStakeEntryKey } from "../../../state/dashboard-stake-machine";
-import { usePositionDetails } from "../../classic/hooks/use-position-details";
+} from "../../../state/stake-view";
+import { usePositionDetails } from "../../compact/hooks/use-position-details";
 
 export const usePositionDetailsStake = () => {
   const walletScope = useWalletScopeRoute();

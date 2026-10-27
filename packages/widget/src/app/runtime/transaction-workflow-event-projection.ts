@@ -44,7 +44,7 @@ const keysFor = (
   const owner = request.event.owner;
   return Match.valueTags(request, {
     Immediate: ({ event }) => {
-      if (event.workflowKind === "Classic") {
+      if (event.workflowKind === "Yield") {
         return [
           ...resourceInvalidationKeys.walletBalances(owner),
           ...resourceInvalidationKeys.yieldPositions(owner),
@@ -65,7 +65,7 @@ const keysFor = (
       ];
     },
     Reconciliation: ({ event }) => {
-      if (event.workflowKind === "Classic") {
+      if (event.workflowKind === "Yield") {
         return [
           ...resourceInvalidationKeys.walletBalances(owner),
           ...resourceInvalidationKeys.yieldPositions(owner),

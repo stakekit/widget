@@ -26,7 +26,7 @@ services. The application composes Modules; it does not absorb their behavior.
 
 Activity owns the activity feed, action lookup, action details, and their
 variant layouts. A Yield Action Continuation starts from Activity but runs as a
-Classic Transaction Flow; completed and failed details never start one.
+Yield Transaction Flow; completed and failed details never start one.
 
 ## Dependency direction
 

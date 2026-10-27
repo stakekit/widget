@@ -29,7 +29,7 @@ const registrationBackoff = Duration.seconds(1);
 
 /** A transaction whose broadcast hash an API records; Direct ones it does not. */
 export type ApiRecordedSource = TransactionWorkflowTransactionFor<
-  "Borrow" | "Classic"
+  "Borrow" | "Yield"
 >["source"];
 
 /**
@@ -56,7 +56,7 @@ export const makeHeldHashRegistration = Effect.gen(function* () {
     hash: string
   ): Effect.Effect<void> => {
     const register = Match.value(source).pipe(
-      Match.tag("Classic", (source) =>
+      Match.tag("Yield", (source) =>
         yieldOperations.submitTransactionHashInBackground({
           payload: { hash },
           transactionId: source.transaction.id,

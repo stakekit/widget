@@ -9,11 +9,11 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
-import type { DashboardYieldCategory } from "../../domain/earn/contract";
+import type { YieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {
-  dashboardYieldCategories,
   type ValidatorsConfig,
+  yieldCategories,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
 import type { SKHostConfiguration } from "../../public-api/react-types";
@@ -180,12 +180,12 @@ const normalizeWidgetConfig = (
   const yieldGrouping =
     hostConfiguration.yieldGrouping ?? (dashboardVariant ? "category" : "flat");
 
-  const dashboardYieldCategoryOrder = [
+  const yieldCategoryOrder = [
     ...new Set([
-      ...(hostConfiguration.dashboardYieldCategoryOrder ?? []),
-      ...dashboardYieldCategories,
+      ...(hostConfiguration.yieldCategoryOrder ?? []),
+      ...yieldCategories,
     ]),
-  ] as DashboardYieldCategory[];
+  ] as YieldCategory[];
   const validatorsConfig: ValidatorsConfig = new Map(
     Object.entries(hostConfiguration.validatorsConfig ?? {}).map(
       ([network, validators]) =>
@@ -233,7 +233,7 @@ const normalizeWidgetConfig = (
         : undefined,
     customTranslations: hostConfiguration.customTranslations,
     dashboardVariant,
-    dashboardYieldCategoryOrder,
+    yieldCategoryOrder,
     disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
     disableInitLayoutAnimation:
       hostConfiguration.disableInitLayoutAnimation ?? false,

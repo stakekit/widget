@@ -14,12 +14,12 @@ import {
 import {
   type ConfidentialTransactionWorkflowInput,
   flattenTransactionWorkflowTransactions,
-  makeClassicTransactionWorkflowInput,
+  makeYieldTransactionWorkflowInput,
   TransactionPrepareError,
   type TransactionWorkflowContext,
 } from "../transaction-workflow-model";
 import {
-  attachPreparedClassicAction,
+  attachPreparedYieldAction,
   getTransactionWorkflowId,
   validateTransactionWorkflowInput,
 } from "./model";
@@ -79,7 +79,7 @@ export const makePrepareAction = Effect.gen(function* () {
           false
         );
       }
-      const prepared = makeClassicTransactionWorkflowInput({
+      const prepared = makeYieldTransactionWorkflowInput({
         action: validation.success,
         inputToken: input.inputToken,
         providersDetails: input.providersDetails,
@@ -88,7 +88,7 @@ export const makePrepareAction = Effect.gen(function* () {
       const inputError = validateTransactionWorkflowInput(prepared);
       if (inputError) return yield* fail(inputError.message, inputError, false);
 
-      return attachPreparedClassicAction({ context, prepared });
+      return attachPreparedYieldAction({ context, prepared });
     }
   );
 
@@ -141,7 +141,7 @@ export const makePrepareAction = Effect.gen(function* () {
       const owner = input.walletScope.address;
       const unwrap = flattenTransactionWorkflowTransactions(context).find(
         ({ meta, source }) =>
-          source._tag === "Classic" &&
+          source._tag === "Yield" &&
           source.transaction.type === "UNWRAP" &&
           meta.done
       );

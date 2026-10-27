@@ -11,14 +11,14 @@ import {
   WalletAddress,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import {
-  type ClassicFlowSession,
-  decodeClassicFlowNavigationState,
-} from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { makeYieldEntry } from "../../../src/features/yield-entry/index";
 import { getYieldEntryCta } from "../../../src/features/yield-entry/model/yield-entry";
 import type { YieldEntryFacadeInput } from "../../../src/features/yield-entry/state/yield-entry";
+import {
+  decodeYieldFlowNavigationState,
+  type YieldFlowSession,
+} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   makeWidgetNavigation,
   type WidgetNavigationOptions,
@@ -31,11 +31,11 @@ import {
   type WalletState,
 } from "../../../src/services/wallet/wallet-state";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../../fixtures";
-import { makeClassicFlowTestKit } from "../../utils/classic-flow-test-kit";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
 import { stubWalletModal } from "../../utils/wallet-modal";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
+import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -149,7 +149,7 @@ const makeObservableRegistry = (
   scope: WalletScopeKey | null = walletScope
 ) => {
   const runtimeLayer = Layer.unwrap(
-    makeClassicFlowTestKit({
+    makeYieldFlowTestKit({
       initialWalletState: serviceWalletState,
       navigation: { execute: ports.navigation.execute },
       wallet: {
@@ -189,11 +189,11 @@ type Push = (
 ) => Effect.Effect<void>;
 
 /** The Session the single Start navigation carried to Review. */
-const startedSession = (push: Mock<Push>): ClassicFlowSession => {
+const startedSession = (push: Mock<Push>): YieldFlowSession => {
   expect(push).toHaveBeenCalledOnce();
   const [path, options] = push.mock.calls[0] ?? [];
   expect(path).toBe("/review");
-  return Option.getOrThrow(decodeClassicFlowNavigationState(options?.state));
+  return Option.getOrThrow(decodeYieldFlowNavigationState(options?.state));
 };
 
 describe("Yield Entry", () => {
@@ -581,7 +581,7 @@ describe("Yield Entry", () => {
         [
           walletRuntime.layer,
           Layer.unwrap(
-            makeClassicFlowTestKit({
+            makeYieldFlowTestKit({
               initialWalletState: walletState,
               navigation: { execute: navigation.execute },
             }).pipe(Effect.map((kit) => kit.layer))

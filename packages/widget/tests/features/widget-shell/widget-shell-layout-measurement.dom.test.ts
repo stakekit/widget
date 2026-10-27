@@ -10,7 +10,7 @@ import {
 } from "../../../src/features/widget-shell/state/element-measurement";
 import {
   animationLayoutHeightAtom,
-  classicLayoutElementAtom,
+  compactLayoutElementAtom,
   headerElementAtom,
   poweredByElementAtom,
 } from "../../../src/features/widget-shell/state/layout-height";
@@ -37,7 +37,7 @@ const appendElement = ({
 };
 
 describe("animation layout height", () => {
-  it("sums the classic layout, header, and powered-by heights", () => {
+  it("sums the compact layout, header, and powered-by heights", () => {
     const registry = AtomRegistry.make();
     registry.mount(animationLayoutHeightAtom);
 
@@ -50,7 +50,7 @@ describe("animation layout height", () => {
       attachElement(appendElement({ height: 20 }))
     );
     registry.set(
-      classicLayoutElementAtom,
+      compactLayoutElementAtom,
       attachElement(appendElement({ height: 100 }))
     );
 
@@ -73,16 +73,16 @@ describe("animation layout height", () => {
     const outgoing = appendElement({ height: 100 });
     const incoming = appendElement({ height: 120 });
 
-    registry.set(classicLayoutElementAtom, attachElement(outgoing));
-    registry.set(classicLayoutElementAtom, attachElement(incoming));
-    registry.set(classicLayoutElementAtom, detachElement(outgoing));
+    registry.set(compactLayoutElementAtom, attachElement(outgoing));
+    registry.set(compactLayoutElementAtom, attachElement(incoming));
+    registry.set(compactLayoutElementAtom, detachElement(outgoing));
 
-    expect(registry.get(classicLayoutElementAtom)).toBe(incoming);
+    expect(registry.get(compactLayoutElementAtom)).toBe(incoming);
     expect(registry.get(animationLayoutHeightAtom)).toBe(180);
 
-    registry.set(classicLayoutElementAtom, detachElement(incoming));
+    registry.set(compactLayoutElementAtom, detachElement(incoming));
 
-    expect(registry.get(classicLayoutElementAtom)).toBeNull();
+    expect(registry.get(compactLayoutElementAtom)).toBeNull();
   });
 
   it("retains the last non-zero layout height while a route check redirects", () => {
@@ -98,11 +98,11 @@ describe("animation layout height", () => {
       attachElement(appendElement({ height: 20 }))
     );
     registry.set(
-      classicLayoutElementAtom,
+      compactLayoutElementAtom,
       attachElement(appendElement({ height: 100 }))
     );
     registry.set(
-      classicLayoutElementAtom,
+      compactLayoutElementAtom,
       attachElement(appendElement({ height: 0 }))
     );
 
@@ -121,7 +121,7 @@ describe("animation layout height", () => {
       attachElement(appendElement({ height: 20 }))
     );
     registry.set(
-      classicLayoutElementAtom,
+      compactLayoutElementAtom,
       attachElement(appendElement({ height: 100 }))
     );
     registry.set(headerElementAtom, detachElement(header));

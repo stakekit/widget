@@ -13,7 +13,7 @@ export const resolveInitialRoutePath = ({
 }: {
   readonly borrowAvailable: boolean;
   readonly tab: InitTab;
-  readonly variant: "classic" | "dashboard";
+  readonly variant: "compact" | "dashboard";
 }): string =>
   Match.value({ borrowAvailable, tab, variant }).pipe(
     Match.when({ tab: "activity" }, () => "/activity"),

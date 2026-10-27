@@ -240,7 +240,7 @@ const signEach = Effect.gen(function* () {
     transaction: yield* wallet
       .signTransaction({
         expectedOwner,
-        family: "classic",
+        family: "yield",
         ledgerHwAppId: null,
         network: "ethereum",
         tx: transaction,

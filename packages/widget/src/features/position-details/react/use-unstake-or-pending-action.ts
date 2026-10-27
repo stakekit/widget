@@ -1,13 +1,13 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useWalletScopeRoute } from "../../wallet/index";
 import {
-  dispatchPositionDetailsWorkflowAtom,
-  positionDetailsWorkflowViewAtom,
-} from "../state/classic-view";
-import {
   type PositionDetailsWorkflowAction,
   PositionDetailsWorkflowKey,
 } from "../state/workflow";
+import {
+  dispatchPositionDetailsWorkflowAtom,
+  positionDetailsWorkflowViewAtom,
+} from "../state/workflow-view";
 import { useUnstakeOrPendingActionParams } from "./use-unstake-or-pending-action-params";
 
 export const useUnstakeOrPendingAction = () => {

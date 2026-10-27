@@ -10,13 +10,13 @@ type LedgerTransactionInput = Parameters<
   ReturnType<typeof makeLedgerWalletDriver>["signTransaction"]
 >[0];
 const transactionInput = {
-  family: "classic" as const,
+  family: "yield" as const,
   ledgerHwAppId: "ethereum",
   network: "ethereum" as const,
   tx: "{}",
   txMeta: {} as Extract<
     LedgerTransactionInput,
-    { readonly family: "classic" }
+    { readonly family: "yield" }
   >["txMeta"],
 };
 
@@ -58,7 +58,7 @@ describe("Ledger wallet driver", () => {
         signedTx: "0xledger-hash",
       });
       expect(ledger.prepareTransaction).toHaveBeenCalledWith({
-        family: "classic",
+        family: "yield",
         network: "ethereum",
         tx: "{}",
         txMeta: transactionInput.txMeta,

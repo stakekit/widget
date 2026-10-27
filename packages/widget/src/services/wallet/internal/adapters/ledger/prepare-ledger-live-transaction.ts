@@ -20,7 +20,7 @@ import {
   isCosmosWalletNetwork,
   isEvmWalletNetwork,
 } from "../../../../../domain/wallet/network";
-import type { ClassicTransactionMeta } from "../../../wallet-transactions";
+import type { YieldTransactionMeta } from "../../../wallet-transactions";
 import { decodeWalletPayload } from "../decode-wallet-payload";
 import { unsignedEVMTransactionCodec } from "../evm/transaction";
 import { substratePayloadCodec } from "../substrate/transaction";
@@ -29,10 +29,10 @@ import { unsignedTronTransactionCodec } from "../tron/transaction";
 import type { BuildPolkadotLedgerTransaction } from "./polkadot-ledger-transaction";
 
 type PrepareLedgerLiveTransactionParams = {
-  family: "borrow" | "classic";
+  family: "borrow" | "yield";
   tx: string;
   network: string;
-  txMeta?: ClassicTransactionMeta;
+  txMeta?: YieldTransactionMeta;
 };
 
 const GasEstimate = Schema.NullOr(
@@ -113,7 +113,7 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
                 })
               : Effect.fail(
                   transactionPreparationError(
-                    "Missing classic transaction metadata"
+                    "Missing yield transaction metadata"
                   )
                 );
           }
@@ -135,7 +135,7 @@ const preparePolkadotTransaction = ({
     LedgerTransactionPreparationError
   >;
   payload: unknown;
-  txMeta: ClassicTransactionMeta;
+  txMeta: YieldTransactionMeta;
 }): Effect.Effect<RawTransaction, LedgerTransactionPreparationError> =>
   Effect.fromResult(decodeWalletPayload(substratePayloadCodec, payload)).pipe(
     Effect.mapError(transactionPreparationError),
@@ -162,10 +162,10 @@ const prepareSynchronousTransaction = ({
   payload,
   txMeta,
 }: {
-  family: "borrow" | "classic";
+  family: "borrow" | "yield";
   network: string;
   payload: unknown;
-  txMeta?: ClassicTransactionMeta;
+  txMeta?: YieldTransactionMeta;
 }): Result.Result<RawTransaction, string> => {
   if (isEvmWalletNetwork(network)) {
     return decodeWalletPayload(unsignedEVMTransactionCodec, payload).pipe(
@@ -183,7 +183,7 @@ const prepareSynchronousTransaction = ({
   }
 
   if (!txMeta) {
-    return Result.fail("Missing classic transaction metadata");
+    return Result.fail("Missing yield transaction metadata");
   }
 
   switch (network) {
@@ -240,7 +240,7 @@ const buildEthereumLedgerTransaction = ({
 };
 
 const buildCosmosLedgerTransaction = (
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const mode = getCosmosMode(txMeta.txType);
@@ -267,7 +267,7 @@ const buildCosmosLedgerTransaction = (
 };
 
 const buildTronLedgerTransaction = (
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): Result.Result<RawTronTransaction, string> => {
   const amount = getActionAmountInBaseUnits(txMeta);
   const resource = txMeta.rawArguments?.tronResource;
@@ -364,7 +364,7 @@ const buildTronLedgerTransaction = (
 };
 
 const buildNearLedgerTransaction = (
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const amount = getActionAmountInBaseUnits(txMeta);
@@ -383,7 +383,7 @@ const buildNearLedgerTransaction = (
 };
 
 const buildTezosLedgerTransaction = (
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
   const isUnstake = txMeta.txType === "UNSTAKE";
@@ -405,7 +405,7 @@ const buildTezosLedgerTransaction = (
 
 const buildTonLedgerTransaction = (
   tx: typeof unsignedTonTransactionCodec.Type,
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
 
@@ -450,7 +450,7 @@ const buildTonLedgerTransaction = (
 };
 
 const parseGasEstimate = (
-  gasEstimate: ClassicTransactionMeta["gasEstimate"]
+  gasEstimate: YieldTransactionMeta["gasEstimate"]
 ): GasEstimate => {
   if (!gasEstimate) return null;
 
@@ -460,7 +460,7 @@ const parseGasEstimate = (
 };
 
 const getActionAmountInBaseUnits = (
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): BigNumber | null => {
   if (txMeta.amountRaw) {
     return exactDecimal(txMeta.amountRaw);
@@ -486,7 +486,7 @@ const getFeeInBaseUnits = (gasEstimate: GasEstimate): BigNumber => {
   );
 };
 
-const getCosmosMode = (txType: ClassicTransactionMeta["txType"]): string => {
+const getCosmosMode = (txType: YieldTransactionMeta["txType"]): string => {
   switch (txType) {
     case "STAKE":
       return "delegate";
@@ -507,7 +507,7 @@ const getCosmosMode = (txType: ClassicTransactionMeta["txType"]): string => {
 const isCosmosClaimMode = (mode: string): boolean =>
   mode === "claimReward" || mode === "claimRewardCompound";
 
-const getNearMode = (txType: ClassicTransactionMeta["txType"]): string => {
+const getNearMode = (txType: YieldTransactionMeta["txType"]): string => {
   switch (txType) {
     case "STAKE":
       return "stake";
@@ -522,7 +522,7 @@ const getNearMode = (txType: ClassicTransactionMeta["txType"]): string => {
 };
 
 const getActionAmountInTokenUnits = (
-  txMeta: ClassicTransactionMeta
+  txMeta: YieldTransactionMeta
 ): BigNumber | null => {
   const amount = txMeta.rawArguments?.amount ?? txMeta.amount;
 
@@ -545,7 +545,7 @@ const getTronVotes = ({
   txMeta,
   validatorAddresses,
 }: {
-  txMeta: ClassicTransactionMeta;
+  txMeta: YieldTransactionMeta;
   validatorAddresses: ReadonlyArray<string>;
 }): Result.Result<{ address: string; voteCount: number }[], string> => {
   const amount = getActionAmountInTokenUnits(txMeta);

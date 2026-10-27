@@ -2,9 +2,9 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { createContext, useContext, useState } from "react";
 import { Navigate, Outlet, useMatch, useParams } from "react-router";
 import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
-import { YieldActionContinuationSessionRoute } from "../../classic-transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
 import type { YieldSummaryProvider } from "../../yield-summary/index";
+import { YieldActionContinuationSessionRoute } from "../../yield-transaction-flow/views";
 import {
   type ActivityActionItem,
   type ActivitySelectionTarget,
@@ -23,7 +23,7 @@ import {
   ActivityDetailsUnavailable,
 } from "../ui/activity-details/activity-details-status";
 
-export type ActivityPresentation = "Classic" | "Dashboard";
+export type ActivityPresentation = "Compact" | "Dashboard";
 
 type ActivityActionRouteValue = Readonly<{
   readonly continuationReady: boolean;

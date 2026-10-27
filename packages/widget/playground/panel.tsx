@@ -1,6 +1,6 @@
 import { Option } from "effect";
 import { useState, useSyncExternalStore } from "react";
-import { DashboardYieldCategory, YieldProviderId } from "../src/index.package";
+import { YieldCategory, YieldProviderId } from "../src/index.package";
 import {
   type ConnectionSettings,
   connectionProps,
@@ -18,7 +18,7 @@ import {
 } from "./playground-config";
 import type { PlaygroundWallet } from "./wallet/playground-wallet";
 
-const categories = Object.values(DashboardYieldCategory);
+const categories = Object.values(YieldCategory);
 const knownProviderIds = Object.values(YieldProviderId).join(", ");
 
 const connectionFields = [

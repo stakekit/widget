@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import type { useSelectValidator } from "../../../src/features/earn/react/use-select-validator";
-import { SelectValidatorSection } from "../../../src/features/earn/ui/classic/earn-page/components/select-validator-section";
+import { SelectValidatorSection } from "../../../src/features/earn/ui/compact/earn-page/components/select-validator-section";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils";

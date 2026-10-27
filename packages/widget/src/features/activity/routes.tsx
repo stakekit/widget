@@ -4,7 +4,7 @@ import {
   YieldActionContinuationCompletePage,
   YieldActionContinuationExecution,
   YieldActionContinuationStepsPage,
-} from "../classic-transaction-flow/views";
+} from "../yield-transaction-flow/views";
 import {
   ActivityActionRoute,
   type ActivityPresentation,

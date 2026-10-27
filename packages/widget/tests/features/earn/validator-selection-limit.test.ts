@@ -10,7 +10,7 @@ import {
   makeAutomaticPendingActionModalState,
   makePendingActionModalStore,
   togglePendingActionValidator,
-} from "../../../src/features/position-details/model/classic-flow-actions";
+} from "../../../src/features/position-details/model/flow-actions";
 
 const SUBSTRATE_LIMIT = 16;
 

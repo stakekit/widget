@@ -116,7 +116,7 @@ describe("EVM wallet driver", () => {
 
       expect(
         yield* driver.signTransaction({
-          family: "classic",
+          family: "yield",
           tx: transaction({ gasPrice: "7" }),
         })
       ).toEqual({ broadcasted: true, signedTx: hash });
@@ -135,11 +135,11 @@ describe("EVM wallet driver", () => {
       });
 
       const decodeFailure = yield* Effect.flip(
-        driver.signTransaction({ family: "classic", tx: "not-json" })
+        driver.signTransaction({ family: "yield", tx: "not-json" })
       );
       const broadcastFailure = yield* Effect.flip(
         driver.signTransaction({
-          family: "classic",
+          family: "yield",
           tx: transaction({ gasPrice: "7" }),
         })
       );

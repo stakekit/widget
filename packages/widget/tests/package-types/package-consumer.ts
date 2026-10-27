@@ -1,7 +1,6 @@
 import {
   type ActionMeta,
   type BittensorTx,
-  DashboardYieldCategory,
   EvmChainIds,
   type EvmTx,
   type HelpModalProps,
@@ -21,6 +20,7 @@ import {
   type SupportedSKChainIds,
   type TonTx,
   type TronTx,
+  YieldCategory,
 } from "@stakekit/widget";
 
 type Equal<Left, Right> =
@@ -66,7 +66,7 @@ export type PackageTypeAssertions = [
 ];
 
 export const packageValueAssertions = {
-  category: DashboardYieldCategory.Stake,
+  category: YieldCategory.Stake,
   evmChainId: EvmChainIds.Ethereum satisfies SupportedSKChainIds,
   miscChainId: MiscChainIds.Solana satisfies SupportedSKChainIds,
   network: "ethereum" satisfies PublicNetwork,

@@ -23,9 +23,9 @@ import {
   ActivitySelectionKey,
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";
-import type { ClassicFlowSession } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { useClassicFlowSession } from "../../../src/features/classic-transaction-flow/react/classic-flow-route";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
+import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { useYieldFlowSession } from "../../../src/features/yield-transaction-flow/react/yield-flow-route";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
 
@@ -111,12 +111,12 @@ const NavigationCapture = ({
 
 type SessionPageProps = Readonly<{
   readonly name: string;
-  readonly sessions: Array<ClassicFlowSession>;
+  readonly sessions: Array<YieldFlowSession>;
 }>;
 
 /** A flow page that shows which Session it renders, numbered by first sight. */
 const SessionPage = ({ name, sessions }: SessionPageProps) => {
-  const session = useClassicFlowSession();
+  const session = useYieldFlowSession();
   if (!sessions.includes(session)) sessions.push(session);
   return (
     <output data-testid="page">
@@ -135,9 +135,9 @@ const ReviewPage = ({ sessions }: Pick<SessionPageProps, "sessions">) =>
 
 const renderActivity = async (
   initialPath: string,
-  presentation: "Classic" | "Dashboard" = "Classic"
+  presentation: "Compact" | "Dashboard" = "Compact"
 ) => {
-  const sessions: Array<ClassicFlowSession> = [];
+  const sessions: Array<YieldFlowSession> = [];
   const navigation: { current: NavigateFunction | null } = { current: null };
   // Production renders the widget in StrictMode with the default idle TTL.
   const app = await render(

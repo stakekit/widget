@@ -1,8 +1,8 @@
 import type { ActivityActionsQuery } from "../../../domain/activity/query";
-import type { DashboardYieldCategory } from "../../../domain/earn/contract";
-import { getApiYieldTypesForDashboardCategory } from "../../../domain/earn/yield";
+import type { YieldCategory } from "../../../domain/earn/contract";
+import { getApiYieldTypesForYieldCategory } from "../../../domain/earn/yield";
 
-export type ActivityFilterCategory = DashboardYieldCategory | "borrow";
+export type ActivityFilterCategory = YieldCategory | "borrow";
 
 export type ActivityFilter = "all" | ActivityFilterCategory;
 
@@ -46,7 +46,7 @@ export const getActivityFilterSources = (
       return {
         includeBorrow: false,
         includeYield: true,
-        yieldTypes: getApiYieldTypesForDashboardCategory(filter),
+        yieldTypes: getApiYieldTypesForYieldCategory(filter),
       };
   }
 };

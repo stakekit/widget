@@ -57,7 +57,7 @@ const scope = new WalletScopeKey({
   ),
   network: "ethereum",
 });
-const classicEntry: EarnEntry = {
+const compactEntry: EarnEntry = {
   categoryOrder: ["stake", "defi", "rwa"],
   dashboardVariant: false,
   initParams: null,
@@ -72,7 +72,7 @@ const tokenCatalog = [firstYield, secondYield].map((yieldModel) => ({
 }));
 
 const makeRegistry = ({
-  entry = classicEntry,
+  entry = compactEntry,
   getProvider = () => Effect.succeedNone,
   listYields = () =>
     Effect.succeed({
@@ -254,7 +254,7 @@ describe("Earn Selection", () => {
   it("keeps a captured initialization seed across Earn route remounts", async () => {
     const { registry } = makeRegistry({
       entry: {
-        ...classicEntry,
+        ...compactEntry,
         initParams: {
           accountId: null,
           balanceId: null,
@@ -344,7 +344,7 @@ describe("Earn Selection", () => {
     it("preselects the token and yield a host prefers", async () => {
       const { registry } = makeRegistry({
         entry: {
-          ...classicEntry,
+          ...compactEntry,
           // Widget Configuration lowercases host keys.
           preferredTokenYieldsPerNetwork: {
             ethereum: {
@@ -374,7 +374,7 @@ describe("Earn Selection", () => {
     it("preselects the initial token, whatever the address case", async () => {
       const { registry } = makeRegistry({
         entry: {
-          ...classicEntry,
+          ...compactEntry,
           initParams: decodeInitParams({
             externalProviderInitToken: null,
             href: `https://host.test/?tab=earn&token=ethereum-${usdcAddress}`,
@@ -421,7 +421,7 @@ describe("Earn Selection", () => {
       });
       const { registry } = makeRegistry({
         entry: {
-          ...classicEntry,
+          ...compactEntry,
           initParams: decodeInitParams({
             externalProviderInitToken: null,
             href: "https://host.test/?tab=earn&token=USDa&network=ethereum",
@@ -605,7 +605,7 @@ describe("Earn Selection", () => {
       await expect(
         renderYieldSelection({
           entry: {
-            ...classicEntry,
+            ...compactEntry,
             yieldProviderOrder: { defi: ["morpho", "aave"] },
           },
         })
@@ -623,7 +623,7 @@ describe("Earn Selection", () => {
     it("keeps the default order for a category without a ranking", async () => {
       await expect(
         renderYieldSelection({
-          entry: { ...classicEntry, yieldProviderOrder: { stake: ["morpho"] } },
+          entry: { ...compactEntry, yieldProviderOrder: { stake: ["morpho"] } },
         })
       ).resolves.toEqual({
         listed: [
@@ -639,7 +639,7 @@ describe("Earn Selection", () => {
     it("defaults to the next ranked provider when the first has no reward rate", async () => {
       const { selected } = await renderYieldSelection({
         entry: {
-          ...classicEntry,
+          ...compactEntry,
           yieldProviderOrder: { defi: ["morpho", "aave"] },
         },
         yields: makeYields({ morphoRates: [0, 0] }),
@@ -651,7 +651,7 @@ describe("Earn Selection", () => {
     it("defaults to the best-ranked provider even in a later type group", async () => {
       const { listed, selected } = await renderYieldSelection({
         entry: {
-          ...classicEntry,
+          ...compactEntry,
           yieldProviderOrder: { defi: ["morpho", "aave"] },
         },
         yields: [
@@ -687,7 +687,7 @@ describe("Earn Selection", () => {
     it("lets a host-preferred yield win over the ranking", async () => {
       const { selected } = await renderYieldSelection({
         entry: {
-          ...classicEntry,
+          ...compactEntry,
           preferredTokenYieldsPerNetwork: {
             ethereum: {
               [`ethereum-${usdcToken.address?.toLowerCase()}`]:
@@ -705,7 +705,7 @@ describe("Earn Selection", () => {
   it("does not reopen initialization after user intent completes it", async () => {
     const { registry } = makeRegistry({
       entry: {
-        ...classicEntry,
+        ...compactEntry,
         initParams: {
           accountId: null,
           balanceId: null,
@@ -769,7 +769,7 @@ describe("Earn Selection", () => {
     });
     const { registry } = makeRegistry({
       entry: {
-        ...classicEntry,
+        ...compactEntry,
         initParams: {
           accountId: null,
           balanceId: null,
@@ -828,7 +828,7 @@ describe("Earn Selection", () => {
     });
     const { registry } = makeRegistry({
       entry: {
-        ...classicEntry,
+        ...compactEntry,
         initParams: {
           accountId: null,
           balanceId: null,
@@ -894,7 +894,7 @@ describe("Earn Selection", () => {
     const cUsdc = confidentialYield.inputTokens[0]!;
     const { registry } = makeRegistry({
       entry: {
-        ...classicEntry,
+        ...compactEntry,
         walletScope: new WalletScopeKey({
           address: scope.address,
           network: "ethereum-sepolia",

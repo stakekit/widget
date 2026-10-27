@@ -1,7 +1,7 @@
 import {
-  type DashboardYieldCategory,
-  DashboardYieldCategory as DomainDashboardYieldCategory,
+  YieldCategory as DomainYieldCategory,
   YieldProviderId as DomainYieldProviderId,
+  type YieldCategory,
   type YieldProviderId,
 } from "../domain/earn/contract.js";
 import type { Network } from "../domain/network/contract.js";
@@ -20,7 +20,7 @@ export type {
 } from "../domain/wallet/contract.js";
 export type { SKTheme } from "./theme.js";
 export {
-  DomainDashboardYieldCategory as DashboardYieldCategory,
+  DomainYieldCategory as YieldCategory,
   DomainYieldProviderId as YieldProviderId,
   EvmChainIds,
   MiscChainIds,
@@ -598,7 +598,7 @@ export type SKPreferredTokenYieldsPerNetwork = Readonly<
  * providers work before the widget lists them.
  */
 export type SKYieldProviderOrder = Partial<
-  Record<DashboardYieldCategory, Array<YieldProviderId | (string & {})>>
+  Record<YieldCategory, Array<YieldProviderId | (string & {})>>
 >;
 
 type SettingsPropsBase = {
@@ -673,7 +673,7 @@ type SettingsPropsBase = {
   /** Enables the dashboard route tree and category yield grouping by default. */
   dashboardVariant?: boolean;
   /** Order of yield categories. Omitted categories follow in the default order. */
-  dashboardYieldCategoryOrder?: DashboardYieldCategory[];
+  yieldCategoryOrder?: YieldCategory[];
   /**
    * Lists these yield providers first within each category tab, and selects
    * the first one by default. Applies only with category yield grouping.

@@ -16,25 +16,25 @@ import {
 } from "../../../src/domain/identity/identifiers";
 import { toPositionBalancesByType } from "../../../src/domain/portfolio/positions";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { resolvePositionDetailsExitReceiveTokenSelection } from "../../../src/features/position-details/model/exit-receive-token";
 import {
   makeAutomaticPendingActionModalState,
   makePendingActionModalStore,
   openPendingActionModal,
   reconcilePendingActionModalReceipt,
   resolvePositionDetailsExitSubmission,
-} from "../../../src/features/position-details/model/classic-flow-actions";
-import { resolvePositionDetailsExitReceiveTokenSelection } from "../../../src/features/position-details/model/exit-receive-token";
+} from "../../../src/features/position-details/model/flow-actions";
 import { resolvePositionDetailsActionCapabilities } from "../../../src/features/position-details/model/hub";
+import {
+  PositionDetailsWorkflowKey,
+  positionDetailsWorkflowAtom,
+} from "../../../src/features/position-details/state/workflow";
 import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsPendingActionsViewAtom,
   positionDetailsPricesAtom,
   positionDetailsWorkflowViewAtom,
-} from "../../../src/features/position-details/state/classic-view";
-import {
-  PositionDetailsWorkflowKey,
-  positionDetailsWorkflowAtom,
-} from "../../../src/features/position-details/state/workflow";
+} from "../../../src/features/position-details/state/workflow-view";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,

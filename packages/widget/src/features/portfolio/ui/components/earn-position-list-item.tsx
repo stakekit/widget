@@ -43,7 +43,7 @@ export type EarnPositionListItemDetails = {
   readonly totalAmountUsd: BigNumber | null;
 };
 
-type Presentation = "classic" | "dashboard";
+type Presentation = "compact" | "dashboard";
 
 const EarnPositionAmount = ({
   item,

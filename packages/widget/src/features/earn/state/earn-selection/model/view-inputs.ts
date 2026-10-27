@@ -1,5 +1,5 @@
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
-import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -20,11 +20,9 @@ export type CategoryObservation =
   | Readonly<{ readonly _tag: "disabled" }>
   | Readonly<{
       readonly _tag: "enabled";
-      readonly result: EarnResourceResult<
-        ReadonlyArray<DashboardYieldCategory>
-      >;
+      readonly result: EarnResourceResult<ReadonlyArray<YieldCategory>>;
       readonly catalogs: ReadonlyArray<{
-        readonly category: DashboardYieldCategory;
+        readonly category: YieldCategory;
         readonly result: EarnResourceResult<ReadonlyArray<EarnTokenOption>>;
       }>;
     }>;

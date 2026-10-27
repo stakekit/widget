@@ -20,7 +20,7 @@ import {
 } from "../../../src/services/wallet/wallet-state";
 
 const transactionInput = {
-  family: "classic" as const,
+  family: "yield" as const,
   ledgerHwAppId: null,
   network: "ethereum" as Network,
   tx: JSON.stringify({

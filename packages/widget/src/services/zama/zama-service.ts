@@ -252,12 +252,12 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     Effect.forkScoped
   );
 
-  // A revealed balance is stale once a Classic workflow moved funds.
+  // A revealed balance is stale once a Yield workflow moved funds.
   yield* events.events.pipe(
     Stream.runForEach((event) =>
       (event._tag === "TransactionWorkflowResourcesChanged" ||
         event._tag === "TransactionWorkflowEnded") &&
-      event.workflowKind === "Classic"
+      event.workflowKind === "Yield"
         ? values.forgetTokenBalancesOf(event.owner)
         : Effect.void
     ),

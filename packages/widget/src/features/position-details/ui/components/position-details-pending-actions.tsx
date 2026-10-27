@@ -7,9 +7,9 @@ import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
-import { AmountBlock } from "../classic/components/amount-block";
-import { StaticActionBlock } from "../classic/components/static-action-block";
-import type { usePositionDetails } from "../classic/hooks/use-position-details";
+import { AmountBlock } from "../compact/components/amount-block";
+import { StaticActionBlock } from "../compact/components/static-action-block";
+import type { usePositionDetails } from "../compact/hooks/use-position-details";
 
 export const PositionDetailsPendingActions = ({
   positionDetails,
@@ -22,7 +22,7 @@ export const PositionDetailsPendingActions = ({
     | "onPendingActionAmountChange"
     | "onPendingActionClick"
   >;
-  readonly presentation: "classic" | "dashboard";
+  readonly presentation: "compact" | "dashboard";
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -60,7 +60,7 @@ export const PositionDetailsPendingActions = ({
             { confidential: isConfidentialYield(integrationData) }
           ),
         };
-        // Classic flags invalid amounts; dashboard falls back to a humanized
+        // Compact flags invalid amounts; dashboard falls back to a humanized
         // label for action types without a translation.
         const label =
           presentation === "dashboard"
@@ -70,7 +70,7 @@ export const PositionDetailsPendingActions = ({
               })
             : t(labelKey, labelOptions);
         const unstakeAmountError =
-          presentation === "classic" ? val.validation !== null : undefined;
+          presentation === "compact" ? val.validation !== null : undefined;
 
         return (
           <AmountBlock

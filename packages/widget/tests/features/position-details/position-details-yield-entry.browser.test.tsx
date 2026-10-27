@@ -22,18 +22,18 @@ import { applicationRouterAtom } from "../../../src/app/runtime/application-rout
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import { decodeClassicFlowNavigationState } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
+import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/stake-entry";
 import {
   positionDetailsStakeViewAtom,
   setPositionDetailsStakeAmountAtom,
   submitPositionDetailsStakeAtom,
-} from "../../../src/features/position-details/state/dashboard-stake-facade";
-import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/dashboard-stake-machine";
+} from "../../../src/features/position-details/state/stake-view";
 import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../../src/features/wallet/index";
+import { decodeYieldFlowNavigationState } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -48,8 +48,8 @@ import { makeWidgetNavigation } from "../../../src/services/navigation/widget-na
 import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
-import { makeClassicFlowTestKit } from "../../utils/classic-flow-test-kit";
 import { render } from "../../utils/test-utils";
+import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -89,9 +89,9 @@ const navigation = makeWidgetNavigation({
       navigationChannel.navigate?.(path, { ...options, replace: true })
     ),
 });
-const makeClassicFlowLayer = () =>
+const makeYieldFlowLayer = () =>
   Layer.unwrap(
-    makeClassicFlowTestKit({
+    makeYieldFlowTestKit({
       initialWalletState: walletState,
       navigation: { execute: navigation.execute },
     }).pipe(Effect.map((kit) => kit.layer))
@@ -135,7 +135,7 @@ const PositionEntry = () => {
 };
 
 const ReviewGuard = () => {
-  const session = decodeClassicFlowNavigationState(useLocation().state);
+  const session = decodeYieldFlowNavigationState(useLocation().state);
   const carriesPositionStake = Option.exists(
     session,
     ({ intake, mount }) =>
@@ -203,7 +203,7 @@ const TestApp = () => {
             })
           ).pipe(Layer.fresh),
         ],
-        [walletRuntime.layer, makeClassicFlowLayer()],
+        [walletRuntime.layer, makeYieldFlowLayer()],
         [walletConnectionStateAtom, connectedWalletState],
         [walletScopeAtom, walletScope],
         [

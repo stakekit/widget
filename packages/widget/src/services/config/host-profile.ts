@@ -1,13 +1,13 @@
 export type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
 
 /**
- * Earn presentation. Compact is the dashboard, Utila, and Porto layout. Zerion
- * covers the Classic Earn adjustments, the positions-list presentation, the
- * stake Review meta information, and the yearly-reward label. A Zerion host
- * with the dashboard flag gets both.
+ * Earn presentation. Condensed is the Dashboard Layout, Utila, and Porto
+ * presentation. Zerion covers the Compact Layout Earn adjustments, the
+ * positions-list presentation, the stake Review meta information, and the
+ * yearly-reward label. A Zerion host in the Dashboard Layout gets both.
  */
 type EarnPresentation = Readonly<{
-  compact: boolean;
+  condensed: boolean;
   zerion: boolean;
 }>;
 
@@ -32,7 +32,7 @@ export type HostProfile = Readonly<{
 }>;
 
 const standardProfile: HostProfile = {
-  earnPresentation: { compact: false, zerion: false },
+  earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
   hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
@@ -49,19 +49,19 @@ const variantProfiles: Readonly<Record<WidgetVariant, HostProfile>> = {
   finery: { ...standardProfile, forcesInstitutionalWallets: true },
   porto: {
     ...standardProfile,
-    earnPresentation: { compact: true, zerion: false },
+    earnPresentation: { condensed: true, zerion: false },
     walletCatalogue: "porto",
   },
   utila: {
     ...standardProfile,
-    earnPresentation: { compact: true, zerion: false },
+    earnPresentation: { condensed: true, zerion: false },
     requiresTermsAcknowledgement: true,
     showsPendingApprovalsNotice: true,
     translationOverlay: "utila",
   },
   zerion: {
     ...standardProfile,
-    earnPresentation: { compact: false, zerion: true },
+    earnPresentation: { condensed: false, zerion: true },
     hidesEarnLoadingSpinner: true,
     hidesHeaderWalletControl: true,
     hostTokenIconMapping: true,
@@ -75,10 +75,10 @@ export const resolveHostProfile = (
 ): HostProfile => {
   const profile = variantProfiles[variant];
 
-  return dashboardVariant && !profile.earnPresentation.compact
+  return dashboardVariant && !profile.earnPresentation.condensed
     ? {
         ...profile,
-        earnPresentation: { ...profile.earnPresentation, compact: true },
+        earnPresentation: { ...profile.earnPresentation, condensed: true },
       }
     : profile;
 };

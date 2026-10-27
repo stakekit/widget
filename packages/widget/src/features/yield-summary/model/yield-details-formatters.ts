@@ -2,8 +2,8 @@ import type { TFunction } from "i18next";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { getEffectiveYieldRewardRateDetails } from "../../../domain/earn/reward-rate";
 import {
-  getDashboardYieldCategory,
   getYieldActionArg,
+  getYieldCategory,
   hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
 } from "../../../domain/earn/yield";
@@ -29,7 +29,7 @@ export const formatRewardRateLabel = (
     getRewardTypeFormatted(yieldDto.rewardRate.rateType.toLowerCase()) ||
     t("dashboard.earn_details.apy");
 
-  return getDashboardYieldCategory(yieldDto) === "stake"
+  return getYieldCategory(yieldDto) === "stake"
     ? rewardType
     : t("dashboard.earn_details.reward_rate_period", {
         rewardType,
@@ -56,7 +56,7 @@ export const formatMinStakeLabel = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): string =>
-  getDashboardYieldCategory(yieldDto) === "rwa"
+  getYieldCategory(yieldDto) === "rwa"
     ? t("dashboard.earn_details.minimum_subscription")
     : t("dashboard.earn_details.min_stake");
 

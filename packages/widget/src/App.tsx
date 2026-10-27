@@ -9,7 +9,7 @@ import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { applicationRoutes } from "./app/routes/application-routes";
 import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
-import { ClassicRoutes } from "./app/routes/ui/classic-routes";
+import { CompactRoutes } from "./app/routes/ui/compact-routes";
 import { DashboardRoutes } from "./app/routes/ui/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router";
 import {
@@ -51,7 +51,7 @@ const App = () => {
 
   const routeContent = (() => {
     if (underMaintenance) return <UnderMaintenance />;
-    return dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />;
+    return dashboardVariant ? <DashboardRoutes /> : <CompactRoutes />;
   })();
 
   return routeContent;

@@ -3,7 +3,7 @@ import { Effect, Schema } from "effect";
 import { vi } from "vitest";
 import { ValidatorAddress } from "../../../src/domain/identity/identifiers";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
-import type { ClassicTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
+import type { YieldTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
 
 const substrateMethod = vi.hoisted(() => ({
   current: {
@@ -32,16 +32,16 @@ vi.mock("@polkadot/types", () => ({
 }));
 
 type PrepareParams = {
-  family?: "borrow" | "classic";
+  family?: "borrow" | "yield";
   network: string;
   tx: string;
-  txMeta?: ClassicTransactionMeta;
+  txMeta?: YieldTransactionMeta;
 };
 
 const prepared = (params: PrepareParams) =>
   makePrepareLedgerLiveTransaction.pipe(
     Effect.flatMap((prepareTransaction) =>
-      prepareTransaction({ ...params, family: params.family ?? "classic" })
+      prepareTransaction({ ...params, family: params.family ?? "yield" })
     )
   );
 
@@ -50,8 +50,8 @@ const prepare = (params: PrepareParams) => prepared(params);
 const prepareFailure = (params: PrepareParams) => Effect.flip(prepared(params));
 
 const createTxMeta = (
-  overrides: Partial<ClassicTransactionMeta>
-): ClassicTransactionMeta =>
+  overrides: Partial<YieldTransactionMeta>
+): YieldTransactionMeta =>
   ({
     actionId: "action-id",
     actionType: "STAKE",
@@ -72,7 +72,7 @@ const createTxMeta = (
     txId: "tx-id",
     txType: "STAKE",
     ...overrides,
-  }) as ClassicTransactionMeta;
+  }) as YieldTransactionMeta;
 
 const validatorAddress = Schema.decodeSync(ValidatorAddress);
 
@@ -276,7 +276,7 @@ describe("prepareLedgerLiveTransaction", () => {
     })
   );
 
-  it.effect("requires classic transaction metadata for Polkadot", () =>
+  it.effect("requires yield transaction metadata for Polkadot", () =>
     Effect.gen(function* () {
       expect(
         yield* prepareFailure({
@@ -285,7 +285,7 @@ describe("prepareLedgerLiveTransaction", () => {
         })
       ).toMatchObject({
         _tag: "LedgerTransactionPreparationError",
-        message: "Missing classic transaction metadata",
+        message: "Missing yield transaction metadata",
       });
     })
   );

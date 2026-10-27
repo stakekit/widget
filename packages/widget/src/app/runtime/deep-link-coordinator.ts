@@ -4,8 +4,8 @@ import {
   type WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
-import { makeStartClassicTransactionFlow } from "../../features/classic-transaction-flow/runtime";
 import { getPositionDetailsHubPath } from "../../features/position-details/index";
+import { makeStartYieldTransactionFlow } from "../../features/yield-transaction-flow/runtime";
 import {
   toWidgetPath,
   WidgetNavigation,
@@ -16,8 +16,8 @@ import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 
-type ClassicFlowStartInput = Parameters<
-  Effect.Success<typeof makeStartClassicTransactionFlow>
+type YieldFlowStartInput = Parameters<
+  Effect.Success<typeof makeStartYieldTransactionFlow>
 >[0];
 
 type PendingActionIntent = Readonly<{
@@ -38,8 +38,8 @@ export type PendingActionDeepLinkObservation =
       readonly yieldId: string;
     }>
   | Readonly<{
-      readonly _tag: "StartClassicFlow";
-      readonly input: ClassicFlowStartInput;
+      readonly _tag: "StartYieldFlow";
+      readonly input: YieldFlowStartInput;
       readonly intent: PendingActionIntent;
       readonly walletScope: WalletScopeKey;
     }>;
@@ -95,7 +95,7 @@ export class DeepLinkCoordinator extends Context.Service<
   static readonly layer = Layer.effect(
     DeepLinkCoordinator,
     Effect.gen(function* () {
-      const startClassicFlow = yield* makeStartClassicTransactionFlow;
+      const startYieldFlow = yield* makeStartYieldTransactionFlow;
       const navigation = yield* WidgetNavigation;
       const serial = yield* makeScopedSerialOperations();
       const wallet = yield* WalletService;
@@ -174,7 +174,7 @@ export class DeepLinkCoordinator extends Context.Service<
             .pipe(Effect.as(true));
         }
 
-        return startClassicFlow(pendingAction.input).pipe(
+        return startYieldFlow(pendingAction.input).pipe(
           Effect.map((outcome) => outcome._tag === "Started")
         );
       };

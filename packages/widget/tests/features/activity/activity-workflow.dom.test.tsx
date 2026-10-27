@@ -9,7 +9,7 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../../src/features/activity/model/activity-action";
 import type { ActivityPageView } from "../../../src/features/activity/state/page";
 import { ActivityPagePresentation } from "../../../src/features/activity/ui/activity-page/activity-page-presentation";
-import { CompletePageComponent } from "../../../src/features/classic-transaction-flow/ui/complete/pages/common.page.tsx";
+import { CompletePageComponent } from "../../../src/features/yield-transaction-flow/ui/complete/pages/common.page.tsx";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";

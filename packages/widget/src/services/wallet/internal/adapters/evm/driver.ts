@@ -65,7 +65,7 @@ export const makeEvmWalletDriver = ({
   }: {
     readonly account?: Address;
     readonly connector?: Connector;
-    readonly family: "borrow" | "classic";
+    readonly family: "borrow" | "yield";
     readonly tx: string;
   }) => {
     const decode =

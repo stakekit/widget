@@ -1,15 +1,15 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { isConfidentialYield } from "../../../../../domain/earn/confidential";
-import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getEffectiveYieldRewardRateDetails,
   type SelectedValidators,
 } from "../../../../../domain/earn/reward-rate";
 import {
-  getDashboardYieldCategory,
   getExtendedYieldType,
+  getYieldCategory,
   getYieldCooldownPeriod,
   getYieldFeePercent,
   getYieldLockupPeriod,
@@ -130,7 +130,7 @@ const kpiPriorities = {
     "risk",
   ],
 } as const satisfies Record<
-  Exclude<DashboardYieldCategory, null>,
+  Exclude<YieldCategory, null>,
   readonly EarnDetailFactId[]
 >;
 
@@ -151,7 +151,7 @@ export const getEarnDetailsModel = ({
   yieldDto: EarnYieldWithProvider;
 }) => {
   const provider = yieldDto.provider;
-  const dashboardYieldCategory = getDashboardYieldCategory(yieldDto);
+  const yieldCategory = getYieldCategory(yieldDto);
   const effectiveRewardRate = getEffectiveYieldRewardRateDetails({
     selectedValidators,
     yieldDto,
@@ -163,14 +163,11 @@ export const getEarnDetailsModel = ({
     t,
     yieldDto,
   });
-  const promotedFactIds = getPromotedFactIds(
-    detailFacts,
-    dashboardYieldCategory
-  );
+  const promotedFactIds = getPromotedFactIds(detailFacts, yieldCategory);
 
   return {
     addressRows: getAddressRows(yieldDto, t),
-    dashboardYieldCategory,
+    yieldCategory,
     detailRows: getDetailRows({
       facts: detailFacts,
       locale,
@@ -179,7 +176,7 @@ export const getEarnDetailsModel = ({
       yieldDto,
     }),
     headerBadges: getHeaderBadges(yieldDto, t),
-    isStakeCategory: dashboardYieldCategory === "stake",
+    isStakeCategory: yieldCategory === "stake",
     metricCards: detailFacts
       .filter((fact) => promotedFactIds.has(fact.id))
       .map(toMetricCard),
@@ -195,7 +192,7 @@ export const getEarnDetailsModel = ({
 
 const getPromotedFactIds = (
   facts: EarnDetailFact[],
-  category: DashboardYieldCategory | null
+  category: YieldCategory | null
 ): Set<EarnDetailFactId> => {
   const priority = category ? kpiPriorities[category] : kpiPriorities.defi;
   const factsById = new Map(facts.map((fact) => [fact.id, fact]));
@@ -643,7 +640,7 @@ const getHeaderBadges = (
   }
 
   if (
-    getDashboardYieldCategory(yieldDto) === "stake" &&
+    getYieldCategory(yieldDto) === "stake" &&
     yieldDto.mechanics.rewardClaiming === "auto"
   ) {
     badges.push({

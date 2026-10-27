@@ -82,8 +82,8 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         );
 
         const owner = walletScopeOwnerKey(input.walletScope);
-        // A confidential workflow is a Classic one once prepared.
-        const workflowKind = input._tag === "Borrow" ? "Borrow" : "Classic";
+        // A confidential workflow is a Yield one once prepared.
+        const workflowKind = input._tag === "Borrow" ? "Borrow" : "Yield";
 
         // Registered before the processor forks, so it runs after the processor
         // is interrupted and reads the state the workflow was left in.

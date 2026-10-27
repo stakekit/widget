@@ -1,5 +1,5 @@
 import { Data, Predicate, Result, Schema, SchemaIssue } from "effect";
-import { DashboardYieldCategory } from "../../domain/earn/contract";
+import { YieldCategory } from "../../domain/earn/contract";
 import { HostTokenKey } from "../../domain/token/token";
 import {
   EvmChainIds,
@@ -73,12 +73,11 @@ type HostLanguage = NonNullable<SettingsProps["language"]>;
 type HostVariant = NonNullable<SKHostConfiguration["variant"]>;
 type HostYieldGrouping = NonNullable<SettingsProps["yieldGrouping"]>;
 
-const dashboardYieldCategoryValues =
-  exhaustiveLiterals<DashboardYieldCategory>()([
-    DashboardYieldCategory.RWA,
-    DashboardYieldCategory.DeFi,
-    DashboardYieldCategory.Stake,
-  ]);
+const yieldCategoryValues = exhaustiveLiterals<YieldCategory>()([
+  YieldCategory.RWA,
+  YieldCategory.DeFi,
+  YieldCategory.Stake,
+]);
 const hostLanguageValues = exhaustiveLiterals<HostLanguage>()(["en", "fr"]);
 const hostVariantValues = exhaustiveLiterals<HostVariant>()([
   "default",
@@ -171,9 +170,9 @@ const walletPolicyFields = {
 const WalletPolicy = Schema.Struct(walletPolicyFields);
 
 const yieldProviderOrderFields = {
-  [DashboardYieldCategory.RWA]: optional(Schema.Array(Schema.String)),
-  [DashboardYieldCategory.DeFi]: optional(Schema.Array(Schema.String)),
-  [DashboardYieldCategory.Stake]: optional(Schema.Array(Schema.String)),
+  [YieldCategory.RWA]: optional(Schema.Array(Schema.String)),
+  [YieldCategory.DeFi]: optional(Schema.Array(Schema.String)),
+  [YieldCategory.Stake]: optional(Schema.Array(Schema.String)),
 } satisfies Record<
   keyof NonNullable<SettingsProps["yieldProviderOrder"]>,
   Schema.Constraint
@@ -198,8 +197,8 @@ const hostConfigurationValueFields = {
   chainIconMapping: optional(IconMapping),
   customTranslations: optional(CustomTranslations),
   dashboardVariant: optional(Schema.Boolean),
-  dashboardYieldCategoryOrder: optional(
-    Schema.Array(Schema.Literals(dashboardYieldCategoryValues))
+  yieldCategoryOrder: optional(
+    Schema.Array(Schema.Literals(yieldCategoryValues))
   ),
   disableAutoScrollToTop: optional(Schema.Boolean),
   disableInitLayoutAnimation: optional(Schema.Boolean),
