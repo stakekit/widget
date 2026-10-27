@@ -9,7 +9,7 @@ import { EvmChainIds } from "../src/index.package";
 import { readConnectionSettings } from "./connection-settings";
 import { installDevConsole, logWalletEntry } from "./dev-console";
 import { PlaygroundApp } from "./playground-app";
-import { readPlaygroundConfig } from "./playground-config";
+import { mountedTheme, readPlaygroundConfig } from "./playground-config";
 import { connectInjectedWallet } from "./wallet/injected-wallet-backend";
 import {
   makePlaygroundWallet,
@@ -51,7 +51,7 @@ const startHostWallet = async (): Promise<PlaygroundWallet | undefined> => {
 };
 
 const start = async () => {
-  document.body.dataset.theme = config.theme;
+  document.body.dataset.theme = mountedTheme(config);
   document.body.dataset.variant = config.variant;
 
   const wallet = await startHostWallet();

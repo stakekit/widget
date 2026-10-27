@@ -3,7 +3,11 @@ import {
   type ConnectionSettings,
   connectionProps,
 } from "./connection-settings";
-import type { PlaygroundConfig } from "./playground-config";
+import {
+  mountedBorrowEnabled,
+  mountedTheme,
+  type PlaygroundConfig,
+} from "./playground-config";
 
 /** Widget mount props for a playground config; the host wallet is added by the caller. */
 export const toWidgetProps = (
@@ -16,9 +20,9 @@ export const toWidgetProps = (
   const props: SKAppProps = {
     apiKey: connection.apiKey || import.meta.env.VITE_API_KEY,
     variant: config.variant,
-    theme: config.theme === "dark" ? darkTheme : lightTheme,
+    theme: mountedTheme(config) === "dark" ? darkTheme : lightTheme,
     dashboardVariant: config.dashboardVariant,
-    borrowEnabled: config.borrowEnabled,
+    borrowEnabled: mountedBorrowEnabled(config),
     hideGasFee: config.hideGasFee,
     onMountAnimationComplete: () =>
       console.info("[playground] mount animation complete"),

@@ -9,8 +9,11 @@ import {
 import {
   decodeExtraProps,
   defaultPlaygroundConfig,
+  fixedVariantTheme,
   hostVariants,
   languages,
+  mountedBorrowEnabled,
+  mountedTheme,
   type PlaygroundConfig,
   themes,
   walletModes,
@@ -29,11 +32,15 @@ const connectionFields = [
 ] as const;
 
 const Choice = <Value extends string>({
+  disabled,
+  hint,
   label,
   onChange,
   options,
   value,
 }: {
+  readonly disabled?: boolean;
+  readonly hint?: string;
   readonly label: string;
   readonly onChange: (value: Value) => void;
   readonly options: ReadonlyArray<Value>;
@@ -42,6 +49,7 @@ const Choice = <Value extends string>({
   <label className="pg-field">
     <span>{label}</span>
     <select
+      disabled={disabled}
       onChange={(event) => {
         const next = options.find((option) => option === event.target.value);
         if (next !== undefined) onChange(next);
@@ -54,25 +62,32 @@ const Choice = <Value extends string>({
         </option>
       ))}
     </select>
+    {hint && <small className="pg-hint">{hint}</small>}
   </label>
 );
 
 const Toggle = ({
   checked,
+  disabled,
+  hint,
   label,
   onChange,
 }: {
   readonly checked: boolean;
+  readonly disabled?: boolean;
+  readonly hint?: string;
   readonly label: string;
   readonly onChange: (checked: boolean) => void;
 }) => (
   <label className="pg-toggle">
     <input
       checked={checked}
+      disabled={disabled}
       onChange={(event) => onChange(event.target.checked)}
       type="checkbox"
     />
     <span>{label}</span>
+    {hint && <small className="pg-hint">{hint}</small>}
   </label>
 );
 
@@ -193,6 +208,8 @@ export const PlaygroundPanel = ({
       : JSON.stringify(config.extraProps, null, 2)
   );
   const [error, setError] = useState<string>();
+  const [linkCopied, setLinkCopied] = useState(false);
+  const variantTheme = fixedVariantTheme(draft.variant);
 
   const update = <Key extends keyof PlaygroundConfig>(
     key: Key,
@@ -242,6 +259,8 @@ export const PlaygroundPanel = ({
     if (next === undefined) return;
     const { origin, pathname } = window.location;
     await navigator.clipboard.writeText(`${origin}${pathname}${linkFor(next)}`);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 1500);
   };
 
   return (
@@ -286,10 +305,12 @@ export const PlaygroundPanel = ({
           value={draft.variant}
         />
         <Choice
+          disabled={variantTheme !== undefined}
+          hint={variantTheme && `${draft.variant} is ${variantTheme} only`}
           label="theme"
           onChange={(value) => update("theme", value)}
           options={themes}
-          value={draft.theme}
+          value={mountedTheme(draft)}
         />
         <Choice
           label="language"
@@ -303,7 +324,9 @@ export const PlaygroundPanel = ({
           onChange={(value) => update("dashboardVariant", value)}
         />
         <Toggle
-          checked={draft.borrowEnabled}
+          checked={mountedBorrowEnabled(draft)}
+          disabled={!draft.dashboardVariant}
+          hint={draft.dashboardVariant ? undefined : "needs dashboardVariant"}
           label="borrowEnabled"
           onChange={(value) => update("borrowEnabled", value)}
         />
@@ -354,7 +377,10 @@ export const PlaygroundPanel = ({
             value={connectionDraft[key]}
           />
         ))}
-        <p className="pg-hint">Stored in localStorage, never in the link.</p>
+        <p className="pg-hint">
+          Stored in localStorage, never in the link. A non-production API URL
+          needs that environment's API key.
+        </p>
       </section>
 
       {error && <p className="pg-error">{error}</p>}
@@ -363,7 +389,7 @@ export const PlaygroundPanel = ({
           Apply and reload
         </button>
         <button onClick={copyLink} type="button">
-          Copy link
+          {linkCopied ? "Copied ✓" : "Copy link"}
         </button>
         <button
           onClick={() => navigateTo(linkFor(defaultPlaygroundConfig))}

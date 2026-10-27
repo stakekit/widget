@@ -92,7 +92,9 @@ export const PlaygroundApp = ({
           wallet={wallet}
         />
       )}
-      <Widget props={props} startError={startError} wallet={wallet} />
+      <div className="pg-stage" data-panel-open={panelOpen}>
+        <Widget props={props} startError={startError} wallet={wallet} />
+      </div>
     </>
   );
 };
