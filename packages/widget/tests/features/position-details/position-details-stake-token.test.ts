@@ -11,14 +11,14 @@ import { ConfidentialTokenBalanceKey } from "../../../src/domain/earn/confidenti
 import type { EarnYield } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/stake-entry";
 import {
   hidePositionDetailsStakeTokenBalanceAtom,
   positionDetailsStakeViewAtom,
   revealPositionDetailsStakeTokenBalanceAtom,
   selectPositionDetailsStakeTokenAtom,
   setPositionDetailsStakeAmountAtom,
-} from "../../../src/features/position-details/state/dashboard-stake-facade";
-import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/dashboard-stake-machine";
+} from "../../../src/features/position-details/state/stake-view";
 import {
   walletConnectionStateAtom,
   walletScopeAtom,

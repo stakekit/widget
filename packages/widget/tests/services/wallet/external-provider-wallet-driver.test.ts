@@ -42,7 +42,7 @@ type ExternalProviderTransactionInput = Parameters<
 
 const txMeta = {} as Extract<
   ExternalProviderTransactionInput,
-  { readonly family: "classic" }
+  { readonly family: "yield" }
 >["txMeta"];
 
 const borrowTxMeta = {
@@ -112,7 +112,7 @@ describe("external-provider wallet driver", () => {
         expect(
           yield* driver.signTransaction({
             address: zeroAddress,
-            family: "classic",
+            family: "yield",
             network: "ethereum",
             tx,
             txMeta,
@@ -136,7 +136,7 @@ describe("external-provider wallet driver", () => {
       const failure = yield* Effect.flip(
         makeExternalProviderWalletDriver({ connector }).signTransaction({
           address: zeroAddress,
-          family: "classic",
+          family: "yield",
           network: "ethereum",
           tx,
           txMeta,
@@ -154,7 +154,7 @@ describe("external-provider wallet driver", () => {
     "routes Borrow transactions through the Borrow connector capability",
     () =>
       Effect.gen(function* () {
-        let classicCalls = 0;
+        let yieldCalls = 0;
         let borrowCalls = 0;
         const connector = {
           id: "externalProviderConnector",
@@ -163,8 +163,8 @@ describe("external-provider wallet driver", () => {
             return Effect.succeed("borrow-hash");
           },
           sendTransaction: () => {
-            classicCalls += 1;
-            return Effect.succeed("classic-hash");
+            yieldCalls += 1;
+            return Effect.succeed("yield-hash");
           },
         } as unknown as Connector;
 
@@ -181,7 +181,7 @@ describe("external-provider wallet driver", () => {
         ).toEqual({ broadcasted: true, signedTx: "borrow-hash" });
 
         expect(borrowCalls).toBe(1);
-        expect(classicCalls).toBe(0);
+        expect(yieldCalls).toBe(0);
       })
   );
 
@@ -196,14 +196,14 @@ describe("external-provider wallet driver", () => {
         },
         sendTransaction: (input: unknown) => {
           received.push(input);
-          return Effect.succeed("classic-hash");
+          return Effect.succeed("yield-hash");
         },
       } as unknown as Connector;
       const driver = makeExternalProviderWalletDriver({ connector });
 
       yield* driver.signTransaction({
         address: zeroAddress,
-        family: "classic",
+        family: "yield",
         network: "ethereum",
         tx,
         txMeta,
@@ -355,7 +355,7 @@ describe("external-provider wallet driver", () => {
         const failure = yield* Effect.flip(
           makeExternalProviderWalletDriver({ connector }).signTransaction({
             address: zeroAddress,
-            family: "classic",
+            family: "yield",
             network: "ethereum",
             tx: JSON.stringify({ ...JSON.parse(tx), to: undefined }),
             txMeta,

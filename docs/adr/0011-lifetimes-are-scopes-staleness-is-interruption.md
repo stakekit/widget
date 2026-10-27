@@ -45,9 +45,9 @@ read an effect Atom, so Atoms are never created per render or per mount. A page
 model comes from an `Atom.family` keyed by data that every render of the page
 shares: Review's by its Session and history entry, Execution's by its Session
 and the handoff Steps' navigation state names: Borrow's created action's id,
-or Classic's handoff itself, since a confidential vault's action exists only
-once its workflow prepares it. A discarded render then reads the same Atom as the
-committed one, and one workflow runs.
+or the Yield flow's handoff itself, since a confidential vault's action exists
+only once its workflow prepares it. A discarded render then reads the same Atom
+as the committed one, and one workflow runs.
 
 Interruption cannot cancel work that has already left Effect. Side effects that
 must not be torn — router navigation, a handoff plus its navigation — run

@@ -1,19 +1,19 @@
 export type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
 
 /**
- * Earn presentation. Compact is the dashboard, Utila, and Porto layout. Zerion
- * covers the Classic Earn adjustments, the positions-list presentation, the
- * stake Review meta information, and the yearly-reward label. A Zerion host
- * with the dashboard flag gets both.
+ * Earn presentation. Condensed is the Dashboard Layout, Utila, and Porto
+ * presentation. Zerion covers the Compact Layout Earn adjustments, the
+ * positions-list presentation, the stake Review meta information, and the
+ * yearly-reward label. A Zerion host in the Dashboard Layout gets both.
  */
 type EarnPresentation = Readonly<{
-  compact: boolean;
+  condensed: boolean;
   zerion: boolean;
 }>;
 
 /**
  * Named capabilities a host variant enables, resolved once from `variant` and
- * `dashboardVariant`. Features, services, and wallet adapters read these rather
+ * the Layout. Features, services, and wallet adapters read these rather
  * than the variant name. The host chain modal is the `chainModal` Widget
  * Configuration field, which only Zerion hosts supply.
  */
@@ -32,7 +32,7 @@ export type HostProfile = Readonly<{
 }>;
 
 const standardProfile: HostProfile = {
-  earnPresentation: { compact: false, zerion: false },
+  earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
   hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
@@ -44,41 +44,29 @@ const standardProfile: HostProfile = {
   walletCatalogue: "default",
 };
 
-const variantProfiles: Readonly<Record<WidgetVariant, HostProfile>> = {
-  default: standardProfile,
-  finery: { ...standardProfile, forcesInstitutionalWallets: true },
-  porto: {
-    ...standardProfile,
-    earnPresentation: { compact: true, zerion: false },
-    walletCatalogue: "porto",
-  },
-  utila: {
-    ...standardProfile,
-    earnPresentation: { compact: true, zerion: false },
-    requiresTermsAcknowledgement: true,
-    showsPendingApprovalsNotice: true,
-    translationOverlay: "utila",
-  },
-  zerion: {
-    ...standardProfile,
-    earnPresentation: { compact: false, zerion: true },
-    hidesEarnLoadingSpinner: true,
-    hidesHeaderWalletControl: true,
-    hostTokenIconMapping: true,
-    hostTracking: true,
-  },
-};
-
-export const resolveHostProfile = (
-  variant: WidgetVariant,
-  dashboardVariant: boolean
-): HostProfile => {
-  const profile = variantProfiles[variant];
-
-  return dashboardVariant && !profile.earnPresentation.compact
-    ? {
-        ...profile,
-        earnPresentation: { ...profile.earnPresentation, compact: true },
-      }
-    : profile;
-};
+/** Each variant's profile; Widget Configuration adjusts it for the Layout. */
+export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
+  {
+    default: standardProfile,
+    finery: { ...standardProfile, forcesInstitutionalWallets: true },
+    porto: {
+      ...standardProfile,
+      earnPresentation: { condensed: true, zerion: false },
+      walletCatalogue: "porto",
+    },
+    utila: {
+      ...standardProfile,
+      earnPresentation: { condensed: true, zerion: false },
+      requiresTermsAcknowledgement: true,
+      showsPendingApprovalsNotice: true,
+      translationOverlay: "utila",
+    },
+    zerion: {
+      ...standardProfile,
+      earnPresentation: { condensed: false, zerion: true },
+      hidesEarnLoadingSpinner: true,
+      hidesHeaderWalletControl: true,
+      hostTokenIconMapping: true,
+      hostTracking: true,
+    },
+  };

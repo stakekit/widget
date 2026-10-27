@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useParams } from "react-router";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useWidgetRouteMatch } from "../../../navigation/index";
+import { WidgetNavigate } from "../../../navigation/views";
 import {
   type BorrowPositionAction,
   isBorrowCollateralToggleAction,
 } from "../model/details";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
-import { getBorrowPositionBasePath, useBorrowPositionContext } from "./context";
+import { useBorrowPositionContext } from "./context";
 import { RepayActionForm } from "./forms/repay-action-form";
 import { WithdrawActionForm } from "./forms/withdraw-action-form";
 
@@ -31,7 +33,13 @@ const BorrowPositionActionForm = ({
 };
 
 export const BorrowPositionActionPage = () => {
-  const { actionId, marketId } = useParams();
+  const match = useWidgetRouteMatch(widgetRoutes.borrowPositionAction);
+  const actionId = match?.actionId;
+  const positionPath = match
+    ? widgetRoutes.borrowPosition.build("Dashboard", {
+        marketId: match.marketId,
+      })
+    : widgetRoutes.positions.build();
   const { t } = useTranslation();
   const { actions, model, position } = useBorrowPositionContext();
   const action = actions.find((candidate) => candidate.id === actionId);
@@ -45,7 +53,7 @@ export const BorrowPositionActionPage = () => {
     }
 
     if (isBorrowCollateralToggleAction(action)) {
-      return <Navigate replace to={getBorrowPositionBasePath(marketId)} />;
+      return <WidgetNavigate replace to={positionPath} />;
     }
 
     return <BorrowPositionActionForm action={action} />;
@@ -55,7 +63,7 @@ export const BorrowPositionActionPage = () => {
   return (
     <>
       <BorrowPositionBreadcrumb
-        backPath={getBorrowPositionBasePath(marketId)}
+        backPath={positionPath}
         positionName={model?.title ?? null}
       />
 

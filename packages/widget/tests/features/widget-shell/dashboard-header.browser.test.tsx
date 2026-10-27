@@ -11,7 +11,7 @@ vi.mock("../../../src/features/wallet/views", async (importOriginal) => {
   };
 });
 
-vi.mock("../../../src/features/widget-shell/header/use-header", () => ({
+vi.mock("../../../src/features/widget-shell/react/use-header", () => ({
   useHeader: () => ({
     containerRef: { current: null },
     hideAccountAndChainSelector: false,
@@ -25,7 +25,7 @@ vi.mock("../../../src/features/widget-shell/header/use-header", () => ({
   }),
 }));
 
-import { Header } from "../../../src/features/widget-shell/dashboard/components/header";
+import { Header } from "../../../src/features/widget-shell/ui/dashboard/header";
 
 it("scopes the dashboard disconnect hit target to the icon", async () => {
   const app = await render(

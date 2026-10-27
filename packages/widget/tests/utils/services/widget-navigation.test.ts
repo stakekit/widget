@@ -1,10 +1,10 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Ref } from "effect";
 import {
-  toWidgetPath,
   type WidgetNavigationCommand,
   WidgetNavigationError,
 } from "../../../src/services/navigation/widget-navigation";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import { makeTestNavigation } from "./widget-navigation";
 
 describe("makeTestNavigation", () => {
@@ -14,16 +14,16 @@ describe("makeTestNavigation", () => {
       Effect.gen(function* () {
         const navigation = yield* makeTestNavigation();
 
-        yield* navigation.service.push(toWidgetPath("/earn"));
-        yield* navigation.service.replace(toWidgetPath("/activity"), {
+        yield* navigation.service.push(widgetRoutes.earn.build());
+        yield* navigation.service.replace(widgetRoutes.activity.build(), {
           scroll: "preserve",
         });
-        yield* navigation.service.back({ state: { source: "test" } });
+        yield* navigation.service.back({ scroll: "preserve" });
 
         expect(yield* navigation.commands).toEqual([
-          { _tag: "Push", path: "/earn" },
-          { _tag: "Replace", path: "/activity", scroll: "preserve" },
-          { _tag: "Back", state: { source: "test" } },
+          { _tag: "Push", to: "/" },
+          { _tag: "Replace", scroll: "preserve", to: "/activity" },
+          { _tag: "Back", scroll: "preserve" },
         ]);
 
         yield* navigation.clear;
@@ -41,13 +41,13 @@ describe("makeTestNavigation", () => {
       });
 
       const error = yield* Effect.flip(
-        navigation.service.push(toWidgetPath("/earn"))
+        navigation.service.push(widgetRoutes.earn.build())
       );
 
       expect(error).toBe(failure);
       expect(yield* Ref.get(received)).toEqual({
         _tag: "Push",
-        path: "/earn",
+        to: "/",
       });
     })
   );

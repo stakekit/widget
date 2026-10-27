@@ -98,7 +98,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem(),
-      presentation: "Dashboard",
+      showsBackButton: false,
       providersDetails: [{ name: "StakeKit" }],
     };
 
@@ -140,7 +140,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem({ status: "WAITING_FOR_NEXT", withYield: false }),
-      presentation: "Classic",
+      showsBackButton: true,
       providersDetails: [],
     };
 
@@ -196,7 +196,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item,
-      presentation: "Dashboard",
+      showsBackButton: false,
       providersDetails: [],
     };
 

@@ -1,7 +1,10 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
+import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
+import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useWalletScopeRoute } from "../../../../wallet/index";
-import { usePositionDetailsStakeMatch } from "../../../react/use-position-details-stake-match";
+import { usePositionDetails } from "../../../react/use-position-details";
+import { PositionDetailsStakeEntryKey } from "../../../state/stake-entry";
 import {
   hidePositionDetailsStakeTokenBalanceAtom,
   positionDetailsStakeViewAtom,
@@ -12,16 +15,14 @@ import {
   setPositionDetailsStakeMaxAmountAtom,
   setPositionDetailsStakeTronResourceAtom,
   submitPositionDetailsStakeAtom,
-} from "../../../state/dashboard-stake-facade";
-import { PositionDetailsStakeEntryKey } from "../../../state/dashboard-stake-machine";
-import { usePositionDetails } from "../../classic/hooks/use-position-details";
+} from "../../../state/stake-view";
 
 export const usePositionDetailsStake = () => {
   const walletScope = useWalletScopeRoute();
-  const match = usePositionDetailsStakeMatch();
+  const match = useWidgetRouteMatch(widgetRoutes.positionDetails);
   const key = new PositionDetailsStakeEntryKey({
-    balanceId: match?.params.balanceId ?? "",
-    integrationId: (match?.params.integrationId ?? "") as YieldId,
+    balanceId: match?.balanceId ?? "",
+    integrationId: (match?.integrationId ?? "") as YieldId,
     walletScope,
   });
   const view = useAtomValue(positionDetailsStakeViewAtom(key));

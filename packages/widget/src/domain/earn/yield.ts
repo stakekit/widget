@@ -5,8 +5,8 @@ import type { ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
 import {
-  DashboardYieldCategory,
-  type DashboardYieldCategory as DashboardYieldCategoryType,
+  YieldCategory,
+  type YieldCategory as YieldCategoryType,
 } from "./contract";
 import type { EarnProvider, EarnYieldWithProvider } from "./models";
 import {
@@ -86,18 +86,18 @@ export type ValidatorsConfig = ReadonlyMap<
   }>
 >;
 
-export const dashboardYieldCategories = [
-  DashboardYieldCategory.RWA,
-  DashboardYieldCategory.DeFi,
-  DashboardYieldCategory.Stake,
-] as const satisfies ReadonlyArray<DashboardYieldCategoryType>;
+export const yieldCategories = [
+  YieldCategory.RWA,
+  YieldCategory.DeFi,
+  YieldCategory.Stake,
+] as const satisfies ReadonlyArray<YieldCategoryType>;
 
 /**
- * Maps locally known API yield types to dashboard categories. Unknown future
+ * Maps locally known API yield types to Yield Categories. Unknown future
  * API types are intentionally not included in filtered queries because the app
- * cannot infer which dashboard category they belong to.
+ * cannot infer which Yield Category they belong to.
  */
-const apiYieldTypeToDashboardCategory = {
+const apiYieldTypeToYieldCategory = {
   staking: "stake",
   restaking: "stake",
   liquid_staking: "stake",
@@ -107,23 +107,23 @@ const apiYieldTypeToDashboardCategory = {
   concentrated_liquidity_pool: "defi",
   liquidity_pool: "defi",
   real_world_asset: "rwa",
-} as const satisfies Record<KnownApiYieldType, DashboardYieldCategoryType>;
+} as const satisfies Record<KnownApiYieldType, YieldCategoryType>;
 
-export const getApiYieldTypesForDashboardCategory = (
-  category: DashboardYieldCategoryType
+export const getApiYieldTypesForYieldCategory = (
+  category: YieldCategoryType
 ): KnownApiYieldType[] =>
   (
-    Object.entries(apiYieldTypeToDashboardCategory) as [
+    Object.entries(apiYieldTypeToYieldCategory) as [
       KnownApiYieldType,
-      DashboardYieldCategoryType,
+      YieldCategoryType,
     ][]
   )
     .filter(([, mapped]) => mapped === category)
     .map(([yieldType]) => yieldType);
 
-export const getDashboardYieldCategory = (
+export const getYieldCategory = (
   yieldDto: EarnYieldWithProvider
-): DashboardYieldCategoryType | null => {
+): YieldCategoryType | null => {
   const yieldType = getExtendedYieldType(yieldDto);
 
   if (yieldType === "real_world_asset") return "rwa";

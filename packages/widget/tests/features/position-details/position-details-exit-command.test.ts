@@ -14,19 +14,19 @@ import {
   WalletAddress,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import {
-  type ClassicTransactionFlowIntake,
-  decodeClassicFlowNavigationState,
-} from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { resolvePositionDetailsExitSubmission } from "../../../src/features/position-details/model/classic-flow-actions";
-import { positionDetailsExitActions } from "../../../src/features/position-details/state/classic-actions/exit";
-import { positionDetailsPendingActions } from "../../../src/features/position-details/state/classic-actions/pending-action";
-import { positionDetailsClassicViewAtom } from "../../../src/features/position-details/state/classic-facade";
+import { resolvePositionDetailsExitSubmission } from "../../../src/features/position-details/model/flow-actions";
+import { positionDetailsExitActions } from "../../../src/features/position-details/state/actions/exit";
+import { positionDetailsPendingActions } from "../../../src/features/position-details/state/actions/pending-action";
+import { positionDetailsViewAtom } from "../../../src/features/position-details/state/details-view";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
 } from "../../../src/features/position-details/state/workflow";
 import { walletConnectionStateAtom } from "../../../src/features/wallet/index";
+import {
+  type YieldTransactionFlowIntake,
+  yieldFlowRoutes,
+} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -39,8 +39,12 @@ import {
 import {
   makeWidgetNavigation,
   type WidgetNavigationOptions,
-  type WidgetPath,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  type WidgetNavigationTarget,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import type { TrackingService } from "../../../src/services/tracking/tracking-service";
 import {
   disconnectedLedgerConnectorState,
@@ -52,22 +56,29 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
-import { makeClassicFlowTestKit } from "../../utils/classic-flow-test-kit";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
+import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
-type Push = (path: WidgetPath, options?: WidgetNavigationOptions) => void;
+type Push = (
+  to: WidgetNavigationTarget,
+  options?: WidgetNavigationOptions
+) => void;
 
 /** The intake of the Session the single Start navigation carried to Review. */
 const startedIntake = (
   push: Mock<Push>,
   reviewPath: string
-): ClassicTransactionFlowIntake => {
+): YieldTransactionFlowIntake => {
   expect(push).toHaveBeenCalledOnce();
-  const [path, options] = push.mock.calls[0] ?? [];
-  expect(path).toBe(reviewPath);
-  return Option.getOrThrow(decodeClassicFlowNavigationState(options?.state))
-    .intake;
+  const [to] = push.mock.calls[0] ?? [];
+  if (to === undefined) throw new Error("Expected a Review navigation");
+  expect(widgetTargetPath(to)).toBe(reviewPath);
+  return Option.getOrThrow(
+    yieldFlowRoutes.Earn.state(widgetTargetState(to)).pipe(
+      Option.map((state) => state.yieldFlowSession.intake)
+    )
+  );
 };
 
 const {
@@ -314,7 +325,7 @@ const makeRegistry = ({
       Atom.initialValue(
         walletRuntime.layer,
         Layer.unwrap(
-          makeClassicFlowTestKit({
+          makeYieldFlowTestKit({
             initialWalletState: walletState,
             navigation: { execute: navigation.execute },
           }).pipe(Effect.map((kit) => kit.layer))
@@ -381,7 +392,7 @@ describe("Position Details exit command", () => {
       yieldOpportunity: constrainedYield,
     });
     const commandAtom = submitPositionDetailsExitAtom(workflowKey);
-    const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+    const viewAtom = positionDetailsViewAtom(workflowKey);
     const unmountView = registry.mount(viewAtom);
 
     try {
@@ -444,7 +455,7 @@ describe("Position Details exit command", () => {
       selectedAddress: usdcAddress,
     },
   ] as const)(
-    "hands the $name Exit Receive Token to Classic Flow",
+    "hands the $name Exit Receive Token to Yield Flow",
     async ({ expectedAddress, expectedSymbol, selectedAddress }) => {
       const push = vi.fn<Push>();
       const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
@@ -482,7 +493,7 @@ describe("Position Details exit command", () => {
         yieldOpportunity: eligibleYield,
       });
       const commandAtom = submitPositionDetailsExitAtom(workflowKey);
-      const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+      const viewAtom = positionDetailsViewAtom(workflowKey);
       const unmountView = registry.mount(viewAtom);
 
       try {
@@ -552,7 +563,7 @@ describe("Position Details exit command", () => {
         trackEvent: () => Effect.void,
         yieldOpportunity: kelpRsethYield,
       });
-      const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+      const viewAtom = positionDetailsViewAtom(workflowKey);
       const unmountView = registry.mount(viewAtom);
 
       try {
@@ -707,7 +718,7 @@ describe("Position Details exit command", () => {
     ).toEqual({ _tag: "Invalid" });
   });
 
-  it("preserves the closed Classic rejection for Exit", async () => {
+  it("preserves the closed Yield rejection for Exit", async () => {
     const push = vi.fn<Push>();
     const registry = makeRegistry({
       push,
@@ -738,7 +749,7 @@ describe("Position Details exit command", () => {
     }
   });
 
-  it("preserves the closed Classic rejection for a Pending Action", async () => {
+  it("preserves the closed Yield rejection for a Pending Action", async () => {
     const push = vi.fn<Push>();
     const registry = makeRegistry({
       push,
@@ -1332,7 +1343,7 @@ describe("Position Details exit command", () => {
       trackEvent: () => Effect.void,
       yieldBalance: refreshedBalance,
     });
-    const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+    const viewAtom = positionDetailsViewAtom(workflowKey);
     const unmount = registry.mount(viewAtom);
 
     try {
@@ -1392,7 +1403,7 @@ describe("Position Details exit command", () => {
       yieldBalance: partialBalance,
       yieldOpportunity: partialExitYield,
     });
-    const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+    const viewAtom = positionDetailsViewAtom(workflowKey);
     const unmountView = registry.mount(viewAtom);
 
     try {

@@ -10,10 +10,10 @@ import {
   resolveSelectedPositionDetailsActionMode,
   shouldShowPositionDetailsActionTabs,
 } from "../../../model/hub";
-import { PositionDetailsUnstakeActions } from "../../classic/components/position-details-unstake-actions";
-import { PositionDetailsValidatorModal } from "../../classic/components/position-details-validator-modal";
-import { usePositionDetails } from "../../classic/hooks/use-position-details";
+import { usePositionDetails } from "../../../react/use-position-details";
 import { PositionDetailsPendingActions } from "../../components/position-details-pending-actions";
+import { PositionDetailsUnstakeActions } from "../../components/position-details-unstake-actions";
+import { PositionDetailsValidatorModal } from "../../components/position-details-validator-modal";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { PositionDetailsStakeActions } from "./position-details-stake-actions";
 import { container } from "./styles.css";
@@ -88,8 +88,9 @@ export const PositionDetailsHub = () => {
         ) : null}
 
         <PositionDetailsPendingActions
+          flagsInvalidAmount={false}
+          humanizesUntranslatedLabels
           positionDetails={positionDetails}
-          presentation="dashboard"
         />
 
         {mode === "unstake" ? <PositionDetailsUnstakeActions /> : null}

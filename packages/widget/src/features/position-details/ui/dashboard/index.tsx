@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { Navigate, Outlet, useMatch } from "react-router";
+import { Outlet } from "react-router";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   PositionDetailsBreadcrumb as PositionDetailsBreadcrumbLayout,
   PositionDetailsPane,
 } from "../../../../shared/ui/components/position-details";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { useWidgetRoutePrefixMatch } from "../../../navigation/index";
+import { WidgetNavigate } from "../../../navigation/views";
 import {
   AnimationPage,
   BackButton,
@@ -12,7 +15,7 @@ import {
   SplitView,
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
-import { usePositionDetails } from "../classic/hooks/use-position-details";
+import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsInfo } from "./components/position-details-info";
 
 const PositionBreadcrumb = ({
@@ -36,18 +39,19 @@ const PositionBreadcrumb = ({
 const PositionDetailsPageComponent = () => {
   const { t } = useTranslation();
   const positionDetails = usePositionDetails();
-  const flowSegment = useMatch("positions/:integrationId/:balanceId/:flow/*")
-    ?.params.flow;
+  const stakeFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionStake);
+  const unstakeFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionUnstake);
+  const pendingActionFlow = useWidgetRoutePrefixMatch(
+    widgetRoutes.positionPendingAction
+  );
   const layout = resolvePositionDetailsPageLayout({
     ...positionDetails,
     flowActive:
-      flowSegment === "stake" ||
-      flowSegment === "unstake" ||
-      flowSegment === "pending-action",
+      stakeFlow !== null || unstakeFlow !== null || pendingActionFlow !== null,
   });
 
   if (layout === "PositionLost") {
-    return <Navigate replace to="/positions" />;
+    return <WidgetNavigate replace to={widgetRoutes.positions.build()} />;
   }
 
   const shouldShowActions = layout === "Actions";

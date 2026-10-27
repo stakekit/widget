@@ -5,7 +5,7 @@ import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 
 import type { useSelectValidator } from "../../../src/features/earn/react/use-select-validator";
-import { SelectYieldRewardDetails } from "../../../src/features/earn/ui/classic/earn-page/components/select-yield-section/select-yield-reward-details";
+import { SelectYieldRewardDetails } from "../../../src/features/earn/ui/components/select-yield-section/select-yield-reward-details";
 import {
   ProviderSelectionCard,
   ProviderSummary,
@@ -95,20 +95,20 @@ const renderProviderSelectionCard = () =>
   );
 
 const renderSelectYieldRewardDetails = ({
-  dashboardVariant = true,
+  alwaysShowStrategy = true,
 }: {
-  dashboardVariant?: boolean;
+  alwaysShowStrategy?: boolean;
 } = {}) =>
   render(
     <I18nextProvider i18n={i18nInstance}>
       <TestWidgetConfigProvider
         apiKey="test-key"
         baseUrl="https://api.example.com"
-        dashboardVariant={dashboardVariant}
+        dashboardVariant
         variant="default"
         yieldsApiUrl="https://yield.example.com"
       >
-        <SelectYieldRewardDetails />
+        <SelectYieldRewardDetails alwaysShowStrategy={alwaysShowStrategy} />
       </TestWidgetConfigProvider>
     </I18nextProvider>
   );
@@ -219,7 +219,7 @@ describe("ProviderSelectionCard", () => {
 });
 
 describe("SelectYieldRewardDetails", () => {
-  it("uses all selected validators in the dashboard Stake via summary", async () => {
+  it("uses all selected validators in the Stake via summary", async () => {
     const firstValidator = decodeValidator(
       yieldApiValidatorFixture({
         address: "validator-1",
@@ -253,7 +253,7 @@ describe("SelectYieldRewardDetails", () => {
       .toBeInTheDocument();
   });
 
-  it("hides the yield strategy summary in the widget variant", async () => {
+  it("hides the yield strategy summary without an output token unless always shown", async () => {
     hookState.entryView = {
       estimatedRewards: null,
       providers: [],
@@ -265,7 +265,7 @@ describe("SelectYieldRewardDetails", () => {
     };
 
     const app = await renderSelectYieldRewardDetails({
-      dashboardVariant: false,
+      alwaysShowStrategy: false,
     });
 
     await expect

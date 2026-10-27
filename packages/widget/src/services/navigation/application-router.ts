@@ -2,16 +2,22 @@ import { Context, Effect, Layer, Queue, Stream } from "effect";
 import {
   createMemoryRouter,
   type DataRouter,
+  type Location,
   type RouteObject,
 } from "react-router";
 
-const pathnameStream = (router: DataRouter): Stream.Stream<string> =>
-  Stream.callback<string>(
+/** The router's current location; match its pathname with registry routes. */
+export type ApplicationLocation = Readonly<Pick<Location, "pathname">>;
+
+const locationStream = (
+  router: DataRouter
+): Stream.Stream<ApplicationLocation> =>
+  Stream.callback<ApplicationLocation>(
     (queue) =>
       Effect.acquireRelease(
         Effect.sync(() => {
           const publish = (state: DataRouter["state"]) => {
-            Queue.offerUnsafe(queue, state.location.pathname);
+            Queue.offerUnsafe(queue, { pathname: state.location.pathname });
           };
           const unsubscribe = router.subscribe(publish);
           publish(router.state);
@@ -28,7 +34,7 @@ const pathnameStream = (router: DataRouter): Stream.Stream<string> =>
 export class ApplicationRouter extends Context.Service<
   ApplicationRouter,
   {
-    readonly pathnames: Stream.Stream<string>;
+    readonly locations: Stream.Stream<ApplicationLocation>;
     readonly router: DataRouter;
   }
 >()("@stakekit/widget/services/navigation/ApplicationRouter") {
@@ -43,10 +49,10 @@ export class ApplicationRouter extends Context.Service<
           Effect.sync(() => createMemoryRouter([...routes], options)),
           (router) => Effect.sync(() => router.dispose())
         );
-        const pathnames = yield* pathnameStream(router).pipe(
+        const locations = yield* locationStream(router).pipe(
           Stream.share({ capacity: 1, replay: 1, strategy: "sliding" })
         );
-        return ApplicationRouter.of({ pathnames, router });
+        return ApplicationRouter.of({ locations, router });
       })
     );
 }

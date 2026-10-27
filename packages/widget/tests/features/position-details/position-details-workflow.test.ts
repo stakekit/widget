@@ -2,7 +2,10 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletAddress,
+  YieldId,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   makePositionDetailsWorkflowState,
@@ -27,7 +30,7 @@ const scopeB = new WalletScopeKey({
 const workflowAtom = positionDetailsWorkflowAtom(
   new PositionDetailsWorkflowKey({
     balanceId: "balance-1",
-    integrationId: "yield-1",
+    integrationId: Schema.decodeSync(YieldId)("yield-1"),
     pendingActionType: null,
     scope: scopeA,
   })
@@ -74,7 +77,7 @@ describe("position details workflow atoms", () => {
     const walletBWorkflow = positionDetailsWorkflowAtom(
       new PositionDetailsWorkflowKey({
         balanceId: "balance-1",
-        integrationId: "yield-1",
+        integrationId: Schema.decodeSync(YieldId)("yield-1"),
         pendingActionType: null,
         scope: scopeB,
       })

@@ -1,0 +1,18 @@
+id: no-layout-name-in-logic
+valid:
+  - 'const layout: WidgetLayout = "Dashboard"'
+  - 'const grouped = layout === "Compact"'
+  - 'const label = t("dashboard.earn_details.apy")'
+  - 'const formatted = formatCompactNumber(tvl, locale)'
+  - 'export const formatMeaningfulCompactUsd = () => ""'
+  - 'const categoryGrouping = config.yieldGrouping === "category"'
+  - 'const { condensed } = hostProfile.earnPresentation'
+invalid:
+  - 'export const getDashboardPositionDetailsModel = () => null'
+  - 'type DashboardPositionMetricCard = { readonly label: string }'
+  - 'const compactLayoutHeight = 0'
+  - 'const grouping = entry.dashboardVariant'
+  - 'const entry = { dashboardVariant: true }'
+  - 'const { dashboardVariant } = entry'
+  - 'const isCompact = true'
+  - 'export const shouldShowActivityDashboardSplit = () => false'

@@ -67,7 +67,7 @@ describe("Yield Entry submission", () => {
       name: "KYC block",
     },
     {
-      expected: "StartClassicFlow",
+      expected: "StartYieldFlow",
       input: eligibleSubmission,
       name: "eligible entry",
     },

@@ -17,7 +17,7 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/index";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
+import type { YieldTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { InitParams } from "../../../services/wallet/init-params";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import { initParamsAtom } from "../../init-params/index";
@@ -188,7 +188,7 @@ const projectPendingActionDeepLink = (value: PendingActionDeepLinkValue) => {
 
 const getPendingActionProvidersDetails = (
   integration: PendingActionDeepLinkValue["yieldData"]
-): ReadonlyArray<ClassicTransactionWorkflowProviderDetail> => {
+): ReadonlyArray<YieldTransactionWorkflowProviderDetail> => {
   const rewardRate = integration.rewardRate.total;
   const provider = integration.provider;
 

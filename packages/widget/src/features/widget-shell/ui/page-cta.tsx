@@ -1,6 +1,6 @@
-import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
+import { pageCta } from "./layout.css";
 
 export type PageCta = {
   disabled: boolean;
@@ -12,12 +12,10 @@ export type PageCta = {
 } | null;
 
 export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-
   if (!cta || cta.hide) return null;
 
   return (
-    <Box marginTop="auto" paddingTop={dashboardVariant ? undefined : "8"}>
+    <Box marginTop="auto" className={pageCta}>
       <Button
         data-rk={`footer-button-${cta.variant ?? "primary"}`}
         disabled={cta.disabled || cta.isLoading}
@@ -28,7 +26,7 @@ export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
             cta.variant ??
             (cta.disabled || cta.isLoading ? "disabled" : "primary"),
           animation: "press",
-          size: dashboardVariant ? "compact" : "regular",
+          size: "layout",
         }}
       >
         {cta.label}

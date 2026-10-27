@@ -22,7 +22,7 @@ describe("Stellar wallet driver", () => {
         expect(
           yield* makeStellarWalletDriver({ connector }).signTransaction({
             address,
-            family: "classic",
+            family: "yield",
             ledgerHwAppId: null,
             network: "stellar",
             tx: "unsigned-xdr",
@@ -55,7 +55,7 @@ describe("Stellar wallet driver", () => {
         yield* Effect.flip(
           makeStellarWalletDriver({ connector }).signTransaction({
             address,
-            family: "classic",
+            family: "yield",
             ledgerHwAppId: null,
             network: "stellar-testnet",
             tx: "unsigned-xdr",
@@ -82,7 +82,7 @@ describe("Stellar wallet driver", () => {
         yield* Effect.flip(
           makeStellarWalletDriver({ connector }).signTransaction({
             address,
-            family: "classic",
+            family: "yield",
             ledgerHwAppId: null,
             network: "stellar",
             tx: "unsigned-xdr",

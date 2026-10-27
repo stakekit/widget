@@ -2,7 +2,7 @@ import { Data } from "effect";
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
 import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
 import type { TronResource } from "../../../../domain/action/tron-resource";
-import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../domain/earn/contract";
 import type {
   EarnProvider,
   EarnValidator,
@@ -49,11 +49,12 @@ export class EarnCatalogError extends Data.TaggedError("EarnCatalogError")<{
 export type EarnEntry = {
   readonly walletScope: WalletScopeKey | null;
   readonly walletResolution: "pending" | "settled";
-  readonly dashboardVariant: boolean;
-  readonly categoryOrder: ReadonlyArray<DashboardYieldCategory>;
+  /** Yields are grouped and selected by Yield Category. */
+  readonly categoryGrouping: boolean;
+  readonly categoryOrder: ReadonlyArray<YieldCategory>;
   readonly initParams?: InitParams | null;
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork | null;
-  /** Empty unless yields are grouped by dashboard category. */
+  /** Empty unless yields are grouped by Yield Category. */
   readonly yieldProviderOrder?: YieldProviderOrder;
 };
 
@@ -65,14 +66,14 @@ export type EarnEntryIntent = {
   /** Validator name or address requested by init params; resolved until the user picks one or changes yield. */
   requestedValidator: string | null;
   selectedProviderOption: ProviderOption | null;
-  selectedCategory: DashboardYieldCategory | null;
+  selectedCategory: YieldCategory | null;
   stakeAmount: string;
   useMaxAmount: boolean;
   tronResource: TronResource | null;
 };
 
 export type EarnSelection = {
-  category: DashboardYieldCategory | null;
+  category: YieldCategory | null;
   token: EarnTokenOption | null;
   yield: EarnYieldWithProvider | null;
   validators: ReadonlyArray<EarnValidator>;
@@ -115,7 +116,7 @@ export type EarnSelectionView = {
   readonly blockingFailure: boolean;
   readonly selection: EarnSelection;
   readonly form: EarnSelectionForm;
-  readonly availableCategories: ReadonlyArray<DashboardYieldCategory>;
+  readonly availableCategories: ReadonlyArray<YieldCategory>;
   readonly loading: {
     readonly wallet: boolean;
     readonly categories: boolean;

@@ -3,20 +3,20 @@
 // `composition.ts` so consumers do not pull the shell page graph. Generic UI kit
 // components live in `shared/ui/components` and are imported directly.
 
-export { headerContainer } from "./classic-layout/styles.css";
+export { AnimationPage } from "./ui/animation-page";
 export {
   BackButton,
   BackButtonProvider,
-} from "./dashboard/components/back-button";
+} from "./ui/back-button";
+export { headerContainer } from "./ui/compact/compact-layout/styles.css";
 export {
   SplitView,
   type SplitViewSide,
-} from "./dashboard/components/split-view";
+} from "./ui/dashboard/split-view";
 export {
   outletWrapper as dashboardOutletWrapper,
   wrapper as dashboardWrapper,
-} from "./dashboard/components/styles.css";
-export { AnimationPage } from "./ui/animation-page";
+} from "./ui/dashboard/styles.css";
 export { FallbackContent } from "./ui/fallback-content";
 export { container } from "./ui/layout.css";
 export { MountAnimatedPage } from "./ui/mount-animated-page";

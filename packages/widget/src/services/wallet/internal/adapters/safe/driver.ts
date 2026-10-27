@@ -34,7 +34,7 @@ export const makeSafeWalletDriver = ({
     tx,
   }: {
     readonly address: Address;
-    readonly family: "borrow" | "classic";
+    readonly family: "borrow" | "yield";
     readonly tx: string;
   }): Effect.Effect<
     WalletBroadcastResult,

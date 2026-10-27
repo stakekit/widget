@@ -22,8 +22,8 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowIntake,
-  decodeBorrowFlowNavigationState,
-  makeBorrowFlowNavigationState,
+  borrowFlowRoutes,
+  getBorrowTransactionFlowDestination,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   leaveBorrowFlow,
@@ -35,11 +35,15 @@ import { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import {
-  toWidgetPath,
   type WidgetNavigation,
   type WidgetNavigationCommand,
   WidgetNavigationError,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetRoutes,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
 import {
   type TransactionWorkflowInput,
@@ -103,6 +107,13 @@ const marketPositionIntake: BorrowTransactionFlowIntake = {
   ...borrowEntryIntake,
   entry: { _tag: "MarketPosition", marketId },
 };
+
+const borrowEntryDestination = getBorrowTransactionFlowDestination(
+  borrowEntryIntake.entry
+);
+const marketPositionDestination = getBorrowTransactionFlowDestination(
+  marketPositionIntake.entry
+);
 
 const makeAction = (status = "CREATED", id = "action-1"): Action =>
   Schema.decodeUnknownSync(Action)({
@@ -204,7 +215,12 @@ const makeKit = Effect.fn("test.makeBorrowFlowKit")(function* (
 // compare routes only.
 const withoutNavigationState = (
   commands: ReadonlyArray<WidgetNavigationCommand>
-) => commands.map(({ state: _state, ...command }) => command);
+) =>
+  commands.map((command) =>
+    command._tag === "Back"
+      ? command
+      : { _tag: command._tag, path: widgetTargetPath(command.to) }
+  );
 
 // The action id Steps' navigation state carries after a handoff.
 const handedOffActionId = (session: BorrowFlowSession) =>
@@ -238,20 +254,25 @@ describe("startBorrowTransactionFlow", () => {
         expect(
           (yield* kit.navigation.commands).map((command) => ({
             _tag: command._tag,
-            path: command._tag === "Back" ? null : command.path,
-            session: Option.getOrNull(
-              decodeBorrowFlowNavigationState(command.state)
-            ),
+            path: command._tag === "Back" ? null : widgetTargetPath(command.to),
+            session:
+              command._tag === "Back"
+                ? null
+                : Option.getOrNull(
+                    borrowFlowRoutes.BorrowEntry.state(
+                      widgetTargetState(command.to)
+                    ).pipe(Option.map((state) => state.borrowFlowSession))
+                  ),
           }))
         ).toEqual([
           {
             _tag: "Push",
-            path: toWidgetPath("/borrow/review"),
+            path: borrowEntryDestination.reviewPath,
             session: first.session,
           },
           {
             _tag: "Push",
-            path: toWidgetPath("/borrow/review"),
+            path: borrowEntryDestination.reviewPath,
             session: second.session,
           },
         ]);
@@ -294,7 +315,7 @@ describe("startBorrowTransactionFlow", () => {
         expect(withoutNavigationState(yield* kit.navigation.commands)).toEqual([
           {
             _tag: "Push",
-            path: toWidgetPath(`/positions/borrow/${marketId}/review`),
+            path: marketPositionDestination.reviewPath,
           },
         ]);
         expect(yield* kit.tracking.trackedEvents).toEqual([]);
@@ -346,7 +367,7 @@ describe("startBorrowTransactionFlow", () => {
 
       expect(error).toMatchObject({ _tag: "WidgetNavigationError" });
       expect(withoutNavigationState(yield* kit.navigation.commands)).toEqual([
-        { _tag: "Push", path: toWidgetPath("/borrow/review") },
+        { _tag: "Push", path: borrowEntryDestination.reviewPath },
       ]);
       expect(yield* kit.tracking.trackedEvents).toEqual([]);
     })
@@ -417,8 +438,10 @@ describe("confirmBorrowAction", () => {
       expect(yield* kit.navigation.commands).toEqual([
         {
           _tag: "Push",
-          path: toWidgetPath("/borrow/steps"),
-          state: makeBorrowFlowNavigationState(handle, action.id),
+          to: borrowEntryDestination.steps({
+            borrowFlowSession: handle,
+            executionActionId: action.id,
+          }),
         },
       ]);
     })
@@ -435,11 +458,10 @@ describe("confirmBorrowAction", () => {
       expect(yield* kit.navigation.commands).toEqual([
         {
           _tag: "Push",
-          path: toWidgetPath(`/positions/borrow/${marketId}/steps`),
-          state: makeBorrowFlowNavigationState(
-            handle,
-            yield* handedOffActionId(handle)
-          ),
+          to: marketPositionDestination.steps({
+            borrowFlowSession: handle,
+            executionActionId: yield* handedOffActionId(handle),
+          }),
         },
       ]);
     })
@@ -859,7 +881,7 @@ describe("leaveBorrowFlow", () => {
   it.effect("replaces the flow with Borrow for a Borrow Entry flow", () =>
     Effect.gen(function* () {
       expect(yield* leave(borrowEntryIntake)).toEqual([
-        { _tag: "Replace", path: toWidgetPath("/borrow") },
+        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
       ]);
     })
   );
@@ -871,7 +893,7 @@ describe("leaveBorrowFlow", () => {
         expect(yield* leave(marketPositionIntake)).toEqual([
           {
             _tag: "Replace",
-            path: toWidgetPath(`/positions/borrow/${marketId}`),
+            to: widgetRoutes.borrowPosition.build("Dashboard", { marketId }),
           },
         ]);
       })
@@ -903,7 +925,7 @@ describe("leaveBorrowFlow", () => {
 
       expect(interruptedWhileLeaving).toBeUndefined();
       expect(yield* kit.navigation.commands).toEqual([
-        { _tag: "Replace", path: toWidgetPath("/borrow") },
+        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
       ]);
     })
   );

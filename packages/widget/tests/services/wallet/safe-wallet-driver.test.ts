@@ -56,7 +56,7 @@ describe("Safe wallet driver", () => {
       expect(
         yield* driver.signTransaction({
           address: zeroAddress,
-          family: "classic",
+          family: "yield",
           tx,
         })
       ).toEqual({
@@ -77,7 +77,7 @@ describe("Safe wallet driver", () => {
           confirmationRetries: 2,
           confirmationSchedule: Schedule.spaced("1 millis"),
           connector: makeConnector(getTxStatus),
-        }).signTransaction({ address: zeroAddress, family: "classic", tx })
+        }).signTransaction({ address: zeroAddress, family: "yield", tx })
       );
 
       expect(failure._tag).toBe("WalletBroadcastError");
@@ -100,7 +100,7 @@ describe("Safe wallet driver", () => {
             confirmationRetries: 120,
             confirmationSchedule: Schedule.spaced("1 hour"),
             connector: makeConnector(getTxStatus),
-          }).signTransaction({ address: zeroAddress, family: "classic", tx })
+          }).signTransaction({ address: zeroAddress, family: "yield", tx })
         );
 
         yield* Effect.promise(() =>

@@ -11,7 +11,7 @@ import {
 } from "../../../src/services/config/widget-config";
 
 const standard: HostProfile = {
-  earnPresentation: { compact: false, zerion: false },
+  earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
   hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
@@ -23,7 +23,7 @@ const standard: HostProfile = {
   walletCatalogue: "default",
 };
 
-const compact = { compact: true, zerion: false } as const;
+const compact = { condensed: true, zerion: false } as const;
 
 const resolutionTable: ReadonlyArray<
   readonly [WidgetVariant, boolean, HostProfile]
@@ -77,7 +77,7 @@ const resolutionTable: ReadonlyArray<
     false,
     {
       ...standard,
-      earnPresentation: { compact: false, zerion: true },
+      earnPresentation: { condensed: false, zerion: true },
       hidesEarnLoadingSpinner: true,
       hidesHeaderWalletControl: true,
       hostTokenIconMapping: true,
@@ -89,7 +89,7 @@ const resolutionTable: ReadonlyArray<
     true,
     {
       ...standard,
-      earnPresentation: { compact: true, zerion: true },
+      earnPresentation: { condensed: true, zerion: true },
       hidesEarnLoadingSpinner: true,
       hidesHeaderWalletControl: true,
       hostTokenIconMapping: true,

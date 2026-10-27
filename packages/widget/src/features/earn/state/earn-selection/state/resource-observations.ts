@@ -62,7 +62,7 @@ const readCategory = (
     readonly network: InitialViewObservations["network"];
   }
 ): CategoryObservation =>
-  entry.dashboardVariant
+  entry.categoryGrouping
     ? {
         _tag: "enabled",
         catalogs: entry.categoryOrder.map((category) => ({
@@ -218,7 +218,7 @@ export const resolveEarnViewFromResources = (
   if (
     view.blockingFailure ||
     view.loading.categories ||
-    (entry.dashboardVariant && !view.selection.category)
+    (entry.categoryGrouping && !view.selection.category)
   ) {
     return bindValidatorsKey(view, null);
   }

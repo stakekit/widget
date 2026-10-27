@@ -9,25 +9,26 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
-import type { DashboardYieldCategory } from "../../domain/earn/contract";
+import type { YieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {
-  dashboardYieldCategories,
   type ValidatorsConfig,
+  yieldCategories,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
 import type { SKHostConfiguration } from "../../public-api/react-types";
 import { config } from "../../shared/config/widget-defaults";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
-import { type HostProfile, resolveHostProfile } from "./host-profile";
+import { type HostProfile, variantHostProfiles } from "./host-profile";
 import {
   type DecodedHostConfiguration,
   decodeHostConfiguration,
   type HostConfigurationWarning,
+  hostLayout,
   type InvalidHostConfiguration,
   type MountFixedHostSettings,
 } from "./widget-config-boundary";
-import type { WidgetConfig } from "./widget-config-model";
+import type { WidgetConfig, WidgetLayout } from "./widget-config-model";
 
 type WidgetConfigEnvironment = Readonly<{
   apiUrl: string;
@@ -170,22 +171,38 @@ type NormalizedWidgetConfiguration = Readonly<{
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
+/** The Dashboard Layout condenses the Earn presentation of every variant. */
+const resolveHostProfile = (
+  variant: WidgetConfig["variant"],
+  layout: WidgetLayout
+): HostProfile => {
+  const profile = variantHostProfiles[variant];
+
+  return layout === "Dashboard" && !profile.earnPresentation.condensed
+    ? {
+        ...profile,
+        earnPresentation: { ...profile.earnPresentation, condensed: true },
+      }
+    : profile;
+};
+
 const normalizeWidgetConfig = (
   hostConfiguration: DecodedHostConfiguration,
   environment: WidgetConfigEnvironment
 ): WidgetConfig => {
   const borrowEnabled = hostConfiguration.borrowEnabled ?? false;
-  const dashboardVariant = hostConfiguration.dashboardVariant ?? false;
+  const layout = hostLayout(hostConfiguration);
   const variant = hostConfiguration.variant ?? "default";
   const yieldGrouping =
-    hostConfiguration.yieldGrouping ?? (dashboardVariant ? "category" : "flat");
+    hostConfiguration.yieldGrouping ??
+    (layout === "Dashboard" ? "category" : "flat");
 
-  const dashboardYieldCategoryOrder = [
+  const yieldCategoryOrder = [
     ...new Set([
-      ...(hostConfiguration.dashboardYieldCategoryOrder ?? []),
-      ...dashboardYieldCategories,
+      ...(hostConfiguration.yieldCategoryOrder ?? []),
+      ...yieldCategories,
     ]),
-  ] as DashboardYieldCategory[];
+  ] as YieldCategory[];
   const validatorsConfig: ValidatorsConfig = new Map(
     Object.entries(hostConfiguration.validatorsConfig ?? {}).map(
       ([network, validators]) =>
@@ -232,8 +249,9 @@ const normalizeWidgetConfig = (
         ? hostConfiguration.chainModal
         : undefined,
     customTranslations: hostConfiguration.customTranslations,
-    dashboardVariant,
-    dashboardYieldCategoryOrder,
+    earnCategoryGrouping:
+      layout === "Dashboard" && yieldGrouping === "category",
+    yieldCategoryOrder,
     disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
     disableInitLayoutAnimation:
       hostConfiguration.disableInitLayoutAnimation ?? false,
@@ -247,15 +265,16 @@ const normalizeWidgetConfig = (
     hideChainSelector: hostConfiguration.hideChainSelector ?? false,
     hideGasFee: hostConfiguration.hideGasFee ?? false,
     hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
-    hostProfile: resolveHostProfile(variant, dashboardVariant),
+    hostProfile: resolveHostProfile(variant, layout),
     initialChain: hostConfiguration.initialChain,
     institutionalWallets: hostConfiguration.institutionalWallets ?? false,
     isLedgerLive: environment.isLedgerLive,
     isSafe: hostConfiguration.isSafe ?? false,
     language: hostConfiguration.language,
+    layout,
     mapWalletFn: hostConfiguration.mapWalletFn,
     mountAnimationStartsFinished:
-      dashboardVariant ||
+      layout === "Dashboard" ||
       (hostConfiguration.disableInitLayoutAnimation === undefined &&
         environment.mountAnimationStartsFinishedByDefault),
     onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,

@@ -1,13 +1,13 @@
 import { type HTMLMotionProps, motion } from "motion/react";
-import type { CSSProperties, PropsWithChildren } from "react";
-import { useWidgetConfig } from "../../../features/widget-configuration/index";
+import { createContext, type PropsWithChildren, useContext } from "react";
+import { animationPage } from "./layout.css";
 
-type PageTransition = Pick<
+export type PageTransition = Pick<
   HTMLMotionProps<"div">,
   "animate" | "exit" | "initial"
 >;
 
-const classicPageTransition = {
+export const compactPageTransition = {
   initial: { opacity: 0, scale: 1, translateY: "-15px" },
   animate: {
     opacity: 1,
@@ -22,27 +22,22 @@ const classicPageTransition = {
   },
 } satisfies PageTransition;
 
-const dashboardPageTransition = {
+export const dashboardPageTransition = {
   initial: { opacity: 0 },
   animate: { opacity: 1, transition: { duration: 0.4, delay: 0.05 } },
   exit: { opacity: 0, filter: "blur(8px)", transition: { duration: 0.1 } },
 } satisfies PageTransition;
 
-const dashboardLayoutStyle: CSSProperties = {
-  display: "flex",
-  flex: 1,
-  flexDirection: "column",
-  minHeight: 0,
-};
+/** The page enter and exit animation; the app container sets it per Layout. */
+export const PageTransitionContext = createContext<PageTransition>(
+  compactPageTransition
+);
 
 export const AnimationPage = ({ children }: PropsWithChildren) => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const transition = useContext(PageTransitionContext);
 
   return (
-    <motion.div
-      style={dashboardVariant ? dashboardLayoutStyle : undefined}
-      {...(dashboardVariant ? dashboardPageTransition : classicPageTransition)}
-    >
+    <motion.div className={animationPage} {...transition}>
       {children}
     </motion.div>
   );

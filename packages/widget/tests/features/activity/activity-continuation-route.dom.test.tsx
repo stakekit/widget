@@ -23,9 +23,9 @@ import {
   ActivitySelectionKey,
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";
-import type { ClassicFlowSession } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { useClassicFlowSession } from "../../../src/features/classic-transaction-flow/react/classic-flow-route";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
+import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { useYieldFlowSession } from "../../../src/features/yield-transaction-flow/react/yield-flow-route";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
 
@@ -111,12 +111,12 @@ const NavigationCapture = ({
 
 type SessionPageProps = Readonly<{
   readonly name: string;
-  readonly sessions: Array<ClassicFlowSession>;
+  readonly sessions: Array<YieldFlowSession>;
 }>;
 
 /** A flow page that shows which Session it renders, numbered by first sight. */
 const SessionPage = ({ name, sessions }: SessionPageProps) => {
-  const session = useClassicFlowSession();
+  const session = useYieldFlowSession();
   if (!sessions.includes(session)) sessions.push(session);
   return (
     <output data-testid="page">
@@ -135,9 +135,9 @@ const ReviewPage = ({ sessions }: Pick<SessionPageProps, "sessions">) =>
 
 const renderActivity = async (
   initialPath: string,
-  presentation: "Classic" | "Dashboard" = "Classic"
+  selectsDefaultAction = false
 ) => {
-  const sessions: Array<ClassicFlowSession> = [];
+  const sessions: Array<YieldFlowSession> = [];
   const navigation: { current: NavigateFunction | null } = { current: null };
   // Production renders the widget in StrictMode with the default idle TTL.
   const app = await render(
@@ -154,12 +154,13 @@ const renderActivity = async (
           />
           <LocationProbe />
           <Routes>
-            {presentation === "Dashboard" ? (
+            {selectsDefaultAction ? (
               <Route
                 path="/activity"
                 element={
                   <ActivityActionRoute
-                    presentation="Dashboard"
+                    selectsDefaultAction
+                    showsBackButton={false}
                     source="yield"
                   />
                 }
@@ -173,7 +174,8 @@ const renderActivity = async (
               path="/activity/:actionId"
               element={
                 <ActivityActionRoute
-                  presentation={presentation}
+                  selectsDefaultAction={selectsDefaultAction}
+                  showsBackButton={false}
                   source="yield"
                 />
               }
@@ -240,7 +242,7 @@ describe("Activity Yield Action Continuation route", () => {
   });
 
   it("drops the continuation when another action is selected", async () => {
-    const activity = await renderActivity(reviewPath, "Dashboard");
+    const activity = await renderActivity(reviewPath, true);
     await expect.poll(activity.page).toBe("Review:1");
 
     await activity.navigate(
@@ -256,7 +258,7 @@ describe("Activity Yield Action Continuation route", () => {
   });
 
   it("moves a continuable default selection to its own action route", async () => {
-    const activity = await renderActivity("/activity", "Dashboard");
+    const activity = await renderActivity("/activity", true);
 
     await expect.poll(activity.location).toBe(reviewPath);
     await expect.poll(activity.page).toBe("Review:1");

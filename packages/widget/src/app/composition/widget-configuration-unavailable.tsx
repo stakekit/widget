@@ -20,15 +20,13 @@ export const WidgetConfigurationUnavailable = ({
   readonly presentation: RejectedConfigurationPresentation;
 }) => {
   const [i18n] = useState(createWidgetI18nInstance);
-  const { dashboardVariant, theme, variant } = presentation;
+  const { layout, theme, variant } = presentation;
 
   return (
     <I18nextProvider i18n={i18n}>
       <ThemeStyles theme={theme} variant={variant}>
-        <AppContainer variant={dashboardVariant ? "dashboard" : "widget"}>
-          <WidgetUnavailableWithoutConfiguration
-            layout={{ dashboardVariant, variant }}
-          />
+        <AppContainer layout={layout}>
+          <WidgetUnavailableWithoutConfiguration />
         </AppContainer>
       </ThemeStyles>
     </I18nextProvider>

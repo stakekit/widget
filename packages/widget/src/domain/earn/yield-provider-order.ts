@@ -1,19 +1,19 @@
-import type { DashboardYieldCategory } from "./contract";
+import type { YieldCategory } from "./contract";
 import type { EarnYieldWithProvider } from "./models";
 import {
   type ExtendedYieldType,
-  getDashboardYieldCategory,
   getExtendedYieldType,
+  getYieldCategory,
   getYieldTypesSortRank,
   isNonZeroRewardRateYield,
 } from "./yield";
 
 /**
- * Yield provider IDs to list first, per dashboard category, in rank order.
+ * Yield provider IDs to list first, per Yield Category, in rank order.
  * A category without an entry keeps the default yield order.
  */
 export type YieldProviderOrder = Readonly<
-  Partial<Record<DashboardYieldCategory, ReadonlyArray<string>>>
+  Partial<Record<YieldCategory, ReadonlyArray<string>>>
 >;
 
 const unranked = Number.MAX_SAFE_INTEGER;
@@ -28,9 +28,8 @@ const makeProviderRank = (order: YieldProviderOrder) => {
   }
 
   return (yieldDto: EarnYieldWithProvider) =>
-    ranks.get(
-      `${getDashboardYieldCategory(yieldDto)}:${yieldDto.providerId}`
-    ) ?? unranked;
+    ranks.get(`${getYieldCategory(yieldDto)}:${yieldDto.providerId}`) ??
+    unranked;
 };
 
 /**

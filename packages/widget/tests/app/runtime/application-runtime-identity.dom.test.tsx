@@ -25,18 +25,18 @@ import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
-  ClassicFlowHandoff,
-  type ClassicTransactionFlowIntake,
   makeYieldActionContinuationSession,
-} from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { makeClassicFlowExecutionPage } from "../../../src/features/classic-transaction-flow/state/execution-page";
+  YieldFlowHandoff,
+  type YieldTransactionFlowIntake,
+} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { makeYieldFlowExecutionPage } from "../../../src/features/yield-transaction-flow/state/execution-page";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import type { TransactionWorkflowHandle } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
-import { makeClassicFlowTestKit } from "../../utils/classic-flow-test-kit";
 import { render } from "../../utils/test-utils.dom.tsx";
 import { widgetConfigAtom } from "../../utils/widget-config";
+import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
 type LifecycleProbe = {
   initialized: number;
@@ -149,7 +149,7 @@ const RuntimeHarness = ({
 };
 
 const activityIntake = (): Extract<
-  ClassicTransactionFlowIntake,
+  YieldTransactionFlowIntake,
   { readonly _tag: "YieldActionContinuation" }
 > => {
   const selectedYield = yieldApiYieldFixture();
@@ -168,8 +168,8 @@ const activityIntake = (): Extract<
 
 const executionLifetime = { finalized: 0, started: 0 };
 const continuationIntake = activityIntake();
-const classicFlowDependencies = Layer.unwrap(
-  makeClassicFlowTestKit({
+const yieldFlowDependencies = Layer.unwrap(
+  makeYieldFlowTestKit({
     initialWalletState: makeConnectedWalletState(
       continuationIntake.walletScope
     ),
@@ -191,20 +191,18 @@ const classicFlowDependencies = Layer.unwrap(
  * Shows one Flow Execution in the wallet runtime. It takes the waiting
  * handoff once, so a restart would end in interruption.
  */
-const ClassicFlowRuntimeHarness = ({
+const YieldFlowRuntimeHarness = ({
   executionAtom,
 }: {
   readonly executionAtom: Atom.Atom<
     AsyncResult.AsyncResult<TransactionWorkflowHandle, unknown>
   >;
 }) => {
-  useAtomInitialValues([
-    [walletRuntime.layer, classicFlowDependencies as never],
-  ]);
+  useAtomInitialValues([[walletRuntime.layer, yieldFlowDependencies as never]]);
   const workflow = useAtomValue(executionAtom);
 
   return (
-    <output data-testid="classic-flow-workflow">
+    <output data-testid="yield-flow-workflow">
       {AsyncResult.isSuccess(workflow) ? "started" : workflow._tag}
     </output>
   );
@@ -384,22 +382,22 @@ describe("dynamic Widget Configuration", () => {
     executionLifetime.started = 0;
     const session = makeYieldActionContinuationSession(continuationIntake);
     // As Review's handoff would leave it.
-    const handoff = new ClassicFlowHandoff({
+    const handoff = new YieldFlowHandoff({
       _tag: "Action",
       action: continuationIntake.action,
     });
     MutableRef.set(session.handoff.ref, { _tag: "Waiting", handoff });
-    const { executionAtom } = makeClassicFlowExecutionPage(session, handoff);
+    const { executionAtom } = makeYieldFlowExecutionPage(session, handoff);
     const app = await render(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
         hostConfiguration={settings(firstTrack)}
       >
-        <ClassicFlowRuntimeHarness executionAtom={executionAtom} />
+        <YieldFlowRuntimeHarness executionAtom={executionAtom} />
       </SKAtomRegistryProvider>
     );
     const workflow = () =>
-      app.container.querySelector('[data-testid="classic-flow-workflow"]')
+      app.container.querySelector('[data-testid="yield-flow-workflow"]')
         ?.textContent;
 
     await expect.poll(workflow).toBe("started");
@@ -410,7 +408,7 @@ describe("dynamic Widget Configuration", () => {
         routes={applicationRoutes}
         hostConfiguration={settings(secondTrack)}
       >
-        <ClassicFlowRuntimeHarness executionAtom={executionAtom} />
+        <YieldFlowRuntimeHarness executionAtom={executionAtom} />
       </SKAtomRegistryProvider>
     );
     await act(async () => {

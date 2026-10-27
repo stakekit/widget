@@ -3,7 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
-import type { DashboardYieldCategory } from "../../../domain/earn/contract";
+import type { YieldCategory } from "../../../domain/earn/contract";
 import type { EarnValidatorKey } from "../../../domain/earn/models";
 import { getMaxSelectedValidators } from "../../../domain/earn/validator";
 import {
@@ -179,11 +179,10 @@ export const selectEarnSelectionYieldAtom = Atom.fnSync(
 ).pipe(Atom.withLabel("selectEarnSelectionYieldAtom"));
 
 export const selectEarnSelectionCategoryAtom = Atom.fnSync(
-  (category: DashboardYieldCategory, context) => {
+  (category: YieldCategory, context) => {
     const config = context(widgetConfigAtom);
     if (
-      !config.dashboardVariant ||
-      config.yieldGrouping !== "category" ||
+      !config.earnCategoryGrouping ||
       context(internalEarnSelectionViewAtom).selection.category === category
     ) {
       return;

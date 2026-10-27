@@ -9,9 +9,9 @@ import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../../yield-summary/index";
+import { usePositionListItem as useBasePositionListItem } from "../../../../react/use-position-list-item";
 import { positionPricesAtom } from "../../../../state/read-models/position-list-item";
 import type { PositionItem } from "../../../../state/read-models/positions";
-import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {
   const { locale } = useWidgetPresentation();

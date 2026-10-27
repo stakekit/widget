@@ -13,6 +13,7 @@ const presentation = (locale: string): WidgetPresentation => ({
   disableInputAutoResize: false,
   hideNetworkLogo: false,
   hostTokenIconMapping: false,
+  layout: "compact",
   locale,
   mapNetworkIconUrl: () => undefined,
   mapTokenIconUrl: () => undefined,

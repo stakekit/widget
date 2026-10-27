@@ -47,7 +47,7 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
         pendingActionValue.balance
       );
       return {
-        _tag: "StartClassicFlow",
+        _tag: "StartYieldFlow",
         input: {
           intake: {
             _tag: "Manage",

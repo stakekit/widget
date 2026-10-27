@@ -1,23 +1,24 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
+import type { YieldPendingActionType } from "../../domain/action/pending-action";
+import type { YieldId } from "../../domain/identity/identifiers";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
-import { makeStartClassicTransactionFlow } from "../../features/classic-transaction-flow/runtime";
-import { getPositionDetailsHubPath } from "../../features/position-details/index";
+import { makeStartYieldTransactionFlow } from "../../features/yield-transaction-flow/runtime";
 import {
-  toWidgetPath,
   WidgetNavigation,
   type WidgetNavigationError,
 } from "../../services/navigation/widget-navigation";
+import { widgetRoutes } from "../../services/navigation/widget-routes";
 import type { WalletRuntimeInvariantError } from "../../services/wallet/wallet-errors";
 import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 
-type ClassicFlowStartInput = Parameters<
-  Effect.Success<typeof makeStartClassicTransactionFlow>
+type YieldFlowStartInput = Parameters<
+  Effect.Success<typeof makeStartYieldTransactionFlow>
 >[0];
 
 type PendingActionIntent = Readonly<{
@@ -33,13 +34,13 @@ export type PendingActionDeepLinkObservation =
       readonly _tag: "OpenValidatorSelection";
       readonly balanceId: string;
       readonly intent: PendingActionIntent;
-      readonly pendingActionType: string;
+      readonly pendingActionType: YieldPendingActionType;
       readonly walletScope: WalletScopeKey;
-      readonly yieldId: string;
+      readonly yieldId: YieldId;
     }>
   | Readonly<{
-      readonly _tag: "StartClassicFlow";
-      readonly input: ClassicFlowStartInput;
+      readonly _tag: "StartYieldFlow";
+      readonly input: YieldFlowStartInput;
       readonly intent: PendingActionIntent;
       readonly walletScope: WalletScopeKey;
     }>;
@@ -49,7 +50,7 @@ export type DeepLinkRouteObservation = Readonly<{
   readonly pendingAction: PendingActionDeepLinkObservation | null;
   readonly position: {
     readonly balanceId: string;
-    readonly yieldId: string;
+    readonly yieldId: YieldId;
   } | null;
   readonly ready: boolean;
 }>;
@@ -95,7 +96,7 @@ export class DeepLinkCoordinator extends Context.Service<
   static readonly layer = Layer.effect(
     DeepLinkCoordinator,
     Effect.gen(function* () {
-      const startClassicFlow = yield* makeStartClassicTransactionFlow;
+      const startYieldFlow = yield* makeStartYieldTransactionFlow;
       const navigation = yield* WidgetNavigation;
       const serial = yield* makeScopedSerialOperations();
       const wallet = yield* WalletService;
@@ -163,18 +164,21 @@ export class DeepLinkCoordinator extends Context.Service<
       const openPendingAction = (
         pendingAction: PendingActionDeepLinkObservation
       ) => {
+        // Both Layouts mount position details and its validator selection.
         if (pendingAction._tag === "OpenValidatorSelection") {
           return navigation
             .execute({
               _tag: "Push",
-              path: toWidgetPath(
-                `/positions/${pendingAction.yieldId}/${pendingAction.balanceId}/select-validator/${pendingAction.pendingActionType}`
-              ),
+              to: widgetRoutes.positionSelectValidator.build({
+                balanceId: pendingAction.balanceId,
+                integrationId: pendingAction.yieldId,
+                pendingActionType: pendingAction.pendingActionType,
+              }),
             })
             .pipe(Effect.as(true));
         }
 
-        return startClassicFlow(pendingAction.input).pipe(
+        return startYieldFlow(pendingAction.input).pipe(
           Effect.map((outcome) => outcome._tag === "Started")
         );
       };
@@ -191,12 +195,10 @@ export class DeepLinkCoordinator extends Context.Service<
             navigation
               .execute({
                 _tag: "Push",
-                path: toWidgetPath(
-                  getPositionDetailsHubPath({
-                    balanceId: position.balanceId,
-                    integrationId: position.yieldId,
-                  })
-                ),
+                to: widgetRoutes.positionDetails.build({
+                  balanceId: position.balanceId,
+                  integrationId: position.yieldId,
+                }),
               })
               .pipe(Effect.as(true))
           );

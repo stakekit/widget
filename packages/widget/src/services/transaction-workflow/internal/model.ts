@@ -5,7 +5,6 @@ import type { Action as BorrowAction } from "../../../domain/borrow/execution/ac
 import { TransactionWorkflowId } from "../../../domain/identity/identifiers";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
-  type ClassicTransactionWorkflowInput,
   type DirectTransactionRecord,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
@@ -16,6 +15,7 @@ import {
   TransactionWorkflowInputError,
   type TransactionWorkflowState,
   type TransactionWorkflowTransactionFor,
+  type YieldTransactionWorkflowInput,
 } from "../transaction-workflow-model";
 
 type TransactionWorkflowBatch = TransactionWorkflowContext["batches"][number];
@@ -42,9 +42,7 @@ const toTransaction = (
     signedTx: null,
     submissionIndex: null,
     url:
-      source._tag === "Classic"
-        ? (source.transaction.explorerUrl ?? null)
-        : null,
+      source._tag === "Yield" ? (source.transaction.explorerUrl ?? null) : null,
   },
 });
 
@@ -82,15 +80,15 @@ const toDirectTransaction = ({
   };
 };
 
-const makeClassicTransactionWorkflowBatch = (
+const makeYieldTransactionWorkflowBatch = (
   transactions: YieldAction["transactions"]
 ): TransactionWorkflowBatch => ({
   currentStep: 1,
-  id: "classic",
+  id: "yield",
   totalSteps: 1,
   transactions: [...transactions]
     .sort((first, second) => (first.stepIndex ?? 0) - (second.stepIndex ?? 0))
-    .map((transaction) => toTransaction({ _tag: "Classic", transaction })),
+    .map((transaction) => toTransaction({ _tag: "Yield", transaction })),
 });
 
 export const makeBorrowTransactionWorkflowBatch = (
@@ -111,7 +109,7 @@ export const getTransactionWorkflowId = (
   TransactionWorkflowId.make(
     Match.value(domain).pipe(
       Match.tag(
-        "Classic",
+        "Yield",
         ({ actionMeta, yieldId }) =>
           actionMeta?.actionId ?? `confidential:${yieldId}`
       ),
@@ -125,9 +123,9 @@ const toTransactionWorkflowDomain = (
 ): TransactionWorkflowDomainContext =>
   Match.value(input).pipe(
     Match.tag(
-      "Classic",
+      "Yield",
       ({ actionMeta, yieldId }): TransactionWorkflowDomainContext => ({
-        _tag: "Classic",
+        _tag: "Yield",
         actionMeta,
         yieldId,
       })
@@ -135,7 +133,7 @@ const toTransactionWorkflowDomain = (
     Match.tag(
       "Confidential",
       ({ yieldId }): TransactionWorkflowDomainContext => ({
-        _tag: "Classic",
+        _tag: "Yield",
         actionMeta: null,
         yieldId,
       })
@@ -159,7 +157,7 @@ export const validateTransactionWorkflowInput = (
   const fail = (message: string) =>
     new TransactionWorkflowInputError({ message, workflowId });
   const { actionAddress, networks } = Match.value(input).pipe(
-    Match.tag("Classic", ({ actionMeta, transactions }) => ({
+    Match.tag("Yield", ({ actionMeta, transactions }) => ({
       actionAddress: actionMeta.address,
       networks: transactions.map(({ network }) => network),
     })),
@@ -238,9 +236,9 @@ const initializeTransactionWorkflowContext = (
   recorded: ReadonlyMap<DirectTransaction["id"], DirectTransactionRecord>
 ): TransactionWorkflowContext =>
   Match.value(input).pipe(
-    Match.tag("Classic", (input) =>
+    Match.tag("Yield", (input) =>
       withCurrentTransaction({
-        batches: [makeClassicTransactionWorkflowBatch(input.transactions)],
+        batches: [makeYieldTransactionWorkflowBatch(input.transactions)],
         domain: toTransactionWorkflowDomain(input),
         finalize: null,
         preparation: null,
@@ -255,7 +253,7 @@ const initializeTransactionWorkflowContext = (
       return {
         batches: [
           {
-            ...makeClassicTransactionWorkflowBatch([]),
+            ...makeYieldTransactionWorkflowBatch([]),
             transactions: input.conversion.map((transaction) =>
               toDirectTransaction({
                 recorded: recorded.get(transaction.id),
@@ -334,14 +332,14 @@ export const initializeTransactionWorkflow = (
  * transactions follow the ones the workflow already holds, and sign with its
  * meta. An instant exit's finalize prepares a second action this way.
  */
-export const attachPreparedClassicAction = ({
+export const attachPreparedYieldAction = ({
   context,
   prepared,
 }: {
   readonly context: TransactionWorkflowContext;
-  readonly prepared: ClassicTransactionWorkflowInput;
+  readonly prepared: YieldTransactionWorkflowInput;
 }): TransactionWorkflowContext => {
-  const held = context.batches[0] ?? makeClassicTransactionWorkflowBatch([]);
+  const held = context.batches[0] ?? makeYieldTransactionWorkflowBatch([]);
   const { finalize } = context;
   const finalizing = finalize !== null && !finalize.done;
 
@@ -352,13 +350,13 @@ export const attachPreparedClassicAction = ({
         ...held,
         transactions: [
           ...held.transactions,
-          ...makeClassicTransactionWorkflowBatch(prepared.transactions)
+          ...makeYieldTransactionWorkflowBatch(prepared.transactions)
             .transactions,
         ],
       },
     ],
     domain: {
-      _tag: "Classic",
+      _tag: "Yield",
       actionMeta: prepared.actionMeta,
       yieldId: prepared.yieldId,
     },
@@ -372,8 +370,8 @@ export const attachPreparedClassicAction = ({
 
 export function getCurrentTransactionWorkflowTransactionFor(
   context: TransactionWorkflowContext,
-  kind: "Classic"
-): TransactionWorkflowTransactionFor<"Classic"> | null;
+  kind: "Yield"
+): TransactionWorkflowTransactionFor<"Yield"> | null;
 export function getCurrentTransactionWorkflowTransactionFor(
   context: TransactionWorkflowContext,
   kind: "Direct"

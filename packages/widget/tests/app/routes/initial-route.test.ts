@@ -1,18 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { resolveInitialRoutePath } from "../../../src/app/routes/model/initial-route";
+import type { WidgetLayout } from "../../../src/services/config/widget-config-model";
 
 const resolve = ({
   borrowAvailable = false,
+  layout = "Compact",
   tab,
-  variant = "classic",
 }: {
   readonly borrowAvailable?: boolean;
+  readonly layout?: WidgetLayout;
   readonly tab: "earn" | "positions" | "manage" | "activity" | "borrow" | null;
-  readonly variant?: "classic" | "dashboard";
-}) => resolveInitialRoutePath({ borrowAvailable, tab, variant });
+}) => resolveInitialRoutePath({ borrowAvailable, layout, tab });
 
 describe("initial route path", () => {
-  it("starts the classic widget on the tab named by the deep link", () => {
+  it("starts the Compact Layout on the tab named by the deep link", () => {
     expect(resolve({ tab: "positions" })).toBe("/positions");
     expect(resolve({ tab: "manage" })).toBe("/positions");
     expect(resolve({ tab: "earn" })).toBe("/");
@@ -22,32 +23,26 @@ describe("initial route path", () => {
     expect(resolve({ tab: null })).toBe("/");
   });
 
-  it("starts both variants on activity", () => {
+  it("starts both Layouts on activity", () => {
     expect(resolve({ tab: "activity" })).toBe("/activity");
-    expect(resolve({ tab: "activity", variant: "dashboard" })).toBe(
-      "/activity"
-    );
+    expect(resolve({ layout: "Dashboard", tab: "activity" })).toBe("/activity");
   });
 
-  it("maps dashboard manage aliases to the positions route", () => {
-    expect(resolve({ tab: "positions", variant: "dashboard" })).toBe(
+  it("maps Dashboard manage aliases to the positions route", () => {
+    expect(resolve({ layout: "Dashboard", tab: "positions" })).toBe(
       "/positions"
     );
-    expect(resolve({ tab: "manage", variant: "dashboard" })).toBe("/positions");
+    expect(resolve({ layout: "Dashboard", tab: "manage" })).toBe("/positions");
   });
 
-  it("starts dashboard borrow only when the feature is available", () => {
+  it("starts Dashboard borrow only when the feature is available", () => {
     expect(
-      resolve({
-        borrowAvailable: true,
-        tab: "borrow",
-        variant: "dashboard",
-      })
+      resolve({ borrowAvailable: true, layout: "Dashboard", tab: "borrow" })
     ).toBe("/borrow");
-    expect(resolve({ tab: "borrow", variant: "dashboard" })).toBe("/");
+    expect(resolve({ layout: "Dashboard", tab: "borrow" })).toBe("/");
   });
 
-  it("does not expose a borrow route in the classic variant", () => {
+  it("does not open borrow in the Compact Layout", () => {
     expect(resolve({ borrowAvailable: true, tab: "borrow" })).toBe("/");
   });
 });

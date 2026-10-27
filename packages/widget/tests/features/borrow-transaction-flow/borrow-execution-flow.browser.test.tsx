@@ -28,7 +28,6 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowReview,
-  makeBorrowFlowNavigationState,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   BorrowTransactionFlowExecutionPage,
@@ -48,6 +47,11 @@ import { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetRoutes,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import {
   WalletOwnerMismatchError,
@@ -385,15 +389,17 @@ const renderExecution = (
         Effect.sync(() => {
           navigation.current?.(-1);
         }),
-      push: (path, options) =>
+      push: (to) =>
         Effect.sync(() => {
-          navigation.current?.(path, { state: options?.state });
+          navigation.current?.(widgetTargetPath(to), {
+            state: widgetTargetState(to),
+          });
         }),
-      replace: (path, options) =>
+      replace: (to) =>
         Effect.sync(() => {
-          navigation.current?.(path, {
+          navigation.current?.(widgetTargetPath(to), {
             replace: true,
-            state: options?.state,
+            state: widgetTargetState(to),
           });
         }),
     });
@@ -444,7 +450,7 @@ const renderExecution = (
       flowWallet.layer
     );
     // Start hands its Session to the flow route through navigation state.
-    const flowState = makeBorrowFlowNavigationState(options.session ?? session);
+    const flowState = { borrowFlowSession: options.session ?? session };
     const initialEntries = (
       options.initialEntries ?? [options.initialPath ?? "/borrow/review"]
     ).map((pathname) =>
@@ -470,7 +476,7 @@ const renderExecution = (
           <Route
             element={
               <WalletScopeRoute
-                fallbackPath="/borrow"
+                fallbackPath={widgetRoutes.borrow.build("Dashboard")}
                 walletState={connectedWalletState}
               />
             }

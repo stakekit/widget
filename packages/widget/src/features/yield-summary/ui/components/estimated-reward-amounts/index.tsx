@@ -22,9 +22,9 @@ export const EstimatedRewardAmounts = ({
 }: EstimatedRewardAmountsProps) => {
   const { earnPresentation } = useWidgetConfig("hostProfile");
 
-  if (earnPresentation.compact) {
+  if (earnPresentation.condensed) {
     return (
-      <CompactEarnYearlyOrMonthly
+      <CondensedEarnYearlyOrMonthly
         earnMonthly={earnMonthly}
         earnYearly={earnYearly}
       />
@@ -118,7 +118,7 @@ const DefaultEarnYearlyOrMonthly = ({
   );
 };
 
-const CompactEarnYearlyOrMonthly = ({
+const CondensedEarnYearlyOrMonthly = ({
   earnMonthly,
   earnYearly,
 }: EstimatedRewardAmountsProps) => {

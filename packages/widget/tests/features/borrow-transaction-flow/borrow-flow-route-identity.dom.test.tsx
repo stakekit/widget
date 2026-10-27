@@ -16,7 +16,6 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowEntry,
-  makeBorrowFlowNavigationState,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   BorrowTransactionFlowRoute,
@@ -175,7 +174,7 @@ describe("Borrow Flow route", () => {
     const flow = await renderFlow({
       entry: {
         pathname: "/positions/borrow/market-b/review",
-        state: makeBorrowFlowNavigationState(session),
+        state: { borrowFlowSession: session },
       },
       expected: "MarketPosition",
     });
@@ -198,7 +197,7 @@ describe("Borrow Flow route", () => {
         connectedWalletScope,
         entry: {
           pathname: "/positions/borrow/market-a/review",
-          state: makeBorrowFlowNavigationState(session),
+          state: { borrowFlowSession: session },
         },
         expected: "MarketPosition",
       });
@@ -213,7 +212,7 @@ describe("Borrow Flow route", () => {
     const flow = await renderFlow({
       entry: {
         pathname: "/borrow/review",
-        state: makeBorrowFlowNavigationState(session),
+        state: { borrowFlowSession: session },
       },
       expected: "BorrowEntry",
     });
@@ -241,16 +240,13 @@ describe("Borrow Flow route", () => {
     const flow = await renderFlow({
       entry: {
         pathname: "/borrow/review",
-        state: makeBorrowFlowNavigationState(first),
+        state: { borrowFlowSession: first },
       },
       expected: "BorrowEntry",
     });
     await expect.poll(flow.page).toBe("Review:1");
 
-    await flow.navigate(
-      "/borrow/review",
-      makeBorrowFlowNavigationState(second)
-    );
+    await flow.navigate("/borrow/review", { borrowFlowSession: second });
     await expect.poll(flow.page).toBe("Review:2");
 
     await flow.navigate("/borrow/steps");

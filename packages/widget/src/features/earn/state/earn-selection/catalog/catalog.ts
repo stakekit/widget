@@ -1,7 +1,7 @@
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
@@ -89,7 +89,7 @@ export const availableYieldCategoriesAtom = Atom.family(
         )
       ) {
         return AsyncResult.initial<
-          ReadonlyArray<DashboardYieldCategory>,
+          ReadonlyArray<YieldCategory>,
           EarnCatalogError
         >(true);
       }

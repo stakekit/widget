@@ -14,8 +14,7 @@ import {
   BorrowFlowSession,
   type BorrowTransactionFlowIntake,
   getBorrowReviewTrackingProperties,
-  getBorrowTransactionFlowRoutes,
-  makeBorrowFlowNavigationState,
+  getBorrowTransactionFlowDestination,
 } from "../model/borrow-transaction-flow";
 
 /** Validates the intake and navigates to Review carrying a new Session. */
@@ -48,8 +47,9 @@ export const startBorrowTransactionFlow = Effect.fn(
   yield* Effect.uninterruptible(
     navigation.execute({
       _tag: "Push",
-      path: getBorrowTransactionFlowRoutes(session.intake.entry).reviewPath,
-      state: makeBorrowFlowNavigationState(session),
+      to: getBorrowTransactionFlowDestination(session.intake.entry).review({
+        borrowFlowSession: session,
+      }),
     })
   );
   const trackingProperties = getBorrowReviewTrackingProperties(session.intake);
@@ -75,7 +75,7 @@ export const leaveBorrowFlow = (session: BorrowFlowSession) =>
     Effect.uninterruptible(
       navigation.execute({
         _tag: "Replace",
-        path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
+        to: getBorrowTransactionFlowDestination(session.intake.entry).basePath,
       })
     )
   );

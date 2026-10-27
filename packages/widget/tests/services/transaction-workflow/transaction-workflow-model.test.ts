@@ -19,7 +19,6 @@ import {
 } from "../../../src/services/transaction-workflow/internal/model";
 import {
   BorrowTransactionWorkflowInput,
-  ClassicTransactionWorkflowInput,
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
   getTransactionStepProgress,
@@ -32,20 +31,21 @@ import {
   TransactionSignError,
   TransactionSubmissionError,
   type TransactionWorkflowState,
+  YieldTransactionWorkflowInput,
 } from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import { ExternalProviderError } from "../../../src/services/wallet/external-provider";
 import {
   WalletBroadcastError,
   WalletSigningError,
 } from "../../../src/services/wallet/wallet-errors";
-import type { ClassicActionMeta } from "../../../src/services/wallet/wallet-transactions";
+import type { YieldActionMeta } from "../../../src/services/wallet/wallet-transactions";
 import { yieldApiTransactionFixture } from "../../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
-const classicWalletScope = new WalletScopeKey({
+const yieldWalletScope = new WalletScopeKey({
   address,
   network: "ethereum",
 });
@@ -53,9 +53,9 @@ const borrowWalletScope = new WalletScopeKey({ address, network: "base" });
 const actionMeta = {
   actionId: "action-1",
   address,
-} as unknown as ClassicActionMeta;
+} as unknown as YieldActionMeta;
 
-const classicTransaction = (
+const yieldTransaction = (
   id: string,
   status: ActionTransaction["status"],
   stepIndex: number
@@ -112,15 +112,15 @@ const borrowAction = ({
 
 describe("transaction workflow model", () => {
   it("captures distinct top-level inputs while retaining structural equality", () => {
-    const classicInput = {
+    const yieldInput = {
       actionMeta,
-      transactions: [classicTransaction("classic-1", "CREATED", 0)],
-      walletScope: classicWalletScope,
+      transactions: [yieldTransaction("yield-1", "CREATED", 0)],
+      walletScope: yieldWalletScope,
       yieldId,
     };
     const action = borrowAction();
 
-    const classic = new ClassicTransactionWorkflowInput(classicInput);
+    const yieldWorkflowInput = new YieldTransactionWorkflowInput(yieldInput);
     const borrow = new BorrowTransactionWorkflowInput({
       action,
       walletScope: borrowWalletScope,
@@ -128,8 +128,8 @@ describe("transaction workflow model", () => {
 
     expect(
       Equal.equals(
-        classic,
-        new ClassicTransactionWorkflowInput({ ...classicInput })
+        yieldWorkflowInput,
+        new YieldTransactionWorkflowInput({ ...yieldInput })
       )
     ).toBe(true);
     expect(
@@ -144,14 +144,14 @@ describe("transaction workflow model", () => {
         })
       )
     ).toBe(true);
-    expect(classic.transactions).not.toBe(classicInput.transactions);
-    expect(classic.walletScope).not.toBe(classicWalletScope);
+    expect(yieldWorkflowInput.transactions).not.toBe(yieldInput.transactions);
+    expect(yieldWorkflowInput.walletScope).not.toBe(yieldWalletScope);
     expect(borrow.action).not.toBe(action);
     expect(borrow.walletScope).not.toBe(borrowWalletScope);
   });
 
   it("rejects transactions outside the captured wallet network", () => {
-    const input = new ClassicTransactionWorkflowInput({
+    const input = new YieldTransactionWorkflowInput({
       actionMeta,
       transactions: [
         yieldApiTransactionFixture({
@@ -160,7 +160,7 @@ describe("transaction workflow model", () => {
           status: "CREATED",
         }),
       ],
-      walletScope: classicWalletScope,
+      walletScope: yieldWalletScope,
       yieldId,
     });
 
@@ -169,16 +169,16 @@ describe("transaction workflow model", () => {
     );
   });
 
-  it("sorts a fixed classic batch and selects its first incomplete transaction", () => {
+  it("sorts a fixed yield batch and selects its first incomplete transaction", () => {
     const state = initializeTransactionWorkflow(
-      new ClassicTransactionWorkflowInput({
+      new YieldTransactionWorkflowInput({
         actionMeta,
         transactions: [
-          classicTransaction("third", "CREATED", 3),
-          classicTransaction("first", "CONFIRMED", 1),
-          classicTransaction("second", "SKIPPED", 2),
+          yieldTransaction("third", "CREATED", 3),
+          yieldTransaction("first", "CONFIRMED", 1),
+          yieldTransaction("second", "SKIPPED", 2),
         ],
-        walletScope: classicWalletScope,
+        walletScope: yieldWalletScope,
         yieldId,
       })
     );
@@ -197,10 +197,10 @@ describe("transaction workflow model", () => {
 
   it("starts broadcast transactions in confirmation and disables completed fixed batches", () => {
     const makeKey = (status: ActionTransaction["status"]) =>
-      new ClassicTransactionWorkflowInput({
+      new YieldTransactionWorkflowInput({
         actionMeta,
-        transactions: [classicTransaction("classic-1", status, 0)],
-        walletScope: classicWalletScope,
+        transactions: [yieldTransaction("yield-1", status, 0)],
+        walletScope: yieldWalletScope,
         yieldId,
       });
 
@@ -277,17 +277,17 @@ describe("transaction workflow model", () => {
 
   it("allows the one retry command only from the matching failed phase", () => {
     const context = initializeTransactionWorkflow(
-      new ClassicTransactionWorkflowInput({
+      new YieldTransactionWorkflowInput({
         actionMeta,
-        transactions: [classicTransaction("classic-1", "CREATED", 0)],
-        walletScope: classicWalletScope,
+        transactions: [yieldTransaction("yield-1", "CREATED", 0)],
+        walletScope: yieldWalletScope,
         yieldId,
       })
     ).context;
     const common = {
-      batchId: "classic",
+      batchId: "yield",
       message: "failed",
-      transactionId: "classic-1",
+      transactionId: "yield-1",
       workflowId: TransactionWorkflowId.make("action-1"),
     };
     const states = [
@@ -350,7 +350,7 @@ describe("transaction workflow model", () => {
 
   it("projects host custom messages from wallet broadcast sign failures", () => {
     const withCustom = makeTransactionSignError({
-      batchId: "classic",
+      batchId: "yield",
       network: "ethereum",
       reason: {
         _tag: "WalletOperationFailed",
@@ -360,7 +360,7 @@ describe("transaction workflow model", () => {
         }),
         operation: "transaction",
       },
-      transactionId: "classic-1",
+      transactionId: "yield-1",
       workflowId: TransactionWorkflowId.make("action-1"),
     });
     expect(withCustom.message).toBe("Transaction signing failed.");
@@ -369,10 +369,10 @@ describe("transaction workflow model", () => {
     );
 
     const withoutCustom = makeTransactionSignError({
-      batchId: "classic",
+      batchId: "yield",
       network: "ethereum",
       reason: { _tag: "WalletUnavailable", detail: "disconnected" },
-      transactionId: "classic-1",
+      transactionId: "yield-1",
       workflowId: TransactionWorkflowId.make("action-1"),
     });
     expect(withoutCustom.message).toBe(
@@ -383,7 +383,7 @@ describe("transaction workflow model", () => {
 
   it("projects host custom messages from external-provider message-signing failures", () => {
     const error = makeTransactionSignError({
-      batchId: "classic",
+      batchId: "yield",
       network: "ethereum",
       reason: {
         _tag: "WalletOperationFailed",
@@ -396,7 +396,7 @@ describe("transaction workflow model", () => {
         }),
         operation: "message",
       },
-      transactionId: "classic-1",
+      transactionId: "yield-1",
       workflowId: TransactionWorkflowId.make("action-1"),
     });
 
@@ -408,13 +408,13 @@ describe("transaction workflow model", () => {
 
   describe("step progress", () => {
     const context = initializeTransactionWorkflow(
-      new ClassicTransactionWorkflowInput({
+      new YieldTransactionWorkflowInput({
         actionMeta,
         transactions: [
-          classicTransaction("classic-1", "CREATED", 0),
-          classicTransaction("classic-2", "CREATED", 1),
+          yieldTransaction("yield-1", "CREATED", 0),
+          yieldTransaction("yield-2", "CREATED", 1),
         ],
-        walletScope: classicWalletScope,
+        walletScope: yieldWalletScope,
         yieldId,
       })
     ).context;
@@ -422,9 +422,9 @@ describe("transaction workflow model", () => {
     if (!current || !waiting) throw new Error("Expected two transactions.");
     const done = { ...current, meta: { ...current.meta, done: true } };
     const common = {
-      batchId: "classic",
+      batchId: "yield",
       message: "failed",
-      transactionId: "classic-1",
+      transactionId: "yield-1",
       workflowId: TransactionWorkflowId.make("action-1"),
     };
     const phases = (
@@ -519,10 +519,10 @@ describe("transaction workflow model", () => {
       });
 
       const settled = initializeTransactionWorkflow(
-        new ClassicTransactionWorkflowInput({
+        new YieldTransactionWorkflowInput({
           actionMeta,
-          transactions: [classicTransaction("classic-1", "CONFIRMED", 0)],
-          walletScope: classicWalletScope,
+          transactions: [yieldTransaction("yield-1", "CONFIRMED", 0)],
+          walletScope: yieldWalletScope,
           yieldId,
         })
       );
@@ -539,13 +539,13 @@ describe("transaction workflow model", () => {
 
   describe("leave guard", () => {
     const context = initializeTransactionWorkflow(
-      new ClassicTransactionWorkflowInput({
+      new YieldTransactionWorkflowInput({
         actionMeta,
         transactions: [
-          classicTransaction("classic-1", "CREATED", 0),
-          classicTransaction("classic-2", "CREATED", 1),
+          yieldTransaction("yield-1", "CREATED", 0),
+          yieldTransaction("yield-2", "CREATED", 1),
         ],
-        walletScope: classicWalletScope,
+        walletScope: yieldWalletScope,
         yieldId,
       })
     ).context;
@@ -561,11 +561,11 @@ describe("transaction workflow model", () => {
       })),
     };
     const signError = new TransactionSignError({
-      batchId: "classic",
+      batchId: "yield",
       message: "declined",
       network: "ethereum",
       reason: { _tag: "WalletRequestCancelled", operation: "transaction" },
-      transactionId: "classic-2",
+      transactionId: "yield-2",
       workflowId: TransactionWorkflowId.make("action-1"),
     });
 

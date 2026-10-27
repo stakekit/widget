@@ -48,9 +48,8 @@ export type ActivityPageView =
   | { readonly status: "loading" }
   | ActivityPageReadyView;
 
-export const shouldShowActivityDashboardSplit = (
-  view: ActivityPageView
-): boolean => view.status === "ready" && view.actions.length > 0;
+export const hasActivityActions = (view: ActivityPageView): boolean =>
+  view.status === "ready" && view.actions.length > 0;
 
 type ActivityActionsResult = Atom.Type<
   ReturnType<typeof activityActionsPullAtom>

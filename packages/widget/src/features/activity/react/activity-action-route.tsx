@@ -1,10 +1,19 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { createContext, useContext, useState } from "react";
-import { Navigate, Outlet, useMatch, useParams } from "react-router";
+import { Outlet } from "react-router";
+import {
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../services/navigation/widget-routes";
 import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
-import { YieldActionContinuationSessionRoute } from "../../classic-transaction-flow/views";
+import {
+  useWidgetRouteMatch,
+  useWidgetRoutePrefixMatch,
+} from "../../navigation/index";
+import { WidgetNavigate } from "../../navigation/views";
 import { walletScopeAtom } from "../../wallet/index";
 import type { YieldSummaryProvider } from "../../yield-summary/index";
+import { YieldActionContinuationSessionRoute } from "../../yield-transaction-flow/views";
 import {
   type ActivityActionItem,
   type ActivitySelectionTarget,
@@ -23,12 +32,10 @@ import {
   ActivityDetailsUnavailable,
 } from "../ui/activity-details/activity-details-status";
 
-export type ActivityPresentation = "Classic" | "Dashboard";
-
 type ActivityActionRouteValue = Readonly<{
   readonly continuationReady: boolean;
   readonly item: ActivityActionItem;
-  readonly presentation: ActivityPresentation;
+  readonly showsBackButton: boolean;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
 }>;
 
@@ -42,31 +49,43 @@ export const useActivityActionRoute = (): ActivityActionRouteValue => {
 };
 
 export const ActivityActionRoute = ({
-  presentation,
+  selectsDefaultAction,
+  showsBackButton,
   source,
 }: {
-  readonly presentation: ActivityPresentation;
+  readonly selectsDefaultAction: boolean;
+  readonly showsBackButton: boolean;
   readonly source: ActivitySelectionTarget["source"];
 }) => {
-  const { actionId: actionIdParam } = useParams();
-  const stepsMatch = useMatch("/activity/:actionId/steps");
-  const completeMatch = useMatch("/activity/:actionId/complete");
+  const borrowActionId = useWidgetRoutePrefixMatch(
+    widgetRoutes.activityBorrowAction
+  )?.actionId;
+  const yieldActionId = useWidgetRoutePrefixMatch(
+    widgetRoutes.activityAction
+  )?.actionId;
+  const actionIdParam = source === "borrow" ? borrowActionId : yieldActionId;
+  const stepsMatch = useWidgetRouteMatch(
+    widgetYieldFlowRoutes.YieldActionContinuation.steps
+  );
+  const completeMatch = useWidgetRouteMatch(
+    widgetYieldFlowRoutes.YieldActionContinuation.complete
+  );
   const executionMatch = stepsMatch ?? completeMatch;
   const scope = useAtomValue(walletScopeAtom);
   const parsed = parseActivityRouteIntent({
     actionIdParam,
-    allowDefault: presentation === "Dashboard",
+    allowDefault: selectsDefaultAction,
     source,
   });
 
   if (!scope) return <ActivityDetailsUnavailable />;
   if (parsed.status === "missing" || parsed.status === "invalid") {
-    return <Navigate replace to="/activity" />;
+    return <WidgetNavigate replace to={widgetRoutes.activity.build()} />;
   }
 
   return (
     <BoundActivityActionRoute
-      presentation={presentation}
+      showsBackButton={showsBackButton}
       selectionKey={
         new ActivitySelectionKey({
           intent: parsed.intent,
@@ -79,11 +98,11 @@ export const ActivityActionRoute = ({
 };
 
 const BoundActivityActionRoute = ({
-  presentation,
   selectionKey,
+  showsBackButton,
 }: {
-  readonly presentation: ActivityPresentation;
   readonly selectionKey: ActivitySelectionKey;
+  readonly showsBackButton: boolean;
 }) => {
   const result = useAtomValue(activityDetailsViewAtom(selectionKey));
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
@@ -102,7 +121,7 @@ const BoundActivityActionRoute = ({
   if (result.status === "unavailable") {
     return resolveUnavailableActivitySelection(selectionKey.intent) ===
       "clear-route" ? (
-      <Navigate replace to="/activity" />
+      <WidgetNavigate replace to={widgetRoutes.activity.build()} />
     ) : null;
   }
 
@@ -112,7 +131,7 @@ const BoundActivityActionRoute = ({
   // Only the explicit action route spans Review, Steps, and Complete, so it is
   // the one that owns a continuation.
   if (result.canContinue && selectionKey.intent._tag === "default") {
-    return <Navigate replace to={reviewPath} />;
+    return <WidgetNavigate replace to={reviewPath} />;
   }
   // A continuation started on this action's Review stays mounted through its
   // execution; any other action drops it.
@@ -124,7 +143,7 @@ const BoundActivityActionRoute = ({
   }
   const continuationReady = continuedActionId === actionId;
   if (selectionKey.surface === "execution" && !continuationReady) {
-    return <Navigate replace to={reviewPath} />;
+    return <WidgetNavigate replace to={reviewPath} />;
   }
 
   return (
@@ -132,8 +151,8 @@ const BoundActivityActionRoute = ({
       value={{
         continuationReady,
         item,
-        presentation,
         providersDetails: result.providersDetails,
+        showsBackButton,
       }}
     >
       {continuationReady && item._tag === "yield" && item.yieldData ? (

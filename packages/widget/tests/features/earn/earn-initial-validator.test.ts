@@ -42,7 +42,7 @@ const requested = validator(
 
 const entry = (requestedValidator: string): EarnEntry => ({
   categoryOrder: ["stake", "defi", "rwa"],
-  dashboardVariant: false,
+  categoryGrouping: false,
   initParams: {
     accountId: null,
     balanceId: null,

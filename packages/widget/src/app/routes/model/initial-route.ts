@@ -1,29 +1,29 @@
-import { Match } from "effect";
+import type { WidgetLayout } from "../../../services/config/widget-config-model";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../services/navigation/widget-routes";
 import type { InitTab } from "../../../services/wallet/init-params";
 
 /**
  * Resolves a decoded route-level tab into the first memory-router entry. Both
- * variants accept cross-variant aliases while keeping their route trees private
- * to application composition.
+ * Layouts accept cross-Layout aliases; Borrow opens only where it is mounted.
  */
 export const resolveInitialRoutePath = ({
   borrowAvailable,
+  layout,
   tab,
-  variant,
 }: {
   readonly borrowAvailable: boolean;
+  readonly layout: WidgetLayout;
   readonly tab: InitTab;
-  readonly variant: "classic" | "dashboard";
-}): string =>
-  Match.value({ borrowAvailable, tab, variant }).pipe(
-    Match.when({ tab: "activity" }, () => "/activity"),
-    Match.when(
-      ({ tab }) => tab === "positions" || tab === "manage",
-      () => "/positions"
-    ),
-    Match.when(
-      { borrowAvailable: true, tab: "borrow", variant: "dashboard" },
-      () => "/borrow"
-    ),
-    Match.orElse(() => "/")
-  );
+}): WidgetPath => {
+  if (tab === "activity") return widgetRoutes.activity.build();
+  if (tab === "positions" || tab === "manage") {
+    return widgetRoutes.positions.build();
+  }
+  if (tab === "borrow" && borrowAvailable && layout === "Dashboard") {
+    return widgetRoutes.borrow.build(layout);
+  }
+  return widgetRoutes.earn.build();
+};

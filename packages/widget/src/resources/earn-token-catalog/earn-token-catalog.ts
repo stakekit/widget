@@ -1,9 +1,9 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import type { DashboardYieldCategory } from "../../domain/earn/contract";
+import type { YieldCategory } from "../../domain/earn/contract";
 import {
-  getApiYieldTypesForDashboardCategory,
+  getApiYieldTypesForYieldCategory,
   getDisplayOnlyYieldTypes,
   withDisplayOnlyYields,
 } from "../../domain/earn/yield";
@@ -20,7 +20,7 @@ export class EarnTokenCatalogKey extends Data.TaggedClass(
   "EarnTokenCatalogKey"
 )<{
   readonly network: Network | null;
-  readonly category: DashboardYieldCategory | null;
+  readonly category: YieldCategory | null;
 }> {}
 
 class EarnTokenCatalogError extends Data.TaggedError("EarnTokenCatalogError")<{
@@ -38,7 +38,7 @@ const earnTokenCatalogCanonicalAtom = Atom.family((key: EarnTokenCatalogKey) =>
         const source = yield* LegacyResourceSource;
         const network = key.network ?? undefined;
         const yieldTypes = key.category
-          ? getApiYieldTypesForDashboardCategory(key.category)
+          ? getApiYieldTypesForYieldCategory(key.category)
           : undefined;
         const displayOnlyYieldTypes = getDisplayOnlyYieldTypes({
           network,

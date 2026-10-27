@@ -52,7 +52,7 @@ const makeRegistry = (
       applicationRuntimeInitInitialValue(),
       Atom.initialValue(earnEntryAtom, {
         categoryOrder: ["stake", "defi", "rwa"],
-        dashboardVariant: false,
+        categoryGrouping: false,
         initParams: null,
         preferredTokenYieldsPerNetwork: null,
         walletResolution: "settled",

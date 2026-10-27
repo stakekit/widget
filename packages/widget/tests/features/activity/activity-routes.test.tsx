@@ -2,6 +2,10 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { createActivityActionRoutes } from "../../../src/features/activity/composition";
+import {
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../src/services/navigation/widget-routes";
 
 vi.mock("../../../src/features/activity/react/activity-action-route", () => ({
   ActivityActionRoute: function ActivityActionRoute() {
@@ -16,7 +20,7 @@ vi.mock(
     },
   })
 );
-vi.mock("../../../src/features/classic-transaction-flow/views", () => ({
+vi.mock("../../../src/features/yield-transaction-flow/views", () => ({
   YieldActionContinuationCompletePage:
     function YieldActionContinuationCompletePage() {
       return null;
@@ -34,7 +38,8 @@ vi.mock("../../../src/features/classic-transaction-flow/views", () => ({
 type ElementProps = Readonly<{
   children?: ReactNode;
   fallbackPath?: string;
-  presentation?: string;
+  selectsDefaultAction?: boolean;
+  showsBackButton?: boolean;
 }>;
 
 const nameOf = (element: ReactElement | null): string | null => {
@@ -42,7 +47,9 @@ const nameOf = (element: ReactElement | null): string | null => {
   const type = element.type;
   const name = typeof type === "function" ? type.name : String(type);
   const props = element.props as ElementProps;
-  if (props.presentation) return `${name}(${props.presentation})`;
+  if (props.selectsDefaultAction !== undefined) {
+    return `${name}(selectsDefaultAction=${props.selectsDefaultAction}, showsBackButton=${props.showsBackButton})`;
+  }
   if (props.fallbackPath) return `${name}(${props.fallbackPath})`;
   return name;
 };
@@ -61,7 +68,7 @@ const describeRoute = (route: RouteObject): RouteDescription => ({
   path: route.path ?? null,
 });
 
-const borrowActionIdRoute = (presentation: string): RouteDescription => ({
+const borrowActionIdRoute = (actionRoute: string): RouteDescription => ({
   children: [
     {
       children: [],
@@ -70,12 +77,12 @@ const borrowActionIdRoute = (presentation: string): RouteDescription => ({
       path: null,
     },
   ],
-  element: `ActivityActionRoute(${presentation})`,
+  element: actionRoute,
   index: false,
-  path: "borrow/:actionId",
+  path: widgetRoutes.activityBorrowAction.pattern,
 });
 
-const actionIdRoute = (presentation: string): RouteDescription => ({
+const actionIdRoute = (actionRoute: string): RouteDescription => ({
   children: [
     {
       children: [],
@@ -89,13 +96,13 @@ const actionIdRoute = (presentation: string): RouteDescription => ({
           children: [],
           element: "YieldActionContinuationStepsPage",
           index: false,
-          path: "steps",
+          path: widgetYieldFlowRoutes.YieldActionContinuation.steps.pattern,
         },
         {
           children: [],
           element: "YieldActionContinuationCompletePage",
           index: false,
-          path: "complete",
+          path: widgetYieldFlowRoutes.YieldActionContinuation.complete.pattern,
         },
       ],
       element: "YieldActionContinuationExecution",
@@ -103,30 +110,42 @@ const actionIdRoute = (presentation: string): RouteDescription => ({
       path: null,
     },
   ],
-  element: `ActivityActionRoute(${presentation})`,
+  element: actionRoute,
   index: false,
-  path: ":actionId",
+  path: widgetRoutes.activityAction.pattern,
 });
 
 const ActionScopeGuard = function ActionScopeGuard() {
   return null;
 };
 
+const compactActionRoute =
+  "ActivityActionRoute(selectsDefaultAction=false, showsBackButton=true)";
+const dashboardActionRoute =
+  "ActivityActionRoute(selectsDefaultAction=true, showsBackButton=false)";
+
 describe("Activity routes", () => {
-  it("uses Classic details only under an action id", () => {
+  it("mounts details only under an action id without default selection", () => {
     const routes = createRoutesFromElements(
-      createActivityActionRoutes("Classic")
+      createActivityActionRoutes({
+        selectsDefaultAction: false,
+        showsBackButton: true,
+      })
     );
 
     expect(routes.map(describeRoute)).toEqual([
-      borrowActionIdRoute("Classic"),
-      actionIdRoute("Classic"),
+      borrowActionIdRoute(compactActionRoute),
+      actionIdRoute(compactActionRoute),
     ]);
   });
 
-  it("keeps Dashboard default selection outside the action-scope guard", () => {
+  it("keeps default selection outside the action-scope guard", () => {
     const routes = createRoutesFromElements(
-      createActivityActionRoutes("Dashboard", { ActionScopeGuard })
+      createActivityActionRoutes({
+        ActionScopeGuard,
+        selectsDefaultAction: true,
+        showsBackButton: false,
+      })
     );
 
     expect(routes.map(describeRoute)).toEqual([
@@ -139,14 +158,14 @@ describe("Activity routes", () => {
             path: null,
           },
         ],
-        element: "ActivityActionRoute(Dashboard)",
+        element: dashboardActionRoute,
         index: false,
         path: null,
       },
       {
         children: [
-          borrowActionIdRoute("Dashboard"),
-          actionIdRoute("Dashboard"),
+          borrowActionIdRoute(dashboardActionRoute),
+          actionIdRoute(dashboardActionRoute),
         ],
         element: "ActionScopeGuard(/activity)",
         index: false,

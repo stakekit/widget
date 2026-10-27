@@ -1,9 +1,9 @@
 import * as Atom from "effect/reactivity/Atom";
-import type { DashboardYieldCategory } from "../../../domain/earn/contract";
+import type { YieldCategory } from "../../../domain/earn/contract";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import {
-  getDashboardYieldCategory,
   getExtendedYieldType,
+  getYieldCategory,
   getYieldRewardTokens,
 } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
@@ -58,14 +58,11 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
           )
       )
     : all;
-  const categoryGrouping =
-    config.dashboardVariant && config.yieldGrouping === "category";
+  const categoryGrouping = config.earnCategoryGrouping;
   const category = yieldOptions.selectedCategory;
   const filtered =
     categoryGrouping && category
-      ? searchFiltered.filter(
-          (item) => getDashboardYieldCategory(item) === category
-        )
+      ? searchFiltered.filter((item) => getYieldCategory(item) === category)
       : searchFiltered;
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
@@ -99,6 +96,6 @@ export const selectEarnYieldAtom = Atom.fnSync((yieldId: YieldId, context) =>
 ).pipe(Atom.withLabel("selectEarnYieldAtom"));
 
 export const selectEarnCategoryAtom = Atom.fnSync(
-  (category: DashboardYieldCategory, context) =>
+  (category: YieldCategory, context) =>
     context.set(selectEarnSelectionCategoryAtom, category)
 ).pipe(Atom.withLabel("selectEarnCategoryAtom"));

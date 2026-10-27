@@ -24,10 +24,10 @@ export const makeTestNavigation = Effect.fn("makeTestNavigation")(function* (
   const service = makeWidgetNavigation({
     back: (navigationOptions) =>
       execute({ ...navigationOptions, _tag: "Back" }),
-    push: (path, navigationOptions) =>
-      execute({ ...navigationOptions, _tag: "Push", path }),
-    replace: (path, navigationOptions) =>
-      execute({ ...navigationOptions, _tag: "Replace", path }),
+    push: (to, navigationOptions) =>
+      execute({ ...navigationOptions, _tag: "Push", to }),
+    replace: (to, navigationOptions) =>
+      execute({ ...navigationOptions, _tag: "Replace", to }),
   });
 
   return {

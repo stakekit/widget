@@ -3,11 +3,11 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { useElementAtomRef } from "../../../src/features/widget-shell/react/use-element-atom-ref";
-import { classicLayoutElementAtom } from "../../../src/features/widget-shell/state/layout-height";
+import { pageOutletElementAtom } from "../../../src/features/widget-shell/state/layout-height";
 import { render } from "../../utils/test-utils.dom.tsx";
 
 const Layout = ({ name }: { name: string }) => {
-  const layoutRef = useElementAtomRef(classicLayoutElementAtom);
+  const layoutRef = useElementAtomRef(pageOutletElementAtom);
 
   return <div ref={layoutRef} data-testid={name} />;
 };
@@ -36,7 +36,7 @@ describe("layout element slot", () => {
 
     await app.show(<Layout key="outgoing" name="outgoing" />);
 
-    expect(registry.get(classicLayoutElementAtom)).toBe(
+    expect(registry.get(pageOutletElementAtom)).toBe(
       findLayout(app.container, "outgoing")
     );
 
@@ -51,7 +51,7 @@ describe("layout element slot", () => {
 
     await app.show(<Layout key="incoming" name="incoming" />);
 
-    expect(registry.get(classicLayoutElementAtom)).toBe(incoming);
+    expect(registry.get(pageOutletElementAtom)).toBe(incoming);
   });
 
   it("clears the slot once the owning layout unmounts", async () => {
@@ -61,6 +61,6 @@ describe("layout element slot", () => {
     await app.show(<Layout name="only" />);
     await app.show(null);
 
-    expect(registry.get(classicLayoutElementAtom)).toBeNull();
+    expect(registry.get(pageOutletElementAtom)).toBeNull();
   });
 });

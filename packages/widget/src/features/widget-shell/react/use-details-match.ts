@@ -1,9 +1,13 @@
-import { useMatch } from "react-router";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import { useWidgetRouteMatch } from "../../navigation/index";
 
+/** True on the Compact tab pages: Earn, Positions, and Activity. */
 export const useDetailsMatch = () => {
-  const rootMatch = useMatch("/");
-  const positionsMatch = useMatch("/positions");
-  const activityMatch = useMatch("/activity");
+  const earnMatch = useWidgetRouteMatch(widgetRoutes.earn);
+  const positionsMatch = useWidgetRouteMatch(widgetRoutes.positions);
+  const activityMatch = useWidgetRouteMatch(widgetRoutes.activity);
 
-  return rootMatch || positionsMatch || activityMatch;
+  return (
+    earnMatch !== null || positionsMatch !== null || activityMatch !== null
+  );
 };

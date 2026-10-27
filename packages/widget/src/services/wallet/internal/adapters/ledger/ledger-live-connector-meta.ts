@@ -10,7 +10,7 @@ import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { Chain } from "../../../wallet-descriptors";
 import type { WalletIntegrationError } from "../../../wallet-errors";
-import type { ClassicTransactionMeta } from "../../../wallet-transactions";
+import type { YieldTransactionMeta } from "../../../wallet-transactions";
 import type { LedgerTransactionPreparationError } from "./prepare-ledger-live-transaction";
 
 export const configMeta = {
@@ -36,10 +36,10 @@ export type ExtraProps = ConnectorWithFilteredChains & {
     tx,
     txMeta,
   }: {
-    family: "borrow" | "classic";
+    family: "borrow" | "yield";
     network: string;
     tx: string;
-    txMeta?: ClassicTransactionMeta;
+    txMeta?: YieldTransactionMeta;
   }) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
 };
 

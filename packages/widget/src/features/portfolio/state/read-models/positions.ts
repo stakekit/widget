@@ -4,9 +4,9 @@ import { isOptionalPendingAction } from "../../../../domain/action/pending-actio
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import { isUnfinishedInstantExit } from "../../../../domain/earn/confidential";
-import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../domain/earn/contract";
 import type { EarnBalance } from "../../../../domain/earn/models";
-import { getDashboardYieldCategory } from "../../../../domain/earn/yield";
+import { getYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
@@ -55,7 +55,7 @@ export type UnifiedPositionItem =
 export type PositionsListRow =
   | { readonly kind: "chain-modal" }
   | {
-      readonly category: DashboardYieldCategory | "borrow";
+      readonly category: YieldCategory | "borrow";
       readonly count: number;
       readonly kind: "section";
     }
@@ -239,14 +239,12 @@ export const currentGroupedPositionsAtom = Atom.make(
       ),
       AsyncResult.getOrElse(() => new Map())
     );
-    const grouped = new Map<DashboardYieldCategory, PositionItem[]>();
+    const grouped = new Map<YieldCategory, PositionItem[]>();
     const ungrouped: PositionItem[] = [];
 
     for (const item of earnPositions) {
       const yieldModel = yieldsById.get(item.integrationId);
-      const category = yieldModel
-        ? getDashboardYieldCategory(yieldModel)
-        : null;
+      const category = yieldModel ? getYieldCategory(yieldModel) : null;
 
       if (category) {
         const existing = grouped.get(category);
@@ -258,7 +256,7 @@ export const currentGroupedPositionsAtom = Atom.make(
     }
 
     const rows: PositionsListRow[] = [{ kind: "chain-modal" }];
-    for (const category of config.dashboardYieldCategoryOrder) {
+    for (const category of config.yieldCategoryOrder) {
       const items = grouped.get(category);
       if (!items?.length) continue;
 

@@ -10,7 +10,7 @@ type EarnInitializationPhase =
   | "complete";
 
 export type EarnEntryState = {
-  readonly dashboardVariant: boolean;
+  readonly categoryGrouping: boolean;
   readonly initializationPhase: EarnInitializationPhase;
   readonly initParams: InitParams | null;
   readonly intent: EarnEntryIntent;
@@ -49,14 +49,14 @@ export const clearEarnEntryAmounts = (
 export const reconcileEarnEntryOwner = (
   previous: EarnEntryState | null,
   owner: WalletScopeOwnerKey | null,
-  dashboardVariant = false,
+  categoryGrouping = false,
   walletResolution: "pending" | "settled" = "settled",
   initParams: InitParams | null = null
 ): EarnEntryState => {
   if (!previous) {
     const applying = walletResolution === "settled";
     return {
-      dashboardVariant,
+      categoryGrouping,
       initializationPhase: applying
         ? "applying-init-params"
         : "waiting-for-wallet",
@@ -75,19 +75,19 @@ export const reconcileEarnEntryOwner = (
   }
 
   const ownerUnchanged = sameOwner(previous.owner, owner);
-  const variantUnchanged = previous.dashboardVariant === dashboardVariant;
+  const groupingUnchanged = previous.categoryGrouping === categoryGrouping;
 
   if (
     previous.initializationPhase !== "waiting-for-wallet" &&
     ownerUnchanged &&
-    variantUnchanged
+    groupingUnchanged
   ) {
     return previous;
   }
 
   const applying = previous.initializationPhase === "waiting-for-wallet";
   return {
-    dashboardVariant,
+    categoryGrouping,
     initializationPhase: applying ? "applying-init-params" : "complete",
     initParams: applying ? initParams : null,
     intent: makeDefaultEarnIntent(

@@ -46,7 +46,7 @@ describe("WidgetConfigService", () => {
             WidgetConfigService.layer({
               apiKey: "api-key",
               dashboardVariant: true,
-              dashboardYieldCategoryOrder: ["stake", "stake", "rwa"],
+              yieldCategoryOrder: ["stake", "stake", "rwa"],
               preferredTokenYieldsPerNetwork: {
                 ethereum: {
                   "ETHEREUM-ETH": "ethereum-eth-native-staking",
@@ -61,8 +61,9 @@ describe("WidgetConfigService", () => {
           baseUrl: "https://api.stakek.it/",
           borrowApiUrl: "https://borrow.yield.xyz",
           borrowEnabled: false,
-          dashboardVariant: true,
-          dashboardYieldCategoryOrder: ["stake", "rwa", "defi"],
+          earnCategoryGrouping: true,
+          layout: "Dashboard",
+          yieldCategoryOrder: ["stake", "rwa", "defi"],
           disableAutoScrollToTop: false,
           disableInitLayoutAnimation: false,
           disableInjectedProviderDiscovery: false,
@@ -80,6 +81,30 @@ describe("WidgetConfigService", () => {
           },
           yieldGrouping: "category",
           yieldsApiUrl: "https://api.yield.xyz/",
+        });
+      })
+  );
+
+  it.effect(
+    "keeps a Compact host's category grouping without Earn category tabs",
+    () =>
+      Effect.gen(function* () {
+        const current = yield* WidgetConfigService.use(
+          (config) => config.current
+        ).pipe(
+          Effect.provide(
+            WidgetConfigService.layer({
+              apiKey: "api-key",
+              variant: "default",
+              yieldGrouping: "category",
+            })
+          )
+        );
+
+        expect(current).toMatchObject({
+          earnCategoryGrouping: false,
+          layout: "Compact",
+          yieldGrouping: "category",
         });
       })
   );
@@ -465,7 +490,7 @@ describe("WidgetConfigService", () => {
         });
         expect(result.current).toMatchObject({
           borrowEnabled: true,
-          dashboardVariant: true,
+          layout: "Dashboard",
         });
       })
   );

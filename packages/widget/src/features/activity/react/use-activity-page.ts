@@ -1,5 +1,9 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useMatch, useNavigate, useParams } from "react-router";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import {
+  useWidgetNavigate,
+  useWidgetRoutePrefixMatch,
+} from "../../navigation/index";
 import {
   type ActivityActionItem,
   getActivityActionPath,
@@ -21,15 +25,17 @@ export const useActivityPage = ({
 }: {
   readonly allowDefaultSelection?: boolean;
 } = {}) => {
-  const navigate = useNavigate();
-  const { actionId: actionIdParam } = useParams();
-  const borrowMatch = useMatch("/activity/borrow/:actionId");
+  const navigation = useWidgetNavigate();
+  const borrowMatch = useWidgetRoutePrefixMatch(
+    widgetRoutes.activityBorrowAction
+  );
+  const yieldMatch = useWidgetRoutePrefixMatch(widgetRoutes.activityAction);
   const view = useAtomValue(activityPageViewAtom);
   const loadMore = useAtomSet(loadMoreActivityAtom);
   const retry = useAtomSet(retryActivityPageAtom);
   const selectFilter = useAtomSet(setActivityPageFilterAtom);
   const parsed = parseActivityRouteIntent({
-    actionIdParam,
+    actionIdParam: borrowMatch?.actionId ?? yieldMatch?.actionId,
     allowDefault: allowDefaultSelection,
     source: borrowMatch ? "borrow" : "yield",
   });
@@ -42,7 +48,7 @@ export const useActivityPage = ({
     view,
     selectedAction,
     onActionSelect: (item: ActivityActionItem) =>
-      navigate(getActivityActionPath(getActivitySelectionTarget(item))),
+      navigation.push(getActivityActionPath(getActivitySelectionTarget(item))),
     onFilterSelect: selectFilter,
     onLoadMore: () => loadMore(undefined),
     onRetry: () => retry(undefined),

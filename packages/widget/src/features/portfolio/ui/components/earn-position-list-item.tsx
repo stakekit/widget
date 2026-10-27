@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { PositionDetailsLabelType } from "../../../../domain/portfolio/positions";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatTokenAmount,
   formatUsd,
@@ -12,11 +13,11 @@ import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
-import { SKLink } from "../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { WidgetLink } from "../../../navigation/views";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { PositionItem } from "../../state/read-models/positions";
 import {
@@ -43,16 +44,14 @@ export type EarnPositionListItemDetails = {
   readonly totalAmountUsd: BigNumber | null;
 };
 
-type Presentation = "classic" | "dashboard";
-
 const EarnPositionAmount = ({
   item,
   details,
-  presentation,
+  showsMissingAmountPlaceholder,
 }: {
   readonly item: PositionItem;
   readonly details: EarnPositionListItemDetails;
-  readonly presentation: Presentation;
+  readonly showsMissingAmountPlaceholder: boolean;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -90,7 +89,7 @@ const EarnPositionAmount = ({
     );
   }
 
-  if (presentation === "dashboard") return <Text>-</Text>;
+  if (showsMissingAmountPlaceholder) return <Text>-</Text>;
 
   return null;
 };
@@ -98,11 +97,18 @@ const EarnPositionAmount = ({
 export const EarnPositionListItem = ({
   item,
   details,
-  presentation,
+  opensDetailsWithViewTransition,
+  showsMissingAmountPlaceholder,
+  showsRewardRate,
 }: {
   readonly item: PositionItem;
   readonly details: EarnPositionListItemDetails;
-  readonly presentation: Presentation;
+  /** Whether opening Position Details runs a view transition. */
+  readonly opensDetailsWithViewTransition: boolean;
+  /** Whether an unpriced or unloaded amount renders a "-" placeholder. */
+  readonly showsMissingAmountPlaceholder: boolean;
+  /** Whether the row shows the average reward rate next to the amount. */
+  readonly showsRewardRate: boolean;
 }): ReactElement => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -113,7 +119,6 @@ export const EarnPositionListItem = ({
     inactiveValidator,
     rewardRateAverage,
   } = details;
-  const isDashboard = presentation === "dashboard";
   const actionBadge = (() => {
     if (item.actionRequired) {
       return {
@@ -143,10 +148,12 @@ export const EarnPositionListItem = ({
   })();
 
   return (
-    <SKLink
-      relative="path"
-      to={`../positions/${item.integrationId}/${item.balanceId}`}
-      viewTransition={isDashboard}
+    <WidgetLink
+      to={widgetRoutes.positionDetails.build({
+        balanceId: item.balanceId,
+        integrationId: item.integrationId,
+      })}
+      viewTransition={opensDetailsWithViewTransition}
     >
       <Box py="1">
         {integrationData ? (
@@ -239,14 +246,14 @@ export const EarnPositionListItem = ({
 
               {/* Reward rate + staked */}
               <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-                {isDashboard && rewardRateAverage ? (
+                {showsRewardRate && rewardRateAverage ? (
                   <Text className={rewardRateText}>{rewardRateAverage}</Text>
                 ) : null}
 
                 <EarnPositionAmount
                   item={item}
                   details={details}
-                  presentation={presentation}
+                  showsMissingAmountPlaceholder={showsMissingAmountPlaceholder}
                 />
               </Box>
             </Box>
@@ -283,6 +290,6 @@ export const EarnPositionListItem = ({
           <ContentLoaderSquare heightPx={60} />
         )}
       </Box>
-    </SKLink>
+    </WidgetLink>
   );
 };

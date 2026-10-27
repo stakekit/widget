@@ -1,9 +1,9 @@
-export { ClassicLayout } from "./classic-layout";
-export { AppContainer } from "./dashboard/components/app-container";
-export { Header as DashboardHeader } from "./dashboard/components/header";
-export { Details } from "./details/details.page.tsx";
-export { Header } from "./header";
 export { AnimationLayout } from "./ui/animation-layout";
+export { AppContainer } from "./ui/app-container";
+export { CompactLayout } from "./ui/compact/compact-layout";
+export { Details } from "./ui/compact/details/details.page.tsx";
+export { Header } from "./ui/compact/header";
+export { Header as DashboardHeader } from "./ui/dashboard/header";
 export { GlobalModals } from "./ui/global-modals";
 export { NetworkNotSupported } from "./ui/network-not-supported";
 export { NoEnabledYields } from "./ui/no-enabled-yields";

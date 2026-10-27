@@ -1,12 +1,9 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Layer, Schema, Stream } from "effect";
+import { Effect, Layer, Stream } from "effect";
 import type { DataRouter } from "react-router";
 import { ApplicationRouter } from "../../../src/services/navigation/application-router";
-import {
-  toWidgetPath,
-  WidgetNavigation,
-  WidgetPath,
-} from "../../../src/services/navigation/widget-navigation";
+import { WidgetNavigation } from "../../../src/services/navigation/widget-navigation";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 
 describe("WidgetNavigation", () => {
   it.effect("executes absolute push, replace, back, and scroll decisions", () =>
@@ -20,10 +17,10 @@ describe("WidgetNavigation", () => {
         const { router } = yield* ApplicationRouter;
         const navigation = yield* WidgetNavigation;
 
-        yield* navigation.push(toWidgetPath("/positions/one"), {
+        yield* navigation.push(widgetRoutes.positions.build(), {
           scroll: "reset",
         });
-        yield* navigation.replace(toWidgetPath("/positions/two"), {
+        yield* navigation.replace(widgetRoutes.activity.build(), {
           scroll: "preserve",
         });
         yield* navigation.back({ scroll: "reset" });
@@ -51,18 +48,12 @@ describe("WidgetNavigation", () => {
     })
   );
 
-  it("rejects route-relative application paths", () => {
-    expect(() => Schema.decodeUnknownSync(WidgetPath)("positions/one")).toThrow(
-      "Expected a string matching template literal parts"
-    );
-  });
-
   it.effect("normalizes router failures", () =>
     Effect.gen(function* () {
       const applicationRouterLayer = Layer.succeed(
         ApplicationRouter,
         ApplicationRouter.of({
-          pathnames: Stream.never,
+          locations: Stream.never,
           router: {
             navigate: () =>
               Promise.reject(new Error("router rejected navigation")),
@@ -70,7 +61,7 @@ describe("WidgetNavigation", () => {
         })
       );
       const program = WidgetNavigation.use((navigation) =>
-        navigation.push(toWidgetPath("/review"), { scroll: "preserve" })
+        navigation.push(widgetRoutes.earn.build(), { scroll: "preserve" })
       ).pipe(
         Effect.provide(
           WidgetNavigation.layer().pipe(Layer.provide(applicationRouterLayer))

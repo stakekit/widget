@@ -7,14 +7,19 @@ import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
-import { AmountBlock } from "../classic/components/amount-block";
-import { StaticActionBlock } from "../classic/components/static-action-block";
-import type { usePositionDetails } from "../classic/hooks/use-position-details";
+import type { usePositionDetails } from "../../react/use-position-details";
+import { AmountBlock } from "./amount-block";
+import { StaticActionBlock } from "./static-action-block";
 
 export const PositionDetailsPendingActions = ({
+  flagsInvalidAmount,
+  humanizesUntranslatedLabels,
   positionDetails,
-  presentation,
 }: {
+  /** Whether an invalid pending-action amount is flagged on its block. */
+  readonly flagsInvalidAmount: boolean;
+  /** Whether action types without a translation fall back to a humanized label. */
+  readonly humanizesUntranslatedLabels: boolean;
   readonly positionDetails: Pick<
     ReturnType<typeof usePositionDetails>,
     | "integrationData"
@@ -22,7 +27,6 @@ export const PositionDetailsPendingActions = ({
     | "onPendingActionAmountChange"
     | "onPendingActionClick"
   >;
-  readonly presentation: "classic" | "dashboard";
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -60,17 +64,15 @@ export const PositionDetailsPendingActions = ({
             { confidential: isConfidentialYield(integrationData) }
           ),
         };
-        // Classic flags invalid amounts; dashboard falls back to a humanized
-        // label for action types without a translation.
-        const label =
-          presentation === "dashboard"
-            ? t(labelKey, {
-                ...labelOptions,
-                defaultValue: humanizePendingActionType(val.pendingAction.type),
-              })
-            : t(labelKey, labelOptions);
-        const unstakeAmountError =
-          presentation === "classic" ? val.validation !== null : undefined;
+        const label = humanizesUntranslatedLabels
+          ? t(labelKey, {
+              ...labelOptions,
+              defaultValue: humanizePendingActionType(val.pendingAction.type),
+            })
+          : t(labelKey, labelOptions);
+        const unstakeAmountError = flagsInvalidAmount
+          ? val.validation !== null
+          : undefined;
 
         return (
           <AmountBlock

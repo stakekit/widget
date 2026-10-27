@@ -61,7 +61,7 @@ const getExecutionStatus = (
     case "Completed":
       return { error: null, isRunning: false, phase: "completed" };
     case "Disabled":
-    // Only a confidential Classic workflow prepares its action.
+    // Only a confidential Yield workflow prepares its action.
     case "Preparing":
     case "PrepareFailed":
       return { error: null, isRunning: false, phase: "disabled" };

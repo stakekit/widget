@@ -51,7 +51,7 @@ export const applicationBaseRuntime = Atom.runtime<
         const initialEntry = resolveInitialRoutePath({
           borrowAvailable: settings.borrowEnabled,
           tab,
-          variant: settings.dashboardVariant ? "dashboard" : "classic",
+          layout: settings.layout,
         });
 
         return ApplicationRouter.layer(init.routes, {

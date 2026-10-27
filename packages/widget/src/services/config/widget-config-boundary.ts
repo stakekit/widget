@@ -1,5 +1,5 @@
 import { Data, Predicate, Result, Schema, SchemaIssue } from "effect";
-import { DashboardYieldCategory } from "../../domain/earn/contract";
+import { YieldCategory } from "../../domain/earn/contract";
 import { HostTokenKey } from "../../domain/token/token";
 import {
   EvmChainIds,
@@ -19,6 +19,7 @@ import type {
 } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
+import type { WidgetLayout } from "./widget-config-model";
 
 const optional = <S extends Schema.Constraint>(schema: S) =>
   Schema.optionalKey(Schema.UndefinedOr(schema));
@@ -73,12 +74,11 @@ type HostLanguage = NonNullable<SettingsProps["language"]>;
 type HostVariant = NonNullable<SKHostConfiguration["variant"]>;
 type HostYieldGrouping = NonNullable<SettingsProps["yieldGrouping"]>;
 
-const dashboardYieldCategoryValues =
-  exhaustiveLiterals<DashboardYieldCategory>()([
-    DashboardYieldCategory.RWA,
-    DashboardYieldCategory.DeFi,
-    DashboardYieldCategory.Stake,
-  ]);
+const yieldCategoryValues = exhaustiveLiterals<YieldCategory>()([
+  YieldCategory.RWA,
+  YieldCategory.DeFi,
+  YieldCategory.Stake,
+]);
 const hostLanguageValues = exhaustiveLiterals<HostLanguage>()(["en", "fr"]);
 const hostVariantValues = exhaustiveLiterals<HostVariant>()([
   "default",
@@ -171,9 +171,9 @@ const walletPolicyFields = {
 const WalletPolicy = Schema.Struct(walletPolicyFields);
 
 const yieldProviderOrderFields = {
-  [DashboardYieldCategory.RWA]: optional(Schema.Array(Schema.String)),
-  [DashboardYieldCategory.DeFi]: optional(Schema.Array(Schema.String)),
-  [DashboardYieldCategory.Stake]: optional(Schema.Array(Schema.String)),
+  [YieldCategory.RWA]: optional(Schema.Array(Schema.String)),
+  [YieldCategory.DeFi]: optional(Schema.Array(Schema.String)),
+  [YieldCategory.Stake]: optional(Schema.Array(Schema.String)),
 } satisfies Record<
   keyof NonNullable<SettingsProps["yieldProviderOrder"]>,
   Schema.Constraint
@@ -198,8 +198,8 @@ const hostConfigurationValueFields = {
   chainIconMapping: optional(IconMapping),
   customTranslations: optional(CustomTranslations),
   dashboardVariant: optional(Schema.Boolean),
-  dashboardYieldCategoryOrder: optional(
-    Schema.Array(Schema.Literals(dashboardYieldCategoryValues))
+  yieldCategoryOrder: optional(
+    Schema.Array(Schema.Literals(yieldCategoryValues))
   ),
   disableAutoScrollToTop: optional(Schema.Boolean),
   disableInitLayoutAnimation: optional(Schema.Boolean),
@@ -443,6 +443,12 @@ const combineExternalProvider = (
     : missingBorrowProviderCapability();
 };
 
+/** The Layout the host selects through the public `dashboardVariant` flag. */
+export const hostLayout = (
+  hostConfiguration: DecodedHostConfiguration
+): WidgetLayout =>
+  hostConfiguration.dashboardVariant ? "Dashboard" : "Compact";
+
 type SemanticHostConfigurationIssue = Exclude<
   InvalidHostConfigurationIssue,
   "host-configuration-decode-failed"
@@ -455,7 +461,7 @@ const semanticIssues = (
 
   if (
     hostConfiguration.borrowEnabled === true &&
-    hostConfiguration.dashboardVariant !== true
+    hostLayout(hostConfiguration) !== "Dashboard"
   ) {
     issues.push("borrow-requires-dashboard");
   }
@@ -540,7 +546,7 @@ export const decodeHostConfiguration = (
 
 /** How the widget looks while it shows that the Host Configuration was rejected. */
 export type RejectedConfigurationPresentation = Readonly<{
-  dashboardVariant: boolean;
+  layout: WidgetLayout;
   theme: SKTheme | undefined;
   variant: HostVariant;
 }>;
@@ -555,7 +561,7 @@ const isHostVariant = Schema.is(Schema.Literals(hostVariantValues));
 export const decodeRejectedConfigurationPresentation = (
   hostConfiguration: Partial<SKHostConfiguration>
 ): RejectedConfigurationPresentation => ({
-  dashboardVariant: hostConfiguration.dashboardVariant === true,
+  layout: hostConfiguration.dashboardVariant === true ? "Dashboard" : "Compact",
   theme:
     hostConfiguration.theme === undefined
       ? undefined

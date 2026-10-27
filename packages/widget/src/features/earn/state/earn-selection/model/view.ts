@@ -4,7 +4,7 @@ import {
   getConfidentialAssetToken,
   sameTokenContract,
 } from "../../../../../domain/earn/confidential";
-import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../../domain/earn/contract";
 import {
   filterValidators,
   type PreferredTokenYieldsPerNetwork,
@@ -79,7 +79,7 @@ const resolveCategorySelection = ({
 }) => {
   if (observations.category._tag === "disabled") {
     return {
-      available: [] as ReadonlyArray<DashboardYieldCategory>,
+      available: [] as ReadonlyArray<YieldCategory>,
       blockingFailure: false,
       category: null,
       loading: false,
@@ -114,7 +114,7 @@ const resolveCategorySelection = ({
     blockingFailure: isBlockingFailure(categoryResult),
     category:
       candidates.find(
-        (candidate): candidate is DashboardYieldCategory =>
+        (candidate): candidate is YieldCategory =>
           candidate !== null && available.includes(candidate)
       ) ?? null,
     loading: !hasAvailableValue(categoryResult) && isResolving(categoryResult),
@@ -145,7 +145,7 @@ export const resolveEarnView = ({
     blockingFailure: category.blockingFailure,
     empty: {
       categories:
-        entry.dashboardVariant &&
+        entry.categoryGrouping &&
         !category.loading &&
         !category.blockingFailure &&
         category.available.length === 0,
@@ -160,7 +160,7 @@ export const resolveEarnView = ({
   if (
     category.blockingFailure ||
     category.loading ||
-    (entry.dashboardVariant && !category.category)
+    (entry.categoryGrouping && !category.category)
   ) {
     return makeEarnView({ ...categoryFacts, intent });
   }
