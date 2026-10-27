@@ -19,18 +19,20 @@ export const AnimationPage = ({ children }: PropsWithChildren) => {
       initial={{
         opacity: 0,
         scale: 1,
-        translateY: dashboardVariant ? "-10px" : "-15px",
+        translateY: dashboardVariant ? 0 : "-15px",
       }}
       animate={{
         opacity: 1,
         translateY: 0,
-        transition: { duration: dashboardVariant ? 0.4 : 0.5, delay: 0.1 },
+        transition: dashboardVariant
+          ? { duration: 0.4, delay: 0.05 }
+          : { duration: 0.5, delay: 0.1 },
       }}
       exit={{
         opacity: 0,
         filter: "blur(8px)",
-        scale: dashboardVariant ? 0.9 : 0.8,
-        transition: { duration: 0.4 },
+        scale: dashboardVariant ? 1 : 0.8,
+        transition: { duration: dashboardVariant ? 0.1 : 0.4 },
       }}
     >
       {children}

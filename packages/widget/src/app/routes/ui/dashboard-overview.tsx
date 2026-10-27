@@ -15,23 +15,16 @@ import {
   earnDetailsWrapper,
   overviewPageContainer,
 } from "./dashboard-overview.css";
-import { useDashboardCategoryTransition } from "./dashboard-shell";
 
 /**
  * Stable parent of the Earn form and its flow routes, so moving from the form
  * into Review does not replay the page transition.
  */
-export const DashboardEarnTab = () => {
-  const categoryTransition = useDashboardCategoryTransition();
-
-  return (
-    // Remount on category tab clicks so they get the same enter
-    // transition as switching route tabs.
-    <AnimationPage key={categoryTransition}>
-      <Outlet />
-    </AnimationPage>
-  );
-};
+export const DashboardEarnTab = () => (
+  <AnimationPage>
+    <Outlet />
+  </AnimationPage>
+);
 
 /** The Earn form beside the details of its live selection. */
 export const DashboardOverview = () => (
