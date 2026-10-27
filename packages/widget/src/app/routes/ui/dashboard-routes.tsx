@@ -1,5 +1,5 @@
 import { AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import type { YieldCategory } from "../../../domain/earn/contract";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../../../features/borrow/composition";
 import { createBorrowTransactionFlowRoutes } from "../../../features/borrow-transaction-flow/composition";
 import { EarnPageContent } from "../../../features/earn/composition";
-import { useEarnYieldSelection } from "../../../features/earn/index";
+import { useSelectEarnCategory } from "../../../features/earn/index";
 import { ManagePage } from "../../../features/portfolio/composition";
 import {
   DashboardPositionDetailsPage,
@@ -29,6 +29,7 @@ import {
   DashboardOverview,
 } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
+import { resolveDashboardRouteTab } from "./dashboard-tabs";
 
 const borrowRouteComposition = {
   WalletScopeRouteGuard,
@@ -44,24 +45,24 @@ export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
  * into its Review or a position into its unstake flow, keep the same key.
  */
 const resolveDashboardPageKey = (pathname: string) => {
-  const segments = pathname.split("/").filter(Boolean);
-  const [section] = segments;
-
-  if (section === "activity" || section === "borrow") return section;
+  const tab = resolveDashboardRouteTab(pathname);
+  if (tab !== "manage") return tab;
   // `positions`, `positions/:integrationId/:balanceId`, or
   // `positions/borrow/:marketId`
-  if (section === "positions") return segments.slice(0, 3).join("/");
-  return "earn";
+  return pathname.split("/").filter(Boolean).slice(0, 3).join("/");
 };
 
 export const DashboardRoutes = () => {
   const location = useLocation();
-  const { selectCategory } = useEarnYieldSelection();
+  const selectCategory = useSelectEarnCategory();
   const [categoryPresses, setCategoryPresses] = useState(0);
-  // Applied once the leaving page finished its exit, so it does not render the
-  // newly selected category while fading out.
+  // A pressed category is applied once the leaving page finished its exit, so
+  // it does not render the new category while fading out. The state drives
+  // the tab highlight; the ref is what the exit callback reads, because
+  // AnimatePresence keeps the callback from the render the exit started in.
   const [pendingYieldCategory, setPendingYieldCategory] =
     useState<YieldCategory | null>(null);
+  const pendingYieldCategoryRef = useRef<YieldCategory | null>(null);
   const registerEarnFooterButton = shouldRegisterDashboardEarnFooterButton(
     location.pathname
   );
@@ -70,13 +71,16 @@ export const DashboardRoutes = () => {
   const routesKey = pageKey === "earn" ? `earn:${categoryPresses}` : pageKey;
 
   const onYieldCategorySelect = (category: YieldCategory) => {
+    pendingYieldCategoryRef.current = category;
     setPendingYieldCategory(category);
     setCategoryPresses((n) => n + 1);
   };
 
   const onExitComplete = () => {
-    if (pendingYieldCategory === null) return;
-    selectCategory(pendingYieldCategory);
+    const category = pendingYieldCategoryRef.current;
+    if (category === null) return;
+    pendingYieldCategoryRef.current = null;
+    selectCategory(category);
     setPendingYieldCategory(null);
   };
 

@@ -59,6 +59,9 @@ export const useEarnYieldSelection = () => ({
   view: useAtomValue(earnYieldSelectionViewAtom),
 });
 
+/** Selects a dashboard yield category without subscribing to the selection. */
+export const useSelectEarnCategory = () => useAtomSet(selectEarnCategoryAtom);
+
 export const useEarnValidatorSelection = () => ({
   recordModalEvent: useAtomSet(earnValidatorModalEventAtom),
   loadMore: useAtomSet(loadMoreEarnValidatorsAtom),
