@@ -537,3 +537,30 @@ export const decodeHostConfiguration = (
     warnings: theme.warnings.map((issue) => ({ _tag: "Theme", issue })),
   });
 };
+
+/** How the widget looks while it shows that the Host Configuration was rejected. */
+export type RejectedConfigurationPresentation = Readonly<{
+  dashboardVariant: boolean;
+  theme: SKTheme | undefined;
+  variant: HostVariant;
+}>;
+
+const isHostVariant = Schema.is(Schema.Literals(hostVariantValues));
+
+/**
+ * Decodes the presentation fields of a rejected Host Configuration one by
+ * one, so the widget-unavailable notice can still match the host. Invalid
+ * fields fall back to the defaults instead of failing again.
+ */
+export const decodeRejectedConfigurationPresentation = (
+  hostConfiguration: Partial<SKHostConfiguration>
+): RejectedConfigurationPresentation => ({
+  dashboardVariant: hostConfiguration.dashboardVariant === true,
+  theme:
+    hostConfiguration.theme === undefined
+      ? undefined
+      : decodeTheme(hostConfiguration.theme).theme,
+  variant: isHostVariant(hostConfiguration.variant)
+    ? hostConfiguration.variant
+    : "default",
+});

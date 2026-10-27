@@ -8,4 +8,7 @@ export { GlobalModals } from "./ui/global-modals";
 export { NetworkNotSupported } from "./ui/network-not-supported";
 export { NoEnabledYields } from "./ui/no-enabled-yields";
 export { PoweredBy } from "./ui/powered-by";
-export { WidgetUnavailable } from "./ui/widget-unavailable";
+export {
+  WidgetUnavailable,
+  WidgetUnavailableWithoutConfiguration,
+} from "./ui/widget-unavailable";

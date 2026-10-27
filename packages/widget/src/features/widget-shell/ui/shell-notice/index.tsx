@@ -1,5 +1,9 @@
+import type { ReactNode } from "react";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
+import {
+  combineRecipeWithVariant,
+  type WidgetVariant,
+} from "../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
@@ -7,18 +11,42 @@ import { wrapper } from "../../dashboard/components/styles.css";
 import { PoweredBy } from "../powered-by";
 import { background, container, dashboardBackground } from "./style.css";
 
-export const ShellNotice = ({
-  description,
-  testId,
-  title,
-}: {
+type ShellNoticeContent = {
   readonly description: string;
   readonly testId: string;
   readonly title: string;
-}) => {
+};
+
+/** The host layout a notice fills: the dashboard or the classic widget, per variant. */
+export type ShellNoticeLayout = Readonly<{
+  dashboardVariant: boolean;
+  variant: WidgetVariant;
+}>;
+
+export const ShellNotice = (content: ShellNoticeContent) => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
 
+  return (
+    <ShellNoticeFrame
+      {...content}
+      footer={<PoweredBy opacity={1} />}
+      layout={{ dashboardVariant, variant }}
+    />
+  );
+};
+
+/** A full-widget notice laid out from props, so it renders without Widget Configuration. */
+export const ShellNoticeFrame = ({
+  description,
+  footer,
+  layout: { dashboardVariant, variant },
+  testId,
+  title,
+}: ShellNoticeContent & {
+  readonly footer?: ReactNode;
+  readonly layout: ShellNoticeLayout;
+}) => {
   return (
     <Box
       style={{ borderRadius: "14px" }}
@@ -58,7 +86,7 @@ export const ShellNotice = ({
           </Text>
         </Box>
       </Box>
-      <PoweredBy opacity={1} />
+      {footer}
     </Box>
   );
 };
