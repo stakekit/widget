@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Outlet, useOutletContext } from "react-router";
+import type { ReactNode } from "react";
+import type { DashboardYieldCategory } from "../../../domain/earn/contract";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import {
   DashboardHeader,
@@ -13,17 +13,16 @@ import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant"
 import { Box } from "../../../shared/ui/primitives/box";
 import { DashboardTabs } from "./dashboard-tabs";
 
-type DashboardShellContext = {
-  /** Bumped on each yield category tab press that changes the category. */
-  readonly categoryTransition: number;
-};
-
-export const useDashboardCategoryTransition = () =>
-  useOutletContext<DashboardShellContext>().categoryTransition;
-
-export const DashboardShell = () => {
+export const DashboardShell = ({
+  children,
+  onYieldCategorySelect,
+  pendingYieldCategory,
+}: {
+  readonly children: ReactNode;
+  readonly onYieldCategorySelect: (category: DashboardYieldCategory) => void;
+  readonly pendingYieldCategory: DashboardYieldCategory | null;
+}) => {
   const variant = useWidgetConfig("variant");
-  const [categoryTransition, setCategoryTransition] = useState(0);
 
   return (
     <Box
@@ -31,7 +30,8 @@ export const DashboardShell = () => {
     >
       <DashboardHeader />
       <DashboardTabs
-        onYieldCategoryChange={() => setCategoryTransition((n) => n + 1)}
+        onYieldCategorySelect={onYieldCategorySelect}
+        pendingYieldCategory={pendingYieldCategory}
       />
 
       <Box
@@ -40,9 +40,7 @@ export const DashboardShell = () => {
           variant,
         })}
       >
-        <Outlet
-          context={{ categoryTransition } satisfies DashboardShellContext}
-        />
+        {children}
       </Box>
 
       <PoweredBy />

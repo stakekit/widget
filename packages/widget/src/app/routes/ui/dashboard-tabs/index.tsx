@@ -26,15 +26,20 @@ const tabsMap: Record<RouteTab, string> = {
 };
 
 export const DashboardTabs = ({
-  onYieldCategoryChange,
+  onYieldCategorySelect,
+  pendingYieldCategory,
 }: {
-  readonly onYieldCategoryChange: () => void;
+  /** Selects a yield category; applying it may wait for the page transition. */
+  readonly onYieldCategorySelect: (category: DashboardYieldCategory) => void;
+  /** A pressed yield category not yet applied to the Earn selection. */
+  readonly pendingYieldCategory: DashboardYieldCategory | null;
 }) => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
-  const { selectCategory, view: yieldSelection } = useEarnYieldSelection();
+  const { view: yieldSelection } = useEarnYieldSelection();
   const availableDashboardYieldCategories = yieldSelection.availableCategories;
-  const selectedDashboardYieldCategory = yieldSelection.selectedCategory;
+  const selectedDashboardYieldCategory =
+    pendingYieldCategory ?? yieldSelection.selectedCategory;
   const location = useLocation();
 
   const selectedTab = Match.value(location.pathname).pipe(
@@ -56,8 +61,7 @@ export const DashboardTabs = ({
     }
 
     trackEvent("tabClicked", { selected: category });
-    if (selectedDashboardYieldCategory !== category) onYieldCategoryChange();
-    selectCategory(category);
+    onYieldCategorySelect(category);
     navigate("/");
   };
 
