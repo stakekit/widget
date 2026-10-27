@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { BorrowFeatureRoute } from "../../../src/app/routes/ui/borrow-feature-route";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import { render } from "../../utils/test-utils.dom.tsx";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 
@@ -38,10 +39,20 @@ const renderRoute = ({
     >
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
-          <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
+          <Route
+            element={
+              <BorrowFeatureRoute fallbackPath={widgetRoutes.earn.build()} />
+            }
+          >
             <Route path="/borrow/*" element={<LocationProbe />} />
           </Route>
-          <Route element={<BorrowFeatureRoute fallbackPath="/positions" />}>
+          <Route
+            element={
+              <BorrowFeatureRoute
+                fallbackPath={widgetRoutes.positions.build()}
+              />
+            }
+          >
             <Route path="/positions/borrow/*" element={<LocationProbe />} />
           </Route>
           <Route path="/" element={<LocationProbe />} />
@@ -88,7 +99,11 @@ describe("BorrowFeatureRoute", () => {
       >
         <MemoryRouter initialEntries={["/borrow/review"]}>
           <Routes>
-            <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
+            <Route
+              element={
+                <BorrowFeatureRoute fallbackPath={widgetRoutes.earn.build()} />
+              }
+            >
               <Route
                 path="/borrow/*"
                 element={<BorrowScopeProbe onUnmount={finalized} />}

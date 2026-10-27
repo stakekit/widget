@@ -46,7 +46,6 @@ import {
   getYieldTransactionFlowGasWarningInput,
   getYieldTransactionFlowKycYield,
   getYieldTransactionFlowReviewPricingInput,
-  makeYieldFlowNavigationState,
   type YieldFlowExecutionSource,
   YieldFlowHandoff,
   type YieldFlowSession,
@@ -192,8 +191,10 @@ export const handOffYieldFlowSource = Effect.fn("handOffYieldFlowSource")(
             navigation
               .execute({
                 _tag: "Push",
-                path: destination.stepsPath,
-                state: makeYieldFlowNavigationState(session, next),
+                to: destination.steps({
+                  executionHandoff: next,
+                  yieldFlowSession: session,
+                }),
               })
               .pipe(
                 Effect.tapError(() =>

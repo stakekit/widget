@@ -43,6 +43,23 @@ Widget root, a prop the Layout's composition supplies that names the
 difference, or a Layout-specific component. See
 [ADR 0013](../../docs/adr/0013-layouts-are-application-composition.md).
 
+## Routes and navigation
+
+The Route Registry (`services/navigation/widget-routes.ts`) defines every
+absolute Widget path once: its pattern, typed params, the Layouts that mount
+it, how to build it, and how to match a pathname against it. Route trees mount
+registry patterns, navigation accepts only registry-built `WidgetPath`s, and
+pathname parsing uses registry matching; only relative redirects stay literal.
+Building a route that some Layout does not mount requires naming the Layout. A
+Transaction Flow's Review, Steps, and Complete form one flow group per mount,
+and the owning Feature binds the navigation state its pages carry to that
+group. The `navigation` Feature adapts the registry to React.
+
+Navigation that completes a domain operation, such as a handoff with its
+navigation or a deep link, runs in that Effect operation through the
+`WidgetNavigation` service. Navigation that only answers a user's UI action,
+such as a tab press or a back button, stays in React.
+
 ## Dependency direction
 
 Dependencies point toward narrow interfaces and stable lower-level concepts:
@@ -246,8 +263,9 @@ and Effect Atom registry.
   memoize by hand), ad hoc Atom runtimes, direct Effect runtime execution,
   native `Date`, global `fetch`, throws in Effect generators, wildcard Module
   exports, Resources that read an API ResourceSource without
-  `makePresentableResource`, Layout reads outside application composition and
-  Widget Configuration, Layout-named identifiers in Domain, Resource, service, and
+  `makePresentableResource`, literal absolute Widget paths outside the Route
+  Registry, Layout reads outside application composition and Widget
+  Configuration, Layout-named identifiers in Domain, Resource, service, and
   Feature `model/` and `state/` code, and Layout-named files outside `ui/` and
   `app/layouts/`.
 - Architecture rules live in these tools, not in tests that read source text.

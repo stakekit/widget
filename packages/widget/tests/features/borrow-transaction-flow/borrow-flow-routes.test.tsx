@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { createBorrowTransactionFlowRoutes } from "../../../src/features/borrow-transaction-flow/composition";
+import { widgetBorrowFlowRoutes } from "../../../src/services/navigation/widget-routes";
 
 vi.mock(
   "../../../src/features/borrow-transaction-flow/react/borrow-flow-route",
@@ -70,24 +71,26 @@ const describeRoute = (route: RouteObject): RouteContract => ({
   path: route.path ?? null,
 });
 
-const flowPagesContract: ReadonlyArray<RouteContract> = [
+const flowPagesContract = (
+  entry: keyof typeof widgetBorrowFlowRoutes
+): ReadonlyArray<RouteContract> => [
   {
     children: [],
     element: "BorrowReviewPage",
-    path: "review",
+    path: widgetBorrowFlowRoutes[entry].review.pattern,
   },
   {
     children: [
       {
         children: [],
         element: "BorrowTransactionFlowExecutionPage(Steps)>BorrowStepsPage",
-        path: "steps",
+        path: widgetBorrowFlowRoutes[entry].steps.pattern,
       },
       {
         children: [],
         element:
           "BorrowTransactionFlowExecutionPage(Complete)>BorrowCompletePage",
-        path: "complete",
+        path: widgetBorrowFlowRoutes[entry].complete.pattern,
       },
     ],
     element: "BorrowTransactionFlowExecutionRoute",
@@ -107,7 +110,7 @@ describe("Borrow Transaction Flow routes", () => {
 
       expect(routes.map(describeRoute)).toEqual([
         {
-          children: flowPagesContract,
+          children: flowPagesContract(entry),
           element: `BorrowTransactionFlowRoute(${entry})`,
           path: null,
         },
@@ -127,7 +130,7 @@ describe("Borrow Transaction Flow routes", () => {
       {
         children: [
           {
-            children: flowPagesContract,
+            children: flowPagesContract("MarketPosition"),
             element: "BorrowFlowLayout",
             path: null,
           },

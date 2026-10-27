@@ -1,3 +1,4 @@
+import { Option } from "effect";
 import { AnimatePresence } from "motion/react";
 import { useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
@@ -22,6 +23,7 @@ import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import { GlobalModals } from "../../../features/widget-shell/composition";
 // import { RewardsTabPage } from "../../../domain/portfolio/rewards";
 import { createYieldFlowRoutes } from "../../../features/yield-transaction-flow/composition";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import { BorrowFeatureRoute } from "../../routes/ui/borrow-feature-route";
 import {
   DashboardEarnFlowOverview,
@@ -37,19 +39,119 @@ const borrowRouteComposition = {
 };
 
 export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
-  pathname === "/";
+  Option.isSome(widgetRoutes.earn.match(pathname));
 
 /**
  * Identity of the dashboard page a pathname renders. A change replays the page
  * transition (exit, then enter); steps inside one page, such as the Earn form
  * into its Review or a position into its unstake flow, keep the same key.
  */
-const resolveDashboardPageKey = (pathname: string) => {
+const resolveDashboardPageKey = (pathname: string): string => {
   const tab = resolveDashboardRouteTab(pathname);
   if (tab !== "manage") return tab;
-  // `positions`, `positions/:integrationId/:balanceId`, or
-  // `positions/borrow/:marketId`
-  return pathname.split("/").filter(Boolean).slice(0, 3).join("/");
+  // A position's pages share its key: a market position, a yield position,
+  // or the positions list.
+  const borrowPosition = widgetRoutes.borrowPosition.matchPrefix(pathname);
+  if (Option.isSome(borrowPosition)) {
+    return widgetRoutes.borrowPosition.build("Dashboard", borrowPosition.value);
+  }
+  const position = widgetRoutes.positionDetails.matchPrefix(pathname);
+  if (Option.isSome(position)) {
+    return widgetRoutes.positionDetails.build(position.value);
+  }
+  return widgetRoutes.positions.build();
+};
+
+/** The Dashboard Layout's route tree. */
+export const createDashboardRoutes = ({
+  registerEarnFooterButton,
+}: {
+  readonly registerEarnFooterButton: boolean;
+}) => {
+  const earnPath = widgetRoutes.earn.build();
+  const positionsPath = widgetRoutes.positions.build();
+
+  return (
+    <>
+      {/* Earn Tab */}
+      <Route element={<DashboardEarnTab />}>
+        <Route element={<DashboardOverview />}>
+          <Route
+            index
+            element={
+              <EarnPageContent
+                registerFooterButton={registerEarnFooterButton}
+              />
+            }
+          />
+        </Route>
+
+        <Route element={<WalletScopeRouteGuard fallbackPath={earnPath} />}>
+          {createYieldFlowRoutes({
+            layout: <DashboardEarnFlowOverview />,
+            mount: "Earn",
+          })}
+        </Route>
+      </Route>
+
+      {/* Borrow Tab */}
+      <Route element={<BorrowFeatureRoute fallbackPath={earnPath} />}>
+        {createBorrowEntryRoutes(borrowRouteComposition)}
+      </Route>
+
+      {/* Manage Tab + Position Details */}
+      <Route path={widgetRoutes.positions.pattern}>
+        <Route index element={<ManagePage />} />
+        <Route element={<BorrowFeatureRoute fallbackPath={positionsPath} />}>
+          {createBorrowMarketPositionRoutes(borrowRouteComposition)}
+        </Route>
+        <Route element={<WalletScopeRouteGuard fallbackPath={positionsPath} />}>
+          <Route
+            path={widgetRoutes.positionDetails.pattern}
+            element={<DashboardPositionDetailsPage />}
+          >
+            <Route index element={<PositionDetailsHub />} />
+
+            <Route path={widgetRoutes.positionStake.pattern}>
+              <Route index element={<Navigate replace to=".." />} />
+              {createYieldFlowRoutes({ mount: "PositionStake" })}
+              <Route path="*" element={<Navigate replace to="../.." />} />
+            </Route>
+
+            <Route
+              path={widgetRoutes.positionSelectValidator.pattern}
+              element={<PositionDetailsHub />}
+            />
+
+            <Route path={widgetRoutes.positionUnstake.pattern}>
+              <Route index element={<Navigate replace to=".." />} />
+              {createYieldFlowRoutes({ mount: "PositionExit" })}
+              <Route path="*" element={<Navigate replace to="../.." />} />
+            </Route>
+
+            <Route path={widgetRoutes.positionPendingAction.pattern}>
+              <Route index element={<Navigate replace to=".." />} />
+              {createYieldFlowRoutes({ mount: "PositionManage" })}
+              <Route path="*" element={<Navigate replace to="../.." />} />
+            </Route>
+
+            <Route
+              path="*"
+              element={<Navigate replace relative="path" to=".." />}
+            />
+          </Route>
+        </Route>
+      </Route>
+
+      <Route path={widgetRoutes.activity.pattern} element={<ActivityTabPage />}>
+        {createActivityActionRoutes({
+          ActionScopeGuard: WalletScopeRouteGuard,
+          selectsDefaultAction: true,
+          showsBackButton: false,
+        })}
+      </Route>
+    </>
+  );
 };
 
 export const DashboardRoutes = () => {
@@ -93,85 +195,7 @@ export const DashboardRoutes = () => {
         <AnimatePresence mode="wait" onExitComplete={onExitComplete}>
           {/* The exiting Routes keeps its location, so it renders the page being left. */}
           <Routes location={location} key={routesKey}>
-            {/* Earn Tab */}
-            <Route element={<DashboardEarnTab />}>
-              <Route element={<DashboardOverview />}>
-                <Route
-                  index
-                  element={
-                    <EarnPageContent
-                      registerFooterButton={registerEarnFooterButton}
-                    />
-                  }
-                />
-              </Route>
-
-              <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-                {createYieldFlowRoutes({
-                  journey: "Enter",
-                  layout: <DashboardEarnFlowOverview />,
-                })}
-              </Route>
-            </Route>
-
-            {/* Borrow Tab */}
-            <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
-              {createBorrowEntryRoutes(borrowRouteComposition)}
-            </Route>
-
-            {/* Manage Tab + Position Details */}
-            <Route path="positions">
-              <Route index element={<ManagePage />} />
-              <Route element={<BorrowFeatureRoute fallbackPath="/positions" />}>
-                {createBorrowMarketPositionRoutes(borrowRouteComposition)}
-              </Route>
-              <Route
-                element={<WalletScopeRouteGuard fallbackPath="/positions" />}
-              >
-                <Route
-                  path=":integrationId/:balanceId"
-                  element={<DashboardPositionDetailsPage />}
-                >
-                  <Route index element={<PositionDetailsHub />} />
-
-                  <Route path="stake">
-                    <Route index element={<Navigate replace to=".." />} />
-                    {createYieldFlowRoutes({ journey: "Enter" })}
-                    <Route path="*" element={<Navigate replace to="../.." />} />
-                  </Route>
-
-                  <Route
-                    path="select-validator/:pendingActionType"
-                    element={<PositionDetailsHub />}
-                  />
-
-                  <Route path="unstake">
-                    <Route index element={<Navigate replace to=".." />} />
-                    {createYieldFlowRoutes({ journey: "Exit" })}
-                    <Route path="*" element={<Navigate replace to="../.." />} />
-                  </Route>
-
-                  <Route path="pending-action">
-                    <Route index element={<Navigate replace to=".." />} />
-                    {createYieldFlowRoutes({ journey: "Manage" })}
-                    <Route path="*" element={<Navigate replace to="../.." />} />
-                  </Route>
-
-                  <Route
-                    path="*"
-                    element={<Navigate replace relative="path" to=".." />}
-                  />
-                </Route>
-              </Route>
-            </Route>
-
-            <Route path="activity" element={<ActivityTabPage />}>
-              {createActivityActionRoutes({
-                ActionScopeGuard: WalletScopeRouteGuard,
-                selectsDefaultAction: true,
-                showsBackButton: false,
-              })}
-            </Route>
+            {createDashboardRoutes({ registerEarnFooterButton })}
           </Routes>
         </AnimatePresence>
       </DashboardShell>

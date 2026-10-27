@@ -5,7 +5,7 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { tabResourcesPrefetchAtom } from "../../../src/app/routes/state/tab-resources-prefetch";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { applicationRouterPathnameAtom } from "../../../src/app/runtime/application-router";
+import { applicationRouterLocationAtom } from "../../../src/app/runtime/application-router";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   walletConfigResultAtom,
@@ -68,7 +68,7 @@ const makeRegistry = ({
   AtomRegistry.make({
     initialValues: [
       applicationRuntimeInitInitialValue(),
-      Atom.initialValue(applicationRouterPathnameAtom, pathname),
+      Atom.initialValue(applicationRouterLocationAtom, { pathname }),
       Atom.initialValue(
         appRuntime.layer,
         Layer.mergeAll(

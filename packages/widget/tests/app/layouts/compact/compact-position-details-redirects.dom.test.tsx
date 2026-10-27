@@ -6,31 +6,42 @@ import {
   useLocation,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+import {
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../../src/services/navigation/widget-routes";
 import { render } from "../../../utils/test-utils.dom.tsx";
 
 /**
- * Redirect contract for compact position-details mounts.
+ * Redirect contract for Compact position-details mounts: relative redirects
+ * under the registry's absolute route patterns.
  * Keep in sync with `src/app/layouts/compact/compact-routes.tsx`.
  */
 const CompactPositionDetailsRedirectRoutes = () => (
   <Routes>
-    <Route path="positions/:integrationId/:balanceId">
+    <Route path={widgetRoutes.positionDetails.pattern}>
       <Route index element={<div data-testid="hub">hub</div>} />
 
-      <Route path="stake">
+      <Route path={widgetRoutes.positionStake.pattern}>
         <Route index element={<Navigate replace to=".." />} />
         <Route path="*" element={<Navigate replace to="../.." />} />
       </Route>
 
-      <Route path="unstake">
+      <Route path={widgetRoutes.positionUnstake.pattern}>
         <Route index element={<Navigate replace to=".." />} />
-        <Route path="review" element={<div data-testid="unstake-review" />} />
+        <Route
+          path={widgetYieldFlowRoutes.PositionExit.review.pattern}
+          element={<div data-testid="unstake-review" />}
+        />
         <Route path="*" element={<Navigate replace to="../.." />} />
       </Route>
 
-      <Route path="pending-action">
+      <Route path={widgetRoutes.positionPendingAction.pattern}>
         <Route index element={<Navigate replace to=".." />} />
-        <Route path="review" element={<div data-testid="pending-review" />} />
+        <Route
+          path={widgetYieldFlowRoutes.PositionManage.review.pattern}
+          element={<div data-testid="pending-review" />}
+        />
         <Route path="*" element={<Navigate replace to="../.." />} />
       </Route>
 

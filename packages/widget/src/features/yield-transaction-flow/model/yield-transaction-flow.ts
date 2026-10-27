@@ -27,7 +27,10 @@ import type {
 } from "../../../domain/earn/models";
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { exactDecimal } from "../../../domain/finance/exact";
-import type { ProviderOption } from "../../../domain/identity/identifiers";
+import type {
+  ProviderOption,
+  YieldId,
+} from "../../../domain/identity/identifiers";
 import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import {
@@ -35,10 +38,11 @@ import {
   WalletScopeKey,
 } from "../../../domain/wallet/wallet-scope";
 import {
-  toWidgetPath,
+  type WidgetFlowDestination,
   type WidgetPath,
-  type WidgetPathInput,
-} from "../../../services/navigation/widget-navigation";
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../services/navigation/widget-routes";
 import {
   ConfidentialTransactionWorkflowInput,
   makeDirectTransactionLedger,
@@ -114,13 +118,13 @@ export type YieldTransactionFlowIntake =
   | ManageYieldTransactionFlowIntake
   | YieldActionContinuationIntake;
 
-type YieldTransactionFlowDestination = Readonly<{
-  readonly completePath: WidgetPath;
-  /** Where finishing the flow returns: the tab its mount belongs to. */
-  readonly finishPath: WidgetPath;
-  readonly reviewPath: WidgetPath;
-  readonly stepsPath: WidgetPath;
-}>;
+type YieldTransactionFlowDestination = WidgetFlowDestination<
+  typeof YieldFlowNavigationState.Type
+> &
+  Readonly<{
+    /** Where finishing the flow returns: the tab its mount belongs to. */
+    readonly finishPath: WidgetPath;
+  }>;
 
 type YieldTransactionFlowMount =
   | Readonly<{
@@ -130,17 +134,17 @@ type YieldTransactionFlowMount =
   | Readonly<{
       readonly _tag: "PositionExit";
       readonly balanceId: string;
-      readonly integrationId: string;
+      readonly integrationId: YieldId;
     }>
   | Readonly<{
       readonly _tag: "PositionManage";
       readonly balanceId: string;
-      readonly integrationId: string;
+      readonly integrationId: YieldId;
     }>
   | Readonly<{
       readonly _tag: "PositionStake";
       readonly balanceId: string;
-      readonly integrationId: string;
+      readonly integrationId: YieldId;
     }>;
 
 export type YieldTransactionFlowEnterMount = Extract<
@@ -262,51 +266,28 @@ const YieldFlowNavigationState = Schema.Struct({
   executionHandoff: Schema.optional(Schema.instanceOf(YieldFlowHandoff)),
 });
 
-export const makeYieldFlowNavigationState = (
-  session: YieldFlowSession,
-  executionHandoff?: YieldFlowHandoff
-): typeof YieldFlowNavigationState.Type =>
-  executionHandoff === undefined
-    ? { yieldFlowSession: session }
-    : { yieldFlowSession: session, executionHandoff };
+export type YieldFlowMountTag = YieldTransactionFlowMount["_tag"];
 
-export const decodeYieldFlowNavigationState = (
-  state: unknown
-): Option.Option<YieldFlowSession> =>
-  Schema.decodeUnknownOption(YieldFlowNavigationState)(state).pipe(
-    Option.map((decoded) => decoded.yieldFlowSession)
-  );
-
-export const decodeYieldFlowExecutionHandoff = (
-  state: unknown
-): YieldFlowHandoff | null =>
-  Schema.decodeUnknownOption(YieldFlowNavigationState)(state).pipe(
-    Option.flatMap((decoded) =>
-      Option.fromUndefinedOr(decoded.executionHandoff)
+/**
+ * Each mount's Review, Steps, and Complete routes, carrying the Session (and
+ * on Steps and Complete, the handoff) in their navigation state.
+ */
+export const yieldFlowRoutes = {
+  Earn: widgetYieldFlowRoutes.Earn.withState(YieldFlowNavigationState),
+  PositionExit: widgetYieldFlowRoutes.PositionExit.withState(
+    YieldFlowNavigationState
+  ),
+  PositionManage: widgetYieldFlowRoutes.PositionManage.withState(
+    YieldFlowNavigationState
+  ),
+  PositionStake: widgetYieldFlowRoutes.PositionStake.withState(
+    YieldFlowNavigationState
+  ),
+  YieldActionContinuation:
+    widgetYieldFlowRoutes.YieldActionContinuation.withState(
+      YieldFlowNavigationState
     ),
-    Option.getOrNull
-  );
-
-type YieldTransactionFlowRouteBase = "" | WidgetPathInput;
-
-const positionFlowSegments = {
-  PositionExit: "unstake",
-  PositionManage: "pending-action",
-  PositionStake: "stake",
-} as const;
-
-const makeYieldTransactionFlowDestination = ({
-  finishPath,
-  routeBase,
-}: {
-  readonly finishPath: WidgetPathInput;
-  readonly routeBase: YieldTransactionFlowRouteBase;
-}): YieldTransactionFlowDestination => ({
-  completePath: toWidgetPath(`${routeBase}/complete`),
-  finishPath: toWidgetPath(finishPath),
-  reviewPath: toWidgetPath(`${routeBase}/review`),
-  stepsPath: toWidgetPath(`${routeBase}/steps`),
-});
+} as const satisfies Record<YieldFlowMountTag, unknown>;
 
 const copyYieldTransactionFlowIntake = (
   intake: YieldTransactionFlowIntake,
@@ -323,34 +304,42 @@ export const makeYieldFlowSession = (
   command: StartYieldTransactionFlow,
   walletScope: WalletScopeKey
 ): YieldFlowSession => {
-  const destination = (() => {
+  const destination = ((): YieldTransactionFlowDestination => {
     switch (command.mount._tag) {
       case "YieldActionContinuation": {
         if (command.intake._tag !== "YieldActionContinuation") {
           throw new Error("Expected Yield Action Continuation intake.");
         }
-        const routeBase = `/activity/${encodeURIComponent(
-          command.intake.action.id
-        )}` as WidgetPathInput;
         return {
-          completePath: toWidgetPath(`${routeBase}/complete`),
-          finishPath: toWidgetPath("/activity"),
-          reviewPath: toWidgetPath(routeBase),
-          stepsPath: toWidgetPath(`${routeBase}/steps`),
+          ...yieldFlowRoutes.YieldActionContinuation.at({
+            actionId: command.intake.action.id,
+          }),
+          finishPath: widgetRoutes.activity.build(),
         };
       }
       case "Earn":
-        return makeYieldTransactionFlowDestination({
-          finishPath: "/",
-          routeBase: "",
-        });
+        return {
+          ...yieldFlowRoutes.Earn.at(),
+          finishPath: widgetRoutes.earn.build(),
+        };
       case "PositionExit":
       case "PositionManage":
+        return {
+          ...yieldFlowRoutes[command.mount._tag].at({
+            balanceId: command.mount.balanceId,
+            integrationId: command.mount.integrationId,
+          }),
+          finishPath: widgetRoutes.positions.build(),
+        };
+      // Only the Dashboard Layout mounts a position's stake flow.
       case "PositionStake":
-        return makeYieldTransactionFlowDestination({
-          finishPath: "/positions",
-          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/${positionFlowSegments[command.mount._tag]}`,
-        });
+        return {
+          ...yieldFlowRoutes.PositionStake.at("Dashboard", {
+            balanceId: command.mount.balanceId,
+            integrationId: command.mount.integrationId,
+          }),
+          finishPath: widgetRoutes.positions.build(),
+        };
     }
   })();
 
@@ -370,30 +359,19 @@ export const makeYieldActionContinuationSession = (
     intake.walletScope
   );
 
-const removeOptionalTrailingSlash = (pathname: string): string =>
-  pathname.length > 1 && pathname.endsWith("/")
-    ? pathname.slice(0, -1)
-    : pathname;
-
-const yieldFlowRouteGroups = [
-  /^()\/(?:review|steps|complete)$/,
-  /^(\/positions\/[^/]+\/[^/]+\/(?:stake|unstake|pending-action))\/(?:review|steps|complete)$/,
-  /^(\/activity\/[^/]+)(?:\/steps|\/complete)?$/,
-];
-
 /**
  * The flow mount a pathname belongs to: Review, Steps, and Complete of one
  * mount share it, so a layout can keep that subtree (and its Session) mounted
  * across the flow's own navigation. Null outside Yield flow routes.
  */
-export const getYieldFlowRouteGroup = (pathname: string): string | null => {
-  const normalized = removeOptionalTrailingSlash(pathname);
-  for (const group of yieldFlowRouteGroups) {
-    const match = group.exec(normalized);
-    if (match) return match[1] || "/";
-  }
-  return null;
-};
+export const getYieldFlowRouteGroup = (pathname: string): string | null =>
+  Option.getOrNull(
+    Option.firstSomeOf(
+      Object.values(widgetYieldFlowRoutes).map((routes) =>
+        routes.mountKey(pathname)
+      )
+    )
+  );
 
 type YieldTransactionFlowReviewPricingInput = {
   readonly token: Token;

@@ -6,7 +6,10 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletAddress,
+  YieldId,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
@@ -14,15 +17,16 @@ import {
   startYieldTransactionFlowAtom,
 } from "../../../src/features/yield-transaction-flow/index";
 import {
-  decodeYieldFlowNavigationState,
   type NavigatingYieldTransactionFlowStart,
   type YieldTransactionFlowIntake,
+  yieldFlowRoutes,
 } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import {
-  makeWidgetNavigation,
-  type WidgetNavigationOptions,
-  type WidgetPath,
-} from "../../../src/services/navigation/widget-navigation";
+  type WidgetNavigationTarget,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
@@ -111,12 +115,12 @@ const makeManageIntake = (): Intake<"Manage"> => {
 };
 
 const makeRegistry = (
-  push: (path: WidgetPath, options?: WidgetNavigationOptions) => void,
+  push: (to: WidgetNavigationTarget) => void,
   currentWalletScope: WalletScopeKey = walletScope
 ) => {
   const navigation = makeWidgetNavigation({
     back: () => Effect.void,
-    push: (path, options) => Effect.sync(() => push(path, options)),
+    push: (to) => Effect.sync(() => push(to)),
     replace: () => Effect.void,
   });
   const walletState = {
@@ -190,7 +194,7 @@ const startCases: ReadonlyArray<
       mount: {
         _tag: "PositionStake",
         balanceId: "balance",
-        integrationId: "yield",
+        integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     }),
     name: "position Stake",
@@ -205,7 +209,7 @@ const startCases: ReadonlyArray<
       mount: {
         _tag: "PositionExit",
         balanceId: "balance",
-        integrationId: "yield",
+        integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     }),
     name: "position Exit",
@@ -220,7 +224,7 @@ const startCases: ReadonlyArray<
       mount: {
         _tag: "PositionManage",
         balanceId: "balance",
-        integrationId: "yield",
+        integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     }),
     name: "position Manage",
@@ -258,8 +262,7 @@ describe("Yield Transaction Flow interface", () => {
       reviewPath,
       stepsPath,
     }) => {
-      const push =
-        vi.fn<(path: WidgetPath, options?: WidgetNavigationOptions) => void>();
+      const push = vi.fn<(to: WidgetNavigationTarget) => void>();
       const registry = makeRegistry(push);
       const command = makeCommand();
 
@@ -270,14 +273,17 @@ describe("Yield Transaction Flow interface", () => {
           .poll(() => readStartOutcome(registry)?._tag)
           .toBe("Started");
         expect(push).toHaveBeenCalledOnce();
-        const [path, options] = push.mock.calls[0] ?? [];
-        expect(path).toBe(reviewPath);
+        const [to] = push.mock.calls[0] ?? [];
+        if (to === undefined) throw new Error("Expected a Review navigation");
+        expect(widgetTargetPath(to)).toBe(reviewPath);
         const session = Option.getOrThrow(
-          decodeYieldFlowNavigationState(options?.state)
+          yieldFlowRoutes.Earn.state(widgetTargetState(to)).pipe(
+            Option.map((state) => state.yieldFlowSession)
+          )
         );
         expect(session.intake).toEqual(command.intake);
         expect(session.mount).toEqual(command.mount);
-        expect(session.destination).toEqual({
+        expect(session.destination).toMatchObject({
           completePath,
           finishPath,
           reviewPath,
@@ -325,14 +331,19 @@ describe("Yield Flow route group", () => {
     ["/activity/action-1/steps", "/activity/action-1"],
     ["/activity/action-1/complete", "/activity/action-1"],
     ["/activity/action-2/steps", "/activity/action-2"],
-    ["/", null],
-    ["/positions", null],
-    ["/positions/yield/balance", null],
-    ["/activity", null],
-    ["/activity/", null],
-    ["/borrow/review", null],
   ] as const)("groups %s as %s", (pathname, group) => {
     expect(getYieldFlowRouteGroup(pathname)).toBe(group);
+  });
+
+  it.each([
+    "/",
+    "/positions",
+    "/positions/yield/balance",
+    "/activity",
+    "/activity/",
+    "/borrow/review",
+  ])("does not group %s", (pathname) => {
+    expect(getYieldFlowRouteGroup(pathname)).toBeNull();
   });
 
   it("shares a group across one mount's flow routes and separates other mounts", () => {
@@ -344,6 +355,7 @@ describe("Yield Flow route group", () => {
       "/positions/yield/balance/unstake",
       "/positions/yield/balance/pending-action",
       "/positions/yield/other/stake",
+      "/positions/yield/other/pending-action",
     ];
 
     for (const base of mounts) {
@@ -354,5 +366,8 @@ describe("Yield Flow route group", () => {
     expect(groupsOf(mounts.map((base) => `${base}/review`)).size).toBe(
       mounts.length
     );
+    expect(
+      groupsOf(["/activity/action-1/steps", "/activity/action-2/steps"]).size
+    ).toBe(2);
   });
 });

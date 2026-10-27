@@ -3,7 +3,6 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { EarnBalance } from "../../../src/domain/earn/models";
 import {
-  getPositionDetailsHubPath,
   positionDetailsExitHasContent,
   positionDetailsPendingHasContent,
   resolvePositionDetailsPageLayout,
@@ -107,14 +106,5 @@ describe("position details action content", () => {
         positionLost: false,
       })
     ).toBe("InfoOnly");
-  });
-
-  it("builds the position hub path", () => {
-    expect(
-      getPositionDetailsHubPath({
-        balanceId: "balance-1",
-        integrationId: "yield-1",
-      })
-    ).toBe("/positions/yield-1/balance-1");
   });
 });

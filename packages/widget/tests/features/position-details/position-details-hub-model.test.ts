@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  getPositionDetailsHubPath,
   positionDetailsExitHasContent,
   positionDetailsHubHasContent,
   resolvePositionDetailsActionCapabilities,
@@ -11,15 +10,6 @@ import {
 import { yieldApiYieldFixture } from "../../fixtures";
 
 describe("position details hub model", () => {
-  it("builds the bare position details hub path", () => {
-    expect(
-      getPositionDetailsHubPath({
-        balanceId: "balance-1",
-        integrationId: "yield-1",
-      })
-    ).toBe("/positions/yield-1/balance-1");
-  });
-
   it("defaults to unstake when exit is supported, else stake", () => {
     expect(
       resolvePositionDetailsActionMode({ canStake: true, canUnstake: true })

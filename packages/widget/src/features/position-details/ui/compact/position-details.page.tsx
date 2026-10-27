@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Navigate } from "react-router";
 import { isCancellingBalance } from "../../../../domain/earn/confidential";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatRewardRatePercent,
   formatTokenAmount,
@@ -14,6 +14,7 @@ import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
@@ -59,7 +60,7 @@ const PositionDetails = () => {
   const { locale } = useWidgetPresentation();
 
   if (!isLoading && positionLost) {
-    return <Navigate replace to="/positions" />;
+    return <WidgetNavigate replace to={widgetRoutes.positions.build()} />;
   }
 
   const balanceRows = positionBalancesByTypeValue

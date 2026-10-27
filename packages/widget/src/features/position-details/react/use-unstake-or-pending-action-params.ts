@@ -1,25 +1,19 @@
-import { Option, Schema } from "effect";
-import type { YieldPendingActionType } from "../../../domain/action/pending-action";
-import { YieldId } from "../../../domain/identity/identifiers";
-import { usePendingActionSelectValidatorMatch } from "./use-pending-action-select-validator-match";
-import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import {
+  useWidgetRouteMatch,
+  useWidgetRoutePrefixMatch,
+} from "../../navigation/index";
 
 export const useUnstakeOrPendingActionParams = () => {
-  const unstakeOrPendingActionFlowMatch = useUnstakeOrPendingActionMatch();
-  const pendingActionSelectValidatorMatch =
-    usePendingActionSelectValidatorMatch();
+  const positionMatch = useWidgetRoutePrefixMatch(widgetRoutes.positionDetails);
+  const pendingActionSelectValidatorMatch = useWidgetRouteMatch(
+    widgetRoutes.positionSelectValidator
+  );
 
-  const { balanceId, integrationId: rawIntegrationId } =
-    unstakeOrPendingActionFlowMatch?.params ??
-    pendingActionSelectValidatorMatch?.params ??
-    {};
-
-  const integrationId = rawIntegrationId
-    ? Schema.decodeOption(YieldId)(rawIntegrationId).pipe(Option.getOrUndefined)
-    : undefined;
-
-  const pendingActionType = pendingActionSelectValidatorMatch?.params
-    .pendingActionType as YieldPendingActionType | undefined;
+  const balanceId = positionMatch?.balanceId;
+  const integrationId = positionMatch?.integrationId;
+  const pendingActionType =
+    pendingActionSelectValidatorMatch?.pendingActionType;
 
   return {
     balanceId: balanceId ?? null,

@@ -17,7 +17,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
+import { getBorrowTransactionFlowDestination } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
@@ -34,7 +34,7 @@ export const BorrowStepsPage = () => {
   const executionFlow = useBorrowTransactionFlowExecution();
   const back = useAtomSet(executionFlow.leaveAtom);
   const leaveConfirmation = useExecutionLeaveConfirmation(
-    getBorrowTransactionFlowRoutes(flow.intake.entry).completePath
+    getBorrowTransactionFlowDestination(flow.intake.entry).completePath
   );
   const leave = () => leaveConfirmation.confirm(() => back(undefined));
   const execution = useBorrowExecution();

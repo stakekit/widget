@@ -1,20 +1,27 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Layer, Schema, Stream } from "effect";
+import { Effect, Layer, Option, Schema, Stream } from "effect";
 import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,
 } from "../../../src/app/runtime/deep-link-coordinator";
 import { EarnBalance } from "../../../src/domain/earn/models";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletAddress,
+  YieldId,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { findPendingActionDeepLinkTarget } from "../../../src/features/earn/model/pending-action-deep-link";
-import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   type WidgetNavigationCommand,
   WidgetNavigationError,
   type WidgetNavigationOptions,
-  type WidgetPath,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  type WidgetPath,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
@@ -32,6 +39,7 @@ const otherAddress = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000002"
 );
 const scope = new WalletScopeKey({ address, network: "ethereum" });
+const yieldId = Schema.decodeSync(YieldId)("yield-1");
 
 const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
   maintenance: false,
@@ -42,7 +50,7 @@ const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
       mount: {
         _tag: "PositionManage",
         balanceId: "balance-1",
-        integrationId: "yield-1",
+        integrationId: yieldId,
       },
     },
     intent: {
@@ -89,7 +97,9 @@ const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
   });
   const navigation = yield* makeTestNavigation({
     execute: (command) =>
-      command._tag === "Push" ? navigate(command.path, command) : Effect.void,
+      command._tag === "Push"
+        ? navigate(widgetTargetPath(command.to), command)
+        : Effect.void,
   });
 
   return {
@@ -102,19 +112,25 @@ const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
   } as const;
 });
 
-/** The navigation state Start carries to Review. */
-type YieldFlowNavigationState = Readonly<{
-  readonly yieldFlowSession?: YieldFlowSession;
-}>;
-
 /** The Flow Sessions Start navigated to Review with. */
 const startedSessions = (commands: ReadonlyArray<WidgetNavigationCommand>) =>
-  commands.flatMap((command) => {
-    const state = command.state as YieldFlowNavigationState | undefined;
-    return command._tag === "Push" && state?.yieldFlowSession
-      ? [{ path: command.path, session: state.yieldFlowSession }]
-      : [];
-  });
+  commands.flatMap((command) =>
+    command._tag === "Push"
+      ? yieldFlowRoutes.PositionManage.state(
+          widgetTargetState(command.to)
+        ).pipe(
+          Option.match({
+            onNone: () => [],
+            onSome: ({ yieldFlowSession }) => [
+              {
+                path: widgetTargetPath(command.to),
+                session: yieldFlowSession,
+              },
+            ],
+          })
+        )
+      : []
+  );
 
 const runObservations = Effect.fn("runObservations")(function* (
   observations: ReadonlyArray<DeepLinkRouteObservation>,
@@ -238,7 +254,7 @@ describe("DeepLinkCoordinator", () => {
         const position = {
           maintenance: false,
           pendingAction: null,
-          position: { balanceId: "balance-1", yieldId: "yield-1" },
+          position: { balanceId: "balance-1", yieldId },
           ready: true,
         } satisfies DeepLinkRouteObservation;
 
@@ -270,7 +286,7 @@ describe("DeepLinkCoordinator", () => {
           {
             maintenance: false,
             pendingAction: null,
-            position: { balanceId: "balance-1", yieldId: "yield-1" },
+            position: { balanceId: "balance-1", yieldId },
             ready: true,
           },
         ],

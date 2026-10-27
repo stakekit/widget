@@ -1,7 +1,10 @@
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import { useRef, useState } from "react";
 import { type Blocker, useBlocker } from "react-router";
-import type { WidgetPath } from "../../../services/navigation/widget-navigation";
+import {
+  isWidgetPath,
+  type WidgetPath,
+} from "../../../services/navigation/widget-routes";
 import {
   beforeUnloadLeaveGuardAtom,
   leaveGuardedAtom,
@@ -73,7 +76,7 @@ export const useExecutionLeaveConfirmation = (completePath: WidgetPath) => {
       guarded &&
       !leaving.current &&
       nextLocation.pathname !== currentLocation.pathname &&
-      nextLocation.pathname !== completePath
+      !isWidgetPath(nextLocation.pathname, completePath)
   );
   // Each blocked attempt is a new Blocker; the same history entry is not.
   const heldNavigation = blocker.state === "blocked" ? blocker : null;

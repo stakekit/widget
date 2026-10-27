@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../../domain/borrow/positions/market-position";
+import { widgetRoutes } from "../../../../../../services/navigation/widget-routes";
 import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../shared/ui/primitives/box";
-import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
+import { WidgetLink } from "../../../../../navigation/views";
 import type { UnifiedPositionItem } from "../../../../state/read-models/positions";
 import { EarnPositionListItem } from "../../../components/earn-position-list-item";
 import {
@@ -29,7 +30,11 @@ const BorrowMarketPositionListItem = ({
   const model = getBorrowMarketPositionListItemModel({ locale, position, t });
 
   return (
-    <SKLink relative="path" to={`../positions/borrow/${position.id}`}>
+    <WidgetLink
+      to={widgetRoutes.borrowPosition.build("Dashboard", {
+        marketId: position.id,
+      })}
+    >
       <Box py="1">
         <ListItem className={listItem}>
           <Box
@@ -85,7 +90,7 @@ const BorrowMarketPositionListItem = ({
           </Box>
         </ListItem>
       </Box>
-    </SKLink>
+    </WidgetLink>
   );
 };
 

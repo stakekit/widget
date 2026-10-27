@@ -19,7 +19,7 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowIntake,
-  makeBorrowFlowNavigationState,
+  getBorrowTransactionFlowDestination,
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import { emptyBorrowExecutionView } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";
 import { makeBorrowFlowExecutionPage } from "../../../src/features/borrow-transaction-flow/state/execution-page";
@@ -30,7 +30,7 @@ import {
 } from "../../../src/features/borrow-transaction-flow/state/review-page";
 import { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
-import { toWidgetPath } from "../../../src/services/navigation/widget-navigation";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
 import type { TransactionWorkflowCommand } from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../../src/services/transaction-workflow/transaction-workflow-service";
@@ -202,8 +202,10 @@ describe("Borrow flow Review page", () => {
         expect(yield* navigation.commands).toEqual([
           {
             _tag: "Push",
-            path: toWidgetPath("/borrow/steps"),
-            state: makeBorrowFlowNavigationState(handle, action.id),
+            to: getBorrowTransactionFlowDestination(intake.entry).steps({
+              borrowFlowSession: handle,
+              executionActionId: action.id,
+            }),
           },
         ]);
       })
@@ -311,7 +313,7 @@ describe("Borrow flow Review page", () => {
       });
 
       expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", path: toWidgetPath("/borrow") },
+        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
       ]);
     })
   );
@@ -401,7 +403,7 @@ describe("Borrow flow Execution page", () => {
       });
 
       expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", path: toWidgetPath("/borrow") },
+        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
       ]);
     })
   );

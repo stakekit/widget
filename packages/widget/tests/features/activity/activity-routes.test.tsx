@@ -2,6 +2,10 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { createActivityActionRoutes } from "../../../src/features/activity/composition";
+import {
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../src/services/navigation/widget-routes";
 
 vi.mock("../../../src/features/activity/react/activity-action-route", () => ({
   ActivityActionRoute: function ActivityActionRoute() {
@@ -75,7 +79,7 @@ const borrowActionIdRoute = (actionRoute: string): RouteDescription => ({
   ],
   element: actionRoute,
   index: false,
-  path: "borrow/:actionId",
+  path: widgetRoutes.activityBorrowAction.pattern,
 });
 
 const actionIdRoute = (actionRoute: string): RouteDescription => ({
@@ -92,13 +96,13 @@ const actionIdRoute = (actionRoute: string): RouteDescription => ({
           children: [],
           element: "YieldActionContinuationStepsPage",
           index: false,
-          path: "steps",
+          path: widgetYieldFlowRoutes.YieldActionContinuation.steps.pattern,
         },
         {
           children: [],
           element: "YieldActionContinuationCompletePage",
           index: false,
-          path: "complete",
+          path: widgetYieldFlowRoutes.YieldActionContinuation.complete.pattern,
         },
       ],
       element: "YieldActionContinuationExecution",
@@ -108,7 +112,7 @@ const actionIdRoute = (actionRoute: string): RouteDescription => ({
   ],
   element: actionRoute,
   index: false,
-  path: ":actionId",
+  path: widgetRoutes.activityAction.pattern,
 });
 
 const ActionScopeGuard = function ActionScopeGuard() {

@@ -33,7 +33,7 @@ import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../../src/features/wallet/index";
-import { decodeYieldFlowNavigationState } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -45,6 +45,10 @@ import {
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
@@ -82,11 +86,18 @@ const navigationChannel: {
 } = { navigate: null };
 const navigation = makeWidgetNavigation({
   back: () => Effect.sync(() => navigationChannel.navigate?.(-1)),
-  push: (path, options) =>
-    Effect.sync(() => navigationChannel.navigate?.(path, options)),
-  replace: (path, options) =>
+  push: (to) =>
     Effect.sync(() =>
-      navigationChannel.navigate?.(path, { ...options, replace: true })
+      navigationChannel.navigate?.(widgetTargetPath(to), {
+        state: widgetTargetState(to),
+      })
+    ),
+  replace: (to) =>
+    Effect.sync(() =>
+      navigationChannel.navigate?.(widgetTargetPath(to), {
+        replace: true,
+        state: widgetTargetState(to),
+      })
     ),
 });
 const makeYieldFlowLayer = () =>
@@ -135,7 +146,9 @@ const PositionEntry = () => {
 };
 
 const ReviewGuard = () => {
-  const session = decodeYieldFlowNavigationState(useLocation().state);
+  const session = yieldFlowRoutes.PositionStake.state(useLocation().state).pipe(
+    Option.map((state) => state.yieldFlowSession)
+  );
   const carriesPositionStake = Option.exists(
     session,
     ({ intake, mount }) =>

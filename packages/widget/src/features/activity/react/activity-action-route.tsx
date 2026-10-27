@@ -1,7 +1,16 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { createContext, useContext, useState } from "react";
-import { Navigate, Outlet, useMatch, useParams } from "react-router";
+import { Outlet } from "react-router";
+import {
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../services/navigation/widget-routes";
 import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
+import {
+  useWidgetRouteMatch,
+  useWidgetRoutePrefixMatch,
+} from "../../navigation/index";
+import { WidgetNavigate } from "../../navigation/views";
 import { walletScopeAtom } from "../../wallet/index";
 import type { YieldSummaryProvider } from "../../yield-summary/index";
 import { YieldActionContinuationSessionRoute } from "../../yield-transaction-flow/views";
@@ -48,9 +57,19 @@ export const ActivityActionRoute = ({
   readonly showsBackButton: boolean;
   readonly source: ActivitySelectionTarget["source"];
 }) => {
-  const { actionId: actionIdParam } = useParams();
-  const stepsMatch = useMatch("/activity/:actionId/steps");
-  const completeMatch = useMatch("/activity/:actionId/complete");
+  const borrowActionId = useWidgetRoutePrefixMatch(
+    widgetRoutes.activityBorrowAction
+  )?.actionId;
+  const yieldActionId = useWidgetRoutePrefixMatch(
+    widgetRoutes.activityAction
+  )?.actionId;
+  const actionIdParam = source === "borrow" ? borrowActionId : yieldActionId;
+  const stepsMatch = useWidgetRouteMatch(
+    widgetYieldFlowRoutes.YieldActionContinuation.steps
+  );
+  const completeMatch = useWidgetRouteMatch(
+    widgetYieldFlowRoutes.YieldActionContinuation.complete
+  );
   const executionMatch = stepsMatch ?? completeMatch;
   const scope = useAtomValue(walletScopeAtom);
   const parsed = parseActivityRouteIntent({
@@ -61,7 +80,7 @@ export const ActivityActionRoute = ({
 
   if (!scope) return <ActivityDetailsUnavailable />;
   if (parsed.status === "missing" || parsed.status === "invalid") {
-    return <Navigate replace to="/activity" />;
+    return <WidgetNavigate replace to={widgetRoutes.activity.build()} />;
   }
 
   return (
@@ -102,7 +121,7 @@ const BoundActivityActionRoute = ({
   if (result.status === "unavailable") {
     return resolveUnavailableActivitySelection(selectionKey.intent) ===
       "clear-route" ? (
-      <Navigate replace to="/activity" />
+      <WidgetNavigate replace to={widgetRoutes.activity.build()} />
     ) : null;
   }
 
@@ -112,7 +131,7 @@ const BoundActivityActionRoute = ({
   // Only the explicit action route spans Review, Steps, and Complete, so it is
   // the one that owns a continuation.
   if (result.canContinue && selectionKey.intent._tag === "default") {
-    return <Navigate replace to={reviewPath} />;
+    return <WidgetNavigate replace to={reviewPath} />;
   }
   // A continuation started on this action's Review stays mounted through its
   // execution; any other action drops it.
@@ -124,7 +143,7 @@ const BoundActivityActionRoute = ({
   }
   const continuationReady = continuedActionId === actionId;
   if (selectionKey.surface === "execution" && !continuationReady) {
-    return <Navigate replace to={reviewPath} />;
+    return <WidgetNavigate replace to={reviewPath} />;
   }
 
   return (

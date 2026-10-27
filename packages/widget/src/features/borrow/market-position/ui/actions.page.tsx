@@ -1,8 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import {
+  useWidgetNavigate,
+  useWidgetRouteMatch,
+} from "../../../navigation/index";
 import {
   type BorrowPositionAction,
   isBorrowCollateralToggleAction,
@@ -13,7 +17,8 @@ import * as styles from "./styles.css";
 
 export const BorrowPositionActionsPage = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigation = useWidgetNavigate();
+  const marketId = useWidgetRouteMatch(widgetRoutes.borrowPosition)?.marketId;
   const {
     actions: positionActions,
     model,
@@ -23,8 +28,15 @@ export const BorrowPositionActionsPage = () => {
     (action) => !isBorrowCollateralToggleAction(action)
   );
 
-  const onActionSelect = (action: BorrowPositionAction) =>
-    navigate(`action/${action.id}`);
+  const onActionSelect = (action: BorrowPositionAction) => {
+    if (!marketId) return;
+    navigation.push(
+      widgetRoutes.borrowPositionAction.build("Dashboard", {
+        actionId: action.id,
+        marketId,
+      })
+    );
+  };
 
   return (
     <>

@@ -1,8 +1,15 @@
 import { motion } from "motion/react";
-import { useLocation, useNavigate } from "react-router";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../../../../services/navigation/widget-routes";
 import { Divider } from "../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { useMountAnimation } from "../../../../../mount-animation/index";
+import {
+  useWidgetNavigate,
+  useWidgetRoutePrefixMatch,
+} from "../../../../../navigation/index";
 import { useTrackEvent } from "../../../../../tracking/index";
 import { useWidgetConfig } from "../../../../../widget-configuration/index";
 import { divider } from "../styles.css";
@@ -10,10 +17,10 @@ import { Tab } from "./tab";
 
 type TabsList = "earn" | "positions" | "activity";
 
-const TABS_MAP = {
-  earn: "/",
-  positions: "/positions",
-  activity: "/activity",
+const TABS_MAP: Record<TabsList, WidgetPath> = {
+  earn: widgetRoutes.earn.build(),
+  positions: widgetRoutes.positions.build(),
+  activity: widgetRoutes.activity.build(),
 };
 
 type TabsProps = {
@@ -22,12 +29,13 @@ type TabsProps = {
 
 const Tabs = ({ pendingActionsCount }: TabsProps) => {
   const trackEvent = useTrackEvent();
-  const navigate = useNavigate();
+  const navigation = useWidgetNavigate();
 
-  const location = useLocation();
+  const positionsMatch = useWidgetRoutePrefixMatch(widgetRoutes.positions);
+  const activityMatch = useWidgetRoutePrefixMatch(widgetRoutes.activity);
   const getSelectedTab = (): TabsList => {
-    if (location.pathname.startsWith("/positions")) return "positions";
-    if (location.pathname.startsWith("/activity")) return "activity";
+    if (positionsMatch) return "positions";
+    if (activityMatch) return "activity";
     return "earn";
   };
   const selectedTab = getSelectedTab();
@@ -37,7 +45,7 @@ const Tabs = ({ pendingActionsCount }: TabsProps) => {
 
     trackEvent("tabClicked", { selected });
 
-    navigate(TABS_MAP[selected]);
+    navigation.push(TABS_MAP[selected]);
   };
 
   return (

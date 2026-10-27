@@ -3,8 +3,8 @@ import clsx from "clsx";
 import { capitalize, toLowerCase } from "effect/String";
 import { type ReactNode, useId } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
 import {
@@ -23,6 +23,7 @@ import { ClockClockWiseIcon } from "../../../../shared/ui/primitives/icons/clock
 import { ExternalLinkIcon } from "../../../../shared/ui/primitives/icons/external-link";
 import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useWidgetNavigate } from "../../../navigation/index";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
 import { PageCtaButton } from "../../../widget-shell/views";
 import {
@@ -317,7 +318,7 @@ const Receipt = ({
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const { showsBackButton } = useActivityActionRoute();
-  const navigate = useNavigate();
+  const navigation = useWidgetNavigate();
   const title = useActivityActionTitle(view.title);
   const network = capitalizeFirstLetters(view.network.replaceAll("-", " "));
 
@@ -333,7 +334,7 @@ const Receipt = ({
           as="button"
           aria-label={t("activity.details.back")}
           className={styles.back}
-          onClick={() => navigate("/activity")}
+          onClick={() => navigation.push(widgetRoutes.activity.build())}
         >
           <CaretLeftIcon />
         </Box>

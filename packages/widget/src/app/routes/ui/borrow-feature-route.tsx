@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
-import { Navigate, Outlet } from "react-router";
+import { Outlet } from "react-router";
+import { WidgetNavigate } from "../../../features/navigation/views";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
+import type { WidgetPath } from "../../../services/navigation/widget-routes";
 
 export const BorrowFeatureRoute = ({
   fallbackPath,
 }: {
-  readonly fallbackPath: string;
+  readonly fallbackPath: WidgetPath;
 }): ReactNode =>
   useWidgetConfig("borrowEnabled") ? (
     <Outlet />
   ) : (
-    <Navigate to={fallbackPath} replace />
+    <WidgetNavigate replace to={fallbackPath} />
   );

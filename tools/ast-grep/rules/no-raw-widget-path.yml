@@ -1,0 +1,123 @@
+id: no-raw-widget-path
+language: Tsx
+severity: error
+message: Build Widget paths, route patterns, and route matchers from the route registry (`services/navigation/widget-routes.ts`) instead of string literals. Only relative `..` redirects and `*` catch-alls may stay literal.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/src/services/navigation/widget-routes.ts
+utils:
+  raw-path:
+    any:
+      - kind: template_string
+      - kind: string
+        not:
+          regex: ^["'](?:\.\.(?:/\.\.)*|\*)["']$
+  absolute-path-literal:
+    any:
+      - kind: template_string
+        regex: ^`/
+      - kind: string
+        regex: ^["']/
+  raw-path-value:
+    any:
+      - matches: raw-path
+      - kind: jsx_expression
+        has:
+          matches: raw-path
+  first-argument-raw-path:
+    kind: arguments
+    has:
+      nthChild: 1
+      matches: raw-path
+  router-element:
+    any:
+      - kind: jsx_opening_element
+      - kind: jsx_self_closing_element
+rule:
+  any:
+    # navigate("/…"), router.navigate("/…")
+    - kind: call_expression
+      all:
+        - has:
+            field: function
+            any:
+              - kind: identifier
+                regex: ^navigate$
+              - kind: member_expression
+                has:
+                  field: property
+                  regex: ^navigate$
+        - has:
+            field: arguments
+            matches: first-argument-raw-path
+    # useMatch("…"), matchPath("…")
+    - kind: call_expression
+      all:
+        - has:
+            field: function
+            regex: ^(?:useMatch|matchPath)$
+        - has:
+            field: arguments
+            matches: first-argument-raw-path
+    # <Navigate to="…">, <Link to="…">
+    - kind: jsx_attribute
+      all:
+        - has:
+            kind: property_identifier
+            regex: ^to$
+        - has:
+            matches: raw-path-value
+        - inside:
+            matches: router-element
+            has:
+              field: name
+              regex: ^(?:Navigate|Link|NavLink|SKLink|WidgetNavigate|WidgetLink)$
+    # <Route path="…">
+    - kind: jsx_attribute
+      all:
+        - has:
+            kind: property_identifier
+            regex: ^path$
+        - has:
+            matches: raw-path-value
+        - inside:
+            matches: router-element
+            has:
+              field: name
+              regex: ^Route$
+    # pathname.startsWith("/…"), startsWith("/…")
+    - kind: call_expression
+      all:
+        - has:
+            field: function
+            any:
+              - kind: identifier
+                regex: ^startsWith$
+              - kind: member_expression
+                has:
+                  field: property
+                  regex: ^startsWith$
+        - has:
+            field: arguments
+            has:
+              nthChild: 1
+              matches: absolute-path-literal
+    # pathname === "/…"
+    - kind: binary_expression
+      all:
+        - has:
+            field: operator
+            regex: ^[!=]==?$
+        - has:
+            matches: absolute-path-literal
+        - has:
+            any:
+              - kind: identifier
+                regex: "[Pp]athname$"
+              - kind: member_expression
+                has:
+                  field: property
+                  regex: ^pathname$

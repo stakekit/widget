@@ -11,11 +11,13 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletAddress,
+  YieldId,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
-  makeYieldFlowNavigationState,
   makeYieldFlowSession,
   type YieldFlowSession,
 } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
@@ -80,7 +82,7 @@ const makeExitSession = () => {
       mount: {
         _tag: "PositionExit",
         balanceId: "balance",
-        integrationId: "yield",
+        integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     },
     walletScope
@@ -140,7 +142,7 @@ const renderFlow = async (
             }}
           />
           <Routes>
-            <Route element={<YieldFlowRoute expected="Enter" />}>
+            <Route element={<YieldFlowRoute expected="Enter" mount="Earn" />}>
               <Route
                 path="/review"
                 element={<SessionPage name="Review" sessions={sessions} />}
@@ -178,7 +180,7 @@ describe("Yield Flow route", () => {
   it("redirects home when the navigated Session has another intake variant", async () => {
     const flow = await renderFlow({
       pathname: "/review",
-      state: makeYieldFlowNavigationState(makeExitSession()),
+      state: { yieldFlowSession: makeExitSession() },
     });
 
     await expect.poll(flow.location).toBe("/");
@@ -189,7 +191,7 @@ describe("Yield Flow route", () => {
     const flow = await renderFlow(
       {
         pathname: "/review",
-        state: makeYieldFlowNavigationState(makeEnterSession()),
+        state: { yieldFlowSession: makeEnterSession() },
       },
       otherWalletScope
     );
@@ -202,7 +204,7 @@ describe("Yield Flow route", () => {
     const session = makeEnterSession();
     const flow = await renderFlow({
       pathname: "/review",
-      state: makeYieldFlowNavigationState(session),
+      state: { yieldFlowSession: session },
     });
     await expect.poll(flow.page).toBe("Review:1");
 
@@ -227,11 +229,11 @@ describe("Yield Flow route", () => {
     const second = makeEnterSession();
     const flow = await renderFlow({
       pathname: "/review",
-      state: makeYieldFlowNavigationState(first),
+      state: { yieldFlowSession: first },
     });
     await expect.poll(flow.page).toBe("Review:1");
 
-    await flow.navigate("/review", makeYieldFlowNavigationState(second));
+    await flow.navigate("/review", { yieldFlowSession: second });
     await expect.poll(flow.page).toBe("Review:2");
 
     await flow.navigate("/steps");
