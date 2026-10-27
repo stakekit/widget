@@ -18,6 +18,15 @@ import { DashboardTab } from "./tab";
 
 type RouteTab = "earn" | "borrow" | "manage" | "activity";
 
+/** The route tab a dashboard pathname belongs to. */
+export const resolveDashboardRouteTab = (pathname: string): RouteTab =>
+  Match.value(pathname).pipe(
+    Match.when(startsWith("/activity"), () => "activity" as const),
+    Match.when(startsWith("/borrow"), () => "borrow" as const),
+    Match.when(startsWith("/positions"), () => "manage" as const),
+    Match.orElse(() => "earn" as const)
+  );
+
 const tabsMap: Record<RouteTab, string> = {
   activity: "/activity",
   borrow: "/borrow",
@@ -42,12 +51,7 @@ export const DashboardTabs = ({
     pendingYieldCategory ?? yieldSelection.selectedCategory;
   const location = useLocation();
 
-  const selectedTab = Match.value(location.pathname).pipe(
-    Match.when(startsWith("/activity"), () => "activity" as const),
-    Match.when(startsWith("/borrow"), () => "borrow" as const),
-    Match.when(startsWith("/positions"), () => "manage" as const),
-    Match.orElse(() => "earn" as const)
-  );
+  const selectedTab = resolveDashboardRouteTab(location.pathname);
 
   const onRouteTabPress = (selected: RouteTab) => {
     if (selectedTab === selected) return;
