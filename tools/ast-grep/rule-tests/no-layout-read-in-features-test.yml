@@ -1,0 +1,21 @@
+id: no-layout-read-in-features
+valid:
+  - 'const variant = useWidgetConfig("variant")'
+  - 'const { earnPresentation } = useWidgetConfig("hostProfile")'
+  - 'const shown = useMountAnimation().state.layout'
+  - 'const { state } = useMountAnimation(); const ready = state.layout'
+  - 'const grouping = get(widgetConfigAtom).yieldGrouping'
+  - 'const { locale } = useWidgetPresentation()'
+  - 'const element = <motion.div layout="position" />'
+  - 'const { layout } = props'
+invalid:
+  - 'const layout = useWidgetConfig("layout")'
+  - "const layout = useWidgetConfig('layout')"
+  - 'const dashboard = config.layout === "Dashboard"'
+  - 'const layout = get(widgetConfigAtom).layout'
+  - 'const layout = context(widgetConfigAtom).layout'
+  - 'const layout = registry.get(widgetConfigAtom).layout'
+  - 'const { layout } = get(widgetConfigAtom)'
+  - 'const { layout: current } = context.get(widgetConfigAtom)'
+  - 'const attribute = useWidgetPresentation().layout'
+  - 'const { layout } = useWidgetPresentation()'

@@ -145,7 +145,7 @@ export const resolveEarnView = ({
     blockingFailure: category.blockingFailure,
     empty: {
       categories:
-        entry.dashboardVariant &&
+        entry.categoryGrouping &&
         !category.loading &&
         !category.blockingFailure &&
         category.available.length === 0,
@@ -160,7 +160,7 @@ export const resolveEarnView = ({
   if (
     category.blockingFailure ||
     category.loading ||
-    (entry.dashboardVariant && !category.category)
+    (entry.categoryGrouping && !category.category)
   ) {
     return makeEarnView({ ...categoryFacts, intent });
   }

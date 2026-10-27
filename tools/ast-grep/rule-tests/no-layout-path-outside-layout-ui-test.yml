@@ -1,0 +1,4 @@
+id: no-layout-path-outside-layout-ui
+valid: []
+invalid:
+  - 'export const value = 1'

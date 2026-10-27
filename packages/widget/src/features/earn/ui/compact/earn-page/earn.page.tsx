@@ -17,13 +17,13 @@ import {
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";
-import { ExtraArgsSelection } from "./components/extra-args-selection";
-import { Footer } from "./components/footer";
+import { ExtraArgsSelection } from "../../components/extra-args-selection";
+import { Footer } from "../../components/footer";
+import { SelectTokenSection } from "../../components/select-token-section";
+import { SelectTokenTitle } from "../../components/select-token-section/title";
+import { SelectYieldSection } from "../../components/select-yield-section";
 import { SelectProvider } from "./components/select-provider";
-import { SelectTokenSection } from "./components/select-token-section";
-import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
-import { SelectYieldSection } from "./components/select-yield-section";
 
 const hiddenLivePresentationStyle = {
   inset: 0,
@@ -103,7 +103,7 @@ const EarnPageComponent = () => {
 
             <SelectTokenSection />
 
-            <SelectYieldSection />
+            <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
 
             <EarnKycGate />
 
@@ -111,7 +111,7 @@ const EarnPageComponent = () => {
 
             <SelectValidatorSection />
 
-            <ExtraArgsSelection />
+            <ExtraArgsSelection showDivider />
           </Box>
 
           {status.isError && (

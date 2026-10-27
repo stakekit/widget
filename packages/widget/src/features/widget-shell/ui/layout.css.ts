@@ -1,6 +1,11 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../shared/styles/theme/atoms.css";
+import { vars } from "../../../shared/styles/theme/contract.css";
+import {
+  compactLayoutSelector,
+  dashboardLayoutSelector,
+} from "../../../shared/styles/theme/ids";
 import { minContainerWidth } from "../../../shared/styles/tokens/breakpoints";
 import {
   appContainerName,
@@ -49,10 +54,43 @@ export const appContainer = recipe({
     minHeight: "800px",
   },
   variants: {
-    variant: {
+    layout: {
+      compact: {},
       dashboard: { display: "flex", justifyContent: "center" },
-      widget: {},
     },
   },
-  defaultVariants: { variant: "widget" },
+});
+
+export const animationPage = style({
+  selectors: {
+    [`${dashboardLayoutSelector} &`]: {
+      display: "flex",
+      flex: 1,
+      flexDirection: "column",
+      minHeight: 0,
+    },
+  },
+});
+
+export const pageContainer = style({
+  selectors: {
+    [`${compactLayoutSelector} &`]: {
+      paddingLeft: vars.space["4"],
+      paddingRight: vars.space["4"],
+      paddingTop: vars.space["2"],
+    },
+    [`${dashboardLayoutSelector} &`]: { gap: vars.space["2"] },
+  },
+});
+
+export const pageCta = style({
+  selectors: {
+    [`${compactLayoutSelector} &`]: { paddingTop: vars.space["8"] },
+  },
+});
+
+export const poweredBy = style({
+  selectors: {
+    [`${compactLayoutSelector} &`]: { paddingTop: vars.space["3"] },
+  },
 });

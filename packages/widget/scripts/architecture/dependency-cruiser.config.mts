@@ -556,6 +556,35 @@ const configuration: IConfiguration = {
         pathNot: "^src/public-api/theme\\.ts$",
       },
     },
+    {
+      name: "compact-layout-ui-independent",
+      severity: "error",
+      comment:
+        "A Feature's Compact Layout UI never imports Dashboard Layout UI; components both Layouts render live in the Feature's `ui/`.",
+      from: { path: "^src/features/.+/ui/compact/" },
+      to: { path: "^src/features/.+/ui/dashboard/" },
+    },
+    {
+      name: "dashboard-layout-ui-independent",
+      severity: "error",
+      comment:
+        "A Feature's Dashboard Layout UI never imports Compact Layout UI; components both Layouts render live in the Feature's `ui/`.",
+      from: { path: "^src/features/.+/ui/dashboard/" },
+      to: { path: "^src/features/.+/ui/compact/" },
+    },
+    {
+      name: "layout-ui-is-a-leaf",
+      severity: "error",
+      comment:
+        "Layout-specific screens are composed by the application; logic, hooks, and lower owners never depend on them.",
+      from: {
+        path: [
+          "^src/(?:domain|resources|services|shared)/",
+          "^src/features/.+/(?:model|state|react)/",
+        ],
+      },
+      to: { path: "^src/features/.+/ui/(?:compact|dashboard)/" },
+    },
     ...makeGeneratedRuntimeRules(),
     ...architecturePolicy.moduleCollections
       .map(compileCollection)

@@ -1,12 +1,12 @@
 import { motion } from "motion/react";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { Box } from "../../../shared/ui/primitives/box";
 import { SKLogo } from "../../../shared/ui/primitives/icons/sk-logo";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import { useMountAnimation } from "../../mount-animation/index";
 import { useElementAtomRef } from "../react/use-element-atom-ref";
 import { poweredByElementAtom } from "../state/layout-height";
+import { poweredBy } from "./layout.css";
 
 export const PoweredBy = ({ opacity }: { opacity?: number }) => {
   const poweredByRef = useElementAtomRef(poweredByElementAtom);
@@ -14,7 +14,6 @@ export const PoweredBy = ({ opacity }: { opacity?: number }) => {
   const { t } = useTranslation();
 
   const { state } = useMountAnimation();
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
 
   return (
     <motion.div
@@ -30,7 +29,7 @@ export const PoweredBy = ({ opacity }: { opacity?: number }) => {
         display="flex"
         justifyContent="center"
         alignItems="center"
-        paddingTop={dashboardVariant ? undefined : "3"}
+        className={poweredBy}
         marginBottom="3"
         gap="1"
       >

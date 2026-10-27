@@ -43,16 +43,14 @@ export type EarnPositionListItemDetails = {
   readonly totalAmountUsd: BigNumber | null;
 };
 
-type Presentation = "compact" | "dashboard";
-
 const EarnPositionAmount = ({
   item,
   details,
-  presentation,
+  showsMissingAmountPlaceholder,
 }: {
   readonly item: PositionItem;
   readonly details: EarnPositionListItemDetails;
-  readonly presentation: Presentation;
+  readonly showsMissingAmountPlaceholder: boolean;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -90,7 +88,7 @@ const EarnPositionAmount = ({
     );
   }
 
-  if (presentation === "dashboard") return <Text>-</Text>;
+  if (showsMissingAmountPlaceholder) return <Text>-</Text>;
 
   return null;
 };
@@ -98,11 +96,18 @@ const EarnPositionAmount = ({
 export const EarnPositionListItem = ({
   item,
   details,
-  presentation,
+  opensDetailsWithViewTransition,
+  showsMissingAmountPlaceholder,
+  showsRewardRate,
 }: {
   readonly item: PositionItem;
   readonly details: EarnPositionListItemDetails;
-  readonly presentation: Presentation;
+  /** Whether opening Position Details runs a view transition. */
+  readonly opensDetailsWithViewTransition: boolean;
+  /** Whether an unpriced or unloaded amount renders a "-" placeholder. */
+  readonly showsMissingAmountPlaceholder: boolean;
+  /** Whether the row shows the average reward rate next to the amount. */
+  readonly showsRewardRate: boolean;
 }): ReactElement => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -113,7 +118,6 @@ export const EarnPositionListItem = ({
     inactiveValidator,
     rewardRateAverage,
   } = details;
-  const isDashboard = presentation === "dashboard";
   const actionBadge = (() => {
     if (item.actionRequired) {
       return {
@@ -146,7 +150,7 @@ export const EarnPositionListItem = ({
     <SKLink
       relative="path"
       to={`../positions/${item.integrationId}/${item.balanceId}`}
-      viewTransition={isDashboard}
+      viewTransition={opensDetailsWithViewTransition}
     >
       <Box py="1">
         {integrationData ? (
@@ -239,14 +243,14 @@ export const EarnPositionListItem = ({
 
               {/* Reward rate + staked */}
               <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-                {isDashboard && rewardRateAverage ? (
+                {showsRewardRate && rewardRateAverage ? (
                   <Text className={rewardRateText}>{rewardRateAverage}</Text>
                 ) : null}
 
                 <EarnPositionAmount
                   item={item}
                   details={details}
-                  presentation={presentation}
+                  showsMissingAmountPlaceholder={showsMissingAmountPlaceholder}
                 />
               </Box>
             </Box>

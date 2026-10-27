@@ -1,6 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import {
   getTransactionStepPhases,
   TransactionSteps,
@@ -30,7 +29,6 @@ import { useBorrowExecution } from "./use-borrow-execution";
 export const BorrowStepsPage = () => {
   useTrackPage("borrowSteps");
 
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
   const { t } = useTranslation();
   const flow = useBorrowTransactionFlow();
   const executionFlow = useBorrowTransactionFlowExecution();
@@ -121,7 +119,7 @@ export const BorrowStepsPage = () => {
             <Button
               data-rk="borrow-steps-retry"
               onClick={execution.retry}
-              variant={{ size: dashboardVariant ? "compact" : "regular" }}
+              variant={{ size: "layout" }}
             >
               {t("shared.retry")}
             </Button>

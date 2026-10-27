@@ -316,7 +316,7 @@ const Receipt = ({
 }) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { presentation } = useActivityActionRoute();
+  const { showsBackButton } = useActivityActionRoute();
   const navigate = useNavigate();
   const title = useActivityActionTitle(view.title);
   const network = capitalizeFirstLetters(view.network.replaceAll("-", " "));
@@ -328,7 +328,7 @@ const Receipt = ({
 
   return (
     <Box className={styles.page} data-rk="activity-details-receipt">
-      {presentation === "Compact" ? (
+      {showsBackButton ? (
         <Box
           as="button"
           aria-label={t("activity.details.back")}

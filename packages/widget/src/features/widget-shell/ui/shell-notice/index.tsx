@@ -1,15 +1,9 @@
 import type { ReactNode } from "react";
-import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import {
-  combineRecipeWithVariant,
-  type WidgetVariant,
-} from "../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { wrapper } from "../../dashboard/components/styles.css";
 import { PoweredBy } from "../powered-by";
-import { background, container, dashboardBackground } from "./style.css";
+import { container, frame } from "./style.css";
 
 type ShellNoticeContent = {
   readonly description: string;
@@ -17,48 +11,24 @@ type ShellNoticeContent = {
   readonly title: string;
 };
 
-/** The host layout a notice fills: the dashboard or the yield widget, per variant. */
-export type ShellNoticeLayout = Readonly<{
-  dashboardVariant: boolean;
-  variant: WidgetVariant;
-}>;
+export const ShellNotice = (content: ShellNoticeContent) => (
+  <ShellNoticeFrame {...content} footer={<PoweredBy opacity={1} />} />
+);
 
-export const ShellNotice = (content: ShellNoticeContent) => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
-
-  return (
-    <ShellNoticeFrame
-      {...content}
-      footer={<PoweredBy opacity={1} />}
-      layout={{ dashboardVariant, variant }}
-    />
-  );
-};
-
-/** A full-widget notice laid out from props, so it renders without Widget Configuration. */
+/**
+ * A full-widget notice that renders without Widget Configuration; the Layout
+ * attribute on the app container frames it.
+ */
 export const ShellNoticeFrame = ({
   description,
   footer,
-  layout: { dashboardVariant, variant },
   testId,
   title,
 }: ShellNoticeContent & {
   readonly footer?: ReactNode;
-  readonly layout: ShellNoticeLayout;
 }) => {
   return (
-    <Box
-      style={{ borderRadius: "14px" }}
-      className={
-        dashboardVariant
-          ? [
-              combineRecipeWithVariant({ rec: wrapper, variant }),
-              dashboardBackground,
-            ]
-          : background
-      }
-    >
+    <Box className={frame}>
       <Box
         display="flex"
         flexDirection="column"

@@ -19,6 +19,7 @@ import type {
 } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
+import type { WidgetLayout } from "./widget-config-model";
 
 const optional = <S extends Schema.Constraint>(schema: S) =>
   Schema.optionalKey(Schema.UndefinedOr(schema));
@@ -442,6 +443,12 @@ const combineExternalProvider = (
     : missingBorrowProviderCapability();
 };
 
+/** The Layout the host selects through the public `dashboardVariant` flag. */
+export const hostLayout = (
+  hostConfiguration: DecodedHostConfiguration
+): WidgetLayout =>
+  hostConfiguration.dashboardVariant ? "Dashboard" : "Compact";
+
 type SemanticHostConfigurationIssue = Exclude<
   InvalidHostConfigurationIssue,
   "host-configuration-decode-failed"
@@ -454,7 +461,7 @@ const semanticIssues = (
 
   if (
     hostConfiguration.borrowEnabled === true &&
-    hostConfiguration.dashboardVariant !== true
+    hostLayout(hostConfiguration) !== "Dashboard"
   ) {
     issues.push("borrow-requires-dashboard");
   }
@@ -539,7 +546,7 @@ export const decodeHostConfiguration = (
 
 /** How the widget looks while it shows that the Host Configuration was rejected. */
 export type RejectedConfigurationPresentation = Readonly<{
-  dashboardVariant: boolean;
+  layout: WidgetLayout;
   theme: SKTheme | undefined;
   variant: HostVariant;
 }>;
@@ -554,7 +561,7 @@ const isHostVariant = Schema.is(Schema.Literals(hostVariantValues));
 export const decodeRejectedConfigurationPresentation = (
   hostConfiguration: Partial<SKHostConfiguration>
 ): RejectedConfigurationPresentation => ({
-  dashboardVariant: hostConfiguration.dashboardVariant === true,
+  layout: hostConfiguration.dashboardVariant === true ? "Dashboard" : "Compact",
   theme:
     hostConfiguration.theme === undefined
       ? undefined

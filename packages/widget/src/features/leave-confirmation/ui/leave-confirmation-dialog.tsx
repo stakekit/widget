@@ -4,7 +4,6 @@ import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { Heading } from "../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../widget-configuration/index";
 import type { LeaveConfirmationDialogProps } from "../react/use-leave-confirmation";
 
 /** Mounted only while asking, so the controls that host it stay light. */
@@ -16,8 +15,6 @@ const OpenLeaveConfirmationDialog = ({
   onStay,
 }: LeaveConfirmationDialogProps) => {
   const { t } = useTranslation();
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const size = dashboardVariant ? "compact" : "regular";
 
   return (
     <SelectModal
@@ -53,10 +50,13 @@ const OpenLeaveConfirmationDialog = ({
           marginTop="6"
           width="full"
         >
-          <Button onClick={onStay} variant={{ size }}>
+          <Button onClick={onStay} variant={{ size: "layout" }}>
             {t("leave_confirmation.stay")}
           </Button>
-          <Button onClick={onLeave} variant={{ color: "secondary", size }}>
+          <Button
+            onClick={onLeave}
+            variant={{ color: "secondary", size: "layout" }}
+          >
             {t("leave_confirmation.leave")}
           </Button>
         </Box>

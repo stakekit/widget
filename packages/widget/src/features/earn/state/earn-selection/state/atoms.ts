@@ -39,12 +39,11 @@ const earnWalletSnapshotAtom = Atom.make((context) => {
 export const earnEntryAtom = Atom.make<EarnEntry>((context) => {
   const config = context.get(widgetConfigAtom);
   const wallet = context.get(earnWalletSnapshotAtom);
-  const categoryGrouping =
-    config.dashboardVariant && config.yieldGrouping === "category";
+  const categoryGrouping = config.earnCategoryGrouping;
 
   return {
     categoryOrder: config.yieldCategoryOrder,
-    dashboardVariant: categoryGrouping,
+    categoryGrouping,
     initParams: context.get(initParamsAtom),
     preferredTokenYieldsPerNetwork: config.preferredTokenYieldsPerNetwork,
     walletScope: wallet.walletScope,
@@ -63,7 +62,7 @@ const earnEntryStateAtom = Atom.writable<EarnEntryState, EarnEntryState>(
     return reconcileEarnEntryOwner(
       previous,
       owner,
-      entry.dashboardVariant,
+      entry.categoryGrouping,
       entry.walletResolution,
       entry.initParams ?? null
     );

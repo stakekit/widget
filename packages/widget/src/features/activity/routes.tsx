@@ -5,10 +5,7 @@ import {
   YieldActionContinuationExecution,
   YieldActionContinuationStepsPage,
 } from "../yield-transaction-flow/views";
-import {
-  ActivityActionRoute,
-  type ActivityPresentation,
-} from "./react/activity-action-route";
+import { ActivityActionRoute } from "./react/activity-action-route";
 import { ActivityDetailsPage } from "./ui/activity-details/activity-details.page";
 
 const activityActionChildRoutes = (
@@ -24,31 +21,32 @@ const activityActionChildRoutes = (
   </>
 );
 
-export const createActivityActionRoutes = (
-  presentation: ActivityPresentation,
-  options?: {
-    readonly ActionScopeGuard?: ComponentType<{
-      readonly fallbackPath: string;
-    }>;
-  }
-) => {
-  const ActionScopeGuard = options?.ActionScopeGuard;
+export const createActivityActionRoutes = ({
+  ActionScopeGuard,
+  selectsDefaultAction,
+  showsBackButton,
+}: {
+  readonly ActionScopeGuard?: ComponentType<{
+    readonly fallbackPath: string;
+  }>;
+  /** Whether the bare Activity route selects a default action. */
+  readonly selectsDefaultAction: boolean;
+  /** Whether the action details render a back button to the Activity list. */
+  readonly showsBackButton: boolean;
+}) => {
+  const actionRoute = (source: "borrow" | "yield") => (
+    <ActivityActionRoute
+      selectsDefaultAction={selectsDefaultAction}
+      showsBackButton={showsBackButton}
+      source={source}
+    />
+  );
   const actionIdRoutes = (
     <>
-      <Route
-        path="borrow/:actionId"
-        element={
-          <ActivityActionRoute presentation={presentation} source="borrow" />
-        }
-      >
+      <Route path="borrow/:actionId" element={actionRoute("borrow")}>
         <Route index element={<ActivityDetailsPage />} />
       </Route>
-      <Route
-        path=":actionId"
-        element={
-          <ActivityActionRoute presentation={presentation} source="yield" />
-        }
-      >
+      <Route path=":actionId" element={actionRoute("yield")}>
         {activityActionChildRoutes}
       </Route>
     </>
@@ -56,12 +54,8 @@ export const createActivityActionRoutes = (
 
   return (
     <>
-      {presentation === "Dashboard" ? (
-        <Route
-          element={
-            <ActivityActionRoute presentation={presentation} source="yield" />
-          }
-        >
+      {selectsDefaultAction ? (
+        <Route element={actionRoute("yield")}>
           <Route index element={<ActivityDetailsPage />} />
         </Route>
       ) : null}

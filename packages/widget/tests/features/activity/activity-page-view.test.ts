@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../../src/features/activity/model/activity-action";
 import {
+  hasActivityActions,
   projectActivityPageView,
   resolveActivityPageFilter,
   resolveActivityPageWalletStatus,
-  shouldShowActivityDashboardSplit,
 } from "../../../src/features/activity/state/page";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 
@@ -421,10 +421,10 @@ describe("Activity page inputs", () => {
 
 describe("Activity dashboard split", () => {
   it("only splits when the feed has actions to inspect", () => {
-    expect(shouldShowActivityDashboardSplit({ status: "empty" })).toBe(false);
-    expect(shouldShowActivityDashboardSplit({ status: "loading" })).toBe(false);
+    expect(hasActivityActions({ status: "empty" })).toBe(false);
+    expect(hasActivityActions({ status: "loading" })).toBe(false);
     expect(
-      shouldShowActivityDashboardSplit({
+      hasActivityActions({
         actions: [],
         filterOptions: [{ count: 0, filter: "all" }],
         pagination: { status: "complete" },
@@ -435,7 +435,7 @@ describe("Activity dashboard split", () => {
       })
     ).toBe(false);
     expect(
-      shouldShowActivityDashboardSplit({
+      hasActivityActions({
         actions: [makeActionItem("a1")],
         filterOptions: [{ count: 1, filter: "all" }],
         pagination: { status: "complete" },

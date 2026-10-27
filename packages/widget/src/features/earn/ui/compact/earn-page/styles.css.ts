@@ -2,19 +2,6 @@ import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 
-export const selectItemText = style({
-  color: vars.color.tokenSelect,
-  fontWeight: vars.fontWeight.tokenSelect,
-});
-
-export const apyYield = style([
-  {
-    color: vars.color.text,
-    fontSize: vars.fontSize["3xl"],
-    fontWeight: vars.fontWeight.normal,
-  },
-]);
-
 export const overflowEllipsis = style({
   minWidth: 0,
   overflowWrap: "anywhere",

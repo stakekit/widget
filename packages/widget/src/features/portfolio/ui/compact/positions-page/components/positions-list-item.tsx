@@ -1,11 +1,13 @@
+import { usePositionListItem } from "../../../../react/use-position-list-item";
 import type { PositionItem } from "../../../../state/read-models/positions";
 import { EarnPositionListItem } from "../../../components/earn-position-list-item";
-import { usePositionListItem } from "../hooks/use-position-list-item";
 
 export const PositionsListItem = ({ item }: { item: PositionItem }) => (
   <EarnPositionListItem
     item={item}
     details={usePositionListItem(item)}
-    presentation="compact"
+    opensDetailsWithViewTransition={false}
+    showsMissingAmountPlaceholder={false}
+    showsRewardRate={false}
   />
 );

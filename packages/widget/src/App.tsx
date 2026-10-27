@@ -8,10 +8,10 @@ import { ApplicationRouteContentProvider } from "./app/composition/application-r
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { WidgetConfigurationUnavailable } from "./app/composition/widget-configuration-unavailable";
+import { CompactRoutes } from "./app/layouts/compact/compact-routes";
+import { DashboardRoutes } from "./app/layouts/dashboard/dashboard-routes";
 import { applicationRoutes } from "./app/routes/application-routes";
 import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
-import { CompactRoutes } from "./app/routes/ui/compact-routes";
-import { DashboardRoutes } from "./app/routes/ui/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router";
 import {
   walletEnabledNetworksResultAtom,
@@ -36,7 +36,7 @@ import { preloadImages } from "./shared/assets/images";
 preloadImages();
 
 const App = () => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const layout = useWidgetConfig("layout");
   const enabledNetworks = useAtomValue(walletEnabledNetworksResultAtom);
   const externalProviderChainsEnabled = useAtomValue(
     walletExternalProviderChainsEnabledResultAtom
@@ -55,7 +55,7 @@ const App = () => {
 
   const routeContent = (() => {
     if (underMaintenance) return <UnderMaintenance />;
-    return dashboardVariant ? <DashboardRoutes /> : <CompactRoutes />;
+    return layout === "Dashboard" ? <DashboardRoutes /> : <CompactRoutes />;
   })();
 
   return routeContent;
@@ -68,12 +68,12 @@ const Root = () => (
 );
 
 const SKAppRouter = () => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const layout = useWidgetConfig("layout");
   const router = useAtomValue(applicationRouterAtom);
 
   return (
     <ApplicationRouteContentProvider value={<Root />}>
-      <AppContainer variant={dashboardVariant ? "dashboard" : "widget"}>
+      <AppContainer layout={layout}>
         <RouterProvider router={router} />
       </AppContainer>
     </ApplicationRouteContentProvider>

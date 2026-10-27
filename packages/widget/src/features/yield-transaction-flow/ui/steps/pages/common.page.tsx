@@ -43,7 +43,6 @@ const getStepPhases = (t: TFunction, row: YieldStepRow) => {
 };
 
 export const StepsPage = () => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
   const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
   const {
@@ -125,7 +124,7 @@ export const StepsPage = () => {
               <Button
                 data-rk="footer-button-primary"
                 onClick={retry}
-                variant={{ size: dashboardVariant ? "compact" : "regular" }}
+                variant={{ size: "layout" }}
               >
                 {t("shared.retry")}
               </Button>

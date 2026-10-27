@@ -13,7 +13,7 @@ type EarnPresentation = Readonly<{
 
 /**
  * Named capabilities a host variant enables, resolved once from `variant` and
- * `dashboardVariant`. Features, services, and wallet adapters read these rather
+ * the Layout. Features, services, and wallet adapters read these rather
  * than the variant name. The host chain modal is the `chainModal` Widget
  * Configuration field, which only Zerion hosts supply.
  */
@@ -44,41 +44,29 @@ const standardProfile: HostProfile = {
   walletCatalogue: "default",
 };
 
-const variantProfiles: Readonly<Record<WidgetVariant, HostProfile>> = {
-  default: standardProfile,
-  finery: { ...standardProfile, forcesInstitutionalWallets: true },
-  porto: {
-    ...standardProfile,
-    earnPresentation: { condensed: true, zerion: false },
-    walletCatalogue: "porto",
-  },
-  utila: {
-    ...standardProfile,
-    earnPresentation: { condensed: true, zerion: false },
-    requiresTermsAcknowledgement: true,
-    showsPendingApprovalsNotice: true,
-    translationOverlay: "utila",
-  },
-  zerion: {
-    ...standardProfile,
-    earnPresentation: { condensed: false, zerion: true },
-    hidesEarnLoadingSpinner: true,
-    hidesHeaderWalletControl: true,
-    hostTokenIconMapping: true,
-    hostTracking: true,
-  },
-};
-
-export const resolveHostProfile = (
-  variant: WidgetVariant,
-  dashboardVariant: boolean
-): HostProfile => {
-  const profile = variantProfiles[variant];
-
-  return dashboardVariant && !profile.earnPresentation.condensed
-    ? {
-        ...profile,
-        earnPresentation: { ...profile.earnPresentation, condensed: true },
-      }
-    : profile;
-};
+/** Each variant's profile; Widget Configuration adjusts it for the Layout. */
+export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
+  {
+    default: standardProfile,
+    finery: { ...standardProfile, forcesInstitutionalWallets: true },
+    porto: {
+      ...standardProfile,
+      earnPresentation: { condensed: true, zerion: false },
+      walletCatalogue: "porto",
+    },
+    utila: {
+      ...standardProfile,
+      earnPresentation: { condensed: true, zerion: false },
+      requiresTermsAcknowledgement: true,
+      showsPendingApprovalsNotice: true,
+      translationOverlay: "utila",
+    },
+    zerion: {
+      ...standardProfile,
+      earnPresentation: { condensed: false, zerion: true },
+      hidesEarnLoadingSpinner: true,
+      hidesHeaderWalletControl: true,
+      hostTokenIconMapping: true,
+      hostTracking: true,
+    },
+  };

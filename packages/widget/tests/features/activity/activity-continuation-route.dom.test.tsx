@@ -135,7 +135,7 @@ const ReviewPage = ({ sessions }: Pick<SessionPageProps, "sessions">) =>
 
 const renderActivity = async (
   initialPath: string,
-  presentation: "Compact" | "Dashboard" = "Compact"
+  selectsDefaultAction = false
 ) => {
   const sessions: Array<YieldFlowSession> = [];
   const navigation: { current: NavigateFunction | null } = { current: null };
@@ -154,12 +154,13 @@ const renderActivity = async (
           />
           <LocationProbe />
           <Routes>
-            {presentation === "Dashboard" ? (
+            {selectsDefaultAction ? (
               <Route
                 path="/activity"
                 element={
                   <ActivityActionRoute
-                    presentation="Dashboard"
+                    selectsDefaultAction
+                    showsBackButton={false}
                     source="yield"
                   />
                 }
@@ -173,7 +174,8 @@ const renderActivity = async (
               path="/activity/:actionId"
               element={
                 <ActivityActionRoute
-                  presentation={presentation}
+                  selectsDefaultAction={selectsDefaultAction}
+                  showsBackButton={false}
                   source="yield"
                 />
               }
@@ -240,7 +242,7 @@ describe("Activity Yield Action Continuation route", () => {
   });
 
   it("drops the continuation when another action is selected", async () => {
-    const activity = await renderActivity(reviewPath, "Dashboard");
+    const activity = await renderActivity(reviewPath, true);
     await expect.poll(activity.page).toBe("Review:1");
 
     await activity.navigate(
@@ -256,7 +258,7 @@ describe("Activity Yield Action Continuation route", () => {
   });
 
   it("moves a continuable default selection to its own action route", async () => {
-    const activity = await renderActivity("/activity", "Dashboard");
+    const activity = await renderActivity("/activity", true);
 
     await expect.poll(activity.location).toBe(reviewPath);
     await expect.poll(activity.page).toBe("Review:1");

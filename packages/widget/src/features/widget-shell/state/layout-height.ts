@@ -20,15 +20,13 @@ const makeElementHeightAtom = ({
     measure,
   });
 
-export const compactLayoutElementAtom = makeElementAtom(
-  "compactLayoutElementAtom"
-);
+export const pageOutletElementAtom = makeElementAtom("pageOutletElementAtom");
 export const headerElementAtom = makeElementAtom("headerElementAtom");
 export const poweredByElementAtom = makeElementAtom("poweredByElementAtom");
 
-const compactLayoutHeightAtom = makeElementHeightAtom({
-  elementAtom: compactLayoutElementAtom,
-  label: "compactLayoutHeightAtom",
+const pageOutletHeightAtom = makeElementHeightAtom({
+  elementAtom: pageOutletElementAtom,
+  label: "pageOutletHeightAtom",
   /**
    * Route checks can briefly render a Navigate with zero height. Retaining the
    * prior layout height prevents the outer container from jumping.
@@ -46,10 +44,10 @@ const poweredByHeightAtom = makeElementHeightAtom({
 });
 
 export const animationLayoutHeightAtom = Atom.make((get) => {
-  const compactLayoutHeight = get(compactLayoutHeightAtom);
+  const pageOutletHeight = get(pageOutletHeightAtom);
   const headerHeight = get(headerHeightAtom);
 
-  if (compactLayoutHeight === 0 || headerHeight === 0) return 0;
+  if (pageOutletHeight === 0 || headerHeight === 0) return 0;
 
-  return compactLayoutHeight + headerHeight + get(poweredByHeightAtom);
+  return pageOutletHeight + headerHeight + get(poweredByHeightAtom);
 }).pipe(Atom.withLabel("animationLayoutHeightAtom"));

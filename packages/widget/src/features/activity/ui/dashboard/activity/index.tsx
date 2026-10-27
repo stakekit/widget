@@ -6,10 +6,7 @@ import {
   AnimationPage,
   BackButtonProvider,
 } from "../../../../widget-shell/views";
-import {
-  activityPageViewAtom,
-  shouldShowActivityDashboardSplit,
-} from "../../../state/page";
+import { activityPageViewAtom, hasActivityActions } from "../../../state/page";
 import { ActivityPageContent } from "../../activity-page/activity-page-content";
 import * as styles from "./styles.css";
 
@@ -19,8 +16,7 @@ export const ActivityTabPage = () => {
   const stepsMatch = useMatch("/activity/:actionId/steps");
   const completeMatch = useMatch("/activity/:actionId/complete");
   const isExecution = stepsMatch !== null || completeMatch !== null;
-  const showSplit =
-    wallet?.status === "connected" && shouldShowActivityDashboardSplit(view);
+  const showSplit = wallet?.status === "connected" && hasActivityActions(view);
 
   if (!showSplit) {
     return (

@@ -27,13 +27,13 @@ import {
   YieldRiskInfoTooltip,
 } from "../../../../yield-summary/views";
 import {
-  type DashboardPositionDetailValue,
-  getDashboardPositionDetailsModel,
   getPositionHeaderBadges,
-} from "../../../model/dashboard-position-details";
-import { usePositionDetails } from "../../compact/hooks/use-position-details";
+  getPositionOverviewModel,
+  type PositionOverviewDetailValue,
+} from "../../../model/position-overview";
+import { usePositionDetails } from "../../../react/use-position-details";
 
-const renderDetailValue = (value: DashboardPositionDetailValue) =>
+const renderDetailValue = (value: PositionOverviewDetailValue) =>
   typeof value === "string" ? (
     value
   ) : (
@@ -65,7 +65,7 @@ export const PositionDetailsInfo = () => {
   const integrationData = positionDetails.integrationData;
   const positionBalancesByType = positionDetails.positionBalancesByType;
   if (integrationData && positionBalancesByType) {
-    const model = getDashboardPositionDetailsModel({
+    const model = getPositionOverviewModel({
       cancellingHandles: positionDetails.cancellingHandles,
       canUnstake: positionDetails.canUnstake,
       integrationData,

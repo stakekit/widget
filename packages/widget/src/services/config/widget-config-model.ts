@@ -14,6 +14,9 @@ import type { HostProfile, WidgetVariant } from "./host-profile";
 
 type YieldGrouping = "flat" | "category";
 
+/** Which shell and route tree the Widget renders. */
+export type WidgetLayout = "Compact" | "Dashboard";
+
 type WidgetLanguage = "en" | "fr";
 
 type TranslationTree = Readonly<{
@@ -39,23 +42,26 @@ export type WidgetConfig = {
   readonly chainIconMapping?: SettingsProps["chainIconMapping"];
   readonly chainModal?: ZerionChainModal;
   readonly customTranslations?: CustomTranslations;
-  readonly dashboardVariant: boolean;
   readonly yieldCategoryOrder: ReadonlyArray<YieldCategory>;
   readonly disableAutoScrollToTop: boolean;
   readonly disableInitLayoutAnimation: boolean;
   readonly disableInjectedProviderDiscovery: boolean;
   readonly disableResizingInputFontSize: boolean;
+  /** Earn groups yields into category tabs; only the Dashboard Layout has them. */
+  readonly earnCategoryGrouping: boolean;
   readonly externalProviders?: ExternalProviderSnapshot;
   readonly hideAccountAndChainSelector: boolean;
   readonly hideChainSelector: boolean;
   readonly hideGasFee: boolean;
   readonly hideNetworkLogo: boolean;
-  /** Capabilities resolved once from `variant` and `dashboardVariant`. */
+  /** Capabilities resolved once from `variant` and `layout`. */
   readonly hostProfile: HostProfile;
   readonly initialChain?: SupportedSKChainIds;
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
+  /** Derived from the public `dashboardVariant` flag. */
+  readonly layout: WidgetLayout;
   readonly language?: WidgetLanguage;
   readonly mapWalletFn?: SettingsProps["mapWalletFn"];
   readonly mountAnimationStartsFinished: boolean;
@@ -69,6 +75,7 @@ export type WidgetConfig = {
   readonly validatorsConfig: ValidatorsConfig;
   readonly variant: WidgetVariant;
   readonly walletPolicy?: WalletPolicy;
+  /** Defaults to `"category"` in the Dashboard Layout, else `"flat"`. */
   readonly yieldGrouping: YieldGrouping;
   readonly yieldProviderOrder: YieldProviderOrder;
   readonly yieldsApiUrl: string;
