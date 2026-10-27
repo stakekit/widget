@@ -12,10 +12,6 @@ body[data-theme="dark"][data-variant="finery"] {
   background: #1a2022;
 }
 
-body[data-theme="light"][data-variant="porto"] {
-  background: #171717;
-}
-
 .pg-toolbar {
   display: flex;
   align-items: center;
@@ -36,8 +32,15 @@ body[data-theme="light"][data-variant="porto"] {
   color: #e6e6e6;
 }
 
-body[data-theme="light"]:not([data-variant="porto"]) .pg-badge {
+body[data-theme="light"] .pg-badge {
   color: #333333;
+}
+
+/* Keep the widget clear of the open panel when the page has room for both. */
+@media (min-width: 900px) {
+  .pg-stage[data-panel-open="true"] {
+    padding-right: 420px;
+  }
 }
 
 .pg-panel {
@@ -110,6 +113,7 @@ body[data-theme="light"]:not([data-variant="porto"]) .pg-badge {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 6px;
 }
 
