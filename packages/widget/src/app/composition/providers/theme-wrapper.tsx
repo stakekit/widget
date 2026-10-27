@@ -33,10 +33,15 @@ export const getThemeOverrides = ({
   return {};
 };
 
-export const ThemeWrapper = ({ children }: PropsWithChildren) => {
-  const theme = useWidgetConfig("theme");
-  const variant = useWidgetConfig("variant");
-
+/** Theme variables for a host theme and variant, read from props. */
+export const ThemeStyles = ({
+  children,
+  theme,
+  variant,
+}: PropsWithChildren<{
+  readonly theme: WidgetConfig["theme"];
+  readonly variant: WidgetConfig["variant"];
+}>) => {
   const baseTheme = mergeDeep(lightTheme, theme);
   const overrides = getThemeOverrides({
     baseTheme,
@@ -54,5 +59,16 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
       />
       {children}
     </div>
+  );
+};
+
+export const ThemeWrapper = ({ children }: PropsWithChildren) => {
+  const theme = useWidgetConfig("theme");
+  const variant = useWidgetConfig("variant");
+
+  return (
+    <ThemeStyles theme={theme} variant={variant}>
+      {children}
+    </ThemeStyles>
   );
 };

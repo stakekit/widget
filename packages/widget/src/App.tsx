@@ -7,6 +7,7 @@ import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
+import { WidgetConfigurationUnavailable } from "./app/composition/widget-configuration-unavailable";
 import { applicationRoutes } from "./app/routes/application-routes";
 import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
 import { CompactRoutes } from "./app/routes/ui/compact-routes";
@@ -16,7 +17,10 @@ import {
   walletEnabledNetworksResultAtom,
   walletExternalProviderChainsEnabledResultAtom,
 } from "./features/wallet/index";
-import { useWidgetConfig } from "./features/widget-configuration/index";
+import {
+  rejectedWidgetConfigAtom,
+  useWidgetConfig,
+} from "./features/widget-configuration/index";
 import {
   AppContainer,
   NetworkNotSupported,
@@ -76,12 +80,20 @@ const SKAppRouter = () => {
   );
 };
 
-export const SKAppRegistryContent = ({ children }: PropsWithChildren) => (
-  <>
-    <SKAppRouter />
-    {children}
-  </>
-);
+export const SKAppRegistryContent = ({ children }: PropsWithChildren) => {
+  const rejectedConfig = useAtomValue(rejectedWidgetConfigAtom);
+
+  return (
+    <>
+      {rejectedConfig ? (
+        <WidgetConfigurationUnavailable presentation={rejectedConfig} />
+      ) : (
+        <SKAppRouter />
+      )}
+      {children}
+    </>
+  );
+};
 
 const SKAppProductionContent = ({
   children,
