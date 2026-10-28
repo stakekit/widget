@@ -43,6 +43,10 @@ Widget root, a prop the Layout's composition supplies that names the
 difference, or a Layout-specific component. See
 [ADR 0013](../../docs/adr/0013-layouts-are-application-composition.md).
 
+`app/layouts/layout-app-container.tsx` selects the Layout attribute and page
+transition. The shared shell receives that resolved presentation; it does not
+select a Layout or own Layout-specific transition presets.
+
 ## Routes and navigation
 
 The Route Registry (`services/navigation/widget-routes.ts`) defines every
@@ -51,9 +55,11 @@ it, how to build it, and how to match a pathname against it. Route trees mount
 registry patterns, navigation accepts only registry-built `WidgetPath`s, and
 pathname parsing uses registry matching; only relative redirects stay literal.
 Building a route that some Layout does not mount requires naming the Layout. A
-Transaction Flow's Review, Steps, and Complete form one flow group per mount,
-and the owning Feature binds the navigation state its pages carry to that
-group. The `navigation` Feature adapts the registry to React.
+Transaction Flow's Review, Steps, and Complete form one flow group per mount.
+The owning Feature or application composition binds the navigation-state schema
+to its route or flow group. Presentation changes carried by navigation apply
+only after the router accepts it, so blocked navigation cannot remount the
+current page. The `navigation` Feature adapts the registry to React.
 
 Navigation that completes a domain operation, such as a handoff with its
 navigation or a deep link, runs in that Effect operation through the

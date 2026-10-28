@@ -12,6 +12,7 @@ import {
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { dashboardEarnRoute } from "../dashboard-earn-route";
 import {
   divider,
   tabsContainer,
@@ -44,11 +45,8 @@ const tabsMap: Record<RouteTab, WidgetPath> = {
 };
 
 export const DashboardTabs = ({
-  onYieldCategorySelect,
   pendingYieldCategory,
 }: {
-  /** Selects a yield category; applying it may wait for the page transition. */
-  readonly onYieldCategorySelect: (category: YieldCategory) => void;
   /** A pressed yield category not yet applied to the Earn selection. */
   readonly pendingYieldCategory: YieldCategory | null;
 }) => {
@@ -72,8 +70,7 @@ export const DashboardTabs = ({
     }
 
     trackEvent("tabClicked", { selected: category });
-    onYieldCategorySelect(category);
-    navigation.push(widgetRoutes.earn.build());
+    navigation.push(dashboardEarnRoute.build({ yieldCategory: category }));
   };
 
   const borrowEnabled = useWidgetConfig("borrowEnabled");

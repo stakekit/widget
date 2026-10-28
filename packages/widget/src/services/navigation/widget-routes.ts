@@ -149,6 +149,18 @@ class WidgetRoute<
     return `/${segments.join("/")}` as WidgetPath;
   }
 
+  /** Binds the navigation state this route's owner carries with its path. */
+  withState<State, Encoded>(schema: Schema.Codec<State, Encoded>) {
+    return {
+      build: (
+        state: State,
+        ...args: WidgetRouteBuildArgs<Layout, Params>
+      ): WidgetLocation<State> =>
+        ({ path: this.build(...args), state }) as WidgetLocation<State>,
+      state: Schema.decodeUnknownOption(schema),
+    };
+  }
+
   /** This route's params when `pathname` is exactly this route. */
   match(pathname: string): Option.Option<Params> {
     return this.#match(pathSegments(pathname), true);

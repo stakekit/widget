@@ -23,7 +23,13 @@ import { waitForMs } from "../../../utils/wait";
 
 type TransactionDto = typeof LegacyTransaction.Encoded;
 
-export const setup = async (worker: TestWorker) => {
+export const setup = async (
+  worker: TestWorker,
+  {
+    /** Also lists an AVAX lending yield, so the DeFi category is available. */
+    includeDefiYield = false,
+  }: { readonly includeDefiYield?: boolean } = {}
+) => {
   const token: TokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
@@ -166,6 +172,21 @@ export const setup = async (worker: TestWorker) => {
       supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
     },
   });
+  const defiYieldOp = yieldApiYieldDtoFixture({
+    ...yieldApiYieldOp,
+    id: "avalanche-avax-lending",
+    metadata: {
+      ...yieldApiYieldOp.metadata,
+      name: "AVAX Lending",
+    },
+    mechanics: {
+      ...yieldApiYieldOp.mechanics,
+      type: "lending",
+    },
+  });
+  const catalogYields = includeDefiYield
+    ? [yieldApiYieldOp, defiYieldOp]
+    : [yieldApiYieldOp];
   const enterAction = {
     id: "18bdda99-346a-4694-af71-58dfea68d542",
     integrationId: "avalanche-avax-liquid-staking",
@@ -307,10 +328,10 @@ export const setup = async (worker: TestWorker) => {
       await mockDelay();
 
       return HttpResponse.json({
-        items: [yieldApiYieldOp],
-        total: 1,
+        items: catalogYields,
+        total: catalogYields.length,
         offset: 0,
-        limit: 1,
+        limit: catalogYields.length,
       });
     }),
     http.get(
@@ -409,6 +430,15 @@ export const setup = async (worker: TestWorker) => {
       );
     })
   );
+
+  if (includeDefiYield) {
+    worker.use(
+      http.get(yieldApiRoute(`/v1/yields/${defiYieldOp.id}`), async () => {
+        await mockDelay();
+        return HttpResponse.json(defiYieldOp);
+      })
+    );
+  }
 
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 

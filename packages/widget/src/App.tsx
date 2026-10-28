@@ -10,6 +10,7 @@ import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime
 import { WidgetConfigurationUnavailable } from "./app/composition/widget-configuration-unavailable";
 import { CompactRoutes } from "./app/layouts/compact/compact-routes";
 import { DashboardRoutes } from "./app/layouts/dashboard/dashboard-routes";
+import { LayoutAppContainer } from "./app/layouts/layout-app-container";
 import { applicationRoutes } from "./app/routes/application-routes";
 import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
 import { applicationRouterAtom } from "./app/runtime/application-router";
@@ -22,7 +23,6 @@ import {
   useWidgetConfig,
 } from "./features/widget-configuration/index";
 import {
-  AppContainer,
   NetworkNotSupported,
   NoEnabledYields,
 } from "./features/widget-shell/composition";
@@ -73,9 +73,9 @@ const SKAppRouter = () => {
 
   return (
     <ApplicationRouteContentProvider value={<Root />}>
-      <AppContainer layout={layout}>
+      <LayoutAppContainer layout={layout}>
         <RouterProvider router={router} />
-      </AppContainer>
+      </LayoutAppContainer>
     </ApplicationRouteContentProvider>
   );
 };

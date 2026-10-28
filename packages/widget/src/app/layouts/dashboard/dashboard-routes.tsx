@@ -1,6 +1,6 @@
 import { Option } from "effect";
 import { AnimatePresence } from "motion/react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import type { YieldCategory } from "../../../domain/earn/contract";
 import {
@@ -14,6 +14,7 @@ import {
 import { createBorrowTransactionFlowRoutes } from "../../../features/borrow-transaction-flow/composition";
 import { EarnPageContent } from "../../../features/earn/composition";
 import { useSelectEarnCategory } from "../../../features/earn/index";
+import { useWidgetRouteState } from "../../../features/navigation/index";
 import { ManagePage } from "../../../features/portfolio/composition";
 import {
   DashboardPositionDetailsPage,
@@ -25,6 +26,7 @@ import { GlobalModals } from "../../../features/widget-shell/composition";
 import { createYieldFlowRoutes } from "../../../features/yield-transaction-flow/composition";
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import { BorrowFeatureRoute } from "../../routes/ui/borrow-feature-route";
+import { dashboardEarnRoute } from "./dashboard-earn-route";
 import {
   DashboardEarnFlowOverview,
   DashboardEarnTab,
@@ -157,41 +159,52 @@ export const createDashboardRoutes = ({
 export const DashboardRoutes = () => {
   const location = useLocation();
   const selectCategory = useSelectEarnCategory();
-  const [categoryPresses, setCategoryPresses] = useState(0);
-  // A pressed category is applied once the leaving page finished its exit, so
-  // it does not render the new category while fading out. The state drives
-  // the tab highlight; the ref is what the exit callback reads, because
-  // AnimatePresence keeps the callback from the render the exit started in.
-  const [pendingYieldCategory, setPendingYieldCategory] =
-    useState<YieldCategory | null>(null);
+  const earnNavigation = useWidgetRouteState(dashboardEarnRoute);
+  const isEarnPage = Option.isSome(widgetRoutes.earn.match(location.pathname));
+  const acceptedCategory = isEarnPage
+    ? (earnNavigation?.yieldCategory ?? null)
+    : null;
+  const [categoryTransition, setCategoryTransition] = useState<{
+    readonly key: string | null;
+    readonly category: YieldCategory | null;
+  }>({ key: null, category: null });
+
+  // A blocked navigation never changes location, so it cannot remount Steps.
+  // Keep the accepted category's key through Review, Steps, and Complete.
+  if (acceptedCategory !== null && categoryTransition.key !== location.key) {
+    setCategoryTransition({ key: location.key, category: acceptedCategory });
+  } else if (
+    acceptedCategory === null &&
+    categoryTransition.category !== null
+  ) {
+    setCategoryTransition({ ...categoryTransition, category: null });
+  }
+
+  // AnimatePresence retains the callback from when the exit began. Read the
+  // latest accepted category, including another press during that exit.
   const pendingYieldCategoryRef = useRef<YieldCategory | null>(null);
+  useLayoutEffect(() => {
+    pendingYieldCategoryRef.current = categoryTransition.category;
+  }, [categoryTransition]);
+
   const registerEarnFooterButton = shouldRegisterDashboardEarnFooterButton(
     location.pathname
   );
   const pageKey = resolveDashboardPageKey(location.pathname);
-  // Category tab presses replay the Earn page transition like route tabs do.
-  const routesKey = pageKey === "earn" ? `earn:${categoryPresses}` : pageKey;
-
-  const onYieldCategorySelect = (category: YieldCategory) => {
-    pendingYieldCategoryRef.current = category;
-    setPendingYieldCategory(category);
-    setCategoryPresses((n) => n + 1);
-  };
+  const routesKey =
+    pageKey === "earn" ? `earn:${categoryTransition.key}` : pageKey;
 
   const onExitComplete = () => {
     const category = pendingYieldCategoryRef.current;
     if (category === null) return;
     pendingYieldCategoryRef.current = null;
     selectCategory(category);
-    setPendingYieldCategory(null);
+    setCategoryTransition((current) => ({ ...current, category: null }));
   };
 
   return (
     <>
-      <DashboardShell
-        onYieldCategorySelect={onYieldCategorySelect}
-        pendingYieldCategory={pendingYieldCategory}
-      >
+      <DashboardShell pendingYieldCategory={categoryTransition.category}>
         <AnimatePresence mode="wait" onExitComplete={onExitComplete}>
           {/* The exiting Routes keeps its location, so it renders the page being left. */}
           <Routes location={location} key={routesKey}>
