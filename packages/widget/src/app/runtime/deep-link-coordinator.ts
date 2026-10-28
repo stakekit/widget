@@ -1,16 +1,17 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
+import type { YieldPendingActionType } from "../../domain/action/pending-action";
+import type { YieldId } from "../../domain/identity/identifiers";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
-import { getPositionDetailsHubPath } from "../../features/position-details/index";
 import { makeStartYieldTransactionFlow } from "../../features/yield-transaction-flow/runtime";
 import {
-  toWidgetPath,
   WidgetNavigation,
   type WidgetNavigationError,
 } from "../../services/navigation/widget-navigation";
+import { widgetRoutes } from "../../services/navigation/widget-routes";
 import type { WalletRuntimeInvariantError } from "../../services/wallet/wallet-errors";
 import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../services/wallet/wallet-service";
@@ -33,9 +34,9 @@ export type PendingActionDeepLinkObservation =
       readonly _tag: "OpenValidatorSelection";
       readonly balanceId: string;
       readonly intent: PendingActionIntent;
-      readonly pendingActionType: string;
+      readonly pendingActionType: YieldPendingActionType;
       readonly walletScope: WalletScopeKey;
-      readonly yieldId: string;
+      readonly yieldId: YieldId;
     }>
   | Readonly<{
       readonly _tag: "StartYieldFlow";
@@ -49,7 +50,7 @@ export type DeepLinkRouteObservation = Readonly<{
   readonly pendingAction: PendingActionDeepLinkObservation | null;
   readonly position: {
     readonly balanceId: string;
-    readonly yieldId: string;
+    readonly yieldId: YieldId;
   } | null;
   readonly ready: boolean;
 }>;
@@ -163,13 +164,16 @@ export class DeepLinkCoordinator extends Context.Service<
       const openPendingAction = (
         pendingAction: PendingActionDeepLinkObservation
       ) => {
+        // Both Layouts mount position details and its validator selection.
         if (pendingAction._tag === "OpenValidatorSelection") {
           return navigation
             .execute({
               _tag: "Push",
-              path: toWidgetPath(
-                `/positions/${pendingAction.yieldId}/${pendingAction.balanceId}/select-validator/${pendingAction.pendingActionType}`
-              ),
+              to: widgetRoutes.positionSelectValidator.build({
+                balanceId: pendingAction.balanceId,
+                integrationId: pendingAction.yieldId,
+                pendingActionType: pendingAction.pendingActionType,
+              }),
             })
             .pipe(Effect.as(true));
         }
@@ -191,12 +195,10 @@ export class DeepLinkCoordinator extends Context.Service<
             navigation
               .execute({
                 _tag: "Push",
-                path: toWidgetPath(
-                  getPositionDetailsHubPath({
-                    balanceId: position.balanceId,
-                    integrationId: position.yieldId,
-                  })
-                ),
+                to: widgetRoutes.positionDetails.build({
+                  balanceId: position.balanceId,
+                  integrationId: position.yieldId,
+                }),
               })
               .pipe(Effect.as(true))
           );

@@ -1,13 +1,18 @@
-import { Match } from "effect";
-import { startsWith } from "effect/String";
-import { useLocation, useNavigate } from "react-router";
+import { Option } from "effect";
+import { useLocation } from "react-router";
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import { useEarnYieldSelection } from "../../../../features/earn/index";
+import { useWidgetNavigate } from "../../../../features/navigation/index";
 import { useTrackEvent } from "../../../../features/tracking/index";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../../services/navigation/widget-routes";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { dashboardEarnRoute } from "../dashboard-earn-route";
 import {
   divider,
   tabsContainer,
@@ -19,44 +24,44 @@ import { DashboardTab } from "./tab";
 type RouteTab = "earn" | "borrow" | "manage" | "activity";
 
 /** The route tab a dashboard pathname belongs to. */
-export const resolveDashboardRouteTab = (pathname: string): RouteTab =>
-  Match.value(pathname).pipe(
-    Match.when(startsWith("/activity"), () => "activity" as const),
-    Match.when(startsWith("/borrow"), () => "borrow" as const),
-    Match.when(startsWith("/positions"), () => "manage" as const),
-    Match.orElse(() => "earn" as const)
-  );
+export const resolveDashboardRouteTab = (pathname: string): RouteTab => {
+  if (Option.isSome(widgetRoutes.activity.matchPrefix(pathname))) {
+    return "activity";
+  }
+  if (Option.isSome(widgetRoutes.borrow.matchPrefix(pathname))) {
+    return "borrow";
+  }
+  if (Option.isSome(widgetRoutes.positions.matchPrefix(pathname))) {
+    return "manage";
+  }
+  return "earn";
+};
 
-const tabsMap: Record<RouteTab, string> = {
-  activity: "/activity",
-  borrow: "/borrow",
-  earn: "/",
-  manage: "/positions",
+const tabsMap: Record<RouteTab, WidgetPath> = {
+  activity: widgetRoutes.activity.build(),
+  borrow: widgetRoutes.borrow.build("Dashboard"),
+  earn: widgetRoutes.earn.build(),
+  manage: widgetRoutes.positions.build(),
 };
 
 export const DashboardTabs = ({
-  onYieldCategorySelect,
   pendingYieldCategory,
 }: {
-  /** Selects a yield category; applying it may wait for the page transition. */
-  readonly onYieldCategorySelect: (category: YieldCategory) => void;
   /** A pressed yield category not yet applied to the Earn selection. */
   readonly pendingYieldCategory: YieldCategory | null;
 }) => {
   const trackEvent = useTrackEvent();
-  const navigate = useNavigate();
+  const navigation = useWidgetNavigate();
   const { view: yieldSelection } = useEarnYieldSelection();
   const availableYieldCategories = yieldSelection.availableCategories;
   const selectedYieldCategory =
     pendingYieldCategory ?? yieldSelection.selectedCategory;
-  const location = useLocation();
-
-  const selectedTab = resolveDashboardRouteTab(location.pathname);
+  const selectedTab = resolveDashboardRouteTab(useLocation().pathname);
 
   const onRouteTabPress = (selected: RouteTab) => {
     if (selectedTab === selected) return;
     trackEvent("tabClicked", { selected });
-    navigate(tabsMap[selected]);
+    navigation.push(tabsMap[selected]);
   };
 
   const onYieldCategoryPress = (category: YieldCategory) => {
@@ -65,8 +70,7 @@ export const DashboardTabs = ({
     }
 
     trackEvent("tabClicked", { selected: category });
-    onYieldCategorySelect(category);
-    navigate("/");
+    navigation.push(dashboardEarnRoute.build({ yieldCategory: category }));
   };
 
   const borrowEnabled = useWidgetConfig("borrowEnabled");

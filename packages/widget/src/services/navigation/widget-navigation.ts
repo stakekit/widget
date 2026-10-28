@@ -1,16 +1,13 @@
-import { Context, Data, Effect, Layer, Schema } from "effect";
+import { Context, Data, Effect, Layer } from "effect";
 import { ApplicationRouter } from "./application-router";
-
-export const WidgetPath = Schema.TemplateLiteral([
-  Schema.Literal("/"),
-  Schema.String,
-]).pipe(Schema.brand("WidgetPath"));
-export type WidgetPath = typeof WidgetPath.Type;
-export type WidgetPathInput = typeof WidgetPath.Encoded;
+import {
+  type WidgetNavigationTarget,
+  widgetTargetPath,
+  widgetTargetState,
+} from "./widget-routes";
 
 export type WidgetNavigationOptions = Readonly<{
   readonly scroll?: "preserve" | "reset";
-  readonly state?: unknown;
 }>;
 
 export type WidgetNavigationCommand =
@@ -22,13 +19,13 @@ export type WidgetNavigationCommand =
   | Readonly<
       {
         readonly _tag: "Push";
-        readonly path: WidgetPath;
+        readonly to: WidgetNavigationTarget;
       } & WidgetNavigationOptions
     >
   | Readonly<
       {
         readonly _tag: "Replace";
-        readonly path: WidgetPath;
+        readonly to: WidgetNavigationTarget;
       } & WidgetNavigationOptions
     >;
 
@@ -37,8 +34,6 @@ export class WidgetNavigationError extends Data.TaggedError(
 )<{
   readonly cause: unknown;
 }> {}
-
-export const toWidgetPath = Schema.decodeSync(WidgetPath);
 
 const resetScroll = async (
   options: WidgetNavigationOptions,
@@ -65,11 +60,11 @@ export type WidgetNavigationService = Readonly<{
     command: WidgetNavigationCommand
   ) => Effect.Effect<void, WidgetNavigationError>;
   readonly push: (
-    path: WidgetPath,
+    to: WidgetNavigationTarget,
     options?: WidgetNavigationOptions
   ) => Effect.Effect<void, WidgetNavigationError>;
   readonly replace: (
-    path: WidgetPath,
+    to: WidgetNavigationTarget,
     options?: WidgetNavigationOptions
   ) => Effect.Effect<void, WidgetNavigationError>;
 }>;
@@ -83,9 +78,9 @@ export const makeWidgetNavigation = (
       case "Back":
         return methods.back(command);
       case "Push":
-        return methods.push(command.path, command);
+        return methods.push(command.to, command);
       case "Replace":
-        return methods.replace(command.path, command);
+        return methods.replace(command.to, command);
     }
   },
 });
@@ -103,23 +98,22 @@ export class WidgetNavigation extends Context.Service<
             await resetScroll(options, canResetScroll);
             await router.navigate(-1);
           });
-        const push: WidgetNavigation["Service"]["push"] = (
-          path,
-          options = {}
-        ) =>
+        const push: WidgetNavigation["Service"]["push"] = (to, options = {}) =>
           runNavigation(async () => {
             await resetScroll(options, canResetScroll);
-            await router.navigate(path, { state: options.state });
+            await router.navigate(widgetTargetPath(to), {
+              state: widgetTargetState(to),
+            });
           });
         const replace: WidgetNavigation["Service"]["replace"] = (
-          path,
+          to,
           options = {}
         ) =>
           runNavigation(async () => {
             await resetScroll(options, canResetScroll);
-            await router.navigate(path, {
+            await router.navigate(widgetTargetPath(to), {
               replace: true,
-              state: options.state,
+              state: widgetTargetState(to),
             });
           });
         return makeWidgetNavigation({ back, push, replace });

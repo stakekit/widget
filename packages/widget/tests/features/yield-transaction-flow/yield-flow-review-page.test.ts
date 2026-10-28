@@ -6,11 +6,13 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { TokenBalance } from "../../../src/domain/finance/models";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletAddress,
+  YieldId,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   makeYieldActionContinuationSession,
-  makeYieldFlowNavigationState,
   makeYieldFlowSession,
   YieldFlowHandoff,
   type YieldFlowSession,
@@ -28,7 +30,6 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
-import { toWidgetPath } from "../../../src/services/navigation/widget-navigation";
 import { resourceInvalidationKeys } from "../../../src/services/resource-invalidation";
 import {
   yieldApiActionFixture,
@@ -42,6 +43,7 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
+const integrationId = Schema.decodeSync(YieldId)("integration");
 const selectedStake = yieldApiYieldFixture();
 const gasToken = selectedStake.mechanics.gasFeeToken;
 const enterIntake: YieldTransactionFlowIntake = {
@@ -254,7 +256,7 @@ describe("Yield flow Review page", () => {
                 mount: {
                   _tag: "PositionExit",
                   balanceId: "balance",
-                  integrationId: "integration",
+                  integrationId,
                 },
               },
               walletScope
@@ -312,8 +314,10 @@ describe("Yield flow Review page", () => {
         expect(yield* kit.navigation.commands).toEqual([
           {
             _tag: "Push",
-            path: toWidgetPath("/steps"),
-            state: makeYieldFlowNavigationState(handle, handoff),
+            to: {
+              path: "/steps",
+              state: { executionHandoff: handoff, yieldFlowSession: handle },
+            },
           },
         ]);
 
@@ -469,8 +473,13 @@ describe("Yield flow Review page", () => {
       expect(yield* kit.navigation.commands).toEqual([
         {
           _tag: "Push",
-          path: toWidgetPath(`/activity/${action.id}/steps`),
-          state: makeYieldFlowNavigationState(handle, held?.handoff),
+          to: {
+            path: `/activity/${action.id}/steps`,
+            state: {
+              executionHandoff: held?.handoff,
+              yieldFlowSession: handle,
+            },
+          },
         },
       ]);
     })

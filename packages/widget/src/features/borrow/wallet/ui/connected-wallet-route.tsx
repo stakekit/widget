@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { Navigate, Outlet } from "react-router";
+import { Outlet } from "react-router";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
+import { WidgetNavigate } from "../../../navigation/views";
 import { useBorrowWalletView } from "../react/use-borrow-wallet";
 
 export const BorrowConnectedWalletRoute = (): ReactNode => {
@@ -11,5 +13,5 @@ export const BorrowConnectedWalletRoute = (): ReactNode => {
   if (walletView.status === "connecting") {
     return <ContentLoaderSquare heightPx={340} />;
   }
-  return <Navigate to="/borrow" replace />;
+  return <WidgetNavigate replace to={widgetRoutes.borrow.build("Dashboard")} />;
 };

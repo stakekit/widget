@@ -8,7 +8,6 @@ import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adap
 import { WalletService } from "../../../services/wallet/wallet-service";
 import {
   isYieldTransactionFlowWalletScopeValid,
-  makeYieldFlowNavigationState,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
   type YieldFlowSession,
@@ -53,8 +52,7 @@ export const makeStartYieldTransactionFlow = Effect.gen(function* () {
     yield* Effect.uninterruptible(
       navigation.execute({
         _tag: "Push",
-        path: session.destination.reviewPath,
-        state: makeYieldFlowNavigationState(session),
+        to: session.destination.review({ yieldFlowSession: session }),
       })
     );
     return { _tag: "Started", session } as const;

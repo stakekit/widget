@@ -1,4 +1,5 @@
 export { AnimationLayout } from "./ui/animation-layout";
+export type { PageTransition } from "./ui/animation-page";
 export { AppContainer } from "./ui/app-container";
 export { CompactLayout } from "./ui/compact/compact-layout";
 export { Details } from "./ui/compact/details/details.page.tsx";

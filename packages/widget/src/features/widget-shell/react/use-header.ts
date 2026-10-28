@@ -1,9 +1,9 @@
 import { useAtomSet } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { useNavigate } from "react-router";
 import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
 import { useLeaveConfirmation } from "../../leave-confirmation/index";
+import { useWidgetNavigate } from "../../navigation/index";
 import { useTrackEvent } from "../../tracking/index";
 import { useSKWallet, useWalletConfig } from "../../wallet/index";
 import { useWidgetConfig } from "../../widget-configuration/index";
@@ -13,7 +13,7 @@ import { useDetailsMatch } from "./use-details-match";
 import { useElementAtomRef } from "./use-element-atom-ref";
 
 export const useHeader = () => {
-  const navigate = useNavigate();
+  const navigation = useWidgetNavigate();
 
   const headerRef = useElementAtomRef(headerElementAtom);
 
@@ -41,7 +41,7 @@ export const useHeader = () => {
     if (!showBack) return;
 
     trackEvent("backClicked");
-    navigate(-1);
+    navigation.back();
   };
 
   const disconnectWidget = useAtomSet(disconnectWidgetAtom);

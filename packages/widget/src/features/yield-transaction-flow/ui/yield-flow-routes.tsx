@@ -1,6 +1,8 @@
 import { Match } from "effect";
 import type { ComponentType, ReactNode } from "react";
 import { Route } from "react-router";
+import { widgetYieldFlowRoutes } from "../../../services/navigation/widget-routes";
+import type { YieldFlowMountTag } from "../model/yield-transaction-flow";
 import {
   YieldFlowExecutionPage,
   YieldFlowExecutionRoute,
@@ -17,7 +19,7 @@ import { StakeStepsPage } from "./steps/pages/stake-steps.page.tsx";
 import { UnstakeStepsPage } from "./steps/pages/unstake-steps.page.tsx";
 
 type YieldFlowRouteMount = {
-  readonly journey: "Enter" | "Exit" | "Manage";
+  readonly mount: Exclude<YieldFlowMountTag, "YieldActionContinuation">;
   /**
    * Layout rendered inside the Session (it may read the Session intake) around
    * Review, Steps, and Complete; it renders their `<Outlet />`.
@@ -32,15 +34,17 @@ type StandardYieldFlowPages = Readonly<{
 }>;
 
 const createStandardYieldFlowRoutes = (
-  { journey, layout }: YieldFlowRouteMount,
+  { layout, mount }: YieldFlowRouteMount,
+  journey: "Enter" | "Exit" | "Manage",
   { CompletePage, ReviewPage, StepsPage }: StandardYieldFlowPages
 ) => {
+  const routes = widgetYieldFlowRoutes[mount];
   const pages = (
     <>
-      <Route path="review" element={<ReviewPage />} />
+      <Route path={routes.review.pattern} element={<ReviewPage />} />
       <Route element={<YieldFlowExecutionRoute />}>
         <Route
-          path="steps"
+          path={routes.steps.pattern}
           element={
             <YieldFlowExecutionPage page="Steps">
               <StepsPage />
@@ -48,7 +52,7 @@ const createStandardYieldFlowRoutes = (
           }
         />
         <Route
-          path="complete"
+          path={routes.complete.pattern}
           element={
             <YieldFlowExecutionPage page="Complete">
               <CompletePage />
@@ -60,30 +64,31 @@ const createStandardYieldFlowRoutes = (
   );
 
   return (
-    <Route element={<YieldFlowRoute expected={journey} />}>
+    <Route element={<YieldFlowRoute expected={journey} mount={mount} />}>
       {layout ? <Route element={layout}>{pages}</Route> : pages}
     </Route>
   );
 };
 
-export const createYieldFlowRoutes = (mount: YieldFlowRouteMount) =>
-  Match.value(mount.journey).pipe(
-    Match.when("Enter", () =>
-      createStandardYieldFlowRoutes(mount, {
+/** Review, Steps, and Complete of the Yield Transaction Flow `mount` starts. */
+export const createYieldFlowRoutes = (route: YieldFlowRouteMount) =>
+  Match.value(route.mount).pipe(
+    Match.whenOr("Earn", "PositionStake", () =>
+      createStandardYieldFlowRoutes(route, "Enter", {
         CompletePage: StakeCompletePage,
         ReviewPage: StakeReviewPage,
         StepsPage: StakeStepsPage,
       })
     ),
-    Match.when("Exit", () =>
-      createStandardYieldFlowRoutes(mount, {
+    Match.when("PositionExit", () =>
+      createStandardYieldFlowRoutes(route, "Exit", {
         CompletePage: UnstakeCompletePage,
         ReviewPage: UnstakeReviewPage,
         StepsPage: UnstakeStepsPage,
       })
     ),
-    Match.when("Manage", () =>
-      createStandardYieldFlowRoutes(mount, {
+    Match.when("PositionManage", () =>
+      createStandardYieldFlowRoutes(route, "Manage", {
         CompletePage: PendingCompletePage,
         ReviewPage: PendingReviewPage,
         StepsPage: PendingStepsPage,

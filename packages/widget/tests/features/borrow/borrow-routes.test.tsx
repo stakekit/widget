@@ -7,6 +7,7 @@ import {
 } from "../../../src/features/borrow/composition";
 import { createBorrowTransactionFlowRoutes } from "../../../src/features/borrow-transaction-flow/composition";
 import { WalletScopeRouteGuard } from "../../../src/features/wallet/composition";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 
 const routeComposition = {
   WalletScopeRouteGuard,
@@ -143,13 +144,13 @@ describe("Borrow routes", () => {
         ],
         element: "BorrowShell",
         index: false,
-        path: "borrow",
+        path: widgetRoutes.borrow.pattern,
       },
       {
         children: [],
-        element: "Navigate",
+        element: "WidgetNavigate",
         index: false,
-        path: "borrow/*",
+        path: widgetRoutes.borrow.descendants,
       },
     ]);
   });
@@ -176,7 +177,7 @@ describe("Borrow routes", () => {
                     children: [],
                     element: "BorrowPositionActionPage",
                     index: false,
-                    path: "action/:actionId",
+                    path: widgetRoutes.borrowPositionAction.pattern,
                   },
                   {
                     children: [],
@@ -187,7 +188,7 @@ describe("Borrow routes", () => {
                 ],
                 element: "BorrowPositionDetailsPage",
                 index: false,
-                path: "borrow/:marketId",
+                path: widgetRoutes.borrowPosition.pattern,
               },
             ],
             element: "BorrowConnectedWalletRoute",
@@ -201,9 +202,9 @@ describe("Borrow routes", () => {
       },
       {
         children: [],
-        element: "Navigate",
+        element: "WidgetNavigate",
         index: false,
-        path: "borrow/*",
+        path: widgetRoutes.positionsBorrow.descendants,
       },
     ]);
   });

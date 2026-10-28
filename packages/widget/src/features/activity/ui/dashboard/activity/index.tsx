@@ -1,6 +1,8 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Outlet, useMatch } from "react-router";
+import { Outlet } from "react-router";
+import { widgetYieldFlowRoutes } from "../../../../../services/navigation/widget-routes";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useSKWallet } from "../../../../wallet/index";
 import {
   AnimationPage,
@@ -13,8 +15,12 @@ import * as styles from "./styles.css";
 export const ActivityTabPage = () => {
   const wallet = useSKWallet();
   const view = useAtomValue(activityPageViewAtom);
-  const stepsMatch = useMatch("/activity/:actionId/steps");
-  const completeMatch = useMatch("/activity/:actionId/complete");
+  const stepsMatch = useWidgetRouteMatch(
+    widgetYieldFlowRoutes.YieldActionContinuation.steps
+  );
+  const completeMatch = useWidgetRouteMatch(
+    widgetYieldFlowRoutes.YieldActionContinuation.complete
+  );
   const isExecution = stepsMatch !== null || completeMatch !== null;
   const showSplit = wallet?.status === "connected" && hasActivityActions(view);
 

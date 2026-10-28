@@ -5,14 +5,6 @@ export type PositionDetailsActionCapabilities = {
   readonly canUnstake: boolean;
 };
 
-export const getPositionDetailsHubPath = ({
-  integrationId,
-  balanceId,
-}: {
-  integrationId: string | undefined;
-  balanceId: string | undefined;
-}): `/${string}` => `/positions/${integrationId}/${balanceId}`;
-
 export const resolvePositionDetailsActionMode = ({
   canStake,
   canUnstake,

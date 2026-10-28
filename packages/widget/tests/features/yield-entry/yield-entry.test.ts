@@ -16,14 +16,18 @@ import { makeYieldEntry } from "../../../src/features/yield-entry/index";
 import { getYieldEntryCta } from "../../../src/features/yield-entry/model/yield-entry";
 import type { YieldEntryFacadeInput } from "../../../src/features/yield-entry/state/yield-entry";
 import {
-  decodeYieldFlowNavigationState,
   type YieldFlowSession,
+  yieldFlowRoutes,
 } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   makeWidgetNavigation,
   type WidgetNavigationOptions,
-  type WidgetPath,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  type WidgetNavigationTarget,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import {
   disconnectedLedgerConnectorState,
@@ -184,16 +188,21 @@ const readSubmitOutcome = (
   );
 
 type Push = (
-  path: WidgetPath,
+  to: WidgetNavigationTarget,
   options?: WidgetNavigationOptions
 ) => Effect.Effect<void>;
 
 /** The Session the single Start navigation carried to Review. */
 const startedSession = (push: Mock<Push>): YieldFlowSession => {
   expect(push).toHaveBeenCalledOnce();
-  const [path, options] = push.mock.calls[0] ?? [];
-  expect(path).toBe("/review");
-  return Option.getOrThrow(decodeYieldFlowNavigationState(options?.state));
+  const [to] = push.mock.calls[0] ?? [];
+  if (to === undefined) throw new Error("Expected a Review navigation");
+  expect(widgetTargetPath(to)).toBe("/review");
+  return Option.getOrThrow(
+    yieldFlowRoutes.Earn.state(widgetTargetState(to)).pipe(
+      Option.map((state) => state.yieldFlowSession)
+    )
+  );
 };
 
 describe("Yield Entry", () => {
@@ -485,7 +494,7 @@ describe("Yield Entry", () => {
       registry.set(facade.submitAtom, undefined);
       await readSubmitOutcome(registry, facade.submitAtom).toBe("submitted");
       expect(ports.push).toHaveBeenCalledWith(
-        "/review",
+        expect.objectContaining({ path: "/review" }),
         expect.objectContaining({ _tag: "Push" })
       );
       expect(startedSession(ports.push)).toMatchObject({

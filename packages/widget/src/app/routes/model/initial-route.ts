@@ -1,5 +1,8 @@
-import { Match } from "effect";
 import type { WidgetLayout } from "../../../services/config/widget-config-model";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../services/navigation/widget-routes";
 import type { InitTab } from "../../../services/wallet/init-params";
 
 /**
@@ -14,16 +17,13 @@ export const resolveInitialRoutePath = ({
   readonly borrowAvailable: boolean;
   readonly layout: WidgetLayout;
   readonly tab: InitTab;
-}): string =>
-  Match.value({ borrowAvailable, layout, tab }).pipe(
-    Match.when({ tab: "activity" }, () => "/activity"),
-    Match.when(
-      ({ tab }) => tab === "positions" || tab === "manage",
-      () => "/positions"
-    ),
-    Match.when(
-      { borrowAvailable: true, layout: "Dashboard", tab: "borrow" },
-      () => "/borrow"
-    ),
-    Match.orElse(() => "/")
-  );
+}): WidgetPath => {
+  if (tab === "activity") return widgetRoutes.activity.build();
+  if (tab === "positions" || tab === "manage") {
+    return widgetRoutes.positions.build();
+  }
+  if (tab === "borrow" && borrowAvailable && layout === "Dashboard") {
+    return widgetRoutes.borrow.build(layout);
+  }
+  return widgetRoutes.earn.build();
+};

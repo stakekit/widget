@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import {
   createContext,
@@ -7,19 +6,21 @@ import {
   useContext,
   useState,
 } from "react";
-import { Navigate, Outlet, useLocation, useParams } from "react-router";
-import {
-  type MarketId,
-  MarketId as MarketIdSchema,
-} from "../../../domain/borrow/ids";
+import { Outlet, useLocation } from "react-router";
+import type { MarketId } from "../../../domain/borrow/ids";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import {
+  useWidgetRoutePrefixMatch,
+  useWidgetRouteState,
+} from "../../navigation/index";
+import { WidgetNavigate } from "../../navigation/views";
 import { walletScopeAtom } from "../../wallet/index";
 import {
   type BorrowFlowSession,
   type BorrowTransactionFlowEntry,
-  decodeBorrowFlowExecutionActionId,
-  decodeBorrowFlowNavigationState,
-  getBorrowTransactionFlowRoutes,
+  borrowFlowRoutes,
+  getBorrowTransactionFlowDestination,
 } from "../model/borrow-transaction-flow";
 import {
   BorrowFlowExecutionKey,
@@ -49,9 +50,18 @@ export const useBorrowTransactionFlowReview = () =>
     )
   );
 
+/** The action Steps and Complete were navigated to run, if any. */
+const useBorrowFlowExecutionActionId = () => {
+  const { intake } = useBorrowTransactionFlow();
+  return (
+    useWidgetRouteState(borrowFlowRoutes[intake.entry._tag])
+      ?.executionActionId ?? null
+  );
+};
+
 /** The Execution of the action Steps and Complete were navigated to run. */
 export const useBorrowTransactionFlowExecution = () => {
-  const actionId = decodeBorrowFlowExecutionActionId(useLocation().state);
+  const actionId = useBorrowFlowExecutionActionId();
   const session = useBorrowTransactionFlow();
   if (!actionId) throw new Error("Borrow Flow Execution is unavailable.");
   return useAtomValue(
@@ -71,9 +81,13 @@ const getEntryFallbackPath = (
   expected: BorrowTransactionFlowEntry["_tag"],
   marketId: MarketId | undefined
 ) => {
-  if (expected === "BorrowEntry") return "/borrow";
-  if (marketId) return `/positions/borrow/${marketId}`;
-  return "/positions";
+  if (expected === "BorrowEntry") {
+    return widgetRoutes.borrow.build("Dashboard");
+  }
+  if (marketId) {
+    return widgetRoutes.borrowPosition.build("Dashboard", { marketId });
+  }
+  return widgetRoutes.positions.build();
 };
 
 type MountedBorrowFlowSession = Readonly<{
@@ -92,14 +106,12 @@ export const BorrowTransactionFlowRoute = ({
 }: {
   readonly expected: BorrowTransactionFlowEntry["_tag"];
 }) => {
-  const routeParams = useParams();
-  const marketId = routeParams.marketId
-    ? Schema.decodeSync(MarketIdSchema)(routeParams.marketId)
-    : undefined;
+  const marketId = useWidgetRoutePrefixMatch(
+    widgetRoutes.borrowPosition
+  )?.marketId;
   const location = useLocation();
-  const navigated = Option.getOrNull(
-    decodeBorrowFlowNavigationState(location.state)
-  );
+  const navigated =
+    useWidgetRouteState(borrowFlowRoutes[expected])?.borrowFlowSession ?? null;
   const [mounted, setMounted] = useState<MountedBorrowFlowSession | null>(null);
   if (navigated && navigated !== mounted?.session) {
     setMounted({ key: location.key, session: navigated });
@@ -109,7 +121,9 @@ export const BorrowTransactionFlowRoute = ({
     !mounted ||
     !matchesEntry(mounted.session.intake.entry, expected, marketId)
   ) {
-    return <Navigate replace to={getEntryFallbackPath(expected, marketId)} />;
+    return (
+      <WidgetNavigate replace to={getEntryFallbackPath(expected, marketId)} />
+    );
   }
   return <BorrowFlowSessionRoute key={mounted.key} session={mounted.session} />;
 };
@@ -123,9 +137,9 @@ const BorrowFlowSessionRoute = ({
   const walletScope = useAtomValue(walletScopeAtom);
   if (!walletScope || !sameWalletScopeOwner(walletScope, session.walletScope)) {
     return (
-      <Navigate
+      <WidgetNavigate
         replace
-        to={getBorrowTransactionFlowRoutes(session.intake.entry).basePath}
+        to={getBorrowTransactionFlowDestination(session.intake.entry).basePath}
       />
     );
   }
@@ -144,12 +158,12 @@ export const BorrowTransactionFlowExecutionRoute = ({
   children,
 }: PropsWithChildren) => {
   const { intake } = useBorrowTransactionFlow();
-  const actionId = decodeBorrowFlowExecutionActionId(useLocation().state);
+  const actionId = useBorrowFlowExecutionActionId();
   if (!actionId) {
     return (
-      <Navigate
+      <WidgetNavigate
         replace
-        to={getBorrowTransactionFlowRoutes(intake.entry).basePath}
+        to={getBorrowTransactionFlowDestination(intake.entry).basePath}
       />
     );
   }
@@ -163,9 +177,9 @@ const ExecutionStarted = ({ children }: PropsWithChildren) => {
   );
   if (workflow._tag === "Failure") {
     return (
-      <Navigate
+      <WidgetNavigate
         replace
-        to={getBorrowTransactionFlowRoutes(intake.entry).basePath}
+        to={getBorrowTransactionFlowDestination(intake.entry).basePath}
       />
     );
   }
@@ -178,19 +192,23 @@ export const BorrowTransactionFlowExecutionPage = ({
   children,
   page,
 }: PropsWithChildren<{ readonly page: "Complete" | "Steps" }>) => {
-  const { intake } = useBorrowTransactionFlow();
-  const location = useLocation();
+  const session = useBorrowTransactionFlow();
+  const actionId = useBorrowFlowExecutionActionId();
   const state = useAtomValue(useBorrowTransactionFlowExecution().stateAtom);
   if (!AsyncResult.isSuccess(state)) return null;
-  const { completePath, stepsPath } = getBorrowTransactionFlowRoutes(
-    intake.entry
-  );
+  const destination = getBorrowTransactionFlowDestination(session.intake.entry);
+  const navigationState = {
+    borrowFlowSession: session,
+    ...(actionId ? { executionActionId: actionId } : {}),
+  };
   const completed = state.value._tag === "Completed";
   if (page === "Steps" && completed) {
-    return <Navigate replace state={location.state} to={completePath} />;
+    return (
+      <WidgetNavigate replace to={destination.complete(navigationState)} />
+    );
   }
   if (page === "Complete" && !completed) {
-    return <Navigate replace state={location.state} to={stepsPath} />;
+    return <WidgetNavigate replace to={destination.steps(navigationState)} />;
   }
   return children ?? <Outlet />;
 };

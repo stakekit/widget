@@ -69,8 +69,8 @@ export const leaveYieldFlowExecution = (
   to: "Exit" | "Review"
 ) =>
   to === "Review"
-    ? navigate({ _tag: "Replace", path: destination.reviewPath })
-    : navigate({ _tag: "Push", path: destination.finishPath });
+    ? navigate({ _tag: "Replace", to: destination.reviewPath })
+    : navigate({ _tag: "Push", to: destination.finishPath });
 
 /** One handoff's Execution in a Session. */
 export class YieldFlowExecutionKey extends Data.Class<{

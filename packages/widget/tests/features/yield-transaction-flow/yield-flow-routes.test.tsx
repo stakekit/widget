@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { createYieldFlowRoutes } from "../../../src/features/yield-transaction-flow/composition";
+import { widgetYieldFlowRoutes } from "../../../src/services/navigation/widget-routes";
 
 vi.mock(
   "../../../src/features/yield-transaction-flow/react/yield-flow-route",
@@ -133,11 +134,13 @@ const getRouteContract = (
 const standardRouteContract = ({
   completePage,
   journey,
+  mount,
   reviewPage,
   stepsPage,
 }: {
   readonly completePage: string;
   readonly journey: "Enter" | "Exit" | "Manage";
+  readonly mount: "Earn" | "PositionExit" | "PositionManage" | "PositionStake";
   readonly reviewPage: string;
   readonly stepsPage: string;
 }): ReadonlyArray<RouteContract> => [
@@ -147,7 +150,7 @@ const standardRouteContract = ({
         children: [],
         element: reviewPage,
         index: false,
-        path: "review",
+        path: widgetYieldFlowRoutes[mount].review.pattern,
       },
       {
         children: [
@@ -155,13 +158,13 @@ const standardRouteContract = ({
             children: [],
             element: `YieldFlowExecutionPage>${stepsPage}`,
             index: false,
-            path: "steps",
+            path: widgetYieldFlowRoutes[mount].steps.pattern,
           },
           {
             children: [],
             element: `YieldFlowExecutionPage>${completePage}`,
             index: false,
-            path: "complete",
+            path: widgetYieldFlowRoutes[mount].complete.pattern,
           },
         ],
         element: "YieldFlowExecutionRoute",
@@ -178,6 +181,7 @@ const standardRouteContract = ({
 describe("Yield Transaction Flow routes", () => {
   it.each([
     [
+      "Earn",
       "Enter",
       {
         completePage: "StakeCompletePage",
@@ -186,6 +190,16 @@ describe("Yield Transaction Flow routes", () => {
       },
     ],
     [
+      "PositionStake",
+      "Enter",
+      {
+        completePage: "StakeCompletePage",
+        reviewPage: "StakeReviewPage",
+        stepsPage: "StakeStepsPage",
+      },
+    ],
+    [
+      "PositionExit",
       "Exit",
       {
         completePage: "UnstakeCompletePage",
@@ -194,6 +208,7 @@ describe("Yield Transaction Flow routes", () => {
       },
     ],
     [
+      "PositionManage",
       "Manage",
       {
         completePage: "PendingCompletePage",
@@ -201,9 +216,12 @@ describe("Yield Transaction Flow routes", () => {
         stepsPage: "PendingStepsPage",
       },
     ],
-  ] as const)("publishes the %s journey", (journey, pages) => {
-    expect(getRouteContract(createYieldFlowRoutes({ journey }))).toEqual(
-      standardRouteContract({ journey, ...pages })
-    );
-  });
+  ] as const)(
+    "publishes the %s mount's %s journey",
+    (mount, journey, pages) => {
+      expect(getRouteContract(createYieldFlowRoutes({ mount }))).toEqual(
+        standardRouteContract({ journey, mount, ...pages })
+      );
+    }
+  );
 });

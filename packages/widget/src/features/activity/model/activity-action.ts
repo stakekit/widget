@@ -11,6 +11,10 @@ import type {
 } from "../../../domain/earn/models";
 import type { ActionId } from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../services/navigation/widget-routes";
 
 export type YieldActivityItem = {
   readonly _tag: "yield";
@@ -53,7 +57,9 @@ export const isActivitySelectionTarget = (
   item._tag === target.source &&
   item.actionData.id === target.actionId;
 
-export const getActivityActionPath = (target: ActivitySelectionTarget) =>
+export const getActivityActionPath = (
+  target: ActivitySelectionTarget
+): WidgetPath =>
   target.source === "borrow"
-    ? `/activity/borrow/${encodeURIComponent(target.actionId)}`
-    : `/activity/${encodeURIComponent(target.actionId)}`;
+    ? widgetRoutes.activityBorrowAction.build({ actionId: target.actionId })
+    : widgetRoutes.activityAction.build({ actionId: target.actionId });

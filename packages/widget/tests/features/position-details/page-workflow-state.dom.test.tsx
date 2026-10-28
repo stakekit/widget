@@ -5,7 +5,10 @@ import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletAddress,
+  YieldId,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   PositionDetailsWorkflowKey,
@@ -22,7 +25,7 @@ const settings = {
 const positionWorkflowAtom = positionDetailsWorkflowAtom(
   new PositionDetailsWorkflowKey({
     balanceId: "balance-1",
-    integrationId: "yield-1",
+    integrationId: Schema.decodeSync(YieldId)("yield-1"),
     pendingActionType: null,
     scope: new WalletScopeKey({
       address: Schema.decodeSync(WalletAddress)("0xwallet-a"),

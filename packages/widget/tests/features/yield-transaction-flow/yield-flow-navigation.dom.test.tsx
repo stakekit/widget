@@ -38,6 +38,11 @@ import {
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetRoutes,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
 import {
   makeTransactionSignError,
@@ -312,10 +317,13 @@ const FlowRoutes = ({
         <Route path="/" element={<StartPage />} />
         <Route
           element={
-            <WalletScopeRoute fallbackPath="/" walletState={walletState} />
+            <WalletScopeRoute
+              fallbackPath={widgetRoutes.earn.build()}
+              walletState={walletState}
+            />
           }
         >
-          <Route element={<YieldFlowRoute expected="Enter" />}>
+          <Route element={<YieldFlowRoute expected="Enter" mount="Earn" />}>
             <Route path="review" element={<ReviewPage />} />
             <Route element={<YieldFlowExecutionRoute />}>
               <Route
@@ -363,7 +371,7 @@ const FlowTestApp = ({
   const applicationRouterLayer = Layer.merge(
     Layer.succeed(
       ApplicationRouter,
-      ApplicationRouter.of({ pathnames: Stream.never, router })
+      ApplicationRouter.of({ locations: Stream.never, router })
     ),
     WidgetConfigService.layer(hostConfiguration)
   );
@@ -372,18 +380,20 @@ const FlowTestApp = ({
       Effect.sync(() => {
         testNavigationChannel.navigate?.(-1);
       }),
-    push: (path, options) =>
+    push: (to) =>
       Effect.sync(() => {
         if (!testNavigationChannel.navigate) {
           throw new Error("Test navigation bridge is unavailable");
         }
-        testNavigationChannel.navigate(path, { state: options?.state });
+        testNavigationChannel.navigate(widgetTargetPath(to), {
+          state: widgetTargetState(to),
+        });
       }),
-    replace: (path, options) =>
+    replace: (to) =>
       Effect.sync(() => {
-        testNavigationChannel.navigate?.(path, {
+        testNavigationChannel.navigate?.(widgetTargetPath(to), {
           replace: true,
-          state: options?.state,
+          state: widgetTargetState(to),
         });
       }),
   });

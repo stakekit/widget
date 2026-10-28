@@ -11,10 +11,7 @@ import {
   WalletAddress,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import {
-  BorrowFlowSession,
-  makeBorrowFlowNavigationState,
-} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import { BorrowFlowSession } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   BorrowTransactionFlowExecutionPage,
   BorrowTransactionFlowExecutionRoute,
@@ -28,6 +25,10 @@ import {
   makeWidgetNavigation,
   WidgetNavigation,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
 import {
   TransactionWorkflowInputError,
@@ -157,20 +158,24 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     ],
     {
       initialEntries: [
-        withUnserializedState(
-          { pathname },
-          makeBorrowFlowNavigationState(session)
-        ),
+        withUnserializedState({ pathname }, { borrowFlowSession: session }),
       ],
     }
   );
   const navigation = makeWidgetNavigation({
     back: () => Effect.promise(() => router.navigate(-1)),
-    push: (path, options) =>
-      Effect.promise(() => router.navigate(path, { state: options?.state })),
-    replace: (path, options) =>
+    push: (to) =>
       Effect.promise(() =>
-        router.navigate(path, { replace: true, state: options?.state })
+        router.navigate(widgetTargetPath(to), {
+          state: widgetTargetState(to),
+        })
+      ),
+    replace: (to) =>
+      Effect.promise(() =>
+        router.navigate(widgetTargetPath(to), {
+          replace: true,
+          state: widgetTargetState(to),
+        })
       ),
   });
   const layer = Layer.mergeAll(

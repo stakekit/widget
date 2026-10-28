@@ -1,4 +1,4 @@
-import { Equal, Option, Ref, Schema } from "effect";
+import { Equal, Ref, Schema } from "effect";
 import type { CollateralToken } from "../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
@@ -7,6 +7,7 @@ import type {
   ActionMetadata,
 } from "../../../domain/borrow/execution/action";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
+import type { MarketId } from "../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
   RiskGateBlockReason,
@@ -16,9 +17,11 @@ import type {
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
-  toWidgetPath,
-  type WidgetPathInput,
-} from "../../../services/navigation/widget-navigation";
+  type WidgetFlowDestination,
+  type WidgetPath,
+  widgetBorrowFlowRoutes,
+  widgetRoutes,
+} from "../../../services/navigation/widget-routes";
 
 export type BorrowConstraintWarning =
   | "AmountExceedsAvailableLiquidity"
@@ -361,7 +364,7 @@ export type BorrowEntryFlowDetails = {
 
 export type BorrowTransactionFlowEntry =
   | { readonly _tag: "BorrowEntry"; readonly details: BorrowEntryFlowDetails }
-  | { readonly _tag: "MarketPosition"; readonly marketId: string };
+  | { readonly _tag: "MarketPosition"; readonly marketId: MarketId };
 
 export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
   readonly entry: BorrowTransactionFlowEntry;
@@ -404,30 +407,20 @@ const BorrowFlowNavigationState = Schema.Struct({
   executionActionId: Schema.optional(Schema.String),
 });
 
-export const makeBorrowFlowNavigationState = (
-  session: BorrowFlowSession,
-  executionActionId?: string
-): typeof BorrowFlowNavigationState.Type =>
-  executionActionId === undefined
-    ? { borrowFlowSession: session }
-    : { borrowFlowSession: session, executionActionId };
+type BorrowFlowNavigationState = typeof BorrowFlowNavigationState.Type;
 
-export const decodeBorrowFlowNavigationState = (
-  state: unknown
-): Option.Option<BorrowFlowSession> =>
-  Schema.decodeUnknownOption(BorrowFlowNavigationState)(state).pipe(
-    Option.map((decoded) => decoded.borrowFlowSession)
-  );
-
-export const decodeBorrowFlowExecutionActionId = (
-  state: unknown
-): string | null =>
-  Schema.decodeUnknownOption(BorrowFlowNavigationState)(state).pipe(
-    Option.flatMap((decoded) =>
-      Option.fromUndefinedOr(decoded.executionActionId)
-    ),
-    Option.getOrNull
-  );
+/**
+ * Each entry's Review, Steps, and Complete routes, carrying the Session (and
+ * on Steps and Complete, the handed-off action) in their navigation state.
+ */
+export const borrowFlowRoutes = {
+  BorrowEntry: widgetBorrowFlowRoutes.BorrowEntry.withState(
+    BorrowFlowNavigationState
+  ),
+  MarketPosition: widgetBorrowFlowRoutes.MarketPosition.withState(
+    BorrowFlowNavigationState
+  ),
+} as const satisfies Record<BorrowTransactionFlowEntry["_tag"], unknown>;
 
 export const getBorrowReviewTrackingProperties = (
   intake: BorrowTransactionFlowIntake
@@ -447,18 +440,24 @@ export const getBorrowReviewTrackingProperties = (
   };
 };
 
-export const getBorrowTransactionFlowRoutes = (
+/**
+ * The flow pages an entry mounts, and its base: the page the flow starts from
+ * and leaves to. Only the Dashboard Layout mounts Borrow.
+ */
+export const getBorrowTransactionFlowDestination = (
   entry: BorrowTransactionFlowEntry
-) => {
-  const basePath: WidgetPathInput =
-    entry._tag === "BorrowEntry"
-      ? "/borrow"
-      : `/positions/borrow/${entry.marketId}`;
-
-  return {
-    basePath: toWidgetPath(basePath),
-    completePath: toWidgetPath(`${basePath}/complete`),
-    reviewPath: toWidgetPath(`${basePath}/review`),
-    stepsPath: toWidgetPath(`${basePath}/steps`),
-  } as const;
-};
+): WidgetFlowDestination<BorrowFlowNavigationState> &
+  Readonly<{ readonly basePath: WidgetPath }> =>
+  entry._tag === "BorrowEntry"
+    ? {
+        ...borrowFlowRoutes.BorrowEntry.at("Dashboard"),
+        basePath: widgetRoutes.borrow.build("Dashboard"),
+      }
+    : {
+        ...borrowFlowRoutes.MarketPosition.at("Dashboard", {
+          marketId: entry.marketId,
+        }),
+        basePath: widgetRoutes.borrowPosition.build("Dashboard", {
+          marketId: entry.marketId,
+        }),
+      };

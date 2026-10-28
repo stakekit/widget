@@ -1,7 +1,11 @@
 import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { ApplicationRouter } from "../../services/navigation/application-router";
+import {
+  type ApplicationLocation,
+  ApplicationRouter,
+} from "../../services/navigation/application-router";
+import { widgetRoutes } from "../../services/navigation/widget-routes";
 import { applicationBaseRuntime } from "./application-base-runtime";
 
 export const applicationRouterAtom = applicationBaseRuntime
@@ -15,18 +19,20 @@ export const applicationRouterAtom = applicationBaseRuntime
     Atom.withLabel("applicationRouterAtom")
   );
 
-export const applicationRouterPathnameAtom = applicationBaseRuntime
+export const applicationRouterLocationAtom = applicationBaseRuntime
   .atom(
     ApplicationRouter.use((applicationRouter) =>
-      Effect.succeed(applicationRouter.pathnames)
+      Effect.succeed(applicationRouter.locations)
     ).pipe(Stream.unwrap)
   )
   .pipe(
     Atom.map((result) =>
       result.pipe(
         AsyncResult.value,
-        Option.getOrElse(() => "/")
+        Option.getOrElse(
+          (): ApplicationLocation => ({ pathname: widgetRoutes.earn.build() })
+        )
       )
     ),
-    Atom.withLabel("applicationRouterPathnameAtom")
+    Atom.withLabel("applicationRouterLocationAtom")
   );

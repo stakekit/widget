@@ -24,8 +24,8 @@ import {
 } from "../../../src/features/position-details/state/workflow";
 import { walletConnectionStateAtom } from "../../../src/features/wallet/index";
 import {
-  decodeYieldFlowNavigationState,
   type YieldTransactionFlowIntake,
+  yieldFlowRoutes,
 } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   YieldOpportunityKey,
@@ -39,8 +39,12 @@ import {
 import {
   makeWidgetNavigation,
   type WidgetNavigationOptions,
-  type WidgetPath,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  type WidgetNavigationTarget,
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import type { TrackingService } from "../../../src/services/tracking/tracking-service";
 import {
   disconnectedLedgerConnectorState,
@@ -56,7 +60,10 @@ import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
 import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
-type Push = (path: WidgetPath, options?: WidgetNavigationOptions) => void;
+type Push = (
+  to: WidgetNavigationTarget,
+  options?: WidgetNavigationOptions
+) => void;
 
 /** The intake of the Session the single Start navigation carried to Review. */
 const startedIntake = (
@@ -64,10 +71,14 @@ const startedIntake = (
   reviewPath: string
 ): YieldTransactionFlowIntake => {
   expect(push).toHaveBeenCalledOnce();
-  const [path, options] = push.mock.calls[0] ?? [];
-  expect(path).toBe(reviewPath);
-  return Option.getOrThrow(decodeYieldFlowNavigationState(options?.state))
-    .intake;
+  const [to] = push.mock.calls[0] ?? [];
+  if (to === undefined) throw new Error("Expected a Review navigation");
+  expect(widgetTargetPath(to)).toBe(reviewPath);
+  return Option.getOrThrow(
+    yieldFlowRoutes.Earn.state(widgetTargetState(to)).pipe(
+      Option.map((state) => state.yieldFlowSession.intake)
+    )
+  );
 };
 
 const {

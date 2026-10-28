@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import {
   createContext,
@@ -7,15 +6,18 @@ import {
   useContext,
   useState,
 } from "react";
-import { Navigate, Outlet, useLocation } from "react-router";
+import { Outlet, useLocation } from "react-router";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import { useWidgetRouteState } from "../../navigation/index";
+import { WidgetNavigate } from "../../navigation/views";
 import { walletScopeAtom } from "../../wallet/index";
 import {
-  decodeYieldFlowExecutionHandoff,
-  decodeYieldFlowNavigationState,
   getYieldTransactionFlowIntakeVariant,
   isYieldTransactionFlowWalletScopeValid,
+  type YieldFlowMountTag,
   type YieldFlowSession,
   type YieldTransactionFlowIntake,
+  yieldFlowRoutes,
 } from "../model/yield-transaction-flow";
 import { isYieldTransactionWorkflowFinished } from "../model/yield-transaction-workflow";
 import {
@@ -46,9 +48,18 @@ export const useYieldFlowReview = () =>
     )
   );
 
+/** The handoff Steps and Complete were navigated to run, if any. */
+const useYieldFlowExecutionHandoff = () => {
+  const session = useYieldFlowSession();
+  return (
+    useWidgetRouteState(yieldFlowRoutes[session.mount._tag])
+      ?.executionHandoff ?? null
+  );
+};
+
 /** The Execution of the handoff Steps and Complete were navigated to run. */
 export const useYieldFlowExecution = () => {
-  const handoff = decodeYieldFlowExecutionHandoff(useLocation().state);
+  const handoff = useYieldFlowExecutionHandoff();
   const session = useYieldFlowSession();
   if (!handoff) throw new Error("Yield Flow Execution is unavailable.");
   return useAtomValue(
@@ -81,16 +92,17 @@ type MountedYieldFlowSession = Readonly<{
  */
 export const YieldFlowRoute = ({
   expected,
+  mount,
 }: {
   readonly expected: Exclude<
     YieldTransactionFlowIntake["_tag"],
     "YieldActionContinuation"
   >;
+  readonly mount: Exclude<YieldFlowMountTag, "YieldActionContinuation">;
 }) => {
   const location = useLocation();
-  const navigated = Option.getOrNull(
-    decodeYieldFlowNavigationState(location.state)
-  );
+  const navigated =
+    useWidgetRouteState(yieldFlowRoutes[mount])?.yieldFlowSession ?? null;
   const [mounted, setMounted] = useState<MountedYieldFlowSession | null>(null);
   if (navigated && navigated !== mounted?.session) {
     setMounted({ key: location.key, session: navigated });
@@ -100,7 +112,7 @@ export const YieldFlowRoute = ({
     !mounted ||
     !getYieldTransactionFlowIntakeVariant(mounted.session.intake, expected)
   ) {
-    return <Navigate to="/" replace />;
+    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
   }
   return <YieldFlowSessionRoute key={mounted.key} session={mounted.session} />;
 };
@@ -113,7 +125,7 @@ export const YieldFlowSessionRoute = ({
 }) => {
   const walletScope = useAtomValue(walletScopeAtom);
   if (!isYieldTransactionFlowWalletScopeValid(session.intake, walletScope)) {
-    return <Navigate to="/" replace />;
+    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
   }
   return (
     <YieldFlowSessionContext.Provider value={session}>
@@ -127,8 +139,10 @@ export const YieldFlowSessionRoute = ({
  * workflow; without an action handed off by Review, it leaves the flow.
  */
 export const YieldFlowExecutionRoute = ({ children }: PropsWithChildren) => {
-  const handoff = decodeYieldFlowExecutionHandoff(useLocation().state);
-  if (!handoff) return <Navigate to="/" replace />;
+  const handoff = useYieldFlowExecutionHandoff();
+  if (!handoff) {
+    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
+  }
   return <ExecutionStarted>{children}</ExecutionStarted>;
 };
 
@@ -139,7 +153,7 @@ const ExecutionStarted = ({ children }: PropsWithChildren) => {
   const execution = useAtomValue(executionAtom);
   const state = useAtomValue(stateAtom);
   if (AsyncResult.isFailure(execution) || AsyncResult.isFailure(state)) {
-    return <Navigate to="/" replace />;
+    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
   }
   if (AsyncResult.isInitial(execution)) return null;
   return children ?? <Outlet />;
@@ -150,21 +164,28 @@ export const YieldFlowExecutionPage = ({
   children,
   page,
 }: PropsWithChildren<{ readonly page: "Complete" | "Steps" }>) => {
-  const { destination } = useYieldFlowSession();
-  const location = useLocation();
+  const session = useYieldFlowSession();
+  const handoff = useYieldFlowExecutionHandoff();
   const state = useAtomValue(useYieldFlowExecution().stateAtom);
   // Confidential steps run before the workflow has a state.
   const finished =
     AsyncResult.isSuccess(state) &&
     isYieldTransactionWorkflowFinished(state.value);
+  const navigationState = {
+    ...(handoff ? { executionHandoff: handoff } : {}),
+    yieldFlowSession: session,
+  };
   if (page === "Steps" && finished) {
     return (
-      <Navigate replace state={location.state} to={destination.completePath} />
+      <WidgetNavigate
+        replace
+        to={session.destination.complete(navigationState)}
+      />
     );
   }
   if (page === "Complete" && !finished) {
     return (
-      <Navigate replace state={location.state} to={destination.stepsPath} />
+      <WidgetNavigate replace to={session.destination.steps(navigationState)} />
     );
   }
   return children ?? <Outlet />;

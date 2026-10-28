@@ -5,14 +5,17 @@ import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import {
   applicationRouterAtom,
-  applicationRouterPathnameAtom,
+  applicationRouterLocationAtom,
 } from "../../../src/app/runtime/application-router";
 import { applicationRuntimeInitAtom } from "../../../src/app/runtime/application-runtime-init";
 import {
-  toWidgetPath,
   WidgetNavigation,
   type WidgetNavigationCommand,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetRoutes,
+  widgetYieldFlowRoutes,
+} from "../../../src/services/navigation/widget-routes";
 
 const navigationCommandAtom = appRuntime
   .fn(
@@ -50,21 +53,23 @@ describe("ApplicationRouter runtime", () => {
     }
   });
 
-  it("publishes pathname changes through the ApplicationRouter stream", async () => {
+  it("publishes location changes through the ApplicationRouter stream", async () => {
     const registry = makeRegistry();
-    const unmount = registry.mount(applicationRouterPathnameAtom);
+    const unmount = registry.mount(applicationRouterLocationAtom);
 
     try {
-      expect(registry.get(applicationRouterPathnameAtom)).toBe("/");
+      expect(registry.get(applicationRouterLocationAtom).pathname).toBe("/");
 
       registry.set(navigationCommandAtom, {
         _tag: "Push",
-        path: toWidgetPath("/positions"),
+        to: widgetRoutes.positions.build(),
         scroll: "preserve",
       });
 
       await vi.waitFor(() =>
-        expect(registry.get(applicationRouterPathnameAtom)).toBe("/positions")
+        expect(registry.get(applicationRouterLocationAtom).pathname).toBe(
+          "/positions"
+        )
       );
     } finally {
       unmount();
@@ -112,7 +117,7 @@ describe("ApplicationRouter runtime", () => {
 
       registry.set(navigationCommandAtom, {
         _tag: "Push",
-        path: toWidgetPath("/review"),
+        to: widgetYieldFlowRoutes.Earn.review.build(),
         scroll: "preserve",
       });
 
@@ -122,7 +127,7 @@ describe("ApplicationRouter runtime", () => {
 
       registry.set(navigationCommandAtom, {
         _tag: "Replace",
-        path: toWidgetPath("/complete"),
+        to: widgetYieldFlowRoutes.Earn.complete.build(),
         scroll: "preserve",
       });
 
@@ -148,7 +153,7 @@ describe("ApplicationRouter runtime", () => {
     try {
       firstRegistry.set(navigationCommandAtom, {
         _tag: "Push",
-        path: toWidgetPath("/review"),
+        to: widgetYieldFlowRoutes.Earn.review.build(),
         scroll: "preserve",
       });
       await vi.waitFor(() =>

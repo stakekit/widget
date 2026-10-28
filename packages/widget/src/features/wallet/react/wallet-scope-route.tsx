@@ -1,12 +1,14 @@
 import { useAtomValue } from "@effect/atom-react";
 import { createContext, useContext, useState } from "react";
-import { Navigate, Outlet } from "react-router";
+import { Outlet } from "react-router";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
 } from "../../../domain/wallet/wallet-scope";
+import type { WidgetPath } from "../../../services/navigation/widget-routes";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
+import { WidgetNavigate } from "../../navigation/views";
 import { currentWalletStateAtom } from "../state/selectors";
 
 const WalletScopeRouteContext = createContext<WalletScopeKey | null>(null);
@@ -15,7 +17,7 @@ export const WalletScopeRoute = ({
   fallbackPath,
   walletState,
 }: {
-  readonly fallbackPath: string;
+  readonly fallbackPath: WidgetPath;
   readonly walletState: NormalizedWalletState;
 }) => {
   const walletScope = walletScopeFromState(walletState);
@@ -31,7 +33,7 @@ export const WalletScopeRoute = ({
     (initialWalletScope !== null &&
       !sameWalletScopeOwner(initialWalletScope, walletScope))
   ) {
-    return <Navigate to={fallbackPath} replace />;
+    return <WidgetNavigate replace to={fallbackPath} />;
   }
 
   return (
@@ -44,7 +46,7 @@ export const WalletScopeRoute = ({
 export const WalletScopeRouteGuard = ({
   fallbackPath,
 }: {
-  readonly fallbackPath: string;
+  readonly fallbackPath: WidgetPath;
 }) => {
   const walletState = useAtomValue(currentWalletStateAtom);
 

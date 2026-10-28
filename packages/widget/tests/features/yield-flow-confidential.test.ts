@@ -18,7 +18,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { DirectTransaction } from "../../src/domain/action/direct-transaction";
 import { ConfidentialHandle } from "../../src/domain/earn/confidential";
-import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import { Token } from "../../src/domain/token/token";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
@@ -108,7 +108,11 @@ const exitStart = (
       unstakeToken: integration.token,
       walletScope,
     },
-    mount: { _tag: "PositionExit", balanceId: "b", integrationId: "i" },
+    mount: {
+      _tag: "PositionExit",
+      balanceId: "b",
+      integrationId: Schema.decodeSync(YieldId)("i"),
+    },
   };
 };
 
@@ -134,7 +138,11 @@ const withdrawUnwrapStart = (): NavigatingYieldTransactionFlowStart => {
       },
       walletScope,
     },
-    mount: { _tag: "PositionManage", balanceId: "b", integrationId: "i" },
+    mount: {
+      _tag: "PositionManage",
+      balanceId: "b",
+      integrationId: Schema.decodeSync(YieldId)("i"),
+    },
   };
 };
 

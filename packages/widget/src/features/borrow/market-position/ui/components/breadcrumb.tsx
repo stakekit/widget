@@ -1,17 +1,21 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../../../services/navigation/widget-routes";
 import { PositionDetailsBreadcrumb } from "../../../../../shared/ui/components/position-details";
+import { useWidgetNavigate } from "../../../../navigation/index";
 import { BackButton, BackButtonProvider } from "../../../../widget-shell/views";
 
 export const BorrowPositionBreadcrumb = ({
-  backPath = "/positions",
+  backPath = widgetRoutes.positions.build(),
   positionName,
 }: {
-  readonly backPath?: string;
+  readonly backPath?: WidgetPath;
   readonly positionName: string | null;
 }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigation = useWidgetNavigate();
 
   return (
     <BackButtonProvider>
@@ -19,7 +23,7 @@ export const BorrowPositionBreadcrumb = ({
         backButton={
           <BackButton
             data-testid="borrow-position-details-back"
-            onClick={() => navigate(backPath)}
+            onClick={() => navigation.push(backPath)}
           />
         }
         positionName={positionName}

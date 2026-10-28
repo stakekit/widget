@@ -1,3 +1,6 @@
+import { Option } from "effect";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
+
 export type TabResourcesPrefetchLandingTab =
   | "activity"
   | "borrow"
@@ -8,10 +11,14 @@ export type TabResourcesPrefetchLandingTab =
 export const resolveTabResourcesPrefetchLanding = (
   pathname: string
 ): TabResourcesPrefetchLandingTab => {
-  if (pathname.startsWith("/activity")) return "activity";
-  if (pathname.startsWith("/borrow")) return "borrow";
-  if (pathname.startsWith("/positions")) return "manage";
-  if (pathname === "/") return "earn";
+  if (Option.isSome(widgetRoutes.activity.matchPrefix(pathname))) {
+    return "activity";
+  }
+  if (Option.isSome(widgetRoutes.borrow.matchPrefix(pathname))) return "borrow";
+  if (Option.isSome(widgetRoutes.positions.matchPrefix(pathname))) {
+    return "manage";
+  }
+  if (Option.isSome(widgetRoutes.earn.match(pathname))) return "earn";
   return "other";
 };
 

@@ -1,10 +1,13 @@
 import type BigNumber from "bignumber.js";
+import { Schema } from "effect";
 import type { YieldBalanceType } from "../portfolio/positions";
-import type { ManageActionCommand, PendingAction } from "./models";
+import { ManageActionCommand, PendingAction } from "./models";
 
-export type YieldPendingActionType =
-  | PendingAction["type"]
-  | NonNullable<ManageActionCommand["action"]>;
+export const YieldPendingActionType = Schema.Union([
+  PendingAction.fields.type,
+  ManageActionCommand.fields.action,
+]);
+export type YieldPendingActionType = typeof YieldPendingActionType.Type;
 
 /**
  * Pending actions a position never needs: cancelling a queued request, or

@@ -14,8 +14,7 @@ import {
 } from "../../../services/navigation/widget-navigation";
 import {
   type BorrowFlowSession,
-  getBorrowTransactionFlowRoutes,
-  makeBorrowFlowNavigationState,
+  getBorrowTransactionFlowDestination,
 } from "../model/borrow-transaction-flow";
 import { leaveBorrowFlow } from "./borrow-flow-session";
 
@@ -121,7 +120,7 @@ export const confirmBorrowAction = Effect.fn("confirmBorrowAction")(function* (
   }
 
   const navigation = yield* WidgetNavigation;
-  const { stepsPath } = getBorrowTransactionFlowRoutes(session.intake.entry);
+  const destination = getBorrowTransactionFlowDestination(session.intake.entry);
   return yield* Effect.uninterruptible(
     Effect.gen(function* () {
       const held = yield* Ref.getAndUpdate(
@@ -133,8 +132,10 @@ export const confirmBorrowAction = Effect.fn("confirmBorrowAction")(function* (
       yield* navigation
         .execute({
           _tag: "Push",
-          path: stepsPath,
-          state: makeBorrowFlowNavigationState(session, action.id),
+          to: destination.steps({
+            borrowFlowSession: session,
+            executionActionId: action.id,
+          }),
         })
         .pipe(
           Effect.tapError(() =>

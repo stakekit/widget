@@ -15,11 +15,9 @@ import { DashboardTabs } from "./dashboard-tabs";
 
 export const DashboardShell = ({
   children,
-  onYieldCategorySelect,
   pendingYieldCategory,
 }: {
   readonly children: ReactNode;
-  readonly onYieldCategorySelect: (category: YieldCategory) => void;
   readonly pendingYieldCategory: YieldCategory | null;
 }) => {
   const variant = useWidgetConfig("variant");
@@ -29,10 +27,7 @@ export const DashboardShell = ({
       className={combineRecipeWithVariant({ rec: dashboardWrapper, variant })}
     >
       <DashboardHeader />
-      <DashboardTabs
-        onYieldCategorySelect={onYieldCategorySelect}
-        pendingYieldCategory={pendingYieldCategory}
-      />
+      <DashboardTabs pendingYieldCategory={pendingYieldCategory} />
 
       <Box
         className={combineRecipeWithVariant({

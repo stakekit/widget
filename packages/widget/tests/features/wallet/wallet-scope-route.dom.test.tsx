@@ -7,6 +7,7 @@ import type { Connector } from "wagmi";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { useWalletScopeRoute } from "../../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../../src/features/wallet/react/wallet-scope-route";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { render } from "../../utils/test-utils.dom.tsx";
@@ -79,7 +80,7 @@ const TestRouter = ({
           <Route
             element={
               <WalletScopeRoute
-                fallbackPath="/safe"
+                fallbackPath={widgetRoutes.positions.build()}
                 walletState={walletState}
               />
             }
@@ -96,7 +97,10 @@ const TestRouter = ({
               }
             />
           </Route>
-          <Route path="safe" element={<div data-testid="safe">safe</div>} />
+          <Route
+            path="positions"
+            element={<div data-testid="safe">safe</div>}
+          />
         </Routes>
       </MemoryRouter>
     </ReplaceWalletContext.Provider>

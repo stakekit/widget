@@ -4,7 +4,7 @@ import { borrowLandingPrimaryReadyAtom } from "../../../features/borrow/index";
 import { earnLandingPrimaryReadyAtom } from "../../../features/earn/index";
 import { manageTabResourcesPrefetchAtom } from "../../../features/portfolio/index";
 import { walletScopeAtom } from "../../../features/wallet/index";
-import { applicationRouterPathnameAtom } from "../../runtime/application-router";
+import { applicationRouterLocationAtom } from "../../runtime/application-router";
 import {
   resolveTabResourcesPrefetchLanding,
   shouldWarmTabResources,
@@ -12,7 +12,7 @@ import {
 
 export const tabResourcesPrefetchAtom = Atom.make((get) => {
   const tab = resolveTabResourcesPrefetchLanding(
-    get(applicationRouterPathnameAtom)
+    get(applicationRouterLocationAtom).pathname
   );
 
   if (

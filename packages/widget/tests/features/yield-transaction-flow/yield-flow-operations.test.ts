@@ -15,18 +15,17 @@ import type { YieldAction } from "../../../src/domain/action/models";
 import {
   TransactionWorkflowId,
   WalletAddress,
+  YieldId,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
-  decodeYieldFlowExecutionHandoff,
-  decodeYieldFlowNavigationState,
   makeYieldActionContinuationSession,
-  makeYieldFlowNavigationState,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
   YieldFlowHandoff,
   type YieldFlowSession,
   type YieldTransactionFlowIntake,
+  yieldFlowRoutes,
 } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   leaveYieldFlowExecution,
@@ -43,11 +42,14 @@ import {
   InputValidationError,
 } from "../../../src/services/api/resource-sources";
 import {
-  toWidgetPath,
   type WidgetNavigation,
   type WidgetNavigationCommand,
   WidgetNavigationError,
 } from "../../../src/services/navigation/widget-navigation";
+import {
+  widgetTargetPath,
+  widgetTargetState,
+} from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
 import {
   type TransactionWorkflowInput,
@@ -73,6 +75,7 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
+const integrationId = Schema.decodeSync(YieldId)("integration");
 const otherWalletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
     "0x2234567890123456789012345678901234567890"
@@ -173,7 +176,7 @@ const exitStart = (): NavigatingYieldTransactionFlowStart => ({
   mount: {
     _tag: "PositionExit",
     balanceId: "balance",
-    integrationId: "integration",
+    integrationId,
   },
 });
 
@@ -210,7 +213,12 @@ const makeKit = (overrides: KitOverrides = {}) =>
 // compare routes only.
 const withoutNavigationState = (
   commands: ReadonlyArray<WidgetNavigationCommand>
-) => commands.map(({ state: _state, ...command }) => command);
+) =>
+  commands.map((command) =>
+    command._tag === "Back"
+      ? command
+      : { ...command, to: widgetTargetPath(command.to) }
+  );
 
 const unavailablePreview = () =>
   Effect.fail(
@@ -258,29 +266,31 @@ describe("makeStartYieldTransactionFlow", () => {
         expect(second.session.intake.walletScope).not.toBe(
           input.intake.walletScope
         );
-        expect(second.session.destination).toEqual({
-          completePath: toWidgetPath("/complete"),
-          finishPath: toWidgetPath("/"),
-          reviewPath: toWidgetPath("/review"),
-          stepsPath: toWidgetPath("/steps"),
+        expect(second.session.destination).toMatchObject({
+          completePath: "/complete",
+          finishPath: "/",
+          reviewPath: "/review",
+          stepsPath: "/steps",
         });
         expect(
           (yield* kit.navigation.commands).map((command) => ({
             _tag: command._tag,
-            path: command._tag === "Back" ? null : command.path,
+            path: command._tag === "Back" ? null : widgetTargetPath(command.to),
             session: Option.getOrNull(
-              decodeYieldFlowNavigationState(command.state)
+              yieldFlowRoutes.Earn.state(
+                command._tag === "Back" ? null : widgetTargetState(command.to)
+              ).pipe(Option.map((state) => state.yieldFlowSession))
             ),
           }))
         ).toEqual([
           {
             _tag: "Push",
-            path: toWidgetPath("/review"),
+            path: "/review",
             session: first.session,
           },
           {
             _tag: "Push",
-            path: toWidgetPath("/review"),
+            path: "/review",
             session: second.session,
           },
         ]);
@@ -301,7 +311,7 @@ describe("makeStartYieldTransactionFlow", () => {
 
       expect(error).toMatchObject({ _tag: "WidgetNavigationError" });
       expect(withoutNavigationState(yield* kit.navigation.commands)).toEqual([
-        { _tag: "Push", path: toWidgetPath("/review") },
+        { _tag: "Push", to: "/review" },
       ]);
     })
   );
@@ -540,13 +550,24 @@ describe("handOffYieldFlowSource", () => {
       expect(yield* kit.navigation.commands).toEqual([
         {
           _tag: "Push",
-          path: toWidgetPath("/steps"),
-          state: makeYieldFlowNavigationState(handle, handoff),
+          to: {
+            path: "/steps",
+            state: { executionHandoff: handoff, yieldFlowSession: handle },
+          },
         },
       ]);
+      const [command] = yield* kit.navigation.commands;
       expect(
-        decodeYieldFlowExecutionHandoff(
-          (yield* kit.navigation.commands)[0]?.state
+        Option.getOrNull(
+          yieldFlowRoutes.Earn.state(
+            command && command._tag !== "Back"
+              ? widgetTargetState(command.to)
+              : null
+          ).pipe(
+            Option.flatMap((state) =>
+              Option.fromUndefinedOr(state.executionHandoff)
+            )
+          )
         )
       ).toBe(handoff);
       expect(yield* kit.tracking.trackedEvents).toEqual([]);
@@ -579,8 +600,10 @@ describe("handOffYieldFlowSource", () => {
       expect(yield* kit.navigation.commands).toEqual([
         {
           _tag: "Push",
-          path: toWidgetPath("/positions/integration/balance/unstake/steps"),
-          state: makeYieldFlowNavigationState(handle, handoff),
+          to: {
+            path: "/positions/integration/balance/unstake/steps",
+            state: { executionHandoff: handoff, yieldFlowSession: handle },
+          },
         },
       ]);
     })
@@ -823,8 +846,10 @@ describe("startYieldFlowExecution", () => {
       expect(yield* kit.navigation.commands).toEqual([
         {
           _tag: "Push",
-          path: toWidgetPath(`/activity/${action.id}/steps`),
-          state: makeYieldFlowNavigationState(handle, handoff),
+          to: {
+            path: `/activity/${action.id}/steps`,
+            state: { executionHandoff: handoff, yieldFlowSession: handle },
+          },
         },
       ]);
     })
@@ -934,7 +959,7 @@ describe("leaveYieldFlowExecution", () => {
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(enterStart(), walletScope), "Review")
-      ).toEqual([{ _tag: "Replace", path: toWidgetPath("/review") }]);
+      ).toEqual([{ _tag: "Replace", to: "/review" }]);
     })
   );
 
@@ -942,7 +967,7 @@ describe("leaveYieldFlowExecution", () => {
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(enterStart(), walletScope), "Exit")
-      ).toEqual([{ _tag: "Push", path: toWidgetPath("/") }]);
+      ).toEqual([{ _tag: "Push", to: "/" }]);
     })
   );
 
@@ -955,7 +980,7 @@ describe("leaveYieldFlowExecution", () => {
         mount: {
           _tag: "PositionManage",
           balanceId: "balance",
-          integrationId: "integration",
+          integrationId,
         },
       }),
     ],
@@ -966,7 +991,7 @@ describe("leaveYieldFlowExecution", () => {
         mount: {
           _tag: "PositionStake",
           balanceId: "balance",
-          integrationId: "integration",
+          integrationId,
         },
       }),
     ],
@@ -974,7 +999,7 @@ describe("leaveYieldFlowExecution", () => {
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(start(), walletScope), "Exit")
-      ).toEqual([{ _tag: "Push", path: toWidgetPath("/positions") }]);
+      ).toEqual([{ _tag: "Push", to: "/positions" }]);
     })
   );
 
@@ -985,7 +1010,7 @@ describe("leaveYieldFlowExecution", () => {
           makeYieldActionContinuationSession(makeContinuationIntake()),
           "Exit"
         )
-      ).toEqual([{ _tag: "Push", path: toWidgetPath("/activity") }]);
+      ).toEqual([{ _tag: "Push", to: "/activity" }]);
     })
   );
 
@@ -1018,7 +1043,7 @@ describe("leaveYieldFlowExecution", () => {
 
       expect(interruptedWhileBackPending).toBeUndefined();
       expect(yield* kit.navigation.commands).toEqual([
-        { _tag: "Replace", path: toWidgetPath("/review") },
+        { _tag: "Replace", to: "/review" },
       ]);
     })
   );

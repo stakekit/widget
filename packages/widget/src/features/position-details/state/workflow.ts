@@ -4,7 +4,10 @@ import * as Atom from "effect/reactivity/Atom";
 import type { PendingActionStateKey } from "../../../domain/action/action-command";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
 import { exactZero } from "../../../domain/finance/exact";
-import type { TokenAddress } from "../../../domain/identity/identifiers";
+import type {
+  TokenAddress,
+  YieldId,
+} from "../../../domain/identity/identifiers";
 import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
@@ -89,7 +92,7 @@ export class PositionDetailsWorkflowKey extends Data.TaggedClass(
   "PositionDetailsWorkflowKey"
 )<{
   readonly balanceId: string | null;
-  readonly integrationId: string | null;
+  readonly integrationId: YieldId | null;
   readonly pendingActionType: YieldPendingActionType | null;
   readonly scope: WalletScopeKey;
 }> {}

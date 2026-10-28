@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { PositionDetailsLabelType } from "../../../../domain/portfolio/positions";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatTokenAmount,
   formatUsd,
@@ -12,11 +13,11 @@ import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
-import { SKLink } from "../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { WidgetLink } from "../../../navigation/views";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { PositionItem } from "../../state/read-models/positions";
 import {
@@ -147,9 +148,11 @@ export const EarnPositionListItem = ({
   })();
 
   return (
-    <SKLink
-      relative="path"
-      to={`../positions/${item.integrationId}/${item.balanceId}`}
+    <WidgetLink
+      to={widgetRoutes.positionDetails.build({
+        balanceId: item.balanceId,
+        integrationId: item.integrationId,
+      })}
       viewTransition={opensDetailsWithViewTransition}
     >
       <Box py="1">
@@ -287,6 +290,6 @@ export const EarnPositionListItem = ({
           <ContentLoaderSquare heightPx={60} />
         )}
       </Box>
-    </SKLink>
+    </WidgetLink>
   );
 };

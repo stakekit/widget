@@ -1,5 +1,4 @@
 import type { PropsWithChildren } from "react";
-import type { WidgetLayout } from "../../../services/config/widget-config-model";
 import {
   type LayoutAttributeValue,
   layoutAttribute,
@@ -7,46 +6,28 @@ import {
 import { Box } from "../../../shared/ui/primitives/box";
 import { useElementAtomRef } from "../react/use-element-atom-ref";
 import { appContainerElementAtom } from "../state/app-container";
-import {
-  compactPageTransition,
-  dashboardPageTransition,
-  type PageTransition,
-  PageTransitionContext,
-} from "./animation-page";
+import { type PageTransition, PageTransitionContext } from "./animation-page";
 import { appContainer } from "./layout.css";
 
 /**
- * How the shell presents each Layout: the Layout attribute that scopes
- * Layout-specific styles, and the page enter and exit animation.
+ * The shell's root element: scopes Layout-specific styles through the Layout
+ * attribute and provides the page enter and exit animation.
  */
-const layoutPresentation: Readonly<
-  Record<
-    WidgetLayout,
-    {
-      readonly attribute: LayoutAttributeValue;
-      readonly pageTransition: PageTransition;
-    }
-  >
-> = {
-  Compact: { attribute: "compact", pageTransition: compactPageTransition },
-  Dashboard: {
-    attribute: "dashboard",
-    pageTransition: dashboardPageTransition,
-  },
-};
-
 export const AppContainer = ({
   layout,
+  pageTransition,
   children,
-}: PropsWithChildren<{ readonly layout: WidgetLayout }>) => {
+}: PropsWithChildren<{
+  readonly layout: LayoutAttributeValue;
+  readonly pageTransition: PageTransition;
+}>) => {
   const appContainerRef = useElementAtomRef(appContainerElementAtom);
-  const { attribute, pageTransition } = layoutPresentation[layout];
 
   return (
     <Box
       ref={appContainerRef}
-      {...{ [layoutAttribute]: attribute }}
-      className={appContainer({ layout: attribute })}
+      {...{ [layoutAttribute]: layout }}
+      className={appContainer({ layout })}
     >
       <PageTransitionContext value={pageTransition}>
         {children}

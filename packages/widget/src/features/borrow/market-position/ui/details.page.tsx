@@ -1,11 +1,17 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, Outlet, useLocation, useParams } from "react-router";
+import { Outlet } from "react-router";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { toPresentable } from "../../../../shared/effect/async-result";
 import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import {
+  useWidgetRouteMatch,
+  useWidgetRoutePrefixMatch,
+} from "../../../navigation/index";
+import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
 import {
   AnimationPage,
@@ -28,16 +34,16 @@ import {
   BorrowPositionActionsSkeleton,
   BorrowPositionInfoSkeleton,
 } from "./components/skeletons";
-import {
-  type BorrowPositionContext,
-  getBorrowPositionBasePath,
-} from "./context";
+import type { BorrowPositionContext } from "./context";
 
 export const BorrowPositionDetailsPage = () => {
   useTrackPage("positionDetails");
 
-  const { marketId } = useParams();
-  const location = useLocation();
+  const marketId = useWidgetRoutePrefixMatch(
+    widgetRoutes.borrowPosition
+  )?.marketId;
+  const hasNestedRoute =
+    useWidgetRouteMatch(widgetRoutes.borrowPosition) === null;
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
@@ -60,9 +66,6 @@ export const BorrowPositionDetailsPage = () => {
       })
     : [];
   const isPositionLoading = presentablePosition._tag === "Loading";
-  const positionBasePath = getBorrowPositionBasePath(marketId);
-  const normalizedPathname = location.pathname.replace(/\/+$/u, "");
-  const hasNestedRoute = normalizedPathname !== positionBasePath;
   const shouldShowLeftPane = hasNestedRoute || actions.length > 0 || !!position;
   const context: BorrowPositionContext = {
     actions,
@@ -99,7 +102,7 @@ export const BorrowPositionDetailsPage = () => {
   // A closed position (e.g. after a full repay) has nothing to manage; nested
   // flow routes still render so Complete can show the settled result.
   if (!hasNestedRoute && presentablePosition._tag === "Ready" && !position) {
-    return <Navigate replace to="/positions" />;
+    return <WidgetNavigate replace to={widgetRoutes.positions.build()} />;
   }
 
   const rightContent = (() => {
