@@ -60,6 +60,7 @@ export const VirtualList = <ItemData,>({
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
+  // biome-ignore lint/nursery/useReactCompiler: this component opts out with "use no memo", which Biome's incompatible-library check does not read.
   const rowVirtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => innerRef.current,
@@ -145,6 +146,7 @@ export const GroupedVirtualList = ({
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
+  // biome-ignore lint/nursery/useReactCompiler: this component opts out with "use no memo", which Biome's incompatible-library check does not read.
   const rowVirtualizer = useVirtualizer({
     count: groupCounts.reduce(
       (acc, numChildren) => acc + numChildren,

@@ -257,19 +257,23 @@ describe("Earn position list item", () => {
       hookState.details = createDetails();
       const startViewTransition = vi
         .spyOn(document, "startViewTransition")
-        .mockImplementation((update) => {
-          const done = Promise.resolve(
-            typeof update === "function" ? update() : update?.update?.()
-          );
+        .mockImplementation(
+          (
+            update?: ViewTransitionUpdateCallback | StartViewTransitionOptions
+          ) => {
+            const done = Promise.resolve(
+              typeof update === "function" ? update() : update?.update?.()
+            );
 
-          return {
-            finished: done,
-            ready: done,
-            skipTransition: () => undefined,
-            types: new Set(),
-            updateCallbackDone: done,
-          } as unknown as ViewTransition;
-        });
+            return {
+              finished: done,
+              ready: done,
+              skipTransition: () => undefined,
+              types: new Set(),
+              updateCallbackDone: done,
+            } as unknown as ViewTransition;
+          }
+        );
 
       const app = await renderRow(presentation.row(createItem()));
       const link = app.getByRole("link");

@@ -22,15 +22,15 @@ allowBuilds:
   utf-8-validate: false
 
 catalog:
-  "@angular/build": 22.2.3
-  "@angular/cli": 22.2.3
+  "@angular/build": 22.2.4
+  "@angular/cli": 22.2.4
   "@angular/common": 22.2.3
   "@angular/compiler": 22.2.3
   "@angular/compiler-cli": 22.2.3
   "@angular/core": 22.2.3
   "@angular/platform-browser": 22.2.3
   "@ast-grep/cli": 0.51.0
-  "@biomejs/biome": ^2.5.15
+  "@biomejs/biome": ^2.6.3
   "@commitlint/cli": ^21.2.4
   "@commitlint/config-conventional": ^21.2.4
   # @cosmos-kit/core 2.18 depends on @cosmjs 0.36 and cosmjs-types 0.10; newer lines duplicate its types.
@@ -41,14 +41,14 @@ catalog:
   "@cosmos-kit/leap-extension": 2.17.1
   "@cosmos-kit/leap-metamask-cosmos-snap": 0.17.1
   "@creit-tech/stellar-wallets-kit": jsr:2.7.1
-  "@effect/atom-react": 4.0.5
-  "@effect/openapi-generator": 4.0.5
-  "@effect/platform-browser": 4.0.5
-  "@effect/platform-node": 4.0.5
-  "@effect/tsgo": 0.56.0
-  "@effect/vitest": 4.0.5
-  "@ledgerhq/wallet-api-client": ^1.16.0
-  "@ledgerhq/wallet-api-core": ^2.1.0
+  "@effect/atom-react": 4.0.7
+  "@effect/openapi-generator": 4.0.7
+  "@effect/platform-browser": 4.0.7
+  "@effect/platform-node": 4.0.7
+  "@effect/tsgo": 0.63.0
+  "@effect/vitest": 4.0.7
+  "@ledgerhq/wallet-api-client": ^1.17.0
+  "@ledgerhq/wallet-api-core": ^2.2.0
   "@luno-kit/core": ^0.0.13
   "@meshsdk/wallet": 1.9.1
   "@msw/playwright": ^0.7.0
@@ -70,7 +70,7 @@ catalog:
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
   # The Solana wallet adapters peer on @solana/web3.js ^1.99.0.
   "@solana/web3.js": ^1.99.0
-  "@tanstack/react-virtual": ^3.14.21
+  "@tanstack/react-virtual": ^3.14.22
   "@ton/core": ^0.63.1
   "@tonconnect/ui": ^5.0.1
   "@tronweb3/tronwallet-abstract-adapter": ^1.3.0
@@ -95,7 +95,7 @@ catalog:
   "@walletconnect/sign-client": 2.26.0
   # Must equal the exact version @reown/appkit depends on: createAppKit types its universalProvider option against it.
   "@walletconnect/universal-provider": 2.23.7
-  "@zama-fhe/sdk": 3.7.0
+  "@zama-fhe/sdk": 3.7.1
   aria-hidden: ^1.2.6
   autoprefixer: ^10.6.1
   bignumber.js: ^11.1.5
@@ -106,31 +106,31 @@ catalog:
   clsx: ^2.1.1
   # Held with @cosmjs for @cosmos-kit/core 2.18 (see the @cosmjs note).
   cosmjs-types: ^0.10.1
-  dependency-cruiser: ^18.6.0
-  effect: 4.0.5
+  dependency-cruiser: ^18.7.0
+  effect: 4.0.7
   esbuild: ^0.28.2
   husky: ^9.1.7
-  i18next: ^26.5.2
-  i18next-browser-languagedetector: ^8.2.1
-  jscpd: 5.4.1
+  i18next: ^26.5.11
+  i18next-browser-languagedetector: ^8.2.3
+  jscpd: 5.4.2
   jsdom: ^30.1.3
-  knip: ^6.42.0
+  knip: ^6.43.0
   mipd: ^0.0.7
   mixpanel-browser: ^2.84.0
-  motion: 14.3.1
+  motion: 14.6.0
   msw: ^3.0.3
-  next: ^16.4.2
+  next: ^16.4.3
   # Must satisfy the @vitejs/plugin-react peer range.
   oxc-transform-react: ^0.152.0
   playwright: ^1.64.1
   postcss: ^8.5.31
   react: ^19.3.1
   react-dom: ^19.3.1
-  react-i18next: ^17.1.0
+  react-i18next: ^17.1.9
   react-is: ^19.3.1
   react-loading-skeleton: ^3.5.0
   react-remove-scroll: ^2.7.2
-  react-router: ^8.4.0
+  react-router: ^8.5.0
   recharts: ^3.10.1
   rxjs: ~7.8.0
   scheduler: ">=0.25.0 <0.29.0"
@@ -140,12 +140,12 @@ catalog:
   # @angular/compiler-cli and @angular/build 22 peer on typescript >=6.0 <6.1.
   typescript: ~6.0.3
   unplugin-macros: ^0.23.3
-  viem: ^2.57.7
-  vite: ^8.3.4
+  viem: ^2.57.11
+  vite: ^8.3.5
   vite-plugin-node-polyfills: ^0.28.0
   vitest: 5.0.5
   vitest-browser-react: ^2.3.0
-  wagmi: 3.7.7
+  wagmi: 3.7.9
   yaml: ^2.9.1
 
 minimumReleaseAge: 4320
@@ -159,7 +159,7 @@ minimumReleaseAgeExclude:
 overrides:
   "@reown/appkit": 1.8.24
   # @angular/build pins vite 8.3.0 (GHSA-587h-7wmj-h5pm, fixed in 8.3.3).
-  "@angular/build>vite": ^8.3.4
+  "@angular/build>vite": ^8.3.5
   # chain-registry's own range would drift onto the new schema (see the chain-registry catalog note).
   "chain-registry>@chain-registry/types": 0.50.410
 

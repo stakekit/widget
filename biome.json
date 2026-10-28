@@ -16,6 +16,7 @@
       "!**/mockServiceWorker.js",
       "!**/package.json",
       "!**/.repos",
+      "!**/CHANGELOG.md",
       "!!**/@dedot/api/chaintypes/substrate/tx.d.ts"
     ]
   },
@@ -60,7 +61,8 @@
       },
       "correctness": {
         "useJsxKeyInIterable": "off",
-        "useUniqueElementIds": "off"
+        "useUniqueElementIds": "off",
+        "noComponentHookFactories": "off"
       },
       "complexity": {
         "noForEach": "off",
