@@ -1,5 +1,16 @@
 # @stakekit/widget
 
+## [0.0.295](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.294...@stakekit/widget@0.0.295) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **widget:** `DashboardYieldCategory` is now `YieldCategory` and the `dashboardYieldCategoryOrder` option is now `yieldCategoryOrder`.
+
+### Code Refactoring
+
+* **widget:** rename the Classic flow and layout, and dashboard yield categories ([#607](https://github.com/stakekit/widget/issues/607)) ([2a12e1d](https://github.com/stakekit/widget/commit/2a12e1d8eff2d854cd92ba21f950f85ef0d58608))
+
 ## [0.0.294](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.293...@stakekit/widget@0.0.294) (2026-10-26)
 
 
