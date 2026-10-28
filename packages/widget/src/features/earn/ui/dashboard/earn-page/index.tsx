@@ -6,13 +6,13 @@ import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
-import { ExtraArgsSelection } from "../../compact/earn-page/components/extra-args-selection";
-import { Footer } from "../../compact/earn-page/components/footer";
-import { SelectTokenSection } from "../../compact/earn-page/components/select-token-section";
-import { SelectTokenTitle } from "../../compact/earn-page/components/select-token-section/title";
-import { SelectYieldSection } from "../../compact/earn-page/components/select-yield-section";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";
+import { ExtraArgsSelection } from "../../components/extra-args-selection";
+import { Footer } from "../../components/footer";
+import { SelectTokenSection } from "../../components/select-token-section";
+import { SelectTokenTitle } from "../../components/select-token-section/title";
+import { SelectYieldSection } from "../../components/select-yield-section";
 import { container } from "./styles.css";
 
 export const EarnPageContent = ({
@@ -39,11 +39,11 @@ export const EarnPageContent = ({
 
         <SelectTokenSection />
 
-        <SelectYieldSection />
+        <SelectYieldSection alwaysShowStrategy showRiskSummary={false} />
 
         <EarnKycGate />
 
-        <ExtraArgsSelection />
+        <ExtraArgsSelection showDivider={false} />
       </Box>
 
       {earnPresentation.condensed && <Divider />}

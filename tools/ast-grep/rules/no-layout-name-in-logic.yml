@@ -1,0 +1,24 @@
+id: no-layout-name-in-logic
+language: Tsx
+severity: error
+message: Logic is Layout-agnostic. Name what the code models, not the Layout that shows it; Layout names belong to the application composition and Feature `ui/compact` or `ui/dashboard`.
+files:
+  - packages/widget/src/domain/**/*.ts
+  - packages/widget/src/resources/**/*.ts
+  - packages/widget/src/services/**/*.ts
+  - packages/widget/src/features/**/model/**/*.ts
+  - packages/widget/src/features/**/state/**/*.ts
+ignores:
+  # Decodes the public `dashboardVariant` Host Configuration flag.
+  - packages/widget/src/services/config/widget-config-boundary.ts
+rule:
+  any:
+    - kind: identifier
+    - kind: property_identifier
+    - kind: shorthand_property_identifier
+    - kind: shorthand_property_identifier_pattern
+    - kind: type_identifier
+  regex: (?i)dashboard|compact
+  not:
+    # Compact number notation is a number format, not the Layout.
+    regex: Compact(?:Number|Usd)$

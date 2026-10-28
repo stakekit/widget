@@ -58,8 +58,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
           )
       )
     : all;
-  const categoryGrouping =
-    config.dashboardVariant && config.yieldGrouping === "category";
+  const categoryGrouping = config.earnCategoryGrouping;
   const category = yieldOptions.selectedCategory;
   const filtered =
     categoryGrouping && category

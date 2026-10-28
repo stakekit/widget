@@ -3,7 +3,7 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
-import { shouldRegisterDashboardEarnFooterButton } from "../../../src/app/routes/ui/dashboard-routes";
+import { shouldRegisterDashboardEarnFooterButton } from "../../../src/app/layouts/dashboard/dashboard-routes";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import type { PositionDetailsActionMode } from "../../../src/features/position-details/model/hub";
 import { PositionDetailsActionTabs } from "../../../src/features/position-details/ui/dashboard/components/position-details-action-tabs";

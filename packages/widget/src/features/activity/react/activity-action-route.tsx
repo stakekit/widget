@@ -23,12 +23,10 @@ import {
   ActivityDetailsUnavailable,
 } from "../ui/activity-details/activity-details-status";
 
-export type ActivityPresentation = "Compact" | "Dashboard";
-
 type ActivityActionRouteValue = Readonly<{
   readonly continuationReady: boolean;
   readonly item: ActivityActionItem;
-  readonly presentation: ActivityPresentation;
+  readonly showsBackButton: boolean;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
 }>;
 
@@ -42,10 +40,12 @@ export const useActivityActionRoute = (): ActivityActionRouteValue => {
 };
 
 export const ActivityActionRoute = ({
-  presentation,
+  selectsDefaultAction,
+  showsBackButton,
   source,
 }: {
-  readonly presentation: ActivityPresentation;
+  readonly selectsDefaultAction: boolean;
+  readonly showsBackButton: boolean;
   readonly source: ActivitySelectionTarget["source"];
 }) => {
   const { actionId: actionIdParam } = useParams();
@@ -55,7 +55,7 @@ export const ActivityActionRoute = ({
   const scope = useAtomValue(walletScopeAtom);
   const parsed = parseActivityRouteIntent({
     actionIdParam,
-    allowDefault: presentation === "Dashboard",
+    allowDefault: selectsDefaultAction,
     source,
   });
 
@@ -66,7 +66,7 @@ export const ActivityActionRoute = ({
 
   return (
     <BoundActivityActionRoute
-      presentation={presentation}
+      showsBackButton={showsBackButton}
       selectionKey={
         new ActivitySelectionKey({
           intent: parsed.intent,
@@ -79,11 +79,11 @@ export const ActivityActionRoute = ({
 };
 
 const BoundActivityActionRoute = ({
-  presentation,
   selectionKey,
+  showsBackButton,
 }: {
-  readonly presentation: ActivityPresentation;
   readonly selectionKey: ActivitySelectionKey;
+  readonly showsBackButton: boolean;
 }) => {
   const result = useAtomValue(activityDetailsViewAtom(selectionKey));
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
@@ -132,8 +132,8 @@ const BoundActivityActionRoute = ({
       value={{
         continuationReady,
         item,
-        presentation,
         providersDetails: result.providersDetails,
+        showsBackButton,
       }}
     >
       {continuationReady && item._tag === "yield" && item.yieldData ? (

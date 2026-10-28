@@ -22,6 +22,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
   );
   const hideNetworkLogo = useWidgetConfig("hideNetworkLogo");
   const { hostTokenIconMapping } = useWidgetConfig("hostProfile");
+  const layout = useWidgetConfig("layout");
   const portalContainer = useWidgetConfig("portalContainer");
   const tokenIconMapping = useWidgetConfig("tokenIconMapping");
   const variant = useWidgetConfig("variant");
@@ -30,6 +31,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
     disableInputAutoResize: !!disableResizingInputFontSize,
     hideNetworkLogo: !!hideNetworkLogo,
     hostTokenIconMapping,
+    layout: layout === "Dashboard" ? "dashboard" : "compact",
     locale: i18n.resolvedLanguage ?? i18n.language,
     mapNetworkIconUrl: (network: Network) => {
       if (!isWalletNetwork(network)) return undefined;

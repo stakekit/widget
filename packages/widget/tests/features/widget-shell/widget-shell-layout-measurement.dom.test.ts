@@ -10,8 +10,8 @@ import {
 } from "../../../src/features/widget-shell/state/element-measurement";
 import {
   animationLayoutHeightAtom,
-  compactLayoutElementAtom,
   headerElementAtom,
+  pageOutletElementAtom,
   poweredByElementAtom,
 } from "../../../src/features/widget-shell/state/layout-height";
 
@@ -50,7 +50,7 @@ describe("animation layout height", () => {
       attachElement(appendElement({ height: 20 }))
     );
     registry.set(
-      compactLayoutElementAtom,
+      pageOutletElementAtom,
       attachElement(appendElement({ height: 100 }))
     );
 
@@ -73,16 +73,16 @@ describe("animation layout height", () => {
     const outgoing = appendElement({ height: 100 });
     const incoming = appendElement({ height: 120 });
 
-    registry.set(compactLayoutElementAtom, attachElement(outgoing));
-    registry.set(compactLayoutElementAtom, attachElement(incoming));
-    registry.set(compactLayoutElementAtom, detachElement(outgoing));
+    registry.set(pageOutletElementAtom, attachElement(outgoing));
+    registry.set(pageOutletElementAtom, attachElement(incoming));
+    registry.set(pageOutletElementAtom, detachElement(outgoing));
 
-    expect(registry.get(compactLayoutElementAtom)).toBe(incoming);
+    expect(registry.get(pageOutletElementAtom)).toBe(incoming);
     expect(registry.get(animationLayoutHeightAtom)).toBe(180);
 
-    registry.set(compactLayoutElementAtom, detachElement(incoming));
+    registry.set(pageOutletElementAtom, detachElement(incoming));
 
-    expect(registry.get(compactLayoutElementAtom)).toBeNull();
+    expect(registry.get(pageOutletElementAtom)).toBeNull();
   });
 
   it("retains the last non-zero layout height while a route check redirects", () => {
@@ -98,11 +98,11 @@ describe("animation layout height", () => {
       attachElement(appendElement({ height: 20 }))
     );
     registry.set(
-      compactLayoutElementAtom,
+      pageOutletElementAtom,
       attachElement(appendElement({ height: 100 }))
     );
     registry.set(
-      compactLayoutElementAtom,
+      pageOutletElementAtom,
       attachElement(appendElement({ height: 0 }))
     );
 
@@ -121,7 +121,7 @@ describe("animation layout height", () => {
       attachElement(appendElement({ height: 20 }))
     );
     registry.set(
-      compactLayoutElementAtom,
+      pageOutletElementAtom,
       attachElement(appendElement({ height: 100 }))
     );
     registry.set(headerElementAtom, detachElement(header));

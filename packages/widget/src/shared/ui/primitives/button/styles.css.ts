@@ -3,6 +3,7 @@ import type { RecipeVariants } from "@vanilla-extract/recipes";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
+import { dashboardLayoutSelector } from "../../../styles/theme/ids";
 
 const lighterBackground = (background: string) =>
   `color-mix(in oklab, ${background} 88%, ${vars.color.white})`;
@@ -151,6 +152,18 @@ export const buttonStyle = recipe({
         atoms({ minHeight: "10" }),
         {
           borderRadius: vars.borderRadius.baseContract.lg,
+        },
+      ],
+      /** Regular in the Compact Layout, compact in the Dashboard Layout. */
+      layout: [
+        atoms({ minHeight: "buttonMinHeight" }),
+        {
+          selectors: {
+            [`${dashboardLayoutSelector} &`]: {
+              borderRadius: vars.borderRadius.baseContract.lg,
+              minHeight: vars.space["10"],
+            },
+          },
         },
       ],
       small: [

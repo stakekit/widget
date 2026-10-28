@@ -1,0 +1,18 @@
+id: no-layout-path-outside-layout-ui
+language: Tsx
+severity: error
+message: 'A path naming a Layout belongs under a `ui/compact` or `ui/dashboard` directory or `src/app/layouts`. Elsewhere, name the file or directory after what it holds, not the Layout.'
+note: |
+  Features do not branch on the Layout. A Layout difference is a style keyed by
+  the Layout attribute, a prop the Layout's composition supplies that names the
+  difference, or a Layout-specific component under `ui/`.
+files:
+  - packages/widget/src/**/*[Cc][Oo][Mm][Pp][Aa][Cc][Tt]*
+  - packages/widget/src/**/*[Cc][Oo][Mm][Pp][Aa][Cc][Tt]*/**
+  - packages/widget/src/**/*[Dd][Aa][Ss][Hh][Bb][Oo][Aa][Rr][Dd]*
+  - packages/widget/src/**/*[Dd][Aa][Ss][Hh][Bb][Oo][Aa][Rr][Dd]*/**
+ignores:
+  - packages/widget/src/**/ui/**
+  - packages/widget/src/app/layouts/**
+rule:
+  kind: program

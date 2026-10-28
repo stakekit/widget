@@ -2,6 +2,7 @@ import { createContext, type PropsWithChildren, useContext } from "react";
 import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
 import type { WidgetVariant } from "../styles/recipe-variant";
+import type { LayoutAttributeValue } from "../styles/theme/ids";
 
 /**
  * Host-owned rendering environment for the shared UI kit.
@@ -16,6 +17,11 @@ export type WidgetPresentation = {
   readonly hideNetworkLogo: boolean;
   /** Replace selected token icons with the host's icon set. */
   readonly hostTokenIconMapping: boolean;
+  /**
+   * The Layout attribute portaled kit roots repeat, so Layout-scoped styles
+   * reach content rendered outside the app container. Not for branching.
+   */
+  readonly layout: LayoutAttributeValue;
   readonly locale: string;
   readonly mapNetworkIconUrl: (network: Network) => string | undefined;
   readonly mapTokenIconUrl: (token: Token) => string | undefined;
@@ -29,6 +35,7 @@ const defaultWidgetPresentation: WidgetPresentation = {
   disableInputAutoResize: false,
   hideNetworkLogo: false,
   hostTokenIconMapping: false,
+  layout: "compact",
   locale: "en",
   mapNetworkIconUrl: unmappedIconUrl,
   mapTokenIconUrl: unmappedIconUrl,

@@ -17,13 +17,13 @@ import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
+import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
+import { PositionDetailsUnstakeActions } from "../components/position-details-unstake-actions";
+import { PositionDetailsValidatorModal } from "../components/position-details-validator-modal";
 import { PositionBalances } from "./components/position-balances";
-import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
-import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
 import { ProviderDetails } from "./components/provider-details";
 import { YieldDetails } from "./components/yield-details";
-import { usePositionDetails } from "./hooks/use-position-details";
 import { container } from "./styles.css";
 
 const PositionDetails = () => {
@@ -261,13 +261,14 @@ const PositionDetails = () => {
             >
               {/* Pending actions */}
               <PositionDetailsPendingActions
+                flagsInvalidAmount
+                humanizesUntranslatedLabels={false}
                 positionDetails={{
                   integrationData: integrationDataValue,
                   pendingActions: pendingActionsValue,
                   onPendingActionAmountChange,
                   onPendingActionClick,
                 }}
-                presentation="compact"
               />
               {/* Unstake */}
               <PositionDetailsUnstakeActions />

@@ -4,7 +4,7 @@ import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { id } from "../../../styles/theme/ids";
+import { id, layoutAttribute } from "../../../styles/theme/ids";
 import { Box } from "../../primitives/box";
 import { SearchIcon } from "../../primitives/icons/search";
 import { XIcon } from "../../primitives/icons/x-icon";
@@ -95,7 +95,7 @@ const SelectModalWithoutState = ({
 }: SelectModalProps) => {
   const { isOpen, setOpen } = useSelectModalContext();
   const { t } = useTranslation();
-  const { portalContainer: configuredPortalContainer } =
+  const { layout, portalContainer: configuredPortalContainer } =
     useWidgetPresentation();
 
   const showTopBar = !!title || !hideTopBar || onSearch;
@@ -105,7 +105,12 @@ const SelectModalWithoutState = ({
       {trigger}
 
       <Portal container={configuredPortalContainer ?? portalContainer}>
-        <Box className={container} data-select-modal data-rk={id}>
+        <Box
+          className={container}
+          data-select-modal
+          data-rk={id}
+          {...{ [layoutAttribute]: layout }}
+        >
           <Overlay onClick={() => setOpen(false)} className={overlay} />
 
           <Content

@@ -19,6 +19,7 @@ import type {
 } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
+import type { WidgetLayout } from "./widget-config-model";
 
 const optional = <S extends Schema.Constraint>(schema: S) =>
   Schema.optionalKey(Schema.UndefinedOr(schema));
@@ -442,6 +443,12 @@ const combineExternalProvider = (
     : missingBorrowProviderCapability();
 };
 
+/** The Layout the host selects through the public `dashboardVariant` flag. */
+export const hostLayout = (
+  hostConfiguration: DecodedHostConfiguration
+): WidgetLayout =>
+  hostConfiguration.dashboardVariant ? "Dashboard" : "Compact";
+
 type SemanticHostConfigurationIssue = Exclude<
   InvalidHostConfigurationIssue,
   "host-configuration-decode-failed"
@@ -454,7 +461,7 @@ const semanticIssues = (
 
   if (
     hostConfiguration.borrowEnabled === true &&
-    hostConfiguration.dashboardVariant !== true
+    hostLayout(hostConfiguration) !== "Dashboard"
   ) {
     issues.push("borrow-requires-dashboard");
   }
@@ -536,3 +543,30 @@ export const decodeHostConfiguration = (
     warnings: theme.warnings.map((issue) => ({ _tag: "Theme", issue })),
   });
 };
+
+/** How the widget looks while it shows that the Host Configuration was rejected. */
+export type RejectedConfigurationPresentation = Readonly<{
+  layout: WidgetLayout;
+  theme: SKTheme | undefined;
+  variant: HostVariant;
+}>;
+
+const isHostVariant = Schema.is(Schema.Literals(hostVariantValues));
+
+/**
+ * Decodes the presentation fields of a rejected Host Configuration one by
+ * one, so the widget-unavailable notice can still match the host. Invalid
+ * fields fall back to the defaults instead of failing again.
+ */
+export const decodeRejectedConfigurationPresentation = (
+  hostConfiguration: Partial<SKHostConfiguration>
+): RejectedConfigurationPresentation => ({
+  layout: hostConfiguration.dashboardVariant === true ? "Dashboard" : "Compact",
+  theme:
+    hostConfiguration.theme === undefined
+      ? undefined
+      : decodeTheme(hostConfiguration.theme).theme,
+  variant: isHostVariant(hostConfiguration.variant)
+    ? hostConfiguration.variant
+    : "default",
+});

@@ -12,7 +12,7 @@ import {
   SplitView,
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
-import { usePositionDetails } from "../compact/hooks/use-position-details";
+import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsInfo } from "./components/position-details-info";
 
 const PositionBreadcrumb = ({

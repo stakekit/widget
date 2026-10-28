@@ -97,7 +97,9 @@ const EarnPositionsListItem = ({
   <EarnPositionListItem
     item={item}
     details={usePositionListItem(item)}
-    presentation="dashboard"
+    opensDetailsWithViewTransition
+    showsMissingAmountPlaceholder
+    showsRewardRate
   />
 );
 

@@ -182,8 +182,7 @@ export const selectEarnSelectionCategoryAtom = Atom.fnSync(
   (category: YieldCategory, context) => {
     const config = context(widgetConfigAtom);
     if (
-      !config.dashboardVariant ||
-      config.yieldGrouping !== "category" ||
+      !config.earnCategoryGrouping ||
       context(internalEarnSelectionViewAtom).selection.category === category
     ) {
       return;

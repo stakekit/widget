@@ -59,7 +59,7 @@ const scope = new WalletScopeKey({
 });
 const compactEntry: EarnEntry = {
   categoryOrder: ["stake", "defi", "rwa"],
-  dashboardVariant: false,
+  categoryGrouping: false,
   initParams: null,
   preferredTokenYieldsPerNetwork: null,
   walletResolution: "settled",

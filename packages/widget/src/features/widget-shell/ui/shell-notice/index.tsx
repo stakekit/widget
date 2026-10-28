@@ -1,36 +1,34 @@
-import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
+import type { ReactNode } from "react";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { wrapper } from "../../dashboard/components/styles.css";
 import { PoweredBy } from "../powered-by";
-import { background, container, dashboardBackground } from "./style.css";
+import { container, frame } from "./style.css";
 
-export const ShellNotice = ({
-  description,
-  testId,
-  title,
-}: {
+type ShellNoticeContent = {
   readonly description: string;
   readonly testId: string;
   readonly title: string;
-}) => {
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
+};
 
+export const ShellNotice = (content: ShellNoticeContent) => (
+  <ShellNoticeFrame {...content} footer={<PoweredBy opacity={1} />} />
+);
+
+/**
+ * A full-widget notice that renders without Widget Configuration; the Layout
+ * attribute on the app container frames it.
+ */
+export const ShellNoticeFrame = ({
+  description,
+  footer,
+  testId,
+  title,
+}: ShellNoticeContent & {
+  readonly footer?: ReactNode;
+}) => {
   return (
-    <Box
-      style={{ borderRadius: "14px" }}
-      className={
-        dashboardVariant
-          ? [
-              combineRecipeWithVariant({ rec: wrapper, variant }),
-              dashboardBackground,
-            ]
-          : background
-      }
-    >
+    <Box className={frame}>
       <Box
         display="flex"
         flexDirection="column"
@@ -58,7 +56,7 @@ export const ShellNotice = ({
           </Text>
         </Box>
       </Box>
-      <PoweredBy opacity={1} />
+      {footer}
     </Box>
   );
 };

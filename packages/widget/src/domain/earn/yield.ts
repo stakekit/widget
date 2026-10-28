@@ -93,9 +93,9 @@ export const yieldCategories = [
 ] as const satisfies ReadonlyArray<YieldCategoryType>;
 
 /**
- * Maps locally known API yield types to dashboard categories. Unknown future
+ * Maps locally known API yield types to Yield Categories. Unknown future
  * API types are intentionally not included in filtered queries because the app
- * cannot infer which dashboard category they belong to.
+ * cannot infer which Yield Category they belong to.
  */
 const apiYieldTypeToYieldCategory = {
   staking: "stake",

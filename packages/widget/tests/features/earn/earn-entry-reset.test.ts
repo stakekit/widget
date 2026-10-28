@@ -17,7 +17,7 @@ const owner = {
 } as EarnEntryState["owner"];
 
 const settledEntry: EarnEntryState = {
-  dashboardVariant: false,
+  categoryGrouping: false,
   initializationPhase: "complete",
   initParams: null,
   intent: makeDefaultEarnIntent(),

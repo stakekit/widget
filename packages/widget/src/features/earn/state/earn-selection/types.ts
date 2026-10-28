@@ -49,11 +49,12 @@ export class EarnCatalogError extends Data.TaggedError("EarnCatalogError")<{
 export type EarnEntry = {
   readonly walletScope: WalletScopeKey | null;
   readonly walletResolution: "pending" | "settled";
-  readonly dashboardVariant: boolean;
+  /** Yields are grouped and selected by Yield Category. */
+  readonly categoryGrouping: boolean;
   readonly categoryOrder: ReadonlyArray<YieldCategory>;
   readonly initParams?: InitParams | null;
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork | null;
-  /** Empty unless yields are grouped by dashboard category. */
+  /** Empty unless yields are grouped by Yield Category. */
   readonly yieldProviderOrder?: YieldProviderOrder;
 };
 

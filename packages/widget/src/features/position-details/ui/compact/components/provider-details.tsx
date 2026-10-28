@@ -5,7 +5,8 @@ import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferr
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useMetaInfo } from "../../../../yield-entry/views";
 import type { YieldSummaryProvider as ProviderDetailsModel } from "../../../../yield-summary/index";
-import { inactiveContainer, noWrap } from "../styles.css";
+import { noWrap } from "../../components/styles.css";
+import { inactiveContainer } from "../styles.css";
 import { PositionSourceDetails } from "./position-source-details";
 
 export const ProviderDetails = ({

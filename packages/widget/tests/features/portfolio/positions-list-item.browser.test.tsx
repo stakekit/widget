@@ -20,6 +20,7 @@ const frenchPresentation: WidgetPresentation = {
   disableInputAutoResize: false,
   hideNetworkLogo: false,
   hostTokenIconMapping: false,
+  layout: "compact",
   locale: "fr",
   mapNetworkIconUrl: () => undefined,
   mapTokenIconUrl: () => undefined,
@@ -42,10 +43,9 @@ const hookState = vi.hoisted(() => ({
   details: undefined as unknown as RowDetails,
 }));
 
-vi.mock(
-  "../../../src/features/portfolio/ui/compact/positions-page/hooks/use-position-list-item",
-  () => ({ usePositionListItem: () => hookState.details })
-);
+vi.mock("../../../src/features/portfolio/react/use-position-list-item", () => ({
+  usePositionListItem: () => hookState.details,
+}));
 
 vi.mock(
   "../../../src/features/portfolio/ui/dashboard/positions/hooks/use-position-list-item",

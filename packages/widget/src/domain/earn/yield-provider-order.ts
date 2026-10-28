@@ -9,7 +9,7 @@ import {
 } from "./yield";
 
 /**
- * Yield provider IDs to list first, per dashboard category, in rank order.
+ * Yield provider IDs to list first, per Yield Category, in rank order.
  * A category without an entry keeps the default yield order.
  */
 export type YieldProviderOrder = Readonly<

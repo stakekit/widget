@@ -10,7 +10,7 @@ ast-grep.
 `packages/widget/src` is organized by the owner of a capability:
 
 ```text
-app/          application composition, routing, and runtime assembly
+app/          application composition, Layouts, routing, and runtime assembly
 features/     user-facing capabilities and their state
 resources/    authoritative cacheable remote reads
 services/     side effects and external-system adapters
@@ -25,8 +25,23 @@ Shared may depend on Domain types and rules, but not on features, resources, or
 services. The application composes Modules; it does not absorb their behavior.
 
 Activity owns the activity feed, action lookup, action details, and their
-variant layouts. A Yield Action Continuation starts from Activity but runs as a
-Yield Transaction Flow; completed and failed details never start one.
+Layout-specific screens. A Yield Action Continuation starts from Activity but
+runs as a Yield Transaction Flow; completed and failed details never start one.
+
+## Layouts
+
+The Compact Layout and the Dashboard Layout are application composition under
+`app/layouts/<layout>/`: each owns its shell, route tree, tabs, and page
+transitions. Widget Configuration derives the Layout from Host Configuration,
+and only application composition and Widget Configuration read it; the shared
+dialog portal only restamps the Layout attribute on content it moves out of the
+Widget root. Features are Layout-agnostic: a Feature's `ui/` holds what both
+Layouts render, `ui/compact/` and `ui/dashboard/` hold Layout-specific screens
+and never import each other, and `model/`, `state/`, and `react/` never import
+either. A Layout difference is a style keyed by the Layout attribute on the
+Widget root, a prop the Layout's composition supplies that names the
+difference, or a Layout-specific component. See
+[ADR 0013](../../docs/adr/0013-layouts-are-application-composition.md).
 
 ## Dependency direction
 
@@ -221,16 +236,20 @@ and Effect Atom registry.
 
 - dependency-cruiser enforces cross-Module direction, keeps API internals
   private, keeps the `internal/` folders of `services/wallet` and
-  `services/transaction-workflow` private to their service, and keeps API
-  transport free of error presentation.
+  `services/transaction-workflow` private to their service, keeps API
+  transport free of error presentation, and keeps `ui/compact/` and
+  `ui/dashboard/` independent of each other and out of Layout-free code.
 - Biome constrains barrels and keeps React out of domain, Resource, and service
   logic and out of Feature `model/` and `state/`.
 - ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
   Compiler memoizes, and only functions with a `"use no memo"` directive may
   memoize by hand), ad hoc Atom runtimes, direct Effect runtime execution,
   native `Date`, global `fetch`, throws in Effect generators, wildcard Module
-  exports, and Resources that read an API ResourceSource without
-  `makePresentableResource`.
+  exports, Resources that read an API ResourceSource without
+  `makePresentableResource`, Layout reads outside application composition and
+  Widget Configuration, Layout-named identifiers in Domain, Resource, service, and
+  Feature `model/` and `state/` code, and Layout-named files outside `ui/` and
+  `app/layouts/`.
 - Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
 - jscpd fails when duplicated source and tooling code (tests and generated API
