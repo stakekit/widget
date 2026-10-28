@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { getTokenPriceInUSD } from "../../../src/domain/finance/price";
@@ -15,7 +16,7 @@ describe("token USD prices", () => {
     });
 
     const amountInUsd = getTokenPriceInUSD({
-      amount: "0.0012",
+      amount: new BigNumber("0.0012"),
       baseToken: null,
       pricePerShare: null,
       prices,

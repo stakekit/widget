@@ -74,7 +74,7 @@ export const useMetaInfo = ({
         ? {
             title: t("details.validators_staked_balance"),
             val: formatBigNumber(
-              exactDecimal(stakedBalance),
+              stakedBalance,
               (value) =>
                 `${formatNumber(value, locale, 0)} ${stakedBalanceToken.symbol}`
             ),

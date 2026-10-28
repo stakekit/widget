@@ -1,6 +1,7 @@
+import type BigNumber from "bignumber.js";
 import { Array as EArray, pipe } from "effect";
 import type { TFunction } from "i18next";
-import { exactDecimal } from "../finance/exact";
+import { sumExact } from "../finance/exact";
 import type { ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
@@ -196,15 +197,6 @@ export const filterValidators = <T extends ValidatorDto>({
   return filtered;
 };
 
-const toNumber = (value: number | string | null | undefined) => {
-  if (value === null || value === undefined) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
 const secondsToDays = (seconds: number | undefined) => {
   if (seconds === undefined) return undefined;
 
@@ -281,7 +273,7 @@ export const getYieldRiskSourceLabel = (
 
 export const hasYieldFeeConfigurationEnabled = (
   yieldDto: EarnYieldWithProvider
-) => Object.values(yieldDto.mechanics.fee ?? {}).some(Boolean);
+) => Object.values(yieldDto.mechanics.fee ?? {}).some((fee) => fee != null);
 
 export const getYieldCooldownPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.cooldownPeriod?.seconds);
@@ -289,30 +281,22 @@ export const getYieldCooldownPeriod = (yieldDto: EarnYieldWithProvider) =>
 export const getYieldWarmupPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.warmupPeriod?.seconds);
 
-export const getYieldTvlUsd = (yieldDto: EarnYieldWithProvider) => {
-  const tvlUsd = yieldDto.statistics?.tvlUsd;
+export const getYieldTvlUsd = (yieldDto: EarnYieldWithProvider) =>
+  yieldDto.statistics?.tvlUsd ?? null;
 
-  if (tvlUsd == null || tvlUsd === "") return null;
-
-  return tvlUsd;
-};
-
+/**
+ * The yield's total fee as a decimal ratio (0.02 = 2%), summed exactly from
+ * the API's percentages; null when it charges none.
+ */
 export const getYieldFeePercent = (
   yieldDto: EarnYieldWithProvider
-): number | null => {
-  const fee = yieldDto.mechanics.fee;
+): BigNumber | null => {
+  const fees = Object.values(yieldDto.mechanics.fee ?? {}).filter(
+    (fee) => fee != null
+  );
+  const total = sumExact(fees);
 
-  if (!fee) return null;
-
-  const total = Object.values(fee).reduce((acc, value) => {
-    const parsed = toNumber(value);
-
-    return parsed !== undefined ? acc + parsed : acc;
-  }, 0);
-
-  if (total <= 0) return null;
-
-  return total / 100;
+  return total.isGreaterThan(0) ? total.dividedBy(100) : null;
 };
 
 export const getYieldLockupPeriod = (yieldDto: EarnYieldWithProvider) =>
@@ -344,15 +328,8 @@ export const getYieldOutputToken = (yieldDto: EarnYieldWithProvider) =>
     ? yieldDto.outputToken
     : null;
 
-const hasPositivePricePerShare = (yieldDto: EarnYieldWithProvider) => {
-  const price = yieldDto.state?.pricePerShareState?.price;
-
-  if (price === null || price === undefined) return false;
-
-  const amount = exactDecimal(price);
-
-  return amount.isFinite() && amount.isGreaterThan(0);
-};
+const hasPositivePricePerShare = (yieldDto: EarnYieldWithProvider) =>
+  yieldDto.state?.pricePerShareState?.price.isGreaterThan(0) ?? false;
 
 export const hasYieldBearingOutputToken = (yieldDto: EarnYieldWithProvider) =>
   getYieldOutputToken(yieldDto) !== null && hasPositivePricePerShare(yieldDto);
@@ -487,11 +464,10 @@ const isNativeStaking = (yieldDto: EarnYieldWithProvider) => {
     return false;
   }
 
-  const minimum = getYieldActionArg(yieldDto, "enter", "amount")?.minimum;
-
-  return minimum !== null && minimum !== undefined
-    ? exactDecimal(minimum).isEqualTo(32)
-    : false;
+  return (
+    getYieldActionArg(yieldDto, "enter", "amount")?.minimum.isEqualTo(32) ??
+    false
+  );
 };
 
 const isPooledStaking = (yieldDto: EarnYieldWithProvider) =>

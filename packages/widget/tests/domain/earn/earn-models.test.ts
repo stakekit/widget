@@ -100,6 +100,89 @@ describe("Earn application models", () => {
     expect(balance.amountUsd?.toFixed()).toBe("12345678901234567890.12");
   });
 
+  it.effect("decodes an encrypted balance's shares as its handle", () =>
+    Effect.gen(function* () {
+      const balance = yield* Schema.decodeEffect(EarnBalance)({
+        address: "wallet-1",
+        type: "active",
+        amount: "0",
+        amountRaw: "0",
+        isEncrypted: true,
+        pendingActions: [],
+        shareAmount: "0",
+        shareAmountRaw: `0x${"AB".repeat(32)}`,
+        token,
+      }).pipe(Effect.provide(Logger.layer([])));
+
+      expect(balance.shares).toEqual({
+        _tag: "Encrypted",
+        handle: `0x${"ab".repeat(32)}`,
+      });
+    })
+  );
+
+  it.effect("decodes a plain balance's shares as exact amounts", () =>
+    Effect.gen(function* () {
+      const balance = yield* Schema.decodeEffect(EarnBalance)({
+        address: "wallet-1",
+        type: "active",
+        amount: "1.6",
+        amountRaw: "1600000",
+        pendingActions: [],
+        shareAmount: "1.500000000000000001",
+        shareAmountRaw: "1500000000000000001",
+        token,
+      }).pipe(Effect.provide(Logger.layer([])));
+
+      expect(balance.shares).toEqual({
+        _tag: "Plain",
+        amount: new BigNumber("1.500000000000000001"),
+        amountRaw: 1500000000000000001n,
+      });
+    })
+  );
+
+  it.effect("drops only a malformed plain share count", () =>
+    Effect.gen(function* () {
+      const balance = yield* Schema.decodeEffect(EarnBalance)({
+        address: "wallet-1",
+        type: "active",
+        amount: "1",
+        amountRaw: "1",
+        pendingActions: [],
+        shareAmount: "2.5",
+        shareAmountRaw: "not-a-quantity",
+        token,
+      }).pipe(Effect.provide(Logger.layer([])));
+
+      expect(balance.amount.toFixed()).toBe("1");
+      expect(balance.shares).toEqual({
+        _tag: "Plain",
+        amount: new BigNumber("2.5"),
+      });
+    })
+  );
+
+  it.effect("drops only a raw share count of the wrong wire type", () =>
+    Effect.gen(function* () {
+      const balance = yield* Schema.decodeEffect(EarnBalance)({
+        address: "wallet-1",
+        type: "active",
+        amount: "1",
+        amountRaw: "1",
+        pendingActions: [],
+        shareAmount: "2.5",
+        shareAmountRaw: { value: 25 },
+        token,
+      }).pipe(Effect.provide(Logger.layer([])));
+
+      expect(balance.shares).toEqual({
+        _tag: "Plain",
+        amount: new BigNumber("2.5"),
+      });
+    })
+  );
+
   it.effect("safely omits an invalid optional balance timestamp", () =>
     Effect.gen(function* () {
       const balance = yield* Schema.decodeEffect(EarnBalance)({
@@ -235,6 +318,119 @@ describe("Earn application models", () => {
 
     expect(yieldModel.state).toEqual({});
   });
+
+  const decodeYieldQuietly = (wire: unknown) =>
+    Schema.decodeUnknownEffect(EarnYield)(wire).pipe(
+      Effect.provide(Logger.layer([]))
+    );
+
+  it.effect("drops only a malformed fee and keeps the yield", () =>
+    Effect.gen(function* () {
+      const base = yieldApiYieldDtoFixture();
+      const yieldModel = yield* decodeYieldQuietly({
+        ...base,
+        mechanics: {
+          ...base.mechanics,
+          fee: { deposit: "abc", management: "2.00" },
+        },
+      });
+
+      expect(yieldModel.mechanics.fee).toEqual({
+        deposit: null,
+        management: new BigNumber("2"),
+      });
+    })
+  );
+
+  it.effect("drops only a malformed entry limit and keeps the yield", () =>
+    Effect.gen(function* () {
+      const base = yieldApiYieldDtoFixture();
+      const yieldModel = yield* decodeYieldQuietly({
+        ...base,
+        mechanics: {
+          ...base.mechanics,
+          entryLimits: {
+            maximum: null,
+            minimum: "ten",
+            subsequentMinimum: "10000",
+          },
+        },
+      });
+
+      expect(yieldModel.mechanics.entryLimits).toEqual({
+        maximum: null,
+        minimum: null,
+        subsequentMinimum: new BigNumber("10000"),
+      });
+    })
+  );
+
+  it.effect("drops only malformed TVL values and keeps their models", () =>
+    Effect.gen(function* () {
+      const yieldModel = yield* decodeYieldQuietly({
+        ...yieldApiYieldDtoFixture(),
+        statistics: { tvlUsd: "1,200,000", averagePositionSizeUsd: "3448.27" },
+      });
+      const provider = yield* Schema.decodeEffect(EarnProvider)({
+        id: "stakekit",
+        name: "StakeKit",
+        logoURI: "https://stakek.it/logo.svg",
+        website: "https://stakek.it",
+        tvlUsd: "",
+      }).pipe(Effect.provide(Logger.layer([])));
+      const validator = yield* Schema.decodeUnknownEffect(EarnValidator)({
+        address: "validator-1",
+        tvl: "lots",
+        tvlRaw: "8250450000000000000000",
+      }).pipe(Effect.provide(Logger.layer([])));
+      const validatorWithTvl = yield* Schema.decodeEffect(EarnValidator)({
+        address: "validator-2",
+        tvl: "8250.45",
+      });
+
+      expect(yieldModel.statistics).toEqual({
+        averagePositionSizeUsd: new BigNumber("3448.27"),
+        tvlUsd: null,
+      });
+      expect(provider.tvlUsd).toBeNull();
+      expect(validator.tvl).toBeNull();
+      expect(validator).not.toHaveProperty("tvlRaw");
+      expect(validatorWithTvl.tvl).toEqual(new BigNumber("8250.45"));
+    })
+  );
+
+  it.effect(
+    "drops only a malformed price-per-share state and keeps the yield",
+    () =>
+      Effect.gen(function* () {
+        const base = yieldApiYieldDtoFixture();
+        const malformed = yield* decodeYieldQuietly({
+          ...base,
+          state: {
+            pricePerShareState: {
+              price: "not-a-price",
+              quoteToken: base.token,
+              shareToken: base.token,
+            },
+          },
+        });
+        const priced = yield* decodeYieldQuietly({
+          ...base,
+          state: {
+            pricePerShareState: {
+              price: 1.05,
+              quoteToken: base.token,
+              shareToken: base.token,
+            },
+          },
+        });
+
+        expect(malformed.state).toEqual({ pricePerShareState: null });
+        expect(priced.state?.pricePerShareState?.price).toEqual(
+          new BigNumber("1.05")
+        );
+      })
+  );
 
   it("decodes advertised provider options as opaque values", () => {
     const baseYield = yieldApiYieldDtoFixture();

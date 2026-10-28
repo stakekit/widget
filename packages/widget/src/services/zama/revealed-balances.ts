@@ -8,10 +8,10 @@ import {
   SubscriptionRef,
 } from "effect";
 import type {
-  ConfidentialHandle,
   ConfidentialTokenBalanceKey,
   RevealedBalances as Values,
 } from "../../domain/earn/confidential";
+import type { ConfidentialHandle } from "../../domain/earn/models";
 import type { WalletScopeOwner } from "../../domain/wallet/wallet-scope";
 
 type RevealedBalancesApi = Readonly<{

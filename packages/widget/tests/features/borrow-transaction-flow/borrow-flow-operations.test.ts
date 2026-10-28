@@ -13,7 +13,11 @@ import {
 } from "effect";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
-import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
+import {
+  ActionId,
+  IntegrationId,
+  MarketId,
+} from "../../../src/domain/borrow/ids";
 import {
   TransactionWorkflowId,
   WalletAddress,
@@ -225,7 +229,9 @@ const withoutNavigationState = (
 // The action id Steps' navigation state carries after a handoff.
 const handedOffActionId = (session: BorrowFlowSession) =>
   Ref.get(session.handoff).pipe(
-    Effect.map((handoff) => handoff?.action.id ?? "nothing-handed-off")
+    Effect.map(
+      (handoff) => handoff?.action.id ?? ActionId.make("nothing-handed-off")
+    )
   );
 
 describe("startBorrowTransactionFlow", () => {
@@ -771,7 +777,10 @@ describe("startBorrowFlowExecution", () => {
 
       const exit = yield* Effect.exit(
         Effect.scoped(
-          startBorrowFlowExecution(openSession(), "never-handed-off")
+          startBorrowFlowExecution(
+            openSession(),
+            ActionId.make("never-handed-off")
+          )
         ).pipe(Effect.provide(kit.layer))
       );
 

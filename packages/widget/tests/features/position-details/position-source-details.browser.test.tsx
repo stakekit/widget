@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
@@ -31,8 +32,7 @@ const integration: EarnYieldWithProvider = {
   rewardRate: yieldRewardRateFixture({ total: 0.04 }),
   state: {
     pricePerShareState: {
-      price: 1.06274537,
-      quoteToken: baseYield.token,
+      price: new BigNumber("1.06274537"),
       shareToken: baseYield.token,
     },
   },
@@ -92,7 +92,7 @@ describe("Position source yield details", () => {
             ...integration,
             mechanics: {
               ...integration.mechanics,
-              fee: { management: "0.02" },
+              fee: { management: new BigNumber("0.02") },
             },
           }}
           showRewardRate={false}

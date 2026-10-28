@@ -255,7 +255,7 @@ describe("Yield flow Review page", () => {
                 intake: makeExitIntake(integration),
                 mount: {
                   _tag: "PositionExit",
-                  balanceId: "balance",
+                  balanceId: "default",
                   integrationId,
                 },
               },

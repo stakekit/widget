@@ -1,6 +1,7 @@
 import { Effect, Result, Schema } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
+import type { WalletSignature } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import { isEvmWalletNetwork } from "../../../../../domain/wallet/network";
 import type {
@@ -188,7 +189,7 @@ export const makeExternalProviderWalletDriver = ({
   }: {
     readonly message: string;
   }): Effect.Effect<
-    string,
+    WalletSignature,
     | WalletCapabilityUnavailableError
     | WalletRequestCancelledError
     | WalletSigningError
@@ -208,7 +209,7 @@ export const makeExternalProviderWalletDriver = ({
   signTypedData: (
     input: WalletSignBorrowTypedDataInput
   ): Effect.Effect<
-    string,
+    WalletSignature,
     | WalletCapabilityUnavailableError
     | WalletRequestCancelledError
     | WalletSigningError
@@ -228,7 +229,7 @@ export const makeExternalProviderWalletDriver = ({
   signZamaPermit: (
     input: WalletSignPermitInput
   ): Effect.Effect<
-    string,
+    WalletSignature,
     | WalletCapabilityUnavailableError
     | WalletRequestCancelledError
     | WalletSigningError

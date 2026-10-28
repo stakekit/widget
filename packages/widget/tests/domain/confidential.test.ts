@@ -3,7 +3,6 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import {
   type ConfidentialEncryption,
-  ConfidentialHandle,
   fillConfidentialBalance,
   getCancellingHandles,
   getCancelReturn,
@@ -20,7 +19,10 @@ import {
   planConfidentialEncryption,
   toConfidentialArguments,
 } from "../../src/domain/earn/confidential";
-import type { EarnBalance } from "../../src/domain/earn/models";
+import {
+  ConfidentialHandle,
+  type EarnBalance,
+} from "../../src/domain/earn/models";
 import { Token } from "../../src/domain/token/token";
 import {
   confidentialFixture,
@@ -33,9 +35,16 @@ const { cShare, cUsdc, depositBatcher, redeemBatcher, router, usdc } =
 const confidentialYield = confidentialYieldFixture;
 const shareToken = Schema.decodeSync(Token)(cShare);
 
+const toHandle = Schema.decodeSync(ConfidentialHandle);
+const amountHandle = toHandle(`0x${"01".repeat(32)}`);
+const legHandles = [
+  toHandle(`0x${"02".repeat(32)}`),
+  toHandle(`0x${"03".repeat(32)}`),
+];
+
 const encryption: ConfidentialEncryption = {
-  amount: { handle: "0xamount", proof: "0xamountproof" },
-  legs: { handles: ["0xleg0", "0xleg1"], proof: "0xlegproof" },
+  amount: { handle: amountHandle, proof: "0xamountproof" },
+  legs: { handles: legHandles, proof: "0xlegproof" },
 };
 
 describe("confidential vault rules", () => {
@@ -45,10 +54,10 @@ describe("confidential vault rules", () => {
   });
 
   it("publicly decrypts only an unwrap's WITHDRAW, never a batch cancel", () => {
-    const requestId = `0x${"cd".repeat(32)}`;
+    const requestId = toHandle(`0x${"cd".repeat(32)}`);
     const hidden = (type: EarnBalance["type"]) => ({
       isEncrypted: true,
-      shareAmountRaw: requestId,
+      shares: { _tag: "Encrypted", handle: requestId } as const,
       type,
     });
 
@@ -63,7 +72,7 @@ describe("confidential vault rules", () => {
     ).toBeNull();
     expect(
       getPendingActionDecryptHandle(
-        { shareAmountRaw: "5", type: "withdrawable" },
+        { shares: { _tag: "Plain", amountRaw: 5n }, type: "withdrawable" },
         "WITHDRAW"
       )
     ).toBeNull();
@@ -91,7 +100,7 @@ describe("confidential vault rules", () => {
   it("counts a cancelled withdrawal's refund in vault shares, not the underlying it is valued in", () => {
     const refund = getCancelReturn(confidentialYield(), "CANCEL_PENDING", {
       amount: new BigNumber("0.1"),
-      shareAmount: "0.097168",
+      shares: { _tag: "Plain", amount: new BigNumber("0.097168") },
       shareToken,
       type: "exiting",
     });
@@ -214,9 +223,9 @@ describe("confidential vault rules", () => {
     );
 
     expect(args).toEqual({
-      encryptedAmount: "0xamount",
+      encryptedAmount: amountHandle,
       encryptedAmountProof: "0xamountproof",
-      encryptedLegAmounts: ["0xleg0", "0xleg1"],
+      encryptedLegAmounts: legHandles,
       encryptedLegProof: "0xlegproof",
       inputToken: cUsdc.address,
       ledgerWalletApiCompatible: true,
@@ -279,15 +288,12 @@ describe("confidential vault rules", () => {
       amountRaw: 0n,
       amountUsd: null as BigNumber | null,
       isEncrypted: true,
-      shareAmount: "0",
-      shareAmountRaw: handle,
+      shares: { _tag: "Encrypted", handle: toHandle(handle) } as const,
       shareToken,
       token: usdc,
     };
     const revealedShares = (shares: bigint) =>
-      new Map([
-        [Schema.decodeSync(ConfidentialHandle)(handle.toUpperCase()), shares],
-      ]);
+      new Map([[toHandle(handle.toUpperCase()), shares]]);
 
     it("values revealed shares at the share price and the token USD price", () => {
       const yieldDto = confidentialYieldFixture({
@@ -311,7 +317,12 @@ describe("confidential vault rules", () => {
 
       expect(filled.amount.toFixed()).toBe("2.5");
       expect(filled.amountUsd?.toFixed()).toBe("5");
-      expect(filled.shareAmountRaw).toBe("2000000");
+      expect(filled.shares).toEqual({
+        _tag: "Revealed",
+        amount: new BigNumber("2"),
+        amountRaw: 2_000_000n,
+        handle,
+      });
     });
 
     it("stays recognisable as its pending position once revealed", () => {
@@ -324,7 +335,7 @@ describe("confidential vault rules", () => {
         },
       ]);
 
-      expect(filled.isEncrypted).toBeUndefined();
+      expect(filled).not.toHaveProperty("isEncrypted");
       expect(
         [hidden, filled].map((balance) =>
           isCancellingBalance(balance, cancelling)

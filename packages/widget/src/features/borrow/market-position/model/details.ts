@@ -4,6 +4,7 @@ import {
   deriveMarketPositionOverview,
   type MarketPosition,
 } from "../../../../domain/borrow/positions/market-position";
+import type { BorrowPositionActionKey } from "../../../../domain/borrow/positions/position-action-key";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
 import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
 import {
@@ -42,7 +43,7 @@ type BorrowPositionDetailRow = {
 };
 
 export type BorrowPositionAction = {
-  readonly id: string;
+  readonly id: BorrowPositionActionKey;
   readonly label: string;
   readonly pendingContext: BorrowPositionPendingActionContext;
   readonly type:

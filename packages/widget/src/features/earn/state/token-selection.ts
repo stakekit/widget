@@ -3,7 +3,6 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { exactDecimal } from "../../../domain/finance/exact";
 import { isFundedBalance } from "../../../domain/finance/funded-balance";
 import type { Prices } from "../../../domain/health/models";
 import { tokenString } from "../../../domain/token/token";
@@ -25,11 +24,8 @@ export type EarnTokenSelectionItem = EarnTokenOption & {
   readonly fundedUsd: BigNumber | null;
 };
 
-const positiveAmount = (option: EarnTokenOption) => {
-  if (option.amount === null) return null;
-  const amount = exactDecimal(option.amount);
-  return amount.isGreaterThan(0) ? amount : null;
-};
+const positiveAmount = (option: EarnTokenOption) =>
+  option.amount?.isGreaterThan(0) ? option.amount : null;
 
 const toSelectionItem = (
   option: EarnTokenOption,

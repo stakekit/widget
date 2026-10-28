@@ -4,6 +4,11 @@ import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../domain/borrow/catalog/token";
+import type {
+  IntegrationId,
+  MarketId,
+  TokenAddress,
+} from "../../../domain/borrow/ids";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
 import type {
   EarnValidator,
@@ -26,8 +31,8 @@ import type {
 
 /** Facts resolved for a set of Activity rows; missing facts stay absent. */
 export type ActivityEnrichmentFacts = {
-  readonly borrowIntegrationsById: ReadonlyMap<string, Integration>;
-  readonly borrowMarketsById: ReadonlyMap<string, Market>;
+  readonly borrowIntegrationsById: ReadonlyMap<IntegrationId, Integration>;
+  readonly borrowMarketsById: ReadonlyMap<MarketId, Market>;
   readonly validatorsByKey: ReadonlyMap<string, EarnValidator>;
   readonly yieldsById: ReadonlyMap<YieldId, EarnYieldWithProvider | null>;
 };
@@ -53,7 +58,7 @@ const BORROW_DEBT_ACTIONS: Record<BorrowActivityAction["action"], boolean> = {
 /** A market's loan or collateral token at an address, case-insensitively. */
 export const findBorrowMarketToken = (
   market: Market,
-  address: string
+  address: TokenAddress
 ): BorrowToken | null => {
   const normalized = address.toLowerCase();
 
@@ -110,8 +115,9 @@ export const projectBorrowActivityItem = (
   walletScope: WalletScopeKey,
   { borrowIntegrationsById, borrowMarketsById }: ActivityEnrichmentFacts
 ): BorrowActivityItem => {
-  const market =
-    borrowMarketsById.get(action.rawArguments?.marketId ?? "") ?? null;
+  const market = action.rawArguments
+    ? (borrowMarketsById.get(action.rawArguments.marketId) ?? null)
+    : null;
 
   return {
     _tag: "borrow",

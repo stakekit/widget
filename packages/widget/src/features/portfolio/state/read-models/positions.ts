@@ -10,6 +10,7 @@ import { getYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
+  type BalanceDataKey,
   type PositionData,
   type PositionValidators,
   toPositionsData,
@@ -32,7 +33,7 @@ export type PositionItem = {
   readonly integrationId: YieldId;
   readonly balancesWithAmount: EarnBalance[];
   readonly allBalances: EarnBalance[];
-  readonly balanceId: string;
+  readonly balanceId: BalanceDataKey;
   readonly actionRequired: boolean;
   /**
    * Only optional cancellations are pending, or an Instant Exit is still to

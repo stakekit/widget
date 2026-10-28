@@ -23,7 +23,10 @@ import type {
   Transaction as BorrowTransaction,
   SubmitTransactionCommand,
 } from "../../../src/domain/borrow/execution/transaction";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  TransactionHash,
+  WalletAddress,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowFlowSession,
@@ -77,8 +80,9 @@ import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
-const transactionHash =
-  "0x1111111111111111111111111111111111111111111111111111111111111111";
+const transactionHash = TransactionHash.make(
+  "0x1111111111111111111111111111111111111111111111111111111111111111"
+);
 const walletScope = new WalletScopeKey({ address, network: "base" });
 const i18nInstance = createWidgetI18nInstance();
 

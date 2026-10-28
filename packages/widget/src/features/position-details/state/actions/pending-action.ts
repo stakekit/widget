@@ -11,6 +11,8 @@ import type {
   EarnBalance,
   EarnValidator,
 } from "../../../../domain/earn/models";
+import type { YieldId } from "../../../../domain/identity/identifiers";
+import type { BalanceDataKey } from "../../../../domain/portfolio/positions";
 import { walletScopeOwnerKey } from "../../../../domain/wallet/wallet-scope";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { startYieldTransactionFlowAtom } from "../../../yield-transaction-flow/index";
@@ -34,8 +36,8 @@ import type { PositionDetailsWorkflowKey } from "../workflow";
 import { positionDetailsFlowFactsAtom } from "./facts";
 
 class PendingActionModalKey extends Data.Class<{
-  readonly balanceId: string | null;
-  readonly integrationId: string | null;
+  readonly balanceId: BalanceDataKey | null;
+  readonly integrationId: YieldId | null;
   readonly owner: ReturnType<typeof walletScopeOwnerKey>;
   readonly pendingActionType: PositionDetailsWorkflowKey["pendingActionType"];
 }> {}
@@ -163,7 +165,7 @@ const openPositionPendingActionModalAtom = Atom.family(
 
 const togglePositionPendingActionValidatorAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
-    Atom.fnSync((validator: EarnValidator["address"], context) => {
+    Atom.fnSync((validator: EarnValidator, context) => {
       const storeAtom = pendingActionModalStoreAtom(
         getPendingActionModalKey(key)
       );

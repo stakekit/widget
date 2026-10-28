@@ -1,5 +1,10 @@
+import type { YieldPendingActionType } from "../../../domain/action/pending-action";
 import type { EarnBalance } from "../../../domain/earn/models";
-import { getPositionBalanceDataKey } from "../../../domain/portfolio/positions";
+import type { ValidatorAddress } from "../../../domain/identity/identifiers";
+import {
+  type BalanceDataKey,
+  getPositionBalanceDataKey,
+} from "../../../domain/portfolio/positions";
 
 /**
  * A deep link with `balanceId` targets only balances under that position key;
@@ -11,10 +16,10 @@ export const findPendingActionDeepLinkTarget = ({
   pendingActionType,
   validator,
 }: {
-  readonly balanceId: string | null;
+  readonly balanceId: BalanceDataKey | null;
   readonly balances: ReadonlyArray<EarnBalance>;
-  readonly pendingActionType: string;
-  readonly validator: string | null;
+  readonly pendingActionType: YieldPendingActionType;
+  readonly validator: ValidatorAddress | null;
 }) => {
   for (const balance of balances) {
     if (balanceId && getPositionBalanceDataKey(balance) !== balanceId) continue;

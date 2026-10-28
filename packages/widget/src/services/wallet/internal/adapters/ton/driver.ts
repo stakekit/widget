@@ -4,7 +4,10 @@ import {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
 } from "../../../wallet-errors";
-import type { WalletBroadcastResult } from "../../../wallet-transactions";
+import {
+  decodeWalletBroadcastResult,
+  type WalletBroadcastResult,
+} from "../../../wallet-transactions";
 import { isTonConnector } from "./ton-connector-meta";
 
 export const makeTonWalletDriver = ({
@@ -36,6 +39,6 @@ export const makeTonWalletDriver = ({
           )
         );
 
-      return { broadcasted: true, signedTx };
+      return yield* decodeWalletBroadcastResult(signedTx);
     }),
 });

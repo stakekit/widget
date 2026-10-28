@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Option, Schema } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import {
@@ -22,7 +22,6 @@ import {
   truncateToTokenDecimals,
 } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
-import { YieldId } from "../../../domain/identity/identifiers";
 import {
   getSingleExitTokenSum,
   type PositionBalancesByType,
@@ -194,9 +193,7 @@ const resolveUnstakeAmount = ({
 export const positionDetailsWorkflowViewAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
     Atom.make((get) => {
-      const yieldId = key.integrationId
-        ? Schema.decodeOption(YieldId)(key.integrationId).pipe(Option.getOrNull)
-        : null;
+      const yieldId = key.integrationId;
       const yieldOpportunity = get(
         yieldOpportunityAtom.foreground(new YieldOpportunityKey({ yieldId }))
       );

@@ -15,15 +15,18 @@ import { TestClock } from "effect/testing";
 import { keccak256 } from "viem";
 import {
   type DirectTransaction,
+  DirectTransactionId,
   makeErc20Approval,
 } from "../../../src/domain/action/direct-transaction";
 import type { ActionTransaction } from "../../../src/domain/action/models";
+import { zeroEncryptedBalance } from "../../../src/domain/earn/confidential";
 import {
   ConfidentialHandle,
-  zeroEncryptedBalance,
-} from "../../../src/domain/earn/confidential";
-import { EarnPosition } from "../../../src/domain/earn/models";
+  EarnPosition,
+} from "../../../src/domain/earn/models";
 import {
+  SignedTransactionPayload,
+  TransactionHash,
   WalletAddress,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
@@ -65,6 +68,10 @@ const address = Schema.decodeSync(WalletAddress)(
 );
 const yieldId = Schema.decodeSync(YieldId)("ethereum-sepolia-zama-vault");
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
+const signedPayload = {
+  broadcasted: false,
+  signedTx: SignedTransactionPayload.make("0x02aa"),
+} as const;
 
 const command = {
   action: "WITHDRAW",
@@ -101,7 +108,7 @@ const wrap: DirectTransaction = {
   approval: null,
   chainId: 11155111,
   data: "0xea598cb0",
-  id: "conversion-wrap",
+  id: DirectTransactionId.make("conversion-wrap"),
   network: "ethereum",
   to: "0x00000000000000000000000000000000000000c0",
   type: "WRAP",
@@ -117,12 +124,12 @@ const approval = {
 } as const;
 const approve = makeErc20Approval({
   ...approval,
-  id: "conversion-approval",
+  id: DirectTransactionId.make("conversion-approval"),
   type: "APPROVAL",
 });
 const reset = makeErc20Approval({
   ...approval,
-  id: "conversion-approval",
+  id: DirectTransactionId.make("conversion-approval"),
   type: "RESET_APPROVAL",
 });
 
@@ -145,8 +152,7 @@ const makeInput = ({
 
 const capabilities = ({
   evmRpc,
-  signTransaction = () =>
-    Effect.succeed({ broadcasted: false, signedTx: "0x02aa" }),
+  signTransaction = () => Effect.succeed(signedPayload),
   yieldOperations,
   zama = { decryptCommand: () => Effect.succeed(decryptedCommand) },
 }: Pick<
@@ -367,7 +373,7 @@ describe("confidential transaction workflow", () => {
             },
             signTransaction: (input) =>
               Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-                Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+                Effect.as(signedPayload)
               ),
           }),
           makeInput({ conversion: [wrap], ledger })
@@ -415,7 +421,7 @@ describe("confidential transaction workflow", () => {
             },
             signTransaction: (input) =>
               Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-                Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+                Effect.as(signedPayload)
               ),
           })
         );
@@ -437,7 +443,7 @@ describe("confidential transaction workflow", () => {
           awaitState(workflow, (state) => state._tag === "Completed")
         );
 
-        expect(held.get("conversion-wrap")?._tag).toBe("Sent");
+        expect(held.get(wrap.id)?._tag).toBe("Sent");
         expect(signed).toEqual(["conversion-wrap", "deposit"]);
       }).pipe(Effect.scoped)
   );
@@ -450,8 +456,12 @@ describe("confidential transaction workflow", () => {
         ledger,
         new Map([
           [
-            "conversion-wrap",
-            { _tag: "Confirmed", hash: "0x01", transaction: wrap },
+            wrap.id,
+            {
+              _tag: "Confirmed",
+              hash: TransactionHash.make("0x01"),
+              transaction: wrap,
+            },
           ],
         ])
       );
@@ -459,7 +469,7 @@ describe("confidential transaction workflow", () => {
         capabilities({
           signTransaction: (input) =>
             Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-              Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+              Effect.as(signedPayload)
             ),
         }),
         makeInput({ conversion: [wrap], ledger })
@@ -492,7 +502,7 @@ describe("confidential transaction workflow", () => {
           },
           signTransaction: (input) =>
             Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-              Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+              Effect.as(signedPayload)
             ),
         }),
         makeInput({ conversion: [wrap], ledger })
@@ -534,7 +544,7 @@ describe("confidential transaction workflow", () => {
             },
             signTransaction: (input) =>
               Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-                Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+                Effect.as(signedPayload)
               ),
           }),
           makeInput({ conversion: [wrap] })
@@ -572,8 +582,11 @@ describe("confidential transaction workflow", () => {
             signTransaction: (input) =>
               Effect.succeed(
                 input.txMeta.txId === "conversion-wrap"
-                  ? { broadcasted: true, signedTx: "0xwallethash" }
-                  : { broadcasted: false, signedTx: "0x02aa" }
+                  ? ({
+                      broadcasted: true,
+                      signedTx: TransactionHash.make("0xeeee"),
+                    } as const)
+                  : signedPayload
               ),
           }),
           makeInput({ conversion: [wrap], ledger })
@@ -581,10 +594,10 @@ describe("confidential transaction workflow", () => {
 
         yield* awaitState(workflow, (state) => state._tag === "Completed");
 
-        expect(awaited).toEqual(["0xwallethash"]);
-        expect((yield* Ref.get(ledger)).get("conversion-wrap")).toEqual({
+        expect(awaited).toEqual(["0xeeee"]);
+        expect((yield* Ref.get(ledger)).get(wrap.id)).toEqual({
           _tag: "Confirmed",
-          hash: "0xwallethash",
+          hash: "0xeeee",
           transaction: wrap,
         });
       }).pipe(Effect.scoped)
@@ -607,7 +620,7 @@ describe("confidential transaction workflow", () => {
           },
           signTransaction: (input) =>
             Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-              Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+              Effect.as(signedPayload)
             ),
         }),
         makeInput({ conversion: [wrap], ledger })
@@ -649,7 +662,7 @@ describe("confidential transaction workflow", () => {
             },
             signTransaction: (input) =>
               Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-                Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+                Effect.as(signedPayload)
               ),
           }),
           makeInput({ conversion: [wrap], ledger })
@@ -663,7 +676,7 @@ describe("confidential transaction workflow", () => {
         yield* workflow.dispatch({ _tag: "Retry" });
         yield* awaitState(workflow, (state) => state._tag === "Completed");
 
-        expect(held.get("conversion-wrap")?._tag).toBe("Sent");
+        expect(held.get(wrap.id)?._tag).toBe("Sent");
         expect(broadcast).toEqual(["0x02aa", "0x02aa"]);
         expect(signed).toEqual(["conversion-wrap", "deposit"]);
       }).pipe(Effect.scoped)
@@ -687,7 +700,7 @@ describe("confidential transaction workflow", () => {
                       operation: "transaction",
                     })
                   )
-                : Effect.succeed({ broadcasted: false, signedTx: "0x02aa" })
+                : Effect.succeed(signedPayload)
             ),
         }),
         makeInput({ conversion: [wrap] })
@@ -771,7 +784,7 @@ describe("confidential transaction workflow", () => {
               else if (input.txMeta.txId.includes("approval")) {
                 allowance = approval.amount;
               }
-              return { broadcasted: false, signedTx: "0x02aa" };
+              return signedPayload;
             }),
         }),
         makeInput({ conversion, ledger })
@@ -790,7 +803,11 @@ describe("confidential transaction workflow", () => {
           new Map([
             [
               approve.id,
-              { _tag: "Confirmed", hash: "0x01", transaction: approve },
+              {
+                _tag: "Confirmed",
+                hash: TransactionHash.make("0x01"),
+                transaction: approve,
+              },
             ],
           ])
         );
@@ -811,9 +828,20 @@ describe("confidential transaction workflow", () => {
           new Map([
             [
               approve.id,
-              { _tag: "Confirmed", hash: "0x01", transaction: approve },
+              {
+                _tag: "Confirmed",
+                hash: TransactionHash.make("0x01"),
+                transaction: approve,
+              },
             ],
-            [wrap.id, { _tag: "Sent", hash: "0x02", transaction: wrap }],
+            [
+              wrap.id,
+              {
+                _tag: "Sent",
+                hash: TransactionHash.make("0x02"),
+                transaction: wrap,
+              },
+            ],
           ])
         );
 
@@ -834,7 +862,14 @@ describe("confidential transaction workflow", () => {
         yield* Ref.set(
           ledger,
           new Map([
-            [reset.id, { _tag: "Sent", hash: "0x01", transaction: reset }],
+            [
+              reset.id,
+              {
+                _tag: "Sent",
+                hash: TransactionHash.make("0x01"),
+                transaction: reset,
+              },
+            ],
           ])
         );
         const signed: Array<string> = [];
@@ -856,7 +891,7 @@ describe("confidential transaction workflow", () => {
             signTransaction: (input) =>
               Effect.sync(() => {
                 signed.push(input.txMeta.txId);
-                return { broadcasted: false, signedTx: "0x02aa" };
+                return signedPayload;
               }),
           }),
           // Planned upfront this time: the same reset as the one sent.
@@ -1059,7 +1094,7 @@ describe("confidential transaction workflow", () => {
               signTransaction: ({ txMeta }) =>
                 Effect.sync(() =>
                   signed.push([txMeta.txId, txMeta.actionId, txMeta.actionType])
-                ).pipe(Effect.as({ broadcasted: false, signedTx: "0x02aa" })),
+                ).pipe(Effect.as(signedPayload)),
             }),
             instantInput
           );

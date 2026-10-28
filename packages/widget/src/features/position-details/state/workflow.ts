@@ -8,7 +8,10 @@ import type {
   TokenAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
-import type { YieldBalanceType } from "../../../domain/portfolio/positions";
+import type {
+  BalanceDataKey,
+  YieldBalanceType,
+} from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 
@@ -91,7 +94,7 @@ export const reducePositionDetailsWorkflow = ({
 export class PositionDetailsWorkflowKey extends Data.TaggedClass(
   "PositionDetailsWorkflowKey"
 )<{
-  readonly balanceId: string | null;
+  readonly balanceId: BalanceDataKey | null;
   readonly integrationId: YieldId | null;
   readonly pendingActionType: YieldPendingActionType | null;
   readonly scope: WalletScopeKey;

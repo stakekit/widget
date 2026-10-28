@@ -78,7 +78,7 @@ const createItem = (
   integrationId: integrationData.id as YieldId,
   balancesWithAmount: [],
   allBalances: [],
-  balanceId: "balance-1",
+  balanceId: "default",
   actionRequired: false,
   hasPendingRequest: false,
   pointsRewardTokenBalances: [],

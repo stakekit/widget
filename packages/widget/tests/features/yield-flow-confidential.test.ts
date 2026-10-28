@@ -16,9 +16,16 @@ import { Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import type { DirectTransaction } from "../../src/domain/action/direct-transaction";
-import { ConfidentialHandle } from "../../src/domain/earn/confidential";
-import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import {
+  type DirectTransaction,
+  DirectTransactionId,
+} from "../../src/domain/action/direct-transaction";
+import { ConfidentialHandle } from "../../src/domain/earn/models";
+import {
+  SignedTransactionPayload,
+  WalletAddress,
+  YieldId,
+} from "../../src/domain/identity/identifiers";
 import { Token } from "../../src/domain/token/token";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
@@ -41,7 +48,11 @@ import type { EvmRpc } from "../../src/services/evm-rpc/evm-rpc";
 import type { TransactionWorkflowHandle } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletRequestCancelledError } from "../../src/services/wallet/wallet-errors";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
-import type { WalletSignTransactionInput } from "../../src/services/wallet/wallet-transactions";
+import type {
+  WalletBroadcastResult,
+  WalletSignedPayloadResult,
+  WalletSignTransactionInput,
+} from "../../src/services/wallet/wallet-transactions";
 import type { ZamaService } from "../../src/services/zama/zama-service";
 import {
   confidentialFixture,
@@ -57,6 +68,10 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
+const signedPayload = {
+  broadcasted: false,
+  signedTx: SignedTransactionPayload.make("0x02aa"),
+} as const;
 
 const enterStart = (
   pick: "asset" | "underlying"
@@ -110,7 +125,7 @@ const exitStart = (
     },
     mount: {
       _tag: "PositionExit",
-      balanceId: "b",
+      balanceId: "default",
       integrationId: Schema.decodeSync(YieldId)("i"),
     },
   };
@@ -140,7 +155,7 @@ const withdrawUnwrapStart = (): NavigatingYieldTransactionFlowStart => {
     },
     mount: {
       _tag: "PositionManage",
-      balanceId: "b",
+      balanceId: "default",
       integrationId: Schema.decodeSync(YieldId)("i"),
     },
   };
@@ -167,7 +182,7 @@ const direct = (type: DirectTransaction["type"]): DirectTransaction => ({
   approval: null,
   chainId: 11155111,
   data: "0x00",
-  id: `conversion-${type.toLowerCase()}`,
+  id: DirectTransactionId.make(`conversion-${type.toLowerCase()}`),
   network: "ethereum",
   to: cUsdc.address as `0x${string}`,
   type,
@@ -194,8 +209,7 @@ const depositAction = yieldApiActionFixture({
 const openConfidentialFlow = Effect.fn("test.openConfidentialFlow")(function* ({
   evmRpc = {},
   previewAction = () => Effect.succeed(depositAction),
-  signTransaction = () =>
-    Effect.succeed({ broadcasted: false, signedTx: "0x02aa" }),
+  signTransaction = () => Effect.succeed(signedPayload),
   start,
   zama = {},
 }: {
@@ -206,7 +220,7 @@ const openConfidentialFlow = Effect.fn("test.openConfidentialFlow")(function* ({
   readonly signTransaction?: (
     input: WalletSignTransactionInput
   ) => Effect.Effect<
-    { broadcasted: boolean; signedTx: string },
+    WalletBroadcastResult | WalletSignedPayloadResult,
     WalletRequestCancelledError
   >;
   readonly start: NavigatingYieldTransactionFlowStart;
@@ -302,7 +316,7 @@ const awaitState = (
 const signedIds =
   (signed: Array<string>) => (input: WalletSignTransactionInput) =>
     Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-      Effect.as({ broadcasted: false, signedTx: "0x02aa" })
+      Effect.as(signedPayload)
     );
 
 const convertingRpc: Partial<EvmRpc["Service"]> = {

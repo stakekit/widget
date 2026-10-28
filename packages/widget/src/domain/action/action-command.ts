@@ -64,7 +64,7 @@ export const preparePendingActionCommand = ({
   pendingAction: PendingAction;
   yieldBalance: PendingActionBalance;
   integration: EarnYieldWithProvider;
-  selectedValidators: ValidatorDto["address"][];
+  selectedValidators: ReadonlyArray<ValidatorDto["address"]>;
 }): Result.Result<PreparedPendingAction, Error> => {
   if (!address) return Result.fail(new Error("missing address"));
 

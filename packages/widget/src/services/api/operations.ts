@@ -15,6 +15,10 @@ import type {
   SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
+import type {
+  ActionId as BorrowActionId,
+  TransactionId as BorrowTransactionId,
+} from "../../domain/borrow/ids";
 import type { EarnYieldBalancesResponse } from "../../domain/earn/models";
 import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
 import {
@@ -46,14 +50,14 @@ type BorrowOperationsService = {
     command: BorrowActionCommand
   ) => Effect.Effect<BorrowAction, BorrowOperationFailure>;
   readonly getAction: (
-    actionId: string
+    actionId: BorrowActionId
   ) => Effect.Effect<BorrowAction | null, BorrowOperationFailure>;
   readonly stepAction: (
-    actionId: string
+    actionId: BorrowActionId
   ) => Effect.Effect<BorrowAction, BorrowOperationFailure>;
   readonly submitTransaction: (request: {
     readonly command: BorrowSubmitTransactionCommand;
-    readonly transactionId: string;
+    readonly transactionId: BorrowTransactionId;
   }) => Effect.Effect<BorrowSubmitTransactionResult, BorrowOperationFailure>;
   /**
    * `submitTransaction` for work that outlives the user's Transaction Flow:
@@ -61,7 +65,7 @@ type BorrowOperationsService = {
    */
   readonly submitTransactionInBackground: (request: {
     readonly command: BorrowSubmitTransactionCommand;
-    readonly transactionId: string;
+    readonly transactionId: BorrowTransactionId;
   }) => Effect.Effect<BorrowSubmitTransactionResult, BorrowOperationFailure>;
 };
 

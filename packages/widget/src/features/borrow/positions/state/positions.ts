@@ -12,7 +12,7 @@ import {
 import { walletScopeAtom } from "../../../wallet/index";
 
 export class BorrowPositionKey extends Data.Class<{
-  readonly marketId: MarketId | string | null;
+  readonly marketId: MarketId | null;
   readonly scope: WalletScopeKey;
 }> {}
 

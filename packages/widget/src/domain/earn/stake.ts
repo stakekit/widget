@@ -34,16 +34,12 @@ export const getMaxAmount = ({
 export const isForceMaxAmount = (
   args:
     | {
-        readonly minimum?: string | number | BigNumber | null;
-        readonly maximum?: string | number | BigNumber | null;
+        readonly minimum?: BigNumber | null;
+        readonly maximum?: BigNumber | null;
       }
     | null
     | undefined
-) =>
-  args?.minimum != null &&
-  args?.maximum != null &&
-  exactDecimal(args.minimum).isEqualTo(-1) &&
-  exactDecimal(args.maximum).isEqualTo(-1);
+) => (args?.minimum?.isEqualTo(-1) && args.maximum?.isEqualTo(-1)) === true;
 
 export const isYieldActionAmountEditable = (
   yieldDto: EarnYieldWithProvider,
@@ -75,7 +71,7 @@ export const getEnterAmountConstraint = (
     return { type: "force-max" };
   }
 
-  const maximum = exactDecimal(amountArgument?.maximum ?? 0);
+  const maximum = amountArgument?.maximum ?? exactZero();
 
   return {
     maximum: maximum.isGreaterThan(0) ? maximum : null,
@@ -103,18 +99,17 @@ export const getMinStakeAmount = (
   selectedYieldHasActivePosition: boolean
 ) => {
   const entryLimits = yieldDto.mechanics.entryLimits;
-  const firstEntryMin = exactDecimal(
+  const firstEntryMin =
     entryLimits?.minimum ??
-      getYieldActionArg(yieldDto, "enter", "amount")?.minimum ??
-      0
-  );
+    getYieldActionArg(yieldDto, "enter", "amount")?.minimum ??
+    exactZero();
 
   if (!selectedYieldHasActivePosition) {
     return firstEntryMin;
   }
 
   if (entryLimits?.subsequentMinimum != null) {
-    return exactDecimal(entryLimits.subsequentMinimum);
+    return entryLimits.subsequentMinimum;
   }
 
   if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
@@ -126,17 +121,18 @@ export const getMinStakeAmount = (
 
 export const getMinUnstakeAmount = (
   yieldDto: EarnYieldWithProvider,
-  pricePerShare: string | null
+  pricePerShare: BigNumber | null
 ) => {
-  const integrationMin = exactDecimal(
-    getYieldActionArg(yieldDto, "exit", "amount")?.minimum ?? 0
-  );
+  const integrationMin =
+    getYieldActionArg(yieldDto, "exit", "amount")?.minimum ?? exactZero();
 
-  const pricePerShareBN = exactDecimal(pricePerShare ?? 0);
-
-  if (pricePerShareBN.isZero() || !isBittensorStaking(yieldDto.id)) {
+  if (
+    !pricePerShare ||
+    pricePerShare.isZero() ||
+    !isBittensorStaking(yieldDto.id)
+  ) {
     return integrationMin;
   }
 
-  return integrationMin.dividedBy(pricePerShareBN).decimalPlaces(16);
+  return integrationMin.dividedBy(pricePerShare).decimalPlaces(16);
 };

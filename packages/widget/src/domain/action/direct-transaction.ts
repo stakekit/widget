@@ -1,7 +1,14 @@
+import { Schema } from "effect";
 import { encodeFunctionData, erc20Abi } from "viem";
 import type { Network } from "../network/network";
 
 type Address = `0x${string}`;
+
+/** Names a Direct Transaction for one Flow Session; no API knows it. */
+export const DirectTransactionId = Schema.NonEmptyString.pipe(
+  Schema.brand("DirectTransactionId")
+);
+export type DirectTransactionId = typeof DirectTransactionId.Type;
 
 /** An ERC-20 allowance an approval sets: `owner` lets `spender` move `amount` of `token`. */
 export type Erc20Approval = Readonly<{
@@ -24,7 +31,7 @@ export type DirectTransaction = Readonly<{
   readonly chainId: number;
   readonly data: Address;
   /** Stable for one Flow Session, so a retry finds it again. */
-  readonly id: string;
+  readonly id: DirectTransactionId;
   readonly network: Network;
   readonly to: Address;
   readonly type: "APPROVAL" | "RESET_APPROVAL" | "WRAP";
@@ -44,7 +51,7 @@ export const makeErc20Approval = ({
   ...approval
 }: Erc20Approval & {
   readonly chainId: number;
-  readonly id: string;
+  readonly id: DirectTransactionId;
   readonly network: Network;
   readonly type: "APPROVAL" | "RESET_APPROVAL";
 }): DirectTransaction => ({
@@ -55,7 +62,7 @@ export const makeErc20Approval = ({
     args: [approval.spender, type === "APPROVAL" ? approval.amount : 0n],
     functionName: "approve",
   }),
-  id: type === "APPROVAL" ? id : `${id}-reset`,
+  id: type === "APPROVAL" ? id : DirectTransactionId.make(`${id}-reset`),
   network,
   to: approval.token,
   type,

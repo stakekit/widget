@@ -4,6 +4,7 @@ import { ActionCommand } from "../../../domain/action/models";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import {
@@ -12,10 +13,8 @@ import {
   getMinUnstakeAmount,
   isForceMaxAmount,
 } from "../../../domain/earn/stake";
-import type { ValidatorKey } from "../../../domain/earn/validator";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import {
-  exactDecimal,
   exactZero,
   truncateToTokenDecimals,
 } from "../../../domain/finance/exact";
@@ -36,7 +35,7 @@ type YieldEntryInput = Readonly<{
   readonly token: Token | null;
   readonly tronResource: TronResource | null;
   readonly useMaxAmount: boolean;
-  readonly validators: ReadonlyMap<ValidatorKey, EarnValidator>;
+  readonly validators: ReadonlyMap<EarnValidatorKey, EarnValidator>;
   readonly yield: EarnYieldWithProvider | null;
 }>;
 
@@ -230,7 +229,7 @@ type YieldAmountConstraintsInput = Readonly<{
       }>
     | Readonly<{
         readonly type: "exit";
-        readonly pricePerShare: string | null;
+        readonly pricePerShare: BigNumber | null;
       }>
   );
 
@@ -241,11 +240,9 @@ const resolveMinimum = (
   if (forceMax) return input.availableAmount;
   if (!input.yield) return null;
 
-  return exactDecimal(
-    input.type === "enter"
-      ? getMinStakeAmount(input.yield, input.selectedYieldHasActivePosition)
-      : getMinUnstakeAmount(input.yield, input.pricePerShare)
-  );
+  return input.type === "enter"
+    ? getMinStakeAmount(input.yield, input.selectedYieldHasActivePosition)
+    : getMinUnstakeAmount(input.yield, input.pricePerShare);
 };
 
 const resolveMaximum = (

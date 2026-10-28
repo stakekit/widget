@@ -70,59 +70,57 @@ const renderAt = (path: string) =>
 
 describe("compact position details redirects", () => {
   it("keeps the bare hub", async () => {
-    const app = await renderAt("/positions/yield-1/balance-1");
+    const app = await renderAt("/positions/yield-1/default");
 
     expect(textFor(app.container, "hub")).toBe("hub");
     expect(textFor(app.container, "location")).toBe(
-      "/positions/yield-1/balance-1"
+      "/positions/yield-1/default"
     );
   });
 
   it.each(["stake", "unstake", "pending-action"] as const)(
     "redirects bare %s index to the hub",
     async (suffix) => {
-      const app = await renderAt(`/positions/yield-1/balance-1/${suffix}`);
+      const app = await renderAt(`/positions/yield-1/default/${suffix}`);
 
       expect(textFor(app.container, "hub")).toBe("hub");
       expect(textFor(app.container, "location")).toBe(
-        "/positions/yield-1/balance-1"
+        "/positions/yield-1/default"
       );
     }
   );
 
   it.each([
-    "/positions/yield-1/balance-1/stake/bogus",
-    "/positions/yield-1/balance-1/unstake/bogus",
-    "/positions/yield-1/balance-1/pending-action/bogus",
+    "/positions/yield-1/default/stake/bogus",
+    "/positions/yield-1/default/unstake/bogus",
+    "/positions/yield-1/default/pending-action/bogus",
   ] as const)("redirects illegal child %s to the hub", async (path) => {
     const app = await renderAt(path);
 
     expect(textFor(app.container, "hub")).toBe("hub");
     expect(textFor(app.container, "location")).toBe(
-      "/positions/yield-1/balance-1"
+      "/positions/yield-1/default"
     );
   });
 
   it("redirects unknown position segments to the hub, not home", async () => {
-    const app = await renderAt("/positions/yield-1/balance-1/bogus");
+    const app = await renderAt("/positions/yield-1/default/bogus");
 
     expect(textFor(app.container, "hub")).toBe("hub");
     expect(textFor(app.container, "home")).toBeNull();
     expect(textFor(app.container, "location")).toBe(
-      "/positions/yield-1/balance-1"
+      "/positions/yield-1/default"
     );
   });
 
   it("still reaches real flow children", async () => {
-    const unstake = await renderAt(
-      "/positions/yield-1/balance-1/unstake/review"
-    );
+    const unstake = await renderAt("/positions/yield-1/default/unstake/review");
     expect(
       unstake.container.querySelector('[data-testid="unstake-review"]')
     ).not.toBeNull();
 
     const pending = await renderAt(
-      "/positions/yield-1/balance-1/pending-action/review"
+      "/positions/yield-1/default/pending-action/review"
     );
     expect(
       pending.container.querySelector('[data-testid="pending-review"]')

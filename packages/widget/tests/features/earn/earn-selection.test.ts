@@ -1031,7 +1031,10 @@ describe("Earn Selection", () => {
       expect(
         registry
           .get(earnSelectionTokenOptionsViewAtom)
-          .items.map((option) => [option.token.symbol, option.amount])
+          .items.map((option) => [
+            option.token.symbol,
+            option.amount?.toFixed(),
+          ])
       ).toEqual([
         ["USDC", "5"],
         [firstYield.token.symbol, "0.000000000000000001"],
@@ -1067,7 +1070,7 @@ describe("Earn Selection", () => {
         registry
           .get(earnSelectionTokenOptionsViewAtom)
           .items.map(({ amount, source, token }) => ({
-            amount,
+            amount: amount?.toFixed(),
             source,
             symbol: token.symbol,
           }))

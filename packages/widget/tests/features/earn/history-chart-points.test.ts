@@ -23,7 +23,6 @@ describe("history chart adapters", () => {
     const tvlPoint = toTvlHistoryChartPoint({
       timestamp,
       tvl,
-      tvlRaw: "9007199254740993250000000000000000",
     });
     const rewardPoint = toRewardRateHistoryChartPoint({
       timestamp,

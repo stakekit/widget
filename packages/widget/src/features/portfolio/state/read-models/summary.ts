@@ -160,7 +160,7 @@ export const availableBalanceSummaryAtom = Atom.make((get) => {
                 getTokenPriceInUSD({
                   amount: balance.amount,
                   baseToken: balance.token,
-                  pricePerShare: "1",
+                  pricePerShare: null,
                   prices,
                   token: balance.token,
                 })

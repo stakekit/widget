@@ -1,8 +1,13 @@
 import type BigNumber from "bignumber.js";
-import { DateTime } from "effect";
-import type { EarnBalance, EarnPosition, EarnValidator } from "../earn/models";
+import { DateTime, Schema } from "effect";
+import {
+  type EarnBalance,
+  type EarnPosition,
+  type EarnValidator,
+  EarnValidatorKey,
+  getVisibleShares,
+} from "../earn/models";
 import type { YieldRewardRate } from "../earn/reward-rate";
-import type { ValidatorKey } from "../earn/validator";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
 import { equalTokens, type TokenString, tokenString } from "../token/token";
@@ -19,9 +24,28 @@ export type PositionValidators = ReadonlyArray<EarnValidator>;
 
 export type PositionDetailsLabelType = "hasFrozenV1";
 
-type BalanceType = "validators" | "default";
+/**
+ * Identifies one balance group of a position: `default`, `validators` (a
+ * balance spread over several validators), or `validator::<validator key>`.
+ */
+export type BalanceDataKey =
+  | "default"
+  | "validators"
+  | `validator::${EarnValidatorKey}`;
 
-export type BalanceDataKey = BalanceType | `validator::${ValidatorKey}`;
+const validatorBalanceDataKeyPrefix = "validator::";
+const isEarnValidatorKey = Schema.is(EarnValidatorKey);
+
+export const BalanceDataKey = Schema.String.pipe(
+  Schema.refine(
+    (key): key is BalanceDataKey =>
+      key === "default" ||
+      key === "validators" ||
+      (key.startsWith(validatorBalanceDataKeyPrefix) &&
+        isEarnValidatorKey(key.slice(validatorBalanceDataKeyPrefix.length))),
+    { expected: "a position balance key" }
+  )
+);
 
 export type PositionsData = Map<
   YieldId,
@@ -64,7 +88,7 @@ export const getPositionBalanceDataKey = (
   const validator = balance.validator ?? balance.validators?.[0];
 
   if (validator) {
-    return `validator::${validator.key}` as BalanceDataKey;
+    return `validator::${validator.key}`;
   }
 
   return "default";
@@ -124,11 +148,11 @@ export const getPositionData = (
 
 export const getPositionBalances = (
   position: PositionData | null,
-  balanceId: string | null
+  balanceId: BalanceDataKey | null
 ): PositionBalances | null => {
   if (!position || !balanceId) return null;
 
-  const balanceData = position.balanceData.get(balanceId as BalanceDataKey);
+  const balanceData = position.balanceData.get(balanceId);
   return balanceData
     ? { ...balanceData, rewardRate: position.rewardRate }
     : null;
@@ -193,20 +217,13 @@ export const groupPositionBalanceRows = (
       | "amountUsd"
       | "date"
       | "isEncrypted"
-      | "revealedHandle"
-      | "shareAmount"
-      | "shareAmountRaw"
+      | "shares"
       | "shareToken"
       | "token"
       | "type"
     >
   >,
-  isCancelling: (
-    balance: Pick<
-      EarnBalance,
-      "isEncrypted" | "revealedHandle" | "shareAmountRaw"
-    >
-  ) => boolean
+  isCancelling: (balance: Pick<EarnBalance, "shares">) => boolean
 ): ReadonlyArray<PositionBalanceRow> => [
   ...balances
     .reduce((rows, balance) => {
@@ -229,7 +246,7 @@ export const groupPositionBalanceRows = (
         ...(balance.shareToken
           ? {
               shareAmount: (previous?.shareAmount ?? exactZero()).plus(
-                exactDecimal(balance.shareAmount || 0)
+                getVisibleShares(balance)?.amount ?? exactZero()
               ),
               shareToken: balance.shareToken,
             }

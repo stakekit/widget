@@ -1,4 +1,8 @@
 import { Data, Effect, Schema } from "effect";
+import {
+  TransactionHash,
+  WalletSignature,
+} from "../../domain/identity/identifiers";
 import type {
   SKBorrowTx,
   SKTx,
@@ -30,15 +34,18 @@ export type CurrentRef<A> = {
 };
 
 /** A host call: its broadcast hash or signature, or why it failed. */
-type HostOutcome = Effect.Effect<
-  string,
+type HostOutcome<A extends TransactionHash | WalletSignature> = Effect.Effect<
+  A,
   ExternalProviderError | ExternalProviderCancelled
 >;
 
 export class ExternalProvider {
   constructor(private variantProvider: CurrentRef<ExternalProviderSnapshot>) {}
 
-  sendTransaction(tx: SKTx, txMeta: YieldTransactionMeta): HostOutcome {
+  sendTransaction(
+    tx: SKTx,
+    txMeta: YieldTransactionMeta
+  ): HostOutcome<TransactionHash> {
     return Effect.suspend(() => {
       const sendTransaction =
         this.variantProvider.current.provider.sendTransaction;
@@ -70,7 +77,7 @@ export class ExternalProvider {
   sendBorrowTransaction(
     tx: SKBorrowTx,
     txMeta: BorrowTransactionMeta
-  ): HostOutcome {
+  ): HostOutcome<TransactionHash> {
     return Effect.suspend(() => {
       const config = this.variantProvider.current;
       if (!config.borrow) {
@@ -101,7 +108,7 @@ export class ExternalProvider {
     });
   }
 
-  signMessage(messageHash: string): HostOutcome {
+  signMessage(messageHash: string): HostOutcome<WalletSignature> {
     return Effect.suspend(() =>
       callHost(
         () => this.variantProvider.current.provider.signMessage(messageHash),
@@ -121,7 +128,7 @@ export class ExternalProvider {
   signTypedData(
     typedData: Eip712TypedData,
     txMeta: BorrowTransactionMeta
-  ): HostOutcome {
+  ): HostOutcome<WalletSignature> {
     return Effect.suspend(() => {
       const config = this.variantProvider.current;
       if (!config.borrow) {
@@ -147,7 +154,7 @@ export class ExternalProvider {
   signZamaPermit(
     typedData: Eip712TypedData,
     meta: SKZamaPermitMeta
-  ): HostOutcome {
+  ): HostOutcome<WalletSignature> {
     return Effect.suspend(() => {
       const provider = this.variantProvider.current.provider;
       if (!hasZamaPermitSigner(provider)) {
@@ -187,17 +194,17 @@ const SignatureError = Schema.Struct({
  */
 const TransactionError = Schema.Struct({
   ...SignatureError.fields,
-  txHash: Schema.optional(Schema.NonEmptyString),
+  txHash: Schema.optional(TransactionHash),
 });
 
 const TransactionSuccess = Schema.Struct({
   type: Schema.Literal("success"),
-  txHash: Schema.NonEmptyString,
+  txHash: TransactionHash,
 });
 
 const SignatureSuccess = Schema.Struct({
   type: Schema.Literal("success"),
-  signature: Schema.NonEmptyString,
+  signature: WalletSignature,
 });
 
 const TransactionOutcome = Schema.Union([
@@ -214,12 +221,12 @@ const SignatureOutcome = Schema.Union([
 
 /** Yield callbacks also accept the legacy bare string. */
 const LegacyTransactionOutcome = Schema.Union([
-  Schema.NonEmptyString,
+  TransactionHash,
   ...TransactionOutcome.members,
 ]);
 
 const LegacySignatureOutcome = Schema.Union([
-  Schema.NonEmptyString,
+  WalletSignature,
   ...SignatureOutcome.members,
 ]);
 
@@ -230,7 +237,7 @@ const LegacySignatureOutcome = Schema.Union([
  */
 const toTransactionHash =
   (family: "borrow" | "yield") =>
-  (result: typeof TransactionOutcome.Type): HostOutcome => {
+  (result: typeof TransactionOutcome.Type): HostOutcome<TransactionHash> => {
     if (result.type === "success") return Effect.succeed(result.txHash);
     if (result.type === "error" && result.txHash !== undefined) {
       return Effect.logWarning(
@@ -243,7 +250,9 @@ const toTransactionHash =
     return failHost(result);
   };
 
-const toSignature = (result: typeof SignatureOutcome.Type): HostOutcome =>
+const toSignature = (
+  result: typeof SignatureOutcome.Type
+): HostOutcome<WalletSignature> =>
   result.type === "success"
     ? Effect.succeed(result.signature)
     : failHost(result);
@@ -270,7 +279,7 @@ const callHost = <S extends Schema.Top>(
 
 const failHost = (
   result: typeof HostCancelled.Type | typeof SignatureError.Type
-): HostOutcome =>
+): Effect.Effect<never, ExternalProviderError | ExternalProviderCancelled> =>
   result.type === "cancelled"
     ? Effect.fail(new ExternalProviderCancelled())
     : Effect.fail(hostResultError(result.error));

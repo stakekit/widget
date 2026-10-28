@@ -1,6 +1,8 @@
 import { Effect, Schema, SchemaGetter, SchemaTransformation } from "effect";
-import { YieldId } from "../../domain/identity/identifiers";
+import { YieldPendingActionType } from "../../domain/action/pending-action";
+import { ValidatorAddress, YieldId } from "../../domain/identity/identifiers";
 import { Network } from "../../domain/network/network";
+import { BalanceDataKey } from "../../domain/portfolio/positions";
 import { HostTokenKey } from "../../domain/token/token";
 import {
   isWalletNetwork,
@@ -18,11 +20,9 @@ const SafeQueryParam = Schema.String.check(
 
 // Position balance keys (`default`, `validators`, `validator::<address>[:<subnet>]`)
 // contain `:`, which is safe inside a route segment; `/`, `%`, `?` and `..` stay out.
-const BalanceIdParam = Schema.String.check(
+const BalanceIdParam = BalanceDataKey.check(
   Schema.isPattern(/^(?!.*\.\.)[a-zA-Z0-9-_.+:]*$/)
 );
-
-const PendingActionType = SafeQueryParam.check(Schema.isPattern(/^[A-Z_]+$/));
 
 const InitTab = invalidAsNull(
   Schema.Literals(["earn", "positions", "manage", "activity", "borrow"])
@@ -94,10 +94,10 @@ export const InitParams = Schema.Struct({
   accountId: invalidAsNull(AccountId),
   balanceId: invalidAsNull(BalanceIdParam),
   network: invalidAsNull(SupportedNetwork),
-  pendingaction: invalidAsNull(PendingActionType),
+  pendingaction: invalidAsNull(YieldPendingActionType),
   tab: InitTab,
   token: invalidAsNull(InitToken),
-  validator: invalidAsNull(Schema.String),
+  validator: invalidAsNull(ValidatorAddress),
   yieldId: invalidAsNull(SafeYieldId),
 });
 export type InitParams = typeof InitParams.Type;

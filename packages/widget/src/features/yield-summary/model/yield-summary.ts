@@ -1,9 +1,9 @@
 import type BigNumber from "bignumber.js";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
-import type { ValidatorKey } from "../../../domain/earn/validator";
 import {
   getExtendedYieldType,
   getYieldRewardTokens,
@@ -25,7 +25,7 @@ export type YieldSummaryProvider = Readonly<{
 
 export type YieldSummaryInput = Readonly<{
   readonly validators:
-    | ReadonlyMap<ValidatorKey, EarnValidator>
+    | ReadonlyMap<EarnValidatorKey, EarnValidator>
     | ReadonlyArray<EarnValidator>
     | null;
   readonly yield: EarnYieldWithProvider | null;
@@ -78,7 +78,11 @@ const getYieldSummaryProviders = ({
 
   const values = Array.isArray(validators)
     ? validators
-    : [...(validators as ReadonlyMap<ValidatorKey, EarnValidator>).values()];
+    : [
+        ...(
+          validators as ReadonlyMap<EarnValidatorKey, EarnValidator>
+        ).values(),
+      ];
   if (values.length === 0) return [getYieldProvider(selectedYield)];
 
   return values.map(getValidatorProvider);

@@ -20,12 +20,14 @@ import {
   erc20Abi,
   type Hex,
   http,
+  isHex,
   type PublicClient,
   parseAbi,
   parseEventLogs,
 } from "viem";
 import {
   type DirectTransaction,
+  DirectTransactionId,
   makeErc20Approval,
 } from "../../domain/action/direct-transaction";
 import type {
@@ -36,13 +38,16 @@ import {
   type ConfidentialConversion,
   type ConfidentialEncryption,
   type ConfidentialEncryptionPlan,
-  ConfidentialHandle,
   ConfidentialTokenBalanceKey,
   getConfidentialNetwork,
   planConfidentialEncryption,
   toConfidentialArguments,
 } from "../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../domain/earn/models";
+import {
+  ConfidentialHandle,
+  type EarnYieldWithProvider,
+} from "../../domain/earn/models";
+import type { TransactionHash } from "../../domain/identity/identifiers";
 import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
 import { WidgetConfigService } from "../config/widget-config";
@@ -56,6 +61,12 @@ class ZamaError extends Data.TaggedError("ZamaError")<{
   readonly cause: unknown;
   readonly operation: string;
 }> {}
+
+// The SDK returns hex handles; the domain keeps them branded.
+const EncryptedHandles = Schema.Struct({
+  amount: Schema.NullOr(ConfidentialHandle),
+  legs: Schema.NullOr(Schema.Array(ConfidentialHandle)),
+});
 
 /**
  * How a confidential vault's action command gets its hidden amount: the
@@ -171,7 +182,7 @@ type ZamaServiceApi = Readonly<{
    */
   readonly readUnwrapRequest: (input: {
     readonly chainId: number;
-    readonly hash: string;
+    readonly hash: TransactionHash;
     readonly owner: string;
   }) => Effect.Effect<ConfidentialHandle, ConfidentialPreparationError>;
   readonly revealHandles: (input: {
@@ -309,7 +320,14 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
           },
         } satisfies Eip712TypedData,
       });
-      return signature as Hex;
+      // viem's signer seam takes hex; an EVM wallet signs in hex.
+      if (!isHex(signature)) {
+        return yield* new ZamaError({
+          cause: "The wallet returned a non-hex permit signature",
+          operation: "permit",
+        });
+      }
+      return signature;
     });
 
   const makeSigner = (
@@ -427,16 +445,22 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
         ? encryptValues(plan.legs.contract, plan.legs.values)
         : Effect.succeed(null),
     ]);
-    const amountHandle = amount?.encryptedValues[0];
+    const handles = yield* Schema.decodeEffect(EncryptedHandles)({
+      amount: amount?.encryptedValues[0] ?? null,
+      legs: legs?.encryptedValues ?? null,
+    }).pipe(
+      Effect.mapError((cause) => new ZamaError({ cause, operation: "encrypt" }))
+    );
 
     return {
       amount:
-        amount && amountHandle
-          ? { handle: amountHandle, proof: amount.inputProof }
+        amount && handles.amount
+          ? { handle: handles.amount, proof: amount.inputProof }
           : null,
-      legs: legs
-        ? { handles: legs.encryptedValues, proof: legs.inputProof }
-        : null,
+      legs:
+        legs && handles.legs
+          ? { handles: handles.legs, proof: legs.inputProof }
+          : null,
     } satisfies ConfidentialEncryption;
   });
 
@@ -518,7 +542,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
       makeErc20Approval({
         amount,
         chainId: conversion.chainId,
-        id: "conversion-approval",
+        id: DirectTransactionId.make("conversion-approval"),
         network,
         type,
         ...allowance,
@@ -531,7 +555,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
         args: [allowance.owner, amount],
         functionName: "wrap",
       }),
-      id: "conversion-wrap",
+      id: DirectTransactionId.make("conversion-wrap"),
       network,
       to: allowance.spender,
       type: "WRAP",
@@ -698,11 +722,18 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const readUnwrapRequest: ZamaServiceApi["readUnwrapRequest"] = Effect.fn(
     "ZamaService.readUnwrapRequest"
   )(function* ({ chainId, hash, owner }) {
+    // viem takes hex, and an EVM transaction's hash is in it.
+    if (!isHex(hash)) {
+      return yield* unpreparable(
+        "The unwrap transaction hash is not hex.",
+        hash
+      );
+    }
     const client = yield* getPublicClient(chainId).pipe(
       Effect.mapError(retryableFailure)
     );
     const receipt = yield* tryZama("read-unwrap-receipt", () =>
-      client.getTransactionReceipt({ hash: hash as Hex })
+      client.getTransactionReceipt({ hash })
     ).pipe(Effect.mapError(retryableFailure));
     const [requested] = parseEventLogs({
       abi: wrapperAbi,

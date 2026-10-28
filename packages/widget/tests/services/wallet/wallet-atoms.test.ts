@@ -204,7 +204,7 @@ describe("wallet Effect Atom boundaries", () => {
       })
     ).toMatchObject({ network: null });
     expect(
-      Schema.decodeSync(InitParams)({
+      Schema.decodeUnknownSync(InitParams)({
         ...emptyInitParams,
         pendingaction: "unstake",
       })

@@ -11,7 +11,6 @@ import type { ExitReceiveToken } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import {
   type CancelReturn,
-  type ConfidentialHandle,
   getConfidentialAssetToken,
   getConfidentialChainId,
   getConfidentialConversion,
@@ -21,17 +20,21 @@ import {
   toConfidentialUnderlyingAmount,
 } from "../../../domain/earn/confidential";
 import type {
+  ConfidentialHandle,
   EarnProvider,
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
-import type { ValidatorKey } from "../../../domain/earn/validator";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type {
   ProviderOption,
   YieldId,
 } from "../../../domain/identity/identifiers";
-import type { YieldBalanceType } from "../../../domain/portfolio/positions";
+import type {
+  BalanceDataKey,
+  YieldBalanceType,
+} from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,
@@ -69,7 +72,7 @@ type EnterYieldTransactionFlowIntake = {
   readonly selectedProviderOption: YieldFlowProviderOption | null;
   readonly selectedStake: EarnYieldWithProvider;
   readonly selectedToken: Token;
-  readonly selectedValidators: ReadonlyMap<ValidatorKey, EarnValidator>;
+  readonly selectedValidators: ReadonlyMap<EarnValidatorKey, EarnValidator>;
   readonly walletScope: WalletScopeKey;
 };
 
@@ -133,17 +136,17 @@ type YieldTransactionFlowMount =
   | Readonly<{ readonly _tag: "Earn" }>
   | Readonly<{
       readonly _tag: "PositionExit";
-      readonly balanceId: string;
+      readonly balanceId: BalanceDataKey;
       readonly integrationId: YieldId;
     }>
   | Readonly<{
       readonly _tag: "PositionManage";
-      readonly balanceId: string;
+      readonly balanceId: BalanceDataKey;
       readonly integrationId: YieldId;
     }>
   | Readonly<{
       readonly _tag: "PositionStake";
-      readonly balanceId: string;
+      readonly balanceId: BalanceDataKey;
       readonly integrationId: YieldId;
     }>;
 
@@ -364,7 +367,7 @@ export const makeYieldActionContinuationSession = (
  * mount share it, so a layout can keep that subtree (and its Session) mounted
  * across the flow's own navigation. Null outside Yield flow routes.
  */
-export const getYieldFlowRouteGroup = (pathname: string): string | null =>
+export const getYieldFlowRouteGroup = (pathname: string): WidgetPath | null =>
   Option.getOrNull(
     Option.firstSomeOf(
       Object.values(widgetYieldFlowRoutes).map((routes) =>

@@ -2,9 +2,9 @@ import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
-import type { ValidatorKey } from "../../../domain/earn/validator";
 import { isBittensorStaking } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 
@@ -20,7 +20,7 @@ export const getYieldEstimatedRewards = ({
 }: {
   readonly amount: BigNumber;
   readonly providers: ReadonlyArray<YieldRewardProvider> | null;
-  readonly validators: ReadonlyMap<ValidatorKey, EarnValidator>;
+  readonly validators: ReadonlyMap<EarnValidatorKey, EarnValidator>;
   readonly yield: EarnYieldWithProvider | null;
 }) => {
   const firstValidator = EArray.head([...validators.values()]).pipe(

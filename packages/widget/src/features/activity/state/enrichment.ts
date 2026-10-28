@@ -6,6 +6,7 @@ import type { YieldAction } from "../../../domain/action/models";
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
+import type { IntegrationId, MarketId } from "../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
   EarnValidator,
@@ -182,8 +183,8 @@ export const loadActivityEnrichmentFacts = (
     concurrency: ACTIVITY_ENRICHMENT_CONCURRENCY,
   }).pipe(
     Effect.map((facts): ActivityEnrichmentFacts => {
-      const borrowIntegrationsById = new Map<string, Integration>();
-      const borrowMarketsById = new Map<string, Market>();
+      const borrowIntegrationsById = new Map<IntegrationId, Integration>();
+      const borrowMarketsById = new Map<MarketId, Market>();
       const validatorsByKey = new Map<string, EarnValidator>();
       const yieldsById = new Map<YieldId, EarnYieldWithProvider | null>();
 

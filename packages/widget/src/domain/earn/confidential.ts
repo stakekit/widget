@@ -1,20 +1,25 @@
 import type BigNumber from "bignumber.js";
-import {
-  Data,
-  type HashMap,
-  Option,
-  Schema,
-  SchemaTransformation,
-  Struct,
-} from "effect";
+import { Data, type HashMap, Option, Schema, Struct } from "effect";
 import type { YieldAction } from "../action/models";
 import type { YieldPendingActionType } from "../action/pending-action";
-import { exactDecimal, truncateToTokenDecimals } from "../finance/exact";
+import {
+  exactDecimal,
+  exactZero,
+  truncateToTokenDecimals,
+} from "../finance/exact";
 import type { Network } from "../network/network";
 import type { Token } from "../token/token";
 import { getWalletRoutingId } from "../wallet/network";
 import type { WalletScopeOwner } from "../wallet/wallet-scope";
-import type { EarnBalance, EarnYieldWithProvider } from "./models";
+import {
+  type BalanceShares,
+  ConfidentialHandle,
+  type EarnBalance,
+  type EarnBalanceShares,
+  type EarnYieldWithProvider,
+  getEncryptedHandle,
+  getVisibleShares,
+} from "./models";
 import { getYieldActionArg } from "./yield";
 
 type ConfidentialIntent = "enter" | "exit";
@@ -241,11 +246,11 @@ export const planConfidentialEncryption = ({
 
 export type ConfidentialEncryption = Readonly<{
   readonly amount: Readonly<{
-    readonly handle: string;
+    readonly handle: ConfidentialHandle;
     readonly proof: string;
   }> | null;
   readonly legs: Readonly<{
-    readonly handles: ReadonlyArray<string>;
+    readonly handles: ReadonlyArray<ConfidentialHandle>;
     readonly proof: string;
   }> | null;
 }>;
@@ -292,16 +297,6 @@ export const toBaseUnits = (amount: BigNumber, decimals: number): bigint =>
     truncateToTokenDecimals(amount, decimals).shiftedBy(decimals).toFixed(0)
   );
 
-export const ConfidentialHandle = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.toLowerCase()),
-  Schema.decodeTo(
-    Schema.String.check(Schema.isPattern(/^0x[0-9a-f]{64}$/)).pipe(
-      Schema.brand("ConfidentialHandle")
-    )
-  )
-);
-export type ConfidentialHandle = typeof ConfidentialHandle.Type;
-
 /** A token balance its owner revealed; EVM addresses compare lowercased. */
 export class ConfidentialTokenBalanceKey extends Data.Class<{
   readonly network: Network;
@@ -344,31 +339,17 @@ const decodeHandle = (value: string | null | undefined) =>
     ? Option.getOrNull(Schema.decodeOption(ConfidentialHandle)(value))
     : null;
 
-// The API puts an encrypted balance's handle in `shareAmountRaw`.
-export const getEncryptedHandle = (
-  balance: Readonly<{
-    readonly isEncrypted?: boolean;
-    readonly shareAmountRaw?: string;
-  }>
-): ConfidentialHandle | null =>
-  balance.isEncrypted ? decodeHandle(balance.shareAmountRaw) : null;
-
 /**
  * Whether a balance's pending position, hidden or revealed, has a cancel in
  * flight.
  */
 export const isCancellingBalance = (
-  balance: Readonly<{
-    readonly isEncrypted?: boolean;
-    readonly revealedHandle?: string;
-    readonly shareAmountRaw?: string;
-  }>,
+  balance: BalanceShares,
   cancellingHandles: ReadonlySet<ConfidentialHandle>
-): boolean => {
-  const handle =
-    getEncryptedHandle(balance) ?? decodeHandle(balance.revealedHandle);
-  return handle !== null && cancellingHandles.has(handle);
-};
+): boolean =>
+  (balance.shares?._tag === "Encrypted" ||
+    balance.shares?._tag === "Revealed") &&
+  cancellingHandles.has(balance.shares.handle);
 
 /**
  * Pending positions with a cancel broadcast but not yet confirmed; the cancel
@@ -394,9 +375,7 @@ type ConfidentialBalance = Readonly<{
   readonly amountRaw: bigint;
   readonly amountUsd?: BigNumber | null;
   readonly isEncrypted?: boolean;
-  readonly revealedHandle?: string;
-  readonly shareAmount?: string;
-  readonly shareAmountRaw?: string;
+  readonly shares?: EarnBalanceShares;
   readonly shareToken?: Pick<Token, "address" | "decimals">;
   readonly token: Pick<Token, "decimals">;
 }>;
@@ -406,13 +385,11 @@ const getConfidentialPricePerShare = (
   shareToken: Pick<Token, "address">
 ): BigNumber => {
   const state = yieldDto.state?.pricePerShareState;
-  const price = state ? exactDecimal(state.price) : null;
-  return price?.isFinite() &&
-    price.isGreaterThan(0) &&
-    state?.shareToken.address &&
+  return state?.price.isGreaterThan(0) &&
+    state.shareToken.address &&
     shareToken.address &&
     sameAddress(state.shareToken.address, shareToken.address)
-    ? price
+    ? state.price
     : exactDecimal(1);
 };
 
@@ -465,7 +442,7 @@ export const isUnfinishedInstantExit = (
   pendingActionType === "WITHDRAW";
 
 export const getPendingActionDecryptHandle = (
-  balance: Pick<EarnBalance, "isEncrypted" | "shareAmountRaw" | "type">,
+  balance: Pick<EarnBalance, "isEncrypted" | "shares" | "type">,
   pendingActionType: YieldPendingActionType
 ): ConfidentialHandle | null =>
   isUnfinishedInstantExit(balance, pendingActionType)
@@ -518,7 +495,7 @@ export const getCancelReturn = (
   pendingActionType: YieldPendingActionType,
   balance: Readonly<{
     readonly amount: BigNumber;
-    readonly shareAmount?: string;
+    readonly shares?: EarnBalanceShares;
     readonly shareToken?: Token;
     readonly type: BalanceType;
   }>
@@ -528,7 +505,7 @@ export const getCancelReturn = (
   // A withdrawal is valued in the underlying but holds vault shares.
   const amount =
     balance.type === "exiting"
-      ? exactDecimal(balance.shareAmount || 0)
+      ? (getVisibleShares(balance)?.amount ?? exactZero())
       : balance.amount;
   return { amount, token };
 };
@@ -557,7 +534,7 @@ export const getBalanceRowDisplayAmount = (
 type ConfidentialExitSource = Readonly<{
   readonly amount: BigNumber;
   readonly amountUsd?: BigNumber | null;
-  readonly shareAmount?: string;
+  readonly shares?: EarnBalanceShares;
   readonly shareToken?: Token;
   readonly token: Token;
 }>;
@@ -597,7 +574,7 @@ export const getConfidentialExitBalance = (
   }
   return activeBalances.reduce<ConfidentialExitBalance>(
     (sum, balance) => ({
-      amount: sum.amount.plus(exactDecimal(balance.shareAmount || 0)),
+      amount: sum.amount.plus(getVisibleShares(balance)?.amount ?? exactZero()),
       amountUsd: sum.amountUsd.plus(balance.amountUsd ?? 0),
       token: shareToken,
       underlying: {
@@ -614,21 +591,35 @@ export const getConfidentialExitBalance = (
   );
 };
 
-// The API sends empty amounts for encrypted balances.
+// The API sends empty amounts for encrypted balances; their shares are a handle.
 export const zeroEncryptedBalance = <
   Balance extends Readonly<{ readonly isEncrypted?: boolean }>,
 >(
   balance: Balance
 ): Balance =>
-  balance.isEncrypted
-    ? { ...balance, amount: "0", amountRaw: "0", shareAmount: "0" }
-    : balance;
+  balance.isEncrypted ? { ...balance, amount: "0", amountRaw: "0" } : balance;
+
+/**
+ * An encrypted balance after its handle is revealed: no longer encrypted,
+ * valued from the decrypted share count, and still carrying the handle so a
+ * cancel of its pending position stays recognisable.
+ */
+export type RevealedBalance<Balance extends ConfidentialBalance> = Omit<
+  Balance,
+  "amount" | "amountRaw" | "amountUsd" | "isEncrypted" | "shares"
+> &
+  Readonly<{
+    readonly amount: BigNumber;
+    readonly amountRaw: bigint;
+    readonly amountUsd?: BigNumber | null;
+    readonly shares: typeof EarnBalanceShares.cases.Revealed.Type;
+  }>;
 
 export const fillConfidentialBalance = <Balance extends ConfidentialBalance>(
   balance: Balance,
   handles: RevealedHandles,
   valuation: ConfidentialValuation | null = null
-): Balance => {
+): Balance | RevealedBalance<Balance> => {
   const handle = getEncryptedHandle(balance);
   if (handle === null) return balance;
   const revealed = handles.get(handle);
@@ -646,17 +637,27 @@ export const fillConfidentialBalance = <Balance extends ConfidentialBalance>(
     shareAmount.times(pricePerShare),
     balance.token.decimals
   );
+  const amountUsd = valuation?.usdPrice
+    ? amount.times(valuation.usdPrice)
+    : balance.amountUsd;
   return {
-    ...Struct.omit(balance, ["isEncrypted"]),
+    ...Struct.omit(balance, [
+      "amount",
+      "amountRaw",
+      "amountUsd",
+      "isEncrypted",
+      "shares",
+    ]),
     amount,
-    amountRaw: BigInt(amount.shiftedBy(balance.token.decimals).toFixed(0)),
-    ...(valuation?.usdPrice
-      ? { amountUsd: amount.times(valuation.usdPrice) }
-      : {}),
-    revealedHandle: handle as string,
-    shareAmount: shareAmount.toFixed(),
-    shareAmountRaw: revealed.toString(),
-  } as Balance;
+    amountRaw: toBaseUnits(amount, balance.token.decimals),
+    ...(amountUsd === undefined ? {} : { amountUsd }),
+    shares: {
+      _tag: "Revealed",
+      amount: shareAmount,
+      amountRaw: revealed,
+      handle,
+    },
+  };
 };
 
 export const fillConfidentialPosition = <
@@ -666,7 +667,7 @@ export const fillConfidentialPosition = <
   position: Position,
   handles: RevealedHandles,
   valuation: ConfidentialValuation | null = null
-): Position => ({
+) => ({
   ...position,
   balances: position.balances.map((balance) =>
     fillConfidentialBalance(balance, handles, valuation)

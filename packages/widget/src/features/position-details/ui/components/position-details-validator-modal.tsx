@@ -31,13 +31,13 @@ export const PositionDetailsValidatorModal = () => {
 
   return (
     <SelectValidator
-      selectedValidators={validatorAddressesHandling.selectedValidators}
+      selectedValidators={validatorAddressesHandling.selectedValidatorKeys}
       onItemClick={(val) => {
-        validatorAddressesHandling.onItemClick(val.address);
+        validatorAddressesHandling.onItemClick(val);
 
         if (validatorAddressesHandling.multiSelect) return;
 
-        onValidatorsSubmit([val.address]);
+        onValidatorsSubmit();
       }}
       selectedStake={integrationDataValue}
       validators={validatorsData}
@@ -56,11 +56,7 @@ export const PositionDetailsValidatorModal = () => {
                 : "primary",
             }}
             disabled={validatorAddressesHandling.submitDisabled}
-            onClick={() =>
-              onValidatorsSubmit([
-                ...validatorAddressesHandling.selectedValidators.values(),
-              ])
-            }
+            onClick={() => onValidatorsSubmit()}
           >
             {t("position_details.select_validators.submit")}
           </Button>

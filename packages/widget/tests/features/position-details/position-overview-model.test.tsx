@@ -2,9 +2,11 @@ import BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import { ConfidentialHandle } from "../../../src/domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
-import { EarnBalance } from "../../../src/domain/earn/models";
+import {
+  ConfidentialHandle,
+  EarnBalance,
+  type EarnYieldWithProvider,
+} from "../../../src/domain/earn/models";
 import { TokenAddress } from "../../../src/domain/identity/identifiers";
 import { RewardsSummary } from "../../../src/domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../src/domain/portfolio/positions";
@@ -484,7 +486,12 @@ describe("getPositionOverviewModel", () => {
             // A revealed balance keeps the handle it was decrypted from.
             {
               ...balance({ amount: "1", amountUsd: "1", type: "exiting" }),
-              revealedHandle: cancelling,
+              shares: {
+                _tag: "Revealed",
+                amount: new BigNumber("1"),
+                amountRaw: 1_000_000n,
+                handle: cancelling,
+              },
             },
             balance({
               amount: "2",
@@ -1080,13 +1087,7 @@ describe("getPositionOverviewModel", () => {
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
       rewardsSummary: Schema.decodeSync(RewardsSummary)({
-        rewards: {
-          last24H: "0",
-          last30D: "0",
-          last7D: "0",
-          lastYear: "0",
-          total: "1.5",
-        },
+        rewards: { total: "1.5" },
         token: yieldApiYieldFixture().token,
       }),
       t: t as TFunction,
@@ -1167,8 +1168,7 @@ describe("getPositionOverviewModel", () => {
         },
         state: {
           pricePerShareState: {
-            price: 1.06274537,
-            quoteToken: baseYield.token,
+            price: new BigNumber("1.06274537"),
             shareToken: baseYield.token,
           },
         },
@@ -1203,8 +1203,7 @@ describe("getPositionOverviewModel", () => {
       integrationData: makeYield({
         state: {
           pricePerShareState: {
-            price: 1.06274537,
-            quoteToken: yieldApiYieldFixture().token,
+            price: new BigNumber("1.06274537"),
             shareToken: yieldApiYieldFixture().token,
           },
         },

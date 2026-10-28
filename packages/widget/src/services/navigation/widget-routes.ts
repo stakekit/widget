@@ -1,7 +1,9 @@
 import { Option, Schema } from "effect";
 import { YieldPendingActionType } from "../../domain/action/pending-action";
 import { ActionId as BorrowActionId, MarketId } from "../../domain/borrow/ids";
+import { BorrowPositionActionKey } from "../../domain/borrow/positions/position-action-key";
 import { ActionId, YieldId } from "../../domain/identity/identifiers";
+import { BalanceDataKey } from "../../domain/portfolio/positions";
 import type { WidgetLayout } from "../config/widget-config-model";
 
 /**
@@ -327,7 +329,10 @@ const flowRoutes = <Params, Layout extends WidgetLayout>(
   );
 };
 
-const positionParams = { integrationId: YieldId } as const;
+const positionParams = {
+  balanceId: BalanceDataKey,
+  integrationId: YieldId,
+} as const;
 const activityActionParams = { actionId: ActionId } as const;
 const borrowPositionParams = { marketId: MarketId } as const;
 
@@ -382,7 +387,7 @@ export const widgetRoutes = {
   borrowPositionAction: route(
     "/positions/borrow/:marketId/action/:actionId",
     wideLayouts,
-    borrowPositionParams
+    { ...borrowPositionParams, actionId: BorrowPositionActionKey }
   ),
 } as const;
 

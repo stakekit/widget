@@ -6,10 +6,10 @@ import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
-import type { ValidatorKey } from "../../../domain/earn/validator";
 import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
@@ -104,7 +104,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
     const selectedValidatorsAtom = Atom.make((get) => {
       const selectedYield = get(selectedYieldAtom);
       if (!selectedYield || !isYieldValidatorSelectionRequired(selectedYield)) {
-        return new Map<ValidatorKey, EarnValidator>();
+        return new Map<EarnValidatorKey, EarnValidator>();
       }
       const balances =
         get(positionBalancesResultAtom).pipe(

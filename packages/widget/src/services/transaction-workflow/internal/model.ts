@@ -24,18 +24,40 @@ type TransactionWorkflowTransaction =
 type TransactionWorkflowSource = TransactionWorkflowTransaction["source"];
 type TransactionWorkflowDomainContext = TransactionWorkflowContext["domain"];
 
-export const isTransactionWorkflowDoneStatus = (status: string) =>
-  status === "CONFIRMED" || status === "SKIPPED";
+type TransactionWorkflowRemoteStatus =
+  | YieldAction["transactions"][number]["status"]
+  | BorrowAction["transactions"][number]["status"];
 
-const isBroadcastStatus = (status: string) =>
-  status === "BROADCASTED" || status === "CONFIRMED";
+/** Every remote status is classified, so a new one must be placed here. */
+const transactionWorkflowStatusProgress = {
+  NOT_FOUND: { broadcast: false, done: false },
+  CREATED: { broadcast: false, done: false },
+  BLOCKED: { broadcast: false, done: false },
+  WAITING_FOR_SIGNATURE: { broadcast: false, done: false },
+  SIGNED: { broadcast: false, done: false },
+  BROADCASTED: { broadcast: true, done: false },
+  PENDING: { broadcast: false, done: false },
+  CONFIRMED: { broadcast: true, done: true },
+  FAILED: { broadcast: false, done: false },
+  SKIPPED: { broadcast: false, done: true },
+} as const satisfies Record<
+  TransactionWorkflowRemoteStatus,
+  { readonly broadcast: boolean; readonly done: boolean }
+>;
+
+export const isTransactionWorkflowDoneStatus = (
+  status: TransactionWorkflowRemoteStatus
+) => transactionWorkflowStatusProgress[status].done;
 
 const toTransaction = (
   source: Exclude<TransactionWorkflowSource, { readonly _tag: "Direct" }>
 ): TransactionWorkflowTransaction => ({
   source,
   meta: {
-    broadcasted: isBroadcastStatus(source.transaction.status) ? true : null,
+    broadcasted: transactionWorkflowStatusProgress[source.transaction.status]
+      .broadcast
+      ? true
+      : null,
     confirmationError: null,
     done: isTransactionWorkflowDoneStatus(source.transaction.status),
     signError: null,
@@ -69,11 +91,12 @@ const toDirectTransaction = ({
   return {
     source: { _tag: "Direct", transaction },
     meta: {
-      broadcasted: record ? true : null,
+      ...(record
+        ? { broadcasted: true, signedTx: record.hash }
+        : { broadcasted: null, signedTx: null }),
       confirmationError: null,
       done: record?._tag === "Confirmed",
       signError: null,
-      signedTx: record?.hash ?? null,
       submissionIndex: null,
       url: null,
     },

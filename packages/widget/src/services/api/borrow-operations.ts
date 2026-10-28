@@ -5,6 +5,10 @@ import {
   type SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
+import type {
+  ActionId as BorrowActionId,
+  TransactionId as BorrowTransactionId,
+} from "../../domain/borrow/ids";
 import type * as BorrowApi from "../../generated/api/borrow-client";
 import type { RichErrorService } from "../errors/rich-error-service";
 import {
@@ -18,7 +22,7 @@ import type { ApiClients } from "./transport";
 
 type SubmitTransactionRequest = {
   readonly command: BorrowSubmitTransactionCommand;
-  readonly transactionId: string;
+  readonly transactionId: BorrowTransactionId;
 };
 
 export const makeBorrowOperations = (
@@ -45,7 +49,7 @@ export const makeBorrowOperations = (
   });
 
   const getAction = Effect.fn("BorrowOperations.getAction")(function* (
-    actionId: string
+    actionId: BorrowActionId
   ) {
     const client = yield* requireTransport();
     const response = yield* client.read
@@ -60,7 +64,7 @@ export const makeBorrowOperations = (
   });
 
   const stepAction = Effect.fn("BorrowOperations.stepAction")(function* (
-    actionId: string
+    actionId: BorrowActionId
   ) {
     const client = yield* requireTransport();
     return yield* client.write

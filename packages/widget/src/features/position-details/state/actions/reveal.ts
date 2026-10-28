@@ -7,9 +7,9 @@ import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import {
   getConfidentialChainId,
   getConfidentialHandleContract,
-  getEncryptedHandle,
   isUserRevealableBalance,
 } from "../../../../domain/earn/confidential";
+import { getEncryptedHandle } from "../../../../domain/earn/models";
 import { resourceInvalidationKeys } from "../../../../services/resource-invalidation";
 import { RevealedBalances } from "../../../../services/zama/revealed-balances";
 import { ZamaService } from "../../../../services/zama/zama-service";

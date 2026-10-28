@@ -252,7 +252,7 @@ const manageBalance = Schema.decodeSync(EarnBalance)(
 );
 const manageAction = manageBalance.pendingActions[0]!;
 const workflowKey = new PositionDetailsWorkflowKey({
-  balanceId: "balance-1",
+  balanceId: "default",
   integrationId: selectedYield.id,
   pendingActionType: null,
   scope,
@@ -262,8 +262,8 @@ const positionKey = new PositionBalancesKey({
   scope,
   yieldId: selectedYield.id,
 });
-const exitReviewPath = `/positions/${selectedYield.id}/balance-1/unstake/review`;
-const manageReviewPath = `/positions/${selectedYield.id}/balance-1/pending-action/review`;
+const exitReviewPath = `/positions/${selectedYield.id}/default/unstake/review`;
+const manageReviewPath = `/positions/${selectedYield.id}/default/pending-action/review`;
 
 const makeConnectedWallet = (
   overrides: Partial<

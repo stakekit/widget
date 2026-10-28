@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { Data } from "effect";
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
 import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
@@ -27,7 +28,7 @@ import type {
 export type EarnTokenOption = {
   readonly token: Token;
   readonly availableYields: ReadonlyArray<YieldId>;
-  readonly amount: string | null;
+  readonly amount: BigNumber | null;
   readonly source: "balance" | "default";
 };
 export type EarnTokenKey = TokenString;

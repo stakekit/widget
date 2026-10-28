@@ -7,13 +7,13 @@ import {
   isOptionalPendingAction,
 } from "../../../domain/action/pending-action";
 import {
-  type ConfidentialHandle,
   getBalanceRowDisplayAmount,
   isCancellingBalance,
   isConfidentialYield,
   isUnfinishedInstantExit,
 } from "../../../domain/earn/confidential";
 import type {
+  ConfidentialHandle,
   EarnBalance,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
@@ -412,10 +412,7 @@ const getRewardsMetric = ({
     };
   }
 
-  if (
-    rewardsSummary &&
-    exactDecimal(rewardsSummary.rewards.total).isGreaterThan(0)
-  ) {
+  if (rewardsSummary?.rewards.total.isGreaterThan(0)) {
     promotedFactIds.add("rewards");
 
     return {

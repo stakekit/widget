@@ -2,6 +2,7 @@ import { Array as EArray } from "effect";
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
 import type { ManageActionCommand } from "../../../../src/domain/action/models";
+import { TransactionHash } from "../../../../src/domain/identity/identifiers";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
@@ -434,7 +435,7 @@ export const setup = async (
             network: EArray.getUnsafe(pendingAction.transactions, 0).network,
             status: "BROADCASTED",
             id: transactionId,
-            hash: "transaction_hash",
+            hash: TransactionHash.make("transaction_hash"),
           }),
         });
       }
@@ -448,7 +449,9 @@ export const setup = async (
           explorerUrl:
             "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
           network: avaxLiquidStaking.token.network,
-          hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          hash: TransactionHash.make(
+            "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb"
+          ),
           status: "CONFIRMED",
         }),
       });

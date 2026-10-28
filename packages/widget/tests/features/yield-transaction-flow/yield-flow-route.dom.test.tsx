@@ -81,7 +81,7 @@ const makeExitSession = () => {
       },
       mount: {
         _tag: "PositionExit",
-        balanceId: "balance",
+        balanceId: "default",
         integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     },

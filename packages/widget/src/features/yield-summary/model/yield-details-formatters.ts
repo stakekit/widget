@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { getEffectiveYieldRewardRateDetails } from "../../../domain/earn/reward-rate";
@@ -65,15 +66,11 @@ export const formatMinStake = (
   t: TFunction,
   locale: string
 ): { kpiPrimaryEligible: boolean; value: string } | null => {
-  const minimum =
+  const amount =
     yieldDto.mechanics.entryLimits?.minimum ??
     getYieldActionArg(yieldDto, "enter", "amount")?.minimum;
 
-  if (minimum === null || minimum === undefined) return null;
-
-  const amount = exactDecimal(minimum);
-
-  if (!amount.isFinite()) return null;
+  if (!amount) return null;
 
   if (amount.isZero()) {
     return {
@@ -113,11 +110,11 @@ export const formatCommission = (
 };
 
 export const formatProviderTvl = (
-  tvl: string | number | null | undefined,
+  tvl: BigNumber | null | undefined,
   tokenSymbol: string,
   locale: string
 ) => {
-  if (tvl === null || tvl === undefined) return null;
+  if (!tvl) return null;
 
   const formatted = formatCompactNumber(tvl, locale);
 
@@ -169,13 +166,7 @@ export const formatPricePerShare = (
 ): string | null => {
   const price = yieldDto.state?.pricePerShareState?.price;
 
-  if (price === null || price === undefined) return null;
-
-  const amount = exactDecimal(price);
-
-  if (!amount.isFinite() || amount.isLessThanOrEqualTo(0)) return null;
-
-  return formatNumber(amount, locale, 8);
+  return price?.isGreaterThan(0) ? formatNumber(price, locale, 8) : null;
 };
 
 export const formatCooldownDays = (days: number, t: TFunction): string => {
@@ -205,10 +196,10 @@ export const formatOptionalDays = (
 };
 
 export const formatMeaningfulCompactUsd = (
-  value: string | number | null | undefined,
+  value: BigNumber | null | undefined,
   locale: string
 ) => {
-  if (!isPositiveFinite(value)) return null;
+  if (!value?.isGreaterThan(0)) return null;
 
   const formatted = formatUsd(value, locale);
 
@@ -216,20 +207,12 @@ export const formatMeaningfulCompactUsd = (
 };
 
 export const formatMeaningfulCompactNumber = (
-  value: string | number | null | undefined,
+  value: number | null | undefined,
   locale: string
 ) => {
-  if (!isPositiveFinite(value)) return null;
+  if (value == null || value <= 0) return null;
 
   const formatted = formatCompactNumber(value, locale);
 
   return formatted === "-" ? null : formatted;
-};
-
-const isPositiveFinite = (value: string | number | null | undefined) => {
-  if (value === null || value === undefined || value === "") return false;
-
-  const amount = exactDecimal(value);
-
-  return amount.isFinite() && amount.isGreaterThan(0);
 };

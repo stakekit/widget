@@ -1,9 +1,9 @@
 import type { JSX, ReactNode } from "react";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
-import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import type { Token } from "../../../../../domain/token/token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
@@ -21,7 +21,7 @@ type MetaInfoTextSize = NonNullable<NonNullable<TextVariants>["size"]>;
 type Props = {
   isLoading?: boolean;
   selectedStake: EarnYieldWithProvider | null;
-  selectedValidators: Map<ValidatorKey, EarnValidator>;
+  selectedValidators: Map<EarnValidatorKey, EarnValidator>;
   selectedToken: Token | null;
   textSize?: MetaInfoTextSize;
 };

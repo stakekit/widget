@@ -4,8 +4,10 @@ import {
   decodeBorrowTransactionForWallet,
   decodeBorrowTypedDataForWallet,
 } from "../../../domain/borrow/execution/transaction";
-import { TransactionId } from "../../../domain/identity/identifiers";
-import type { Network } from "../../../domain/network/network";
+import {
+  TransactionId,
+  type WalletSignature,
+} from "../../../domain/identity/identifiers";
 import type { WalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import { EvmRpc } from "../../evm-rpc/evm-rpc";
 import { TrackingService } from "../../tracking/tracking-service";
@@ -82,10 +84,16 @@ const walletSignFailureReason = (
     }),
   });
 
+/** What the wallet returned: a broadcast hash, a signed payload, or a signature. */
+type WorkflowSignedResult =
+  | WalletBroadcastResult
+  | WalletSignedPayloadResult
+  | { readonly broadcasted: false; readonly signedTx: WalletSignature };
+
 /** `context` with its current transaction holding what the wallet returned. */
 export const withSignedTransaction = (
   context: TransactionWorkflowContext,
-  signed: WalletBroadcastResult | WalletSignedPayloadResult
+  signed: WorkflowSignedResult
 ): TransactionWorkflowContext =>
   updateCurrentTransactionWorkflowTransaction({
     context,
@@ -93,10 +101,9 @@ export const withSignedTransaction = (
       ...current,
       meta: {
         ...current.meta,
-        broadcasted: signed.broadcasted,
+        ...signed,
         confirmationError: null,
         signError: null,
-        signedTx: signed.signedTx,
       },
     }),
   });
@@ -249,7 +256,7 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
                     signed.broadcasted
                       ? recordDirectTransaction(ledger, direct, {
                           _tag: "Sent",
-                          hash: signed.signedTx as `0x${string}`,
+                          hash: signed.signedTx,
                         })
                       : Effect.void
                   )
@@ -284,7 +291,7 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
               expectedOwner,
               family: "yield",
               ledgerHwAppId: null,
-              network: network as Network,
+              network,
               tx: payload,
               txMeta: {
                 ...domain.actionMeta,
@@ -342,7 +349,7 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
               expectedOwner,
               family: "borrow",
               ledgerHwAppId: null,
-              network: network as Network,
+              network,
               tx,
               txMeta,
             })

@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
+import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import {
   getBorrowMarketPairLabel,
   getListedCollateralTokens,
@@ -32,11 +33,6 @@ type BorrowMarketGroup = {
   /** Deepest market first. */
   readonly marketItems: readonly Market[];
   readonly network: BorrowNetwork;
-};
-
-type NamedIntegration = {
-  readonly id: string;
-  readonly name: string;
 };
 
 export const toBorrowEntryToken = ({
@@ -101,7 +97,7 @@ export const filterBorrowMarketGroups = ({
   markets,
   search,
 }: {
-  readonly integrations: readonly NamedIntegration[];
+  readonly integrations: ReadonlyArray<Pick<Integration, "id" | "name">>;
   readonly markets: readonly Market[];
   readonly search: string;
 }): readonly BorrowMarketGroup[] => {

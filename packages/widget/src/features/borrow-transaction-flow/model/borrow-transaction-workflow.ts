@@ -1,4 +1,5 @@
 import type { Transaction } from "../../../domain/borrow/execution/transaction";
+import type { TransactionHash } from "../../../domain/identity/identifiers";
 import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
@@ -13,7 +14,7 @@ import {
 type BorrowExecutionStep = {
   readonly done: boolean;
   readonly explorerUrl: string | null;
-  readonly id: string;
+  readonly id: Transaction["id"];
   readonly progress: TransactionStepProgress;
   readonly type: Transaction["type"];
 };
@@ -21,8 +22,8 @@ type BorrowExecutionStep = {
 /** A submitted transaction of a completed action, for the completion page. */
 type BorrowCompletedTransaction = {
   readonly explorerUrl: string;
-  readonly hash: string | null;
-  readonly id: string;
+  readonly hash: TransactionHash | null;
+  readonly id: Transaction["id"];
   readonly type: Transaction["type"];
 };
 
@@ -108,7 +109,7 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
                     {
                       explorerUrl: submission.link,
                       hash: submission.hash,
-                      id: submission.transactionId,
+                      id: submission.source.transaction.id,
                       type: submission.source.transaction.type,
                     },
                   ]

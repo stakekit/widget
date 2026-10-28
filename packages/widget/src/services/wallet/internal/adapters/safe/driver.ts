@@ -6,7 +6,10 @@ import {
   WalletCapabilityUnavailableError,
   WalletDecodeError,
 } from "../../../wallet-errors";
-import type { WalletBroadcastResult } from "../../../wallet-transactions";
+import {
+  decodeWalletBroadcastResult,
+  type WalletBroadcastResult,
+} from "../../../wallet-transactions";
 import {
   decodeAndPrepareBorrowEvmTransaction,
   decodeAndPrepareEvmTransaction,
@@ -113,6 +116,6 @@ export const makeSafeWalletDriver = ({
         )
       );
 
-      return { broadcasted: true, signedTx };
+      return yield* decodeWalletBroadcastResult(signedTx);
     }),
 });
