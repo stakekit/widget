@@ -41,12 +41,12 @@ catalog:
   "@cosmos-kit/leap-extension": 2.17.1
   "@cosmos-kit/leap-metamask-cosmos-snap": 0.17.1
   "@creit-tech/stellar-wallets-kit": jsr:2.7.1
-  "@effect/atom-react": 4.0.7
-  "@effect/openapi-generator": 4.0.7
-  "@effect/platform-browser": 4.0.7
-  "@effect/platform-node": 4.0.7
+  "@effect/atom-react": 4.1.0
+  "@effect/openapi-generator": 4.1.0
+  "@effect/platform-browser": 4.1.0
+  "@effect/platform-node": 4.1.0
   "@effect/tsgo": 0.63.0
-  "@effect/vitest": 4.0.7
+  "@effect/vitest": 4.1.0
   "@ledgerhq/wallet-api-client": ^1.17.0
   "@ledgerhq/wallet-api-core": ^2.2.0
   "@luno-kit/core": ^0.0.13
@@ -70,14 +70,14 @@ catalog:
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
   # The Solana wallet adapters peer on @solana/web3.js ^1.99.0.
   "@solana/web3.js": ^1.99.0
-  "@tanstack/react-virtual": ^3.14.22
+  "@tanstack/react-virtual": ^3.14.23
   "@ton/core": ^0.63.1
   "@tonconnect/ui": ^5.0.1
   "@tronweb3/tronwallet-abstract-adapter": ^1.3.0
   "@tronweb3/tronwallet-adapter-bitkeep": ^1.3.0
   "@tronweb3/tronwallet-adapter-ledger": ^1.1.15
   "@tronweb3/tronwallet-adapter-tronlink": ^1.3.0
-  "@types/node": ^26.6.5
+  "@types/node": ^24.19.2
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@types/react-is": ^19.3.0
@@ -107,7 +107,7 @@ catalog:
   # Held with @cosmjs for @cosmos-kit/core 2.18 (see the @cosmjs note).
   cosmjs-types: ^0.10.1
   dependency-cruiser: ^18.7.0
-  effect: 4.0.7
+  effect: 4.1.0
   esbuild: ^0.28.2
   husky: ^9.1.7
   i18next: ^26.5.11
