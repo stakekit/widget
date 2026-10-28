@@ -311,16 +311,14 @@ const assertEncryptWorkerStarts = async (
             name: string;
           }) => Worker)
         : undefined;
-    const startWorker = () => {
-      if (InlineWorker) return new InlineWorker({ name: "zama-fhe-encrypt" });
-      if (scriptUrl === null) return null;
-      return new Worker(scriptUrl, {
-        name: "zama-fhe-encrypt",
-        type: "module",
-      });
-    };
-    const worker = startWorker();
-    if (worker === null) {
+    // Code here runs in the page: a named helper would be compiled to
+    // `__name(...)`, which the page does not define.
+    const worker =
+      InlineWorker === undefined
+        ? scriptUrl !== null &&
+          new Worker(scriptUrl, { name: "zama-fhe-encrypt", type: "module" })
+        : new InlineWorker({ name: "zama-fhe-encrypt" });
+    if (worker === false) {
       return `${chunk} does not export an inline worker constructor`;
     }
     const { promise, resolve } = Promise.withResolvers<string>();
