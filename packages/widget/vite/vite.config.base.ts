@@ -65,7 +65,7 @@ export const getConfig = (
       },
       plugins: [
         ...(options?.plugins ?? []),
-        nodePolyfills({ include: ["buffer", "crypto"] }),
+        nodePolyfills({ include: ["buffer", "crypto", "stream"] }),
         macros(),
         react({
           compiler: true,
