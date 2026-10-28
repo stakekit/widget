@@ -26,8 +26,8 @@ import {
 } from "../../../wallet-errors";
 import type {
   BorrowTransactionMeta,
-  ClassicTransactionMeta,
   WalletBroadcastResult,
+  YieldTransactionMeta,
 } from "../../../wallet-transactions";
 import { decodeWalletPayload } from "../decode-wallet-payload";
 import {
@@ -169,8 +169,8 @@ type ExternalProviderTransactionInput = {
   readonly tx: string;
 } & (
   | {
-      readonly family: "classic";
-      readonly txMeta: ClassicTransactionMeta;
+      readonly family: "yield";
+      readonly txMeta: YieldTransactionMeta;
     }
   | {
       readonly family: "borrow";

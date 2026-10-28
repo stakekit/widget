@@ -62,7 +62,7 @@ Common options include:
 
 - API endpoints and the required `apiKey`
 - `lightTheme`, `darkTheme`, or a custom `SKTheme`
-- classic or dashboard layout configuration
+- compact or dashboard layout configuration
 - initial chain and yield preferences
 - translations, icon mappings, and declarative wallet filtering, grouping, and
   ordering through `walletPolicy`
@@ -74,7 +74,7 @@ running widget can safely consume it. Wallet topology, including connector
 mode, provider presence, connector construction, and related wallet setup, is
 fixed during bootstrap. Remount the widget to change it.
 
-The package exports the supported chain constants, dashboard yield categories,
+The package exports the supported chain constants, yield categories,
 wallet types, Wallet Policy, transaction metadata types, and themes. Prefer
 those exports over copying their shapes into host code.
 

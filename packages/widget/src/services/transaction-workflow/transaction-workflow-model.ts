@@ -20,7 +20,7 @@ import type {
   WalletRuntimeInvariantError,
   WalletSigningError,
 } from "../wallet/wallet-errors";
-import type { ClassicActionMeta } from "../wallet/wallet-transactions";
+import type { YieldActionMeta } from "../wallet/wallet-transactions";
 import type { ConfidentialPreparation } from "../zama/zama-service";
 
 export type DirectTransactionRecord = Readonly<{
@@ -43,17 +43,17 @@ export const makeDirectTransactionLedger = (): DirectTransactionLedger =>
     new Map()
   );
 
-type ClassicTransactionWorkflowInputFields = {
-  readonly actionMeta: ClassicActionMeta;
+type YieldTransactionWorkflowInputFields = {
+  readonly actionMeta: YieldActionMeta;
   readonly transactions: YieldAction["transactions"];
   readonly walletScope: WalletScopeKey;
   readonly yieldId: YieldAction["yieldId"];
 };
 
-export class ClassicTransactionWorkflowInput extends Data.TaggedClass(
-  "Classic"
-)<ClassicTransactionWorkflowInputFields> {
-  constructor(input: ClassicTransactionWorkflowInputFields) {
+export class YieldTransactionWorkflowInput extends Data.TaggedClass(
+  "Yield"
+)<YieldTransactionWorkflowInputFields> {
+  constructor(input: YieldTransactionWorkflowInputFields) {
     super({
       actionMeta: { ...input.actionMeta },
       transactions: [...input.transactions],
@@ -63,7 +63,7 @@ export class ClassicTransactionWorkflowInput extends Data.TaggedClass(
   }
 }
 
-export type ClassicTransactionWorkflowProviderDetail = {
+export type YieldTransactionWorkflowProviderDetail = {
   readonly address?: string;
   readonly logo?: string;
   readonly name: string;
@@ -72,24 +72,24 @@ export type ClassicTransactionWorkflowProviderDetail = {
   readonly website?: string;
 };
 
-type ClassicActionFacts = {
-  readonly inputToken: ClassicActionMeta["inputToken"];
+type YieldActionFacts = {
+  readonly inputToken: YieldActionMeta["inputToken"];
   readonly providersDetails:
-    | ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+    | ReadonlyArray<YieldTransactionWorkflowProviderDetail>
     | null
     | undefined;
 };
 
-export const makeClassicTransactionWorkflowInput = ({
+export const makeYieldTransactionWorkflowInput = ({
   action,
   inputToken,
   providersDetails,
   walletScope,
-}: ClassicActionFacts & {
+}: YieldActionFacts & {
   readonly action: YieldAction;
   readonly walletScope: WalletScopeKey;
 }) =>
-  new ClassicTransactionWorkflowInput({
+  new YieldTransactionWorkflowInput({
     actionMeta: {
       actionId: action.id,
       actionType: action.type,
@@ -117,7 +117,7 @@ export const makeClassicTransactionWorkflowInput = ({
     yieldId: action.yieldId,
   });
 
-type ConfidentialTransactionWorkflowInputFields = ClassicActionFacts & {
+type ConfidentialTransactionWorkflowInputFields = YieldActionFacts & {
   /** Run after preparation, before the action's own transactions. */
   readonly conversion: ReadonlyArray<DirectTransaction>;
   /**
@@ -133,7 +133,7 @@ type ConfidentialTransactionWorkflowInputFields = ClassicActionFacts & {
 };
 
 /**
- * A Classic workflow for a confidential vault: its action exists only once
+ * A Yield workflow for a confidential vault: its action exists only once
  * the workflow has encrypted or decrypted the amount and previewed it.
  */
 export class ConfidentialTransactionWorkflowInput extends Data.TaggedClass(
@@ -170,7 +170,7 @@ export class BorrowTransactionWorkflowInput extends Data.TaggedClass(
 }
 
 export type TransactionWorkflowInput =
-  | ClassicTransactionWorkflowInput
+  | YieldTransactionWorkflowInput
   | ConfidentialTransactionWorkflowInput
   | BorrowTransactionWorkflowInput;
 
@@ -194,7 +194,7 @@ export class TransactionPrepareError extends Data.TaggedError(
 
 type TransactionWorkflowSource =
   | {
-      readonly _tag: "Classic";
+      readonly _tag: "Yield";
       readonly transaction: ActionTransaction;
     }
   | {
@@ -404,9 +404,9 @@ type TransactionWorkflowBatch = {
 
 type TransactionWorkflowDomainContext =
   | {
-      readonly _tag: "Classic";
+      readonly _tag: "Yield";
       /** Null only while a confidential workflow prepares its action. */
-      readonly actionMeta: ClassicActionMeta | null;
+      readonly actionMeta: YieldActionMeta | null;
       readonly yieldId: YieldAction["yieldId"];
     }
   | {

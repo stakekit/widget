@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import type { WalletScopeKey } from "../../../../../domain/wallet/wallet-scope";
@@ -8,17 +8,17 @@ export class AvailableYieldCategoriesKey extends Data.TaggedClass(
   "AvailableYieldCategoriesKey"
 )<{
   network: Network | null;
-  categoryOrder: ReadonlyArray<DashboardYieldCategory>;
+  categoryOrder: ReadonlyArray<YieldCategory>;
 }> {}
 
 export class YieldCatalogKey extends Data.TaggedClass("YieldCatalogKey")<{
-  category: DashboardYieldCategory | null;
+  category: YieldCategory | null;
   network: Network;
   token: string | null;
   yieldIds: ReadonlyArray<YieldId>;
 }> {
   constructor(input: {
-    readonly category: DashboardYieldCategory | null;
+    readonly category: YieldCategory | null;
     readonly network: Network;
     readonly token?: string | null;
     readonly yieldIds: ReadonlyArray<YieldId>;
@@ -38,7 +38,7 @@ export class PositionsDataKey extends Data.TaggedClass("PositionsDataKey")<{
 
 export class TokenOptionsKey extends Data.TaggedClass("TokenOptionsKey")<{
   scope: WalletScopeKey | null;
-  category: DashboardYieldCategory | null;
+  category: YieldCategory | null;
 }> {}
 
 export class YieldValidatorsKey extends Data.TaggedClass("YieldValidatorsKey")<{

@@ -225,7 +225,7 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
                   wallet
                     .signTransaction({
                       expectedOwner,
-                      family: "classic",
+                      family: "yield",
                       ledgerHwAppId: null,
                       network: direct.network,
                       tx,
@@ -258,7 +258,7 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
             )
           );
       }),
-      Match.tag("Classic", ({ domain, transaction }) => {
+      Match.tag("Yield", ({ domain, transaction }) => {
         const { source } = transaction;
 
         if (source.transaction.unsignedTransaction == null) {
@@ -282,7 +282,7 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
             )
           : signRecordedTransaction(source, {
               expectedOwner,
-              family: "classic",
+              family: "yield",
               ledgerHwAppId: null,
               network: network as Network,
               tx: payload,

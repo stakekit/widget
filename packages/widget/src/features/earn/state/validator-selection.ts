@@ -60,7 +60,7 @@ export const earnValidatorSelectionViewAtom = Atom.make((get) => {
     enabled: Boolean(
       validatorOptions.selectedYield && validatorOptions.enabled
     ),
-    shouldSort: config.hostProfile.earnPresentation.compact,
+    shouldSort: config.hostProfile.earnPresentation.condensed,
     validators: validatorOptions.items,
   });
   const tokenOptionsLoading =

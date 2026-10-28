@@ -32,7 +32,7 @@ import type {
  *   deliberate Domain contract paths and rejects Domain implementation imports.
  */
 
-type ClassicExternalProviderProps = {
+type YieldExternalProviderProps = {
   readonly apiKey: string;
   readonly externalProviders: {
     readonly currentAddress: string;
@@ -70,13 +70,13 @@ type BorrowProviderCallbacks = {
 
 type BorrowExternalProviderPropsWith<
   Callbacks extends Partial<BorrowProviderCallbacks>,
-> = ClassicExternalProviderProps & {
+> = YieldExternalProviderProps & {
   readonly borrowEnabled: true;
   readonly externalProviders: Omit<
-    ClassicExternalProviderProps["externalProviders"],
+    YieldExternalProviderProps["externalProviders"],
     "provider"
   > & {
-    readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] &
+    readonly provider: YieldExternalProviderProps["externalProviders"]["provider"] &
       Callbacks;
   };
 };
@@ -90,12 +90,12 @@ type DynamicBorrowProps = {
 };
 
 describe("public external-provider props", () => {
-  it("preserves classic hosts and makes Borrow capability follow borrowEnabled", () => {
-    expectTypeOf<ClassicExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
+  it("preserves yield hosts and makes Borrow capability follow borrowEnabled", () => {
+    expectTypeOf<YieldExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<BorrowExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<DynamicBorrowProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<
-      ClassicExternalProviderProps & { readonly borrowEnabled: true }
+      YieldExternalProviderProps & { readonly borrowEnabled: true }
     >().not.toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<
       BorrowExternalProviderPropsWith<
@@ -194,7 +194,7 @@ const removedEntryExports = [
 const sharedEntryExports = [
   "ActionMeta",
   "BittensorTx",
-  "DashboardYieldCategory",
+  "YieldCategory",
   "EvmChainIds",
   "EvmTx",
   "MiscChainIds",

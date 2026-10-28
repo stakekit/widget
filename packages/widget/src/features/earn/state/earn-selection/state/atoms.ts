@@ -43,7 +43,7 @@ export const earnEntryAtom = Atom.make<EarnEntry>((context) => {
     config.dashboardVariant && config.yieldGrouping === "category";
 
   return {
-    categoryOrder: config.dashboardYieldCategoryOrder,
+    categoryOrder: config.yieldCategoryOrder,
     dashboardVariant: categoryGrouping,
     initParams: context.get(initParamsAtom),
     preferredTokenYieldsPerNetwork: config.preferredTokenYieldsPerNetwork,

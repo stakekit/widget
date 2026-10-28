@@ -36,8 +36,8 @@ import type {
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import {
   BorrowTransactionWorkflowInput,
-  ClassicTransactionWorkflowInput,
   type TransactionWorkflowState,
+  YieldTransactionWorkflowInput,
 } from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import {
   type TransactionWorkflowHandle,
@@ -49,9 +49,9 @@ import {
 } from "../../../src/services/wallet/wallet-errors";
 import type { WalletState } from "../../../src/services/wallet/wallet-state";
 import type {
-  ClassicActionMeta,
   WalletBroadcastResult,
   WalletSignedPayloadResult,
+  YieldActionMeta,
 } from "../../../src/services/wallet/wallet-transactions";
 import { yieldApiTransactionFixture } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
@@ -68,7 +68,7 @@ const otherAddress = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000009"
 );
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
-const classicWalletScope = new WalletScopeKey({
+const yieldWalletScope = new WalletScopeKey({
   address,
   network: "ethereum",
 });
@@ -77,14 +77,14 @@ const signedPayload = "0xsigned-payload";
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 const actionMeta = {
-  actionId: "classic-action-1",
+  actionId: "yield-action-1",
   actionType: "stake",
   address,
   amount: "1",
   inputToken: undefined,
   providersDetails: [],
   yieldId,
-} as unknown as ClassicActionMeta;
+} as unknown as YieldActionMeta;
 
 type WorkflowTestCapabilityOverrides = {
   readonly borrow?: Partial<BorrowOperations["Service"]>;
@@ -93,7 +93,7 @@ type WorkflowTestCapabilityOverrides = {
   readonly yieldOperations?: Partial<YieldOperations["Service"]>;
 };
 
-const classicTransaction = (
+const yieldTransaction = (
   id: string,
   overrides: Partial<ActionTransaction> = {}
 ) =>
@@ -177,8 +177,7 @@ const makeCapabilities = (
     ...overrides.borrow,
   },
   initialWalletState:
-    overrides.initialWalletState ??
-    makeConnectedWalletState(classicWalletScope),
+    overrides.initialWalletState ?? makeConnectedWalletState(yieldWalletScope),
   wallet: {
     signMessage: () => Effect.succeed(signedPayload),
     signTransaction: () =>
@@ -213,9 +212,7 @@ const makeWorkflowFromService = ({
   capabilities,
 }: {
   readonly capabilities: TransactionWorkflowTestKitOptions;
-  readonly key:
-    | ClassicTransactionWorkflowInput
-    | BorrowTransactionWorkflowInput;
+  readonly key: YieldTransactionWorkflowInput | BorrowTransactionWorkflowInput;
 }) =>
   makeTransactionWorkflowTestKit(capabilities).pipe(
     // Built in the caller's Scope: the service outlives the workflow, as the
@@ -239,7 +236,7 @@ const waitForState = (
   );
 
 const runToCompletion = (
-  key: ClassicTransactionWorkflowInput | BorrowTransactionWorkflowInput,
+  key: YieldTransactionWorkflowInput | BorrowTransactionWorkflowInput,
   capabilities: TransactionWorkflowTestKitOptions
 ) =>
   Effect.scoped(
@@ -259,10 +256,10 @@ describe("transaction workflow runtime", () => {
     "publishes owner-scoped lifecycle facts around a successful workflow",
     () =>
       Effect.gen(function* () {
-        const key = new ClassicTransactionWorkflowInput({
+        const key = new YieldTransactionWorkflowInput({
           actionMeta,
-          transactions: [classicTransaction("lifecycle-events")],
-          walletScope: classicWalletScope,
+          transactions: [yieldTransaction("lifecycle-events")],
+          walletScope: yieldWalletScope,
           yieldId,
         });
         const kit = yield* makeTransactionWorkflowTestKit(makeCapabilities());
@@ -278,7 +275,7 @@ describe("transaction workflow runtime", () => {
             expect(yield* kit.events.publishedEvents).toEqual([
               {
                 _tag: "TransactionWorkflowStarted",
-                owner: walletScopeOwnerKey(classicWalletScope),
+                owner: walletScopeOwnerKey(yieldWalletScope),
               },
             ]);
 
@@ -290,12 +287,12 @@ describe("transaction workflow runtime", () => {
         expect(yield* kit.events.publishedEvents).toEqual([
           {
             _tag: "TransactionWorkflowStarted",
-            owner: walletScopeOwnerKey(classicWalletScope),
+            owner: walletScopeOwnerKey(yieldWalletScope),
           },
           {
             _tag: "TransactionWorkflowEnded",
-            owner: walletScopeOwnerKey(classicWalletScope),
-            workflowKind: "Classic",
+            owner: walletScopeOwnerKey(yieldWalletScope),
+            workflowKind: "Yield",
           },
         ]);
       })
@@ -303,10 +300,10 @@ describe("transaction workflow runtime", () => {
 
   it.effect("closes its state Stream when the workflow Scope closes", () =>
     Effect.gen(function* () {
-      const key = new ClassicTransactionWorkflowInput({
+      const key = new YieldTransactionWorkflowInput({
         actionMeta,
-        transactions: [classicTransaction("scope-close")],
-        walletScope: classicWalletScope,
+        transactions: [yieldTransaction("scope-close")],
+        walletScope: yieldWalletScope,
         yieldId,
       });
 
@@ -332,7 +329,7 @@ describe("transaction workflow runtime", () => {
   );
 
   it.effect(
-    "auto-starts classic signed-payload and broadcast submission paths",
+    "auto-starts yield signed-payload and broadcast submission paths",
     () =>
       Effect.gen(function* () {
         const submitSigned = vi.fn(() =>
@@ -343,10 +340,10 @@ describe("transaction workflow runtime", () => {
           } as never)
         );
         yield* runToCompletion(
-          new ClassicTransactionWorkflowInput({
+          new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("classic-signed")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("yield-signed")],
+            walletScope: yieldWalletScope,
             yieldId,
           }),
           makeCapabilities({
@@ -356,7 +353,7 @@ describe("transaction workflow runtime", () => {
 
         expect(submitSigned).toHaveBeenCalledWith({
           payload: { signedTransaction: signedPayload },
-          transactionId: "classic-signed",
+          transactionId: "yield-signed",
         });
 
         const submitHash = vi.fn(() =>
@@ -367,10 +364,10 @@ describe("transaction workflow runtime", () => {
           } as never)
         );
         yield* runToCompletion(
-          new ClassicTransactionWorkflowInput({
+          new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("classic-broadcast")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("yield-broadcast")],
+            walletScope: yieldWalletScope,
             yieldId,
           }),
           makeCapabilities({
@@ -387,7 +384,7 @@ describe("transaction workflow runtime", () => {
 
         expect(submitHash).toHaveBeenCalledWith({
           payload: { hash: transactionHash },
-          transactionId: "classic-broadcast",
+          transactionId: "yield-broadcast",
         });
       })
   );
@@ -441,10 +438,10 @@ describe("transaction workflow runtime", () => {
           Effect.gen(function* () {
             const machine = yield* makeWorkflowFromService({
               capabilities,
-              key: new ClassicTransactionWorkflowInput({
+              key: new YieldTransactionWorkflowInput({
                 actionMeta,
-                transactions: [classicTransaction("retry")],
-                walletScope: classicWalletScope,
+                transactions: [yieldTransaction("retry")],
+                walletScope: yieldWalletScope,
                 yieldId,
               }),
             });
@@ -757,10 +754,10 @@ describe("transaction workflow runtime", () => {
           Effect.gen(function* () {
             yield* makeWorkflowFromService({
               capabilities,
-              key: new ClassicTransactionWorkflowInput({
+              key: new YieldTransactionWorkflowInput({
                 actionMeta,
-                transactions: [classicTransaction("pending")],
-                walletScope: classicWalletScope,
+                transactions: [yieldTransaction("pending")],
+                walletScope: yieldWalletScope,
                 yieldId,
               }),
             });
@@ -776,31 +773,31 @@ describe("transaction workflow runtime", () => {
     })
   );
 
-  it.effect("completes a live classic transaction when the API skips it", () =>
+  it.effect("completes a live yield transaction when the API skips it", () =>
     Effect.gen(function* () {
-      const getClassicStatus = vi.fn(() =>
+      const getYieldStatus = vi.fn(() =>
         Effect.succeed({ explorerUrl: null, status: "SKIPPED" as const })
       );
 
       const result = yield* runToCompletion(
-        new ClassicTransactionWorkflowInput({
+        new YieldTransactionWorkflowInput({
           actionMeta,
-          transactions: [classicTransaction("skipped-live")],
-          walletScope: classicWalletScope,
+          transactions: [yieldTransaction("skipped-live")],
+          walletScope: yieldWalletScope,
           yieldId,
         }),
         makeCapabilities({
-          yieldOperations: { getTransactionStatus: getClassicStatus as never },
+          yieldOperations: { getTransactionStatus: getYieldStatus as never },
         })
       );
 
       expect(result.finalState._tag).toBe("Completed");
-      expect(getClassicStatus).toHaveBeenCalledOnce();
+      expect(getYieldStatus).toHaveBeenCalledOnce();
     })
   );
 
   it.effect(
-    "uses the classic confirmation interval and exhausts its attempt limit",
+    "uses the yield confirmation interval and exhausts its attempt limit",
     () =>
       Effect.gen(function* () {
         let checks = 0;
@@ -824,10 +821,10 @@ describe("transaction workflow runtime", () => {
                     }),
                 },
               }),
-              key: new ClassicTransactionWorkflowInput({
+              key: new YieldTransactionWorkflowInput({
                 actionMeta,
-                transactions: [classicTransaction("exhausted")],
-                walletScope: classicWalletScope,
+                transactions: [yieldTransaction("exhausted")],
+                walletScope: yieldWalletScope,
                 yieldId,
               }),
             });
@@ -1240,10 +1237,10 @@ describe("transaction workflow leave guard", () => {
     () =>
       Effect.scoped(
         Effect.gen(function* () {
-          const key = new ClassicTransactionWorkflowInput({
+          const key = new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("leave-guard")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("leave-guard")],
+            walletScope: yieldWalletScope,
             yieldId,
           });
           const kit = yield* makeTransactionWorkflowTestKit(
@@ -1346,7 +1343,7 @@ describe("held broadcast hash registration", () => {
   }: {
     readonly capabilities: TransactionWorkflowTestKitOptions;
     readonly key:
-      | ClassicTransactionWorkflowInput
+      | YieldTransactionWorkflowInput
       | BorrowTransactionWorkflowInput;
     readonly leaveAfter?: Effect.Effect<void>;
   }) {
@@ -1586,7 +1583,7 @@ describe("held broadcast hash registration", () => {
   );
 
   it.effect(
-    "registers a held Classic hash through the Yield transaction API",
+    "registers a held Yield hash through the Yield transaction API",
     () =>
       Effect.gen(function* () {
         const sent: Array<unknown> = [];
@@ -1610,24 +1607,24 @@ describe("held broadcast hash registration", () => {
               submitTransactionHashInBackground: submitHash,
             },
           }),
-          key: new ClassicTransactionWorkflowInput({
+          key: new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("classic-held")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("yield-held")],
+            walletScope: yieldWalletScope,
             yieldId,
           }),
         });
 
-        const classicHash = {
+        const yieldHash = {
           payload: { hash: transactionHash },
-          transactionId: "classic-held",
+          transactionId: "yield-held",
         };
-        expect(sent).toEqual([classicHash, classicHash]);
+        expect(sent).toEqual([yieldHash, yieldHash]);
       })
   );
 
   it.effect(
-    "registers a Classic hash the wallet broadcasts after the user left mid-signing",
+    "registers a Yield hash the wallet broadcasts after the user left mid-signing",
     () =>
       Effect.gen(function* () {
         const wallet = yield* answerLater();
@@ -1649,10 +1646,10 @@ describe("held broadcast hash registration", () => {
               submitTransactionHashInBackground: submitHash,
             },
           }),
-          key: new ClassicTransactionWorkflowInput({
+          key: new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("classic-late")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("yield-late")],
+            walletScope: yieldWalletScope,
             yieldId,
           }),
           leaveAfter: Deferred.await(wallet.requested),
@@ -1667,7 +1664,7 @@ describe("held broadcast hash registration", () => {
 
         expect(submitHash).toHaveBeenCalledExactlyOnceWith({
           payload: { hash: transactionHash },
-          transactionId: "classic-late",
+          transactionId: "yield-late",
         });
       })
   );
@@ -1728,10 +1725,10 @@ describe("held broadcast hash registration", () => {
               submitTransactionHashInBackground: submitHash,
             },
           }),
-          key: new ClassicTransactionWorkflowInput({
+          key: new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("classic-late-signed")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("yield-late-signed")],
+            walletScope: yieldWalletScope,
             yieldId,
           }),
           leaveAfter: Deferred.await(wallet.requested),
@@ -1764,10 +1761,10 @@ describe("held broadcast hash registration", () => {
               submitTransactionHashInBackground: submitHash,
             },
           }),
-          key: new ClassicTransactionWorkflowInput({
+          key: new YieldTransactionWorkflowInput({
             actionMeta,
-            transactions: [classicTransaction("classic-unbroadcast")],
-            walletScope: classicWalletScope,
+            transactions: [yieldTransaction("yield-unbroadcast")],
+            walletScope: yieldWalletScope,
             yieldId,
           }),
         });

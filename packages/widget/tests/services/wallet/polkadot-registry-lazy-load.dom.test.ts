@@ -5,7 +5,7 @@ import { vi } from "vitest";
 import type { Network } from "../../../src/domain/network/network";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
-import type { ClassicTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
+import type { YieldTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
 import { runWalletEffect } from "../../utils/run-wallet-effect";
 import { unusedWalletConnectProtocol } from "../../utils/wallet-connect";
 
@@ -158,7 +158,7 @@ const txMeta = {
   structuredTransaction: null,
   txId: "tx-id",
   txType: "STAKE",
-} as unknown as ClassicTransactionMeta;
+} as unknown as YieldTransactionMeta;
 
 describe("Polkadot registry lazy load", () => {
   it.live(
@@ -215,13 +215,13 @@ describe("Polkadot registry lazy load", () => {
         expect(evaluated.polkadotLedgerTransaction).toBe(0);
 
         yield* prepareTransaction({
-          family: "classic",
+          family: "yield",
           network: "cosmos",
           tx: "{}",
           txMeta: {
             ...txMeta,
             rawArguments: { validatorAddress: "cosmosvaloper1validator" },
-          } as ClassicTransactionMeta,
+          } as YieldTransactionMeta,
         });
 
         expect(evaluated.polkadotLedgerTransaction).toBe(0);
@@ -235,7 +235,7 @@ describe("Polkadot registry lazy load", () => {
         const prepareTransaction = yield* makePrepareLedgerLiveTransaction;
 
         yield* prepareTransaction({
-          family: "classic",
+          family: "yield",
           network: "polkadot",
           tx: polkadotLedgerTx,
           txMeta,
@@ -245,7 +245,7 @@ describe("Polkadot registry lazy load", () => {
         expect(buildPolkadotLedgerTransaction).toHaveBeenCalledTimes(1);
 
         yield* prepareTransaction({
-          family: "classic",
+          family: "yield",
           network: "polkadot",
           tx: polkadotLedgerTx,
           txMeta,

@@ -325,14 +325,14 @@ const invalidationsBeforeTeardown = Effect.fn("invalidationsBeforeTeardown")(
 );
 
 describe("Transaction Workflow resource event projection", () => {
-  it.effect("immediately invalidates Classic resources for a stale owner", () =>
+  it.effect("immediately invalidates Yield resources for a stale owner", () =>
     Effect.scoped(
       Effect.gen(function* () {
         const projection = yield* makeProjectionHarness(
           disconnectedWalletState
         );
 
-        yield* projection.endWorkflow("Classic");
+        yield* projection.endWorkflow("Yield");
         yield* projection.awaitInvalidationCount(1);
 
         expect(yield* projection.invalidations).toEqual([
@@ -348,13 +348,13 @@ describe("Transaction Workflow resource event projection", () => {
   );
 
   it.effect(
-    "reconciles Classic balances and positions four more times at ten-second intervals",
+    "reconciles Yield balances and positions four more times at ten-second intervals",
     () =>
       Effect.scoped(
         Effect.gen(function* () {
           const projection = yield* makeProjectionHarness(connectedWalletState);
 
-          yield* projection.endWorkflow("Classic");
+          yield* projection.endWorkflow("Yield");
           yield* projection.awaitInvalidationCount(1);
 
           expect(yield* projection.invalidations).toEqual([
@@ -410,11 +410,11 @@ describe("Transaction Workflow resource event projection", () => {
         Effect.gen(function* () {
           const projection = yield* makeProjectionHarness(connectedWalletState);
 
-          yield* projection.endWorkflow("Classic");
+          yield* projection.endWorkflow("Yield");
           yield* projection.awaitInvalidationCount(1);
 
           yield* projection.advanceTime("5 seconds");
-          yield* projection.endWorkflow("Classic");
+          yield* projection.endWorkflow("Yield");
           yield* projection.awaitInvalidationCount(2);
 
           yield* projection.advanceTime("5 seconds");
@@ -443,7 +443,7 @@ describe("Transaction Workflow resource event projection", () => {
         Effect.gen(function* () {
           const projection = yield* makeProjectionHarness(connectedWalletState);
 
-          yield* projection.endWorkflow("Classic");
+          yield* projection.endWorkflow("Yield");
           yield* projection.awaitInvalidationCount(1);
 
           yield* projection.advanceTime("5 seconds");

@@ -6,8 +6,8 @@ import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { EarnBalance, type EarnYield } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import { positionDetailsStakeViewAtom } from "../../../src/features/position-details/state/dashboard-stake-facade";
-import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/dashboard-stake-machine";
+import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/stake-entry";
+import { positionDetailsStakeViewAtom } from "../../../src/features/position-details/state/stake-view";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   YieldOpportunityKey,

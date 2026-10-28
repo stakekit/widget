@@ -1,0 +1,264 @@
+import { useAtomValue } from "@effect/atom-react";
+import { capitalize, toLowerCase } from "effect/String";
+import { motion } from "motion/react";
+import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
+import type {
+  PendingActionLabelContext,
+  YieldPendingActionType,
+} from "../../../../../domain/action/pending-action";
+import type { ConfidentialBatchSide } from "../../../../../domain/earn/confidential";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import {
+  type ExtendedYieldType,
+  isEthenaUsdeStaking,
+} from "../../../../../domain/earn/yield";
+import type { Token } from "../../../../../domain/token/token";
+import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
+import { Box } from "../../../../../shared/ui/primitives/box";
+import { CheckCircleIcon } from "../../../../../shared/ui/primitives/icons/check-circle";
+import { Image } from "../../../../../shared/ui/primitives/image";
+import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../../../widget-shell/views";
+import { formatNextBatchTiming } from "../../../../yield-summary/index";
+import { formatTransactionTypeLabel } from "../../../model/yield-transaction-workflow";
+import { useComplete } from "../hooks/use-complete.hook";
+
+type CompletePageModel = ReturnType<typeof useComplete>;
+
+type Props = {
+  completion: CompletePageModel;
+  token: Token | null;
+  metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
+  network: string;
+  amount: string;
+  pendingActionType?: YieldPendingActionType;
+  pendingActionLabelContext?: PendingActionLabelContext;
+  /** The request was queued into this vault's next batch, not settled. */
+  batched?: BatchedRequest | null;
+  providersDetails: ReadonlyArray<{
+    logo?: string;
+    name?: string;
+  }> | null;
+  yieldType: ExtendedYieldType | null;
+  integrationId: string;
+};
+
+type BatchedRequest = Readonly<{
+  readonly side: ConfidentialBatchSide;
+  readonly yieldDto: EarnYieldWithProvider;
+}>;
+
+type CompletePageProps = Omit<Props, "completion">;
+
+export const CompletePageComponent = ({
+  amount,
+  metadata,
+  network,
+  token,
+  pendingActionType,
+  pendingActionLabelContext,
+  batched = null,
+  yieldType,
+  providersDetails,
+  integrationId,
+  completion,
+}: Props) => {
+  const { t } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
+
+  const {
+    cta,
+    onViewTransactionClick,
+    unstakeMatch,
+    pendingActionMatch,
+    urls,
+  } = completion;
+  const translationContext = isEthenaUsdeStaking(integrationId)
+    ? "ethena_usde"
+    : undefined;
+  const getSuccessKey = () => {
+    if (batched?.side === "redemption") {
+      return "complete.withdrawal_submitted" as const;
+    }
+    if (unstakeMatch) return "complete.successfully_unstaked" as const;
+    if (pendingActionMatch) {
+      return "complete.successfully_pending_action" as const;
+    }
+    if (batched) return "complete.deposit_submitted" as const;
+    return "complete.successfully_staked" as const;
+  };
+  const successKey = getSuccessKey();
+
+  const getAction = () => {
+    if (!yieldType) return "";
+    if (unstakeMatch) {
+      return t(`complete.unstake.${yieldType}`, {
+        context: translationContext,
+      });
+    }
+    return t(`complete.stake.${yieldType}`, {
+      context: translationContext,
+    });
+  };
+  const action = getAction();
+  const nextBatch = batched
+    ? formatNextBatchTiming({
+        now: presentationTime?.now ?? null,
+        side: batched.side,
+        t,
+        yieldDto: batched.yieldDto,
+      })
+    : null;
+  const getNextBatchNote = () => {
+    if (!nextBatch) return null;
+    return nextBatch._tag === "due"
+      ? t("complete.next_batch_imminent")
+      : t("complete.next_batch_in", { duration: nextBatch.duration });
+  };
+  const nextBatchNote = getNextBatchNote();
+
+  return (
+    <AnimationPage>
+      <PageContainer>
+        <Box
+          flex={1}
+          display="flex"
+          flexDirection="column"
+          justifyContent="space-between"
+          my="4"
+        >
+          <Box
+            flex={1}
+            display="flex"
+            flexDirection="column"
+            justifyContent="center"
+            alignItems="center"
+            textAlign="center"
+          >
+            {token && metadata ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.1 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  transition: { delay: 0.2, duration: 0.3 },
+                }}
+              >
+                <Box my="4">
+                  <TokenIcon
+                    tokenLogoHw="32"
+                    tokenNetworkLogoHw="8"
+                    token={token}
+                    metadata={metadata}
+                  />
+                </Box>
+              </motion.div>
+            ) : null}
+
+            <motion.div
+              initial={{ opacity: 0, translateX: "-40px" }}
+              animate={{
+                opacity: 1,
+                translateX: 0,
+                transition: { delay: 0.2, duration: 0.8 },
+              }}
+            >
+              <Heading overflowWrap="anywhere" variant={{ level: "h3" }}>
+                {t(successKey, {
+                  action,
+                  amount,
+                  tokenNetwork: network,
+                  pendingAction: t(
+                    `complete.pending_action.${
+                      pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
+                    }` as const,
+                    {
+                      context: pendingActionLabelContext ?? translationContext,
+                    }
+                  ),
+                })}
+              </Heading>
+            </motion.div>
+
+            {nextBatchNote ? (
+              <Text marginTop="2" variant={{ type: "muted" }}>
+                {nextBatchNote}
+              </Text>
+            ) : null}
+
+            {!unstakeMatch && !pendingActionMatch
+              ? providersDetails?.map((v, i) => (
+                  <Box
+                    key={i}
+                    display="flex"
+                    marginTop="2"
+                    justifyContent="center"
+                    alignItems="center"
+                    gap="1"
+                  >
+                    {v.logo && (
+                      <Image
+                        imgProps={{ borderRadius: "full" }}
+                        wrapperProps={{ hw: "5" }}
+                        src={v.logo}
+                        fallbackName={v.name || v.logo}
+                      />
+                    )}
+                    <Text variant={{ type: "muted" }}>
+                      {t("complete.via", { providerName: v.name })}
+                    </Text>
+                  </Box>
+                ))
+              : null}
+
+            {urls.map((val) => (
+              <Box
+                key={val.url}
+                marginTop="4"
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                as="button"
+                onClick={() => onViewTransactionClick(val.url)}
+              >
+                <Box
+                  marginRight="1"
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <CheckCircleIcon width={22} height={22} />
+                </Box>
+                <Text variant={{ type: "muted" }}>
+                  {t("complete.view_transaction", {
+                    type: capitalize(
+                      toLowerCase(
+                        formatTransactionTypeLabel(val.type, t, {
+                          context: isEthenaUsdeStaking(integrationId)
+                            ? "ETHENA_USDE"
+                            : undefined,
+                        })
+                      )
+                    ),
+                  })}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        <PageCtaButton cta={cta} />
+      </PageContainer>
+    </AnimationPage>
+  );
+};
+
+export const CompletePage = (props: CompletePageProps) => {
+  return <CompletePageComponent {...props} completion={useComplete()} />;
+};

@@ -28,6 +28,18 @@ mount for the Application Runtime Generation.
 Earn presentation, terms-of-service acknowledgement, or wallet catalogue.
 Features read capabilities, never variant names.
 
+**Layout**: The page arrangement a Widget Instance presents: the Compact Layout
+or the Dashboard Layout. It is independent of the host variant.
+_Avoid_: variant, flavour, classic
+
+**Compact Layout**: The single-column Layout that shows one page at a time
+under the widget header, with Earn, positions, and activity as tabs.
+_Avoid_: classic, widget variant
+
+**Dashboard Layout**: The wide Layout with Yield Category, Borrow, Manage, and
+Activity tabs, showing details beside the page.
+_Avoid_: dashboard variant
+
 **Widget Domain Event**: An immutable fact that a meaningful occurrence
 completed. It carries identity for observers but does not prescribe a mutation.
 
@@ -149,8 +161,12 @@ is distinct from a known zero balance.
 **Validator Policy**: Host Configuration that constrains eligible or preferred
 validators for a network.
 
+**Yield Category**: A kind of yield (staking, DeFi, or real-world assets) by
+which yields are grouped, ordered, and filtered.
+_Avoid_: dashboard category
+
 **Yield Provider Order**: Host Configuration that ranks yield providers within
-each dashboard category, ordering that category's yields and its default yield.
+each Yield Category, ordering that category's yields and its default yield.
 It ranks yields, never validators.
 
 **Eligible Validator**: A validator satisfying the selected yield's
@@ -296,7 +312,15 @@ claiming rewards, withdrawing, or cancelling a pending deposit.
 surface and Wallet Scope Owner.
 
 **Transaction Flow**: A Wallet Scope-bound journey through Review, Steps, and
-Complete. Classic and Borrow flows share lifecycle language, not implementation.
+Complete. Yield and Borrow Transaction Flows share lifecycle language, not
+implementation.
+
+**Yield Transaction Flow**: A Transaction Flow that enters, exits, or manages a
+yield position through a Yield Action.
+_Avoid_: classic flow
+
+**Borrow Transaction Flow**: A Transaction Flow that applies a Borrow action to
+a new or existing Market Position.
 
 **Review**: The Transaction Flow stage where the user inspects what will happen
 and confirms it.
@@ -307,7 +331,7 @@ while a Transaction Workflow runs.
 **Complete**: The Transaction Flow stage shown once its Transaction Workflow
 completes.
 
-**Manage**: A Classic Transaction Flow that runs one Pending Action on a
+**Manage**: A Yield Transaction Flow that runs one Pending Action on a
 position balance.
 
 **Flow Session**: One user attempt to complete a Transaction Flow, with immutable
@@ -365,6 +389,6 @@ details.
 **Continuable Yield Action**: A Yield Action waiting for its next step that is
 still recent enough to continue.
 
-**Yield Action Continuation**: A Classic Transaction Flow confirmed from an
+**Yield Action Continuation**: A Yield Transaction Flow confirmed from an
 Activity details Review for a Continuable Yield Action. It executes the existing
 Yield Action without creating an Action Preview or another Yield Action.

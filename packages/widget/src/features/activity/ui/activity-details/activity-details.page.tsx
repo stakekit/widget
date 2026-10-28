@@ -23,12 +23,12 @@ import { ClockClockWiseIcon } from "../../../../shared/ui/primitives/icons/clock
 import { ExternalLinkIcon } from "../../../../shared/ui/primitives/icons/external-link";
 import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useTrackEvent, useTrackPage } from "../../../tracking/index";
+import { PageCtaButton } from "../../../widget-shell/views";
 import {
   formatTransactionTypeLabel,
   useYieldActionContinuationReview,
-} from "../../../classic-transaction-flow/index";
-import { useTrackEvent, useTrackPage } from "../../../tracking/index";
-import { PageCtaButton } from "../../../widget-shell/views";
+} from "../../../yield-transaction-flow/index";
 import type {
   BorrowActivityItem,
   YieldActivityItem,
@@ -328,7 +328,7 @@ const Receipt = ({
 
   return (
     <Box className={styles.page} data-rk="activity-details-receipt">
-      {presentation === "Classic" ? (
+      {presentation === "Compact" ? (
         <Box
           as="button"
           aria-label={t("activity.details.back")}

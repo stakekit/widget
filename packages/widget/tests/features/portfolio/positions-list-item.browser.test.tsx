@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
 import type { PositionItem } from "../../../src/features/portfolio/state/read-models/positions";
-import { PositionsListItem as ClassicPositionsListItem } from "../../../src/features/portfolio/ui/classic/positions-page/components/positions-list-item";
+import { PositionsListItem as CompactPositionsListItem } from "../../../src/features/portfolio/ui/compact/positions-page/components/positions-list-item";
 import { PositionsListItem as DashboardPositionsListItem } from "../../../src/features/portfolio/ui/dashboard/positions/components/positions-list-item";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import {
@@ -43,7 +43,7 @@ const hookState = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "../../../src/features/portfolio/ui/classic/positions-page/hooks/use-position-list-item",
+  "../../../src/features/portfolio/ui/compact/positions-page/hooks/use-position-list-item",
   () => ({ usePositionListItem: () => hookState.details })
 );
 
@@ -107,8 +107,8 @@ const renderRow = (row: ReactNode) => {
 
 const presentations = [
   {
-    name: "classic",
-    row: (item: PositionItem) => <ClassicPositionsListItem item={item} />,
+    name: "compact",
+    row: (item: PositionItem) => <CompactPositionsListItem item={item} />,
   },
   {
     name: "dashboard",
@@ -221,12 +221,12 @@ describe("Earn position list item", () => {
     await expect.element(dashboard.getByText("4.2%")).toBeInTheDocument();
     dashboard.unmount();
 
-    const classic = await renderRow(presentations[0].row(createItem()));
+    const compact = await renderRow(presentations[0].row(createItem()));
 
     await expect
-      .element(classic.getByText(integrationData.metadata.name))
+      .element(compact.getByText(integrationData.metadata.name))
       .toBeInTheDocument();
-    await expect.element(classic.getByText("4.2%")).not.toBeInTheDocument();
+    await expect.element(compact.getByText("4.2%")).not.toBeInTheDocument();
   });
 
   it("shows a dash for a missing amount only in the dashboard", async () => {
@@ -238,13 +238,13 @@ describe("Earn position list item", () => {
       .toBeInTheDocument();
     dashboard.unmount();
 
-    const classic = await renderRow(presentations[0].row(createItem()));
+    const compact = await renderRow(presentations[0].row(createItem()));
 
     await expect
-      .element(classic.getByText(integrationData.metadata.name))
+      .element(compact.getByText(integrationData.metadata.name))
       .toBeInTheDocument();
     await expect
-      .element(classic.getByText("-", { exact: true }))
+      .element(compact.getByText("-", { exact: true }))
       .not.toBeInTheDocument();
   });
 

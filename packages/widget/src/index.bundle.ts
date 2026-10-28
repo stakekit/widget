@@ -53,10 +53,10 @@ export type {
   TronTx,
 } from "./public-api/types.js";
 export {
-  DashboardYieldCategory,
   EvmChainIds,
   MiscChainIds,
   SubstrateChainIds,
+  YieldCategory,
   YieldProviderId,
 } from "./public-api/types.js";
 

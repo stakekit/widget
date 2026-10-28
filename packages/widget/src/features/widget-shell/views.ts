@@ -3,7 +3,7 @@
 // `composition.ts` so consumers do not pull the shell page graph. Generic UI kit
 // components live in `shared/ui/components` and are imported directly.
 
-export { headerContainer } from "./classic-layout/styles.css";
+export { headerContainer } from "./compact-layout/styles.css";
 export {
   BackButton,
   BackButtonProvider,

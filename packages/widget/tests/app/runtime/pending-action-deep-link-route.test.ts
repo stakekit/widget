@@ -7,8 +7,8 @@ import {
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import type { ClassicFlowSession } from "../../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { findPendingActionDeepLinkTarget } from "../../../src/features/earn/model/pending-action-deep-link";
+import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import {
   type WidgetNavigationCommand,
   WidgetNavigationError,
@@ -36,7 +36,7 @@ const scope = new WalletScopeKey({ address, network: "ethereum" });
 const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
   maintenance: false,
   pendingAction: {
-    _tag: "StartClassicFlow",
+    _tag: "StartYieldFlow",
     input: {
       intake: { walletScope: ownerScope } as never,
       mount: {
@@ -103,16 +103,16 @@ const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
 });
 
 /** The navigation state Start carries to Review. */
-type ClassicFlowNavigationState = Readonly<{
-  readonly classicFlowSession?: ClassicFlowSession;
+type YieldFlowNavigationState = Readonly<{
+  readonly yieldFlowSession?: YieldFlowSession;
 }>;
 
 /** The Flow Sessions Start navigated to Review with. */
 const startedSessions = (commands: ReadonlyArray<WidgetNavigationCommand>) =>
   commands.flatMap((command) => {
-    const state = command.state as ClassicFlowNavigationState | undefined;
-    return command._tag === "Push" && state?.classicFlowSession
-      ? [{ path: command.path, session: state.classicFlowSession }]
+    const state = command.state as YieldFlowNavigationState | undefined;
+    return command._tag === "Push" && state?.yieldFlowSession
+      ? [{ path: command.path, session: state.yieldFlowSession }]
       : [];
   });
 
@@ -157,7 +157,7 @@ describe("DeepLinkCoordinator", () => {
         pending,
       ]);
 
-      expect(pending.pendingAction?._tag).toBe("StartClassicFlow");
+      expect(pending.pendingAction?._tag).toBe("StartYieldFlow");
       expect(started).toHaveLength(1);
       expect(started[0]?.path).toBe(
         "/positions/yield-1/balance-1/pending-action/review"

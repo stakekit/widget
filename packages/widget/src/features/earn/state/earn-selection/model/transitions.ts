@@ -1,5 +1,5 @@
 import type { TronResource } from "../../../../../domain/action/tron-resource";
-import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type {
   EarnValidator,
   EarnValidatorKey,
@@ -27,7 +27,7 @@ const resetYieldIntent = (
 
 export const selectCategory = (
   intent: EarnEntryIntent,
-  category: DashboardYieldCategory
+  category: YieldCategory
 ): EarnEntryIntent =>
   intent.selectedCategory === category
     ? intent

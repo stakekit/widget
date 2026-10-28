@@ -257,7 +257,7 @@ const makeWallet = (
   callbacks: Pick<SKBorrowWallet, "sendBorrowTransaction"> &
     Partial<Pick<SKBorrowWallet, "signTypedData">>
 ): SKBorrowWallet => ({
-  sendTransaction: async () => "classic-hash",
+  sendTransaction: async () => "yield-hash",
   signMessage: async () => "signature",
   signTypedData: async () => ({ type: "success", signature: "0xsignature" }),
   switchChain: async () => {},

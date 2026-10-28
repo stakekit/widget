@@ -1,7 +1,7 @@
 import { Match } from "effect";
 import { startsWith } from "effect/String";
 import { useLocation, useNavigate } from "react-router";
-import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
+import type { YieldCategory } from "../../../../domain/earn/contract";
 import { useEarnYieldSelection } from "../../../../features/earn/index";
 import { useTrackEvent } from "../../../../features/tracking/index";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
@@ -33,8 +33,8 @@ export const DashboardTabs = ({
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
   const { selectCategory, view: yieldSelection } = useEarnYieldSelection();
-  const availableDashboardYieldCategories = yieldSelection.availableCategories;
-  const selectedDashboardYieldCategory = yieldSelection.selectedCategory;
+  const availableYieldCategories = yieldSelection.availableCategories;
+  const selectedYieldCategory = yieldSelection.selectedCategory;
   const location = useLocation();
 
   const selectedTab = Match.value(location.pathname).pipe(
@@ -50,13 +50,13 @@ export const DashboardTabs = ({
     navigate(tabsMap[selected]);
   };
 
-  const onYieldCategoryPress = (category: DashboardYieldCategory) => {
-    if (selectedTab === "earn" && selectedDashboardYieldCategory === category) {
+  const onYieldCategoryPress = (category: YieldCategory) => {
+    if (selectedTab === "earn" && selectedYieldCategory === category) {
       return;
     }
 
     trackEvent("tabClicked", { selected: category });
-    if (selectedDashboardYieldCategory !== category) onYieldCategoryChange();
+    if (selectedYieldCategory !== category) onYieldCategoryChange();
     selectCategory(category);
     navigate("/");
   };
@@ -67,7 +67,7 @@ export const DashboardTabs = ({
   const categoryGroupingEnabled = yieldGrouping === "category";
   const showGroupDivider =
     categoryGroupingEnabled &&
-    (availableDashboardYieldCategories.length > 0 || borrowEnabled);
+    (availableYieldCategories.length > 0 || borrowEnabled);
 
   return (
     <Box className={combineRecipeWithVariant({ rec: tabsWrapper, variant })}>
@@ -76,11 +76,10 @@ export const DashboardTabs = ({
         data-rk="tabs-section"
       >
         {categoryGroupingEnabled ? (
-          availableDashboardYieldCategories.map((category) => (
+          availableYieldCategories.map((category) => (
             <DashboardTab
               isSelected={
-                selectedTab === "earn" &&
-                selectedDashboardYieldCategory === category
+                selectedTab === "earn" && selectedYieldCategory === category
               }
               key={category}
               onTabPress={() => onYieldCategoryPress(category)}

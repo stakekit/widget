@@ -501,7 +501,7 @@ describe("ZamaService", () => {
   );
 
   it.effect(
-    "forgets the owner's revealed balances once a Classic workflow moves funds",
+    "forgets the owner's revealed balances once a Yield workflow moves funds",
     () =>
       Effect.gen(function* () {
         const { events, layer } = yield* makeLayer({});
@@ -525,7 +525,7 @@ describe("ZamaService", () => {
           yield* events.publish({
             _tag: "TransactionWorkflowResourcesChanged",
             owner: walletScopeOwnerKey(scope),
-            workflowKind: "Classic",
+            workflowKind: "Yield",
           });
           return yield* values.changes.pipe(
             Stream.filter(

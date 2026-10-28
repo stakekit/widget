@@ -140,7 +140,7 @@ export const makeAdvanceBatch = Effect.gen(function* () {
         workflowId,
       });
 
-    if (context.domain._tag === "Classic") {
+    if (context.domain._tag === "Yield") {
       return { _tag: "Complete", context };
     }
 

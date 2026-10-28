@@ -140,7 +140,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem({ status: "WAITING_FOR_NEXT", withYield: false }),
-      presentation: "Classic",
+      presentation: "Compact",
       providersDetails: [],
     };
 

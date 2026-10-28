@@ -46,7 +46,7 @@ describe("WidgetConfigService", () => {
             WidgetConfigService.layer({
               apiKey: "api-key",
               dashboardVariant: true,
-              dashboardYieldCategoryOrder: ["stake", "stake", "rwa"],
+              yieldCategoryOrder: ["stake", "stake", "rwa"],
               preferredTokenYieldsPerNetwork: {
                 ethereum: {
                   "ETHEREUM-ETH": "ethereum-eth-native-staking",
@@ -62,7 +62,7 @@ describe("WidgetConfigService", () => {
           borrowApiUrl: "https://borrow.yield.xyz",
           borrowEnabled: false,
           dashboardVariant: true,
-          dashboardYieldCategoryOrder: ["stake", "rwa", "defi"],
+          yieldCategoryOrder: ["stake", "rwa", "defi"],
           disableAutoScrollToTop: false,
           disableInitLayoutAnimation: false,
           disableInjectedProviderDiscovery: false,

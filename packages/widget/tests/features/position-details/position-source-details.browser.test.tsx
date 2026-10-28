@@ -2,8 +2,8 @@ import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
-import { PositionSourceDetails } from "../../../src/features/position-details/ui/classic/components/position-source-details";
-import { YieldDetails } from "../../../src/features/position-details/ui/classic/components/yield-details";
+import { PositionSourceDetails } from "../../../src/features/position-details/ui/compact/components/position-source-details";
+import { YieldDetails } from "../../../src/features/position-details/ui/compact/components/yield-details";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import {
   yieldApiProviderFixture,

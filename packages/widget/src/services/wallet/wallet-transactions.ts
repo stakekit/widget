@@ -10,7 +10,7 @@ import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 
-type ClassicProviderDetail = {
+type YieldProviderDetail = {
   readonly name: string;
   readonly address: string | undefined;
   readonly rewardRate: number | undefined;
@@ -19,8 +19,8 @@ type ClassicProviderDetail = {
   readonly logo: string | undefined;
 };
 
-/** Action context the wallet receives with every classic signing request. */
-export type ClassicActionMeta = {
+/** Action context the wallet receives with every yield signing request. */
+export type YieldActionMeta = {
   readonly actionId: YieldAction["id"];
   readonly actionType: YieldAction["type"];
   readonly address: YieldAction["address"];
@@ -30,10 +30,10 @@ export type ClassicActionMeta = {
   readonly yieldId: YieldAction["yieldId"];
   readonly inputToken: Token | undefined;
   // Mutable because the host contract publishes a mutable array.
-  readonly providersDetails: Array<ClassicProviderDetail>;
+  readonly providersDetails: Array<YieldProviderDetail>;
 };
 
-export type ClassicTransactionMeta = ClassicActionMeta & {
+export type YieldTransactionMeta = YieldActionMeta & {
   readonly annotatedTransaction: ActionTransaction["annotatedTransaction"];
   readonly gasEstimate: ActionTransaction["gasEstimate"];
   readonly structuredTransaction: ActionTransaction["structuredTransaction"];
@@ -100,8 +100,8 @@ type WalletSignTransactionInputFields = {
 export type WalletSignTransactionInput = WalletSignTransactionInputFields &
   (
     | {
-        readonly family: "classic";
-        readonly txMeta: ClassicTransactionMeta;
+        readonly family: "yield";
+        readonly txMeta: YieldTransactionMeta;
       }
     | {
         readonly family: "borrow";

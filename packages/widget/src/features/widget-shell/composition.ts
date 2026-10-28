@@ -1,4 +1,4 @@
-export { ClassicLayout } from "./classic-layout";
+export { CompactLayout } from "./compact-layout";
 export { AppContainer } from "./dashboard/components/app-container";
 export { Header as DashboardHeader } from "./dashboard/components/header";
 export { Details } from "./details/details.page.tsx";

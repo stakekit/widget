@@ -14,7 +14,7 @@ type YieldEntrySubmissionDecision =
   | Readonly<{ readonly _tag: "ConnectWallet" }>
   | Readonly<{ readonly _tag: "Invalid" }>
   | Readonly<{ readonly _tag: "KycBlocked" }>
-  | Readonly<{ readonly _tag: "StartClassicFlow" }>
+  | Readonly<{ readonly _tag: "StartYieldFlow" }>
   | Readonly<{ readonly _tag: "Unavailable" }>;
 
 export const resolveYieldEntrySubmission = (
@@ -35,5 +35,5 @@ export const resolveYieldEntrySubmission = (
   if (facts.validationHasErrors) return { _tag: "Invalid" };
   if (!facts.preparationAvailable) return { _tag: "Unavailable" };
   if (facts.kycBlocked) return { _tag: "KycBlocked" };
-  return { _tag: "StartClassicFlow" };
+  return { _tag: "StartYieldFlow" };
 };

@@ -31,7 +31,7 @@ import {
   getDashboardPositionDetailsModel,
   getPositionHeaderBadges,
 } from "../../../model/dashboard-position-details";
-import { usePositionDetails } from "../../classic/hooks/use-position-details";
+import { usePositionDetails } from "../../compact/hooks/use-position-details";
 
 const renderDetailValue = (value: DashboardPositionDetailValue) =>
   typeof value === "string" ? (

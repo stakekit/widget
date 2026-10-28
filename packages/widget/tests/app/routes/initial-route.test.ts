@@ -4,15 +4,15 @@ import { resolveInitialRoutePath } from "../../../src/app/routes/model/initial-r
 const resolve = ({
   borrowAvailable = false,
   tab,
-  variant = "classic",
+  variant = "compact",
 }: {
   readonly borrowAvailable?: boolean;
   readonly tab: "earn" | "positions" | "manage" | "activity" | "borrow" | null;
-  readonly variant?: "classic" | "dashboard";
+  readonly variant?: "compact" | "dashboard";
 }) => resolveInitialRoutePath({ borrowAvailable, tab, variant });
 
 describe("initial route path", () => {
-  it("starts the classic widget on the tab named by the deep link", () => {
+  it("starts the compact widget on the tab named by the deep link", () => {
     expect(resolve({ tab: "positions" })).toBe("/positions");
     expect(resolve({ tab: "manage" })).toBe("/positions");
     expect(resolve({ tab: "earn" })).toBe("/");
@@ -47,7 +47,7 @@ describe("initial route path", () => {
     expect(resolve({ tab: "borrow", variant: "dashboard" })).toBe("/");
   });
 
-  it("does not expose a borrow route in the classic variant", () => {
+  it("does not expose a borrow route in the compact variant", () => {
     expect(resolve({ borrowAvailable: true, tab: "borrow" })).toBe("/");
   });
 });

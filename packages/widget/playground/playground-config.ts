@@ -56,6 +56,26 @@ export const defaultPlaygroundConfig: PlaygroundConfig = {
   extraProps: {},
 };
 
+/**
+ * Host variants whose palette is drawn for one theme only (Utila light, Porto
+ * dark); the theme setting does not apply to them.
+ */
+const singleThemeVariants: Partial<
+  Record<PlaygroundConfig["variant"], PlaygroundConfig["theme"]>
+> = { porto: "dark", utila: "light" };
+
+/** The theme the variant is fixed to, if any. */
+export const fixedVariantTheme = (variant: PlaygroundConfig["variant"]) =>
+  singleThemeVariants[variant];
+
+/** The theme a config mounts the widget with. */
+export const mountedTheme = (config: PlaygroundConfig) =>
+  fixedVariantTheme(config.variant) ?? config.theme;
+
+/** Borrow requires the dashboard variant; the widget rejects it otherwise. */
+export const mountedBorrowEnabled = (config: PlaygroundConfig) =>
+  config.borrowEnabled && config.dashboardVariant;
+
 const searchParam = "playground";
 
 const decodeConfigChanges = Schema.decodeUnknownOption(
