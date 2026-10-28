@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import { isEvmWalletNetwork } from "../../../../domain/wallet/network";
 import type {
@@ -9,7 +8,10 @@ import type {
   WalletSwitchAccountInput,
 } from "../../wallet-commands";
 import type { Chain } from "../../wallet-descriptors";
-import { WalletCapabilityUnavailableError } from "../../wallet-errors";
+import {
+  WalletCapabilityUnavailableError,
+  WalletDecodeError,
+} from "../../wallet-errors";
 import type {
   LedgerConnectorState,
   NormalizedWalletState,
@@ -23,6 +25,7 @@ import {
 } from "../adapters/cosmos/cosmos-connector-meta";
 import { makeCosmosWalletDriver } from "../adapters/cosmos/driver";
 import { makeEvmWalletDriver } from "../adapters/evm/driver";
+import { isEvmAddress } from "../adapters/evm/transaction";
 import { isExternalProviderConnector } from "../adapters/external-provider";
 import { makeExternalProviderWalletDriver } from "../adapters/external-provider/driver";
 import { makeLedgerWalletDriver } from "../adapters/ledger/driver";
@@ -182,7 +185,7 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
       return yield* makeExternalProviderWalletDriver({
         connector,
       }).signTransaction({
-        address: address as Address,
+        address,
         ...input,
       });
     }
@@ -199,11 +202,16 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
     if (isTonConnector(connector)) {
       return yield* makeTonWalletDriver({ connector }).signTransaction(input);
     }
+    if (!isEvmAddress(address)) {
+      return yield* new WalletDecodeError({
+        cause: "Connected account is not an EVM address",
+      });
+    }
     if (isSafeConnector(connector)) {
       return yield* makeSafeWalletDriver({
         connector,
       }).signTransaction({
-        address: address as Address,
+        address,
         family: input.family,
         tx: input.tx,
       });
@@ -212,7 +220,7 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
     return yield* makeEvmWalletDriver({
       sendTransaction: actions.sendEvmTransaction,
     }).signTransaction({
-      account: address as Address,
+      account: address,
       connector,
       family: input.family,
       tx: input.tx,

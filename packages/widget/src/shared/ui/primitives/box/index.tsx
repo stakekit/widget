@@ -25,13 +25,15 @@ export type BoxProps = PropsWithChildren<
     }
 >;
 
+const atomPropertyNames: ReadonlySet<string> = atoms.properties;
+
 export const Box = forwardRef<unknown, BoxProps>(
   ({ children, as = "div", className, ...props }, ref) => {
     const atomsProps: Record<string, unknown> = {};
     const nativeProps: Record<string, unknown> = {};
 
     Object.entries(props).forEach(([key, value]) => {
-      if (atoms.properties.has(key as keyof Atoms)) {
+      if (atomPropertyNames.has(key)) {
         atomsProps[key] = value;
       } else {
         nativeProps[key] = value;

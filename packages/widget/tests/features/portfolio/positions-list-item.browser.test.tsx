@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
+import type { InactiveValidatorStatus } from "../../../src/features/portfolio/state/read-models/position-list-item";
 import type { PositionItem } from "../../../src/features/portfolio/state/read-models/positions";
 import { PositionsListItem as CompactPositionsListItem } from "../../../src/features/portfolio/ui/compact/positions-page/components/positions-list-item";
 import { PositionsListItem as DashboardPositionsListItem } from "../../../src/features/portfolio/ui/dashboard/positions/components/positions-list-item";
@@ -33,7 +34,7 @@ const i18nInstance = createWidgetI18nInstance();
 type RowDetails = {
   readonly integrationData: unknown;
   readonly providersDetails: unknown;
-  readonly inactiveValidator: string | null;
+  readonly inactiveValidator: InactiveValidatorStatus | null;
   readonly rewardRateAverage: string | null;
   readonly totalAmountFormatted: string | null;
   readonly totalAmountUsd: BigNumber | null;
@@ -84,7 +85,6 @@ const createItem = (
   pointsRewardTokenBalances: [],
   hasPendingClaimRewards: false,
   token: integrationData.token,
-  yieldLabelDto: null,
   type: "default",
   ...overrides,
 });
@@ -169,7 +169,7 @@ describe("Earn position list item", () => {
       },
       {
         expected: "Inactive",
-        inactiveValidator: "inactive",
+        inactiveValidator: "other",
         item: { hasPendingClaimRewards: true },
       },
       {
@@ -182,7 +182,7 @@ describe("Earn position list item", () => {
         inactiveValidator: null,
         item: { hasPendingRequest: true },
       },
-    ])(
+    ] as const)(
       "shows the $expected badge first",
       async ({ expected, inactiveValidator, item }) => {
         hookState.details = createDetails({ inactiveValidator });
@@ -219,7 +219,7 @@ describe("Earn position list item", () => {
     const dashboard = await renderRow(presentations[1].row(createItem()));
 
     await expect.element(dashboard.getByText("4.2%")).toBeInTheDocument();
-    dashboard.unmount();
+    await dashboard.unmount();
 
     const compact = await renderRow(presentations[0].row(createItem()));
 
@@ -236,7 +236,7 @@ describe("Earn position list item", () => {
     await expect
       .element(dashboard.getByText("-", { exact: true }))
       .toBeInTheDocument();
-    dashboard.unmount();
+    await dashboard.unmount();
 
     const compact = await renderRow(presentations[0].row(createItem()));
 

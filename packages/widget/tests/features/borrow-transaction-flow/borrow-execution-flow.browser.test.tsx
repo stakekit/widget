@@ -515,7 +515,12 @@ const renderExecution = (
           </Route>
         </Route>
       ),
-      { initialEntries, initialIndex: options.initialIndex }
+      {
+        initialEntries,
+        ...(options.initialIndex === undefined
+          ? {}
+          : { initialIndex: options.initialIndex }),
+      }
     );
 
     const app = yield* Effect.acquireRelease(
@@ -656,7 +661,9 @@ describe("borrow execution flow component", () => {
             args: {
               amount: "25",
               marketId: command.args.marketId,
-              tokenAddress: command.args.tokenAddress,
+              ...(command.args.tokenAddress === undefined
+                ? {}
+                : { tokenAddress: command.args.tokenAddress }),
             },
           },
           summary: {

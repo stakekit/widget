@@ -49,6 +49,7 @@ import {
   type YieldFlowExecutionSource,
   YieldFlowHandoff,
   type YieldFlowSession,
+  type YieldPreviewIntake,
   type YieldTransactionFlowIntake,
 } from "../model/yield-transaction-flow";
 import { makeYieldFlowStakeReviewViewAtom } from "./yield-summary";
@@ -85,10 +86,7 @@ const isRetryablePreviewError = Predicate.isTagged("YieldFlowPreviewError");
 
 /** The preview request a Review of `intake` sends. */
 const getYieldFlowPreviewRequest = (
-  intake: Exclude<
-    YieldTransactionFlowIntake,
-    { readonly _tag: "YieldActionContinuation" }
-  >
+  intake: YieldPreviewIntake
 ): ActionPreviewRequest => {
   switch (intake._tag) {
     case "Enter":

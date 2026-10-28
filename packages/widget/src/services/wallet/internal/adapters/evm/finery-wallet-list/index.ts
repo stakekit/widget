@@ -1,5 +1,4 @@
 import { createStore } from "mipd";
-import type { EIP1193Provider } from "viem";
 import { injected } from "wagmi";
 import { evmChainGroup } from "../../../../../../services/wallet/evm-chain-group";
 import type { Chain, WalletList } from "../../../../wallet-descriptors";
@@ -85,10 +84,6 @@ const safeWalletWC: CommonWalletOptions = {
   chainGroup: evmChainGroup,
 };
 
-const asEip1193Provider = (
-  provider: Record<string, unknown> | undefined
-): EIP1193Provider | undefined => provider as EIP1193Provider | undefined;
-
 export const createFineryWallets = (
   evmChains: Chain[],
   wallets: EvmWallets
@@ -100,7 +95,7 @@ export const createFineryWallets = (
   // listening, so detection sees extensions that appear after bootstrap.
   const store = createStore();
   const announcedProvider = (rdns: string) =>
-    asEip1193Provider(store.findProvider({ rdns })?.provider);
+    store.findProvider({ rdns })?.provider;
 
   const institutionalExtension =
     ({

@@ -7,7 +7,6 @@ import { BitKeepAdapter } from "@tronweb3/tronwallet-adapter-bitkeep";
 import { LedgerAdapter } from "@tronweb3/tronwallet-adapter-ledger";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
 import { Effect, Schema, Stream } from "effect";
-import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import type {
   Chain,
@@ -23,6 +22,7 @@ import {
   walletImages,
 } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { toWagmiAccount } from "../../wagmi-seam";
 import { tron } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
@@ -89,7 +89,7 @@ const createTronConnector = ({
     const accounts = () => {
       const address = wallet.address();
       if (!address) throw new Error("No account found");
-      return [address as Address];
+      return [toWagmiAccount(address)];
     };
     return {
       ...walletDetailsParams,

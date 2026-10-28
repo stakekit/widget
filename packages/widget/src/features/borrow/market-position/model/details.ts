@@ -235,7 +235,7 @@ export const getBorrowPositionDetailsModel = ({
     {
       id: "debt",
       label: t("dashboard.borrow.position_details.debt"),
-      subValue: debtBalance?.tokenSymbol,
+      ...(debtBalance ? { subValue: debtBalance.tokenSymbol } : {}),
       value: formatUsd(position.metrics.totalBorrowedUsd, locale),
     },
     ...(currentLtv === null

@@ -362,13 +362,7 @@ describe("semantic resource invalidation", () => {
             readonly offset: number;
             readonly yieldTypes?: ReadonlyArray<string>;
           }) => {
-            activityRequests.push({
-              address: request.address,
-              limit: request.limit,
-              network: request.network,
-              offset: request.offset,
-              yieldTypes: request.yieldTypes,
-            });
+            activityRequests.push(request);
             if (request.limit === 1) {
               return Effect.succeed({
                 items: [],

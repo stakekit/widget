@@ -17,8 +17,8 @@ export type NumberInputProps = {
   onChange: (value: BigNumber) => void;
   onBlur?: () => void;
   value: BigNumber;
-  disabled?: boolean;
-  isInvalid?: boolean;
+  disabled?: boolean | undefined;
+  isInvalid?: boolean | undefined;
   shakeOnInvalid?: boolean;
 };
 
@@ -79,7 +79,7 @@ export const NumberInput = ({
   useEffect(() => {
     if (!shakeOnInvalid || !isInvalid) return;
 
-    animate.start("shake");
+    void animate.start("shake");
   }, [animate, isInvalid, shakeOnInvalid]);
 
   return (

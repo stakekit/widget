@@ -7,8 +7,14 @@ import {
   exactZero,
   truncateToTokenDecimals,
 } from "../finance/exact";
+import {
+  type ContractAddress,
+  TokenAddress,
+  WalletAddress,
+} from "../identity/identifiers";
 import type { Network } from "../network/network";
 import type { Token } from "../token/token";
+import type { EvmChainIds } from "../wallet/chain-ids";
 import { getWalletRoutingId } from "../wallet/network";
 import type { WalletScopeOwner } from "../wallet/wallet-scope";
 import {
@@ -31,7 +37,12 @@ export type ConfidentialBatchSide = "redemption" | "subscription";
 
 const confidentialNetworks = ["ethereum", "ethereum-sepolia"] as const;
 
-const getChainId = (network: Network) => {
+/** The chain ids of the networks confidential vaults run on. */
+export type ConfidentialChainId =
+  | typeof EvmChainIds.Ethereum
+  | typeof EvmChainIds.EthereumSepolia;
+
+const getChainId = (network: Network): ConfidentialChainId | undefined => {
   const allowed = confidentialNetworks.find((item) => item === network);
   return allowed === undefined ? undefined : getWalletRoutingId(allowed);
 };
@@ -57,7 +68,7 @@ export const sameTokenContract = (
 const isExecutionContract = (
   yieldDto: EarnYieldWithProvider,
   intent: ConfidentialIntent,
-  address: string
+  address: ContractAddress | TokenAddress
 ) =>
   (yieldDto.executionContracts?.[intent] ?? []).some((contract) =>
     sameAddress(contract, address)
@@ -162,7 +173,7 @@ export const getConfidentialAssetToken = (
     : null;
 
 export type ConfidentialConversion = Readonly<{
-  readonly chainId: number;
+  readonly chainId: ConfidentialChainId;
   readonly underlying: string;
   readonly wrapper: string;
 }>;
@@ -188,7 +199,7 @@ export type ConfidentialEncryptionPlan = Readonly<{
     readonly contract: string;
     readonly value: bigint;
   }> | null;
-  readonly chainId: number;
+  readonly chainId: ConfidentialChainId;
   readonly legs: Readonly<{
     readonly contract: string;
     readonly values: ReadonlyArray<bigint>;
@@ -300,20 +311,23 @@ export const toBaseUnits = (amount: BigNumber, decimals: number): bigint =>
 /** A token balance its owner revealed; EVM addresses compare lowercased. */
 export class ConfidentialTokenBalanceKey extends Data.Class<{
   readonly network: Network;
-  readonly owner: string;
-  readonly token: string | null;
+  readonly owner: WalletAddress;
+  readonly token: TokenAddress | null;
 }> {
   constructor({
     owner,
     token,
   }: {
-    readonly owner: string;
+    readonly owner: WalletAddress;
     readonly token: Token;
   }) {
+    // Lowercasing a non-empty address keeps it non-empty, so `make` cannot throw.
     super({
       network: token.network,
-      owner: owner.toLowerCase(),
-      token: token.address?.toLowerCase() ?? null,
+      owner: WalletAddress.make(owner.toLowerCase()),
+      token: token.address
+        ? TokenAddress.make(token.address.toLowerCase())
+        : null,
     });
   }
 

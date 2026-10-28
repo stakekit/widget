@@ -8,10 +8,12 @@ import type { EarnYield } from "../../../src/domain/earn/models";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { type PriceRequest, Prices } from "../../../src/domain/health/models";
 import {
+  ProviderId,
   ProviderOption,
   WalletAddress,
+  YieldId,
 } from "../../../src/domain/identity/identifiers";
-import { tokenString } from "../../../src/domain/token/token";
+import { hostTokenKey, tokenString } from "../../../src/domain/token/token";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   earnSelectionProviderOptionsViewAtom,
@@ -601,12 +603,14 @@ describe("Earn Selection", () => {
       };
     };
 
+    const providers = (...ids: ReadonlyArray<string>) =>
+      ids.map((id) => ProviderId.make(id));
     it("lists and selects ranked providers first, keeping type groups together", async () => {
       await expect(
         renderYieldSelection({
           entry: {
             ...compactEntry,
-            yieldProviderOrder: { defi: ["morpho", "aave"] },
+            yieldProviderOrder: { defi: providers("morpho", "aave") },
           },
         })
       ).resolves.toEqual({
@@ -623,7 +627,10 @@ describe("Earn Selection", () => {
     it("keeps the default order for a category without a ranking", async () => {
       await expect(
         renderYieldSelection({
-          entry: { ...compactEntry, yieldProviderOrder: { stake: ["morpho"] } },
+          entry: {
+            ...compactEntry,
+            yieldProviderOrder: { stake: providers("morpho") },
+          },
         })
       ).resolves.toEqual({
         listed: [
@@ -640,7 +647,7 @@ describe("Earn Selection", () => {
       const { selected } = await renderYieldSelection({
         entry: {
           ...compactEntry,
-          yieldProviderOrder: { defi: ["morpho", "aave"] },
+          yieldProviderOrder: { defi: providers("morpho", "aave") },
         },
         yields: makeYields({ morphoRates: [0, 0] }),
       });
@@ -652,7 +659,7 @@ describe("Earn Selection", () => {
       const { listed, selected } = await renderYieldSelection({
         entry: {
           ...compactEntry,
-          yieldProviderOrder: { defi: ["morpho", "aave"] },
+          yieldProviderOrder: { defi: providers("morpho", "aave") },
         },
         yields: [
           usdcYield({
@@ -690,11 +697,12 @@ describe("Earn Selection", () => {
           ...compactEntry,
           preferredTokenYieldsPerNetwork: {
             ethereum: {
-              [`ethereum-${usdcToken.address?.toLowerCase()}`]:
-                "ethereum-usdc-aave-lending",
+              [hostTokenKey(usdcToken)]: YieldId.make(
+                "ethereum-usdc-aave-lending"
+              ),
             },
           },
-          yieldProviderOrder: { defi: ["morpho", "aave"] },
+          yieldProviderOrder: { defi: providers("morpho", "aave") },
         },
       });
 
@@ -1191,7 +1199,7 @@ describe("Earn Selection", () => {
       getProvider?: YieldResourceSource["Service"]["getProvider"]
     ) =>
       makeRegistry({
-        getProvider,
+        ...(getProvider === undefined ? {} : { getProvider }),
         listYields: () =>
           Effect.succeed({
             items: [yieldModel],

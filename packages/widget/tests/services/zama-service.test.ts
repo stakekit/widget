@@ -10,12 +10,16 @@ import {
 import { decodeFunctionData, erc20Abi } from "viem";
 import { sepolia } from "viem/chains";
 import { vi } from "vitest";
-import { ConfidentialTokenBalanceKey } from "../../src/domain/earn/confidential";
+import {
+  type ConfidentialConversion,
+  ConfidentialTokenBalanceKey,
+} from "../../src/domain/earn/confidential";
 import { ConfidentialHandle } from "../../src/domain/earn/models";
 import {
   WalletAddress,
   WalletSignature,
 } from "../../src/domain/identity/identifiers";
+import { EvmChainIds } from "../../src/domain/wallet/chain-ids";
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
@@ -97,10 +101,10 @@ const owner = Schema.decodeSync(WalletAddress)(
 );
 const { cUsdc, router, usdc } = confidentialFixture;
 const conversion = {
-  chainId: 11155111,
+  chainId: EvmChainIds.EthereumSepolia,
   underlying: usdc.address,
   wrapper: cUsdc.address,
-};
+} satisfies ConfidentialConversion;
 
 // The SDK returns 32-byte hex handles.
 const amountHandle = `0x${"01".repeat(32)}`;
@@ -202,7 +206,10 @@ const depositPreparation = (
     balance: pick === "asset" ? { chainId: 11155111, token } : null,
     command: {
       address: owner,
-      arguments: { amount: "5", inputToken: token.address },
+      arguments: {
+        amount: "5",
+        ...(token.address === undefined ? {} : { inputToken: token.address }),
+      },
       yieldId: yieldDto.id,
     },
     conversion: pick === "asset" ? null : conversion,

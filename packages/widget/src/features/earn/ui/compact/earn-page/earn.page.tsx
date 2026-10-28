@@ -148,11 +148,17 @@ export const AnimatedEarnPage = () => {
     "disableInitLayoutAnimation"
   );
 
-  const getAnimation = () => {
+  const getAnimation = (): {
+    readonly transition: { readonly duration: number; readonly delay: number };
+    readonly initial: {
+      readonly opacity: number;
+      readonly translateY: string | number;
+    };
+  } => {
     if (mountAnimationFinished) {
       return {
         transition: { duration: 0.3, delay: 0 },
-        initial: { opacity: 0, translateY: "-10px" as string | number },
+        initial: { opacity: 0, translateY: "-10px" },
       };
     }
     if (disableInitLayoutAnimation) {

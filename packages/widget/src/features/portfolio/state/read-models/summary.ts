@@ -24,7 +24,10 @@ const DEFAULT_CURRENCY = "USD";
 const positionsResultAtom = positionsTableDataAtom;
 
 const yieldIdsAtom = Atom.make((get) =>
-  AsyncResult.getOrElse(get(positionsResultAtom), () => [] as PositionItem[])
+  AsyncResult.getOrElse(
+    get(positionsResultAtom),
+    (): ReadonlyArray<PositionItem> => []
+  )
     .map((position) => position.integrationId)
     .filter((yieldId, index, values) => values.indexOf(yieldId) === index)
 );

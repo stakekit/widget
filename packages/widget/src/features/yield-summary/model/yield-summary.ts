@@ -76,13 +76,7 @@ const getYieldSummaryProviders = ({
 }: YieldSummaryInput): YieldSummaryProvider[] | null => {
   if (!validators || !selectedYield) return null;
 
-  const values = Array.isArray(validators)
-    ? validators
-    : [
-        ...(
-          validators as ReadonlyMap<EarnValidatorKey, EarnValidator>
-        ).values(),
-      ];
+  const values = [...validators.values()];
   if (values.length === 0) return [getYieldProvider(selectedYield)];
 
   return values.map(getValidatorProvider);

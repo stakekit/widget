@@ -13,6 +13,7 @@ import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
 } from "../../../../../domain/earn/yield";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Token } from "../../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
@@ -39,15 +40,15 @@ type Props = {
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;
-  pendingActionLabelContext?: PendingActionLabelContext;
+  pendingActionLabelContext?: PendingActionLabelContext | undefined;
   /** The request was queued into this vault's next batch, not settled. */
   batched?: BatchedRequest | null;
   providersDetails: ReadonlyArray<{
-    logo?: string;
+    logo?: string | undefined;
     name?: string;
   }> | null;
   yieldType: ExtendedYieldType | null;
-  integrationId: string;
+  integrationId: YieldId;
 };
 
 type BatchedRequest = Readonly<{
@@ -80,9 +81,9 @@ export const CompletePageComponent = ({
     pendingActionMatch,
     urls,
   } = completion;
-  const translationContext = isEthenaUsdeStaking(integrationId)
-    ? "ethena_usde"
-    : undefined;
+  const translationOptions = isEthenaUsdeStaking(integrationId)
+    ? { context: "ethena_usde" }
+    : {};
   const getSuccessKey = () => {
     if (batched?.side === "redemption") {
       return "complete.withdrawal_submitted" as const;
@@ -99,15 +100,21 @@ export const CompletePageComponent = ({
   const getAction = () => {
     if (!yieldType) return "";
     if (unstakeMatch) {
-      return t(`complete.unstake.${yieldType}`, {
-        context: translationContext,
-      });
+      return t(`complete.unstake.${yieldType}`, translationOptions);
     }
-    return t(`complete.stake.${yieldType}`, {
-      context: translationContext,
-    });
+    return t(`complete.stake.${yieldType}`, translationOptions);
   };
   const action = getAction();
+  const pendingAction = pendingActionType
+    ? {
+        pendingAction: t(
+          `complete.pending_action.${toLowerCase(pendingActionType)}`,
+          pendingActionLabelContext === undefined
+            ? translationOptions
+            : { context: pendingActionLabelContext }
+        ),
+      }
+    : {};
   const nextBatch = batched
     ? formatNextBatchTiming({
         now: presentationTime?.now ?? null,
@@ -175,14 +182,7 @@ export const CompletePageComponent = ({
                   action,
                   amount,
                   tokenNetwork: network,
-                  pendingAction: t(
-                    `complete.pending_action.${
-                      pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
-                    }` as const,
-                    {
-                      context: pendingActionLabelContext ?? translationContext,
-                    }
-                  ),
+                  ...pendingAction,
                 })}
               </Heading>
             </motion.div>

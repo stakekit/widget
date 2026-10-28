@@ -43,7 +43,7 @@ export const useUnstakeActionReview = () => {
   const formattedAmount = formatTokenAmount(amount, locale, "down");
 
   const title = isUnstakeYieldType(getExtendedYieldType(integrationData))
-    ? (t("position_details.unstake") as string)
+    ? t("position_details.unstake")
     : t("position_details.withdraw");
 
   const fee = getGasFeeInUSD({

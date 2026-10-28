@@ -31,9 +31,9 @@ type SelectModalWithoutStateProps = PropsWithChildren<
     inputPlaceholder?: string;
     trigger?: ReactNode;
     onClose?: () => void;
-    onOpen?: () => void;
+    onOpen?: (() => void) | undefined;
     searchValue?: string;
-    isLoading?: boolean;
+    isLoading?: boolean | undefined;
     errorMessage?: string;
     disableClose?: boolean;
     hideTopBar?: boolean;
@@ -58,7 +58,7 @@ type SelectModalContextType = {
 };
 
 export type SelectModalProps = SelectModalWithoutStateProps & {
-  state?: SelectModalContextType;
+  state?: SelectModalContextType | undefined;
   portalContainer?: HTMLElement;
 };
 
@@ -274,10 +274,10 @@ export const SelectModalItem = ({
   selected,
 }: PropsWithChildren<{
   onItemClick?: (args: { closeModal: () => void }) => void;
-  testId?: string;
+  testId?: string | undefined;
   variant?: ItemContainerVariants;
   className?: string;
-  selected?: boolean;
+  selected?: boolean | undefined;
 }>) => {
   const { setOpen } = useSelectModalContext();
   const onClick = () => onItemClick?.({ closeModal: () => setOpen(false) });

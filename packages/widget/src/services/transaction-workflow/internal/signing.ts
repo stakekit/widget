@@ -1,4 +1,5 @@
 import { Effect, Match } from "effect";
+import { isAddress } from "viem";
 import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
 import {
   decodeBorrowTransactionForWallet,
@@ -9,7 +10,7 @@ import {
   type WalletSignature,
 } from "../../../domain/identity/identifiers";
 import type { WalletScopeOwner } from "../../../domain/wallet/wallet-scope";
-import { EvmRpc } from "../../evm-rpc/evm-rpc";
+import { EvmRpc, EvmRpcError } from "../../evm-rpc/evm-rpc";
 import { TrackingService } from "../../tracking/tracking-service";
 import type {
   WalletOwnerMismatchError,
@@ -214,12 +215,25 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
     const signed = yield* Match.value(current).pipe(
       Match.tag("Direct", ({ domain, transaction }) => {
         const direct = transaction.source.transaction;
+        const from = expectedOwner.address;
+        // A Direct Transaction runs on an EVM chain, whose senders are hex.
+        if (!isAddress(from, { strict: false })) {
+          return Effect.fail(
+            fail({
+              _tag: "EstimateFailed",
+              cause: new EvmRpcError({
+                cause: `Not an EVM sender address: ${from}`,
+                operation: "prepare-transaction",
+              }),
+            })
+          );
+        }
 
         return evmRpc
           .prepare({
             chainId: direct.chainId,
             data: direct.data,
-            from: expectedOwner.address as `0x${string}`,
+            from,
             to: direct.to,
           })
           .pipe(

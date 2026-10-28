@@ -14,7 +14,11 @@ import type {
   WalletDescriptor,
 } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
-import type { WalletConnectPresentation } from "../../platform/wallet-connect-presentation";
+import {
+  makeWalletConnectConnection,
+  type WalletConnectConnection,
+  type WalletConnectPresentation,
+} from "../../platform/wallet-connect-presentation";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import coinbaseWalletIcon from "./icons/coinbase-wallet.svg";
@@ -53,16 +57,16 @@ type WalletConnectRequest = {
 };
 type SharedWalletConnectConnection = {
   request: WalletConnectRequest;
-  readonly effect: Effect.Effect<
-    { readonly accounts: readonly Address[]; readonly chainId: number },
-    WalletIntegrationError
-  >;
+  readonly connection: WalletConnectConnection<{
+    readonly accounts: readonly Address[];
+    readonly chainId: number;
+  }>;
 };
 type SharedWalletConnectFactory = {
   readonly factory: WalletConnectFactory;
   readonly getConnection: (
     request: WalletConnectRequest
-  ) => SharedWalletConnectConnection["effect"];
+  ) => SharedWalletConnectConnection["connection"];
   readonly release: (request: WalletConnectRequest) => void;
 };
 type GetWalletConnectFactory = (
@@ -108,24 +112,26 @@ export const createEvmWallets = (
         activeRequest = request;
         if (sharedConnection) {
           sharedConnection.request = request;
-          return sharedConnection.effect;
+          return sharedConnection.connection;
         }
-        const connection: SharedWalletConnectConnection = {
+        const shared: SharedWalletConnectConnection = {
           request,
-          effect: Effect.suspend(() => {
-            const { connector, parameters, failure } = connection.request;
-            return Effect.tryPromise({
-              try: () =>
-                connector.connect({
-                  ...parameters,
-                  withCapabilities: false,
-                }),
-              catch: failure,
-            });
-          }),
+          connection: makeWalletConnectConnection(
+            Effect.suspend(() => {
+              const { connector, parameters, failure } = shared.request;
+              return Effect.tryPromise({
+                try: () =>
+                  connector.connect({
+                    ...parameters,
+                    withCapabilities: false,
+                  }),
+                catch: failure,
+              });
+            })
+          ),
         };
-        sharedConnection = connection;
-        return connection.effect;
+        sharedConnection = shared;
+        return shared.connection;
       },
     };
     return sharedFactory;
@@ -240,10 +246,7 @@ export const injectedWallet: CreateWalletDescriptor = () => ({
   chainGroup: evmChainGroup,
   createConnector: (details) =>
     withWalletDetails(
-      failWhenProviderMissing(
-        "injected",
-        injected({ shimDisconnect: true }) as CreateConnectorFn
-      ),
+      failWhenProviderMissing("injected", injected({ shimDisconnect: true })),
       details
     ),
   iconBackground: "transparent",
@@ -387,7 +390,16 @@ const createMetaMaskWallet =
           const connector = await selectConnector();
           return connector.isAuthorized();
         },
-        switchChain: (parameters) => activeConnector.switchChain!(parameters),
+        switchChain: (parameters) => {
+          const connector = activeConnector;
+          if (!connector.switchChain) {
+            throw new WalletIntegrationError({
+              message: "MetaMask connector cannot switch chains",
+              operation: "evm-wallet-switch-chain",
+            });
+          }
+          return connector.switchChain(parameters);
+        },
         onAccountsChanged: (accounts) =>
           activeConnector.onAccountsChanged(accounts),
         onChainChanged: (chainId) => activeConnector.onChainChanged(chainId),
@@ -414,7 +426,10 @@ export const coinbaseWallet: CreateWalletDescriptor = ({
   chainGroup: evmChainGroup,
   createConnector: (details) =>
     ((config) => ({
-      ...createCoinbaseConnector({ appName, appLogoUrl: appIcon })(config),
+      ...createCoinbaseConnector({
+        appName,
+        ...(appIcon === undefined ? {} : { appLogoUrl: appIcon }),
+      })(config),
       walletDetails: details.walletDetails,
     })) satisfies ReturnType<WalletDescriptor["createConnector"]>,
   iconBackground: "#0052FF",

@@ -1,0 +1,32 @@
+id: no-unbranded-domain-identifier
+language: Tsx
+severity: error
+message: Use a brand (`Schema.NonEmptyString.pipe(Schema.brand(...))`) or a literal union for identifier-like domain fields, not an unbranded string schema.
+note: Identifier-like fields are `id`, `network`, `hash`, `address`, or names ending in `Id`, `Key`, `Address`, `Hash`, or `Network`.
+files:
+  - packages/widget/src/domain/**/*.ts
+utils:
+  unbranded-string:
+    regex: ^Schema\.(?:String|NonEmptyString)$
+  optional-unbranded-string:
+    kind: call_expression
+    all:
+      - has:
+          field: function
+          regex: ^Schema\.(?:optional|optionalKey|NullOr|UndefinedOr|NullishOr|OptionFromNullOr|OptionFromOptional|OptionFromOptionalKey|OptionFromUndefinedOr|OptionFromNullishOr)$
+      - has:
+          field: arguments
+          has:
+            nthChild: 1
+            matches: unbranded-string
+rule:
+  kind: pair
+  all:
+    - has:
+        field: key
+        regex: ^["']?(?:id|network|hash|address|\w*(?:Id|Key|Address|Hash|Network))["']?$
+    - has:
+        field: value
+        any:
+          - matches: unbranded-string
+          - matches: optional-unbranded-string

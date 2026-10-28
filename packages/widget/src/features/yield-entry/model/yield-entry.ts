@@ -46,7 +46,7 @@ type YieldEntryWallet = Readonly<{
 }>;
 
 type YieldEntryRewardProvider = Readonly<{
-  readonly rewardRate?: BigNumber | number | null;
+  readonly rewardRate?: BigNumber | number | null | undefined;
 }>;
 
 export type YieldEntryAmountInitialization =

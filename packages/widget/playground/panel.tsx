@@ -40,7 +40,7 @@ const Choice = <Value extends string>({
   value,
 }: {
   readonly disabled?: boolean;
-  readonly hint?: string;
+  readonly hint?: string | undefined;
   readonly label: string;
   readonly onChange: (value: Value) => void;
   readonly options: ReadonlyArray<Value>;
@@ -75,7 +75,7 @@ const Toggle = ({
 }: {
   readonly checked: boolean;
   readonly disabled?: boolean;
-  readonly hint?: string;
+  readonly hint?: string | undefined;
   readonly label: string;
   readonly onChange: (checked: boolean) => void;
 }) => (

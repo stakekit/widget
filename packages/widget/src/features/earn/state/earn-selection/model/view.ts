@@ -76,10 +76,15 @@ const resolveCategorySelection = ({
   readonly intent: EarnEntryIntent;
   readonly observations: EarnViewObservations;
   readonly previous: EarnSelectionView | null;
-}) => {
+}): {
+  readonly available: ReadonlyArray<YieldCategory>;
+  readonly blockingFailure: boolean;
+  readonly category: YieldCategory | null;
+  readonly loading: boolean;
+} => {
   if (observations.category._tag === "disabled") {
     return {
-      available: [] as ReadonlyArray<YieldCategory>,
+      available: [],
       blockingFailure: false,
       category: null,
       loading: false,

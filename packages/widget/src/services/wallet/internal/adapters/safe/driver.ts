@@ -52,7 +52,11 @@ export const makeSafeWalletDriver = ({
       }
 
       const decode: Effect.Effect<
-        { readonly data: Hex; readonly to: Address; readonly value?: Hex },
+        {
+          readonly data: Hex;
+          readonly to: Address;
+          readonly value?: Hex | undefined;
+        },
         Schema.SchemaError
       > =
         family === "borrow"

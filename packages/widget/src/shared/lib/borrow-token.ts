@@ -9,9 +9,9 @@ export const borrowTokenToAppToken = ({
   readonly network: BorrowNetwork;
   readonly token: BorrowToken;
 }): Token => ({
-  address: token.address,
+  ...(token.address === undefined ? {} : { address: token.address }),
   decimals: token.decimals,
   name: token.name,
-  network: network as Token["network"],
+  network,
   symbol: token.symbol,
 });

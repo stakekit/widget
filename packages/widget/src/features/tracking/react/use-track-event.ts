@@ -1,6 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import type {
-  Properties,
+  TrackEventArgs,
   TrackEventKey,
 } from "../../../services/tracking/types";
 import { trackEventAtom } from "../state/commands";
@@ -8,6 +8,8 @@ import { trackEventAtom } from "../state/commands";
 export const useTrackEvent = () => {
   const dispatch = useAtomSet(trackEventAtom);
 
-  return (event: TrackEventKey, properties?: Properties) =>
-    dispatch({ event, properties });
+  return <Event extends TrackEventKey>(
+    event: Event,
+    ...[properties]: TrackEventArgs<Event>
+  ) => dispatch({ event, properties });
 };

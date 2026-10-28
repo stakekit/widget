@@ -172,7 +172,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: yieldRewardRateFixture({ total: 0.025 }),
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -240,7 +239,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -312,7 +310,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -378,7 +375,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -435,7 +431,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -505,7 +500,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -534,7 +528,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -577,7 +570,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -616,7 +608,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
     const facts = new Map(
@@ -683,7 +674,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -746,7 +736,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -780,7 +769,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -823,7 +811,6 @@ describe("getPositionOverviewModel", () => {
         personalizedRewardRate: null,
         positionBalancesByType: new Map(),
         providersDetails: [{ name: "Rocket Pool", status: "active" }],
-        rewardsSummary: undefined,
         t: t as TFunction,
       });
 
@@ -865,7 +852,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -902,7 +888,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -932,7 +917,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -985,7 +969,6 @@ describe("getPositionOverviewModel", () => {
         ],
       ]),
       providersDetails: [],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -1014,7 +997,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -1057,7 +1039,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType,
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -1137,7 +1118,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -1184,7 +1164,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Midas", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 
@@ -1212,7 +1191,6 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Midas", status: "active" }],
-      rewardsSummary: undefined,
       t: t as TFunction,
     });
 

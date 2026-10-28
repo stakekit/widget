@@ -7,6 +7,7 @@ import {
   Result,
   Semaphore,
   Stream,
+  Struct,
   SubscriptionRef,
 } from "effect";
 import type { YieldCategory } from "../../domain/earn/contract";
@@ -15,7 +16,7 @@ import {
   type ValidatorsConfig,
   yieldCategories,
 } from "../../domain/earn/yield";
-import type { Network } from "../../domain/network/network";
+import { Network } from "../../domain/network/network";
 import type { SKHostConfiguration } from "../../public-api/react-types";
 import { config } from "../../shared/config/widget-defaults";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
@@ -197,45 +198,61 @@ const normalizeWidgetConfig = (
     hostConfiguration.yieldGrouping ??
     (layout === "Dashboard" ? "category" : "flat");
 
-  const yieldCategoryOrder = [
+  const yieldCategoryOrder: ReadonlyArray<YieldCategory> = [
     ...new Set([
       ...(hostConfiguration.yieldCategoryOrder ?? []),
       ...yieldCategories,
     ]),
-  ] as YieldCategory[];
+  ];
+  const validatorPolicies = hostConfiguration.validatorsConfig ?? {};
   const validatorsConfig: ValidatorsConfig = new Map(
-    Object.entries(hostConfiguration.validatorsConfig ?? {}).map(
-      ([network, validators]) =>
-        [
-          network as Network | "*",
-          {
-            allowed: validators.allowed
-              ? new Set(validatorAddressIdentities(validators.allowed))
-              : undefined,
-            blocked: validators.blocked
-              ? new Set(validatorAddressIdentities(validators.blocked))
-              : undefined,
-            mergePreferredWithDefault:
-              validators.mergePreferredWithDefault ?? true,
-            preferred: validators.preferred
-              ? new Set(validatorAddressIdentities(validators.preferred))
-              : undefined,
-            preferredOnly: validators.preferredOnly ?? false,
-          },
-        ] as const
-    )
+    [...Network.literals, "*" as const].flatMap((network) => {
+      const validators = validatorPolicies[network];
+      if (validators === undefined) return [];
+      const policy = {
+        ...(validators.allowed
+          ? { allowed: new Set(validatorAddressIdentities(validators.allowed)) }
+          : {}),
+        ...(validators.blocked
+          ? { blocked: new Set(validatorAddressIdentities(validators.blocked)) }
+          : {}),
+        mergePreferredWithDefault: validators.mergePreferredWithDefault ?? true,
+        ...(validators.preferred
+          ? {
+              preferred: new Set(
+                validatorAddressIdentities(validators.preferred)
+              ),
+            }
+          : {}),
+        preferredOnly: validators.preferredOnly ?? false,
+      };
+      return [[network, policy] as const];
+    })
   );
   const externalProviders = hostConfiguration.externalProviders
     ? {
-        ...hostConfiguration.externalProviders,
-        supportedChainIds: hostConfiguration.externalProviders.supportedChainIds
-          ? [
-              ...new Set(hostConfiguration.externalProviders.supportedChainIds),
-            ].sort((first, second) => first - second)
-          : undefined,
+        externalProviders: {
+          ...hostConfiguration.externalProviders,
+          ...(hostConfiguration.externalProviders.supportedChainIds
+            ? {
+                supportedChainIds: [
+                  ...new Set(
+                    hostConfiguration.externalProviders.supportedChainIds
+                  ),
+                ].sort((first, second) => first - second),
+              }
+            : {}),
+        },
       }
-    : undefined;
+    : {};
   return {
+    ...Struct.pick(hostConfiguration, [
+      "customTranslations",
+      "initialChain",
+      "language",
+      "tonConnectManifestUrl",
+      "walletPolicy",
+    ]),
     apiKey: hostConfiguration.apiKey,
     baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
     borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
@@ -244,11 +261,10 @@ const normalizeWidgetConfig = (
     borrowEnabled,
     borrowMarketsScope: hostConfiguration.borrowMarketsScope ?? "all",
     chainIconMapping: hostConfiguration.chainIconMapping,
-    chainModal:
-      hostConfiguration.variant === "zerion"
-        ? hostConfiguration.chainModal
-        : undefined,
-    customTranslations: hostConfiguration.customTranslations,
+    ...(hostConfiguration.variant === "zerion" &&
+    hostConfiguration.chainModal !== undefined
+      ? { chainModal: hostConfiguration.chainModal }
+      : {}),
     earnCategoryGrouping:
       layout === "Dashboard" && yieldGrouping === "category",
     yieldCategoryOrder,
@@ -259,18 +275,16 @@ const normalizeWidgetConfig = (
       hostConfiguration.disableInjectedProviderDiscovery ?? false,
     disableResizingInputFontSize:
       hostConfiguration.disableResizingInputFontSize ?? false,
-    externalProviders,
+    ...externalProviders,
     hideAccountAndChainSelector:
       hostConfiguration.hideAccountAndChainSelector ?? false,
     hideChainSelector: hostConfiguration.hideChainSelector ?? false,
     hideGasFee: hostConfiguration.hideGasFee ?? false,
     hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
     hostProfile: resolveHostProfile(variant, layout),
-    initialChain: hostConfiguration.initialChain,
     institutionalWallets: hostConfiguration.institutionalWallets ?? false,
     isLedgerLive: environment.isLedgerLive,
     isSafe: hostConfiguration.isSafe ?? false,
-    language: hostConfiguration.language,
     layout,
     mapWalletFn: hostConfiguration.mapWalletFn,
     mountAnimationStartsFinished:
@@ -279,15 +293,17 @@ const normalizeWidgetConfig = (
         environment.mountAnimationStartsFinishedByDefault),
     onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
     portalContainer: hostConfiguration.portalContainer,
-    preferredTokenYieldsPerNetwork:
-      hostConfiguration.preferredTokenYieldsPerNetwork,
+    ...(hostConfiguration.preferredTokenYieldsPerNetwork === undefined
+      ? {}
+      : {
+          preferredTokenYieldsPerNetwork:
+            hostConfiguration.preferredTokenYieldsPerNetwork,
+        }),
     theme: hostConfiguration.theme,
     tokenIconMapping: hostConfiguration.tokenIconMapping,
-    tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
     tracking: hostConfiguration.tracking,
     validatorsConfig,
     variant,
-    walletPolicy: hostConfiguration.walletPolicy,
     yieldGrouping,
     yieldProviderOrder: hostConfiguration.yieldProviderOrder ?? {},
     yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,

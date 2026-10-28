@@ -2,6 +2,10 @@ import { describe, expect, it } from "@effect/vitest";
 import { Deferred, Effect, Layer, Ref } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import type { SKAppProps } from "../../../src/public-api/react-types";
+import type {
+  SettingsProps,
+  SKHostVariant,
+} from "../../../src/public-api/types";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../../src/services/config/widget-config-model";
 import translationEN from "../../../src/services/translation/English/translations.json";
@@ -14,12 +18,19 @@ import {
 } from "../../../src/services/translation/widget-translation";
 import { getTestWidgetConfig } from "../../utils/widget-config";
 
-const makeSettings = (overrides: Partial<WidgetConfig> = {}): WidgetConfig =>
+const makeSettings = (
+  overrides: Partial<
+    Pick<
+      SettingsProps,
+      "customTranslations" | "disableInjectedProviderDiscovery" | "language"
+    >
+  > & { readonly variant?: Exclude<SKHostVariant, "zerion"> } = {}
+): WidgetConfig =>
   getTestWidgetConfig({
     apiKey: "test-key",
     variant: "default",
     ...overrides,
-  } as SKAppProps);
+  });
 
 const asHostConfiguration = (settings: WidgetConfig): SKAppProps =>
   settings as unknown as SKAppProps;
@@ -383,9 +394,17 @@ describe("WidgetTranslation resource ownership", () => {
       language: "en",
       translationOverlay: "none",
     });
-    expect(
-      local.en.translation.errors.KaminoLendingInsufficientSolForRentError.title
-    ).toBe("Insufficient SOL for Account Rent");
+    expect(local).toMatchObject({
+      en: {
+        translation: {
+          errors: {
+            KaminoLendingInsufficientSolForRentError: {
+              title: "Insufficient SOL for Account Rent",
+            },
+          },
+        },
+      },
+    });
 
     const enriched = composeWidgetTranslationResources({
       apiErrors: {
@@ -409,17 +428,28 @@ describe("WidgetTranslation resource ownership", () => {
       language: "en",
       translationOverlay: "none",
     });
-    expect(
-      enriched.en.translation.errors.KaminoLendingInsufficientSolForRentError
-    ).toEqual({
-      title: "HOST TITLE",
-      details: "REMOTE DETAILS",
-      solution: "REMOTE SOLUTION",
+    expect(enriched).toMatchObject({
+      en: {
+        translation: {
+          errors: {
+            KaminoLendingInsufficientSolForRentError: {
+              title: "HOST TITLE",
+              details: "REMOTE DETAILS",
+              solution: "REMOTE SOLUTION",
+            },
+          },
+        },
+      },
+      fr: {
+        translation: {
+          errors: {
+            KaminoLendingInsufficientSolForRentError: {
+              title: "SOL insuffisant pour le loyer du compte",
+            },
+          },
+        },
+      },
     });
-    expect(
-      enriched.fr.translation.errors.KaminoLendingInsufficientSolForRentError
-        .title
-    ).toBe("SOL insuffisant pour le loyer du compte");
   });
 
   it("rebuilds exact resources without mutating canonical translations", () => {
@@ -442,12 +472,18 @@ describe("WidgetTranslation resource ownership", () => {
       translationOverlay: "none",
     });
 
-    expect(customized.en.translation.details.rewards.receive_output).toBe(
-      "CUSTOM"
-    );
-    expect(canonical.en.translation.details.rewards.receive_output).toBe(
-      "You'll receive"
-    );
+    expect(customized).toMatchObject({
+      en: {
+        translation: { details: { rewards: { receive_output: "CUSTOM" } } },
+      },
+    });
+    expect(canonical).toMatchObject({
+      en: {
+        translation: {
+          details: { rewards: { receive_output: "You'll receive" } },
+        },
+      },
+    });
   });
 
   it("applies canonical, variant, API error, then host precedence", () => {
@@ -464,8 +500,11 @@ describe("WidgetTranslation resource ownership", () => {
       translationOverlay: "utila",
     });
 
-    expect(resources.en.translation.details.earn).toBe("Stake");
-    expect(resources.en.translation.errors).toMatchObject({ shared: "HOST" });
+    expect(resources).toMatchObject({
+      en: {
+        translation: { details: { earn: "Stake" }, errors: { shared: "HOST" } },
+      },
+    });
   });
 
   it("replaces omitted keys when reconciling a live generation", () => {

@@ -197,7 +197,7 @@ const bindValidatorsKey = (
 
 export const resolveEarnViewFromResources = (
   context: Atom.AtomContext,
-  { entry, intent, previous }: EarnViewResolutionInput
+  { entry, intent, previous = null }: EarnViewResolutionInput
 ): EarnSelectionView => {
   const initial = readInitial(context, entry);
   const category = readCategory(context, { entry, network: initial.network });

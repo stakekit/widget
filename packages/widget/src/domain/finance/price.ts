@@ -1,12 +1,9 @@
 import type BigNumber from "bignumber.js";
 import type { Prices } from "../health/models";
+import type { Token } from "../token/token";
 import { exactZero } from "./exact";
 
-type PriceLookupToken = {
-  readonly symbol: string;
-  readonly network: string;
-  readonly address?: string;
-};
+type PriceLookupToken = Pick<Token, "network" | "address">;
 
 export const getTokenPriceInUSD = ({
   token,

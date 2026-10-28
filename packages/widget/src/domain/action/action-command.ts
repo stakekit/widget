@@ -97,7 +97,7 @@ export const preparePendingActionCommand = ({
         getPendingActionStateKey({
           balanceType: yieldBalance.type,
           token: yieldBalance.token,
-          actionType: pendingAction.type as YieldPendingActionType,
+          actionType: pendingAction.type,
           passthrough: pendingAction.passthrough,
         })
       )
@@ -119,7 +119,7 @@ export const preparePendingActionCommand = ({
 
   return Result.succeed({
     command: {
-      action: pendingAction.type as YieldPendingActionType,
+      action: pendingAction.type,
       address,
       arguments: { ...args, ...(additionalAddresses ?? {}) },
       passthrough: pendingAction.passthrough,

@@ -311,12 +311,18 @@ const assertEncryptWorkerStarts = async (
             name: string;
           }) => Worker)
         : undefined;
-    if (scriptUrl === null && InlineWorker === undefined) {
+    const startWorker = () => {
+      if (InlineWorker) return new InlineWorker({ name: "zama-fhe-encrypt" });
+      if (scriptUrl === null) return null;
+      return new Worker(scriptUrl, {
+        name: "zama-fhe-encrypt",
+        type: "module",
+      });
+    };
+    const worker = startWorker();
+    if (worker === null) {
       return `${chunk} does not export an inline worker constructor`;
     }
-    const worker = InlineWorker
-      ? new InlineWorker({ name: "zama-fhe-encrypt" })
-      : new Worker(scriptUrl!, { name: "zama-fhe-encrypt", type: "module" });
     const { promise, resolve } = Promise.withResolvers<string>();
     worker.addEventListener("message", (event) => {
       if (event.data === "zama-encrypt-worker-ready") resolve("ready");

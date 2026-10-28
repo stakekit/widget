@@ -7,10 +7,7 @@ import { formatUsd } from "../../../src/shared/lib/number-format";
 
 describe("token USD prices", () => {
   it("formats a native-token amount from the API price key", () => {
-    const token = {
-      network: "ethereum",
-      symbol: "ETH",
-    };
+    const token = { network: "ethereum" } as const;
     const prices = Schema.decodeSync(PriceResponse)({
       "ethereum-undefined": { price: 1619.22, price_24_h: 0 },
     });

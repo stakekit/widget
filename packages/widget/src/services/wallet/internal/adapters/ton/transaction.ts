@@ -1,8 +1,4 @@
-import {
-  Cell,
-  type CommonMessageInfoRelaxedInternal,
-  loadMessageRelaxed,
-} from "@ton/core";
+import { Cell, loadMessageRelaxed } from "@ton/core";
 import { Schema, SchemaTransformation } from "effect";
 
 const BigIntFromNumber = Schema.Finite.pipe(
@@ -54,9 +50,12 @@ type DecodedTonRawTransaction = Extract<
 export const normalizeTonTransactionToRaw = (
   tx: DecodedTonTransaction
 ): DecodedTonRawTransaction => {
-  if (!("message" in tx)) return tx as DecodedTonRawTransaction;
+  if (!("message" in tx)) return tx;
   const parsedTx = loadMessageRelaxed(Cell.fromBase64(tx.message).beginParse());
-  const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
+  const info = parsedTx.info;
+  if (info.type !== "internal") {
+    throw new Error("Unsupported TON message: expected an internal message");
+  }
   return [
     {
       address: info.dest.toString(),

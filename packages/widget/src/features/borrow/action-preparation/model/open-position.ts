@@ -92,10 +92,7 @@ export const prepareOpenPositionAction = (
       ? [
           {
             amount: effectiveCollateralAmount,
-            tokenId: decodeTokenId({
-              address: collateralToken.token.address,
-              symbol: collateralToken.token.symbol,
-            }),
+            tokenId: decodeTokenId(collateralToken.token),
             type: "supply" as const,
           },
         ]

@@ -75,7 +75,7 @@ export const formatMinStake = (
   if (amount.isZero()) {
     return {
       kpiPrimaryEligible: false,
-      value: t("dashboard.earn_details.no_minimum") as string,
+      value: t("dashboard.earn_details.no_minimum"),
     };
   }
 

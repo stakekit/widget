@@ -153,8 +153,12 @@ export const GroupedVirtualList = ({
     getScrollElement: () => innerRef.current,
     estimateSize,
     overscan: 10,
-    paddingStart: increaseViewportBy?.top,
-    paddingEnd: increaseViewportBy?.bottom,
+    ...(increaseViewportBy?.top === undefined
+      ? {}
+      : { paddingStart: increaseViewportBy.top }),
+    ...(increaseViewportBy?.bottom === undefined
+      ? {}
+      : { paddingEnd: increaseViewportBy.bottom }),
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
@@ -175,7 +179,7 @@ export const GroupedVirtualList = ({
 
   const { resultArray } = useMemo(
     () =>
-      groupCounts.reduce(
+      groupCounts.reduce<{ resultArray: ResultsArray[]; childIndex: number }>(
         (acc, numChildren, parentIndex) => {
           acc.resultArray.push({ type: "parent", index: parentIndex });
 
@@ -195,7 +199,7 @@ export const GroupedVirtualList = ({
 
           return acc;
         },
-        { resultArray: [] as ResultsArray[], childIndex: 0 }
+        { resultArray: [], childIndex: 0 }
       ),
     [groupCounts]
   );

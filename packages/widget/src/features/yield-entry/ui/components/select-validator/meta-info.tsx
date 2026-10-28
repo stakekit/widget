@@ -37,7 +37,7 @@ export const useMetaInfo = ({
   commission?: ValidatorDto["commission"];
   stakedBalance?: ValidatorDto["tvl"];
   votingPower?: ValidatorDto["votingPower"];
-  address?: ValidatorDto["address"];
+  address?: ValidatorDto["address"] | undefined;
   website?: ValidatorDto["website"];
   nominatorCount?: ValidatorDto["nominatorCount"];
   subnetName?: ValidatorSubnet["name"];

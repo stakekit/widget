@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
+import { YieldId } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../../src/features/activity/model/activity-action";
 import type { ActivityPageView } from "../../../src/features/activity/state/page";
@@ -157,7 +158,7 @@ describe("activity and completion workflows", () => {
             unstakeMatch: false,
             urls: [{ type: "STAKE", url: "https://explorer.test/tx" }],
           }}
-          integrationId="test-yield"
+          integrationId={YieldId.make("test-yield")}
           metadata={null}
           network="ethereum"
           providersDetails={null}

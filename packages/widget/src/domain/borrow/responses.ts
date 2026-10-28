@@ -19,21 +19,24 @@ import {
 } from "./ids";
 import { BorrowAccountSnapshot } from "./positions/borrow-account-snapshot";
 
-const ItemIdentifier = Schema.Struct({ id: Schema.String }).pipe(
-  Schema.decodeTo(Schema.String, {
-    decode: SchemaGetter.transform((value) => value.id),
-    encode: SchemaGetter.forbidden(() => "Item identifier is decode-only"),
-  })
-);
+const itemIdentifier = (
+  id: typeof IntegrationId | typeof MarketId | typeof ActionId
+) =>
+  Schema.Struct({ id }).pipe(
+    Schema.decodeTo(Schema.String, {
+      decode: SchemaGetter.transform((value) => value.id),
+      encode: SchemaGetter.forbidden(() => "Item identifier is decode-only"),
+    })
+  );
 
 export const BorrowIntegrationsResponse = TolerantArray(Integration, {
   operation: "borrow-integrations",
-  identifier: ItemIdentifier,
+  identifier: itemIdentifier(IntegrationId),
 });
 
 const BorrowMarketItems = TolerantArray(Market, {
   operation: "borrow-markets",
-  identifier: ItemIdentifier,
+  identifier: itemIdentifier(MarketId),
 });
 
 export const BorrowMarketsResponse = Schema.Struct({
@@ -112,7 +115,7 @@ export const BorrowActionsPage = Schema.Struct({
   items: Schema.optionalKey(
     TolerantArray(BorrowActivityAction, {
       operation: "borrow-actions",
-      identifier: ItemIdentifier,
+      identifier: itemIdentifier(ActionId),
     })
   ),
 });

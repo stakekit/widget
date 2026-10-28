@@ -207,17 +207,17 @@ describe("widget runtime service graph", () => {
           expect(secondService).not.toBe(firstService);
 
           yield* Effect.all([
-            firstService.trackEvent("txSigned", { registry: "first" }),
-            secondService.trackEvent("txSigned", { registry: "second" }),
+            firstService.trackEvent("helpModalOpened", { modal: "first" }),
+            secondService.trackEvent("helpModalOpened", { modal: "second" }),
           ]);
 
           expect(firstTrack).toHaveBeenCalledOnce();
-          expect(firstTrack).toHaveBeenCalledWith("Transaction signed", {
-            registry: "first",
+          expect(firstTrack).toHaveBeenCalledWith("Help modal opened", {
+            modal: "first",
           });
           expect(secondTrack).toHaveBeenCalledOnce();
-          expect(secondTrack).toHaveBeenCalledWith("Transaction signed", {
-            registry: "second",
+          expect(secondTrack).toHaveBeenCalledWith("Help modal opened", {
+            modal: "second",
           });
 
           const replacementTrack = vi.fn();
@@ -225,13 +225,13 @@ describe("widget runtime service graph", () => {
             firstRegistry.get(widgetConfigProbeAtom)
           );
           yield* firstConfig.update(makeConfig(replacementTrack));
-          yield* firstService.trackEvent("txSigned", {
-            registry: "first-updated",
+          yield* firstService.trackEvent("helpModalOpened", {
+            modal: "first-updated",
           });
 
           expect(firstTrack).toHaveBeenCalledOnce();
-          expect(replacementTrack).toHaveBeenCalledWith("Transaction signed", {
-            registry: "first-updated",
+          expect(replacementTrack).toHaveBeenCalledWith("Help modal opened", {
+            modal: "first-updated",
           });
           expect(secondTrack).toHaveBeenCalledOnce();
         } finally {

@@ -53,7 +53,7 @@ export const makeLedgerWalletDriver = ({
           family: input.family,
           network: input.network,
           tx: input.tx,
-          txMeta: input.family === "yield" ? input.txMeta : undefined,
+          ...(input.family === "yield" ? { txMeta: input.txMeta } : {}),
         })
         .pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
       const deserializedTransaction = yield* Effect.try({

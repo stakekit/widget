@@ -23,3 +23,19 @@ export const positionPricesAtom = Atom.family((key: PricesKey) =>
     .foreground(key)
     .pipe(Atom.map(toPresentable), Atom.withLabel("positionPricesAtom"))
 );
+
+/**
+ * How a row presents its first non-active validator: jailed validators get
+ * their own badge, every other provider status shares the inactive badge.
+ */
+export type InactiveValidatorStatus = "jailed" | "other";
+
+export const toInactiveValidatorStatus = (
+  providers: ReadonlyArray<{ readonly status?: string | undefined }> | null
+): InactiveValidatorStatus | null => {
+  const status = providers?.find(
+    (provider) => provider.status !== "active"
+  )?.status;
+  if (!status) return null;
+  return status === "jailed" ? "jailed" : "other";
+};

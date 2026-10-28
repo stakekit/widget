@@ -7,6 +7,7 @@ import type {
 } from "../../domain/action/models";
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
+import type { ConfidentialChainId } from "../../domain/earn/confidential";
 import type {
   SignedTransactionPayload,
   TransactionHash,
@@ -70,12 +71,12 @@ export class YieldTransactionWorkflowInput extends Data.TaggedClass(
 }
 
 export type YieldTransactionWorkflowProviderDetail = {
-  readonly address?: string;
-  readonly logo?: string;
+  readonly address?: string | undefined;
+  readonly logo?: string | undefined;
   readonly name: string;
-  readonly rewardRate?: BigNumber | number;
-  readonly rewardType?: string;
-  readonly website?: string;
+  readonly rewardRate?: BigNumber | number | undefined;
+  readonly rewardType?: string | undefined;
+  readonly website?: string | undefined;
 };
 
 type YieldActionFacts = {
@@ -131,7 +132,9 @@ type ConfidentialTransactionWorkflowInputFields = YieldActionFacts & {
    * confirms, the workflow decrypts the unwrapped amount on this chain and
    * withdraws it.
    */
-  readonly finalizeUnwrap?: Readonly<{ readonly chainId: number }> | null;
+  readonly finalizeUnwrap?: Readonly<{
+    readonly chainId: ConfidentialChainId;
+  }> | null;
   readonly ledger: DirectTransactionLedger;
   readonly preparation: ConfidentialPreparation;
   readonly walletScope: WalletScopeKey;

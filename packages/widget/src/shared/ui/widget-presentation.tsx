@@ -1,5 +1,4 @@
 import { createContext, type PropsWithChildren, useContext } from "react";
-import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
 import type { WidgetVariant } from "../styles/recipe-variant";
 import type { LayoutAttributeValue } from "../styles/theme/ids";
@@ -23,7 +22,7 @@ export type WidgetPresentation = {
    */
   readonly layout: LayoutAttributeValue;
   readonly locale: string;
-  readonly mapNetworkIconUrl: (network: Network) => string | undefined;
+  readonly mapNetworkIconUrl: (network: Token["network"]) => string | undefined;
   readonly mapTokenIconUrl: (token: Token) => string | undefined;
   readonly portalContainer: HTMLElement | undefined;
   readonly variant: WidgetVariant;

@@ -19,6 +19,8 @@ import { UserRejectedRequestError } from "viem";
 import { config } from "../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../wallet-errors";
 import {
+  makeWalletConnectConnection,
+  type WalletConnectConnection,
   type WalletConnectPresentation,
   WalletConnectPresentationPlatform,
 } from "./wallet-connect-presentation";
@@ -32,10 +34,44 @@ export const WalletConnectNamespaceSchema = Schema.Literals([
 ]);
 export type WalletConnectNamespace = typeof WalletConnectNamespaceSchema.Type;
 
+/** A WalletConnect session topic. */
+export const WalletConnectTopic = Schema.String.pipe(
+  Schema.brand("WalletConnectTopic")
+);
+export type WalletConnectTopic = typeof WalletConnectTopic.Type;
+
+/** CAIP-2 chain id: `<namespace>:<reference>`. */
+export const CaipChainId = Schema.String.check(
+  Schema.isPattern(/^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$/)
+).pipe(Schema.brand("CaipChainId"));
+export type CaipChainId = typeof CaipChainId.Type;
+
+/** CAIP-10 account id: `<namespace>:<chain reference>:<address>`. */
+export const CaipAccountId = Schema.String.check(
+  Schema.isPattern(/^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}:[-.%a-zA-Z0-9]{1,128}$/)
+).pipe(Schema.brand("CaipAccountId"));
+export type CaipAccountId = typeof CaipAccountId.Type;
+
+const decodeCaipChainId = Schema.decodeOption(CaipChainId);
+
+/** The CAIP-2 id of `reference` in `namespace`, if it is well-formed. */
+export const caipChainId = (
+  namespace: WalletConnectNamespace,
+  reference: string
+): Option.Option<CaipChainId> => decodeCaipChainId(`${namespace}:${reference}`);
+
+/** The bare addresses of `accounts` on `chainId`, in order. */
+export const caipAddresses = (
+  accounts: ReadonlyArray<CaipAccountId>,
+  chainId: CaipChainId
+): ReadonlyArray<string> =>
+  accounts.flatMap((account) =>
+    account.startsWith(`${chainId}:`) ? [account.slice(chainId.length + 1)] : []
+  );
+
 export type WalletConnectProposal = Readonly<{
   namespace: WalletConnectNamespace;
-  /** CAIP-2 chain ids. */
-  chains: readonly [string, ...string[]];
+  chains: readonly [CaipChainId, ...CaipChainId[]];
   /** Empty: the namespace is proposed through optionalNamespaces only. */
   requiredMethods: ReadonlyArray<string>;
   optionalMethods?: ReadonlyArray<string>;
@@ -46,10 +82,10 @@ export type WalletConnectProposal = Readonly<{
 
 /** An approved session narrowed to one namespace. */
 export type WalletConnectSession = Readonly<{
-  topic: string;
+  topic: WalletConnectTopic;
   namespace: WalletConnectNamespace;
-  /** CAIP-10 accounts of `namespace` only. */
-  accounts: ReadonlyArray<string>;
+  /** Accounts of `namespace` only. */
+  accounts: ReadonlyArray<CaipAccountId>;
   methods: ReadonlyArray<string>;
   /** Seconds since epoch. */
   expiry: number;
@@ -58,9 +94,8 @@ export type WalletConnectSession = Readonly<{
 }>;
 
 export type WalletConnectRequest<A> = Readonly<{
-  topic: string;
-  /** CAIP-2 chain id. */
-  chainId: string;
+  topic: WalletConnectTopic;
+  chainId: CaipChainId;
   method: string;
   params: unknown;
   response: Schema.Decoder<A>;
@@ -94,12 +129,17 @@ export type WalletConnectProtocol = Readonly<{
     input: WalletConnectRequest<A>
   ) => Effect.Effect<A, WalletIntegrationError>;
   /** Deletes only this topic's session. */
-  disconnect: (topic: string) => Effect.Effect<void, WalletIntegrationError>;
+  disconnect: (
+    topic: WalletConnectTopic
+  ) => Effect.Effect<void, WalletIntegrationError>;
   /**
    * Calls `listener` when the wallet deletes or expires `topic`. Returns the
    * unsubscribe function.
    */
-  subscribeEnded: (topic: string, listener: () => void) => () => void;
+  subscribeEnded: (
+    topic: WalletConnectTopic,
+    listener: () => void
+  ) => () => void;
 }>;
 
 type ProposalNamespace = Readonly<{
@@ -127,29 +167,25 @@ export type WalletConnectSignClient = Readonly<{
   ) => Promise<unknown>;
   disconnect: (topic: string) => Promise<void>;
   /** `session_delete` and `session_expire`, by topic. */
-  subscribeEnded: (listener: (topic: string) => void) => () => void;
+  subscribeEnded: (listener: (topic: WalletConnectTopic) => void) => () => void;
 }>;
 
 const StoredSession = Schema.Struct({
-  topic: Schema.String,
+  topic: WalletConnectTopic,
   expiry: Schema.Finite,
   namespaces: Schema.Record(Schema.String, Schema.Unknown),
   sessionProperties: Schema.optional(Schema.Unknown),
 });
-// CAIP-10 account id: `<namespace>:<chain reference>:<address>`.
-const CaipAccount = Schema.String.check(
-  Schema.isPattern(/^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}:[-.%a-zA-Z0-9]{1,128}$/)
-);
 const SessionNamespace = Schema.Struct({
   accounts: Schema.Array(Schema.Unknown),
   methods: Schema.Array(Schema.String),
 });
-const decodeCaipAccount = Schema.decodeUnknownOption(CaipAccount);
+const decodeCaipAccount = Schema.decodeUnknownOption(CaipAccountId);
 const decodeStoredSession = Schema.decodeUnknownOption(StoredSession);
 const decodeSessionNamespace = Schema.decodeUnknownOption(SessionNamespace);
 // Invalid SDK events are discarded: they name no session to end.
 const decodeTopic = Schema.decodeUnknownOption(
-  Schema.Struct({ topic: Schema.String })
+  Schema.Struct({ topic: WalletConnectTopic })
 );
 const decodeSessionProperties = Schema.decodeUnknownOption(
   Schema.Record(Schema.String, Schema.String)
@@ -262,16 +298,16 @@ export const walletConnectSessionOwners = (
   );
   return {
     // Unreadable storage owns nothing rather than restoring foreign sessions.
-    get: (topic: string) =>
+    get: (topic: WalletConnectTopic) =>
       owners.get(topic).pipe(Effect.orElseSucceed(() => Option.none())),
-    set: (topic: string, namespace: WalletConnectNamespace) =>
+    set: (topic: WalletConnectTopic, namespace: WalletConnectNamespace) =>
       owners.set(topic, namespace),
-    remove: (topic: string) => owners.remove(topic),
+    remove: (topic: WalletConnectTopic) => owners.remove(topic),
   };
 };
 
 type PendingProposal = Readonly<{
-  connection: Effect.Effect<WalletConnectSession, WalletIntegrationError>;
+  connection: WalletConnectConnection<WalletConnectSession>;
   subscribeUri: (
     publish: (uri: string) => void
   ) => Effect.Effect<void, never, Scope.Scope>;
@@ -291,7 +327,7 @@ export const makeWalletConnectProtocol = Effect.fn("makeWalletConnectProtocol")(
     const owner = yield* Effect.scope;
     const clientPermit = yield* Semaphore.make(1);
     const proposalPermit = yield* Semaphore.make(1);
-    const endedListeners = new Map<string, Set<() => void>>();
+    const endedListeners = new Map<WalletConnectTopic, Set<() => void>>();
     const pendingProposals = new Map<string, PendingProposal>();
     // Approved after their presentation was dismissed, by proposal key. The
     // next `connect` with that key adopts them; unclaimed ones stay owned.
@@ -401,8 +437,8 @@ export const makeWalletConnectProtocol = Effect.fn("makeWalletConnectProtocol")(
         if (existing) return existing;
         const { fiber, latestUri } = yield* propose(proposal);
         const pending: PendingProposal = {
-          // One stable Effect per proposal lets presentation resume it too.
-          connection: Fiber.join(fiber),
+          // One stable connection per proposal lets presentation resume it too.
+          connection: makeWalletConnectConnection(Fiber.join(fiber)),
           subscribeUri: (publish) =>
             SubscriptionRef.changes(latestUri).pipe(
               Stream.runForEach((uri) =>

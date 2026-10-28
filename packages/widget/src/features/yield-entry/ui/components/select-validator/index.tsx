@@ -194,11 +194,11 @@ const getValidatorGroups = ({
     },
     {
       preferred: {
-        items: [] as EarnValidator[],
+        items: [],
         label: preferredLabel,
       },
       other: {
-        items: [] as EarnValidator[],
+        items: [],
         label: otherLabel,
       },
     }

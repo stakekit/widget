@@ -333,7 +333,7 @@ export const dispatchPositionDetailsWorkflowAtom = Atom.family(
         reducePositionDetailsWorkflow({
           action,
           maxUnstakeAmount: view.maxUnstakeAmount,
-          pendingActions,
+          ...(pendingActions === undefined ? {} : { pendingActions }),
           state: {
             exitReceiveTokenAddress: view.exitReceiveTokenAddress,
             pendingActions: view.pendingActions,

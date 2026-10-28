@@ -97,6 +97,8 @@ const schemaMemberName = (expression: ts.Expression): string | undefined => {
   ) {
     return current.expression.name.text;
   }
+
+  return undefined;
 };
 
 const isEmptyStruct = (expression: ts.Expression): boolean => {

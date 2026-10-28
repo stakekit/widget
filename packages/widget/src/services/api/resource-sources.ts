@@ -90,7 +90,9 @@ export type BorrowActionsRequest = {
   readonly limit: number;
   readonly network: BorrowNetwork;
   readonly offset: number;
-  readonly statuses?: BorrowApi.ActionsControllerGetActionsV1Params["statuses"];
+  readonly statuses?: NonNullable<
+    BorrowApi.ActionsControllerGetActionsV1Params["statuses"]
+  >;
 };
 
 export class MissingBorrowApiConfig extends Data.TaggedError(

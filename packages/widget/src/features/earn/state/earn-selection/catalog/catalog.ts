@@ -7,7 +7,6 @@ import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { exactZero } from "../../../../../domain/finance/exact";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
-import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
 import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
@@ -27,6 +26,7 @@ import {
 } from "../../../../../resources/yield-directory/index";
 import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/index";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
+import { makeEmptyPositionsData } from "../model/view-model";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
@@ -118,7 +118,6 @@ export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
     new YieldDirectoryKey({
       network: key.network,
       token: key.token,
-      types: undefined,
       yieldIds: key.yieldIds,
     })
   );
@@ -142,7 +141,7 @@ export const positionsDataAtom = Atom.family((key: PositionsDataKey) => {
           AsyncResult.map((positions) => toPositionsData(positions.items)),
           mapAsyncResultError(toCatalogError("positions-data"))
         )
-      : AsyncResult.success(new Map() as PositionsData)
+      : AsyncResult.success(makeEmptyPositionsData())
   ).pipe(Atom.withLabel("earnPositionsDataAtom"));
 });
 

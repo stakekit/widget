@@ -20,6 +20,7 @@ import {
   erc20Abi,
   type Hex,
   http,
+  isAddress,
   isHex,
   type PublicClient,
   parseAbi,
@@ -35,6 +36,7 @@ import type {
   ManageActionCommand,
 } from "../../domain/action/models";
 import {
+  type ConfidentialChainId,
   type ConfidentialConversion,
   type ConfidentialEncryption,
   type ConfidentialEncryptionPlan,
@@ -47,7 +49,11 @@ import {
   ConfidentialHandle,
   type EarnYieldWithProvider,
 } from "../../domain/earn/models";
-import type { TransactionHash } from "../../domain/identity/identifiers";
+import type {
+  ContractAddress,
+  TransactionHash,
+  WalletAddress,
+} from "../../domain/identity/identifiers";
 import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
 import { WidgetConfigService } from "../config/widget-config";
@@ -61,6 +67,17 @@ class ZamaError extends Data.TaggedError("ZamaError")<{
   readonly cause: unknown;
   readonly operation: string;
 }> {}
+
+// viem takes 0x addresses; an EVM wallet's and contract's addresses are in them.
+const toEvmAddress = (
+  address: string,
+  operation: string
+): Effect.Effect<Address, ZamaError> =>
+  isAddress(address, { strict: false })
+    ? Effect.succeed(address)
+    : Effect.fail(
+        new ZamaError({ cause: `Not an EVM address: ${address}`, operation })
+      );
 
 // The SDK returns hex handles; the domain keeps them branded.
 const EncryptedHandles = Schema.Struct({
@@ -82,7 +99,7 @@ type ConfidentialEncryptPreparation = Readonly<{
   readonly assetAddress: string | null;
   /** The hidden balance `amount` must not exceed, if it is not wrapped first. */
   readonly balance: Readonly<{
-    readonly chainId: number;
+    readonly chainId: ConfidentialChainId;
     readonly token: Token;
   }> | null;
   readonly command: ActionCommand;
@@ -96,7 +113,7 @@ type ConfidentialEncryptPreparation = Readonly<{
 
 type ConfidentialDecryptPreparation = Readonly<{
   readonly _tag: "Decrypt";
-  readonly chainId: number;
+  readonly chainId: ConfidentialChainId;
   readonly command: ManageActionCommand;
   readonly handle: ConfidentialHandle;
 }>;
@@ -156,17 +173,17 @@ type ZamaServiceApi = Readonly<{
     readonly amount: bigint;
     readonly conversion: ConfidentialConversion;
     readonly network: Network;
-    readonly owner: string;
+    readonly owner: WalletAddress;
   }) => Effect.Effect<ReadonlyArray<DirectTransaction>>;
   /**
    * How many of `tokens` the owner has not yet made `operator` an operator
    * on; a grant whose status cannot be read counts as missing.
    */
   readonly countMissingOperatorGrants: (input: {
-    readonly chainId: number;
-    readonly operator: string;
-    readonly owner: string;
-    readonly tokens: ReadonlyArray<string>;
+    readonly chainId: ConfidentialChainId;
+    readonly operator: ContractAddress;
+    readonly owner: WalletAddress;
+    readonly tokens: ReadonlyArray<ContractAddress>;
   }) => Effect.Effect<number>;
   /** A deposit's or exit's command with its amount encrypted instead. */
   readonly encryptCommand: (
@@ -181,18 +198,18 @@ type ZamaServiceApi = Readonly<{
    * owner: the handle its WITHDRAW publicly decrypts.
    */
   readonly readUnwrapRequest: (input: {
-    readonly chainId: number;
+    readonly chainId: ConfidentialChainId;
     readonly hash: TransactionHash;
-    readonly owner: string;
+    readonly owner: WalletAddress;
   }) => Effect.Effect<ConfidentialHandle, ConfidentialPreparationError>;
   readonly revealHandles: (input: {
-    readonly chainId: number;
+    readonly chainId: ConfidentialChainId;
     readonly handles: ReadonlyArray<HandleInput>;
-    readonly owner: string;
+    readonly owner: WalletAddress;
   }) => Effect.Effect<void, ZamaError>;
   readonly revealTokenBalance: (input: {
-    readonly chainId: number;
-    readonly owner: string;
+    readonly chainId: ConfidentialChainId;
+    readonly owner: WalletAddress;
     readonly token: Token;
   }) => Effect.Effect<bigint, ZamaError>;
 }>;
@@ -284,8 +301,8 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
 
   const signPermit = (
     typedData: EIP712TypedData,
-    owner: string,
-    chainId: number
+    owner: WalletAddress,
+    chainId: ConfidentialChainId
   ) =>
     Effect.gen(function* () {
       const network = getConfidentialNetwork(chainId);
@@ -332,8 +349,9 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
 
   const makeSigner = (
     Base: typeof BaseSigner,
-    owner: string,
-    chainId: number
+    owner: WalletAddress,
+    address: Address,
+    chainId: ConfidentialChainId
   ) =>
     new (class WidgetPermitSigner extends Base {
       signTypedData(typedData: EIP712TypedData) {
@@ -344,9 +362,9 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
           new Error("Zama transactions go through the widget transaction flow")
         );
       }
-    })({ address: owner as Address, chainId });
+    })({ address, chainId });
 
-  const getChain = (zama: ZamaModules, chainId: number) =>
+  const getChain = (zama: ZamaModules, chainId: ConfidentialChainId) =>
     Effect.gen(function* () {
       const preset = zama.chains[chainId];
       if (!preset) {
@@ -367,12 +385,15 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     });
 
   // Read-only, so wallet events never fire.
-  const widgetRpcProvider = (chainId: number): EIP1193Provider => ({
-    on: () => {},
-    removeListener: () => {},
-    request: wallet.wagmiConfig.getClient({ chainId })
-      .request as EIP1193Provider["request"],
-  });
+  const widgetRpcProvider = (chainId: ConfidentialChainId): EIP1193Provider => {
+    const client = wallet.wagmiConfig.getClient({ chainId });
+    return {
+      on: () => {},
+      removeListener: () => {},
+      // biome-ignore lint/nursery/noUnsafeTypeAssertion: viem types a client's `request` by its RPC schema, which its own `EIP1193Provider["request"]` overloads do not accept though both send the same EIP-1193 requests.
+      request: client.request as EIP1193Provider["request"],
+    };
+  };
 
   // The Zama preset RPC is only a fallback.
   const publicClientFor = (chain: FheChain): PublicClient =>
@@ -385,8 +406,8 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     });
 
   const getSdk = Effect.fn("ZamaService.getSdk")(function* (
-    chainId: number,
-    owner: string
+    chainId: ConfidentialChainId,
+    owner: WalletAddress
   ) {
     const zama = yield* modules;
     const chain = yield* getChain(zama, chainId);
@@ -403,9 +424,18 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
           publicClient: publicClientFor(chain),
         }),
         relayers: {
-          [chain.id]: zama.web.web({ offloadWorker: zama.encryptWorker }),
+          [chain.id]: zama.web.web(
+            zama.encryptWorker === undefined
+              ? {}
+              : { offloadWorker: zama.encryptWorker }
+          ),
         },
-        signer: makeSigner(zama.core.BaseSigner, owner, chainId),
+        signer: makeSigner(
+          zama.core.BaseSigner,
+          owner,
+          yield* toEvmAddress(owner, "signer"),
+          chainId
+        ),
         // The default IndexedDB would keep keys and cleartexts for 30 days.
         storage: zama.core.memoryStorage,
       })
@@ -415,7 +445,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   });
 
   const getPublicClient = Effect.fn("ZamaService.getPublicClient")(function* (
-    chainId: number
+    chainId: ConfidentialChainId
   ) {
     return publicClientFor(yield* getChain(yield* modules, chainId));
   });
@@ -424,17 +454,22 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     owner,
     plan,
   }: {
-    readonly owner: string;
+    readonly owner: WalletAddress;
     readonly plan: ConfidentialEncryptionPlan;
   }): Effect.fn.Return<ConfidentialEncryption, ZamaError> {
     const sdk = yield* getSdk(plan.chainId, owner);
+    const userAddress = yield* toEvmAddress(owner, "encrypt");
     const encryptValues = (contract: string, inputs: ReadonlyArray<bigint>) =>
-      tryZama("encrypt", () =>
-        sdk.encrypt({
-          contractAddress: contract as Address,
-          userAddress: owner as Address,
-          values: inputs.map((value) => ({ type: "euint64", value })),
-        })
+      toEvmAddress(contract, "encrypt").pipe(
+        Effect.flatMap((contractAddress) =>
+          tryZama("encrypt", () =>
+            sdk.encrypt({
+              contractAddress,
+              userAddress,
+              values: inputs.map((value) => ({ type: "euint64", value })),
+            })
+          )
+        )
       );
 
     const [amount, legs] = yield* Effect.all([
@@ -468,13 +503,16 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     "ZamaService.revealHandles"
   )(function* ({ chainId, handles, owner }) {
     const sdk = yield* getSdk(chainId, owner);
-    const clear = yield* tryZama("decrypt", () =>
-      sdk.decryption.decryptValues(
-        handles.map((input) => ({
-          contractAddress: input.contract as Address,
-          encryptedValue: input.handle as Hex,
+    const inputs = yield* Effect.forEach(handles, (input) =>
+      toEvmAddress(input.contract, "decrypt").pipe(
+        Effect.map((contractAddress) => ({
+          contractAddress,
+          encryptedValue: input.handle,
         }))
       )
+    );
+    const clear = yield* tryZama("decrypt", () =>
+      sdk.decryption.decryptValues(inputs)
     );
     const cleartexts = new Map(
       Object.entries(clear).map(([handle, value]) => [
@@ -501,8 +539,10 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
       });
     }
     const sdk = yield* getSdk(chainId, owner);
+    const tokenAddress = yield* toEvmAddress(address, "decrypt");
+    const ownerAddress = yield* toEvmAddress(owner, "decrypt");
     const balance = yield* tryZama("decrypt", () =>
-      sdk.createToken(address as Address).balanceOf(owner as Address)
+      sdk.createToken(tokenAddress).balanceOf(ownerAddress)
     );
     yield* values.addTokenBalance(
       new ConfidentialTokenBalanceKey({ owner, token }),
@@ -519,11 +559,12 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     readonly conversion: ConfidentialConversion;
   }) {
     const client = yield* getPublicClient(conversion.chainId);
+    const address = yield* toEvmAddress(conversion.wrapper, "read-rate");
     // `rate()` rebases underlying decimals to the wrapper's.
     const rate = yield* tryZama("read-rate", () =>
       client.readContract({
         abi: wrapperAbi,
-        address: conversion.wrapper as Address,
+        address,
         functionName: "rate",
       })
     );
@@ -533,11 +574,12 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const planConversion: ZamaServiceApi["planConversion"] = Effect.fn(
     "ZamaService.planConversion"
   )(function* ({ amount, conversion, network, owner }) {
-    const allowance = {
-      owner: owner as Address,
-      spender: conversion.wrapper as Address,
-      token: conversion.underlying as Address,
-    };
+    // A conversion runs on an EVM chain, so its addresses are hex.
+    const allowance = yield* Effect.all({
+      owner: toEvmAddress(owner, "plan-conversion"),
+      spender: toEvmAddress(conversion.wrapper, "plan-conversion"),
+      token: toEvmAddress(conversion.underlying, "plan-conversion"),
+    }).pipe(Effect.orDie);
     const approve = (type: "APPROVAL" | "RESET_APPROVAL") =>
       makeErc20Approval({
         amount,
@@ -596,14 +638,23 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
       const granted = yield* Effect.forEach(
         tokens,
         (token) =>
-          tryZama("read-operator", () =>
-            client.value.readContract({
-              abi: wrapperAbi,
-              address: token as Address,
-              args: [owner as Address, operator as Address],
-              functionName: "isOperator",
-            })
-          ).pipe(Effect.orElseSucceed(() => false)),
+          Effect.all([
+            toEvmAddress(token, "read-operator"),
+            toEvmAddress(owner, "read-operator"),
+            toEvmAddress(operator, "read-operator"),
+          ]).pipe(
+            Effect.flatMap(([address, holder, spender]) =>
+              tryZama("read-operator", () =>
+                client.value.readContract({
+                  abi: wrapperAbi,
+                  address,
+                  args: [holder, spender],
+                  functionName: "isOperator",
+                })
+              )
+            ),
+            Effect.orElseSucceed(() => false)
+          ),
         { concurrency: "unbounded" }
       );
       return granted.filter((isGranted) => !isGranted).length;
@@ -614,15 +665,15 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     owner,
     requestId,
   }: {
-    readonly chainId: number;
-    readonly owner: string;
+    readonly chainId: ConfidentialChainId;
+    readonly owner: WalletAddress;
     readonly requestId: ConfidentialHandle;
   }) {
     const sdk = yield* getSdk(chainId, owner);
     const decrypted = yield* tryZama("public-decrypt", () =>
-      sdk.decryption.decryptPublicValues([requestId as Hex])
+      sdk.decryption.decryptPublicValues([requestId])
     );
-    const cleartext = decrypted.clearValues[requestId as Hex];
+    const cleartext = decrypted.clearValues[requestId];
     if (typeof cleartext !== "bigint") {
       return yield* new ZamaError({
         cause: decrypted,
@@ -735,9 +786,14 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     const receipt = yield* tryZama("read-unwrap-receipt", () =>
       client.getTransactionReceipt({ hash })
     ).pipe(Effect.mapError(retryableFailure));
+    const receiver = yield* toEvmAddress(owner, "read-unwrap-receipt").pipe(
+      Effect.mapError((error) =>
+        unpreparable("The unwrap owner is not an EVM address.", error)
+      )
+    );
     const [requested] = parseEventLogs({
       abi: wrapperAbi,
-      args: { receiver: owner as Address },
+      args: { receiver },
       eventName: "UnwrapRequested",
       logs: receipt.logs,
     });

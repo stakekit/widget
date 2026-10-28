@@ -18,6 +18,12 @@ vi.mock("../../../src/services/tracking/tracking-variants", () => ({
   },
 }));
 
+const transaction = (txId: string) => ({
+  network: "ethereum",
+  txId,
+  yieldId: "ethereum-eth-lido-staking",
+});
+
 describe("tracking service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -44,26 +50,32 @@ describe("tracking service", () => {
         yield* TrackingService.use((tracking) =>
           Effect.gen(function* () {
             const config = yield* WidgetConfigService;
-            yield* tracking.trackEvent("txSigned", { txId: "first" });
+            yield* tracking.trackEvent("txSigned", transaction("first"));
             yield* config.update({
               apiKey: "test-api-key",
               tracking: { trackEvent: secondTrackEvent, trackPageView },
               variant: "default",
             });
-            yield* tracking.trackEvent("txSubmitted", { txId: "second" });
-            yield* tracking.trackPageView("earn", { source: "test" });
+            yield* tracking.trackEvent("txSubmitted", transaction("second"));
+            yield* tracking.trackPageView("positionDetails", {
+              yield: "Test yield",
+            });
           })
         ).pipe(Effect.provide(layer));
 
         expect(firstTrackEvent).toHaveBeenCalledOnce();
-        expect(firstTrackEvent).toHaveBeenCalledWith("Transaction signed", {
-          txId: "first",
-        });
+        expect(firstTrackEvent).toHaveBeenCalledWith(
+          "Transaction signed",
+          transaction("first")
+        );
         expect(secondTrackEvent).toHaveBeenCalledOnce();
-        expect(secondTrackEvent).toHaveBeenCalledWith("Transaction submitted", {
-          txId: "second",
+        expect(secondTrackEvent).toHaveBeenCalledWith(
+          "Transaction submitted",
+          transaction("second")
+        );
+        expect(trackPageView).toHaveBeenCalledWith("Position details", {
+          yield: "Test yield",
         });
-        expect(trackPageView).toHaveBeenCalledWith("Earn", { source: "test" });
       })
   );
 
@@ -80,8 +92,8 @@ describe("tracking service", () => {
 
       yield* TrackingService.use((tracking) =>
         Effect.all([
-          tracking.trackEvent("txSigned", { txId: "first" }),
-          tracking.trackEvent("txSubmitted", { txId: "second" }),
+          tracking.trackEvent("txSigned", transaction("first")),
+          tracking.trackEvent("txSubmitted", transaction("second")),
           tracking.trackPageView("positions"),
         ])
       ).pipe(Effect.provide(layer));
@@ -90,12 +102,12 @@ describe("tracking service", () => {
       expect(variantTracking.trackEvent).toHaveBeenNthCalledWith(
         1,
         "Transaction signed",
-        { txId: "first" }
+        transaction("first")
       );
       expect(variantTracking.trackEvent).toHaveBeenNthCalledWith(
         2,
         "Transaction submitted",
-        { txId: "second" }
+        transaction("second")
       );
       expect(variantTracking.trackPageView).toHaveBeenCalledWith("Positions");
     })

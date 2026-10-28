@@ -10,7 +10,12 @@ import {
 import type { YieldRewardRate } from "../earn/reward-rate";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
-import { equalTokens, type TokenString, tokenString } from "../token/token";
+import {
+  equalTokens,
+  type Token,
+  type TokenString,
+  tokenString,
+} from "../token/token";
 
 export type YieldBalanceType = EarnBalance["type"];
 
@@ -21,8 +26,6 @@ export type PositionBalancesByType = Map<
   })[]
 >;
 export type PositionValidators = ReadonlyArray<EarnValidator>;
-
-export type PositionDetailsLabelType = "hasFrozenV1";
 
 /**
  * Identifies one balance group of a position: `default`, `validators` (a
@@ -102,44 +105,43 @@ export const getBalanceValidators = (balance: EarnBalance) => {
 export const toPositionsData = (
   balancesData: ReadonlyArray<EarnPosition>
 ): PositionsData =>
-  balancesData.reduce((positions, position) => {
+  balancesData.reduce<PositionsData>((positions, position) => {
     positions.set(position.yieldId, {
       yieldId: position.yieldId,
-      rewardRate: position.rewardRate,
+      ...(position.rewardRate === undefined
+        ? {}
+        : { rewardRate: position.rewardRate }),
       balanceData: [...position.balances]
         .sort((a, b) =>
           getPositionBalanceDataKey(a).localeCompare(
             getPositionBalanceDataKey(b)
           )
         )
-        .reduce(
-          (balances, balance) => {
-            const key = getPositionBalanceDataKey(balance);
-            const previous = balances.get(key);
+        .reduce<PositionData["balanceData"]>((balances, balance) => {
+          const key = getPositionBalanceDataKey(balance);
+          const previous = balances.get(key);
 
-            if (previous) {
-              previous.balances.push(balance);
-            } else if (key === "default") {
-              balances.set(key, {
-                balances: [balance],
-                type: "default",
-              });
-            } else {
-              balances.set(key, {
-                balances: [balance],
-                type: "validators",
-                validators: getBalanceValidators(balance),
-              });
-            }
+          if (previous) {
+            previous.balances.push(balance);
+          } else if (key === "default") {
+            balances.set(key, {
+              balances: [balance],
+              type: "default",
+            });
+          } else {
+            balances.set(key, {
+              balances: [balance],
+              type: "validators",
+              validators: getBalanceValidators(balance),
+            });
+          }
 
-            return balances;
-          },
-          new Map() as PositionData["balanceData"]
-        ),
+          return balances;
+        }, new Map()),
     });
 
     return positions;
-  }, new Map() as PositionsData);
+  }, new Map());
 
 export const getPositionData = (
   positions: PositionsData,
@@ -198,7 +200,7 @@ export type PositionBalanceRow = PositionTokenSum &
     readonly isEncrypted?: boolean;
     /** The share token's amount, for balances denominated in shares. */
     readonly shareAmount?: BigNumber;
-    readonly shareToken?: EarnBalance["shareToken"];
+    readonly shareToken?: NonNullable<EarnBalance["shareToken"]>;
     readonly type: YieldBalanceType;
   }>;
 
@@ -234,6 +236,7 @@ export const groupPositionBalanceRows = (
         balance.shareToken ? tokenString(balance.shareToken) : ""
       }`;
       const previous = rows.get(key);
+      const isEncrypted = previous?.isEncrypted || balance.isEncrypted;
 
       rows.set(key, {
         amount: (previous?.amount ?? exactZero()).plus(balance.amount),
@@ -242,7 +245,7 @@ export const groupPositionBalanceRows = (
         ),
         cancelling,
         date: balance.date,
-        isEncrypted: previous?.isEncrypted || balance.isEncrypted,
+        ...(isEncrypted === undefined ? {} : { isEncrypted }),
         ...(balance.shareToken
           ? {
               shareAmount: (previous?.shareAmount ?? exactZero()).plus(
@@ -279,7 +282,7 @@ export const getSingleExitTokenSum = (
 export const toPositionBalancesByType = (
   balances: ReadonlyArray<EarnBalance>
 ): PositionBalancesByType =>
-  balances.reduce((byType, balance) => {
+  balances.reduce<PositionBalancesByType>((byType, balance) => {
     const amount = exactDecimal(balance.amount);
     if (!balance.isEncrypted && (amount.isZero() || amount.isNaN())) {
       return byType;
@@ -296,15 +299,11 @@ export const toPositionBalancesByType = (
     ]);
 
     return byType;
-  }, new Map() as PositionBalancesByType);
+  }, new Map());
 
 export const getPositionTotalAmount = (
   balances: EarnBalance[],
-  baseToken: {
-    readonly address?: string;
-    readonly symbol: string;
-    readonly network: string;
-  }
+  baseToken: Pick<Token, "symbol" | "network" | "address">
 ) => {
   const baseTokenBalance = balances.find((b) =>
     equalTokens(b.token, baseToken)

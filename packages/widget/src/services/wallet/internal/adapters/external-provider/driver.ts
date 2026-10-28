@@ -1,5 +1,4 @@
 import { Effect, Result, Schema } from "effect";
-import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { WalletSignature } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
@@ -34,6 +33,7 @@ import { decodeWalletPayload } from "../decode-wallet-payload";
 import {
   decodeAndPrepareBorrowEvmTransaction,
   decodeAndPrepareEvmTransaction,
+  isEvmAddress,
 } from "../evm/transaction";
 import {
   normalizeSolanaTransactionToHex,
@@ -74,16 +74,21 @@ const tryResult = <A>(
   }
 };
 
+const notEvmAccount = new WalletDecodeError({
+  cause: "Connected account is not an EVM address",
+});
+
 const decodeExternalProviderTransaction = ({
   address,
   network,
   tx,
 }: {
-  readonly address: Address;
+  readonly address: string;
   readonly network: Network;
   readonly tx: string;
 }): Effect.Effect<SKTx, WalletDecodeError> => {
   if (isEvmWalletNetwork(network)) {
+    if (!isEvmAddress(address)) return Effect.fail(notEvmAccount);
     return decodeAndPrepareEvmTransaction({ address, tx }).pipe(
       Effect.map((decodedTx): SKTx => ({ type: "evm", tx: decodedTx })),
       Effect.mapError((cause) => new WalletDecodeError({ cause }))
@@ -120,7 +125,7 @@ const decodeExternalProviderTransaction = ({
         Schema.fromJsonString(unsignedTronTransactionCodec),
         tx
       ).pipe(
-        Result.map((decodedTx) => ({ type: "tron", tx: decodedTx }) as TronTx)
+        Result.map((decodedTx): TronTx => ({ type: "tron", tx: decodedTx }))
       );
     }
 
@@ -130,7 +135,7 @@ const decodeExternalProviderTransaction = ({
         tx
       ).pipe(
         Result.map(
-          (decodedTx) => ({ type: "bittensor", tx: decodedTx }) as BittensorTx
+          (decodedTx): BittensorTx => ({ type: "bittensor", tx: decodedTx })
         )
       );
     }
@@ -148,7 +153,7 @@ const decodeBorrowExternalProviderTransaction = ({
   network,
   tx,
 }: {
-  readonly address: Address;
+  readonly address: string;
   readonly network: Network;
   readonly tx: string;
 }): Effect.Effect<SKBorrowTx, WalletDecodeError> => {
@@ -157,6 +162,7 @@ const decodeBorrowExternalProviderTransaction = ({
       new WalletDecodeError({ cause: "Unsupported Borrow network" })
     );
   }
+  if (!isEvmAddress(address)) return Effect.fail(notEvmAccount);
 
   return decodeAndPrepareBorrowEvmTransaction({ address, tx }).pipe(
     Effect.map((decodedTx): SKBorrowTx => ({ type: "evm", tx: decodedTx })),
@@ -165,7 +171,7 @@ const decodeBorrowExternalProviderTransaction = ({
 };
 
 type ExternalProviderTransactionInput = {
-  readonly address: Address;
+  readonly address: string;
   readonly network: Network;
   readonly tx: string;
 } & (

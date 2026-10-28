@@ -2,10 +2,7 @@ import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import {
-  type BorrowNetwork,
-  isBorrowNetwork,
-} from "../../domain/borrow/network";
+import { isBorrowNetwork } from "../../domain/borrow/network";
 import { deriveBorrowPositions } from "../../domain/borrow/positions/borrow-positions";
 import type { BorrowIntegrationPositionsResponse } from "../../domain/borrow/responses";
 import {
@@ -38,14 +35,14 @@ const borrowPositionPolicy = withApiResourcePolicy({
   staleTime: Duration.minutes(1),
 });
 
+const noBorrowPositions: typeof BorrowIntegrationPositionsResponse.Type = [];
+
 const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>
   appRuntime
     .atom((context) => {
       const network = key.scope?.network;
       if (!key.scope || !network || !isBorrowNetwork(network)) {
-        return Effect.succeed(
-          [] as typeof BorrowIntegrationPositionsResponse.Type
-        );
+        return Effect.succeed(noBorrowPositions);
       }
       const scope = key.scope;
 
@@ -61,13 +58,11 @@ const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>
           .getPositionData({
             address: scope.address,
             integrations,
-            network: network as BorrowNetwork,
+            network,
           })
           .pipe(
             Effect.catchTag("BorrowFeatureDisabled", () =>
-              Effect.succeed(
-                [] as typeof BorrowIntegrationPositionsResponse.Type
-              )
+              Effect.succeed(noBorrowPositions)
             ),
             withBorrowResourceError("borrow-positions")
           );

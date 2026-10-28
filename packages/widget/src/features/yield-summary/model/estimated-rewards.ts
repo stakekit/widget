@@ -9,7 +9,7 @@ import { isBittensorStaking } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 
 type YieldRewardProvider = Readonly<{
-  readonly rewardRate?: BigNumber | number | null;
+  readonly rewardRate?: BigNumber | number | null | undefined;
 }>;
 
 export const getYieldEstimatedRewards = ({

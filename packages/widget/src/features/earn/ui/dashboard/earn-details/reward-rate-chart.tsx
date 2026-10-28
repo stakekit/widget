@@ -31,7 +31,7 @@ type Props = {
   isRefreshing: boolean;
   refreshKey: HistoryPeriod;
   tickFormatter: (value: number) => string;
-  valueFormatter?: (value: number) => string;
+  valueFormatter?: ((value: number) => string) | undefined;
 };
 
 // History is sampled per day, week, or month at UTC midnight; formatting in
@@ -43,9 +43,9 @@ const height = 150;
 const accentColor = vars.color.primaryButtonBackground;
 
 type EndpointDotProps = {
-  cx?: number;
-  cy?: number;
-  index?: number;
+  cx?: number | undefined;
+  cy?: number | undefined;
+  index?: number | undefined;
 };
 
 const ChartDotGlyph = ({

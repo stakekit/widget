@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { encodeFunctionData, erc20Abi } from "viem";
 import type { Network } from "../network/network";
+import type { EvmChainIds } from "../wallet/chain-ids";
 
 type Address = `0x${string}`;
 
@@ -28,7 +29,7 @@ export type DirectTransaction = Readonly<{
    * signing, since an approval may have landed after it was planned.
    */
   readonly approval: Erc20Approval | null;
-  readonly chainId: number;
+  readonly chainId: EvmChainIds;
   readonly data: Address;
   /** Stable for one Flow Session, so a retry finds it again. */
   readonly id: DirectTransactionId;
@@ -50,7 +51,7 @@ export const makeErc20Approval = ({
   type,
   ...approval
 }: Erc20Approval & {
-  readonly chainId: number;
+  readonly chainId: EvmChainIds;
   readonly id: DirectTransactionId;
   readonly network: Network;
   readonly type: "APPROVAL" | "RESET_APPROVAL";

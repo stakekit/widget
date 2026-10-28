@@ -86,7 +86,10 @@ const enterStart = (
       providersDetails: [],
       request: {
         address,
-        arguments: { amount: "5", inputToken: token.address },
+        arguments: {
+          amount: "5",
+          ...(token.address === undefined ? {} : { inputToken: token.address }),
+        },
         yieldId: selectedStake.id,
       },
       selectedProviderOption: null,

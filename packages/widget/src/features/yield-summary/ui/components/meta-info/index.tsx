@@ -23,7 +23,7 @@ type Props = {
   selectedStake: EarnYieldWithProvider | null;
   selectedValidators: Map<EarnValidatorKey, EarnValidator>;
   selectedToken: Token | null;
-  textSize?: MetaInfoTextSize;
+  textSize?: MetaInfoTextSize | undefined;
 };
 
 export const MetaInfo = ({

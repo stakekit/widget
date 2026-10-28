@@ -82,7 +82,9 @@ const fakeWallet =
               })
             )
           ),
-          installUrl: wallet.injected.installUrl,
+          ...(wallet.injected.installUrl === undefined
+            ? {}
+            : { installUrl: wallet.injected.installUrl }),
         }
       : { _tag: "Remote" },
     chainGroup: wallet.family
@@ -299,7 +301,9 @@ export const makeWalletConnectPicker = Effect.fn("makeWalletConnectPicker")(
           settings={getTestWidgetConfig({
             apiKey: "test-api-key",
             disableInjectedProviderDiscovery: announcedWallets.length === 0,
-            initialChain: options.initialChain,
+            ...(options.initialChain === undefined
+              ? {}
+              : { initialChain: options.initialChain }),
             variant: "default",
           })}
         >

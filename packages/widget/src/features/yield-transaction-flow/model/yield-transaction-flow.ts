@@ -115,10 +115,14 @@ type YieldActionContinuationIntake = {
   readonly walletScope: WalletScopeKey;
 };
 
-export type YieldTransactionFlowIntake =
+/** An intake Review previews: every intake except a continued action. */
+export type YieldPreviewIntake =
   | EnterYieldTransactionFlowIntake
   | ExitYieldTransactionFlowIntake
-  | ManageYieldTransactionFlowIntake
+  | ManageYieldTransactionFlowIntake;
+
+export type YieldTransactionFlowIntake =
+  | YieldPreviewIntake
   | YieldActionContinuationIntake;
 
 type YieldTransactionFlowDestination = WidgetFlowDestination<
@@ -295,13 +299,10 @@ export const yieldFlowRoutes = {
 const copyYieldTransactionFlowIntake = (
   intake: YieldTransactionFlowIntake,
   walletScope: WalletScopeKey
-): YieldTransactionFlowIntake => {
-  const { walletScope: _expectedWalletScope, ...facts } = intake;
-  return {
-    ...facts,
-    walletScope: new WalletScopeKey(walletScope),
-  } as YieldTransactionFlowIntake;
-};
+): YieldTransactionFlowIntake => ({
+  ...intake,
+  walletScope: new WalletScopeKey(walletScope),
+});
 
 export const makeYieldFlowSession = (
   command: StartYieldTransactionFlow,
@@ -449,18 +450,21 @@ export const isYieldTransactionFlowWalletScopeValid = (
   currentWalletScope !== null &&
   sameWalletScopeOwner(intake.walletScope, currentWalletScope);
 
+const isYieldTransactionFlowIntakeVariant = <
+  Variant extends YieldTransactionFlowIntake["_tag"],
+>(
+  intake: YieldTransactionFlowIntake,
+  variant: Variant
+): intake is Extract<YieldTransactionFlowIntake, { readonly _tag: Variant }> =>
+  intake._tag === variant;
+
 export const getYieldTransactionFlowIntakeVariant = <
   Variant extends YieldTransactionFlowIntake["_tag"],
 >(
   intake: YieldTransactionFlowIntake,
   variant: Variant
 ): Extract<YieldTransactionFlowIntake, { readonly _tag: Variant }> | null =>
-  intake._tag === variant
-    ? (intake as Extract<
-        YieldTransactionFlowIntake,
-        { readonly _tag: Variant }
-      >)
-    : null;
+  isYieldTransactionFlowIntakeVariant(intake, variant) ? intake : null;
 
 const getYieldFlowInputToken = (intake: YieldTransactionFlowIntake) =>
   Match.value(intake).pipe(

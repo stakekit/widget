@@ -6,7 +6,6 @@ import {
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
 import { Array as EArray, Effect, Option, Stream } from "effect";
-import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import type {
@@ -21,6 +20,7 @@ import {
 import type { WalletConnectProtocol } from "../../platform/wallet-connect-protocol";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { toWagmiAccounts } from "../../wagmi-seam";
 import walletConnectIcon from "../evm/icons/wallet-connect.svg";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
@@ -121,7 +121,7 @@ const createSubstrateConnector = ({
   chains: ReadonlyArray<Chain>;
 }) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => {
-    const filteredChains = chains as Chain[];
+    const filteredChains = [...chains];
     const getFirstFilteredChain = () =>
       EArray.head(filteredChains).pipe(
         Option.getOrThrowWith(() => new Error("No supported chains found"))
@@ -196,11 +196,7 @@ const createSubstrateConnector = ({
           config.storage?.removeItem("substrate.disconnected");
           config.storage?.setItem("substrate.lastConnectedId", id);
 
-          return wagmiConnectResult(
-            args?.withCapabilities,
-            accounts as Address[],
-            chain.id
-          );
+          return wagmiConnectResult(args?.withCapabilities, accounts, chain.id);
         }
 
         throw new Error("No accounts found");
@@ -212,9 +208,7 @@ const createSubstrateConnector = ({
         return wallet.disconnect();
       },
       getAccounts: () =>
-        wallet
-          .getAccounts(currentChainId())
-          .then((accounts) => accounts as Address[]),
+        wallet.getAccounts(currentChainId()).then(toWagmiAccounts),
       switchChain: async (chain) => {
         const chainToSwitchTo = filteredChains.find(
           (c) => c.id === chain.chainId
@@ -230,7 +224,7 @@ const createSubstrateConnector = ({
 
         state.chainId = chainToSwitchTo.id;
         config.emitter.emit("change", {
-          accounts: accounts as Address[],
+          accounts: toWagmiAccounts(accounts),
           chainId: chainToSwitchTo.id,
         });
 

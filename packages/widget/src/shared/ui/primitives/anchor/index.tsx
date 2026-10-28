@@ -7,7 +7,9 @@ export const SKAnchor = (props: PropsWithChildren<{ href?: string }>) => {
     <Box
       className={container}
       as="a"
-      href={props.href ?? (props.children as string) ?? ""}
+      href={
+        props.href ?? (typeof props.children === "string" ? props.children : "")
+      }
       target="_blank"
     >
       {props.children ?? props.href}

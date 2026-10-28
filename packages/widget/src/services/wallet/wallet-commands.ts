@@ -47,13 +47,15 @@ export type WalletSwitchAccountInput = {
 
 export type WalletSignMessageInput = {
   readonly account?: Address;
-  readonly connector?: Connector;
+  // `undefined` is passed to override a connector with Wagmi's current one.
+  readonly connector?: Connector | undefined;
   readonly message: string;
 };
 
 export type WalletSignTypedDataInput = Eip712TypedData & {
   readonly account?: Address;
-  readonly connector?: Connector;
+  // `undefined` is passed to override a connector with Wagmi's current one.
+  readonly connector?: Connector | undefined;
 };
 
 type ZamaPermitMeta = {

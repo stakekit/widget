@@ -1,4 +1,4 @@
-import { Struct } from "effect";
+import { Array as Arr, Struct } from "effect";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import {
   getConfidentialAssetToken,
@@ -100,10 +100,12 @@ export const resolvePositionDetailsExitReceiveTokenSelection = ({
     "exit",
     "outputToken"
   )?.options;
-  if (!advertisedOptions?.length) return null;
+  if (!advertisedOptions || !Arr.isReadonlyArrayNonEmpty(advertisedOptions)) {
+    return null;
+  }
 
   const tokensByAddress = buildExitReceiveTokensByAddress(integration);
-  const options = advertisedOptions.map((address) => ({
+  const options = Arr.map(advertisedOptions, (address) => ({
     address,
     symbol: tokensByAddress.get(addressIdentity(address))?.symbol ?? address,
   }));
@@ -126,7 +128,7 @@ export const resolvePositionDetailsExitReceiveTokenSelection = ({
       )
     : preferred;
 
-  const resolved = selected ?? defaultOption ?? options[0]!;
+  const resolved = selected ?? defaultOption ?? Arr.headNonEmpty(options);
   const exitMode =
     confidentialAsset &&
     equalExitReceiveTokenAddresses(resolved.address, confidentialAsset)
@@ -152,14 +154,12 @@ export const projectExitReceiveTokenOption = ({
   const token =
     known ??
     ({
-      ...Struct.omit(positionToken, ["address"]),
+      ...Struct.omit(positionToken, ["address", "coinGeckoId", "logoURI"]),
       ...(option.address === NATIVE_TOKEN_ADDRESS
         ? {}
         : { address: option.address }),
       name: option.symbol,
       symbol: option.symbol,
-      logoURI: undefined,
-      coinGeckoId: undefined,
     } satisfies Token);
 
   return {

@@ -2,6 +2,7 @@ import { Data, Duration, Effect, Result, Schedule } from "effect";
 import { isHex, keccak256 } from "viem";
 import type { ManageActionCommand } from "../../../domain/action/models";
 import { getValidStakeSessionTx } from "../../../domain/action/rules";
+import type { ConfidentialChainId } from "../../../domain/earn/confidential";
 import { getEncryptedHandle } from "../../../domain/earn/models";
 import { TransactionHash } from "../../../domain/identity/identifiers";
 import {
@@ -135,7 +136,7 @@ export const makePrepareAction = Effect.gen(function* () {
       context,
       input,
     }: {
-      readonly chainId: number;
+      readonly chainId: ConfidentialChainId;
       readonly context: TransactionWorkflowContext;
       readonly input: ConfidentialTransactionWorkflowInput;
     }) {

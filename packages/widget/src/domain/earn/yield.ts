@@ -1,8 +1,8 @@
 import type BigNumber from "bignumber.js";
-import { Array as EArray, pipe } from "effect";
+import { Array as EArray, Record as ERecord, pipe, Schema } from "effect";
 import type { TFunction } from "i18next";
 import { sumExact } from "../finance/exact";
-import type { ProviderOption, YieldId } from "../identity/identifiers";
+import { type ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
 import {
@@ -30,7 +30,7 @@ export type YieldMetadata = Pick<
   EarnYieldWithProvider["metadata"],
   "logoURI" | "name"
 > & {
-  provider?: EarnProvider;
+  provider?: EarnProvider | undefined;
 };
 
 const knownApiYieldTypes = [
@@ -71,9 +71,11 @@ type YieldTypeLabelsMap = {
   };
 };
 
-/** Preferred yield ID per host token key, per network. */
+/** Preferred yield ID, or `"*"` for the default choice, per host token key, per network. */
 export type PreferredTokenYieldsPerNetwork = Readonly<
-  Record<string, Readonly<Record<HostTokenKey, string>>>
+  Partial<
+    Record<Network, Readonly<Partial<Record<HostTokenKey, YieldId | "*">>>>
+  >
 >;
 
 export type ValidatorsConfig = ReadonlyMap<
@@ -113,14 +115,9 @@ const apiYieldTypeToYieldCategory = {
 export const getApiYieldTypesForYieldCategory = (
   category: YieldCategoryType
 ): KnownApiYieldType[] =>
-  (
-    Object.entries(apiYieldTypeToYieldCategory) as [
-      KnownApiYieldType,
-      YieldCategoryType,
-    ][]
-  )
-    .filter(([, mapped]) => mapped === category)
-    .map(([yieldType]) => yieldType);
+  ERecord.keys(apiYieldTypeToYieldCategory).filter(
+    (yieldType) => apiYieldTypeToYieldCategory[yieldType] === category
+  );
 
 export const getYieldCategory = (
   yieldDto: EarnYieldWithProvider
@@ -170,7 +167,7 @@ export const filterValidators = <T extends ValidatorDto>({
         const blockedIdentities = toAddressIdentities(blocked);
         const preferredIdentities = toAddressIdentities(preferred);
 
-        return validators.flatMap((v) => {
+        return validators.flatMap((v): T[] => {
           const addressIdentity = validatorAddressIdentity(v.address);
 
           if (allowedIdentities && !allowedIdentities.has(addressIdentity)) {
@@ -183,10 +180,10 @@ export const filterValidators = <T extends ValidatorDto>({
             !!(mergePreferredWithDefault && v.preferred);
 
           if (preferredOnly) {
-            return isPreferred ? [{ ...v, preferred: true } as T] : [];
+            return isPreferred ? [{ ...v, preferred: true }] : [];
           }
 
-          return [{ ...v, preferred: isPreferred } as T];
+          return [{ ...v, preferred: isPreferred }];
         });
       })();
 
@@ -318,7 +315,7 @@ export const getExtendedYieldType = (
     return "pooled_staking";
   }
 
-  const type = yieldDto.mechanics.type as string;
+  const type = yieldDto.mechanics.type;
 
   return isKnownApiYieldType(type) ? type : "unknown";
 };
@@ -505,14 +502,21 @@ export const isYieldValidatorSelectionRequired = (
     isYieldActionArgRequired(yieldDto, "enter", "validatorAddresses")
   );
 
-export const isEthenaUsdeStaking = (yieldId: string) =>
-  yieldId === "ethena-usde-staking";
+const decodeYieldId = Schema.decodeSync(YieldId);
 
-export const isBittensorStaking = (yieldId: string) =>
-  yieldId === "bittensor-native-staking";
+const ethenaUsdeStakingYieldId = decodeYieldId("ethena-usde-staking");
+const bittensorStakingYieldId = decodeYieldId("bittensor-native-staking");
 
-const zeroRewardRateYieldIdWhitelist = new Set<string>([
-  "optimism-usdc-gtusdcb-0x4ffc4e5f1f1f5c43dc9bc27b53728da13b02be35-4626-vault",
+export const isEthenaUsdeStaking = (yieldId: YieldId) =>
+  yieldId === ethenaUsdeStakingYieldId;
+
+export const isBittensorStaking = (yieldId: YieldId) =>
+  yieldId === bittensorStakingYieldId;
+
+const zeroRewardRateYieldIdWhitelist = new Set<YieldId>([
+  decodeYieldId(
+    "optimism-usdc-gtusdcb-0x4ffc4e5f1f1f5c43dc9bc27b53728da13b02be35-4626-vault"
+  ),
 ]);
 
 export const isNonZeroRewardRateYield = (
@@ -525,27 +529,27 @@ export const isNonZeroRewardRateYield = (
  * Yields closed to deposits (`status.enter: false`) that stay visible while
  * their investment schedule pauses deposits. Entry remains disabled for them.
  */
-const displayOnlyYields: Record<
-  string,
+const displayOnlyYields = new Map<
+  YieldId,
   { readonly network: Network; readonly yieldType: KnownApiYieldType }
-> = {
-  "base-usdc-midas-mglo-vault": {
-    network: "base",
-    yieldType: "real_world_asset",
-  },
-  "robinhood-usdg-midas-mglo-vault": {
-    network: "robinhood",
-    yieldType: "real_world_asset",
-  },
-  "ethereum-usdc-midas-mglobal-vault": {
-    network: "ethereum",
-    yieldType: "real_world_asset",
-  },
-};
+>([
+  [
+    decodeYieldId("base-usdc-midas-mglo-vault"),
+    { network: "base", yieldType: "real_world_asset" },
+  ],
+  [
+    decodeYieldId("robinhood-usdg-midas-mglo-vault"),
+    { network: "robinhood", yieldType: "real_world_asset" },
+  ],
+  [
+    decodeYieldId("ethereum-usdc-midas-mglobal-vault"),
+    { network: "ethereum", yieldType: "real_world_asset" },
+  ],
+]);
 
 export const isYieldVisible = (
   yieldDto: Pick<EarnYieldWithProvider, "id" | "status">
-) => yieldDto.status.enter || Object.hasOwn(displayOnlyYields, yieldDto.id);
+) => yieldDto.status.enter || displayOnlyYields.has(yieldDto.id);
 
 /**
  * API yield types that can hold a display-only yield within a token-catalog
@@ -556,7 +560,7 @@ export const getDisplayOnlyYieldTypes = (scope: {
   readonly yieldTypes?: ReadonlyArray<KnownApiYieldType>;
 }): KnownApiYieldType[] => [
   ...new Set(
-    Object.values(displayOnlyYields)
+    Array.from(displayOnlyYields.values())
       .filter(
         ({ network, yieldType }) =>
           (!scope.network || scope.network === network) &&
@@ -583,7 +587,7 @@ export const withDisplayOnlyYields = <Option extends TokenYieldOption>(
 
   for (const offeredOption of offered) {
     const displayOnly = offeredOption.availableYields.filter((id) =>
-      Object.hasOwn(displayOnlyYields, id)
+      displayOnlyYields.has(id)
     );
     if (displayOnly.length === 0) continue;
 

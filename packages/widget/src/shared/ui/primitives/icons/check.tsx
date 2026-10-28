@@ -5,9 +5,9 @@ export const Check = ({
   hw = 24,
   className,
 }: {
-  hw?: number;
+  hw?: number | undefined;
   color?: keyof (typeof vars)["color"];
-  className?: string;
+  className?: string | undefined;
 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

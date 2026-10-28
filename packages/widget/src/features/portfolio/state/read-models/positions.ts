@@ -15,7 +15,6 @@ import {
   type PositionValidators,
   toPositionsData,
 } from "../../../../domain/portfolio/positions";
-import type { YieldBalanceLabel } from "../../../../domain/portfolio/token-balance";
 import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import {
   BorrowPositionsKey,
@@ -43,7 +42,6 @@ export type PositionItem = {
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
   readonly hasPendingClaimRewards: boolean;
   readonly token: EarnBalance["token"] | null;
-  readonly yieldLabelDto: YieldBalanceLabel | null;
 } & (
   | { readonly type: "validators"; readonly validators: PositionValidators }
   | { readonly type: "default" }
@@ -107,7 +105,6 @@ export const toPositionItems = (
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,
-          yieldLabelDto: null,
           token:
             [...value.balances].sort(
               (a, b) => priorityOrder[a.type] - priorityOrder[b.type]

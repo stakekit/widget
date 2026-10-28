@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Struct } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import { WalletDecodeError } from "../../../wallet-errors";
@@ -17,19 +17,23 @@ const prepareEvmTransaction = (
     data: decodedTx.data,
     gas: decodedTx.gasLimit,
     to: decodedTx.to,
-    value: decodedTx.value,
+    ...(decodedTx.value === undefined ? {} : { value: decodedTx.value }),
   };
 
   return decodedTx.maxFeePerGas !== undefined
     ? {
         ...transaction,
         maxFeePerGas: decodedTx.maxFeePerGas,
-        maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas,
+        ...(decodedTx.maxPriorityFeePerGas === undefined
+          ? {}
+          : { maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas }),
         type: "eip1559" as const,
       }
     : {
         ...transaction,
-        gasPrice: decodedTx.gasPrice,
+        ...(decodedTx.gasPrice === undefined
+          ? {}
+          : { gasPrice: decodedTx.gasPrice }),
         type: "legacy" as const,
       };
 };
@@ -57,23 +61,23 @@ export const makeEvmWalletDriver = ({
 }: {
   readonly sendTransaction: WagmiActions["sendEvmTransaction"];
 }) => ({
-  signTransaction: ({
-    account,
-    connector,
-    family,
-    tx,
-  }: {
+  signTransaction: (request: {
     readonly account?: Address;
     readonly connector?: Connector;
     readonly family: "borrow" | "yield";
     readonly tx: string;
   }) => {
     const decode =
-      family === "borrow" ? decodeBorrowEvmTransaction : decodeEvmTransaction;
+      request.family === "borrow"
+        ? decodeBorrowEvmTransaction
+        : decodeEvmTransaction;
 
-    return decode(tx).pipe(
+    return decode(request.tx).pipe(
       Effect.flatMap((input) =>
-        sendTransaction({ ...input, account, connector })
+        sendTransaction({
+          ...input,
+          ...Struct.pick(request, ["account", "connector"]),
+        })
       )
     );
   },

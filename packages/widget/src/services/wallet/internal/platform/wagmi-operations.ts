@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Array as EArray, Effect, Layer, Schema } from "effect";
 import type { Address, Hash, Hex } from "viem";
 import {
   type Config,
@@ -40,20 +40,19 @@ export class WagmiOperationsError extends Schema.TaggedError<
   ]),
 }) {}
 
-const connectionOwners = new WeakMap<
-  Config,
-  {
-    pending: symbol | undefined;
-    readonly connectors: Map<Connector, () => void>;
-  }
->();
+type ConnectionOwner = {
+  pending: symbol | undefined;
+  readonly connectors: Map<Connector, () => void>;
+};
+
+const connectionOwners = new WeakMap<Config, ConnectionOwner>();
 
 const connectionOwner = (config: Config) => {
   const current = connectionOwners.get(config);
   if (current) return current;
-  const owner = {
-    pending: undefined as symbol | undefined,
-    connectors: new Map<Connector, () => void>(),
+  const owner: ConnectionOwner = {
+    pending: undefined,
+    connectors: new Map(),
   };
   connectionOwners.set(config, owner);
   return owner;
@@ -160,10 +159,18 @@ export const wagmiOperations = {
           new WagmiOperationsError({ cause, operation: "connect" }),
       });
       if (owner.pending !== attempt) return yield* Effect.interrupt;
+      const accounts = result.accounts;
+      // Wagmi records a connection only with at least one account.
+      if (!EArray.isReadonlyArrayNonEmpty(accounts)) {
+        return yield* new WagmiOperationsError({
+          cause: new Error("Connector returned no accounts"),
+          operation: "connect",
+        });
+      }
       config.setState((state) => ({
         ...state,
         connections: new Map(state.connections).set(input.connector.uid, {
-          accounts: result.accounts as Connection["accounts"],
+          accounts,
           chainId: result.chainId,
           connector: input.connector,
         }),

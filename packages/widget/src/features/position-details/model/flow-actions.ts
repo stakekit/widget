@@ -404,6 +404,8 @@ export type PendingActionTelemetry =
       readonly yieldId: EarnYieldWithProvider["id"];
     }>;
 
+const noSelectedValidators: ReadonlyArray<ValidatorAddress> = [];
+
 export const resolvePositionPendingActionDecision = ({
   canMount,
   command,
@@ -441,7 +443,7 @@ export const resolvePositionPendingActionDecision = ({
       return {
         attemptId: null,
         pendingAction: command.pendingAction,
-        selectedValidators: [] as ReadonlyArray<ValidatorAddress>,
+        selectedValidators: noSelectedValidators,
         yieldBalance: command.yieldBalance,
       };
     }

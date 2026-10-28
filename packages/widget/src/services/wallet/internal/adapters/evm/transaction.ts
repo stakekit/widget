@@ -6,27 +6,25 @@ const HexString = Schema.declare<Hex>(
   (input): input is Hex => typeof input === "string" && input.startsWith("0x"),
   { expected: "a 0x-prefixed hex string" }
 );
-const EvmAddress = Schema.declare<Address>(
-  (input): input is Address =>
-    typeof input === "string" && input.startsWith("0x"),
-  { expected: "a 0x-prefixed address" }
-);
+/** An EVM account as wallets and the API quote it: a 0x-prefixed string. */
+export const isEvmAddress = (input: unknown): input is Address =>
+  typeof input === "string" && input.startsWith("0x");
+const EvmAddress = Schema.declare<Address>(isEvmAddress, {
+  expected: "a 0x-prefixed address",
+});
 
 /**
  * EVM nodes quote transaction quantities as hex, while the API quotes them as
  * decimal strings or safe integers.
  */
-const HexQuantity = Schema.String.check(
-  Schema.makeFilter((value) =>
-    isHex(value) && value.length > 2
-      ? true
-      : "expected a 0x-prefixed hex quantity"
-  )
-).pipe(
+const HexQuantity = Schema.String.pipe(
+  Schema.refine((value): value is Hex => isHex(value) && value.length > 2, {
+    message: "expected a 0x-prefixed hex quantity",
+  }),
   Schema.decodeTo(
     Schema.BigInt,
     SchemaTransformation.transform({
-      decode: (value) => hexToBigInt(value as Hex),
+      decode: (value) => hexToBigInt(value),
       encode: (value) => numberToHex(value),
     })
   )

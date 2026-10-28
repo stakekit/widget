@@ -20,6 +20,7 @@ import {
   TolerantOptionalUtcDateTimeFromString,
 } from "../finance/scalars";
 import {
+  ContractAddress,
   ProviderId,
   ProviderOption,
   TokenAddress,
@@ -324,7 +325,7 @@ const EncryptedAmountArgument = decodeApiArgument(
 
 const EncryptedLegAmountsArgumentDomain = Schema.Struct({
   required: Schema.Boolean,
-  options: Schema.Array(Schema.String),
+  options: Schema.Array(ContractAddress),
 }).check(makeRequiredOptionsFilter("encryptedLegAmounts"));
 
 const EncryptedLegAmountsArgument = decodeApiArgument(
@@ -558,12 +559,18 @@ const EarnInvestmentSchedule = Schema.Struct({
 });
 export type EarnInvestmentSchedule = typeof EarnInvestmentSchedule.Type;
 
+/** The contracts a yield's enter and exit transactions call. */
+const EarnExecutionContracts = Schema.Struct({
+  enter: Schema.optionalKey(Schema.Array(ContractAddress)),
+  exit: Schema.optionalKey(Schema.Array(ContractAddress)),
+});
+
 export const EarnYield = Schema.Struct({
   ...Struct.pick(YieldApi.YieldDto.fields, ["network", "status"]),
   statistics: Schema.optionalKey(EarnYieldStatistics),
   // Malformed contracts leave the yield non-confidential.
   executionContracts: Schema.optionalKey(
-    TolerantNullOr(YieldApi.ExecutionContractsDto, {
+    TolerantNullOr(EarnExecutionContracts, {
       operation: "yield",
       field: "executionContracts",
     })
@@ -626,9 +633,9 @@ const OptionalKeyFromNullOr = <S extends Schema.Top>(schema: S) =>
 export const ConfidentialHandle = Schema.String.pipe(
   Schema.decode(SchemaTransformation.toLowerCase()),
   Schema.decodeTo(
-    Schema.String.check(Schema.isPattern(/^0x[0-9a-f]{64}$/)).pipe(
-      Schema.brand("ConfidentialHandle")
-    )
+    Schema.TemplateLiteral(["0x", Schema.String])
+      .check(Schema.isPattern(/^0x[0-9a-f]{64}$/))
+      .pipe(Schema.brand("ConfidentialHandle"))
   )
 );
 export type ConfidentialHandle = typeof ConfidentialHandle.Type;
@@ -754,17 +761,14 @@ const decodeBalanceShares = (
 
 export const EarnBalance = EarnBalanceWire.pipe(
   Schema.decodeTo(EarnBalanceDomain, {
-    decode: SchemaGetter.transformEffect(
-      ({ shareAmount, shareAmountRaw, ...balance }, options) =>
-        decodeBalanceShares(
-          { isEncrypted: balance.isEncrypted, shareAmount, shareAmountRaw },
-          options
-        ).pipe(
-          Effect.map((shares) =>
-            shares === null ? balance : { ...balance, shares }
-          )
+    decode: SchemaGetter.transformEffect((wire, options) => {
+      const balance = Struct.omit(wire, ["shareAmount", "shareAmountRaw"]);
+      return decodeBalanceShares(wire, options).pipe(
+        Effect.map((shares) =>
+          shares === null ? balance : { ...balance, shares }
         )
-    ),
+      );
+    }),
     encode: SchemaGetter.forbidden(
       () => "Decoded Earn balances are decode-only"
     ),
@@ -790,14 +794,14 @@ export type EarnPosition = typeof EarnPosition.Type;
 export const EarnYieldBalancesResponse = EarnPosition;
 export type EarnYieldBalancesResponse = EarnPosition;
 
-const YieldIdentifier = Schema.Struct({ id: Schema.String }).pipe(
+const YieldIdentifier = Schema.Struct({ id: YieldId }).pipe(
   Schema.decodeTo(Schema.String, {
     decode: SchemaGetter.transform((value) => value.id),
     encode: SchemaGetter.forbidden(() => "Yield identifier is decode-only"),
   })
 );
 
-const ValidatorIdentifier = Schema.Struct({ address: Schema.String }).pipe(
+const ValidatorIdentifier = Schema.Struct({ address: ValidatorAddress }).pipe(
   Schema.decodeTo(Schema.String, {
     decode: SchemaGetter.transform((value) => value.address),
     encode: SchemaGetter.forbidden(() => "Validator identifier is decode-only"),

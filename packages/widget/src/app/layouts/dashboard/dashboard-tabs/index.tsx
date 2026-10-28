@@ -63,7 +63,7 @@ export const DashboardTabs = ({
   const onRouteTabPress = (selected: DashboardRouteTab) => {
     if (selectedTab === selected) return;
     trackEvent("tabClicked", { selected });
-    navigation.push(tabsMap[selected]);
+    void navigation.push(tabsMap[selected]);
   };
 
   const onYieldCategoryPress = (category: YieldCategory) => {
@@ -72,7 +72,7 @@ export const DashboardTabs = ({
     }
 
     trackEvent("tabClicked", { selected: category });
-    navigation.push(dashboardEarnRoute.build({ yieldCategory: category }));
+    void navigation.push(dashboardEarnRoute.build({ yieldCategory: category }));
   };
 
   const borrowEnabled = useWidgetConfig("borrowEnabled");

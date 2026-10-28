@@ -493,28 +493,21 @@ export const setup = async (
     requestFn,
   });
 
-  const setUrl = ({
-    accountId,
-    yieldId,
-    pendingaction,
-    network,
-  }:
-    | {
-        yieldId: string;
-        accountId: string;
-        pendingaction?: string;
-        network?: never;
-      }
-    | {
-        network: string;
-        yieldId?: never;
-        accountId?: never;
-        pendingaction?: never;
-      }) => {
-    return network
-      ? _setUrl({ network })
-      : _setUrl({ yieldId, accountId, pendingaction });
-  };
+  const setUrl = (
+    params:
+      | {
+          yieldId: string;
+          accountId: string;
+          pendingaction?: string;
+          network?: never;
+        }
+      | {
+          network: string;
+          yieldId?: never;
+          accountId?: never;
+          pendingaction?: never;
+        }
+  ) => _setUrl(params);
 
   return {
     customConnectors,

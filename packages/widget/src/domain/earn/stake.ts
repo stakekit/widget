@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
+import { Schema } from "effect";
 import { exactDecimal, exactZero } from "../finance/exact";
-import type { Network } from "../network/network";
+import { YieldId } from "../identity/identifiers";
 import { equalTokens, type Token } from "../token/token";
 import { isConfidentialYield } from "./confidential";
 import type { EarnYieldWithProvider } from "./models";
@@ -80,13 +81,19 @@ export const getEnterAmountConstraint = (
   };
 };
 
-const yieldsWithEnterMinBasedOnPosition = new Map<Network, Set<string>>([
-  ["polkadot", new Set(["polkadot-dot-validator-staking"])],
+const yieldsWithEnterMinBasedOnPosition = new Map<
+  Token["network"],
+  ReadonlySet<YieldId>
+>([
+  [
+    "polkadot",
+    new Set([Schema.decodeSync(YieldId)("polkadot-dot-validator-staking")]),
+  ],
 ]);
 
 const isYieldWithEnterMinBasedOnPosition = (yieldDto: EarnYieldWithProvider) =>
   yieldsWithEnterMinBasedOnPosition
-    .get(yieldDto.mechanics.gasFeeToken.network as Network)
+    .get(yieldDto.mechanics.gasFeeToken.network)
     ?.has(yieldDto.id) ?? false;
 
 /**

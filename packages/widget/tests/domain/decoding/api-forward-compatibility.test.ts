@@ -518,9 +518,9 @@ describe("Domain schemas decode only the fields the widget reads", () => {
 
         expect(balances[0]?.token).not.toHaveProperty("feeConfigurationId");
         expect(Object.values(rewards)[0]?.token.symbol).toBe(token.symbol);
-        expect(
-          prices.getByToken({ network: "ethereum", symbol: "ETH" })?.price
-        ).toEqual(expect.anything());
+        expect(prices.getByToken({ network: "ethereum" })?.price).toEqual(
+          expect.anything()
+        );
       })
   );
 });

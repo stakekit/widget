@@ -56,7 +56,10 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
-import { makeTestTracking } from "../../utils/services/tracking-service";
+import {
+  makeTestTracking,
+  type TestTrackingOptions,
+} from "../../utils/services/tracking-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
 import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
@@ -293,7 +296,7 @@ const makeRegistry = ({
 }: {
   readonly push: Mock<Push>;
   readonly serviceWallet?: NormalizedWalletState;
-  readonly trackEvent: TrackingService["Service"]["trackEvent"];
+  readonly trackEvent: NonNullable<TestTrackingOptions["trackEvent"]>;
   readonly wallet?: NormalizedWalletState;
   readonly yieldBalance?: EarnBalance;
   readonly yieldOpportunity?: typeof selectedYield;

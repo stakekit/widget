@@ -60,6 +60,12 @@ export const ValidatorAddress = Schema.NonEmptyString.pipe(
 );
 export type ValidatorAddress = typeof ValidatorAddress.Type;
 
+/** A smart contract's address on its chain, such as a confidential vault's batcher. */
+export const ContractAddress = Schema.NonEmptyString.pipe(
+  Schema.brand("ContractAddress")
+);
+export type ContractAddress = typeof ContractAddress.Type;
+
 const hexAddress = /^0x[0-9a-f]+$/i;
 
 /** 0x-prefixed hex addresses are case-insensitive; other encodings keep their case. */

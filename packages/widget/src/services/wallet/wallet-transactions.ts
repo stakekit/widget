@@ -40,6 +40,7 @@ export type YieldActionMeta = {
   readonly providersDetails: Array<YieldProviderDetail>;
 };
 
+/** Every field is always present (possibly `undefined`): hosts receive it as-is. */
 export type YieldTransactionMeta = YieldActionMeta & {
   readonly annotatedTransaction: ActionTransaction["annotatedTransaction"];
   readonly gasEstimate: ActionTransaction["gasEstimate"];
@@ -61,11 +62,13 @@ export type BorrowTransactionMeta = {
     readonly borrowAmount?: string;
     readonly collateralAmount?: string;
     readonly collateralAmountRaw?: string;
-    readonly collateralTokenAddress?: BorrowRawArguments["collateralTokenAddress"];
+    readonly collateralTokenAddress?: NonNullable<
+      BorrowRawArguments["collateralTokenAddress"]
+    >;
     readonly marketId: BorrowRawArguments["marketId"];
     readonly repayAll?: boolean;
     readonly targetLtv?: string;
-    readonly tokenAddress?: BorrowRawArguments["tokenAddress"];
+    readonly tokenAddress?: NonNullable<BorrowRawArguments["tokenAddress"]>;
   };
   readonly txId: BorrowTransaction["id"];
   readonly txType: BorrowTransaction["type"];
@@ -77,7 +80,8 @@ export type LegacyTransaction = typeof LegacyTransaction.Type;
 type WalletEvmTransactionInputCommon = {
   readonly account?: Address;
   readonly chainId?: number;
-  readonly connector?: Connector;
+  // `undefined` is passed to override a connector with Wagmi's current one.
+  readonly connector?: Connector | undefined;
   readonly data?: Hex;
   readonly gas?: bigint;
   readonly to: Address;

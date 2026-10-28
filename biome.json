@@ -15,7 +15,8 @@
       "!**/region-iso-3166-codes.ts",
       "!**/mockServiceWorker.js",
       "!**/package.json",
-      "!**/.repos"
+      "!**/.repos",
+      "!!**/@dedot/api/chaintypes/substrate/tx.d.ts"
     ]
   },
   "formatter": {
@@ -37,7 +38,7 @@
     "rules": {
       "preset": "recommended",
       "style": {
-        "noNonNullAssertion": "off",
+        "noNonNullAssertion": "error",
         "noParameterAssign": "error",
         "useAsConstAssertion": "error",
         "useDefaultParameterLast": "error",
@@ -66,7 +67,11 @@
         "useIndexOf": "off"
       },
       "nursery": {
-        "useReactCompiler": "error"
+        "useReactCompiler": "error",
+        "useExhaustiveSwitchCases": "error",
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error",
+        "noUselessTypeConversion": "error"
       }
     },
     "domains": {
@@ -76,6 +81,26 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["packages/widget/src/**"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noUnsafeTypeAssertion": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/widget/tests/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
     {
       "includes": [
         "packages/widget/src/**",

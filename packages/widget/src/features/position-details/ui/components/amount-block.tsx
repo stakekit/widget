@@ -25,7 +25,7 @@ type AmountBlockProps = {
   canChangeAmount: boolean;
   disabled?: boolean;
   onClick: () => void;
-  unstakeAmountError?: boolean;
+  unstakeAmountError?: boolean | undefined;
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
@@ -61,10 +61,7 @@ export const AmountBlock = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  const unstakeProps =
-    rest.variant === "unstake"
-      ? (rest as Extract<AmountBlockProps, { variant: "unstake" }>)
-      : null;
+  const unstakeProps = rest.variant === "unstake" ? rest : null;
   const min =
     unstakeProps?.unstakeMinAmount == null
       ? null

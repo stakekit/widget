@@ -11,6 +11,7 @@ import {
   WalletConnectNamespaceSchema,
   type WalletConnectProtocol,
   type WalletConnectSignClient,
+  WalletConnectTopic,
   walletConnectSessionHint,
   walletConnectSessionOwners,
 } from "../../src/services/wallet/internal/platform/wallet-connect-protocol";
@@ -58,6 +59,7 @@ export const walletConnectSession = (input: {
 const decodeTopic = Schema.decodeUnknownOption(
   Schema.Struct({ topic: Schema.String })
 );
+const toTopic = Schema.decodeSync(WalletConnectTopic);
 const decodeNamespaced = Schema.decodeUnknownOption(
   Schema.Struct({
     topic: Schema.String,
@@ -94,11 +96,12 @@ export type FakeSignClient = Readonly<{
  */
 export const makeFakeSignClient = (
   options: {
-    readonly sessions?: ReadonlyArray<unknown>;
-    readonly request?: (input: RequestInput) => Promise<unknown>;
+    // Forwarded from fixtures' own optional options.
+    readonly sessions?: ReadonlyArray<unknown> | undefined;
+    readonly request?: ((input: RequestInput) => Promise<unknown>) | undefined;
   } = {}
 ): FakeSignClient => {
-  const ended = new Set<(topic: string) => void>();
+  const ended = new Set<(topic: WalletConnectTopic) => void>();
   const pending: Array<PromiseWithResolvers<unknown>> = [];
   const state: FakeSignClient["state"] = {
     sessions: options.sessions ?? [],
@@ -161,7 +164,7 @@ export const makeFakeSignClient = (
     reject: (cause) => nextApproval().reject(cause),
     end: (topic) => {
       removeSession(topic);
-      for (const listener of ended) listener(topic);
+      for (const listener of ended) listener(toTopic(topic));
     },
   };
 };
@@ -292,7 +295,7 @@ export const makeWalletConnectTestStore = (
       yield* walletConnectSessionHint(store).set(true).pipe(Effect.orDie);
       const owners = walletConnectSessionOwners(store);
       for (const [topic, namespace] of Object.entries(approved))
-        yield* owners.set(topic, namespace).pipe(Effect.orDie);
+        yield* owners.set(toTopic(topic), namespace).pipe(Effect.orDie);
     }
     return store;
   });

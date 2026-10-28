@@ -170,7 +170,11 @@ export const setup = async (
       ...yieldApiYieldBase.mechanics,
       type: "staking",
       gasFeeToken: token,
-      supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
+      ...(yieldOp.metadata.supportsLedgerWalletApi === undefined
+        ? {}
+        : {
+            supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
+          }),
     },
   });
   const defiYieldOp = yieldApiYieldDtoFixture({
@@ -376,9 +380,13 @@ export const setup = async (
               network: transactionConstruct.network,
               status: "CREATED",
               type: "STAKE",
-              gasEstimate: transactionConstruct.gasEstimate
-                ? JSON.stringify(transactionConstruct.gasEstimate)
-                : undefined,
+              ...(transactionConstruct.gasEstimate
+                ? {
+                    gasEstimate: JSON.stringify(
+                      transactionConstruct.gasEstimate
+                    ),
+                  }
+                : {}),
               unsignedTransaction: transactionConstruct.unsignedTransaction,
               stepIndex: 0,
             }),
@@ -405,9 +413,11 @@ export const setup = async (
             hash: TransactionHash.make("transaction_hash"),
             status: "BROADCASTED",
             unsignedTransaction: transactionConstruct.unsignedTransaction,
-            gasEstimate: transactionConstruct.gasEstimate
-              ? JSON.stringify(transactionConstruct.gasEstimate)
-              : undefined,
+            ...(transactionConstruct.gasEstimate
+              ? {
+                  gasEstimate: JSON.stringify(transactionConstruct.gasEstimate),
+                }
+              : {}),
           })
         );
       }
@@ -426,9 +436,9 @@ export const setup = async (
           ),
           status: "CONFIRMED",
           unsignedTransaction: transactionConstruct.unsignedTransaction,
-          gasEstimate: transactionConstruct.gasEstimate
-            ? JSON.stringify(transactionConstruct.gasEstimate)
-            : undefined,
+          ...(transactionConstruct.gasEstimate
+            ? { gasEstimate: JSON.stringify(transactionConstruct.gasEstimate) }
+            : {}),
         })
       );
     })

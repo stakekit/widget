@@ -1,5 +1,6 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
+import { ProviderId, YieldId } from "../../../src/domain/identity/identifiers";
 import type { SKHostConfiguration } from "../../../src/public-api/react-types";
 import type {
   SettingsProps,
@@ -289,7 +290,7 @@ describe("decodeHostConfiguration", () => {
           accent: 42,
           background: "#fff",
         },
-      } as unknown as SettingsProps["theme"],
+      } as unknown as NonNullable<SettingsProps["theme"]>,
       variant: "default",
     });
 
@@ -300,6 +301,211 @@ describe("decodeHostConfiguration", () => {
       });
       expect(result.success.warnings).toEqual([
         { _tag: "Theme", issue: "invalid-theme-token" },
+      ]);
+    }
+  });
+
+  it("drops a validatorsConfig entry under an unknown network and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      validatorsConfig: {
+        "*": { preferredOnly: true },
+        ethereum: { allowed: ["0xvalidator"] },
+        "not-a-network": { blocked: ["0xother"] },
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.validatorsConfig).toEqual({
+        "*": { preferredOnly: true },
+        ethereum: { allowed: ["0xvalidator"] },
+      });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "UnknownNetworkKey",
+          field: "validatorsConfig",
+          key: "not-a-network",
+        },
+      ]);
+    }
+  });
+
+  it("drops preferred token yields under an unknown network and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      preferredTokenYieldsPerNetwork: {
+        ethereum: { "ethereum-": "*" },
+        "not-a-network": { "not-a-network-": "*" },
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(
+        result.success.configuration.preferredTokenYieldsPerNetwork
+      ).toEqual({ ethereum: { "ethereum-": "*" } });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "UnknownNetworkKey",
+          field: "preferredTokenYieldsPerNetwork",
+          key: "not-a-network",
+        },
+      ]);
+    }
+  });
+
+  it("decodes preferred token yields as yield IDs or the default choice, dropping an invalid one", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      preferredTokenYieldsPerNetwork: {
+        ethereum: {
+          "ethereum-": "ethereum-eth-lido-staking",
+          "ethereum-0xa": "*",
+          "ethereum-0xb": "",
+        },
+      },
+      variant: "default",
+    });
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(
+        result.success.configuration.preferredTokenYieldsPerNetwork
+      ).toEqual({
+        ethereum: {
+          "ethereum-": YieldId.make("ethereum-eth-lido-staking"),
+          "ethereum-0xa": "*",
+        },
+      });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "InvalidEntry",
+          field: "preferredTokenYieldsPerNetwork",
+          path: "ethereum.ethereum-0xb",
+        },
+      ]);
+    }
+  });
+
+  it("drops a null preferred token yield under a known network and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      hideGasFee: true,
+      preferredTokenYieldsPerNetwork: {
+        ethereum: { "ethereum-": null, "ethereum-0xa": "*" },
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.hideGasFee).toBe(true);
+      expect(
+        result.success.configuration.preferredTokenYieldsPerNetwork
+      ).toEqual({ ethereum: { "ethereum-0xa": "*" } });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "InvalidEntry",
+          field: "preferredTokenYieldsPerNetwork",
+          path: "ethereum.ethereum-",
+        },
+      ]);
+    }
+  });
+
+  it("drops a non-string chainIconMapping value under an unknown network and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      chainIconMapping: {
+        ethereum: "https://icons.example/ethereum.svg",
+        "not-a-network": 42,
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.chainIconMapping).toEqual({
+        ethereum: "https://icons.example/ethereum.svg",
+      });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "UnknownNetworkKey",
+          field: "chainIconMapping",
+          key: "not-a-network",
+        },
+      ]);
+    }
+  });
+
+  it("drops a malformed validatorsConfig policy under an unknown network and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      validatorsConfig: {
+        ethereum: { preferredOnly: true },
+        "not-a-network": { allowed: "0xvalidator" },
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.validatorsConfig).toEqual({
+        ethereum: { preferredOnly: true },
+      });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "UnknownNetworkKey",
+          field: "validatorsConfig",
+          key: "not-a-network",
+        },
+      ]);
+    }
+  });
+
+  it("drops an invalid yieldProviderOrder provider ID and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      yieldProviderOrder: { defi: ["morpho", "", "aave"], stake: ["lido"] },
+      variant: "default",
+    });
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.yieldProviderOrder).toEqual({
+        defi: [ProviderId.make("morpho"), ProviderId.make("aave")],
+        stake: [ProviderId.make("lido")],
+      });
+      expect(result.success.warnings).toEqual([
+        { _tag: "InvalidEntry", field: "yieldProviderOrder", path: "defi.1" },
+      ]);
+    }
+  });
+
+  it("drops a chainIconMapping entry under an unknown network and keeps the rest", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      chainIconMapping: {
+        ethereum: "https://icons.example/ethereum.svg",
+        "not-a-network": "https://icons.example/other.svg",
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.chainIconMapping).toEqual({
+        ethereum: "https://icons.example/ethereum.svg",
+      });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "UnknownNetworkKey",
+          field: "chainIconMapping",
+          key: "not-a-network",
+        },
       ]);
     }
   });

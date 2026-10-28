@@ -20,128 +20,88 @@ import {
   supportedLedgerFamiliesWithCurrency,
 } from "./chains";
 
+/** Ledger currency id to its crypto-currency family; token currencies map to their parent's family. */
+export type LedgerCurrencyFamilies = Map<
+  Currency["id"],
+  CryptoCurrency["family"]
+>;
+
+type SupportedLedgerCurrency =
+  SupportedLedgerFamiliesWithCurrency[SupportedLedgerLiveFamilies][string];
+
+export type LedgerChainItem = SupportedLedgerCurrency & {
+  chain: Chain;
+  enabled: boolean;
+};
+
+export type EnabledChainsMap = {
+  evm: Partial<EvmChainsMap>;
+  cosmos: Partial<CosmosChainsMap>;
+  misc: Partial<MiscChainsMap>;
+  substrate: Partial<SubstrateChainsMap>;
+};
+
+const ledgerFamilies: SupportedLedgerFamiliesWithCurrency =
+  supportedLedgerFamiliesWithCurrency;
+
+export const isSupportedLedgerLiveFamily = (
+  family: string
+): family is SupportedLedgerLiveFamilies =>
+  Object.hasOwn(ledgerFamilies, family);
+
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   accounts,
   ledgerCurrencies,
   enabledChainsMap,
 }: {
   accounts: Account[];
-  ledgerCurrencies: Effect.Success<ReturnType<typeof getLedgerCurrencies>>;
-  enabledChainsMap: {
-    evm: Partial<EvmChainsMap>;
-    cosmos: Partial<CosmosChainsMap>;
-    misc: Partial<MiscChainsMap>;
-    substrate: Partial<SubstrateChainsMap>;
-  };
-}) => {
-  const { accountsFamilies, accountsCurrencies } = accounts.reduce(
-    (acc, next) => {
-      const ledgerCurrency = ledgerCurrencies.get(next.currency);
+  ledgerCurrencies: LedgerCurrencyFamilies;
+  enabledChainsMap: EnabledChainsMap;
+}): Map<SupportedLedgerLiveFamilies, Map<string, LedgerChainItem>> => {
+  const accountsFamilies = new Set<string>();
+  const accountsCurrencies = new Set<string>();
+  for (const account of accounts) {
+    const ledgerCurrency = ledgerCurrencies.get(account.currency);
 
-      if (ledgerCurrency) {
-        acc.accountsFamilies.add(ledgerCurrency);
-        acc.accountsCurrencies.add(next.currency);
+    if (ledgerCurrency) {
+      accountsFamilies.add(ledgerCurrency);
+      accountsCurrencies.add(account.currency);
+    }
+  }
+
+  const chainByNetwork = new Map<WalletNetwork, Chain>(
+    [
+      ...Object.values(enabledChainsMap.evm),
+      ...Object.values(enabledChainsMap.cosmos),
+      ...Object.values(enabledChainsMap.misc),
+      ...Object.values(enabledChainsMap.substrate),
+    ].map((entry) => [entry.network, entry.wagmiChain])
+  );
+
+  const result = new Map<
+    SupportedLedgerLiveFamilies,
+    Map<string, LedgerChainItem>
+  >();
+  for (const [family, currencies] of Record.toEntries(ledgerFamilies)) {
+    const items = new Map<string, LedgerChainItem>();
+    for (const [key, item] of Record.toEntries(currencies)) {
+      const chain = chainByNetwork.get(item.network);
+
+      if (!chain) continue;
+
+      if (
+        accountsFamilies.has(item.family) &&
+        (key === "*" || accountsCurrencies.has(item.currencyId))
+      ) {
+        items.set(key, { ...item, chain, enabled: true });
+      } else if (ledgerChainPriority.has(item.network)) {
+        items.set(key, { ...item, chain, enabled: false });
       }
+    }
+    result.set(family, items);
+  }
 
-      return acc;
-    },
-    { accountsFamilies: new Set(), accountsCurrencies: new Set() }
-  );
-
-  const v = Record.toEntries(supportedLedgerFamiliesWithCurrency).reduce(
-    (acc, [k, v]) => {
-      const filtered = Object.keys(v).reduce((acc, key) => {
-        const item = v[key as keyof typeof v] as
-          | SupportedLedgerCurrency
-          | undefined;
-
-        if (!item) return acc;
-
-        const chain =
-          enabledChainsMap.evm[
-            item.network as unknown as EvmChainsMap[keyof EvmChainsMap]["network"]
-          ]?.wagmiChain ||
-          enabledChainsMap.cosmos[
-            item.network as unknown as CosmosChainsMap[keyof CosmosChainsMap]["network"]
-          ]?.wagmiChain ||
-          enabledChainsMap.misc[
-            item.network as unknown as MiscChainsMap[keyof MiscChainsMap]["network"]
-          ]?.wagmiChain ||
-          enabledChainsMap.substrate[
-            item.network as unknown as SubstrateChainsMap[keyof SubstrateChainsMap]["network"]
-          ]?.wagmiChain;
-
-        if (!chain) return acc;
-
-        if (
-          accountsFamilies.has(item.family) &&
-          (key === "*" || accountsCurrencies.has(item.currencyId))
-        ) {
-          // biome-ignore lint: false
-          return { ...acc, [key]: { ...item, chain, enabled: true } };
-        }
-
-        if (ledgerChainPriority.has(item.network)) {
-          // biome-ignore lint: false
-          return { ...acc, [key]: { ...item, chain, enabled: false } };
-        }
-
-        return acc;
-      }, {} as MappedSupportedLedgerFamiliesWithCurrency);
-
-      // biome-ignore lint: false
-      return { ...acc, [k]: filtered };
-    },
-    {} as MappedSupportedLedgerFamiliesWithCurrency
-  );
-
-  type V = typeof v;
-  type Key = keyof V;
-
-  return Object.keys(v).reduce(
-    (acc, key) => {
-      const subItem = v[key as Key];
-
-      type SubItemKey = keyof typeof subItem;
-
-      const subItemMap = Object.keys(subItem).reduce((acc, subKey) => {
-        const value = subItem[subKey as keyof typeof subItem];
-
-        if (value) acc.set(subKey as SubItemKey, value);
-
-        return acc;
-      }, new Map<SubItemKey, V[Key][SubItemKey]>());
-
-      acc.set(key as Key, subItemMap);
-
-      return acc;
-    },
-    new Map<
-      Key,
-      Map<
-        "*" | (string & {}),
-        {
-          currencyId: string;
-          family: SupportedLedgerLiveFamilies;
-          network: WalletNetwork;
-          chain: Chain;
-          enabled: boolean;
-        }
-      >
-    >()
-  );
-};
-
-type SupportedLedgerCurrency =
-  SupportedLedgerFamiliesWithCurrency[keyof SupportedLedgerFamiliesWithCurrency][string];
-
-type MappedSupportedLedgerFamiliesWithCurrency = {
-  [Key in keyof SupportedLedgerFamiliesWithCurrency]: {
-    [K in keyof SupportedLedgerFamiliesWithCurrency[Key]]: SupportedLedgerFamiliesWithCurrency[Key][K] & {
-      chain: Chain;
-      enabled: boolean;
-    };
-  };
+  return result;
 };
 
 /**
@@ -164,32 +124,25 @@ export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
         operation: "ledger-list-currencies",
       }),
   }).pipe(
-    Effect.map((val) => {
-      return val.reduce(
-        (acc, next) => {
-          if (next.type === "CryptoCurrency") {
-            acc.cryptoCurrency.set(next.id, next.family);
-          } else {
-            acc.tokenCurrency.push(next);
-          }
-
-          return acc;
-        },
-        { cryptoCurrency: new Map(), tokenCurrency: [] } as {
-          cryptoCurrency: Map<Currency["id"], CryptoCurrency["family"]>;
-          tokenCurrency: ERC20TokenCurrency[];
+    Effect.map((currencies): LedgerCurrencyFamilies => {
+      const cryptoCurrency: LedgerCurrencyFamilies = new Map();
+      const tokenCurrency: ERC20TokenCurrency[] = [];
+      for (const currency of currencies) {
+        if (currency.type === "CryptoCurrency") {
+          cryptoCurrency.set(currency.id, currency.family);
+        } else {
+          tokenCurrency.push(currency);
         }
-      );
-    }),
-    Effect.map((v) => {
-      v.tokenCurrency.forEach((t) => {
-        const parentCryptoCurrencyFamily = v.cryptoCurrency.get(t.parent);
+      }
+
+      for (const token of tokenCurrency) {
+        const parentCryptoCurrencyFamily = cryptoCurrency.get(token.parent);
 
         if (parentCryptoCurrencyFamily) {
-          v.cryptoCurrency.set(t.id, parentCryptoCurrencyFamily);
+          cryptoCurrency.set(token.id, parentCryptoCurrencyFamily);
         }
-      });
+      }
 
-      return v.cryptoCurrency;
+      return cryptoCurrency;
     })
   );

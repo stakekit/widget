@@ -122,7 +122,7 @@ const makeFixture = Effect.fn("makeTronWcFixture")(function* (
   );
   const wagmi = yield* makeConnector({
     protocol: walletConnect.protocol,
-    storage: options.storage,
+    ...(options.storage === undefined ? {} : { storage: options.storage }),
   });
   return { ...walletConnect, ...wagmi };
 });

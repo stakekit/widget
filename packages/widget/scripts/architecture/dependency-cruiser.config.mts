@@ -271,10 +271,11 @@ const compileCollection = (
     sameOwnerInterfacePath: `^${declaration.root}/$1/${interfacePattern}\\.ts$`,
     interfacePaths,
     interfaceImporters,
-    parentInterfacePath:
-      declaration.parent === undefined
-        ? undefined
-        : `^${declaration.parent}/${interfacePattern}\\.ts$`,
+    ...(declaration.parent === undefined
+      ? {}
+      : {
+          parentInterfacePath: `^${declaration.parent}/${interfacePattern}\\.ts$`,
+        }),
   };
 };
 

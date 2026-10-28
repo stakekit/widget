@@ -2,10 +2,10 @@ import type { Atoms } from "../../../../styles/theme/atoms.css";
 import { Image } from "../../../primitives/image";
 
 type TokenIconProps = {
-  mainUrl?: string;
-  fallbackUrl?: string;
+  mainUrl?: string | undefined;
+  fallbackUrl?: string | undefined;
   name: string;
-  tokenLogoHw?: Atoms["hw"];
+  tokenLogoHw?: Atoms["hw"] | undefined;
 };
 
 export const TokenIconImage = ({

@@ -171,7 +171,7 @@ export const projectBorrowCompletion = ({
   settled,
   summary,
 }: {
-  readonly metadata?: ActionMetadata;
+  readonly metadata?: ActionMetadata | undefined;
   readonly settled?: BorrowSettledPosition | null;
   readonly summary: Summary;
 }) => {

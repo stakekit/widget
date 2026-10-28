@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Exit, Fiber, Queue, Stream } from "effect";
+import { Effect, Exit, Fiber, Queue, Stream, Struct } from "effect";
 import { afterEach, vi } from "vitest";
 import { createConfig, http } from "wagmi";
 import { connect, getAccount } from "wagmi/actions";
@@ -8,6 +8,7 @@ import { mainnet } from "wagmi/chains";
 import type * as WagmiConnectors from "wagmi/connectors";
 import { createEvmWallets } from "../../../src/services/wallet/internal/adapters/evm/wallets";
 import {
+  makeWalletConnectConnection,
   makeWalletConnectPresentation,
   type WalletConnectModal,
 } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
@@ -25,9 +26,9 @@ const uri = "wc:proposal@2?relay-protocol=irn&symKey=0123456789abcdef";
 const nativeSession = vi.hoisted(() => {
   const state: {
     approval: Promise<void> | undefined;
-    providerReady?: Promise<void>;
-    onProvider?: () => void;
-    onConnected?: () => void;
+    providerReady?: Promise<void> | undefined;
+    onProvider?: (() => void) | undefined;
+    onConnected?: (() => void) | undefined;
     requests: number;
     changeAccounts: ((accounts: string[]) => void) | undefined;
     disconnect: (() => void) | undefined;
@@ -102,7 +103,9 @@ const provider = (address: string, flags: Record<string, unknown>) => ({
 
 const makeMetaMaskConfig = (discover = false) => {
   const { metaMaskWallet } = createEvmWallets({
-    walletConnectPresentation: { connect: ({ connection }) => connection },
+    walletConnectPresentation: {
+      connect: ({ connection }) => connection.effect,
+    },
     runWalletEffect,
   });
   return createConfig({
@@ -246,10 +249,8 @@ describe("named EVM native handoff", () => {
                 groupName: "Ethereum",
                 wallets: [
                   wallets.metaMaskWallet,
-                  (options) => ({
-                    ...wallets.ledgerWallet(options),
-                    desktop: undefined,
-                  }),
+                  (options) =>
+                    Struct.omit(wallets.ledgerWallet(options), ["desktop"]),
                 ],
               },
             ],
@@ -360,19 +361,21 @@ describe("cross-ecosystem WalletConnect handoff", () => {
           const cosmos = presentation
             .connect({
               namespace: "cosmos",
-              connection: Effect.tryPromise({
-                try: async () => {
-                  const result = await cosmosApproval.promise;
-                  cosmosCompleted.resolve();
-                  return result;
-                },
-                catch: (cause) =>
-                  new WalletIntegrationError({
-                    cause,
-                    message: "Cosmos approval failed",
-                    operation: "cosmos-connect",
-                  }),
-              }),
+              connection: makeWalletConnectConnection(
+                Effect.tryPromise({
+                  try: async () => {
+                    const result = await cosmosApproval.promise;
+                    cosmosCompleted.resolve();
+                    return result;
+                  },
+                  catch: (cause) =>
+                    new WalletIntegrationError({
+                      cause,
+                      message: "Cosmos approval failed",
+                      operation: "cosmos-connect",
+                    }),
+                })
+              ),
               subscribeUri: (publish) =>
                 Effect.sync(() => publish("wc:cosmos@2")),
             })
@@ -503,7 +506,7 @@ describe("cross-ecosystem WalletConnect handoff", () => {
         const other = yield* presentation
           .connect({
             namespace: "cosmos",
-            connection: Effect.never,
+            connection: makeWalletConnectConnection(Effect.never),
             subscribeUri: (publish) =>
               Effect.sync(() => publish("wc:cosmos@2")),
           })

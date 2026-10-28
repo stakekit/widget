@@ -45,7 +45,7 @@ const gasTokenBalancesCanonicalAtom = Atom.family((key: GasTokenBalancesKey) =>
           isWalletNetwork(address.network)
             ? resourceInvalidationKeys.walletBalances(
                 new WalletScopeKey({
-                  additionalAddresses: address.additionalAddresses,
+                  additionalAddresses: address.additionalAddresses ?? null,
                   address: address.address,
                   network: address.network,
                 })
