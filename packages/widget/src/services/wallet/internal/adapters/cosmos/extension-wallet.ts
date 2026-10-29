@@ -103,6 +103,9 @@ export const makeExtensionWallet = (
       throw new WalletNotAvailableError({ walletId: walletInfo.name });
     }
   };
+  const installUrl = walletInfo.downloads?.find(
+    (download) => download.device === "desktop"
+  )?.link;
 
   return {
     id: walletInfo.name,
@@ -113,9 +116,7 @@ export const makeExtensionWallet = (
       detect: Effect.tryPromise(detectClient).pipe(
         Effect.orElseSucceed(() => false)
       ),
-      installUrl: walletInfo.downloads?.find(
-        (download) => download.device === "desktop"
-      )?.link,
+      ...(installUrl === undefined ? {} : { installUrl }),
     },
     makeSession: ({ connectorId, storage }) => {
       /**

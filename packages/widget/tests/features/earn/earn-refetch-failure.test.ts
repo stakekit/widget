@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
@@ -88,7 +89,7 @@ describe("Earn derived atoms after a failed refetch", () => {
 
     try {
       expect(AsyncResult.getOrThrow(registry.get(tokenOptions))).toMatchObject([
-        { amount: "5", source: "balance" },
+        { amount: new BigNumber("5"), source: "balance" },
       ]);
 
       offline = true;
@@ -100,7 +101,10 @@ describe("Earn derived atoms after a failed refetch", () => {
       expect(option && tokenString(option.token)).toBe(
         tokenString(earnYield.token)
       );
-      expect(option).toMatchObject({ amount: "5", source: "balance" });
+      expect(option).toMatchObject({
+        amount: new BigNumber("5"),
+        source: "balance",
+      });
     } finally {
       unmount();
       registry.dispose();

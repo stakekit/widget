@@ -6,7 +6,10 @@ import {
   WalletIntegrationError,
   WalletSigningError,
 } from "../../../wallet-errors";
-import type { WalletSignTransactionInput } from "../../../wallet-transactions";
+import {
+  decodeWalletSignedPayloadResult,
+  type WalletSignTransactionInput,
+} from "../../../wallet-transactions";
 import { isStellarConnector } from "./stellar-connector-meta";
 
 const stellarMainnetIdentity = getProtocolChainIdentity("stellar");
@@ -50,7 +53,7 @@ export const makeStellarWalletDriver = ({
         });
       }
 
-      return { broadcasted: false, signedTx: result.signedTxXdr };
+      return yield* decodeWalletSignedPayloadResult(result.signedTxXdr);
     }
   );
 

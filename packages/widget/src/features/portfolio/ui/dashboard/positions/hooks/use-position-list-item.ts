@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { exactDecimal } from "../../../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";
 import { PricesKey } from "../../../../../../resources/token-prices/index";
 import { config } from "../../../../../../shared/config/widget-defaults";
@@ -37,8 +36,7 @@ export const usePositionListItem = (item: PositionItem) => {
     rewardsSummaries._tag === "Ready"
       ? rewardsSummaries.value?.[item.integrationId]
       : undefined;
-  const rewardsSummary =
-    summary && exactDecimal(summary.rewards.total).gt(0) ? summary : null;
+  const rewardsSummary = summary?.rewards.total.gt(0) ? summary : null;
 
   const pricesView = useAtomValue(
     positionPricesAtom(
@@ -56,11 +54,7 @@ export const usePositionListItem = (item: PositionItem) => {
   const prices = pricesView._tag === "Ready" ? pricesView.value : null;
 
   const rewardsAmountFormatted = rewardsSummary
-    ? formatTokenAmount(
-        exactDecimal(rewardsSummary.rewards.total),
-        locale,
-        "down"
-      )
+    ? formatTokenAmount(rewardsSummary.rewards.total, locale, "down")
     : null;
 
   const rewardsAmountPriceFormatted =

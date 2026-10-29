@@ -1,8 +1,11 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Match } from "effect";
 import { exactZero } from "../finance/exact";
-import type { EarnValidator, EarnYieldWithProvider } from "./models";
-import type { ValidatorKey } from "./validator";
+import type {
+  EarnValidator,
+  EarnValidatorKey,
+  EarnYieldWithProvider,
+} from "./models";
 
 export type YieldRewardRate = NonNullable<EarnYieldWithProvider["rewardRate"]>;
 type YieldRewardDto = YieldRewardRate["components"][number];
@@ -10,13 +13,13 @@ type YieldWithRewardRate = Pick<EarnYieldWithProvider, "rewardRate">;
 type ValidatorRewardRateDto = NonNullable<EarnValidator["rewardRate"]>;
 export type SelectedValidators =
   | ReadonlyArray<EarnValidator>
-  | ReadonlyMap<ValidatorKey, EarnValidator>;
+  | ReadonlyMap<EarnValidatorKey, EarnValidator>;
 
 type RewardRateBreakdownKey = "native" | "protocol_incentive" | "campaign";
 
 const isSelectedValidatorMap = (
   validators: SelectedValidators
-): validators is ReadonlyMap<ValidatorKey, EarnValidator> =>
+): validators is ReadonlyMap<EarnValidatorKey, EarnValidator> =>
   validators instanceof Map;
 
 const getSelectedValidators = (

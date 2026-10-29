@@ -12,13 +12,17 @@ const combineNested = (left: unknown, right: unknown): unknown => {
   return right;
 };
 
-export const mergeDeep = <A>(
-  base: A,
-  ...overlays: ReadonlyArray<unknown>
-): A => {
+/**
+ * Merges plain objects key by key, later sources winning; nested plain objects
+ * merge recursively and `undefined` never overwrites. Non-object sources are
+ * skipped. The result is untyped: callers read it through their own decoder.
+ */
+export const mergeDeep = (
+  ...sources: ReadonlyArray<unknown>
+): Record<string, unknown> => {
   let merged: Record<string, unknown> = Record.empty();
 
-  for (const source of [base, ...overlays]) {
+  for (const source of sources) {
     if (!Predicate.isObject(source)) {
       continue;
     }
@@ -26,5 +30,5 @@ export const mergeDeep = <A>(
     merged = Record.union(merged, source, combineNested);
   }
 
-  return merged as A;
+  return merged;
 };

@@ -1,5 +1,6 @@
 import { Schema, Struct } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
+import { TolerantNullOr } from "../decoding/response-schema";
 import {
   ExactBaseUnitAmount,
   ExactDecimal,
@@ -9,9 +10,12 @@ import {
 import {
   ActionId,
   ProviderOption,
+  SignedTransactionPayload,
+  TransactionHash,
   TransactionId,
   ValidatorAddress,
   WalletAddress,
+  WalletSignature,
   YieldId,
 } from "../identity/identifiers";
 import { Token } from "../token/token";
@@ -54,7 +58,6 @@ export const ActionTransaction = Schema.Struct({
     "network",
     "status",
     "type",
-    "hash",
     "unsignedTransaction",
     "annotatedTransaction",
     "structuredTransaction",
@@ -69,15 +72,23 @@ export const ActionTransaction = Schema.Struct({
     field: "broadcastedAt",
   }),
   createdAt: UtcDateTimeFromString,
+  hash: TolerantNullOr(TransactionHash, {
+    operation: "yield-action-transaction",
+    field: "hash",
+  }),
   id: TransactionId,
 });
 export type ActionTransaction = typeof ActionTransaction.Type;
 
 // Status polling and submission only read these fields; validating the rest
 // would let unrelated additions fail an in-flight transaction.
-export const ActionTransactionReceipt = Schema.Struct(
-  Struct.pick(YieldApi.TransactionDto.fields, ["status", "hash", "explorerUrl"])
-);
+export const ActionTransactionReceipt = Schema.Struct({
+  ...Struct.pick(YieldApi.TransactionDto.fields, ["status", "explorerUrl"]),
+  hash: TolerantNullOr(TransactionHash, {
+    operation: "yield-transaction-receipt",
+    field: "hash",
+  }),
+});
 export type ActionTransactionReceipt = typeof ActionTransactionReceipt.Type;
 
 // `executionPattern` and `events` are unread, so they are not decoded.
@@ -139,14 +150,20 @@ export const PendingAction = Schema.Struct({
 export type PendingAction = typeof PendingAction.Type;
 
 export const SubmitTransactionHashCommand = Schema.Struct({
-  payload: YieldApi.SubmitHashDto,
+  payload: Schema.Struct({ hash: TransactionHash }),
   transactionId: TransactionId,
 });
 export type SubmitTransactionHashCommand =
   typeof SubmitTransactionHashCommand.Type;
 
+/** A yield message is submitted as its signature, a transaction as its payload. */
 export const SubmitSignedTransactionCommand = Schema.Struct({
-  payload: YieldApi.SubmitTransactionDto,
+  payload: Schema.Struct({
+    signedTransaction: Schema.Union([
+      SignedTransactionPayload,
+      WalletSignature,
+    ]),
+  }),
   transactionId: TransactionId,
 });
 export type SubmitSignedTransactionCommand =

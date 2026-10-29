@@ -9,7 +9,11 @@ import {
   isListedBorrowMarket,
   type Market,
 } from "../../../../domain/borrow/catalog/market";
-import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
+import {
+  decodeTokenId,
+  type MarketId,
+  type TokenId,
+} from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import {
   type BorrowPositions,
@@ -43,7 +47,7 @@ export type BorrowFormIntent = {
   readonly borrowAmount: string;
   readonly collateralAmount: string;
   readonly selectedCollateralTokenId: TokenId | null;
-  readonly selectedMarketId: string | null;
+  readonly selectedMarketId: MarketId | null;
 };
 
 export type BorrowFormAction =
@@ -61,7 +65,7 @@ export type BorrowFormAction =
     }
   | {
       readonly type: "market/select";
-      readonly marketId: string;
+      readonly marketId: MarketId;
     }
   | {
       readonly type: "amounts/clear";
@@ -122,7 +126,7 @@ export type BorrowEntryView = {
   readonly selectedIntegration: Integration | null;
   readonly selectedMarket: Market | null;
   readonly selectedMarketPosition: MarketPosition | null;
-  readonly selectedMarketId: string | null;
+  readonly selectedMarketId: MarketId | null;
   readonly validation: BorrowFormValidation;
   readonly walletBalances: BorrowMarketWalletBalances | null;
 };

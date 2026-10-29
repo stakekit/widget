@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import type { TransactionType } from "../../../src/domain/action/rules";
 import {
+  SignedTransactionPayload,
   WalletAddress,
+  WalletSignature,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
@@ -42,9 +44,12 @@ const runYieldToCompletion = (
       const kit = yield* makeTransactionWorkflowTestKit({
         initialWalletState: makeConnectedWalletState(yieldWalletScope),
         wallet: {
-          signMessage: () => Effect.succeed("0xsigned"),
+          signMessage: () => Effect.succeed(WalletSignature.make("0xsigned")),
           signTransaction: () =>
-            Effect.succeed({ broadcasted: false, signedTx: "0xsigned" }),
+            Effect.succeed({
+              broadcasted: false,
+              signedTx: SignedTransactionPayload.make("0xsigned"),
+            }),
         },
         yieldOperations: {
           getTransactionStatus: () =>

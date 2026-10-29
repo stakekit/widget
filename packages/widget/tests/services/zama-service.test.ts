@@ -11,10 +11,15 @@ import { decodeFunctionData, erc20Abi } from "viem";
 import { sepolia } from "viem/chains";
 import { vi } from "vitest";
 import {
-  ConfidentialHandle,
+  type ConfidentialConversion,
   ConfidentialTokenBalanceKey,
 } from "../../src/domain/earn/confidential";
-import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { ConfidentialHandle } from "../../src/domain/earn/models";
+import {
+  WalletAddress,
+  WalletSignature,
+} from "../../src/domain/identity/identifiers";
+import { EvmChainIds } from "../../src/domain/wallet/chain-ids";
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
@@ -96,10 +101,14 @@ const owner = Schema.decodeSync(WalletAddress)(
 );
 const { cUsdc, router, usdc } = confidentialFixture;
 const conversion = {
-  chainId: 11155111,
+  chainId: EvmChainIds.EthereumSepolia,
   underlying: usdc.address,
   wrapper: cUsdc.address,
-};
+} satisfies ConfidentialConversion;
+
+// The SDK returns 32-byte hex handles.
+const amountHandle = `0x${"01".repeat(32)}`;
+const legHandles = [`0x${"02".repeat(32)}`, `0x${"03".repeat(32)}`];
 
 const revealedHandle = Schema.decodeSync(ConfidentialHandle)(
   `0x${"cd".repeat(32)}`
@@ -128,7 +137,7 @@ const makeLayer = Effect.fn("makeZamaTestLayer")(function* (options: {
     readonly request: (args: unknown) => Promise<unknown>;
   };
   readonly wagmiChains?: ReadonlyArray<{ readonly id: number }>;
-  readonly signPermit?: (input: unknown) => Effect.Effect<`0x${string}`>;
+  readonly signPermit?: (input: unknown) => Effect.Effect<WalletSignature>;
 }) {
   const wallet = yield* makeTestWallet({
     canSignPermit: Effect.succeed(options.canSignPermit ?? true),
@@ -197,7 +206,10 @@ const depositPreparation = (
     balance: pick === "asset" ? { chainId: 11155111, token } : null,
     command: {
       address: owner,
-      arguments: { amount: "5", inputToken: token.address },
+      arguments: {
+        amount: "5",
+        ...(token.address === undefined ? {} : { inputToken: token.address }),
+      },
       yieldId: yieldDto.id,
     },
     conversion: pick === "asset" ? null : conversion,
@@ -269,10 +281,8 @@ describe("ZamaService", () => {
       Effect.gen(function* () {
         sdk.balanceOf.mockResolvedValueOnce(5_000_000n);
         sdk.encrypt
-          .mockImplementationOnce(() => encryptAs(["0xamount"], "0xap"))
-          .mockImplementationOnce(() =>
-            encryptAs(["0xleg0", "0xleg1"], "0xlp")
-          );
+          .mockImplementationOnce(() => encryptAs([amountHandle], "0xap"))
+          .mockImplementationOnce(() => encryptAs(legHandles, "0xlp"));
         const { layer } = yield* makeLayer({});
 
         const command = yield* ZamaService.use((zama) =>
@@ -289,9 +299,9 @@ describe("ZamaService", () => {
           [router, [0n, 5_000_000n]],
         ]);
         expect(command.arguments).toEqual({
-          encryptedAmount: "0xamount",
+          encryptedAmount: amountHandle,
           encryptedAmountProof: "0xap",
-          encryptedLegAmounts: ["0xleg0", "0xleg1"],
+          encryptedLegAmounts: legHandles,
           encryptedLegProof: "0xlp",
           inputToken: cUsdc.address,
         });
@@ -301,7 +311,7 @@ describe("ZamaService", () => {
   it.effect("encrypts the wrapped amount of an underlying deposit", () =>
     Effect.gen(function* () {
       client.readContract.mockResolvedValueOnce(2n);
-      sdk.encrypt.mockImplementation(() => encryptAs(["0xh"], "0xp"));
+      sdk.encrypt.mockImplementation(() => encryptAs([amountHandle], "0xp"));
       const { layer } = yield* makeLayer({});
 
       yield* ZamaService.use((zama) =>
@@ -393,7 +403,7 @@ describe("ZamaService", () => {
           signPermit: (input) =>
             Effect.sync(() => {
               signed.push(input);
-              return "0xsig" as const;
+              return WalletSignature.make("0x5167");
             }),
         });
 
@@ -428,7 +438,7 @@ describe("ZamaService", () => {
           relayerUrl: "https://api.example.test/v1/zama/relayer/11155111/",
         });
         expect(values.handles.get(handle)).toBe(42n);
-        expect(signature).toBe("0xsig");
+        expect(signature).toBe("0x5167");
         expect(signed).toEqual([
           {
             expectedOwner: { address: owner, network: "ethereum-sepolia" },

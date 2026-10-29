@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type {
   BorrowActivityItem,
   YieldActivityItem,
@@ -59,7 +60,7 @@ const makeItem = ({
         yieldApiTransactionFixture({
           error: "Execution reverted",
           explorerUrl: "https://explorer.test/failed",
-          hash: "0x1234567890abcdef1234",
+          hash: TransactionHash.make("0x1234567890abcdef1234"),
           id: "stake",
           status: "FAILED",
           stepIndex: 1,

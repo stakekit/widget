@@ -56,13 +56,15 @@ export const TolerantArray = <Item extends Schema.ConstraintDecoder<unknown>>(
           const result = Schema.decodeUnknownResult(item)(input);
 
           return Result.match(result, {
-            onFailure: (failure) =>
-              logDecodeRejection({
+            onFailure: (failure) => {
+              const identifier = decodeIdentifier(options.identifier, input);
+              return logDecodeRejection({
                 operation: options.operation,
                 location: index,
-                identifier: decodeIdentifier(options.identifier, input),
+                ...(identifier === undefined ? {} : { identifier }),
                 issue: failure.message,
-              }).pipe(Effect.as(Option.none<Item["Type"]>())),
+              }).pipe(Effect.as(Option.none<Item["Type"]>()));
+            },
             onSuccess: Effect.succeedSome,
           });
         }).pipe(Effect.map(EArray.getSomes))

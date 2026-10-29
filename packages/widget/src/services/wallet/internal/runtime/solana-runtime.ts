@@ -2,6 +2,7 @@ import {
   type Adapter,
   isWalletAdapterCompatibleStandardWallet,
   type WalletAdapter,
+  type WalletAdapterCompatibleStandardWallet,
   WalletAdapterNetwork,
   WalletReadyState,
 } from "@solana/wallet-adapter-base";
@@ -52,10 +53,6 @@ type StandardAdapter = WalletAdapter & {
   readonly destroy: () => void;
 };
 
-type DisposableAdapter = Adapter & {
-  readonly destroy?: () => void;
-};
-
 type SolanaRuntimeEnvironment = {
   readonly appIdentityUri: string | undefined;
   readonly userAgent: string | null;
@@ -74,9 +71,13 @@ type HeadlessSolanaRuntimeDependencies = {
     readonly appIdentityUri: string | undefined;
     readonly cluster: Cluster;
   }) => Adapter;
-  readonly createStandardAdapter: (wallet: StandardWallet) => StandardAdapter;
+  readonly createStandardAdapter: (
+    wallet: WalletAdapterCompatibleStandardWallet
+  ) => StandardAdapter;
   readonly environment: () => SolanaRuntimeEnvironment;
-  readonly isCompatibleStandardWallet: (wallet: StandardWallet) => boolean;
+  readonly isCompatibleStandardWallet: (
+    wallet: StandardWallet
+  ) => wallet is WalletAdapterCompatibleStandardWallet;
   readonly registry: Wallets;
 };
 
@@ -135,17 +136,12 @@ const makeDefaultDependencies = (
   createMobileAdapter: ({ appIdentityUri, cluster }) =>
     new SolanaMobileWalletAdapter({
       addressSelector: createDefaultAddressSelector(),
-      appIdentity: { uri: appIdentityUri },
+      appIdentity: appIdentityUri === undefined ? {} : { uri: appIdentityUri },
       authorizationResultCache: createDefaultAuthorizationResultCache(),
       cluster,
       onWalletNotFound: createDefaultWalletNotFoundHandler(),
     }),
-  createStandardAdapter: (wallet) =>
-    new StandardWalletAdapter({
-      wallet: wallet as ConstructorParameters<
-        typeof StandardWalletAdapter
-      >[0]["wallet"],
-    }),
+  createStandardAdapter: (wallet) => new StandardWalletAdapter({ wallet }),
   environment: () => ({
     appIdentityUri:
       typeof globalThis.location === "undefined"
@@ -214,7 +210,9 @@ const injectedProviders: Readonly<Record<string, (page: unknown) => boolean>> =
   };
 
 const disposeAdapter = (adapter: Adapter) => {
-  (adapter as DisposableAdapter).destroy?.();
+  if ("destroy" in adapter && typeof adapter.destroy === "function") {
+    adapter.destroy();
+  }
 };
 
 const makeHeadlessSolanaRuntime = (
@@ -322,8 +320,8 @@ const makeHeadlessSolanaRuntime = (
               .map((adapter) =>
                 getOrCreateDescriptor(
                   adapter,
-                  [...standardAdapters.values()].includes(
-                    adapter as StandardAdapter
+                  [...standardAdapters.values()].some(
+                    (standardAdapter) => standardAdapter === adapter
                   )
                     ? "standard"
                     : "fallback"

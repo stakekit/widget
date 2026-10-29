@@ -16,6 +16,7 @@ import base58 from "bs58";
 import { Effect, Fiber, FiberSet, Queue, Schema } from "effect";
 import { vi } from "vitest";
 import { getSolanaConnectors } from "../../../src/services/wallet/internal/adapters/solana/solana-connector";
+import { makeWalletConnectConnection } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
 import { WalletConnectSolanaAdapter } from "../../../src/services/wallet/internal/runtime/solana-wallet-connect-adapter";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import {
@@ -180,7 +181,7 @@ describe("Solana WalletConnect protocol adapter", () => {
         const other = yield* fixture.presentation
           .connect({
             namespace: "eip155",
-            connection: Effect.never,
+            connection: makeWalletConnectConnection(Effect.never),
             subscribeUri: (publish) =>
               Effect.sync(() => publish("wc:evm-proposal@2")),
           })

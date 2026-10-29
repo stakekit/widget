@@ -4,8 +4,8 @@ export const Copy = ({
   hw = 24,
   className,
 }: {
-  hw?: number;
-  className?: string;
+  hw?: number | undefined;
+  className?: string | undefined;
 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

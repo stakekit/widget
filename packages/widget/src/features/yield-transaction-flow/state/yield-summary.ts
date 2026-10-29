@@ -33,13 +33,13 @@ const makePercentageFee = ({
   percentage,
 }: {
   readonly amount: BigNumber;
-  readonly percentage: string | undefined;
+  readonly percentage: BigNumber | null | undefined;
 }): YieldFlowPercentageFee | null =>
-  percentage === undefined
+  percentage == null
     ? null
     : {
         amount: amount.multipliedBy(percentage).dividedBy(100),
-        ratio: exactDecimal(percentage).dividedBy(100),
+        ratio: percentage.dividedBy(100),
       };
 
 export const makeYieldFlowStakeReviewViewAtom = (
@@ -69,17 +69,7 @@ export const makeYieldFlowStakeReviewViewAtom = (
       validators: new Map(intake.selectedValidators),
       yield: intake.selectedStake,
     });
-    const yieldFee = (
-      intake.selectedStake as typeof intake.selectedStake & {
-        mechanics?: {
-          fee?: {
-            deposit?: string;
-            management?: string;
-            performance?: string;
-          };
-        };
-      }
-    ).mechanics?.fee;
+    const yieldFee = intake.selectedStake.mechanics.fee;
     const feeInput = { amount: stakeAmount };
 
     return {

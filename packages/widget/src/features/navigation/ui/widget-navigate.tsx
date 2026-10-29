@@ -16,7 +16,7 @@ export const WidgetNavigate = ({
   readonly to: WidgetNavigationTarget;
 }) => (
   <Navigate
-    replace={replace}
+    replace={replace ?? false}
     state={widgetTargetState(to)}
     to={widgetTargetPath(to)}
   />

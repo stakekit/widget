@@ -1,9 +1,9 @@
 import type { RecipeVariants } from "@vanilla-extract/recipes";
 import { recipe } from "@vanilla-extract/recipes";
+import { Record as ERecord } from "effect";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 import { minMediaQuery } from "../../../styles/tokens/breakpoints";
-import type { Heading, Text } from "../../../styles/tokens/typography";
 
 const fontWeightVariants = {
   normal: atoms({ fontWeight: "normal" }),
@@ -13,38 +13,21 @@ const fontWeightVariants = {
   extrabold: atoms({ fontWeight: "extrabold" }),
 };
 
+const responsiveFontSize = (sizes: {
+  readonly mobile: { readonly fontSize: string };
+  readonly tablet: { readonly fontSize: string };
+}) => ({
+  fontSize: sizes.mobile.fontSize,
+  "@media": {
+    [minMediaQuery("tablet")]: { fontSize: sizes.tablet.fontSize },
+  },
+});
+
 export const heading = recipe({
   base: atoms({ color: "text" }),
 
   variants: {
-    level: {
-      ...Object.keys(vars.heading).reduce(
-        (acc, key) => {
-          const K = key as Heading;
-
-          acc[K] = {
-            fontSize: vars.heading[K].mobile.fontSize,
-            "@media": {
-              [minMediaQuery("tablet")]: {
-                fontSize: vars.heading[K].tablet.fontSize,
-              },
-            },
-          };
-
-          return acc;
-        },
-        {} as Record<
-          Heading,
-          {
-            fontSize: typeof vars.heading.h1.mobile.fontSize;
-            "@media": Record<
-              string,
-              { fontSize: typeof vars.heading.h1.mobile.fontSize }
-            >;
-          }
-        >
-      ),
-    },
+    level: ERecord.map(vars.heading, responsiveFontSize),
     weight: fontWeightVariants,
   },
 
@@ -67,34 +50,7 @@ export const textStyles = recipe({
       white: atoms({ color: "white" }),
       danger: atoms({ color: "textDanger" }),
     },
-    size: {
-      ...Object.keys(vars.text).reduce(
-        (acc, key) => {
-          const K = key as Text;
-
-          acc[K] = {
-            fontSize: vars.text[K].mobile.fontSize,
-            "@media": {
-              [minMediaQuery("tablet")]: {
-                fontSize: vars.text[K].tablet.fontSize,
-              },
-            },
-          };
-
-          return acc;
-        },
-        {} as Record<
-          Text,
-          {
-            fontSize: typeof vars.text.small.mobile.fontSize;
-            "@media": Record<
-              string,
-              { fontSize: typeof vars.text.small.mobile.fontSize }
-            >;
-          }
-        >
-      ),
-    },
+    size: ERecord.map(vars.text, responsiveFontSize),
   },
 
   defaultVariants: {

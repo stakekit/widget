@@ -77,7 +77,7 @@ export const getPendingActionAmountConfig = (
   const maximum = amountArg.maximum;
 
   return {
-    required: !!amountArg.required,
+    required: amountArg.required,
     minimum,
     maximum,
     forceMax:

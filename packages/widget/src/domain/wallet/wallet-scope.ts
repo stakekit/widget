@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import type { WalletAddress } from "../identity/identifiers";
+import { WalletAddress } from "../identity/identifiers";
 import type { AdditionalAddresses } from "./address";
 import { isEvmWalletNetwork, type WalletNetwork } from "./network";
 
@@ -52,14 +52,15 @@ export const walletScopeOwnerKey = (
   scope: Pick<WalletScopeKey, "address" | "network">
 ) =>
   new WalletScopeOwnerKey({
+    // Lowercasing a non-empty address keeps it non-empty, so `make` cannot throw.
     address: isEvmWalletNetwork(scope.network)
-      ? (scope.address.toLowerCase() as WalletAddress)
+      ? WalletAddress.make(scope.address.toLowerCase())
       : scope.address,
     network: scope.network,
   });
 
 export type WalletScopeOwner = {
-  readonly address: string;
+  readonly address: WalletAddress;
   readonly network: WalletNetwork;
 };
 

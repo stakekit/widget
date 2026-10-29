@@ -175,7 +175,7 @@ const exitStart = (): NavigatingYieldTransactionFlowStart => ({
   intake: makeExitIntake(),
   mount: {
     _tag: "PositionExit",
-    balanceId: "balance",
+    balanceId: "default",
     integrationId,
   },
 });
@@ -601,7 +601,7 @@ describe("handOffYieldFlowSource", () => {
         {
           _tag: "Push",
           to: {
-            path: "/positions/integration/balance/unstake/steps",
+            path: "/positions/integration/default/unstake/steps",
             state: { executionHandoff: handoff, yieldFlowSession: handle },
           },
         },
@@ -979,7 +979,7 @@ describe("leaveYieldFlowExecution", () => {
         intake: makeManageIntake(),
         mount: {
           _tag: "PositionManage",
-          balanceId: "balance",
+          balanceId: "default",
           integrationId,
         },
       }),
@@ -990,7 +990,7 @@ describe("leaveYieldFlowExecution", () => {
         intake: makeEnterIntake(),
         mount: {
           _tag: "PositionStake",
-          balanceId: "balance",
+          balanceId: "default",
           integrationId,
         },
       }),

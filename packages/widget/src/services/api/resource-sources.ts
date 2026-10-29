@@ -5,7 +5,10 @@ import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
-import type { ActionId as BorrowActionId } from "../../domain/borrow/ids";
+import type {
+  ActionId as BorrowActionId,
+  IntegrationId as BorrowIntegrationId,
+} from "../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import type {
   BorrowActionsPage,
@@ -83,11 +86,13 @@ export type EarnTokenCatalogRequest = {
 
 export type BorrowActionsRequest = {
   readonly address: WalletAddress;
-  readonly integrationId?: string;
+  readonly integrationId?: BorrowIntegrationId;
   readonly limit: number;
   readonly network: BorrowNetwork;
   readonly offset: number;
-  readonly statuses?: BorrowApi.ActionsControllerGetActionsV1Params["statuses"];
+  readonly statuses?: NonNullable<
+    BorrowApi.ActionsControllerGetActionsV1Params["statuses"]
+  >;
 };
 
 export class MissingBorrowApiConfig extends Data.TaggedError(

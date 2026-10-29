@@ -112,7 +112,10 @@ export const connectWalletAtom = walletRuntime.fn(
         enabledChains: wallet.wagmiConfig.chains,
         initialChain,
       });
-      yield* wallet.connect({ chainId, connector });
+      yield* wallet.connect({
+        ...(chainId === undefined ? {} : { chainId }),
+        connector,
+      });
     }),
   // WalletService decides whether a repeated selection starts a connection.
   { concurrent: true }

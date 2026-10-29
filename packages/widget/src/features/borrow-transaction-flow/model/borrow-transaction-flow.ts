@@ -7,7 +7,7 @@ import type {
   ActionMetadata,
 } from "../../../domain/borrow/execution/action";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
-import type { MarketId } from "../../../domain/borrow/ids";
+import { ActionId, type MarketId } from "../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
   RiskGateBlockReason,
@@ -404,7 +404,7 @@ export class BorrowFlowSession {
 const BorrowFlowNavigationState = Schema.Struct({
   borrowFlowSession: Schema.instanceOf(BorrowFlowSession),
   /** On Steps and Complete: the handed-off action their Execution runs. */
-  executionActionId: Schema.optional(Schema.String),
+  executionActionId: Schema.optional(ActionId),
 });
 
 type BorrowFlowNavigationState = typeof BorrowFlowNavigationState.Type;

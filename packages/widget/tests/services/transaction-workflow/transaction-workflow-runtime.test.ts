@@ -20,7 +20,10 @@ import type { ActionTransaction } from "../../../src/domain/action/models";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
 import {
+  SignedTransactionPayload,
+  TransactionHash,
   WalletAddress,
+  WalletSignature,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
 import {
@@ -73,9 +76,11 @@ const yieldWalletScope = new WalletScopeKey({
   network: "ethereum",
 });
 const borrowWalletScope = new WalletScopeKey({ address, network: "base" });
-const signedPayload = "0xsigned-payload";
-const transactionHash =
-  "0x1111111111111111111111111111111111111111111111111111111111111111";
+const signedPayload = SignedTransactionPayload.make("0xsigned-payload");
+const messageSignature = WalletSignature.make("0xsigned-payload");
+const transactionHash = TransactionHash.make(
+  "0x1111111111111111111111111111111111111111111111111111111111111111"
+);
 const actionMeta = {
   actionId: "yield-action-1",
   actionType: "stake",
@@ -179,9 +184,9 @@ const makeCapabilities = (
   initialWalletState:
     overrides.initialWalletState ?? makeConnectedWalletState(yieldWalletScope),
   wallet: {
-    signMessage: () => Effect.succeed(signedPayload),
+    signMessage: () => Effect.succeed(messageSignature),
     signTransaction: () =>
-      Effect.succeed({ broadcasted: false, signedTx: signedPayload }),
+      Effect.succeed({ broadcasted: false as const, signedTx: signedPayload }),
     ...overrides.wallet,
   },
   yieldOperations: {
@@ -919,7 +924,10 @@ describe("transaction workflow runtime", () => {
             ],
           });
           const signTransaction = vi.fn(() =>
-            Effect.succeed({ broadcasted: false, signedTx: signedPayload })
+            Effect.succeed({
+              broadcasted: false as const,
+              signedTx: signedPayload,
+            })
           );
           const submit = vi.fn(() =>
             Effect.succeed({

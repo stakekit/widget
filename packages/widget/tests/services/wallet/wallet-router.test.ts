@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Schema } from "effect";
-import { type Chain, type Hash, type Hex, zeroAddress } from "viem";
+import { type Chain, zeroAddress } from "viem";
 import type { Connector } from "wagmi";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  TransactionHash,
+  WalletAddress,
+  WalletSignature,
+} from "../../../src/domain/identity/identifiers";
 import type { Network } from "../../../src/domain/network/network";
 import {
   routeWalletAccountSwitch,
@@ -75,11 +79,13 @@ const actions = () =>
     sendEvmTransaction: vi.fn(() =>
       Effect.succeed({
         broadcasted: true as const,
-        signedTx: "0xhash" as Hash,
+        signedTx: TransactionHash.make("0xhash"),
       })
     ),
-    signMessage: vi.fn(() => Effect.succeed("0xsignature" as Hex)),
-    signTypedData: vi.fn(() => Effect.succeed("0xtyped" as Hex)),
+    signMessage: vi.fn(() =>
+      Effect.succeed(WalletSignature.make("0xsignature"))
+    ),
+    signTypedData: vi.fn(() => Effect.succeed(WalletSignature.make("0xtyped"))),
     switchChain: vi.fn(() => Effect.die("unused")),
   }) satisfies WagmiActions;
 

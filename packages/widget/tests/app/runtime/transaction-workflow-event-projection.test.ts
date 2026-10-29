@@ -15,7 +15,11 @@ import { TestClock } from "effect/testing";
 import { transactionWorkflowResourceEventProjection } from "../../../src/app/runtime/transaction-workflow-event-projection";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  SignedTransactionPayload,
+  TransactionHash,
+  WalletAddress,
+} from "../../../src/domain/identity/identifiers";
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
@@ -255,14 +259,18 @@ const invalidationsBeforeTeardown = Effect.fn("invalidationsBeforeTeardown")(
           Effect.succeed({
             link: "https://explorer.test/borrow",
             status: "BROADCASTED",
-            transactionHash:
-              "0x1111111111111111111111111111111111111111111111111111111111111111",
+            transactionHash: TransactionHash.make(
+              "0x1111111111111111111111111111111111111111111111111111111111111111"
+            ),
           }),
       },
       initialWalletState: makeConnectedWalletState(borrowWalletScope),
       wallet: {
         signTransaction: () =>
-          Effect.succeed({ broadcasted: false, signedTx: "0xsigned" }),
+          Effect.succeed({
+            broadcasted: false,
+            signedTx: SignedTransactionPayload.make("0xsigned"),
+          }),
       },
     });
 

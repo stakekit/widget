@@ -5,7 +5,10 @@ import {
   WalletDecodeError,
   WalletSigningError,
 } from "../../../wallet-errors";
-import type { WalletSignedPayloadResult } from "../../../wallet-transactions";
+import {
+  decodeWalletSignedPayloadResult,
+  type WalletSignedPayloadResult,
+} from "../../../wallet-transactions";
 import { unsignedTronTransactionCodec } from "./transaction";
 import { isTronConnector } from "./tron-connector-meta";
 
@@ -44,6 +47,6 @@ export const makeTronWalletDriver = ({
           new WalletSigningError({ cause, operation: "transaction" }),
       });
 
-      return { broadcasted: false, signedTx };
+      return yield* decodeWalletSignedPayloadResult(signedTx);
     }),
 });

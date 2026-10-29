@@ -21,10 +21,12 @@ import {
 } from "./styles.css";
 import { DashboardTab } from "./tab";
 
-type RouteTab = "earn" | "borrow" | "manage" | "activity";
+export type DashboardRouteTab = "earn" | "borrow" | "manage" | "activity";
 
 /** The route tab a dashboard pathname belongs to. */
-export const resolveDashboardRouteTab = (pathname: string): RouteTab => {
+export const resolveDashboardRouteTab = (
+  pathname: string
+): DashboardRouteTab => {
   if (Option.isSome(widgetRoutes.activity.matchPrefix(pathname))) {
     return "activity";
   }
@@ -37,7 +39,7 @@ export const resolveDashboardRouteTab = (pathname: string): RouteTab => {
   return "earn";
 };
 
-const tabsMap: Record<RouteTab, WidgetPath> = {
+const tabsMap: Record<DashboardRouteTab, WidgetPath> = {
   activity: widgetRoutes.activity.build(),
   borrow: widgetRoutes.borrow.build("Dashboard"),
   earn: widgetRoutes.earn.build(),
@@ -58,10 +60,10 @@ export const DashboardTabs = ({
     pendingYieldCategory ?? yieldSelection.selectedCategory;
   const selectedTab = resolveDashboardRouteTab(useLocation().pathname);
 
-  const onRouteTabPress = (selected: RouteTab) => {
+  const onRouteTabPress = (selected: DashboardRouteTab) => {
     if (selectedTab === selected) return;
     trackEvent("tabClicked", { selected });
-    navigation.push(tabsMap[selected]);
+    void navigation.push(tabsMap[selected]);
   };
 
   const onYieldCategoryPress = (category: YieldCategory) => {
@@ -70,7 +72,7 @@ export const DashboardTabs = ({
     }
 
     trackEvent("tabClicked", { selected: category });
-    navigation.push(dashboardEarnRoute.build({ yieldCategory: category }));
+    void navigation.push(dashboardEarnRoute.build({ yieldCategory: category }));
   };
 
   const borrowEnabled = useWidgetConfig("borrowEnabled");

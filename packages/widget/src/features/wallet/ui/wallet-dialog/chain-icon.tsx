@@ -27,7 +27,7 @@ export const WalletChainIcon = ({
     return initial === undefined ? null : (
       <Monogram
         initial={initial}
-        className={className}
+        {...(className === undefined ? {} : { className })}
         style={{ width: size, height: size }}
       />
     );

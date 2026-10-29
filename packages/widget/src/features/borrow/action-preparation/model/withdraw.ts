@@ -33,10 +33,7 @@ export const prepareWithdrawAction = (
   const assessment = position.risk.assess([
     {
       amount: executableAmount,
-      tokenId: decodeTokenId({
-        address: token.collateralToken.token.address,
-        symbol: token.collateralToken.token.symbol,
-      }),
+      tokenId: decodeTokenId(token.collateralToken.token),
       type: "withdraw",
     },
   ]);

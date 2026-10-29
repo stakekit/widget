@@ -6,8 +6,8 @@ import type { BoxProps } from "../box";
 import { Box } from "../box";
 
 type ImageProps = {
-  src?: string;
-  fallbackName?: string;
+  src?: string | undefined;
+  fallbackName?: string | undefined;
   wrapperProps?: Omit<BoxProps, "as">;
   imgProps?: Omit<BoxProps, "as" | "src">;
 };
@@ -63,7 +63,7 @@ export const Monogram = ({
   style,
 }: {
   initial: string;
-  label?: string;
+  label?: string | undefined;
   className?: string;
   style?: CSSProperties;
 }) => (

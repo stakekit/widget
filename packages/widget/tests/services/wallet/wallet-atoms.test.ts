@@ -204,7 +204,7 @@ describe("wallet Effect Atom boundaries", () => {
       })
     ).toMatchObject({ network: null });
     expect(
-      Schema.decodeSync(InitParams)({
+      Schema.decodeUnknownSync(InitParams)({
         ...emptyInitParams,
         pendingaction: "unstake",
       })
@@ -418,8 +418,6 @@ describe("wallet Effect Atom boundaries", () => {
                 institutionalWallets: false,
                 isLedgerLive: false,
                 isSafe: false,
-                mapWalletFn: undefined,
-                walletPolicy: undefined,
                 persistPublicKey: () => Effect.void,
                 queryParams,
                 solanaConnection: {} as SolanaConnection,
@@ -471,8 +469,6 @@ describe("wallet Effect Atom boundaries", () => {
                 institutionalWallets: false,
                 isLedgerLive: false,
                 isSafe: false,
-                mapWalletFn: undefined,
-                walletPolicy: undefined,
                 persistPublicKey: () => Effect.void,
                 queryParams,
                 solanaConnection: {} as SolanaConnection,

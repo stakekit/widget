@@ -214,10 +214,8 @@ export const installExternalProviderSynchronization = Effect.fn(
     const chainKey = `${connector.uid}:${connection.chainId ?? ""}:${
       snapshot.currentChain ?? ""
     }`;
-    if (
-      snapshot.currentChain === undefined ||
-      connection.chainId === snapshot.currentChain
-    ) {
+    const currentChain = snapshot.currentChain;
+    if (currentChain === undefined || connection.chainId === currentChain) {
       yield* Ref.update(memory, (current) => ({
         ...current,
         chainNotification: null,
@@ -228,7 +226,7 @@ export const installExternalProviderSynchronization = Effect.fn(
         chainNotification: chainKey,
       }));
       yield* runConnectorNotification(() =>
-        connector.onChainChanged(snapshot.currentChain!.toString())
+        connector.onChainChanged(currentChain.toString())
       );
     }
   });

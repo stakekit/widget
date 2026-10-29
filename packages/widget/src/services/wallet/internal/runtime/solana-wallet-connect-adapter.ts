@@ -19,9 +19,11 @@ import {
 } from "@solana/web3.js";
 import base58 from "bs58";
 import { Effect, Predicate, Schema } from "effect";
-import type {
-  WalletConnectProtocol,
-  WalletConnectSession,
+import {
+  CaipChainId,
+  caipAddresses,
+  type WalletConnectProtocol,
+  type WalletConnectSession,
 } from "../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "./effect-runner";
 
@@ -40,6 +42,16 @@ const solanaMethods = [
   "solana_signAllTransactions",
   "solana_signAndSendTransaction",
 ];
+
+const decodeChainId = Schema.decodeSync(CaipChainId);
+const mainnetChains = [
+  decodeChainId("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"),
+  decodeChainId("solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ"),
+] as const;
+const devnetChains = [
+  decodeChainId("solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1"),
+  decodeChainId("solana:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K"),
+] as const;
 
 type Options = {
   readonly network: WalletAdapterNetwork.Mainnet | WalletAdapterNetwork.Devnet;
@@ -63,14 +75,15 @@ const deserialize = <T extends Transaction | VersionedTransaction>(
 ): T => {
   const bytes = Buffer.from(serialized, "base64");
   // The request's transaction version determines the response's concrete type.
-  return (
-    isVersionedTransaction(original)
-      ? VersionedTransaction.deserialize(bytes)
-      : Transaction.from(bytes)
-  ) as T;
+  const deserialized = isVersionedTransaction(original)
+    ? VersionedTransaction.deserialize(bytes)
+    : Transaction.from(bytes);
+  // biome-ignore lint/nursery/noUnsafeTypeAssertion: @solana/wallet-adapter-base declares signTransaction generic over T; the response has the request's concrete class, which TypeScript cannot relate to T
+  return deserialized as T;
 };
 
 export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
+  // biome-ignore lint/nursery/noUnsafeTypeAssertion: @solana/wallet-adapter-base brands WalletName and exposes no constructor for it; adapters declare their name by assertion
   readonly name = "WalletConnect" as WalletName<"WalletConnect">;
   readonly url = "https://walletconnect.org";
   readonly icon =
@@ -84,7 +97,7 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
 
   private key: PublicKey | null = null;
   private session: WalletConnectSession | undefined;
-  private chainId: string | undefined;
+  private chainId: CaipChainId | undefined;
   private connectingPromise: Promise<void> | undefined;
   private unsubscribeEnded: (() => void) | undefined;
   private attempt = 0;
@@ -114,24 +127,17 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
     return this.connectingPromise !== undefined;
   }
 
-  private get chains(): readonly [string, ...string[]] {
+  private get chains(): readonly [CaipChainId, ...CaipChainId[]] {
     return this.options.network === WalletAdapterNetwork.Mainnet
-      ? [
-          "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-          "solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
-        ]
-      : [
-          "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
-          "solana:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K",
-        ];
+      ? mainnetChains
+      : devnetChains;
   }
 
   /** The first account on a configured chain whose address is a public key. */
   private account(session: WalletConnectSession) {
     for (const chainId of this.chains) {
-      for (const account of session.accounts) {
-        if (!account.startsWith(`${chainId}:`)) continue;
-        const bytes = base58.decodeUnsafe(account.slice(chainId.length + 1));
+      for (const address of caipAddresses(session.accounts, chainId)) {
+        const bytes = base58.decodeUnsafe(address);
         if (bytes?.length === 32) {
           return { chainId, publicKey: new PublicKey(bytes) };
         }
@@ -163,7 +169,7 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
       return Promise.reject(new WalletNotReadyError());
     }
     if (this.connected) return Promise.resolve();
-    if (this.connectingPromise) return this.connectingPromise;
+    if (this.connectingPromise !== undefined) return this.connectingPromise;
     const attempt = ++this.attempt;
     const protocol = this.options.walletConnectProtocol;
     this.connectingPromise = this.options
@@ -306,9 +312,13 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
           "Wallet returned a different number of signed transactions"
         );
       }
-      return transactions.map((transaction, index) =>
-        deserialize(response.transactions[index]!, transaction)
-      );
+      return transactions.map((transaction, index) => {
+        const signed = response.transactions[index];
+        if (signed === undefined) {
+          throw new Error(`Wallet returned no signed transaction ${index}`);
+        }
+        return deserialize(signed, transaction);
+      });
     } catch (cause) {
       return this.signingError(cause);
     }

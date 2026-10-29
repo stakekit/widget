@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
-import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import type { InfiniteScrollProps } from "../../../../../shared/ui/components/virtual-list";
@@ -20,7 +20,7 @@ type SelectValidatorProps = PropsWithChildren<
     SelectModalProps,
     "isLoading" | "onClose" | "onOpen" | "state" | "trigger"
   > & {
-    selectedValidators: Set<ValidatorKey>;
+    selectedValidators: ReadonlySet<EarnValidatorKey>;
     onItemClick: (item: EarnValidator) => void;
     onViewMoreClick?: () => void;
     onLoadMore?: () => void;
@@ -194,11 +194,11 @@ const getValidatorGroups = ({
     },
     {
       preferred: {
-        items: [] as EarnValidator[],
+        items: [],
         label: preferredLabel,
       },
       other: {
-        items: [] as EarnValidator[],
+        items: [],
         label: otherLabel,
       },
     }

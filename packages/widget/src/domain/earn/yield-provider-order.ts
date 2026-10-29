@@ -1,3 +1,4 @@
+import type { ProviderId } from "../identity/identifiers";
 import type { YieldCategory } from "./contract";
 import type { EarnYieldWithProvider } from "./models";
 import {
@@ -13,7 +14,7 @@ import {
  * A category without an entry keeps the default yield order.
  */
 export type YieldProviderOrder = Readonly<
-  Partial<Record<YieldCategory, ReadonlyArray<string>>>
+  Partial<Record<YieldCategory, ReadonlyArray<ProviderId>>>
 >;
 
 const unranked = Number.MAX_SAFE_INTEGER;

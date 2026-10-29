@@ -66,7 +66,6 @@ describe("dashboard application schemas", () => {
       expect(DateTime.isDateTime(rewardRate.items[0]?.timestamp)).toBe(true);
       expect(tvl.items).toHaveLength(1);
       expect(tvl.items[0]?.tvl.toFixed()).toBe("1000.5");
-      expect(tvl.items[0]?.tvlRaw).toBe("1000500000");
       expect(DateTime.isDateTime(tvl.items[0]?.timestamp)).toBe(true);
     })
   );

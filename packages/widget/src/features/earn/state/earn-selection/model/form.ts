@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
 import {
@@ -17,7 +18,7 @@ export const canSubmitEarnForm = ({
   positionsData,
   selectedYield,
 }: {
-  readonly availableAmount: string | null;
+  readonly availableAmount: BigNumber | null;
   readonly form: EarnSelectionForm;
   readonly positionsData: PositionsData;
   readonly selectedYield: EarnYieldWithProvider;
@@ -60,7 +61,7 @@ export const resolveForm = ({
   positionsData,
   selectedYield,
 }: {
-  availableAmount: string | null;
+  availableAmount: BigNumber | null;
   intent: EarnEntryIntent;
   positionsData: PositionsData;
   selectedYield: EarnYieldWithProvider;
@@ -104,12 +105,12 @@ const resolveStakeAmount = ({
   constraint,
   intent,
 }: {
-  availableAmount: string | null;
+  availableAmount: BigNumber | null;
   constraint: ReturnType<typeof getEnterAmountConstraint>;
   intent: EarnEntryIntent;
 }) => {
   if (constraint.type === "force-max") {
-    return availableAmount ?? "0";
+    return availableAmount?.toFixed() ?? "0";
   }
 
   if (intent.amountInput !== "untouched") {

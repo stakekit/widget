@@ -41,7 +41,7 @@ describe("Token", () => {
     expect(
       equalTokens(
         { network: "ethereum", symbol: "ETH" },
-        { network: "ethereum", symbol: "ETH", address: "" }
+        token({ network: "ethereum", symbol: "ETH", address: "0x" })
       )
     ).toBe(false);
   });

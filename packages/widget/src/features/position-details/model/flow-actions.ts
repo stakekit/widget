@@ -18,15 +18,20 @@ import {
   isConfidentialYield,
   toBaseUnits,
 } from "../../../domain/earn/confidential";
-import type {
-  EarnBalance,
-  EarnValidator,
-  EarnYieldWithProvider,
+import {
+  type EarnBalance,
+  type EarnValidator,
+  type EarnValidatorKey,
+  type EarnYieldWithProvider,
+  getVisibleShares,
 } from "../../../domain/earn/models";
 import { getMaxSelectedValidators } from "../../../domain/earn/validator";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { truncateToTokenDecimals } from "../../../domain/finance/exact";
-import type { WalletAddress } from "../../../domain/identity/identifiers";
+import type {
+  ValidatorAddress,
+  WalletAddress,
+} from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
 
@@ -39,20 +44,26 @@ type PendingActionSelection = Readonly<{
   readonly yieldBalance: EarnBalance;
 }>;
 
+/** Selected validators by key, so subnets of one address stay distinct. */
+type PendingActionSelectedValidators = ReadonlyMap<
+  EarnValidatorKey,
+  ValidatorAddress
+>;
+
 export type PendingActionModalState =
   | Readonly<{
       readonly _tag: "Closed";
       readonly attemptId: null;
       readonly multiSelect: false;
       readonly pendingAction: null;
-      readonly selectedValidators: Set<EarnValidator["address"]>;
+      readonly selectedValidators: PendingActionSelectedValidators;
     }>
   | Readonly<{
       readonly _tag: "Open";
       readonly attemptId: PendingActionAttemptId;
       readonly multiSelect: boolean;
       readonly pendingAction: PendingActionSelection;
-      readonly selectedValidators: Set<EarnValidator["address"]>;
+      readonly selectedValidators: PendingActionSelectedValidators;
     }>;
 
 export type PendingActionModalStore = Readonly<{
@@ -71,7 +82,7 @@ export const closedPendingActionModalState: PendingActionModalState = {
   attemptId: null,
   multiSelect: false,
   pendingAction: null,
-  selectedValidators: new Set(),
+  selectedValidators: new Map(),
 };
 
 export const makePendingActionModalStore = (): PendingActionModalStore => ({
@@ -91,12 +102,12 @@ const makeOpenPendingActionModalState = ({
   attemptId,
   multiSelect: isPendingActionValidatorAddressesRequired(pendingAction),
   pendingAction: { pendingAction, yieldBalance },
-  selectedValidators: new Set([
-    ...(yieldBalance.validators?.map((validator) => validator.address) ?? []),
-    ...(yieldBalance.validator?.address
-      ? [yieldBalance.validator.address]
-      : []),
-  ]),
+  selectedValidators: new Map(
+    [
+      ...(yieldBalance.validators ?? []),
+      ...(yieldBalance.validator ? [yieldBalance.validator] : []),
+    ].map((validator) => [validator.key, validator.address])
+  ),
 });
 
 export const openPendingActionModal = ({
@@ -159,26 +170,33 @@ export const togglePendingActionValidator = ({
   validator,
 }: {
   readonly store: PendingActionModalStore;
-  readonly validator: EarnValidator["address"];
+  readonly validator: EarnValidator;
 }): PendingActionModalStore => {
   if (store.state._tag !== "Open") return store;
 
-  const selectedValidators = new Set(store.state.selectedValidators);
+  const selectedValidators = new Map(store.state.selectedValidators);
   const maxSelected = getMaxSelectedValidators(
     store.state.pendingAction.yieldBalance.token.network
   );
-  if (store.state.multiSelect && selectedValidators.has(validator)) {
-    selectedValidators.delete(validator);
+  if (store.state.multiSelect && selectedValidators.has(validator.key)) {
+    selectedValidators.delete(validator.key);
   } else if (!store.state.multiSelect) {
     selectedValidators.clear();
-    selectedValidators.add(validator);
+    selectedValidators.set(validator.key, validator.address);
   } else if (maxSelected === null || selectedValidators.size < maxSelected) {
-    selectedValidators.add(validator);
+    selectedValidators.set(validator.key, validator.address);
   }
   return selectedValidators.size > 0
     ? { ...store, state: { ...store.state, selectedValidators } }
     : store;
 };
+
+/** The addresses a pending action submits for the selected validators. */
+export const getPendingActionValidatorAddresses = (
+  state: PendingActionModalState
+): ReadonlyArray<ValidatorAddress> => [
+  ...new Set(state.selectedValidators.values()),
+];
 
 export const pendingActionNeedsValidatorSelection = (
   pendingAction: PendingAction
@@ -304,7 +322,8 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
     // Exact share count; converting back could leave dust.
     if (facts.useMaxAmount) {
       return shareBalances.reduce(
-        (total, balance) => total + BigInt(balance.shareAmountRaw ?? 0),
+        (total, balance) =>
+          total + (getVisibleShares(balance)?.amountRaw ?? 0n),
         0n
       );
     }
@@ -381,9 +400,11 @@ export type PendingActionTelemetry =
   | Readonly<{
       readonly _tag: "ValidatorsSubmitted";
       readonly pendingActionType: PendingAction["type"];
-      readonly validators: ReadonlyArray<EarnValidator["address"]>;
+      readonly validators: ReadonlyArray<ValidatorAddress>;
       readonly yieldId: EarnYieldWithProvider["id"];
     }>;
+
+const noSelectedValidators: ReadonlyArray<ValidatorAddress> = [];
 
 export const resolvePositionPendingActionDecision = ({
   canMount,
@@ -422,7 +443,7 @@ export const resolvePositionPendingActionDecision = ({
       return {
         attemptId: null,
         pendingAction: command.pendingAction,
-        selectedValidators: [] as EarnValidator["address"][],
+        selectedValidators: noSelectedValidators,
         yieldBalance: command.yieldBalance,
       };
     }
@@ -430,7 +451,7 @@ export const resolvePositionPendingActionDecision = ({
       ? {
           attemptId: modal.attemptId,
           ...modal.pendingAction,
-          selectedValidators: [...modal.selectedValidators],
+          selectedValidators: getPendingActionValidatorAddresses(modal),
         }
       : null;
   })();

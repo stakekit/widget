@@ -96,6 +96,13 @@ describe("Deep link param validation", () => {
     await setAndAssertIsValidPendingActionParam("UNSTAKE/../", false);
   });
 
+  it("decodes an unknown pendingaction as null", () => {
+    expect(
+      decodeHref("https://host.test/?pendingaction=NOT_A_PENDING_ACTION")
+        .pendingaction
+    ).toBeNull();
+  });
+
   it("Keeps valid params when another param is invalid", () => {
     const url = new URL(window.location.href);
     url.searchParams.set("network", "not-supported");
@@ -199,6 +206,9 @@ describe("Deep link param validation", () => {
       "../positions",
       "validator::a%2Fb",
       "validator::a?b",
+      "balance-1",
+      "validator::",
+      "validator:abc",
     ]) {
       const url = new URL("https://host.test/");
       url.searchParams.set("balanceId", balanceId);

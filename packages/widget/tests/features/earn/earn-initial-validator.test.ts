@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import type { EarnYield } from "../../../src/domain/earn/models";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  ValidatorAddress,
+  WalletAddress,
+} from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   earnSelectionStatusViewAtom,
@@ -50,7 +53,7 @@ const entry = (requestedValidator: string): EarnEntry => ({
     pendingaction: null,
     tab: "earn",
     token: null,
-    validator: requestedValidator,
+    validator: Schema.decodeSync(ValidatorAddress)(requestedValidator),
     yieldId: validatorYield.id,
   },
   preferredTokenYieldsPerNetwork: null,

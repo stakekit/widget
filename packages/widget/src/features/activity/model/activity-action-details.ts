@@ -41,18 +41,19 @@ type ActivityDetailsTransactionFields = Readonly<{
   readonly error: string | null;
   readonly explorerUrl: string | null;
   readonly hash: string | null;
-  readonly id: string;
   readonly status: ActivityDetailsTransactionStatus;
 }>;
 
-/** Yield and Borrow name transaction types from different vocabularies. */
+/** Yield and Borrow name transactions from different vocabularies. */
 type ActivityDetailsTransaction =
   | (ActivityDetailsTransactionFields & {
       readonly _tag: "yield";
+      readonly id: ActionTransaction["id"];
       readonly type: ActionTransaction["type"];
     })
   | (ActivityDetailsTransactionFields & {
       readonly _tag: "borrow";
+      readonly id: BorrowActivityTransaction["id"];
       readonly type: BorrowActivityTransaction["type"];
     });
 

@@ -77,25 +77,22 @@ describe("position details action tabs", () => {
   it("registers the earn CTA only for the earn index", () => {
     expect(shouldRegisterDashboardEarnFooterButton("/")).toBe(true);
     expect(
-      shouldRegisterDashboardEarnFooterButton("/positions/yield-1/balance-1")
+      shouldRegisterDashboardEarnFooterButton("/positions/yield-1/default")
     ).toBe(false);
     expect(
       shouldRegisterDashboardEarnFooterButton(
-        "/positions/yield-1/balance-1/stake"
+        "/positions/yield-1/default/stake"
       )
     ).toBe(false);
     expect(
       shouldRegisterDashboardEarnFooterButton(
-        "/positions/yield-1/balance-1/stake/review"
+        "/positions/yield-1/default/stake/review"
       )
     ).toBe(false);
   });
 
   it("switches Unstake and Stake tabs without changing the URL", async () => {
-    const app = await renderTabs([
-      "/positions",
-      "/positions/yield-1/balance-1",
-    ]);
+    const app = await renderTabs(["/positions", "/positions/yield-1/default"]);
 
     await expect
       .element(app.getByTestId("position-details-action-tab-unstake"))
@@ -108,7 +105,7 @@ describe("position details action tabs", () => {
       .toHaveTextContent("unstake");
     await expect
       .element(app.getByTestId("location"))
-      .toHaveTextContent("/positions/yield-1/balance-1");
+      .toHaveTextContent("/positions/yield-1/default");
 
     await userEvent.click(app.getByTestId("position-details-action-tab-stake"));
 
@@ -117,7 +114,7 @@ describe("position details action tabs", () => {
       .toHaveTextContent("stake");
     await expect
       .element(app.getByTestId("location"))
-      .toHaveTextContent("/positions/yield-1/balance-1");
+      .toHaveTextContent("/positions/yield-1/default");
   });
 
   it("names the tabs Withdraw and Deposit for a vault", async () => {
@@ -140,7 +137,7 @@ describe("position details action tabs", () => {
   it("does not render a selector when there is only one available action", async () => {
     const app = await render(
       <I18nextProvider i18n={i18nInstance}>
-        <MemoryRouter initialEntries={["/positions/yield-1/balance-1"]}>
+        <MemoryRouter initialEntries={["/positions/yield-1/default"]}>
           <Routes>
             <Route
               path="positions/:integrationId/:balanceId"

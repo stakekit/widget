@@ -197,13 +197,7 @@ describe("Activity action list item projection", () => {
 
   it("projects an unavailable action without inventing a token", () => {
     const projection = projectActivityActionListItem({
-      action: makeItem(
-        yieldApiActionFixture({
-          createdAt: undefined,
-          type: "VOTE",
-        }),
-        null
-      ),
+      action: makeItem(yieldApiActionFixture({ type: "VOTE" }), null),
       locale: "en-US",
       presentationTime: null,
     });

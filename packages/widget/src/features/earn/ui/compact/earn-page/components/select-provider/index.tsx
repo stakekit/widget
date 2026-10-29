@@ -1,4 +1,5 @@
 import { Trigger } from "@radix-ui/react-dialog";
+import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { formatUsd } from "../../../../../../../shared/lib/number-format";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
@@ -27,8 +28,11 @@ const getDisplayWebsite = (website: string) => {
   }
 };
 
-const getProviderTvl = (tvlUsd: unknown, locale: string) => {
-  if (typeof tvlUsd !== "string" && typeof tvlUsd !== "number") return null;
+const getProviderTvl = (
+  tvlUsd: BigNumber | null | undefined,
+  locale: string
+) => {
+  if (!tvlUsd) return null;
 
   const formatted = formatUsd(tvlUsd, locale);
 

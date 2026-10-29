@@ -7,14 +7,16 @@ describe("makeTestTracking", () => {
     Effect.gen(function* () {
       const tracking = yield* makeTestTracking();
 
-      yield* tracking.service.trackEvent("tabClicked", { tab: "earn" });
-      yield* tracking.service.trackPageView("earn", { source: "test" });
+      yield* tracking.service.trackEvent("tabClicked", { selected: "earn" });
+      yield* tracking.service.trackPageView("positionDetails", {
+        yield: "Test yield",
+      });
 
       expect(yield* tracking.trackedEvents).toEqual([
-        { event: "tabClicked", properties: { tab: "earn" } },
+        { event: "tabClicked", properties: { selected: "earn" } },
       ]);
       expect(yield* tracking.trackedPageViews).toEqual([
-        { page: "earn", properties: { source: "test" } },
+        { page: "positionDetails", properties: { yield: "Test yield" } },
       ]);
 
       yield* tracking.clear;
@@ -31,11 +33,11 @@ describe("makeTestTracking", () => {
         trackEvent: () => Ref.update(delegatedCount, (count) => count + 1),
       });
 
-      yield* tracking.service.trackEvent("tabClicked", { tab: "earn" });
+      yield* tracking.service.trackEvent("tabClicked", { selected: "earn" });
 
       expect(yield* Ref.get(delegatedCount)).toBe(1);
       expect(yield* tracking.trackedEvents).toEqual([
-        { event: "tabClicked", properties: { tab: "earn" } },
+        { event: "tabClicked", properties: { selected: "earn" } },
       ]);
     })
   );

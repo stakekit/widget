@@ -310,9 +310,9 @@ type NonNullishValue = NonNullable<unknown>;
 export type SKTxMeta = ActionMeta & {
   txId: string;
   txType: SKTransactionType;
-  structuredTransaction?: NonNullishValue | null;
-  annotatedTransaction?: NonNullishValue | null;
-  gasEstimate?: string;
+  structuredTransaction?: NonNullishValue | null | undefined;
+  annotatedTransaction?: NonNullishValue | null | undefined;
+  gasEstimate?: string | undefined;
 };
 
 /**
@@ -588,7 +588,7 @@ export type SKTrackingConfig = {
  * The value is a yield ID, or `"*"` for the widget's default choice.
  */
 export type SKPreferredTokenYieldsPerNetwork = Readonly<
-  Record<string, Readonly<Record<`${string}-${string}`, string>>>
+  Partial<Record<SKNetwork, Readonly<Record<`${string}-${string}`, string>>>>
 >;
 
 /**
@@ -651,25 +651,29 @@ type SettingsPropsBase = {
   /** Translation overrides per language. */
   customTranslations?: SKCustomTranslations;
   /** Validator rules per network ID, or `"*"` for every network without its own entry. */
-  validatorsConfig?: Record<
-    string,
-    {
-      /** Shows only these validator addresses. */
-      allowed?: string[];
-      /** Hides these validator addresses, even when allowed. */
-      blocked?: string[];
-      /** Marks these validator addresses as preferred. */
-      preferred?: string[];
-      /** Also keeps the API's preferred validators. Defaults to `true`. */
-      mergePreferredWithDefault?: boolean;
-      /** Shows only preferred validators. Defaults to `false`. */
-      preferredOnly?: boolean;
-    }
+  validatorsConfig?: Partial<
+    Record<
+      SKNetwork | "*",
+      {
+        /** Shows only these validator addresses. */
+        allowed?: string[];
+        /** Hides these validator addresses, even when allowed. */
+        blocked?: string[];
+        /** Marks these validator addresses as preferred. */
+        preferred?: string[];
+        /** Also keeps the API's preferred validators. Defaults to `true`. */
+        mergePreferredWithDefault?: boolean;
+        /** Shows only preferred validators. Defaults to `false`. */
+        preferredOnly?: boolean;
+      }
+    >
   >;
   /** Token icon URLs by token symbol, or a function returning the URL for a token. */
   tokenIconMapping?: Record<string, string> | ((token: SKToken) => string);
   /** Network icon URLs by network ID (for example `"ethereum"`), or a function returning one. */
-  chainIconMapping?: Record<string, string> | ((chain: string) => string);
+  chainIconMapping?:
+    | Partial<Record<SKNetwork, string>>
+    | ((network: SKNetwork) => string);
   /** Enables the dashboard route tree and category yield grouping by default. */
   dashboardVariant?: boolean;
   /** Order of yield categories. Omitted categories follow in the default order. */

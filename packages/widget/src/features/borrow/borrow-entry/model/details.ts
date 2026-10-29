@@ -93,7 +93,7 @@ export const getBorrowDetailsModel = ({
   readonly integration: Integration | null;
   readonly locale: string;
   readonly market: Market;
-  readonly projection?: BorrowFormProjection;
+  readonly projection?: BorrowFormProjection | undefined;
   readonly t: TFunction;
 }) => {
   const borrowUsd = getTokenUsdValue({

@@ -32,7 +32,7 @@ const getVariantTokenUrls = ({
   mapTokenIconUrl,
 }: {
   token: Token;
-  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
+  metadata: Pick<YieldMetadata, "logoURI" | "name" | "provider"> | undefined;
   hostTokenIconMapping: WidgetPresentation["hostTokenIconMapping"];
   mapTokenIconUrl: WidgetPresentation["mapTokenIconUrl"];
 }): VariantTokenUrls => {

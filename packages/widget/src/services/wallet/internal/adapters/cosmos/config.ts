@@ -1,12 +1,19 @@
-import { Effect, Record } from "effect";
+import { Effect } from "effect";
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
-import { walletCosmosNetworks } from "../../../../../domain/wallet/network";
+import {
+  type WalletCosmosNetwork,
+  walletCosmosNetworks,
+} from "../../../../../domain/wallet/network";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { WalletConnectProtocol } from "../../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
-import type { CosmosChainsMap } from "./chains";
+import type {
+  CosmosChainEntry,
+  CosmosChainsAssets,
+  CosmosChainsMap,
+} from "./chains";
 import { getWagmiChain } from "./chains/index";
 import type { CosmosWalletManagerOptions } from "./wallet-manager";
 
@@ -78,6 +85,7 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
     Effect.tryPromise(() => walletManager.onMounted()),
     {
       onFailure: () => {
+        // biome-ignore lint/nursery/noUnsafeTypeAssertion: @cosmos-kit/core declares _restoreAccounts private and untyped; it is the only restore path after a failed mount
         const restorableWalletManager = walletManager as unknown as {
           _restoreAccounts: () => Promise<void>;
         };
@@ -92,6 +100,23 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
 
   return connector;
 });
+
+const makeCosmosChainEntry = <Key extends WalletCosmosNetwork>(
+  network: Key,
+  chain: CosmosChainsAssets
+): CosmosChainEntry<Key> => ({
+  type: "cosmos",
+  network,
+  chain,
+  wagmiChain: getWagmiChain(chain),
+});
+
+const setCosmosChainEntry = <Key extends WalletCosmosNetwork>(
+  map: { [Network in Key]?: CosmosChainEntry<Network> },
+  entry: CosmosChainEntry<Key>
+) => {
+  map[entry.network] = entry;
+};
 
 const queryFn = ({
   buildConnectors,
@@ -138,27 +163,16 @@ const queryFn = ({
     });
     const chainsToUseSet = new Set(chainsToUse);
 
-    const cosmosChainsMap: Partial<CosmosChainsMap> = Record.filter(
-      registry.cosmosRegistryChains.reduce((acc, next) => {
-        const network = registry.registryIdsToSKCosmosNetworks[next.chain_id];
-
-        if (!network || !chainsToUseSet.has(network)) {
-          return acc;
-        }
-
-        return {
-          // biome-ignore lint: false
-          ...acc,
-          [network]: {
-            type: "cosmos",
-            network,
-            chain: next,
-            wagmiChain: getWagmiChain(next),
-          },
-        };
-      }, {} as CosmosChainsMap),
-      (v) => networks.has(v.network)
-    );
+    const cosmosChainsMap: Partial<CosmosChainsMap> = {};
+    for (const next of registry.cosmosRegistryChains) {
+      const network = registry.registryIdsToSKCosmosNetworks[next.chain_id];
+      if (network && chainsToUseSet.has(network)) {
+        setCosmosChainEntry(
+          cosmosChainsMap,
+          makeCosmosChainEntry(network, next)
+        );
+      }
+    }
 
     const cosmosWagmiChains = Object.values(cosmosChainsMap).map(
       (value) => value.wagmiChain

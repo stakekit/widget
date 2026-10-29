@@ -2,7 +2,7 @@ import { decodeSignature } from "@cosmjs/amino";
 import { fromHex, toBase64, toHex } from "@cosmjs/encoding";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Array as EArray, Effect, Option, Schema, Stream } from "effect";
-import type { Address, Chain } from "viem";
+import type { Chain } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import {
@@ -15,8 +15,14 @@ import type {
   WalletDescriptor,
 } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { WalletConnectTopic } from "../../platform/wallet-connect-protocol";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import {
+  fromWagmiChainId,
+  toWagmiAccounts,
+  toWagmiChainId,
+} from "../../wagmi-seam";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import type { CosmosChainsAssets, CosmosChainsMap } from "./chains";
@@ -32,7 +38,7 @@ export const cosmosWalletConnectStorageKey = "cosmos.walletConnect" as const;
 
 export const CosmosWalletConnectRecord = Schema.Struct({
   connectorId: Schema.String,
-  topic: Schema.String,
+  topic: WalletConnectTopic,
   chainId: Schema.String,
   address: Schema.String,
 });
@@ -82,8 +88,6 @@ export type CosmosWallet = Readonly<{
     }>
   ) => CosmosWalletSession;
 }>;
-
-const cosmosWagmiChainId = (chainId: string) => chainId as unknown as number;
 
 export const createCosmosConnector = ({
   wallet,
@@ -154,13 +158,16 @@ export const createCosmosConnector = ({
       ) => {
         config.emitter.emit("message", { type: "connecting" });
 
+        const requestedChainId =
+          args?.chainId === undefined
+            ? undefined
+            : fromWagmiChainId(args.chainId);
         const next = args?.isReconnecting
           ? await session.restore()
           : await session.connect(
               // The host's initial chain, when it is one of this connector's chains.
-              chains.find(
-                (chain) => cosmosWagmiChainId(chain.chain_id) === args?.chainId
-              ) ?? currentChain
+              chains.find((chain) => chain.chain_id === requestedChainId) ??
+                currentChain
             );
         currentChain =
           chains.find((chain) => chain.chain_id === next.wallet.chainId) ??
@@ -171,8 +178,8 @@ export const createCosmosConnector = ({
 
         return wagmiConnectResult(
           args?.withCapabilities,
-          [next.address as Address],
-          cosmosWagmiChainId(next.wallet.chainId)
+          [next.address],
+          toWagmiChainId(next.wallet.chainId)
         );
       };
 
@@ -180,9 +187,8 @@ export const createCosmosConnector = ({
         chainId,
       }) => {
         const wagmiChain = config.chains.find((c) => c.id === chainId);
-        const chain = chains.find(
-          (chain) => cosmosWagmiChainId(chain.chain_id) === chainId
-        );
+        const routingId = fromWagmiChainId(chainId);
+        const chain = chains.find((chain) => chain.chain_id === routingId);
 
         if (!wagmiChain || !chain) throw new Error("Chain not found");
 
@@ -192,13 +198,13 @@ export const createCosmosConnector = ({
         await persistAccountPublicKey(next.wallet);
 
         onChainChanged(chainId.toString());
-        onAccountsChanged([next.address as Address]);
+        onAccountsChanged([next.address]);
 
         return wagmiChain;
       };
 
       const { onAccountsChanged, onChainChanged, onDisconnect } =
-        makeWagmiConnectorEvents(config.emitter, cosmosWagmiChainId);
+        makeWagmiConnectorEvents(config.emitter);
 
       const signTransaction = ({
         cw,
@@ -252,7 +258,7 @@ export const createCosmosConnector = ({
         onChainChanged,
         onDisconnect,
         getAccounts: async () =>
-          connection ? [connection.address as Address] : [],
+          toWagmiAccounts(connection ? [connection.address] : []),
         isAuthorized: async () => {
           try {
             return await session.isAuthorized();
@@ -260,7 +266,7 @@ export const createCosmosConnector = ({
             return false;
           }
         },
-        getChainId: async () => cosmosWagmiChainId(currentChain.chain_id),
+        getChainId: async () => toWagmiChainId(currentChain.chain_id),
         getProvider: async () => ({}),
         disconnect: async () => {
           setConnection(null);

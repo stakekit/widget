@@ -72,12 +72,14 @@ const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
   const closeChainCount = yield* Ref.make(0);
   const addLedgerAccount = options.addLedgerAccount;
   const wallet = yield* makeTestWallet({
-    addLedgerAccount: addLedgerAccount
-      ? (input) =>
-          Ref.update(ledgerRequests, (current) => [...current, input]).pipe(
-            Effect.andThen(addLedgerAccount(input))
-          )
-      : undefined,
+    ...(addLedgerAccount
+      ? {
+          addLedgerAccount: (input: AddLedgerAccountInput) =>
+            Ref.update(ledgerRequests, (current) => [...current, input]).pipe(
+              Effect.andThen(addLedgerAccount(input))
+            ),
+        }
+      : {}),
     initialState: options.initialWalletState,
   });
   const modal = stubWalletModal({

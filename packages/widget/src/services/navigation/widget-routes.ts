@@ -1,7 +1,9 @@
-import { Option, Schema } from "effect";
+import { Option, Predicate, Schema } from "effect";
 import { YieldPendingActionType } from "../../domain/action/pending-action";
 import { ActionId as BorrowActionId, MarketId } from "../../domain/borrow/ids";
+import { BorrowPositionActionKey } from "../../domain/borrow/positions/position-action-key";
 import { ActionId, YieldId } from "../../domain/identity/identifiers";
+import { BalanceDataKey } from "../../domain/portfolio/positions";
 import type { WidgetLayout } from "../config/widget-config-model";
 
 /**
@@ -10,19 +12,21 @@ import type { WidgetLayout } from "../config/widget-config-model";
  * navigation, and pathname parsing elsewhere use these definitions.
  */
 
-declare const widgetPathBrand: unique symbol;
+const WidgetPathSchema = Schema.String.pipe(Schema.brand("WidgetPath"));
 
 /** An absolute Widget path, built only by a registry route. */
-export type WidgetPath = string & { readonly [widgetPathBrand]: true };
-
-declare const widgetLocationBrand: unique symbol;
+export type WidgetPath = typeof WidgetPathSchema.Type;
 
 /** A path together with the navigation state its route carries. */
-type WidgetLocation<State = unknown> = Readonly<{
-  readonly path: WidgetPath;
-  readonly state: State;
-  readonly [widgetLocationBrand]: true;
-}>;
+class WidgetLocation<State = unknown> {
+  /** Only a registry route builds a location; no runtime field. */
+  declare private readonly builtByRoute: never;
+
+  constructor(
+    readonly path: WidgetPath,
+    readonly state: State
+  ) {}
+}
 
 /** Where a navigation goes: a path, or a path with its route's state. */
 export type WidgetNavigationTarget = WidgetPath | WidgetLocation;
@@ -51,16 +55,8 @@ type ParamNames<Pattern extends string> =
       ? Name
       : never;
 
-type ParamSchemas<Pattern extends string> = {
-  readonly [Name in ParamNames<Pattern>]?: ParamSchema;
-};
-
-type RouteParams<Pattern extends string, Schemas> = {
-  readonly [Name in ParamNames<Pattern>]: Name extends keyof Schemas
-    ? Schemas[Name] extends { readonly Type: infer Value }
-      ? Value
-      : string
-    : string;
+type ParamFields<Pattern extends string> = {
+  readonly [Name in ParamNames<Pattern>]: ParamSchema;
 };
 
 /**
@@ -103,12 +99,11 @@ const decodeSegment = (segment: string): Option.Option<string> => {
   }
 };
 
+/** The params object among a build's arguments; a Layout is a string. */
 const findParams = (
   args: ReadonlyArray<unknown>
-): Readonly<Record<string, string>> => {
-  const params = args.find((arg) => typeof arg === "object" && arg !== null);
-  return (params ?? {}) as Readonly<Record<string, string>>;
-};
+): Readonly<Record<PropertyKey, unknown>> =>
+  args.find(Predicate.isObject) ?? {};
 
 /** True when `pathname` is exactly `path`, ignoring a trailing slash. */
 export const isWidgetPath = (pathname: string, path: WidgetPath): boolean =>
@@ -129,8 +124,11 @@ class WidgetRoute<
     readonly pattern: Pattern,
     /** The Layouts whose route trees mount this route. */
     readonly layouts: ReadonlyArray<Layout>,
-    /** Decoders of the params with a domain schema. */
-    readonly paramSchemas: Readonly<Record<string, ParamSchema>>
+    /** Decodes the path segments' raw values into the route's params. */
+    readonly paramsSchema: Schema.Codec<
+      Params,
+      Readonly<Record<string, string>>
+    >
   ) {
     this.descendants = `${pattern}/*`;
     this.#segments = parseSegments(pattern);
@@ -140,13 +138,25 @@ class WidgetRoute<
   }
 
   build(...args: WidgetRouteBuildArgs<Layout, Params>): WidgetPath {
+    return this.#path(args);
+  }
+
+  /**
+   * This route's path for `params` in whichever Layout mounts it: it names a
+   * mount, not a navigation target, so it needs no Layout.
+   */
+  mountPath(params: Params): WidgetPath {
+    return this.#path([params]);
+  }
+
+  #path(args: ReadonlyArray<unknown>): WidgetPath {
     const params = findParams(args);
-    const segments = this.#segments.map((segment) =>
-      segment._tag === "Param"
-        ? encodeURIComponent(params[segment.name] ?? "")
-        : segment.value
-    );
-    return `/${segments.join("/")}` as WidgetPath;
+    const segments = this.#segments.map((segment) => {
+      if (segment._tag === "Static") return segment.value;
+      const value = params[segment.name];
+      return encodeURIComponent(typeof value === "string" ? value : "");
+    });
+    return WidgetPathSchema.make(`/${segments.join("/")}`);
   }
 
   /** Binds the navigation state this route's owner carries with its path. */
@@ -156,7 +166,7 @@ class WidgetRoute<
         state: State,
         ...args: WidgetRouteBuildArgs<Layout, Params>
       ): WidgetLocation<State> =>
-        ({ path: this.build(...args), state }) as WidgetLocation<State>,
+        new WidgetLocation(this.build(...args), state),
       state: Schema.decodeUnknownOption(schema),
     };
   }
@@ -188,16 +198,11 @@ class WidgetRoute<
         if (value.toLowerCase() !== segment.value) return Option.none();
         continue;
       }
-      const decoded = decodeSegment(value).pipe(
-        Option.flatMap((raw) => {
-          const schema = this.paramSchemas[segment.name];
-          return schema ? Schema.decodeOption(schema)(raw) : Option.some(raw);
-        })
-      );
+      const decoded = decodeSegment(value);
       if (Option.isNone(decoded)) return Option.none();
       params[segment.name] = decoded.value;
     }
-    return Option.some(params as Params);
+    return Schema.decodeOption(this.paramsSchema)(params);
   }
 }
 
@@ -218,9 +223,9 @@ export type WidgetFlowDestination<State> = WidgetFlowPaths &
 
 /** The route a flow mounts under, in whichever Layouts mount it. */
 type WidgetFlowBase<Params> = Readonly<{
-  readonly build: (...args: never) => WidgetPath;
+  readonly mountPath: (params: Params) => WidgetPath;
   readonly match: (pathname: string) => Option.Option<Params>;
-  readonly paramSchemas: Readonly<Record<string, ParamSchema>>;
+  readonly paramsSchema: Schema.Codec<Params, Readonly<Record<string, string>>>;
   readonly pattern: string;
 }>;
 
@@ -246,15 +251,11 @@ class WidgetFlowRoutes<Params, Layout extends WidgetLayout> {
    * group's pages: its Review, Steps, and Complete share it.
    */
   mountKey(pathname: string): Option.Option<WidgetPath> {
-    // The key names a mount, not a navigation target, so it needs no Layout.
-    const buildBase = this.base.build.bind(this.base) as unknown as (
-      params: Params
-    ) => WidgetPath;
     return Option.firstSomeOf([
       this.review.match(pathname),
       this.steps.match(pathname),
       this.complete.match(pathname),
-    ]).pipe(Option.map(buildBase));
+    ]).pipe(Option.map((params) => this.base.mountPath(params)));
   }
 
   /** Binds the navigation state the flow's pages carry. */
@@ -283,7 +284,7 @@ class StatefulWidgetFlowRoutes<Params, Layout extends WidgetLayout, State> {
     const located =
       (path: WidgetPath) =>
       (state: State): WidgetLocation<State> =>
-        ({ path, state }) as WidgetLocation<State>;
+        new WidgetLocation(path, state);
     return {
       ...paths,
       complete: located(paths.completePath),
@@ -296,16 +297,16 @@ class StatefulWidgetFlowRoutes<Params, Layout extends WidgetLayout, State> {
 const route = <
   const Pattern extends string,
   Layout extends WidgetLayout,
-  const Schemas extends ParamSchemas<Pattern> = Record<never, never>,
+  const Fields extends Schema.Struct.Fields & ParamFields<Pattern>,
 >(
   pattern: Pattern,
   layouts: ReadonlyArray<Layout>,
-  schemas?: Schemas
+  fields: Fields
 ) =>
-  new WidgetRoute<Pattern, RouteParams<Pattern, Schemas>, Layout>(
+  new WidgetRoute<Pattern, Schema.Struct<Fields>["Type"], Layout>(
     pattern,
     layouts,
-    (schemas ?? {}) as Readonly<Record<string, ParamSchema>>
+    Schema.Struct(fields)
   );
 
 const flowRoutes = <Params, Layout extends WidgetLayout>(
@@ -317,7 +318,7 @@ const flowRoutes = <Params, Layout extends WidgetLayout>(
     new WidgetRoute<string, Params, Layout>(
       `${prefix}/${name}`,
       layouts,
-      base.paramSchemas
+      base.paramsSchema
     );
   return new WidgetFlowRoutes<Params, Layout>(
     base,
@@ -327,7 +328,10 @@ const flowRoutes = <Params, Layout extends WidgetLayout>(
   );
 };
 
-const positionParams = { integrationId: YieldId } as const;
+const positionParams = {
+  balanceId: BalanceDataKey,
+  integrationId: YieldId,
+} as const;
 const activityActionParams = { actionId: ActionId } as const;
 const borrowPositionParams = { marketId: MarketId } as const;
 
@@ -338,8 +342,8 @@ const activityAction = route(
 );
 
 export const widgetRoutes = {
-  earn: route("/", allLayouts),
-  positions: route("/positions", allLayouts),
+  earn: route("/", allLayouts, {}),
+  positions: route("/positions", allLayouts, {}),
   positionDetails: route(
     "/positions/:integrationId/:balanceId",
     allLayouts,
@@ -366,14 +370,14 @@ export const widgetRoutes = {
     allLayouts,
     positionParams
   ),
-  activity: route("/activity", allLayouts),
+  activity: route("/activity", allLayouts, {}),
   activityAction,
   activityBorrowAction: route("/activity/borrow/:actionId", allLayouts, {
     actionId: BorrowActionId,
   }),
-  borrow: route("/borrow", wideLayouts),
+  borrow: route("/borrow", wideLayouts, {}),
   /** Base of market positions; its unknown paths redirect to Positions. */
-  positionsBorrow: route("/positions/borrow", wideLayouts),
+  positionsBorrow: route("/positions/borrow", wideLayouts, {}),
   borrowPosition: route(
     "/positions/borrow/:marketId",
     wideLayouts,
@@ -382,7 +386,7 @@ export const widgetRoutes = {
   borrowPositionAction: route(
     "/positions/borrow/:marketId/action/:actionId",
     wideLayouts,
-    borrowPositionParams
+    { ...borrowPositionParams, actionId: BorrowPositionActionKey }
   ),
 } as const;
 

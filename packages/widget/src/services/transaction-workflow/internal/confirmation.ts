@@ -1,4 +1,5 @@
 import { Data, Duration, Effect, Match, Ref, Schedule } from "effect";
+import { isHex } from "viem";
 import { isTransactionError } from "../../../domain/action/rules";
 import {
   type Action as BorrowAction,
@@ -70,8 +71,13 @@ export const makeConfirmCurrent = Effect.gen(function* () {
     if (current._tag === "Direct") {
       const direct = current.transaction.source.transaction;
       const { chainId } = direct;
-      const hash = current.transaction.meta.signedTx as `0x${string}` | null;
+      const { meta } = current.transaction;
+      const hash = meta.broadcasted === true ? meta.signedTx : null;
       if (!hash) return yield* fail("The transaction hash is not available.");
+      // viem takes hex, and an EVM wallet answers in it.
+      if (!isHex(hash)) {
+        return yield* fail("The transaction hash is not EVM hex.");
+      }
       const outcome = yield* evmRpc
         .awaitOutcome({ chainId, hash })
         .pipe(

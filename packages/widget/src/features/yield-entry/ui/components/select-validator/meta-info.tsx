@@ -37,7 +37,7 @@ export const useMetaInfo = ({
   commission?: ValidatorDto["commission"];
   stakedBalance?: ValidatorDto["tvl"];
   votingPower?: ValidatorDto["votingPower"];
-  address?: ValidatorDto["address"];
+  address?: ValidatorDto["address"] | undefined;
   website?: ValidatorDto["website"];
   nominatorCount?: ValidatorDto["nominatorCount"];
   subnetName?: ValidatorSubnet["name"];
@@ -74,7 +74,7 @@ export const useMetaInfo = ({
         ? {
             title: t("details.validators_staked_balance"),
             val: formatBigNumber(
-              exactDecimal(stakedBalance),
+              stakedBalance,
               (value) =>
                 `${formatNumber(value, locale, 0)} ${stakedBalanceToken.symbol}`
             ),

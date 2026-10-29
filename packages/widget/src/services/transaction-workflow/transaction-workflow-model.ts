@@ -7,7 +7,14 @@ import type {
 } from "../../domain/action/models";
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
-import type { TransactionWorkflowId } from "../../domain/identity/identifiers";
+import type { ConfidentialChainId } from "../../domain/earn/confidential";
+import type {
+  SignedTransactionPayload,
+  TransactionHash,
+  TransactionWorkflowId,
+  WalletSignature,
+} from "../../domain/identity/identifiers";
+import type { Network } from "../../domain/network/network";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
 import type { EvmRpcError } from "../evm-rpc/evm-rpc";
@@ -25,7 +32,7 @@ import type { ConfidentialPreparation } from "../zama/zama-service";
 
 export type DirectTransactionRecord = Readonly<{
   readonly _tag: "Confirmed" | "Sent";
-  readonly hash: `0x${string}`;
+  readonly hash: TransactionHash;
   /** What was sent, so a later confirm can resume it without planning again. */
   readonly transaction: DirectTransaction;
 }>;
@@ -64,12 +71,12 @@ export class YieldTransactionWorkflowInput extends Data.TaggedClass(
 }
 
 export type YieldTransactionWorkflowProviderDetail = {
-  readonly address?: string;
-  readonly logo?: string;
+  readonly address?: string | undefined;
+  readonly logo?: string | undefined;
   readonly name: string;
-  readonly rewardRate?: BigNumber | number;
-  readonly rewardType?: string;
-  readonly website?: string;
+  readonly rewardRate?: BigNumber | number | undefined;
+  readonly rewardType?: string | undefined;
+  readonly website?: string | undefined;
 };
 
 type YieldActionFacts = {
@@ -125,7 +132,9 @@ type ConfidentialTransactionWorkflowInputFields = YieldActionFacts & {
    * confirms, the workflow decrypts the unwrapped amount on this chain and
    * withdraws it.
    */
-  readonly finalizeUnwrap?: Readonly<{ readonly chainId: number }> | null;
+  readonly finalizeUnwrap?: Readonly<{
+    readonly chainId: ConfidentialChainId;
+  }> | null;
   readonly ledger: DirectTransactionLedger;
   readonly preparation: ConfidentialPreparation;
   readonly walletScope: WalletScopeKey;
@@ -206,11 +215,15 @@ type TransactionWorkflowSource =
       readonly transaction: BorrowTransaction;
     };
 
+/** A transaction's id, branded by the source it came from. */
+type TransactionWorkflowTransactionId =
+  TransactionWorkflowSource["transaction"]["id"];
+
 type WorkflowErrorFields = {
   readonly batchId: string;
   readonly cause?: unknown;
   readonly message: string;
-  readonly transactionId: string | null;
+  readonly transactionId: TransactionWorkflowTransactionId | null;
   readonly workflowId: TransactionWorkflowId;
 };
 
@@ -300,17 +313,17 @@ export class TransactionSignError extends Data.TaggedError(
 )<{
   readonly batchId: string;
   readonly message: string;
-  readonly network: string;
+  readonly network: Network;
   readonly reason: TransactionSignFailureReason;
-  readonly transactionId: string | null;
+  readonly transactionId: TransactionWorkflowTransactionId | null;
   readonly workflowId: TransactionWorkflowId;
 }> {}
 
 export const makeTransactionSignError = (input: {
   readonly batchId: string;
-  readonly network: string;
+  readonly network: Network;
   readonly reason: TransactionSignFailureReason;
-  readonly transactionId: string | null;
+  readonly transactionId: TransactionWorkflowTransactionId | null;
   readonly workflowId: TransactionWorkflowId;
 }): TransactionSignError =>
   new TransactionSignError({
@@ -344,7 +357,7 @@ export class TransactionSubmissionError extends Data.TaggedError(
 
 export class TransactionConfirmationError extends Data.TaggedError(
   "TransactionConfirmationError"
-)<WorkflowErrorFields & { readonly network: string }> {}
+)<WorkflowErrorFields & { readonly network: Network }> {}
 
 export class TransactionAdvanceError extends Data.TaggedError(
   "TransactionAdvanceError"
@@ -366,20 +379,31 @@ export type TransactionWorkflowError =
 
 export type TransactionWorkflowSubmission = {
   readonly batchId: string;
-  readonly hash: string | null;
+  readonly hash: TransactionHash | null;
   readonly link: string | null;
-  readonly signedPayload: string | null;
+  readonly signedPayload: SignedTransactionPayload | WalletSignature | null;
   readonly source: TransactionWorkflowSource;
   readonly status: string | null;
-  readonly transactionId: string;
+  readonly transactionId: TransactionWorkflowTransactionId;
 };
 
-type TransactionWorkflowTransactionMeta = {
-  readonly broadcasted: boolean | null;
+/**
+ * What the wallet returned. A broadcast transaction holds its hash, or none
+ * when only its API status says it was broadcast; a signed one holds the
+ * payload, or for a message or typed data the signature, an API submits.
+ */
+type TransactionWorkflowSignedMeta =
+  | { readonly broadcasted: null; readonly signedTx: null }
+  | { readonly broadcasted: true; readonly signedTx: TransactionHash | null }
+  | {
+      readonly broadcasted: false;
+      readonly signedTx: SignedTransactionPayload | WalletSignature;
+    };
+
+type TransactionWorkflowTransactionMeta = TransactionWorkflowSignedMeta & {
   readonly confirmationError: TransactionConfirmationError | null;
   readonly done: boolean;
   readonly signError: TransactionSignError | null;
-  readonly signedTx: string | null;
   readonly submissionIndex: number | null;
   readonly url: string | null;
 };

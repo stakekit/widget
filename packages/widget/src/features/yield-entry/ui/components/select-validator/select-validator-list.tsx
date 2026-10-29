@@ -3,9 +3,9 @@ import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
+  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
-import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import { getRewardTypeFormatted } from "../../../../../shared/lib/formatters";
 import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
@@ -49,7 +49,7 @@ export const SelectValidatorList = ({
   ...infiniteScroll
 }: {
   multiSelect: boolean;
-  selectedValidators: Set<ValidatorKey>;
+  selectedValidators: ReadonlySet<EarnValidatorKey>;
   onItemClick: (item: EarnValidator) => void;
   onViewMoreClick: () => void;
   selectedStake: EarnYieldWithProvider;

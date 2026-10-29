@@ -3,14 +3,12 @@ import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
-import type { PositionDetailsLabelType } from "../../../../domain/portfolio/positions";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatTokenAmount,
   formatUsd,
 } from "../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
-import { ToolTip } from "../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { ListItem } from "../../../../shared/ui/primitives/list/list-item";
@@ -19,6 +17,7 @@ import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { WidgetLink } from "../../../navigation/views";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
+import type { InactiveValidatorStatus } from "../../state/read-models/position-list-item";
 import type { PositionItem } from "../../state/read-models/positions";
 import {
   listItem,
@@ -34,10 +33,7 @@ export type EarnPositionListItemDetails = {
   readonly hasHiddenBalance: boolean;
   readonly integrationData: EarnYieldWithProvider | null;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider> | null;
-  readonly inactiveValidator: Exclude<
-    NonNullable<YieldSummaryProvider["status"]>,
-    "active"
-  > | null;
+  readonly inactiveValidator: InactiveValidatorStatus | null;
   readonly rewardRateAverage: string | null;
   readonly totalAmountFormatted: string | null;
   /** Positive USD value of the position, when priced. */
@@ -193,29 +189,6 @@ export const EarnPositionListItem = ({
                     <Text className={positionName}>
                       {integrationData.metadata.name}
                     </Text>
-
-                    {item.yieldLabelDto ? (
-                      <ToolTip
-                        textAlign="left"
-                        maxWidth={300}
-                        label={t(
-                          `position_details.labels.${item.yieldLabelDto.type as PositionDetailsLabelType}.details`,
-                          item.yieldLabelDto.params as
-                            | Record<string, string>
-                            | undefined
-                        )}
-                      >
-                        <Box
-                          className={positionBadge({ type: "actionRequired" })}
-                        >
-                          <Text variant={{ type: "white" }} className={noWrap}>
-                            {t(
-                              `position_details.labels.${item.yieldLabelDto.type as PositionDetailsLabelType}.label`
-                            )}
-                          </Text>
-                        </Box>
-                      </ToolTip>
-                    ) : null}
 
                     {actionBadge ? (
                       <Box

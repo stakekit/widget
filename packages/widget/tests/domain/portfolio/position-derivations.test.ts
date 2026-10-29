@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { EarnBalance, EarnPosition } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import {
+  BalanceDataKey,
   getPositionBalances,
   getPositionData,
   getSingleExitTokenSum,
@@ -66,7 +67,12 @@ describe("position derivations", () => {
     const positions = toPositionsData([position]);
     const selected = getPositionData(positions, position.yieldId);
 
-    expect(getPositionBalances(selected, "missing-balance-group")).toBeNull();
+    expect(
+      getPositionBalances(
+        selected,
+        Schema.decodeSync(BalanceDataKey)("validator::missing")
+      )
+    ).toBeNull();
   });
 
   it("sums balances per token identity without merging equal symbols on different addresses", () => {

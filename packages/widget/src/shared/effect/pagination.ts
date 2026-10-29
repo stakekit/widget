@@ -150,6 +150,6 @@ export const getPullResultItems = <Item, E>(
 ): ReadonlyArray<Item> =>
   result.pipe(
     AsyncResult.value,
-    Option.map((value) => value.items as ReadonlyArray<Item>),
+    Option.map((value): ReadonlyArray<Item> => value.items),
     Option.getOrElse((): ReadonlyArray<Item> => [])
   );

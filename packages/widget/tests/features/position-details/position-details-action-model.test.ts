@@ -8,21 +8,26 @@ import {
   PendingActionStateKey,
   preparePendingActionCommand,
 } from "../../../src/domain/action/action-command";
-import { EarnBalance } from "../../../src/domain/earn/models";
+import { EarnBalance, EarnValidator } from "../../../src/domain/earn/models";
 import { Prices } from "../../../src/domain/health/models";
 import {
   TokenAddress,
   WalletAddress,
 } from "../../../src/domain/identity/identifiers";
-import { toPositionBalancesByType } from "../../../src/domain/portfolio/positions";
+import {
+  type BalanceDataKey,
+  toPositionBalancesByType,
+} from "../../../src/domain/portfolio/positions";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../../../src/features/position-details/model/exit-receive-token";
 import {
+  getPendingActionValidatorAddresses,
   makeAutomaticPendingActionModalState,
   makePendingActionModalStore,
   openPendingActionModal,
   reconcilePendingActionModalReceipt,
   resolvePositionDetailsExitSubmission,
+  togglePendingActionValidator,
 } from "../../../src/features/position-details/model/flow-actions";
 import { resolvePositionDetailsActionCapabilities } from "../../../src/features/position-details/model/hub";
 import {
@@ -352,6 +357,69 @@ describe("Position Details action model", () => {
     ).toBe("Open");
   });
 
+  it("selects subnet validators by key and submits their addresses", () => {
+    const nominate = Schema.decodeSync(EarnBalance)(
+      yieldBalanceFixture({
+        pendingActions: [
+          {
+            arguments: {
+              fields: [
+                {
+                  label: "Validators",
+                  name: "validatorAddresses",
+                  required: true,
+                  type: "string",
+                },
+              ],
+            },
+            intent: "manage",
+            passthrough: "delegate",
+            type: "DELEGATE",
+          },
+        ],
+        token: selectedYield.token,
+      })
+    );
+    const [subnetA, subnetB] = [7, 8].map((id) =>
+      Schema.decodeSync(EarnValidator)(
+        yieldApiValidatorFixture({
+          address: "validator-subnet",
+          subnet: { id, name: `Subnet ${id}` },
+        })
+      )
+    );
+    if (!subnetA || !subnetB) throw new Error("Expected subnet validators");
+
+    const opened = openPendingActionModal({
+      input: {
+        pendingAction: nominate.pendingActions[0]!,
+        yieldBalance: nominate,
+      },
+      store: makePendingActionModalStore(),
+    });
+    const both = togglePendingActionValidator({
+      store: togglePendingActionValidator({
+        store: opened,
+        validator: subnetA,
+      }),
+      validator: subnetB,
+    });
+    const onlyB = togglePendingActionValidator({
+      store: both,
+      validator: subnetA,
+    });
+
+    expect(opened.state.multiSelect).toBe(true);
+    expect([...both.state.selectedValidators.keys()]).toEqual([
+      subnetA.key,
+      subnetB.key,
+    ]);
+    expect([...onlyB.state.selectedValidators.keys()]).toEqual([subnetB.key]);
+    expect(getPendingActionValidatorAddresses(onlyB.state)).toEqual([
+      subnetB.address,
+    ]);
+  });
+
   it("does not apply an automatic receipt to a different pending action", () => {
     const first = makeAutomaticPendingActionModalState({
       pendingAction,
@@ -443,7 +511,7 @@ describe("Position Details action model", () => {
       network: "ethereum",
     });
     const workflowKey = new PositionDetailsWorkflowKey({
-      balanceId: "collision-balance",
+      balanceId: "default",
       integrationId: selectedYield.id,
       pendingActionType: null,
       scope,
@@ -560,7 +628,7 @@ describe("Position Details action model", () => {
         })
       );
 
-    const singleToken = readWorkflowView("single-token", [
+    const singleToken = readWorkflowView("default", [
       active("1.25"),
       active("0.75"),
     ]);
@@ -575,7 +643,7 @@ describe("Position Details action model", () => {
       }).canUnstake
     ).toBe(true);
 
-    const twoTokens = readWorkflowView("two-tokens", [
+    const twoTokens = readWorkflowView("default", [
       active("1.25"),
       active("10", usdt),
     ]);
@@ -633,7 +701,7 @@ describe("Position Details action model", () => {
     const priceKey = (token: { network: string; address?: string }) =>
       `${token.network}-${token.address?.toLowerCase() ?? ""}`;
     const { registry, workflowKey } = makeWorkflowRegistry(
-      "valuation",
+      "default",
       [activeBalance, claimableBalance],
       new Prices(
         new Map([
@@ -661,7 +729,7 @@ describe("Position Details action model", () => {
   it("withdraws a confidential position in its revealed vault shares, valued in the underlying", () => {
     const { cShare, usdc } = confidentialFixture;
     const view = readWorkflowView(
-      "confidential-shares",
+      "default",
       [
         Schema.decodeSync(EarnBalance)(
           yieldBalanceFixture({
@@ -689,7 +757,7 @@ describe("Position Details action model", () => {
   it("keeps withdrawing available while the share balance is hidden, so the user can decrypt it there", () => {
     const { cShare, usdc } = confidentialFixture;
     const view = readWorkflowView(
-      "confidential-hidden",
+      "default",
       [
         Schema.decodeSync(EarnBalance)(
           yieldBalanceFixture({
@@ -841,7 +909,7 @@ describe("Position Details action model", () => {
 });
 
 const makeWorkflowRegistry = (
-  balanceId: string,
+  balanceId: BalanceDataKey,
   balances: ReadonlyArray<EarnBalance>,
   prices: Prices = new Prices(new Map()),
   integration: typeof selectedYield = selectedYield
@@ -890,7 +958,7 @@ const makeWorkflowRegistry = (
 };
 
 const readWorkflowView = (
-  balanceId: string,
+  balanceId: BalanceDataKey,
   balances: ReadonlyArray<EarnBalance>,
   integration: typeof selectedYield = selectedYield
 ) => {

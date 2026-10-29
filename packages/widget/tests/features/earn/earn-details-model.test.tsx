@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
@@ -25,7 +26,11 @@ const t = (key: string, options?: Record<string, unknown>): string => {
 
 const minStakeMechanics = {
   ...yieldApiYieldFixture().mechanics,
-  entryLimits: { minimum: "1", maximum: null, subsequentMinimum: null },
+  entryLimits: {
+    minimum: new BigNumber("1"),
+    maximum: null,
+    subsequentMinimum: null,
+  },
 };
 
 const makeYield = (
@@ -76,8 +81,7 @@ describe("getEarnDetailsModel", () => {
       yieldDto: makeYield({
         state: {
           pricePerShareState: {
-            price: 1.06274537,
-            quoteToken: yieldApiYieldFixture().token,
+            price: new BigNumber("1.06274537"),
             shareToken: yieldApiYieldFixture().token,
           },
         },
@@ -183,8 +187,8 @@ describe("getEarnDetailsModel", () => {
     const model = getEarnDetailsModel({
       locale: "en",
       selectedValidators: new Map([
-        [firstValidator.address, firstValidator],
-        [secondValidator.address, secondValidator],
+        [firstValidator.key, firstValidator],
+        [secondValidator.key, secondValidator],
       ]),
       t: t as TFunction,
       yieldDto: makeYield(),
@@ -209,8 +213,7 @@ describe("getEarnDetailsModel", () => {
         },
         state: {
           pricePerShareState: {
-            price: 1.06274537,
-            quoteToken: baseYield.token,
+            price: new BigNumber("1.06274537"),
             shareToken: baseYield.token,
           },
         },

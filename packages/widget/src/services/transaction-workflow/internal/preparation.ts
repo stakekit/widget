@@ -1,7 +1,10 @@
 import { Data, Duration, Effect, Result, Schedule } from "effect";
-import { keccak256 } from "viem";
+import { isHex, keccak256 } from "viem";
 import type { ManageActionCommand } from "../../../domain/action/models";
 import { getValidStakeSessionTx } from "../../../domain/action/rules";
+import type { ConfidentialChainId } from "../../../domain/earn/confidential";
+import { getEncryptedHandle } from "../../../domain/earn/models";
+import { TransactionHash } from "../../../domain/identity/identifiers";
 import {
   type ActionPreviewRequest,
   isTransientApiFailure,
@@ -133,7 +136,7 @@ export const makePrepareAction = Effect.gen(function* () {
       context,
       input,
     }: {
-      readonly chainId: number;
+      readonly chainId: ConfidentialChainId;
       readonly context: TransactionWorkflowContext;
       readonly input: ConfidentialTransactionWorkflowInput;
     }) {
@@ -151,10 +154,11 @@ export const makePrepareAction = Effect.gen(function* () {
           : (context.submissions[unwrap.meta.submissionIndex] ?? null);
       // The API may not return the hash; a signed EVM transaction's keccak256
       // is its hash.
+      const signedPayload = submission?.signedPayload ?? null;
       const hash =
         submission?.hash ??
-        (submission?.signedPayload
-          ? keccak256(submission.signedPayload as `0x${string}`)
+        (signedPayload && isHex(signedPayload)
+          ? TransactionHash.make(keccak256(signedPayload))
           : null);
       if (!hash) {
         return yield* fail("The unwrap transaction is unknown.", null, false);
@@ -175,8 +179,7 @@ export const makePrepareAction = Effect.gen(function* () {
               .filter(
                 (balance) =>
                   balance.type === "withdrawable" &&
-                  balance.shareAmountRaw?.toLowerCase() ===
-                    requestId.toLowerCase()
+                  getEncryptedHandle(balance) === requestId
               )
               .flatMap((balance) => balance.pendingActions)
               .find(({ type }) => type === "WITHDRAW");

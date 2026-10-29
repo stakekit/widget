@@ -4,6 +4,7 @@ import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { ActionCommand } from "../../../../src/domain/action/models";
 import { EarnYieldWithProvider } from "../../../../src/domain/earn/models";
+import { TransactionHash } from "../../../../src/domain/identity/identifiers";
 import type { LegacyTransaction } from "../../../../src/services/wallet/wallet-transactions";
 import {
   type LegacyYieldFixture,
@@ -169,7 +170,11 @@ export const setup = async (
       ...yieldApiYieldBase.mechanics,
       type: "staking",
       gasFeeToken: token,
-      supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
+      ...(yieldOp.metadata.supportsLedgerWalletApi === undefined
+        ? {}
+        : {
+            supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
+          }),
     },
   });
   const defiYieldOp = yieldApiYieldDtoFixture({
@@ -375,9 +380,13 @@ export const setup = async (
               network: transactionConstruct.network,
               status: "CREATED",
               type: "STAKE",
-              gasEstimate: transactionConstruct.gasEstimate
-                ? JSON.stringify(transactionConstruct.gasEstimate)
-                : undefined,
+              ...(transactionConstruct.gasEstimate
+                ? {
+                    gasEstimate: JSON.stringify(
+                      transactionConstruct.gasEstimate
+                    ),
+                  }
+                : {}),
               unsignedTransaction: transactionConstruct.unsignedTransaction,
               stepIndex: 0,
             }),
@@ -401,12 +410,14 @@ export const setup = async (
             id: transactionId,
             network: transactionConstruct.network,
             type: "STAKE",
-            hash: "transaction_hash",
+            hash: TransactionHash.make("transaction_hash"),
             status: "BROADCASTED",
             unsignedTransaction: transactionConstruct.unsignedTransaction,
-            gasEstimate: transactionConstruct.gasEstimate
-              ? JSON.stringify(transactionConstruct.gasEstimate)
-              : undefined,
+            ...(transactionConstruct.gasEstimate
+              ? {
+                  gasEstimate: JSON.stringify(transactionConstruct.gasEstimate),
+                }
+              : {}),
           })
         );
       }
@@ -420,12 +431,14 @@ export const setup = async (
           type: "STAKE",
           explorerUrl:
             "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-          hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          hash: TransactionHash.make(
+            "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb"
+          ),
           status: "CONFIRMED",
           unsignedTransaction: transactionConstruct.unsignedTransaction,
-          gasEstimate: transactionConstruct.gasEstimate
-            ? JSON.stringify(transactionConstruct.gasEstimate)
-            : undefined,
+          ...(transactionConstruct.gasEstimate
+            ? { gasEstimate: JSON.stringify(transactionConstruct.gasEstimate) }
+            : {}),
         })
       );
     })

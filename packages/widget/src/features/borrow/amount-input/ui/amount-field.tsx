@@ -33,14 +33,14 @@ export const BorrowAmountField = ({
   readonly amount: BigNumber;
   readonly balance?: ReactNode;
   readonly balanceError?: boolean;
-  readonly dataRk?: string;
-  readonly disabled?: boolean;
+  readonly dataRk?: string | undefined;
+  readonly disabled?: boolean | undefined;
   readonly label: string;
   readonly onAmountChange: (amount: BigNumber) => void;
-  readonly onMaxClick?: (() => void) | null;
+  readonly onMaxClick?: (() => void) | null | undefined;
   readonly tone?: "stake" | "action";
-  readonly usdValue?: BigNumber;
-  readonly warning?: string | null;
+  readonly usdValue?: BigNumber | undefined;
+  readonly warning?: string | null | undefined;
 }) => {
   const variant = useWidgetConfig("variant");
   const { locale } = useWidgetPresentation();

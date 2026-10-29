@@ -9,6 +9,7 @@ import {
 import {
   ActionId as BorrowActionId,
   IntegrationId as BorrowIntegrationId,
+  MarketId as BorrowMarketId,
   TransactionId as BorrowTransactionId,
 } from "../../../src/domain/borrow/ids";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -52,7 +53,7 @@ const borrowTxMeta = {
   integrationId: Schema.decodeSync(BorrowIntegrationId)("aave-v3"),
   rawArguments: {
     amount: "1",
-    marketId: "aave-v3-ethereum-usdc",
+    marketId: Schema.decodeSync(BorrowMarketId)("aave-v3-ethereum-usdc"),
   },
   txId: Schema.decodeSync(BorrowTransactionId)("borrow-transaction-id"),
   txType: "BORROW",

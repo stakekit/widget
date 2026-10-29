@@ -1,6 +1,6 @@
 import { BrowserWallet } from "@meshsdk/wallet";
 import { Effect, Stream } from "effect";
-import type { Address, Chain } from "viem";
+import type { Chain } from "viem";
 import { createConnector } from "wagmi";
 import type {
   WalletDetailsParams,
@@ -11,6 +11,7 @@ import {
   WalletNotAvailableError,
 } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
+import { toWagmiAccount } from "../../wagmi-seam";
 import { cardano } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
@@ -95,10 +96,11 @@ const createCardanoConnector = ({
       id: wallet.id,
       name: wallet.name,
       type: configMeta.type,
-      signTransaction: (tx: string) =>
-        connectedWallet
+      signTransaction: (tx: string) => {
+        const signer = connectedWallet;
+        return signer
           ? Effect.tryPromise({
-              try: () => connectedWallet!.signTx(tx),
+              try: () => signer.signTx(tx),
               catch: (cause) =>
                 new WalletIntegrationError({
                   cause,
@@ -112,7 +114,8 @@ const createCardanoConnector = ({
                 message: "No wallet connected",
                 operation: "cardano-sign-transaction",
               })
-            ),
+            );
+      },
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
@@ -134,7 +137,7 @@ const createCardanoConnector = ({
 
         return wagmiConnectResult(
           args?.withCapabilities,
-          [address as Address],
+          [address],
           cardano.id
         );
       },
@@ -148,7 +151,7 @@ const createCardanoConnector = ({
 
         return connectedWallet
           .getUsedAddress()
-          .then((address) => [address.toBech32() as Address]);
+          .then((address) => [toWagmiAccount(address.toBech32())]);
       },
       switchChain: async () => cardano,
       getChainId: async () => cardano.id,
@@ -175,12 +178,17 @@ const createCardanoConnector = ({
 
 export const getCardanoConnectors = (): WalletList[number] => {
   const detected = BrowserWallet.getInstalledWallets().map(
-    (wallet): CardanoWallet => ({
-      id: wallet.id,
-      name: wallet.name,
-      iconUrl: wallet.icon,
-      installUrl: catalogue.find(({ id }) => id === wallet.id)?.installUrl,
-    })
+    (wallet): CardanoWallet => {
+      const installUrl = catalogue.find(
+        ({ id }) => id === wallet.id
+      )?.installUrl;
+      return {
+        id: wallet.id,
+        name: wallet.name,
+        iconUrl: wallet.icon,
+        ...(installUrl === undefined ? {} : { installUrl }),
+      };
+    }
   );
   const listed = [
     ...detected,
@@ -199,7 +207,9 @@ export const getCardanoConnectors = (): WalletList[number] => {
       availability: {
         _tag: "Injected",
         detect: Effect.sync(() => isInjected(wallet.id)),
-        installUrl: wallet.installUrl,
+        ...(wallet.installUrl === undefined
+          ? {}
+          : { installUrl: wallet.installUrl }),
       },
       chainGroup: {
         id: "cardano",

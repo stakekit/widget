@@ -1,0 +1,20 @@
+id: no-unbranded-domain-identifier
+valid:
+  - 'const Model = Schema.Struct({ yieldId: YieldId })'
+  - 'const Model = Schema.Struct({ address: TokenAddress, network: Network })'
+  - 'const Model = Schema.Struct({ id: Schema.NonEmptyString.pipe(Schema.brand("ModelId")) })'
+  - 'const Model = Schema.Struct({ ownerAddress: Schema.optional(WalletAddress) })'
+  - 'const Model = Schema.Struct({ network: Schema.Literals(["ethereum", "solana"]) })'
+  - 'const Model = Schema.Struct({ name: Schema.String, symbol: Schema.NonEmptyString })'
+  - 'const Model = Schema.Struct({ description: Schema.optional(Schema.String) })'
+  - 'const Model = Schema.Struct({ keyboard: Schema.String, identity: Schema.String })'
+invalid:
+  - 'const Model = Schema.Struct({ yieldId: Schema.String })'
+  - 'const Model = Schema.Struct({ id: Schema.NonEmptyString })'
+  - 'const Model = Schema.Struct({ address: Schema.String })'
+  - 'const Model = Schema.Struct({ ownerAddress: Schema.NonEmptyString })'
+  - 'const Model = Schema.Struct({ transactionHash: Schema.String })'
+  - 'const Model = Schema.Struct({ hash: Schema.optional(Schema.String) })'
+  - 'const Model = Schema.Struct({ network: Schema.String })'
+  - 'const Model = Schema.Struct({ balanceKey: Schema.NullOr(Schema.String) })'
+  - 'const Model = Schema.Struct({ "validatorAddress": Schema.optionalKey(Schema.NonEmptyString) })'

@@ -1,5 +1,4 @@
 import { Array as EArray, Option } from "effect";
-import type { Address } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
@@ -9,8 +8,12 @@ import type { ExternalProviderSnapshot } from "../../../../config/external-provi
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { WalletList } from "../../../wallet-descriptors";
-import { normalizeChainId } from "../../normalize-chain-id";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import {
+  parseWalletRoutingId,
+  toWagmiAccounts,
+  toWagmiChainId,
+} from "../../wagmi-seam";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 
 const configMeta = {
@@ -129,9 +132,11 @@ export const externalProviderConnector = (
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
             async () =>
-              variant.current.currentAddress
-                ? [variant.current.currentAddress as Address]
-                : [];
+              toWagmiAccounts(
+                variant.current.currentAddress
+                  ? [variant.current.currentAddress]
+                  : []
+              );
 
           // Preserve the host's identity even when the topology cannot route it.
           const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
@@ -152,7 +157,7 @@ export const externalProviderConnector = (
 
             return wagmiConnectResult(
               args?.withCapabilities,
-              accounts as Address[],
+              accounts,
               chainId
             );
           };
@@ -187,15 +192,15 @@ export const externalProviderConnector = (
           const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
             (chainId) => {
               connectorConfig.emitter.emit("change", {
-                chainId: normalizeChainId(chainId),
+                chainId: toWagmiChainId(parseWalletRoutingId(chainId)),
               });
             };
 
           const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
             (accounts) => {
-              const connectedAccounts = accounts.filter(
-                (account) => !!account
-              ) as Address[];
+              const connectedAccounts = toWagmiAccounts(
+                accounts.filter((account) => !!account)
+              );
               if (connectedAccounts.length === 0) {
                 onDisconnect();
                 return;

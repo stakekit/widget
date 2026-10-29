@@ -8,6 +8,7 @@ import { BorrowFeatureDisabled } from "../../../src/domain/borrow/availability";
 import { ActionId as BorrowActionId } from "../../../src/domain/borrow/ids";
 import {
   ActionId,
+  TransactionHash,
   TransactionId,
   WalletAddress,
   YieldId,
@@ -49,6 +50,7 @@ const config = {
   borrowApiUrl: "https://borrow.example.com",
   yieldsApiUrl: "https://yield.example.com",
 };
+const borrowActionId = Schema.decodeSync(BorrowActionId)("borrow-action");
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
 const firstYieldId = Schema.decodeSync(YieldId)("ethereum-eth-native-staking");
@@ -107,7 +109,7 @@ describe("application API services", () => {
           MissingBorrowApiConfig
         );
         expect(
-          yield* Effect.flip(operations.getAction("borrow-action"))
+          yield* Effect.flip(operations.getAction(borrowActionId))
         ).toBeInstanceOf(MissingBorrowApiConfig);
       })
   );
@@ -156,7 +158,7 @@ describe("application API services", () => {
           { present: () => Effect.void } as never
         );
 
-        expect(yield* operations.getAction("borrow-action")).toBe(null);
+        expect(yield* operations.getAction(borrowActionId)).toBe(null);
         expect(getAction).toHaveBeenCalledWith("borrow-action", undefined);
       })
   );
@@ -174,7 +176,7 @@ describe("application API services", () => {
       );
 
       expect(
-        yield* Effect.flip(operations.getAction("borrow-action"))
+        yield* Effect.flip(operations.getAction(borrowActionId))
       ).toBeInstanceOf(BorrowFeatureDisabled);
       expect(getAction).not.toHaveBeenCalled();
     })
@@ -292,7 +294,7 @@ describe("application API services", () => {
           { present } as never
         );
         const command = {
-          payload: { hash: "0xhash" },
+          payload: { hash: TransactionHash.make("0xhash") },
           transactionId,
         };
 
@@ -363,7 +365,7 @@ describe("application API services", () => {
 
         expect(hidden).toMatchObject({
           isEncrypted: true,
-          shareAmountRaw: handle,
+          shares: { _tag: "Encrypted", handle },
         });
         expect(hidden?.amount.toFixed()).toBe("0");
       })

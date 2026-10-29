@@ -1,10 +1,12 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, HashMap, Option } from "effect";
+import { Effect, HashMap, Option, Schema } from "effect";
 import { ConfidentialTokenBalanceKey } from "../../src/domain/earn/confidential";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { RevealedBalances } from "../../src/services/zama/revealed-balances";
 import { confidentialYieldFixture } from "../fixtures";
 
 const token = confidentialYieldFixture().inputTokens[0]!;
+const decodeWalletAddress = Schema.decodeSync(WalletAddress);
 const checksummed = "0xAbCd000000000000000000000000000000000001";
 
 describe("RevealedBalances", () => {
@@ -14,11 +16,14 @@ describe("RevealedBalances", () => {
       Effect.gen(function* () {
         const values = yield* RevealedBalances;
         yield* values.addTokenBalance(
-          new ConfidentialTokenBalanceKey({ owner: checksummed, token }),
+          new ConfidentialTokenBalanceKey({
+            owner: decodeWalletAddress(checksummed),
+            token,
+          }),
           9n
         );
         const lowercased = new ConfidentialTokenBalanceKey({
-          owner: checksummed.toLowerCase(),
+          owner: decodeWalletAddress(checksummed.toLowerCase()),
           token,
         });
         const found = HashMap.get(

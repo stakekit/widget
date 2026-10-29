@@ -9,6 +9,7 @@ import {
   type Market,
 } from "../../../../../domain/borrow/catalog/market";
 import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/execution/origination-fee";
+import type { MarketId } from "../../../../../domain/borrow/ids";
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
   formatPercent,
@@ -40,7 +41,7 @@ export const MarketSelectModal = ({
 }: {
   readonly integrations: ReadonlyArray<Integration>;
   readonly markets: readonly Market[];
-  readonly selectedMarketId: string | null;
+  readonly selectedMarketId: MarketId | null;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();

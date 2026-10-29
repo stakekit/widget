@@ -2,8 +2,11 @@ import { Context, Effect, Layer } from "effect";
 import { config } from "../../shared/config/widget-defaults";
 import { WidgetConfigService } from "../config/widget-config";
 import {
-  type Properties,
+  type AnyTrackEventProperties,
+  type AnyTrackPageProperties,
+  type TrackEventArgs,
   type TrackEventKey,
+  type TrackPageArgs,
   type TrackPageKey,
   trackEventMap,
   trackPageMap,
@@ -25,8 +28,8 @@ export class TrackingService extends Context.Service<TrackingService>()(
         }).pipe(Effect.orElseSucceed(() => undefined))
       );
 
-      const trackEvent = Effect.fn("TrackingService.trackEvent")(
-        function* (event: TrackEventKey, properties?: Properties) {
+      const sendEvent = Effect.fn("TrackingService.trackEvent")(
+        function* (event: TrackEventKey, properties?: AnyTrackEventProperties) {
           const { hostProfile, tracking } = yield* widgetConfig.current;
           const variantTracking = hostProfile.hostTracking
             ? yield* getVariantTracking
@@ -53,8 +56,8 @@ export class TrackingService extends Context.Service<TrackingService>()(
         (effect) => Effect.ignore(effect)
       );
 
-      const trackPageView = Effect.fn("TrackingService.trackPageView")(
-        function* (page: TrackPageKey, properties?: Properties) {
+      const sendPageView = Effect.fn("TrackingService.trackPageView")(
+        function* (page: TrackPageKey, properties?: AnyTrackPageProperties) {
           const { hostProfile, tracking } = yield* widgetConfig.current;
           const variantTracking = hostProfile.hostTracking
             ? yield* getVariantTracking
@@ -81,7 +84,16 @@ export class TrackingService extends Context.Service<TrackingService>()(
         (effect) => Effect.ignore(effect)
       );
 
-      return { trackEvent, trackPageView } as const;
+      return {
+        trackEvent: <Event extends TrackEventKey>(
+          event: Event,
+          ...[properties]: TrackEventArgs<Event>
+        ) => sendEvent(event, properties),
+        trackPageView: <Page extends TrackPageKey>(
+          page: Page,
+          ...[properties]: TrackPageArgs<Page>
+        ) => sendPageView(page, properties),
+      } as const;
     }),
   }
 ) {

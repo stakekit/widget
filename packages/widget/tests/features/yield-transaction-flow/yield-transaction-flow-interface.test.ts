@@ -187,49 +187,49 @@ const startCases: ReadonlyArray<
     stepsPath: "/steps",
   },
   {
-    completePath: "/positions/yield/balance/stake/complete",
+    completePath: "/positions/yield/default/stake/complete",
     finishPath: "/positions",
     makeCommand: () => ({
       intake: makeEnterIntake(),
       mount: {
         _tag: "PositionStake",
-        balanceId: "balance",
+        balanceId: "default",
         integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     }),
     name: "position Stake",
-    reviewPath: "/positions/yield/balance/stake/review",
-    stepsPath: "/positions/yield/balance/stake/steps",
+    reviewPath: "/positions/yield/default/stake/review",
+    stepsPath: "/positions/yield/default/stake/steps",
   },
   {
-    completePath: "/positions/yield/balance/unstake/complete",
+    completePath: "/positions/yield/default/unstake/complete",
     finishPath: "/positions",
     makeCommand: () => ({
       intake: makeExitIntake(),
       mount: {
         _tag: "PositionExit",
-        balanceId: "balance",
+        balanceId: "default",
         integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     }),
     name: "position Exit",
-    reviewPath: "/positions/yield/balance/unstake/review",
-    stepsPath: "/positions/yield/balance/unstake/steps",
+    reviewPath: "/positions/yield/default/unstake/review",
+    stepsPath: "/positions/yield/default/unstake/steps",
   },
   {
-    completePath: "/positions/yield/balance/pending-action/complete",
+    completePath: "/positions/yield/default/pending-action/complete",
     finishPath: "/positions",
     makeCommand: () => ({
       intake: makeManageIntake(),
       mount: {
         _tag: "PositionManage",
-        balanceId: "balance",
+        balanceId: "default",
         integrationId: Schema.decodeSync(YieldId)("yield"),
       },
     }),
     name: "position Manage",
-    reviewPath: "/positions/yield/balance/pending-action/review",
-    stepsPath: "/positions/yield/balance/pending-action/steps",
+    reviewPath: "/positions/yield/default/pending-action/review",
+    stepsPath: "/positions/yield/default/pending-action/steps",
   },
 ];
 
@@ -304,27 +304,27 @@ describe("Yield Flow route group", () => {
     ["/steps", "/"],
     ["/complete", "/"],
     ["/complete/", "/"],
-    ["/positions/yield/balance/stake/review", "/positions/yield/balance/stake"],
-    ["/positions/yield/balance/stake/steps", "/positions/yield/balance/stake"],
+    ["/positions/yield/default/stake/review", "/positions/yield/default/stake"],
+    ["/positions/yield/default/stake/steps", "/positions/yield/default/stake"],
     [
-      "/positions/yield/balance/stake/complete/",
-      "/positions/yield/balance/stake",
+      "/positions/yield/default/stake/complete/",
+      "/positions/yield/default/stake",
     ],
     [
-      "/positions/yield/balance/unstake/review",
-      "/positions/yield/balance/unstake",
+      "/positions/yield/default/unstake/review",
+      "/positions/yield/default/unstake",
     ],
     [
-      "/positions/yield/balance/unstake/complete",
-      "/positions/yield/balance/unstake",
+      "/positions/yield/default/unstake/complete",
+      "/positions/yield/default/unstake",
     ],
     [
-      "/positions/yield/balance/pending-action/steps",
-      "/positions/yield/balance/pending-action",
+      "/positions/yield/default/pending-action/steps",
+      "/positions/yield/default/pending-action",
     ],
     [
-      "/positions/yield/other/pending-action/steps",
-      "/positions/yield/other/pending-action",
+      "/positions/yield/validators/pending-action/steps",
+      "/positions/yield/validators/pending-action",
     ],
     ["/activity/action-1", "/activity/action-1"],
     ["/activity/action-1/", "/activity/action-1"],
@@ -338,7 +338,7 @@ describe("Yield Flow route group", () => {
   it.each([
     "/",
     "/positions",
-    "/positions/yield/balance",
+    "/positions/yield/default",
     "/activity",
     "/activity/",
     "/borrow/review",
@@ -351,11 +351,11 @@ describe("Yield Flow route group", () => {
       new Set(paths.map(getYieldFlowRouteGroup));
     const mounts = [
       "",
-      "/positions/yield/balance/stake",
-      "/positions/yield/balance/unstake",
-      "/positions/yield/balance/pending-action",
-      "/positions/yield/other/stake",
-      "/positions/yield/other/pending-action",
+      "/positions/yield/default/stake",
+      "/positions/yield/default/unstake",
+      "/positions/yield/default/pending-action",
+      "/positions/yield/validators/stake",
+      "/positions/yield/validators/pending-action",
     ];
 
     for (const base of mounts) {

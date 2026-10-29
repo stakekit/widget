@@ -17,7 +17,7 @@ export const announcedWalletAvailability = ({
 }): WalletAvailability => ({
   _tag: "Injected",
   detect: Effect.sync(() => store.findProvider({ rdns }) !== undefined),
-  installUrl,
+  ...(installUrl === undefined ? {} : { installUrl }),
 });
 
 /**

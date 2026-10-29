@@ -27,6 +27,24 @@ export const TransactionWorkflowId = Schema.NonEmptyString.pipe(
 );
 export type TransactionWorkflowId = typeof TransactionWorkflowId.Type;
 
+/** A transaction's hash on its chain, in that chain's own encoding. */
+export const TransactionHash = Schema.NonEmptyString.pipe(
+  Schema.brand("TransactionHash")
+);
+export type TransactionHash = typeof TransactionHash.Type;
+
+/** A signature a wallet produced over a message or typed data. */
+export const WalletSignature = Schema.NonEmptyString.pipe(
+  Schema.brand("WalletSignature")
+);
+export type WalletSignature = typeof WalletSignature.Type;
+
+/** A transaction a wallet signed but did not broadcast, in its chain's encoding. */
+export const SignedTransactionPayload = Schema.NonEmptyString.pipe(
+  Schema.brand("SignedTransactionPayload")
+);
+export type SignedTransactionPayload = typeof SignedTransactionPayload.Type;
+
 export const WalletAddress = Schema.NonEmptyString.pipe(
   Schema.brand("WalletAddress")
 );
@@ -41,6 +59,12 @@ export const ValidatorAddress = Schema.NonEmptyString.pipe(
   Schema.brand("ValidatorAddress")
 );
 export type ValidatorAddress = typeof ValidatorAddress.Type;
+
+/** A smart contract's address on its chain, such as a confidential vault's batcher. */
+export const ContractAddress = Schema.NonEmptyString.pipe(
+  Schema.brand("ContractAddress")
+);
+export type ContractAddress = typeof ContractAddress.Type;
 
 const hexAddress = /^0x[0-9a-f]+$/i;
 

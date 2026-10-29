@@ -41,7 +41,7 @@ export const useHeader = () => {
     if (!showBack) return;
 
     trackEvent("backClicked");
-    navigation.back();
+    void navigation.back();
   };
 
   const disconnectWidget = useAtomSet(disconnectWidgetAtom);

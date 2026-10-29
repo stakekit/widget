@@ -277,13 +277,19 @@ describe("semantic resource invalidation", () => {
         yield* Effect.promise(() =>
           vi.waitFor(() => {
             expect(
-              AsyncResult.getOrThrow(registry.get(aTokens))[0]?.amount
+              AsyncResult.getOrThrow(
+                registry.get(aTokens)
+              )[0]?.amount?.toFixed()
             ).toBe("1");
             expect(
-              AsyncResult.getOrThrow(registry.get(bTokens))[0]?.amount
+              AsyncResult.getOrThrow(
+                registry.get(bTokens)
+              )[0]?.amount?.toFixed()
             ).toBe("2");
             expect(
-              AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
+              AsyncResult.getOrThrow(
+                registry.get(currentTokens)
+              )[0]?.amount?.toFixed()
             ).toBe("1");
             expect(positionCalls).toEqual(
               new Map([
@@ -308,7 +314,9 @@ describe("semantic resource invalidation", () => {
             expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(4);
             expect(positionCalls.get(sameWalletCachedScope.address)).toBe(2);
             expect(
-              AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
+              AsyncResult.getOrThrow(
+                registry.get(currentTokens)
+              )[0]?.amount?.toFixed()
             ).toBe("10");
           })
         );
@@ -317,7 +325,9 @@ describe("semantic resource invalidation", () => {
         yield* Effect.promise(() =>
           vi.waitFor(() =>
             expect(
-              AsyncResult.getOrThrow(registry.get(aTokens))[0]?.amount
+              AsyncResult.getOrThrow(
+                registry.get(aTokens)
+              )[0]?.amount?.toFixed()
             ).toBe("10")
           )
         );
@@ -352,13 +362,7 @@ describe("semantic resource invalidation", () => {
             readonly offset: number;
             readonly yieldTypes?: ReadonlyArray<string>;
           }) => {
-            activityRequests.push({
-              address: request.address,
-              limit: request.limit,
-              network: request.network,
-              offset: request.offset,
-              yieldTypes: request.yieldTypes,
-            });
+            activityRequests.push(request);
             if (request.limit === 1) {
               return Effect.succeed({
                 items: [],

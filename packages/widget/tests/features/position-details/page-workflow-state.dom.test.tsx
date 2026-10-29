@@ -24,7 +24,7 @@ const settings = {
 
 const positionWorkflowAtom = positionDetailsWorkflowAtom(
   new PositionDetailsWorkflowKey({
-    balanceId: "balance-1",
+    balanceId: "default",
     integrationId: Schema.decodeSync(YieldId)("yield-1"),
     pendingActionType: null,
     scope: new WalletScopeKey({

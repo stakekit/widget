@@ -7,13 +7,13 @@ import {
   isOptionalPendingAction,
 } from "../../../domain/action/pending-action";
 import {
-  type ConfidentialHandle,
   getBalanceRowDisplayAmount,
   isCancellingBalance,
   isConfidentialYield,
   isUnfinishedInstantExit,
 } from "../../../domain/earn/confidential";
 import type {
+  ConfidentialHandle,
   EarnBalance,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
@@ -65,7 +65,7 @@ type PositionOverviewStatusTone = "action" | "claim" | "default";
 type PositionOverviewMetricCard = {
   id: string;
   label: string;
-  subValue?: string;
+  subValue?: string | undefined;
   tone?: PositionOverviewStatusTone;
   /** Several lines when a card lists one amount per token. */
   value: string | ReadonlyArray<string>;
@@ -125,10 +125,10 @@ type PositionOverviewPendingAction = {
 };
 
 type ProviderDetail = {
-  address?: string;
-  name?: string;
-  rewardRate?: BigNumber | null;
-  status?: string | null;
+  address?: string | undefined;
+  name?: string | undefined;
+  rewardRate?: BigNumber | null | undefined;
+  status?: string | null | undefined;
 };
 
 export const getPositionOverviewModel = ({
@@ -152,10 +152,10 @@ export const getPositionOverviewModel = ({
   /** Presentation time; batch timing is omitted without it. */
   now?: DateTime.Utc | null;
   pendingActions: PositionOverviewPendingAction[];
-  personalizedRewardRate?: YieldRewardRate | null;
+  personalizedRewardRate?: YieldRewardRate | null | undefined;
   positionBalancesByType: PositionBalancesByType;
   providersDetails: ProviderDetail[];
-  rewardsSummary?: RewardsSummary;
+  rewardsSummary?: RewardsSummary | undefined;
   t: TFunction;
 }): PositionOverviewModel => {
   const promotedFactIds = new Set<string>();
@@ -394,7 +394,7 @@ const getRewardsMetric = ({
   pendingActions: PositionOverviewPendingAction[];
   positionBalancesByType: PositionBalancesByType;
   promotedFactIds: Set<string>;
-  rewardsSummary?: RewardsSummary;
+  rewardsSummary?: RewardsSummary | undefined;
   t: TFunction;
 }): PositionOverviewMetricCard | null => {
   const claimableSums = getPositiveTokenSums(
@@ -412,10 +412,7 @@ const getRewardsMetric = ({
     };
   }
 
-  if (
-    rewardsSummary &&
-    exactDecimal(rewardsSummary.rewards.total).isGreaterThan(0)
-  ) {
+  if (rewardsSummary?.rewards.total.isGreaterThan(0)) {
     promotedFactIds.add("rewards");
 
     return {
@@ -455,7 +452,7 @@ const getApyMetric = ({
 }: {
   integrationData: EarnYieldWithProvider;
   locale: string;
-  personalizedRewardRate?: YieldRewardRate | null;
+  personalizedRewardRate?: YieldRewardRate | null | undefined;
   promotedFactIds: Set<string>;
   t: TFunction;
 }): PositionOverviewMetricCard | null => {
@@ -612,7 +609,7 @@ const getBreakdownRows = ({
     return {
       id: `${row.type}-${row.token.symbol}-${index}`,
       label: formatBalanceTypeLabel(row.type, t),
-      subValue: subValue || undefined,
+      ...(subValue ? { subValue } : {}),
       value: row.isEncrypted
         ? t("shared.confidential.hidden")
         : `${formatTokenAmount(display.amount, locale, "down")} ${display.token.symbol}`,

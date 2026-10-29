@@ -1,10 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import type { YieldId } from "../../../../../domain/identity/identifiers";
-import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
-import { useWidgetRouteMatch } from "../../../../navigation/index";
-import { useWalletScopeRoute } from "../../../../wallet/index";
 import { usePositionDetails } from "../../../react/use-position-details";
-import { PositionDetailsStakeEntryKey } from "../../../state/stake-entry";
+import type { PositionDetailsStakeEntryKey } from "../../../state/stake-entry";
 import {
   hidePositionDetailsStakeTokenBalanceAtom,
   positionDetailsStakeViewAtom,
@@ -17,14 +13,7 @@ import {
   submitPositionDetailsStakeAtom,
 } from "../../../state/stake-view";
 
-export const usePositionDetailsStake = () => {
-  const walletScope = useWalletScopeRoute();
-  const match = useWidgetRouteMatch(widgetRoutes.positionDetails);
-  const key = new PositionDetailsStakeEntryKey({
-    balanceId: match?.balanceId ?? "",
-    integrationId: (match?.integrationId ?? "") as YieldId,
-    walletScope,
-  });
+export const usePositionDetailsStake = (key: PositionDetailsStakeEntryKey) => {
   const view = useAtomValue(positionDetailsStakeViewAtom(key));
   const refreshKyc = useAtomSet(refreshPositionDetailsStakeKycAtom(key));
   const setAmount = useAtomSet(setPositionDetailsStakeAmountAtom(key));

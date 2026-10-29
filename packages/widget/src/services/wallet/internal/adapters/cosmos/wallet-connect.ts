@@ -1,9 +1,13 @@
 import type { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Effect, Option, Schema } from "effect";
 import { WalletIntegrationError } from "../../../wallet-errors";
-import type {
-  WalletConnectProtocol,
-  WalletConnectSession,
+import {
+  type CaipChainId,
+  caipAddresses,
+  caipChainId,
+  type WalletConnectProtocol,
+  type WalletConnectSession,
+  type WalletConnectTopic,
 } from "../../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import type { CosmosChainsAssets } from "./chains";
@@ -49,11 +53,11 @@ const SignDirectResponse = Schema.Struct({
 const cosmosError = (operation: string, message: string, cause?: unknown) =>
   new WalletIntegrationError({ cause, message, operation });
 
-/** The bare address of `session`'s CAIP-10 account on `chainId`. */
-const sessionAddress = (session: WalletConnectSession, chainId: string) =>
-  Option.fromNullishOr(
-    session.accounts.find((account) => account.startsWith(`cosmos:${chainId}:`))
-  ).pipe(Option.map((account) => account.slice(`cosmos:${chainId}:`.length)));
+/** The bare address of `session`'s account on `caipChain`. */
+const sessionAddress = (
+  session: WalletConnectSession,
+  caipChain: CaipChainId
+) => Option.fromNullishOr(caipAddresses(session.accounts, caipChain)[0]);
 
 const hasRequiredMethods = (session: WalletConnectSession) =>
   requiredMethods.every((method) => session.methods.includes(method));
@@ -61,19 +65,21 @@ const hasRequiredMethods = (session: WalletConnectSession) =>
 const makeChainWallet = ({
   address,
   chainId,
+  caipChain,
   protocol,
   topic,
 }: {
   readonly address: string;
   readonly chainId: string;
+  readonly caipChain: CaipChainId;
   readonly protocol: WalletConnectProtocol;
-  readonly topic: string;
+  readonly topic: WalletConnectTopic;
 }): CosmosChainWallet => ({
   chainId,
   getAccount: protocol
     .request({
       topic,
-      chainId: `cosmos:${chainId}`,
+      chainId: caipChain,
       method: "cosmos_getAccounts",
       params: {},
       response: Accounts,
@@ -100,7 +106,7 @@ const makeChainWallet = ({
       Effect.flatMap((wireSignDoc) =>
         protocol.request({
           topic,
-          chainId: `cosmos:${chainId}`,
+          chainId: caipChain,
           method: "cosmos_signDirect",
           params: { signerAddress: address, signDoc: wireSignDoc },
           response: SignDirectResponse,
@@ -110,7 +116,7 @@ const makeChainWallet = ({
 });
 
 type OwnedSession = Readonly<{
-  topic: string;
+  topic: WalletConnectTopic;
   address: string;
   unsubscribe: () => void;
 }>;
@@ -142,11 +148,13 @@ const makeSession = ({
   const activate = async ({
     address,
     chainId,
+    caipChain,
     topic,
   }: {
     readonly address: string;
     readonly chainId: string;
-    readonly topic: string;
+    readonly caipChain: CaipChainId;
+    readonly topic: WalletConnectTopic;
   }): Promise<CosmosWalletConnection> => {
     const attempt = ++activation;
     if (owned.get(chainId)?.topic !== topic) {
@@ -182,11 +190,15 @@ const makeSession = ({
     }
     return {
       address,
-      wallet: makeChainWallet({ address, chainId, protocol, topic }),
+      wallet: makeChainWallet({ address, chainId, caipChain, protocol, topic }),
     };
   };
 
-  const liveSession = (topic: string, account: string) =>
+  const liveSession = (
+    topic: WalletConnectTopic,
+    caipChain: CaipChainId,
+    address: string
+  ) =>
     protocol
       .sessions("cosmos")
       .pipe(
@@ -194,7 +206,7 @@ const makeSession = ({
           sessions.some(
             (session) =>
               session.topic === topic &&
-              session.accounts.includes(account) &&
+              caipAddresses(session.accounts, caipChain).includes(address) &&
               hasRequiredMethods(session)
           )
         )
@@ -209,16 +221,27 @@ const makeSession = ({
       Option.getOrUndefined
     );
     if (!record) return undefined;
-    const live = await runWalletEffect(
-      liveSession(record.topic, `cosmos:${record.chainId}:${record.address}`)
+    const caipChain = Option.getOrUndefined(
+      caipChainId("cosmos", record.chainId)
     );
-    return live ? record : undefined;
+    if (!caipChain) return undefined;
+    const live = await runWalletEffect(
+      liveSession(record.topic, caipChain, record.address)
+    );
+    return live ? { ...record, caipChain } : undefined;
   };
 
   return {
     ready: async () => {},
     connect: async (chain: CosmosChainsAssets) => {
       const chainId = chain.chain_id;
+      const caipChain = Option.getOrUndefined(caipChainId("cosmos", chainId));
+      if (!caipChain) {
+        throw cosmosError(
+          "cosmos-connect",
+          "Cosmos chain id is not a valid WalletConnect chain"
+        );
+      }
       // A live session already holding this chain's account, e.g. approved
       // before a reload; prefer the one this connector last used for it.
       const reusable = (
@@ -226,7 +249,7 @@ const makeSession = ({
       ).flatMap((session) =>
         hasRequiredMethods(session)
           ? Option.toArray(
-              Option.map(sessionAddress(session, chainId), (address) => ({
+              Option.map(sessionAddress(session, caipChain), (address) => ({
                 address,
                 topic: session.topic,
               }))
@@ -236,23 +259,23 @@ const makeSession = ({
       const existing =
         reusable.find(({ topic }) => topic === owned.get(chainId)?.topic) ??
         reusable[0];
-      if (existing) return activate({ ...existing, chainId });
+      if (existing) return activate({ ...existing, chainId, caipChain });
       const session = await runWalletEffect(
         protocol.connect({
           namespace: "cosmos",
-          chains: [`cosmos:${chainId}`],
+          chains: [caipChain],
           requiredMethods,
           events: ["chainChanged", "accountsChanged"],
         })
       );
-      const address = Option.getOrUndefined(sessionAddress(session, chainId));
+      const address = Option.getOrUndefined(sessionAddress(session, caipChain));
       if (!address) {
         throw cosmosError(
           "cosmos-connect",
           "Wallet did not approve an account for this Cosmos chain"
         );
       }
-      return activate({ address, chainId, topic: session.topic });
+      return activate({ address, chainId, caipChain, topic: session.topic });
     },
     restore: async () => {
       const record = await restorable();

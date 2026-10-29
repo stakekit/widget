@@ -5,6 +5,7 @@ import {
   WalletDecodeError,
   WalletSigningError,
 } from "../../../wallet-errors";
+import { decodeWalletSignedPayloadResult } from "../../../wallet-transactions";
 import { isSubstrateConnector } from "./substrate-connector-meta";
 import { substratePayloadCodec } from "./transaction";
 
@@ -41,6 +42,6 @@ export const makeSubstrateWalletDriver = ({
           )
         );
 
-      return { broadcasted: false, signedTx };
+      return yield* decodeWalletSignedPayloadResult(signedTx);
     }),
 });

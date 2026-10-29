@@ -82,7 +82,7 @@ describe("Validator selection limit", () => {
 
     const next = togglePendingActionValidator({
       store,
-      validator: validators[SUBSTRATE_LIMIT]!.address,
+      validator: validators[SUBSTRATE_LIMIT]!,
     });
 
     expect(next.state.selectedValidators.size).toBe(SUBSTRATE_LIMIT);
