@@ -536,7 +536,9 @@ describe("Yield flow Review page", () => {
 
 describe("confidential vault Review", () => {
   const vault = confidentialYieldFixture();
-  const ether = { ...gasToken, decimals: 18 };
+  // The chain's native token, which pays an EVM transaction's fee.
+  const { address: _gasTokenAddress, ...nativeGasToken } = gasToken;
+  const ether = { ...nativeGasToken, decimals: 18 };
   const vaultAction = yieldApiActionFixture({
     address,
     id: "vault-action",
@@ -546,13 +548,16 @@ describe("confidential vault Review", () => {
       }),
     ],
   });
-  const enterVault = (pick: "asset" | "underlying") => {
+  const enterVault = (
+    pick: "asset" | "underlying",
+    gasFeeToken: typeof gasToken = ether
+  ) => {
     const token = pick === "asset" ? vault.inputTokens[0]! : vault.token;
     return makeYieldFlowSession(
       {
         intake: {
           _tag: "Enter",
-          gasFeeToken: ether,
+          gasFeeToken,
           providersDetails: [],
           request: {
             address,
@@ -687,6 +692,33 @@ describe("confidential vault Review", () => {
               transactions: [yieldApiTransactionFixture()],
             }),
           session: enterVault("underlying"),
+          zama: {
+            ...encrypted,
+            planConversion: () =>
+              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
+          },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasCheckLoading }) => !gasCheckLoading
+        );
+
+        expect(view.action).not.toBeNull();
+        expect(view.gasAmount).toBeNull();
+      })
+  );
+
+  it.effect(
+    "shows no gas when the approve and wrap would be priced in a non-native gas token",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, page } = yield* makeReviewHarness({
+          evmRpc: {
+            estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
+          },
+          previewAction: () => Effect.succeed(vaultAction),
+          session: enterVault("underlying", vault.token),
           zama: {
             ...encrypted,
             planConversion: () =>

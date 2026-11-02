@@ -356,7 +356,8 @@ const planYieldFlowConversion = Effect.fn("planYieldFlowConversion")(function* (
  * the approve and wrap a deposit of the underlying token needs; what the
  * Session already sent costs nothing more. Null when it cannot be estimated,
  * as for an instant exit, whose finishing withdrawal only exists once its
- * unwrap confirms.
+ * unwrap confirms, or when the gas token is not the chain's native one the
+ * node prices fees in.
  */
 const estimateYieldFlowConversionGas = Effect.fn(
   "estimateYieldFlowConversionGas"
@@ -370,6 +371,7 @@ const estimateYieldFlowConversionGas = Effect.fn(
     if (preparation._tag !== "Encrypt" || !preparation.conversion) {
       return exactZero();
     }
+    if (gasFeeToken.address !== undefined) return null;
     const sent = yield* Ref.get(session.ledger);
     const pending = (yield* planYieldFlowConversion(
       session,

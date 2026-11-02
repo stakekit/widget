@@ -500,6 +500,13 @@ const cShare = {
   network: "ethereum-sepolia",
   symbol: "csteakcUSDC",
 } as const;
+// Like the API's, a Sepolia vault's gas token is the chain's native ETH.
+const sepoliaEth = {
+  decimals: 18,
+  name: "Ethereum",
+  network: "ethereum-sepolia",
+  symbol: "ETH",
+} as const;
 
 const legsField = (options: ReadonlyArray<string>) => ({
   isArray: true,
@@ -548,7 +555,7 @@ export const confidentialYieldFixture = (
           ],
         },
       },
-      gasFeeToken: usdc,
+      gasFeeToken: sepoliaEth,
     },
     network: "ethereum-sepolia",
     token: usdc,
