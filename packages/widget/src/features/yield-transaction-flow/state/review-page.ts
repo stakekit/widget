@@ -537,21 +537,20 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
   });
 
   const preparation = getYieldFlowConfidentialPreparation(intake);
-  // A deposit of the underlying token also pays for its approve and wrap.
-  const conversionGasAtom =
-    preparation?._tag === "Encrypt" && preparation.conversion
-      ? walletRuntime
-          .atom((get) =>
-            get(kycBlockingAtom)
-              ? Effect.succeed(null)
-              : estimateYieldFlowConversionGas(
-                  session,
-                  preparation,
-                  gasWarningInput.gasFeeToken
-                )
-          )
-          .pipe(Atom.withLabel("yieldFlowReviewConversionGas"))
-      : null;
+  // A deposit of the underlying token also pays for its approve and wrap;
+  // anything else converts nothing.
+  const conversionGasAtom = walletRuntime
+    .atom((get) => {
+      if (!preparation) return Effect.succeed(exactZero());
+      return get(kycBlockingAtom)
+        ? Effect.succeed(null)
+        : estimateYieldFlowConversionGas(
+            session,
+            preparation,
+            gasWarningInput.gasFeeToken
+          );
+    })
+    .pipe(Atom.withLabel("yieldFlowReviewConversionGas"));
 
   const baseViewAtom = Atom.make((get) => {
     const preview = get(previewAtom);
@@ -560,10 +559,7 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     const previewError = Option.getOrNull(AsyncResult.error(preview));
     const actionPreviewLoading =
       AsyncResult.isInitial(preview) || preview.waiting;
-    const conversionGas: AsyncResult.AsyncResult<BigNumber | null, unknown> =
-      conversionGasAtom
-        ? get(conversionGasAtom)
-        : AsyncResult.success(exactZero());
+    const conversionGas = get(conversionGasAtom);
     const conversionGasLoading =
       AsyncResult.isInitial(conversionGas) || conversionGas.waiting;
     const gasAmount = getGasAmount(
