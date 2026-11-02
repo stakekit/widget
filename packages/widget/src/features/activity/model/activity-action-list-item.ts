@@ -8,9 +8,10 @@ import {
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import {
   type ConfidentialActionKind,
+  type ConfidentialSettlement,
   getConfidentialActionKind,
   getConfidentialAssetToken,
-  isConfidentialActionAwaitingSettlement,
+  getConfidentialSettlement,
 } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
@@ -47,10 +48,17 @@ export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
   /** Confidential deposits only settle when a later batch runs. */
   | { readonly _tag: "deposit_submitted"; readonly tokenSymbol: string | null }
+  /** A confidential deposit its batch cancelled. */
+  | { readonly _tag: "deposit_canceled"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
   /** A confidential private exit only joins the next redemption batch. */
   | {
       readonly _tag: "private_withdrawal_requested";
+      readonly tokenSymbol: string | null;
+    }
+  /** A confidential private exit its batch cancelled. */
+  | {
+      readonly _tag: "private_withdrawal_canceled";
       readonly tokenSymbol: string | null;
     }
   /** The WITHDRAW that pays out a confidential instant exit. */
@@ -153,17 +161,32 @@ const BORROW_ACTIVITY_STATUS_LABEL: Record<
   WAITING_FOR_NEXT: "processing",
 };
 
+/** How a confidential deposit's or private exit's batch resolved, if it is one. */
+export const getActivitySettlement = ({
+  actionData,
+  yieldData,
+}: YieldActivityItem): ConfidentialSettlement | null =>
+  yieldData ? getConfidentialSettlement(yieldData, actionData) : null;
+
+const SETTLEMENT_STATUS_LABEL: Record<
+  ConfidentialSettlement["_tag"],
+  ActivityStatusLabel
+> = {
+  Awaiting: "awaiting_settlement",
+  Cancelled: "canceled",
+  Settled: "completed",
+};
+
 /** Waiting actions show no badge: the user may have continued elsewhere. */
 const projectActivityStatusLabel = (
-  { actionData: action, yieldData }: YieldActivityItem,
+  action: YieldActivityItem["actionData"],
+  settlement: ConfidentialSettlement | null,
   presentationTime: ActivityPresentationTime | null
 ): ActivityStatusLabel | null => {
+  if (settlement) return SETTLEMENT_STATUS_LABEL[settlement._tag];
   switch (action.status) {
     case ActionStatus.SUCCESS:
-      return yieldData &&
-        isConfidentialActionAwaitingSettlement(yieldData, action)
-        ? "awaiting_settlement"
-        : "completed";
+      return "completed";
     case ActionStatus.FAILED:
       return "failed";
     case ActionStatus.WAITING_FOR_NEXT:
@@ -293,21 +316,31 @@ const resolveTitle = ({
   action,
   confidentialKind,
   direction,
+  settlement,
   tokenSymbol,
 }: {
   readonly action: YieldActivityItem;
   readonly confidentialKind: ConfidentialActionKind | null;
   readonly direction: ActivityDirection;
+  readonly settlement: ConfidentialSettlement | null;
   readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
   switch (direction) {
     case "deposit":
-      return confidentialKind === "deposit"
-        ? { _tag: "deposit_submitted", tokenSymbol }
-        : { _tag: "deposited", tokenSymbol };
+      if (confidentialKind !== "deposit" || settlement?._tag === "Settled") {
+        return { _tag: "deposited", tokenSymbol };
+      }
+      return settlement?._tag === "Cancelled"
+        ? { _tag: "deposit_canceled", tokenSymbol }
+        : { _tag: "deposit_submitted", tokenSymbol };
     case "withdraw":
       if (confidentialKind === "privateExit") {
-        return { _tag: "private_withdrawal_requested", tokenSymbol };
+        if (settlement?._tag === "Settled") {
+          return { _tag: "withdrew", tokenSymbol };
+        }
+        return settlement?._tag === "Cancelled"
+          ? { _tag: "private_withdrawal_canceled", tokenSymbol }
+          : { _tag: "private_withdrawal_requested", tokenSymbol };
       }
       if (confidentialKind === "instantExitPayout") {
         return { _tag: "instant_withdrawal_finalized", tokenSymbol };
@@ -423,6 +456,7 @@ export const projectActivityActionListItem = ({
   const confidentialKind = action.yieldData
     ? getConfidentialActionKind(action.yieldData, action.actionData)
     : null;
+  const settlement = getActivitySettlement(action);
   const tokenSymbol = resolveTokenSymbol({
     action,
     confidentialKind,
@@ -438,13 +472,23 @@ export const projectActivityActionListItem = ({
     amountSign: resolveAmountSign({ amount, direction }),
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
-    statusLabel: projectActivityStatusLabel(action, presentationTime),
+    statusLabel: projectActivityStatusLabel(
+      action.actionData,
+      settlement,
+      presentationTime
+    ),
     timestamp: resolveTimestamp({
       createdAt: action.actionData.createdAt,
       locale,
       presentationTime,
     }),
-    title: resolveTitle({ action, confidentialKind, direction, tokenSymbol }),
+    title: resolveTitle({
+      action,
+      confidentialKind,
+      direction,
+      settlement,
+      tokenSymbol,
+    }),
     tokenSymbol,
   };
 };

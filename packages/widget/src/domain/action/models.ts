@@ -1,6 +1,6 @@
-import { Schema, Struct } from "effect";
+import { Effect, Schema, Struct } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TolerantNullOr } from "../decoding/response-schema";
+import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
 import {
   ExactBaseUnitAmount,
   ExactDecimal,
@@ -91,7 +91,40 @@ export const ActionTransactionReceipt = Schema.Struct({
 });
 export type ActionTransactionReceipt = typeof ActionTransactionReceipt.Type;
 
-// `executionPattern` and `events` are unread, so they are not decoded.
+/**
+ * Protocol-side events the API records after an action completed, such as a
+ * confidential batch settling or cancelling the request.
+ */
+const actionEventTypes = [
+  "DEPOSIT_SETTLED",
+  "DEPOSIT_CANCELLED",
+  "REDEMPTION_SETTLED",
+  "REDEMPTION_CANCELLED",
+] as const;
+
+// An event's `id` is unread, so it is not decoded.
+const ActionEvent = Schema.Struct({
+  type: Schema.Literals(actionEventTypes),
+  transactionHash: TolerantNullOr(TransactionHash, {
+    operation: "yield-action-event",
+    field: "transactionHash",
+  }),
+  occurredAt: UtcDateTimeFromString,
+});
+export type ActionEvent = typeof ActionEvent.Type;
+
+const isSupportedActionEvent = Schema.is(
+  Schema.Struct({ type: Schema.Literals(actionEventTypes) })
+);
+
+// Event types added after this list are skipped; a malformed known event
+// drops only itself.
+const ActionEvents = TolerantArray(ActionEvent, {
+  operation: "yield-action-events",
+  isSupported: isSupportedActionEvent,
+}).pipe(Schema.withDecodingDefaultKey(Effect.succeed([])));
+
+// `executionPattern` is unread, so it is not decoded.
 export const YieldAction = Schema.Struct({
   ...Struct.pick(YieldApi.ActionDto.fields, [
     "encryptedAmount",
@@ -108,6 +141,7 @@ export const YieldAction = Schema.Struct({
     field: "completedAt",
   }),
   createdAt: UtcDateTimeFromString,
+  events: ActionEvents,
   id: ActionId,
   rawArguments: Schema.NullOr(ActionArguments),
   transactions: Schema.Array(ActionTransaction),

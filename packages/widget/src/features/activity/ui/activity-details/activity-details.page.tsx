@@ -388,6 +388,12 @@ const Receipt = ({
             value={view.completedAt}
           />
         ) : null}
+        {view.canceledAt ? (
+          <ReceiptRow
+            label={t("activity.details.canceled")}
+            value={view.canceledAt}
+          />
+        ) : null}
         {view.borrow ? <BorrowReceiptRows borrow={view.borrow} /> : null}
       </Box>
 

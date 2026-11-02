@@ -421,6 +421,7 @@ type ActionFixtureOverrides = Partial<
     | "amountUsd"
     | "completedAt"
     | "createdAt"
+    | "events"
     | "id"
     | "rawArguments"
     | "transactions"
@@ -433,6 +434,13 @@ type ActionFixtureOverrides = Partial<
   readonly amountUsd?: typeof YieldAction.Encoded.amountUsd;
   readonly completedAt?: DateTime.Utc | null;
   readonly createdAt?: DateTime.Utc;
+  /** Encoded, as the API sends them. */
+  readonly events?: ReadonlyArray<{
+    readonly id: string;
+    readonly occurredAt: string;
+    readonly transactionHash: string | null;
+    readonly type: string;
+  }>;
   readonly id?: string;
   readonly rawArguments?: typeof YieldAction.Encoded.rawArguments;
   readonly transactions?: ReadonlyArray<ActionTransaction>;

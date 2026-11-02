@@ -38,7 +38,10 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { config } from "../../../shared/config/widget-defaults";
-import { getYieldAmountConstraints } from "../../yield-entry/index";
+import {
+  getYieldAmountConstraints,
+  getYieldEntryPriceToken,
+} from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
   type PendingActionAmountChange,
@@ -412,6 +415,7 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 const projection =
                   view.pendingActionProjections.get(pendingKey);
                 const amount = projection?.amount ?? null;
+                // Encrypted rows carry the unpriced confidential asset.
                 const amountUsd =
                   prices && amount && baseToken
                     ? getTokenPriceInUSD({
@@ -419,7 +423,11 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                         baseToken,
                         pricePerShare: null,
                         prices,
-                        token: balance.token,
+                        token:
+                          getYieldEntryPriceToken(
+                            view.integrationData,
+                            balance.token
+                          ) ?? balance.token,
                       })
                     : null;
                 return {

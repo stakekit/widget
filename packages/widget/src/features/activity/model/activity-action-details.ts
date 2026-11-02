@@ -5,6 +5,7 @@ import { isContinuableYieldAction } from "../../../domain/activity/action-capabi
 import { getBorrowMarketPairLabel } from "../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../domain/borrow/catalog/token";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
+import type { ConfidentialSettlement } from "../../../domain/earn/confidential";
 import { formatDateTime } from "../../../shared/lib/date";
 import {
   formatFigureChange,
@@ -21,6 +22,7 @@ import {
   type ActivityActionTitle,
   type ActivityPresentationTime,
   type ActivityStatusLabel,
+  getActivitySettlement,
   projectActivityActionListItem,
   resolveBorrowActivityAmount,
 } from "./activity-action-list-item";
@@ -75,6 +77,8 @@ export type ActivityActionDetailsProjection = Readonly<{
   readonly amount: string | null;
   readonly borrow: ActivityBorrowDetailsProjection | null;
   readonly canContinue: boolean;
+  /** When a confidential batch cancelled the request. */
+  readonly canceledAt: string | null;
   readonly completedAt: string | null;
   readonly continuationUnavailable: boolean;
   readonly createdAt: string;
@@ -152,6 +156,25 @@ const summarizeTransactions = (
     : { _tag: "total", count: transactions.length };
 };
 
+const projectCompletedAt = ({
+  action,
+  locale,
+  settlement,
+  timeZone,
+}: {
+  readonly action: YieldActivityItem["actionData"];
+  readonly locale: string;
+  readonly settlement: ConfidentialSettlement | null;
+  readonly timeZone: DateTime.TimeZone;
+}) => {
+  if (settlement?._tag === "Settled") {
+    return formatDate(settlement.at, locale, timeZone);
+  }
+  return action.completedAt && settlement === null
+    ? formatDate(action.completedAt, locale, timeZone)
+    : null;
+};
+
 const projectYieldActivityDetails = ({
   item,
   locale,
@@ -175,6 +198,7 @@ const projectYieldActivityDetails = ({
     presentationTime.now
   );
   const statusLabel = listItem.statusLabel;
+  const settlement = getActivitySettlement(item);
   const amount = action.amount
     ? `${listItem.amountSign}${formatTokenAmount(action.amount, locale, "down")}`
     : null;
@@ -203,12 +227,18 @@ const projectYieldActivityDetails = ({
     amount,
     borrow: null,
     canContinue,
-    // The API completes an awaiting batch request when its transactions confirm,
-    // not when the batch settles.
-    completedAt:
-      action.completedAt && statusLabel !== "awaiting_settlement"
-        ? formatDate(action.completedAt, locale, presentationTime.timeZone)
+    canceledAt:
+      settlement?._tag === "Cancelled"
+        ? formatDate(settlement.at, locale, presentationTime.timeZone)
         : null,
+    // The API completes a batch request when its transactions confirm; it is
+    // done when its batch settles.
+    completedAt: projectCompletedAt({
+      action,
+      locale,
+      settlement,
+      timeZone: presentationTime.timeZone,
+    }),
     continuationUnavailable:
       action.status === "WAITING_FOR_NEXT" &&
       item.yieldData === null &&
@@ -313,6 +343,7 @@ const projectBorrowActivityDetails = ({
       ),
     },
     canContinue: false,
+    canceledAt: null,
     completedAt: null,
     continuationUnavailable: false,
     createdAt: formatDate(action.createdAt, locale, presentationTime.timeZone),

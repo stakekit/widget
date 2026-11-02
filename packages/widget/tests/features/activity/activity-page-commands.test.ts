@@ -2,7 +2,7 @@ import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { ActivityFilterOption } from "../../../src/features/activity/model/filters";
@@ -26,7 +26,11 @@ import {
   walletScopeAtom,
 } from "../../../src/features/wallet/index";
 import { YieldResourceSource } from "../../../src/services/api/resource-sources";
-import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
+import {
+  confidentialYieldFixture,
+  yieldApiActionFixture,
+  yieldApiYieldFixture,
+} from "../../fixtures";
 import { unconfiguredBorrowResourceSourceLayer } from "../../utils/services/borrow-resource-source";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
@@ -54,10 +58,10 @@ const filterOptionsAtom = activityFilterOptionsAtom(
 );
 
 type ListActivity = YieldResourceSource["Service"]["listActivity"];
-
 const makeRegistry = (
   listActivity: ListActivity,
-  filterOptions: ActivityFilterOption[] = []
+  filterOptions: ActivityFilterOption[] = [],
+  opportunity = yieldApiYieldFixture()
 ) =>
   AtomRegistry.make({
     initialValues: [
@@ -67,7 +71,7 @@ const makeRegistry = (
           Layer.succeed(
             YieldResourceSource,
             YieldResourceSource.of({
-              getOpportunity: () => Effect.succeed(yieldApiYieldFixture()),
+              getOpportunity: () => Effect.succeed(opportunity),
               getProvider: () => Effect.succeedNone,
               listActivity,
             } as never)
@@ -358,6 +362,132 @@ describe("Activity actions resource commands", () => {
     } finally {
       unmountActions();
       registry.dispose();
+    }
+  });
+});
+
+describe("Activity settlement polling", () => {
+  const vault = confidentialYieldFixture();
+  // A confidential deposit whose batch has not settled yet.
+  const awaiting = yieldApiActionFixture({
+    events: [],
+    intent: "enter",
+    status: "SUCCESS",
+    type: "STAKE",
+    yieldId: vault.id,
+  });
+  const firstPageRequests = (listActivity: Mock<ListActivity>) =>
+    listActivity.mock.calls.filter(
+      ([request]) => request.limit === 50 && (request.offset ?? 0) === 0
+    ).length;
+  const listing = () =>
+    vi.fn<ListActivity>((request) =>
+      Effect.succeed({
+        items: request.limit === 50 ? [awaiting] : [],
+        limit: request.limit ?? 50,
+        offset: request.offset ?? 0,
+        total: 1,
+      })
+    );
+
+  it("refreshes the shown feed while it holds a request awaiting settlement", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const listActivity = listing();
+    const registry = makeRegistry(listActivity, [], vault);
+    const unmount = registry.mount(activityPageViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(activityPageViewAtom)).toMatchObject({
+          status: "ready",
+        })
+      );
+      const before = firstPageRequests(listActivity);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      await vi.waitFor(() =>
+        expect(firstPageRequests(listActivity)).toBeGreaterThan(before)
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not poll a feed only prefetched outside the Activity page", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const listActivity = listing();
+    const registry = makeRegistry(listActivity, [], vault);
+    const actionsAtom = activityActionsPullAtom(
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
+    );
+    const unmount = registry.mount(actionsAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(actionsAtom)).toMatchObject({ _tag: "Success" })
+      );
+      const before = firstPageRequests(listActivity);
+
+      await vi.advanceTimersByTimeAsync(3 * 60_000);
+
+      expect(firstPageRequests(listActivity)).toBe(before);
+    } finally {
+      unmount();
+      registry.dispose();
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps older pages the user loaded instead of refreshing them away", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const older = Array.from({ length: 50 }, (_, index) =>
+      yieldApiActionFixture({ id: `older-${index}`, yieldId: vault.id })
+    );
+    const feed = [awaiting, ...older];
+    const listActivity = vi.fn<ListActivity>((request) => {
+      const limit = request.limit ?? 50;
+      const offset = request.offset ?? 0;
+      return Effect.succeed({
+        items: limit === 50 ? feed.slice(offset, offset + limit) : [],
+        limit,
+        offset,
+        total: feed.length,
+      });
+    });
+    const registry = makeRegistry(listActivity, [], vault);
+    const unmount = registry.mount(activityPageViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(activityPageViewAtom)).toMatchObject({
+          showingCount: 50,
+          status: "ready",
+        })
+      );
+      registry.set(loadMoreActivityAtom, undefined);
+      await vi.waitFor(() =>
+        expect(registry.get(activityPageViewAtom)).toMatchObject({
+          showingCount: 51,
+          status: "ready",
+        })
+      );
+
+      await vi.advanceTimersByTimeAsync(3 * 60_000);
+
+      expect(registry.get(activityPageViewAtom)).toMatchObject({
+        showingCount: 51,
+      });
+    } finally {
+      unmount();
+      registry.dispose();
+      vi.useRealTimers();
     }
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
-import { Schema } from "effect";
+import { DateTime, Schema } from "effect";
 import {
   type ConfidentialEncryption,
   fillConfidentialBalance,
@@ -11,6 +11,7 @@ import {
   getConfidentialConversion,
   getConfidentialHandleContract,
   getConfidentialRedeemOperators,
+  getConfidentialSettlement,
   getPendingActionDecryptHandle,
   isCancellingBalance,
   isConfidentialInstantExit,
@@ -27,6 +28,7 @@ import { Token } from "../../src/domain/token/token";
 import {
   confidentialFixture,
   confidentialYieldFixture,
+  yieldApiActionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
 
@@ -290,7 +292,7 @@ describe("confidential vault rules", () => {
       isEncrypted: true,
       shares: { _tag: "Encrypted", handle: toHandle(handle) } as const,
       shareToken,
-      token: usdc,
+      token: cUsdc,
     };
     const revealedShares = (shares: bigint) =>
       new Map([[toHandle(handle.toUpperCase()), shares]]);
@@ -367,5 +369,100 @@ describe("confidential vault rules", () => {
     ]);
 
     expect([...cancelling]).toEqual([handle("a")]);
+  });
+
+  describe("batch settlement", () => {
+    const at = (iso: string) => DateTime.makeUnsafe(iso);
+    const event = (type: string, occurredAt: string) => ({
+      id: `${type}-${occurredAt}`,
+      occurredAt,
+      transactionHash: "0xsettle",
+      type,
+    });
+    const action = (
+      overrides: Parameters<typeof yieldApiActionFixture>[0] = {}
+    ) =>
+      yieldApiActionFixture({
+        createdAt: at("2026-10-01T00:00:00.000Z"),
+        status: "SUCCESS",
+        type: "STAKE",
+        ...overrides,
+      });
+    const privateExit = { outputToken: cUsdc.address };
+
+    it("settles a deposit and a private exit at their own latest event", () => {
+      expect(
+        getConfidentialSettlement(
+          confidentialYield(),
+          action({
+            events: [
+              event("DEPOSIT_CANCELLED", "2026-10-02T00:00:00.000Z"),
+              event("DEPOSIT_SETTLED", "2026-10-03T00:00:00.000Z"),
+            ],
+          })
+        )
+      ).toEqual({
+        _tag: "Settled",
+        at: at("2026-10-03T00:00:00.000Z"),
+        transactionHash: "0xsettle",
+      });
+      expect(
+        getConfidentialSettlement(
+          confidentialYield(),
+          action({
+            events: [event("REDEMPTION_CANCELLED", "2026-10-02T00:00:00.000Z")],
+            rawArguments: privateExit,
+            type: "UNSTAKE",
+          })
+        )
+      ).toMatchObject({
+        _tag: "Cancelled",
+        at: at("2026-10-02T00:00:00.000Z"),
+      });
+    });
+
+    it("ignores the other kind's events and unknown ones, so the request awaits", () => {
+      expect(
+        getConfidentialSettlement(
+          confidentialYield(),
+          action({
+            events: [
+              event("REDEMPTION_SETTLED", "2026-10-02T00:00:00.000Z"),
+              event("SOMETHING_NEW", "2026-10-02T00:00:00.000Z"),
+            ],
+          })
+        )
+      ).toEqual({ _tag: "Awaiting" });
+    });
+
+    it("awaits every completed request without its event, however old, and no running one", () => {
+      expect(
+        getConfidentialSettlement(
+          confidentialYield(),
+          action({ createdAt: at("2020-01-01T00:00:00.000Z") })
+        )
+      ).toEqual({ _tag: "Awaiting" });
+      expect(
+        getConfidentialSettlement(
+          confidentialYield(),
+          action({ status: "PROCESSING" })
+        )
+      ).toBeNull();
+    });
+
+    it("has no settlement for instant exits or plain yields", () => {
+      expect(
+        getConfidentialSettlement(
+          confidentialYield(),
+          action({
+            rawArguments: { outputToken: usdc.address },
+            type: "UNSTAKE",
+          })
+        )
+      ).toBeNull();
+      expect(
+        getConfidentialSettlement(yieldApiYieldFixture(), action())
+      ).toBeNull();
+    });
   });
 });

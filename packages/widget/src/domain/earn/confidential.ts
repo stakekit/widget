@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
-import { Data, type HashMap, Option, Schema, Struct } from "effect";
-import type { YieldAction } from "../action/models";
+import { Data, DateTime, type HashMap, Option, Schema, Struct } from "effect";
+import type { ActionEvent, YieldAction } from "../action/models";
 import type { YieldPendingActionType } from "../action/pending-action";
 import {
   exactDecimal,
@@ -245,16 +245,66 @@ export const getConfidentialActionKind = (
   }
 };
 
-/** A deposit or private exit the API reports done still waits for its batch. */
-export const isConfidentialActionAwaitingSettlement = (
+/** How the batch a confidential deposit or private exit joined resolved. */
+export type ConfidentialSettlement =
+  | Readonly<{ _tag: "Awaiting" }>
+  | Readonly<{
+      _tag: "Cancelled";
+      at: DateTime.Utc;
+      transactionHash: ActionEvent["transactionHash"];
+    }>
+  | Readonly<{
+      _tag: "Settled";
+      at: DateTime.Utc;
+      transactionHash: ActionEvent["transactionHash"];
+    }>;
+
+const settlementEventTypes = {
+  deposit: { cancelled: "DEPOSIT_CANCELLED", settled: "DEPOSIT_SETTLED" },
+  privateExit: {
+    cancelled: "REDEMPTION_CANCELLED",
+    settled: "REDEMPTION_SETTLED",
+  },
+} as const satisfies Record<
+  "deposit" | "privateExit",
+  Readonly<{ cancelled: ActionEvent["type"]; settled: ActionEvent["type"] }>
+>;
+
+/**
+ * The batch settlement of a confidential deposit or private exit: its latest
+ * settled or cancelled event, else Awaiting once the API reports it done.
+ * Null when it is not such an action, or it has not completed yet.
+ */
+export const getConfidentialSettlement = (
   yieldDto: EarnYieldWithProvider,
-  action: Pick<YieldAction, "intent" | "rawArguments" | "status" | "type">
-) => {
+  action: Pick<
+    YieldAction,
+    "events" | "intent" | "rawArguments" | "status" | "type"
+  >
+): ConfidentialSettlement | null => {
   const kind = getConfidentialActionKind(yieldDto, action);
-  return (
-    action.status === "SUCCESS" &&
-    (kind === "deposit" || kind === "privateExit")
-  );
+  if (kind !== "deposit" && kind !== "privateExit") return null;
+
+  const types = settlementEventTypes[kind];
+  const event = action.events
+    .filter(({ type }) => type === types.settled || type === types.cancelled)
+    .reduce<ActionEvent | null>(
+      (latest, candidate) =>
+        latest &&
+        DateTime.isGreaterThan(latest.occurredAt, candidate.occurredAt)
+          ? latest
+          : candidate,
+      null
+    );
+  if (event) {
+    return {
+      _tag: event.type === types.settled ? "Settled" : "Cancelled",
+      at: event.occurredAt,
+      transactionHash: event.transactionHash,
+    };
+  }
+
+  return action.status === "SUCCESS" ? { _tag: "Awaiting" } : null;
 };
 
 export const planConfidentialEncryption = ({

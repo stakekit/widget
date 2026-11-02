@@ -1631,7 +1631,7 @@ describe("Position Details balance reveal", () => {
           isEncrypted: true,
           shareAmountRaw: `0x${"ab".repeat(32)}`,
           shareToken: confidentialFixture.cShare,
-          token: vault.token,
+          token: confidentialFixture.cUsdc,
         })
       ),
       yieldOpportunity: vault,

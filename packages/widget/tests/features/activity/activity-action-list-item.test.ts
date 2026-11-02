@@ -359,6 +359,47 @@ describe("Activity action list item projection", () => {
     }
   );
 
+  it.each([
+    ["STAKE", "DEPOSIT_SETTLED", "completed", "deposited"],
+    ["STAKE", "DEPOSIT_CANCELLED", "canceled", "deposit_canceled"],
+    ["UNSTAKE", "REDEMPTION_SETTLED", "completed", "withdrew"],
+    [
+      "UNSTAKE",
+      "REDEMPTION_CANCELLED",
+      "canceled",
+      "private_withdrawal_canceled",
+    ],
+  ] as const)(
+    "presents a confidential %s whose batch event is %s as %s",
+    (type, eventType, statusLabel, titleTag) => {
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            amount: "1",
+            events: [
+              {
+                id: "event",
+                occurredAt: "2026-08-27T08:00:00.000Z",
+                transactionHash: null,
+                type: eventType,
+              },
+            ],
+            status: "SUCCESS",
+            type,
+          }),
+          confidentialYieldFixture()
+        ),
+        locale: "en-US",
+        presentationTime: null,
+      });
+
+      expect(projection).toMatchObject({
+        statusLabel,
+        title: { _tag: titleTag, tokenSymbol: "cUSDC" },
+      });
+    }
+  );
+
   it("titles an instant confidential withdrawal with the underlying it paid out", () => {
     const projection = projectActivityActionListItem({
       action: makeItem(

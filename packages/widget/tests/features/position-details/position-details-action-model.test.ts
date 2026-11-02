@@ -727,7 +727,7 @@ describe("Position Details action model", () => {
   });
 
   it("withdraws a confidential position in its revealed vault shares, valued in the underlying", () => {
-    const { cShare, usdc } = confidentialFixture;
+    const { cShare, cUsdc } = confidentialFixture;
     const view = readWorkflowView(
       "default",
       [
@@ -739,7 +739,7 @@ describe("Position Details action model", () => {
             shareAmount: "0.146787",
             shareAmountRaw: "146787",
             shareToken: cShare,
-            token: usdc,
+            token: cUsdc,
             type: "active",
           })
         ),
@@ -751,11 +751,11 @@ describe("Position Details action model", () => {
     expect(view.exitBalance?.amount.toFixed()).toBe("0.146787");
     expect(view.maxUnstakeAmount.toFixed()).toBe("0.146787");
     expect(view.exitBalance?.underlying?.amount.toFixed()).toBe("0.151");
-    expect(view.exitBalance?.underlying?.token.symbol).toBe(usdc.symbol);
+    expect(view.exitBalance?.underlying?.token.symbol).toBe(cUsdc.symbol);
   });
 
   it("keeps withdrawing available while the share balance is hidden, so the user can decrypt it there", () => {
-    const { cShare, usdc } = confidentialFixture;
+    const { cShare, cUsdc } = confidentialFixture;
     const view = readWorkflowView(
       "default",
       [
@@ -767,7 +767,7 @@ describe("Position Details action model", () => {
             shareAmount: "0",
             shareAmountRaw: `0x${"ab".repeat(32)}`,
             shareToken: cShare,
-            token: usdc,
+            token: cUsdc,
             type: "active",
           })
         ),
@@ -783,7 +783,7 @@ describe("Position Details action model", () => {
   });
 
   it("redeems the typed share amount on a partial confidential exit", () => {
-    const { cShare, usdc } = confidentialFixture;
+    const { cShare, cUsdc, usdc } = confidentialFixture;
     const shareToken = { ...cShare, decimals: 8 };
     const integration = confidentialYieldFixture({
       state: {
@@ -808,7 +808,7 @@ describe("Position Details action model", () => {
               shareAmount: "10",
               shareAmountRaw: "1000000000",
               shareToken,
-              token: usdc,
+              token: cUsdc,
             })
           ),
         ],
@@ -848,7 +848,7 @@ describe("Position Details action model", () => {
           Schema.decodeSync(EarnBalance)(
             yieldBalanceFixture({
               shareToken: { ...confidentialFixture.cShare, decimals: 8 },
-              token: confidentialFixture.usdc,
+              token: confidentialFixture.cUsdc,
               ...balance,
             })
           ),

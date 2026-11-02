@@ -540,7 +540,7 @@ describe("getPositionOverviewModel", () => {
   });
 
   it("shows a confidential vault's pending withdrawal in the vault shares it redeems", () => {
-    const { cShare, usdc } = confidentialFixture;
+    const { cShare, cUsdc } = confidentialFixture;
     const model = getPositionOverviewModel({
       canUnstake: true,
       locale: "en",
@@ -561,7 +561,7 @@ describe("getPositionOverviewModel", () => {
                 amountUsd: "0.1",
                 shareAmount: "0.097168",
                 shareToken: cShare,
-                token: usdc,
+                token: cUsdc,
                 type: "exiting",
               }),
               tokenPriceInUsd: new BigNumber(1),

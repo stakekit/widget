@@ -247,6 +247,77 @@ describe("Activity action details projection", () => {
     }
   );
 
+  it.each([
+    [
+      "deposit",
+      "STAKE",
+      undefined,
+      "DEPOSIT_SETTLED",
+      { _tag: "deposited", tokenSymbol: "cUSDC" },
+      "completed",
+      { canceledAt: null, completedAt: "Aug 27, 2026, 08:00 AM" },
+    ],
+    [
+      "deposit",
+      "STAKE",
+      undefined,
+      "DEPOSIT_CANCELLED",
+      { _tag: "deposit_canceled", tokenSymbol: "cUSDC" },
+      "canceled",
+      { canceledAt: "Aug 27, 2026, 08:00 AM", completedAt: null },
+    ],
+    [
+      "private withdrawal",
+      "UNSTAKE",
+      confidentialFixture.cUsdc.address,
+      "REDEMPTION_SETTLED",
+      { _tag: "withdrew", tokenSymbol: "cUSDC" },
+      "completed",
+      { canceledAt: null, completedAt: "Aug 27, 2026, 08:00 AM" },
+    ],
+    [
+      "private withdrawal",
+      "UNSTAKE",
+      confidentialFixture.cUsdc.address,
+      "REDEMPTION_CANCELLED",
+      { _tag: "private_withdrawal_canceled", tokenSymbol: "cUSDC" },
+      "canceled",
+      { canceledAt: "Aug 27, 2026, 08:00 AM", completedAt: null },
+    ],
+  ] as const)(
+    "dates a confidential %s its batch resolved with %s at the event",
+    (_, type, outputToken, eventType, title, statusLabel, times) => {
+      const yieldData = confidentialYieldFixture();
+      const view = projectActivityActionDetails({
+        item: {
+          _tag: "yield",
+          actionData: yieldApiActionFixture({
+            completedAt: DateTime.makeUnsafe("2026-08-26T10:05:00.000Z"),
+            events: [
+              {
+                id: "event",
+                occurredAt: "2026-08-27T08:00:00.000Z",
+                transactionHash: "0xsettle",
+                type: eventType,
+              },
+            ],
+            rawArguments: outputToken ? { outputToken } : null,
+            status: "SUCCESS",
+            type,
+            yieldId: yieldData.id,
+          }),
+          validatorsData: [],
+          walletScope: {} as never,
+          yieldData,
+        },
+        locale: "en-US",
+        presentationTime,
+      });
+
+      expect(view).toMatchObject({ ...times, statusLabel, title });
+    }
+  );
+
   it("projects a Borrow receipt with market, fees, LTV and health factor changes", () => {
     const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
     const market = Schema.decodeSync(Market)({

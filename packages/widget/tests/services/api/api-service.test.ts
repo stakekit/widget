@@ -333,7 +333,7 @@ describe("application API services", () => {
     "decodes encrypted balances as hidden with zero amounts and their handle",
     () =>
       Effect.gen(function* () {
-        const { cShare, usdc } = confidentialFixture;
+        const { cShare, cUsdc } = confidentialFixture;
         const handle = `0x${"aa".repeat(32)}`;
         const source = makeYieldResourceSource({
           YieldsControllerGetAggregateBalances: () =>
@@ -343,7 +343,7 @@ describe("application API services", () => {
                 {
                   balances: [
                     {
-                      ...yieldBalanceFixture({ token: usdc }),
+                      ...yieldBalanceFixture({ token: cUsdc }),
                       amount: "",
                       amountRaw: "",
                       isEncrypted: true,
