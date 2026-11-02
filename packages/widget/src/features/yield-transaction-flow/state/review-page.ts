@@ -352,9 +352,11 @@ const planYieldFlowConversion = Effect.fn("planYieldFlowConversion")(function* (
 });
 
 /**
- * What the approve and wrap a confidential deposit of the underlying token
- * needs would cost, in the gas token; what the Session already sent costs
- * nothing more. Null when it cannot be estimated.
+ * What the transactions around a confidential action cost, in the gas token:
+ * the approve and wrap a deposit of the underlying token needs; what the
+ * Session already sent costs nothing more. Null when it cannot be estimated,
+ * as for an instant exit, whose finishing withdrawal only exists once its
+ * unwrap confirms.
  */
 const estimateYieldFlowConversionGas = Effect.fn(
   "estimateYieldFlowConversionGas"
@@ -364,6 +366,7 @@ const estimateYieldFlowConversionGas = Effect.fn(
     preparation: ConfidentialPreparation,
     gasFeeToken: Token
   ) {
+    if (preparation._tag === "Encrypt" && preparation.instant) return null;
     if (preparation._tag !== "Encrypt" || !preparation.conversion) {
       return exactZero();
     }

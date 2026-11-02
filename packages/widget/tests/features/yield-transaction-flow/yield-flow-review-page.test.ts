@@ -704,7 +704,14 @@ describe("confidential vault Review", () => {
       })
   );
 
-  it.effect("shows a private withdrawal's API gas", () =>
+  it.effect.each([
+    ["a private withdrawal's API gas", {}, "0.01"],
+    [
+      "no gas for an instant withdrawal, whose finishing withdrawal Review cannot price",
+      { outputToken: vault.token.address },
+      null,
+    ],
+  ] as const)("shows %s", ([, outputArguments, expectedGas]) =>
     Effect.gen(function* () {
       const previews: Array<ActionPreviewRequest> = [];
       const { awaitView, page } = yield* makeReviewHarness({
@@ -719,7 +726,11 @@ describe("confidential vault Review", () => {
               gasFeeToken: ether,
               request: {
                 address,
-                arguments: { amount: "7", shareAmountRaw: "7000000" },
+                arguments: {
+                  amount: "7",
+                  shareAmountRaw: "7000000",
+                  ...outputArguments,
+                },
                 yieldId: vault.id,
               },
             },
@@ -734,12 +745,15 @@ describe("confidential vault Review", () => {
         zama: encrypted,
       });
 
-      const view = yield* awaitView(
-        page.reviewViewAtom,
-        ({ gasAmount }) => gasAmount !== null
+      // A priced flow then checks the gas balance, which this harness never
+      // answers; only an unpriced one settles the gas check.
+      const view = yield* awaitView(page.reviewViewAtom, (candidate) =>
+        expectedGas === null
+          ? !candidate.gasCheckLoading
+          : candidate.gasAmount !== null
       );
 
-      expect(view.gasAmount?.toFixed()).toBe("0.01");
+      expect(view.gasAmount?.toFixed() ?? null).toBe(expectedGas);
       expect(previews.map(({ intent }) => intent)).toEqual(["exit"]);
     })
   );
