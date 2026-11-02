@@ -1,7 +1,6 @@
 import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { exactZero } from "../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../domain/finance/price";
@@ -32,29 +31,25 @@ const yieldIdsAtom = Atom.make((get) =>
     .filter((yieldId, index, values) => values.indexOf(yieldId) === index)
 );
 
-const summaryYieldsResultAtom = Atom.make((get) => {
+/** The Yields of the current positions, by id. */
+export const positionYieldsResultAtom = Atom.make((get) => {
   const yieldIds = get(yieldIdsAtom);
 
   return get(multiYieldsByIdAtom(new MultiYieldsKey({ yieldIds })));
 });
 
-// Confidential amounts stay hidden in the list, so totals must not leak them.
+/** A position still showing an encrypted balance, whose amount is unknown. */
+const isHiddenPosition = (position: PositionItem) =>
+  position.balancesWithAmount.some((balance) => balance.isEncrypted);
+
+export const hasHiddenPositions = (positions: ReadonlyArray<PositionItem>) =>
+  positions.some(isHiddenPosition);
+
+// Hidden amounts are unknown, so totals leave those positions out.
 const getSummableYield = (
   position: PositionItem,
   yields: ReadonlyMap<YieldId, EarnYieldWithProvider>
-) => {
-  const yieldDto = yields.get(position.integrationId);
-  return yieldDto && !isConfidentialYield(yieldDto) ? yieldDto : null;
-};
-
-export const hasConfidentialPositions = (
-  positions: ReadonlyArray<PositionItem>,
-  yields: ReadonlyMap<YieldId, EarnYieldWithProvider>
-) =>
-  positions.some((position) => {
-    const yieldDto = yields.get(position.integrationId);
-    return !!yieldDto && isConfidentialYield(yieldDto);
-  });
+) => (isHiddenPosition(position) ? null : yields.get(position.integrationId));
 
 export const getPositionsTotal = (
   positions: ReadonlyArray<PositionItem>,
@@ -105,11 +100,11 @@ export const getPositionsAverageApy = (
 export const allPositionsSummaryAtom = Atom.make((get) =>
   AsyncResult.all({
     positions: get(positionsResultAtom),
-    yields: get(summaryYieldsResultAtom),
+    yields: get(positionYieldsResultAtom),
   }).pipe(
     AsyncResult.map(({ positions, yields }) => ({
       allPositionsSum: getPositionsTotal(positions, yields),
-      excludesConfidential: hasConfidentialPositions(positions, yields),
+      excludesHidden: hasHiddenPositions(positions),
     }))
   )
 );
@@ -117,7 +112,7 @@ export const allPositionsSummaryAtom = Atom.make((get) =>
 export const averageApySummaryAtom = Atom.make((get) =>
   AsyncResult.all({
     positions: get(positionsResultAtom),
-    yields: get(summaryYieldsResultAtom),
+    yields: get(positionYieldsResultAtom),
   }).pipe(
     AsyncResult.map(({ positions, yields }) =>
       getPositionsAverageApy(positions, yields)

@@ -215,6 +215,48 @@ export const isConfidentialInstantExit = (
   yieldDto.token.address !== undefined &&
   sameAddress(outputToken, yieldDto.token.address);
 
+/**
+ * What a confidential action did. A deposit or private exit only joins the
+ * next batch; an instant exit unwraps now and its WITHDRAW pays it out.
+ */
+export type ConfidentialActionKind =
+  | "deposit"
+  | "instantExit"
+  | "instantExitPayout"
+  | "privateExit";
+
+export const getConfidentialActionKind = (
+  yieldDto: EarnYieldWithProvider,
+  action: Pick<YieldAction, "intent" | "rawArguments" | "type">
+): ConfidentialActionKind | null => {
+  if (!isConfidentialYield(yieldDto)) return null;
+  switch (action.intent) {
+    case "enter":
+      return "deposit";
+    case "exit":
+      return isConfidentialInstantExit(
+        yieldDto,
+        action.rawArguments?.outputToken
+      )
+        ? "instantExit"
+        : "privateExit";
+    case "manage":
+      return action.type === "WITHDRAW" ? "instantExitPayout" : null;
+  }
+};
+
+/** A deposit or private exit the API reports done still waits for its batch. */
+export const isConfidentialActionAwaitingSettlement = (
+  yieldDto: EarnYieldWithProvider,
+  action: Pick<YieldAction, "intent" | "rawArguments" | "status" | "type">
+) => {
+  const kind = getConfidentialActionKind(yieldDto, action);
+  return (
+    action.status === "SUCCESS" &&
+    (kind === "deposit" || kind === "privateExit")
+  );
+};
+
 export const planConfidentialEncryption = ({
   instant = false,
   intent,
@@ -711,4 +753,51 @@ const getOwnBatcher = (
 ) => {
   const legs = getConfidentialLegs(yieldDto, intent);
   return legs ? (legs.legs[legs.ownIndex] ?? null) : null;
+};
+
+/** A balance whose shares the user revealed this session. */
+export const isRevealedConfidentialBalance = (balance: BalanceShares) =>
+  balance.shares?._tag === "Revealed";
+
+export type ConfidentialRevealPosition = Readonly<{
+  readonly balances: ReadonlyArray<
+    Pick<EarnBalance, "isEncrypted" | "shares" | "shareToken" | "type">
+  >;
+  readonly yieldDto: EarnYieldWithProvider;
+}>;
+
+type ConfidentialRevealRequest = Readonly<{
+  readonly chainId: ConfidentialChainId;
+  readonly handles: ReadonlyArray<
+    Readonly<{ readonly contract: string; readonly handle: ConfidentialHandle }>
+  >;
+}>;
+
+/**
+ * The user-revealable handles of positions: one request per chain, each
+ * handle once.
+ */
+export const getConfidentialRevealRequests = (
+  positions: ReadonlyArray<ConfidentialRevealPosition>
+): ReadonlyArray<ConfidentialRevealRequest> => {
+  const byChain = new Map<
+    ConfidentialChainId,
+    Map<ConfidentialHandle, string>
+  >();
+  for (const { balances, yieldDto } of positions) {
+    const chainId = getConfidentialChainId(yieldDto);
+    if (chainId === null) continue;
+    const handles = byChain.get(chainId) ?? new Map();
+    for (const balance of balances) {
+      if (!isUserRevealableBalance(balance)) continue;
+      const contract = getConfidentialHandleContract(yieldDto, balance);
+      const handle = getEncryptedHandle(balance);
+      if (handle && contract) handles.set(handle, contract);
+    }
+    if (handles.size > 0) byChain.set(chainId, handles);
+  }
+  return [...byChain].map(([chainId, handles]) => ({
+    chainId,
+    handles: [...handles].map(([handle, contract]) => ({ contract, handle })),
+  }));
 };

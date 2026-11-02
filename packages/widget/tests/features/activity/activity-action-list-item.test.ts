@@ -14,6 +14,7 @@ import type {
 } from "../../../src/features/activity/model/activity-action";
 import { projectActivityActionListItem } from "../../../src/features/activity/model/activity-action-list-item";
 import {
+  confidentialFixture,
   confidentialYieldFixture,
   yieldApiActionFixture,
   yieldApiYieldFixture,
@@ -291,19 +292,124 @@ describe("Activity action list item projection", () => {
     }
   );
 
-  it("titles a confidential deposit as submitted, since it settles in a later batch", () => {
+  it("titles a confidential deposit with the confidential asset and awaits its batch", () => {
     const projection = projectActivityActionListItem({
       action: makeItem(
-        yieldApiActionFixture({ amount: "1", type: "STAKE" }),
+        yieldApiActionFixture({
+          amount: "1",
+          rawArguments: { inputToken: confidentialFixture.cUsdc.address },
+          status: "SUCCESS",
+          type: "STAKE",
+        }),
         confidentialYieldFixture()
       ),
       locale: "en-US",
       presentationTime: null,
     });
 
-    expect(projection.title).toEqual({
-      _tag: "deposit_submitted",
+    expect(projection).toMatchObject({
+      statusLabel: "awaiting_settlement",
+      title: { _tag: "deposit_submitted", tokenSymbol: "cUSDC" },
+      tokenSymbol: "cUSDC",
+    });
+  });
+
+  it.each([
+    [
+      "to the confidential asset",
+      { outputToken: confidentialFixture.cUsdc.address },
+    ],
+    ["without an output token", null],
+  ] as const)(
+    "titles a private confidential withdrawal %s as requested and awaiting its batch",
+    (_, rawArguments) => {
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            amount: "1",
+            rawArguments,
+            status: "SUCCESS",
+            type: "UNSTAKE",
+          }),
+          confidentialYieldFixture()
+        ),
+        locale: "en-US",
+        presentationTime: null,
+      });
+
+      expect(projection).toMatchObject({
+        direction: "withdraw",
+        statusLabel: "awaiting_settlement",
+        title: { _tag: "private_withdrawal_requested", tokenSymbol: "cUSDC" },
+        tokenSymbol: "cUSDC",
+      });
+    }
+  );
+
+  it("titles an instant confidential withdrawal with the underlying it paid out", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          amount: "1",
+          rawArguments: { outputToken: confidentialFixture.usdc.address },
+          status: "SUCCESS",
+          type: "UNSTAKE",
+        }),
+        confidentialYieldFixture()
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({
+      statusLabel: "completed",
+      title: { _tag: "withdrew", tokenSymbol: "USDC" },
       tokenSymbol: "USDC",
+    });
+  });
+
+  it("titles the WITHDRAW that pays out an instant confidential withdrawal", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          intent: "manage",
+          status: "SUCCESS",
+          type: "WITHDRAW",
+        }),
+        confidentialYieldFixture()
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({
+      statusLabel: "completed",
+      title: { _tag: "instant_withdrawal_finalized", tokenSymbol: "USDC" },
+      tokenSymbol: "USDC",
+    });
+  });
+
+  it("keeps a non-confidential withdrawal on the yield token, whatever it names", () => {
+    const yieldData = yieldApiYieldFixture();
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          amount: "1",
+          rawArguments: {
+            outputToken: "0x0000000000000000000000000000000000000001",
+          },
+          status: "SUCCESS",
+          type: "UNSTAKE",
+        }),
+        yieldData
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({
+      statusLabel: "completed",
+      title: { _tag: "withdrew", tokenSymbol: yieldData.token.symbol },
     });
   });
 

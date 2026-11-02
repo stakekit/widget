@@ -1,7 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
@@ -52,12 +51,6 @@ const EarnPositionAmount = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  // Confidential amounts stay hidden here, even after a reveal in details.
-  const hidden =
-    details.hasHiddenBalance ||
-    (details.integrationData !== null &&
-      isConfidentialYield(details.integrationData));
-
   if (details.totalAmountFormatted && item.token) {
     return (
       <Box
@@ -68,12 +61,12 @@ const EarnPositionAmount = ({
         gap="1"
       >
         <Text className={noWrap}>
-          {hidden
+          {details.hasHiddenBalance
             ? t("shared.confidential.hidden")
             : `${details.totalAmountFormatted} ${item.token.symbol}`}
         </Text>
 
-        {details.totalAmountUsd && !hidden ? (
+        {details.totalAmountUsd && !details.hasHiddenBalance ? (
           <Text
             className={noWrap}
             variant={{ type: "muted", weight: "normal" }}

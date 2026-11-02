@@ -137,6 +137,12 @@ type ConfidentialTransactionWorkflowInputFields = YieldActionFacts & {
   }> | null;
   readonly ledger: DirectTransactionLedger;
   readonly preparation: ConfidentialPreparation;
+  /**
+   * The action Review already created from `preparation`, if it could; the
+   * workflow then only checks the balance it spends instead of preparing it
+   * again.
+   */
+  readonly prepared?: YieldAction | null;
   readonly walletScope: WalletScopeKey;
   readonly yieldId: YieldAction["yieldId"];
 };
@@ -155,6 +161,7 @@ export class ConfidentialTransactionWorkflowInput extends Data.TaggedClass(
       inputToken: input.inputToken,
       ledger: input.ledger,
       preparation: input.preparation,
+      prepared: input.prepared ?? null,
       providersDetails: input.providersDetails,
       walletScope: new WalletScopeKey(input.walletScope),
       yieldId: input.yieldId,

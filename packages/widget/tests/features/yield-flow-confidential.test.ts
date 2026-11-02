@@ -165,7 +165,7 @@ const withdrawUnwrapStart = (): NavigatingYieldTransactionFlowStart => {
 };
 
 // Review's resources (prices, gas balances, KYC) run on the app runtime and
-// never answer: a confidential vault's Confirm needs none of them.
+// never answer: a confidential vault's Confirm waits only for its action.
 const silentAppLayer = Layer.mergeAll(
   Reactivity.layer,
   Layer.succeed(
@@ -235,7 +235,8 @@ const openConfidentialFlow = Effect.fn("test.openConfidentialFlow")(function* ({
   const previews: Array<ActionPreviewRequest> = [];
   const kit = yield* makeYieldFlowTestKit({
     engine: {
-      evmRpc,
+      // Review estimates a conversion's gas before Confirm.
+      evmRpc: { estimateFee: () => Effect.succeed(0n), ...evmRpc },
       yieldOperations: {
         getTransactionStatus: () =>
           Effect.succeed({ explorerUrl: null, status: "CONFIRMED" } as never),
@@ -274,9 +275,15 @@ const openConfidentialFlow = Effect.fn("test.openConfidentialFlow")(function* ({
   yield* Effect.addFinalizer(() => Effect.sync(() => registry.dispose()));
   const session = makeYieldFlowSession(start, walletScope);
 
-  // Each Confirm is from a fresh arrival at Review.
+  // Each Confirm is from a fresh arrival at Review, once Review prepared the
+  // action, as its loading Confirm button waits for it.
   const confirm = Effect.gen(function* () {
     const page = makeYieldFlowReviewPage(session);
+    registry.mount(page.reviewViewAtom);
+    yield* AtomRegistry.toStream(registry, page.reviewViewAtom).pipe(
+      Stream.filter((view) => !view.actionPreviewLoading),
+      Stream.runHead
+    );
     registry.set(page.confirmAtom, undefined);
     const outcome = yield* AtomRegistry.getResult(registry, page.confirmAtom, {
       suspendOnWaiting: true,
@@ -441,12 +448,11 @@ describe("confidential vault Yield Transaction Flow", () => {
   );
 
   it.effect(
-    "hands Steps a cUSDC deposit's encryption, checked against its hidden balance",
+    "hands Steps a cUSDC deposit's action Review prepared, its hidden balance still to check",
     () =>
       Effect.gen(function* () {
-        const flow = yield* openConfidentialFlow({
-          start: enterStart("asset"),
-        });
+        const start = enterStart("asset");
+        const flow = yield* openConfidentialFlow({ start });
 
         const handoff = yield* flow.confirm;
 
@@ -459,8 +465,13 @@ describe("confidential vault Yield Transaction Flow", () => {
           intent: "enter",
           requiresPermitSigner: true,
         });
-        // A confidential vault's action is prepared on Steps, not previewed.
-        expect(flow.previews).toEqual([]);
+        // Review previewed the encrypted request once; Steps runs its action.
+        expect(flow.previews).toEqual([
+          { command: start.intake.request, intent: "enter" },
+        ]);
+        expect(
+          handoff.source._tag === "Prepare" && handoff.source.prepared
+        ).toEqual(depositAction);
       })
   );
 
@@ -533,7 +544,8 @@ describe("confidential vault execution", () => {
         const flow = yield* openConfidentialFlow({
           start: enterStart("underlying"),
           zama: {
-            encryptCommand: () => Effect.never,
+            // Steps stays preparing.
+            checkConfidentialBalance: () => Effect.never,
             planConversion: () =>
               Effect.sync(() => events.push("plan")).pipe(
                 Effect.as([
@@ -554,7 +566,8 @@ describe("confidential vault execution", () => {
         );
         yield* close;
 
-        expect(events).toEqual(["plan", "confirmed"]);
+        // Review plans it to estimate its gas, then Confirm plans it for Steps.
+        expect(events).toEqual(["plan", "plan", "confirmed"]);
         expect(
           getYieldTransactionStepsView(preparing, {
             plannedStepTypes: ["DEPOSIT"],
@@ -565,7 +578,7 @@ describe("confidential vault execution", () => {
   );
 
   it.effect(
-    "previews the prepared request, then approves, wraps, and deposits",
+    "runs the request Review previewed, then approves, wraps, and deposits",
     () =>
       Effect.gen(function* () {
         const signed: Array<string> = [];
@@ -593,18 +606,18 @@ describe("confidential vault execution", () => {
         yield* awaitState(execution, "Completed");
         yield* close;
 
-        expect(planned).toEqual([
-          {
-            amount: 5_000_000n,
-            conversion: {
-              chainId: 11155111,
-              underlying: usdc.address,
-              wrapper: cUsdc.address,
-            },
-            network: confidentialYieldFixture().network,
-            owner: address,
+        const conversionPlan = {
+          amount: 5_000_000n,
+          conversion: {
+            chainId: 11155111,
+            underlying: usdc.address,
+            wrapper: cUsdc.address,
           },
-        ]);
+          network: confidentialYieldFixture().network,
+          owner: address,
+        };
+        // Once for Review's gas estimate, once for Steps.
+        expect(planned).toEqual([conversionPlan, conversionPlan]);
         expect(flow.previews.map(({ command }) => command.arguments)).toEqual([
           { encryptedAmount: "0xamount" },
         ]);
@@ -653,7 +666,8 @@ describe("confidential vault execution", () => {
         yield* awaitState(second.execution, "Completed");
         yield* second.close;
 
-        expect(plans).toBe(1);
+        // Only the first Review and Confirm read it, before the wrap was sent.
+        expect(plans).toBe(2);
         expect(signed).toEqual(["conversion-wrap", "deposit"]);
       })
   );

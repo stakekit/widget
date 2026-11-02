@@ -265,6 +265,11 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
           : false) || unstakeIsLessThanMinForDisplay;
       const unstakeAmountError =
         unstakeIsLessThanMinForDisplay || unstakeIsGreaterThanMax;
+      // Distinct from the integration min/max: the amount is more than the
+      // position holds.
+      const unstakeAmountGreaterThanAvailable = exitBalance
+        ? unstakeAmount.isGreaterThan(exitBalance.amount)
+        : false;
       const pendingActionIndex = getPendingActionIndex(positionBalancesByType);
       const pendingActionProjections = new Map(
         [...pendingActionIndex].map(([pendingKey, pending]) => [
@@ -302,6 +307,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         stakedOrLiquidBalances,
         unstakeAmount,
         unstakeAmountError,
+        unstakeAmountGreaterThanAvailable,
         unstakeForceMaxAmount: amountConstraints.forceMax,
         unstakeAmountValid:
           unstakeAmount.isGreaterThanOrEqualTo(

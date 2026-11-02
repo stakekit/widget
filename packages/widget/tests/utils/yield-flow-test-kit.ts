@@ -27,6 +27,8 @@ type YieldFlowTestKitBehavior = Readonly<{
     readonly evmRpc: Partial<EvmRpc["Service"]>;
     readonly yieldOperations: Partial<YieldOperations["Service"]>;
   }>;
+  /** What Review estimates a confidential deposit's conversion with. */
+  readonly evmRpc?: Partial<EvmRpc["Service"]>;
   readonly makeWorkflow?: TransactionWorkflowService["Service"]["make"];
   readonly navigation?: TestNavigationOptions;
   readonly previewAction?: YieldOperations["Service"]["previewAction"];
@@ -85,36 +87,35 @@ export const makeYieldFlowTestKit = Effect.fn("makeYieldFlowTestKit")(
           ...options.engine?.yieldOperations,
         })
       ),
-      makeTestZamaLayer(options.zama)
+      makeTestZamaLayer(options.zama),
+      Layer.succeed(
+        EvmRpc,
+        EvmRpc.of({
+          awaitOutcome: () => unexpectedYieldFlowCall("EvmRpc.awaitOutcome"),
+          broadcast: () => unexpectedYieldFlowCall("EvmRpc.broadcast"),
+          estimateFee: () => unexpectedYieldFlowCall("EvmRpc.estimateFee"),
+          explorerUrl: () => null,
+          prepare: () => unexpectedYieldFlowCall("EvmRpc.prepare"),
+          readAllowance: () => unexpectedYieldFlowCall("EvmRpc.readAllowance"),
+          ...options.evmRpc,
+          ...options.engine?.evmRpc,
+        })
+      )
     );
-    const engineLayer = (engine: NonNullable<typeof options.engine>) =>
-      TransactionWorkflowService.layer.pipe(
-        Layer.provide(
-          Layer.mergeAll(
-            dependencies,
-            events.layer,
-            Layer.succeed(
-              BorrowOperations,
-              BorrowOperations.of({} as BorrowOperations["Service"])
-            ),
-            Layer.succeed(
-              EvmRpc,
-              EvmRpc.of({
-                awaitOutcome: () =>
-                  unexpectedYieldFlowCall("EvmRpc.awaitOutcome"),
-                broadcast: () => unexpectedYieldFlowCall("EvmRpc.broadcast"),
-                explorerUrl: () => null,
-                prepare: () => unexpectedYieldFlowCall("EvmRpc.prepare"),
-                readAllowance: () =>
-                  unexpectedYieldFlowCall("EvmRpc.readAllowance"),
-                ...engine.evmRpc,
-              })
-            )
+    const engineLayer = TransactionWorkflowService.layer.pipe(
+      Layer.provide(
+        Layer.mergeAll(
+          dependencies,
+          events.layer,
+          Layer.succeed(
+            BorrowOperations,
+            BorrowOperations.of({} as BorrowOperations["Service"])
           )
         )
-      );
+      )
+    );
     const workflow = options.engine
-      ? engineLayer(options.engine)
+      ? engineLayer
       : Layer.succeed(
           TransactionWorkflowService,
           TransactionWorkflowService.of({

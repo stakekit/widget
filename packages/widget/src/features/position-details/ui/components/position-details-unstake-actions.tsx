@@ -23,6 +23,7 @@ export const PositionDetailsUnstakeActions = () => {
     unstakeMaxAmount: unstakeMaxAmountValue,
     unstakeMinAmount: unstakeMinAmountValue,
     unstakeIsGreaterOrLessIntegrationLimitError,
+    unstakeAmountGreaterThanAvailable,
     unstakeAmount,
     unstakeAmountUsd,
     unstakeAmountUnderlying,
@@ -144,6 +145,7 @@ export const PositionDetailsUnstakeActions = () => {
         unstakeIsGreaterOrLessIntegrationLimitError={
           unstakeIsGreaterOrLessIntegrationLimitError
         }
+        unstakeAmountGreaterThanAvailable={unstakeAmountGreaterThanAvailable}
         variant="unstake"
         canUnstake={canUnstake}
         unstakeToken={unstakeTokenValue}

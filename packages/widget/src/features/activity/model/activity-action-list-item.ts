@@ -2,11 +2,19 @@ import type { DateTime } from "effect";
 import {
   ActionStatus,
   type ActionType,
+  findYieldToken,
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
-import { isConfidentialYield } from "../../../domain/earn/confidential";
+import {
+  type ConfidentialActionKind,
+  getConfidentialActionKind,
+  getConfidentialAssetToken,
+  isConfidentialActionAwaitingSettlement,
+} from "../../../domain/earn/confidential";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
+import type { Token } from "../../../domain/token/token";
 import {
   formatDateTime,
   getActivityDayKind,
@@ -23,6 +31,8 @@ import type {
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
 export type ActivityStatusLabel =
+  /** A confidential deposit or private exit waiting for its batch to run. */
+  | "awaiting_settlement"
   | "canceled"
   | "completed"
   | "created"
@@ -38,6 +48,16 @@ export type ActivityActionTitle =
   /** Confidential deposits only settle when a later batch runs. */
   | { readonly _tag: "deposit_submitted"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
+  /** A confidential private exit only joins the next redemption batch. */
+  | {
+      readonly _tag: "private_withdrawal_requested";
+      readonly tokenSymbol: string | null;
+    }
+  /** The WITHDRAW that pays out a confidential instant exit. */
+  | {
+      readonly _tag: "instant_withdrawal_finalized";
+      readonly tokenSymbol: string | null;
+    }
   | { readonly _tag: "rewards" }
   | {
       readonly _tag: "generic";
@@ -134,13 +154,16 @@ const BORROW_ACTIVITY_STATUS_LABEL: Record<
 };
 
 /** Waiting actions show no badge: the user may have continued elsewhere. */
-export const projectActivityStatusLabel = (
-  action: YieldActivityItem["actionData"],
+const projectActivityStatusLabel = (
+  { actionData: action, yieldData }: YieldActivityItem,
   presentationTime: ActivityPresentationTime | null
 ): ActivityStatusLabel | null => {
   switch (action.status) {
     case ActionStatus.SUCCESS:
-      return "completed";
+      return yieldData &&
+        isConfidentialActionAwaitingSettlement(yieldData, action)
+        ? "awaiting_settlement"
+        : "completed";
     case ActionStatus.FAILED:
       return "failed";
     case ActionStatus.WAITING_FOR_NEXT:
@@ -177,11 +200,35 @@ const getReadableRawTokenSymbol = (
   return normalizedValue;
 };
 
+// A confidential exit pays out the token it names; a private one without one
+// returns the confidential asset.
+const resolveConfidentialWithdrawalToken = ({
+  action,
+  confidentialKind,
+  yieldData,
+}: {
+  readonly action: YieldActivityItem["actionData"];
+  readonly confidentialKind: ConfidentialActionKind;
+  readonly yieldData: EarnYieldWithProvider;
+}): Token => {
+  const outputToken = action.rawArguments?.outputToken;
+
+  return (
+    (outputToken ? findYieldToken(yieldData, outputToken) : undefined) ??
+    (confidentialKind === "privateExit"
+      ? getConfidentialAssetToken(yieldData)
+      : null) ??
+    yieldData.token
+  );
+};
+
 const resolveTokenSymbol = ({
   action,
+  confidentialKind,
   direction,
 }: {
   readonly action: YieldActivityItem;
+  readonly confidentialKind: ConfidentialActionKind | null;
   readonly direction: ActivityDirection;
 }): string | null => {
   const yieldData = action.yieldData;
@@ -197,6 +244,15 @@ const resolveTokenSymbol = ({
   }
 
   const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
+  if (direction === "withdraw" && confidentialKind) {
+    const token = resolveConfidentialWithdrawalToken({
+      action: action.actionData,
+      confidentialKind,
+      yieldData,
+    });
+
+    return getReadableRawTokenSymbol(token.symbol) ?? yieldTokenSymbol;
+  }
   if (direction === "withdraw" || direction === "neutral") {
     return yieldTokenSymbol;
   }
@@ -224,19 +280,27 @@ const resolveAmountSign = ({
 
 const resolveTitle = ({
   action,
+  confidentialKind,
   direction,
   tokenSymbol,
 }: {
   readonly action: YieldActivityItem;
+  readonly confidentialKind: ConfidentialActionKind | null;
   readonly direction: ActivityDirection;
   readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
   switch (direction) {
     case "deposit":
-      return action.yieldData && isConfidentialYield(action.yieldData)
+      return confidentialKind === "deposit"
         ? { _tag: "deposit_submitted", tokenSymbol }
         : { _tag: "deposited", tokenSymbol };
     case "withdraw":
+      if (confidentialKind === "privateExit") {
+        return { _tag: "private_withdrawal_requested", tokenSymbol };
+      }
+      if (confidentialKind === "instantExitPayout") {
+        return { _tag: "instant_withdrawal_finalized", tokenSymbol };
+      }
       return { _tag: "withdrew", tokenSymbol };
     case "rewards":
       return { _tag: "rewards" };
@@ -345,8 +409,12 @@ export const projectActivityActionListItem = ({
   }
 
   const direction = getActivityDirection(action.actionData.type);
+  const confidentialKind = action.yieldData
+    ? getConfidentialActionKind(action.yieldData, action.actionData)
+    : null;
   const tokenSymbol = resolveTokenSymbol({
     action,
+    confidentialKind,
     direction,
   });
   const amount =
@@ -359,16 +427,13 @@ export const projectActivityActionListItem = ({
     amountSign: resolveAmountSign({ amount, direction }),
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
-    statusLabel: projectActivityStatusLabel(
-      action.actionData,
-      presentationTime
-    ),
+    statusLabel: projectActivityStatusLabel(action, presentationTime),
     timestamp: resolveTimestamp({
       createdAt: action.actionData.createdAt,
       locale,
       presentationTime,
     }),
-    title: resolveTitle({ action, direction, tokenSymbol }),
+    title: resolveTitle({ action, confidentialKind, direction, tokenSymbol }),
     tokenSymbol,
   };
 };

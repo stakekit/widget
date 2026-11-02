@@ -13,6 +13,8 @@ export const makeTestZamaLayer = (
     Layer.succeed(
       ZamaService,
       ZamaService.of({
+        // Every amount fits unless a case checks the balance.
+        checkConfidentialBalance: () => Effect.void,
         planConversion: () => unexpected("planConversion"),
         countMissingOperatorGrants: () =>
           unexpected("countMissingOperatorGrants"),

@@ -401,6 +401,7 @@ describe("Position Details exit command", () => {
     try {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
+        unstakeDisabled: false,
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
@@ -412,6 +413,8 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
+        unstakeAmountGreaterThanAvailable: false,
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: true,
       });
 
@@ -423,6 +426,7 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
+        unstakeDisabled: false,
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
@@ -436,7 +440,65 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
+        unstakeDisabled: false,
         unstakeIsGreaterOrLessIntegrationLimitError: true,
+      });
+    } finally {
+      unmountView();
+      registry.dispose();
+    }
+  });
+
+  it("flags an amount above the position balance and blocks its submission", () => {
+    const yieldDto = yieldApiYieldDtoFixture();
+    const registry = makeRegistry({
+      push: vi.fn(),
+      trackEvent: () => Effect.void,
+      // The amount must be editable, or the view pins it to the balance.
+      yieldOpportunity: yieldApiYieldFixture({
+        ...skySavingsRateFields,
+        id: selectedYield.id,
+        mechanics: {
+          ...yieldDto.mechanics,
+          arguments: {
+            ...yieldDto.mechanics.arguments,
+            exit: {
+              fields: [
+                {
+                  label: "Amount",
+                  name: "amount",
+                  required: true,
+                  type: "string",
+                },
+              ],
+            },
+          },
+        },
+      }),
+    });
+    const viewAtom = positionDetailsViewAtom(workflowKey);
+    const unmountView = registry.mount(viewAtom);
+    const setAmount = (amount: string) =>
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber(amount),
+        unstakeUseMaxAmount: false,
+      });
+
+    try {
+      setAmount("2");
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmountError: true,
+        unstakeAmountGreaterThanAvailable: true,
+        unstakeDisabled: true,
+      });
+
+      setAmount("0.5");
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmountError: false,
+        unstakeAmountGreaterThanAvailable: false,
+        unstakeDisabled: false,
       });
     } finally {
       unmountView();

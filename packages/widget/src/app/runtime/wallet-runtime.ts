@@ -28,6 +28,7 @@ export const walletRuntime = Atom.runtime((get) => {
   return Layer.mergeAll(
     appLayer,
     walletLayer,
+    evmRpcLayer,
     transactionWorkflowLayer,
     walletChainSelectionLayer,
     deepLinkCoordinatorLayer,

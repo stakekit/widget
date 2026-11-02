@@ -54,10 +54,16 @@ type AmountTokenSectionProps = {
   readonly accessory: ReactNode;
   readonly formattedPrice: string;
   readonly balance?: ReactNode;
+  /**
+   * The amount exceeds `balance`: the card and balance turn red and, unless
+   * a caller-specific error label is shown, "Insufficient balance" replaces
+   * the min/max label.
+   */
   readonly balanceError?: boolean | undefined;
   readonly onMaxClick?: (() => void) | null | undefined;
   readonly maxButtonProps?: Pick<BoxProps, "background"> | undefined;
   readonly minMaxLabel?: string | null | undefined;
+  /** `minMaxLabel` is an error; it then wins over the balance error. */
   readonly minMaxError?: boolean;
   readonly state?: "default" | "danger";
   /** Stake/unstake token border vs muted action-card border. */
@@ -90,6 +96,11 @@ export const AmountTokenSection = ({
 }: AmountTokenSectionProps) => {
   const { t } = useTranslation();
   const { variant } = useWidgetPresentation();
+  const label =
+    balanceError && !(minMaxError && minMaxLabel)
+      ? t("shared.insufficient_balance")
+      : minMaxLabel;
+  const labelError = minMaxError || balanceError;
 
   const stakeToneProps: BoxProps =
     tone === "stake"
@@ -100,7 +111,7 @@ export const AmountTokenSection = ({
           className: combineRecipeWithVariant({
             rec: amountTokenSection,
             variant,
-            state,
+            state: balanceError ? "danger" : state,
           }),
         }
       : {
@@ -137,7 +148,7 @@ export const AmountTokenSection = ({
         </Box>
       </Box>
 
-      {minMaxLabel ? (
+      {label ? (
         <Box
           className={combineRecipeWithVariant({
             rec: minMaxContainer,
@@ -146,10 +157,10 @@ export const AmountTokenSection = ({
           data-rk="stake-token-section-min-max"
         >
           <Text
-            variant={{ type: minMaxError ? "danger" : "muted" }}
+            variant={{ type: labelError ? "danger" : "muted" }}
             textAlign="right"
           >
-            {minMaxLabel}
+            {label}
           </Text>
         </Box>
       ) : null}

@@ -95,7 +95,7 @@ describe("Transaction step headers", () => {
         >
           <TransactionSteps
             numbered={numbered}
-            steps={["ENCRYPT AMOUNT", "DEPOSIT"].map((type) => ({
+            steps={["Encrypt amount", "Deposit"].map((type) => ({
               done: false,
               id: type,
               phases: getTransactionStepPhases(i18nInstance.t, {
@@ -114,7 +114,7 @@ describe("Transaction step headers", () => {
     const app = await renderSteps(true);
 
     await expect
-      .element(app.getByText("Transaction 2 / 2 - DEPOSIT"))
+      .element(app.getByText("Transaction 2 / 2 - Deposit"))
       .toBeInTheDocument();
 
     await app.unmount();
@@ -124,10 +124,10 @@ describe("Transaction step headers", () => {
     const app = await renderSteps(false);
 
     await expect
-      .element(app.getByText("Transaction - ENCRYPT AMOUNT"))
+      .element(app.getByText("Transaction - Encrypt amount"))
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("Transaction - DEPOSIT"))
+      .element(app.getByText("Transaction - Deposit"))
       .toBeInTheDocument();
 
     await app.unmount();

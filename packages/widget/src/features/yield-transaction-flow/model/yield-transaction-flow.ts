@@ -201,7 +201,7 @@ export type StartYieldTransactionFlow =
 /**
  * What an Execution runs: Review's previewed action, or, for a confidential
  * vault, the preparation its workflow creates the action from once the
- * amount is encrypted or decrypted.
+ * amount is encrypted or decrypted, unless Review already created it.
  */
 export type YieldFlowExecutionSource =
   | Readonly<{ readonly _tag: "Action"; readonly action: YieldAction }>
@@ -213,6 +213,8 @@ export type YieldFlowExecutionSource =
        */
       readonly conversion: ReadonlyArray<DirectTransaction>;
       readonly preparation: ConfidentialPreparation;
+      /** The action Review created from `preparation`, if it could. */
+      readonly prepared: YieldAction | null;
       /** Presentation only: the Planned Steps Steps lists until it prepares them. */
       readonly plannedStepTypes: ReadonlyArray<PlannedStepType>;
     }>;
@@ -500,7 +502,7 @@ export const getYieldFlowWorkflowInput = ({
       action: source.action,
     });
   }
-  const { preparation } = source;
+  const { preparation, prepared } = source;
   const chainId =
     preparation._tag === "Encrypt" && preparation.instant
       ? getConfidentialChainId(preparation.yieldDto)
@@ -511,6 +513,7 @@ export const getYieldFlowWorkflowInput = ({
     finalizeUnwrap: chainId === null ? null : { chainId },
     ledger,
     preparation,
+    prepared,
     yieldId: preparation.command.yieldId,
   });
 };

@@ -22,7 +22,6 @@ import {
   type ActivityPresentationTime,
   type ActivityStatusLabel,
   projectActivityActionListItem,
-  projectActivityStatusLabel,
   resolveBorrowActivityAmount,
 } from "./activity-action-list-item";
 import { findBorrowMarketToken } from "./activity-enrichment";
@@ -175,7 +174,7 @@ const projectYieldActivityDetails = ({
     action,
     presentationTime.now
   );
-  const statusLabel = projectActivityStatusLabel(action, presentationTime);
+  const statusLabel = listItem.statusLabel;
   const amount = action.amount
     ? `${listItem.amountSign}${formatTokenAmount(action.amount, locale, "down")}`
     : null;
@@ -204,9 +203,12 @@ const projectYieldActivityDetails = ({
     amount,
     borrow: null,
     canContinue,
-    completedAt: action.completedAt
-      ? formatDate(action.completedAt, locale, presentationTime.timeZone)
-      : null,
+    // The API completes an awaiting batch request when its transactions confirm,
+    // not when the batch settles.
+    completedAt:
+      action.completedAt && statusLabel !== "awaiting_settlement"
+        ? formatDate(action.completedAt, locale, presentationTime.timeZone)
+        : null,
     continuationUnavailable:
       action.status === "WAITING_FOR_NEXT" &&
       item.yieldData === null &&

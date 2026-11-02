@@ -12,6 +12,7 @@ import {
   getTransactionSignCustomMessage,
   getTransactionStepProgress,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
+import { sentenceCaseEnumValue } from "../../../shared/lib/formatters";
 
 export type YieldTransactionCompletionUrl = {
   readonly type: TransactionType;
@@ -25,7 +26,7 @@ export const formatTransactionTypeLabel = (
 ) =>
   t(`steps.tx_type.${type}`, {
     context: options?.context,
-    defaultValue: type.replaceAll("_", " "),
+    defaultValue: sentenceCaseEnumValue(type),
   });
 
 export const getYieldTransactionCompletionUrls = (

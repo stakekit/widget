@@ -10,6 +10,8 @@ import type {
 } from "../../../src/features/activity/model/activity-action";
 import { projectActivityActionDetails } from "../../../src/features/activity/model/activity-action-details";
 import {
+  confidentialFixture,
+  confidentialYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
@@ -194,6 +196,56 @@ describe("Activity action details projection", () => {
     expect(view.canContinue).toBe(false);
     expect(view.continuationUnavailable).toBe(false);
   });
+
+  it.each([
+    [
+      "private withdrawal",
+      "UNSTAKE",
+      confidentialFixture.cUsdc.address,
+      { _tag: "private_withdrawal_requested", tokenSymbol: "cUSDC" },
+      "awaiting_settlement",
+      null,
+    ],
+    [
+      "instant withdrawal",
+      "UNSTAKE",
+      confidentialFixture.usdc.address,
+      { _tag: "withdrew", tokenSymbol: "USDC" },
+      "completed",
+      "Aug 26, 2026, 10:05 AM",
+    ],
+  ] as const)(
+    "keeps a confirmed confidential %s receipt to what settled",
+    (_, type, outputToken, title, statusLabel, completedAt) => {
+      const yieldData = confidentialYieldFixture();
+      const view = projectActivityActionDetails({
+        item: {
+          _tag: "yield",
+          actionData: yieldApiActionFixture({
+            completedAt: DateTime.makeUnsafe("2026-08-26T10:05:00.000Z"),
+            rawArguments: { outputToken },
+            status: "SUCCESS",
+            transactions: [yieldApiTransactionFixture({ status: "CONFIRMED" })],
+            type,
+            yieldId: yieldData.id,
+          }),
+          validatorsData: [],
+          walletScope: {} as never,
+          yieldData,
+        },
+        locale: "en-US",
+        presentationTime,
+      });
+
+      expect(view).toMatchObject({
+        completedAt,
+        statusLabel,
+        title,
+        tokenSymbol: title.tokenSymbol,
+        transactions: [{ status: "confirmed" }],
+      });
+    }
+  );
 
   it("projects a Borrow receipt with market, fees, LTV and health factor changes", () => {
     const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";

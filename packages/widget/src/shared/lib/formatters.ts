@@ -28,6 +28,7 @@ export const getRewardTypeFormatted = (rewardType: string | undefined) => {
   }
 };
 
+/** The formatted gas fee with its USD value; null when no estimate settled. */
 export const getGasFeeInUSD = ({
   yieldDto,
   gas,
@@ -38,8 +39,8 @@ export const getGasFeeInUSD = ({
   gas: BigNumber | null;
   locale: string;
   prices: Prices | null;
-}) => {
-  if (!yieldDto || !gas) return "";
+}): string | null => {
+  if (!yieldDto || !gas) return null;
 
   const gasFeeInUSD = getTokenPriceInUSD({
     amount: gas,
@@ -96,6 +97,13 @@ export const humanizeEnumValue = (value: string): string =>
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
+
+/** Sentence-cases snake_case / SCREAMING_SNAKE enum-like strings (e.g. "SET_OPERATOR" → "Set operator"). */
+export const sentenceCaseEnumValue = (value: string): string => {
+  const words = value.split("_").filter(Boolean).join(" ").toLowerCase();
+
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
 
 // Pending action types come straight from the API and can outpace our
 // translation maps (e.g. RWA-specific actions like WITHDRAWAL_REQUEST). Use this

@@ -36,6 +36,8 @@ type AmountBlockProps = {
       unstakeToken: Token;
       canUnstake: boolean;
       unstakeIsGreaterOrLessIntegrationLimitError: boolean;
+      /** The amount is more than the position holds. */
+      unstakeAmountGreaterThanAvailable: boolean;
       unstakeMaxAmount: BigNumber | null;
       unstakeMinAmount: BigNumber | null;
       ctaPlacement?: "card" | "footer";
@@ -135,6 +137,7 @@ export const AmountBlock = ({
       accessory={accessory}
       formattedPrice={formattedAmount}
       balance={balanceContent}
+      balanceError={!!unstakeProps?.unstakeAmountGreaterThanAvailable}
       onMaxClick={canChangeAmount ? onMaxClick : null}
       maxButtonProps={
         rest.variant === "action"

@@ -52,6 +52,29 @@ export const TransactionStatus = {
 
 const toLower = (value: string) => value.toLowerCase();
 
+/**
+ * The yield token an action argument names, by address, symbol or the native
+ * sentinel, across every token the yield accepts or pays out.
+ */
+export const findYieldToken = (
+  yieldDto: EarnYieldWithProvider,
+  value: string
+): Token | undefined => {
+  const needle = toLower(value);
+
+  return [yieldDto.token, ...yieldDto.tokens, ...yieldDto.inputTokens].find(
+    (token) => {
+      const address = token.address ? toLower(token.address) : null;
+
+      return (
+        address === needle ||
+        token.symbol.toLowerCase() === needle ||
+        (needle === NATIVE_TOKEN_ADDRESS && !token.address)
+      );
+    }
+  );
+};
+
 export const getActionInputToken = ({
   actionDto,
   inputToken,
@@ -71,22 +94,8 @@ export const getActionInputToken = ({
 
   const inputTokenValue = actionDto.rawArguments?.inputToken;
 
-  if (!inputTokenValue) {
-    return yieldDto.token ?? yieldDto.tokens?.[0];
-  }
-
-  const needle = toLower(inputTokenValue);
-
   return (
-    [yieldDto.token, ...(yieldDto.tokens ?? [])].find((token) => {
-      const address = token.address ? toLower(token.address) : null;
-
-      return (
-        address === needle ||
-        token.symbol.toLowerCase() === needle ||
-        (needle === NATIVE_TOKEN_ADDRESS && !token.address)
-      );
-    }) ??
+    (inputTokenValue ? findYieldToken(yieldDto, inputTokenValue) : undefined) ??
     yieldDto.token ??
     yieldDto.tokens?.[0]
   );

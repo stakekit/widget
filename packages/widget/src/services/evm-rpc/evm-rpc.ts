@@ -3,6 +3,7 @@ import {
   BaseError,
   erc20Abi,
   type Hex,
+  isAddress,
   numberToHex,
   RpcError,
   RpcRequestError,
@@ -44,6 +45,21 @@ type EvmRpcApi = Readonly<{
     readonly from: Hex;
     readonly to: Hex;
   }) => Effect.Effect<string, EvmRpcError>;
+  /**
+   * What sending `transactions` in order from `from` would cost, in the
+   * chain's native base units at its current max fee per gas. One that cannot
+   * be simulated before the earlier ones land costs its `fallbackGas`
+   * instead; without one, its failure fails the estimate.
+   */
+  readonly estimateFee: (input: {
+    readonly chainId: EvmChainIds;
+    readonly from: string;
+    readonly transactions: ReadonlyArray<{
+      readonly data: Hex;
+      readonly fallbackGas: bigint | null;
+      readonly to: Hex;
+    }>;
+  }) => Effect.Effect<bigint, EvmRpcError>;
   /**
    * Broadcasts `signedTx`; one the node already knows counts as broadcast.
    * Only an error the node answered while not holding it is a rejection.
@@ -189,6 +205,39 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
               to,
               type: 2,
             });
+          }),
+        estimateFee: ({ chainId, from, transactions }) =>
+          Effect.gen(function* () {
+            if (!isAddress(from, { strict: false })) {
+              return yield* new EvmRpcError({
+                cause: `Not an EVM sender address: ${from}`,
+                operation: "estimate-fee",
+              });
+            }
+            const client = yield* clientFor(chainId);
+            const [fees, gas] = yield* Effect.all(
+              [
+                tryRpc("estimate-fee", () => estimateFeesPerGas(client)),
+                Effect.forEach(
+                  transactions,
+                  ({ data, fallbackGas, to }) =>
+                    tryRpc("estimate-fee", () =>
+                      estimateGas(client, { account: from, data, to })
+                    ).pipe(
+                      Effect.catch((error) =>
+                        fallbackGas === null
+                          ? Effect.fail(error)
+                          : Effect.succeed(fallbackGas)
+                      )
+                    ),
+                  { concurrency: "unbounded" }
+                ),
+              ],
+              { concurrency: "unbounded" }
+            );
+            return (
+              gas.reduce((total, used) => total + used, 0n) * fees.maxFeePerGas
+            );
           }),
       } satisfies EvmRpcApi;
     })

@@ -193,10 +193,15 @@ export const positionDetailsViewAtom = Atom.family(
         unstakeAmount: workflow.unstakeAmount,
         unstakeAmountError:
           action.submissionError || workflow.unstakeAmountError,
+        unstakeAmountGreaterThanAvailable:
+          workflow.unstakeAmountGreaterThanAvailable,
+        // An empty amount stays submittable so the click can flag it; an
+        // out-of-range amount is already flagged, so it cannot be submitted.
         unstakeDisabled:
           AsyncResult.isInitial(workflow.yieldOpportunity) ||
           !canUnstake ||
-          exitResources.kyc.isBlocking,
+          exitResources.kyc.isBlocking ||
+          workflow.unstakeAmountError,
         unstakeAmountUsd: workflow.exitBalance
           ? prorate({
               part: workflow.unstakeAmount,

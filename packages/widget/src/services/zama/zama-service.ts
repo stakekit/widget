@@ -5,6 +5,7 @@ import {
   Data,
   Effect,
   FiberSet,
+  HashMap,
   Layer,
   Option,
   Schema,
@@ -185,10 +186,21 @@ type ZamaServiceApi = Readonly<{
     readonly owner: WalletAddress;
     readonly tokens: ReadonlyArray<ContractAddress>;
   }) => Effect.Effect<number>;
-  /** A deposit's or exit's command with its amount encrypted instead. */
+  /**
+   * A deposit's or exit's command with its amount encrypted instead. It asks
+   * the wallet for nothing, so Review can prepare the action before confirm.
+   */
   readonly encryptCommand: (
     preparation: ConfidentialEncryptPreparation
   ) => Effect.Effect<ActionCommand, ConfidentialPreparationError>;
+  /**
+   * Fails when a deposit's amount exceeds the hidden balance it spends. A
+   * balance already revealed is read from memory; revealing one otherwise
+   * may ask the wallet for a permit signature.
+   */
+  readonly checkConfidentialBalance: (
+    preparation: ConfidentialEncryptPreparation
+  ) => Effect.Effect<void, ConfidentialPreparationError>;
   /** An unwrap withdrawal's command with its publicly decrypted amount. */
   readonly decryptCommand: (
     preparation: ConfidentialDecryptPreparation
@@ -692,12 +704,10 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const unpreparable = (message: string, cause: unknown = null) =>
     new ConfidentialPreparationError({ cause, message, retryable: false });
 
-  const encryptCommand: ZamaServiceApi["encryptCommand"] = Effect.fn(
-    "ZamaService.encryptCommand"
-  )(function* (preparation) {
-    const { amount, command } = preparation;
-    const owner = command.address;
-    if (preparation.requiresPermitSigner) {
+  /** A deposit the wallet could never reveal again is not prepared. */
+  const requirePermitSigner = Effect.fn("ZamaService.requirePermitSigner")(
+    function* (preparation: ConfidentialEncryptPreparation) {
+      if (!preparation.requiresPermitSigner) return;
       const canSignPermit = yield* wallet.canSignPermit.pipe(
         Effect.mapError(
           (cause) =>
@@ -714,19 +724,43 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
         );
       }
     }
-    if (preparation.balance) {
-      const balance = yield* revealTokenBalance({
-        chainId: preparation.balance.chainId,
-        owner,
-        token: preparation.balance.token,
-      }).pipe(Effect.mapError(retryableFailure));
+  );
+
+  const checkConfidentialBalance: ZamaServiceApi["checkConfidentialBalance"] =
+    Effect.fn("ZamaService.checkConfidentialBalance")(function* (preparation) {
+      const { amount, balance: spent, command } = preparation;
+      if (!spent) return;
+      const owner = command.address;
+      const revealed = HashMap.get(
+        (yield* values.current).tokenBalances,
+        new ConfidentialTokenBalanceKey({ owner, token: spent.token })
+      );
+      // Only revealing it asks the wallet for a permit.
+      const balance = Option.isSome(revealed)
+        ? revealed.value
+        : yield* requirePermitSigner(preparation).pipe(
+            Effect.andThen(
+              revealTokenBalance({
+                chainId: spent.chainId,
+                owner,
+                token: spent.token,
+              }).pipe(Effect.mapError(retryableFailure))
+            )
+          );
       if (balance < amount) {
         return yield* unpreparable("Amount exceeds the confidential balance.", {
           amount,
           balance,
         });
       }
-    }
+    });
+
+  const encryptCommand: ZamaServiceApi["encryptCommand"] = Effect.fn(
+    "ZamaService.encryptCommand"
+  )(function* (preparation) {
+    const { amount, command } = preparation;
+    const owner = command.address;
+    yield* requirePermitSigner(preparation);
     const value = preparation.conversion
       ? yield* wrappedAmount({
           amount,
@@ -806,6 +840,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   });
 
   return {
+    checkConfidentialBalance,
     countMissingOperatorGrants,
     decryptCommand,
     encryptCommand,
@@ -823,3 +858,33 @@ export class ZamaService extends Context.Service<ZamaService, ZamaServiceApi>()(
     Layer.provide(FetchHttpClient.layer)
   );
 }
+
+/** A confidential vault's command, hidden amount prepared, and its intent. */
+type ConfidentialPreparedCommand =
+  | Readonly<{
+      readonly command: ActionCommand;
+      readonly intent: "enter" | "exit";
+    }>
+  | Readonly<{
+      readonly command: ManageActionCommand;
+      readonly intent: "manage";
+    }>;
+
+/**
+ * The command whose preview creates a confidential vault's action: its amount
+ * encrypted, or its withdrawal decrypted. It asks the wallet for nothing; the
+ * balance a deposit spends is checked once the user confirms.
+ */
+export const prepareConfidentialCommand = (
+  zama: ZamaService["Service"],
+  preparation: ConfidentialPreparation
+): Effect.Effect<ConfidentialPreparedCommand, ConfidentialPreparationError> =>
+  preparation._tag === "Decrypt"
+    ? zama
+        .decryptCommand(preparation)
+        .pipe(Effect.map((command) => ({ command, intent: "manage" as const })))
+    : zama
+        .encryptCommand(preparation)
+        .pipe(
+          Effect.map((command) => ({ command, intent: preparation.intent }))
+        );

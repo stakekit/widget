@@ -182,6 +182,7 @@ type YieldEntryValidationErrors = Readonly<{
 }>;
 
 export const getYieldEntryCta = ({
+  amountExceedsBalance,
   connected,
   externalProviders,
   hasNoYields,
@@ -191,6 +192,7 @@ export const getYieldEntryCta = ({
   preparationAvailable,
   readiness,
 }: {
+  readonly amountExceedsBalance: boolean;
   readonly connected: boolean;
   readonly externalProviders: boolean;
   readonly hasNoYields: boolean;
@@ -205,7 +207,10 @@ export const getYieldEntryCta = ({
     return {
       _tag: "Submit",
       disabled:
-        readiness._tag !== "Ready" || !preparationAvailable || kycBlocking,
+        readiness._tag !== "Ready" ||
+        !preparationAvailable ||
+        kycBlocking ||
+        amountExceedsBalance,
       loading: readiness._tag === "Refreshing" || kycLoading,
     };
   }
@@ -386,6 +391,8 @@ export const projectYieldEntry = ({
   return {
     constraints,
     cta: getYieldEntryCta({
+      amountExceedsBalance:
+        validation.errors.stakeAmountGreaterThanAvailableAmount,
       connected: input.connected,
       externalProviders: input.externalProviders,
       hasNoYields: input.hasNoYields,

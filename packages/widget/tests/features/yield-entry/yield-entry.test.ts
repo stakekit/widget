@@ -369,6 +369,11 @@ describe("Yield Entry", () => {
       override: { kycBlocking: true },
     },
     {
+      expected: { _tag: "Submit", disabled: true, loading: false },
+      name: "amount exceeds the available balance",
+      override: { amountExceedsBalance: true },
+    },
+    {
       expected: { _tag: "Submit", disabled: false, loading: false },
       name: "connected entry is valid",
       override: {},
@@ -376,6 +381,7 @@ describe("Yield Entry", () => {
   ])("resolves the $name CTA branch", ({ expected, override }) => {
     expect(
       getYieldEntryCta({
+        amountExceedsBalance: false,
         connected: true,
         externalProviders: false,
         hasNoYields: false,
