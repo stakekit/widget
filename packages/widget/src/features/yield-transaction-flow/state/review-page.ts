@@ -251,7 +251,8 @@ export const handOffYieldFlowSource = Effect.fn("handOffYieldFlowSource")(
 
 /**
  * What Review estimates the flow's transactions cost in the gas token: the
- * action's, plus the conversion before it. Null when either is unknown.
+ * action's, plus the conversion before it. Null when any part is unknown, so
+ * Review never shows a partial total.
  */
 const getGasAmount = (
   action: YieldAction | null,
@@ -259,10 +260,13 @@ const getGasAmount = (
 ) => {
   if (!action || !conversionGas) return null;
 
-  const total = action.transactions.reduce((sum, transaction) => {
-    const decoded = getTransactionGasEstimate(transaction);
-    return sum.plus(decoded?.amount ?? 0);
-  }, conversionGas);
+  const estimates = action.transactions.map(getTransactionGasEstimate);
+  if (estimates.some((estimate) => !estimate)) return null;
+
+  const total = estimates.reduce(
+    (sum, estimate) => sum.plus(estimate?.amount ?? 0),
+    conversionGas
+  );
 
   return total.isZero() ? null : total;
 };

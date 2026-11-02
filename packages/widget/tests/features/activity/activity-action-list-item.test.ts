@@ -292,27 +292,40 @@ describe("Activity action list item projection", () => {
     }
   );
 
-  it("titles a confidential deposit with the confidential asset and awaits its batch", () => {
-    const projection = projectActivityActionListItem({
-      action: makeItem(
-        yieldApiActionFixture({
-          amount: "1",
-          rawArguments: { inputToken: confidentialFixture.cUsdc.address },
-          status: "SUCCESS",
-          type: "STAKE",
-        }),
-        confidentialYieldFixture()
-      ),
-      locale: "en-US",
-      presentationTime: null,
-    });
+  it.each([
+    [
+      "the confidential asset",
+      { inputToken: confidentialFixture.cUsdc.address },
+    ],
+    [
+      "the underlying it wrapped",
+      { inputToken: confidentialFixture.usdc.address },
+    ],
+    ["no input token", null],
+  ] as const)(
+    "titles a confidential deposit from %s with the confidential asset and awaits its batch",
+    (_name, rawArguments) => {
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            amount: "1",
+            rawArguments,
+            status: "SUCCESS",
+            type: "STAKE",
+          }),
+          confidentialYieldFixture()
+        ),
+        locale: "en-US",
+        presentationTime: null,
+      });
 
-    expect(projection).toMatchObject({
-      statusLabel: "awaiting_settlement",
-      title: { _tag: "deposit_submitted", tokenSymbol: "cUSDC" },
-      tokenSymbol: "cUSDC",
-    });
-  });
+      expect(projection).toMatchObject({
+        statusLabel: "awaiting_settlement",
+        title: { _tag: "deposit_submitted", tokenSymbol: "cUSDC" },
+        tokenSymbol: "cUSDC",
+      });
+    }
+  );
 
   it.each([
     [

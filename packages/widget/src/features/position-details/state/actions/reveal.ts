@@ -35,7 +35,11 @@ export const revealPositionDetailsBalancesAtom = Atom.family(
 export const hidePositionDetailsBalancesAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
     appRuntime
-      .fn(() => hideConfidentialPositions(key.scope))
+      .fn((_input: undefined, context) => {
+        // Resetting ends a reveal still running, which would add back what Hide forgets.
+        context.set(revealPositionDetailsBalancesAtom(key), Atom.Reset);
+        return hideConfidentialPositions(key.scope);
+      })
       .pipe(Atom.withLabel("hidePositionDetailsBalancesAtom"))
 );
 

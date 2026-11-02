@@ -256,6 +256,17 @@ const resolveTokenSymbol = ({
   if (direction === "withdraw" || direction === "neutral") {
     return yieldTokenSymbol;
   }
+  // A confidential deposit always enters as the confidential asset, whatever
+  // the user wrapped it from.
+  const confidentialAsset =
+    confidentialKind === "deposit"
+      ? getConfidentialAssetToken(yieldData)
+      : null;
+  if (confidentialAsset) {
+    return (
+      getReadableRawTokenSymbol(confidentialAsset.symbol) ?? yieldTokenSymbol
+    );
+  }
 
   const inputToken = getActionInputToken({
     actionDto: action.actionData,

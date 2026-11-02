@@ -17,6 +17,11 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { resolvePositionDetailsExitSubmission } from "../../../src/features/position-details/model/flow-actions";
 import { positionDetailsExitActions } from "../../../src/features/position-details/state/actions/exit";
 import { positionDetailsPendingActions } from "../../../src/features/position-details/state/actions/pending-action";
+import {
+  hidePositionDetailsBalancesAtom,
+  revealPositionDetailsBalancesAtom,
+  revealPositionDetailsBalancesStatusAtom,
+} from "../../../src/features/position-details/state/actions/reveal";
 import { positionDetailsViewAtom } from "../../../src/features/position-details/state/details-view";
 import {
   PositionDetailsWorkflowKey,
@@ -51,6 +56,8 @@ import {
   type NormalizedWalletState,
 } from "../../../src/services/wallet/wallet-state";
 import {
+  confidentialFixture,
+  confidentialYieldFixture,
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
@@ -293,6 +300,7 @@ const makeRegistry = ({
   wallet = makeConnectedWallet(),
   yieldBalance = balance,
   yieldOpportunity = selectedYield,
+  zama,
 }: {
   readonly push: Mock<Push>;
   readonly serviceWallet?: NormalizedWalletState;
@@ -300,6 +308,7 @@ const makeRegistry = ({
   readonly wallet?: NormalizedWalletState;
   readonly yieldBalance?: EarnBalance;
   readonly yieldOpportunity?: typeof selectedYield;
+  readonly zama?: Parameters<typeof makeYieldFlowTestKit>[0]["zama"];
 }) => {
   const navigation = makeWidgetNavigation({
     back: () => Effect.void,
@@ -331,6 +340,7 @@ const makeRegistry = ({
           makeYieldFlowTestKit({
             initialWalletState: walletState,
             navigation: { execute: navigation.execute },
+            ...(zama ? { zama } : {}),
           }).pipe(Effect.map((kit) => kit.layer))
         ) as never
       ),
@@ -1601,6 +1611,57 @@ describe("Position Details exit command", () => {
         _tag: "Manage",
       });
     } finally {
+      registry.dispose();
+    }
+  });
+});
+
+describe("Position Details balance reveal", () => {
+  it("ends a reveal still running when the user hides balances", async () => {
+    const vault = confidentialYieldFixture({ id: selectedYield.id });
+    const revealStarted = Promise.withResolvers<void>();
+    const revealInterrupted = Promise.withResolvers<void>();
+    const registry = makeRegistry({
+      push: vi.fn(),
+      trackEvent: () => Effect.void,
+      yieldBalance: Schema.decodeSync(EarnBalance)(
+        yieldBalanceFixture({
+          address,
+          amount: "0",
+          isEncrypted: true,
+          shareAmountRaw: `0x${"ab".repeat(32)}`,
+          shareToken: confidentialFixture.cShare,
+          token: vault.token,
+        })
+      ),
+      yieldOpportunity: vault,
+      zama: {
+        // Never settles on its own: only an interruption ends it, before it
+        // could add back the handles Hide forgot.
+        revealHandles: () =>
+          Effect.sync(() => revealStarted.resolve()).pipe(
+            Effect.andThen(Effect.never),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => revealInterrupted.resolve())
+            )
+          ),
+      },
+    });
+    const revealAtom = revealPositionDetailsBalancesAtom(workflowKey);
+    const unmount = registry.mount(revealAtom);
+
+    try {
+      registry.set(revealAtom, undefined);
+      await revealStarted.promise;
+
+      registry.set(hidePositionDetailsBalancesAtom(workflowKey), undefined);
+
+      await revealInterrupted.promise;
+      expect(
+        registry.get(revealPositionDetailsBalancesStatusAtom(workflowKey))
+      ).toEqual({ failed: false, revealing: false });
+    } finally {
+      unmount();
       registry.dispose();
     }
   });

@@ -44,6 +44,8 @@ export const revealPortfolioBalancesAtom = walletRuntime
 
 export const hidePortfolioBalancesAtom = appRuntime
   .fn((_input: undefined, context) => {
+    // Resetting ends a reveal still running, which would add back what Hide forgets.
+    context.set(revealPortfolioBalancesAtom, Atom.Reset);
     const scope = context(walletScopeAtom);
     return scope ? hideConfidentialPositions(scope) : Effect.void;
   })

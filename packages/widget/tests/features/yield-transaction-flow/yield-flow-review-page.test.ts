@@ -673,6 +673,37 @@ describe("confidential vault Review", () => {
       })
   );
 
+  it.effect(
+    "shows no gas rather than only the conversion's when the deposit has no estimate",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, page } = yield* makeReviewHarness({
+          evmRpc: {
+            estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
+          },
+          previewAction: () =>
+            Effect.succeed({
+              ...vaultAction,
+              transactions: [yieldApiTransactionFixture()],
+            }),
+          session: enterVault("underlying"),
+          zama: {
+            ...encrypted,
+            planConversion: () =>
+              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
+          },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasCheckLoading }) => !gasCheckLoading
+        );
+
+        expect(view.action).not.toBeNull();
+        expect(view.gasAmount).toBeNull();
+      })
+  );
+
   it.effect("shows a private withdrawal's API gas", () =>
     Effect.gen(function* () {
       const previews: Array<ActionPreviewRequest> = [];
