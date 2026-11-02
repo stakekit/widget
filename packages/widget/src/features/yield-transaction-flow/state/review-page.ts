@@ -371,13 +371,13 @@ const estimateYieldFlowConversionGas = Effect.fn(
     if (preparation._tag !== "Encrypt" || !preparation.conversion) {
       return exactZero();
     }
-    if (gasFeeToken.address !== undefined) return null;
     const sent = yield* Ref.get(session.ledger);
     const pending = (yield* planYieldFlowConversion(
       session,
       preparation
     )).filter(({ id }) => !sent.has(id));
     if (pending.length === 0) return exactZero();
+    if (gasFeeToken.address !== undefined) return null;
     const evmRpc = yield* EvmRpc;
     const fee = yield* evmRpc.estimateFee({
       chainId: preparation.conversion.chainId,

@@ -736,6 +736,25 @@ describe("confidential vault Review", () => {
       })
   );
 
+  it.effect(
+    "shows the action's gas in a non-native gas token once no approve or wrap remains",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, page } = yield* makeReviewHarness({
+          previewAction: () => Effect.succeed(vaultAction),
+          session: enterVault("underlying", vault.token),
+          zama: { ...encrypted, planConversion: () => Effect.succeed([]) },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasAmount }) => gasAmount !== null
+        );
+
+        expect(view.gasAmount?.toFixed()).toBe("0.01");
+      })
+  );
+
   it.effect.each([
     ["a private withdrawal's API gas", {}, "0.01"],
     [
