@@ -750,8 +750,8 @@ describe("Position Details action model", () => {
     expect(view.unstakeToken?.symbol).toBe(cShare.symbol);
     expect(view.exitBalance?.amount.toFixed()).toBe("0.146787");
     expect(view.maxUnstakeAmount.toFixed()).toBe("0.146787");
-    expect(view.exitBalance?.underlying?.amount.toFixed()).toBe("0.151");
-    expect(view.exitBalance?.underlying?.token.symbol).toBe(cUsdc.symbol);
+    expect(view.exitBalance?.value?.amount.toFixed()).toBe("0.151");
+    expect(view.exitBalance?.value?.token.symbol).toBe(cUsdc.symbol);
   });
 
   it("keeps withdrawing available while the share balance is hidden, so the user can decrypt it there", () => {

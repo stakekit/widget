@@ -3,10 +3,8 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { PendingAction } from "../../../../domain/action/models";
-import {
-  getCancelReturn,
-  getPendingActionDecryptHandle,
-} from "../../../../domain/earn/confidential";
+import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential";
+import { getPendingActionReturn } from "../../../../domain/earn/denomination";
 import type {
   EarnBalance,
   EarnValidator,
@@ -274,8 +272,7 @@ const runPositionPendingActionAtom = Atom.family(
           decision.selection.yieldBalance,
           decision.selection.pendingAction.type
         );
-        const cancelReturn = getCancelReturn(
-          value.integrationData,
+        const cancelReturn = getPendingActionReturn(
           decision.selection.pendingAction.type,
           decision.selection.yieldBalance
         );

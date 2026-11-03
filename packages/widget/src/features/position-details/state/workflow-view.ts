@@ -12,10 +12,11 @@ import {
   isPendingActionAmountRequired,
 } from "../../../domain/action/pending-action";
 import {
-  type ConfidentialExitBalance,
-  getConfidentialExitBalance,
-  isConfidentialYield,
-} from "../../../domain/earn/confidential";
+  getExitUnit,
+  getSharesExitBalance,
+  type SharesExitBalance,
+} from "../../../domain/earn/denomination";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { isYieldActionAmountEditable } from "../../../domain/earn/stake";
 import {
   exactZero,
@@ -153,17 +154,16 @@ const projectPendingActionAmount = ({
   return { amount, validation };
 };
 
-/** A confidential exit also carries its value in the underlying. */
-type ExitBalance = PositionTokenSum &
-  Partial<Pick<ConfidentialExitBalance, "underlying">>;
+/** An exit in Shares also carries its value in the Value Token. */
+type ExitBalance = PositionTokenSum & Partial<Pick<SharesExitBalance, "value">>;
 
 const getExitBalance = (
-  integration: Parameters<typeof isConfidentialYield>[0] | null,
+  integration: EarnYieldWithProvider | null,
   activeBalances: Parameters<typeof getSingleExitTokenSum>[0] &
-    Parameters<typeof getConfidentialExitBalance>[0]
+    Parameters<typeof getSharesExitBalance>[0]
 ): ExitBalance | null =>
-  integration && isConfidentialYield(integration)
-    ? getConfidentialExitBalance(activeBalances)
+  integration && getExitUnit(integration, activeBalances) === "shares"
+    ? getSharesExitBalance(activeBalances)
     : getSingleExitTokenSum(activeBalances);
 
 const resolveUnstakeAmount = ({

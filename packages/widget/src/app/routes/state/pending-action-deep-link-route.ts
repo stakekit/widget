@@ -1,7 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { getCancelReturn } from "../../../domain/earn/confidential";
+import { getPendingActionReturn } from "../../../domain/earn/denomination";
 import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/index";
@@ -41,8 +41,7 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
         };
       }
 
-      const cancelReturn = getCancelReturn(
-        pendingActionValue.pendingAction.integrationData,
+      const cancelReturn = getPendingActionReturn(
         pendingActionValue.pendingAction.command.action,
         pendingActionValue.balance
       );

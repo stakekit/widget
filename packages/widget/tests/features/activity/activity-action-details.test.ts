@@ -241,7 +241,10 @@ describe("Activity action details projection", () => {
         completedAt,
         statusLabel,
         title,
-        tokenSymbol: title.tokenSymbol,
+        // The receipt's icon is the token its title names.
+        titleToken: { symbol: title.tokenSymbol },
+        // An exit counts the vault shares it redeems.
+        amountTokenSymbol: confidentialFixture.cShare.symbol,
         transactions: [{ status: "confirmed" }],
       });
     }
@@ -301,7 +304,9 @@ describe("Activity action details projection", () => {
                 type: eventType,
               },
             ],
-            rawArguments: outputToken ? { outputToken } : null,
+            rawArguments: outputToken
+              ? { outputToken }
+              : { inputToken: confidentialFixture.cUsdc.address },
             status: "SUCCESS",
             type,
             yieldId: yieldData.id,
@@ -422,7 +427,7 @@ describe("Activity action details projection", () => {
       completedAt: null,
       network: "ethereum",
       statusLabel: "completed",
-      tokenSymbol: "USDC",
+      amountTokenSymbol: "USDC",
       transactions: [
         {
           _tag: "borrow",

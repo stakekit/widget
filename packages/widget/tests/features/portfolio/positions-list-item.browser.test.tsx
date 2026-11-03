@@ -36,7 +36,7 @@ type RowDetails = {
   readonly providersDetails: unknown;
   readonly inactiveValidator: InactiveValidatorStatus | null;
   readonly rewardRateAverage: string | null;
-  readonly totalAmountFormatted: string | null;
+  readonly totalFormatted: string | null;
   readonly totalAmountUsd: BigNumber | null;
 };
 
@@ -63,7 +63,7 @@ const createDetails = (overrides: Partial<RowDetails> = {}): RowDetails => ({
   ],
   inactiveValidator: null,
   rewardRateAverage: "4.2%",
-  totalAmountFormatted: "12.5",
+  totalFormatted: `12.5 ${integrationData.token.symbol}`,
   totalAmountUsd: exactDecimal("25"),
   ...overrides,
 });
@@ -84,7 +84,7 @@ const createItem = (
   hasPendingRequest: false,
   pointsRewardTokenBalances: [],
   hasPendingClaimRewards: false,
-  token: integrationData.token,
+  total: [],
   type: "default",
   ...overrides,
 });
@@ -123,7 +123,7 @@ afterEach(() => {
 });
 
 describe("Earn position list item", () => {
-  describe.each(presentations)("$name", ({ row }) => {
+  describe.each(presentations)("$name", ({ name, row }) => {
     it("shows the position name, provider line, and amounts", async () => {
       hookState.details = createDetails();
       const app = await renderRow(row(createItem()));
@@ -138,6 +138,36 @@ describe("Earn position list item", () => {
         .element(app.getByText(`12.5 ${integrationData.token.symbol}`))
         .toBeInTheDocument();
       await expect.element(app.getByText("≈ $25.00")).toBeInTheDocument();
+    });
+
+    it("shows a total across tokens as its USD value alone", async () => {
+      hookState.details = createDetails({
+        totalAmountUsd: null,
+        totalFormatted: "$1,005.00",
+      });
+      const app = await renderRow(row(createItem()));
+
+      await expect.element(app.getByText("$1,005.00")).toBeInTheDocument();
+      await expect.element(app.getByText(/≈/)).not.toBeInTheDocument();
+    });
+
+    it("keeps the value and its USD estimate in one column beside the APY", async () => {
+      hookState.details = createDetails();
+      const app = await renderRow(row(createItem()));
+
+      await expect.element(app.getByText("≈ $25.00")).toBeInTheDocument();
+      const value = app
+        .getByText(`12.5 ${integrationData.token.symbol}`)
+        .element();
+
+      expect(app.getByText("≈ $25.00").element().parentElement).toBe(
+        value.parentElement
+      );
+      if (name === "dashboard") {
+        expect(app.getByText("4.2%").element().parentElement).not.toBe(
+          value.parentElement
+        );
+      }
     });
 
     it("shows the USD estimate in the Widget language", async () => {
@@ -230,7 +260,7 @@ describe("Earn position list item", () => {
   });
 
   it("shows a dash for a missing amount only in the dashboard", async () => {
-    hookState.details = createDetails({ totalAmountFormatted: null });
+    hookState.details = createDetails({ totalFormatted: null });
     const dashboard = await renderRow(presentations[1].row(createItem()));
 
     await expect

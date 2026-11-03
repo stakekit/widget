@@ -1,21 +1,16 @@
 import type BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
+import { getBalanceShares, type TokenAmount } from "../earn/denomination";
 import {
   type EarnBalance,
   type EarnPosition,
   type EarnValidator,
   EarnValidatorKey,
-  getVisibleShares,
 } from "../earn/models";
 import type { YieldRewardRate } from "../earn/reward-rate";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
-import {
-  equalTokens,
-  type Token,
-  type TokenString,
-  tokenString,
-} from "../token/token";
+import { type TokenString, tokenString } from "../token/token";
 
 export type YieldBalanceType = EarnBalance["type"];
 
@@ -198,9 +193,8 @@ export type PositionBalanceRow = PositionTokenSum &
     readonly cancelling: boolean;
     readonly date: EarnBalance["date"];
     readonly isEncrypted?: boolean;
-    /** The share token's amount, for balances denominated in shares. */
-    readonly shareAmount?: BigNumber;
-    readonly shareToken?: NonNullable<EarnBalance["shareToken"]>;
+    /** The visible Shares, when their token is not the Value Token. */
+    readonly shares?: TokenAmount;
     readonly type: YieldBalanceType;
   }>;
 
@@ -237,7 +231,14 @@ export const groupPositionBalanceRows = (
       }`;
       const previous = rows.get(key);
       const isEncrypted = previous?.isEncrypted || balance.isEncrypted;
-
+      const balanceShares = getBalanceShares(balance);
+      const shares =
+        previous?.shares && balanceShares
+          ? {
+              amount: previous.shares.amount.plus(balanceShares.amount),
+              token: previous.shares.token,
+            }
+          : (previous?.shares ?? balanceShares);
       rows.set(key, {
         amount: (previous?.amount ?? exactZero()).plus(balance.amount),
         amountUsd: (previous?.amountUsd ?? exactZero()).plus(
@@ -246,14 +247,7 @@ export const groupPositionBalanceRows = (
         cancelling,
         date: balance.date,
         ...(isEncrypted === undefined ? {} : { isEncrypted }),
-        ...(balance.shareToken
-          ? {
-              shareAmount: (previous?.shareAmount ?? exactZero()).plus(
-                getVisibleShares(balance)?.amount ?? exactZero()
-              ),
-              shareToken: balance.shareToken,
-            }
-          : {}),
+        ...(shares ? { shares } : {}),
         token: previous?.token ?? balance.token,
         type: balance.type,
       });
@@ -301,50 +295,65 @@ export const toPositionBalancesByType = (
     return byType;
   }, new Map());
 
-export const getPositionTotalAmount = (
-  balances: EarnBalance[],
-  baseToken: Pick<Token, "symbol" | "network" | "address">
-) => {
-  const baseTokenBalance = balances.find((b) =>
-    equalTokens(b.token, baseToken)
+const balanceTypePriority: Record<YieldBalanceType, number> = {
+  active: 1,
+  entering: 2,
+  exiting: 3,
+  withdrawable: 4,
+  claimable: 5,
+  locked: 6,
+};
+
+/** Balances ordered from active to locked, the order a position presents. */
+export const sortBalancesByPriority = <
+  Balance extends { type: YieldBalanceType },
+>(
+  balances: ReadonlyArray<Balance>
+): ReadonlyArray<Balance> =>
+  [...balances].sort(
+    (a, b) => balanceTypePriority[a.type] - balanceTypePriority[b.type]
   );
 
-  const baseTokenPriceInUsd = (() => {
-    if (!baseTokenBalance?.amountUsd) return null;
+/** The USD value of token sums, unpriced sums counting zero. */
+export const getTokenSumsUsd = (sums: ReadonlyArray<PositionTokenSum>) =>
+  sums.reduce((total, sum) => total.plus(sum.amountUsd), exactZero());
 
-    const amount = baseTokenBalance.amount;
-    if (amount.lte(0)) return null;
+/**
+ * A position's total, the one Manage and its details show: every non-points
+ * balance counted in the primary Value Token, the highest-priority balance's,
+ * when every balance is priced. Otherwise one sum per Value Token, since raw
+ * amounts of different tokens never add up.
+ */
+export const getPositionValueTotal = (
+  balances: ReadonlyArray<EarnBalance>
+): ReadonlyArray<PositionTokenSum> => {
+  const sums = sumBalancesByToken(
+    sortBalancesByPriority(
+      balances.filter((balance) => !balance.token.isPoints)
+    )
+  );
+  const [primary, ...others] = sums;
+  if (!primary || others.length === 0) return sums;
 
-    return baseTokenBalance.amountUsd.dividedBy(amount);
-  })();
+  // Every balance needs a USD value to convert; a zero balance needs none.
+  const priced =
+    primary.amount.isGreaterThan(0) &&
+    primary.amountUsd.isGreaterThan(0) &&
+    balances.every(
+      (balance) =>
+        balance.token.isPoints ||
+        balance.amount.isZero() ||
+        !!balance.amountUsd?.isGreaterThan(0)
+    );
+  if (!priced) return sums;
 
-  return balances.reduce(
-    (acc, b) => {
-      if (b.token.isPoints) return acc;
-
-      if (baseTokenBalance && equalTokens(b.token, baseTokenBalance.token)) {
-        return {
-          amount: acc.amount.plus(b.amount),
-          amountUsd: acc.amountUsd.plus(b.amountUsd ?? 0),
-        };
-      }
-
-      const balanceAmountUsd = b.amountUsd ?? exactZero();
-
-      if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
-        return {
-          amount: acc.amount.plus(
-            balanceAmountUsd.dividedBy(baseTokenPriceInUsd)
-          ),
-          amountUsd: acc.amountUsd.plus(balanceAmountUsd),
-        };
-      }
-
-      return {
-        amount: acc.amount.plus(b.amount),
-        amountUsd: acc.amountUsd.plus(balanceAmountUsd),
-      };
+  const price = primary.amountUsd.dividedBy(primary.amount);
+  const othersUsd = getTokenSumsUsd(others);
+  return [
+    {
+      amount: primary.amount.plus(othersUsd.dividedBy(price)),
+      amountUsd: primary.amountUsd.plus(othersUsd),
+      token: primary.token,
     },
-    { amount: exactZero(), amountUsd: exactZero() }
-  );
+  ];
 };

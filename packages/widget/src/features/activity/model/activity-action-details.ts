@@ -6,6 +6,8 @@ import { getBorrowMarketPairLabel } from "../../../domain/borrow/catalog/market"
 import type { BorrowToken } from "../../../domain/borrow/catalog/token";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
 import type { ConfidentialSettlement } from "../../../domain/earn/confidential";
+import type { Token } from "../../../domain/token/token";
+import { borrowTokenToAppToken } from "../../../shared/lib/borrow-token";
 import { formatDateTime } from "../../../shared/lib/date";
 import {
   formatFigureChange,
@@ -24,6 +26,7 @@ import {
   type ActivityStatusLabel,
   getActivitySettlement,
   projectActivityActionListItem,
+  resolveActivityActionTokens,
   resolveBorrowActivityAmount,
 } from "./activity-action-list-item";
 import { findBorrowMarketToken } from "./activity-enrichment";
@@ -85,7 +88,9 @@ export type ActivityActionDetailsProjection = Readonly<{
   readonly network: string;
   readonly statusLabel: ActivityStatusLabel | null;
   readonly title: ActivityActionTitle;
-  readonly tokenSymbol: string | null;
+  /** The token beside the title, whose icon heads the receipt. */
+  readonly titleToken: Token | null;
+  readonly amountTokenSymbol: string | null;
   readonly transactions: ReadonlyArray<ActivityDetailsTransaction>;
   readonly transactionsSummary: ActivityDetailsTransactionsSummary;
 }>;
@@ -247,7 +252,10 @@ const projectYieldActivityDetails = ({
     network: item.yieldData?.token.network ?? item.walletScope.network,
     statusLabel,
     title: listItem.title,
-    tokenSymbol: listItem.tokenSymbol,
+    titleToken: item.yieldData
+      ? resolveActivityActionTokens(item.yieldData, action).titleToken
+      : null,
+    amountTokenSymbol: listItem.amountTokenSymbol,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
   };
@@ -350,7 +358,10 @@ const projectBorrowActivityDetails = ({
     network: item.network,
     statusLabel: listItem.statusLabel,
     title: listItem.title,
-    tokenSymbol: listItem.tokenSymbol,
+    titleToken: item.token
+      ? borrowTokenToAppToken({ network: item.network, token: item.token })
+      : null,
+    amountTokenSymbol: listItem.amountTokenSymbol,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
   };

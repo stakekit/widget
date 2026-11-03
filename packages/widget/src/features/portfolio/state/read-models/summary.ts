@@ -5,7 +5,7 @@ import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { exactZero } from "../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../domain/finance/price";
 import type { YieldId } from "../../../../domain/identity/identifiers";
-import { getPositionTotalAmount } from "../../../../domain/portfolio/positions";
+import { getTokenSumsUsd } from "../../../../domain/portfolio/positions";
 import {
   PricesKey,
   pricesAtom,
@@ -59,10 +59,7 @@ export const getPositionsTotal = (
     const yieldDto = getSummableYield(position, yields);
     if (!yieldDto) return sum;
 
-    return sum.plus(
-      getPositionTotalAmount(position.balancesWithAmount, yieldDto.token)
-        .amountUsd
-    );
+    return sum.plus(getTokenSumsUsd(position.total));
   }, exactZero());
 
 export const getPositionsAverageApy = (
@@ -74,10 +71,7 @@ export const getPositionsAverageApy = (
       const yieldDto = getSummableYield(position, yields);
       if (!yieldDto) return summary;
 
-      const value = getPositionTotalAmount(
-        position.balancesWithAmount,
-        yieldDto.token
-      ).amountUsd;
+      const value = getTokenSumsUsd(position.total);
       const rewardRate = yieldDto.rewardRate.total;
 
       return rewardRate.isGreaterThan(0) && value.gt(0)

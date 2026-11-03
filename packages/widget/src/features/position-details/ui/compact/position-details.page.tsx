@@ -39,7 +39,6 @@ const PositionDetails = () => {
     providersDetails,
     positionSource,
     shareToAmountConversions: shareToAmountConversionsValue,
-    unstakeToken: unstakeTokenValue,
     personalizedRewardRate,
     apyCompositionRewardRate,
     apyCompositionShowsUpToCampaign,
@@ -92,7 +91,8 @@ const PositionDetails = () => {
             gap="1"
           >
             {(() => {
-              const token = unstakeTokenValue ?? integrationDataValue.token;
+              const token =
+                integrationDataValue.outputToken ?? integrationDataValue.token;
               return (
                 <>
                   <Box

@@ -14,10 +14,8 @@ import {
   isPendingActionValidatorAddressRequired,
 } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
-import {
-  isConfidentialYield,
-  toBaseUnits,
-} from "../../../domain/earn/confidential";
+import { toBaseUnits } from "../../../domain/earn/confidential";
+import { getExitUnit } from "../../../domain/earn/denomination";
 import {
   type EarnBalance,
   type EarnValidator,
@@ -307,16 +305,21 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
   })();
   if (!validatorArguments) return null;
 
-  // Confidential vaults redeem shares.
-  const confidential = isConfidentialYield(facts.integration);
-  const shareBalances = confidential
-    ? facts.stakedOrLiquidBalances.filter(
-        (balance) => balance.shareToken && !balance.isEncrypted
-      )
-    : [];
+  // An exit in Shares redeems a share count.
+  const shareBalances =
+    getExitUnit(facts.integration, facts.stakedOrLiquidBalances) === "shares"
+      ? facts.stakedOrLiquidBalances.filter(
+          (balance) => balance.shareToken && !balance.isEncrypted
+        )
+      : [];
   const shareToken = shareBalances[0]?.shareToken;
-  // The API rejects plain amounts for confidential vaults.
-  if (confidential && !shareToken) return null;
+  // An encrypted exit encrypts that share count; it has no plain amount.
+  if (
+    getYieldActionArg(facts.integration, "exit", "encryptedLegAmounts") &&
+    !shareToken
+  ) {
+    return null;
+  }
   const getShareAmountRaw = () => {
     if (!shareToken) return null;
     // Exact share count; converting back could leave dust.

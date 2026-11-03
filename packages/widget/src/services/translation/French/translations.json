@@ -698,7 +698,7 @@
   "complete": {
     "successfully_staked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
     "deposit_submitted": "Dépôt de {{amount}} {{tokenNetwork}} soumis",
-    "approximate_amount": "≈ {{amount}}",
+    "receive_token": "Jeton reçu : {{symbol}}",
     "withdrawal_submitted": "Retrait de {{amount}} {{tokenNetwork}} soumis",
     "next_batch_in": "Rejoint le prochain lot dans {{duration}}",
     "next_batch_imminent": "Rejoint le prochain lot, attendu d'un instant à l'autre",
@@ -1439,6 +1439,7 @@
       "active": "Actif",
       "instant_withdrawal_in_progress": "Retrait instantané en cours",
       "balance": "Solde",
+      "shares": "Parts",
       "breadcrumb_root": "Positions",
       "breakdown": "Repartition du solde",
       "details": "Details du staking",

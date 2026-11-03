@@ -58,6 +58,8 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.position_details.instant_withdrawal_in_progress":
       "Instant withdrawal in progress",
     "dashboard.position_details.balance": "Balance",
+    "dashboard.position_details.shares": "Shares",
+    "shared.confidential.hidden": "Hidden",
     "dashboard.position_details.rewards": "Rewards",
     "dashboard.position_details.rewards_total": "Total earned",
     "dashboard.position_details.status": "Status",
@@ -181,12 +183,13 @@ describe("getPositionOverviewModel", () => {
       "apy",
       "status",
     ]);
+    // The Balance is the position total Manage shows, in its primary token.
     expect(
       model.metricCards.find((card) => card.id === "balance")
     ).toMatchObject({
       label: "Balance",
-      subValue: "$41.4K",
-      value: "12 ETH",
+      subValue: "$42.26K",
+      value: "12.25 ETH",
     });
     expect(
       model.metricCards.find((card) => card.id === "rewards")
@@ -208,7 +211,7 @@ describe("getPositionOverviewModel", () => {
     expect(model.chartSections).toEqual([]);
   });
 
-  it("shows every active token sum and totals only USD across tokens", () => {
+  it("counts every balance in the primary Value Token at its USD price", () => {
     const token = yieldApiYieldFixture().token;
     const cake = { ...token, symbol: "CAKE" };
     const usdt = {
@@ -246,7 +249,64 @@ describe("getPositionOverviewModel", () => {
       model.metricCards.find((card) => card.id === "balance")
     ).toMatchObject({
       subValue: "$16.00",
-      value: ["3 CAKE", "10 USDT"],
+      value: "8 CAKE",
+    });
+  });
+
+  it("lists an unpriced second token apart instead of adding its raw amount", () => {
+    const token = yieldApiYieldFixture().token;
+    const usdc = { ...token, symbol: "USDC" };
+    const foo = {
+      ...token,
+      address: "0x00000000000000000000000000000000000000f1",
+      symbol: "FOO",
+    };
+    const model = getPositionOverviewModel({
+      canUnstake: false,
+      locale: "en",
+      now: null,
+      integrationData: makeYield(),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "active",
+          [
+            {
+              ...makeBalance({
+                amount: "5",
+                amountUsd: "5",
+                token: usdc,
+                type: "active",
+              }),
+              tokenPriceInUsd: new BigNumber(1),
+            },
+          ],
+        ],
+        [
+          "claimable",
+          [
+            {
+              ...makeBalance({
+                amount: "1000",
+                amountUsd: null,
+                token: foo,
+                type: "claimable",
+              }),
+              tokenPriceInUsd: new BigNumber(0),
+            },
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      t: t as TFunction,
+    });
+
+    expect(
+      model.metricCards.find((card) => card.id === "balance")
+    ).toMatchObject({
+      subValue: "$5.00",
+      value: ["5 USDC", "1,000 FOO"],
     });
   });
 
@@ -539,8 +599,8 @@ describe("getPositionOverviewModel", () => {
     ).toBe(false);
   });
 
-  it("shows a confidential vault's pending withdrawal in the vault shares it redeems", () => {
-    const { cShare, cUsdc } = confidentialFixture;
+  it("shows a pending withdrawal in its Value Token with its Shares beside it", () => {
+    const { cShare, usdc } = confidentialFixture;
     const model = getPositionOverviewModel({
       canUnstake: true,
       locale: "en",
@@ -561,7 +621,7 @@ describe("getPositionOverviewModel", () => {
                 amountUsd: "0.1",
                 shareAmount: "0.097168",
                 shareToken: cShare,
-                token: cUsdc,
+                token: usdc,
                 type: "exiting",
               }),
               tokenPriceInUsd: new BigNumber(1),
@@ -574,8 +634,11 @@ describe("getPositionOverviewModel", () => {
     });
 
     expect(model.breakdownRows.map(({ value }) => value)).toEqual([
-      `0.09716 ${cShare.symbol}`,
+      `0.1 ${usdc.symbol}`,
     ]);
+    expect(model.breakdownRows[0]?.subValue).toContain(
+      `0.09716 ${cShare.symbol}`
+    );
   });
 
   it("describes redemption and warmup of a batched vault by its batches", () => {
@@ -1200,6 +1263,250 @@ describe("getPositionOverviewModel", () => {
       id: "price-per-share",
       label: "Price per share",
       value: "1.06274537",
+    });
+  });
+  describe("Shares metric", () => {
+    const usdc = {
+      ...yieldApiYieldFixture().token,
+      address: "0x00000000000000000000000000000000000000c1",
+      decimals: 6,
+      symbol: "USDC",
+    };
+    const steakUsdc = {
+      ...usdc,
+      address: "0x00000000000000000000000000000000000000c2",
+      symbol: "steakUSDC",
+    };
+    const priced = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
+      ...makeBalance(overrides),
+      tokenPriceInUsd: new BigNumber(1),
+    });
+    const overview = (positionBalancesByType: PositionBalancesByType) =>
+      getPositionOverviewModel({
+        canUnstake: true,
+        locale: "en",
+        now: null,
+        integrationData: makeYield(),
+        pendingActions: [],
+        personalizedRewardRate: null,
+        positionBalancesByType,
+        providersDetails: [],
+        t: t as TFunction,
+      });
+
+    it("shows a vault's Shares with their USD value as a base card", () => {
+      const model = overview(
+        new Map([
+          [
+            "active",
+            [
+              priced({
+                amount: "110",
+                amountUsd: "110",
+                shareAmount: "100",
+                shareToken: steakUsdc,
+                token: usdc,
+                type: "active",
+              }),
+            ],
+          ],
+        ])
+      );
+
+      expect(
+        model.metricCards.find((card) => card.id === "shares")
+      ).toMatchObject({
+        label: "Shares",
+        subValue: "$110.00",
+        value: "100 steakUSDC",
+      });
+      // Balance, Shares, APY, and Status fill the grid; no filler is needed.
+      expect(model.metricCards.map((card) => card.id)).toEqual([
+        "balance",
+        "shares",
+        "apy",
+        "status",
+      ]);
+    });
+
+    it("leaves Value Token balances out of the Shares", () => {
+      const model = overview(
+        new Map([
+          [
+            "active",
+            [
+              priced({
+                amount: "110",
+                amountUsd: "110",
+                shareAmount: "100",
+                shareToken: steakUsdc,
+                token: usdc,
+                type: "active",
+              }),
+            ],
+          ],
+          [
+            "withdrawable",
+            [
+              priced({
+                amount: "5",
+                amountUsd: "5",
+                token: usdc,
+                type: "withdrawable",
+              }),
+            ],
+          ],
+        ])
+      );
+      const shares = model.metricCards.find((card) => card.id === "shares");
+
+      expect(shares?.value).toBe("100 steakUSDC");
+      expect(shares?.subValue).toBe("$110.00");
+    });
+
+    it("shows no USD value when a balance carrying Shares is unpriced", () => {
+      const model = overview(
+        new Map([
+          [
+            "active",
+            [
+              priced({
+                amount: "110",
+                amountUsd: null,
+                shareAmount: "100",
+                shareToken: steakUsdc,
+                token: usdc,
+                type: "active",
+              }),
+            ],
+          ],
+        ])
+      );
+      const shares = model.metricCards.find((card) => card.id === "shares");
+
+      expect(shares?.value).toBe("100 steakUSDC");
+      expect(shares?.subValue).toBeUndefined();
+    });
+
+    it("hides Shares while they are encrypted", () => {
+      const { cShare, usdc: zamaUsdc } = confidentialFixture;
+      const model = overview(
+        new Map([
+          [
+            "active",
+            [
+              priced({
+                amount: "0",
+                amountRaw: "0",
+                isEncrypted: true,
+                shareAmount: "0",
+                shareAmountRaw: `0x${"ab".repeat(32)}`,
+                shareToken: cShare,
+                token: zamaUsdc,
+                type: "active",
+              }),
+            ],
+          ],
+        ])
+      );
+
+      expect(
+        model.metricCards.find((card) => card.id === "shares")
+      ).toMatchObject({ value: "Hidden" });
+    });
+
+    it("is not hidden by an encrypted balance of the Value Token itself", () => {
+      const { cUsdc } = confidentialFixture;
+      const model = overview(
+        new Map([
+          [
+            "active",
+            [
+              priced({
+                amount: "110",
+                amountUsd: "110",
+                shareAmount: "100",
+                shareToken: steakUsdc,
+                token: usdc,
+                type: "active",
+              }),
+            ],
+          ],
+          [
+            "entering",
+            [
+              priced({
+                amount: "0",
+                amountRaw: "0",
+                isEncrypted: true,
+                shareAmount: "0",
+                shareAmountRaw: `0x${"ab".repeat(32)}`,
+                shareToken: cUsdc,
+                token: cUsdc,
+                type: "entering",
+              }),
+            ],
+          ],
+        ])
+      );
+
+      expect(
+        model.metricCards.find((card) => card.id === "shares")?.value
+      ).not.toBe("Hidden");
+    });
+
+    it("leaves unclaimed rewards out of the Shares but in the Balance, and fills an odd grid", () => {
+      const model = overview(
+        new Map([
+          [
+            "active",
+            [
+              priced({
+                amount: "110",
+                amountUsd: "110",
+                shareAmount: "100",
+                shareToken: steakUsdc,
+                token: usdc,
+                type: "active",
+              }),
+            ],
+          ],
+          [
+            "claimable",
+            [
+              priced({
+                amount: "2",
+                amountUsd: "2",
+                token: usdc,
+                type: "claimable",
+              }),
+            ],
+          ],
+        ])
+      );
+      const card = (id: string) =>
+        model.metricCards.find((metric) => metric.id === id);
+
+      expect(card("shares")?.value).toBe("100 steakUSDC");
+      expect(card("balance")?.value).toBe("112 USDC");
+      // Balance, Shares, Rewards, APY, and Status leave a cell the reward
+      // token fills.
+      expect(model.metricCards.map((metric) => metric.id)).toEqual([
+        "balance",
+        "shares",
+        "rewards",
+        "apy",
+        "status",
+        "reward-token",
+      ]);
+    });
+
+    it("has no Shares when every balance holds its Value Token", () => {
+      const model = overview(makePositionBalances());
+
+      expect(model.metricCards.some((card) => card.id === "shares")).toBe(
+        false
+      );
     });
   });
 });

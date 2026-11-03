@@ -10,9 +10,9 @@ import {
   type ConfidentialActionKind,
   type ConfidentialSettlement,
   getConfidentialActionKind,
-  getConfidentialAssetToken,
   getConfidentialSettlement,
 } from "../../../domain/earn/confidential";
+import { getExitAmountToken } from "../../../domain/earn/denomination";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
@@ -98,7 +98,8 @@ type ActivityActionListItemProjection = {
   readonly statusLabel: ActivityStatusLabel | null;
   readonly timestamp: ActivityActionTimestamp | null;
   readonly title: ActivityActionTitle;
-  readonly tokenSymbol: string | null;
+  /** The symbol of the token the amount is in. */
+  readonly amountTokenSymbol: string | null;
 };
 
 const getActivityDirection = (type: ActionType): ActivityDirection => {
@@ -223,37 +224,48 @@ const getReadableRawTokenSymbol = (
   return normalizedValue;
 };
 
-// A confidential exit pays out the token it names; a private one without one
-// returns the confidential asset.
-const resolveConfidentialWithdrawalToken = ({
-  action,
-  confidentialKind,
-  yieldData,
-}: {
-  readonly action: YieldActivityItem["actionData"];
-  readonly confidentialKind: ConfidentialActionKind;
-  readonly yieldData: EarnYieldWithProvider;
-}): Token => {
-  const outputToken = action.rawArguments?.outputToken;
-
-  return (
-    (outputToken ? findYieldToken(yieldData, outputToken) : undefined) ??
-    (confidentialKind === "privateExit"
-      ? getConfidentialAssetToken(yieldData)
-      : null) ??
-    yieldData.token
-  );
+/**
+ * The tokens an action shows: its amount in the token of the field it came
+ * from, its title in what it put in or paid out. An enter is in its input
+ * token; an exit's amount is in the Exit Unit and its title names the Exit
+ * Receive Token; any other action pays the Value Token.
+ */
+export const resolveActivityActionTokens = (
+  yieldData: EarnYieldWithProvider,
+  action: YieldActivityItem["actionData"]
+): Readonly<{ readonly amountToken: Token; readonly titleToken: Token }> => {
+  switch (action.intent) {
+    case "enter": {
+      const token =
+        getActionInputToken({ actionDto: action, yieldDto: yieldData }) ??
+        yieldData.token;
+      return { amountToken: token, titleToken: token };
+    }
+    case "exit": {
+      const amountToken = getExitAmountToken(yieldData);
+      const outputToken = action.rawArguments?.outputToken;
+      return {
+        amountToken,
+        titleToken:
+          (outputToken ? findYieldToken(yieldData, outputToken) : undefined) ??
+          amountToken,
+      };
+    }
+    case "manage":
+      return { amountToken: yieldData.token, titleToken: yieldData.token };
+  }
 };
 
-const resolveTokenSymbol = ({
+const resolveTokenSymbols = ({
   action,
-  confidentialKind,
   direction,
 }: {
   readonly action: YieldActivityItem;
-  readonly confidentialKind: ConfidentialActionKind | null;
   readonly direction: ActivityDirection;
-}): string | null => {
+}): Readonly<{
+  readonly amountTokenSymbol: string | null;
+  readonly titleTokenSymbol: string | null;
+}> => {
   const yieldData = action.yieldData;
 
   if (!yieldData) {
@@ -262,41 +274,23 @@ const resolveTokenSymbol = ({
       direction === "withdraw" || direction === "neutral"
         ? (outputToken ?? inputToken)
         : (inputToken ?? outputToken);
+    const symbol = getReadableRawTokenSymbol(preferredToken);
 
-    return getReadableRawTokenSymbol(preferredToken);
+    return { amountTokenSymbol: symbol, titleTokenSymbol: symbol };
   }
 
   const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
-  if (direction === "withdraw" && confidentialKind) {
-    const token = resolveConfidentialWithdrawalToken({
-      action: action.actionData,
-      confidentialKind,
-      yieldData,
-    });
+  const { amountToken, titleToken } = resolveActivityActionTokens(
+    yieldData,
+    action.actionData
+  );
 
-    return getReadableRawTokenSymbol(token.symbol) ?? yieldTokenSymbol;
-  }
-  if (direction === "withdraw" || direction === "neutral") {
-    return yieldTokenSymbol;
-  }
-  // A confidential deposit always enters as the confidential asset, whatever
-  // the user wrapped it from.
-  const confidentialAsset =
-    confidentialKind === "deposit"
-      ? getConfidentialAssetToken(yieldData)
-      : null;
-  if (confidentialAsset) {
-    return (
-      getReadableRawTokenSymbol(confidentialAsset.symbol) ?? yieldTokenSymbol
-    );
-  }
-
-  const inputToken = getActionInputToken({
-    actionDto: action.actionData,
-    yieldDto: yieldData,
-  });
-
-  return getReadableRawTokenSymbol(inputToken?.symbol) ?? yieldTokenSymbol;
+  return {
+    amountTokenSymbol:
+      getReadableRawTokenSymbol(amountToken.symbol) ?? yieldTokenSymbol,
+    titleTokenSymbol:
+      getReadableRawTokenSymbol(titleToken.symbol) ?? yieldTokenSymbol,
+  };
 };
 
 const resolveAmountSign = ({
@@ -435,7 +429,7 @@ const projectBorrowActivityListItem = ({
       presentationTime,
     }),
     title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
-    tokenSymbol,
+    amountTokenSymbol: tokenSymbol,
   };
 };
 
@@ -457,9 +451,8 @@ export const projectActivityActionListItem = ({
     ? getConfidentialActionKind(action.yieldData, action.actionData)
     : null;
   const settlement = getActivitySettlement(action);
-  const tokenSymbol = resolveTokenSymbol({
+  const { amountTokenSymbol, titleTokenSymbol } = resolveTokenSymbols({
     action,
-    confidentialKind,
     direction,
   });
   const amount =
@@ -487,8 +480,8 @@ export const projectActivityActionListItem = ({
       confidentialKind,
       direction,
       settlement,
-      tokenSymbol,
+      tokenSymbol: titleTokenSymbol,
     }),
-    tokenSymbol,
+    amountTokenSymbol,
   };
 };

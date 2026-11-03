@@ -62,17 +62,20 @@ export const findYieldToken = (
 ): Token | undefined => {
   const needle = toLower(value);
 
-  return [yieldDto.token, ...yieldDto.tokens, ...yieldDto.inputTokens].find(
-    (token) => {
-      const address = token.address ? toLower(token.address) : null;
+  return [
+    yieldDto.token,
+    ...yieldDto.tokens,
+    ...yieldDto.inputTokens,
+    ...(yieldDto.outputToken ? [yieldDto.outputToken] : []),
+  ].find((token) => {
+    const address = token.address ? toLower(token.address) : null;
 
-      return (
-        address === needle ||
-        token.symbol.toLowerCase() === needle ||
-        (needle === NATIVE_TOKEN_ADDRESS && !token.address)
-      );
-    }
-  );
+    return (
+      address === needle ||
+      token.symbol.toLowerCase() === needle ||
+      (needle === NATIVE_TOKEN_ADDRESS && !token.address)
+    );
+  });
 };
 
 export const getActionInputToken = ({

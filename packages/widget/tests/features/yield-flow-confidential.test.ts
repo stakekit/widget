@@ -23,6 +23,7 @@ import {
 import { ConfidentialHandle } from "../../src/domain/earn/models";
 import {
   SignedTransactionPayload,
+  TokenAddress,
   WalletAddress,
   YieldId,
 } from "../../src/domain/identity/identifiers";
@@ -336,23 +337,19 @@ const convertingRpc: Partial<EvmRpc["Service"]> = {
 };
 
 describe("confidential vault Yield Transaction Flow", () => {
-  it("reports an instant exit in the underlying it pays out, and a private exit in the shares it queued", () => {
+  it("reports a finished exit as Review showed it: in its Exit Unit, beside its Exit Receive Token", () => {
     const shareToken = Schema.decodeSync(Token)(confidentialFixture.cShare);
-    const integration = confidentialYieldFixture({
-      state: {
-        pricePerShareState: {
-          price: 1.25,
-          quoteToken: usdc,
-          shareToken: confidentialFixture.cShare,
-        },
-      },
-    });
     const intake = (outputToken?: string) => {
       const start = exitStart(outputToken);
       if (start.intake._tag !== "Exit") throw new Error("not an exit");
       return {
         ...start.intake,
-        integration,
+        receiveToken: outputToken
+          ? {
+              address: Schema.decodeSync(TokenAddress)(outputToken),
+              symbol: usdc.symbol,
+            }
+          : null,
         request: {
           ...start.intake.request,
           arguments: { ...start.intake.request.arguments, amount: "2" },
@@ -365,14 +362,14 @@ describe("confidential vault Yield Transaction Flow", () => {
     const queued = getYieldFlowExitCompletion(intake());
 
     expect(instant).toMatchObject({
-      approximate: true,
       batched: false,
-      token: { symbol: usdc.symbol },
+      receiveToken: { symbol: usdc.symbol },
+      token: { symbol: confidentialFixture.cShare.symbol },
     });
-    expect(instant.amount.toFixed()).toBe("2.5");
+    expect(instant.amount.toFixed()).toBe("2");
     expect(queued).toMatchObject({
-      approximate: false,
       batched: true,
+      receiveToken: null,
       token: { symbol: confidentialFixture.cShare.symbol },
     });
     expect(queued.amount.toFixed()).toBe("2");

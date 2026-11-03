@@ -37,7 +37,7 @@ export const ActionListItem = ({
     providersDetails,
     iconType,
     title,
-    tokenSymbol,
+    amountTokenSymbol,
     amount,
     amountSign,
     isPositive,
@@ -135,7 +135,7 @@ export const ActionListItem = ({
             {amount ? (
               <Text className={isPositive ? amountPositive : amountNeutral}>
                 {amountSign}
-                {tokenSymbol ? `${amount} ${tokenSymbol}` : amount}
+                {amountTokenSymbol ? `${amount} ${amountTokenSymbol}` : amount}
               </Text>
             ) : null}
 

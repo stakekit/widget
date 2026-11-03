@@ -903,6 +903,7 @@
       "active": "Active",
       "instant_withdrawal_in_progress": "Instant withdrawal in progress",
       "balance": "Balance",
+      "shares": "Shares",
       "breadcrumb_root": "Positions",
       "breakdown": "Balance breakdown",
       "details": "Staking details",
@@ -1071,7 +1072,7 @@
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "deposit_submitted": "Deposit of {{amount}} {{tokenNetwork}} submitted",
-    "approximate_amount": "≈ {{amount}}",
+    "receive_token": "Receive token: {{symbol}}",
     "withdrawal_submitted": "Withdrawal of {{amount}} {{tokenNetwork}} submitted",
     "next_batch_in": "Joins the next batch in {{duration}}",
     "next_batch_imminent": "Joins the next batch, due any moment",

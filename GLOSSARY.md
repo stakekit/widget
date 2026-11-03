@@ -127,6 +127,22 @@ than the token's decimals. Eligibility and Action Commands use this value.
 **Base Unit Amount**: An integer count of a token's smallest indivisible unit.
 Wallet transactions and raw balances use this value.
 
+**Value Token**: The token a position balance's amount is quoted and priced in:
+the yield's underlying asset. A balance's value always carries it.
+_Avoid_: base token, underlying token
+
+**Shares**: A position balance's amount in its share token, such as vault
+shares or a wrapped token, when that token differs from its Value Token.
+_Avoid_: holding, receipt balance
+
+**Exit Unit**: The token an exit amount is entered in: the share token when the
+exit's Action Argument Contract takes only Shares, not a plain amount;
+otherwise the Value Token.
+
+**Exit Receive Token**: The token an exit pays out, chosen from the exit's
+advertised options.
+_Avoid_: output token (in copy)
+
 ### Earn
 
 **Earn Catalog**: The authoritative project-enabled, enterable categories,

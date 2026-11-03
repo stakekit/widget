@@ -113,7 +113,7 @@ describe("Activity action list item projection", () => {
         _tag: "deposited",
         tokenSymbol: yieldData.token.symbol,
       },
-      tokenSymbol: yieldData.token.symbol,
+      amountTokenSymbol: yieldData.token.symbol,
     });
   });
 
@@ -209,7 +209,7 @@ describe("Activity action list item projection", () => {
         actionLabel: "Vote",
         tokenSymbol: null,
       },
-      tokenSymbol: null,
+      amountTokenSymbol: null,
     });
   });
 
@@ -234,7 +234,7 @@ describe("Activity action list item projection", () => {
         presentationTime: null,
       });
 
-      expect(projection.tokenSymbol).toBeNull();
+      expect(projection.amountTokenSymbol).toBeNull();
     }
   );
 
@@ -251,7 +251,7 @@ describe("Activity action list item projection", () => {
       presentationTime: null,
     });
 
-    expect(projection.tokenSymbol).toBe("POL");
+    expect(projection.amountTokenSymbol).toBe("POL");
   });
 
   it.each([
@@ -296,15 +296,17 @@ describe("Activity action list item projection", () => {
     [
       "the confidential asset",
       { inputToken: confidentialFixture.cUsdc.address },
+      "cUSDC",
     ],
     [
-      "the underlying it wrapped",
+      "the underlying",
       { inputToken: confidentialFixture.usdc.address },
+      "USDC",
     ],
-    ["no input token", null],
+    ["no input token", null, "USDC"],
   ] as const)(
-    "titles a confidential deposit from %s with the confidential asset and awaits its batch",
-    (_name, rawArguments) => {
+    "titles a confidential deposit of %s with its input token and awaits its batch",
+    (_name, rawArguments, symbol) => {
       const projection = projectActivityActionListItem({
         action: makeItem(
           yieldApiActionFixture({
@@ -321,8 +323,8 @@ describe("Activity action list item projection", () => {
 
       expect(projection).toMatchObject({
         statusLabel: "awaiting_settlement",
-        title: { _tag: "deposit_submitted", tokenSymbol: "cUSDC" },
-        tokenSymbol: "cUSDC",
+        title: { _tag: "deposit_submitted", tokenSymbol: symbol },
+        amountTokenSymbol: symbol,
       });
     }
   );
@@ -331,11 +333,12 @@ describe("Activity action list item projection", () => {
     [
       "to the confidential asset",
       { outputToken: confidentialFixture.cUsdc.address },
+      "cUSDC",
     ],
-    ["without an output token", null],
+    ["without an output token", null, "csteakcUSDC"],
   ] as const)(
-    "titles a private confidential withdrawal %s as requested and awaiting its batch",
-    (_, rawArguments) => {
+    "titles a private confidential withdrawal %s with its receive token and counts it in the vault share",
+    (_, rawArguments, titleSymbol) => {
       const projection = projectActivityActionListItem({
         action: makeItem(
           yieldApiActionFixture({
@@ -353,8 +356,11 @@ describe("Activity action list item projection", () => {
       expect(projection).toMatchObject({
         direction: "withdraw",
         statusLabel: "awaiting_settlement",
-        title: { _tag: "private_withdrawal_requested", tokenSymbol: "cUSDC" },
-        tokenSymbol: "cUSDC",
+        title: {
+          _tag: "private_withdrawal_requested",
+          tokenSymbol: titleSymbol,
+        },
+        amountTokenSymbol: "csteakcUSDC",
       });
     }
   );
@@ -384,6 +390,10 @@ describe("Activity action list item projection", () => {
                 type: eventType,
               },
             ],
+            rawArguments:
+              type === "STAKE"
+                ? { inputToken: confidentialFixture.cUsdc.address }
+                : { outputToken: confidentialFixture.cUsdc.address },
             status: "SUCCESS",
             type,
           }),
@@ -400,7 +410,7 @@ describe("Activity action list item projection", () => {
     }
   );
 
-  it("titles an instant confidential withdrawal with the underlying it paid out", () => {
+  it("titles an instant confidential withdrawal with the underlying it paid out and counts it in the vault share", () => {
     const projection = projectActivityActionListItem({
       action: makeItem(
         yieldApiActionFixture({
@@ -418,7 +428,7 @@ describe("Activity action list item projection", () => {
     expect(projection).toMatchObject({
       statusLabel: "completed",
       title: { _tag: "withdrew", tokenSymbol: "USDC" },
-      tokenSymbol: "USDC",
+      amountTokenSymbol: "csteakcUSDC",
     });
   });
 
@@ -439,7 +449,7 @@ describe("Activity action list item projection", () => {
     expect(projection).toMatchObject({
       statusLabel: "completed",
       title: { _tag: "instant_withdrawal_finalized", tokenSymbol: "USDC" },
-      tokenSymbol: "USDC",
+      amountTokenSymbol: "USDC",
     });
   });
 
@@ -464,6 +474,41 @@ describe("Activity action list item projection", () => {
     expect(projection).toMatchObject({
       statusLabel: "completed",
       title: { _tag: "withdrew", tokenSymbol: yieldData.token.symbol },
+    });
+  });
+
+  it("titles a withdrawal with the receive token it names and counts it in the Value Token", () => {
+    const usds = {
+      address: "0x00000000000000000000000000000000000000d5",
+      decimals: 18,
+      name: "USDS",
+      network: "ethereum",
+      symbol: "USDS",
+    } as const;
+    const dai = {
+      ...usds,
+      address: "0x00000000000000000000000000000000000000da",
+      name: "Dai",
+      symbol: "DAI",
+    };
+    const yieldData = yieldApiYieldFixture({ token: dai, tokens: [dai, usds] });
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          amount: "1",
+          rawArguments: { outputToken: usds.address },
+          status: "SUCCESS",
+          type: "UNSTAKE",
+        }),
+        yieldData
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({
+      title: { _tag: "withdrew", tokenSymbol: "USDS" },
+      amountTokenSymbol: "DAI",
     });
   });
 
@@ -510,7 +555,7 @@ describe("Activity action list item projection", () => {
       statusLabel: "completed",
       timestamp: { dayKind: "today", relative: { unit: "hours", value: 2 } },
       title: { _tag: "borrow", action: "supply", tokenSymbol: "USDC" },
-      tokenSymbol: "USDC",
+      amountTokenSymbol: "USDC",
     });
   });
 
@@ -525,7 +570,10 @@ describe("Activity action list item projection", () => {
       presentationTime: null,
     });
 
-    expect(projection).toMatchObject({ amount: "1.5", tokenSymbol: "USDC" });
+    expect(projection).toMatchObject({
+      amount: "1.5",
+      amountTokenSymbol: "USDC",
+    });
   });
 
   it.each([

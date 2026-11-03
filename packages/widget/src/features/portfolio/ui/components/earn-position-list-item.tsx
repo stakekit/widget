@@ -11,7 +11,6 @@ import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { ListItem } from "../../../../shared/ui/primitives/list/list-item";
-import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
 import { WidgetLink } from "../../../navigation/views";
@@ -34,25 +33,45 @@ export type EarnPositionListItemDetails = {
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider> | null;
   readonly inactiveValidator: InactiveValidatorStatus | null;
   readonly rewardRateAverage: string | null;
-  readonly totalAmountFormatted: string | null;
-  /** Positive USD value of the position, when priced. */
+  /** The total: its amount and token, or its USD value across tokens. */
+  readonly totalFormatted: string | null;
+  /** USD value beside a single-token total, when priced. */
   readonly totalAmountUsd: BigNumber | null;
 };
 
-const EarnPositionAmount = ({
-  item,
+/** The row's right side: the APY beside the value and its USD estimate. */
+const EarnPositionValue = ({
   details,
+  rewardRate,
   showsMissingAmountPlaceholder,
 }: {
-  readonly item: PositionItem;
   readonly details: EarnPositionListItemDetails;
+  readonly rewardRate: string | null;
   readonly showsMissingAmountPlaceholder: boolean;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const rate = rewardRate ? (
+    <Text className={rewardRateText}>{rewardRate}</Text>
+  ) : null;
 
-  if (details.totalAmountFormatted && item.token) {
+  if (!details.totalFormatted) {
     return (
+      <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
+        {rate}
+        {showsMissingAmountPlaceholder ? <Text>-</Text> : null}
+      </Box>
+    );
+  }
+
+  const usd =
+    details.totalAmountUsd && !details.hasHiddenBalance
+      ? `≈ ${formatUsd(details.totalAmountUsd, locale)}`
+      : null;
+
+  return (
+    <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
+      {rate}
       <Box
         display="flex"
         flexDirection="column"
@@ -63,24 +82,19 @@ const EarnPositionAmount = ({
         <Text className={noWrap}>
           {details.hasHiddenBalance
             ? t("shared.confidential.hidden")
-            : `${details.totalAmountFormatted} ${item.token.symbol}`}
+            : details.totalFormatted}
         </Text>
-
-        {details.totalAmountUsd && !details.hasHiddenBalance ? (
+        {usd ? (
           <Text
             className={noWrap}
             variant={{ type: "muted", weight: "normal" }}
           >
-            ≈ {formatUsd(details.totalAmountUsd, locale)}
+            {usd}
           </Text>
         ) : null}
       </Box>
-    );
-  }
-
-  if (showsMissingAmountPlaceholder) return <Text>-</Text>;
-
-  return null;
+    </Box>
+  );
 };
 
 export const EarnPositionListItem = ({
@@ -162,20 +176,15 @@ export const EarnPositionListItem = ({
                 flex={1}
                 minWidth="0"
               >
-                {item.token ? (
-                  <TokenIcon
-                    metadata={{
-                      logoURI: integrationData.metadata.logoURI,
-                      name: integrationData.metadata.name,
-                      provider: integrationData.provider,
-                    }}
-                    token={item.token}
-                  />
-                ) : (
-                  <Box display="flex" marginRight="2">
-                    <Spinner />
-                  </Box>
-                )}
+                <TokenIcon
+                  metadata={{
+                    logoURI: integrationData.metadata.logoURI,
+                    name: integrationData.metadata.name,
+                    provider: integrationData.provider,
+                  }}
+                  // The primary Value Token labels the total.
+                  token={item.total[0]?.token ?? integrationData.token}
+                />
 
                 <Box className={positionInfoColumn}>
                   <Box display="flex" alignItems="center" gap="1">
@@ -211,17 +220,11 @@ export const EarnPositionListItem = ({
               </Box>
 
               {/* Reward rate + staked */}
-              <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-                {showsRewardRate && rewardRateAverage ? (
-                  <Text className={rewardRateText}>{rewardRateAverage}</Text>
-                ) : null}
-
-                <EarnPositionAmount
-                  item={item}
-                  details={details}
-                  showsMissingAmountPlaceholder={showsMissingAmountPlaceholder}
-                />
-              </Box>
+              <EarnPositionValue
+                details={details}
+                rewardRate={showsRewardRate ? rewardRateAverage : null}
+                showsMissingAmountPlaceholder={showsMissingAmountPlaceholder}
+              />
             </Box>
 
             {item.pointsRewardTokenBalances.length > 0 && (

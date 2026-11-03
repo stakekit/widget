@@ -19,8 +19,7 @@ export const usePositionListItem = (item: PositionItem) => {
     providersDetails,
     rewardRateAverage,
     inactiveValidator,
-    baseToken,
-    totalAmountFormatted,
+    totalFormatted,
     totalAmountUsd,
   } = useBasePositionListItem(item);
 
@@ -43,10 +42,7 @@ export const usePositionListItem = (item: PositionItem) => {
       new PricesKey({
         request: {
           currency: config.currency,
-          tokenList: [
-            ...(baseToken ? [baseToken] : []),
-            ...(rewardsSummary ? [rewardsSummary.token] : []),
-          ],
+          tokenList: rewardsSummary ? [rewardsSummary.token] : [],
         },
       })
     )
@@ -58,10 +54,10 @@ export const usePositionListItem = (item: PositionItem) => {
     : null;
 
   const rewardsAmountPriceFormatted =
-    baseToken && rewardsSummary && prices
+    rewardsSummary && prices
       ? formatTokenAmount(
           getTokenPriceInUSD({
-            baseToken,
+            baseToken: null,
             amount: rewardsSummary.rewards.total,
             pricePerShare: null,
             token: rewardsSummary.token,
@@ -80,7 +76,7 @@ export const usePositionListItem = (item: PositionItem) => {
     providersDetails,
     rewardRateAverage,
     inactiveValidator,
-    totalAmountFormatted,
+    totalFormatted,
     totalAmountUsd,
     rewardsAmountFormatted,
     rewardsAmountPriceFormatted,

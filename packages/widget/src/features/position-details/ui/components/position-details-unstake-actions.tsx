@@ -26,7 +26,7 @@ export const PositionDetailsUnstakeActions = () => {
     unstakeAmountGreaterThanAvailable,
     unstakeAmount,
     unstakeAmountUsd,
-    unstakeAmountUnderlying,
+    unstakeAmountValue,
     exitBalance,
     canChangeUnstakeAmount: canChangeUnstakeAmountValue,
     canUnstake,
@@ -104,7 +104,8 @@ export const PositionDetailsUnstakeActions = () => {
     ),
     onClick: onUnstakeClick,
   };
-  // A confidential exit is typed in vault shares and chooses its payout apart.
+  // A confidential exit is typed in its Exit Unit, Shares, so it chooses
+  // its Exit Receive Token apart from the amount.
   const confidentialExit = !!exitReceiveTokenSelection?.confidentialExit;
   const receiveTokenAccessory = (
     <ExitReceiveTokenAccessory
@@ -115,14 +116,10 @@ export const PositionDetailsUnstakeActions = () => {
     />
   );
   const getFormattedAmount = () => {
-    if (unstakeAmountUnderlying) {
+    if (unstakeAmountValue) {
       return t("position_details.underlying_amount", {
-        amount: formatTokenAmount(
-          unstakeAmountUnderlying.amount,
-          locale,
-          "down"
-        ),
-        symbol: unstakeAmountUnderlying.token.symbol,
+        amount: formatTokenAmount(unstakeAmountValue.amount, locale, "down"),
+        symbol: unstakeAmountValue.token.symbol,
       });
     }
     return unstakeAmountUsd ? formatUsd(unstakeAmountUsd, locale) : "";

@@ -566,6 +566,7 @@ export const confidentialYieldFixture = (
       gasFeeToken: sepoliaEth,
     },
     network: "ethereum-sepolia",
+    outputToken: cShare,
     token: usdc,
     tokens: [usdc],
     ...overrides,

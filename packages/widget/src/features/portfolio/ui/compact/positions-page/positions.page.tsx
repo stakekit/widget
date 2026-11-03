@@ -10,7 +10,7 @@ import {
   MountAnimatedPage,
 } from "../../../../widget-shell/views";
 import { usePositions } from "../../../react/use-positions";
-import { RevealBalancesControl } from "../../components/reveal-balances-control";
+import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
 import { container } from "./style.css";
 
@@ -76,7 +76,7 @@ const PositionsPage = () => {
                 <>
                   <ZerionChainModal />
 
-                  <RevealBalancesControl />
+                  <RevealBalancesHeader />
 
                   {isConnected && !positions.length && (
                     <Box my="4">

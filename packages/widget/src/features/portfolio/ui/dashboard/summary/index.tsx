@@ -7,7 +7,6 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { useSummary } from "../../../react/use-summary";
-import { RevealBalancesControl } from "../../components/reveal-balances-control";
 import { SummaryItem } from "../../components/summary-item";
 import { summaryContainer } from "../../components/summary-item/index.css";
 
@@ -122,9 +121,6 @@ export const Summary = () => {
           {t("dashboard.overview.summary.excludes_confidential")}
         </Text>
       ) : null}
-      <Box display="flex" justifyContent="flex-start">
-        <RevealBalancesControl />
-      </Box>
     </Box>
   );
 };

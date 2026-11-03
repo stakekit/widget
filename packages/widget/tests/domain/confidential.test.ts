@@ -5,8 +5,6 @@ import {
   type ConfidentialEncryption,
   fillConfidentialBalance,
   getCancellingHandles,
-  getCancelReturn,
-  getCancelReturnToken,
   getConfidentialCampaignUrl,
   getConfidentialConversion,
   getConfidentialHandleContract,
@@ -78,43 +76,6 @@ describe("confidential vault rules", () => {
         "WITHDRAW"
       )
     ).toBeNull();
-  });
-
-  it("returns what a cancelled pending request refunds: the confidential asset for a deposit, the vault share for a withdrawal", () => {
-    expect(
-      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", {
-        type: "entering",
-      })?.symbol
-    ).toBe(cUsdc.symbol);
-    expect(
-      getCancelReturnToken(confidentialYield(), "CANCEL_PENDING", {
-        shareToken,
-        type: "exiting",
-      })?.symbol
-    ).toBe(cShare.symbol);
-    expect(
-      getCancelReturnToken(yieldApiYieldFixture(), "CANCEL_PENDING", {
-        type: "entering",
-      })
-    ).toBeNull();
-  });
-
-  it("counts a cancelled withdrawal's refund in vault shares, not the underlying it is valued in", () => {
-    const refund = getCancelReturn(confidentialYield(), "CANCEL_PENDING", {
-      amount: new BigNumber("0.1"),
-      shares: { _tag: "Plain", amount: new BigNumber("0.097168") },
-      shareToken,
-      type: "exiting",
-    });
-
-    expect(refund?.token.symbol).toBe(cShare.symbol);
-    expect(refund?.amount.toFixed()).toBe("0.097168");
-    expect(
-      getCancelReturn(confidentialYield(), "CANCEL_PENDING", {
-        amount: new BigNumber("2"),
-        type: "entering",
-      })?.amount.toFixed()
-    ).toBe("2");
   });
 
   it("needs the API to list the router among the enter execution contracts", () => {

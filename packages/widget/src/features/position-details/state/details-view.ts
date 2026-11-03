@@ -209,15 +209,15 @@ export const positionDetailsViewAtom = Atom.family(
               whole: workflow.exitBalance.amount,
             })
           : null,
-        // A confidential exit in shares, restated in the underlying it redeems to.
-        unstakeAmountUnderlying: workflow.exitBalance?.underlying
+        // An exit in Shares, restated in the Value Token it redeems to.
+        unstakeAmountValue: workflow.exitBalance?.value
           ? {
               amount: prorate({
                 part: workflow.unstakeAmount,
-                value: workflow.exitBalance.underlying.amount,
+                value: workflow.exitBalance.value.amount,
                 whole: workflow.exitBalance.amount,
               }),
-              token: workflow.exitBalance.underlying.token,
+              token: workflow.exitBalance.value.token,
             }
           : null,
         unstakeIsGreaterOrLessIntegrationLimitError:

@@ -23,12 +23,21 @@ export const usePendingActionReview = () => {
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;
 
-  // A confidential cancel refunds the wrapper or the vault shares.
+  // A cancel returns what was committed, its Shares when there are any; one
+  // taking an amount shows that amount in the balance's Value Token.
   const returnToken = manageFlow.cancelReturn?.token ?? null;
-  const amount =
-    manageFlow.cancelReturn?.amount ??
-    exactDecimal(manageFlow.request.arguments?.amount ?? 0);
-  const interactedToken = returnToken ?? manageFlow.interactedToken;
+  const requestAmount = manageFlow.request.arguments?.amount;
+  const shown = requestAmount
+    ? {
+        amount: exactDecimal(requestAmount),
+        token: manageFlow.interactedToken,
+      }
+    : (manageFlow.cancelReturn ?? {
+        amount: exactDecimal(0),
+        token: manageFlow.interactedToken,
+      });
+  const amount = shown.amount;
+  const interactedToken = shown.token;
   const integrationData = manageFlow.integration;
 
   const prices = review.prices;

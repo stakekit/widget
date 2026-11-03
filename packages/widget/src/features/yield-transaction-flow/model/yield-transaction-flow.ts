@@ -10,15 +10,15 @@ import type { YieldPendingActionType } from "../../../domain/action/pending-acti
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import {
-  type CancelReturn,
+  getConfidentialActionKind,
   getConfidentialAssetToken,
   getConfidentialChainId,
   getConfidentialConversion,
   isConfidentialInstantExit,
   isConfidentialYield,
   toBaseUnits,
-  toConfidentialUnderlyingAmount,
 } from "../../../domain/earn/confidential";
+import type { TokenAmount } from "../../../domain/earn/denomination";
 import type {
   ConfidentialHandle,
   EarnProvider,
@@ -94,8 +94,8 @@ type ManageYieldTransactionFlowIntake = {
   readonly balanceType: YieldBalanceType;
   /** The balance is still encrypted, so its amount is unknown here. */
   readonly balanceHidden?: boolean;
-  /** What a confidential cancel refunds, presented instead of the request. */
-  readonly cancelReturn?: CancelReturn;
+  /** What a cancel returns, presented instead of the request. */
+  readonly cancelReturn?: TokenAmount;
   readonly confidentialHandle?: ConfidentialHandle;
   readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;
@@ -520,47 +520,28 @@ export const getYieldFlowWorkflowInput = ({
 
 export type YieldFlowExitCompletion = Readonly<{
   readonly amount: BigNumber;
-  /** The payout is valued at the share price, not read back from chain. */
-  readonly approximate: boolean;
   /** The exit only joined the next redemption batch. */
   readonly batched: boolean;
+  /** The Exit Receive Token Review showed, if any. */
+  readonly receiveToken: ExitReceiveToken | null;
+  /** The Exit Unit's token, which the amount is in. */
   readonly token: Token;
 }>;
 
-/**
- * What a finished exit reports: an instant confidential exit the underlying
- * it paid out, a private one the shares it queued, others what they withdrew.
- */
+/** What a finished exit reports: what Review showed. */
 export const getYieldFlowExitCompletion = (
   intake: ExitYieldTransactionFlowIntake
-): YieldFlowExitCompletion => {
-  const amount = exactDecimal(intake.request.arguments?.amount ?? 0);
-  const plain = {
-    amount,
-    approximate: false,
-    batched: false,
-    token: intake.unstakeToken,
-  };
-  if (!isConfidentialYield(intake.integration)) return plain;
-  if (
-    !isConfidentialInstantExit(
-      intake.integration,
-      intake.request.arguments?.outputToken
-    )
-  ) {
-    return { ...plain, batched: true };
-  }
-  return {
-    amount: toConfidentialUnderlyingAmount(
-      intake.integration,
-      intake.unstakeToken,
-      amount
-    ),
-    approximate: true,
-    batched: false,
-    token: intake.integration.token,
-  };
-};
+): YieldFlowExitCompletion => ({
+  amount: exactDecimal(intake.request.arguments?.amount ?? 0),
+  batched:
+    getConfidentialActionKind(intake.integration, {
+      intent: "exit",
+      rawArguments: intake.request.arguments ?? null,
+      type: "UNSTAKE",
+    }) === "privateExit",
+  receiveToken: intake.receiveToken,
+  token: intake.unstakeToken,
+});
 
 /**
  * How a confidential vault's Execution creates its action, once confirmed:

@@ -11,7 +11,9 @@ import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
   type BalanceDataKey,
+  getPositionValueTotal,
   type PositionData,
+  type PositionTokenSum,
   type PositionValidators,
   toPositionsData,
 } from "../../../../domain/portfolio/positions";
@@ -41,7 +43,11 @@ export type PositionItem = {
   readonly hasPendingRequest: boolean;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
   readonly hasPendingClaimRewards: boolean;
-  readonly token: EarnBalance["token"] | null;
+  /**
+   * Every balance with an amount: one sum in the primary Value Token when all
+   * are priced, else one per Value Token.
+   */
+  readonly total: ReadonlyArray<PositionTokenSum>;
 } & (
   | { readonly type: "validators"; readonly validators: PositionValidators }
   | { readonly type: "default" }
@@ -98,17 +104,13 @@ export const toPositionItems = (
         const actionRequired =
           balancesWithAmount.some((balance) => balance.type === "locked") ||
           hasRequiredPendingAction;
-
         items.push({
           ...value,
           integrationId: position.yieldId,
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,
-          token:
-            [...value.balances].sort(
-              (a, b) => priorityOrder[a.type] - priorityOrder[b.type]
-            )[0]?.token ?? null,
+          total: getPositionValueTotal(balancesWithAmount),
           actionRequired,
           hasPendingRequest:
             !actionRequired &&
@@ -291,12 +293,3 @@ export const currentGroupedPositionsAtom = Atom.make(
     return rows;
   }
 ).pipe(Atom.withLabel("currentGroupedPositionsAtom"));
-
-const priorityOrder: Record<EarnBalance["type"], number> = {
-  active: 1,
-  entering: 2,
-  exiting: 3,
-  withdrawable: 4,
-  claimable: 5,
-  locked: 6,
-};
