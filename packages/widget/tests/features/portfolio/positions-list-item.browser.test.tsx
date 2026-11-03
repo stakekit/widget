@@ -36,6 +36,7 @@ type RowDetails = {
   readonly providersDetails: unknown;
   readonly inactiveValidator: InactiveValidatorStatus | null;
   readonly rewardRateAverage: string | null;
+  readonly hasHiddenBalance?: boolean;
   readonly totalFormatted: string | null;
   readonly totalAmountUsd: BigNumber | null;
 };
@@ -277,6 +278,22 @@ describe("Earn position list item", () => {
       .element(compact.getByText("-", { exact: true }))
       .not.toBeInTheDocument();
   });
+
+  it.each(presentations)(
+    "shows Hidden for a hidden $name position without a total",
+    async ({ row }) => {
+      hookState.details = createDetails({
+        hasHiddenBalance: true,
+        totalFormatted: null,
+      });
+      const app = await renderRow(row(createItem()));
+
+      await expect.element(app.getByText("Hidden")).toBeInTheDocument();
+      await expect
+        .element(app.getByText("-", { exact: true }))
+        .not.toBeInTheDocument();
+    }
+  );
 
   it.each([
     { expected: false, presentation: presentations[0] },

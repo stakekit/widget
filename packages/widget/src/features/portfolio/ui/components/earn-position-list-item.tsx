@@ -55,7 +55,7 @@ const EarnPositionValue = ({
     <Text className={rewardRateText}>{rewardRate}</Text>
   ) : null;
 
-  if (!details.totalFormatted) {
+  if (!details.totalFormatted && !details.hasHiddenBalance) {
     return (
       <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
         {rate}
