@@ -599,8 +599,8 @@ describe("getPositionOverviewModel", () => {
     ).toBe(false);
   });
 
-  it("shows a pending withdrawal in its Value Token with its Shares beside it", () => {
-    const { cShare, usdc } = confidentialFixture;
+  it("shows a confidential withdrawal in the confidential asset with its Shares beside it", () => {
+    const { cShare, cUsdc } = confidentialFixture;
     const model = getPositionOverviewModel({
       canUnstake: true,
       locale: "en",
@@ -621,7 +621,7 @@ describe("getPositionOverviewModel", () => {
                 amountUsd: "0.1",
                 shareAmount: "0.097168",
                 shareToken: cShare,
-                token: usdc,
+                token: cUsdc,
                 type: "exiting",
               }),
               tokenPriceInUsd: new BigNumber(1),
@@ -634,7 +634,7 @@ describe("getPositionOverviewModel", () => {
     });
 
     expect(model.breakdownRows.map(({ value }) => value)).toEqual([
-      `0.1 ${usdc.symbol}`,
+      `0.1 ${cUsdc.symbol}`,
     ]);
     expect(model.breakdownRows[0]?.subValue).toContain(
       `0.09716 ${cShare.symbol}`
@@ -1389,7 +1389,7 @@ describe("getPositionOverviewModel", () => {
     });
 
     it("hides Shares while they are encrypted", () => {
-      const { cShare, usdc: zamaUsdc } = confidentialFixture;
+      const { cShare, cUsdc } = confidentialFixture;
       const model = overview(
         new Map([
           [
@@ -1402,7 +1402,7 @@ describe("getPositionOverviewModel", () => {
                 shareAmount: "0",
                 shareAmountRaw: `0x${"ab".repeat(32)}`,
                 shareToken: cShare,
-                token: zamaUsdc,
+                token: cUsdc,
                 type: "active",
               }),
             ],

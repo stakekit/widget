@@ -74,7 +74,7 @@ describe("denomination", () => {
       getBalanceShares({
         shares: { _tag: "Encrypted", handle },
         shareToken: cShare,
-        token: usdc,
+        token: cUsdc,
       })
     ).toBeNull();
   });
@@ -115,7 +115,7 @@ describe("denomination", () => {
     const exiting = {
       shares: { _tag: "Plain", amount: new BigNumber("0.097168") } as const,
       shareToken: cShare,
-      token: usdc,
+      token: cUsdc,
     };
     const refund = getPendingActionReturn("CANCEL_PENDING", exiting);
 
@@ -142,14 +142,14 @@ describe("denomination", () => {
       getPendingActionReturn("CANCEL_PENDING", {
         shares: { _tag: "Plain", amountRaw: 97168n },
         shareToken: cShare,
-        token: usdc,
+        token: cUsdc,
       })?.amount.toFixed()
     ).toBe("0.097168");
     expect(
       getPendingActionReturn("CANCEL_PENDING", {
         shares: { _tag: "Encrypted", handle },
         shareToken: cShare,
-        token: usdc,
+        token: cUsdc,
       })?.amount.toFixed()
     ).toBe("0");
     // A plain vault without a share count shows no "0 <share>".
@@ -262,7 +262,7 @@ describe("position shares", () => {
           amountUsd: null,
           shares: { _tag: "Encrypted", handle },
           shareToken: cShare,
-          token: usdc,
+          token: cUsdc,
           type: "active",
         },
         { ...vaultShare("1", "0.75"), shareToken: cShare },
