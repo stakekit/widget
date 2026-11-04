@@ -88,6 +88,11 @@ export const getConfig = (
           "@base-ui/react/toggle",
           "@base-ui/react/toggle-group",
           "@base-ui/react/tooltip",
+          // The data and motion libraries the Design System imports, for the
+          // same reason.
+          "@tanstack/react-virtual",
+          "motion/react",
+          "recharts",
           // Runtime injection imports this once a compiled module loads. The
           // dependency scan can't see an import the transform adds; found
           // mid-run, it would reload the page and fail a test run.

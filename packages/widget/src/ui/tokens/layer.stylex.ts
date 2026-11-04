@@ -8,6 +8,9 @@ import * as stylex from "@stylexjs/stylex";
  * Numbers, because StyleX types `zIndex` as a number.
  */
 export const layer = stylex.defineConsts({
+  // In-flow content that sticks over the rows scrolling under it, such as a
+  // list's group title. Below every popup.
+  sticky: 1,
   overlay: 10,
   modal: 20,
   dropdown: 30,

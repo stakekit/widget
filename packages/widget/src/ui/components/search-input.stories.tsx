@@ -132,3 +132,108 @@ export const InDisabledField: Story = {
     await expect(args.onValueChange).not.toHaveBeenCalled();
   },
 };
+
+const options = ["ETH", "USDC", "DAI"];
+
+/** Over a listbox of results, the arrow keys and Enter stay in the field. */
+const SearchCombobox = ({
+  onKey,
+  onValueChange,
+}: {
+  readonly onKey: (key: string) => void;
+  readonly onValueChange: (value: string) => void;
+}) => {
+  const [value, setValue] = useState("");
+  const [active, setActive] = useState(-1);
+  return (
+    <div style={{ width: 320 }}>
+      <SearchInput
+        value={value}
+        onValueChange={(next) => {
+          setValue(next);
+          onValueChange(next);
+        }}
+        label="Search tokens"
+        clearLabel="Clear search"
+        listbox={{
+          id: "results",
+          expanded: true,
+          ...(active === -1 ? {} : { activeOptionId: `result-${active}` }),
+          onKey: (key) => {
+            onKey(key);
+            if (key === "ArrowDown") {
+              setActive(Math.min(active + 1, options.length - 1));
+            }
+            if (key === "ArrowUp") setActive(Math.max(active - 1, 0));
+          },
+        }}
+      />
+      <div id="results" role="listbox" aria-label="Results">
+        {options.map((option, index) => (
+          <div
+            key={option}
+            id={`result-${index}`}
+            role="option"
+            tabIndex={-1}
+            aria-selected={index === active}
+          >
+            {option}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const onKey = fn();
+
+export const Combobox: Story = {
+  render: (args) => (
+    <SearchCombobox onKey={onKey} onValueChange={args.onValueChange} />
+  ),
+  play: async ({ args, canvasElement }) => {
+    onKey.mockClear();
+    const combobox = within(canvasElement).getByRole("combobox", {
+      name: "Search tokens",
+    });
+    await expect(combobox).toHaveAttribute("aria-controls", "results");
+    await expect(combobox).toHaveAttribute("aria-expanded", "true");
+
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+    await expect(combobox).toHaveAttribute("aria-activedescendant", "result-1");
+    await expect(onKey.mock.calls).toEqual([
+      ["ArrowDown"],
+      ["ArrowDown"],
+      ["Enter"],
+    ]);
+    await expect(args.onValueChange).not.toHaveBeenCalled();
+    await expect(combobox).toHaveValue("");
+  },
+};
+
+/** While an IME composes, the arrow keys and Enter stay with it. */
+export const ComboboxComposing: Story = {
+  render: (args) => (
+    <SearchCombobox onKey={onKey} onValueChange={args.onValueChange} />
+  ),
+  play: async ({ canvasElement }) => {
+    onKey.mockClear();
+    const combobox = within(canvasElement).getByRole("combobox", {
+      name: "Search tokens",
+    });
+    await userEvent.click(combobox);
+    for (const key of ["ArrowDown", "Enter"]) {
+      combobox.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key,
+          isComposing: true,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    }
+    await expect(onKey).not.toHaveBeenCalled();
+    await expect(combobox).not.toHaveAttribute("aria-activedescendant");
+  },
+};

@@ -1,6 +1,6 @@
 import { Input } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
-import { useRef } from "react";
+import { type RefObject, useRef } from "react";
 import { Icon } from "../primitives/icon";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
@@ -22,12 +22,37 @@ type SearchInputProps = {
   readonly clearLabel: string;
   /** Also disabled by an enclosing disabled `Field`. */
   readonly disabled?: boolean;
+  /** The input, such as for a dialog to focus when it opens. */
+  readonly inputRef?: RefObject<HTMLInputElement | null>;
+  /**
+   * Makes the field a combobox over a listbox of results: focus stays in the
+   * field while the arrow keys move through the options and Enter picks one.
+   */
+  readonly listbox?: {
+    /** The listbox's id. */
+    readonly id: string;
+    /** Whether the listbox shows, such as not while there are no results. */
+    readonly expanded: boolean;
+    /** The id of the option the keys have reached. */
+    readonly activeOptionId?: string;
+    readonly onKey: (key: ListboxKey) => void;
+  };
+};
+
+/** The keys a search field hands to the listbox it controls. */
+type ListboxKey = "ArrowDown" | "ArrowUp" | "Enter";
+
+const listboxKeys: Partial<Record<string, ListboxKey>> = {
+  ArrowDown: "ArrowDown",
+  ArrowUp: "ArrowUp",
+  Enter: "Enter",
 };
 
 /**
  * A search field, such as the token search of a select sheet. A clear button
  * shows once there is a query and hands focus back to the field; Escape also
  * clears it, and only reaches an enclosing dialog once the field is empty.
+ * With `listbox` it is a combobox that moves through the listbox's options.
  */
 export const SearchInput = ({
   value,
@@ -36,8 +61,11 @@ export const SearchInput = ({
   placeholder,
   clearLabel,
   disabled: disabledProp = false,
+  inputRef: inputRefProp,
+  listbox,
 }: SearchInputProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const ownInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = inputRefProp ?? ownInputRef;
   // Base UI disables the input itself under a disabled Field; the box and
   // the clear button follow the same state.
   const field = useFieldState();
@@ -50,6 +78,17 @@ export const SearchInput = ({
         ref={inputRef}
         type="search"
         aria-label={label}
+        {...(listbox === undefined
+          ? {}
+          : ({
+              role: "combobox",
+              "aria-autocomplete": "list",
+              "aria-controls": listbox.expanded ? listbox.id : undefined,
+              "aria-expanded": listbox.expanded,
+              "aria-activedescendant": listbox.expanded
+                ? listbox.activeOptionId
+                : undefined,
+            } as const))}
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
@@ -57,6 +96,14 @@ export const SearchInput = ({
         value={value}
         onValueChange={(next) => onValueChange(next)}
         onKeyDown={(event) => {
+          // While an IME composes, its keys pick and commit characters.
+          if (event.nativeEvent.isComposing) return;
+          const listboxKey = listboxKeys[event.key];
+          if (listbox !== undefined && listboxKey !== undefined) {
+            event.preventDefault();
+            listbox.onKey(listboxKey);
+            return;
+          }
           if (event.key !== "Escape" || value === "") return;
           event.preventDefault();
           event.stopPropagation();

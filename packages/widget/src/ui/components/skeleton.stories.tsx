@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { Stack } from "../primitives/stack";
 import { Card } from "./card";
 import { Skeleton } from "./skeleton";
@@ -14,6 +15,21 @@ type Story = StoryObj<typeof meta>;
 
 export const Line: Story = { args: { shape: "line", role: "body" } };
 export const Rect: Story = { args: { shape: "rect", height: "md" } };
+
+/** `fill` takes its parent's height, such as a loading chart's. */
+export const RectFill: Story = {
+  args: { shape: "rect", height: "fill" },
+  render: (args) => (
+    <div style={{ height: 160 }}>
+      <Skeleton {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const skeleton = canvasElement.querySelector("[aria-hidden='true']");
+    await expect(skeleton?.getBoundingClientRect().height).toBe(160);
+  },
+};
+
 export const Circle: Story = { args: { shape: "circle", size: "lg" } };
 
 /** Every skeleton shape, as a loading list row would use them. */

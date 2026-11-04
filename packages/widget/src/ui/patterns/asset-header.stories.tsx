@@ -1,0 +1,85 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
+import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
+import { AssetHeader } from "./asset-header";
+
+const titleOnlyArgs = {
+  title: "Lido Staked ETH",
+  token: { name: "stETH", src: tokenLogo, networkSrc: networkLogo },
+};
+
+const meta = {
+  title: "Patterns/AssetHeader",
+  component: AssetHeader,
+  args: {
+    ...titleOnlyArgs,
+    provider: { name: "Lido", label: "via Lido", src: tokenLogo },
+    details: ["Ethereum", "stETH"],
+    badges: [
+      { label: "Liquid staking", tone: "accent" },
+      { label: "Auto-compounding" },
+    ],
+  },
+  render: (args) => (
+    <div style={{ width: 360 }}>
+      <AssetHeader {...args} />
+    </div>
+  ),
+} satisfies Meta<typeof AssetHeader>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+/** The name heads the page; the provider, facts and badges follow. */
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { level: 2, name: "Lido Staked ETH" })
+    ).toBeVisible();
+    await expect(canvas.getByText("via Lido")).toBeVisible();
+    await expect(canvas.getByText(/Ethereum · stETH/)).toBeVisible();
+    await expect(canvas.getByText("Auto-compounding")).toBeVisible();
+  },
+};
+
+export const Dark: Story = {
+  ...Default,
+  globals: { colorScheme: "dark" },
+};
+
+/** The provider's logo is a soft square tile; the token's stays round. */
+export const ProviderLogo: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const avatarRoot = (wrapper: Element | null | undefined) => {
+      const root = wrapper?.firstElementChild;
+      if (!(root instanceof HTMLElement)) throw new Error("Expected an avatar");
+      return getComputedStyle(root).borderRadius;
+    };
+    const heading = canvas.getByRole("heading", { name: "Lido Staked ETH" });
+    const token = avatarRoot(heading.parentElement?.previousElementSibling);
+    const provider = avatarRoot(
+      canvas.getByText("via Lido").previousElementSibling
+    );
+    await expect(provider).not.toBe(token);
+  },
+};
+
+/** Only the name and the token, as for a yield without a provider. */
+export const TitleOnly: Story = {
+  render: () => (
+    <div style={{ width: 360 }}>
+      <AssetHeader {...titleOnlyArgs} />
+    </div>
+  ),
+};
+
+/** Without logos, the initials stand in; long names truncate. */
+export const FallbackAndLongName: Story = {
+  args: {
+    title: "Ethereum Liquid Staking Vault with a very long name",
+    token: { name: "ETH", src: brokenImage },
+    provider: { name: "Figment", label: "via Figment" },
+  },
+};

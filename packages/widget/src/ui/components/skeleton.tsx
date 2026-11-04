@@ -88,6 +88,8 @@ const rectHeightStyles = stylex.create({
   sm: { height: controlHeight.sm },
   md: { height: controlHeight.md },
   lg: { height: controlHeight.lg },
+  // The parent's height, such as a chart's plot.
+  fill: { height: "100%" },
 });
 
 const lineStyles = stylex.create({

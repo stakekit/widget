@@ -75,6 +75,20 @@ export const TokenDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/** Beside text that names the token, the avatar stays out of the accessibility tree. */
+export const TokenDecorative: Story = {
+  render: () => (
+    <Stack direction="row" align="center" gap={8}>
+      <TokenAvatar src={brokenImage} name="USDC" decorative />
+      <span>USDC</span>
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole("img")).toBeNull();
+    await expect(canvasElement).toHaveTextContent("UUSDC");
+  },
+};
+
 /** An account's generated avatar: the same address always gets the same one. */
 export const Account: Story = {
   render: () => (

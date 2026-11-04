@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import * as stylex from "@stylexjs/stylex";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode, RefObject } from "react";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
@@ -33,6 +33,8 @@ type ModalProps = {
   readonly children?: ReactNode;
   /** Actions under the body, such as a confirm button. */
   readonly footer?: ReactNode;
+  /** The element to focus on opening; unset, the first focusable one. */
+  readonly initialFocus?: RefObject<HTMLElement | null>;
 };
 
 const enteringOrLeaving = ":is([data-starting-style], [data-ending-style])";
@@ -50,6 +52,7 @@ export const Modal = ({
   closeLabel,
   children,
   footer,
+  initialFocus,
 }: ModalProps) => {
   const container = usePortalContainer();
 
@@ -58,7 +61,10 @@ export const Modal = ({
       {trigger && <Dialog.Trigger render={trigger} />}
       <Dialog.Portal container={container}>
         <Dialog.Backdrop {...stylex.props(dialogStyles.backdrop)} />
-        <Dialog.Popup {...stylex.props(styles.popup)}>
+        <Dialog.Popup
+          {...(initialFocus === undefined ? {} : { initialFocus })}
+          {...stylex.props(styles.popup)}
+        >
           <div {...stylex.props(styles.header)}>
             <Dialog.Title render={<Text variant="title" as="h2" />}>
               {title}

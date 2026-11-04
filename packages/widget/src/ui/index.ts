@@ -1,6 +1,6 @@
 /**
  * The Design System's main interface, for Features and application
- * composition: primitives, components and their finite prop types.
+ * composition: primitives, components, patterns and their finite prop types.
  */
 export { Logo } from "./artwork/logo";
 export { MorphoMark } from "./artwork/morpho-mark";
@@ -8,6 +8,7 @@ export { Accordion } from "./components/accordion";
 export { AlertDialog } from "./components/alert-dialog";
 export { AmountInput } from "./components/amount-input";
 export type { AmountSeparators } from "./components/amount-input-text";
+export { AnimatedNumber } from "./components/animated-number";
 export { Avatar, TokenAvatar } from "./components/avatar";
 export { Badge } from "./components/badge";
 export { Button } from "./components/button";
@@ -45,8 +46,28 @@ export { Spinner } from "./components/spinner";
 export { Steps } from "./components/steps";
 export { Switch } from "./components/switch";
 export { type TabOption, Tabs } from "./components/tabs";
+export {
+  TimeSeriesChart,
+  type TimeSeriesPoint,
+} from "./components/time-series-chart";
 export { Tooltip } from "./components/tooltip";
+export {
+  VirtualList,
+  type VirtualListGroup,
+} from "./components/virtual-list";
 export type { IconName } from "./icons/glyphs";
+export { AmountPanel } from "./patterns/amount-panel";
+export { AssetHeader } from "./patterns/asset-header";
+export { EmptyState } from "./patterns/empty-state";
+export { ErrorState } from "./patterns/error-state";
+export { FlowSteps } from "./patterns/flow-steps";
+export { PageHeader } from "./patterns/page-header";
+export { PageTransition } from "./patterns/page-transition";
+export { ReviewSummary } from "./patterns/review-summary";
+export { SelectSheet } from "./patterns/select-sheet";
+export type { TokenLogo } from "./patterns/token";
+export { TokenTrigger } from "./patterns/token-trigger";
+export { WidgetFrame } from "./patterns/widget-frame";
 export { Box } from "./primitives/box";
 export { Grid } from "./primitives/grid";
 export { Icon } from "./primitives/icon";

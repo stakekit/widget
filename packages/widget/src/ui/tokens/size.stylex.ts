@@ -32,6 +32,11 @@ export const scrollAreaMaxHeight = stylex.defineConsts({
   lg: "480px",
 });
 
+/** A time-series chart's height, axes included. */
+export const chartHeight = stylex.defineConsts({
+  md: "160px",
+});
+
 /** Avatar sizes: `sm` sits in a row of text, `xl` heads an account dialog. */
 export const avatarSize = stylex.defineConsts({
   xs: "16px",

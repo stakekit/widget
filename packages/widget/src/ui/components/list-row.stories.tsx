@@ -5,16 +5,18 @@ import { TokenAvatar } from "./avatar";
 import { Badge } from "./badge";
 import { ListGroup, ListRow } from "./list-row";
 
+const rowContent = {
+  leading: <TokenAvatar src={tokenLogo} name="ETH" />,
+  title: "Ethereum",
+  subtitle: "Lido",
+  value: "1.2345 ETH",
+  subvalue: "$4,012.33",
+};
+
 const meta = {
   title: "Components/ListRow",
   component: ListRow,
-  args: {
-    leading: <TokenAvatar src={tokenLogo} name="ETH" />,
-    title: "Ethereum",
-    subtitle: "Lido",
-    value: "1.2345 ETH",
-    subvalue: "$4,012.33",
-  },
+  args: rowContent,
 } satisfies Meta<typeof ListRow>;
 export default meta;
 
@@ -90,3 +92,166 @@ export const Group: Story = {
 };
 
 export const GroupDark: Story = { ...Group, globals: { colorScheme: "dark" } };
+
+const onSelectOption = fn();
+
+/**
+ * Options of a listbox a combobox owns: the one its keys reached shows the
+ * focus ring, the chosen one reads as selected, and a press chooses one.
+ */
+export const Options: Story = {
+  render: () => (
+    <div role="listbox" aria-label="Tokens">
+      <ListRow
+        {...rowContent}
+        option={{
+          id: "eth",
+          selected: false,
+          active: true,
+          onSelect: onSelectOption,
+        }}
+      />
+      <ListRow
+        {...rowContent}
+        title="Solana"
+        option={{
+          id: "sol",
+          selected: true,
+          active: false,
+          onSelect: onSelectOption,
+        }}
+      />
+      <ListRow
+        {...rowContent}
+        title="Polygon"
+        option={{
+          id: "pol",
+          selected: false,
+          active: false,
+          onSelect: onSelectOption,
+          disabled: true,
+        }}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    onSelectOption.mockClear();
+    const listbox = within(canvasElement).getByRole("listbox", {
+      name: "Tokens",
+    });
+    const [eth, sol, pol] = within(listbox).getAllByRole("option");
+    await expect(sol).toHaveAttribute("aria-selected", "true");
+    await expect(pol).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(eth ?? listbox);
+    await expect(onSelectOption).toHaveBeenCalledOnce();
+    await userEvent.click(pol ?? listbox);
+    await expect(onSelectOption).toHaveBeenCalledOnce();
+  },
+};
+
+export const OptionsDark: Story = {
+  ...Options,
+  globals: { colorScheme: "dark" },
+};
+
+/** Detail rows under the main line, such as a validator's figures. */
+export const WithDetails: Story = {
+  args: {
+    details: [
+      { label: "Commission", value: "5%" },
+      { label: "Staked", value: "1,204,330 SOL" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("Commission")).toBeVisible();
+    await expect(
+      within(canvasElement).getByText("1,204,330 SOL")
+    ).toBeVisible();
+  },
+};
+
+export const WithDetailsDark: Story = {
+  ...WithDetails,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * Options of a listbox taking several choices: a check box shows each
+ * option's selection. Each names its group and its place in the whole list,
+ * of which only some rows render.
+ */
+export const CheckOptions: Story = {
+  render: () => (
+    <div role="listbox" aria-label="Validators" aria-multiselectable>
+      <ListRow
+        {...rowContent}
+        title="Figment"
+        option={{
+          id: "figment",
+          selected: true,
+          active: false,
+          check: true,
+          groupLabel: "Preferred",
+          position: { index: 0, count: 40 },
+          onSelect: onSelectOption,
+        }}
+      />
+      <ListRow
+        {...rowContent}
+        title="Chorus One"
+        option={{
+          id: "chorus",
+          selected: false,
+          active: true,
+          check: true,
+          groupLabel: "All validators",
+          position: { index: 1 },
+          onSelect: onSelectOption,
+        }}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const [figment, chorus] = within(canvasElement).getAllByRole("option");
+    await expect(figment).toHaveAttribute("aria-selected", "true");
+    await expect(figment).toHaveAccessibleDescription("Preferred");
+    await expect(figment).toHaveAttribute("aria-posinset", "1");
+    await expect(figment).toHaveAttribute("aria-setsize", "40");
+    await expect(chorus).toHaveAttribute("aria-selected", "false");
+    await expect(chorus).toHaveAccessibleDescription("All validators");
+    // While more may load, the set size is unknown.
+    await expect(chorus).toHaveAttribute("aria-setsize", "-1");
+  },
+};
+
+export const CheckOptionsDark: Story = {
+  ...CheckOptions,
+  globals: { colorScheme: "dark" },
+};
+
+/** A disabled option takes no press, and doesn't scale as if pressed. */
+export const DisabledOption: Story = {
+  render: () => (
+    <div role="listbox" aria-label="Tokens">
+      <ListRow
+        {...rowContent}
+        option={{
+          id: "eth",
+          selected: false,
+          active: false,
+          onSelect: onSelectOption,
+          disabled: true,
+        }}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    onSelectOption.mockClear();
+    const option = within(canvasElement).getByRole("option");
+    await userEvent.pointer({ keys: "[MouseLeft>]", target: option });
+    await expect(getComputedStyle(option).transform).toBe("none");
+    await userEvent.pointer({ keys: "[/MouseLeft]", target: option });
+    await expect(onSelectOption).not.toHaveBeenCalled();
+  },
+};

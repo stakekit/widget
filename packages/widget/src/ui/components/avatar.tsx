@@ -23,7 +23,11 @@ type AvatarProps = {
   /** Shown when there is no image; the label's first character by default. */
   readonly fallback?: string;
   readonly size?: AvatarSize;
+  /** `square` softens the corners instead, for a provider's or app's logo. */
+  readonly shape?: AvatarShape;
 };
+
+type AvatarShape = "round" | "square";
 
 const initial = (text: string | undefined) =>
   Array.from(text?.trim() ?? "")[0]?.toUpperCase() ?? "";
@@ -33,11 +37,22 @@ const naming = (label: string | undefined) =>
     ? ({ "aria-hidden": true } as const)
     : ({ role: "img", "aria-label": label } as const);
 
-/** A round image with fallback text while it loads or when it fails. */
-export const Avatar = ({ src, label, fallback, size = "md" }: AvatarProps) => (
+/** An image with fallback text while it loads or when it fails. */
+export const Avatar = ({
+  src,
+  label,
+  fallback,
+  size = "md",
+  shape = "round",
+}: AvatarProps) => (
   <BaseAvatar.Root
     {...naming(label)}
-    {...stylex.props(styles.root, sizeStyles[size], fallbackTextStyles[size])}
+    {...stylex.props(
+      styles.root,
+      shape === "square" && styles.square,
+      sizeStyles[size],
+      fallbackTextStyles[size]
+    )}
   >
     {src !== undefined && (
       <BaseAvatar.Image src={src} alt="" {...stylex.props(styles.image)} />
@@ -56,6 +71,13 @@ type TokenAvatarProps = { readonly size?: AvatarSize } & (
       readonly name: string;
       /** The network's logo URL, drawn as a badge at the bottom end. */
       readonly networkSrc?: string;
+      /**
+       * Hides the avatar from assistive technology, beside text that already
+       * names the token, such as a token trigger's symbol.
+       */
+      readonly decorative?: boolean;
+      /** `square` for a logo that is not a token's, such as a provider's. */
+      readonly shape?: AvatarShape;
       readonly account?: never;
     }
   | {
@@ -69,6 +91,8 @@ type TokenAvatarProps = { readonly size?: AvatarSize } & (
       readonly src?: never;
       readonly name?: never;
       readonly networkSrc?: never;
+      readonly decorative?: never;
+      readonly shape?: never;
     }
 );
 
@@ -99,7 +123,14 @@ export const TokenAvatar = (props: TokenAvatarProps) => {
 
   return (
     <span {...stylex.props(styles.token, sizeStyles[size])}>
-      <Avatar src={props.src} label={props.name} size={size} />
+      <Avatar
+        src={props.src}
+        {...(props.decorative
+          ? { fallback: initial(props.name) }
+          : { label: props.name })}
+        size={size}
+        {...(props.shape === undefined ? {} : { shape: props.shape })}
+      />
       {props.networkSrc !== undefined && (
         <BaseAvatar.Root
           aria-hidden="true"
@@ -131,6 +162,8 @@ const styles = stylex.create({
     justifyContent: "center",
     userSelect: "none",
   },
+  // A provider's logo is a square tile; `badge` matches its small size.
+  square: { borderRadius: radius.badge },
   image: {
     display: "block",
     objectFit: "cover",

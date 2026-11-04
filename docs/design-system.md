@@ -113,13 +113,17 @@ explicit `as`, so headings form a real outline.
 - **Elevation**: `raised`, `overlay`, `shell`. In dark, the shell uses a border
   instead of a shadow. Selection is a ring plus a tint, never a shadow.
 - **Motion**: 120, 200 and 320 ms with one standard easing; 0 under
-  `prefers-reduced-motion`; press feedback scales to 0.98.
+  `prefers-reduced-motion`; press feedback scales to 0.98. Parts animated with
+  `motion` (`AnimatedNumber`, `PageTransition`) read the same values in
+  seconds from `ui/tokens/motion-timing.ts`, read the preference themselves and
+  show their final state at once under reduced motion.
 - **Container sizes**: `sm` 400, `md` 520, `split` 800. These are the only
   thresholds for in-Widget layout, which responds to container width only.
 - **Viewport query**: only for how an overlay is presented: a bottom sheet below
   520px wide, a centered dialog above.
 - **Layers**: overlay, modal, dropdown, toast, tooltip, all inside the portal
-  container.
+  container, plus `sticky` for in-flow content that sticks over scrolling rows,
+  such as a `VirtualList` group title.
 - **Tones**: `neutral`, `accent`, `success`, `warning`, `danger`, `info`. Text
   tones: `default`, `muted`, `subtle`, `accent`, `success`, `warning`, `danger`.
 

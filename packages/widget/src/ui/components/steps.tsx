@@ -7,6 +7,7 @@ import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { iconSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
+import { ExternalLink } from "./external-link";
 import { Spinner } from "./spinner";
 
 /** Where a step stands. */
@@ -20,6 +21,15 @@ type Step = {
   /** Shown under the label, such as what to do or what went wrong. */
   readonly description?: string;
   readonly status: StepStatus;
+  /** A link under the step, such as its transaction on a block explorer. */
+  readonly link?: StepLink;
+};
+
+type StepLink = {
+  readonly href: string;
+  readonly label: string;
+  /** Names the new-tab icon, such as "opens in a new tab". */
+  readonly newTabLabel: string;
 };
 
 type StepsProps = {
@@ -63,6 +73,16 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
               tone={step.status === "failed" ? "danger" : "muted"}
             >
               {step.description}
+            </Text>
+          )}
+          {step.link !== undefined && (
+            <Text variant="caption">
+              <ExternalLink
+                href={step.link.href}
+                newTabLabel={step.link.newTabLabel}
+              >
+                {step.link.label}
+              </ExternalLink>
             </Text>
           )}
         </span>

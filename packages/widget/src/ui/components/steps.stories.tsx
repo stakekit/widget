@@ -73,3 +73,30 @@ export const Failed: Story = {
     await expect(submit).toHaveTextContent("Submitting, failed");
   },
 };
+
+/** A step can link out, such as to its transaction on a block explorer. */
+export const WithLink: Story = {
+  args: {
+    steps: [
+      {
+        id: "sign",
+        label: "Approve in your wallet",
+        status: "done",
+        link: {
+          href: "https://etherscan.io/tx/0x1",
+          label: "View transaction",
+          newTabLabel: "opens in a new tab",
+        },
+      },
+      { id: "confirm", label: "Confirming", status: "active" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const [sign] = within(canvasElement).getAllByRole("listitem");
+    await expect(
+      within(sign ?? canvasElement).getByRole("link", {
+        name: "View transaction opens in a new tab",
+      })
+    ).toHaveAttribute("href", "https://etherscan.io/tx/0x1");
+  },
+};
