@@ -111,6 +111,9 @@ const hostVariantValues = exhaustiveLiterals<HostVariant>()([
   "utila",
   "zerion",
 ]);
+const hostLayoutValues = exhaustiveLiterals<
+  NonNullable<SettingsProps["layout"]>
+>()(["compact", "dashboard"]);
 const hostYieldGroupingValues = exhaustiveLiterals<HostYieldGrouping>()([
   "flat",
   "category",
@@ -226,6 +229,7 @@ const hostConfigurationValueFields = {
   hideChainSelector: optional(Schema.Boolean),
   hideGasFee: optional(Schema.Boolean),
   hideNetworkLogo: optional(Schema.Boolean),
+  layout: optional(Schema.Literals(hostLayoutValues)),
   initialChain: optional(SupportedChainId),
   institutionalWallets: optional(Schema.Boolean),
   isSafe: optional(Schema.Boolean),
@@ -369,9 +373,11 @@ export type HostConfigurationDecodeSuccess = Readonly<{
   configuration: DecodedHostConfiguration;
   /**
    * Customized legacy `theme` leaves that no longer apply, by dotted path,
-   * for the development warning that points to `appearance`.
+   * for the warning that points to `appearance`.
    */
   droppedLegacyThemeKeys: ReadonlyArray<string>;
+  /** Deprecated Host Configuration options the host set, for a warning. */
+  deprecatedOptions: ReadonlyArray<"dashboardVariant">;
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
@@ -653,11 +659,26 @@ const combineExternalProvider = (
     : missingBorrowProviderCapability();
 };
 
-/** The Layout the host selects through the public `dashboardVariant` flag. */
+const isHostLayout = Schema.is(Schema.Literals(hostLayoutValues));
+
+/**
+ * The Layout the host selects: `layout`, or else the deprecated
+ * `dashboardVariant` flag. Values that are not a valid choice select nothing.
+ */
+const selectLayout = (options: {
+  readonly dashboardVariant?: unknown;
+  readonly layout?: unknown;
+}): WidgetLayout => {
+  if (isHostLayout(options.layout)) {
+    return options.layout === "dashboard" ? "Dashboard" : "Compact";
+  }
+  return options.dashboardVariant === true ? "Dashboard" : "Compact";
+};
+
+/** The Layout a decoded Host Configuration selects. */
 export const hostLayout = (
   hostConfiguration: DecodedHostConfiguration
-): WidgetLayout =>
-  hostConfiguration.dashboardVariant ? "Dashboard" : "Compact";
+): WidgetLayout => selectLayout(hostConfiguration);
 
 type SemanticHostConfigurationIssue = Exclude<
   InvalidHostConfigurationIssue,
@@ -691,7 +712,7 @@ const semanticIssues = (
 const semanticIssuePath: Record<SemanticHostConfigurationIssue, string> = {
   "borrow-provider-capability-missing": "externalProviders.provider",
   "borrow-requires-category-grouping": "yieldGrouping",
-  "borrow-requires-dashboard": "dashboardVariant",
+  "borrow-requires-dashboard": "layout",
   "zerion-chain-modal-missing": "chainModal",
 };
 
@@ -773,6 +794,8 @@ export const decodeHostConfiguration = (
   return Result.succeed({
     configuration,
     droppedLegacyThemeKeys: theme.droppedLegacyThemeKeys,
+    deprecatedOptions:
+      configuration.dashboardVariant === undefined ? [] : ["dashboardVariant"],
     warnings: [
       ...theme.warnings,
       ...chainIcons.warnings,
@@ -808,8 +831,7 @@ export const decodeRejectedConfigurationPresentation = (
 
   return {
     appearance,
-    layout:
-      hostConfiguration.dashboardVariant === true ? "Dashboard" : "Compact",
+    layout: selectLayout(hostConfiguration),
     theme,
     variant: isHostVariant(hostConfiguration.variant)
       ? hostConfiguration.variant

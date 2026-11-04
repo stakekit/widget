@@ -34,6 +34,7 @@ export type {
   SKExternalProviders,
   SKHostVariant,
   SKLanguage,
+  SKLayout,
   SKNetwork,
   SKPreferredTokenYieldsPerNetwork,
   SKSignMessageResult,

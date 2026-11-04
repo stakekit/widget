@@ -1,14 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
-import { Icon } from "../primitives/icon";
 import { Text } from "../primitives/text";
-import { VisuallyHidden } from "../primitives/visually-hidden";
-import { focusRing } from "../tokens/border.stylex";
-import { color } from "../tokens/color.stylex";
-import { motion } from "../tokens/motion.stylex";
-import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
-import { useCopy } from "./use-copy";
+import { CopyButton } from "./copy-button";
 
 /** Label-value rows, such as a position's or a transaction's details. */
 export const DetailList = ({ children }: { readonly children: ReactNode }) => (
@@ -46,28 +40,10 @@ export const DetailRow = ({
       <Text numeric truncate>
         {value}
       </Text>
-      {copyable && <CopyControl {...copyable} />}
+      {copyable && <CopyButton {...copyable} />}
     </dd>
   </div>
 );
-
-const CopyControl = ({ value, label, copiedLabel }: Copyable) => {
-  const { copied, copy, announcement } = useCopy();
-
-  return (
-    <>
-      <button
-        type="button"
-        aria-label={label}
-        onClick={() => copy(value)}
-        {...stylex.props(styles.copy)}
-      >
-        <Icon name={copied ? "CheckIcon" : "CopyIcon"} size="sm" />
-      </button>
-      <VisuallyHidden role="status">{announcement(copiedLabel)}</VisuallyHidden>
-    </>
-  );
-};
 
 const styles = stylex.create({
   list: {
@@ -92,27 +68,5 @@ const styles = stylex.create({
     justifyContent: "flex-end",
     textAlign: "end",
     minWidth: 0,
-  },
-  copy: {
-    margin: 0,
-    padding: space[4],
-    borderRadius: radius.badge,
-    borderStyle: "none",
-    backgroundColor: {
-      default: "transparent",
-      ":hover": color.surfaceHover,
-    },
-    color: color.textMuted,
-    cursor: "pointer",
-    display: "inline-flex",
-    flexShrink: 0,
-    outlineColor: color.focusRing,
-    outlineOffset: focusRing.offset,
-    outlineStyle: { default: "none", ":focus-visible": "solid" },
-    outlineWidth: focusRing.width,
-    transform: { default: "none", ":active": motion.press },
-    transitionDuration: motion.fast,
-    transitionProperty: "background-color, transform",
-    transitionTimingFunction: motion.easing,
   },
 });

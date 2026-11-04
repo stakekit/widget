@@ -1,0 +1,102 @@
+import * as stylex from "@stylexjs/stylex";
+import type { ButtonHTMLAttributes, Ref } from "react";
+import { Icon } from "../primitives/icon";
+import { borderWidth } from "../tokens/border.stylex";
+import { color } from "../tokens/color.stylex";
+import { motion } from "../tokens/motion.stylex";
+import { radius } from "../tokens/radius.stylex";
+import { controlHeight } from "../tokens/size.stylex";
+import { space } from "../tokens/space.stylex";
+import type { ButtonIconName } from "./button-styles";
+import { focusRingStyles } from "./focus-ring";
+
+type IconButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "className" | "style" | "children" | "aria-label" | "type"
+> & {
+  readonly ref?: Ref<HTMLButtonElement>;
+  readonly icon: ButtonIconName;
+  /** The button's accessible name; it has no visible text. */
+  readonly label: string;
+  readonly variant?: keyof typeof variantStyles;
+  /** `xs` sits inline in a row of text; `sm` and `md` match control heights. */
+  readonly size?: keyof typeof sizeStyles;
+};
+
+/**
+ * A button that shows only an icon, such as back, close or info. It must be
+ * named with `label`. It forwards its ref and props, so it can open a
+ * `Tooltip`, `Popover` or `Menu`.
+ */
+export const IconButton = ({
+  icon,
+  label,
+  variant = "ghost",
+  size = "sm",
+  disabled = false,
+  ...rest
+}: IconButtonProps) => (
+  <button
+    {...rest}
+    type="button"
+    aria-label={label}
+    disabled={disabled}
+    {...stylex.props(
+      styles.root,
+      focusRingStyles.visible,
+      variantStyles[variant],
+      sizeStyles[size]
+    )}
+  >
+    <Icon name={icon} size={size === "md" ? "md" : "sm"} />
+  </button>
+);
+
+const styles = stylex.create({
+  root: {
+    margin: 0,
+    padding: 0,
+    borderColor: "transparent",
+    borderRadius: radius.control,
+    borderStyle: "solid",
+    borderWidth: borderWidth.thin,
+    alignItems: "center",
+    boxSizing: "border-box",
+    cursor: { default: "pointer", ":disabled": "not-allowed" },
+    display: "inline-flex",
+    flexShrink: 0,
+    justifyContent: "center",
+    transform: { default: "none", ":active:not(:disabled)": motion.press },
+    transitionDuration: motion.fast,
+    transitionProperty: "background-color, border-color, color, transform",
+    transitionTimingFunction: motion.easing,
+  },
+});
+
+const variantStyles = stylex.create({
+  ghost: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover:not(:disabled)": color.surfaceHover,
+    },
+    color: {
+      default: color.textMuted,
+      ":hover:not(:disabled)": color.text,
+      ":disabled": color.textSubtle,
+    },
+  },
+  secondary: {
+    borderColor: { default: color.borderStrong, ":disabled": color.border },
+    backgroundColor: {
+      default: color.surface,
+      ":hover:not(:disabled)": color.surfaceHover,
+    },
+    color: { default: color.text, ":disabled": color.textMuted },
+  },
+});
+
+const sizeStyles = stylex.create({
+  xs: { padding: space[4], borderRadius: radius.badge, borderWidth: 0 },
+  sm: { height: controlHeight.sm, width: controlHeight.sm },
+  md: { height: controlHeight.md, width: controlHeight.md },
+});

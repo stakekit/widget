@@ -2,7 +2,8 @@ import { type ColorRole, type ColorRoles, color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { font, fontWeight } from "../tokens/typography.stylex";
-import type { ColorScheme } from "./color-schemes";
+import { type ColorScheme, colorSchemeRoles } from "./color-schemes";
+import { contrastRatio, mostContrasting } from "./contrast";
 
 /**
  * Host-supplied theme values over the color scheme and Appearance Preset:
@@ -28,15 +29,21 @@ const mix = (first: string, percent: number, second: string) =>
 // canvas in light than in dark, matching the defaults.
 const softTint = { light: 10, dark: 16 } as const;
 const accentHoverWeight = 88;
-const accentTextWeight = 60;
-const darkFocusRingWeight = 70;
+const accentTextWeight = 55;
+const focusRingWeight = 70;
+// WCAG 2.2 1.4.11: a focus ring's contrast on the surface around it.
+const focusRingContrast = 3;
 
 /**
  * Derives the roles a host did not set from the ones it did: the accent's
  * hover, tint, text, focus ring and the informational roles, and each status
  * role's tint. A role is derived only when its base is host-supplied, so the
  * scheme's tuned defaults stay otherwise. `base` is the resolved scheme and
- * preset, which supplies any role the derivation mixes with.
+ * preset, which supplies any role the derivation mixes with. A host accent
+ * replaces a preset's, so the preset's `onAccent`, tuned to its own accent,
+ * gives way to whichever of the scheme's `onAccent` and the light scheme's
+ * dark text contrasts more with the host accent; the scheme's when the accent
+ * is not an opaque hex or `rgb()` color.
  */
 const deriveColorRoles = (
   colorScheme: ColorScheme,
@@ -46,22 +53,42 @@ const deriveColorRoles = (
   const role = (name: ColorRole) => host[name] ?? base[name];
   const tint = (name: ColorRole) =>
     mix(role(name), softTint[colorScheme], role("background"));
-  // Hover deepens the accent in both schemes, so `onAccent` keeps its
-  // contrast; the deeper role is the text in light and the canvas in dark.
-  const deeper = colorScheme === "light" ? role("text") : role("background");
+  // The scheme's darkest and lightest roles: the text and the canvas.
+  const darkest = colorScheme === "light" ? role("text") : role("background");
+  const lightest = colorScheme === "light" ? role("background") : role("text");
 
   const accentRoles = (accent: string): Partial<ColorRoles> => {
     const accentSoft = host.accentSoft ?? tint("accent");
     const accentText =
       host.accentText ?? mix(accent, accentTextWeight, role("text"));
+    const onAccent =
+      host.onAccent ??
+      mostContrasting(
+        accent,
+        colorSchemeRoles[colorScheme].onAccent,
+        colorSchemeRoles.light.text
+      );
+    // In light the ring is the accent while it reads on the hover surface,
+    // the darkest one (an unmeasurable color is taken to read); otherwise,
+    // and always in dark, it moves toward the text.
+    const lightFocusRingReads =
+      colorScheme === "light" &&
+      (contrastRatio(accent, role("surfaceHover")) ?? focusRingContrast) >=
+        focusRingContrast;
     return {
-      accentHover: mix(accent, accentHoverWeight, deeper),
+      onAccent,
+      // Hover moves the accent away from `onAccent`, so the text keeps its
+      // contrast: deeper under light text, lighter under dark text.
+      accentHover: mix(
+        accent,
+        accentHoverWeight,
+        mostContrasting(onAccent, darkest, lightest)
+      ),
       accentSoft,
       accentText,
-      focusRing:
-        colorScheme === "light"
-          ? accent
-          : mix(accent, darkFocusRingWeight, role("text")),
+      focusRing: lightFocusRingReads
+        ? accent
+        : mix(accent, focusRingWeight, role("text")),
       info: accentText,
       infoSoft: accentSoft,
     };
@@ -107,23 +134,25 @@ const groupProperties = <Key extends string>(
 };
 
 /**
- * The custom properties that apply a host's Appearance in a color scheme:
- * its values and the roles derived from them. The theme root sets them
- * inline, over the scheme and preset themes.
+ * The custom properties that apply a host's Appearance in the color scheme
+ * presented: its values and the roles derived from them. The theme root sets
+ * them inline, over the scheme and preset themes. When a preset fixes a
+ * scheme other than the one requested, the requested scheme's colors apply
+ * under the presented scheme's, so a host's colors (and a legacy theme's,
+ * mapped to the scheme it was inferred as) survive the preset.
  */
 export const appearanceProperties = (
-  colorScheme: ColorScheme,
+  schemes: Readonly<{ requested: ColorScheme; presented: ColorScheme }>,
   base: ColorRoles,
   appearance: Appearance
 ): Readonly<Record<string, string>> =>
   Object.fromEntries([
     ...groupProperties(
       color,
-      deriveColorRoles(
-        colorScheme,
-        base,
-        appearance.colors?.[colorScheme] ?? {}
-      )
+      deriveColorRoles(schemes.presented, base, {
+        ...appearance.colors?.[schemes.requested],
+        ...appearance.colors?.[schemes.presented],
+      })
     ),
     ...groupProperties(radius, appearance.radius),
     ...groupProperties(controlHeight, appearance.controlHeight),

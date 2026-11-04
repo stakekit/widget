@@ -46,6 +46,39 @@ export const VariantsAndSizesDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/** Icons sit before or after the label and stay out of its name. */
+export const WithIcons: Story = {
+  render: (args) => (
+    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      {sizes.map((size) => (
+        <Button
+          key={size}
+          {...args}
+          size={size}
+          iconStart="PlusIcon"
+          iconEnd="CaretDownIcon"
+        >
+          {`Stake ${size}`}
+        </Button>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole("button", { name: "Stake md" })
+    ).toBeInTheDocument();
+  },
+};
+
+/** The `cta` size fills the width at the call-to-action height setting. */
+export const CallToAction: Story = {
+  args: { variant: "primary", size: "cta" },
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole("button", { name: "Stake" });
+    await expect(getComputedStyle(button).height).toBe("48px");
+  },
+};
+
 /** Tab reaches the button; Enter and Space activate it. */
 export const KeyboardActivation: Story = {
   args: { variant: "primary" },

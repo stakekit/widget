@@ -27,5 +27,5 @@ renderSKWidget({
   appearance: { colorScheme: "light" },
   apiKey: "__YOUR_API_KEY__",
   portalContainer: shadowContainer,
-  dashboardVariant: true,
+  layout: "dashboard",
 });

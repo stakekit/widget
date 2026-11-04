@@ -27,7 +27,6 @@ import { WalletNotAvailableError } from "../../src/services/wallet/wallet-errors
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { TestAtomRuntimeProvider } from "./atom-runtime-provider";
-import { getTestWidgetConfig } from "./widget-config";
 
 export type PickerWallet = Readonly<{
   id: string;
@@ -298,14 +297,14 @@ export const makeWalletConnectPicker = Effect.fn("makeWalletConnectPicker")(
               WalletConnectorSource.layer(walletListFactory),
             ],
           ]}
-          settings={getTestWidgetConfig({
+          hostConfiguration={{
             apiKey: "test-api-key",
             disableInjectedProviderDiscovery: announcedWallets.length === 0,
             ...(options.initialChain === undefined
               ? {}
               : { initialChain: options.initialChain }),
             variant: "default",
-          })}
+          }}
         >
           <I18nextProvider i18n={i18n}>
             <WagmiConfigProvider>

@@ -15,6 +15,7 @@ import {
   type YieldTransactionFlowIntake,
 } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
 import { makeYieldFlowReviewPage } from "../../../src/features/yield-transaction-flow/state/review-page";
+import type { SKAppProps } from "../../../src/public-api/react-types";
 import { TransactionWorkflowService } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import {
   yieldApiActionFixture,
@@ -30,7 +31,6 @@ import { makeTestZamaLayer } from "../../utils/services/zama-service";
 import { makeTestStakeKitApiLayer } from "../../utils/stakekit-api-layer";
 import { describe, expect, it } from "../../utils/test-extend.dom.ts";
 import { renderHook } from "../../utils/test-utils.dom.tsx";
-import { getTestWidgetConfig } from "../../utils/widget-config";
 
 const yieldApiUrl = "https://yield.example.com";
 const command = Schema.decodeSync(ActionCommand)({
@@ -76,29 +76,24 @@ const yieldDependencies = Layer.mergeAll(
   )
 );
 
-const Wrapper = ({ children }: PropsWithChildren) => (
-  <TestAtomRuntimeProvider
-    initialValues={[
-      [walletScopeAtom, walletScope],
-      [walletRuntime.layer, yieldDependencies as never],
-    ]}
-    settings={getTestWidgetConfig({
-      apiKey: "test-key",
-      baseUrl: "https://api.example.com",
-      variant: "default",
-      yieldsApiUrl: yieldApiUrl,
-    })}
-  >
-    {children}
-  </TestAtomRuntimeProvider>
-);
-
-const settings = getTestWidgetConfig({
+const hostConfiguration: SKAppProps = {
   apiKey: "test-key",
   baseUrl: "https://api.example.com",
   variant: "default",
   yieldsApiUrl: yieldApiUrl,
-});
+};
+
+const Wrapper = ({ children }: PropsWithChildren) => (
+  <TestAtomRuntimeProvider
+    hostConfiguration={hostConfiguration}
+    initialValues={[
+      [walletScopeAtom, walletScope],
+      [walletRuntime.layer, yieldDependencies as never],
+    ]}
+  >
+    {children}
+  </TestAtomRuntimeProvider>
+);
 
 /** Opens an Earn Flow Session and its Review page, as the flow routes do. */
 const makeEarnReviewPage = (
@@ -110,6 +105,7 @@ const makeEarnReviewPage = (
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
+    hostConfiguration={hostConfiguration}
     initialValues={[
       [walletRuntime.layer, yieldDependencies as never],
       [
@@ -128,7 +124,6 @@ const ConnectedWrapper = ({ children }: PropsWithChildren) => (
         }),
       ],
     ]}
-    settings={settings}
   >
     {children}
   </TestAtomRuntimeProvider>

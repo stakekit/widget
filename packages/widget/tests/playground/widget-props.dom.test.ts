@@ -65,12 +65,17 @@ describe("Playground widget props", () => {
     ).toBe("#E8590C");
   });
 
-  it("mounts Borrow only with the dashboard variant", () => {
+  it("mounts Borrow only with the dashboard layout", () => {
     expect(
-      propsFor({ borrowEnabled: true, dashboardVariant: false }).borrowEnabled
+      propsFor({ borrowEnabled: true, layout: "compact" }).borrowEnabled
     ).toBe(false);
     expect(
-      propsFor({ borrowEnabled: true, dashboardVariant: true }).borrowEnabled
+      propsFor({ borrowEnabled: true, layout: "dashboard" }).borrowEnabled
     ).toBe(true);
+  });
+
+  it("passes the layout", () => {
+    expect(propsFor({ layout: "compact" }).layout).toBe("compact");
+    expect(propsFor({ layout: "dashboard" }).layout).toBe("dashboard");
   });
 });

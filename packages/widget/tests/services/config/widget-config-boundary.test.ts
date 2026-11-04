@@ -52,7 +52,7 @@ describe("decodeHostConfiguration", () => {
     if (Result.isFailure(result)) {
       expect(result.failure).toBeInstanceOf(InvalidHostConfiguration);
       expect(result.failure.issues).toEqual(["borrow-requires-dashboard"]);
-      expect(result.failure.issuePaths).toEqual(["dashboardVariant"]);
+      expect(result.failure.issuePaths).toEqual(["layout"]);
     }
   });
 
@@ -71,10 +71,7 @@ describe("decodeHostConfiguration", () => {
         "borrow-requires-dashboard",
         "borrow-requires-category-grouping",
       ]);
-      expect(result.failure.issuePaths).toEqual([
-        "dashboardVariant",
-        "yieldGrouping",
-      ]);
+      expect(result.failure.issuePaths).toEqual(["layout", "yieldGrouping"]);
     }
   });
 

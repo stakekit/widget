@@ -122,6 +122,9 @@ const OverlayFixture = () => (
     appearancePreset="default"
     callToActionSize="lg"
     colorScheme="light"
+    gutter="md"
+    surfaceStyle="filled"
+    tabsIndicator="underline"
     portalContainer={undefined}
   >
     <NetworkSelect />
@@ -299,6 +302,9 @@ describe("Widget portal container", () => {
         appearancePreset="default"
         callToActionSize="lg"
         colorScheme="light"
+        gutter="md"
+        surfaceStyle="filled"
+        tabsIndicator="underline"
         portalContainer={undefined}
       >
         <Modal open title="Choose a network" closeLabel="Close">

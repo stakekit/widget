@@ -84,7 +84,7 @@ export type WidgetConfig = {
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
-  /** Derived from the public `dashboardVariant` flag. */
+  /** The public `layout`, or else the deprecated `dashboardVariant` flag. */
   readonly layout: WidgetLayout;
   readonly language?: WidgetLanguage;
   readonly mapWalletFn?: SettingsProps["mapWalletFn"];

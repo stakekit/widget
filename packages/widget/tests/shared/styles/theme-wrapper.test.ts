@@ -1,35 +1,41 @@
 import { describe, expect, it } from "vitest";
 import { getThemeOverrides } from "../../../src/app/composition/providers/theme-wrapper";
 import { darkTheme, lightTheme } from "../../../src/shared/styles/theme/themes";
+import {
+  fineryDarkPalette,
+  fineryLightPalette,
+} from "../../../src/shared/styles/theme/variant-overrides/palettes";
 import { portoThemeOverrides } from "../../../src/shared/styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../../../src/shared/styles/theme/variant-overrides/utila";
 
 describe("getThemeOverrides", () => {
   it("keeps the default variant unthemed", () => {
     expect(
-      getThemeOverrides({
-        baseTheme: lightTheme,
-        variant: "default",
-      })
+      getThemeOverrides({ colorScheme: "light", variant: "default" })
     ).toEqual({});
   });
 
   it("keeps explicit Porto variant overrides", () => {
-    expect(
-      getThemeOverrides({
-        baseTheme: lightTheme,
-        variant: "porto",
-      })
-    ).toBe(portoThemeOverrides);
+    expect(getThemeOverrides({ colorScheme: "dark", variant: "porto" })).toBe(
+      portoThemeOverrides
+    );
   });
 
   it("keeps the explicit Utila variant override", () => {
+    expect(getThemeOverrides({ colorScheme: "light", variant: "utila" })).toBe(
+      utilaThemeOverrides
+    );
+  });
+
+  it("picks Finery's palette from the resolved color scheme", () => {
     expect(
-      getThemeOverrides({
-        baseTheme: lightTheme,
-        variant: "utila",
-      })
-    ).toBe(utilaThemeOverrides);
+      getThemeOverrides({ colorScheme: "light", variant: "finery" }).color
+        ?.background
+    ).toBe(fineryLightPalette.greyOne);
+    expect(
+      getThemeOverrides({ colorScheme: "dark", variant: "finery" }).color
+        ?.background
+    ).toBe(fineryDarkPalette.greyOne);
   });
 });
 

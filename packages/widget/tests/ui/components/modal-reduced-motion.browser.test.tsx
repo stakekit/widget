@@ -17,6 +17,9 @@ const popupMotion = async () => {
       appearancePreset="default"
       callToActionSize="lg"
       colorScheme="light"
+      gutter="md"
+      surfaceStyle="filled"
+      tabsIndicator="underline"
       portalContainer={undefined}
     >
       <Modal open title="Confirm" closeLabel="Close">

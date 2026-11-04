@@ -20,6 +20,7 @@ export const legacyThemes = [
   "customized",
 ] as const;
 export const languages = ["auto", "en", "fr"] as const;
+export const layouts = ["compact", "dashboard"] as const;
 
 const ProviderIds = Schema.Array(Schema.String);
 const ExtraProps = Schema.Record(Schema.String, Schema.Unknown);
@@ -32,7 +33,7 @@ const PlaygroundConfigSchema = Schema.Struct({
   colorScheme: Schema.Literals(colorSchemes),
   legacyTheme: Schema.Literals(legacyThemes),
   language: Schema.Literals(languages),
-  dashboardVariant: Schema.Boolean,
+  layout: Schema.Literals(layouts),
   borrowEnabled: Schema.Boolean,
   hideGasFee: Schema.Boolean,
   yieldProviderOrder: Schema.Struct({
@@ -58,7 +59,7 @@ export const defaultPlaygroundConfig: PlaygroundConfig = {
   colorScheme: "dark",
   legacyTheme: "none",
   language: "auto",
-  dashboardVariant: true,
+  layout: "dashboard",
   borrowEnabled: true,
   hideGasFee: false,
   yieldProviderOrder: {},
@@ -81,9 +82,9 @@ export const fixedVariantColorScheme = (variant: PlaygroundConfig["variant"]) =>
 export const mountedColorScheme = (config: PlaygroundConfig) =>
   fixedVariantColorScheme(config.variant) ?? config.colorScheme;
 
-/** Borrow requires the dashboard variant; the widget rejects it otherwise. */
+/** Borrow requires the dashboard layout; the widget rejects it otherwise. */
 export const mountedBorrowEnabled = (config: PlaygroundConfig) =>
-  config.borrowEnabled && config.dashboardVariant;
+  config.borrowEnabled && config.layout === "dashboard";
 
 const searchParam = "playground";
 

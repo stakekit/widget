@@ -489,6 +489,9 @@ export type SKBorrowExternalProviders = Readonly<
 /** Host integration preset: presentation, theme, wallet catalogue and tracking. */
 export type SKHostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
 
+/** The page arrangement the Widget presents. */
+export type SKLayout = "compact" | "dashboard";
+
 export type SKTranslationTree = Readonly<{
   [key: string]: string | SKTranslationTree;
 }>;
@@ -684,7 +687,16 @@ type SettingsPropsBase = {
   chainIconMapping?:
     | Partial<Record<SKNetwork, string>>
     | ((network: SKNetwork) => string);
-  /** Enables the dashboard route tree and category yield grouping by default. */
+  /**
+   * The Layout: `"compact"` shows one page at a time; `"dashboard"` enables
+   * the dashboard route tree and category yield grouping by default.
+   * Defaults to `"compact"`.
+   */
+  layout?: SKLayout;
+  /**
+   * Enables the dashboard Layout. Ignored when `layout` is set.
+   * @deprecated Use `layout: "dashboard"`.
+   */
   dashboardVariant?: boolean;
   /** Order of yield categories. Omitted categories follow in the default order. */
   yieldCategoryOrder?: YieldCategory[];
@@ -693,7 +705,7 @@ type SettingsPropsBase = {
    * the first one by default. Applies only with category yield grouping.
    */
   yieldProviderOrder?: SKYieldProviderOrder;
-  /** Lists yields flat or grouped by category. Defaults to `"category"` with `dashboardVariant`, else `"flat"`. */
+  /** Lists yields flat or grouped by category. Defaults to `"category"` in the dashboard Layout, else `"flat"`. */
   yieldGrouping?: "flat" | "category";
   /** Offers institutional wallets instead of the regular wallet list. Read at mount. */
   institutionalWallets?: boolean;

@@ -65,6 +65,29 @@ export const getConfig = (
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
           "react-router/dom",
+          // Every Base UI part the Design System imports (`src/ui`). The
+          // dependency scan can miss a newly imported subpath when the cache
+          // hash is unchanged; found mid-run, it would reload the page and
+          // fail a test run. Keep in step with `@base-ui/react/*` imports.
+          "@base-ui/react/accordion",
+          "@base-ui/react/alert-dialog",
+          "@base-ui/react/avatar",
+          "@base-ui/react/checkbox",
+          "@base-ui/react/collapsible",
+          "@base-ui/react/dialog",
+          "@base-ui/react/field",
+          "@base-ui/react/input",
+          "@base-ui/react/menu",
+          "@base-ui/react/meter",
+          "@base-ui/react/popover",
+          "@base-ui/react/scroll-area",
+          "@base-ui/react/select",
+          "@base-ui/react/separator",
+          "@base-ui/react/switch",
+          "@base-ui/react/tabs",
+          "@base-ui/react/toggle",
+          "@base-ui/react/toggle-group",
+          "@base-ui/react/tooltip",
           // Runtime injection imports this once a compiled module loads. The
           // dependency scan can't see an import the transform adds; found
           // mid-run, it would reload the page and fail a test run.

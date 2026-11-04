@@ -51,9 +51,10 @@ const isWidgetPopupEscape = (
  * Renders the Widget's content and the portal container popups render into,
  * and provides that container to them. By default it sits inside the Widget
  * root, so popups stay inside a host dialog's DOM and inherit the theme
- * root's classes and custom properties. With a host `portalContainer`, it is
- * a Widget-owned element appended inside the host's, carrying the theme
- * itself, so the theme and reset never touch the host's own content.
+ * root's classes, attributes and custom properties. With a host
+ * `portalContainer`, it is a Widget-owned element appended inside the host's,
+ * carrying the theme itself, so the theme and reset never touch the host's own
+ * content.
  *
  * A host Radix dialog closes on any Escape it sees in the capture phase unless
  * the event is default-prevented. Base UI closes Widget popups whether or not
@@ -63,10 +64,13 @@ const isWidgetPopupEscape = (
 export const PortalContainerProvider = ({
   children,
   hostContainer,
+  themeAttributes,
   themeClassName,
   themeProperties,
 }: PropsWithChildren<{
   readonly hostContainer: HTMLElement | undefined;
+  /** The Presentation Setting attributes the theme root carries. */
+  readonly themeAttributes: Readonly<Record<`data-sk-${string}`, string>>;
   readonly themeClassName: string;
   readonly themeProperties: Readonly<Record<string, string>>;
 }>) => {
@@ -97,6 +101,7 @@ export const PortalContainerProvider = ({
         createPortal(
           <div
             data-sk-portal=""
+            {...themeAttributes}
             className={themeClassName}
             style={themeProperties}
             ref={setContainer}

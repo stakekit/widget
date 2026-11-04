@@ -4,7 +4,6 @@ import { Icon } from "../primitives/icon";
 import { usePortalContainer } from "../theme/portal-container";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
-import { elevation } from "../tokens/elevation.stylex";
 import { layer } from "../tokens/layer.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { overlaySize } from "../tokens/overlay.stylex";
@@ -17,6 +16,7 @@ import {
   fontWeight,
   lineHeight,
 } from "../tokens/typography.stylex";
+import { popupStyles } from "./popup-styles";
 
 /** One choice: what it stores and what it shows. */
 export type SelectOption<T extends string = string> = {
@@ -37,8 +37,6 @@ type SelectProps<T extends string> = {
   readonly size?: keyof typeof sizeStyles;
   readonly disabled?: boolean;
 };
-
-const enteringOrLeaving = ":is([data-starting-style], [data-ending-style])";
 
 /** A control that opens a list of options and shows the chosen one. */
 export const Select = <const T extends string>({
@@ -77,9 +75,11 @@ export const Select = <const T extends string>({
         <BaseSelect.Positioner
           alignItemWithTrigger={false}
           sideOffset={4}
-          {...stylex.props(styles.positioner)}
+          {...stylex.props(popupStyles.positioner, styles.positioner)}
         >
-          <BaseSelect.Popup {...stylex.props(styles.popup)}>
+          <BaseSelect.Popup
+            {...stylex.props(popupStyles.surface, styles.popup)}
+          >
             <BaseSelect.List aria-label={label} {...stylex.props(styles.list)}>
               {options.map((option) => (
                 <BaseSelect.Item
@@ -87,7 +87,7 @@ export const Select = <const T extends string>({
                   value={option.value}
                   label={option.label}
                   disabled={option.disabled}
-                  {...stylex.props(styles.item)}
+                  {...stylex.props(popupStyles.item, styles.item)}
                 >
                   <BaseSelect.ItemText>{option.label}</BaseSelect.ItemText>
                   <BaseSelect.ItemIndicator {...stylex.props(styles.indicator)}>
@@ -150,29 +150,8 @@ const styles = stylex.create({
     display: "flex",
     flexShrink: 0,
   },
-  positioner: {
-    outlineStyle: "none",
-    zIndex: layer.dropdown,
-  },
-  popup: {
-    borderColor: color.border,
-    borderRadius: radius.control,
-    borderStyle: "solid",
-    borderWidth: borderWidth.thin,
-    backgroundColor: color.surfaceRaised,
-    boxShadow: elevation.overlay,
-    boxSizing: "border-box",
-    color: color.text,
-    fontFamily: font.sans,
-    fontSize: fontSize.body,
-    lineHeight: lineHeight.body,
-    opacity: { default: 1, [enteringOrLeaving]: 0 },
-    outlineStyle: "none",
-    transitionDuration: motion.fast,
-    transitionProperty: "opacity",
-    transitionTimingFunction: motion.easing,
-    minWidth: "var(--anchor-width)",
-  },
+  positioner: { zIndex: layer.dropdown },
+  popup: { minWidth: "var(--anchor-width)" },
   list: {
     padding: space[4],
     boxSizing: "border-box",
@@ -180,23 +159,7 @@ const styles = stylex.create({
     maxHeight: `min(var(--available-height), ${overlaySize.selectMaxHeight})`,
     overflowY: "auto",
   },
-  item: {
-    borderRadius: radius.controlInner,
-    gap: space[8],
-    paddingBlock: space[8],
-    paddingInline: space[12],
-    alignItems: "center",
-    backgroundColor: {
-      default: "transparent",
-      ":is([data-highlighted])": color.surfaceHover,
-    },
-    color: { default: color.text, ":is([data-disabled])": color.textSubtle },
-    cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
-    display: "flex",
-    justifyContent: "space-between",
-    outlineStyle: "none",
-    userSelect: "none",
-  },
+  item: { justifyContent: "space-between" },
   indicator: {
     color: color.accentText,
     display: "flex",

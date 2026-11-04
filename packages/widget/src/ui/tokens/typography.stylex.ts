@@ -38,3 +38,15 @@ export const lineHeight = stylex.defineConsts({
   caption: "16px",
   overline: "16px",
 });
+
+/**
+ * The sizes an amount input steps down through as its amount fills it, from
+ * the `display` role's size. Each keeps the `display` line height, so the
+ * input's height holds still.
+ */
+export const displayShrinkSize = stylex.defineConsts({
+  step0: fontSize.display,
+  step1: "28px",
+  step2: "24px",
+  step3: "20px",
+});

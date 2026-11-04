@@ -170,6 +170,7 @@ type WidgetConfigServiceValue = {
 type NormalizedWidgetConfiguration = Readonly<{
   config: WidgetConfig;
   droppedLegacyThemeKeys: ReadonlyArray<string>;
+  deprecatedOptions: ReadonlyArray<"dashboardVariant">;
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
@@ -323,6 +324,7 @@ const prepareWidgetConfig = (
   return Result.succeed({
     config: normalizeWidgetConfig(decoded.success.configuration, environment),
     droppedLegacyThemeKeys: decoded.success.droppedLegacyThemeKeys,
+    deprecatedOptions: decoded.success.deprecatedOptions,
     warnings: decoded.success.warnings,
   });
 };
@@ -399,6 +401,26 @@ export class WidgetConfigService extends Context.Service<
         yield* reportDroppedLegacyThemeKeys(
           initialResult.success.droppedLegacyThemeKeys
         );
+        const reportedDeprecatedOptions = yield* Ref.make<
+          ReadonlyArray<"dashboardVariant">
+        >([]);
+        // Once per option and Widget, in every build, like dropped legacy
+        // theme keys.
+        const reportDeprecatedOptions = Effect.fn(
+          "WidgetConfigService.reportDeprecatedOptions"
+        )(function* (options: ReadonlyArray<"dashboardVariant">) {
+          const reported = yield* Ref.get(reportedDeprecatedOptions);
+          const fresh = options.filter((option) => !reported.includes(option));
+          if (fresh.length === 0) return;
+
+          yield* Ref.set(reportedDeprecatedOptions, [...reported, ...fresh]);
+          yield* Effect.logWarning(
+            '`dashboardVariant` is deprecated; set `layout: "dashboard"` or `layout: "compact"` instead'
+          ).pipe(
+            Effect.annotateLogs({ event: "deprecated_dashboard_variant" })
+          );
+        });
+        yield* reportDeprecatedOptions(initialResult.success.deprecatedOptions);
         const initial = initialResult.success.config;
         const state = yield* SubscriptionRef.make(initial);
         const updatePermit = yield* Semaphore.make(1);
@@ -474,6 +496,7 @@ export class WidgetConfigService extends Context.Service<
           yield* reportDroppedLegacyThemeKeys(
             nextResult.success.droppedLegacyThemeKeys
           );
+          yield* reportDeprecatedOptions(nextResult.success.deprecatedOptions);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
         }, updatePermit.withPermit);

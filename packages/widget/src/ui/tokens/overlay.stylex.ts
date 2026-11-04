@@ -10,6 +10,10 @@ export const overlaySize = stylex.defineConsts({
   dialogInset: "24px",
   tooltipMaxWidth: "240px",
   selectMaxHeight: "320px",
+  menuMinWidth: "180px",
+  popoverMaxWidth: "280px",
+  // A dialog that asks to confirm one decision.
+  alertDialogWidth: "360px",
   // How far a sheet or dialog travels as it enters and leaves.
   enterOffset: "16px",
 } as const);

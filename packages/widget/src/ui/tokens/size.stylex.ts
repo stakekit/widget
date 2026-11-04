@@ -14,6 +14,24 @@ export const iconSize = stylex.defineConsts({
   lg: "24px",
 });
 
+/**
+ * Checkbox and switch boxes. The switch thumb travels the track's width less
+ * its height.
+ */
+export const selectionControlSize = stylex.defineConsts({
+  checkbox: "20px",
+  switchWidth: "36px",
+  switchHeight: "20px",
+  switchThumb: "16px",
+});
+
+/** Height caps a scroll area can take; unset, it fills its parent. */
+export const scrollAreaMaxHeight = stylex.defineConsts({
+  sm: "200px",
+  md: "320px",
+  lg: "480px",
+});
+
 /** Avatar sizes: `sm` sits in a row of text, `xl` heads an account dialog. */
 export const avatarSize = stylex.defineConsts({
   xs: "16px",

@@ -12,7 +12,8 @@ import {
 // `accent` and outlines with `focusRing`, whose defaults differ by scheme.
 const lightFocusRing = "rgb(74, 96, 255)";
 const darkFocusRing = "rgb(140, 155, 255)";
-const defaultAccent = "rgb(74, 96, 255)";
+const lightAccent = "rgb(74, 96, 255)";
+const darkAccent = "rgb(76, 98, 255)";
 
 const emulateColorScheme = (value: "light" | "dark" | "") =>
   cdp().send("Emulation.setEmulatedMedia", {
@@ -49,7 +50,7 @@ describe("Host appearance", () => {
     const app = await renderApp();
 
     expect(colors(await earnCallToAction(app))).toEqual({
-      background: defaultAccent,
+      background: lightAccent,
       focusRing: lightFocusRing,
     });
 
@@ -63,7 +64,7 @@ describe("Host appearance", () => {
 
     // The legacy dark accent (#AB95FF) is a default, so it no longer applies.
     expect(colors(await earnCallToAction(app))).toEqual({
-      background: defaultAccent,
+      background: darkAccent,
       focusRing: darkFocusRing,
     });
     // Screens not yet migrated keep the legacy dark look.

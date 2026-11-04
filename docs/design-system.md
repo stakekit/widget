@@ -42,10 +42,13 @@ the Widget root and the portal container.
    the palette directly.
 2. **Color Roles**: the semantic roles every part reads. Hosts can set them per
    color scheme.
-3. **Derived roles**: when a host sets only `accent`, then `accentHover`,
-   `accentSoft`, `accentText`, `focusRing`, `info` and `infoSoft` are derived
-   from it; `successSoft`, `warningSoft` and `dangerSoft` are derived from their
-   base role the same way. A host may set any derived role explicitly.
+3. **Derived roles**: when a host sets only `accent`, then `onAccent`,
+   `accentHover`, `accentSoft`, `accentText`, `focusRing`, `info` and
+   `infoSoft` are derived from it; `successSoft`, `warningSoft` and
+   `dangerSoft` are derived from their base role the same way. `onAccent` is
+   whichever of the scheme's `onAccent` and dark text contrasts more with an
+   opaque hex or `rgb()` accent (the scheme's otherwise), and hover moves the
+   accent away from it. A host may set any derived role explicitly.
 
 ### Color Roles
 
@@ -122,17 +125,29 @@ explicit `as`, so headings form a real outline.
 
 ## Theme, Host Profiles and Layouts
 
-The theme root applies one theme per color scheme × Appearance Preset, plus one
-per Presentation Setting, to the Widget root and the portal container. Host
+The theme root applies one theme per color scheme × Appearance Preset, plus the
+Presentation Settings, to the Widget root and the portal container. Host
 `appearance` values win over the mapped legacy `theme`, which wins over the
 Host Profile's Appearance Preset, which wins over the base scheme.
 
 - A Host Profile names an Appearance Preset and may override Presentation
   Settings. Preset values live in the Design System. Components never branch
   on the host variant.
+- A preset may fix the color scheme (Porto dark, Utila light); the requested
+  scheme then does not apply. Preset palettes sit beside the scheme roles in
+  `ui/theme/color-schemes.ts`: a StyleX theme replaces any other theme over the
+  same variables on an element, so a dark palette is built over every dark role.
 - Layout differences arrive as Presentation Settings (call-to-action size,
   gutter, tabs indicator, surface style), named after the difference. Components
   never read which Layout is active.
+- Call-to-action size and gutter are values: themes over the `callToAction`
+  and `gutter` variable groups, one group per setting so their themes compose.
+  Tabs indicator (`underline`, `pill`) and surface style (`filled`,
+  `elevated`) change which styles apply: the theme root and the portal container
+  carry `data-sk-tabs-indicator` and `data-sk-surface-style` with
+  `presentationMarker`, and a component reads one with
+  `stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)`
+  in its own style map. Components never take them as props.
 
 ## Composing the Design System in Features
 

@@ -68,7 +68,8 @@ Common options include:
 - API endpoints and the required `apiKey`
 - `appearance`: Color Roles per color scheme, a `light`, `dark` or `system`
   color scheme, radius, control heights, font and weights
-- compact or dashboard layout configuration
+- `layout`: `"compact"` (the default) or `"dashboard"`; the deprecated
+  `dashboardVariant` flag still maps to it, and `layout` wins when both are set
 - initial chain and yield preferences
 - translations, icon mappings, and declarative wallet filtering, grouping, and
   ordering through `walletPolicy`

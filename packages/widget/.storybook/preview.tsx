@@ -3,15 +3,21 @@ import {
   appearancePresets,
   type ColorScheme,
   resolveColorRoles,
+  type SurfaceStyle,
+  type TabsIndicator,
   ThemeRoot,
 } from "../src/ui/composition";
 
 const colorSchemes: ReadonlyArray<ColorScheme> = ["light", "dark"];
+const tabsIndicators: ReadonlyArray<TabsIndicator> = ["underline", "pill"];
+const surfaceStyles: ReadonlyArray<SurfaceStyle> = ["filled", "elevated"];
 
 /**
- * Themes the story with the toolbar's color scheme and Appearance Preset. The
- * theme root sets no visual property on the Widget root, so the canvas paints
- * the resolved background and text roles, as the Widget's shell does.
+ * Themes the story with the toolbar's color scheme, Appearance Preset and
+ * Presentation Settings. A preset that fixes the color scheme presents it
+ * whatever the toolbar's scheme. The theme root sets no visual property on
+ * the Widget root, so the canvas paints the resolved background and text
+ * roles, as the Widget's shell does.
  */
 const withTheme: Decorator = (Story, { globals }) => {
   const colorScheme =
@@ -19,6 +25,11 @@ const withTheme: Decorator = (Story, { globals }) => {
   const appearancePreset =
     appearancePresets.find((preset) => preset === globals.appearancePreset) ??
     "default";
+  const tabsIndicator =
+    tabsIndicators.find((value) => value === globals.tabsIndicator) ??
+    "underline";
+  const surfaceStyle =
+    surfaceStyles.find((value) => value === globals.surfaceStyle) ?? "filled";
   const roles = resolveColorRoles(colorScheme, appearancePreset);
 
   return (
@@ -36,7 +47,10 @@ const withTheme: Decorator = (Story, { globals }) => {
         appearancePreset={appearancePreset}
         callToActionSize="lg"
         colorScheme={colorScheme}
+        gutter="md"
         portalContainer={undefined}
+        surfaceStyle={surfaceStyle}
+        tabsIndicator={tabsIndicator}
       >
         <Story />
       </ThemeRoot>
@@ -66,8 +80,31 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    tabsIndicator: {
+      description: "How the selected tab is marked",
+      toolbar: {
+        title: "Tabs indicator",
+        icon: "component",
+        items: [...tabsIndicators],
+        dynamicTitle: true,
+      },
+    },
+    surfaceStyle: {
+      description: "Whether surfaces are fills or lift off the canvas",
+      toolbar: {
+        title: "Surface style",
+        icon: "box",
+        items: [...surfaceStyles],
+        dynamicTitle: true,
+      },
+    },
   },
-  initialGlobals: { colorScheme: "light", appearancePreset: "default" },
+  initialGlobals: {
+    colorScheme: "light",
+    appearancePreset: "default",
+    tabsIndicator: "underline",
+    surfaceStyle: "filled",
+  },
   parameters: {
     // The decorator paints the canvas edge to edge.
     layout: "fullscreen",

@@ -218,6 +218,7 @@ const sharedEntryExports = [
   "SKExternalProviders",
   "SKHostVariant",
   "SKLanguage",
+  "SKLayout",
   "SKNetwork",
   "SKPreferredTokenYieldsPerNetwork",
   "SKTheme",
@@ -316,22 +317,27 @@ const propertySignatures = (source: ts.SourceFile, name: string) => {
   return found;
 };
 
-describe("legacy theme prop", () => {
-  it("is marked deprecated wherever hosts can pass it", async () => {
-    const path = join(widgetRoot, "src", "public-api", "types.ts");
-    const source = ts.createSourceFile(
-      path,
-      await readFile(path, "utf8"),
-      ts.ScriptTarget.ESNext,
-      true
-    );
-    const themeProps = propertySignatures(source, "theme");
+/** The JSDoc tag names of each public property signature named `name`. */
+const propertyTagNames = async (name: string) => {
+  const path = join(widgetRoot, "src", "public-api", "types.ts");
+  const source = ts.createSourceFile(
+    path,
+    await readFile(path, "utf8"),
+    ts.ScriptTarget.ESNext,
+    true
+  );
+  return propertySignatures(source, name).map((prop) =>
+    ts.getJSDocTags(prop).map((tag) => tag.tagName.text)
+  );
+};
 
-    expect(themeProps).not.toHaveLength(0);
-    for (const prop of themeProps) {
-      expect(ts.getJSDocTags(prop).map((tag) => tag.tagName.text)).toContain(
-        "deprecated"
-      );
+describe.each(["theme", "dashboardVariant"])("legacy %s prop", (name) => {
+  it("is marked deprecated wherever hosts can pass it", async () => {
+    const tags = await propertyTagNames(name);
+
+    expect(tags).not.toHaveLength(0);
+    for (const propTags of tags) {
+      expect(propTags).toContain("deprecated");
     }
   });
 });

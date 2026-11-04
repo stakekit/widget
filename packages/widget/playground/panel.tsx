@@ -13,6 +13,7 @@ import {
   fixedVariantColorScheme,
   hostVariants,
   languages,
+  layouts,
   legacyThemes,
   mountedBorrowEnabled,
   mountedColorScheme,
@@ -329,15 +330,18 @@ export const PlaygroundPanel = ({
           options={languages}
           value={draft.language}
         />
-        <Toggle
-          checked={draft.dashboardVariant}
-          label="dashboardVariant"
-          onChange={(value) => update("dashboardVariant", value)}
+        <Choice
+          label="layout"
+          onChange={(value) => update("layout", value)}
+          options={layouts}
+          value={draft.layout}
         />
         <Toggle
           checked={mountedBorrowEnabled(draft)}
-          disabled={!draft.dashboardVariant}
-          hint={draft.dashboardVariant ? undefined : "needs dashboardVariant"}
+          disabled={draft.layout !== "dashboard"}
+          hint={
+            draft.layout === "dashboard" ? undefined : "needs layout dashboard"
+          }
           label="borrowEnabled"
           onChange={(value) => update("borrowEnabled", value)}
         />

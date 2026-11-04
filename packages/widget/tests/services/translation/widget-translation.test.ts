@@ -7,7 +7,6 @@ import type {
   SKHostVariant,
 } from "../../../src/public-api/types";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
-import type { WidgetConfig } from "../../../src/services/config/widget-config-model";
 import translationEN from "../../../src/services/translation/English/translations.json";
 import translationFR from "../../../src/services/translation/French/translations.json";
 import {
@@ -16,7 +15,6 @@ import {
   reconcileWidgetI18n,
   WidgetTranslation,
 } from "../../../src/services/translation/widget-translation";
-import { getTestWidgetConfig } from "../../utils/widget-config";
 
 const makeSettings = (
   overrides: Partial<
@@ -25,21 +23,17 @@ const makeSettings = (
       "customTranslations" | "disableInjectedProviderDiscovery" | "language"
     >
   > & { readonly variant?: Exclude<SKHostVariant, "zerion"> } = {}
-): WidgetConfig =>
-  getTestWidgetConfig({
-    apiKey: "test-key",
-    variant: "default",
-    ...overrides,
-  });
-
-const asHostConfiguration = (settings: WidgetConfig): SKAppProps =>
-  settings as unknown as SKAppProps;
+): SKAppProps => ({
+  apiKey: "test-key",
+  variant: "default",
+  ...overrides,
+});
 
 const makeTranslationLayer = (
-  initial: WidgetConfig,
+  initial: SKAppProps,
   load: (language: string) => Effect.Effect<Readonly<Record<string, unknown>>>
 ) => {
-  const configLayer = WidgetConfigService.layer(asHostConfiguration(initial));
+  const configLayer = WidgetConfigService.layer(initial);
   const httpClientLayer = Layer.succeed(
     HttpClient.HttpClient,
     HttpClient.make((request, url) => {
@@ -146,7 +140,7 @@ describe("WidgetTranslation", () => {
           );
           expect(translation.i18n.t("errors.stale")).toBe("API");
 
-          yield* config.update(asHostConfiguration(makeSettings()));
+          yield* config.update(makeSettings());
           yield* expectEventually(
             () => translation.i18n.t("details.rewards.receive_output"),
             "You'll receive"
@@ -182,9 +176,7 @@ describe("WidgetTranslation", () => {
             const config = yield* WidgetConfigService;
             yield* Deferred.await(englishStarted);
 
-            yield* config.update(
-              asHostConfiguration(makeSettings({ language: "fr" }))
-            );
+            yield* config.update(makeSettings({ language: "fr" }));
             yield* Deferred.await(frenchStarted);
             yield* expectEventually(
               () => translation.i18n.t("errors.shared"),
@@ -229,12 +221,10 @@ describe("WidgetTranslation", () => {
           yield* Deferred.await(loadStarted);
 
           yield* config.update(
-            asHostConfiguration(
-              makeSettings({
-                disableInjectedProviderDiscovery: true,
-                language: "en",
-              })
-            )
+            makeSettings({
+              disableInjectedProviderDiscovery: true,
+              language: "en",
+            })
           );
           yield* Effect.sleep("20 millis");
           yield* Deferred.succeed(releaseLoad, undefined);
@@ -276,14 +266,12 @@ describe("WidgetTranslation", () => {
             yield* Deferred.await(firstStarted);
 
             yield* config.update(
-              asHostConfiguration(
-                makeSettings({
-                  customTranslations: {
-                    en: { translation: { details: { earn: "CUSTOM" } } },
-                  },
-                  language: "en",
-                })
-              )
+              makeSettings({
+                customTranslations: {
+                  en: { translation: { details: { earn: "CUSTOM" } } },
+                },
+                language: "en",
+              })
             );
             yield* Deferred.await(secondStarted);
             yield* expectEventually(
@@ -294,9 +282,7 @@ describe("WidgetTranslation", () => {
             yield* Deferred.succeed(releaseFirst, undefined);
             yield* Effect.yieldNow;
             yield* config.update(
-              asHostConfiguration(
-                makeSettings({ language: "en", variant: "utila" })
-              )
+              makeSettings({ language: "en", variant: "utila" })
             );
             yield* expectEventually(
               () => translation.i18n.t("details.earn"),
@@ -330,7 +316,7 @@ describe("WidgetTranslation", () => {
 
   it.effect("creates a clean i18next instance for each scoped generation", () =>
     Effect.gen(function* () {
-      const acquire = (settings: WidgetConfig) =>
+      const acquire = (settings: SKAppProps) =>
         Effect.scoped(WidgetTranslation).pipe(
           Effect.provide(
             makeTranslationLayer(settings, () => Effect.succeed({}))

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { WidgetUnavailableWithoutConfiguration } from "../../features/widget-shell/composition";
+import { variantHostProfiles } from "../../services/config/host-profile";
 import type { RejectedConfigurationPresentation } from "../../services/config/widget-config-boundary";
 import { createWidgetI18nInstance } from "../../services/translation/widget-translation";
 import { LayoutAppContainer } from "../layouts/layout-app-container";
@@ -24,6 +25,7 @@ export const WidgetConfigurationUnavailable = ({
     <I18nextProvider i18n={i18n}>
       <ThemeStyles
         appearance={appearance}
+        hostLook={variantHostProfiles[variant]}
         layout={layout}
         portalContainer={undefined}
         theme={theme}

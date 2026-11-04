@@ -33,6 +33,11 @@ const tones = [
 export const Filled: Story = { args: { variant: "filled" } };
 export const Outline: Story = { args: { variant: "outline" } };
 export const Raised: Story = { args: { variant: "raised" } };
+/** A filled card where the Host Profile presents elevated surfaces. */
+export const Elevated: Story = {
+  args: { variant: "filled" },
+  globals: { surfaceStyle: "elevated" },
+};
 
 /** Every variant in every tone. */
 export const VariantsAndTones: Story = {

@@ -32,6 +32,15 @@ utils:
           inside:
             kind: pair
             field: key
+      # A `stylex.when.*` argument is a selector, such as a Presentation
+      # Setting attribute, not a value.
+      - not:
+          inside:
+            stopBy: end
+            kind: call_expression
+            has:
+              field: function
+              regex: ^stylex\.when\.
   design-value-property:
     kind: pair
     has:

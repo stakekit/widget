@@ -53,7 +53,7 @@ export const toWidgetProps = (
     variant: config.variant,
     appearance: { colorScheme: mountedColorScheme(config) },
     ...(legacyTheme && { theme: legacyTheme }),
-    dashboardVariant: config.dashboardVariant,
+    layout: config.layout,
     borrowEnabled: mountedBorrowEnabled(config),
     hideGasFee: config.hideGasFee,
     onMountAnimationComplete: () =>

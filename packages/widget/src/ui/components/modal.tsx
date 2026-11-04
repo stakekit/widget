@@ -1,7 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactElement, ReactNode } from "react";
-import { Icon } from "../primitives/icon";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
@@ -13,7 +12,8 @@ import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/typography.stylex";
 import { viewport } from "../tokens/viewport.stylex";
-import { Button } from "./button";
+import { dialogStyles } from "./dialog-styles";
+import { IconButton } from "./icon-button";
 
 type ModalProps = {
   /** Open state; leave unset with `trigger` to let the trigger open it. */
@@ -57,19 +57,15 @@ export const Modal = ({
     <Dialog.Root open={open} onOpenChange={(next) => onOpenChange?.(next)}>
       {trigger && <Dialog.Trigger render={trigger} />}
       <Dialog.Portal container={container}>
-        <Dialog.Backdrop {...stylex.props(styles.backdrop)} />
+        <Dialog.Backdrop {...stylex.props(dialogStyles.backdrop)} />
         <Dialog.Popup {...stylex.props(styles.popup)}>
           <div {...stylex.props(styles.header)}>
             <Dialog.Title render={<Text variant="title" as="h2" />}>
               {title}
             </Dialog.Title>
             <Dialog.Close
-              render={
-                <Button variant="ghost" size="sm" aria-label={closeLabel} />
-              }
-            >
-              <Icon name="XIcon" size="sm" />
-            </Dialog.Close>
+              render={<IconButton icon="XIcon" label={closeLabel} />}
+            />
           </div>
           <div {...stylex.props(styles.body)}>
             {description !== undefined && (
@@ -89,16 +85,6 @@ export const Modal = ({
 };
 
 const styles = stylex.create({
-  backdrop: {
-    inset: 0,
-    backgroundColor: color.scrim,
-    opacity: { default: 1, [enteringOrLeaving]: 0 },
-    position: "fixed",
-    transitionDuration: motion.base,
-    transitionProperty: "opacity",
-    transitionTimingFunction: motion.easing,
-    zIndex: layer.modal,
-  },
   // A sheet along the bottom edge; a centered dialog from 520px up.
   popup: {
     borderRadius: { default: 0, [viewport.dialog]: radius.overlay },

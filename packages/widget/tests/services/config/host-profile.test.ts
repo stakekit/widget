@@ -11,12 +11,14 @@ import {
 } from "../../../src/services/config/widget-config";
 
 const standard: HostProfile = {
+  appearancePreset: "default",
   earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
   hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
   hostTracking: false,
+  presentation: {},
   requiresTermsAcknowledgement: false,
   showsPendingApprovalsNotice: false,
   translationOverlay: "none",
@@ -25,86 +27,68 @@ const standard: HostProfile = {
 
 const compact = { condensed: true, zerion: false } as const;
 
+const finery: HostProfile = {
+  ...standard,
+  appearancePreset: "finery",
+  forcesInstitutionalWallets: true,
+  presentation: { surfaceStyle: "elevated", tabsIndicator: "underline" },
+};
+
+const porto: HostProfile = {
+  ...standard,
+  appearancePreset: "porto",
+  earnPresentation: compact,
+  presentation: { callToActionSize: "md" },
+  walletCatalogue: "porto",
+};
+
+const utila: HostProfile = {
+  ...standard,
+  appearancePreset: "utila",
+  earnPresentation: compact,
+  presentation: { callToActionSize: "md" },
+  requiresTermsAcknowledgement: true,
+  showsPendingApprovalsNotice: true,
+  translationOverlay: "utila",
+};
+
+const zerion: HostProfile = {
+  ...standard,
+  earnPresentation: { condensed: false, zerion: true },
+  hidesEarnLoadingSpinner: true,
+  hidesHeaderWalletControl: true,
+  hostTokenIconMapping: true,
+  hostTracking: true,
+};
+
 const resolutionTable: ReadonlyArray<
   readonly [WidgetVariant, boolean, HostProfile]
 > = [
   ["default", false, standard],
   ["default", true, { ...standard, earnPresentation: compact }],
-  ["finery", false, { ...standard, forcesInstitutionalWallets: true }],
-  [
-    "finery",
-    true,
-    {
-      ...standard,
-      earnPresentation: compact,
-      forcesInstitutionalWallets: true,
-    },
-  ],
-  [
-    "porto",
-    false,
-    { ...standard, earnPresentation: compact, walletCatalogue: "porto" },
-  ],
-  [
-    "porto",
-    true,
-    { ...standard, earnPresentation: compact, walletCatalogue: "porto" },
-  ],
-  [
-    "utila",
-    false,
-    {
-      ...standard,
-      earnPresentation: compact,
-      requiresTermsAcknowledgement: true,
-      showsPendingApprovalsNotice: true,
-      translationOverlay: "utila",
-    },
-  ],
-  [
-    "utila",
-    true,
-    {
-      ...standard,
-      earnPresentation: compact,
-      requiresTermsAcknowledgement: true,
-      showsPendingApprovalsNotice: true,
-      translationOverlay: "utila",
-    },
-  ],
-  [
-    "zerion",
-    false,
-    {
-      ...standard,
-      earnPresentation: { condensed: false, zerion: true },
-      hidesEarnLoadingSpinner: true,
-      hidesHeaderWalletControl: true,
-      hostTokenIconMapping: true,
-      hostTracking: true,
-    },
-  ],
+  ["finery", false, finery],
+  ["finery", true, { ...finery, earnPresentation: compact }],
+  ["porto", false, porto],
+  ["porto", true, porto],
+  ["utila", false, utila],
+  ["utila", true, utila],
+  ["zerion", false, zerion],
   [
     "zerion",
     true,
-    {
-      ...standard,
-      earnPresentation: { condensed: true, zerion: true },
-      hidesEarnLoadingSpinner: true,
-      hidesHeaderWalletControl: true,
-      hostTokenIconMapping: true,
-      hostTracking: true,
-    },
+    { ...zerion, earnPresentation: { condensed: true, zerion: true } },
   ],
 ];
 
 const hostConfiguration = (
   variant: WidgetVariant,
-  dashboardVariant: boolean
-): SKHostConfiguration =>
-  variant === "zerion"
-    ? { apiKey: "api-key", chainModal: () => null, dashboardVariant, variant }
-    : { apiKey: "api-key", dashboardVariant, variant };
+  dashboard: boolean
+): SKHostConfiguration => {
+  const layout = dashboard ? "dashboard" : "compact";
+  return variant === "zerion"
+    ? { apiKey: "api-key", chainModal: () => null, layout, variant }
+    : { apiKey: "api-key", layout, variant };
+};
 
 const currentConfig = (configuration: SKHostConfiguration) =>
   WidgetConfigService.use((config) => config.current).pipe(

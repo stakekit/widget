@@ -10,13 +10,17 @@ import {
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
+import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import type { Tone } from "../tone";
 import { interactiveStyles } from "./interactive-styles";
 import { toneBorderStyles, toneSoftStyles } from "./tone-styles";
 
 type CommonProps = {
-  /** `filled` sits on the canvas, `outline` draws an edge, `raised` lifts off it. */
+  /**
+   * `filled` sits on the canvas, `outline` draws an edge, `raised` lifts off
+   * it. Under the `elevated` surface style, `filled` lifts off it as `raised`.
+   */
   readonly variant?: keyof typeof variantStyles;
   readonly padding?: Responsive<Space>;
   /** Tints the surface with a tone's soft color; outlined cards also edge in it. */
@@ -135,8 +139,25 @@ const styles = stylex.create({
   },
 });
 
+// The `elevated` surface style, which the theme root carries, lifts filled
+// surfaces off the canvas.
 const variantStyles = stylex.create({
-  filled: { backgroundColor: color.surface },
+  filled: {
+    backgroundColor: {
+      default: color.surface,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surfaceRaised,
+    },
+    boxShadow: {
+      default: null,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: elevation.raised,
+    },
+  },
   outline: {
     borderColor: color.borderStrong,
     backgroundColor: "transparent",
@@ -147,11 +168,17 @@ const variantStyles = stylex.create({
   },
 });
 
+// The hover rule's `:not(:disabled)` outranks the ancestor condition, so a
+// hovered elevated card still moves to the hover surface.
 const hoverStyles = stylex.create({
   filled: {
     backgroundColor: {
       default: color.surface,
       ":hover:not(:disabled)": color.surfaceHover,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surfaceRaised,
     },
   },
   outline: {

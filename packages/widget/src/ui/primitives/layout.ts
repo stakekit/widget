@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import type { AriaAttributes, AriaRole, ReactNode } from "react";
 import { container } from "../tokens/container.stylex";
-import { presentation } from "../tokens/presentation.stylex";
+import { gutter } from "../tokens/presentation.stylex";
 import { gridTrack } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { layoutVars as v } from "./layout.stylex";
@@ -166,10 +166,10 @@ const gapBase = stylex.create({
     [v.gapSplit]: space.section,
   },
   gutter: {
-    [v.gap]: presentation.gutter,
-    [v.gapSm]: presentation.gutter,
-    [v.gapMd]: presentation.gutter,
-    [v.gapSplit]: presentation.gutter,
+    [v.gap]: gutter.size,
+    [v.gapSm]: gutter.size,
+    [v.gapMd]: gutter.size,
+    [v.gapSplit]: gutter.size,
   },
 });
 const gapSm = stylex.create({
@@ -192,9 +192,9 @@ const gapSm = stylex.create({
     [v.gapSplit]: space.section,
   },
   gutter: {
-    [v.gapSm]: presentation.gutter,
-    [v.gapMd]: presentation.gutter,
-    [v.gapSplit]: presentation.gutter,
+    [v.gapSm]: gutter.size,
+    [v.gapMd]: gutter.size,
+    [v.gapSplit]: gutter.size,
   },
 });
 const gapMd = stylex.create({
@@ -212,7 +212,7 @@ const gapMd = stylex.create({
   48: { [v.gapMd]: space[48], [v.gapSplit]: space[48] },
   64: { [v.gapMd]: space[64], [v.gapSplit]: space[64] },
   section: { [v.gapMd]: space.section, [v.gapSplit]: space.section },
-  gutter: { [v.gapMd]: presentation.gutter, [v.gapSplit]: presentation.gutter },
+  gutter: { [v.gapMd]: gutter.size, [v.gapSplit]: gutter.size },
 });
 const gapSplit = stylex.create({
   0: { [v.gapSplit]: space[0] },
@@ -229,7 +229,7 @@ const gapSplit = stylex.create({
   48: { [v.gapSplit]: space[48] },
   64: { [v.gapSplit]: space[64] },
   section: { [v.gapSplit]: space.section },
-  gutter: { [v.gapSplit]: presentation.gutter },
+  gutter: { [v.gapSplit]: gutter.size },
 });
 
 const alignBase = stylex.create({
@@ -552,10 +552,10 @@ const paddingBlockBase = stylex.create({
     [v.paddingBlockSplit]: space.section,
   },
   gutter: {
-    [v.paddingBlock]: presentation.gutter,
-    [v.paddingBlockSm]: presentation.gutter,
-    [v.paddingBlockMd]: presentation.gutter,
-    [v.paddingBlockSplit]: presentation.gutter,
+    [v.paddingBlock]: gutter.size,
+    [v.paddingBlockSm]: gutter.size,
+    [v.paddingBlockMd]: gutter.size,
+    [v.paddingBlockSplit]: gutter.size,
   },
 });
 const paddingBlockSm = stylex.create({
@@ -630,9 +630,9 @@ const paddingBlockSm = stylex.create({
     [v.paddingBlockSplit]: space.section,
   },
   gutter: {
-    [v.paddingBlockSm]: presentation.gutter,
-    [v.paddingBlockMd]: presentation.gutter,
-    [v.paddingBlockSplit]: presentation.gutter,
+    [v.paddingBlockSm]: gutter.size,
+    [v.paddingBlockMd]: gutter.size,
+    [v.paddingBlockSplit]: gutter.size,
   },
 });
 const paddingBlockMd = stylex.create({
@@ -654,8 +654,8 @@ const paddingBlockMd = stylex.create({
     [v.paddingBlockSplit]: space.section,
   },
   gutter: {
-    [v.paddingBlockMd]: presentation.gutter,
-    [v.paddingBlockSplit]: presentation.gutter,
+    [v.paddingBlockMd]: gutter.size,
+    [v.paddingBlockSplit]: gutter.size,
   },
 });
 const paddingBlockSplit = stylex.create({
@@ -673,7 +673,7 @@ const paddingBlockSplit = stylex.create({
   48: { [v.paddingBlockSplit]: space[48] },
   64: { [v.paddingBlockSplit]: space[64] },
   section: { [v.paddingBlockSplit]: space.section },
-  gutter: { [v.paddingBlockSplit]: presentation.gutter },
+  gutter: { [v.paddingBlockSplit]: gutter.size },
 });
 
 const paddingInlineBase = stylex.create({
@@ -762,10 +762,10 @@ const paddingInlineBase = stylex.create({
     [v.paddingInlineSplit]: space.section,
   },
   gutter: {
-    [v.paddingInline]: presentation.gutter,
-    [v.paddingInlineSm]: presentation.gutter,
-    [v.paddingInlineMd]: presentation.gutter,
-    [v.paddingInlineSplit]: presentation.gutter,
+    [v.paddingInline]: gutter.size,
+    [v.paddingInlineSm]: gutter.size,
+    [v.paddingInlineMd]: gutter.size,
+    [v.paddingInlineSplit]: gutter.size,
   },
 });
 const paddingInlineSm = stylex.create({
@@ -840,9 +840,9 @@ const paddingInlineSm = stylex.create({
     [v.paddingInlineSplit]: space.section,
   },
   gutter: {
-    [v.paddingInlineSm]: presentation.gutter,
-    [v.paddingInlineMd]: presentation.gutter,
-    [v.paddingInlineSplit]: presentation.gutter,
+    [v.paddingInlineSm]: gutter.size,
+    [v.paddingInlineMd]: gutter.size,
+    [v.paddingInlineSplit]: gutter.size,
   },
 });
 const paddingInlineMd = stylex.create({
@@ -864,8 +864,8 @@ const paddingInlineMd = stylex.create({
     [v.paddingInlineSplit]: space.section,
   },
   gutter: {
-    [v.paddingInlineMd]: presentation.gutter,
-    [v.paddingInlineSplit]: presentation.gutter,
+    [v.paddingInlineMd]: gutter.size,
+    [v.paddingInlineSplit]: gutter.size,
   },
 });
 const paddingInlineSplit = stylex.create({
@@ -883,7 +883,7 @@ const paddingInlineSplit = stylex.create({
   48: { [v.paddingInlineSplit]: space[48] },
   64: { [v.paddingInlineSplit]: space[64] },
   section: { [v.paddingInlineSplit]: space.section },
-  gutter: { [v.paddingInlineSplit]: presentation.gutter },
+  gutter: { [v.paddingInlineSplit]: gutter.size },
 });
 
 /** Reads the responsive variables at each container size. */

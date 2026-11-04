@@ -1,26 +1,22 @@
 import type { RecursivePartial } from "../../../types/utils";
 import { vars } from "../contract.css";
-import { darkTheme, type lightTheme } from "../themes";
+import type { lightTheme } from "../themes";
 import {
   fineryDarkPalette,
   fineryLightPalette,
   utilaPalette,
 } from "./palettes";
 
-/** The only base-theme value the Finery overrides depend on. */
-export type FineryBaseTheme = {
-  readonly color: Pick<(typeof lightTheme)["color"], "primary">;
-};
+const fineryPalettes = {
+  light: fineryLightPalette,
+  dark: fineryDarkPalette,
+} as const;
 
-const getFineryPalette = (theme: FineryBaseTheme) =>
-  theme.color.primary === darkTheme.color.primary
-    ? fineryDarkPalette
-    : fineryLightPalette;
-
+/** Finery's legacy overrides in the resolved color scheme. */
 export const getFineryThemeOverrides = (
-  theme: FineryBaseTheme
+  colorScheme: "light" | "dark"
 ): RecursivePartial<typeof lightTheme> => {
-  const palette = getFineryPalette(theme);
+  const palette = fineryPalettes[colorScheme];
 
   return {
     color: {

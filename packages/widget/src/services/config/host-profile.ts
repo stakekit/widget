@@ -12,18 +12,34 @@ type EarnPresentation = Readonly<{
 }>;
 
 /**
+ * The Presentation Settings a Host Profile overrides over the Layout's
+ * defaults. Application composition merges them and checks at compile time
+ * that the names and values are the Design System's.
+ */
+type PresentationOverrides = Readonly<{
+  callToActionSize?: "md" | "lg";
+  surfaceStyle?: "filled" | "elevated";
+  tabsIndicator?: "underline" | "pill";
+}>;
+
+/**
  * Named capabilities a host variant enables, resolved once from `variant` and
  * the Layout. Features, services, and wallet adapters read these rather
  * than the variant name. The host chain modal is the `chainModal` Widget
- * Configuration field, which only Zerion hosts supply.
+ * Configuration field, which only Zerion hosts supply. The Appearance Preset
+ * and Presentation Setting overrides give the host its look; only
+ * application composition reads them, and the Design System owns the preset's
+ * values.
  */
 export type HostProfile = Readonly<{
+  appearancePreset: "default" | "finery" | "porto" | "utila";
   earnPresentation: EarnPresentation;
   forcesInstitutionalWallets: boolean;
   hidesEarnLoadingSpinner: boolean;
   hidesHeaderWalletControl: boolean;
   hostTokenIconMapping: boolean;
   hostTracking: boolean;
+  presentation: PresentationOverrides;
   requiresTermsAcknowledgement: boolean;
   showsPendingApprovalsNotice: boolean;
   translationOverlay: "none" | "utila";
@@ -32,12 +48,14 @@ export type HostProfile = Readonly<{
 }>;
 
 const standardProfile: HostProfile = {
+  appearancePreset: "default",
   earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
   hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
   hostTracking: false,
+  presentation: {},
   requiresTermsAcknowledgement: false,
   showsPendingApprovalsNotice: false,
   translationOverlay: "none",
@@ -48,15 +66,24 @@ const standardProfile: HostProfile = {
 export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
   {
     default: standardProfile,
-    finery: { ...standardProfile, forcesInstitutionalWallets: true },
+    finery: {
+      ...standardProfile,
+      appearancePreset: "finery",
+      forcesInstitutionalWallets: true,
+      presentation: { surfaceStyle: "elevated", tabsIndicator: "underline" },
+    },
     porto: {
       ...standardProfile,
+      appearancePreset: "porto",
       earnPresentation: { condensed: true, zerion: false },
+      presentation: { callToActionSize: "md" },
       walletCatalogue: "porto",
     },
     utila: {
       ...standardProfile,
+      appearancePreset: "utila",
       earnPresentation: { condensed: true, zerion: false },
+      presentation: { callToActionSize: "md" },
       requiresTermsAcknowledgement: true,
       showsPendingApprovalsNotice: true,
       translationOverlay: "utila",

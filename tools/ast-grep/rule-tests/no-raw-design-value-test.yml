@@ -11,6 +11,7 @@ valid:
   - 'const styles = stylex.create({ root: { borderWidth: borderWidth.thin, transitionDuration: "0ms" } })'
   - 'const styles = stylex.create({ root: { width: "100vw", maxHeight: "100vh", height: "1em", minWidth: "1.0em" } })'
   - 'const styles = stylex.create({ root: { width: `min(${size.dialog}, calc(100vw - 2 * ${size.inset}))` } })'
+  - 'const styles = stylex.create({ root: { borderRadius: { default: 0, [stylex.when.ancestor(''[data-sk-tabs-indicator="pill"]'', presentationMarker)]: radius.pill } } })'
   - 'const size = 16'
   - 'const delay = "200ms"'
   - 'const offset = { top: 12 }'

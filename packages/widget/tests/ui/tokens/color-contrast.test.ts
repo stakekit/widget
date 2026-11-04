@@ -3,6 +3,7 @@ import {
   appearancePresets,
   type ColorRole,
   type ColorScheme,
+  presetColorScheme,
   resolveColorRoles,
 } from "../../../src/ui/composition";
 
@@ -90,26 +91,96 @@ const pairs: ReadonlyArray<Pair> = [
   // surface fill and the focus ring.
 ];
 
+// The accent is the only cue of a selected control (the tab underline, a
+// checked checkbox or switch, a pressed chip), drawn over any surface. A
+// host's own accent is the host's indicator color, so only the accents the
+// schemes and presets ship are held to it.
+const shippedAccentPairs: ReadonlyArray<Pair> = nonText("accent", surfaces);
+
 const colorSchemes: ReadonlyArray<ColorScheme> = ["light", "dark"];
 
-// A host-supplied accent, from which the accent's other roles derive.
-const hostAccent = "#0E7C66";
+// Host-supplied accents, from which the accent's other roles derive: one
+// dark enough for white text and one light enough to need dark text.
+const hostAccents = ["#0E7C66", "#AB95FF"];
 
-// Every scheme × Appearance Preset, so a new preset joins the check, with
-// and without a host accent.
-const cases = colorSchemes.flatMap((colorScheme) =>
-  appearancePresets.flatMap((preset) =>
-    [undefined, hostAccent].flatMap((accent) =>
+// Every Appearance Preset × each color scheme it presents, so a new preset
+// joins the check, with and without a host accent. A preset that fixes the
+// scheme is checked in that scheme only.
+const cases = appearancePresets.flatMap((preset) =>
+  [
+    ...new Set(
+      colorSchemes.map((requested) => presetColorScheme(preset, requested))
+    ),
+  ].flatMap((colorScheme) => [
+    ...[...pairs, ...shippedAccentPairs].map((pair) => ({
+      accent: "default accent",
+      colorScheme,
+      hostColors: {},
+      preset,
+      ...pair,
+    })),
+    ...hostAccents.flatMap((accent) =>
       pairs.map((pair) => ({
-        accent: accent ?? "default accent",
+        accent,
         colorScheme,
-        hostColors: accent === undefined ? {} : { accent },
+        hostColors: { accent },
         preset,
         ...pair,
       }))
-    )
-  )
+    ),
+  ])
 );
+
+it("checks every preset in the schemes it presents", () => {
+  const checked = new Set(
+    cases.map(({ colorScheme, preset }) => `${preset} ${colorScheme}`)
+  );
+
+  expect([...checked].sort()).toEqual([
+    "default dark",
+    "default light",
+    "finery dark",
+    "finery light",
+    "porto dark",
+    "utila light",
+  ]);
+});
+
+// White fails on their light accents (Porto 2.48:1, Finery light 3.50:1 and
+// dark 2.14:1).
+it.each([
+  ["porto", "dark"],
+  ["finery", "light"],
+  ["finery", "dark"],
+] as const)("sets dark onAccent text on %s's %s accent", (preset, scheme) => {
+  const roles = resolveColorRoles(scheme, preset);
+
+  expect(luminance(parseColor(roles.onAccent))).toBeLessThan(
+    luminance(parseColor(roles.accent))
+  );
+});
+
+describe("onAccent over a host accent", () => {
+  it.each(appearancePresets)(
+    "keeps a host's own onAccent under %s",
+    (preset) => {
+      const roles = resolveColorRoles("light", preset, {
+        accent: "#AB95FF",
+        onAccent: "#FFFFFF",
+      });
+
+      expect(roles.onAccent).toBe("#FFFFFF");
+    }
+  );
+
+  it("falls back to the scheme's onAccent for an accent it cannot measure", () => {
+    const roles = resolveColorRoles("dark", "porto", {
+      accent: "var(--brand)",
+    });
+
+    expect(roles.onAccent).toBe("#FFFFFF");
+  });
+});
 
 describe("Color Role contrast", () => {
   it.each(cases)(
