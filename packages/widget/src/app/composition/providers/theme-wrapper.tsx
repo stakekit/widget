@@ -2,7 +2,10 @@ import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { Predicate } from "effect";
 import type { PropsWithChildren } from "react";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
-import type { WidgetConfig } from "../../../services/config/widget-config-model";
+import type {
+  WidgetConfig,
+  WidgetLayout,
+} from "../../../services/config/widget-config-model";
 import { mergeDeep } from "../../../shared/effect/merge-deep";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id, rootSelector } from "../../../shared/styles/theme/ids";
@@ -14,6 +17,13 @@ import {
 import { portoThemeOverrides } from "../../../shared/styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../../../shared/styles/theme/variant-overrides/utila";
 import type { RecursivePartial } from "../../../shared/types/utils";
+import { type CallToActionSize, ThemeRoot } from "../../../ui/composition";
+
+/** The call-to-action size each Layout presents. */
+const callToActionSizes: Readonly<Record<WidgetLayout, CallToActionSize>> = {
+  Compact: "lg",
+  Dashboard: "md",
+};
 
 export const getThemeOverrides = ({
   baseTheme,
@@ -56,12 +66,19 @@ const themeVarEntries = (
   );
 };
 
-/** Theme variables for a host theme and variant, read from props. */
+/**
+ * Theme variables for a host theme and variant, read from props, and the
+ * Design System's theme root for the Layout's presentation.
+ */
 export const ThemeStyles = ({
   children,
+  layout,
+  portalContainer,
   theme,
   variant,
 }: PropsWithChildren<{
+  readonly layout: WidgetLayout;
+  readonly portalContainer: HTMLElement | undefined;
   readonly theme: WidgetConfig["theme"];
   readonly variant: WidgetConfig["variant"];
 }>) => {
@@ -82,17 +99,32 @@ export const ThemeStyles = ({
           __html: `${rootSelector} {${assignInlineVars(themeVars)}}`,
         }}
       />
-      {children}
+      <ThemeRoot
+        callToActionSize={callToActionSizes[layout]}
+        // Host Configuration does not choose a color scheme yet, so every
+        // Widget renders the light default.
+        colorScheme="light"
+        portalContainer={portalContainer}
+      >
+        {children}
+      </ThemeRoot>
     </div>
   );
 };
 
 export const ThemeWrapper = ({ children }: PropsWithChildren) => {
+  const layout = useWidgetConfig("layout");
+  const portalContainer = useWidgetConfig("portalContainer");
   const theme = useWidgetConfig("theme");
   const variant = useWidgetConfig("variant");
 
   return (
-    <ThemeStyles theme={theme} variant={variant}>
+    <ThemeStyles
+      layout={layout}
+      portalContainer={portalContainer}
+      theme={theme}
+      variant={variant}
+    >
       {children}
     </ThemeStyles>
   );

@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import "../../../src/shared/styles/theme/global.css";
+import "../../../src/ui/theme/reset.css";
 import { ActionListItem } from "../../../src/features/activity/ui/activity-page/components/action-list-item";
 import {
   activityFeedContainerName,

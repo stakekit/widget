@@ -1,8 +1,29 @@
 import { useTranslation } from "react-i18next";
 import { getYieldTypeLabels } from "../../../../domain/earn/yield";
+import { Button } from "../../../../ui/index";
 import type { PageCta } from "../../../widget-shell/views";
-import { PageCtaButton } from "../../../widget-shell/views";
+import { PageCtaSlot } from "../../../widget-shell/views";
 import { useEarnEntry } from "../../react/use-earn-facades";
+
+/** The Earn page's call-to-action, in both Layouts and the loading skeleton. */
+export const EarnPageCtaButton = ({ cta }: { readonly cta: PageCta }) => {
+  if (!cta || cta.hide) return null;
+
+  return (
+    <PageCtaSlot>
+      <Button
+        data-rk="footer-button-primary"
+        disabled={cta.disabled}
+        loading={cta.isLoading}
+        onClick={cta.onClick}
+        size="cta"
+        variant="primary"
+      >
+        {cta.label}
+      </Button>
+    </PageCtaSlot>
+  );
+};
 
 export const EarnPageCta = ({
   enabled = true,
@@ -35,5 +56,5 @@ export const EarnPageCta = ({
     };
   })();
 
-  return <PageCtaButton cta={cta} />;
+  return <EarnPageCtaButton cta={cta} />;
 };

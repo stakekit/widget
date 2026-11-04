@@ -9,14 +9,10 @@ import { useMountAnimation } from "../../../../mount-animation/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
-import {
-  PageContainer,
-  type PageCta,
-  PageCtaButton,
-} from "../../../../widget-shell/views";
+import { PageContainer, type PageCta } from "../../../../widget-shell/views";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
-import { EarnPageCta } from "../../components/earn-page-cta";
+import { EarnPageCta, EarnPageCtaButton } from "../../components/earn-page-cta";
 import { ExtraArgsSelection } from "../../components/extra-args-selection";
 import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
@@ -69,7 +65,7 @@ const EarnPageSkeleton = () => {
         <ContentLoaderSquare heightPx={150} />
       </Box>
 
-      <PageCtaButton cta={loadingCta} />
+      <EarnPageCtaButton cta={loadingCta} />
     </PageContainer>
   );
 };

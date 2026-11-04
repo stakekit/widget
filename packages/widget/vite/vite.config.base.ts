@@ -13,6 +13,7 @@ import {
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
 import { hostBundlerOutputPlugin } from "./host-bundler-output.ts";
+import { type StyleXInjection, stylexPlugins } from "./stylex.ts";
 
 declare module "vite" {
   interface UserConfig {
@@ -45,6 +46,8 @@ export const getConfig = (
     plugins?: Plugin[];
     /** Keeps `console` calls in minified output; the playground logs to the console. */
     keepConsole?: boolean;
+    /** Defaults to `stylesheet`; see `StyleXInjection`. */
+    stylexInjection?: StyleXInjection;
   }
 ): UserConfigFnObject =>
   defineConfig(({ command }) => {
@@ -67,6 +70,10 @@ export const getConfig = (
         ...(options?.plugins ?? []),
         nodePolyfills({ include: ["buffer", "crypto", "stream"] }),
         macros(),
+        ...stylexPlugins({
+          command,
+          injection: options?.stylexInjection ?? "stylesheet",
+        }),
         react({
           compiler: true,
           // Skip large generated and data-only modules that gain nothing from

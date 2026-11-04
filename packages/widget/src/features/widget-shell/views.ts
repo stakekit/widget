@@ -22,5 +22,5 @@ export { container } from "./ui/layout.css";
 export { MountAnimatedPage } from "./ui/mount-animated-page";
 export { PageContainer } from "./ui/page-container";
 export type { PageCta } from "./ui/page-cta";
-export { PageCtaButton } from "./ui/page-cta";
+export { PageCtaButton, PageCtaSlot } from "./ui/page-cta";
 export { default as UnderMaintenance } from "./ui/under-maintenance";

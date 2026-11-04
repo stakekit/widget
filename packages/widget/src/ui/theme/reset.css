@@ -1,0 +1,59 @@
+/*
+ * The Widget's scoped reset: the one global stylesheet the Design System owns.
+ *
+ * Every rule applies only inside the Widget root (`data-sk-root`), a portal
+ * container the theme root marks (`data-sk-portal`), or a legacy Widget root
+ * that screens not yet on the Design System portal their content into
+ * (`data-rk="stakekit"`, removed with the legacy styles).
+ *
+ * Specificity sits between host and Widget styles: `html body` adds two type
+ * selectors, so a reset rule beats a bare host element selector such as
+ * `button {}`, and `:where()` adds nothing, so every StyleX class (and every
+ * legacy class) beats the reset. The rules are unlayered, because a layered
+ * rule loses to any unlayered host rule. Selectors stay flat, since the
+ * package stylesheet reaches hosts unminified and unlowered.
+ */
+html body :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"]) * {
+  margin: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html
+  body
+  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  :where(button, input, select, textarea) {
+  font-family: inherit;
+  font-size: 100%;
+}
+
+html body :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"]) input {
+  background: transparent;
+}
+
+html
+  body
+  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  button {
+  all: unset;
+  cursor: pointer;
+}
+
+html
+  body
+  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  input::-webkit-outer-spin-button,
+html
+  body
+  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+html
+  body
+  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  input:where([type="number"]) {
+  -moz-appearance: textfield;
+}

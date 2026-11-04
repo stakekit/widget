@@ -22,7 +22,12 @@ export const WidgetConfigurationUnavailable = ({
 
   return (
     <I18nextProvider i18n={i18n}>
-      <ThemeStyles theme={theme} variant={variant}>
+      <ThemeStyles
+        layout={layout}
+        portalContainer={undefined}
+        theme={theme}
+        variant={variant}
+      >
         <LayoutAppContainer layout={layout}>
           <WidgetUnavailableWithoutConfiguration />
         </LayoutAppContainer>

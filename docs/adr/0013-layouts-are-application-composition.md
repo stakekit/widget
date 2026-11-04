@@ -13,9 +13,15 @@ each other. `model/`, `state/`, and `react/` are Layout-free and are named after
 what they model: they never read or branch on the active Layout, though they may
 name the Layouts a navigation target requires. A Layout difference is expressed
 as a Layout-specific component, a prop supplied by the Layout's composition
-that names the difference rather than the Layout, or a style keyed by the Layout
-attribute on the Widget root; it is never a runtime branch on the Layout inside
-a Feature.
+that names the difference rather than the Layout, or a Presentation Setting; it
+is never a runtime branch on the Layout inside a Feature.
+
+Presentation Settings carry visual differences such as call-to-action size,
+gutter and tabs indicator. Application composition resolves them from the
+Layout's defaults and the Host Profile's overrides and passes them to the
+Design System's theme root, which applies them to the Widget root and its
+portal container (ADR 0015). They are named after the difference, never after
+the Layout, and no style is keyed by the Layout.
 
 A route declares the Layouts that mount it, and a test checks each Layout's
 route tree against those declarations. Navigation that starts outside React
@@ -31,8 +37,10 @@ rejected because the coupling is invisible to the import graph and to review.
 
 ## Consequences
 
-The public `dashboardVariant` option remains the host-facing switch; Widget
-Configuration normalizes it to the Layout. dependency-cruiser forbids imports
-between `ui/compact/` and `ui/dashboard/` and from Layout-free folders into
-either, and ast-grep rejects Layout reads outside application composition and
-Widget Configuration.
+The public `layout: "compact" | "dashboard"` option is the host-facing switch;
+Widget Configuration normalizes it to the Layout. The deprecated
+`dashboardVariant` option is still accepted and mapped to `layout`, and `layout`
+wins when a host passes both. dependency-cruiser forbids imports between
+`ui/compact/` and `ui/dashboard/` and from Layout-free folders into either, and
+ast-grep rejects Layout reads outside application composition and Widget
+Configuration.

@@ -122,7 +122,9 @@
         "!packages/widget/src/resources/*/index.ts",
         "!packages/widget/src/services/api/operations.ts",
         "!packages/widget/src/services/api/resource-sources.ts",
-        "!packages/widget/src/services/api/runtime.ts"
+        "!packages/widget/src/services/api/runtime.ts",
+        "!packages/widget/src/ui/index.ts",
+        "!packages/widget/src/ui/composition.ts"
       ],
       "linter": {
         "rules": {

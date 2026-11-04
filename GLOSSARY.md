@@ -25,11 +25,15 @@ keep their mount values for the Application Runtime Generation.
 mount for the Application Runtime Generation.
 
 **Host Profile**: The named capabilities a host variant enables, such as the
-Earn presentation, terms-of-service acknowledgement, or wallet catalogue.
-Features read capabilities, never variant names.
+Earn presentation, terms-of-service acknowledgement, or wallet catalogue, plus
+the Appearance Preset and Presentation Setting overrides that give the host its
+look. Features read capabilities, never variant names, and never style by host
+variant.
 
 **Layout**: The page arrangement a Widget Instance presents: the Compact Layout
-or the Dashboard Layout. It is independent of the host variant.
+or the Dashboard Layout, chosen by the host's `layout` option. It is independent
+of the host variant. Its visual differences reach the Design System as
+Presentation Settings.
 _Avoid_: variant, flavour, classic
 
 **Compact Layout**: The single-column Layout that shows one page at a time
@@ -45,6 +49,37 @@ completed. It carries identity for observers but does not prescribe a mutation.
 
 **Widget Maintenance**: The application-wide state in which new user journeys
 are unavailable.
+
+### Design System
+
+**Design System**: The Owned Module that holds every visual decision of the
+Widget: tokens, themes, the scoped reset, primitives, components, patterns,
+icons, and artwork. Features and application composition build UI only by
+composing it.
+_Avoid_: shared UI, component library
+
+**Appearance**: The host's semantic description of the Widget's look: a color
+scheme (`light`, `dark`, or `system`), Color Roles for each scheme, and radius,
+control-height, font, and weight settings. It applies live and beats the Host
+Profile's Appearance Preset and any legacy theme.
+_Avoid_: theme, theme tokens
+
+**Color Role**: A named semantic color every Design System part reads, such as
+`surface`, `textMuted`, or `accent`, with a value per color scheme. Hosts may
+set any Color Role; derived roles such as `accentHover` follow their base role
+unless set.
+_Avoid_: color token, palette color
+
+**Appearance Preset**: A Design System-owned set of Appearance values that a
+Host Profile names to give a partner host its look. It may fix the color
+scheme.
+_Avoid_: skin, host theme
+
+**Presentation Setting**: A named visual choice, such as call-to-action size,
+gutter, tabs indicator, or surface style, resolved from the Layout's defaults
+and the Host Profile's overrides and applied by the Design System. It is named
+after the difference, never after a Layout or host.
+_Avoid_: Layout style, variant style
 
 ### Wallet
 

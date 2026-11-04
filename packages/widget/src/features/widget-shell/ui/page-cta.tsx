@@ -1,3 +1,4 @@
+import type { PropsWithChildren } from "react";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { pageCta } from "./layout.css";
@@ -11,11 +12,18 @@ export type PageCta = {
   variant?: "primary" | "secondary";
 } | null;
 
+/** Places a page's call-to-action at the foot of the page. */
+export const PageCtaSlot = ({ children }: PropsWithChildren) => (
+  <Box marginTop="auto" className={pageCta}>
+    {children}
+  </Box>
+);
+
 export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
   if (!cta || cta.hide) return null;
 
   return (
-    <Box marginTop="auto" className={pageCta}>
+    <PageCtaSlot>
       <Button
         data-rk={`footer-button-${cta.variant ?? "primary"}`}
         disabled={cta.disabled || cta.isLoading}
@@ -31,6 +39,6 @@ export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
       >
         {cta.label}
       </Button>
-    </Box>
+    </PageCtaSlot>
   );
 };

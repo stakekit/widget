@@ -13,6 +13,7 @@ source of truth for behavior.
 | --- | --- |
 | Ownership, dependency direction, and Module interfaces | `packages/widget/ARCHITECTURE.md` |
 | Project vocabulary | `GLOSSARY.md` |
+| UI: screens, components, styling, theming, and the Design System | `docs/design-system.md` |
 | A decision that constrains the change | The relevant current file in `docs/adr/` |
 | Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
 | Local issues, domain docs, and triage | `docs/agents/` |
@@ -42,6 +43,8 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild
   hosts such as Angular can resolve the built `dist`; part of `build`.
+- `pnpm --filter @stakekit/widget check:stylex-css` — fails when the built
+  package, bundle or website stylesheets hold no StyleX rules; part of `build`.
 - `pnpm test:smoke` — builds the example hosts against `dist` and loads them in
   Chromium with the API mocked by the widget's MSW fixtures.
 

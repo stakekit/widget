@@ -17,80 +17,83 @@ const testCacheDir = (project: "browser" | "dom" | "unit") =>
   path.resolve(import.meta.dirname, "..", "node_modules", ".vite", project);
 
 export default defineConfig(
-  getConfig({
-    test: {
-      projects: [
-        {
-          extends: true,
-          cacheDir: testCacheDir("unit"),
-          test: {
-            name: "unit",
-            environment: "node",
-            exclude: [browserTestPattern, domTestPattern],
-            include: [...unitTestPatterns],
-            testTimeout: 5_000,
-            server: {
-              deps: {
-                inline: inlineTestDependencies,
+  getConfig(
+    {
+      test: {
+        projects: [
+          {
+            extends: true,
+            cacheDir: testCacheDir("unit"),
+            test: {
+              name: "unit",
+              environment: "node",
+              exclude: [browserTestPattern, domTestPattern],
+              include: [...unitTestPatterns],
+              testTimeout: 5_000,
+              server: {
+                deps: {
+                  inline: inlineTestDependencies,
+                },
               },
             },
           },
-        },
-        {
-          extends: true,
-          cacheDir: testCacheDir("dom"),
-          test: {
-            name: "dom",
-            environment: "jsdom",
-            include: [domTestPattern],
-            setupFiles: [
-              path.resolve(
-                import.meta.dirname,
-                "..",
-                "tests/utils/setup.dom.ts"
-              ),
-            ],
-            testTimeout: 10_000,
-            server: {
-              deps: {
-                inline: inlineTestDependencies,
+          {
+            extends: true,
+            cacheDir: testCacheDir("dom"),
+            test: {
+              name: "dom",
+              environment: "jsdom",
+              include: [domTestPattern],
+              setupFiles: [
+                path.resolve(
+                  import.meta.dirname,
+                  "..",
+                  "tests/utils/setup.dom.ts"
+                ),
+              ],
+              testTimeout: 10_000,
+              server: {
+                deps: {
+                  inline: inlineTestDependencies,
+                },
               },
             },
           },
-        },
-        {
-          extends: true,
-          cacheDir: testCacheDir("browser"),
-          // MSW's service worker script is test infrastructure: only the
-          // browser tests serve it, never the playground or its builds.
-          publicDir: path.resolve(
-            import.meta.dirname,
-            "..",
-            "tests/mocks/public"
-          ),
-          test: {
-            name: "browser",
-            fileParallelism: false,
-            include: [browserTestPattern],
-            setupFiles: [
-              path.resolve(
-                import.meta.dirname,
-                "..",
-                "tests/utils/setup.browser.ts"
-              ),
-            ],
-            testTimeout: 20_000,
-            browser: {
-              enabled: true,
-              screenshotFailures: false,
-              provider: playwright(),
-              instances: [{ browser: "chromium" }],
-              viewport: { width: 800, height: 900 },
-              headless: true,
+          {
+            extends: true,
+            cacheDir: testCacheDir("browser"),
+            // MSW's service worker script is test infrastructure: only the
+            // browser tests serve it, never the playground or its builds.
+            publicDir: path.resolve(
+              import.meta.dirname,
+              "..",
+              "tests/mocks/public"
+            ),
+            test: {
+              name: "browser",
+              fileParallelism: false,
+              include: [browserTestPattern],
+              setupFiles: [
+                path.resolve(
+                  import.meta.dirname,
+                  "..",
+                  "tests/utils/setup.browser.ts"
+                ),
+              ],
+              testTimeout: 20_000,
+              browser: {
+                enabled: true,
+                screenshotFailures: false,
+                provider: playwright(),
+                instances: [{ browser: "chromium" }],
+                viewport: { width: 800, height: 900 },
+                headless: true,
+              },
             },
           },
-        },
-      ],
+        ],
+      },
     },
-  })
+    { stylexInjection: "runtime" }
+  )
 );

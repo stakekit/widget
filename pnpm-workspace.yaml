@@ -70,6 +70,8 @@ catalog:
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
   # The Solana wallet adapters peer on @solana/web3.js ^1.99.0.
   "@solana/web3.js": ^1.99.0
+  "@stylexjs/stylex": 0.19.1
+  "@stylexjs/unplugin": 0.19.1
   "@tanstack/react-virtual": ^3.14.23
   "@ton/core": ^0.63.1
   "@tonconnect/ui": ^5.0.1

@@ -12,6 +12,7 @@ const layerNames = [
   "shared",
   "generated",
   "public-api",
+  "ui",
 ] as const;
 const ambientSourceDirectories = ["types"] as const;
 type LayerName = (typeof layerNames)[number];
@@ -81,6 +82,7 @@ export const architecturePolicy = {
         "domain",
         "shared",
         "public-api",
+        "ui",
       ],
     }),
     defineLayer({
@@ -92,6 +94,7 @@ export const architecturePolicy = {
         "domain",
         "shared",
         "public-api",
+        "ui",
       ],
       additionalTargets: ["app-runtime"],
     }),
@@ -116,6 +119,10 @@ export const architecturePolicy = {
     defineLayer({
       name: "public-api",
       mayImport: ["domain", "public-api"],
+    }),
+    defineLayer({
+      name: "ui",
+      mayImport: ["ui"],
     }),
   ],
   moduleCollections: [
@@ -556,6 +563,27 @@ const configuration: IConfiguration = {
         path: "^src/public-api/",
         pathNot: "^src/public-api/theme\\.ts$",
       },
+    },
+    {
+      name: "design-system-internals-private",
+      severity: "error",
+      comment:
+        "Other owners use the Design System only through its main interface (`ui/index.ts`) or its composition interface (`ui/composition.ts`).",
+      from: { pathNot: "^src/ui/" },
+      to: {
+        path: "^src/ui/",
+        pathNot: "^src/ui/(?:index|composition)\\.ts$",
+      },
+    },
+    {
+      name: "design-system-composition-importers",
+      severity: "error",
+      comment:
+        "Only application composition themes the Widget through the Design System's composition interface.",
+      from: {
+        pathNot: [...audiencePaths["app-composition"], "^src/ui/"],
+      },
+      to: { path: "^src/ui/composition\\.ts$" },
     },
     {
       name: "compact-layout-ui-independent",

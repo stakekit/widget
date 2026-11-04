@@ -15,14 +15,28 @@ features/     user-facing capabilities and their state
 resources/    authoritative cacheable remote reads
 services/     side effects and external-system adapters
 domain/       framework-independent rules and models
-shared/       neutral utilities and UI primitives
+ui/           the Design System: every visual decision and UI building block
+shared/       neutral non-visual utilities
 public-api/   host-facing types
 ```
 
 Code stays private to its owner unless another owner needs a deliberate
-interface. Shared is for neutral building blocks, not displaced feature logic.
-Shared may depend on Domain types and rules, but not on features, resources, or
-services. The application composes Modules; it does not absorb their behavior.
+interface. Shared is for neutral non-visual building blocks, not displaced
+feature logic or UI. Shared may depend on Domain types and rules, but not on
+features, resources, or services. The application composes Modules; it does not
+absorb their behavior.
+
+The Design System (`ui/`) owns tokens, themes, the scoped reset, primitives,
+components, patterns, icons, and artwork. It is the only owner that uses StyleX,
+Base UI, `motion`, Recharts, TanStack Virtual, or SVG icon markup. Features and
+application composition build UI only by composing its parts, never with HTML
+elements, `className`, `style`, or raw values. It depends on nothing in
+Features, Resources, services, application composition, Domain, or
+`public-api`: it receives plain values, and Features map their domain values
+onto its props. A component shaped by one Feature lives in that Feature and
+composes Design System parts. See
+[ADR 0015](../../docs/adr/0015-the-design-system-owns-every-visual-decision.md)
+and the [contributor guide](../../docs/design-system.md).
 
 Activity owns the activity feed, action lookup, action details, and their
 Layout-specific screens. A Yield Action Continuation starts from Activity but
@@ -33,19 +47,21 @@ runs as a Yield Transaction Flow; completed and failed details never start one.
 The Compact Layout and the Dashboard Layout are application composition under
 `app/layouts/<layout>/`: each owns its shell, route tree, tabs, and page
 transitions. Widget Configuration derives the Layout from Host Configuration,
-and only application composition and Widget Configuration read it; the shared
-dialog portal only restamps the Layout attribute on content it moves out of the
-Widget root. Features are Layout-agnostic: a Feature's `ui/` holds what both
-Layouts render, `ui/compact/` and `ui/dashboard/` hold Layout-specific screens
-and never import each other, and `model/`, `state/`, and `react/` never import
-either. A Layout difference is a style keyed by the Layout attribute on the
-Widget root, a prop the Layout's composition supplies that names the
-difference, or a Layout-specific component. See
+and only application composition and Widget Configuration read it. Features are
+Layout-agnostic: a Feature's `ui/` holds what both Layouts render,
+`ui/compact/` and `ui/dashboard/` hold Layout-specific screens and never import
+each other, and `model/`, `state/`, and `react/` never import either. A Layout
+difference is a Presentation Setting, a prop the Layout's composition supplies
+that names the difference, or a Layout-specific component. See
 [ADR 0013](../../docs/adr/0013-layouts-are-application-composition.md).
 
-`app/layouts/layout-app-container.tsx` selects the Layout attribute and page
-transition. The shared shell receives that resolved presentation; it does not
-select a Layout or own Layout-specific transition presets.
+Application composition resolves Presentation Settings from the Layout's
+defaults and the Host Profile's overrides and passes them, with the resolved
+color scheme and Appearance, to the Design System's theme root. The theme root
+applies them to the Widget root and its portal container; no style is keyed by
+the Layout. The `WidgetFrame` pattern receives the resolved presentation and
+route transitions use the Design System's `PageTransition`; neither selects a
+Layout.
 
 ## Routes and navigation
 
@@ -80,7 +96,7 @@ application composition
 feature interfaces and resource interfaces
           |
           v
-owned implementations -> domain rules / services / shared primitives
+owned implementations -> domain rules / services / shared utilities / Design System
 ```
 
 Imports within an owner may target its implementation. Imports across owners
@@ -101,8 +117,17 @@ Public types are a semver contract with host applications, not the
 application's model. They are hand-written in `public-api`, never aliased from
 generated API clients or internal implementation types, so a backend or
 refactoring change cannot silently alter what hosts compile against. The only
-derived exceptions are stable Domain contract re-exports and the theme token
-contract, which `public-api` owns.
+derived exceptions are stable Domain contract re-exports.
+
+Hosts theme the Widget through `appearance` (`SKAppearance`), a hand-written
+type of Color Roles per color scheme plus radius, control-height, font, and
+weight settings, and pick the Layout through `layout`. Both are decoded at the
+Host Configuration boundary into the Design System's internal Appearance and
+the Layout. The deprecated `theme`, `lightTheme`, `darkTheme`, and
+`dashboardVariant` stay accepted until the next major version; the boundary
+maps a legacy `theme`'s customized values onto Color Roles under `appearance`,
+and maps `dashboardVariant` to `layout`. The Design System's CSS custom
+properties are not a host contract.
 
 Every hand-written public type has a compile-time conformance site where an
 internal value crosses into or out of it: internal producers assign into the
@@ -160,6 +185,14 @@ implementations remain private.
 Interface exports are explicit and named. Wildcard exports and convenience
 barrels are not interfaces. Tests may deep-import private machinery when the
 test is intentionally about that machinery.
+
+The Design System publishes:
+
+- `index.ts` for Features and application composition: primitives, components,
+  patterns, and their finite prop types.
+- `composition.ts` for application composition only: the theme root, the
+  portal container, theme resolution, and the internal Appearance type that
+  Widget Configuration carries.
 
 ## Application logic
 
@@ -261,7 +294,12 @@ and Effect Atom registry.
   private, keeps the `internal/` folders of `services/wallet` and
   `services/transaction-workflow` private to their service, keeps API
   transport free of error presentation, and keeps `ui/compact/` and
-  `ui/dashboard/` independent of each other and out of Layout-free code.
+  `ui/dashboard/` independent of each other and out of Layout-free code. It
+  allows StyleX, Base UI, `motion`, Recharts, TanStack Virtual, and style
+  definition modules only inside the Design System, restricts Features and
+  application composition to its main interface and its composition interface
+  to application composition, and keeps the Design System free of Features,
+  Resources, services, application composition, Domain, and `public-api`.
 - Biome constrains barrels and keeps React out of domain, Resource, and service
   logic and out of Feature `model/` and `state/`.
 - ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
@@ -274,6 +312,16 @@ and Effect Atom registry.
   Configuration, Layout-named identifiers in Domain, Resource, service, and
   Feature `model/` and `state/` code, and Layout-named files outside `ui/` and
   `app/layouts/`.
+- ast-grep rejects lowercase JSX elements and `className` or `style` attributes
+  in Features and application composition, and, inside the Design System
+  outside its token definitions and artwork, color literals and raw font size,
+  weight, line height, radius, shadow, z-index, duration, and pixel values.
+  Every suppression of these rules states its reason.
+- Design System parts omit `className` and `style` from their types, and `as`
+  is a finite union.
+- Every Design System part and variant has a story that runs as a Chromium
+  test, with accessibility violations failing it; a contrast test checks every
+  text/surface Color Role pair in every scheme and Appearance Preset.
 - Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
 - jscpd fails when duplicated source and tooling code (tests and generated API
