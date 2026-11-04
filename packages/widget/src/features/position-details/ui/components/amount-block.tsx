@@ -23,6 +23,7 @@ import {
   Text,
   TokenTrigger,
 } from "../../../../ui/index";
+import { useWidgetConfig } from "../../../widget-configuration/index";
 import { useYieldMetaInfo } from "../../../yield-summary/views";
 
 type AmountBlockProps = {
@@ -76,6 +77,9 @@ export const AmountBlock = ({
 }: AmountBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const disableResizingInputFontSize = useWidgetConfig(
+    "disableResizingInputFontSize"
+  );
 
   const exitProps = rest.variant === "exit" ? rest : null;
   const min =
@@ -141,6 +145,7 @@ export const AmountBlock = ({
 
   return (
     <AmountPanel
+      shrink={!disableResizingInputFontSize}
       label={label}
       value={toAmountValue(value)}
       onValueChange={(next) => onAmountChange(fromAmountValue(next))}

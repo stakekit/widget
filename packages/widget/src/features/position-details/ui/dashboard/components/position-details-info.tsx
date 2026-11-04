@@ -8,7 +8,6 @@ import {
   DetailList,
   DetailRow,
   Disclosure,
-  ScrollArea,
   Skeleton,
   Stack,
   Text,
@@ -92,74 +91,72 @@ export const PositionDetailsInfo = () => {
   });
 
   return (
-    <ScrollArea label={t("dashboard.split_view.details")}>
-      <Stack gap={24}>
-        <YieldDetailsHeader
-          headerBadges={getPositionHeaderBadges(integrationData, t)}
-          providerName={model.providerName}
-          yieldDto={integrationData}
-        />
+    <Stack gap={24}>
+      <YieldDetailsHeader
+        headerBadges={getPositionHeaderBadges(integrationData, t)}
+        providerName={model.providerName}
+        yieldDto={integrationData}
+      />
 
-        <PositionMetricCards cards={model.metricCards} />
+      <PositionMetricCards cards={model.metricCards} />
 
-        {model.breakdownRows.length > 0 && (
-          <Disclosure
-            title={t("dashboard.position_details.breakdown")}
-            defaultOpen
-          >
-            <Stack gap={12}>
-              <PositionBreakdownRows rows={model.breakdownRows} />
-              {positionDetails.hasHiddenBalances ? (
-                <Stack gap={4}>
-                  <Button
-                    size="sm"
-                    loading={positionDetails.revealing}
-                    onClick={positionDetails.onRevealBalances}
-                  >
-                    {t("shared.confidential.reveal")}
-                  </Button>
-                  {positionDetails.revealFailed ? (
-                    <Text tone="danger">
-                      {t("shared.confidential.reveal_failed")}
-                    </Text>
-                  ) : null}
-                </Stack>
-              ) : null}
-              {positionDetails.hasRevealedBalances ? (
-                <Button size="sm" onClick={positionDetails.onHideBalances}>
-                  {t("shared.confidential.hide")}
+      {model.breakdownRows.length > 0 && (
+        <Disclosure
+          title={t("dashboard.position_details.breakdown")}
+          defaultOpen
+        >
+          <Stack gap={12}>
+            <PositionBreakdownRows rows={model.breakdownRows} />
+            {positionDetails.hasHiddenBalances ? (
+              <Stack gap={4}>
+                <Button
+                  size="sm"
+                  loading={positionDetails.revealing}
+                  onClick={positionDetails.onRevealBalances}
+                >
+                  {t("shared.confidential.reveal")}
                 </Button>
-              ) : null}
-            </Stack>
-          </Disclosure>
-        )}
-
-        <Disclosure title={t("dashboard.position_details.details")} defaultOpen>
-          <DetailList>
-            {model.detailRows.map((row) => (
-              <DetailRow
-                key={row.id}
-                label={row.label}
-                value={renderDetailValue(row.value)}
-              />
-            ))}
-            {model.addressRows.map((row) => (
-              <DetailRow
-                key={`${row.label}-${row.address}`}
-                label={row.label}
-                value={formatAddress(row.address)}
-                copyable={{
-                  value: row.address,
-                  label: t("position_details.copy_address", {
-                    label: row.label,
-                  }),
-                  copiedLabel: t("position_details.copied"),
-                }}
-              />
-            ))}
-          </DetailList>
+                {positionDetails.revealFailed ? (
+                  <Text tone="danger">
+                    {t("shared.confidential.reveal_failed")}
+                  </Text>
+                ) : null}
+              </Stack>
+            ) : null}
+            {positionDetails.hasRevealedBalances ? (
+              <Button size="sm" onClick={positionDetails.onHideBalances}>
+                {t("shared.confidential.hide")}
+              </Button>
+            ) : null}
+          </Stack>
         </Disclosure>
-      </Stack>
-    </ScrollArea>
+      )}
+
+      <Disclosure title={t("dashboard.position_details.details")} defaultOpen>
+        <DetailList>
+          {model.detailRows.map((row) => (
+            <DetailRow
+              key={row.id}
+              label={row.label}
+              value={renderDetailValue(row.value)}
+            />
+          ))}
+          {model.addressRows.map((row) => (
+            <DetailRow
+              key={`${row.label}-${row.address}`}
+              label={row.label}
+              value={formatAddress(row.address)}
+              copyable={{
+                value: row.address,
+                label: t("position_details.copy_address", {
+                  label: row.label,
+                }),
+                copiedLabel: t("position_details.copied"),
+              }}
+            />
+          ))}
+        </DetailList>
+      </Disclosure>
+    </Stack>
   );
 };

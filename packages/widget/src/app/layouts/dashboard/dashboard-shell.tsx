@@ -9,7 +9,8 @@ import { DashboardTabs } from "./dashboard-tabs";
 
 /**
  * The Dashboard Layout's frame: the tabs with the wallet controls at the end
- * of their row, over the page.
+ * of their row from the `split` container size up, under them narrower, over
+ * the page.
  */
 export const DashboardShell = ({
   children,
@@ -21,8 +22,8 @@ export const DashboardShell = ({
   <ShellFrame
     header={
       <Stack
-        direction={{ base: "column", md: "row" }}
-        align={{ base: "stretch", md: "center" }}
+        direction={{ base: "column", split: "row" }}
+        align={{ base: "stretch", split: "center" }}
         justify="between"
         gap={16}
       >

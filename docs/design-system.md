@@ -33,26 +33,24 @@ Virtual and SVG icon markup.
 `src/ui/index.ts` exports:
 
 - **Primitives**: `Box`, `Stack`, `Grid`, `Text`, `Icon`, `VisuallyHidden`.
-- **Components**: `Accordion`, `AlertDialog`, `AmountInput`,
-  `AnimatedNumber`, `Avatar`, `IconAvatar`, `TokenAvatar`, `Badge`, `Button`,
-  `ButtonAnchor`, `Card`, `Checkbox`, `Chip`, `ChipGroup`, `CopyButton`,
-  `DetailList`, `DetailRow`, `Disclosure`, `Divider`, `EmbeddedPage`,
-  `ExpandableAmount`, `ExternalLink`, `Field`, `IconButton`, `Illustration`,
-  `InfoTip`, `ListGroup`, `ListRow`, `Menu`, `Meter`, `Metric`,
-  `MetricGroup`, `Modal`, `Notice`, `Popover`, `ScrollArea`, `SearchInput`,
-  `SegmentedControl`, `Select`, `Skeleton`, `Spinner`, `Steps`, `Switch`,
-  `Tabs`, `TimeSeriesChart`, `Tooltip`, `VirtualList`.
+- **Components**: `AlertDialog`, `AmountInput`, `AnimatedNumber`, `Avatar`,
+  `IconAvatar`, `TokenAvatar`, `Badge`, `Button`, `Card`, `Checkbox`,
+  `ChipGroup`, `CopyButton`, `DetailList`, `DetailRow`, `Disclosure`,
+  `Divider`, `EmbeddedPage`, `ExternalLink`, `Field`, `IconButton`,
+  `Illustration`, `InfoTip`, `ListGroup`, `ListRow`, `Meter`, `Metric`,
+  `MetricGroup`, `Modal`, `Notice`, `ScrollArea`, `SegmentedControl`, `Select`,
+  `Skeleton`, `Spinner`, `Switch`, `Tabs`, `TimeSeriesChart`, `Tooltip`,
+  `VirtualList`.
 - **Patterns**: `AmountPanel`, `AssetHeader`, `EmptyState`, `Entrance`,
   `ErrorState`, `FlowSteps`, `PageHeader`, `PageTransition`,
   `ReviewSummary`, `SelectSheet`, `SplitView`, `StandIn`, `TokenTrigger`,
   `WidgetFrame`.
-- **Artwork**: `Logo`, `MorphoMark`.
-- **Prop types**: `Tone`, `TextTone`, `TypeRole`, `Space`, `Responsive`,
-  `IconName`, `ButtonIconName`, `HostHook`, `TokenLogo`, `AmountSeparators`,
-  `SelectOption`, `TabOption`, `ToggleOption`, `TimeSeriesPoint`,
-  `VirtualListGroup`, `SplitViewSide`.
+- **Artwork**: `MorphoMark`.
+- **Prop types**: `Tone`, `IconName`, `HostHook`, `TabOption`, `ToggleOption`,
+  `SplitViewSide`.
 
-A part added to or removed from `src/ui/index.ts` updates this list.
+A part added to or removed from `src/ui/index.ts` updates this list. Parts used
+only inside the Design System stay unexported until a Feature needs them.
 
 ## Tokens
 
@@ -143,7 +141,10 @@ explicit `as`, so headings form a real outline.
   seconds from `ui/tokens/motion-timing.ts`, read the preference themselves and
   show their final state at once under reduced motion.
 - **Container sizes**: `sm` 400, `md` 520, `split` 800. These are the only
-  thresholds for in-Widget layout, which responds to container width only.
+  thresholds for in-Widget layout, which responds to container width only. A
+  property that reads a value at more than one size uses `containerBand`, whose
+  queries do not overlap: overlapping queries of equal specificity resolve by
+  source order, which StyleX does not guarantee.
 - **Viewport query**: only for how an overlay is presented: a bottom sheet below
   520px wide, a centered dialog above.
 - **Layers**: overlay, modal, dropdown, toast, tooltip, all inside the portal

@@ -14,7 +14,6 @@ import {
   DetailRow,
   Disclosure,
   EmptyState,
-  ScrollArea,
   Skeleton,
   Stack,
   Text,
@@ -136,73 +135,71 @@ const EarnDetailsPanel = ({
   });
 
   return (
-    <ScrollArea label={t("dashboard.earn_details.pane_label")}>
-      <Stack gap={16}>
-        <YieldDetailsHeader
-          headerBadges={headerBadges}
-          providerName={providerName}
-          yieldDto={yieldDto}
+    <Stack gap={16}>
+      <YieldDetailsHeader
+        headerBadges={headerBadges}
+        providerName={providerName}
+        yieldDto={yieldDto}
+      />
+
+      <EarnDetailsMetrics cards={metricCards} />
+
+      {providers}
+
+      {presentsRewardRateHistory && rewardRateChart.view.canRender && (
+        <HistoryChartSection
+          onPeriodChange={rewardRateChart.selectPeriod}
+          tickFormatter={(value) =>
+            formatPercent(exactDecimal(value).div(100), locale)
+          }
+          title={t("dashboard.earn_details.reward_rate")}
+          value={rewardRateFormatted}
+          view={rewardRateChart.view}
         />
+      )}
 
-        <EarnDetailsMetrics cards={metricCards} />
+      {!isStakeCategory && tvlChart.view.canRender && (
+        <HistoryChartSection
+          onPeriodChange={tvlChart.selectPeriod}
+          tickFormatter={(value) => formatUsd(value, locale)}
+          title={t("dashboard.earn_details.tvl")}
+          value={tvlChartValue}
+          view={tvlChart.view}
+        />
+      )}
 
-        {providers}
+      <Disclosure title={t("dashboard.earn_details.about")} defaultOpen>
+        <Stack gap={4}>
+          <Text tone="muted">{yieldDto.metadata.description}</Text>
 
-        {presentsRewardRateHistory && rewardRateChart.view.canRender && (
-          <HistoryChartSection
-            onPeriodChange={rewardRateChart.selectPeriod}
-            tickFormatter={(value) =>
-              formatPercent(exactDecimal(value).div(100), locale)
-            }
-            title={t("dashboard.earn_details.reward_rate")}
-            value={rewardRateFormatted}
-            view={rewardRateChart.view}
-          />
-        )}
+          {yieldDto.metadata.documentation ? (
+            <IntegrationDocsLink
+              documentation={yieldDto.metadata.documentation}
+            />
+          ) : null}
+        </Stack>
+      </Disclosure>
 
-        {!isStakeCategory && tvlChart.view.canRender && (
-          <HistoryChartSection
-            onPeriodChange={tvlChart.selectPeriod}
-            tickFormatter={(value) => formatUsd(value, locale)}
-            title={t("dashboard.earn_details.tvl")}
-            value={tvlChartValue}
-            view={tvlChart.view}
-          />
-        )}
+      <Disclosure title={t("dashboard.earn_details.details")} defaultOpen>
+        <DetailList>
+          {detailRows.map((row) => (
+            <DetailRow key={row.id} label={row.label} value={row.value} />
+          ))}
 
-        <Disclosure title={t("dashboard.earn_details.about")} defaultOpen>
-          <Stack gap={4}>
-            <Text tone="muted">{yieldDto.metadata.description}</Text>
-
-            {yieldDto.metadata.documentation ? (
-              <IntegrationDocsLink
-                documentation={yieldDto.metadata.documentation}
-              />
-            ) : null}
-          </Stack>
-        </Disclosure>
-
-        <Disclosure title={t("dashboard.earn_details.details")} defaultOpen>
-          <DetailList>
-            {detailRows.map((row) => (
-              <DetailRow key={row.id} label={row.label} value={row.value} />
-            ))}
-
-            {addressRows.map((row) => (
-              <DetailRow
-                key={`${row.label}-${row.address}`}
-                label={row.label}
-                value={formatAddress(row.address)}
-                copyable={{
-                  value: row.address,
-                  label: t("wallet_modal.copy_address"),
-                  copiedLabel: t("wallet_modal.copied"),
-                }}
-              />
-            ))}
-          </DetailList>
-        </Disclosure>
-      </Stack>
-    </ScrollArea>
+          {addressRows.map((row) => (
+            <DetailRow
+              key={`${row.label}-${row.address}`}
+              label={row.label}
+              value={formatAddress(row.address)}
+              copyable={{
+                value: row.address,
+                label: t("wallet_modal.copy_address"),
+                copiedLabel: t("wallet_modal.copied"),
+              }}
+            />
+          ))}
+        </DetailList>
+      </Disclosure>
+    </Stack>
   );
 };

@@ -9,6 +9,7 @@ import {
 import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { AmountPanel } from "../../../../ui/index";
+import { useWidgetConfig } from "../../../widget-configuration/index";
 
 /** The balance an amount draws on, short and at full precision. */
 export type BorrowAmountBalance = {
@@ -50,9 +51,13 @@ export const BorrowAmountField = ({
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const disableResizingInputFontSize = useWidgetConfig(
+    "disableResizingInputFontSize"
+  );
 
   return (
     <AmountPanel
+      shrink={!disableResizingInputFontSize}
       label={label}
       value={toAmountValue(amount)}
       onValueChange={(value) => onAmountChange(fromAmountValue(value))}

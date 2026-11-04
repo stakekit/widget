@@ -65,6 +65,8 @@ type AmountPanelProps = {
   };
   readonly disabled?: boolean;
   readonly onBlur?: () => void;
+  /** Steps the amount's type down as it fills the input. On by default. */
+  readonly shrink?: boolean;
   /** Render as the `data-testid` of the panel, the amount and the "Max" chip. */
   readonly testIds?: {
     readonly root?: string;
@@ -92,6 +94,7 @@ export const AmountPanel = ({
   invalid = false,
   disabled = false,
   onBlur,
+  shrink = true,
   testIds,
 }: AmountPanelProps) => (
   <Card
@@ -112,6 +115,7 @@ export const AmountPanel = ({
             separators={separators}
             invalid={invalid || error !== undefined}
             disabled={disabled}
+            shrink={shrink}
             {...(onBlur === undefined ? {} : { onBlur })}
             {...(testIds?.input === undefined ? {} : { testId: testIds.input })}
           />

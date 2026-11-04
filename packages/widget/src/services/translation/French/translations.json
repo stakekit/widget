@@ -1192,7 +1192,6 @@
       "reward_rate": "Taux de récompense",
       "about": "À propos",
       "read_docs": "Lire la documentation d'intégration",
-      "pane_label": "Détails du rendement",
       "chart_history": "Historique : {{chart}}",
       "chart_period": "Période : {{chart}}",
       "no_chart_data": "Aucune donnée de graphique",

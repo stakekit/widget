@@ -76,6 +76,14 @@ export const gridTrack = stylex.defineConsts({
   splitAside: "380px",
 });
 
+/**
+ * The least height of a split view's secondary pane, which otherwise takes
+ * the primary pane's height and scrolls what overflows it.
+ */
+export const splitPaneMinHeight = stylex.defineConsts({
+  secondary: "620px",
+});
+
 /** The one-pixel box that keeps visually hidden content readable. */
 export const visuallyHiddenBox = stylex.defineConsts({
   size: "1px",

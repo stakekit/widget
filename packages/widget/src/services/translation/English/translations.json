@@ -640,7 +640,6 @@
       "reward_rate": "Reward rate",
       "about": "About",
       "read_docs": "Read the integration docs",
-      "pane_label": "Yield details",
       "chart_history": "{{chart}} history",
       "chart_period": "{{chart}} period",
       "no_chart_data": "No chart data",

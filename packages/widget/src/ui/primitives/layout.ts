@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import type { AriaAttributes, AriaRole, ReactNode } from "react";
 import type { HostHook } from "../host-hook";
-import { container } from "../tokens/container.stylex";
+import { containerBand } from "../tokens/container.stylex";
 import { gutter } from "../tokens/presentation.stylex";
 import { gridTrack } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -892,57 +892,57 @@ export const layoutStyles = stylex.create({
   direction: {
     flexDirection: {
       default: v.direction,
-      [container.sm]: v.directionSm,
-      [container.md]: v.directionMd,
-      [container.split]: v.directionSplit,
+      [containerBand.sm]: v.directionSm,
+      [containerBand.md]: v.directionMd,
+      [containerBand.split]: v.directionSplit,
     },
   },
   gap: {
     gap: {
       default: v.gap,
-      [container.sm]: v.gapSm,
-      [container.md]: v.gapMd,
-      [container.split]: v.gapSplit,
+      [containerBand.sm]: v.gapSm,
+      [containerBand.md]: v.gapMd,
+      [containerBand.split]: v.gapSplit,
     },
   },
   align: {
     alignItems: {
       default: v.align,
-      [container.sm]: v.alignSm,
-      [container.md]: v.alignMd,
-      [container.split]: v.alignSplit,
+      [containerBand.sm]: v.alignSm,
+      [containerBand.md]: v.alignMd,
+      [containerBand.split]: v.alignSplit,
     },
   },
   justify: {
     justifyContent: {
       default: v.justify,
-      [container.sm]: v.justifySm,
-      [container.md]: v.justifyMd,
-      [container.split]: v.justifySplit,
+      [containerBand.sm]: v.justifySm,
+      [containerBand.md]: v.justifyMd,
+      [containerBand.split]: v.justifySplit,
     },
   },
   columns: {
     gridTemplateColumns: {
       default: v.columns,
-      [container.sm]: v.columnsSm,
-      [container.md]: v.columnsMd,
-      [container.split]: v.columnsSplit,
+      [containerBand.sm]: v.columnsSm,
+      [containerBand.md]: v.columnsMd,
+      [containerBand.split]: v.columnsSplit,
     },
   },
   paddingBlock: {
     paddingBlock: {
       default: v.paddingBlock,
-      [container.sm]: v.paddingBlockSm,
-      [container.md]: v.paddingBlockMd,
-      [container.split]: v.paddingBlockSplit,
+      [containerBand.sm]: v.paddingBlockSm,
+      [containerBand.md]: v.paddingBlockMd,
+      [containerBand.split]: v.paddingBlockSplit,
     },
   },
   paddingInline: {
     paddingInline: {
       default: v.paddingInline,
-      [container.sm]: v.paddingInlineSm,
-      [container.md]: v.paddingInlineMd,
-      [container.split]: v.paddingInlineSplit,
+      [containerBand.sm]: v.paddingInlineSm,
+      [containerBand.md]: v.paddingInlineMd,
+      [containerBand.split]: v.paddingInlineSplit,
     },
   },
 });

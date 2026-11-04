@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode, RefObject } from "react";
 import { useRef, useState } from "react";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
+import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -33,7 +34,10 @@ type ModalProps = {
   /** The close button's accessible name. */
   readonly closeLabel: string;
   readonly children?: ReactNode;
-  /** Actions under the body, such as a confirm button. */
+  /**
+   * Actions under the body, such as a confirm button. They stay in place while
+   * the body scrolls, ruled off from it once it overflows.
+   */
   readonly footer?: ReactNode;
   /** The element to focus on opening; unset, the first focusable one. */
   readonly initialFocus?: RefObject<HTMLElement | null>;
@@ -96,6 +100,7 @@ export const Modal = ({
   const container = usePortalContainer();
   const opener = useRef<HTMLElement | null>(null);
   const [resuming, setResuming] = useState(false);
+  const [bodyOverflows, setBodyOverflows] = useState(false);
   // A modal shown again after being suspended keeps its original opener.
   if (open === true && suspended && !resuming) setResuming(true);
   if (open !== true && resuming) setResuming(false);
@@ -161,8 +166,22 @@ export const Modal = ({
             />
           </div>
           <div
+            ref={(body) => {
+              if (body === null) return;
+              // The body changes size whenever its overflow can change: it
+              // grows with its content up to the dialog's height cap.
+              const observer = new ResizeObserver(() => {
+                setBodyOverflows(body.scrollHeight > body.clientHeight);
+              });
+              observer.observe(body);
+              return () => observer.disconnect();
+            }}
             data-testid={bodyTestId}
-            {...stylex.props(styles.body, size === "page" && styles.pageBody)}
+            {...stylex.props(
+              styles.body,
+              footer !== undefined && styles.bodyOverFooter,
+              size === "page" && styles.pageBody
+            )}
           >
             {description !== undefined && (
               <Dialog.Description render={<Text as="p" tone="muted" />}>
@@ -172,7 +191,14 @@ export const Modal = ({
             {children}
           </div>
           {footer !== undefined && (
-            <div {...stylex.props(styles.footer)}>{footer}</div>
+            <div
+              {...stylex.props(
+                styles.footer,
+                bodyOverflows && styles.footerUnderScroll
+              )}
+            >
+              {footer}
+            </div>
           )}
         </Dialog.Popup>
       </Dialog.Portal>
@@ -257,6 +283,9 @@ const styles = stylex.create({
     minHeight: 0,
     overflowY: "auto",
   },
+  // The footer's own top padding parts it from the body, so that space stays
+  // put while the body scrolls under it.
+  bodyOverFooter: { paddingBottom: 0 },
   pageBody: {
     paddingBlock: 0,
     paddingInline: 0,
@@ -270,5 +299,11 @@ const styles = stylex.create({
     flexDirection: "column",
     flexShrink: 0,
     paddingBottom: space[20],
+    paddingTop: space[16],
+  },
+  footerUnderScroll: {
+    borderTopColor: color.border,
+    borderTopStyle: "solid",
+    borderTopWidth: borderWidth.thin,
   },
 });

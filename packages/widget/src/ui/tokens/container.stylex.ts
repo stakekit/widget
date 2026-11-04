@@ -10,3 +10,15 @@ export const container = stylex.defineConsts({
   md: "@container (min-width: 520px)",
   split: "@container (min-width: 801px)",
 });
+
+/**
+ * The container sizes as bands, each from its size up to the next. A property
+ * that reads a value at more than one size uses these: queries of equal
+ * specificity that overlap resolve by source order, which StyleX does not
+ * guarantee, so a smaller size's value could win over a larger one's.
+ */
+export const containerBand = stylex.defineConsts({
+  sm: "@container (400px <= width < 520px)",
+  md: "@container (520px <= width < 801px)",
+  split: "@container (min-width: 801px)",
+});

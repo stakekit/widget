@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { type ReactNode, useState } from "react";
 import { focusRingStyles } from "../components/focus-ring";
+import { ScrollArea } from "../components/scroll-area";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
@@ -8,7 +9,7 @@ import { container } from "../tokens/container.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { gutter } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { gridTrack } from "../tokens/size.stylex";
+import { gridTrack, splitPaneMinHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import {
   font,
@@ -23,7 +24,11 @@ export type SplitViewSide = "primary" | "secondary";
 type SplitViewProps = {
   /** The main pane, such as a form; capped at the aside width when split. */
   readonly primary: ReactNode;
-  /** The pane beside it, such as the details of the form's selection. */
+  /**
+   * The pane beside it, such as the details of the form's selection. It takes
+   * the primary pane's height, at least a set minimum, and scrolls what
+   * overflows it.
+   */
   readonly secondary: ReactNode;
   /** Names the bar that reveals the primary pane while collapsed. */
   readonly primaryBarLabel: string;
@@ -38,7 +43,8 @@ type SplitViewProps = {
  * Two panes side by side from the `split` container size up, divided by a
  * rule. Narrower, it shows one pane at a time and a bar beside it, named for
  * the other pane, that swaps them. Without both panes, it shows the one it
- * has.
+ * has. The secondary pane never sets the split view's height: it scrolls
+ * within the primary pane's height, or its minimum when that is taller.
  */
 export const SplitView = ({
   primary,
@@ -53,10 +59,18 @@ export const SplitView = ({
   const [swapped, setSwapped] = useState(false);
   const activeSide = controlledSide ?? ownSide;
 
+  const secondaryPane = (
+    <div {...stylex.props(styles.fill)}>
+      <ScrollArea label={secondaryBarLabel}>{secondary}</ScrollArea>
+    </div>
+  );
+
   if (!primary || !secondary) {
     return (
       <div {...stylex.props(styles.root)}>
-        <div {...stylex.props(styles.pane)}>{primary || secondary}</div>
+        <div {...stylex.props(styles.pane, !primary && styles.bounded)}>
+          {primary || secondaryPane}
+        </div>
       </div>
     );
   }
@@ -105,12 +119,13 @@ export const SplitView = ({
       <div
         {...stylex.props(
           styles.pane,
+          styles.bounded,
           primaryActive
             ? styles.collapsedHidden
             : swapped && styles.enterFromEnd
         )}
       >
-        {secondary}
+        {secondaryPane}
       </div>
     </div>
   );
@@ -141,6 +156,18 @@ const styles = stylex.create({
     flexDirection: "column",
     flexGrow: 1,
     minWidth: 0,
+  },
+  // The secondary pane's content leaves the flow, so the pane's height is
+  // the row's: the primary pane's, or the minimum when that is taller.
+  bounded: {
+    position: "relative",
+    minHeight: splitPaneMinHeight.secondary,
+  },
+  fill: {
+    inset: 0,
+    display: "flex",
+    flexDirection: "column",
+    position: "absolute",
   },
   primary: {
     maxWidth: { default: "none", [container.split]: gridTrack.splitAside },

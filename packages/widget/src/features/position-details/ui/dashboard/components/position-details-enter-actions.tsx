@@ -16,6 +16,7 @@ import { useWidgetPresentation } from "../../../../../shared/react/widget-presen
 import { AmountPanel, Skeleton } from "../../../../../ui/index";
 import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useWalletScopeRoute } from "../../../../wallet/index";
+import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import {
   TronResourceSelection,
@@ -52,6 +53,9 @@ const PositionDetailsEnterTokenSection = ({
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const disableResizingInputFontSize = useWidgetConfig(
+    "disableResizingInputFontSize"
+  );
 
   const isLoading = stake.appLoading;
   const {
@@ -108,6 +112,7 @@ const PositionDetailsEnterTokenSection = ({
 
   return (
     <AmountPanel
+      shrink={!disableResizingInputFontSize}
       label={
         stake.selectedStake
           ? getYieldTypeLabels(stake.selectedStake, t).cta

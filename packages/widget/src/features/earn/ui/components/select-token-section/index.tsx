@@ -12,6 +12,7 @@ import {
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { AmountPanel, Skeleton } from "../../../../../ui/index";
+import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { useConfidentialTokenBalance } from "../../../../yield-entry/views";
 import {
   useEarnEntry,
@@ -27,6 +28,9 @@ export const SelectTokenSection = ({
 } = {}) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const disableResizingInputFontSize = useWidgetConfig(
+    "disableResizingInputFontSize"
+  );
 
   const {
     hideTokenBalance,
@@ -101,6 +105,7 @@ export const SelectTokenSection = ({
 
   return (
     <AmountPanel
+      shrink={!disableResizingInputFontSize}
       label={
         view.selectedStake
           ? getYieldTypeLabels(view.selectedStake, t).title

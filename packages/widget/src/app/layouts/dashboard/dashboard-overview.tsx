@@ -52,7 +52,7 @@ const DashboardOverviewSplitView = ({
           </BackButtonProvider>
         </Stack>
       }
-      secondary={<Stack grow>{details}</Stack>}
+      secondary={details}
     />
   );
 };
