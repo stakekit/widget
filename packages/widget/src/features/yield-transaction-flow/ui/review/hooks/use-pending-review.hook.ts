@@ -1,20 +1,18 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { toLowerCase } from "effect/String";
-import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
-import type { RewardTokenDetails } from "../../../../yield-summary/views";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
 } from "../../../react/yield-flow-route";
-import type { MetaInfoProps } from "../pages/common-page/common.page.tsx";
+import type { MetaInfoProps } from "../pages/common.page.tsx";
 
 export const usePendingActionReview = () => {
   const manageFlow = useYieldFlowIntake("Manage");
@@ -66,18 +64,6 @@ export const usePendingActionReview = () => {
 
   const onClick = () => confirmFlow(undefined);
 
-  const rewardTokenDetailsProps = integrationData.provider
-    ? ({
-        type: "pendingAction",
-        pendingAction: manageFlow.request.action,
-        rewardToken: {
-          logoUri: integrationData.provider.logoURI,
-          providerName: integrationData.provider.name,
-          rewardTokens: [integrationData.token],
-        },
-      } satisfies ComponentProps<typeof RewardTokenDetails>)
-    : null;
-
   const resolveCta = (): PageCta => ({
     label: t("shared.confirm"),
     onClick,
@@ -101,7 +87,6 @@ export const usePendingActionReview = () => {
     amount: formattedAmount,
     facts,
     fee,
-    rewardTokenDetailsProps,
     token: interactedToken,
     metaInfo,
     isGasCheckWarning: review.isGasCheckWarning,

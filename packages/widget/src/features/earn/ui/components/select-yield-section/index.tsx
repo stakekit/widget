@@ -1,21 +1,24 @@
-import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { Divider } from "../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../../../widget-configuration/index";
+import { formatRoundedPercent } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import {
+  AnimatedNumber,
+  Box,
+  Card,
+  Skeleton,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import { YieldRiskRatingSummary } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
   useEarnYieldSelection,
 } from "../../../react/use-earn-facades";
-import { SelectOpportunity } from "./select-opportunity";
+import { SelectYield } from "./select-yield";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";
-import { apyYield, selectYieldSection } from "./styles.css";
-import { useAnimateYieldPercent } from "./use-animated-yield-percent-boundary";
+import { getYieldPercent } from "./yield-percent";
 
+/** The Earn form's yield: its reward rate, the yield selection and its rewards. */
 export const SelectYieldSection = ({
   alwaysShowStrategy,
   showRiskSummary,
@@ -27,91 +30,59 @@ export const SelectYieldSection = ({
 }) => {
   const { view: entry } = useEarnEntry();
   const { view: yieldSelection } = useEarnYieldSelection();
-
-  const { earnPresentation } = useWidgetConfig("hostProfile");
-  const variant = useWidgetConfig("variant");
-
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
 
-  const isLoading = entry.appLoading || yieldSelection.isLoading;
-
-  const yieldPerc = useAnimateYieldPercent(entry.estimatedRewards);
-  const riskSummary = entry.selectedStake ? (
-    <YieldRiskRatingSummary yieldDto={entry.selectedStake} />
-  ) : null;
-  const showSectionTitle =
-    !earnPresentation.condensed && !earnPresentation.zerion;
-  const opportunityCount = yieldSelection.all.length;
-
-  if (isLoading) {
-    return (
-      <Box marginTop="2">
-        <ContentLoaderSquare heightPx={112.5} />
-      </Box>
-    );
+  if (entry.appLoading || yieldSelection.isLoading) {
+    return <Skeleton shape="rect" height="panel" />;
   }
 
-  if (opportunityCount === 0) {
+  if (yieldSelection.all.length === 0) {
     return (
-      <Box my="4" display="flex" justifyContent="center" alignItems="center">
+      <Stack align="center">
         <Text>{t("details.no_opportunities")}</Text>
-      </Box>
+      </Stack>
     );
   }
+
+  const percent = getYieldPercent(entry.estimatedRewards);
+  const getPercentText = () => {
+    if (percent === null) return null;
+    if (percent._tag === "Unknown") return "- %";
+    return (
+      <AnimatedNumber
+        value={percent.ratio}
+        format={(value) => formatRoundedPercent(value, locale)}
+        initial={0}
+      />
+    );
+  };
 
   return (
-    <Box>
-      {showSectionTitle && (
-        <Box my="2">
-          <Text>{t("details.earn")}</Text>
-        </Box>
-      )}
+    <Stack gap={12}>
+      <Card padding={16}>
+        <Stack gap={4}>
+          <Text variant="label" tone="muted">
+            {t("details.earn")}
+          </Text>
 
-      <Box
-        data-rk="stake-yield-section"
-        background="stakeSectionBackground"
-        borderRadius="xl"
-        marginTop="2"
-        py="4"
-        px="4"
-        className={combineRecipeWithVariant({
-          rec: selectYieldSection,
-          variant,
-        })}
-      >
-        {earnPresentation.zerion && (
-          <Box my="1">
-            <Text>{t("details.earn")}</Text>
-          </Box>
-        )}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box minWidth="0" display="flex" marginRight="2" flex={1}>
-            <Box position="relative" data-testid="estimated-reward__percent">
-              <motion.div className={apyYield}>{yieldPerc}</motion.div>
+          <Stack direction="row" align="center" justify="between" gap={8}>
+            <Box testId="estimated-reward__percent">
+              <Text variant="display" as="p" numeric>
+                {getPercentText()}
+              </Text>
             </Box>
-          </Box>
 
-          <Box display="flex" justifyContent="center" alignItems="center">
-            <SelectOpportunity />
-          </Box>
-        </Box>
+            <SelectYield />
+          </Stack>
 
-        {!earnPresentation.zerion && (
           <SelectYieldRewardDetails alwaysShowStrategy={alwaysShowStrategy} />
-        )}
-      </Box>
+        </Stack>
+      </Card>
 
-      {!earnPresentation.zerion && showRiskSummary && riskSummary}
-
-      {earnPresentation.zerion && (
-        <Box display="flex" flexDirection="column" gap="3">
-          <SelectYieldRewardDetails alwaysShowStrategy={alwaysShowStrategy} />
-
-          {showRiskSummary && riskSummary}
-
-          <Divider />
-        </Box>
+      {showRiskSummary && entry.selectedStake && (
+        <YieldRiskRatingSummary yieldDto={entry.selectedStake} />
       )}
-    </Box>
+    </Stack>
   );
 };

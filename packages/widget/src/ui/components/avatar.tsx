@@ -1,5 +1,6 @@
 import { Avatar as BaseAvatar } from "@base-ui/react/avatar";
 import * as stylex from "@stylexjs/stylex";
+import type { ReactElement } from "react";
 import { accountAvatar } from "../artwork/account-avatar";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
@@ -147,6 +148,26 @@ export const TokenAvatar = (props: TokenAvatarProps) => {
   );
 };
 
+/**
+ * An `Icon` in an avatar's circle, such as the direction of an activity in a
+ * row. It is decorative: the text beside it names what it shows.
+ */
+export const IconAvatar = ({
+  size = "md",
+  children,
+}: {
+  readonly size?: AvatarSize;
+  /** The `Icon`; unset, it draws in the text color. */
+  readonly children: ReactElement;
+}) => (
+  <span
+    aria-hidden="true"
+    {...stylex.props(styles.root, styles.icon, sizeStyles[size])}
+  >
+    {children}
+  </span>
+);
+
 const styles = stylex.create({
   root: {
     borderRadius: radius.pill,
@@ -162,6 +183,8 @@ const styles = stylex.create({
     justifyContent: "center",
     userSelect: "none",
   },
+  // An icon sits on the canvas color, so it reads on a row's surface.
+  icon: { backgroundColor: color.background, color: color.text },
   // A provider's logo is a square tile; `badge` matches its small size.
   square: { borderRadius: radius.badge },
   image: {

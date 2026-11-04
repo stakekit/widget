@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import * as styles from "../styles.css";
-import { ExternalLinkIcon } from "./external-link-icon";
+import { ExternalLink } from "../../../../../../ui/index";
 
 export const IntegrationDocsLink = ({
   documentation,
@@ -11,16 +9,11 @@ export const IntegrationDocsLink = ({
   const { t } = useTranslation();
 
   return (
-    <Text
-      as="a"
-      className={styles.integrationDocsLink}
+    <ExternalLink
       href={documentation}
-      rel="noreferrer"
-      target="_blank"
-      variant={{ weight: "normal" }}
+      newTabLabel={t("shared.opens_in_new_tab")}
     >
       {t("dashboard.earn_details.read_docs")}
-      <ExternalLinkIcon />
-    </Text>
+    </ExternalLink>
   );
 };

@@ -111,7 +111,7 @@ describe("SelectValidatorSection", () => {
       .element(app.getByTestId("select-modal__search-input"))
       .toHaveValue("missing validator");
     await expect
-      .element(app.getByText("No validators found"))
+      .element(app.getByText("No validators found").first())
       .toBeInTheDocument();
   });
 
@@ -154,7 +154,7 @@ describe("SelectValidatorSection", () => {
     await userEvent.click(trigger as HTMLButtonElement);
 
     await expect
-      .element(app.getByText("No validators available"))
+      .element(app.getByText("No validators available").first())
       .toBeInTheDocument();
   });
 
@@ -178,7 +178,7 @@ describe("SelectValidatorSection", () => {
     await expect.element(app.getByText("Earn with")).toBeInTheDocument();
 
     const trigger = app.container.querySelector(
-      '[data-rk="select-validator-plus"]'
+      '[data-testid="select-validator-plus"]'
     );
     expect(trigger).not.toBeNull();
 
@@ -203,7 +203,7 @@ describe("SelectValidatorSection", () => {
 
     const app = await renderSection();
     const trigger = app.container.querySelector(
-      '[data-rk="select-validator-plus"]'
+      '[data-testid="select-validator-plus"]'
     );
     await userEvent.click(trigger as HTMLButtonElement);
     await expect.element(app.getByText("Validator 0")).toBeInTheDocument();

@@ -52,6 +52,11 @@ type AmountPanelProps = {
    * replaces `limits`, marks the amount invalid and describes it.
    */
   readonly error?: string;
+  /**
+   * Marks the amount invalid without an `error` to show, such as an empty
+   * amount after a submit.
+   */
+  readonly invalid?: boolean;
   /** The "Max" chip, which fills in the most the user can use. */
   readonly max?: {
     readonly label: string;
@@ -60,6 +65,12 @@ type AmountPanelProps = {
   };
   readonly disabled?: boolean;
   readonly onBlur?: () => void;
+  /** Render as the `data-testid` of the panel, the amount and the "Max" chip. */
+  readonly testIds?: {
+    readonly root?: string;
+    readonly input?: string;
+    readonly max?: string;
+  };
 };
 
 /**
@@ -78,10 +89,15 @@ export const AmountPanel = ({
   limits,
   error,
   max,
+  invalid = false,
   disabled = false,
   onBlur,
+  testIds,
 }: AmountPanelProps) => (
-  <Card padding={16}>
+  <Card
+    padding={16}
+    {...(testIds?.root === undefined ? {} : { testId: testIds.root })}
+  >
     <Stack gap={8}>
       <Field
         label={label}
@@ -94,9 +110,10 @@ export const AmountPanel = ({
             value={value}
             onValueChange={onValueChange}
             separators={separators}
-            invalid={error !== undefined}
+            invalid={invalid || error !== undefined}
             disabled={disabled}
             {...(onBlur === undefined ? {} : { onBlur })}
+            {...(testIds?.input === undefined ? {} : { testId: testIds.input })}
           />
           {token}
         </Stack>
@@ -127,6 +144,7 @@ export const AmountPanel = ({
             {max !== undefined && (
               <Chip
                 onClick={max.onClick}
+                {...(testIds?.max === undefined ? {} : { testId: testIds.max })}
                 disabled={disabled || (max.disabled ?? false)}
               >
                 {max.label}

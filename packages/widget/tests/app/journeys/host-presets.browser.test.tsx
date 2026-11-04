@@ -2,8 +2,8 @@ import type {
   SettingsProps,
   SKHostVariant,
 } from "../../../src/public-api/types";
+import { legacyThemeDefaults } from "../../../src/services/config/legacy-theme-defaults";
 import { widgetStorageKeys } from "../../../src/services/persistence/widget-persistence";
-import { darkTheme } from "../../../src/shared/styles/theme/themes";
 import { describe, expect, it } from "../../utils/test-extend";
 import { type RenderResult, renderApp } from "../../utils/test-utils";
 
@@ -33,6 +33,11 @@ const renderEarnCallToAction = async (props: HostProps) => {
     skProps: { apiKey: import.meta.env.VITE_API_KEY, ...props },
   });
   if (props.variant === "utila") {
+    await app
+      .getByRole("checkbox", {
+        name: "I have read and agree to the Terms of Use",
+      })
+      .click();
     await app.getByRole("button", { name: "I Accept" }).click();
   }
   const style = getComputedStyle(await earnCallToAction(app));
@@ -90,8 +95,11 @@ describe("Host Profile Appearance Presets", () => {
     // A theme built on `darkTheme` is inferred dark; Utila presents light.
     const utila = await renderEarnCallToAction({
       theme: {
-        ...darkTheme,
-        color: { ...darkTheme.color, primaryButtonBackground: "#FF5500" },
+        ...legacyThemeDefaults.dark,
+        color: {
+          ...legacyThemeDefaults.dark.color,
+          primaryButtonBackground: "#FF5500",
+        },
       },
       variant: "utila",
     });

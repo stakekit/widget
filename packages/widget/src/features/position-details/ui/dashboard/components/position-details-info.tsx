@@ -1,30 +1,25 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
+import { formatAddress } from "../../../../../shared/lib/general";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
-  AddressRow,
+  Button,
+  DetailList,
   DetailRow,
-  DetailsSection,
-} from "../../../../../shared/ui/components/details-section";
-import {
-  PositionBreakdownRows,
-  PositionDetailsScrollArea,
-  PositionMetricCards,
-} from "../../../../../shared/ui/components/position-details";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../shared/ui/primitives/button";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+  Disclosure,
+  ScrollArea,
+  Skeleton,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../yield-summary/index";
 import {
-  RiskRatingBadge,
-  riskSummaryActions,
   YieldDetailsHeader,
-  YieldRiskInfoTooltip,
+  YieldRiskRatingActions,
 } from "../../../../yield-summary/views";
 import {
   getPositionHeaderBadges,
@@ -32,15 +27,16 @@ import {
   type PositionOverviewDetailValue,
 } from "../../../model/position-overview";
 import { usePositionDetails } from "../../../react/use-position-details";
+import {
+  PositionBreakdownRows,
+  PositionMetricCards,
+} from "./position-details-layout";
 
 const renderDetailValue = (value: PositionOverviewDetailValue) =>
   typeof value === "string" ? (
     value
   ) : (
-    <div className={riskSummaryActions}>
-      <RiskRatingBadge risk={value.risk} />
-      <YieldRiskInfoTooltip />
-    </div>
+    <YieldRiskRatingActions risk={value.risk} />
   );
 
 export const PositionDetailsInfo = () => {
@@ -59,31 +55,45 @@ export const PositionDetailsInfo = () => {
   );
 
   if (positionDetails.isLoading) {
-    return <ContentLoaderSquare heightPx={430} />;
+    return (
+      <Stack gap={16} aria-busy>
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="rect" height="lg" />
+      </Stack>
+    );
   }
 
   const integrationData = positionDetails.integrationData;
   const positionBalancesByType = positionDetails.positionBalancesByType;
-  if (integrationData && positionBalancesByType) {
-    const model = getPositionOverviewModel({
-      cancellingHandles: positionDetails.cancellingHandles,
-      canUnstake: positionDetails.canUnstake,
-      integrationData,
-      locale,
-      now: presentationTime?.now ?? null,
-      pendingActions: positionDetails.pendingActions ?? [],
-      personalizedRewardRate: positionDetails.personalizedRewardRate,
-      positionBalancesByType,
-      providersDetails: positionDetails.providersDetails ?? [],
-      rewardsSummary:
-        rewardsYieldId && rewardsSummaries._tag === "Ready"
-          ? (rewardsSummaries.value?.[rewardsYieldId] ?? undefined)
-          : undefined,
-      t,
-    });
-
+  if (!integrationData || !positionBalancesByType) {
     return (
-      <PositionDetailsScrollArea>
+      <Stack align="center">
+        <Text tone="muted">{t("dashboard.position_details.empty")}</Text>
+      </Stack>
+    );
+  }
+
+  const model = getPositionOverviewModel({
+    cancellingHandles: positionDetails.cancellingHandles,
+    canUnstake: positionDetails.canUnstake,
+    integrationData,
+    locale,
+    now: presentationTime?.now ?? null,
+    pendingActions: positionDetails.pendingActions ?? [],
+    personalizedRewardRate: positionDetails.personalizedRewardRate,
+    positionBalancesByType,
+    providersDetails: positionDetails.providersDetails ?? [],
+    rewardsSummary:
+      rewardsYieldId && rewardsSummaries._tag === "Ready"
+        ? (rewardsSummaries.value?.[rewardsYieldId] ?? undefined)
+        : undefined,
+    t,
+  });
+
+  return (
+    <ScrollArea label={t("dashboard.split_view.details")}>
+      <Stack gap={24}>
         <YieldDetailsHeader
           headerBadges={getPositionHeaderBadges(integrationData, t)}
           providerName={model.providerName}
@@ -93,67 +103,63 @@ export const PositionDetailsInfo = () => {
         <PositionMetricCards cards={model.metricCards} />
 
         {model.breakdownRows.length > 0 && (
-          <DetailsSection title={t("dashboard.position_details.breakdown")}>
-            <PositionBreakdownRows rows={model.breakdownRows} />
-            {positionDetails.hasHiddenBalances ? (
-              <Box display="flex" flexDirection="column" gap="1" marginTop="2">
-                <Button
-                  variant={{ size: "small", color: "smallButtonLight" }}
-                  disabled={positionDetails.revealing}
-                  isLoading={positionDetails.revealing}
-                  onClick={positionDetails.onRevealBalances}
-                >
-                  <Text>{t("shared.confidential.reveal")}</Text>
+          <Disclosure
+            title={t("dashboard.position_details.breakdown")}
+            defaultOpen
+          >
+            <Stack gap={12}>
+              <PositionBreakdownRows rows={model.breakdownRows} />
+              {positionDetails.hasHiddenBalances ? (
+                <Stack gap={4}>
+                  <Button
+                    size="sm"
+                    loading={positionDetails.revealing}
+                    onClick={positionDetails.onRevealBalances}
+                  >
+                    {t("shared.confidential.reveal")}
+                  </Button>
+                  {positionDetails.revealFailed ? (
+                    <Text tone="danger">
+                      {t("shared.confidential.reveal_failed")}
+                    </Text>
+                  ) : null}
+                </Stack>
+              ) : null}
+              {positionDetails.hasRevealedBalances ? (
+                <Button size="sm" onClick={positionDetails.onHideBalances}>
+                  {t("shared.confidential.hide")}
                 </Button>
-                {positionDetails.revealFailed ? (
-                  <Text variant={{ type: "danger", weight: "normal" }}>
-                    {t("shared.confidential.reveal_failed")}
-                  </Text>
-                ) : null}
-              </Box>
-            ) : null}
-            {positionDetails.hasRevealedBalances ? (
-              <Box marginTop="2" display="flex" flexDirection="column">
-                <Button
-                  variant={{ size: "small", color: "smallButtonLight" }}
-                  onClick={positionDetails.onHideBalances}
-                >
-                  <Text>{t("shared.confidential.hide")}</Text>
-                </Button>
-              </Box>
-            ) : null}
-          </DetailsSection>
+              ) : null}
+            </Stack>
+          </Disclosure>
         )}
 
-        <DetailsSection title={t("dashboard.position_details.details")}>
-          {model.detailRows.map((row) => (
-            <DetailRow
-              key={row.id}
-              id={row.id}
-              label={row.label}
-              value={renderDetailValue(row.value)}
-            />
-          ))}
-
-          {model.addressRows.length > 0 && (
-            <Box display="flex" flexDirection="column" gap="2" marginTop="2">
-              {model.addressRows.map((row) => (
-                <AddressRow key={`${row.label}-${row.address}`} {...row} />
-              ))}
-            </Box>
-          )}
-        </DetailsSection>
-      </PositionDetailsScrollArea>
-    );
-  }
-
-  return (
-    <PositionDetailsScrollArea>
-      <Box alignItems="center" display="flex" justifyContent="center">
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("dashboard.position_details.empty")}
-        </Text>
-      </Box>
-    </PositionDetailsScrollArea>
+        <Disclosure title={t("dashboard.position_details.details")} defaultOpen>
+          <DetailList>
+            {model.detailRows.map((row) => (
+              <DetailRow
+                key={row.id}
+                label={row.label}
+                value={renderDetailValue(row.value)}
+              />
+            ))}
+            {model.addressRows.map((row) => (
+              <DetailRow
+                key={`${row.label}-${row.address}`}
+                label={row.label}
+                value={formatAddress(row.address)}
+                copyable={{
+                  value: row.address,
+                  label: t("position_details.copy_address", {
+                    label: row.label,
+                  }),
+                  copiedLabel: t("position_details.copied"),
+                }}
+              />
+            ))}
+          </DetailList>
+        </Disclosure>
+      </Stack>
+    </ScrollArea>
   );
 };

@@ -46,6 +46,17 @@ type SelectSheetOption = {
     readonly value: string;
   }>;
   readonly disabled?: boolean;
+  /** Renders as the option row's `data-testid`. */
+  readonly testId?: string;
+};
+
+/** A button under a select sheet's options. */
+type SelectSheetAction = {
+  readonly label: string;
+  readonly onClick: () => void;
+  readonly variant?: "primary" | "secondary";
+  readonly loading?: boolean;
+  readonly disabled?: boolean;
 };
 
 type OptionsOrGroups =
@@ -128,15 +139,10 @@ type SelectSheetProps = OptionsOrGroups &
       };
     };
     /**
-     * A button under the options, such as "View all validators" or the confirm
-     * of a `multiple` choice.
+     * Buttons under the options, such as "View all validators" or the confirm
+     * of a `multiple` choice; several stack in the order given.
      */
-    readonly footer?: {
-      readonly label: string;
-      readonly onClick: () => void;
-      readonly variant?: "primary" | "secondary";
-      readonly loading?: boolean;
-    };
+    readonly footer?: SelectSheetAction | ReadonlyArray<SelectSheetAction>;
     /** Shows a spinner, named by `loadingLabel`, instead of the options. */
     readonly loading?: boolean;
     readonly loadingLabel?: string;
@@ -145,6 +151,12 @@ type SelectSheetProps = OptionsOrGroups &
     readonly hasMore?: boolean;
     readonly loadingMore?: boolean;
     readonly loadingMoreLabel?: string;
+    /** Render as the `data-testid` of the sheet, its title and its search field. */
+    readonly testIds?: {
+      readonly container?: string;
+      readonly title?: string;
+      readonly search?: string;
+    };
   };
 
 /** The next option from `from` in `direction` that is not disabled. */
@@ -192,6 +204,7 @@ export const SelectSheet = ({
   hasMore = false,
   loadingMore = false,
   loadingMoreLabel,
+  testIds,
   ...optionsOrGroups
 }: SelectSheetProps) => {
   const baseId = useId();
@@ -243,6 +256,7 @@ export const SelectSheet = ({
       ...(option.value === undefined ? {} : { value: option.value }),
       ...(option.subvalue === undefined ? {} : { subvalue: option.subvalue }),
       ...(option.details === undefined ? {} : { details: option.details }),
+      ...(option.testId === undefined ? {} : { testId: option.testId }),
       ...(option.logo === undefined
         ? {}
         : { leading: <TokenAvatar {...option.logo} decorative /> }),
@@ -355,20 +369,26 @@ export const SelectSheet = ({
       onOpenChange={setOpen}
       title={title}
       closeLabel={closeLabel}
+      {...(testIds?.container === undefined
+        ? {}
+        : { testId: testIds.container })}
+      {...(testIds?.title === undefined ? {} : { titleTestId: testIds.title })}
       {...(trigger === undefined ? {} : { trigger })}
       {...(search === undefined ? {} : { initialFocus: searchRef })}
       {...(footer === undefined
         ? {}
         : {
-            footer: (
+            footer: ("label" in footer ? [footer] : footer).map((action) => (
               <Button
-                variant={footer.variant ?? "secondary"}
-                onClick={footer.onClick}
-                loading={footer.loading ?? false}
+                key={action.label}
+                variant={action.variant ?? "secondary"}
+                onClick={action.onClick}
+                loading={action.loading ?? false}
+                disabled={action.disabled ?? false}
               >
-                {footer.label}
+                {action.label}
               </Button>
-            ),
+            )),
           })}
     >
       {search !== undefined && (
@@ -380,6 +400,7 @@ export const SelectSheet = ({
             search.onValueChange(next);
           }}
           label={search.label}
+          {...(testIds?.search === undefined ? {} : { testId: testIds.search })}
           clearLabel={search.clearLabel}
           {...(search.placeholder === undefined
             ? {}

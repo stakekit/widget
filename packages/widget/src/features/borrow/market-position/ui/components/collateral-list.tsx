@@ -1,74 +1,94 @@
-import clsx from "clsx";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CollapsibleArrow,
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger,
-} from "../../../../../shared/ui/components/collapsible";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Card, Disclosure, Stack, Switch, Text } from "../../../../../ui/index";
 import {
   type BorrowPositionAction,
   findBorrowCollateralToggleAction,
   type getBorrowPositionDetailsModel,
 } from "../../model/details";
 import { useBorrowCollateralToggleForm } from "../../react/use-action-form";
-import * as styles from "../styles.css";
+import { borrowPositionActionHostHooks } from "../host-hooks";
 
-/** A toggle the Risk Gate blocks cannot start Review, so it renders disabled. */
-const CollateralToggle = ({
+type CollateralItem = ReturnType<
+  typeof getBorrowPositionDetailsModel
+>["collateralItems"][number];
+
+const CollateralRowLayout = ({
+  item,
+  note,
+  toggle,
+}: {
+  readonly item: CollateralItem;
+  readonly note?: string | null;
+  readonly toggle?: ReactNode;
+}) => (
+  <Card padding={12}>
+    <Stack gap={8}>
+      <Stack direction="row" align="center" gap={12}>
+        <Stack gap={2} grow>
+          <Text weight="semibold" truncate>
+            {item.label}
+          </Text>
+          <Text variant="caption" tone="muted" numeric>
+            {item.supplyRate}
+          </Text>
+        </Stack>
+        <Stack gap={2} align="end">
+          <Text numeric>{item.balance}</Text>
+          <Text variant="caption" tone="muted" numeric>
+            {item.balanceUsd}
+          </Text>
+        </Stack>
+        {toggle}
+      </Stack>
+      {note ? (
+        <Text variant="caption" tone="danger">
+          {note}
+        </Text>
+      ) : null}
+    </Stack>
+  </Card>
+);
+
+/**
+ * Toggling starts the action's Review instead of applying at once; a toggle
+ * the Risk Gate blocks cannot start Review, so it renders disabled with why.
+ */
+const ToggleableCollateralRow = ({
   action,
-  isCollateral,
+  item,
   onActionSelect,
 }: {
   readonly action: BorrowPositionAction;
-  readonly isCollateral: boolean;
+  readonly item: CollateralItem;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
 }) => {
   const { t } = useTranslation();
   const form = useBorrowCollateralToggleForm(action);
   const riskBlock = form?.riskBlock ?? null;
-  const blocked = form !== null && !form.canSubmit;
 
   return (
-    <>
-      <Box
-        as="button"
-        aria-checked={isCollateral}
-        aria-label={action.label}
-        className={clsx(
-          styles.switchButton,
-          isCollateral && styles.switchButtonChecked,
-          blocked && styles.switchButtonDisabled
-        )}
-        data-rk={`borrow-collateral-toggle__${action.type}`}
-        data-testid={`borrow-collateral-toggle__${action.type}`}
-        disabled={blocked}
-        onClick={(event) => {
-          event.stopPropagation();
-          onActionSelect(action);
-        }}
-        role="switch"
-        type="button"
-      >
-        <Box
-          className={clsx(
-            styles.switchThumb,
-            isCollateral && styles.switchThumbChecked
-          )}
-        />
-      </Box>
-      {riskBlock ? (
-        <Box className={styles.collateralRowNote}>
-          <Text variant={{ type: "danger", weight: "normal" }}>
-            {t(
+    <CollateralRowLayout
+      item={item}
+      note={
+        riskBlock
+          ? t(
               `dashboard.borrow.position_details.validation.collateral_toggle_risk.${riskBlock}`
-            )}
-          </Text>
-        </Box>
-      ) : null}
-    </>
+            )
+          : null
+      }
+      toggle={
+        <Switch
+          checked={item.isCollateral}
+          onCheckedChange={() => onActionSelect(action)}
+          label={action.label}
+          labelHidden
+          disabled={form !== null && !form.canSubmit}
+          testId={`borrow-collateral-toggle__${action.type}`}
+          hostHook={borrowPositionActionHostHooks[action.type]}
+        />
+      }
+    />
   );
 };
 
@@ -79,9 +99,7 @@ export const CollateralList = ({
   totalCollateralUsd,
 }: {
   readonly actions: BorrowPositionAction[];
-  readonly items: ReturnType<
-    typeof getBorrowPositionDetailsModel
-  >["collateralItems"];
+  readonly items: ReadonlyArray<CollateralItem>;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
   readonly totalCollateralUsd: string;
 }) => {
@@ -92,61 +110,34 @@ export const CollateralList = ({
   }
 
   return (
-    <Box className={styles.collateralList}>
-      <CollapsibleRoot initial={false}>
-        <CollapsibleTrigger
-          as="button"
-          className={styles.collateralListButton}
-          type="button"
-        >
-          <Text variant={{ weight: "bold" }}>
-            {t("dashboard.borrow.position_details.collateral_list")}
-          </Text>
-          <CollapsibleArrow />
-          <Box flex={1} textAlign="right">
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {totalCollateralUsd}
-            </Text>
-          </Box>
-        </CollapsibleTrigger>
+    <Disclosure
+      title={t("dashboard.borrow.position_details.collateral_list")}
+      badges={
+        <Text tone="muted" numeric>
+          {totalCollateralUsd}
+        </Text>
+      }
+      defaultOpen
+    >
+      <Stack gap={8}>
+        {items.map((item) => {
+          const toggleAction = findBorrowCollateralToggleAction({
+            actions,
+            item,
+          });
 
-        <CollapsibleContent>
-          <Box display="flex" flexDirection="column" gap="2">
-            {items.map((item) => {
-              const toggleAction = findBorrowCollateralToggleAction({
-                actions,
-                item,
-              });
-
-              return (
-                <Box className={styles.collateralRow} key={item.id}>
-                  <Box minWidth="0">
-                    <Text variant={{ weight: "bold" }}>{item.label}</Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {item.supplyRate}
-                    </Text>
-                  </Box>
-
-                  <Box minWidth="0" textAlign="right">
-                    <Text>{item.balance}</Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {item.balanceUsd}
-                    </Text>
-                  </Box>
-
-                  {toggleAction ? (
-                    <CollateralToggle
-                      action={toggleAction}
-                      isCollateral={item.isCollateral}
-                      onActionSelect={onActionSelect}
-                    />
-                  ) : null}
-                </Box>
-              );
-            })}
-          </Box>
-        </CollapsibleContent>
-      </CollapsibleRoot>
-    </Box>
+          return toggleAction ? (
+            <ToggleableCollateralRow
+              key={item.id}
+              action={toggleAction}
+              item={item}
+              onActionSelect={onActionSelect}
+            />
+          ) : (
+            <CollateralRowLayout key={item.id} item={item} />
+          );
+        })}
+      </Stack>
+    </Disclosure>
   );
 };

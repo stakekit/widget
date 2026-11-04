@@ -5,41 +5,47 @@ import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { ValidatorInput as ValidatorDto } from "../../../../domain/earn/validator";
 import type { Token } from "../../../../domain/token/token";
 import {
+  amountSeparators,
+  fromAmountValue,
+  toAmountValue,
+} from "../../../../shared/lib/amount-value";
+import {
   formatNumber,
   formatTokenAmount,
 } from "../../../../shared/lib/number-format";
-import * as AmountToggle from "../../../../shared/ui/components/amount-toggle";
-import { AmountTokenSection } from "../../../../shared/ui/components/amount-token-section";
-import type { NumberInputProps } from "../../../../shared/ui/components/number-input";
-import { SelectedToken } from "../../../../shared/ui/components/selected-token";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { InfoIcon } from "../../../../shared/ui/primitives/icons/info";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { useTokenLogo } from "../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import {
+  AmountPanel,
+  Button,
+  Icon,
+  Stack,
+  Text,
+  TokenTrigger,
+} from "../../../../ui/index";
 import { useYieldMetaInfo } from "../../../yield-summary/views";
 
 type AmountBlockProps = {
-  onAmountChange: NumberInputProps["onChange"];
-  value: NumberInputProps["value"];
+  onAmountChange: (amount: BigNumber) => void;
+  value: BigNumber;
   canChangeAmount: boolean;
   disabled?: boolean;
   onClick: () => void;
-  unstakeAmountError?: boolean | undefined;
+  exitAmountError?: boolean | undefined;
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
   balance: { amount: BigNumber; token: Token } | null;
 } & (
   | {
-      variant: "unstake";
-      unstakeToken: Token;
-      canUnstake: boolean;
-      unstakeIsGreaterOrLessIntegrationLimitError: boolean;
+      variant: "exit";
+      exitToken: Token;
+      canExit: boolean;
+      exitIsGreaterOrLessIntegrationLimitError: boolean;
       /** The amount is more than the position holds. */
-      unstakeAmountGreaterThanAvailable: boolean;
-      unstakeMaxAmount: BigNumber | null;
-      unstakeMinAmount: BigNumber | null;
+      exitAmountGreaterThanAvailable: boolean;
+      exitMaxAmount: BigNumber | null;
+      exitMinAmount: BigNumber | null;
       ctaPlacement?: "card" | "footer";
       /** Overrides the default position-token chip when CTA is in the footer. */
       tokenAccessory?: ReactNode;
@@ -47,6 +53,14 @@ type AmountBlockProps = {
   | { variant: "action" }
 );
 
+/** The position's token beside the amount, when there is none to choose. */
+const ExitTokenTrigger = ({ token }: { readonly token: Token }) => {
+  const logo = useTokenLogo(token);
+
+  return <TokenTrigger token={{ ...logo, name: token.symbol }} readOnly />;
+};
+
+/** An amount to exit a position with, or to run a pending action on. */
 export const AmountBlock = ({
   onAmountChange,
   value,
@@ -57,145 +71,129 @@ export const AmountBlock = ({
   formattedAmount,
   onMaxClick,
   balance,
-  unstakeAmountError,
+  exitAmountError,
   ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  const unstakeProps = rest.variant === "unstake" ? rest : null;
+  const exitProps = rest.variant === "exit" ? rest : null;
   const min =
-    unstakeProps?.unstakeMinAmount == null
+    exitProps?.exitMinAmount == null
       ? null
       : `${t("shared.min")} ${formatTokenAmount(
-          unstakeProps.unstakeMinAmount,
+          exitProps.exitMinAmount,
           locale,
           "up"
-        )} ${unstakeProps.unstakeToken.symbol}`;
+        )} ${exitProps.exitToken.symbol}`;
   const max =
-    unstakeProps?.unstakeMaxAmount == null
+    exitProps?.exitMaxAmount == null
       ? null
       : `${t("shared.max")} ${formatTokenAmount(
-          unstakeProps.unstakeMaxAmount,
+          exitProps.exitMaxAmount,
           locale,
           "down"
-        )} ${unstakeProps.unstakeToken.symbol}`;
-  const hasMinMax =
-    !!unstakeProps &&
-    !!(min || max || unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError);
-  const minMaxLabel = (() => {
-    if (!hasMinMax) return null;
-    if (min && max) return `${min} / ${max}`;
-    return min ?? max;
-  })();
+        )} ${exitProps.exitToken.symbol}`;
+  const limits = min && max ? `${min} / ${max}` : (min ?? max);
+  const limitError =
+    exitProps?.exitIsGreaterOrLessIntegrationLimitError ?? false;
 
   const showCardCta =
     rest.variant === "action" || rest.ctaPlacement !== "footer";
-  const showAmount = rest.variant === "action" || rest.canUnstake;
+  const showAmount = rest.variant === "action" || rest.canExit;
 
   if (!showAmount) return null;
 
   const accessory = showCardCta ? (
     <Button
       onClick={onClick}
-      disabled={disabled}
-      variant={{
-        size: "small",
-        color: rest.variant === "unstake" ? "smallButton" : "smallButtonLight",
-      }}
+      disabled={disabled ?? false}
+      size="sm"
+      variant={rest.variant === "exit" ? "primary" : "secondary"}
     >
-      <Text>{label}</Text>
+      {label}
     </Button>
   ) : (
-    (rest.tokenAccessory ?? <SelectedToken token={rest.unstakeToken} />)
+    (rest.tokenAccessory ?? <ExitTokenTrigger token={rest.exitToken} />)
   );
 
-  const balanceContent = balance ? (
-    <AmountToggle.Root>
-      <AmountToggle.Amount>
-        {({ state }) => (
-          <span>
-            {t("position_details.available", {
-              amount:
-                state === "full"
-                  ? formatNumber(balance.amount, locale)
-                  : formatTokenAmount(balance.amount, locale, "down"),
-              symbol: balance.token?.symbol ?? "",
-            })}
-          </span>
-        )}
-      </AmountToggle.Amount>
-    </AmountToggle.Root>
-  ) : null;
+  const balanceProps = balance
+    ? {
+        balance: {
+          short: t("position_details.available", {
+            amount: formatTokenAmount(balance.amount, locale, "down"),
+            symbol: balance.token.symbol,
+          }),
+          full: t("position_details.available", {
+            amount: formatNumber(balance.amount, locale),
+            symbol: balance.token.symbol,
+          }),
+          ...(exitProps?.exitAmountGreaterThanAvailable
+            ? { tone: "danger" as const }
+            : {}),
+        },
+      }
+    : {};
+  const limitProps = (() => {
+    if (limitError && limits) return { error: limits };
+    return limits ? { limits } : {};
+  })();
 
   return (
-    <AmountTokenSection
-      value={value}
-      onChange={onAmountChange}
+    <AmountPanel
+      label={label}
+      value={toAmountValue(value)}
+      onValueChange={(next) => onAmountChange(fromAmountValue(next))}
+      separators={amountSeparators(locale)}
       disabled={!canChangeAmount}
-      isInvalid={unstakeAmountError}
-      accessory={accessory}
-      formattedPrice={formattedAmount}
-      balance={balanceContent}
-      balanceError={!!unstakeProps?.unstakeAmountGreaterThanAvailable}
-      onMaxClick={canChangeAmount ? onMaxClick : null}
-      maxButtonProps={
-        rest.variant === "action"
-          ? { background: "backgroundMuted" as const }
-          : undefined
-      }
-      minMaxLabel={minMaxLabel}
-      minMaxError={
-        unstakeProps?.unstakeIsGreaterOrLessIntegrationLimitError ?? false
-      }
-      state={unstakeAmountError ? "danger" : "default"}
-      tone={rest.variant === "action" ? "action" : "stake"}
+      invalid={exitAmountError ?? false}
+      token={accessory}
+      fiatValue={formattedAmount}
+      {...balanceProps}
+      {...limitProps}
+      {...(canChangeAmount && onMaxClick
+        ? { max: { label: t("shared.max"), onClick: onMaxClick } }
+        : {})}
     />
   );
 };
 
-export const UnstakeInfo = ({
+export const ExitInfo = ({
   hideWithdrawnTime = false,
   validators,
   yieldDto,
-  unstakeToken,
+  exitToken,
 }: {
   hideWithdrawnTime?: boolean;
   yieldDto: EarnYieldWithProvider;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  unstakeToken: Token;
+  exitToken: Token;
 }) => {
   const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
     useYieldMetaInfo({
       validators,
       selectedStake: yieldDto,
-      tokenDto: unstakeToken,
+      tokenDto: exitToken,
     });
 
   const values = [
     hideWithdrawnTime ? null : withdrawnTime,
     withdrawnNotAvailable,
     positionLocked,
-  ].filter(Boolean);
-  return values.length > 0 ? (
-    <Box display="flex" flexDirection="column" gap="2">
-      {values.map((v, i) => (
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="flex-start"
-          gap="1"
-          key={i}
-        >
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <InfoIcon />
-          </Box>
+  ].filter((value) => !!value);
 
-          <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
-        </Box>
+  return values.length > 0 ? (
+    <Stack gap={8}>
+      {values.map((value, i) => (
+        <Stack key={i} direction="row" align="center" gap={4}>
+          <Icon name="InfoIcon" size="sm" tone="muted" />
+          <Text variant="caption" tone="muted">
+            {value}
+          </Text>
+        </Stack>
       ))}
-    </Box>
+    </Stack>
   ) : null;
 };

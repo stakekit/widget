@@ -7,57 +7,27 @@ import {
   formatBorrowProviderName,
   formatNetworkName,
 } from "../../../../../shared/lib/formatters";
+import { formatAddress } from "../../../../../shared/lib/general";
+import { useTokenLogo } from "../../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
-  dashboardDetailsScroll,
-  dashboardMetricCard,
-  dashboardMetricGrid,
-} from "../../../../../shared/ui/components/dashboard-details/styles.css";
-import {
-  AddressRow,
+  AssetHeader,
+  DetailList,
   DetailRow,
-  DetailsSection,
-} from "../../../../../shared/ui/components/details-section";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
-import { Image } from "../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+  Disclosure,
+  EmptyState,
+  Metric,
+  MetricGroup,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import type {
   BorrowEntryView,
   BorrowFormProjection,
 } from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";
 import { toBorrowEntryToken } from "../../model/market-groups";
-import * as styles from "../styles.css";
-import { BorrowDetailsEmpty } from "./notices";
-
-const BorrowMetricGrid = ({
-  cards,
-}: {
-  readonly cards: ReturnType<typeof getBorrowDetailsModel>["metricCards"];
-}) => (
-  <Box className={dashboardMetricGrid}>
-    {cards.map((card) => (
-      <Box
-        className={dashboardMetricCard}
-        display="flex"
-        flexDirection="column"
-        gap="1"
-        key={card.id}
-      >
-        <Text variant={{ type: "muted", weight: "normal" }}>{card.label}</Text>
-        <Text variant={{ weight: "bold" }}>{card.value}</Text>
-        {card.subValue ? (
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {card.subValue}
-          </Text>
-        ) : null}
-      </Box>
-    ))}
-  </Box>
-);
+import { BorrowDetailsSkeleton } from "./skeletons";
 
 /** The entry form's details pane: the live selection, with catalog states. */
 export const BorrowEntryDetailsPanel = ({
@@ -76,22 +46,24 @@ export const BorrowEntryDetailsPanel = ({
   } = view;
 
   if (marketsView._tag === "Loading" || integrationsView._tag === "Loading") {
-    return <ContentLoaderSquare heightPx={430} />;
+    return <BorrowDetailsSkeleton />;
   }
 
   if (marketsView._tag === "Failed" || integrationsView._tag === "Failed") {
     return (
-      <BorrowDetailsEmpty title={t("dashboard.borrow.error_title")}>
-        {t("dashboard.borrow.error_description")}
-      </BorrowDetailsEmpty>
+      <EmptyState
+        title={t("dashboard.borrow.error_title")}
+        body={t("dashboard.borrow.error_description")}
+      />
     );
   }
 
   if (!selectedMarket) {
     return (
-      <BorrowDetailsEmpty title={t("dashboard.borrow.details.empty_title")}>
-        {t("dashboard.borrow.details.empty_description")}
-      </BorrowDetailsEmpty>
+      <EmptyState
+        title={t("dashboard.borrow.details.empty_title")}
+        body={t("dashboard.borrow.details.empty_description")}
+      />
     );
   }
 
@@ -131,77 +103,89 @@ export const BorrowMarketDetails = ({
     projection,
     t,
   });
-  const loanToken = toBorrowEntryToken({
-    network: market.network,
-    token: market.loanToken,
-  });
+  const loanTokenLogo = useTokenLogo(
+    toBorrowEntryToken({ network: market.network, token: market.loanToken })
+  );
   const providerName = formatBorrowProviderName(
     integration?.name ?? market.integrationId
   );
 
   return (
-    <Box
-      className={dashboardDetailsScroll}
-      display="flex"
-      flexDirection="column"
-      gap="4"
-    >
-      <Box className={styles.detailsHeader}>
-        <TokenIcon token={loanToken} tokenLogoHw="12" />
+    <Stack gap={16}>
+      <AssetHeader
+        title={model.title}
+        token={loanTokenLogo}
+        provider={{
+          name: providerName,
+          label: providerName,
+          ...(integration?.metadata.logoURI
+            ? { src: integration.metadata.logoURI }
+            : {}),
+        }}
+        details={[formatNetworkName(market.network)]}
+        badges={[{ label: t(`dashboard.borrow.market_type.${market.type}`) }]}
+      />
 
-        <Box minWidth="0">
-          <Text variant={{ weight: "bold" }}>{model.title}</Text>
-          <Box display="flex" alignItems="center" gap="1" flexWrap="wrap">
-            <Image
-              wrapperProps={{ hw: "5" }}
-              imgProps={{ borderRadius: "base" }}
-              src={integration?.metadata.logoURI}
-              fallbackName={providerName}
-            />
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {providerName}
-              {" · "}
-              {formatNetworkName(market.network)}
-            </Text>
-            <HeaderBadge
-              label={t(`dashboard.borrow.market_type.${market.type}`)}
-            />
-          </Box>
-        </Box>
-      </Box>
+      <MetricGroup columns={2}>
+        {model.metricCards.map((card) => (
+          <Metric
+            key={card.id}
+            label={card.label}
+            value={card.value}
+            {...(card.subValue ? { caption: card.subValue } : {})}
+          />
+        ))}
+      </MetricGroup>
 
-      <BorrowMetricGrid cards={model.metricCards} />
-
-      <DetailsSection title={t("dashboard.borrow.details.about")}>
-        <Text variant={{ type: "muted", weight: "normal" }}>
+      <Disclosure title={t("dashboard.borrow.details.about")} defaultOpen>
+        <Text as="p" tone="muted">
           {integration?.metadata.description ??
             t("dashboard.borrow.details.about_fallback", {
               market: model.title,
               provider: providerName,
             })}
         </Text>
-      </DetailsSection>
+      </Disclosure>
 
-      <DetailsSection title={t("dashboard.borrow.details.market_stats")}>
-        {model.marketRows.map((row) => (
-          <DetailRow key={row.id} {...row} />
-        ))}
-      </DetailsSection>
-
-      <DetailsSection title={t("dashboard.borrow.details.protocol")}>
-        {model.protocolRows.map((row) => (
-          <DetailRow key={row.id} {...row} />
-        ))}
-
-        {market.poolAddress ? (
-          <Box marginTop="2">
-            <AddressRow
-              address={market.poolAddress}
-              label={t("dashboard.borrow.details.pool_address")}
+      <Disclosure
+        title={t("dashboard.borrow.details.market_stats")}
+        defaultOpen
+      >
+        <DetailList>
+          {model.marketRows.map((row) => (
+            <DetailRow
+              key={row.id}
+              label={row.label}
+              value={row.value}
+              tone={row.tone ?? "default"}
             />
-          </Box>
-        ) : null}
-      </DetailsSection>
-    </Box>
+          ))}
+        </DetailList>
+      </Disclosure>
+
+      <Disclosure title={t("dashboard.borrow.details.protocol")} defaultOpen>
+        <DetailList>
+          {model.protocolRows.map((row) => (
+            <DetailRow
+              key={row.id}
+              label={row.label}
+              value={row.value}
+              tone={row.tone ?? "default"}
+            />
+          ))}
+          {market.poolAddress ? (
+            <DetailRow
+              label={t("dashboard.borrow.details.pool_address")}
+              value={formatAddress(market.poolAddress)}
+              copyable={{
+                value: market.poolAddress,
+                label: t("wallet_modal.copy_address"),
+                copiedLabel: t("wallet_modal.copied"),
+              }}
+            />
+          ) : null}
+        </DetailList>
+      </Disclosure>
+    </Stack>
   );
 };

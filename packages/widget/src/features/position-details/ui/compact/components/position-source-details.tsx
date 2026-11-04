@@ -1,16 +1,14 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  CollapsibleArrow,
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger,
-} from "../../../../../shared/ui/components/collapsible";
-import { Divider } from "../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Image } from "../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+  Avatar,
+  Disclosure,
+  Divider,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 
+/** Who the position is held through, with its facts behind a disclosure. */
 export const PositionSourceDetails = ({
   children,
   hasDetails,
@@ -29,55 +27,38 @@ export const PositionSourceDetails = ({
   stakeType: string;
 }) => {
   const { t } = useTranslation();
-
+  const title = t("position_details.via", { providerName: name, stakeType });
+  const avatar = (
+    <Avatar
+      {...(logo === undefined ? {} : { src: logo })}
+      fallback={name.slice(0, 1).toUpperCase()}
+      size="sm"
+    />
+  );
   return (
-    <CollapsibleRoot>
-      <Box display="flex" flexDirection="column">
-        {isFirst && <Divider />}
+    <Stack>
+      {isFirst && <Divider />}
 
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          my="2"
+      {hasDetails ? (
+        <Disclosure
+          title={title}
+          leading={avatar}
+          {...(headerAccessory === undefined
+            ? {}
+            : { badges: headerAccessory })}
+          testId="position-source-details-trigger"
         >
-          <Box display="flex" justifyContent="flex-start" alignItems="center">
-            <Box marginRight="2">
-              <Image
-                wrapperProps={{ hw: "8" }}
-                imgProps={{ borderRadius: "full" }}
-                src={logo}
-                fallbackName={name}
-              />
-            </Box>
+          {children}
+        </Disclosure>
+      ) : (
+        <Stack direction="row" align="center" gap={8}>
+          {avatar}
+          <Text weight="medium">{title}</Text>
+          {headerAccessory}
+        </Stack>
+      )}
 
-            <Text>
-              {t("position_details.via", {
-                providerName: name,
-                stakeType,
-              })}
-            </Text>
-
-            {headerAccessory}
-          </Box>
-
-          {hasDetails ? (
-            <CollapsibleTrigger
-              data-testid="position-source-details-trigger"
-              flex={1}
-              justifyContent="flex-end"
-            >
-              <CollapsibleArrow />
-            </CollapsibleTrigger>
-          ) : null}
-        </Box>
-
-        {hasDetails ? (
-          <CollapsibleContent>{children}</CollapsibleContent>
-        ) : null}
-
-        <Divider />
-      </Box>
-    </CollapsibleRoot>
+      <Divider />
+    </Stack>
   );
 };

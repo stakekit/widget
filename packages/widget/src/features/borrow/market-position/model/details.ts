@@ -354,6 +354,7 @@ export const getBorrowPositionDetailsModel = ({
     healthFactor,
     liquidationThreshold,
     marketLabel: getBorrowMarketPairLabel(position.market),
+    maxLtv,
     metricCards,
     providerName: formatBorrowProviderName(position.integration.name),
     totalCollateralUsd: formatUsd(position.metrics.totalCollateralUsd, locale),

@@ -1,18 +1,15 @@
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../domain/borrow/positions/market-position";
+import { formatAddress } from "../../../../../shared/lib/general";
+import { useTokenLogo } from "../../../../../shared/react/token-logo";
 import {
-  AddressRow,
+  AssetHeader,
+  DetailList,
   DetailRow,
-  DetailsSection,
-} from "../../../../../shared/ui/components/details-section";
-import {
-  PositionBreakdownRows,
-  PositionDetailsScrollArea,
-} from "../../../../../shared/ui/components/position-details";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Image } from "../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+  Disclosure,
+  EmptyState,
+  Stack,
+} from "../../../../../ui/index";
 import type {
   BorrowPositionAction,
   getBorrowPositionDetailsModel,
@@ -20,6 +17,10 @@ import type {
 import { CollateralList } from "./collateral-list";
 import { LtvGauge } from "./ltv-gauge";
 import { MetricCards } from "./metric-cards";
+
+type BorrowPositionDetailsModel = ReturnType<
+  typeof getBorrowPositionDetailsModel
+>;
 
 export const BorrowPositionInfo = ({
   actions,
@@ -30,54 +31,56 @@ export const BorrowPositionInfo = ({
 }: {
   readonly actions: BorrowPositionAction[];
   readonly content: "details" | "fallback";
-  readonly model: ReturnType<typeof getBorrowPositionDetailsModel> | null;
+  readonly model: BorrowPositionDetailsModel | null;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
   readonly position: MarketPosition | null;
 }) => {
   const { t } = useTranslation();
 
   if (content === "fallback" || !position || !model) {
-    return (
-      <Box
-        alignItems="center"
-        display="flex"
-        flex={1}
-        justifyContent="center"
-        textAlign="center"
-      >
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("dashboard.borrow.position_details.empty")}
-        </Text>
-      </Box>
-    );
+    return <EmptyState title={t("dashboard.borrow.position_details.empty")} />;
   }
 
   return (
-    <PositionDetailsScrollArea>
-      <Box display="flex" alignItems="center" gap="2">
-        <TokenIcon token={model.headerToken} tokenLogoHw="12" />
-        <Box minWidth="0">
-          <Text variant={{ weight: "bold" }}>{model.title}</Text>
-          <Box display="flex" alignItems="center" gap="1">
-            <Image
-              wrapperProps={{ hw: "5" }}
-              imgProps={{ borderRadius: "base" }}
-              src={position.integration.metadata.logoURI}
-              fallbackName={model.providerName}
-            />
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("positions.via", {
-                providerName: model.providerName,
-                count: 1,
-              })}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {" · "}
-              {model.marketLabel}
-            </Text>
-          </Box>
-        </Box>
-      </Box>
+    <BorrowPositionDetails
+      actions={actions}
+      model={model}
+      onActionSelect={onActionSelect}
+      position={position}
+    />
+  );
+};
+
+const BorrowPositionDetails = ({
+  actions,
+  model,
+  onActionSelect,
+  position,
+}: {
+  readonly actions: BorrowPositionAction[];
+  readonly model: BorrowPositionDetailsModel;
+  readonly onActionSelect: (action: BorrowPositionAction) => void;
+  readonly position: MarketPosition;
+}) => {
+  const { t } = useTranslation();
+  const headerLogo = useTokenLogo(model.headerToken);
+  const providerLogo = position.integration.metadata.logoURI;
+
+  return (
+    <Stack gap={24}>
+      <AssetHeader
+        title={model.title}
+        token={headerLogo}
+        provider={{
+          name: model.providerName,
+          label: t("positions.via", {
+            providerName: model.providerName,
+            count: 1,
+          }),
+          ...(providerLogo ? { src: providerLogo } : {}),
+        }}
+        details={[model.marketLabel]}
+      />
 
       <MetricCards
         cards={model.metricCards}
@@ -87,6 +90,7 @@ export const BorrowPositionInfo = ({
       <LtvGauge
         currentLtv={model.currentLtv}
         liquidationThreshold={model.liquidationThreshold}
+        maxLtv={model.maxLtv}
       />
 
       <CollateralList
@@ -97,23 +101,42 @@ export const BorrowPositionInfo = ({
       />
 
       {model.breakdownRows.length > 0 && (
-        <DetailsSection title={t("dashboard.position_details.breakdown")}>
-          <PositionBreakdownRows rows={model.breakdownRows} />
-        </DetailsSection>
+        <Disclosure
+          title={t("dashboard.position_details.breakdown")}
+          defaultOpen
+        >
+          <DetailList>
+            {model.breakdownRows.map((row) => (
+              <DetailRow
+                key={row.id}
+                label={row.label}
+                value={row.value}
+                {...(row.subValue ? { caption: row.subValue } : {})}
+              />
+            ))}
+          </DetailList>
+        </Disclosure>
       )}
 
-      <DetailsSection title={t("dashboard.borrow.position_details.details")}>
-        {model.detailRows.map((row) => (
-          <DetailRow key={row.id} {...row} />
-        ))}
-
-        <Box display="flex" flexDirection="column" gap="2" marginTop="2">
-          <AddressRow
-            address={position.market.poolAddress}
+      <Disclosure
+        title={t("dashboard.borrow.position_details.details")}
+        defaultOpen
+      >
+        <DetailList>
+          {model.detailRows.map((row) => (
+            <DetailRow key={row.id} label={row.label} value={row.value} />
+          ))}
+          <DetailRow
             label={t("dashboard.borrow.details.pool_address")}
+            value={formatAddress(position.market.poolAddress)}
+            copyable={{
+              value: position.market.poolAddress,
+              label: t("wallet_modal.copy_address"),
+              copiedLabel: t("wallet_modal.copied"),
+            }}
           />
-        </Box>
-      </DetailsSection>
-    </PositionDetailsScrollArea>
+        </DetailList>
+      </Disclosure>
+    </Stack>
   );
 };

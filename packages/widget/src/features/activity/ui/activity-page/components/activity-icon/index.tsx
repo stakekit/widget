@@ -1,36 +1,16 @@
 import { Match } from "effect";
-import { vars } from "../../../../../../shared/styles/theme/contract.css";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { Arrow } from "../../../../../../shared/ui/primitives/icons/arrow";
-import { GifIcon } from "../../../../../../shared/ui/primitives/icons/gift";
-import { iconCircle } from "../activity-item.css";
+import { Icon, IconAvatar } from "../../../../../../ui/index";
 
 export type ActivityIconType = "in" | "neutral" | "out" | "rewards";
 
-export const ActivityIcon = ({ type }: { type: ActivityIconType }) => {
-  const icon = Match.value(type).pipe(
-    Match.when("rewards", () => <GifIcon />),
-    Match.when("out", () => <Arrow direction="down" />),
-    Match.when("in", () => <Arrow direction="up" />),
-    Match.when("neutral", () => (
-      <svg
-        aria-hidden="true"
-        data-rk="activity-icon-neutral"
-        height="16"
-        viewBox="0 0 16 16"
-        width="16"
-      >
-        <path
-          d="M3 8h10"
-          fill="none"
-          stroke={vars.color.text}
-          strokeLinecap="round"
-          strokeWidth="1.5"
-        />
-      </svg>
-    )),
-    Match.exhaustive
-  );
-
-  return <Box className={iconCircle}>{icon}</Box>;
-};
+export const ActivityIcon = ({ type }: { readonly type: ActivityIconType }) => (
+  <IconAvatar>
+    {Match.value(type).pipe(
+      Match.when("rewards", () => <Icon name="GiftIcon" />),
+      Match.when("out", () => <Icon name="ArrowIcon" direction="down" />),
+      Match.when("in", () => <Icon name="ArrowIcon" direction="up" />),
+      Match.when("neutral", () => <Icon name="MinusIcon" />),
+      Match.exhaustive
+    )}
+  </IconAvatar>
+);

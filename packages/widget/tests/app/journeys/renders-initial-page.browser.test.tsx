@@ -354,60 +354,39 @@ describe("Renders initial page", () => {
         dashboardVariant: true,
       },
     });
-    const clickTab = (label: string) => {
-      const tabsSection = app.container.querySelector(
-        "[data-rk='tabs-section']"
-      );
-      const tab = [...(tabsSection?.querySelectorAll("p") ?? [])].find(
-        (el) => el.textContent === label
-      );
+    const tab = (label: string) =>
+      app.getByRole("tab", { name: label, exact: true });
+    const clickTab = (label: string) => tab(label).click();
 
-      expect(tab).not.toBeUndefined();
-      tab?.click();
-    };
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
 
+    await clickTab("DeFi");
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "false");
+
+    await clickTab("Borrow");
     await expect
-      .element(app.getByText("RWA"))
-      .toHaveAttribute("data-state", "selected");
+      .element(tab("Borrow"))
+      .toHaveAttribute("aria-selected", "true");
 
-    clickTab("DeFi");
+    await clickTab("Stake");
+    await expect.element(tab("Stake")).toHaveAttribute("aria-selected", "true");
 
+    await clickTab("Manage");
     await expect
-      .element(app.getByText("DeFi"))
-      .toHaveAttribute("data-state", "selected");
-    await expect
-      .element(app.getByText("RWA"))
-      .toHaveAttribute("data-state", "default");
+      .element(tab("Manage"))
+      .toHaveAttribute("aria-selected", "true");
 
-    clickTab("Borrow");
-    await expect
-      .element(app.getByText("Borrow").first())
-      .toHaveAttribute("data-state", "selected");
+    await clickTab("RWA");
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
 
-    clickTab("Stake");
+    await clickTab("Activity");
     await expect
-      .element(app.getByText("Stake").first())
-      .toHaveAttribute("data-state", "selected");
+      .element(tab("Activity"))
+      .toHaveAttribute("aria-selected", "true");
 
-    clickTab("Manage");
-    await expect
-      .element(app.getByText("Manage").first())
-      .toHaveAttribute("data-state", "selected");
-
-    clickTab("RWA");
-    await expect
-      .element(app.getByText("RWA").first())
-      .toHaveAttribute("data-state", "selected");
-
-    clickTab("Activity");
-    await expect
-      .element(app.getByText("Activity").first())
-      .toHaveAttribute("data-state", "selected");
-
-    clickTab("DeFi");
-    await expect
-      .element(app.getByText("DeFi").first())
-      .toHaveAttribute("data-state", "selected");
+    await clickTab("DeFi");
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
 
     await app.unmount();
   });
@@ -600,10 +579,6 @@ describe("Renders initial page", () => {
     await expect
       .element(app.getByText("Select borrow market"))
       .toBeInTheDocument();
-    await app
-      .getByTestId("select-modal__container")
-      .getByTestId("borrow-market-select__group_dai")
-      .click();
     await app
       .getByTestId("select-modal__container")
       .getByTestId("borrow-market-select__item_aave-v3-ethereum-dai")

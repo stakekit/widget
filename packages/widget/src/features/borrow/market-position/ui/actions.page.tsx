@@ -1,8 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Button, Card, Stack, Text } from "../../../../ui/index";
 import {
   useWidgetNavigate,
   useWidgetRouteMatch,
@@ -13,7 +11,7 @@ import {
 } from "../model/details";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { useBorrowPositionContext } from "./context";
-import * as styles from "./styles.css";
+import { borrowPositionActionHostHooks } from "./host-hooks";
 
 export const BorrowPositionActionsPage = () => {
   const { t } = useTranslation();
@@ -42,38 +40,40 @@ export const BorrowPositionActionsPage = () => {
     <>
       <BorrowPositionBreadcrumb positionName={model?.title ?? null} />
 
-      <Box display="flex" flexDirection="column" gap="3" marginTop="3">
-        <Text variant={{ weight: "bold" }}>
+      <Stack gap={12}>
+        <Text variant="heading" as="h3">
           {t("dashboard.borrow.position_details.actions_title")}
         </Text>
 
         {!position || actions.length === 0 ? (
-          <Text variant={{ type: "muted", weight: "normal" }}>
+          <Text as="p" tone="muted">
             {t("dashboard.borrow.position_details.no_actions")}
           </Text>
         ) : (
           actions.map((action) => (
-            <Box className={styles.actionCard} key={action.id}>
-              <Box display="flex" flexDirection="column" gap="1">
-                <Text>{action.label}</Text>
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  {t(
-                    `dashboard.borrow.position_details.action_descriptions.${action.type}`
-                  )}
-                </Text>
-              </Box>
-              <Button
-                data-rk={`borrow-position-action__${action.type}`}
-                data-testid={`borrow-position-action__${action.type}`}
-                onClick={() => onActionSelect(action)}
-                variant={{ size: "small" }}
-              >
-                {t("dashboard.borrow.position_details.configure_action")}
-              </Button>
-            </Box>
+            <Card key={action.id} padding={16}>
+              <Stack direction="row" align="center" justify="between" gap={12}>
+                <Stack gap={4} grow>
+                  <Text weight="semibold">{action.label}</Text>
+                  <Text variant="caption" tone="muted">
+                    {t(
+                      `dashboard.borrow.position_details.action_descriptions.${action.type}`
+                    )}
+                  </Text>
+                </Stack>
+                <Button
+                  size="sm"
+                  testId={`borrow-position-action__${action.type}`}
+                  hostHook={borrowPositionActionHostHooks[action.type]}
+                  onClick={() => onActionSelect(action)}
+                >
+                  {t("dashboard.borrow.position_details.configure_action")}
+                </Button>
+              </Stack>
+            </Card>
           ))
         )}
-      </Box>
+      </Stack>
     </>
   );
 };

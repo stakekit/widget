@@ -1,15 +1,6 @@
-import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  compactAmount,
-  compactAmountsClip,
-  compactAmountsRow,
-  selectYieldRewardsText,
-} from "./styles.css";
+import { Divider, Stack, Text } from "../../../../../ui/index";
 
 type EstimatedRewardAmountsProps = {
   earnYearly: string;
@@ -20,123 +11,60 @@ export const EstimatedRewardAmounts = ({
   earnYearly,
   earnMonthly,
 }: EstimatedRewardAmountsProps) => {
+  const { t } = useTranslation();
   const { earnPresentation } = useWidgetConfig("hostProfile");
 
   if (earnPresentation.condensed) {
     return (
-      <CondensedEarnYearlyOrMonthly
-        earnMonthly={earnMonthly}
-        earnYearly={earnYearly}
-      />
+      <Stack direction="row" align="center" gap={12} wrap>
+        <Stack direction="row" gap={8}>
+          <Text>{t("shared.yearly")}</Text>
+          <Text numeric>{earnYearly}</Text>
+        </Stack>
+
+        <Divider orientation="vertical" />
+
+        <Stack direction="row" gap={8}>
+          <Text>{t("shared.monthly")}</Text>
+          <Text numeric>{earnMonthly}</Text>
+        </Stack>
+      </Stack>
     );
   }
 
   return (
-    <DefaultEarnYearlyOrMonthly
-      earnMonthly={earnMonthly}
-      earnYearly={earnYearly}
-    />
-  );
-};
-
-const DefaultEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: EstimatedRewardAmountsProps) => {
-  const { t } = useTranslation();
-  const variant = useWidgetConfig("variant");
-  const { earnPresentation } = useWidgetConfig("hostProfile");
-
-  return (
-    <>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        data-testid="estimated-reward__yearly"
-        data-rk="estimated-reward__yearly"
-        gap="2"
+    <Stack gap={8}>
+      <Stack
+        direction="row"
+        align="center"
+        justify="between"
+        gap={8}
+        testId="estimated-reward__yearly"
+        hostHook="estimated-reward__yearly"
       >
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
+        <Text tone="muted">
           {t(
             earnPresentation.zerion ? "details.rewards.yearly" : "shared.yearly"
           )}
         </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
+        <Text tone="muted" numeric>
           {earnYearly}
         </Text>
-      </Box>
+      </Stack>
 
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        data-testid="estimated-reward__monthly"
-        data-rk="estimated-reward__monthly"
-        gap="2"
+      <Stack
+        direction="row"
+        align="center"
+        justify="between"
+        gap={8}
+        testId="estimated-reward__monthly"
+        hostHook="estimated-reward__monthly"
       >
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {t("shared.monthly")}
-        </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
+        <Text tone="muted">{t("shared.monthly")}</Text>
+        <Text tone="muted" numeric>
           {earnMonthly}
         </Text>
-      </Box>
-    </>
-  );
-};
-
-const CondensedEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: EstimatedRewardAmountsProps) => {
-  const { t } = useTranslation();
-
-  return (
-    <Box className={compactAmountsClip}>
-      <Box className={compactAmountsRow}>
-        <Box className={compactAmount}>
-          <Text variant={{ weight: "normal" }}>{t("shared.yearly")}</Text>
-          <Text variant={{ weight: "normal" }}>{earnYearly}</Text>
-        </Box>
-
-        <Box className={compactAmount}>
-          <Text variant={{ weight: "normal" }}>{t("shared.monthly")}</Text>
-          <Text variant={{ weight: "normal" }}>{earnMonthly}</Text>
-        </Box>
-      </Box>
-    </Box>
+      </Stack>
+    </Stack>
   );
 };

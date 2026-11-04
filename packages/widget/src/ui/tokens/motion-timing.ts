@@ -25,3 +25,16 @@ export const pageMotion = {
   blur: "blur(8px)",
   shrink: 0.96,
 } as const;
+
+/**
+ * How content enters the Widget: on its first mount it waits for the frame
+ * to open and drops in from further up, slowly; later it drops in briefly.
+ * Seconds and pixels.
+ */
+export const entranceMotion = {
+  firstDelay: 0.8,
+  firstDuration: 1,
+  firstRise: 40,
+  laterDuration: 0.3,
+  laterRise: 10,
+} as const;

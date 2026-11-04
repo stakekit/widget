@@ -3,7 +3,7 @@ import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";
 import { PricesKey } from "../../../../../../resources/token-prices/index";
 import { config } from "../../../../../../shared/config/widget-defaults";
 import { formatTokenAmount } from "../../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../../shared/react/widget-presentation";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,

@@ -115,14 +115,16 @@ describe("Staking flow Leave Confirmation", () => {
       walletListFactory: customConnectors,
     });
     const tab = (label: string) => {
-      const section = app.container.querySelector("[data-rk='tabs-section']");
-      const found = [...(section?.querySelectorAll("p") ?? [])].find(
-        (el) => el.textContent === label
-      );
+      const found = [
+        ...app.container.querySelectorAll<HTMLElement>('[role="tab"]'),
+      ].find((el) => el.textContent === label);
       if (!found) throw new Error(`Missing dashboard tab: ${label}`);
       return found;
     };
-    const tabState = (label: string) => tab(label).getAttribute("data-state");
+    const tabState = (label: string) =>
+      tab(label).getAttribute("aria-selected") === "true"
+        ? "selected"
+        : "default";
     const signatureRequests = () =>
       requestFn.mock.calls.filter(
         ([{ method }]) => method === "eth_sendTransaction"

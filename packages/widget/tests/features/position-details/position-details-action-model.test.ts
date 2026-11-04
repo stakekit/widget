@@ -640,7 +640,7 @@ describe("Position Details action model", () => {
       resolvePositionDetailsActionCapabilities({
         ...singleToken,
         canUnstake: true,
-      }).canUnstake
+      }).canExit
     ).toBe(true);
 
     const twoTokens = readWorkflowView("default", [
@@ -654,7 +654,7 @@ describe("Position Details action model", () => {
       resolvePositionDetailsActionCapabilities({
         ...twoTokens,
         canUnstake: true,
-      }).canUnstake
+      }).canExit
     ).toBe(false);
   });
 
@@ -777,7 +777,7 @@ describe("Position Details action model", () => {
 
     expect(
       resolvePositionDetailsActionCapabilities({ ...view, canUnstake: true })
-        .canUnstake
+        .canExit
     ).toBe(true);
     expect(view.unstakeToken?.symbol).toBe(cShare.symbol);
   });

@@ -1,18 +1,19 @@
 import { useTranslation } from "react-i18next";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
+  Card,
+  Checkbox,
+  DetailList,
   DetailRow,
-  DetailRowList,
-} from "../../../../../shared/ui/components/details-section";
-import { Divider } from "../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+  Divider,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import { PageCtaButton } from "../../../../widget-shell/views";
 import type { BorrowRepayActionContext } from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
 import { useBorrowRepayForm } from "../../react/use-action-form";
-import * as styles from "../styles.css";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormWarningMessage } from "./form-warning";
 import { LtvTransitionRow } from "./ltv-transition-row";
@@ -41,7 +42,7 @@ export const RepayActionForm = ({
   });
 
   return (
-    <Box display="flex" flexDirection="column" gap="4">
+    <Stack gap={16}>
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.outstanding_debt", {
@@ -56,47 +57,45 @@ export const RepayActionForm = ({
         warning={warning}
       />
 
-      <Box className={styles.formCard}>
-        <Box className={styles.checkboxRow}>
-          <Box display="flex" flexDirection="column" gap="1">
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.position_details.repay_full")}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("dashboard.borrow.position_details.repay_full_description")}
-            </Text>
-          </Box>
-          <input
+      <Card padding={16}>
+        <Stack gap={12}>
+          <Checkbox
             checked={view.repayAll}
-            className={styles.checkbox}
-            onChange={(event) =>
-              dispatch({
-                repayAll: event.target.checked,
-                type: "repayAll/set",
-              })
+            onCheckedChange={(repayAll) =>
+              dispatch({ repayAll, type: "repayAll/set" })
             }
-            type="checkbox"
+            label={
+              <Stack as="span" gap={2}>
+                <Text weight="semibold">
+                  {t("dashboard.borrow.position_details.repay_full")}
+                </Text>
+                <Text variant="caption" tone="muted">
+                  {t(
+                    "dashboard.borrow.position_details.repay_full_description"
+                  )}
+                </Text>
+              </Stack>
+            }
           />
-        </Box>
 
-        <Divider />
+          <Divider />
 
-        <DetailRowList>
-          <LtvTransitionRow
-            currentLtv={view.currentLtv}
-            projectedLtv={view.projectedLtv}
-          />
-          <DetailRow
-            id="loan"
-            label={t("dashboard.borrow.form.loan")}
-            value={`${formatTokenAmount(debtBalance.balance, locale, "up")} -> ${formatTokenAmount(
-              view.remainingDebt,
-              locale,
-              "up"
-            )} ${debtBalance.tokenSymbol}`}
-          />
-        </DetailRowList>
-      </Box>
+          <DetailList>
+            <LtvTransitionRow
+              currentLtv={view.currentLtv}
+              projectedLtv={view.projectedLtv}
+            />
+            <DetailRow
+              label={t("dashboard.borrow.form.loan")}
+              value={`${formatTokenAmount(debtBalance.balance, locale, "up")} -> ${formatTokenAmount(
+                view.remainingDebt,
+                locale,
+                "up"
+              )} ${debtBalance.tokenSymbol}`}
+            />
+          </DetailList>
+        </Stack>
+      </Card>
 
       <PageCtaButton
         cta={{
@@ -106,6 +105,6 @@ export const RepayActionForm = ({
           onClick: startReview,
         }}
       />
-    </Box>
+    </Stack>
   );
 };

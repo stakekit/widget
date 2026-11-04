@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import { Stack } from "../primitives/stack";
 import { Badge } from "./badge";
 
@@ -46,4 +47,14 @@ export const TonesAndVariants: Story = {
 export const TonesAndVariantsDark: Story = {
   ...TonesAndVariants,
   globals: { colorScheme: "dark" },
+};
+
+/** As a `status`, the badge is announced when it appears or changes. */
+export const Status: Story = {
+  args: { role: "status", children: "Confirm in wallet" },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("status")).toHaveTextContent(
+      "Confirm in wallet"
+    );
+  },
 };

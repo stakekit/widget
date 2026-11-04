@@ -1,15 +1,13 @@
 id: no-host-variant-comparison
 language: Tsx
 severity: error
-message: Read a Host Profile capability from Widget Configuration instead of comparing the host variant with a string literal. Only the configuration Module and style files may branch on variant names.
+message: Read a Host Profile capability from Widget Configuration instead of comparing the host variant with a string literal. Only the configuration Module may branch on variant names.
 files:
   - packages/widget/src/**/*.ts
   - packages/widget/src/**/*.tsx
 ignores:
   - packages/widget/src/generated/**
   - packages/widget/src/services/config/**
-  - packages/widget/src/**/*.css.ts
-  - packages/widget/src/app/composition/providers/theme-wrapper.tsx
 utils:
   host-variant-literal:
     kind: string

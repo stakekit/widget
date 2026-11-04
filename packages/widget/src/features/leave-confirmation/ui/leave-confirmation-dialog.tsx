@@ -1,9 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { SelectModal } from "../../../shared/ui/components/select-modal";
-import { Box } from "../../../shared/ui/primitives/box";
-import { Button } from "../../../shared/ui/primitives/button";
-import { Heading } from "../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../shared/ui/primitives/typography/text";
+import { AlertDialog } from "../../../ui/index";
 import type { LeaveConfirmationDialogProps } from "../react/use-leave-confirmation";
 
 /** Mounted only while asking, so the controls that host it stay light. */
@@ -17,50 +13,16 @@ const OpenLeaveConfirmationDialog = ({
   const { t } = useTranslation();
 
   return (
-    <SelectModal
-      dialogTitle={t("leave_confirmation.title")}
-      state={{
-        isOpen: true,
-        setOpen: (isOpen) => {
-          if (!isOpen) onStay();
-        },
-      }}
-    >
-      <Box
-        data-testid="leave-confirmation"
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        gap="2"
-        px="6"
-        paddingBottom="6"
-      >
-        <Heading variant={{ level: "h4" }}>
-          {t("leave_confirmation.title")}
-        </Heading>
-
-        <Text variant={{ type: "muted", weight: "normal" }} textAlign="center">
-          {t("leave_confirmation.description")}
-        </Text>
-
-        <Box
-          display="flex"
-          flexDirection="column"
-          gap="2"
-          marginTop="6"
-          width="full"
-        >
-          <Button onClick={onStay} variant={{ size: "layout" }}>
-            {t("leave_confirmation.stay")}
-          </Button>
-          <Button
-            onClick={onLeave}
-            variant={{ color: "secondary", size: "layout" }}
-          >
-            {t("leave_confirmation.leave")}
-          </Button>
-        </Box>
-      </Box>
-    </SelectModal>
+    <AlertDialog
+      open
+      testId="leave-confirmation"
+      title={t("leave_confirmation.title")}
+      description={t("leave_confirmation.description")}
+      cancelLabel={t("leave_confirmation.stay")}
+      confirmLabel={t("leave_confirmation.leave")}
+      tone="danger"
+      onCancel={onStay}
+      onConfirm={onLeave}
+    />
   );
 };

@@ -92,3 +92,13 @@ export const LongTitle: Story = {
     title: "Ethereum Liquid Staking via a provider with a very long name",
   },
 };
+
+/** The back button carries a test id when the page needs one. */
+export const BackTestId: Story = {
+  args: { back: { label: "Back", onClick: fn(), testId: "page-back" } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByTestId("page-back")
+    ).toHaveAccessibleName("Back");
+  },
+};

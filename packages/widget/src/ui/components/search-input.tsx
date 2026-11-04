@@ -37,6 +37,8 @@ type SearchInputProps = {
     readonly activeOptionId?: string;
     readonly onKey: (key: ListboxKey) => void;
   };
+  /** Renders as the input's `data-testid`. */
+  readonly testId?: string;
 };
 
 /** The keys a search field hands to the listbox it controls. */
@@ -63,6 +65,7 @@ export const SearchInput = ({
   disabled: disabledProp = false,
   inputRef: inputRefProp,
   listbox,
+  testId,
 }: SearchInputProps) => {
   const ownInputRef = useRef<HTMLInputElement>(null);
   const inputRef = inputRefProp ?? ownInputRef;
@@ -78,6 +81,7 @@ export const SearchInput = ({
         ref={inputRef}
         type="search"
         aria-label={label}
+        data-testid={testId}
         {...(listbox === undefined
           ? {}
           : ({

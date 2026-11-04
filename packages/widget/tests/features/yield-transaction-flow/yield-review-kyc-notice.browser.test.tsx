@@ -3,8 +3,8 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import type { KycGate } from "../../../src/domain/earn/kyc";
-import type { useStakeReview } from "../../../src/features/yield-transaction-flow/ui/review/hooks/use-stake-review.hook";
-import { StakeReviewPage } from "../../../src/features/yield-transaction-flow/ui/review/pages/stake-review.page";
+import type { useEnterReview } from "../../../src/features/yield-transaction-flow/ui/review/hooks/use-enter-review.hook";
+import { EnterReviewPage } from "../../../src/features/yield-transaction-flow/ui/review/pages/enter-review.page";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
@@ -12,13 +12,13 @@ import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 const i18nInstance = createWidgetI18nInstance();
 
 const hookState = vi.hoisted(() => ({
-  current: undefined as unknown as ReturnType<typeof useStakeReview>,
+  current: undefined as unknown as ReturnType<typeof useEnterReview>,
 }));
 
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/review/hooks/use-stake-review.hook",
+  "../../../src/features/yield-transaction-flow/ui/review/hooks/use-enter-review.hook",
   () => ({
-    useStakeReview: () => hookState.current,
+    useEnterReview: () => hookState.current,
   })
 );
 
@@ -54,7 +54,6 @@ const renderStakeReview = ({
     metaInfo: { showMetaInfo: false },
     onKycStatusRefresh: vi.fn(),
     performanceFee: null,
-    rewardToken: null,
     token: stake.token,
     yieldType: "Stake",
   };
@@ -67,18 +66,15 @@ const renderStakeReview = ({
         variant="default"
       >
         <MemoryRouter>
-          <StakeReviewPage />
+          <EnterReviewPage />
         </MemoryRouter>
       </TestWidgetConfigProvider>
     </I18nextProvider>
   );
 };
 
-const pageChildCount = (container: HTMLElement) =>
-  container.querySelector('[data-rk="page-container"]')?.childElementCount;
-
 describe("Yield review KYC notice", () => {
-  it("adds the card in its own spacing wrapper only when KYC needs attention", async () => {
+  it("adds the card only when KYC needs attention", async () => {
     const passed = await renderStakeReview({
       gate: { state: "pass" },
       isChecking: false,
@@ -87,7 +83,6 @@ describe("Yield review KYC notice", () => {
       .element(passed.getByText(i18nInstance.t("shared.fees")))
       .toBeInTheDocument();
     expect(passed.getByTestId(/^kyc-gate-card/).elements()).toHaveLength(0);
-    const passedChildCount = pageChildCount(passed.container);
     await passed.unmount();
 
     const blocked = await renderStakeReview({
@@ -97,7 +92,6 @@ describe("Yield review KYC notice", () => {
     await expect
       .element(blocked.getByTestId("kyc-gate-card-start_kyc"))
       .toBeInTheDocument();
-    expect(pageChildCount(blocked.container)).toBe((passedChildCount ?? 0) + 1);
     await blocked.unmount();
   });
 

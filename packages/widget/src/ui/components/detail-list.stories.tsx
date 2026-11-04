@@ -21,6 +21,7 @@ const meta = {
           label="Status"
           value={<Badge tone="warning">Pending</Badge>}
         />
+        <DetailRow label="Health factor" value="1.08" tone="danger" />
         <DetailRow
           label="Validator"
           value="0x9f8d…0f9e"
@@ -41,6 +42,25 @@ type Story = StoryObj<typeof meta>;
 export const Rows: Story = {};
 
 export const RowsDark: Story = { globals: { colorScheme: "dark" } };
+
+/** A caption under the value gives its context, such as its fiat value. */
+export const WithCaption: Story = {
+  args: {
+    children: (
+      <DetailRow label="Active" value="12.5 ETH" caption="$40,120.00" />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("12.5 ETH")).toBeVisible();
+    await expect(canvas.getByText("$40,120.00")).toBeVisible();
+  },
+};
+
+export const WithCaptionDark: Story = {
+  ...WithCaption,
+  globals: { colorScheme: "dark" },
+};
 
 /**
  * The copy button copies the full value, shows a check and announces the

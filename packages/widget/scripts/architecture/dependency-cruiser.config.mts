@@ -1,14 +1,8 @@
 /**
  * Layer and owned-Module import rules used by `check-architecture.ts`, and
- * the Design System's dependency rules with their migration allowlist
- * (`design-system-allowlist.ts`).
+ * the Design System's dependency rules.
  */
 import type { IConfiguration, IForbiddenRuleType } from "dependency-cruiser";
-import {
-  type DependencyCruiserRuleId,
-  type DesignSystemAllowlist,
-  designSystemAllowlist,
-} from "./design-system-allowlist";
 
 const layerNames = [
   "app",
@@ -467,9 +461,7 @@ const makeOwnedModuleRules = (
     : makeServiceModuleRules(declaration);
 
 /**
- * Styling and behavior libraries only the Design System may import. The
- * legacy engine (vanilla-extract, Radix and its shared internals, clsx and the
- * skeleton library) is listed so no new code adopts it before its removal.
+ * Styling and behavior libraries only the Design System may import.
  * Unresolved specifiers (a library not installed yet) match by name.
  */
 const designSystemLibraries = [
@@ -478,33 +470,11 @@ const designSystemLibraries = [
   "motion",
   "recharts",
   "@tanstack/react-virtual",
-  "@vanilla-extract/[^/]+",
-  "@radix-ui/[^/]+",
-  "react-remove-scroll",
-  "aria-hidden",
-  "clsx",
-  "react-loading-skeleton",
 ];
 const designSystemLibraryPath = `(?:^|/node_modules/)(?:${designSystemLibraries.join("|")})(?:/|$)`;
-const styleModulePath = "\\.(?:stylex|css)\\.ts$|\\.css$";
+const styleModulePath = "\\.stylex\\.ts$|\\.css$";
 
-/** Exact-path patterns for the allowlisted importers of one rule. */
-const allowlisted = (
-  allowlist: DesignSystemAllowlist,
-  rule: DependencyCruiserRuleId
-): ReadonlyArray<string> =>
-  Object.entries(allowlist)
-    .filter(([, rules]) => rules.includes(rule))
-    .map(([path]) => `^${path.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
-
-/**
- * The dependency-cruiser configuration with the given Design System
- * migration allowlist; `check-design-system-allowlist.ts` builds it with an
- * empty one to find every current offender.
- */
-export const makeArchitectureConfiguration = (
-  allowlist: DesignSystemAllowlist
-): IConfiguration => ({
+const architectureConfiguration: IConfiguration = {
   forbidden: [
     {
       name: "undeclared-layer-imports",
@@ -558,51 +528,27 @@ export const makeArchitectureConfiguration = (
       to: { path: "^src/services/errors/" },
     },
     {
-      name: "shared-public-theme-contract-only",
+      name: "shared-no-public-api",
       severity: "error",
       comment:
-        "Only shared theme implementation modules may implement the host-facing theme contract.",
-      from: {
-        path: "^src/shared/",
-        pathNot: "^src/shared/styles/(?:theme|tokens)/",
-      },
+        "Shared code never depends on the host-facing public API; hosts' types enter at host boundaries.",
+      from: { path: "^src/shared/" },
       to: { path: "^src/public-api/" },
-    },
-    {
-      name: "shared-theme-imports-only-theme-contract",
-      severity: "error",
-      comment:
-        "Shared theme implementation may depend only on the exact host-facing theme contract.",
-      from: { path: "^src/shared/styles/(?:theme|tokens)/" },
-      to: {
-        path: "^src/public-api/",
-        pathNot: "^src/public-api/theme\\.ts$",
-      },
     },
     {
       name: "design-system-owns-styling-libraries",
       severity: "error",
       comment:
-        "Only the Design System imports StyleX, Base UI, motion, Recharts, TanStack Virtual and the legacy styling libraries. Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
-      from: {
-        pathNot: [
-          "^src/ui/",
-          ...allowlisted(allowlist, "design-system-owns-styling-libraries"),
-        ],
-      },
+        "Only the Design System imports StyleX, Base UI, motion, Recharts and TanStack Virtual. Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
+      from: { pathNot: "^src/ui/" },
       to: { path: designSystemLibraryPath },
     },
     {
       name: "design-system-owns-style-modules",
       severity: "error",
       comment:
-        "Only the Design System defines and imports style modules (`*.stylex.ts`, `*.css.ts`, `.css`). Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
-      from: {
-        pathNot: [
-          "^src/ui/",
-          ...allowlisted(allowlist, "design-system-owns-style-modules"),
-        ],
-      },
+        "Only the Design System defines and imports style modules (`*.stylex.ts`, `.css`). Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
+      from: { pathNot: "^src/ui/" },
       to: { path: styleModulePath },
     },
     {
@@ -682,6 +628,6 @@ export const makeArchitectureConfiguration = (
     tsConfig: { fileName: "tsconfig.json" },
     tsPreCompilationDeps: true,
   },
-});
+};
 
-export default makeArchitectureConfiguration(designSystemAllowlist);
+export default architectureConfiguration;

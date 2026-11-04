@@ -21,6 +21,8 @@ type IconButtonProps = Omit<
   readonly variant?: keyof typeof variantStyles;
   /** `xs` sits inline in a row of text; `sm` and `md` match control heights. */
   readonly size?: keyof typeof sizeStyles;
+  /** Rendered as `data-testid`. */
+  readonly testId?: string;
 };
 
 /**
@@ -34,6 +36,7 @@ export const IconButton = ({
   variant = "ghost",
   size = "sm",
   disabled = false,
+  testId,
   ...rest
 }: IconButtonProps) => (
   <button
@@ -41,6 +44,7 @@ export const IconButton = ({
     type="button"
     aria-label={label}
     disabled={disabled}
+    {...(testId === undefined ? {} : { "data-testid": testId })}
     {...stylex.props(
       styles.root,
       focusRingStyles.visible,

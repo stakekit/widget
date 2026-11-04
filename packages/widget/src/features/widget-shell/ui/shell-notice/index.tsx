@@ -1,9 +1,5 @@
-import type { ReactNode } from "react";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { PoweredBy } from "../powered-by";
-import { container, frame } from "./style.css";
+import { Stack, Text } from "../../../../ui/index";
+import { ShellFrame } from "../shell-frame";
 
 type ShellNoticeContent = {
   readonly description: string;
@@ -11,52 +7,23 @@ type ShellNoticeContent = {
   readonly title: string;
 };
 
-export const ShellNotice = (content: ShellNoticeContent) => (
-  <ShellNoticeFrame {...content} footer={<PoweredBy opacity={1} />} />
-);
-
 /**
- * A full-widget notice that renders without Widget Configuration; the Layout
- * attribute on the app container frames it.
+ * A full-widget notice in the shell's frame. It renders without Widget
+ * Configuration: the app container gives the frame its width.
  */
-export const ShellNoticeFrame = ({
+export const ShellNotice = ({
   description,
-  footer,
   testId,
   title,
-}: ShellNoticeContent & {
-  readonly footer?: ReactNode;
-}) => {
-  return (
-    <Box className={frame}>
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        className={container}
-        data-testid={testId}
-      >
-        <Box>
-          <Heading
-            marginBottom="4"
-            textAlign="center"
-            variant={{ level: "h4" }}
-          >
-            {title}
-          </Heading>
-
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-            marginBottom="4"
-          >
-            {description}
-          </Text>
-        </Box>
-      </Box>
-      {footer}
-    </Box>
-  );
-};
+}: ShellNoticeContent) => (
+  <ShellFrame>
+    <Stack testId={testId} align="center" justify="center" gap={16} grow>
+      <Text variant="title" as="h2" align="center">
+        {title}
+      </Text>
+      <Text as="p" tone="muted" align="center">
+        {description}
+      </Text>
+    </Stack>
+  </ShellFrame>
+);

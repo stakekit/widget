@@ -213,7 +213,7 @@ describe("ProviderSelectionCard", () => {
       .element(app.getByTestId("select-modal__search-input"))
       .toHaveValue("missing validator");
     await expect
-      .element(app.getByText("No validators found"))
+      .element(app.getByText("No validators found").first())
       .toBeInTheDocument();
   });
 });

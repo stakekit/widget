@@ -6,17 +6,17 @@ import {
 } from "../../../shared/lib/formatters";
 import { formatAddress } from "../../../shared/lib/general";
 import { formatTokenAmount } from "../../../shared/lib/number-format";
-import { vars } from "../../../shared/styles/theme/contract.css";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
+  Card,
+  DetailList,
   DetailRow,
-  DetailRowList,
-} from "../../../shared/ui/components/details-section";
-import { Box } from "../../../shared/ui/primitives/box";
-import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
-import { ExternalLinkIcon } from "../../../shared/ui/primitives/icons/external-link";
-import { Heading } from "../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
+  ExternalLink,
+  Icon,
+  Stack,
+  Text,
+  VisuallyHidden,
+} from "../../../ui/index";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
@@ -29,7 +29,6 @@ import {
   useBorrowTransactionFlowExecution,
 } from "../react/borrow-flow-route";
 import { BorrowFlowPositionChangeRows } from "./position-change-rows";
-import * as styles from "./styles.css";
 import { BorrowFlowOriginationRows } from "./summary-rows";
 import { useBorrowExecution } from "./use-borrow-execution";
 
@@ -75,131 +74,112 @@ export const BorrowCompletePage = () => {
   return (
     <AnimationPage>
       <PageContainer>
-        <Box
-          data-rk="borrow-complete-page"
-          display="flex"
-          flexDirection="column"
-          gap="5"
-        >
-          <Box
-            alignItems="center"
-            display="flex"
-            flexDirection="column"
-            gap="2"
-            textAlign="center"
-          >
-            <Box className={styles.successBadge}>
-              <CheckCircleIcon
-                color={vars.color.statusSuccess}
-                height={28}
-                width={28}
-              />
-            </Box>
-            <Text variant={{ weight: "bold" }}>
+        <Stack hostHook="borrow-complete-page" gap={20}>
+          <Stack align="center" gap={8}>
+            <Icon name="CheckCircleIcon" size="lg" tone="success" />
+            <Text weight="semibold">
               {t(`dashboard.borrow.success_page.titles.${summary.action}`)}
             </Text>
-            <Heading variant={{ level: "h3" }}>
+            <Text variant="title" as="h2" numeric>
               {headline.amount === null
                 ? headline.symbol
                 : `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`}
-            </Heading>
-            <Text variant={{ type: "muted", weight: "normal" }}>
+            </Text>
+            <Text tone="muted">
               {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
             </Text>
-          </Box>
+          </Stack>
 
           {collateralSupplied || collateralFee || origination ? (
-            <DetailRowList>
+            <DetailList>
               {collateralSupplied ? (
                 <DetailRow
-                  id="collateral-supplied"
                   label={t("dashboard.borrow.success_page.collateral_supplied")}
                   value={`${formatTokenAmount(collateralSupplied.amount, locale, "down")} ${collateralSupplied.symbol}`}
                 />
               ) : null}
               {collateralFee ? (
                 <DetailRow
-                  id="collateral-fee"
                   label={t("dashboard.borrow.review_page.collateral_fee")}
                   value={`${formatTokenAmount(collateralFee.amount, locale, "up")} ${collateralFee.symbol}`}
                 />
               ) : null}
               <BorrowFlowOriginationRows origination={origination} />
-            </DetailRowList>
+            </DetailList>
           ) : null}
 
           {hasPositionFigures ? (
-            <Box display="flex" flexDirection="column" gap="1">
-              <Text variant={{ size: "small", type: "muted" }}>
+            <Stack gap={8}>
+              <Text variant="overline" tone="muted">
                 {t(`dashboard.borrow.success_page.position.${position.source}`)}
               </Text>
-              <DetailRowList>
+              <DetailList>
                 <BorrowFlowPositionChangeRows change={position.change} />
-              </DetailRowList>
-            </Box>
+              </DetailList>
+            </Stack>
           ) : null}
 
           {result.transactions.length === 1 && singleTransaction ? (
-            <Box
-              as="button"
-              className={styles.explorerLink}
-              data-rk="borrow-complete-transaction-link"
-              onClick={() =>
-                window.open(singleTransaction.explorerUrl, "_blank")
-              }
-              type="button"
-            >
-              <Text variant={{ type: "muted", weight: "normal" }}>
+            <Stack align="center">
+              <ExternalLink
+                href={singleTransaction.explorerUrl}
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("dashboard.borrow.success_page.view_on_explorer")}
-              </Text>
-              <ExternalLinkIcon />
-            </Box>
+              </ExternalLink>
+            </Stack>
           ) : null}
 
           {result.transactions.length > 1 ? (
-            <Box className={styles.transactionList} textAlign="left">
-              <Text variant={{ size: "small", type: "muted" }}>
-                {t("dashboard.borrow.success_page.transactions")}
-              </Text>
-              {result.transactions.map((transaction) => {
-                const type = t(
-                  `dashboard.borrow.execution_page.tx_type.${transaction.type}`
-                );
+            <Card padding={16}>
+              <Stack gap={12}>
+                <Text variant="overline" tone="muted">
+                  {t("dashboard.borrow.success_page.transactions")}
+                </Text>
+                {result.transactions.map((transaction) => {
+                  const type = t(
+                    `dashboard.borrow.execution_page.tx_type.${transaction.type}`
+                  );
+                  const viewLabel = t(
+                    "dashboard.borrow.success_page.view_transaction",
+                    { type }
+                  );
 
-                return (
-                  <Box
-                    aria-label={t(
-                      "dashboard.borrow.success_page.view_transaction",
-                      { type }
-                    )}
-                    as="button"
-                    className={styles.transactionRow}
-                    data-rk="borrow-complete-transaction-link"
-                    key={transaction.id}
-                    onClick={() =>
-                      window.open(transaction.explorerUrl, "_blank")
-                    }
-                    type="button"
-                  >
-                    <Box alignItems="center" display="flex" gap="2">
-                      <CheckCircleIcon color={vars.color.statusSuccess} />
-                      <Text>{type}</Text>
-                    </Box>
-                    <Box alignItems="center" display="flex" gap="1">
-                      {transaction.hash ? (
-                        <Text variant={{ type: "muted", weight: "normal" }}>
-                          {formatAddress(transaction.hash, {
-                            leadingChars: 6,
-                            trailingChars: 4,
-                          })}
-                        </Text>
-                      ) : null}
-                      <ExternalLinkIcon />
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
+                  return (
+                    <Stack
+                      key={transaction.id}
+                      direction="row"
+                      align="center"
+                      justify="between"
+                      gap={12}
+                    >
+                      <Stack direction="row" align="center" gap={8}>
+                        <Icon name="CheckCircleIcon" size="sm" tone="success" />
+                        <Text>{type}</Text>
+                      </Stack>
+                      <Text variant="caption" numeric>
+                        <ExternalLink
+                          href={transaction.explorerUrl}
+                          newTabLabel={t("shared.opens_in_new_tab")}
+                        >
+                          {transaction.hash ? (
+                            <>
+                              <VisuallyHidden>{`${viewLabel}, `}</VisuallyHidden>
+                              {formatAddress(transaction.hash, {
+                                leadingChars: 6,
+                                trailingChars: 4,
+                              })}
+                            </>
+                          ) : (
+                            viewLabel
+                          )}
+                        </ExternalLink>
+                      </Text>
+                    </Stack>
+                  );
+                })}
+              </Stack>
+            </Card>
           ) : null}
 
           <PageCtaButton
@@ -210,7 +190,7 @@ export const BorrowCompletePage = () => {
               onClick: () => done(undefined),
             }}
           />
-        </Box>
+        </Stack>
       </PageContainer>
     </AnimationPage>
   );

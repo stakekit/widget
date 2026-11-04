@@ -70,8 +70,8 @@ const rootStyles = stylex.create({
  * container, so popups rendered outside the root carry the same Color Roles
  * and settings. A preset that fixes the color scheme overrides the requested
  * one. A host's Appearance is set over them as inline custom properties on
- * both. It sets no color, font or spacing on the root itself: screens that
- * have not moved to the Design System keep their own styles.
+ * both. It sets no color, font or spacing on the root itself: Text roles
+ * carry the font, and each part its own colors and spacing.
  *
  * Value settings (call-to-action size, gutter) are themes over their own
  * variable groups; the tabs indicator and surface style are attributes

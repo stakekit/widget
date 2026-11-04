@@ -1,85 +1,63 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
-import { SelectModal } from "../../../../shared/ui/components/select-modal";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Card, Illustration, Modal, Stack, Text } from "../../../../ui/index";
 import { richErrorInterpolationValues } from "../../model/rich-error-interpolation-values";
 import { useRichErrors } from "../../react/use-rich-errors";
-import { imageStyle } from "./style.css";
 
+/**
+ * The rich error dialog: the error's Error Copy (title, details and a
+ * potential solution), or "Something went wrong" for an error without copy.
+ */
 export const RichErrorModal = () => {
   const { i18n, t } = useTranslation();
   const { error, resetError } = useRichErrors();
   const { message, details } = error ?? {};
-  const hasKnownErrorCopy = message
-    ? (["title", "details", "solution"] as const).every((field) =>
-        i18n.exists(`errors.${message}.${field}`)
-      )
-    : false;
+  const knownMessage =
+    message &&
+    (["title", "details", "solution"] as const).every((field) =>
+      i18n.exists(`errors.${message}.${field}`)
+    )
+      ? message
+      : null;
   useEffect(() => resetError, [resetError]);
 
   return (
-    <SelectModal
-      state={{ isOpen: !!error, setOpen: (isOpen) => !isOpen && resetError() }}
+    <Modal
+      open={!!error}
+      onOpenChange={(open) => {
+        if (!open) resetError();
+      }}
+      title={
+        knownMessage
+          ? t(`errors.${knownMessage}.title`)
+          : t("shared.something_went_wrong")
+      }
+      closeLabel={t("shared.close")}
     >
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        px="6"
-        lineHeight="sm"
-      >
-        <Box as="img" src={images.whatIsLiquidStaking} className={imageStyle} />
-        {message && hasKnownErrorCopy && (
+      <Stack align="center" gap={16}>
+        <Illustration src={images.whatIsLiquidStaking} size="md" />
+        {knownMessage && (
           <>
-            <Box textAlign="center">
-              <Heading variant={{ level: "h4" }}>
-                {t(`errors.${message}.title`)}
-              </Heading>
-              <Text
-                variant={{ type: "muted", weight: "normal" }}
-                textAlign="center"
-                marginTop="2"
-              >
-                {t(
-                  `errors.${message}.details`,
-                  richErrorInterpolationValues(details)
-                )}
-              </Text>
-            </Box>
-
-            <Box marginTop="4" textAlign="center">
-              <Text variant={{ size: "large" }}>
+            <Text as="p" tone="muted" align="center">
+              {t(
+                `errors.${knownMessage}.details`,
+                richErrorInterpolationValues(details)
+              )}
+            </Text>
+            <Stack gap={8} align="stretch">
+              <Text variant="heading" as="h3" align="center">
                 {t("error_modal.solution")}
               </Text>
-
-              <Box
-                borderRadius="md"
-                background="backgroundMuted"
-                px="4"
-                py="1"
-                marginTop="2"
-              >
-                <Text variant={{ size: "medium" }} textAlign="center">
-                  {t(`errors.${message}.solution`)}
+              <Card>
+                <Text as="p" align="center">
+                  {t(`errors.${knownMessage}.solution`)}
                 </Text>
-              </Box>
-            </Box>
+              </Card>
+            </Stack>
           </>
         )}
-
-        {!hasKnownErrorCopy && (
-          <Box textAlign="center">
-            <Heading variant={{ level: "h4" }}>
-              {t("shared.something_went_wrong")}
-            </Heading>
-          </Box>
-        )}
-      </Box>
-    </SelectModal>
+      </Stack>
+    </Modal>
   );
 };

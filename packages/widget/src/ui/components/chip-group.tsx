@@ -15,8 +15,13 @@ import {
 import { focusRingStyles } from "./focus-ring";
 import type { ToggleOption } from "./segmented-control";
 
+/** One chip: a choice, and how many items it matches, formatted. */
+type ChipOption<T extends string> = ToggleOption<T> & {
+  readonly count?: string;
+};
+
 type ChipGroupProps<T extends string> = {
-  readonly options: ReadonlyArray<ToggleOption<T>>;
+  readonly options: ReadonlyArray<ChipOption<T>>;
   /** The chosen chips; empty chooses none. */
   readonly value: ReadonlyArray<NoInfer<T>>;
   readonly onValueChange: (value: ReadonlyArray<T>) => void;
@@ -28,7 +33,7 @@ type ChipGroupProps<T extends string> = {
 /**
  * Filters as chips: any number of them can be on, such as the Activity
  * filters. Arrow keys move between chips and Enter or Space toggles one; an
- * on chip is pressed.
+ * on chip is pressed. A chip's `count` follows its label in tabular figures.
  */
 export const ChipGroup = <const T extends string>({
   options,
@@ -53,6 +58,9 @@ export const ChipGroup = <const T extends string>({
         {...stylex.props(styles.chip, focusRingStyles.visible)}
       >
         {option.label}
+        {option.count !== undefined && (
+          <span {...stylex.props(styles.count)}>{option.count}</span>
+        )}
       </Toggle>
     ))}
   </ToggleGroup>
@@ -74,8 +82,10 @@ const styles = stylex.create({
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
+    gap: space[6],
     paddingBlock: space[4],
     paddingInline: space[12],
+    alignItems: "center",
     backgroundColor: {
       default: color.surface,
       ":hover:not([data-disabled], [data-pressed])": color.surfaceHover,
@@ -87,6 +97,7 @@ const styles = stylex.create({
       ":is([data-pressed])": color.accentText,
     },
     cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
+    display: "inline-flex",
     fontFamily: font.sans,
     fontSize: fontSize.label,
     fontWeight: fontWeight.medium,
@@ -100,4 +111,5 @@ const styles = stylex.create({
     transitionTimingFunction: motion.easing,
     whiteSpace: "nowrap",
   },
+  count: { fontVariantNumeric: "tabular-nums" },
 });

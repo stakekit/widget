@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Stack, Text } from "../../../../ui/index";
 import { useWidgetRouteMatch } from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import {
@@ -46,7 +45,7 @@ export const BorrowPositionActionPage = () => {
   const getActionContent = (): ReactNode => {
     if (!position || !action) {
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text as="p" tone="muted">
           {t("dashboard.borrow.position_details.empty")}
         </Text>
       );
@@ -67,19 +66,17 @@ export const BorrowPositionActionPage = () => {
         positionName={model?.title ?? null}
       />
 
-      <Box display="flex" flexDirection="column" gap="4" marginTop="3">
-        <Box display="flex" flexDirection="column" gap="1">
-          <Text variant={{ weight: "bold" }}>
+      <Stack gap={16}>
+        <Stack gap={4}>
+          <Text variant="heading" as="h3">
             {action?.label ??
               t("dashboard.borrow.position_details.actions_title")}
           </Text>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {model?.marketLabel}
-          </Text>
-        </Box>
+          <Text tone="muted">{model?.marketLabel}</Text>
+        </Stack>
 
         {actionContent}
-      </Box>
+      </Stack>
     </>
   );
 };

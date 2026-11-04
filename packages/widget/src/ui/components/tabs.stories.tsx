@@ -159,3 +159,36 @@ export const DisabledTab: Story = {
     await expect(args.onValueChange).not.toHaveBeenCalled();
   },
 };
+
+const grouped: ReadonlyArray<TabOption<Section>> = [
+  { value: "earn", label: "Earn" },
+  { value: "positions", label: "Positions", count: 2, separated: true },
+  { value: "activity", label: "Activity", count: 0 },
+];
+
+/**
+ * A tab can carry a count that needs attention, which is part of its name, and
+ * start a new group behind a divider the tab list skips.
+ */
+export const CountAndGroups: Story = {
+  render: (args) => (
+    <Tabs
+      tabs={grouped}
+      value="earn"
+      onValueChange={args.onValueChange}
+      label="Sections"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const list = tabList(canvasElement);
+
+    await expect(
+      canvas.getByRole("tab", { name: "Positions 2" })
+    ).toBeVisible();
+    // Zero shows no count.
+    await expect(canvas.getByRole("tab", { name: "Activity" })).toBeVisible();
+    await expect(within(list).getAllByRole("tab")).toHaveLength(3);
+    await expect(list.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
+  },
+};

@@ -3,20 +3,22 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import { exactDecimal } from "../../../../../domain/finance/exact";
+import { formatAddress } from "../../../../../shared/lib/general";
 import {
   formatPercent,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
-import { dashboardDetailsScroll } from "../../../../../shared/ui/components/dashboard-details/styles.css";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
-  AddressRow,
+  DetailList,
   DetailRow,
-  DetailsSection,
-} from "../../../../../shared/ui/components/details-section";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+  Disclosure,
+  EmptyState,
+  ScrollArea,
+  Skeleton,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import { YieldDetailsHeader } from "../../../../yield-summary/views";
 import { useYieldFlowIntake } from "../../../../yield-transaction-flow/index";
 import {
@@ -102,22 +104,19 @@ const EarnDetailsPanel = ({
   const tvlChart = useEarnTvlHistoryChart(yieldDto?.id ?? null);
 
   if (isLoading) {
-    return <ContentLoaderSquare heightPx={430} />;
+    return (
+      <Stack gap={16} aria-busy>
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="line" width="threeQuarters" />
+        <Skeleton shape="line" width="half" />
+      </Stack>
+    );
   }
 
   if (!yieldDto) {
-    return (
-      <Box
-        alignItems="center"
-        className={dashboardDetailsScroll}
-        display="flex"
-        justifyContent="center"
-      >
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("dashboard.earn_details.empty")}
-        </Text>
-      </Box>
-    );
+    return <EmptyState title={t("dashboard.earn_details.empty")} />;
   }
 
   const {
@@ -137,73 +136,73 @@ const EarnDetailsPanel = ({
   });
 
   return (
-    <Box
-      className={dashboardDetailsScroll}
-      display="flex"
-      flexDirection="column"
-      gap="4"
-    >
-      <YieldDetailsHeader
-        headerBadges={headerBadges}
-        providerName={providerName}
-        yieldDto={yieldDto}
-      />
-
-      <EarnDetailsMetrics cards={metricCards} />
-
-      {providers}
-
-      {presentsRewardRateHistory && rewardRateChart.view.canRender && (
-        <HistoryChartSection
-          chartId="reward-rate"
-          onPeriodChange={rewardRateChart.selectPeriod}
-          tickFormatter={(value) =>
-            formatPercent(exactDecimal(value).div(100), locale)
-          }
-          title={t("dashboard.earn_details.reward_rate")}
-          value={rewardRateFormatted}
-          view={rewardRateChart.view}
+    <ScrollArea label={t("dashboard.earn_details.pane_label")}>
+      <Stack gap={16}>
+        <YieldDetailsHeader
+          headerBadges={headerBadges}
+          providerName={providerName}
+          yieldDto={yieldDto}
         />
-      )}
 
-      {!isStakeCategory && tvlChart.view.canRender && (
-        <HistoryChartSection
-          chartId="tvl"
-          onPeriodChange={tvlChart.selectPeriod}
-          tickFormatter={(value) => formatUsd(value, locale)}
-          title={t("dashboard.earn_details.tvl")}
-          value={tvlChartValue}
-          view={tvlChart.view}
-        />
-      )}
+        <EarnDetailsMetrics cards={metricCards} />
 
-      <DetailsSection title={t("dashboard.earn_details.about")}>
-        <Box display="flex" flexDirection="column" gap="1">
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {yieldDto.metadata.description}
-          </Text>
+        {providers}
 
-          {yieldDto.metadata.documentation ? (
-            <IntegrationDocsLink
-              documentation={yieldDto.metadata.documentation}
-            />
-          ) : null}
-        </Box>
-      </DetailsSection>
-
-      <DetailsSection title={t("dashboard.earn_details.details")}>
-        {detailRows.map((row) => (
-          <DetailRow key={row.id} {...row} />
-        ))}
-
-        {addressRows.length > 0 && (
-          <Box display="flex" flexDirection="column" gap="2" marginTop="2">
-            {addressRows.map((row) => (
-              <AddressRow key={`${row.label}-${row.address}`} {...row} />
-            ))}
-          </Box>
+        {presentsRewardRateHistory && rewardRateChart.view.canRender && (
+          <HistoryChartSection
+            onPeriodChange={rewardRateChart.selectPeriod}
+            tickFormatter={(value) =>
+              formatPercent(exactDecimal(value).div(100), locale)
+            }
+            title={t("dashboard.earn_details.reward_rate")}
+            value={rewardRateFormatted}
+            view={rewardRateChart.view}
+          />
         )}
-      </DetailsSection>
-    </Box>
+
+        {!isStakeCategory && tvlChart.view.canRender && (
+          <HistoryChartSection
+            onPeriodChange={tvlChart.selectPeriod}
+            tickFormatter={(value) => formatUsd(value, locale)}
+            title={t("dashboard.earn_details.tvl")}
+            value={tvlChartValue}
+            view={tvlChart.view}
+          />
+        )}
+
+        <Disclosure title={t("dashboard.earn_details.about")} defaultOpen>
+          <Stack gap={4}>
+            <Text tone="muted">{yieldDto.metadata.description}</Text>
+
+            {yieldDto.metadata.documentation ? (
+              <IntegrationDocsLink
+                documentation={yieldDto.metadata.documentation}
+              />
+            ) : null}
+          </Stack>
+        </Disclosure>
+
+        <Disclosure title={t("dashboard.earn_details.details")} defaultOpen>
+          <DetailList>
+            {detailRows.map((row) => (
+              <DetailRow key={row.id} label={row.label} value={row.value} />
+            ))}
+
+            {addressRows.map((row) => (
+              <DetailRow
+                key={`${row.label}-${row.address}`}
+                label={row.label}
+                value={formatAddress(row.address)}
+                copyable={{
+                  value: row.address,
+                  label: t("wallet_modal.copy_address"),
+                  copiedLabel: t("wallet_modal.copied"),
+                }}
+              />
+            ))}
+          </DetailList>
+        </Disclosure>
+      </Stack>
+    </ScrollArea>
   );
 };

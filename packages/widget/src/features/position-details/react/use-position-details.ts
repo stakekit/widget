@@ -14,11 +14,11 @@ import {
   setPositionDetailsExitReceiveTokenAtom,
   submitPositionDetailsExitAtom,
 } from "../state/details-view";
+import { useExitOrPendingAction } from "./use-exit-or-pending-action";
 import { usePendingActions } from "./use-pending-actions";
-import { useUnstakeOrPendingAction } from "./use-unstake-or-pending-action";
 
 export const usePositionDetails = () => {
-  const { dispatch, workflowKey } = useUnstakeOrPendingAction();
+  const { dispatch, workflowKey } = useExitOrPendingAction();
   const view = useAtomValue(positionDetailsViewAtom(workflowKey));
   const setAmount = useAtomSet(setPositionDetailsExitAmountAtom(workflowKey));
   const setMaxAmount = useAtomSet(

@@ -113,7 +113,7 @@ type PositionOverviewChartSection = {
   title: string;
 };
 
-type PositionOverviewModel = {
+export type PositionOverviewModel = {
   addressRows: PositionOverviewAddressRow[];
   breakdownRows: PositionOverviewBreakdownRow[];
   chartSections: PositionOverviewChartSection[];

@@ -20,17 +20,21 @@ export const Chip = ({
   disabled = false,
   selected,
   children,
+  testId,
 }: {
   readonly onClick: () => void;
   readonly disabled?: boolean;
   readonly selected?: boolean;
   readonly children: string;
+  /** Renders as the chip's `data-testid`. */
+  readonly testId?: string;
 }) => (
   <button
     type="button"
     onClick={onClick}
     disabled={disabled}
     aria-pressed={selected}
+    data-testid={testId}
     {...stylex.props(styles.root, selected && styles.selected)}
   >
     {children}

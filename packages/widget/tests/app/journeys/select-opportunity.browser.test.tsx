@@ -217,9 +217,12 @@ describe("Select opportunity", () => {
       EArray.getUnsafe(searchInput.elements(), 0),
       "missing token"
     );
-    await expect.element(app.getByText("No tokens found")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("No tokens found").first())
+      .toBeInTheDocument();
 
-    await userEvent.keyboard("[Escape]");
+    // Escape clears the query first, then closes the sheet.
+    await userEvent.keyboard("[Escape][Escape]");
 
     await app.getByTestId("select-opportunity").click();
 
@@ -237,7 +240,9 @@ describe("Select opportunity", () => {
       EArray.getUnsafe(searchInput.elements(), 0),
       "missing yield"
     );
-    await expect.element(app.getByText("No yields found")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("No yields found").first())
+      .toBeInTheDocument();
     await userEvent.clear(EArray.getUnsafe(searchInput.elements(), 0));
 
     selectContainer = app.getByTestId("select-modal__container");

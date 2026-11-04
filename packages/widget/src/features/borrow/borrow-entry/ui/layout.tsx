@@ -2,13 +2,12 @@ import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
+import { EmptyState, SplitView, Stack } from "../../../../ui/index";
 import {
   type BorrowEntryFlowDetails,
   useBorrowTransactionFlow,
 } from "../../../borrow-transaction-flow/index";
-import { AnimationPage, SplitView } from "../../../widget-shell/views";
+import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowWalletView } from "../../wallet/index";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import { borrowFlowDetailsAtom } from "../state/flow-details";
@@ -16,8 +15,7 @@ import {
   BorrowEntryDetailsPanel,
   BorrowMarketDetails,
 } from "./components/details-panel";
-import { BorrowDetailsEmpty } from "./components/notices";
-import * as styles from "./styles.css";
+import { BorrowDetailsSkeleton } from "./components/skeletons";
 
 /**
  * Stays mounted across the form and the flow, so moving between their split
@@ -37,15 +35,11 @@ const BorrowSplitView = ({ details }: { readonly details: ReactNode }) => {
       primaryBarLabel={t("dashboard.split_view.actions")}
       secondaryBarLabel={t("dashboard.split_view.details")}
       primary={
-        <Box className={styles.formPane} width="0">
+        <Stack gap={8} grow>
           <Outlet />
-        </Box>
+        </Stack>
       }
-      secondary={
-        <Box className={styles.detailsPaneWrapper} flex={1} width="0">
-          {details}
-        </Box>
-      }
+      secondary={details}
     />
   );
 };
@@ -62,12 +56,13 @@ export const BorrowEntryLayout = () => {
   const getDetails = (): ReactNode => {
     if (walletView.status === "ready") return <BorrowConnectedEntryDetails />;
     if (walletView.status === "connecting") {
-      return <ContentLoaderSquare heightPx={430} />;
+      return <BorrowDetailsSkeleton />;
     }
     return (
-      <BorrowDetailsEmpty title={t("dashboard.borrow.details.empty_title")}>
-        {t("dashboard.borrow.details.empty_description")}
-      </BorrowDetailsEmpty>
+      <EmptyState
+        title={t("dashboard.borrow.details.empty_title")}
+        body={t("dashboard.borrow.details.empty_description")}
+      />
     );
   };
 

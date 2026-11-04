@@ -92,7 +92,6 @@ export type WidgetConfig = {
   readonly onMountAnimationComplete?: SettingsProps["onMountAnimationComplete"];
   readonly portalContainer?: SettingsProps["portalContainer"];
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
-  readonly theme?: SettingsProps["theme"];
   readonly tokenIconMapping?: SettingsProps["tokenIconMapping"];
   readonly tonConnectManifestUrl?: string;
   readonly tracking?: SettingsProps["tracking"];

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
+import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
 import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
-import { Avatar, TokenAvatar } from "./avatar";
+import { Avatar, IconAvatar, TokenAvatar } from "./avatar";
 
 const meta = {
   title: "Components/Avatar",
@@ -59,6 +60,31 @@ export const Token: Story = {
       ))}
     </Stack>
   ),
+};
+
+/** An icon in an avatar's circle, decorative beside the text that names it. */
+export const IconInAvatar: Story = {
+  render: () => (
+    <Stack direction="row" align="center" gap={8}>
+      <IconAvatar>
+        <Icon name="ArrowIcon" direction="up" />
+      </IconAvatar>
+      <IconAvatar>
+        <Icon name="GiftIcon" />
+      </IconAvatar>
+      <IconAvatar size="lg">
+        <Icon name="MinusIcon" size="lg" />
+      </IconAvatar>
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryAllByRole("img")).toHaveLength(0);
+  },
+};
+
+export const IconInAvatarDark: Story = {
+  ...IconInAvatar,
+  globals: { colorScheme: "dark" },
 };
 
 export const TokenFallback: Story = {

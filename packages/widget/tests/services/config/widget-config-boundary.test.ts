@@ -293,9 +293,11 @@ describe("decodeHostConfiguration", () => {
 
     expect(Result.isSuccess(result)).toBe(true);
     if (Result.isSuccess(result)) {
-      expect(result.success.configuration.theme).toEqual({
-        color: { background: "#fff" },
+      // The valid leaf still maps into the Appearance.
+      expect(result.success.configuration.appearance.colors.light).toEqual({
+        background: "#fff",
       });
+      expect(result.success.configuration).not.toHaveProperty("theme");
       expect(result.success.warnings).toEqual([
         { _tag: "Theme", issue: "invalid-theme-token" },
       ]);

@@ -1,12 +1,14 @@
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferred";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import {
+  Badge,
+  DetailList,
+  DetailRow,
+  ExternalLink,
+  Icon,
+} from "../../../../../ui/index";
 import { useMetaInfo } from "../../../../yield-entry/views";
 import type { YieldSummaryProvider as ProviderDetailsModel } from "../../../../yield-summary/index";
-import { noWrap } from "../../components/styles.css";
-import { inactiveContainer } from "../styles.css";
 import { PositionSourceDetails } from "./position-source-details";
 
 export const ProviderDetails = ({
@@ -25,7 +27,7 @@ export const ProviderDetails = ({
 }) => {
   const { t } = useTranslation();
 
-  const nameOrAddress = providerDetails.name ?? providerDetails ?? "";
+  const nameOrAddress = providerDetails.name ?? providerDetails.address ?? "";
   const metaInfo = useMetaInfo({
     address: providerDetails.address,
     commission: providerDetails.commission,
@@ -36,75 +38,69 @@ export const ProviderDetails = ({
     votingPower: providerDetails.votingPower,
     website: providerDetails.website,
   });
-  const metaEntries = Object.entries(metaInfo).filter(
-    (
-      entry
-    ): entry is [
-      keyof typeof metaInfo,
-      NonNullable<(typeof metaInfo)[keyof typeof metaInfo]>,
-    ] => !!entry[1]
+  const metaEntries = Object.entries(metaInfo).flatMap(([key, entry]) =>
+    entry ? [{ key, entry }] : []
   );
+  const inactive =
+    providerDetails.status && providerDetails.status !== "active";
 
   return (
     <PositionSourceDetails
       hasDetails={metaEntries.length > 0}
       headerAccessory={
-        <>
-          {providerDetails.preferred ? (
-            <Box marginLeft="1" display="flex">
-              <PreferredIcon />
-            </Box>
-          ) : null}
-
-          {providerDetails.status && providerDetails.status !== "active" ? (
-            <Box marginLeft="1" className={inactiveContainer}>
-              <Text
-                variant={{
-                  type: "white",
-                  weight: "medium",
-                  size: "small",
-                }}
-                className={noWrap}
-              >
+        providerDetails.preferred || inactive ? (
+          <>
+            {providerDetails.preferred ? (
+              <Icon name="PreferredIcon" size="sm" />
+            ) : null}
+            {inactive ? (
+              <Badge tone="danger">
                 {t(
                   providerDetails.status === "jailed"
                     ? "details.validators_jailed"
                     : "details.validators_inactive"
                 )}
-              </Text>
-            </Box>
-          ) : null}
-        </>
+              </Badge>
+            ) : null}
+          </>
+        ) : undefined
       }
       isFirst={isFirst}
       logo={logo}
       name={nameOrAddress}
       stakeType={stakeType}
     >
-      {metaEntries.length > 0 ? (
-        <Box marginTop="1">
-          {metaEntries.map(([key, val]) => (
-            <Box
-              key={key}
-              marginTop="1"
-              marginBottom="3"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Text variant={{ weight: "normal" }}>{val.title}</Text>
-
-              {key === "address" && providerDetails.address ? (
-                val.val
+      <DetailList>
+        {metaEntries.map(({ key, entry }) => (
+          <DetailRow
+            key={key}
+            label={entry.title}
+            value={
+              entry.href ? (
+                <ExternalLink
+                  href={entry.href}
+                  newTabLabel={t("shared.opens_in_new_tab")}
+                >
+                  {entry.val}
+                </ExternalLink>
               ) : (
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  {val.val}
-                </Text>
-              )}
-            </Box>
-          ))}
-        </Box>
-      ) : null}
+                entry.val
+              )
+            }
+            {...(entry.copyValue
+              ? {
+                  copyable: {
+                    value: entry.copyValue,
+                    label: t("position_details.copy_address", {
+                      label: entry.title,
+                    }),
+                    copiedLabel: t("position_details.copied"),
+                  },
+                }
+              : {})}
+          />
+        ))}
+      </DetailList>
     </PositionSourceDetails>
   );
 };

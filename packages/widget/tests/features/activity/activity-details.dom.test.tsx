@@ -105,7 +105,9 @@ describe("Activity details receipt", () => {
 
     const app = await renderDetails();
     const rows = Array.from(
-      app.container.querySelectorAll('[data-rk="activity-details-transaction"]')
+      app.container.querySelectorAll(
+        '[data-testid="activity-details-transaction"]'
+      )
     );
     const explorer = app.container.querySelector<HTMLButtonElement>(
       'button[aria-label="View Stake transaction"]'
@@ -214,7 +216,7 @@ describe("Activity details receipt", () => {
     expect(
       Array.from(
         app.container.querySelectorAll(
-          '[data-rk="activity-details-transaction"]'
+          '[data-testid="activity-details-transaction"]'
         )
       ).map((row) => row.textContent)
     ).toEqual(["1. Token approvalConfirmed"]);

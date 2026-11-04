@@ -38,12 +38,16 @@ export const Stack = ({
   wrap = false,
   grow = false,
   children,
+  testId,
+  hostHook,
   ...rest
 }: StackProps) =>
   createElement(
     as,
     {
       ...rest,
+      "data-testid": testId,
+      "data-rk": hostHook,
       ...stylex.props(
         styles.root,
         layoutStyles.direction,

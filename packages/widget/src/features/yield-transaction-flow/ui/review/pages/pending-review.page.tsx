@@ -1,9 +1,6 @@
 import { useTrackPage } from "../../../../tracking/index";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
-import {
-  getPositionActionReviewProps,
-  ReviewPage,
-} from "./common-page/common.page.tsx";
+import { getPositionActionReviewProps, ReviewPage } from "./common.page.tsx";
 
 export const PendingReviewPage = () => {
   const review = usePendingActionReview();

@@ -1,13 +1,17 @@
 import { useAtomSet } from "@effect/atom-react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../../../../shared/ui/primitives/button";
+import { Button } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import { useSKWallet } from "../../react/use-wallet";
 import { setWalletConnectModalOpenAtom } from "../../state/wallet-modal";
 import { addLedgerAccountAtom } from "../../state/workflows";
 
-export const ConnectButton = (props: ComponentProps<typeof Button>) => {
+/** The primary call to action that connects a wallet or adds a Ledger account. */
+export const ConnectButton = ({
+  size = "cta",
+  ...props
+}: Omit<ComponentProps<typeof Button>, "onClick" | "children" | "variant">) => {
   const { t } = useTranslation();
 
   const wallet = useSKWallet();
@@ -30,7 +34,7 @@ export const ConnectButton = (props: ComponentProps<typeof Button>) => {
   };
 
   return (
-    <Button onClick={onClick} {...props}>
+    <Button {...props} variant="primary" size={size} onClick={onClick}>
       {t(
         isLedgerLiveAccountPlaceholder
           ? "init.ledger_add_account"

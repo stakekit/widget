@@ -2,8 +2,9 @@ import type { CompleteTheme } from "../../public-api/theme";
 
 /**
  * The legacy light and dark themes as they shipped before `appearance`,
- * frozen so the legacy mapping keeps recognizing an unchanged `lightTheme` or
- * `darkTheme` after the legacy styles are removed. Never edit these values.
+ * frozen: the deprecated public `lightTheme` and `darkTheme` exports are
+ * these values, and the legacy mapping recognizes them unchanged. Never edit
+ * these values.
  */
 const commonLegacyDefaults = {
   fontSize: {

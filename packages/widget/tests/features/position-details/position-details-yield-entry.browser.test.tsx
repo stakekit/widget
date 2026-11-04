@@ -23,12 +23,12 @@ import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
-import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/stake-entry";
+import { PositionDetailsEnterKey } from "../../../src/features/position-details/state/enter-entry";
 import {
-  positionDetailsStakeViewAtom,
-  setPositionDetailsStakeAmountAtom,
-  submitPositionDetailsStakeAtom,
-} from "../../../src/features/position-details/state/stake-view";
+  positionDetailsEnterViewAtom,
+  setPositionDetailsEnterAmountAtom,
+  submitPositionDetailsEnterAtom,
+} from "../../../src/features/position-details/state/enter-view";
 import {
   walletConnectionStateAtom,
   walletScopeAtom,
@@ -63,7 +63,7 @@ const walletScope = new WalletScopeKey({
   network: "ethereum",
 });
 const selectedYield = yieldApiYieldFixture();
-const entryKey = new PositionDetailsStakeEntryKey({
+const entryKey = new PositionDetailsEnterKey({
   balanceId: "default",
   integrationId: selectedYield.id,
   walletScope,
@@ -120,9 +120,9 @@ const NavigationBridge = () => {
 };
 
 const PositionEntry = () => {
-  const view = useAtomValue(positionDetailsStakeViewAtom(entryKey));
-  const setAmount = useAtomSet(setPositionDetailsStakeAmountAtom(entryKey));
-  const submit = useAtomSet(submitPositionDetailsStakeAtom(entryKey));
+  const view = useAtomValue(positionDetailsEnterViewAtom(entryKey));
+  const setAmount = useAtomSet(setPositionDetailsEnterAmountAtom(entryKey));
+  const submit = useAtomSet(submitPositionDetailsEnterAtom(entryKey));
 
   return (
     <>

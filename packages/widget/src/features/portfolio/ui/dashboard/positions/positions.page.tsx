@@ -1,27 +1,30 @@
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Box, Stack, Text, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { FallbackContent } from "../../../../widget-shell/views";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { usePositions } from "../../../react/use-positions";
+import type { PositionsListRow } from "../../../state/read-models/positions";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
 import { useGroupedPositions } from "./hooks/use-grouped-positions";
 import { getUnifiedManagePositionsState } from "./model";
-import { container, positionsTitle } from "./styles.css";
+
+const positionsListRowKey = (row: PositionsListRow) => {
+  if (row.kind === "chain-modal") return "chain-modal";
+  if (row.kind === "section") return `section:${row.category}`;
+  return row.item.kind === "borrow"
+    ? `borrow:${row.item.position.id}`
+    : `earn:${row.item.position.integrationId}:${row.item.position.balanceId}`;
+};
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
   const { positionsView } = usePositions();
-  const variant = useWidgetConfig("variant");
   const borrowPositions = usePortfolioBorrowPositions();
   const wallet = useSKWallet();
   const isConnected = wallet?.status === "connected";
@@ -51,19 +54,11 @@ export const PositionsPage = () => {
     }
     if (manageState.showConnectWallet) {
       return (
-        <Box
-          display="flex"
-          flex={1}
-          justifyContent="center"
-          alignItems="center"
-        >
-          <Text
-            variant={{ weight: "medium", size: "large" }}
-            textAlign="center"
-          >
+        <Stack grow align="center" justify="center">
+          <Text variant="heading" as="p" align="center">
             {t("dashboard.details.positions_connect_wallet")}
           </Text>
-        </Box>
+        </Stack>
       );
     }
     if (manageState.hasOnlyErrors) {
@@ -74,25 +69,20 @@ export const PositionsPage = () => {
   };
 
   return (
-    <Box className={container} display="flex" flex={1} flexDirection="column">
+    <Stack grow>
       {renderContent()}
 
       {manageState.showPositionsList && (
         <>
           <RevealBalancesHeader
             leading={
-              <Text
-                className={combineRecipeWithVariant({
-                  rec: positionsTitle,
-                  variant,
-                })}
-              >
+              <Text variant="heading" as="h2">
                 {t("dashboard.details.my_positions")}
               </Text>
             }
             trailing={
               manageState.totalPositionsCount ? (
-                <Text variant={{ type: "muted", weight: "normal" }}>
+                <Text tone="muted">
                   {t("dashboard.details.positions_active", {
                     count: manageState.totalPositionsCount,
                   })}
@@ -101,19 +91,20 @@ export const PositionsPage = () => {
             }
           />
 
-          <Box flex={1} display="flex" flexDirection="column">
+          <Stack grow gap={8}>
             {manageState.hasPartialError && (
-              <Box marginBottom="2">
-                <Text variant={{ type: "danger", weight: "normal" }}>
-                  {t("dashboard.details.positions_partial_error")}
-                </Text>
-              </Box>
+              <Text tone="danger">
+                {t("dashboard.details.positions_partial_error")}
+              </Text>
             )}
 
             <VirtualList
-              estimateSize={() => 60}
-              data={listData}
-              itemContent={(_, row) => {
+              label={t("dashboard.details.my_positions")}
+              items={listData}
+              getKey={positionsListRowKey}
+              estimateSize={68}
+              maxHeight="lg"
+              renderItem={(row) => {
                 if (row.kind === "chain-modal") return <ZerionChainModal />;
                 if (row.kind === "section") {
                   return (
@@ -128,13 +119,13 @@ export const PositionsPage = () => {
             />
 
             {manageState.showEmptyPositions && (
-              <Box my="4">
+              <Box paddingBlock={16}>
                 <FallbackContent type="no_current_positions" />
               </Box>
             )}
-          </Box>
+          </Stack>
         </>
       )}
-    </Box>
+    </Stack>
   );
 };

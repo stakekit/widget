@@ -1,15 +1,18 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Title } from "@radix-ui/react-dialog";
-import clsx from "clsx";
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
-import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import {
+  Badge,
+  Divider,
+  Icon,
+  ListGroup,
+  ListRow,
+  Modal,
+  Notice,
+  TokenTrigger,
+} from "../../../../ui/index";
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
@@ -25,34 +28,10 @@ import {
   walletChainModalOpenAtom,
 } from "../../state/wallet-modal";
 import { logoutAtom } from "../../state/workflows";
-import { WalletDialog, WalletDialogClose } from "../wallet-dialog";
-import { WalletChainIcon } from "../wallet-dialog/chain-icon";
-import { DisconnectSquareIcon } from "../wallet-dialog/icons";
 import {
-  heading,
-  menuButton,
-  walletSummaryTitle,
-  walletSummaryTrigger,
-} from "../wallet-dialog/styles.css";
-import {
-  chainBody,
-  chainIcon,
-  chainLabel,
-  chainList,
-  chainRow,
-  connectedDot,
-  dialogHeading,
-  disabledRow,
-  disconnectRow,
-  errorDot,
-  header,
-  headerSpacer,
-  mobileSeparator,
-  pendingDot,
-  separator,
-  status,
-  wrongNetwork,
-} from "./styles.css";
+  useWalletChainIconUrl,
+  WalletChainIcon,
+} from "../wallet-dialog/chain-icon";
 
 type ChainDialogProps = {
   readonly chains: ReadonlyArray<Chain>;
@@ -76,83 +55,94 @@ const ChainDialog = ({
   onOpenChange,
   onSelect,
   open,
-  suspended,
+  suspended = false,
 }: ChainDialogProps) => {
   const { t } = useTranslation();
   const selection = useAtomValue(walletChainSelectionAtom);
 
   return (
-    <WalletDialog
+    <Modal
       open={open}
       onOpenChange={onOpenChange}
       suspended={suspended}
       testId="wallet-chain-dialog"
+      title={t("wallet_modal.network")}
+      closeLabel={t("wallet_modal.close")}
     >
-      <div className={chainBody}>
-        <div className={header}>
-          <span className={headerSpacer} />
-          <Title className={clsx(heading, dialogHeading)}>
-            {t("wallet_modal.network")}
-          </Title>
-          <WalletDialogClose onClose={() => onOpenChange(false)} />
-        </div>
-        {notice}
-        <div className={chainList}>
-          {chains.map((chain, index) => {
-            const disabled = disabledChainIds.has(chain.id);
-            const selected = currentChainId === chain.id;
-            const pending = selection?.pendingChainId === chain.id;
-            const failed = selection?.failedChainId === chain.id;
+      {notice}
+      <ListGroup>
+        {chains.map((chain) => {
+          const selected = currentChainId === chain.id;
 
-            return (
-              <Fragment key={chain.id}>
-                <button
-                  type="button"
-                  className={menuButton}
-                  data-testid={`wallet-chain-${chain.id}`}
-                  aria-current={selected || undefined}
-                  onClick={() => {
-                    if (!selected) onSelect(chain);
-                  }}
-                >
-                  <span className={clsx(chainRow, disabled && disabledRow)}>
-                    <span className={chainLabel}>
-                      <WalletChainIcon chain={chain} className={chainIcon} />
-                      <span>{chain.name}</span>
-                    </span>
-                    {selected && (
-                      <span className={status}>
-                        {t("wallet_modal.connected")}
-                        <span className={connectedDot} />
-                      </span>
-                    )}
-                    {!selected && (pending || failed) && (
-                      <span className={status} role="status">
-                        {t(
-                          failed
-                            ? "wallet_modal.confirm_error"
-                            : "wallet_modal.confirm"
-                        )}
-                        <span className={failed ? errorDot : pendingDot} />
-                      </span>
-                    )}
-                    {!selected && !pending && !failed && disabled && (
-                      <span className={status}>
-                        {t("chain_modal.disabled_chain_info")}
-                      </span>
-                    )}
-                  </span>
-                </button>
-                {index < chains.length - 1 && (
-                  <div className={mobileSeparator} />
-                )}
-              </Fragment>
-            );
-          })}
-          {footer}
-        </div>
-      </div>
-    </WalletDialog>
+          return (
+            <ChainRow
+              key={chain.id}
+              chain={chain}
+              selected={selected}
+              pending={!selected && selection?.pendingChainId === chain.id}
+              failed={!selected && selection?.failedChainId === chain.id}
+              disabled={disabledChainIds.has(chain.id)}
+              onSelect={() => {
+                if (!selected) onSelect(chain);
+              }}
+            />
+          );
+        })}
+      </ListGroup>
+      {footer}
+    </Modal>
+  );
+};
+
+const ChainRow = ({
+  chain,
+  selected,
+  pending,
+  failed,
+  disabled,
+  onSelect,
+}: {
+  readonly chain: Chain;
+  readonly selected: boolean;
+  readonly pending: boolean;
+  readonly failed: boolean;
+  readonly disabled: boolean;
+  readonly onSelect: () => void;
+}) => {
+  const { t } = useTranslation();
+  const status = (() => {
+    if (selected) {
+      return <Badge tone="success">{t("wallet_modal.connected")}</Badge>;
+    }
+    if (failed) {
+      return (
+        <Badge tone="danger" role="status">
+          {t("wallet_modal.confirm_error")}
+        </Badge>
+      );
+    }
+    if (pending) {
+      return (
+        <Badge tone="warning" role="status">
+          {t("wallet_modal.confirm")}
+        </Badge>
+      );
+    }
+    return undefined;
+  })();
+
+  return (
+    <ListRow
+      testId={`wallet-chain-${chain.id}`}
+      leading={<WalletChainIcon chain={chain} />}
+      title={chain.name}
+      {...(status === undefined ? {} : { badges: status })}
+      {...(disabled && !selected && !pending && !failed
+        ? { subtitle: t("chain_modal.disabled_chain_info") }
+        : {})}
+      selected={selected}
+      onClick={onSelect}
+    />
   );
 };
 
@@ -202,13 +192,16 @@ export const ChainModal = () => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const wallet = useSKWallet();
-  const variant = useWidgetConfig("variant");
   const disabledChains = useLedgerDisabledChain();
   const logout = useAtomSet(logoutAtom);
   const chainOpen = useAtomValue(walletChainModalOpenAtom);
   const setChainOpen = useAtomSet(setWalletChainModalOpenAtom);
   const selectChain = useAtomSet(selectWalletChainAtom);
+  const currentChain = wallet?.network
+    ? wallet.connectorChains.find((chain) => chain.id === wallet.chain.id)
+    : undefined;
   const leaveConfirmation = useLeaveConfirmation();
+  const currentChainIconUrl = useWalletChainIconUrl(currentChain);
 
   // A connecting wallet keeps its scope owner while a network switch settles.
   if (!wallet?.network) return null;
@@ -220,40 +213,22 @@ export const ChainModal = () => {
     ),
     ...disabledChains,
   ];
-  const currentChain = wallet.connectorChains.find(
-    (chain) => chain.id === wallet.chain.id
-  );
 
   return (
     <>
-      <Box
-        data-rk="chain-modal-container"
-        as="button"
-        type="button"
-        borderRadius="2xl"
-        background="backgroundMuted"
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        className={combineRecipeWithVariant({
-          variant,
-          rec: walletSummaryTrigger,
-        })}
-        paddingLeft="2"
-        py="2"
+      <TokenTrigger
+        hostHook="chain-modal-container"
+        token={{
+          name: wallet.chain.name,
+          ...(currentChainIconUrl === undefined
+            ? {}
+            : { src: currentChainIconUrl }),
+        }}
         onClick={() => {
           trackEvent("chainModalOpened");
           setChainOpen(true);
         }}
-      >
-        {currentChain && <WalletChainIcon chain={currentChain} size={24} />}
-        <Box marginLeft="2">
-          <Text className={walletSummaryTitle}>{wallet.chain.name}</Text>
-        </Box>
-        <Box mx="2">
-          <CaretDownIcon />
-        </Box>
-      </Box>
+      />
 
       <ChainDialog
         chains={chains}
@@ -263,28 +238,23 @@ export const ChainModal = () => {
           !currentChain &&
           shouldShowDisconnect(wallet.connector) && (
             <>
-              <div className={separator} />
-              <button
-                type="button"
-                className={clsx(menuButton, disconnectRow)}
+              <Divider />
+              <ListRow
+                leading={<Icon name="DisconnectSquareIcon" size="lg" />}
+                title={t("wallet_modal.disconnect")}
                 onClick={() =>
                   leaveConfirmation.confirm(() => {
                     setChainOpen(false);
                     logout();
                   })
                 }
-              >
-                <span className={chainLabel}>
-                  <DisconnectSquareIcon />
-                  {t("wallet_modal.disconnect")}
-                </span>
-              </button>
+              />
             </>
           )
         }
         notice={
           !currentChain && (
-            <p className={wrongNetwork}>{t("wallet_modal.wrong_network")}</p>
+            <Notice tone="warning">{t("wallet_modal.wrong_network")}</Notice>
           )
         }
         onOpenChange={setChainOpen}

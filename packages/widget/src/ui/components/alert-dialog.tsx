@@ -1,6 +1,6 @@
 import { AlertDialog as BaseAlertDialog } from "@base-ui/react/alert-dialog";
 import * as stylex from "@stylexjs/stylex";
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, useRef } from "react";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
@@ -31,8 +31,12 @@ type AlertDialogProps = {
   readonly cancelLabel: string;
   /** Runs before the dialog closes. */
   readonly onConfirm: () => void;
+  /** Runs when the dialog closes without confirming: Escape or cancel. */
+  readonly onCancel?: () => void;
   /** `danger` for a confirm that loses something, such as leaving a flow. */
   readonly tone?: "primary" | "danger";
+  /** Rendered as the popup's `data-testid`. */
+  readonly testId?: string;
 };
 
 /**
@@ -49,19 +53,32 @@ export const AlertDialog = ({
   confirmLabel,
   cancelLabel,
   onConfirm,
+  onCancel,
   tone = "primary",
+  testId,
 }: AlertDialogProps) => {
   const container = usePortalContainer();
+  // Confirm closes the dialog itself, so only other closes count as cancelling.
+  const confirming = useRef(false);
+  const actions = useRef<BaseAlertDialog.Root.Actions>(null);
 
   return (
     <BaseAlertDialog.Root
       open={open}
-      onOpenChange={(next) => onOpenChange?.(next)}
+      actionsRef={actions}
+      onOpenChange={(next) => {
+        if (!next && !confirming.current) onCancel?.();
+        confirming.current = false;
+        onOpenChange?.(next);
+      }}
     >
       {trigger && <BaseAlertDialog.Trigger render={trigger} />}
       <BaseAlertDialog.Portal container={container}>
         <BaseAlertDialog.Backdrop {...stylex.props(dialogStyles.backdrop)} />
-        <BaseAlertDialog.Popup {...stylex.props(styles.popup)}>
+        <BaseAlertDialog.Popup
+          {...stylex.props(styles.popup)}
+          {...(testId === undefined ? {} : { "data-testid": testId })}
+        >
           <BaseAlertDialog.Title render={<Text variant="title" as="h2" />}>
             {title}
           </BaseAlertDialog.Title>
@@ -72,11 +89,16 @@ export const AlertDialog = ({
             <BaseAlertDialog.Close render={<Button variant="secondary" />}>
               {cancelLabel}
             </BaseAlertDialog.Close>
-            <BaseAlertDialog.Close
-              render={<Button variant={tone} onClick={onConfirm} />}
+            <Button
+              variant={tone}
+              onClick={() => {
+                confirming.current = true;
+                onConfirm();
+                actions.current?.close();
+              }}
             >
               {confirmLabel}
-            </BaseAlertDialog.Close>
+            </Button>
           </div>
         </BaseAlertDialog.Popup>
       </BaseAlertDialog.Portal>

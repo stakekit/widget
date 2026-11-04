@@ -19,7 +19,7 @@ import {
 } from "../../../domain/earn/yield";
 import type { Token } from "../../../domain/token/token";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
-import { SKAnchor } from "../../../shared/ui/primitives/anchor";
+import { ExternalLink } from "../../../ui/index";
 import {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
@@ -79,9 +79,12 @@ export const useYieldMetaInfo = ({
           i18nKey="details.campaign_susd_position_locked"
           components={{
             link0: (
-              <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+              <ExternalLink
+                href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/"
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("shared.learn_more")}
-              </SKAnchor>
+              </ExternalLink>
             ),
           }}
         />
@@ -91,9 +94,12 @@ export const useYieldMetaInfo = ({
           i18nKey="details.campaign_susd"
           components={{
             link0: (
-              <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+              <ExternalLink
+                href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/"
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("shared.learn_more")}
-              </SKAnchor>
+              </ExternalLink>
             ),
           }}
         />
@@ -114,9 +120,12 @@ export const useYieldMetaInfo = ({
           i18nKey="details.confidential_campaign"
           components={{
             link0: (
-              <SKAnchor href={confidentialCampaignUrl}>
+              <ExternalLink
+                href={confidentialCampaignUrl}
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("shared.learn_more")}
-              </SKAnchor>
+              </ExternalLink>
             ),
           }}
         />
@@ -127,9 +136,12 @@ export const useYieldMetaInfo = ({
         i18nKey="details.campaign"
         components={{
           link0: (
-            <SKAnchor href="https://420.synthetix.io/?collateral=SNX">
+            <ExternalLink
+              href="https://420.synthetix.io/?collateral=SNX"
+              newTabLabel={t("shared.opens_in_new_tab")}
+            >
               {t("shared.learn_more")}
-            </SKAnchor>
+            </ExternalLink>
           ),
         }}
       />

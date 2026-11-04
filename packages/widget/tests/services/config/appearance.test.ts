@@ -3,9 +3,9 @@ import { Effect, Layer, Logger, References, Result } from "effect";
 import type { SKAppearance } from "../../../src/public-api/appearance";
 import type { SKHostConfiguration } from "../../../src/public-api/react-types";
 import type { SKTheme } from "../../../src/public-api/theme";
+import { legacyThemeDefaults } from "../../../src/services/config/legacy-theme-defaults";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { decodeHostConfiguration } from "../../../src/services/config/widget-config-boundary";
-import { darkTheme, lightTheme } from "../../../src/shared/styles/theme/themes";
 
 const decode = (settings: Partial<SKHostConfiguration>) => {
   const result = decodeHostConfiguration({
@@ -16,6 +16,9 @@ const decode = (settings: Partial<SKHostConfiguration>) => {
   if (Result.isFailure(result)) throw result.failure;
   return result.success;
 };
+
+/** The deprecated public `lightTheme` and `darkTheme` exports' values. */
+const { dark: darkTheme, light: lightTheme } = legacyThemeDefaults;
 
 const staleHostAppearance = (input: unknown) => input as SKAppearance;
 
@@ -257,12 +260,12 @@ describe("legacy theme mapping", () => {
     expect(decoded.droppedLegacyThemeKeys).toEqual([]);
   });
 
-  it("keeps the legacy theme for the legacy variables", () => {
+  it("feeds the legacy theme only into the Appearance", () => {
     const theme = {
       color: { ...darkTheme.color, primaryButtonBackground: "#FF5500" },
     };
 
-    expect(decode({ theme }).configuration.theme).toEqual(theme);
+    expect(decode({ theme }).configuration).not.toHaveProperty("theme");
   });
 
   it("infers dark from a customized darkTheme and maps into its colors", () => {

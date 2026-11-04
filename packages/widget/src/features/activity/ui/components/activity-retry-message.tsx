@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { ErrorState } from "../../../../ui/index";
 
 export const ActivityRetryMessage = ({
   onRetry,
@@ -10,11 +9,9 @@ export const ActivityRetryMessage = ({
 }): ReactElement => {
   const { t } = useTranslation();
   return (
-    <>
-      <Text variant={{ type: "danger" }} textAlign="center">
-        {t("shared.something_went_wrong")}
-      </Text>
-      <Button onClick={onRetry}>{t("shared.retry")}</Button>
-    </>
+    <ErrorState
+      title={t("shared.something_went_wrong")}
+      action={{ label: t("shared.retry"), onClick: onRetry }}
+    />
   );
 };

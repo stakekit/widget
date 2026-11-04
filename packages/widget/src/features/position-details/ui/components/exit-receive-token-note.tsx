@@ -3,9 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { Token } from "../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { InfoIcon } from "../../../../shared/ui/primitives/icons/info";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Icon, Stack, Text } from "../../../../ui/index";
 import {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
@@ -40,17 +38,14 @@ export const ExitReceiveTokenNote = ({
           })
         : null;
     return (
-      <Box
-        data-testid="position-details-exit-receive-token-note"
-        display="flex"
-        alignItems="center"
-        justifyContent="flex-start"
-        gap="1"
+      <Stack
+        testId="position-details-exit-receive-token-note"
+        direction="row"
+        align="center"
+        gap={4}
       >
-        <Box display="flex" alignItems="center" justifyContent="center">
-          <InfoIcon />
-        </Box>
-        <Text variant={{ type: "muted", size: "small" }}>
+        <Icon name="InfoIcon" size="sm" tone="muted" />
+        <Text variant="caption" tone="muted">
           {t(
             `position_details.receive_token.confidential_${selection.confidentialExit}`,
             {
@@ -59,7 +54,7 @@ export const ExitReceiveTokenNote = ({
             }
           )}
         </Text>
-      </Box>
+      </Stack>
     );
   }
 
@@ -79,17 +74,16 @@ export const ExitReceiveTokenNote = ({
       });
 
   return (
-    <Box
-      data-testid="position-details-exit-receive-token-note"
-      display="flex"
-      alignItems="center"
-      justifyContent="flex-start"
-      gap="1"
+    <Stack
+      testId="position-details-exit-receive-token-note"
+      direction="row"
+      align="center"
+      gap={4}
     >
-      <Box display="flex" alignItems="center" justifyContent="center">
-        <InfoIcon />
-      </Box>
-      <Text variant={{ type: "muted", size: "small" }}>{message}</Text>
-    </Box>
+      <Icon name="InfoIcon" size="sm" tone="muted" />
+      <Text variant="caption" tone="muted">
+        {message}
+      </Text>
+    </Stack>
   );
 };

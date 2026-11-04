@@ -3,7 +3,9 @@ import { useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { Text } from "../primitives/text";
 import { Button } from "./button";
+import { EmbeddedPage } from "./embedded-page";
 import { Modal } from "./modal";
+import { Spinner } from "./spinner";
 
 const meta = {
   title: "Components/Modal",
@@ -149,5 +151,106 @@ export const InsideThemeRoot: Story = {
     const popup = await dialog();
     await expect(popup.closest("[data-sk-root]")).not.toBeNull();
     await expect(popup.closest("[data-sk-portal]")).not.toBeNull();
+  },
+};
+
+/**
+ * `page` is as wide as the split container size and fills the dialog's
+ * height; its body holds an embedded page edge to edge.
+ */
+export const Page: Story = {
+  args: {
+    size: "page",
+    title: "Verify identity",
+    description: undefined,
+    closeTestId: "modal-close",
+    children: (
+      <EmbeddedPage src="about:blank" title="Verification" testId="frame" />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Learn more" })
+    );
+    const popup = await screen.findByRole("dialog", {
+      name: "Verify identity",
+    });
+    await waitFor(() => expect(popup).toBeVisible());
+    const frame = within(popup).getByTitle("Verification");
+    await expect(frame.getBoundingClientRect().height).toBeGreaterThan(200);
+    await userEvent.click(within(popup).getByTestId("modal-close"));
+    await waitFor(() => expect(popup).not.toBeInTheDocument());
+  },
+};
+
+/**
+ * A back button before the title steps back; a status sits right after the
+ * title, such as a spinner while work is pending.
+ */
+export const BackAndTitleStatus: Story = {
+  args: {
+    open: true,
+    back: { label: "Back", onBack: fn(), testId: "modal-back" },
+    titleStatus: <Spinner size="sm" label="Connecting" />,
+  },
+  render: ({ trigger: _trigger, ...args }) => <Modal {...args} />,
+  play: async ({ args }) => {
+    const popup = await dialog();
+    await waitFor(() => expect(popup).toBeVisible());
+    await expect(within(popup).getByRole("status")).toHaveAccessibleName(
+      "Connecting"
+    );
+    await userEvent.click(within(popup).getByTestId("modal-back"));
+    await expect(args.back?.onBack).toHaveBeenCalledOnce();
+  },
+};
+
+const SuspendedModal = () => {
+  const [open, setOpen] = useState(false);
+  const [suspended, setSuspended] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Open</Button>
+      <Button onClick={() => setSuspended(false)}>Resume</Button>
+      <Modal
+        open={open}
+        suspended={suspended}
+        onOpenChange={setOpen}
+        title="Connect a wallet"
+        closeLabel="Close"
+      >
+        <Button onClick={() => setSuspended(true)}>Show over it</Button>
+      </Modal>
+    </>
+  );
+};
+
+/**
+ * `suspended` hides the open modal without moving focus to its opener; once
+ * shown again and closed, focus returns to the original opener.
+ */
+export const Suspended: Story = {
+  render: () => <SuspendedModal />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const opener = canvas.getByRole("button", { name: "Open" });
+    await userEvent.click(opener);
+    const popup = await screen.findByRole("dialog", {
+      name: "Connect a wallet",
+    });
+    await userEvent.click(
+      within(popup).getByRole("button", { name: "Show over it" })
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await expect(opener).not.toHaveFocus();
+
+    // The modal makes the page inert while open; the resume control is outside.
+    canvas
+      .getByRole("button", { name: "Resume" })
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await screen.findByRole("dialog", { name: "Connect a wallet" });
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(opener).toHaveFocus());
   },
 };

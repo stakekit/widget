@@ -7,6 +7,7 @@ import { Text } from "../primitives/text";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import type { Tone } from "../tone";
+import { Spinner } from "./spinner";
 import { toneSoftStyles, toneTextStyles } from "./tone-styles";
 
 const toneIcons = {
@@ -20,13 +21,16 @@ const toneIcons = {
 
 /**
  * A message on its tone's tint, with the tone's icon, an optional title and
- * an optional action below the body.
+ * an optional action below the body. While `busy`, a spinner replaces the
+ * icon and the notice reads as busy.
  */
 export const Notice = ({
   tone = "info",
   title,
   children,
   action,
+  busy = false,
+  testId,
 }: {
   readonly tone?: Tone;
   readonly title?: string;
@@ -34,10 +38,18 @@ export const Notice = ({
   readonly children: ReactNode;
   /** A button or link that resolves the notice. */
   readonly action?: ReactNode;
+  /** The work the notice describes is in progress, such as a status check. */
+  readonly busy?: boolean;
+  /** Rendered as `data-testid`. */
+  readonly testId?: string;
 }) => (
-  <div {...stylex.props(styles.root, toneSoftStyles[tone])}>
+  <div
+    data-testid={testId}
+    aria-busy={busy || undefined}
+    {...stylex.props(styles.root, toneSoftStyles[tone])}
+  >
     <span {...stylex.props(styles.icon, toneTextStyles[tone])}>
-      <Icon name={toneIcons[tone]} size="md" />
+      {busy ? <Spinner size="md" /> : <Icon name={toneIcons[tone]} size="md" />}
     </span>
     <Stack gap={8} grow>
       <Stack gap={2}>

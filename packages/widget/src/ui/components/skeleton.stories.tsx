@@ -15,6 +15,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Line: Story = { args: { shape: "line", role: "body" } };
 export const Rect: Story = { args: { shape: "rect", height: "md" } };
+/** `panel` stands in for an amount panel; `section` for a taller section. */
+export const RectPanel: Story = { args: { shape: "rect", height: "panel" } };
+export const RectSection: Story = {
+  args: { shape: "rect", height: "section" },
+};
 
 /** `fill` takes its parent's height, such as a loading chart's. */
 export const RectFill: Story = {

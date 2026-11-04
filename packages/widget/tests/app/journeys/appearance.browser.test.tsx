@@ -1,6 +1,6 @@
 import { afterEach } from "vitest";
 import { cdp } from "vitest/browser";
-import { darkTheme, lightTheme } from "../../../src/shared/styles/theme/themes";
+import { darkTheme, lightTheme } from "../../../src/index.package";
 import { describe, expect, it } from "../../utils/test-extend";
 import {
   type RenderResult,
@@ -35,12 +35,6 @@ const colors = (element: Element) => {
   return { background: style.backgroundColor, focusRing: style.outlineColor };
 };
 
-/** A legacy `--sk-*` variable, which screens not yet migrated read. */
-const legacyVariable = (name: string) =>
-  getComputedStyle(
-    document.querySelector('[data-rk="stakekit"]') as Element
-  ).getPropertyValue(name);
-
 describe("Host appearance", () => {
   afterEach(async () => {
     await emulateColorScheme("");
@@ -67,8 +61,6 @@ describe("Host appearance", () => {
       background: darkAccent,
       focusRing: darkFocusRing,
     });
-    // Screens not yet migrated keep the legacy dark look.
-    expect(legacyVariable("--sk-color-primary")).toBe("#171717");
 
     await app.unmount();
   });
@@ -86,9 +78,6 @@ describe("Host appearance", () => {
 
     expect(colors(await earnCallToAction(app)).background).toBe(
       "rgb(255, 85, 0)"
-    );
-    expect(legacyVariable("--sk-color-primary-button-background")).toBe(
-      "#FF5500"
     );
 
     await app.unmount();

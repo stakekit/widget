@@ -13,20 +13,16 @@ import { createWidgetI18nInstance } from "../../../src/services/translation/widg
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
-} from "../../../src/shared/ui/widget-presentation";
+} from "../../../src/shared/react/widget-presentation";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils";
 
 const frenchPresentation: WidgetPresentation = {
-  disableInputAutoResize: false,
   hideNetworkLogo: false,
   hostTokenIconMapping: false,
-  layout: "compact",
   locale: "fr",
   mapNetworkIconUrl: () => undefined,
   mapTokenIconUrl: () => undefined,
-  portalContainer: undefined,
-  variant: "default",
 };
 
 const i18nInstance = createWidgetI18nInstance();

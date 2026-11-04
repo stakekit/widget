@@ -35,12 +35,16 @@ export const Grid = ({
   align = "stretch",
   grow = false,
   children,
+  testId,
+  hostHook,
   ...rest
 }: GridProps) =>
   createElement(
     as,
     {
       ...rest,
+      "data-testid": testId,
+      "data-rk": hostHook,
       ...stylex.props(
         styles.root,
         layoutStyles.columns,

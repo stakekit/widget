@@ -21,6 +21,16 @@ export const PositiveRate: Story = {
   args: { label: "Reward rate", value: "4.21%", valueTone: "success" },
 };
 
+/** A risk figure near or past its limit. */
+export const RiskTones: Story = {
+  render: () => (
+    <MetricGroup>
+      <Metric label="Health factor" value="1.32" valueTone="warning" />
+      <Metric label="Health factor" value="0.94" valueTone="danger" />
+    </MetricGroup>
+  ),
+};
+
 export const WithExpandableAmount: Story = {
   args: { value: <ExpandableAmount short="1.23K ETH" full="1,234.56 ETH" /> },
 };

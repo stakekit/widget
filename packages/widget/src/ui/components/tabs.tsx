@@ -1,6 +1,6 @@
 import { Tabs as BaseTabs } from "@base-ui/react/tabs";
 import * as stylex from "@stylexjs/stylex";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
@@ -15,12 +15,20 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 import { focusRingStyles } from "./focus-ring";
+import { toneSoftStyles } from "./tone-styles";
 
 /** One tab: what it stores and what it shows. */
 export type TabOption<T extends string = string> = {
   readonly value: T;
   readonly label: string;
   readonly disabled?: boolean;
+  /**
+   * A number beside the label that needs attention, such as pending
+   * actions; part of the tab's name. Unset or zero, none shows.
+   */
+  readonly count?: number;
+  /** Draws a divider before the tab, so it starts a new group. */
+  readonly separated?: boolean;
 };
 
 type TabsProps<T extends string> = {
@@ -57,14 +65,26 @@ export const Tabs = <const T extends string>({
       {/* First, so the tabs paint over the pill. */}
       <BaseTabs.Indicator {...stylex.props(styles.indicator)} />
       {tabs.map((tab) => (
-        <BaseTabs.Tab
-          key={tab.value}
-          value={tab.value}
-          disabled={tab.disabled}
-          {...stylex.props(styles.tab, focusRingStyles.visible)}
-        >
-          {tab.label}
-        </BaseTabs.Tab>
+        <Fragment key={tab.value}>
+          {tab.separated === true && (
+            <span aria-hidden="true" {...stylex.props(styles.separator)} />
+          )}
+          <BaseTabs.Tab
+            value={tab.value}
+            disabled={tab.disabled}
+            {...stylex.props(styles.tab, focusRingStyles.visible)}
+          >
+            {tab.label}
+            {tab.count !== undefined && tab.count > 0 && (
+              <>
+                {" "}
+                <span {...stylex.props(styles.count, toneSoftStyles.danger)}>
+                  {tab.count}
+                </span>
+              </>
+            )}
+          </BaseTabs.Tab>
+        </Fragment>
       ))}
     </BaseTabs.List>
     {children !== undefined && (
@@ -223,4 +243,20 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
   },
   panel: { borderRadius: radius.badge, minWidth: 0 },
+  // A thin rule between two groups of tabs.
+  separator: {
+    alignSelf: "center",
+    backgroundColor: color.border,
+    flexShrink: 0,
+    height: "1em",
+    width: borderWidth.thin,
+  },
+  count: {
+    borderRadius: radius.pill,
+    paddingInline: space[6],
+    display: "inline-block",
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semibold,
+    lineHeight: lineHeight.caption,
+  },
 });

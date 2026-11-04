@@ -17,7 +17,9 @@ describe("Trust incentive APY", () => {
     });
 
     await expect
-      .element(app.getByTestId("estimated-reward__percent").getByText("4.55%"))
+      .element(
+        app.getByTestId("estimated-reward__percent").getByText("4.55%").first()
+      )
       .toBeInTheDocument();
 
     await expect.element(app.getByText("APY composition")).toBeInTheDocument();

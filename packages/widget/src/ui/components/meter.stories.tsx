@@ -43,3 +43,30 @@ export const Tones: Story = {
 };
 
 export const TonesDark: Story = { ...Tones, globals: { colorScheme: "dark" } };
+
+/**
+ * A marker ticks a point on the scale, such as the liquidation threshold, and
+ * reads out with the value; the scale captions the track's ends.
+ */
+export const WithMarker: Story = {
+  args: {
+    tone: "warning",
+    marker: { value: 86, label: "Liquidation at 86%" },
+    scale: { start: "Low risk", end: "Liquidation at 86%" },
+  },
+  play: async ({ canvasElement }) => {
+    const meter = within(canvasElement).getByRole("meter", {
+      name: "Loan to value",
+    });
+    await expect(meter).toHaveAttribute(
+      "aria-valuetext",
+      "62%, Liquidation at 86%"
+    );
+    await expect(within(canvasElement).getByText("Low risk")).toBeVisible();
+  },
+};
+
+export const WithMarkerDark: Story = {
+  ...WithMarker,
+  globals: { colorScheme: "dark" },
+};

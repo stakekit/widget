@@ -2,8 +2,8 @@ import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { formatLtv } from "../../../../../shared/lib/number-format";
-import { DetailRow } from "../../../../../shared/ui/components/details-section";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import { DetailRow } from "../../../../../ui/index";
 
 export const LtvTransitionRow = ({
   currentLtv,
@@ -23,10 +23,6 @@ export const LtvTransitionRow = ({
       : `${formatLtv(currentLtv, locale)} -> ${formatLtv(projectedLtv, locale)}`;
 
   return (
-    <DetailRow
-      id="ltv"
-      label={t("dashboard.borrow.form.ltv_ratio")}
-      value={value}
-    />
+    <DetailRow label={t("dashboard.borrow.form.ltv_ratio")} value={value} />
   );
 };

@@ -6,19 +6,15 @@ import {
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
-} from "../../../src/shared/ui/widget-presentation";
+} from "../../../src/shared/react/widget-presentation";
 import { render } from "../../utils/test-utils.dom.tsx";
 
 const presentation = (locale: string): WidgetPresentation => ({
-  disableInputAutoResize: false,
   hideNetworkLogo: false,
   hostTokenIconMapping: false,
-  layout: "compact",
   locale,
   mapNetworkIconUrl: () => undefined,
   mapTokenIconUrl: () => undefined,
-  portalContainer: undefined,
-  variant: "default",
 });
 
 // French groups digits with U+202F and uses a decimal comma.

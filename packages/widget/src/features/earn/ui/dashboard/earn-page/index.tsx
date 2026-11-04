@@ -1,20 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { amountTokenSectionTitleContainer } from "../../../../../shared/ui/components/amount-token-section/styles.css";
-import { Divider } from "../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Divider, Notice, Stack } from "../../../../../ui/index";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";
 import { ExtraArgsSelection } from "../../components/extra-args-selection";
 import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
-import { SelectTokenTitle } from "../../components/select-token-section/title";
 import { SelectYieldSection } from "../../components/select-yield-section";
-import { container } from "./styles.css";
 
+/** The Dashboard Layout's Earn form, beside its details. */
 export const EarnPageContent = ({
   registerFooterButton = true,
 }: {
@@ -22,21 +17,11 @@ export const EarnPageContent = ({
 }) => {
   const { t } = useTranslation();
   const { earnPresentation } = useWidgetConfig("hostProfile");
-  const variant = useWidgetConfig("variant");
   const { view: status } = useEarnPageStatus();
 
   return (
-    <Box className={container}>
-      <Box>
-        <Box
-          className={combineRecipeWithVariant({
-            rec: amountTokenSectionTitleContainer,
-            variant,
-          })}
-        >
-          <SelectTokenTitle />
-        </Box>
-
+    <Stack gap={16} grow>
+      <Stack gap={12}>
         <SelectTokenSection />
 
         <SelectYieldSection alwaysShowStrategy showRiskSummary={false} />
@@ -44,23 +29,17 @@ export const EarnPageContent = ({
         <EarnKycGate />
 
         <ExtraArgsSelection showDivider={false} />
-      </Box>
+      </Stack>
 
       {earnPresentation.condensed && <Divider />}
 
-      <Box>
-        <Footer />
-      </Box>
+      <Footer />
 
       {status.isError && (
-        <Box alignItems="center" display="flex" flexDirection="column" gap="2">
-          <Text textAlign="center" variant={{ type: "danger" }}>
-            {t("shared.something_went_wrong")}
-          </Text>
-        </Box>
+        <Notice tone="danger">{t("shared.something_went_wrong")}</Notice>
       )}
 
       <EarnPageCta enabled={registerFooterButton} />
-    </Box>
+    </Stack>
   );
 };

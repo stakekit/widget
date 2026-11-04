@@ -1,7 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
-import { motion } from "motion/react";
-import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   PendingActionLabelContext,
@@ -12,16 +10,20 @@ import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
+  type YieldMetadata,
 } from "../../../../../domain/earn/yield";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Token } from "../../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { CheckCircleIcon } from "../../../../../shared/ui/primitives/icons/check-circle";
-import { Image } from "../../../../../shared/ui/primitives/image";
-import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
+import {
+  Avatar,
+  Box,
+  ExternalLink,
+  Stack,
+  Text,
+  TokenAvatar,
+} from "../../../../../ui/index";
 import {
   AnimationPage,
   PageContainer,
@@ -36,7 +38,7 @@ type CompletePageModel = ReturnType<typeof useComplete>;
 type Props = {
   completion: CompletePageModel;
   token: Token | null;
-  metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
+  metadata: Pick<YieldMetadata, "logoURI" | "name" | "provider"> | null;
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;
@@ -76,6 +78,7 @@ export const CompletePageComponent = ({
 }: Props) => {
   const { t } = useTranslation();
   const presentationTime = useAtomValue(presentationClockAtom);
+  const resolveTokenLogo = useTokenLogoResolver();
 
   const {
     cta,
@@ -87,6 +90,9 @@ export const CompletePageComponent = ({
   const translationOptions = isEthenaUsdeStaking(integrationId)
     ? { context: "ethena_usde" }
     : {};
+  const typeContext = isEthenaUsdeStaking(integrationId)
+    ? "ETHENA_USDE"
+    : undefined;
   const getSuccessKey = () => {
     if (batched?.side === "redemption") {
       return "complete.withdrawal_submitted" as const;
@@ -137,130 +143,85 @@ export const CompletePageComponent = ({
   return (
     <AnimationPage>
       <PageContainer>
-        <Box
-          flex={1}
-          display="flex"
-          flexDirection="column"
-          justifyContent="space-between"
-          my="4"
-        >
-          <Box
-            flex={1}
-            display="flex"
-            flexDirection="column"
-            justifyContent="center"
-            alignItems="center"
-            textAlign="center"
-          >
+        <Box paddingBlock={16} grow>
+          <Stack align="center" justify="center" gap={8}>
             {token && metadata ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.1 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  transition: { delay: 0.2, duration: 0.3 },
-                }}
-              >
-                <Box my="4">
-                  <TokenIcon
-                    tokenLogoHw="32"
-                    tokenNetworkLogoHw="8"
-                    token={token}
-                    metadata={metadata}
-                  />
-                </Box>
-              </motion.div>
+              <Box paddingBlock={16}>
+                <TokenAvatar
+                  {...resolveTokenLogo(token, { metadata })}
+                  size="xl"
+                />
+              </Box>
             ) : null}
 
-            <motion.div
-              initial={{ opacity: 0, translateX: "-40px" }}
-              animate={{
-                opacity: 1,
-                translateX: 0,
-                transition: { delay: 0.2, duration: 0.8 },
-              }}
-            >
-              <Heading overflowWrap="anywhere" variant={{ level: "h3" }}>
-                {t(successKey, {
-                  action,
-                  amount,
-                  tokenNetwork: network,
-                  ...pendingAction,
-                })}
-              </Heading>
-            </motion.div>
+            <Text variant="title" as="h1" align="center" breakAnywhere>
+              {t(successKey, {
+                action,
+                amount,
+                tokenNetwork: network,
+                ...pendingAction,
+              })}
+            </Text>
 
             {receiveToken ? (
-              <Text marginTop="2" variant={{ type: "muted" }}>
+              <Text as="p" tone="muted" align="center">
                 {t("complete.receive_token", { symbol: receiveToken.symbol })}
               </Text>
             ) : null}
 
             {nextBatchNote ? (
-              <Text marginTop="2" variant={{ type: "muted" }}>
+              <Text as="p" tone="muted" align="center">
                 {nextBatchNote}
               </Text>
             ) : null}
 
             {!unstakeMatch && !pendingActionMatch
-              ? providersDetails?.map((v, i) => (
-                  <Box
-                    key={i}
-                    display="flex"
-                    marginTop="2"
-                    justifyContent="center"
-                    alignItems="center"
-                    gap="1"
+              ? providersDetails?.map((provider, index) => (
+                  <Stack
+                    key={provider.name ?? provider.logo ?? index}
+                    direction="row"
+                    align="center"
+                    justify="center"
+                    gap={4}
                   >
-                    {v.logo && (
-                      <Image
-                        imgProps={{ borderRadius: "full" }}
-                        wrapperProps={{ hw: "5" }}
-                        src={v.logo}
-                        fallbackName={v.name || v.logo}
+                    {provider.logo && (
+                      <Avatar
+                        src={provider.logo}
+                        fallback={provider.name || provider.logo}
+                        size="xs"
                       />
                     )}
-                    <Text variant={{ type: "muted" }}>
-                      {t("complete.via", { providerName: v.name })}
+                    <Text tone="muted">
+                      {t("complete.via", { providerName: provider.name })}
                     </Text>
-                  </Box>
+                  </Stack>
                 ))
               : null}
 
-            {urls.map((val) => (
-              <Box
-                key={val.url}
-                marginTop="4"
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                as="button"
-                onClick={() => onViewTransactionClick(val.url)}
-              >
-                <Box
-                  marginRight="1"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  <CheckCircleIcon width={22} height={22} />
-                </Box>
-                <Text variant={{ type: "muted" }}>
-                  {t("complete.view_transaction", {
-                    type: capitalize(
-                      toLowerCase(
-                        formatTransactionTypeLabel(val.type, t, {
-                          context: isEthenaUsdeStaking(integrationId)
-                            ? "ETHENA_USDE"
-                            : undefined,
-                        })
-                      )
-                    ),
-                  })}
-                </Text>
-              </Box>
-            ))}
-          </Box>
+            {urls.length > 0 && (
+              <Stack align="center" gap={8}>
+                {urls.map((val) => (
+                  <Text key={val.url} as="p">
+                    <ExternalLink
+                      href={val.url}
+                      newTabLabel={t("shared.opens_in_new_tab")}
+                      onClick={onViewTransactionClick}
+                    >
+                      {t("complete.view_transaction", {
+                        type: capitalize(
+                          toLowerCase(
+                            formatTransactionTypeLabel(val.type, t, {
+                              context: typeContext,
+                            })
+                          )
+                        ),
+                      })}
+                    </ExternalLink>
+                  </Text>
+                ))}
+              </Stack>
+            )}
+          </Stack>
         </Box>
         <PageCtaButton cta={cta} />
       </PageContainer>

@@ -86,7 +86,7 @@ const pollTagName = (testId: string, tagName: string) =>
 const walletGroups = () =>
   Array.from(
     document.querySelectorAll<HTMLElement>(
-      '[data-testid="wallet-connect-dialog"] section[aria-labelledby]'
+      '[data-testid="wallet-connect-dialog"] ul[aria-labelledby]'
     ),
     (group) => ({
       name: document.getElementById(group.getAttribute("aria-labelledby") ?? "")

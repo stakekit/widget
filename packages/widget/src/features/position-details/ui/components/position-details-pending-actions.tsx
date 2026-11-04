@@ -4,7 +4,7 @@ import { getPendingActionLabelContext } from "../../../../domain/action/pending-
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import type { usePositionDetails } from "../../react/use-position-details";
 import { AmountBlock } from "./amount-block";
 import { StaticActionBlock } from "./static-action-block";
@@ -68,7 +68,7 @@ export const PositionDetailsPendingActions = ({
               defaultValue: humanizePendingActionType(val.pendingAction.type),
             })
           : t(labelKey, labelOptions);
-        const unstakeAmountError = flagsInvalidAmount
+        const exitAmountError = flagsInvalidAmount
           ? val.validation !== null
           : undefined;
 
@@ -99,7 +99,7 @@ export const PositionDetailsPendingActions = ({
               val.amountUsd ? formatUsd(val.amountUsd, locale) : ""
             }
             balance={null}
-            unstakeAmountError={unstakeAmountError}
+            exitAmountError={exitAmountError}
           />
         );
       })}

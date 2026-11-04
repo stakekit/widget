@@ -22,6 +22,8 @@ export const Badge = ({
   tone = "neutral",
   variant = "soft",
   icon,
+  testId,
+  role,
   children,
 }: {
   readonly tone?: Tone;
@@ -29,8 +31,14 @@ export const Badge = ({
   /** A decorative icon before the label. */
   readonly icon?: Exclude<IconName, "ArrowIcon">;
   readonly children: string;
+  /** Rendered as `data-testid`. */
+  readonly testId?: string;
+  /** `status` announces the label politely when it changes or appears. */
+  readonly role?: "status";
 }) => (
   <span
+    data-testid={testId}
+    role={role}
     {...stylex.props(
       styles.root,
       variant === "soft"

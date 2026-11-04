@@ -1,6 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactElement, ReactNode, RefObject } from "react";
+import { useRef, useState } from "react";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
@@ -9,6 +10,7 @@ import { layer } from "../tokens/layer.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { overlaySize } from "../tokens/overlay.stylex";
 import { radius } from "../tokens/radius.stylex";
+import { containerWidth } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/typography.stylex";
 import { viewport } from "../tokens/viewport.stylex";
@@ -35,13 +37,42 @@ type ModalProps = {
   readonly footer?: ReactNode;
   /** The element to focus on opening; unset, the first focusable one. */
   readonly initialFocus?: RefObject<HTMLElement | null>;
+  /** Renders as the popup's `data-testid`. */
+  readonly testId?: string;
+  /** Renders as the title's `data-testid`. */
+  readonly titleTestId?: string;
+  /** Renders as the close button's `data-testid`. */
+  readonly closeTestId?: string;
+  /**
+   * `page` is a full-height dialog, as wide as the split container size, whose
+   * body holds a page edge to edge, such as an `EmbeddedPage`.
+   */
+  readonly size?: "default" | "page";
+  /** A back button before the title, such as returning to a previous step. */
+  readonly back?: {
+    /** The back button's accessible name. */
+    readonly label: string;
+    readonly onBack: () => void;
+    /** Renders as the back button's `data-testid`. */
+    readonly testId?: string;
+  };
+  /** Shown right after the title, such as a `Spinner` while work is pending. */
+  readonly titleStatus?: ReactNode;
+  /** Renders as the scrolling body's `data-testid`. */
+  readonly bodyTestId?: string;
+  /**
+   * Hides an open modal, without ending it, while another surface shows over
+   * it. Focus returns to the original opener only when it finally closes.
+   */
+  readonly suspended?: boolean;
 };
 
 const enteringOrLeaving = ":is([data-starting-style], [data-ending-style])";
 
 /**
  * A dialog: a bottom sheet below a 520px viewport and a centered dialog from
- * there up. It traps focus, closes on Escape and returns focus to its opener.
+ * there up. It traps focus, closes on Escape and returns focus to its opener,
+ * also after being `suspended` in between.
  */
 export const Modal = ({
   open,
@@ -53,27 +84,86 @@ export const Modal = ({
   children,
   footer,
   initialFocus,
+  testId,
+  titleTestId,
+  closeTestId,
+  size = "default",
+  back,
+  titleStatus,
+  bodyTestId,
+  suspended = false,
 }: ModalProps) => {
   const container = usePortalContainer();
+  const opener = useRef<HTMLElement | null>(null);
+  const [resuming, setResuming] = useState(false);
+  // A modal shown again after being suspended keeps its original opener.
+  if (open === true && suspended && !resuming) setResuming(true);
+  if (open !== true && resuming) setResuming(false);
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => onOpenChange?.(next)}>
+    <Dialog.Root
+      open={open === undefined ? undefined : open && !suspended}
+      onOpenChange={(next) => onOpenChange?.(next)}
+    >
       {trigger && <Dialog.Trigger render={trigger} />}
       <Dialog.Portal container={container}>
         <Dialog.Backdrop {...stylex.props(dialogStyles.backdrop)} />
         <Dialog.Popup
-          {...(initialFocus === undefined ? {} : { initialFocus })}
-          {...stylex.props(styles.popup)}
+          initialFocus={() => {
+            if (!resuming || !opener.current?.isConnected) {
+              const root = container?.getRootNode() ?? document;
+              const active =
+                root instanceof ShadowRoot || root instanceof Document
+                  ? root.activeElement
+                  : document.activeElement;
+              opener.current =
+                active instanceof HTMLElement && active !== document.body
+                  ? active
+                  : null;
+            }
+            return initialFocus?.current ?? true;
+          }}
+          finalFocus={() => {
+            if (suspended) return false;
+            return opener.current?.isConnected ? opener.current : true;
+          }}
+          data-testid={testId}
+          {...stylex.props(styles.popup, size === "page" && styles.pagePopup)}
         >
           <div {...stylex.props(styles.header)}>
-            <Dialog.Title render={<Text variant="title" as="h2" />}>
-              {title}
-            </Dialog.Title>
+            {back && (
+              <IconButton
+                icon="CaretLeftIcon"
+                label={back.label}
+                onClick={back.onBack}
+                {...(back.testId === undefined ? {} : { testId: back.testId })}
+              />
+            )}
+            <div {...stylex.props(styles.title)}>
+              <Dialog.Title
+                data-testid={titleTestId}
+                render={<Text variant="title" as="h2" />}
+              >
+                {title}
+              </Dialog.Title>
+              {titleStatus}
+            </div>
             <Dialog.Close
-              render={<IconButton icon="XIcon" label={closeLabel} />}
+              render={
+                <IconButton
+                  icon="XIcon"
+                  label={closeLabel}
+                  {...(closeTestId === undefined
+                    ? {}
+                    : { testId: closeTestId })}
+                />
+              }
             />
           </div>
-          <div {...stylex.props(styles.body)}>
+          <div
+            data-testid={bodyTestId}
+            {...stylex.props(styles.body, size === "page" && styles.pageBody)}
+          >
             {description !== undefined && (
               <Dialog.Description render={<Text as="p" tone="muted" />}>
                 {description}
@@ -139,6 +229,24 @@ const styles = stylex.create({
     justifyContent: "space-between",
     paddingTop: space[20],
   },
+  title: {
+    gap: space[8],
+    alignItems: "center",
+    display: "flex",
+    flexGrow: 1,
+    minWidth: 0,
+  },
+  // Fills the dialog's height so an embedded page has room; a sheet below 520px.
+  pagePopup: {
+    height: {
+      default: overlaySize.sheetMaxHeight,
+      [viewport.dialog]: overlaySize.dialogMaxHeight,
+    },
+    width: {
+      default: "100%",
+      [viewport.dialog]: `min(${containerWidth.split}, calc(100vw - 2 * ${overlaySize.dialogInset}))`,
+    },
+  },
   body: {
     gap: space[12],
     paddingBlock: space[16],
@@ -148,6 +256,12 @@ const styles = stylex.create({
     flexGrow: 1,
     minHeight: 0,
     overflowY: "auto",
+  },
+  pageBody: {
+    paddingBlock: 0,
+    paddingInline: 0,
+    marginTop: space[12],
+    overflowY: "hidden",
   },
   footer: {
     gap: space[8],

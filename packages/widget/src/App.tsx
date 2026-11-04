@@ -1,4 +1,3 @@
-import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";

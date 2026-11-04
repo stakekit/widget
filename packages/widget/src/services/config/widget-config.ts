@@ -302,7 +302,6 @@ const normalizeWidgetConfig = (
           preferredTokenYieldsPerNetwork:
             hostConfiguration.preferredTokenYieldsPerNetwork,
         }),
-    theme: hostConfiguration.theme,
     tokenIconMapping: hostConfiguration.tokenIconMapping,
     tracking: hostConfiguration.tracking,
     validatorsConfig,

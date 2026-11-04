@@ -1,9 +1,6 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
-import { VirtualList } from "../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Skeleton, Stack, Text, VirtualList } from "../../../../ui/index";
 import { FallbackContent } from "../../../widget-shell/views";
 import {
   type ActivityActionItem,
@@ -18,66 +15,67 @@ import type {
 import { ActivityRetryMessage } from "../components/activity-retry-message";
 import { ActionListItem } from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";
-import { container } from "./style.css";
 
 type ActivityPageReadyView = Extract<ActivityPageView, { status: "ready" }>;
 
+const skeletonRows = [...Array(5).keys()];
+
 const ActivityPageSkeleton = () => (
-  <Box
-    aria-hidden="true"
-    data-rk="activity-page-skeleton"
-    display="flex"
-    gap="1"
-    flexDirection="column"
-  >
-    {[...Array(5).keys()].map((item) => (
-      <ContentLoaderSquare key={item} heightPx={60} />
+  <Stack aria-busy="true" gap={4} testId="activity-page-skeleton">
+    {skeletonRows.map((item) => (
+      <Skeleton key={item} shape="rect" height="lg" />
     ))}
-  </Box>
+  </Stack>
 );
 
 const ActivityPageError = ({
-  dataRk,
+  testId,
   onRetry,
 }: {
-  readonly dataRk: string;
+  readonly testId: string;
   readonly onRetry: () => void;
 }) => (
-  <Box
-    alignItems="center"
-    data-rk={dataRk}
-    display="flex"
-    flexDirection="column"
-    gap="2"
-    justifyContent="center"
-    my="4"
-  >
+  <Stack align="center" justify="center" testId={testId}>
     <ActivityRetryMessage onRetry={onRetry} />
-  </Box>
+  </Stack>
+);
+
+const ActivityPageMessage = ({
+  testId,
+  children,
+}: {
+  readonly testId: string;
+  readonly children: string;
+}) => (
+  <Stack align="center" justify="center" grow testId={testId}>
+    <Text variant="heading" as="p" align="center">
+      {children}
+    </Text>
+  </Stack>
 );
 
 const resolveInfiniteScroll = (
   pagination: ActivityPagePagination
 ): {
-  readonly hasNextPage: boolean;
-  readonly isFetchingNextPage: boolean;
+  readonly hasMore: boolean;
+  readonly loadingMore: boolean;
 } =>
   Match.value(pagination).pipe(
     Match.when({ status: "idle" }, () => ({
-      hasNextPage: true,
-      isFetchingNextPage: false,
+      hasMore: true,
+      loadingMore: false,
     })),
     Match.when({ status: "loading-more" }, () => ({
-      hasNextPage: true,
-      isFetchingNextPage: true,
+      hasMore: true,
+      loadingMore: true,
     })),
     Match.when({ status: "complete" }, () => ({
-      hasNextPage: false,
-      isFetchingNextPage: false,
+      hasMore: false,
+      loadingMore: false,
     })),
     Match.when({ status: "load-more-failed" }, () => ({
-      hasNextPage: false,
-      isFetchingNextPage: false,
+      hasMore: false,
+      loadingMore: false,
     })),
     Match.exhaustive
   );
@@ -99,7 +97,7 @@ const ReadyActivityPage = ({
   const infiniteScroll = resolveInfiniteScroll(view.pagination);
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Stack gap={12}>
       <ActivityFilters
         options={view.filterOptions}
         selectedFilter={view.selectedFilter}
@@ -107,29 +105,27 @@ const ReadyActivityPage = ({
       />
 
       {view.actions.length > 0 ? (
-        <>
-          <Box display="flex" justifyContent="flex-end" paddingBottom="2">
-            <Text
-              variant={{
-                type: "muted",
-                weight: "normal",
-                size: "small",
-              }}
-            >
+        <Stack gap={8}>
+          <Stack direction="row" justify="end">
+            <Text variant="caption" tone="muted">
               {t("activity.showing_count", {
                 showing: view.showingCount,
                 total: view.total,
               })}
             </Text>
-          </Box>
+          </Stack>
 
           <VirtualList
-            data={view.actions}
-            hasNextPage={infiniteScroll.hasNextPage}
-            isFetchingNextPage={infiniteScroll.isFetchingNextPage}
-            fetchNextPage={onLoadMore}
-            estimateSize={() => 80}
-            itemContent={(_index, item) => (
+            label={t("activity.list_label")}
+            items={view.actions}
+            getKey={(item) => `${item._tag}:${item.actionData.id}`}
+            hasMore={infiniteScroll.hasMore}
+            loadingMore={infiniteScroll.loadingMore}
+            loadingMoreLabel={t("activity.loading_more")}
+            onEndReached={onLoadMore}
+            estimateSize={80}
+            maxHeight="lg"
+            renderItem={(item) => (
               <ActionListItem
                 action={item}
                 isSelected={isActivitySelectionTarget(item, selectedAction)}
@@ -140,17 +136,15 @@ const ReadyActivityPage = ({
 
           {view.pagination.status === "load-more-failed" && (
             <ActivityPageError
-              dataRk="activity-load-more-error"
+              testId="activity-load-more-error"
               onRetry={onLoadMore}
             />
           )}
-        </>
+        </Stack>
       ) : (
-        <Box my="4">
-          <FallbackContent type="no_previous_activity" />
-        </Box>
+        <FallbackContent type="no_previous_activity" />
       )}
-    </Box>
+    </Stack>
   );
 };
 
@@ -173,35 +167,19 @@ export const ActivityPagePresentation = ({
 
   const content = Match.value(view).pipe(
     Match.when({ status: "connect-wallet" }, () => (
-      <Box
-        alignItems="center"
-        data-rk="activity-connect-wallet"
-        display="flex"
-        flex={1}
-        justifyContent="center"
-      >
-        <Text variant={{ weight: "medium", size: "large" }} textAlign="center">
-          {t("dashboard.details.activity_connect_wallet")}
-        </Text>
-      </Box>
+      <ActivityPageMessage testId="activity-connect-wallet">
+        {t("dashboard.details.activity_connect_wallet")}
+      </ActivityPageMessage>
     )),
     Match.when({ status: "connecting" }, () => <ActivityPageSkeleton />),
     Match.when({ status: "loading" }, () => <ActivityPageSkeleton />),
     Match.when({ status: "failed" }, () => (
-      <ActivityPageError dataRk="activity-page-error" onRetry={onRetry} />
+      <ActivityPageError testId="activity-page-error" onRetry={onRetry} />
     )),
     Match.when({ status: "empty" }, () => (
-      <Box
-        alignItems="center"
-        data-rk="activity-empty"
-        display="flex"
-        flex={1}
-        justifyContent="center"
-      >
-        <Text variant={{ weight: "medium", size: "large" }} textAlign="center">
-          {t("activity.no_previous_activity")}
-        </Text>
-      </Box>
+      <ActivityPageMessage testId="activity-empty">
+        {t("activity.no_previous_activity")}
+      </ActivityPageMessage>
     )),
     Match.when({ status: "ready" }, (readyView) => (
       <ReadyActivityPage
@@ -215,9 +193,5 @@ export const ActivityPagePresentation = ({
     Match.exhaustive
   );
 
-  return (
-    <Box className={container} display="flex" flex={1} flexDirection="column">
-      {content}
-    </Box>
-  );
+  return <Stack grow>{content}</Stack>;
 };

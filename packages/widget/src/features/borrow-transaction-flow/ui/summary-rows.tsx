@@ -4,8 +4,8 @@ import {
   formatTokenAmount,
   formatUsd,
 } from "../../../shared/lib/number-format";
-import { DetailRow } from "../../../shared/ui/components/details-section";
-import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import { DetailRow } from "../../../ui/index";
 import {
   type BorrowTransactionFlowReview,
   getBorrowTransactionFlowAmountLabelKey,
@@ -33,14 +33,12 @@ export const BorrowFlowAmountRows = ({
     <>
       {projected.borrow ? (
         <DetailRow
-          id="borrow-amount"
           label={t(getBorrowTransactionFlowAmountLabelKey(action))}
           value={`${formatTokenAmount(projected.borrow.amount, locale, "down")} ${projected.borrow.symbol}`}
         />
       ) : null}
       {projected.collateral ? (
         <DetailRow
-          id="collateral-amount"
           label={t("dashboard.borrow.review_page.collateral_amount")}
           value={`${formatTokenAmount(projected.collateral.amount, locale, "down")} ${projected.collateral.symbol}`}
         />
@@ -72,12 +70,10 @@ export const BorrowFlowOriginationRows = ({
   return (
     <>
       <DetailRow
-        id="origination-fee"
         label={t("dashboard.borrow.review_page.origination_fee")}
         value={feeUsd === "-" ? fee : `${fee} (${feeUsd})`}
       />
       <DetailRow
-        id="debt-principal"
         label={t("dashboard.borrow.review_page.debt_principal")}
         value={`${formatTokenAmount(origination.principalAmount, locale, "up")} ${origination.symbol}`}
       />

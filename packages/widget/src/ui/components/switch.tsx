@@ -1,6 +1,8 @@
 import { Switch as BaseSwitch } from "@base-ui/react/switch";
 import * as stylex from "@stylexjs/stylex";
 import { useId } from "react";
+import type { HostHook } from "../host-hook";
+import { VisuallyHidden } from "../primitives/visually-hidden";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -17,6 +19,15 @@ type SwitchProps = {
   readonly disabled?: boolean;
   /** Puts the label before the switch, as in a settings row. */
   readonly labelFirst?: boolean;
+  /**
+   * Keeps the label for assistive technology only, where the row around the
+   * switch already shows what it sets, such as an asset's name.
+   */
+  readonly labelHidden?: boolean;
+  /** Renders as the switch's `data-testid`. */
+  readonly testId?: string;
+  /** Renders as the switch's `data-rk`, for hosts that locate it. */
+  readonly hostHook?: HostHook;
 };
 
 /**
@@ -29,6 +40,9 @@ export const Switch = ({
   label,
   disabled = false,
   labelFirst = false,
+  labelHidden = false,
+  testId,
+  hostHook,
 }: SwitchProps) => {
   const id = useId();
   return (
@@ -45,11 +59,13 @@ export const Switch = ({
         checked={checked}
         onCheckedChange={(next) => onCheckedChange(next)}
         disabled={disabled}
+        data-testid={testId}
+        data-rk={hostHook}
         {...stylex.props(styles.track, focusRingStyles.visible)}
       >
         <BaseSwitch.Thumb {...stylex.props(styles.thumb)} />
       </BaseSwitch.Root>
-      {label}
+      {labelHidden ? <VisuallyHidden>{label}</VisuallyHidden> : label}
     </label>
   );
 };

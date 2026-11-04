@@ -28,6 +28,10 @@ type CommonProps = {
   readonly numeric?: boolean;
   /** One line, cut with an ellipsis. */
   readonly truncate?: boolean;
+  /** Aligns the lines, such as `center` under a centered icon. */
+  readonly align?: keyof typeof alignStyles;
+  /** Breaks a long unbroken run, such as a full-precision amount, anywhere. */
+  readonly breakAnywhere?: boolean;
   readonly id?: string;
   readonly children?: ReactNode;
 };
@@ -49,6 +53,8 @@ const TextRoot = ({
   weight,
   numeric = false,
   truncate = false,
+  align,
+  breakAnywhere = false,
   children,
   ...rest
 }: TextProps) =>
@@ -62,7 +68,9 @@ const TextRoot = ({
         tone && textToneStyles[tone],
         weight && weightStyles[weight],
         numeric && styles.numeric,
-        truncate && styles.truncate
+        truncate && styles.truncate,
+        align && alignStyles[align],
+        breakAnywhere && styles.breakAnywhere
       ),
     },
     children
@@ -80,6 +88,13 @@ const styles = stylex.create({
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
+  breakAnywhere: { overflowWrap: "anywhere" },
+});
+
+const alignStyles = stylex.create({
+  start: { textAlign: "start" },
+  center: { textAlign: "center" },
+  end: { textAlign: "end" },
 });
 
 const roleStyles = stylex.create({
@@ -145,11 +160,17 @@ const Mark = ({ children }: { readonly children?: ReactNode }) => (
 );
 
 /**
+ * A line break inside translated copy, for `<Trans components>`, where the
+ * translation separates lines with `<br0/>`.
+ */
+const Break = () => <br />;
+
+/**
  * Text in one of the type roles. Heading roles require `as`, so a look never
  * decides the document outline. `Text.Strong` and `Text.Mark` emphasize runs
- * inside it.
+ * inside it; `Text.Break` breaks a line in it.
  */
-export const Text = Object.assign(TextRoot, { Strong, Mark });
+export const Text = Object.assign(TextRoot, { Strong, Mark, Break });
 
 const emphasisStyles = stylex.create({
   strong: { fontWeight: fontWeight.semibold },

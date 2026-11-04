@@ -1,13 +1,20 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Title } from "@radix-ui/react-dialog";
-import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
-import clsx from "clsx";
 import type { PropsWithChildren } from "react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConnectorWithWalletDetails } from "../../../../services/wallet/wallet-descriptors";
-import { Image } from "../../../../shared/ui/primitives/image";
-import { Spinner } from "../../../../shared/ui/primitives/spinner";
+import {
+  Avatar,
+  Badge,
+  Box,
+  ListGroup,
+  ListRow,
+  Modal,
+  Notice,
+  Spinner,
+  Text,
+  VisuallyHidden,
+} from "../../../../ui/index";
 import type {
   ConnectPickerGroup,
   ConnectPickerWallet,
@@ -21,26 +28,6 @@ import {
   walletConnectModalOpenAtom,
   walletConnectPresentationOpenAtom,
 } from "../../state/wallet-modal";
-import { WalletDialog, WalletDialogClose } from "../wallet-dialog";
-import { BackIcon } from "../wallet-dialog/icons";
-import { closeButton, heading, menuButton } from "../wallet-dialog/styles.css";
-import {
-  body,
-  checkingHint,
-  checkingOption,
-  disclaimer,
-  error,
-  group,
-  groupHeading,
-  header,
-  headerSlot,
-  installHint,
-  list,
-  option,
-  optionRow,
-  optionTitle,
-  title,
-} from "./styles.css";
 
 // Catalogue group names owned by the widget; host policy group names render as given.
 const groupNameKeys: Readonly<
@@ -84,78 +71,73 @@ const ConnectModal = () => {
   };
 
   return (
-    <WalletDialog
+    <Modal
       open={isOpen}
       suspended={presentationOpen}
       onOpenChange={setModalOpen}
       testId="wallet-connect-dialog"
+      bodyTestId="wallet-connect-list"
+      title={t(
+        activeEcosystem
+          ? "wallet_modal.connect_wallet"
+          : "wallet_modal.select_ecosystem"
+      )}
+      titleStatus={attempt._tag === "Pending" && <Spinner size="sm" />}
+      closeLabel={t("wallet_modal.close")}
+      {...(canChooseAnotherEcosystem
+        ? {
+            back: {
+              label: t("wallet_modal.change_ecosystem"),
+              testId: "connect-ecosystem-back",
+              onBack: () => {
+                setOpen(true);
+                setSelectedChainGroupId(undefined);
+              },
+            },
+          }
+        : {})}
+      footer={
+        <Text variant="caption" tone="muted" align="center">
+          {t("chain_modal_disclaimer")}
+        </Text>
+      }
     >
-      <div className={body}>
-        <div className={header}>
-          <span className={headerSlot}>
-            {canChooseAnotherEcosystem && (
-              <button
-                type="button"
-                className={closeButton}
-                aria-label={t("wallet_modal.change_ecosystem")}
-                data-testid="connect-ecosystem-back"
-                onClick={() => {
-                  setOpen(true);
-                  setSelectedChainGroupId(undefined);
-                }}
-              >
-                <BackIcon />
-              </button>
-            )}
-          </span>
-          <div className={title}>
-            <Title className={heading}>
-              {t(
-                activeEcosystem
-                  ? "wallet_modal.connect_wallet"
-                  : "wallet_modal.select_ecosystem"
-              )}
-            </Title>
-            {attempt._tag === "Pending" && <Spinner />}
-          </div>
-          <WalletDialogClose onClose={() => setModalOpen(false)} />
-        </div>
-        {attempt._tag === "Failed" && (
-          <p className={error} role="alert">
-            {t("wallet_modal.connection_error")}
-          </p>
-        )}
-        {attempt._tag === "WalletNotAvailable" && (
-          <p className={error} role="alert">
+      {attempt._tag === "Failed" && (
+        <Box role="alert">
+          <Notice tone="danger">{t("wallet_modal.connection_error")}</Notice>
+        </Box>
+      )}
+      {attempt._tag === "WalletNotAvailable" && (
+        <Box role="alert">
+          <Notice tone="danger">
             {t("wallet_modal.wallet_not_available")}
-          </p>
-        )}
-        <div className={list} data-testid="wallet-connect-list">
-          {activeEcosystem ? (
-            <WalletGroups groups={activeEcosystem.groups} onConnect={connect} />
-          ) : (
-            ecosystems.map(({ chainGroup }) => (
-              <button
-                key={chainGroup.id}
-                type="button"
-                className={menuButton}
-                data-testid={`connect-ecosystem-${chainGroup.id}`}
-                onClick={() => {
-                  setSelectedChainGroupId(chainGroup.id);
-                  setOpen(true);
-                }}
-              >
-                <OptionContent
+          </Notice>
+        </Box>
+      )}
+      {activeEcosystem ? (
+        <WalletGroups groups={activeEcosystem.groups} onConnect={connect} />
+      ) : (
+        <ListGroup>
+          {ecosystems.map(({ chainGroup }) => (
+            <ListRow
+              key={chainGroup.id}
+              testId={`connect-ecosystem-${chainGroup.id}`}
+              leading={
+                <OptionIcon
                   iconUrl={chainGroup.iconUrl}
                   title={chainGroup.title}
                 />
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-      <p className={disclaimer}>{t("chain_modal_disclaimer")}</p>
-    </WalletDialog>
+              }
+              title={chainGroup.title}
+              onClick={() => {
+                setSelectedChainGroupId(chainGroup.id);
+                setOpen(true);
+              }}
+            />
+          ))}
+        </ListGroup>
+      )}
+    </Modal>
   );
 };
 
@@ -166,47 +148,30 @@ const WalletGroups = ({
   readonly groups: ReadonlyArray<ConnectPickerGroup>;
   readonly onConnect: (connector: ConnectorWithWalletDetails) => void;
 }) => {
-  if (groups.length === 1) {
-    return groups[0]?.wallets.map((wallet) => (
-      <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
-    ));
-  }
-
-  return groups.map((walletGroup) => (
-    <WalletGroup
-      key={walletGroup.id}
-      walletGroup={walletGroup}
-      onConnect={onConnect}
-    />
-  ));
-};
-
-const WalletGroup = ({
-  walletGroup,
-  onConnect,
-}: {
-  readonly walletGroup: ConnectPickerGroup;
-  readonly onConnect: (connector: ConnectorWithWalletDetails) => void;
-}) => {
   const { t } = useTranslation();
-  const headingId = useId();
-  const groupTitle = () => {
-    const { label } = walletGroup;
+  const groupTitle = ({ label }: ConnectPickerGroup) => {
     if (label._tag === "Installed") return t("wallet_modal.groups.installed");
     const key = groupNameKeys[label.name];
     return key ? t(key) : label.name;
   };
 
-  return (
-    <section className={group} aria-labelledby={headingId}>
-      <h3 id={headingId} className={groupHeading}>
-        {groupTitle()}
-      </h3>
+  if (groups.length === 1) {
+    return (
+      <ListGroup>
+        {groups[0]?.wallets.map((wallet) => (
+          <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
+        ))}
+      </ListGroup>
+    );
+  }
+
+  return groups.map((walletGroup) => (
+    <ListGroup key={walletGroup.id} label={groupTitle(walletGroup)}>
       {walletGroup.wallets.map((wallet) => (
         <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
       ))}
-    </section>
-  );
+    </ListGroup>
+  ));
 };
 
 const WalletOption = ({
@@ -217,71 +182,54 @@ const WalletOption = ({
   readonly onConnect: (connector: ConnectorWithWalletDetails) => void;
 }) => {
   const { t } = useTranslation();
+  const testId = `connect-wallet-${wallet.id}`;
+  const leading = <OptionIcon iconUrl={wallet.iconUrl} title={wallet.title} />;
 
   if (wallet.action._tag === "Install") {
     return (
-      <a
-        className={clsx(menuButton, option)}
-        data-testid={`connect-wallet-${wallet.id}`}
-        href={wallet.action.url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <OptionContent iconUrl={wallet.iconUrl} title={wallet.title}>
-          <span className={installHint}>{t("wallet_modal.install")}</span>
-        </OptionContent>
-      </a>
+      <ListRow
+        testId={testId}
+        leading={leading}
+        title={wallet.title}
+        badges={<Badge tone="accent">{t("wallet_modal.install")}</Badge>}
+        link={{ href: wallet.action.url, newTab: true }}
+      />
     );
   }
 
   if (wallet.action._tag === "Checking") {
     return (
-      <div
-        className={clsx(menuButton, checkingOption)}
-        data-testid={`connect-wallet-${wallet.id}`}
-        aria-busy="true"
-        aria-disabled="true"
-      >
-        <OptionContent iconUrl={wallet.iconUrl} title={wallet.title}>
-          <span className={checkingHint} aria-hidden="true" />
-          <VisuallyHiddenRoot>{t("wallet_modal.checking")}</VisuallyHiddenRoot>
-        </OptionContent>
-      </div>
+      <ListRow
+        testId={testId}
+        leading={leading}
+        title={wallet.title}
+        badges={<VisuallyHidden>{t("wallet_modal.checking")}</VisuallyHidden>}
+        busy
+      />
     );
   }
 
+  const { connector } = wallet;
   return (
-    <button
-      type="button"
-      className={menuButton}
-      data-testid={`connect-wallet-${wallet.id}`}
-      onClick={() => onConnect(wallet.connector)}
-    >
-      <OptionContent iconUrl={wallet.iconUrl} title={wallet.title} />
-    </button>
+    <ListRow
+      testId={testId}
+      leading={leading}
+      title={wallet.title}
+      onClick={() => onConnect(connector)}
+    />
   );
 };
 
-const OptionContent = ({
-  children,
+const OptionIcon = ({
   iconUrl,
-  title: optionName,
-}: PropsWithChildren<{
+  title,
+}: {
   readonly iconUrl: ConnectPickerWallet["iconUrl"];
   readonly title: string;
-}>) => {
-  const resolvedIconUrl = useAtomValue(walletIconUrlAtom(iconUrl));
-
-  return (
-    <span className={optionRow}>
-      <Image
-        src={resolvedIconUrl}
-        fallbackName={optionName}
-        wrapperProps={{ borderRadius: "lg", hw: "7" }}
-        imgProps={{ borderRadius: "lg", hw: "7" }}
-      />
-      <span className={optionTitle}>{optionName}</span>
-      {children}
-    </span>
-  );
-};
+}) => (
+  <Avatar
+    src={useAtomValue(walletIconUrlAtom(iconUrl))}
+    fallback={Array.from(title.trim())[0]?.toUpperCase() ?? ""}
+    shape="square"
+  />
+);

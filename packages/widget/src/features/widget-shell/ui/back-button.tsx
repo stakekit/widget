@@ -1,6 +1,6 @@
 import { createContext, type PropsWithChildren, useContext } from "react";
-import { Box } from "../../../shared/ui/primitives/box";
-import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
+import { useTranslation } from "react-i18next";
+import { IconButton } from "../../../ui/index";
 import { useHeader } from "../react/use-header";
 
 const BackButtonContext = createContext<boolean>(false);
@@ -12,42 +12,35 @@ const BackButtonContext = createContext<boolean>(false);
 export const BackButtonProvider = ({
   children,
   enabled = true,
-}: PropsWithChildren<{ readonly enabled?: boolean }>) => {
-  return (
-    <BackButtonContext.Provider value={enabled}>
-      {children}
-    </BackButtonContext.Provider>
-  );
-};
+}: PropsWithChildren<{ readonly enabled?: boolean }>) => (
+  <BackButtonContext value={enabled}>{children}</BackButtonContext>
+);
 
-const useBackButton = () => {
-  return useContext(BackButtonContext);
-};
-
-type BackButtonProps = {
-  readonly "aria-label"?: string;
-  readonly "data-rk"?: string;
-  readonly "data-testid"?: string;
+/**
+ * The shell's back button, shown inside an enabled `BackButtonProvider`.
+ * Unset, `onClick` goes back in the Widget's history and `label` is "Back".
+ */
+export const BackButton = ({
+  label,
+  onClick,
+  testId,
+}: {
+  readonly label?: string;
   readonly onClick?: () => void;
-};
-
-export const BackButton = ({ onClick, ...rest }: BackButtonProps) => {
+  readonly testId?: string;
+}) => {
+  const { t } = useTranslation();
   const { onLeftIconPress } = useHeader();
-  const showBack = useBackButton();
+  const showBack = useContext(BackButtonContext);
 
   if (!showBack) return null;
 
   return (
-    <Box
-      as="button"
+    <IconButton
+      icon="CaretLeftIcon"
+      label={label ?? t("shared.back")}
       onClick={onClick ?? onLeftIconPress}
-      display="flex"
-      alignItems="center"
-      justifyContent="flex-start"
-      type="button"
-      {...rest}
-    >
-      <CaretLeftIcon />
-    </Box>
+      {...(testId === undefined ? {} : { testId })}
+    />
   );
 };

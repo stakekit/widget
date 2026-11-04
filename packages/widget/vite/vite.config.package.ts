@@ -2,20 +2,12 @@ import path from "node:path";
 import { defineConfig, esmExternalRequirePlugin } from "vite";
 import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 
-// These packages coordinate work or DOM state with the embedding application.
-// Bundling a private copy separates React's cleanup queue and modal lock stacks.
-// The Radix internals stay shared until the last Radix screen moves to the
-// Design System. Base UI is deliberately absent: the Widget bundles its own
-// copy, and its popups coexist with host dialogs through the portal container
-// inside the Widget root (tests/app/journeys/overlays-in-host-dialogs).
-const sharedDependencies = [
-  "scheduler",
-  "@radix-ui/react-dismissable-layer",
-  "@radix-ui/react-focus-guards",
-  "@radix-ui/react-focus-scope",
-  "aria-hidden",
-  "react-remove-scroll",
-];
+// These packages coordinate work with the embedding application. Bundling a
+// private copy separates React's cleanup queue. Base UI is deliberately
+// absent: the Widget bundles its own copy, and its popups coexist with host
+// dialogs through the portal container inside the Widget root
+// (tests/app/journeys/overlays-in-host-dialogs).
+const sharedDependencies = ["scheduler"];
 
 const config = getConfig({
   experimental: chunkRelativeAssetUrls,

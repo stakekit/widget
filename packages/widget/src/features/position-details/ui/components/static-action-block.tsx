@@ -13,12 +13,9 @@ import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { Box, Button, Card, Stack, Text } from "../../../../ui/index";
 import type { usePositionDetails } from "../../react/use-position-details";
-import { actionBlockCta, actionBlockText, noWrap } from "./styles.css";
 
 type StaticActionBlockProps = {
   pendingAction: PendingAction;
@@ -48,60 +45,53 @@ export const StaticActionBlock = ({
   const cancelReturn = getPendingActionReturn(pendingAction.type, yieldBalance);
 
   return (
-    <Box
-      display="flex"
-      flexWrap="wrap"
-      justifyContent="space-between"
-      alignItems="center"
-      gap="3"
-      px="4"
-      py="4"
-      borderRadius="xl"
-      borderColor="backgroundMuted"
-      borderWidth={1}
-      borderStyle="solid"
-    >
-      <Box className={actionBlockText}>
-        <Text variant={{ weight: "normal" }}>
-          <Trans
-            i18nKey="position_details.available_to"
-            context={labelContext}
-            values={{
-              amount: yieldBalance.isEncrypted
-                ? t("shared.confidential.hidden")
-                : formatTokenAmount(
-                    cancelReturn?.amount ?? exactDecimal(yieldBalance.amount),
-                    locale,
-                    "down"
+    // The CTA keeps a single-line label; when it and the text can't share a
+    // row (narrow widget, long translations) it wraps below, at the end.
+    <Card variant="outline" padding={16}>
+      <Stack direction="row" align="center" justify="between" gap={12} wrap>
+        <Box grow>
+          <Stack gap={4}>
+            <Text breakAnywhere>
+              <Trans
+                i18nKey="position_details.available_to"
+                context={labelContext}
+                values={{
+                  amount: yieldBalance.isEncrypted
+                    ? t("shared.confidential.hidden")
+                    : formatTokenAmount(
+                        cancelReturn?.amount ??
+                          exactDecimal(yieldBalance.amount),
+                        locale,
+                        "down"
+                      ),
+                  symbol: (cancelReturn?.token ?? yieldBalance.token).symbol,
+                  pendingAction: t(
+                    `position_details.pending_action.${actionKey}`,
+                    {
+                      context: isEthenaUsdeStaking(integration.id)
+                        ? "ethena_usde"
+                        : undefined,
+                      defaultValue: humanizePendingActionType(
+                        pendingAction.type
+                      ),
+                    }
                   ),
-              symbol: (cancelReturn?.token ?? yieldBalance.token).symbol,
-              pendingAction: t(`position_details.pending_action.${actionKey}`, {
-                context: isEthenaUsdeStaking(integration.id)
-                  ? "ethena_usde"
-                  : undefined,
-                defaultValue: humanizePendingActionType(pendingAction.type),
-              }),
-            }}
-            components={{
-              bold: <Box as="span" fontWeight="bold" display="block" />,
-            }}
-          />
-        </Text>
-        {cancelReturn ? (
-          <Text variant={{ type: "muted", size: "small" }}>
-            {t("position_details.cancel_returns", {
-              symbol: cancelReturn.token.symbol,
-            })}
-          </Text>
-        ) : null}
-      </Box>
+                }}
+                components={{ bold: <Text.Strong /> }}
+              />
+            </Text>
+            {cancelReturn ? (
+              <Text variant="caption" tone="muted">
+                {t("position_details.cancel_returns", {
+                  symbol: cancelReturn.token.symbol,
+                })}
+              </Text>
+            ) : null}
+          </Stack>
+        </Box>
 
-      <Box className={actionBlockCta}>
         <Button
-          variant={{
-            size: "small",
-            color: "smallButtonLight",
-          }}
+          size="sm"
           onClick={() =>
             onPendingActionClick({
               yieldBalance: yieldBalance,
@@ -109,14 +99,12 @@ export const StaticActionBlock = ({
             })
           }
         >
-          <Text className={noWrap}>
-            {t(`position_details.pending_action_button.${actionKey}`, {
-              context: labelContext,
-              defaultValue: humanizePendingActionType(pendingAction.type),
-            })}
-          </Text>
+          {t(`position_details.pending_action_button.${actionKey}`, {
+            context: labelContext,
+            defaultValue: humanizePendingActionType(pendingAction.type),
+          })}
         </Button>
-      </Box>
-    </Box>
+      </Stack>
+    </Card>
   );
 };

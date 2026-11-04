@@ -1,15 +1,18 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Title } from "@radix-ui/react-dialog";
-import clsx from "clsx";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import { formatAddress } from "../../../../shared/lib/general";
-import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import {
+  Icon,
+  ListGroup,
+  ListRow,
+  Modal,
+  Stack,
+  TokenAvatar,
+  TokenTrigger,
+  VisuallyHidden,
+} from "../../../../ui/index";
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
@@ -20,33 +23,11 @@ import {
   walletAddressCopiedAtom,
 } from "../../state/account-presentation";
 import { logoutAtom, switchAccountAtom } from "../../state/workflows";
-import { WalletDialog, WalletDialogClose } from "../wallet-dialog";
-import { WalletAvatar } from "../wallet-dialog/avatar";
-import { CopiedIcon, CopyIcon, DisconnectIcon } from "../wallet-dialog/icons";
-import {
-  heading,
-  menuButton,
-  walletSummaryTitle,
-  walletSummaryTrigger,
-} from "../wallet-dialog/styles.css";
-import {
-  accountOption,
-  action,
-  actionContent,
-  actionIcon,
-  actions,
-  close,
-  profile,
-  profileAvatar,
-  profileDetails,
-  triggerAvatar,
-} from "./styles.css";
 
 export const AccountModal = () => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const wallet = useSKWallet();
-  const variant = useWidgetConfig("variant");
   const [isOpen, setOpen] = useState(false);
   const logout = useAtomSet(logoutAtom);
   const switchAccount = useAtomSet(switchAccountAtom);
@@ -67,107 +48,72 @@ export const AccountModal = () => {
 
   return (
     <>
-      <Box
-        data-rk="account-modal-container"
-        as="button"
-        type="button"
-        aria-label={displayAddress}
-        borderRadius="2xl"
-        background="backgroundMuted"
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        className={combineRecipeWithVariant({
-          variant,
-          rec: walletSummaryTrigger,
-        })}
-        paddingLeft="2"
-        py="2"
+      <TokenTrigger
+        hostHook="account-modal-container"
+        token={{ name: displayAddress }}
+        account={wallet.address}
         onClick={() => {
           trackEvent("accountModalOpened");
           setOpen(true);
         }}
-      >
-        <WalletAvatar address={wallet.address} className={triggerAvatar} />
-        <Text className={walletSummaryTitle}>{displayAddress}</Text>
-        <Box mx="2">
-          <CaretDownIcon />
-        </Box>
-      </Box>
+      />
 
-      <WalletDialog
+      <Modal
         open={isOpen}
         onOpenChange={setOpen}
         suspended={leaveConfirmation.pending}
         testId="wallet-account-dialog"
+        title={displayAddress}
+        closeLabel={t("wallet_modal.close")}
       >
-        <div className={profile}>
-          <div className={profileDetails}>
-            <div className={close}>
-              <WalletDialogClose onClose={() => setOpen(false)} />
-            </div>
-            <WalletAvatar address={wallet.address} className={profileAvatar} />
-            <Title className={heading}>{displayAddress}</Title>
+        <Stack align="center">
+          <TokenAvatar account={wallet.address} size="xl" />
+        </Stack>
+        {otherAccounts.length > 0 && (
+          <ListGroup>
             {otherAccounts.map((account) => (
-              <button
+              <ListRow
                 key={account.address}
-                type="button"
-                className={clsx(menuButton, accountOption)}
-                data-testid={`wallet-account-${account.address}`}
+                testId={`wallet-account-${account.address}`}
+                leading={<TokenAvatar account={account.address} size="sm" />}
+                title={formatAddress(account.address)}
                 onClick={() =>
                   leaveConfirmation.confirm(() => {
                     switchAccount({ account, connector: wallet.connector });
                     setOpen(false);
                   })
                 }
-              >
-                <span className={heading}>
-                  {formatAddress(account.address)}
-                </span>
-              </button>
+              />
             ))}
-          </div>
-          <div className={actions}>
-            <button
-              type="button"
-              className={action}
-              onClick={() => copyAddress(undefined)}
-              data-testid="wallet-account-copy"
-            >
-              <span className={actionContent}>
-                <span className={actionIcon}>
-                  {copied ? <CopiedIcon /> : <CopyIcon />}
-                </span>
-                <span aria-live="polite">
-                  {t(
-                    copied ? "wallet_modal.copied" : "wallet_modal.copy_address"
-                  )}
-                </span>
-              </span>
-            </button>
-            {showDisconnect && (
-              <button
-                type="button"
-                className={action}
-                data-testid="wallet-account-disconnect"
-                onClick={() =>
-                  leaveConfirmation.confirm(() => {
-                    setOpen(false);
-                    logout();
-                  })
-                }
-              >
-                <span className={actionContent}>
-                  <span className={actionIcon}>
-                    <DisconnectIcon />
-                  </span>
-                  <span>{t("wallet_modal.disconnect")}</span>
-                </span>
-              </button>
+          </ListGroup>
+        )}
+        <ListGroup>
+          <ListRow
+            testId="wallet-account-copy"
+            leading={<Icon name={copied ? "CheckIcon" : "CopyIcon"} />}
+            title={t(
+              copied ? "wallet_modal.copied" : "wallet_modal.copy_address"
             )}
-          </div>
-        </div>
-      </WalletDialog>
+            onClick={() => copyAddress(undefined)}
+          />
+          {showDisconnect && (
+            <ListRow
+              testId="wallet-account-disconnect"
+              leading={<Icon name="DisconnectIcon" />}
+              title={t("wallet_modal.disconnect")}
+              onClick={() =>
+                leaveConfirmation.confirm(() => {
+                  setOpen(false);
+                  logout();
+                })
+              }
+            />
+          )}
+        </ListGroup>
+        <VisuallyHidden role="status">
+          {copied ? t("wallet_modal.copied") : ""}
+        </VisuallyHidden>
+      </Modal>
       <LeaveConfirmationDialog {...leaveConfirmation.dialog} />
     </>
   );

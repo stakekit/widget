@@ -5,7 +5,7 @@ import {
   widgetRoutes,
   widgetYieldFlowRoutes,
 } from "../../../services/navigation/widget-routes";
-import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
+import { Skeleton, Stack } from "../../../ui/index";
 import {
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,
@@ -113,7 +113,13 @@ const BoundActivityActionRoute = ({
   >(null);
 
   if (result.status === "loading") {
-    return <ContentLoaderSquare heightPx={320} />;
+    return (
+      <Stack aria-busy="true" gap={12}>
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="rect" height="lg" />
+        <Skeleton shape="rect" height="lg" />
+      </Stack>
+    );
   }
   if (result.status === "failed") {
     return <ActivityDetailsFailure onRetry={() => retry(undefined)} />;

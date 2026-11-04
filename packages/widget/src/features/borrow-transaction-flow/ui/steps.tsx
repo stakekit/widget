@@ -1,14 +1,17 @@
 import { useAtomSet } from "@effect/atom-react";
+import type { TFunction } from "i18next";
+import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+import type { TransactionPhaseProgress } from "../../../services/transaction-workflow/transaction-workflow-model";
 import {
-  getTransactionStepPhases,
-  TransactionSteps,
-} from "../../../shared/ui/components/transaction-steps";
-import { Box } from "../../../shared/ui/primitives/box";
-import { Button } from "../../../shared/ui/primitives/button";
-import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
-import { Spinner } from "../../../shared/ui/primitives/spinner";
-import { Text } from "../../../shared/ui/primitives/typography/text";
+  Button,
+  FlowSteps,
+  IconButton,
+  Notice,
+  Spinner,
+  Stack,
+  Text,
+} from "../../../ui/index";
 import { useExecutionLeaveConfirmation } from "../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../leave-confirmation/views";
 import { useTrackPage } from "../../tracking/index";
@@ -23,8 +26,29 @@ import {
   useBorrowTransactionFlowExecution,
 } from "../react/borrow-flow-route";
 import { BorrowFlowHeading } from "./flow-heading";
-import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";
+
+type FlowStep = ComponentProps<typeof FlowSteps>["steps"][number];
+
+/** Where a transaction's sign, broadcast and confirm phases put it. */
+const toFlowStepState = (
+  t: TFunction,
+  done: boolean,
+  phases: TransactionPhaseProgress
+): Pick<FlowStep, "state" | "message"> => {
+  if (done) return { state: "done" };
+  if (phases.sign === "failed") {
+    return { message: t("steps.approve_error"), state: "failed" };
+  }
+  if (phases.broadcast === "failed" || phases.confirm === "failed") {
+    return { message: t("shared.something_went_wrong"), state: "failed" };
+  }
+  if (phases.sign === "active") return { state: "signing" };
+  if (phases.broadcast === "active") return { state: "broadcasting" };
+  if (phases.confirm === "active") return { state: "active" };
+  if (phases.confirm === "done") return { state: "done" };
+  return { state: "pending" };
+};
 
 export const BorrowStepsPage = () => {
   useTrackPage("borrowSteps");
@@ -44,30 +68,22 @@ export const BorrowStepsPage = () => {
   return (
     <AnimationPage>
       <PageContainer>
-        <Box
-          data-rk="borrow-steps-page"
-          display="flex"
-          flexDirection="column"
-          gap="4"
-        >
-          <Box display="flex" flexDirection="column" gap="2">
+        <Stack hostHook="borrow-steps-page" gap={16}>
+          <Stack gap={8}>
             {isPositionFlow ? (
-              <Box
-                aria-label={t("dashboard.borrow.review_page.back_to_position")}
-                as="button"
-                className={styles.flowBackButton}
+              <IconButton
+                icon="CaretLeftIcon"
+                label={t("dashboard.borrow.review_page.back_to_position")}
+                size="sm"
                 onClick={leave}
-                type="button"
-              >
-                <CaretLeftIcon />
-              </Box>
+              />
             ) : null}
 
             <BorrowFlowHeading summary={flow.intake.summary} />
-          </Box>
+          </Stack>
 
           {execution.totalSteps > 1 ? (
-            <Text variant={{ type: "muted", weight: "normal" }}>
+            <Text tone="muted">
               {t("dashboard.borrow.execution_page.batch_progress", {
                 current: execution.currentStep,
                 total: execution.totalSteps,
@@ -76,50 +92,67 @@ export const BorrowStepsPage = () => {
           ) : null}
 
           {execution.steps.length > 0 ? (
-            <TransactionSteps
-              steps={execution.steps.map((step) => ({
-                done: step.done,
-                explorerUrl: step.explorerUrl,
+            <FlowSteps
+              label={t("steps.progress_label")}
+              stateLabels={{
+                active: t("steps.state.active"),
+                broadcasting: t("steps.state.broadcasting"),
+                done: t("steps.state.done"),
+                failed: t("steps.state.failed"),
+                pending: t("steps.state.pending"),
+                signing: t("steps.state.signing"),
+              }}
+              explorerLink={{
+                label: t("dashboard.borrow.success_page.view_on_explorer"),
+                newTabLabel: t("shared.opens_in_new_tab"),
+              }}
+              steps={execution.steps.map((step, index) => ({
                 id: step.id,
-                phases: getTransactionStepPhases(t, step.progress.phases),
-                type: t(`dashboard.borrow.execution_page.tx_type.${step.type}`),
+                label: t("steps.tx_of", {
+                  count: execution.steps.length,
+                  current: index + 1,
+                  type: t(
+                    `dashboard.borrow.execution_page.tx_type.${step.type}`
+                  ),
+                }),
+                ...toFlowStepState(t, step.done, step.progress.phases),
+                ...(step.explorerUrl ? { explorerUrl: step.explorerUrl } : {}),
               }))}
             />
           ) : null}
 
           {execution.phase === "advancing" && execution.isRunning ? (
-            <Box alignItems="center" display="flex" gap="3">
+            <Stack direction="row" align="center" gap={12}>
               <Spinner />
-              <Text variant={{ type: "muted", weight: "normal" }}>
+              <Text tone="muted">
                 {t("dashboard.borrow.execution_page.preparing_next_step")}
               </Text>
-            </Box>
+            </Stack>
           ) : null}
 
           {executionErrorMessage && (
-            <Box className={styles.executionError}>
-              <Text variant={{ type: "danger" }}>
-                {t(
-                  `dashboard.borrow.execution_page.error_titles.${flow.intake.summary.action}`
-                )}
-              </Text>
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {executionErrorMessage}
-              </Text>
-            </Box>
+            <Notice
+              tone="danger"
+              title={t(
+                `dashboard.borrow.execution_page.error_titles.${flow.intake.summary.action}`
+              )}
+            >
+              {executionErrorMessage}
+            </Notice>
           )}
 
           {execution.cancelled && (
-            <Text variant={{ type: "muted", weight: "normal" }}>
+            <Notice tone="neutral">
               {t("dashboard.borrow.execution_page.cancelled")}
-            </Text>
+            </Notice>
           )}
 
           {(executionErrorMessage || execution.cancelled) && (
             <Button
-              data-rk="borrow-steps-retry"
+              hostHook="borrow-steps-retry"
               onClick={execution.retry}
-              variant={{ size: "layout" }}
+              variant="primary"
+              size="lg"
             >
               {t("shared.retry")}
             </Button>
@@ -136,7 +169,7 @@ export const BorrowStepsPage = () => {
           />
 
           <LeaveConfirmationDialog {...leaveConfirmation.dialog} />
-        </Box>
+        </Stack>
       </PageContainer>
     </AnimationPage>
   );

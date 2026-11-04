@@ -4,20 +4,20 @@ import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { toPresentable } from "../../../../shared/effect/async-result";
-import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import {
+  Notice,
+  SplitView,
+  type SplitViewSide,
+  Stack,
+} from "../../../../ui/index";
 import {
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,
 } from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
-import {
-  AnimationPage,
-  SplitView,
-  type SplitViewSide,
-} from "../../../widget-shell/views";
+import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowPosition } from "../../positions/index";
 import {
   type BorrowPositionAction,
@@ -84,16 +84,12 @@ export const BorrowPositionDetailsPage = () => {
           primaryBarLabel={t("dashboard.split_view.actions")}
           secondaryBarLabel={t("dashboard.split_view.details")}
           primary={
-            <PositionDetailsPane kind="actions">
+            <Stack gap={16}>
               <BorrowPositionBreadcrumb positionName={null} />
               <BorrowPositionActionsSkeleton />
-            </PositionDetailsPane>
+            </Stack>
           }
-          secondary={
-            <PositionDetailsPane kind="info">
-              <BorrowPositionInfoSkeleton />
-            </PositionDetailsPane>
-          }
+          secondary={<BorrowPositionInfoSkeleton />}
         />
       </AnimationPage>
     );
@@ -111,11 +107,7 @@ export const BorrowPositionDetailsPage = () => {
     }
 
     if (presentablePosition._tag === "Failed") {
-      return (
-        <Text variant={{ type: "danger", weight: "normal" }}>
-          {t("shared.something_went_wrong")}
-        </Text>
-      );
+      return <Notice tone="danger">{t("shared.something_went_wrong")}</Notice>;
     }
 
     return (
@@ -140,19 +132,19 @@ export const BorrowPositionDetailsPage = () => {
         secondaryBarLabel={t("dashboard.split_view.details")}
         primary={
           shouldShowLeftPane ? (
-            <PositionDetailsPane kind="actions">
+            <Stack gap={16}>
               <Outlet context={context} />
-            </PositionDetailsPane>
+            </Stack>
           ) : null
         }
         secondary={
-          <PositionDetailsPane kind="info">
+          <Stack gap={16}>
             {shouldShowLeftPane ? null : (
               <BorrowPositionBreadcrumb positionName={model?.title ?? null} />
             )}
 
             {rightContent}
-          </PositionDetailsPane>
+          </Stack>
         }
       />
     </AnimationPage>

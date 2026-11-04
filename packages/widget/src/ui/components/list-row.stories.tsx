@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
+import { ContainerFrame, narrowAndWide } from "../storybook/container-frame";
 import { tokenLogo } from "../storybook/images";
 import { TokenAvatar } from "./avatar";
 import { Badge } from "./badge";
@@ -58,6 +59,68 @@ export const Selected: Story = {
     await expect(
       within(canvasElement).getByRole("button", { name: /Ethereum/ })
     ).toHaveAttribute("aria-pressed", "true");
+  },
+};
+
+const onLinkClick = fn((event: { preventDefault: () => void }) =>
+  event.preventDefault()
+);
+
+/** With `link` the row is a link: Tab reaches it, Enter follows it. */
+export const Link: Story = {
+  args: { link: { href: "#position", onClick: onLinkClick } },
+  play: async ({ canvasElement }) => {
+    onLinkClick.mockClear();
+    const row = within(canvasElement).getByRole("link", { name: /Ethereum/ });
+    await expect(row).toHaveAttribute("href", "#position");
+    await userEvent.tab();
+    await expect(row).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    await expect(onLinkClick).toHaveBeenCalledTimes(1);
+  },
+};
+
+export const LinkDark: Story = { ...Link, globals: { colorScheme: "dark" } };
+
+/** A figure, such as a reward rate, before the value column. */
+export const WithFigure: Story = {
+  args: { figure: { text: "4.2%", tone: "success" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("4.2%")).toBeVisible();
+    await expect(canvas.getByText("1.2345 ETH").parentElement).not.toBe(
+      canvas.getByText("4.2%").parentElement
+    );
+  },
+};
+
+export const WithFigureDark: Story = {
+  ...WithFigure,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * With `from: "sm"` the figure shows only from the `sm` container size up:
+ * a narrow row keeps room for its title.
+ */
+export const FigureFromSm: Story = {
+  args: { figure: { text: "+0.5 ETH", tone: "success", from: "sm" } },
+  render: (args) => (
+    <>
+      <ContainerFrame width={360}>
+        <ListRow {...args} />
+      </ContainerFrame>
+      <ContainerFrame width={480}>
+        <ListRow {...args} />
+      </ContainerFrame>
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const [narrow, wide] = narrowAndWide(
+      within(canvasElement).getAllByText("+0.5 ETH")
+    );
+    await expect(narrow).not.toBeVisible();
+    await expect(wide).toBeVisible();
   },
 };
 
@@ -253,5 +316,34 @@ export const DisabledOption: Story = {
     await expect(getComputedStyle(option).transform).toBe("none");
     await userEvent.pointer({ keys: "[/MouseLeft]", target: option });
     await expect(onSelectOption).not.toHaveBeenCalled();
+  },
+};
+
+/** While `busy`, the row reads as busy and shows a spinner at its end. */
+export const Busy: Story = {
+  render: ({ leading, title }) => (
+    <ListRow
+      leading={leading}
+      title={title}
+      subtitle={rowContent.subtitle}
+      busy
+      testId="row"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByTestId("row")).toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+  },
+};
+
+/** A `link` with `newTab` opens another site's page in a new tab. */
+export const NewTabLink: Story = {
+  args: { link: { href: "https://example.com", newTab: true } },
+  play: async ({ canvasElement }) => {
+    const link = within(canvasElement).getByRole("link", { name: /Ethereum/ });
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
   },
 };

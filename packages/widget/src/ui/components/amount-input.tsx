@@ -72,6 +72,8 @@ type AmountInputProps = {
   readonly onBlur?: () => void;
   /** Steps the type down as the amount fills the input. On by default. */
   readonly shrink?: boolean;
+  /** Renders as the input's `data-testid`. */
+  readonly testId?: string;
 };
 
 /**
@@ -90,6 +92,7 @@ export const AmountInput = ({
   disabled = false,
   onBlur,
   shrink = true,
+  testId,
 }: AmountInputProps) => {
   // `null` while not focused, which shows `value`.
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -140,6 +143,7 @@ export const AmountInput = ({
         placeholder="0"
         aria-label={label}
         aria-invalid={invalid || undefined}
+        data-testid={testId}
         disabled={disabled}
         value={text}
         onChange={(event) => {

@@ -1,7 +1,15 @@
 import type BigNumber from "bignumber.js";
-import { PositionMetricCards } from "../../../../../shared/ui/components/position-details";
+import { Metric, MetricGroup } from "../../../../../ui/index";
 import type { getBorrowPositionDetailsModel } from "../../model/details";
-import * as styles from "../styles.css";
+
+const getHealthTone = (
+  healthFactor: BigNumber | null | undefined
+): "default" | "warning" | "danger" => {
+  if (healthFactor == null) return "default";
+  if (healthFactor.isLessThan(1)) return "danger";
+  if (healthFactor.isLessThan(2)) return "warning";
+  return "default";
+};
 
 export const MetricCards = ({
   cards,
@@ -12,20 +20,19 @@ export const MetricCards = ({
   >["metricCards"];
   readonly healthFactor: BigNumber | null | undefined;
 }) => {
-  const positionCards = cards.map((card) => {
-    const isHealthCard = card.id === "health-factor";
-    const getToneClass = () => {
-      if (!isHealthCard || healthFactor == null) return undefined;
-      if (healthFactor.isLessThan(1)) return styles.healthValueDanger;
-      if (healthFactor.isLessThan(2)) return styles.healthValueWarning;
-      return styles.healthValue;
-    };
-    const toneClass = getToneClass();
+  const healthTone = getHealthTone(healthFactor);
 
-    return toneClass === undefined
-      ? card
-      : { ...card, valueClassName: toneClass };
-  });
-
-  return <PositionMetricCards cards={positionCards} />;
+  return (
+    <MetricGroup columns={2}>
+      {cards.map((card) => (
+        <Metric
+          key={card.id}
+          label={card.label}
+          value={card.value}
+          valueTone={card.id === "health-factor" ? healthTone : "default"}
+          {...(card.subValue ? { caption: card.subValue } : {})}
+        />
+      ))}
+    </MetricGroup>
+  );
 };

@@ -39,12 +39,16 @@ export const Box = ({
   position,
   overflow,
   children,
+  testId,
+  hostHook,
   ...rest
 }: BoxProps) =>
   createElement(
     as,
     {
       ...rest,
+      "data-testid": testId,
+      "data-rk": hostHook,
       ...stylex.props(
         styles.root,
         layoutStyles.paddingBlock,

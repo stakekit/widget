@@ -18,6 +18,8 @@ type ReviewRow = {
     readonly label: string;
     readonly text: string;
   };
+  /** Renders as the row's `data-testid`. */
+  readonly testId?: string;
 } & (
   | {
       /** The formatted value, such as "$1.20" or "0.5%". */
@@ -139,6 +141,7 @@ const ReviewRows = ({ rows }: { readonly rows: ReadonlyArray<ReviewRow> }) => (
         <DetailRow
           key={row.label}
           label={row.label}
+          {...(row.testId === undefined ? {} : { testId: row.testId })}
           value={
             row.info === undefined ? (
               value

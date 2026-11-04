@@ -10,47 +10,47 @@ import {
 import { yieldApiYieldFixture } from "../../fixtures";
 
 describe("position details hub model", () => {
-  it("defaults to unstake when exit is supported, else stake", () => {
+  it("defaults to exit when it is supported, else enter", () => {
     expect(
-      resolvePositionDetailsActionMode({ canStake: true, canUnstake: true })
-    ).toBe("unstake");
+      resolvePositionDetailsActionMode({ canEnter: true, canExit: true })
+    ).toBe("exit");
     expect(
-      resolvePositionDetailsActionMode({ canStake: true, canUnstake: false })
-    ).toBe("stake");
+      resolvePositionDetailsActionMode({ canEnter: true, canExit: false })
+    ).toBe("enter");
     expect(
-      resolvePositionDetailsActionMode({ canStake: false, canUnstake: true })
-    ).toBe("unstake");
+      resolvePositionDetailsActionMode({ canEnter: false, canExit: true })
+    ).toBe("exit");
     expect(
-      resolvePositionDetailsActionMode({ canStake: false, canUnstake: false })
+      resolvePositionDetailsActionMode({ canEnter: false, canExit: false })
     ).toBe(null);
   });
 
   it("keeps an explicit tab selection when that action stays supported", () => {
     expect(
       resolveSelectedPositionDetailsActionMode({
-        canStake: true,
-        canUnstake: true,
-        selectedMode: "stake",
+        canEnter: true,
+        canExit: true,
+        selectedMode: "enter",
       })
-    ).toBe("stake");
+    ).toBe("enter");
     expect(
       resolveSelectedPositionDetailsActionMode({
-        canStake: true,
-        canUnstake: false,
-        selectedMode: "unstake",
+        canEnter: true,
+        canExit: false,
+        selectedMode: "exit",
       })
-    ).toBe("stake");
+    ).toBe("enter");
   });
 
-  it("shows action tabs only when both stake and exit are supported", () => {
+  it("shows action tabs only when both enter and exit are supported", () => {
     expect(
-      shouldShowPositionDetailsActionTabs({ canStake: true, canUnstake: true })
+      shouldShowPositionDetailsActionTabs({ canEnter: true, canExit: true })
     ).toBe(true);
     expect(
-      shouldShowPositionDetailsActionTabs({ canStake: true, canUnstake: false })
+      shouldShowPositionDetailsActionTabs({ canEnter: true, canExit: false })
     ).toBe(false);
     expect(
-      shouldShowPositionDetailsActionTabs({ canStake: false, canUnstake: true })
+      shouldShowPositionDetailsActionTabs({ canEnter: false, canExit: true })
     ).toBe(false);
   });
 
@@ -84,7 +84,7 @@ describe("position details hub model", () => {
     ).toBe(true);
   });
 
-  it("drops the unstake capability when the position has no unstakeable balance", () => {
+  it("drops the exit capability when the position has no unstakeable balance", () => {
     const lockedOnly = {
       canChangeUnstakeAmount: true,
       canUnstake: true,
@@ -99,14 +99,14 @@ describe("position details hub model", () => {
 
     const capabilities = resolvePositionDetailsActionCapabilities(lockedOnly);
 
-    expect(capabilities).toEqual({ canStake: true, canUnstake: false });
+    expect(capabilities).toEqual({ canEnter: true, canExit: false });
     expect(shouldShowPositionDetailsActionTabs(capabilities)).toBe(false);
     expect(
       resolveSelectedPositionDetailsActionMode({
         ...capabilities,
         selectedMode: null,
       })
-    ).toBe("stake");
+    ).toBe("enter");
   });
 
   it("treats the hub as actionable when exit is supported even without form readiness", () => {

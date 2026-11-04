@@ -24,22 +24,22 @@ const vaultYield = yieldApiYieldFixture({
 });
 
 const ControlledTabs = ({
-  canStake = true,
-  canUnstake = true,
+  canEnter = true,
+  canExit = true,
   integration = yieldApiYieldFixture(),
 }: {
-  canStake?: boolean;
-  canUnstake?: boolean;
+  canEnter?: boolean;
+  canExit?: boolean;
   integration?: EarnYieldWithProvider;
 }) => {
   const [selectedMode, setSelectedMode] =
-    useState<PositionDetailsActionMode>("unstake");
+    useState<PositionDetailsActionMode>("exit");
 
   return (
     <>
       <PositionDetailsActionTabs
-        canStake={canStake}
-        canUnstake={canUnstake}
+        canEnter={canEnter}
+        canExit={canExit}
         integration={integration}
         selectedMode={selectedMode}
         onSelectMode={setSelectedMode}
@@ -91,27 +91,30 @@ describe("position details action tabs", () => {
     ).toBe(false);
   });
 
-  it("switches Unstake and Stake tabs without changing the URL", async () => {
+  it("switches the Unstake and Stake tabs without changing the URL", async () => {
     const app = await renderTabs(["/positions", "/positions/yield-1/default"]);
 
     await expect
-      .element(app.getByTestId("position-details-action-tab-unstake"))
-      .toBeInTheDocument();
+      .element(app.getByRole("tab", { name: "Unstake" }))
+      .toHaveAttribute("aria-selected", "true");
     await expect
-      .element(app.getByTestId("position-details-action-tab-stake"))
-      .toBeInTheDocument();
+      .element(app.getByRole("tab", { name: "Stake" }))
+      .toHaveAttribute("aria-selected", "false");
     await expect
       .element(app.getByTestId("selected-mode"))
-      .toHaveTextContent("unstake");
+      .toHaveTextContent("exit");
     await expect
       .element(app.getByTestId("location"))
       .toHaveTextContent("/positions/yield-1/default");
 
-    await userEvent.click(app.getByTestId("position-details-action-tab-stake"));
+    await userEvent.click(app.getByRole("tab", { name: "Stake" }));
 
     await expect
       .element(app.getByTestId("selected-mode"))
-      .toHaveTextContent("stake");
+      .toHaveTextContent("enter");
+    await expect
+      .element(app.getByRole("tab", { name: "Stake" }))
+      .toHaveAttribute("aria-selected", "true");
     await expect
       .element(app.getByTestId("location"))
       .toHaveTextContent("/positions/yield-1/default");
@@ -127,11 +130,11 @@ describe("position details action tabs", () => {
     );
 
     await expect
-      .element(app.getByTestId("position-details-action-tab-unstake"))
-      .toHaveTextContent("Withdraw");
+      .element(app.getByRole("tab", { name: "Withdraw" }))
+      .toBeInTheDocument();
     await expect
-      .element(app.getByTestId("position-details-action-tab-stake"))
-      .toHaveTextContent("Deposit");
+      .element(app.getByRole("tab", { name: "Deposit" }))
+      .toBeInTheDocument();
   });
 
   it("does not render a selector when there is only one available action", async () => {
@@ -141,18 +144,13 @@ describe("position details action tabs", () => {
           <Routes>
             <Route
               path="positions/:integrationId/:balanceId"
-              element={<ControlledTabs canUnstake={false} />}
+              element={<ControlledTabs canExit={false} />}
             />
           </Routes>
         </MemoryRouter>
       </I18nextProvider>
     );
 
-    await expect
-      .element(app.getByTestId("position-details-action-tab-stake"))
-      .not.toBeInTheDocument();
-    await expect
-      .element(app.getByTestId("position-details-action-tab-unstake"))
-      .not.toBeInTheDocument();
+    await expect.element(app.getByRole("tablist")).not.toBeInTheDocument();
   });
 });

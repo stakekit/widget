@@ -572,7 +572,7 @@ const waitForServer = async (
 const assertStyleXStylesLoaded = async (page: Page, label: string) => {
   await page
     .locator(
-      '[data-rk="earn-live-presentation"] [data-rk="footer-button-primary"]'
+      '[data-testid="earn-live-presentation"] [data-rk="footer-button-primary"]'
     )
     .waitFor({ state: "visible", timeout: 90_000 });
   const { rendered, unstyled } = await page.evaluate(() => {
@@ -675,7 +675,7 @@ const assertWidgetLoads = async ({
       .waitFor({ state: "visible", timeout: 90_000 });
     await page
       .locator(
-        '[data-rk="earn-live-presentation"] [data-testid="select-token"]'
+        '[data-testid="earn-live-presentation"] [data-testid="select-token"]'
       )
       .waitFor({ state: "visible", timeout: 90_000 });
     await page.waitForTimeout(500);

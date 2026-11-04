@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes, Ref } from "react";
 import { TokenAvatar } from "../components/avatar";
 import { focusRingStyles } from "../components/focus-ring";
+import type { HostHook } from "../host-hook";
 import { Icon } from "../primitives/icon";
 import { Text } from "../primitives/text";
 import { borderWidth } from "../tokens/border.stylex";
@@ -25,21 +26,39 @@ type TokenTriggerProps = Omit<
    * token to choose. The button props then do not apply.
    */
   readonly readOnly?: boolean;
+  /** Renders as the trigger's `data-testid`. */
+  readonly testId?: string;
+  /** Renders as the trigger's `data-rk`, for hosts that locate it. */
+  readonly hostHook?: HostHook;
+  /**
+   * An account address: draws the account's generated avatar in place of the
+   * token's logo, as in a wallet's account trigger. `token.name` stays the
+   * text.
+   */
+  readonly account?: string;
 };
 
 /**
  * The chosen token beside an amount: its logo with the network badge and its
- * symbol on a raised pill. As a button it shows a caret and forwards its ref
- * and props, so it can be a `Modal` or `SelectSheet` trigger.
+ * symbol on a raised pill, or the chosen network or account in a wallet
+ * header. As a button it shows a caret and forwards its ref and props, so it
+ * can be a `Modal` or `SelectSheet` trigger.
  */
 export const TokenTrigger = ({
   token,
   readOnly = false,
+  testId,
+  hostHook,
+  account,
   ...rest
 }: TokenTriggerProps) => {
   const content = (
     <>
-      <TokenAvatar {...token} size="sm" decorative />
+      {account === undefined ? (
+        <TokenAvatar {...token} size="sm" decorative />
+      ) : (
+        <TokenAvatar account={account} size="sm" />
+      )}
       <Text weight="semibold" truncate>
         {token.name}
       </Text>
@@ -48,7 +67,13 @@ export const TokenTrigger = ({
 
   if (readOnly) {
     return (
-      <span {...stylex.props(styles.root, styles.readOnly)}>{content}</span>
+      <span
+        data-testid={testId}
+        data-rk={hostHook}
+        {...stylex.props(styles.root, styles.readOnly)}
+      >
+        {content}
+      </span>
     );
   }
 
@@ -56,6 +81,8 @@ export const TokenTrigger = ({
     <button
       {...rest}
       type="button"
+      data-testid={testId}
+      data-rk={hostHook}
       {...stylex.props(styles.root, styles.button, focusRingStyles.visible)}
     >
       {content}

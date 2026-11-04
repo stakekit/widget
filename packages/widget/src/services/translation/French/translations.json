@@ -1,5 +1,8 @@
 {
   "shared": {
+    "amount": "Montant",
+    "clear_search": "Effacer la recherche",
+    "search": "Rechercher",
     "insufficient_balance": "Solde insuffisant",
     "confidential": {
       "decrypt": "Déchiffrer",
@@ -41,7 +44,12 @@
     "learn_more": "En savoir plus",
     "change": "Changer",
     "manage_validators": "Gérer les validateurs",
-    "fee": "Frais"
+    "fee": "Frais",
+    "back": "Retour",
+    "close": "Fermer",
+    "opens_in_new_tab": "s'ouvre dans un nouvel onglet",
+    "powered_by_label": "Alimenté par",
+    "widget_sections": "Sections du widget"
   },
   "errors": {
     "InvalidArgumentError": {
@@ -294,6 +302,10 @@
     }
   },
   "activity": {
+    "list_label": "Activité",
+    "loading_more": "Chargement de plus d'activités",
+    "copy_hash": "Copier le hash de la transaction",
+    "copied": "Copié",
     "complete": {
       "continue": "Continuer"
     },
@@ -388,6 +400,7 @@
     },
     "showing_count": "Affichage de {{showing}} sur {{total}}",
     "filters": {
+      "label": "Filtrer l'activité",
       "all": "Tout",
       "stake": "Stake",
       "defi": "DeFi",
@@ -575,13 +588,16 @@
     }
   },
   "review": {
-    "estimated_reward": "Récompenses estimées",
+    "estimated_yearly_rewards": "Récompenses annuelles estimées",
+    "estimated_monthly_rewards": "Récompenses mensuelles estimées",
     "estimated_gas_fee": "Frais de gas estimés",
     "gas_fee_unavailable": "Indisponible",
     "wallet_fee": "Frais de {{wallet}}",
     "claim": "Réclamer",
     "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
-    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
+    "and_earn": "& gagnez {{interestRate}}",
+    "fee_info": "À propos : {{fee}}",
+    "gas_warning": "Cette action risque d'échouer : les fonds sont insuffisants pour couvrir les frais de gas",
     "additional_info": "Infos supplémentaires",
     "deposit_fee": "Frais de Dépôt",
     "management_fee": "Frais de Gestion",
@@ -627,6 +643,15 @@
     "encrypt_error": "Le chiffrement a échoué. Réessayez.",
     "prepare_rejected": "Cette demande ne peut pas aboutir. Revenez en arrière pour la modifier.",
     "approve_error": "Une erreur s'est produite",
+    "progress_label": "Progression de la transaction",
+    "state": {
+      "pending": "Pas commencée",
+      "active": "En cours",
+      "signing": "Autorisez cette transaction dans votre portefeuille",
+      "broadcasting": "Envoi de la transaction",
+      "done": "Complétée",
+      "failed": "Echouée"
+    },
     "view_transaction": "Voir la transaction",
     "tx_type": {
       "DECRYPT": "Déchiffrer le montant",
@@ -1061,7 +1086,10 @@
     "unstake_sign": {
       "title": "Vérifier la propriété",
       "description": "Vous devez vérifier la propriété de cette adresse avant de procéder. Vous serez invité(e) à signer un message qui sera utilisé pour confirmer que vous possédez bien cette adresse."
-    }
+    },
+    "actions_label": "Actions de la position",
+    "copy_address": "Copier {{label}}",
+    "copied": "Copié"
   },
   "unstake_review": {
     "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
@@ -1164,6 +1192,10 @@
       "reward_rate": "Taux de récompense",
       "about": "À propos",
       "read_docs": "Lire la documentation d'intégration",
+      "pane_label": "Détails du rendement",
+      "chart_history": "Historique : {{chart}}",
+      "chart_period": "Période : {{chart}}",
+      "no_chart_data": "Aucune donnée de graphique",
       "details": "Détails",
       "network": "Réseau",
       "provider": "Fournisseur",
@@ -1488,6 +1520,8 @@
   "tos_modal": {
     "title": "Conditions d'utilisation",
     "accept_button": "J'accepte",
+    "agree_checkbox": "J'ai lu et j'accepte les Conditions d'utilisation",
+    "close": "Fermer",
     "introduction": "Ces Conditions d'utilisation de StakeKit sont conclues entre vous (« vous » ou « votre ») et StakeKit LLC, ainsi qu'Omni Ltd. et ses autres filiales (« StakeKit », « nous », « notre » et « nos »). En accédant, téléchargeant, utilisant ou en cliquant sur « J'accepte » pour accepter tout « Service StakeKit » fourni par StakeKit, vous acceptez d'avoir lu attentivement, compris et accepté tous les termes et conditions de ces Conditions d'utilisation (« Conditions ») ainsi que notre Politique de confidentialité. Notre Politique de confidentialité peut être consultée ici : Politique de confidentialité StakeKit.",
     "additional_terms": "De plus, lors de l'utilisation de certaines fonctionnalités des Services, vous pourriez être soumis à des termes et conditions supplémentaires spécifiques applicables à ces fonctionnalités.",
     "risk_warning": "Comme pour tout actif, les valeurs des « Cryptomonnaies » peuvent fluctuer de manière significative et il existe un risque substantiel de pertes économiques lors de l'achat, de la vente, de la détention ou de l'investissement dans les cryptomonnaies et leurs dérivés. En utilisant les Services StakeKit, vous reconnaissez et acceptez que (1) vous êtes conscient des risques associés aux transactions de cryptomonnaies et de leurs dérivés, (2) vous assumez tous les risques liés à l'utilisation des Services StakeKit et aux transactions de monnaies numériques et de leurs dérivés, et (3) StakeKit ne sera pas responsable de ces risques ou de leurs conséquences négatives.",

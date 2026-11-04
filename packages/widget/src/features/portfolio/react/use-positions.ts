@@ -14,7 +14,6 @@ export const usePositions = () => {
   const isConnected = useSKWallet()?.status === "connected";
 
   return {
-    listData: ["header" as const, ...positions],
     positions,
     positionsView,
     // A refetch or a failed refetch keeps shown positions on screen.

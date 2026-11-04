@@ -2,6 +2,7 @@ import { Collapsible } from "@base-ui/react/collapsible";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { Icon } from "../primitives/icon";
+import { space } from "../tokens/space.stylex";
 import { disclosureStyles } from "./disclosure-styles";
 import { focusRingStyles } from "./focus-ring";
 
@@ -15,11 +16,18 @@ type DisclosureProps = {
   readonly open?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
   readonly defaultOpen?: boolean;
+  /** An avatar before the title, such as the provider's logo. */
+  readonly leading?: ReactNode;
+  /** Badges or a decorative icon after the title, such as a status. */
+  readonly badges?: ReactNode;
+  /** Renders as the trigger's `data-testid`. */
+  readonly testId?: string;
 };
 
 /**
  * A section that shows or hides its content, such as more details. The
- * trigger is a button whose expanded state says whether it is open.
+ * trigger is a button whose expanded state says whether it is open; it may
+ * lead with an avatar and carry badges after its title.
  */
 export const Disclosure = ({
   title,
@@ -27,6 +35,9 @@ export const Disclosure = ({
   open,
   onOpenChange,
   defaultOpen = false,
+  leading,
+  badges,
+  testId,
 }: DisclosureProps) => (
   <Collapsible.Root
     open={open}
@@ -34,9 +45,18 @@ export const Disclosure = ({
     defaultOpen={defaultOpen}
   >
     <Collapsible.Trigger
+      data-testid={testId}
       {...stylex.props(disclosureStyles.trigger, focusRingStyles.visible)}
     >
-      {title}
+      {leading === undefined && badges === undefined ? (
+        title
+      ) : (
+        <span {...stylex.props(styles.title)}>
+          {leading}
+          <span>{title}</span>
+          {badges}
+        </span>
+      )}
       <span {...stylex.props(disclosureStyles.caret)}>
         <Icon name="CaretDownIcon" size="sm" />
       </span>
@@ -48,6 +68,12 @@ export const Disclosure = ({
 );
 
 const styles = stylex.create({
+  title: {
+    gap: space[8],
+    alignItems: "center",
+    display: "flex",
+    minWidth: 0,
+  },
   panel: {
     height: {
       default: "var(--collapsible-panel-height)",

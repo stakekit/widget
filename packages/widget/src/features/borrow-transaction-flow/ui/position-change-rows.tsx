@@ -12,18 +12,15 @@ import {
   formatLtv,
   formatUsd,
 } from "../../../shared/lib/number-format";
-import {
-  DetailRow,
-  type DetailRowTone,
-} from "../../../shared/ui/components/details-section";
-import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import { DetailRow } from "../../../ui/index";
 import type { BorrowPositionChange } from "../model/borrow-completion";
 
 const riskLevelTone = {
   nearLimit: "warning",
   overLimit: "danger",
   safe: "default",
-} as const satisfies Record<RiskLevel, DetailRowTone>;
+} as const satisfies Record<RiskLevel, "default" | "warning" | "danger">;
 
 /** Collateral, debt, LTV, and health factor as they move with the action. */
 export const BorrowFlowPositionChangeRows = ({
@@ -50,21 +47,18 @@ export const BorrowFlowPositionChangeRows = ({
     <>
       {collateral ? (
         <DetailRow
-          id="collateral-value"
           label={t("dashboard.borrow.form.collateral_value")}
           value={collateral}
         />
       ) : null}
       {debt ? (
         <DetailRow
-          id="debt-value"
           label={t("dashboard.borrow.position_details.debt")}
           value={debt}
         />
       ) : null}
       {ltv && change.ltv ? (
         <DetailRow
-          id="ltv"
           label={t("dashboard.borrow.review_page.ltv")}
           tone={
             riskLevelTone[
@@ -79,7 +73,6 @@ export const BorrowFlowPositionChangeRows = ({
       ) : null}
       {healthFactor && change.healthFactor ? (
         <DetailRow
-          id="health-factor"
           label={t("dashboard.borrow.review_page.health_factor")}
           tone={
             riskLevelTone[

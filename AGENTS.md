@@ -29,9 +29,8 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   mounted as a host against the real API, configured from its panel and the
   page link, with a scripted host wallet on `window.skDev`. See the README's
   Development section. API mocking belongs to tests only.
-- `pnpm --filter @stakekit/widget lint` — widget formatting, type checks,
-  StyleX lint on `src/ui`, and the Design System migration allowlist check
-  (`check:design-system-allowlist`; `--write` syncs the ast-grep mirrors).
+- `pnpm --filter @stakekit/widget lint` — widget formatting, type checks, and
+  StyleX lint on `src/ui`.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.

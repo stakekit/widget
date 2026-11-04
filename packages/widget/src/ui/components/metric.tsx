@@ -27,8 +27,11 @@ export const Metric = ({
   readonly value: ReactNode;
   /** Context under the value, such as its fiat equivalent. */
   readonly caption?: ReactNode;
-  /** `success` is for positive rates and claimable amounts only. */
-  readonly valueTone?: "default" | "success";
+  /**
+   * `success` is for positive rates and claimable amounts only; `warning`
+   * and `danger` mark a risk figure, such as a health factor near liquidation.
+   */
+  readonly valueTone?: "default" | "success" | "warning" | "danger";
 }) => {
   const grouped = use(InMetricGroup);
   const [Term, Description] = grouped

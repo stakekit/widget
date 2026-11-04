@@ -62,6 +62,11 @@ export const containerWidth = stylex.defineConsts({
   split: "800px",
 });
 
+/** The widest a `WidgetFrame` grows: a frame that lays out a split view. */
+export const frameMaxWidth = stylex.defineConsts({
+  wide: "1000px",
+});
+
 /**
  * Grid tracks: the narrowest metric before metrics wrap, and the aside of the
  * split view.
@@ -75,4 +80,16 @@ export const gridTrack = stylex.defineConsts({
 export const visuallyHiddenBox = stylex.defineConsts({
   size: "1px",
   margin: "-1px",
+});
+
+/** Illustration sizes: `md` beside a message, `lg` heading a dialog. */
+export const illustrationSize = stylex.defineConsts({
+  md: "240px",
+  lg: "320px",
+});
+
+/** Stand-in heights for blocks taller than a control, such as an amount panel. */
+export const skeletonHeight = stylex.defineConsts({
+  panel: "112px",
+  section: "160px",
 });

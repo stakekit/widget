@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { Text } from "./text";
 
 const meta = {
@@ -96,6 +97,38 @@ export const Truncated: Story = {
   ),
 };
 
+/** Centered lines, such as a heading under a centered icon. */
+export const Centered: Story = {
+  args: { as: "p", align: "center" },
+  render: (args) => (
+    <div style={{ width: 200 }}>
+      <Text {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const text = canvasElement.querySelector("p");
+    await expect(text && getComputedStyle(text).textAlign).toBe("center");
+  },
+};
+
+/** A long unbroken amount wraps inside its container instead of overflowing. */
+export const BreakAnywhere: Story = {
+  args: {
+    as: "p",
+    breakAnywhere: true,
+    children: "0.123456789012345678901234 ETH",
+  },
+  render: (args) => (
+    <div style={{ width: 120 }}>
+      <Text {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const text = canvasElement.querySelector("p");
+    await expect(text?.scrollWidth).toBeLessThanOrEqual(text?.clientWidth ?? 0);
+  },
+};
+
 /** Emphasis inside translated copy, as `<Trans components>` renders it. */
 export const StrongAndMark: Story = {
   render: () => (
@@ -109,4 +142,18 @@ export const StrongAndMark: Story = {
 export const StrongAndMarkDark: Story = {
   ...StrongAndMark,
   globals: { colorScheme: "dark" },
+};
+
+/** A line break inside translated copy, where the translation has `<br0/>`. */
+export const Break: Story = {
+  render: () => (
+    <Text as="p">
+      Earn self-custodial yield.
+      <Text.Break />
+      Find more on our website.
+    </Text>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector("p br")).not.toBeNull();
+  },
 };

@@ -5,66 +5,74 @@ import {
   getYieldRiskSourceLabel,
   type YieldRiskDisplay,
 } from "../../../../../domain/earn/yield";
-import { ToolTip } from "../../../../../shared/ui/components/tooltip";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
-  riskInfoButton,
-  riskRatingBadge,
-  riskRatingBadgeText,
-  riskSummaryActions,
-  riskSummaryContainer,
-} from "./styles.css";
+  Badge,
+  Card,
+  InfoTip,
+  Stack,
+  Text,
+  type Tone,
+  VisuallyHidden,
+} from "../../../../../ui/index";
 
-type RiskRatingBadgeProps = {
-  risk: YieldRiskDisplay;
-  size?: "compact" | "default";
-  testId?: string;
-};
+// Green stays for positive rates, so the best ratings read in the info tone.
+const riskTones = {
+  positive: "info",
+  warning: "warning",
+  danger: "danger",
+  neutral: "neutral",
+} as const satisfies Record<YieldRiskDisplay["tone"], Tone>;
 
-export const YieldRiskInfoTooltip = () => {
+const YieldRiskInfoTooltip = () => {
   const { t } = useTranslation();
 
   return (
-    <ToolTip asChild label={t("details.risk.tooltip")}>
-      <Box
-        as="button"
-        aria-label={t("details.risk.info_aria_label")}
-        className={riskInfoButton}
-        type="button"
-      >
-        <InfoIcon />
-      </Box>
-    </ToolTip>
+    <InfoTip label={t("details.risk.info_aria_label")}>
+      {t("details.risk.tooltip")}
+    </InfoTip>
   );
 };
 
 export const RiskRatingBadge = ({
   risk,
-  size = "compact",
   testId,
-}: RiskRatingBadgeProps) => {
+}: {
+  readonly risk: YieldRiskDisplay;
+  readonly testId?: string;
+}) => {
   const { t } = useTranslation();
 
   return (
-    <Box
+    <Stack
       as="span"
-      aria-label={`${t("details.risk.title")}: ${risk.rating}`}
-      className={riskRatingBadge({ size, tone: risk.tone })}
-      data-testid={testId}
+      direction="row"
+      align="center"
+      {...(testId ? { testId } : {})}
     >
-      <Box as="span" className={riskRatingBadgeText({ size, tone: risk.tone })}>
-        {risk.rating}
-      </Box>
-    </Box>
+      <VisuallyHidden>{`${t("details.risk.title")}: `}</VisuallyHidden>
+      <Badge tone={riskTones[risk.tone]}>{risk.rating}</Badge>
+    </Stack>
   );
 };
+
+/** The rating's badge beside the info tip that explains where ratings come from. */
+export const YieldRiskRatingActions = ({
+  risk,
+  testId,
+}: {
+  readonly risk: YieldRiskDisplay;
+  readonly testId?: string;
+}) => (
+  <Stack direction="row" align="center" gap={8}>
+    <RiskRatingBadge risk={risk} {...(testId ? { testId } : {})} />
+    <YieldRiskInfoTooltip />
+  </Stack>
+);
 
 export const YieldRiskRatingSummary = ({
   yieldDto,
 }: {
-  yieldDto: EarnYieldWithProvider;
+  readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
   const risk = getYieldRiskDisplay(yieldDto);
@@ -74,35 +82,22 @@ export const YieldRiskRatingSummary = ({
   const sourceLabel = getYieldRiskSourceLabel(risk.source, t);
 
   return (
-    <Box
-      background="stakeSectionBackground"
-      borderRadius="xl"
-      className={riskSummaryContainer}
-      data-testid="yield-risk-rating-summary"
-      display="flex"
-      justifyContent="space-between"
-      alignItems="center"
-      gap="3"
-      marginTop="2"
-      py="4"
-      px="4"
-    >
-      <Box display="flex" flexDirection="column" gap="1" minWidth="0">
-        <Text variant={{ weight: "bold" }}>{t("details.risk.title")}</Text>
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("details.risk.rated_by", { source: sourceLabel })}
-        </Text>
-      </Box>
+    <Card testId="yield-risk-rating-summary">
+      <Stack direction="row" align="center" justify="between" gap={12}>
+        <Stack gap={4}>
+          <Text variant="label" weight="semibold">
+            {t("details.risk.title")}
+          </Text>
+          <Text variant="caption" tone="muted">
+            {t("details.risk.rated_by", { source: sourceLabel })}
+          </Text>
+        </Stack>
 
-      <Box className={riskSummaryActions}>
-        <RiskRatingBadge
+        <YieldRiskRatingActions
           risk={risk}
-          size="default"
           testId="yield-risk-rating-summary__badge"
         />
-
-        <YieldRiskInfoTooltip />
-      </Box>
-    </Box>
+      </Stack>
+    </Card>
   );
 };

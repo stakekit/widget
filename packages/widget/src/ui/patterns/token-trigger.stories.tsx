@@ -82,3 +82,23 @@ export const FallbackAndTruncation: Story = {
     </Stack>
   ),
 };
+
+/**
+ * An account's trigger: its generated avatar beside the address, named by the
+ * address, and located by hosts through `hostHook`.
+ */
+export const Account: Story = {
+  args: {
+    token: { name: "0x12…cdef" },
+    account: "0x1234567890abcdef1234567890abcdef12345678",
+    hostHook: "account-modal-container",
+  },
+  play: async ({ args, canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", {
+      name: "0x12…cdef",
+    });
+    await expect(trigger).toHaveAttribute("data-rk", "account-modal-container");
+    await userEvent.click(trigger);
+    await expect(args.onClick).toHaveBeenCalledOnce();
+  },
+};

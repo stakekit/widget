@@ -8,13 +8,8 @@ import {
 import {
   AnimationPage,
   BackButtonProvider,
-  SplitView,
 } from "../../../features/widget-shell/views";
-import { Box } from "../../../shared/ui/primitives/box";
-import {
-  earnDetailsWrapper,
-  overviewPageContainer,
-} from "./dashboard-overview.css";
+import { SplitView, Stack } from "../../../ui/index";
 
 /**
  * Stable parent of the Earn form and its flow routes, so moving from the form
@@ -47,31 +42,17 @@ const DashboardOverviewSplitView = ({
   const { t } = useTranslation();
 
   return (
-    <Box display="flex" flexDirection="column" gap="4">
-      <SplitView
-        primaryBarLabel={t("dashboard.split_view.earn")}
-        secondaryBarLabel={t("dashboard.split_view.details")}
-        primary={
-          <Box
-            className={overviewPageContainer}
-            display="flex"
-            flex={1}
-            flexDirection="column"
-            gap="8"
-            justifyContent="space-between"
-            width="0"
-          >
-            <BackButtonProvider>
-              <Outlet />
-            </BackButtonProvider>
-          </Box>
-        }
-        secondary={
-          <Box className={earnDetailsWrapper} flex={1} width="0">
-            {details}
-          </Box>
-        }
-      />
-    </Box>
+    <SplitView
+      primaryBarLabel={t("dashboard.split_view.earn")}
+      secondaryBarLabel={t("dashboard.split_view.details")}
+      primary={
+        <Stack grow gap={32} justify="between">
+          <BackButtonProvider>
+            <Outlet />
+          </BackButtonProvider>
+        </Stack>
+      }
+      secondary={<Stack grow>{details}</Stack>}
+    />
   );
 };

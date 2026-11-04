@@ -1,14 +1,57 @@
+import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { emptyBorrowPositions } from "../../../../../domain/borrow/positions/borrow-positions";
 import { exactZero } from "../../../../../domain/finance/exact";
-import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import {
+  formatPercent,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import {
+  Card,
+  Metric,
+  MetricGroup,
+  Skeleton,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { useSummary } from "../../../react/use-summary";
-import { SummaryItem } from "../../components/summary-item";
-import { summaryContainer } from "../../components/summary-item/index.css";
+
+/** A summary figure: the label above its neutral value, or a loader. */
+const SummaryMetric = ({
+  label,
+  value,
+  isLoading,
+  kind,
+}: {
+  readonly label: string;
+  readonly value: BigNumber | undefined;
+  readonly isLoading: boolean;
+  readonly kind: "usd" | "percent";
+}) => {
+  const { locale } = useWidgetPresentation();
+  const formatted = (() => {
+    if (!value) return "-";
+    if (kind === "percent") {
+      return value.gt(0) ? formatPercent(value.dividedBy(100), locale) : "-";
+    }
+    return formatUsd(value, locale);
+  })();
+
+  return (
+    <Metric
+      label={label}
+      value={
+        isLoading ? (
+          <Skeleton shape="rect" height="sm" width="half" />
+        ) : (
+          formatted
+        )
+      }
+    />
+  );
+};
 
 export const Summary = () => {
   const summary = useSummary();
@@ -71,56 +114,55 @@ export const Summary = () => {
 
   const { t } = useTranslation();
 
-  const variant = useWidgetConfig("variant");
-
   return (
-    <Box display="flex" flexDirection="column" gap="2">
-      <Box
-        className={combineRecipeWithVariant({ rec: summaryContainer, variant })}
-      >
-        <SummaryItem
-          type="staked"
-          label={t(
-            hasBorrowPositions
-              ? "dashboard.overview.summary.total_supplied"
-              : "dashboard.overview.summary.total_staked"
-          )}
-          value={totalPositionsValue}
-          isLoading={
-            summary.allPositions._tag === "Loading" || borrowPositionsAreLoading
-          }
-        />
+    <Stack gap={8}>
+      <Card padding={16}>
+        <MetricGroup columns={{ base: 1, sm: 3 }}>
+          <SummaryMetric
+            kind="usd"
+            label={t(
+              hasBorrowPositions
+                ? "dashboard.overview.summary.total_supplied"
+                : "dashboard.overview.summary.total_staked"
+            )}
+            value={totalPositionsValue}
+            isLoading={
+              summary.allPositions._tag === "Loading" ||
+              borrowPositionsAreLoading
+            }
+          />
 
-        <SummaryItem
-          type="apy"
-          label={t("dashboard.overview.summary.average_apy")}
-          value={averageApyValue}
-          isLoading={
-            summary.averageApy._tag === "Loading" || borrowPositionsAreLoading
-          }
-        />
+          <SummaryMetric
+            kind="percent"
+            label={t("dashboard.overview.summary.average_apy")}
+            value={averageApyValue}
+            isLoading={
+              summary.averageApy._tag === "Loading" || borrowPositionsAreLoading
+            }
+          />
 
-        <SummaryItem
-          type="available"
-          label={t(
-            hasBorrowPositions
-              ? "dashboard.overview.summary.net_worth"
-              : "dashboard.overview.summary.available_balance"
-          )}
-          value={availableOrNetWorthValue}
-          isLoading={
-            hasBorrowPositions
-              ? summary.allPositions._tag === "Loading" ||
-                borrowPositionsAreLoading
-              : summary.availableBalance._tag === "Loading"
-          }
-        />
-      </Box>
+          <SummaryMetric
+            kind="usd"
+            label={t(
+              hasBorrowPositions
+                ? "dashboard.overview.summary.net_worth"
+                : "dashboard.overview.summary.available_balance"
+            )}
+            value={availableOrNetWorthValue}
+            isLoading={
+              hasBorrowPositions
+                ? summary.allPositions._tag === "Loading" ||
+                  borrowPositionsAreLoading
+                : summary.availableBalance._tag === "Loading"
+            }
+          />
+        </MetricGroup>
+      </Card>
       {allPositions?.excludesHidden ? (
-        <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
+        <Text variant="caption" tone="muted">
           {t("dashboard.overview.summary.excludes_confidential")}
         </Text>
       ) : null}
-    </Box>
+    </Stack>
   );
 };

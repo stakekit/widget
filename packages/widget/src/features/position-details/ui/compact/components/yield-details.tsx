@@ -13,10 +13,8 @@ import {
 } from "../../../../../domain/earn/yield";
 import { humanizeEnumValue } from "../../../../../shared/lib/formatters";
 import { formatRoundedPercent } from "../../../../../shared/lib/number-format";
-import { SKAnchor } from "../../../../../shared/ui/primitives/anchor";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import { DetailList, DetailRow, ExternalLink } from "../../../../../ui/index";
 import {
   formatMeaningfulCompactUsd,
   formatOptionalDays,
@@ -64,26 +62,15 @@ export const YieldDetails = ({
         `position_details.stake_type.${getExtendedYieldType(integrationData)}`
       )}
     >
-      {details.length > 0 ? (
-        <Box marginTop="1">
-          {details.map((detail) => (
-            <Box
-              key={detail.id}
-              marginTop="1"
-              marginBottom="3"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              gap="3"
-            >
-              <Text variant={{ weight: "normal" }}>{detail.label}</Text>
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {detail.value}
-              </Text>
-            </Box>
-          ))}
-        </Box>
-      ) : null}
+      <DetailList>
+        {details.map((detail) => (
+          <DetailRow
+            key={detail.id}
+            label={detail.label}
+            value={detail.value}
+          />
+        ))}
+      </DetailList>
     </PositionSourceDetails>
   );
 };
@@ -126,9 +113,12 @@ const getYieldDetails = ({
           id: "website",
           label: t("details.validators_website"),
           value: (
-            <SKAnchor href={formatProviderWebsiteHref(website)}>
+            <ExternalLink
+              href={formatProviderWebsiteHref(website)}
+              newTabLabel={t("shared.opens_in_new_tab")}
+            >
               {formatProviderWebsite(website)}
-            </SKAnchor>
+            </ExternalLink>
           ),
         }
       : null,

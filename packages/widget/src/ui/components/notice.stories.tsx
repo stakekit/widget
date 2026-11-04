@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { expect, fn, within } from "storybook/test";
 import { Stack } from "../primitives/stack";
 import { Button } from "./button";
 import { Notice } from "./notice";
@@ -54,3 +54,18 @@ export const Tones: Story = {
 };
 
 export const TonesDark: Story = { ...Tones, globals: { colorScheme: "dark" } };
+
+/** While busy, a spinner replaces the tone's icon. */
+export const Busy: Story = {
+  args: {
+    tone: "neutral",
+    title: "Checking verification",
+    children: "This takes a few seconds.",
+    busy: true,
+    testId: "notice",
+  },
+  play: async ({ canvasElement }) => {
+    const notice = within(canvasElement).getByTestId("notice");
+    await expect(notice).toHaveAttribute("aria-busy", "true");
+  },
+};

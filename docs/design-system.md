@@ -28,13 +28,38 @@ Design System props.
 Only the Design System uses StyleX, Base UI, `motion`, Recharts, TanStack
 Virtual and SVG icon markup.
 
+## Parts
+
+`src/ui/index.ts` exports:
+
+- **Primitives**: `Box`, `Stack`, `Grid`, `Text`, `Icon`, `VisuallyHidden`.
+- **Components**: `Accordion`, `AlertDialog`, `AmountInput`,
+  `AnimatedNumber`, `Avatar`, `IconAvatar`, `TokenAvatar`, `Badge`, `Button`,
+  `ButtonAnchor`, `Card`, `Checkbox`, `Chip`, `ChipGroup`, `CopyButton`,
+  `DetailList`, `DetailRow`, `Disclosure`, `Divider`, `EmbeddedPage`,
+  `ExpandableAmount`, `ExternalLink`, `Field`, `IconButton`, `Illustration`,
+  `InfoTip`, `ListGroup`, `ListRow`, `Menu`, `Meter`, `Metric`,
+  `MetricGroup`, `Modal`, `Notice`, `Popover`, `ScrollArea`, `SearchInput`,
+  `SegmentedControl`, `Select`, `Skeleton`, `Spinner`, `Steps`, `Switch`,
+  `Tabs`, `TimeSeriesChart`, `Tooltip`, `VirtualList`.
+- **Patterns**: `AmountPanel`, `AssetHeader`, `EmptyState`, `Entrance`,
+  `ErrorState`, `FlowSteps`, `PageHeader`, `PageTransition`,
+  `ReviewSummary`, `SelectSheet`, `SplitView`, `StandIn`, `TokenTrigger`,
+  `WidgetFrame`.
+- **Artwork**: `Logo`, `MorphoMark`.
+- **Prop types**: `Tone`, `TextTone`, `TypeRole`, `Space`, `Responsive`,
+  `IconName`, `ButtonIconName`, `HostHook`, `TokenLogo`, `AmountSeparators`,
+  `SelectOption`, `TabOption`, `ToggleOption`, `TimeSeriesPoint`,
+  `VirtualListGroup`, `SplitViewSide`.
+
+A part added to or removed from `src/ui/index.ts` updates this list.
+
 ## Tokens
 
 Tokens are StyleX variables defined in the Design System's token definitions.
-Their CSS custom properties use a namespace distinct from the legacy `--sk-*`
-names. They are not a host contract: hosts theme the Widget only through
-`appearance`, and the theme root sets host values as inline custom properties on
-the Widget root and the portal container.
+Their CSS custom properties are not a host contract: hosts theme the Widget
+only through `appearance`, and the theme root sets host values as inline custom
+properties on the Widget root and the portal container.
 
 ### Three tiers
 
@@ -186,6 +211,11 @@ A component shaped by one Feature, such as a Feature's details pane or metric
 card, lives in that Feature and composes Design System parts. It still follows
 the rules above.
 
+Hosts and tests locate elements by `data-rk`. A part that takes `hostHook`
+renders it as `data-rk`; the values are the `HostHook` union in
+`src/ui/host-hook.ts`, and a new value joins that union. No other `data-rk`
+value is rendered.
+
 ## Extending instead of working around
 
 When the Design System lacks something a screen needs, extend it; do not work
@@ -214,13 +244,11 @@ deliberate exception and states its reason after ` -- `, for example
 
 `pnpm lint` and `pnpm check-hygiene` enforce the rules above:
 
-- dependency-cruiser keeps StyleX, Base UI, `motion`, Recharts, TanStack
-  Virtual and the legacy styling libraries (vanilla-extract, Radix and its
-  internals, clsx, the skeleton library) inside `src/ui/`
-  (`design-system-owns-styling-libraries`), and style modules (`*.stylex.ts`,
-  `*.css.ts`, `.css`) too (`design-system-owns-style-modules`). It keeps other
-  owners on the main interface (`design-system-internals-private`), lets only
-  application composition use the composition interface
+- dependency-cruiser keeps StyleX, Base UI, `motion`, Recharts and TanStack
+  Virtual inside `src/ui/` (`design-system-owns-styling-libraries`), and style
+  modules (`*.stylex.ts`, `.css`) too (`design-system-owns-style-modules`). It
+  keeps other owners on the main interface (`design-system-internals-private`),
+  lets only application composition use the composition interface
   (`design-system-composition-importers`), and lets `src/ui/` import only
   itself (`layer-ui`). These run in `check-hygiene`.
 - ast-grep rejects lowercase JSX elements and `createElement` calls with a
@@ -239,15 +267,8 @@ deliberate exception and states its reason after ` -- `, for example
   shorthands, sorted keys) on `src/ui/`:
   `pnpm --filter @stakekit/widget lint:stylex`.
 
-During the migration, files that have not moved yet are listed in
-`packages/widget/scripts/architecture/design-system-allowlist.ts` with the
-rules they break. `pnpm --filter @stakekit/widget check:design-system-allowlist`
-(part of `lint`) fails on an offender the list does not name, on an entry that
-no longer offends, and on an entry (file and rule) that the list at the merge
-base with `main` does not have, so the list only shrinks. Without git or a
-`main` branch it skips that comparison and says so. After migrating a file,
-delete its entry and run the check with `--write`, which copies the list into
-the ast-grep rules' `ignores`.
+Every rule applies to every file; the only exceptions are suppressions that
+state their reason.
 
 ## Artwork
 

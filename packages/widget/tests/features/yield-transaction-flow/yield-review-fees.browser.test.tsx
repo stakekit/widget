@@ -2,8 +2,8 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import type { useStakeReview } from "../../../src/features/yield-transaction-flow/ui/review/hooks/use-stake-review.hook";
-import { StakeReviewPage } from "../../../src/features/yield-transaction-flow/ui/review/pages/stake-review.page";
+import type { useEnterReview } from "../../../src/features/yield-transaction-flow/ui/review/hooks/use-enter-review.hook";
+import { EnterReviewPage } from "../../../src/features/yield-transaction-flow/ui/review/pages/enter-review.page";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
@@ -11,19 +11,19 @@ import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 const i18nInstance = createWidgetI18nInstance();
 
 const hookState = vi.hoisted(() => ({
-  current: undefined as unknown as ReturnType<typeof useStakeReview>,
+  current: undefined as unknown as ReturnType<typeof useEnterReview>,
 }));
 
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/review/hooks/use-stake-review.hook",
+  "../../../src/features/yield-transaction-flow/ui/review/hooks/use-enter-review.hook",
   () => ({
-    useStakeReview: () => hookState.current,
+    useEnterReview: () => hookState.current,
   })
 );
 
 const stake = yieldApiYieldFixture();
 
-type Review = ReturnType<typeof useStakeReview>;
+type Review = ReturnType<typeof useEnterReview>;
 
 const depositFee = {
   explanation: "Charged on deposit",
@@ -72,7 +72,6 @@ const renderStakeReview = ({
     metaInfo: { showMetaInfo: false },
     onKycStatusRefresh: vi.fn(),
     performanceFee: null,
-    rewardToken: null,
     token: stake.token,
     yieldType: "Stake",
     ...fees,
@@ -87,7 +86,7 @@ const renderStakeReview = ({
         variant="default"
       >
         <MemoryRouter>
-          <StakeReviewPage />
+          <EnterReviewPage />
         </MemoryRouter>
       </TestWidgetConfigProvider>
     </I18nextProvider>

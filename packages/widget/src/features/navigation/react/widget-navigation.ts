@@ -1,5 +1,11 @@
 import { Option } from "effect";
-import { useLocation, useNavigate } from "react-router";
+import type { MouseEvent } from "react";
+import {
+  useHref,
+  useLinkClickHandler,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import {
   type WidgetNavigationTarget,
   widgetTargetPath,
@@ -28,6 +34,30 @@ export const useWidgetNavigate = () => {
         state: widgetTargetState(to),
       }),
   } as const;
+};
+
+/** What an anchor needs to navigate within the Widget's router. */
+export type WidgetLinkProps = {
+  readonly href: string;
+  readonly onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
+};
+
+/**
+ * The `href` and click handler that make an anchor a router link to a
+ * registry path or location: a plain click navigates in the Widget, a
+ * modified click keeps the browser's behavior.
+ */
+export const useWidgetLinkProps = (
+  to: WidgetNavigationTarget,
+  options?: { readonly viewTransition?: boolean }
+): WidgetLinkProps => {
+  const path = widgetTargetPath(to);
+  const href = useHref(path);
+  const onClick = useLinkClickHandler<HTMLAnchorElement>(path, {
+    state: widgetTargetState(to),
+    viewTransition: options?.viewTransition ?? false,
+  });
+  return { href, onClick };
 };
 
 /** The route's params while the current location is exactly that route. */

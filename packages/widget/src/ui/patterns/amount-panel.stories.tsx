@@ -126,6 +126,27 @@ export const InvalidDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/**
+ * `invalid` marks the amount without a message, such as an empty amount
+ * after a submit; the limits still show. Test ids name the panel's parts.
+ */
+export const InvalidWithoutMessage: Story = {
+  args: {
+    invalid: true,
+    limits: "Min 0.01 ETH",
+    testIds: { root: "panel", input: "amount", max: "max" },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const amount = canvas.getByRole("textbox", { name: "Stake" });
+    await expect(amount).toHaveAttribute("aria-invalid", "true");
+    await expect(amount).toHaveAttribute("data-testid", "amount");
+    await expect(canvas.getByText("Min 0.01 ETH")).toBeVisible();
+    await expect(canvas.getByTestId("panel")).toContainElement(amount);
+    await expect(canvas.getByTestId("max")).toHaveAccessibleName("Max");
+  },
+};
+
 /** Disabled, the amount and the chip do not take input. */
 export const Disabled: Story = {
   args: { value: "1", disabled: true },

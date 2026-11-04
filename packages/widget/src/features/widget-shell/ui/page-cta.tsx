@@ -1,7 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { Box } from "../../../shared/ui/primitives/box";
-import { Button } from "../../../shared/ui/primitives/button";
-import { pageCta } from "./layout.css";
+import { Button, Stack } from "../../../ui/index";
 
 export type PageCta = {
   disabled: boolean;
@@ -14,28 +12,24 @@ export type PageCta = {
 
 /** Places a page's call-to-action at the foot of the page. */
 export const PageCtaSlot = ({ children }: PropsWithChildren) => (
-  <Box marginTop="auto" className={pageCta}>
+  <Stack grow justify="end">
     {children}
-  </Box>
+  </Stack>
 );
 
-export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
+export const PageCtaButton = ({ cta }: { readonly cta: PageCta }) => {
   if (!cta || cta.hide) return null;
+  const variant = cta.variant ?? "primary";
 
   return (
     <PageCtaSlot>
       <Button
-        data-rk={`footer-button-${cta.variant ?? "primary"}`}
-        disabled={cta.disabled || cta.isLoading}
-        isLoading={cta.isLoading}
+        hostHook={`footer-button-${variant}`}
+        disabled={cta.disabled}
+        loading={cta.isLoading}
         onClick={cta.onClick}
-        variant={{
-          color:
-            cta.variant ??
-            (cta.disabled || cta.isLoading ? "disabled" : "primary"),
-          animation: "press",
-          size: "layout",
-        }}
+        size="cta"
+        variant={variant}
       >
         {cta.label}
       </Button>

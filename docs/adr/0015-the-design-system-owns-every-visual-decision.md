@@ -21,10 +21,10 @@ only neutral non-visual utilities.
 
 ## Styling: StyleX
 
-StyleX replaces vanilla-extract, Sprinkles and recipes because `stylex.props`
-merges per property and the last argument wins, whatever file declared the
-style. Overrides therefore follow the order they are applied in, not the order
-stylesheets happen to be emitted in.
+The Widget styles with StyleX because `stylex.props` merges per property and the
+last argument wins, whatever file declared the style. Overrides therefore follow
+the order they are applied in, not the order stylesheets happen to be emitted
+in.
 
 The Widget is embedded in pages it does not control, so two configuration
 constraints hold in every build and Vitest project:
@@ -38,17 +38,18 @@ Hosts keep importing the one published stylesheet. The only global stylesheet
 is the scoped reset (plus overrides for third-party markup the Widget renders):
 every selector is scoped to the Widget root or its portal container, beats bare
 host element selectors and loses to every StyleX rule. The Design System's
-custom properties use a namespace distinct from the legacy `--sk-*` names and
-are not a host contract.
+custom properties are not a host contract.
 
 ## Behavior: Base UI
 
 Base UI provides every interactive behavior (dialogs, menus, selects, tabs,
-popovers, tooltips and the other controls) and replaces Radix. It is bundled
-privately, not shared with the host. Popups render into the Widget's portal
-container, which by default lives inside the Widget root, so they stay inside a
-host dialog's DOM and stacking context; a host-supplied `portalContainer` still
-wins. The portal container carries the theme root's classes and variables.
+popovers, tooltips and the other controls). It is bundled privately, not shared
+with the host. Popups render into the Widget's portal container, which by
+default lives inside the Widget root, so they stay inside a host dialog's DOM
+and stacking context; a host-supplied `portalContainer` still wins. The portal
+container carries the theme root's classes and variables. A journey test
+mounts the Widget inside Radix and Base UI host dialogs and checks that focus,
+Escape and clicks stay inside the Widget's popups.
 
 ## Appearance
 
@@ -100,9 +101,10 @@ composition interface to application composition. ast-grep rejects lowercase
 JSX elements and `className` or `style` attributes in Features and application
 composition, and color literals and raw sizes, weights, line heights, radii,
 shadows, z-indices and durations inside the Design System outside its token
-definitions and artwork. Every suppression states its reason. Design System
-parts omit `className` and `style` from their types, and `as` is a finite
-union. Every part and variant has a story that runs as a Chromium test with
-accessibility violations failing it, and a contrast test checks every
-text/surface Color Role pair in every scheme and Appearance Preset. See
+definitions and artwork. These rules apply to every file, with no exemption
+list; every suppression states its reason. Design System parts omit
+`className` and `style` from their types, and `as` is a finite union. Every
+part and variant has a story that runs as a Chromium test with accessibility
+violations failing it, and a contrast test checks every text/surface Color
+Role pair in every scheme and Appearance Preset. See
 [the contributor guide](../design-system.md).

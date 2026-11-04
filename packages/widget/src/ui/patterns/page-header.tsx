@@ -15,6 +15,8 @@ type PageHeaderProps = {
     /** The button's accessible name, such as "Back". */
     readonly label: string;
     readonly onClick: () => void;
+    /** Renders as the back button's `data-testid`. */
+    readonly testId?: string;
   };
   /** The heading level the page's outline needs. */
   readonly as?: "h1" | "h2" | "h3";
@@ -37,6 +39,7 @@ export const PageHeader = ({
         label={back.label}
         size="sm"
         onClick={back.onClick}
+        data-testid={back.testId}
       />
     )}
     {(parent !== undefined || title !== undefined) && (

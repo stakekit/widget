@@ -3,13 +3,18 @@ import { isValidElement, useEffect, useEffectEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
-import { SKAnchor } from "../../../../shared/ui/primitives/anchor";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button, Icon, Modal } from "../../../../ui/index";
+import {
+  Button,
+  Icon,
+  Illustration,
+  Modal,
+  Stack,
+  Text,
+} from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import type { useGeoBlock } from "../../react/use-geo-block";
 import { WidgetTranslationGate } from "../../react/widget-translation-gate";
-import { imageStyle } from "./style.css";
+import { TranslatedLink } from "../translated-link";
 
 type ModalType =
   | ({ type: "geoBlock"; onClose: () => void } & Exclude<
@@ -52,7 +57,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofac_ofsi"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -65,7 +70,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofsi_crypto_ban"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -78,7 +83,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.crypto_ban"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -91,7 +96,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofac"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -104,7 +109,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofsi"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -120,7 +125,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                   countryName,
                   nameOfRegion: modal.regionCodeName ?? "",
                 }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -133,7 +138,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.staking_ban"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
             image: images.fees,
@@ -146,7 +151,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
             <Trans
               i18nKey="help_modals.geo_block.default"
               values={{ countryName }}
-              components={{ link0: <SKAnchor /> }}
+              components={{ link0: <TranslatedLink /> }}
             />
           ),
           image: images.fees,
@@ -173,9 +178,11 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
             <Trans
               i18nKey="help_modals.what_is_stakekit.description"
               components={{
-                br0: <br />,
-                link0: <SKAnchor href="https://yield.xyz/" />,
-                link1: <SKAnchor href="https://docs.yield.xyz/docs/faqs" />,
+                br0: <Text.Break />,
+                link0: <TranslatedLink href="https://yield.xyz/" />,
+                link1: (
+                  <TranslatedLink href="https://docs.yield.xyz/docs/faqs" />
+                ),
               }}
             />
           ),
@@ -244,9 +251,9 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
         )
       }
     >
-      <Box display="flex" justifyContent="center">
-        <Box as="img" src={image} alt="" className={imageStyle} />
-      </Box>
+      <Stack align="center">
+        <Illustration src={image} size="lg" />
+      </Stack>
     </Modal>
   );
 };

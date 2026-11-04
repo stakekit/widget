@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Box, Stack, Text, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
@@ -12,12 +10,11 @@ import {
 import { usePositions } from "../../../react/use-positions";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
-import { container } from "./style.css";
 
 const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positions, positionsView, listData, showPositions } = usePositions();
+  const { positions, positionsView, showPositions } = usePositions();
 
   const wallet = useSKWallet();
   const isConnected = wallet?.status === "connected";
@@ -31,28 +28,15 @@ const PositionsPage = () => {
     }
     if (!isConnected && !isConnecting) {
       return (
-        <Box
-          display="flex"
-          flex={1}
-          flexDirection="column"
-          justifyContent="flex-end"
-        >
-          <Box
-            display="flex"
-            flex={1}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text
-              variant={{ weight: "medium", size: "large" }}
-              textAlign="center"
-            >
+        <Stack grow justify="end">
+          <Stack grow align="center" justify="center">
+            <Text variant="heading" as="p" align="center">
               {t("positions.connect_wallet_manage")}
             </Text>
-          </Box>
+          </Stack>
 
           <FallbackContent type="not_connected" />
-        </Box>
+        </Stack>
       );
     }
     if (positionsView._tag === "Failed") {
@@ -63,35 +47,32 @@ const PositionsPage = () => {
   };
 
   return (
-    <Box className={container} display="flex" flex={1} flexDirection="column">
+    <Stack grow>
       {renderContent()}
 
       {showPositions && (
-        <Box flex={1} display="flex" flexDirection="column">
+        <Stack grow>
+          <ZerionChainModal />
+
+          <RevealBalancesHeader />
+
+          {isConnected && !positions.length && (
+            <Box paddingBlock={16}>
+              <FallbackContent type="no_current_positions" />
+            </Box>
+          )}
+
           <VirtualList
-            estimateSize={() => 60}
-            data={listData}
-            itemContent={(_, item) =>
-              item === "header" ? (
-                <>
-                  <ZerionChainModal />
-
-                  <RevealBalancesHeader />
-
-                  {isConnected && !positions.length && (
-                    <Box my="4">
-                      <FallbackContent type="no_current_positions" />
-                    </Box>
-                  )}
-                </>
-              ) : (
-                <PositionsListItem item={item} />
-              )
-            }
+            label={t("positions.title")}
+            items={positions}
+            getKey={(item) => `${item.integrationId}:${item.balanceId}`}
+            estimateSize={68}
+            maxHeight="lg"
+            renderItem={(item) => <PositionsListItem item={item} />}
           />
-        </Box>
+        </Stack>
       )}
-    </Box>
+    </Stack>
   );
 };
 

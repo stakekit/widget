@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -15,8 +15,14 @@ export type EarnValidatorTriggerState = {
   readonly selectedValidators: EarnValidator[];
   readonly multiSelect: boolean;
   readonly onRemoveValidator: (item: EarnValidator) => void;
+  /** Opens the validator list; focus returns to the opener on close. */
+  readonly open: () => void;
 };
 
+/**
+ * The validator selection of the Earn form, when the yield needs one: the
+ * caller's trigger, which opens the validator list.
+ */
 export const EarnValidatorSelection = ({
   renderTrigger,
 }: {
@@ -38,6 +44,7 @@ export const EarnValidatorSelection = ({
     validatorSearch,
     validatorsData,
   } = useSelectValidator();
+  const [open, setOpen] = useState(false);
 
   if (!selectedStake || !isYieldValidatorSelectionRequired(selectedStake)) {
     return null;
@@ -49,29 +56,36 @@ export const EarnValidatorSelection = ({
     "enter",
     "validatorAddresses"
   );
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) onOpen();
+    else onClose();
+  };
 
   return (
-    <SelectValidator
-      trigger={renderTrigger({
+    <>
+      {renderTrigger({
         multiSelect,
         onRemoveValidator,
+        open: () => onOpenChange(true),
         selectedStake,
         selectedValidators: selectedValidatorsArr,
       })}
-      selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
-      multiSelect={multiSelect}
-      selectedStake={selectedStake}
-      onItemClick={onItemClick}
-      onViewMoreClick={onViewMoreClick}
-      onClose={onClose}
-      onOpen={onOpen}
-      onSearch={onValidatorSearch}
-      searchValue={validatorSearch}
-      isLoading={isLoading}
-      validators={validatorsData ?? []}
-      hasMore={hasMoreValidators}
-      isLoadingMore={isLoadingMoreValidators}
-      onLoadMore={onLoadMoreValidators}
-    />
+      <SelectValidator
+        open={open}
+        onOpenChange={onOpenChange}
+        selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
+        multiSelect={multiSelect}
+        selectedStake={selectedStake}
+        onItemClick={onItemClick}
+        onViewMoreClick={onViewMoreClick}
+        search={{ value: validatorSearch, onValueChange: onValidatorSearch }}
+        isLoading={isLoading}
+        validators={validatorsData ?? []}
+        hasMore={hasMoreValidators}
+        isLoadingMore={isLoadingMoreValidators}
+        onLoadMore={onLoadMoreValidators}
+      />
+    </>
   );
 };

@@ -125,8 +125,10 @@ const headerAbove = (
 /**
  * A long list that renders only the rows in view, in a focusable scrolling
  * region. Rows are measured, so they may wrap and grow as the container
- * narrows; the list reads its own width, never the window's. Items may come
- * in titled groups, and more load when the last row scrolls into view.
+ * narrows; the list reads its own width, never the window's. The region is a
+ * size container, so its rows' container sizes follow the list's width, such
+ * as in a split view's narrow column. Items may come in titled groups, and
+ * more load when the last row scrolls into view.
  */
 export const VirtualList = <T,>({
   label,
@@ -316,6 +318,7 @@ export const VirtualList = <T,>({
 const styles = stylex.create({
   root: {
     overscrollBehavior: "contain",
+    containerType: "inline-size",
     flexGrow: 1,
     scrollbarWidth: "thin",
     height: "100%",

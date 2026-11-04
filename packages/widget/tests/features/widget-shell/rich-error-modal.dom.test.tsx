@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RichError } from "../../../src/services/errors/rich-error";
@@ -17,16 +16,6 @@ const richErrorState = vi.hoisted(
 
 vi.mock("../../../src/features/widget-shell/react/use-rich-errors", () => ({
   useRichErrors: () => richErrorState,
-}));
-
-vi.mock("../../../src/shared/ui/components/select-modal", () => ({
-  SelectModal: ({
-    children,
-    state,
-  }: {
-    children: ReactNode;
-    state: { isOpen: boolean };
-  }) => (state.isOpen ? children : null),
 }));
 
 import { RichErrorModal } from "../../../src/features/widget-shell/ui/rich-error-modal";

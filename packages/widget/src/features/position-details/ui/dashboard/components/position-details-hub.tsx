@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Spinner } from "../../../../../shared/ui/primitives/spinner";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Spinner, Stack, Text } from "../../../../../ui/index";
 import {
   type PositionDetailsActionMode,
   positionDetailsHubHasContent,
@@ -11,12 +9,11 @@ import {
   shouldShowPositionDetailsActionTabs,
 } from "../../../model/hub";
 import { usePositionDetails } from "../../../react/use-position-details";
+import { PositionDetailsExitActions } from "../../components/position-details-exit-actions";
 import { PositionDetailsPendingActions } from "../../components/position-details-pending-actions";
-import { PositionDetailsUnstakeActions } from "../../components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "../../components/position-details-validator-modal";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
-import { PositionDetailsStakeActions } from "./position-details-stake-actions";
-import { container } from "./styles.css";
+import { PositionDetailsEnterActions } from "./position-details-enter-actions";
 
 export const PositionDetailsHub = () => {
   const { t } = useTranslation();
@@ -29,14 +26,9 @@ export const PositionDetailsHub = () => {
 
   if (positionDetails.isLoading) {
     return (
-      <Box
-        className={container}
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
+      <Stack grow align="center" justify="center">
         <Spinner />
-      </Box>
+      </Stack>
     );
   }
 
@@ -56,48 +48,33 @@ export const PositionDetailsHub = () => {
 
   if (!positionDetailsHubHasContent(positionDetails)) {
     return (
-      <Box
-        className={container}
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("dashboard.position_details.no_actions")}
-        </Text>
-      </Box>
+      <Stack grow align="center" justify="center">
+        <Text tone="muted">{t("dashboard.position_details.no_actions")}</Text>
+      </Stack>
     );
   }
 
   return (
-    <Box
-      className={container}
-      flex={1}
-      display="flex"
-      flexDirection="column"
-      marginTop="3"
-    >
-      <Box display="flex" flex={1} flexDirection="column" gap="3">
-        {shouldShowPositionDetailsActionTabs(capabilities) ? (
-          <PositionDetailsActionTabs
-            {...capabilities}
-            integration={positionDetails.integrationData}
-            selectedMode={mode ?? "unstake"}
-            onSelectMode={setSelectedMode}
-          />
-        ) : null}
-
-        <PositionDetailsPendingActions
-          flagsInvalidAmount={false}
-          humanizesUntranslatedLabels
-          positionDetails={positionDetails}
+    <Stack grow gap={12}>
+      {shouldShowPositionDetailsActionTabs(capabilities) ? (
+        <PositionDetailsActionTabs
+          {...capabilities}
+          integration={positionDetails.integrationData}
+          selectedMode={mode ?? "exit"}
+          onSelectMode={setSelectedMode}
         />
+      ) : null}
 
-        {mode === "unstake" ? <PositionDetailsUnstakeActions /> : null}
-        {mode === "stake" ? <PositionDetailsStakeActions /> : null}
-      </Box>
+      <PositionDetailsPendingActions
+        flagsInvalidAmount={false}
+        humanizesUntranslatedLabels
+        positionDetails={positionDetails}
+      />
+
+      {mode === "exit" ? <PositionDetailsExitActions /> : null}
+      {mode === "enter" ? <PositionDetailsEnterActions /> : null}
 
       <PositionDetailsValidatorModal />
-    </Box>
+    </Stack>
   );
 };

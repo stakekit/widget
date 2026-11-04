@@ -56,7 +56,9 @@ describe("Staking flow", () => {
     await expect.element(app.getByText("Stake").first()).toBeInTheDocument();
 
     await expect
-      .element(app.getByTestId("estimated-reward__percent").getByText("5.08%"))
+      .element(
+        app.getByTestId("estimated-reward__percent").getByText("5.08%").first()
+      )
       .toBeInTheDocument();
 
     await expect
@@ -109,17 +111,13 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
 
+    // Review shows the amount with its symbol, and the rate it earns under it.
     await expect
-      .element(app.getByText(stakeAmount).first())
-      .toBeInTheDocument();
-
-    await expect
-      .element(app.getByText(yieldOp.token.symbol).first())
+      .element(app.getByText(`${stakeAmount} ${yieldOp.token.symbol}`).first())
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("& earn", { exact: false }).first())
+      .element(app.getByText("& earn 5.08%").first())
       .toBeInTheDocument();
-    await expect.element(app.getByText("5.08%").first()).toBeInTheDocument();
 
     await expect
       .element(

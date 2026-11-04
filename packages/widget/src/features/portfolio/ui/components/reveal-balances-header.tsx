@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Box, Button, Stack, Text } from "../../../../ui/index";
 import { useRevealBalances } from "../../react/use-reveal-balances";
 
 /**
@@ -28,41 +26,35 @@ export const RevealBalancesHeader = ({
   if (!leading && !trailing && !hasControl) return null;
 
   return (
-    <Box display="flex" flexDirection="column" gap="1" my="1">
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent={leading ? "space-between" : "flex-end"}
-        gap="2"
-      >
-        {leading}
-        <Box display="flex" alignItems="center" gap="2">
-          {trailing}
-          {canReveal ? (
-            <Button
-              variant={{ size: "small", color: "smallButtonLight" }}
-              disabled={revealing}
-              isLoading={revealing}
-              onClick={onReveal}
-            >
-              <Text>{t("shared.confidential.reveal_all")}</Text>
-            </Button>
-          ) : null}
-          {canHide ? (
-            <Button
-              variant={{ size: "small", color: "smallButtonLight" }}
-              onClick={onHide}
-            >
-              <Text>{t("shared.confidential.hide_all")}</Text>
-            </Button>
-          ) : null}
-        </Box>
-      </Box>
-      {canReveal && revealFailed ? (
-        <Text variant={{ type: "danger", weight: "normal" }} textAlign="end">
-          {t("shared.confidential.reveal_all_failed")}
-        </Text>
-      ) : null}
+    <Box paddingBlock={4}>
+      <Stack gap={4}>
+        <Stack
+          direction="row"
+          align="center"
+          justify={leading ? "between" : "end"}
+          gap={8}
+        >
+          {leading}
+          <Stack direction="row" align="center" gap={8}>
+            {trailing}
+            {canReveal ? (
+              <Button size="sm" loading={revealing} onClick={onReveal}>
+                {t("shared.confidential.reveal_all")}
+              </Button>
+            ) : null}
+            {canHide ? (
+              <Button size="sm" onClick={onHide}>
+                {t("shared.confidential.hide_all")}
+              </Button>
+            ) : null}
+          </Stack>
+        </Stack>
+        {canReveal && revealFailed ? (
+          <Text tone="danger" align="end">
+            {t("shared.confidential.reveal_all_failed")}
+          </Text>
+        ) : null}
+      </Stack>
     </Box>
   );
 };

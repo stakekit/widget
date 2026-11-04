@@ -5,7 +5,7 @@ import {
   formatTokenAmountWithSymbol,
   formatUsd,
 } from "../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import {
   positionYieldAtom,

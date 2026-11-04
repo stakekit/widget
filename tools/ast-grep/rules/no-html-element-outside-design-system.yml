@@ -2,10 +2,7 @@ id: no-html-element-outside-design-system
 language: Tsx
 severity: error
 message: 'Features and application composition render no HTML or SVG elements. Compose a part from the Design System (`src/ui/index.ts`); if none fits, extend the Design System instead of working around it.'
-note: |
-  See docs/design-system.md, "Extending instead of working around". The
-  exact-path `ignores` are the files not migrated yet, mirrored from
-  packages/widget/scripts/architecture/design-system-allowlist.ts.
+note: See docs/design-system.md, "Extending instead of working around".
 files:
   - packages/widget/src/features/**
   - packages/widget/src/app/**
@@ -30,40 +27,3 @@ rule:
               nthChild: 1
               kind: string
               regex: ^["'][a-z]
-ignores:
-  - packages/widget/src/app/composition/providers/theme-wrapper.tsx
-  - packages/widget/src/app/layouts/compact/compact-routes.tsx
-  - packages/widget/src/app/layouts/dashboard/dashboard-tabs/tab.tsx
-  - packages/widget/src/features/activity/ui/activity-details/activity-details.page.tsx
-  - packages/widget/src/features/activity/ui/activity-page/components/activity-icon/index.tsx
-  - packages/widget/src/features/borrow/market-position/ui/forms/repay-action-form.tsx
-  - packages/widget/src/features/earn/ui/compact/earn-page/earn.page.tsx
-  - packages/widget/src/features/earn/ui/components/select-token-section/index.tsx
-  - packages/widget/src/features/earn/ui/components/select-yield-section/index.tsx
-  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/external-link-icon.tsx
-  - packages/widget/src/features/earn/ui/dashboard/earn-details/reward-rate-chart.tsx
-  - packages/widget/src/features/position-details/ui/components/amount-block.tsx
-  - packages/widget/src/features/position-details/ui/dashboard/components/position-details-info.tsx
-  - packages/widget/src/features/position-details/ui/dashboard/components/position-details-stake-actions.tsx
-  - packages/widget/src/features/preferences/ui/help-modal/index.tsx
-  - packages/widget/src/features/wallet/ui/account-modal/index.tsx
-  - packages/widget/src/features/wallet/ui/chain-modal/index.tsx
-  - packages/widget/src/features/wallet/ui/connect-modal/index.tsx
-  - packages/widget/src/features/wallet/ui/wallet-dialog/avatar.tsx
-  - packages/widget/src/features/wallet/ui/wallet-dialog/icons.tsx
-  - packages/widget/src/features/wallet/ui/wallet-dialog/index.tsx
-  - packages/widget/src/features/widget-shell/ui/animation-layout.tsx
-  - packages/widget/src/features/widget-shell/ui/animation-page.tsx
-  - packages/widget/src/features/widget-shell/ui/compact/compact-layout/index.tsx
-  - packages/widget/src/features/widget-shell/ui/compact/details/components/tab.tsx
-  - packages/widget/src/features/widget-shell/ui/compact/details/components/tabs.tsx
-  - packages/widget/src/features/widget-shell/ui/compact/details/details.page.tsx
-  - packages/widget/src/features/widget-shell/ui/compact/header/index.tsx
-  - packages/widget/src/features/widget-shell/ui/mount-animated-page.tsx
-  - packages/widget/src/features/widget-shell/ui/powered-by.tsx
-  - packages/widget/src/features/yield-entry/ui/components/confidential-token-balance.tsx
-  - packages/widget/src/features/yield-summary/ui/components/kyc-gate-card/verification-modal.tsx
-  - packages/widget/src/features/yield-transaction-flow/ui/complete/pages/common.page.tsx
-  - packages/widget/src/features/yield-transaction-flow/ui/review/pages/common-page/common.page.tsx
-  - packages/widget/src/features/yield-transaction-flow/ui/review/pages/common-page/components/review-top-section.tsx
-  - packages/widget/src/features/yield-transaction-flow/ui/steps/pages/common.page.tsx

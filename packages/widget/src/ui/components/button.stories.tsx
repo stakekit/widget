@@ -136,3 +136,23 @@ export const Loading: Story = {
     await expect(args.onClick).not.toHaveBeenCalled();
   },
 };
+
+/** A test id renders as the button's `data-testid`. */
+export const TestId: Story = {
+  args: { testId: "primary-action" },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByTestId("primary-action")
+    ).toHaveRole("button");
+  },
+};
+
+/** A host hook renders as the button's `data-rk`, which hosts locate it by. */
+export const HostHook: Story = {
+  args: { hostHook: "footer-button-primary", variant: "primary" },
+  play: async ({ canvasElement }) => {
+    await expect(
+      canvasElement.querySelector('[data-rk="footer-button-primary"]')
+    ).toHaveRole("button");
+  },
+};

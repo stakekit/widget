@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 import { Text } from "../primitives/text";
 import { ExternalLink } from "./external-link";
 
@@ -36,6 +36,25 @@ export const Default: Story = {
     await expect(link).toHaveFocus();
     await expect(link).toHaveAttribute("target", "_blank");
     await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  },
+};
+
+/** `onClick` runs as the link opens, such as to record the visit. */
+export const WithClickHandler: Story = {
+  args: { onClick: fn() },
+  beforeEach: () => {
+    // Keep the test page from opening the explorer in a new tab.
+    const stay = (event: MouseEvent) => event.preventDefault();
+    window.addEventListener("click", stay, { capture: true });
+    return () => window.removeEventListener("click", stay, { capture: true });
+  },
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("link", {
+        name: "View on explorer opens in a new tab",
+      })
+    );
+    await expect(args.onClick).toHaveBeenCalledOnce();
   },
 };
 

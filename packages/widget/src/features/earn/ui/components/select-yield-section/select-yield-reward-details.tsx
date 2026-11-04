@@ -7,12 +7,14 @@ import {
 } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
-import { Divider } from "../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { MorphoStarsIcon } from "../../../../../shared/ui/primitives/icons/morpho-stars";
-import { Image } from "../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import {
+  Avatar,
+  Divider,
+  MorphoMark,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   EstimatedRewardAmounts,
@@ -21,7 +23,6 @@ import {
   RewardRateBreakdown,
 } from "../../../../yield-summary/views";
 import { useEarnEntry } from "../../../react/use-earn-facades";
-import { viaProviderImage } from "./styles.css";
 
 type StrategyProvider = {
   key: string;
@@ -111,89 +112,61 @@ export const SelectYieldRewardDetails = ({
     : null;
 
   return (
-    <Box data-rk="yield-rewards">
-      <Box display="flex" flexDirection="column" gap="4" marginTop="3">
-        {showYieldStrategyDetails && (
-          <>
-            {strategyDetails &&
-            (alwaysShowStrategy || strategyDetails.outputToken) ? (
-              <YieldStrategyDetails {...strategyDetails} />
-            ) : null}
+    <Stack gap={16}>
+      {showYieldStrategyDetails && (
+        <>
+          {strategyDetails &&
+          (alwaysShowStrategy || strategyDetails.outputToken) ? (
+            <YieldStrategyDetails {...strategyDetails} />
+          ) : null}
 
-            {alwaysShowStrategy && <Divider />}
-          </>
-        )}
+          {alwaysShowStrategy && <Divider />}
+        </>
+      )}
 
-        {earnPresentation.zerion && rewardToken ? (
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            gap="2"
-          >
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              <Trans
-                i18nKey="details.rewards.receive"
-                components={{
-                  symbols1: (
-                    <Box as="span" fontWeight="bold">
-                      {getRewardTokenSymbols(rewardToken.rewardTokens)}
-                    </Box>
-                  ),
-                }}
+      {earnPresentation.zerion && rewardToken ? (
+        <Stack direction="row" align="center" justify="between" gap={8}>
+          <Text tone="muted">
+            <Trans
+              i18nKey="details.rewards.receive"
+              components={{
+                symbols1: (
+                  <Text.Strong>
+                    {getRewardTokenSymbols(rewardToken.rewardTokens)}
+                  </Text.Strong>
+                ),
+              }}
+            />
+          </Text>
+
+          <Stack direction="row" align="center" gap={4}>
+            {rewardToken.logoUri && (
+              <Avatar
+                src={rewardToken.logoUri}
+                fallback={rewardToken.providerName}
+                size="xs"
               />
-            </Text>
+            )}
+            {isMorphoProvider(rewardToken.providerName) && <MorphoMark />}
+            <Text tone="muted">{rewardToken.providerName}</Text>
+          </Stack>
+        </Stack>
+      ) : null}
 
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              flexShrink={0}
-            >
-              {rewardToken.logoUri && (
-                <Box
-                  marginRight="1"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  gap="1"
-                >
-                  <Image
-                    imgProps={{ borderRadius: "full" }}
-                    wrapperProps={{ hw: "5" }}
-                    src={rewardToken.logoUri}
-                    fallbackName={rewardToken.providerName}
-                  />
+      <EstimatedRewardAmounts
+        earnMonthly={earnMonthly}
+        earnYearly={earnYearly}
+      />
 
-                  {isMorphoProvider(rewardToken.providerName) && (
-                    <Box width="5" height="5">
-                      <MorphoStarsIcon />
-                    </Box>
-                  )}
-                </Box>
-              )}
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {rewardToken.providerName}
-              </Text>
-            </Box>
-          </Box>
-        ) : null}
-
-        <EstimatedRewardAmounts
-          earnMonthly={earnMonthly}
-          earnYearly={earnYearly}
+      {rewardRateDetails ? (
+        <RewardRateBreakdown
+          rewardRate={rewardRateDetails}
+          showUpToCampaign
+          title={t("details.apy_composition.title")}
+          testId="reward-rate-breakdown"
         />
-
-        {rewardRateDetails ? (
-          <RewardRateBreakdown
-            rewardRate={rewardRateDetails}
-            showUpToCampaign
-            title={t("details.apy_composition.title")}
-            testId="reward-rate-breakdown"
-          />
-        ) : null}
-      </Box>
-    </Box>
+      ) : null}
+    </Stack>
   );
 };
 
@@ -219,47 +192,32 @@ const YieldStrategyDetails = ({
   const displayedProviders = firstProvider ? [firstProvider] : [];
 
   return (
-    <Box
-      display="flex"
-      justifyContent="space-between"
-      alignItems="center"
-      gap="2"
-      flexWrap="wrap"
-    >
+    <Stack direction="row" align="center" justify="between" gap={8} wrap>
       {outputToken ? (
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text tone="muted">
           {t("details.rewards.receive_output")}{" "}
-          <Text as="span" variant={{ weight: "bold" }}>
-            {outputAmount}
-          </Text>{" "}
-          {outputToken.symbol}
+          <Text.Strong>{outputAmount}</Text.Strong> {outputToken.symbol}
         </Text>
       ) : (
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("details.yield_strategy")}
-        </Text>
+        <Text tone="muted">{t("details.yield_strategy")}</Text>
       )}
 
-      <Box display="flex" alignItems="center" gap="1">
-        {!outputToken && (
-          <Text variant={{ type: "muted", weight: "normal" }}>{yieldType}</Text>
-        )}
+      <Stack direction="row" align="center" gap={4}>
+        {!outputToken && <Text tone="muted">{yieldType}</Text>}
 
         {displayedProviders.map((provider) => (
-          <Image
+          <Avatar
             key={provider.key}
-            imgProps={{ borderRadius: "base", className: viaProviderImage }}
-            wrapperProps={{ hw: "5" }}
             src={provider.logo}
-            fallbackName={provider.name}
+            fallback={provider.name}
+            size="xs"
+            shape="square"
           />
         ))}
 
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {t("details.via", { providerName })}
-        </Text>
-      </Box>
-    </Box>
+        <Text tone="muted">{t("details.via", { providerName })}</Text>
+      </Stack>
+    </Stack>
   );
 };
 

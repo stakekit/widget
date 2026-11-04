@@ -655,3 +655,68 @@ export const MultipleChoicesWithoutSearch: Story = {
     ).toHaveAttribute("aria-pressed", "true");
   },
 };
+
+const onViewAll = fn();
+
+/**
+ * Several footer buttons stack in order, and one may be disabled. Test ids
+ * name the sheet, its title, its search field and each option.
+ */
+export const FooterActionsAndTestIds: Story = {
+  render: (args) => (
+    <SelectSheet
+      title="Select validators"
+      closeLabel="Close"
+      listLabel="Validators"
+      trigger={<TokenTrigger token={{ name: "Validators" }} />}
+      options={validatorOptions.map((option) => ({
+        ...option,
+        testId: `validator-${option.id}`,
+      }))}
+      multiple={{ selectedIds: new Set<string>() }}
+      onSelect={args.onSelect}
+      search={{
+        value: "",
+        onValueChange: fn(),
+        label: "Search validators",
+        clearLabel: "Clear search",
+      }}
+      testIds={{
+        container: "sheet",
+        title: "sheet-title",
+        search: "sheet-search",
+      }}
+      footer={[
+        { label: "View all", onClick: onViewAll },
+        {
+          label: "Confirm",
+          variant: "primary",
+          onClick: onConfirm,
+          disabled: true,
+        },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    onViewAll.mockClear();
+    const sheet = await openValidators(canvasElement);
+    await expect(sheet).toHaveAttribute("data-testid", "sheet");
+    await expect(within(sheet).getByTestId("sheet-title")).toHaveTextContent(
+      "Select validators"
+    );
+    await expect(within(sheet).getByTestId("sheet-search")).toHaveRole(
+      "combobox"
+    );
+    await expect(
+      within(sheet).getByTestId("validator-figment")
+    ).toHaveAttribute("role", "option");
+
+    await expect(
+      within(sheet).getByRole("button", { name: "Confirm" })
+    ).toBeDisabled();
+    await userEvent.click(
+      within(sheet).getByRole("button", { name: "View all" })
+    );
+    await expect(onViewAll).toHaveBeenCalledOnce();
+  },
+};

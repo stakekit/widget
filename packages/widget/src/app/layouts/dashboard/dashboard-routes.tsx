@@ -1,5 +1,4 @@
 import { Option } from "effect";
-import { AnimatePresence } from "motion/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import type { YieldCategory } from "../../../domain/earn/contract";
@@ -28,6 +27,7 @@ import {
   type WidgetPath,
   widgetRoutes,
 } from "../../../services/navigation/widget-routes";
+import { PageTransition } from "../../../ui/index";
 import { BorrowFeatureRoute } from "../../routes/ui/borrow-feature-route";
 import { dashboardEarnRoute } from "./dashboard-earn-route";
 import {
@@ -188,7 +188,7 @@ export const DashboardRoutes = () => {
     setCategoryTransition({ ...categoryTransition, category: null });
   }
 
-  // AnimatePresence retains the callback from when the exit began. Read the
+  // The transition retains the callback from when the exit began. Read the
   // latest accepted category, including another press during that exit.
   const pendingYieldCategoryRef = useRef<YieldCategory | null>(null);
   useLayoutEffect(() => {
@@ -213,12 +213,18 @@ export const DashboardRoutes = () => {
   return (
     <>
       <DashboardShell pendingYieldCategory={categoryTransition.category}>
-        <AnimatePresence mode="wait" onExitComplete={onExitComplete}>
-          {/* The exiting Routes keeps its location, so it renders the page being left. */}
-          <Routes location={location} key={routesKey}>
+        <PageTransition
+          pageKey={routesKey}
+          variant="fade"
+          waitForExit
+          fill
+          onExitComplete={onExitComplete}
+        >
+          {/* The leaving page keeps its location, so it renders the page being left. */}
+          <Routes location={location}>
             {createDashboardRoutes({ registerEarnFooterButton })}
           </Routes>
-        </AnimatePresence>
+        </PageTransition>
       </DashboardShell>
 
       <GlobalModals />

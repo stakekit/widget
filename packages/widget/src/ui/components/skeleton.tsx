@@ -3,7 +3,11 @@ import type { TypeRole } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { avatarSize, controlHeight } from "../tokens/size.stylex";
+import {
+  avatarSize,
+  controlHeight,
+  skeletonHeight,
+} from "../tokens/size.stylex";
 import { fontSize, lineHeight } from "../tokens/typography.stylex";
 
 const pulse = stylex.keyframes({
@@ -90,6 +94,9 @@ const rectHeightStyles = stylex.create({
   lg: { height: controlHeight.lg },
   // The parent's height, such as a chart's plot.
   fill: { height: "100%" },
+  // A block taller than a control, such as an amount panel or a section.
+  panel: { height: skeletonHeight.panel },
+  section: { height: skeletonHeight.section },
 });
 
 const lineStyles = stylex.create({

@@ -342,6 +342,49 @@ default, customized values that have a Color Role or setting carry over, and
 `appearance` wins key by key when both are passed. The widget logs a warning
 once per legacy key that no longer applies, naming it.
 
+## Upgrading
+
+### Design System release
+
+The widget now renders every screen with one Design System. Hosts that only
+pass `appearance` and `layout` need no changes. Otherwise:
+
+**Deprecated options.** `theme`, `lightTheme`, `darkTheme` and
+`dashboardVariant` still work and are removed in the next major version:
+
+| Before | After |
+| --- | --- |
+| `theme={lightTheme}` | `appearance={{ colorScheme: "light" }}` (the default) |
+| `theme={darkTheme}` | `appearance={{ colorScheme: "dark" }}` |
+| a customized `theme` | `appearance.colors.light` / `.dark` by Color Role, plus `radius`, `controlHeight`, `font` and `fontWeight` |
+| `dashboardVariant` | `layout: "dashboard"` |
+
+See [Legacy `theme`](#legacy-theme) for how a customized theme carries over.
+
+**Precedence.** `appearance` (and a mapped legacy `theme`) now wins over the
+Appearance Preset of your Host Profile, key by key. Before, the host variant's
+overrides won over the host's theme.
+
+**Visual changes.**
+
+- The default dark accent is blue (`#4C62FF`) instead of lavender.
+- The Finery light accent is darkened to `#119A88`, so selected controls keep
+  3:1 contrast on every surface.
+- Porto and Finery dark (and Finery light) draw dark text on the accent
+  (`onAccent`), because their accents are too light for white text.
+- Type sizes are in px and no longer scale with the host page's root font size.
+- The terms of service dialog requires ticking a checkbox before accepting.
+- Leave Confirmation's primary action is Leave, shown as a danger action; Stay
+  is the secondary one.
+- The wallet account surface is still a dialog.
+
+**Styling hooks.** The legacy `--sk-*` CSS custom properties are removed. The
+widget's new custom properties have different names and are not a host
+contract: theme the widget through `appearance`, not CSS variables. Undocumented
+`data-rk` attributes are removed; the remaining ones, listed in
+[`src/ui/host-hook.ts`](packages/widget/src/ui/host-hook.ts), are the only
+`data-rk` values the widget renders.
+
 ## Development
 
 This repository uses the pnpm version pinned by mise:

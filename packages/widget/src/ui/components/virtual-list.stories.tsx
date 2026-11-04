@@ -380,6 +380,45 @@ export const ContainerWidth: Story = {
   },
 };
 
+/**
+ * The list is a size container: its rows follow the list's width, not the
+ * frame's. A row figure shown from `sm` up hides in a 360px list inside a
+ * wide frame, and shows in a 480px one.
+ */
+export const RowsFollowListWidth: Story = {
+  render: () => (
+    <ContainerFrame width={800}>
+      {[360, 480].map((width) => (
+        <div key={width} style={{ width }}>
+          <VirtualList
+            label={`Validators ${width}`}
+            items={validators(0, 3)}
+            getKey={(validator) => validator.id}
+            renderItem={(validator) => (
+              <ListRow
+                title={validator.name}
+                figure={{ text: "+0.5 ETH", from: "sm" }}
+                value="4.20%"
+              />
+            )}
+            maxHeight="sm"
+          />
+        </div>
+      ))}
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const [narrow] = within(
+      region(canvasElement, "Validators 360")
+    ).getAllByText("+0.5 ETH");
+    const [wide] = within(region(canvasElement, "Validators 480")).getAllByText(
+      "+0.5 ETH"
+    );
+    await expect(narrow).not.toBeVisible();
+    await expect(wide).toBeVisible();
+  },
+};
+
 /** As a listbox, the rows are options a combobox owns by `listId`. */
 export const Listbox: Story = {
   render: () => (

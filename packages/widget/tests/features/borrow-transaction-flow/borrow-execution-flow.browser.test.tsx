@@ -1317,8 +1317,8 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Transaction - Disable collateral"))
-          .toBeInTheDocument()
+          .poll(() => app.container.textContent)
+          .toContain("Transaction - Disable collateral")
       );
       expect(app.container.textContent).not.toContain("DISABLE_COLLATERAL");
     })
@@ -1342,26 +1342,23 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Transaction 1 / 2 - Token approval"))
-          .toBeInTheDocument()
+          .poll(() => app.container.textContent)
+          .toContain("Transaction 1 / 2 - Token approval")
       );
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Transaction 2 / 2 - Supply"))
-          .toBeInTheDocument()
+          .poll(() => app.container.textContent)
+          .toContain("Transaction 2 / 2 - Supply")
       );
       // The signing step of the first transaction is active.
       yield* Effect.promise(() =>
         expect
           .poll(() =>
-            Array.from(
-              app.container.querySelectorAll(
-                '[data-rk="tx-state-step-circle"]'
-              ),
-              (circle) => circle.getAttribute("data-state")
+            Array.from(app.container.querySelectorAll("ol > li"), (step) =>
+              step.getAttribute("aria-current")
             ).slice(0, 2)
           )
-          .toEqual(["success", "pending"])
+          .toEqual(["step", null])
       );
       expect(app.container.textContent).not.toContain("Transaction history");
     })
@@ -1489,7 +1486,9 @@ describe("borrow execution flow component", () => {
         yield* Effect.promise(() =>
           expect
             .element(
-              app.getByRole("button", { name: `View ${label} transaction` })
+              app.getByRole("link", {
+                name: new RegExp(`^View ${label} transaction`),
+              })
             )
             .toBeInTheDocument()
         );

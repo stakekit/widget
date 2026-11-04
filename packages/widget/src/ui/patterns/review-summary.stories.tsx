@@ -132,7 +132,7 @@ export const LoadingOneFee: Story = {
     fees: {
       heading: "Fees",
       rows: [
-        { label: "Estimated gas fee", loading: true },
+        { label: "Estimated gas fee", loading: true, testId: "gas-fee" },
         { label: "Commission", value: "10%" },
       ],
     },
@@ -141,7 +141,9 @@ export const LoadingOneFee: Story = {
     const canvas = within(canvasElement);
     const heading = canvas.getByRole("heading", { name: "Fees" });
     await expect(heading.parentElement).toHaveAttribute("aria-busy", "true");
-    await expect(canvas.getByText("Estimated gas fee")).toBeVisible();
+    await expect(
+      within(canvas.getByTestId("gas-fee")).getByText("Estimated gas fee")
+    ).toBeVisible();
     await expect(canvas.getByText("10%")).toBeVisible();
   },
 };

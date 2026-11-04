@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { isMobile } from "../../../../../shared/lib/general";
+import { useTrackEvent } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
 import { getYieldTransactionCompletionUrls } from "../../../model/yield-transaction-workflow";
@@ -8,7 +9,6 @@ import {
   useYieldFlowExecution,
   useYieldFlowSession,
 } from "../../../react/yield-flow-route";
-import { useViewTransaction } from "../../use-view-transaction";
 
 export const useComplete = () => {
   const execution = useYieldFlowExecution();
@@ -23,7 +23,9 @@ export const useComplete = () => {
     ? getYieldTransactionCompletionUrls(workflowView.state.context)
     : [];
 
-  const onViewTransactionClick = useViewTransaction();
+  const trackEvent = useTrackEvent();
+  // The explorer link opens the transaction itself; the visit is recorded.
+  const onViewTransactionClick = () => trackEvent("viewTxClicked");
 
   const onClick = () => {
     if (opensLedgerEarn) {

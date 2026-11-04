@@ -48,6 +48,32 @@ export const Default: Story = {};
 
 export const Dark: Story = { globals: { colorScheme: "dark" } };
 
+/** A chip's count follows its label. */
+export const WithCounts: Story = {
+  render: ({ onValueChange }) => (
+    <ChipGroup
+      options={[
+        { value: "stake", label: "Stake", count: "12" },
+        { value: "unstake", label: "Unstake", count: "3" },
+        { value: "pending", label: "Pending", count: "0" },
+      ]}
+      value={["stake"]}
+      onValueChange={onValueChange}
+      label="Activity filters"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const stake = within(canvasElement).getByRole("button", { name: /Stake/ });
+    await expect(stake).toHaveTextContent("Stake12");
+    await expect(stake).toHaveAttribute("aria-pressed", "true");
+  },
+};
+
+export const WithCountsDark: Story = {
+  ...WithCounts,
+  globals: { colorScheme: "dark" },
+};
+
 /**
  * Arrows move between chips, skipping a disabled one; Enter and Space toggle
  * the focused chip. An on chip is pressed, and several can be on.

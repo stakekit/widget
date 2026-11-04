@@ -1,37 +1,37 @@
-export type PositionDetailsActionMode = "stake" | "unstake";
+export type PositionDetailsActionMode = "enter" | "exit";
 
 export type PositionDetailsActionCapabilities = {
-  readonly canStake: boolean;
-  readonly canUnstake: boolean;
+  readonly canEnter: boolean;
+  readonly canExit: boolean;
 };
 
 export const resolvePositionDetailsActionMode = ({
-  canStake,
-  canUnstake,
+  canEnter,
+  canExit,
 }: PositionDetailsActionCapabilities): PositionDetailsActionMode | null => {
-  if (canUnstake) return "unstake";
-  if (canStake) return "stake";
+  if (canExit) return "exit";
+  if (canEnter) return "enter";
   return null;
 };
 
 export const resolveSelectedPositionDetailsActionMode = ({
-  canStake,
-  canUnstake,
+  canEnter,
+  canExit,
   selectedMode,
 }: PositionDetailsActionCapabilities & {
   selectedMode: PositionDetailsActionMode | null;
 }): PositionDetailsActionMode | null => {
-  if (selectedMode === "stake" && canStake) return "stake";
-  if (selectedMode === "unstake" && canUnstake) return "unstake";
-  return resolvePositionDetailsActionMode({ canStake, canUnstake });
+  if (selectedMode === "enter" && canEnter) return "enter";
+  if (selectedMode === "exit" && canExit) return "exit";
+  return resolvePositionDetailsActionMode({ canEnter, canExit });
 };
 
 export const shouldShowPositionDetailsActionTabs = ({
-  canStake,
-  canUnstake,
-}: PositionDetailsActionCapabilities) => canStake && canUnstake;
+  canEnter,
+  canExit,
+}: PositionDetailsActionCapabilities) => canEnter && canExit;
 
-const positionDetailsStakeHasContent = (val: {
+const positionDetailsEnterHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;
 }) => val.integrationData?.status.enter ?? false;
 
@@ -57,7 +57,7 @@ export const positionDetailsExitHasContent = (val: {
 /**
  * Tab capabilities are content-based, not flag-based: a Yield can support exit
  * while the position has no unstakeable balance (everything locked or pending),
- * and offering an Unstake tab that renders nothing is a dead end.
+ * and offering an exit tab that renders nothing is a dead end.
  */
 export const resolvePositionDetailsActionCapabilities = (val: {
   canChangeUnstakeAmount: boolean | null;
@@ -67,8 +67,8 @@ export const resolvePositionDetailsActionCapabilities = (val: {
   positionBalancesByType?: unknown;
   unstakeToken?: unknown;
 }): PositionDetailsActionCapabilities => ({
-  canStake: positionDetailsStakeHasContent(val),
-  canUnstake: positionDetailsExitHasContent(val),
+  canEnter: positionDetailsEnterHasContent(val),
+  canExit: positionDetailsExitHasContent(val),
 });
 
 export const positionDetailsPendingHasContent = (val: {
@@ -80,14 +80,14 @@ export const positionDetailsHubHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;
   pendingActions?: readonly unknown[] | null;
 }) =>
-  positionDetailsStakeHasContent(val) ||
+  positionDetailsEnterHasContent(val) ||
   val.canUnstake ||
   positionDetailsPendingHasContent(val);
 
 type PositionDetailsPageLayout = "Actions" | "InfoOnly" | "PositionLost";
 
 /**
- * An active flow (stake, unstake, pending action) keeps its pane even when the
+ * An active flow (enter, exit, pending action) keeps its pane even when the
  * position disappears: exiting everything removes the position while the flow
  * still has steps or its completion screen to show.
  */

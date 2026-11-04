@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Text } from "../primitives/text";
+import { TokenAvatar } from "./avatar";
+import { Badge } from "./badge";
 import { Disclosure } from "./disclosure";
 
 const meta = {
@@ -26,6 +28,28 @@ export const Open: Story = { args: { defaultOpen: true } };
 
 export const OpenDark: Story = {
   args: { defaultOpen: true },
+  globals: { colorScheme: "dark" },
+};
+
+/** The trigger may lead with an avatar and carry badges after its title. */
+export const WithLeadingAndBadges: Story = {
+  args: {
+    title: "Staked via Chorus One",
+    leading: <TokenAvatar name="Chorus One" size="sm" decorative />,
+    badges: <Badge tone="danger">Jailed</Badge>,
+  },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", {
+      name: /Staked via Chorus One/,
+    });
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(trigger);
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  },
+};
+
+export const WithLeadingAndBadgesDark: Story = {
+  ...WithLeadingAndBadges,
   globals: { colorScheme: "dark" },
 };
 

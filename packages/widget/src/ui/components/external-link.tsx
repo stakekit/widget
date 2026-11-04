@@ -14,17 +14,21 @@ import { focusRingStyles } from "./focus-ring";
 export const ExternalLink = ({
   href,
   newTabLabel,
+  onClick,
   children,
 }: {
   readonly href: string;
   /** Names the trailing icon, such as "opens in a new tab". */
   readonly newTabLabel: string;
+  /** Called as the link opens, such as to record the visit. */
+  readonly onClick?: () => void;
   readonly children: ReactNode;
 }) => (
   <a
     href={href}
     target="_blank"
     rel="noopener noreferrer"
+    onClick={onClick}
     {...stylex.props(styles.root, focusRingStyles.visible)}
   >
     {children}

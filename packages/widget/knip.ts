@@ -27,25 +27,13 @@ export default {
   ],
   ignoreIssues: {
     "src/generated/**": ["exports", "types"],
-    // Features migrate onto the Design System's interface in tickets 11–16;
-    // ticket 17 removes this so unused parts are reported again.
-    "src/ui/index.ts": ["exports", "types"],
   },
   ignoreDependencies: [
     "@effect/language-service",
     "@effect/openapi-generator",
     "@effect/platform-node",
-    // Production imports of these packages come from bundled third-party code.
-    // vite.config.package.ts checks they stay external; DOM tests use them directly.
-    ...(process.argv.includes("--production")
-      ? [
-          "@radix-ui/react-dismissable-layer",
-          "@radix-ui/react-focus-guards",
-          "@radix-ui/react-focus-scope",
-          "aria-hidden",
-          "react-remove-scroll",
-          "scheduler",
-        ]
-      : []),
+    // Production imports of this package come from bundled third-party code.
+    // vite.config.package.ts checks it stays external.
+    ...(process.argv.includes("--production") ? ["scheduler"] : []),
   ],
 } satisfies KnipConfig;

@@ -1,9 +1,9 @@
 import { useAtomValue } from "@effect/atom-react";
-import clsx from "clsx";
 import { capitalize, toLowerCase } from "effect/String";
 import { type ReactNode, useId } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
+import type { Token } from "../../../../domain/token/token";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import {
@@ -11,16 +11,23 @@ import {
   formatBorrowProviderName,
 } from "../../../../shared/lib/formatters";
 import { formatAddress } from "../../../../shared/lib/general";
-import { vars } from "../../../../shared/styles/theme/contract.css";
-import { Divider } from "../../../../shared/ui/components/divider";
-import { TokenIcon } from "../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { CaretLeftIcon } from "../../../../shared/ui/primitives/icons/caret-left";
-import { CheckCircleIcon } from "../../../../shared/ui/primitives/icons/check-circle";
-import { ClockClockWiseIcon } from "../../../../shared/ui/primitives/icons/clock-clock-wise";
-import { ExternalLinkIcon } from "../../../../shared/ui/primitives/icons/external-link";
-import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { useTokenLogo } from "../../../../shared/react/token-logo";
+import {
+  Badge,
+  Box,
+  Card,
+  CopyButton,
+  DetailList,
+  DetailRow,
+  Divider,
+  ExternalLink,
+  Icon,
+  IconButton,
+  Notice,
+  Stack,
+  Text,
+  TokenAvatar,
+} from "../../../../ui/index";
 import { useWidgetNavigate } from "../../../navigation/index";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
 import { PageCtaButton } from "../../../widget-shell/views";
@@ -39,7 +46,6 @@ import {
 import { useActivityActionRoute } from "../../react/activity-action-route";
 import { ActivityIcon } from "../activity-page/components/activity-icon";
 import { useActivityActionTitle } from "../activity-page/hooks/use-activity-action-title";
-import * as styles from "./styles.css";
 
 const reviewPageByIntent = {
   enter: "stakeReview",
@@ -53,7 +59,7 @@ const ContinuationControls = () => {
   const review = useYieldActionContinuationReview();
 
   return (
-    <>
+    <Stack gap={12}>
       <PageCtaButton
         cta={{
           disabled: review.disabled,
@@ -63,42 +69,24 @@ const ContinuationControls = () => {
           onClick: review.confirm,
         }}
       />
-      <Box paddingTop="3">
-        <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
-          <Trans
-            i18nKey="activity.review.terms_of_use"
-            values={{ action: t("activity.review.continue") }}
-            components={{
-              underline0: (
-                // biome-ignore lint: third-party terms link
-                <a
-                  className={styles.termsLink}
-                  href="https://docs.yield.xyz/docs/terms-of-use"
-                  onClick={() => trackEvent("termsClicked")}
-                  rel="noreferrer"
-                  target="_blank"
-                />
-              ),
-            }}
-          />
-        </Text>
-      </Box>
-    </>
-  );
-};
-
-const StatusBadge = ({
-  status,
-}: {
-  readonly status: NonNullable<ActivityActionDetailsProjection["statusLabel"]>;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <Box className={styles.badgeMuted}>
-      <Text variant={{ size: "small", type: "muted", weight: "medium" }}>
-        {t(`activity.status.${status}`)}
+      <Text variant="caption" tone="muted" as="p">
+        <Trans
+          i18nKey="activity.review.terms_of_use"
+          values={{ action: t("activity.review.continue") }}
+          components={{
+            underline0: (
+              <ExternalLink
+                href="https://docs.yield.xyz/docs/terms-of-use"
+                newTabLabel={t("shared.opens_in_new_tab")}
+                onClick={() => trackEvent("termsClicked")}
+              >
+                {null}
+              </ExternalLink>
+            ),
+          }}
+        />
       </Text>
-    </Box>
+    </Stack>
   );
 };
 
@@ -112,7 +100,7 @@ const TransactionsSummary = ({
   switch (summary._tag) {
     case "allConfirmed":
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text tone="muted">
           {t("activity.review.transactions_all_confirmed", {
             count: summary.count,
           })}
@@ -120,13 +108,13 @@ const TransactionsSummary = ({
       );
     case "failed":
       return (
-        <Text variant={{ type: "danger", weight: "normal" }}>
+        <Text tone="danger">
           {t("activity.review.transactions_failed", { count: summary.count })}
         </Text>
       );
     case "inProgress":
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text tone="muted">
           {t("activity.review.transactions_in_progress", {
             count: summary.count,
           })}
@@ -134,8 +122,8 @@ const TransactionsSummary = ({
       );
     case "total":
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {summary.count}
+        <Text tone="muted" numeric>
+          {String(summary.count)}
         </Text>
       );
   }
@@ -151,14 +139,14 @@ const TransactionStatusIcon = ({
 }) => {
   switch (status) {
     case "confirmed":
-      return <CheckCircleIcon color={vars.color.statusSuccess} />;
+      return <Icon name="CheckCircleIcon" size="sm" tone="success" />;
     case "failed":
-      return <XIcon color="textDanger" hw={16} strokeWidth={2.5} />;
+      return <Icon name="XIcon" size="sm" tone="danger" />;
     case "skipped":
-      return <XIcon color="textMuted" hw={16} strokeWidth={2.5} />;
+      return <Icon name="XIcon" size="sm" tone="muted" />;
     case "in_progress":
     case "not_submitted":
-      return <ClockClockWiseIcon />;
+      return <Icon name="HistoryIcon" size="sm" tone="muted" />;
   }
 };
 
@@ -203,77 +191,56 @@ const TransactionRow = ({
   ]
     .filter((part) => part !== null)
     .join(" · ");
-  const content = (
-    <>
-      <Box aria-label={statusLabel} display="flex" id={statusId} role="img">
+  const { explorerUrl, hash } = transaction;
+
+  return (
+    <Stack
+      direction="row"
+      align="center"
+      gap={12}
+      testId="activity-details-transaction"
+    >
+      <Box id={statusId} role="img" aria-label={statusLabel}>
         <TransactionStatusIcon status={transaction.status} />
       </Box>
-      <Box className={styles.transactionText}>
-        <Text variant={{ weight: "normal" }}>{`${position}. ${type}`}</Text>
+      <Stack gap={2} grow>
+        <Text>{`${position}. ${type}`}</Text>
         <Text
           id={detailsId}
-          variant={{
-            size: "small",
-            type:
-              transaction.status === "failed" || transaction.error
-                ? "danger"
-                : "muted",
-            weight: "normal",
-          }}
+          variant="caption"
+          tone={
+            transaction.status === "failed" || transaction.error
+              ? "danger"
+              : "muted"
+          }
         >
           {details}
         </Text>
-      </Box>
-      {transaction.explorerUrl ? (
-        <Box className={styles.transactionExplorer}>
-          {transaction.hash ? (
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {formatAddress(transaction.hash, {
-                leadingChars: 6,
-                trailingChars: 4,
-              })}
-            </Text>
-          ) : null}
-          <ExternalLinkIcon />
-        </Box>
+      </Stack>
+      {hash ? (
+        <Stack direction="row" align="center" gap={4}>
+          <Text tone="muted" numeric>
+            {formatAddress(hash, { leadingChars: 6, trailingChars: 4 })}
+          </Text>
+          <CopyButton
+            value={hash}
+            label={t("activity.copy_hash")}
+            copiedLabel={t("activity.copied")}
+          />
+        </Stack>
       ) : null}
-    </>
-  );
-  const { explorerUrl } = transaction;
-
-  return explorerUrl ? (
-    <Box
-      aria-describedby={`${statusId} ${detailsId}`}
-      aria-label={t("activity.review.view_transaction", { type })}
-      as="button"
-      className={clsx(styles.transaction, styles.transactionLink)}
-      data-rk="activity-details-transaction"
-      onClick={() => onOpen(explorerUrl)}
-      type="button"
-    >
-      {content}
-    </Box>
-  ) : (
-    <Box className={styles.transaction} data-rk="activity-details-transaction">
-      {content}
-    </Box>
+      {explorerUrl ? (
+        <IconButton
+          icon="ExternalLinkIcon"
+          size="xs"
+          label={t("activity.review.view_transaction", { type })}
+          aria-describedby={`${statusId} ${detailsId}`}
+          onClick={() => onOpen(explorerUrl)}
+        />
+      ) : null}
+    </Stack>
   );
 };
-
-const ReceiptRow = ({
-  label,
-  value,
-}: {
-  readonly label: string;
-  readonly value: string;
-}) => (
-  <Box className={styles.row}>
-    <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
-    <Text className={styles.rowValue} variant={{ weight: "normal" }}>
-      {value}
-    </Text>
-  </Box>
-);
 
 const BorrowReceiptRows = ({
   borrow,
@@ -296,9 +263,13 @@ const BorrowReceiptRows = ({
   ];
 
   return rows.map(({ label, value }) =>
-    value ? <ReceiptRow key={label} label={label} value={value} /> : null
+    value ? <DetailRow key={label} label={label} value={value} /> : null
   );
 };
+
+const TitleTokenAvatar = ({ token }: { readonly token: Token }) => (
+  <TokenAvatar {...useTokenLogo(token)} size="lg" />
+);
 
 const Receipt = ({
   children,
@@ -324,100 +295,97 @@ const Receipt = ({
   };
 
   return (
-    <Box className={styles.page} data-rk="activity-details-receipt">
-      {showsBackButton ? (
-        <Box
-          as="button"
-          aria-label={t("activity.details.back")}
-          className={styles.back}
-          onClick={() => navigation.push(widgetRoutes.activity.build())}
-        >
-          <CaretLeftIcon />
-        </Box>
-      ) : null}
-
-      <Box className={styles.header}>
-        {view.titleToken ? (
-          <TokenIcon token={view.titleToken} tokenLogoHw="12" />
-        ) : (
-          <ActivityIcon type="neutral" />
-        )}
-        <Box
-          className={styles.heading}
-          display="flex"
-          flexDirection="column"
-          gap="1"
-        >
-          <Box alignItems="center" display="flex" flexWrap="wrap" gap="2">
-            <Text variant={{ size: "large", weight: "bold" }}>{title}</Text>
-            {view.statusLabel ? (
-              <StatusBadge status={view.statusLabel} />
-            ) : null}
-          </Box>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {providerName
-              ? t("activity.details.via_network", {
-                  network,
-                  provider: providerName,
-                })
-              : network}
-          </Text>
-        </Box>
-      </Box>
-
-      {view.amount ? (
-        <Text className={styles.amount} variant={{ weight: "medium" }}>
-          {view.amount}
-          {view.amountTokenSymbol ? ` ${view.amountTokenSymbol}` : ""}
-        </Text>
-      ) : null}
-
-      <Divider />
-      <Box className={styles.rows}>
-        <ReceiptRow
-          label={t("activity.details.created")}
-          value={view.createdAt}
-        />
-        {view.completedAt ? (
-          <ReceiptRow
-            label={t("activity.details.completed")}
-            value={view.completedAt}
-          />
+    <Card padding={24} testId="activity-details-receipt">
+      <Stack gap={20}>
+        {showsBackButton ? (
+          <Stack direction="row">
+            <IconButton
+              icon="CaretLeftIcon"
+              label={t("activity.details.back")}
+              onClick={() => navigation.push(widgetRoutes.activity.build())}
+            />
+          </Stack>
         ) : null}
-        {view.canceledAt ? (
-          <ReceiptRow
-            label={t("activity.details.canceled")}
-            value={view.canceledAt}
-          />
-        ) : null}
-        {view.borrow ? <BorrowReceiptRows borrow={view.borrow} /> : null}
-      </Box>
 
-      {view.transactions.length > 0 ? (
-        <>
-          <Divider />
-          <Box className={styles.transactions}>
-            <Box className={styles.transactionsHeader}>
-              <Text variant={{ weight: "medium" }}>
-                {t("activity.review.transactions")}
+        <Stack direction="row" align="start" gap={16}>
+          {view.titleToken ? (
+            <TitleTokenAvatar token={view.titleToken} />
+          ) : (
+            <ActivityIcon type="neutral" />
+          )}
+          <Stack gap={4} grow>
+            <Stack direction="row" align="center" gap={8} wrap>
+              <Text variant="title" as="h2">
+                {title}
               </Text>
-              <TransactionsSummary summary={view.transactionsSummary} />
-            </Box>
-            {view.transactions.map((transaction, index) => (
-              <TransactionRow
-                key={transaction.id}
-                onOpen={openTransaction}
-                position={index + 1}
-                transaction={transaction}
-                typeContext={transactionTypeContext}
-              />
-            ))}
-          </Box>
-        </>
-      ) : null}
+              {view.statusLabel ? (
+                <Badge>{t(`activity.status.${view.statusLabel}`)}</Badge>
+              ) : null}
+            </Stack>
+            <Text tone="muted">
+              {providerName
+                ? t("activity.details.via_network", {
+                    network,
+                    provider: providerName,
+                  })
+                : network}
+            </Text>
+          </Stack>
+        </Stack>
 
-      {children}
-    </Box>
+        {view.amount ? (
+          <Text variant="display" as="p" breakAnywhere>
+            {view.amountTokenSymbol
+              ? `${view.amount} ${view.amountTokenSymbol}`
+              : view.amount}
+          </Text>
+        ) : null}
+
+        <Divider />
+        <DetailList>
+          <DetailRow
+            label={t("activity.details.created")}
+            value={view.createdAt}
+          />
+          {view.completedAt ? (
+            <DetailRow
+              label={t("activity.details.completed")}
+              value={view.completedAt}
+            />
+          ) : null}
+          {view.canceledAt ? (
+            <DetailRow
+              label={t("activity.details.canceled")}
+              value={view.canceledAt}
+            />
+          ) : null}
+          {view.borrow ? <BorrowReceiptRows borrow={view.borrow} /> : null}
+        </DetailList>
+
+        {view.transactions.length > 0 ? (
+          <>
+            <Divider />
+            <Stack gap={12}>
+              <Stack direction="row" justify="between" align="center" gap={16}>
+                <Text weight="medium">{t("activity.review.transactions")}</Text>
+                <TransactionsSummary summary={view.transactionsSummary} />
+              </Stack>
+              {view.transactions.map((transaction, index) => (
+                <TransactionRow
+                  key={transaction.id}
+                  onOpen={openTransaction}
+                  position={index + 1}
+                  transaction={transaction}
+                  typeContext={transactionTypeContext}
+                />
+              ))}
+            </Stack>
+          </>
+        ) : null}
+
+        {children}
+      </Stack>
+    </Card>
   );
 };
 
@@ -442,12 +410,9 @@ const YieldReceipt = ({
       view={view}
     >
       {view.continuationUnavailable ? (
-        <Text
-          className={styles.unavailable}
-          variant={{ type: "muted", weight: "normal" }}
-        >
+        <Notice tone="neutral">
           {t("activity.details.continuation_unavailable")}
-        </Text>
+        </Notice>
       ) : null}
 
       {view.canContinue && continuationReady ? <ContinuationControls /> : null}

@@ -30,7 +30,6 @@ import {
   formatRoundedPercent,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
-import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   formatCooldownDays,
   formatDailyBatch,
@@ -46,11 +45,7 @@ import {
   formatRewardRateLabel,
   formatRewardTokenLabel,
 } from "../../../../yield-summary/index";
-import {
-  RiskRatingBadge,
-  riskSummaryActions,
-  YieldRiskInfoTooltip,
-} from "../../../../yield-summary/views";
+import { YieldRiskRatingActions } from "../../../../yield-summary/views";
 import { NetworkDetailValue } from "./components/network-detail-value";
 
 export type EarnDetailsMetricCard = {
@@ -351,12 +346,7 @@ const getRiskFact = (
     kpiPrimaryEligible: true,
     label: t("dashboard.earn_details.risk"),
     subValue: getYieldRiskSourceLabel(risk.source, t).toUpperCase(),
-    value: (
-      <Box className={riskSummaryActions}>
-        <RiskRatingBadge risk={risk} />
-        <YieldRiskInfoTooltip />
-      </Box>
-    ),
+    value: <YieldRiskRatingActions risk={risk} />,
   };
 };
 

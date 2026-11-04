@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { AriaAttributes, AriaRole, ReactNode } from "react";
+import type { HostHook } from "../host-hook";
 import { container } from "../tokens/container.stylex";
 import { gutter } from "../tokens/presentation.stylex";
 import { gridTrack } from "../tokens/size.stylex";
@@ -1075,6 +1076,10 @@ export type LayoutElementProps = {
   readonly id?: string;
   readonly role?: AriaRole;
   readonly children?: ReactNode;
+  /** Rendered as `data-testid`, for tests and hosts that locate the element. */
+  readonly testId?: string;
+  /** Rendered as `data-rk`, a hook a host's stylesheet or script relies on. */
+  readonly hostHook?: HostHook;
 } & Pick<
   AriaAttributes,
   | "aria-label"

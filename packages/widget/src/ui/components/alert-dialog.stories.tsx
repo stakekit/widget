@@ -13,7 +13,9 @@ const meta = {
     confirmLabel: "Leave",
     cancelLabel: "Stay",
     onConfirm: fn(),
+    onCancel: fn(),
     onOpenChange: fn(),
+    testId: "alert-dialog",
     tone: "danger",
   },
 } satisfies Meta<typeof AlertDialog>;
@@ -35,6 +37,7 @@ export const Open: Story = {
     await expect(dialog).toHaveAccessibleDescription(
       "The transactions you have not signed will be dropped."
     );
+    await expect(dialog).toHaveAttribute("data-testid", "alert-dialog");
   },
 };
 
@@ -42,7 +45,10 @@ export const OpenDark: Story = { ...Open, globals: { colorScheme: "dark" } };
 
 export const OpenPrimary: Story = { ...Open, args: { tone: "primary" } };
 
-/** Confirming runs the action, closes the dialog and returns focus. */
+/**
+ * Confirming runs the action, closes the dialog without cancelling and
+ * returns focus.
+ */
 export const Confirm: Story = {
   play: async ({ args, canvasElement }) => {
     const dialog = await openDialog(canvasElement);
@@ -52,6 +58,8 @@ export const Confirm: Story = {
 
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     await expect(args.onConfirm).toHaveBeenCalledTimes(1);
+    await expect(args.onCancel).not.toHaveBeenCalled();
+    await expect(args.onOpenChange).toHaveBeenLastCalledWith(false);
     await expect(
       within(canvasElement).getByRole("button", { name: "Leave" })
     ).toHaveFocus();
@@ -67,6 +75,7 @@ export const Cancel: Story = {
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     await expect(args.onOpenChange).toHaveBeenLastCalledWith(false);
     await expect(args.onConfirm).not.toHaveBeenCalled();
+    await expect(args.onCancel).toHaveBeenCalledTimes(1);
     await expect(
       within(canvasElement).getByRole("button", { name: "Leave" })
     ).toHaveFocus();
@@ -114,5 +123,6 @@ export const Keyboard: Story = {
     await expect(args.onOpenChange).toHaveBeenLastCalledWith(false);
     await expect(trigger).toHaveFocus();
     await expect(args.onConfirm).not.toHaveBeenCalled();
+    await expect(args.onCancel).toHaveBeenCalledTimes(1);
   },
 };

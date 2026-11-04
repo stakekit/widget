@@ -5,10 +5,7 @@
  */
 import { renderSKWidget as renderSKWidgetImplementation } from "./App";
 import type { BundledSKWidgetProps, SKTheme } from "./public-api/types.js";
-import {
-  darkTheme as darkThemeTokens,
-  lightTheme as lightThemeTokens,
-} from "./shared/styles/theme/themes";
+import { legacyThemeDefaults } from "./services/config/legacy-theme-defaults";
 
 export type {
   ActionMeta,
@@ -75,11 +72,11 @@ export const renderSKWidget: (
  * @deprecated Use `appearance: { colorScheme: "dark" }`. Passed unchanged as
  * `theme`, it gives the dark default. Removed in the next major version.
  */
-export const darkTheme: SKTheme = darkThemeTokens;
+export const darkTheme: SKTheme = legacyThemeDefaults.dark;
 /**
  * The legacy light theme tokens.
  *
  * @deprecated Use `appearance`. Passed unchanged as `theme`, it gives the
  * light default. Removed in the next major version.
  */
-export const lightTheme: SKTheme = lightThemeTokens;
+export const lightTheme: SKTheme = legacyThemeDefaults.light;

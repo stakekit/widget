@@ -8,11 +8,13 @@ const StatefulSwitch = ({
   onCheckedChange,
   disabled = false,
   labelFirst = false,
+  labelHidden = false,
 }: {
   readonly initial: boolean;
   readonly onCheckedChange: (checked: boolean) => void;
   readonly disabled?: boolean;
   readonly labelFirst?: boolean;
+  readonly labelHidden?: boolean;
 }) => {
   const [checked, setChecked] = useState(initial);
   return (
@@ -26,6 +28,7 @@ const StatefulSwitch = ({
         label="Use as collateral"
         disabled={disabled}
         labelFirst={labelFirst}
+        labelHidden={labelHidden}
       />
     </div>
   );
@@ -90,5 +93,17 @@ export const Disabled: Story = {
     await userEvent.click(control, { pointerEventsCheck: 0 });
     await expect(control).toBeChecked();
     await expect(args.onCheckedChange).not.toHaveBeenCalled();
+  },
+};
+
+/** A hidden label still names the switch for assistive technology. */
+export const LabelHidden: Story = {
+  args: { labelHidden: true },
+  play: async ({ canvasElement }) => {
+    const control = within(canvasElement).getByRole("switch", {
+      name: "Use as collateral",
+    });
+    await userEvent.click(control);
+    await expect(control).toBeChecked();
   },
 };

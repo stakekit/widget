@@ -24,7 +24,6 @@ import type {
   SKHostConfiguration,
   VariantProps,
 } from "../../public-api/react-types";
-import type { SKTheme } from "../../public-api/theme";
 import type {
   SettingsProps,
   SKBorrowExternalProviders,
@@ -321,7 +320,6 @@ export type DecodedHostConfiguration = Omit<
     onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
     portalContainer: SettingsProps["portalContainer"];
     preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | undefined;
-    theme: SKTheme | undefined;
     tokenIconMapping: SettingsProps["tokenIconMapping"];
     tracking: SettingsProps["tracking"];
     validatorsConfig:
@@ -492,9 +490,9 @@ const keepProviderIds = (
 };
 
 /**
- * The legacy `theme` as today, for the legacy variables, and the Widget's
- * Appearance: `appearance` over the mapped legacy `theme`. Invalid values of
- * either are dropped with a warning.
+ * The Widget's Appearance: `appearance` over the mapped legacy `theme`, the
+ * legacy `theme`'s only use. Invalid values of either are dropped with a
+ * warning.
  */
 const decodeThemeAndAppearance = (
   themeInput: unknown,
@@ -517,7 +515,6 @@ const decodeThemeAndAppearance = (
       appearance.appearance
     ),
     droppedLegacyThemeKeys: legacy?.droppedKeys ?? [],
-    theme: theme.theme,
     warnings: [
       ...theme.warnings.map(
         (issue): HostConfigurationWarning => ({ _tag: "Theme", issue })
@@ -738,10 +735,8 @@ export const decodeHostConfiguration = (
     return Result.fail(externalProviders.failure);
   }
 
-  const theme = decodeThemeAndAppearance(
-    decoded.success.theme,
-    decoded.success.appearance
-  );
+  const { theme: themeInput, ...values } = decoded.success;
+  const theme = decodeThemeAndAppearance(themeInput, values.appearance);
   const chainIcons = keepNetworkEntries(
     "chainIconMapping",
     decoded.success.chainIconMapping,
@@ -763,7 +758,7 @@ export const decodeHostConfiguration = (
   );
 
   const configuration: DecodedHostConfiguration = {
-    ...decoded.success,
+    ...values,
     appearance: theme.appearance,
     chainIconMapping: capabilities.chainIconMapper ?? chainIcons.entries,
     chainModal: capabilities.chainModal,
@@ -772,7 +767,6 @@ export const decodeHostConfiguration = (
     onMountAnimationComplete: capabilities.onMountAnimationComplete,
     portalContainer: capabilities.portalContainer,
     preferredTokenYieldsPerNetwork: preferredTokenYields.entries,
-    theme: theme.theme,
     tokenIconMapping:
       capabilities.tokenIconMapper ?? decoded.success.tokenIconMapping,
     tracking: capabilities.tracking,
@@ -810,7 +804,6 @@ export const decodeHostConfiguration = (
 export type RejectedConfigurationPresentation = Readonly<{
   appearance: WidgetAppearance;
   layout: WidgetLayout;
-  theme: SKTheme | undefined;
   variant: HostVariant;
 }>;
 
@@ -824,7 +817,7 @@ const isHostVariant = Schema.is(Schema.Literals(hostVariantValues));
 export const decodeRejectedConfigurationPresentation = (
   hostConfiguration: Partial<SKHostConfiguration>
 ): RejectedConfigurationPresentation => {
-  const { appearance, theme } = decodeThemeAndAppearance(
+  const { appearance } = decodeThemeAndAppearance(
     hostConfiguration.theme,
     hostConfiguration.appearance
   );
@@ -832,7 +825,6 @@ export const decodeRejectedConfigurationPresentation = (
   return {
     appearance,
     layout: selectLayout(hostConfiguration),
-    theme,
     variant: isHostVariant(hostConfiguration.variant)
       ? hostConfiguration.variant
       : "default",

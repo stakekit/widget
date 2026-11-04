@@ -3,18 +3,16 @@
  *
  * Every rule applies only inside the Widget root (`data-sk-root`), the
  * Widget-owned portal container (`data-sk-portal`, appended inside a host
- * `portalContainer` rather than marking it, so host content is untouched), or
- * a legacy Widget root that screens not yet on the Design System portal their
- * content into (`data-rk="stakekit"`, removed with the legacy styles).
+ * `portalContainer` rather than marking it, so host content is untouched).
  *
  * Specificity sits between host and Widget styles: `html body` adds two type
  * selectors, so a reset rule beats a bare host element selector such as
- * `button {}`, and `:where()` adds nothing, so every StyleX class (and every
- * legacy class) beats the reset. The rules are unlayered, because a layered
- * rule loses to any unlayered host rule. Selectors stay flat, since the
- * package stylesheet reaches hosts unminified and unlowered.
+ * `button {}`, and `:where()` adds nothing, so every StyleX class beats the
+ * reset. The rules are unlayered, because a layered rule loses to any
+ * unlayered host rule. Selectors stay flat, since the package stylesheet
+ * reaches hosts unminified and unlowered.
  */
-html body :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"]) * {
+html body :where([data-sk-root], [data-sk-portal]) * {
   margin: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -22,31 +20,28 @@ html body :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"]) * {
 
 html
   body
-  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  :where([data-sk-root], [data-sk-portal])
   :where(button, input, select, textarea) {
   font-family: inherit;
   font-size: 100%;
 }
 
-html body :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"]) input {
+html body :where([data-sk-root], [data-sk-portal]) input {
   background: transparent;
 }
 
-html
-  body
-  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
-  button {
+html body :where([data-sk-root], [data-sk-portal]) button {
   all: unset;
   cursor: pointer;
 }
 
 html
   body
-  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  :where([data-sk-root], [data-sk-portal])
   input::-webkit-outer-spin-button,
 html
   body
-  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  :where([data-sk-root], [data-sk-portal])
   input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
@@ -54,7 +49,7 @@ html
 
 html
   body
-  :where([data-sk-root], [data-sk-portal], [data-rk="stakekit"])
+  :where([data-sk-root], [data-sk-portal])
   input:where([type="number"]) {
   -moz-appearance: textfield;
 }

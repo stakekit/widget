@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes, Ref } from "react";
+import type { HostHook } from "../host-hook";
 import { borderWidth } from "../tokens/border.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -21,6 +22,10 @@ type ButtonProps = Omit<
     readonly ref?: Ref<HTMLButtonElement>;
     /** Shows a spinner beside the label and disables the button meanwhile. */
     readonly loading?: boolean;
+    /** Renders as the button's `data-testid`. */
+    readonly testId?: string;
+    /** Renders as the button's `data-rk`, which hosts locate it by. */
+    readonly hostHook?: HostHook;
   };
 
 /**
@@ -36,11 +41,15 @@ export const Button = ({
   loading = false,
   disabled = false,
   type = "button",
+  testId,
+  hostHook,
   children,
   ...rest
 }: ButtonProps) => (
   <button
     {...rest}
+    data-testid={testId}
+    data-rk={hostHook}
     type={type}
     disabled={disabled || loading}
     aria-busy={loading || undefined}

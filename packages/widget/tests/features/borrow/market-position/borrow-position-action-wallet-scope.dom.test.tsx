@@ -259,7 +259,7 @@ describe("Borrow position action wallet ownership", () => {
     const action = getAction(position, "withdraw");
     const app = await render(renderAction({ action, owner, position }));
     const maxButton = app.container.querySelector<HTMLButtonElement>(
-      '[data-rk="stake-token-section-max-button"]'
+      '[data-testid="stake-token-section-max-button"]'
     );
     if (!maxButton) throw new Error("Expected Max button");
 

@@ -1,27 +1,16 @@
 import type { Network } from "../../../../../../domain/network/network";
 import { formatNetworkName } from "../../../../../../shared/lib/formatters";
-import { useVariantNetworkUrls } from "../../../../../../shared/ui/components/token-icon/token-icon-container/hooks/use-variant-network-urls";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { Image } from "../../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-
-import * as styles from "../styles.css";
+import { useNetworkLogo } from "../../../../../../shared/react/token-logo";
+import { Avatar, Stack, Text } from "../../../../../../ui/index";
 
 export const NetworkDetailValue = ({ network }: { network: Network }) => {
-  const networkLogoUri = useVariantNetworkUrls(network);
+  const networkLogoUri = useNetworkLogo(network);
   const networkName = formatNetworkName(network);
 
   return (
-    <Box className={styles.networkValue}>
-      <Image
-        wrapperProps={{ hw: "4", flexShrink: 0 }}
-        imgProps={{ borderRadius: "half" }}
-        src={networkLogoUri}
-        fallbackName={networkName}
-      />
-      <Text className={styles.valueText} variant={{ weight: "normal" }}>
-        {networkName}
-      </Text>
-    </Box>
+    <Stack as="span" direction="row" align="center" gap={6}>
+      <Avatar src={networkLogoUri} fallback={networkName.charAt(0)} size="xs" />
+      <Text truncate>{networkName}</Text>
+    </Stack>
   );
 };

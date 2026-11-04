@@ -1,12 +1,8 @@
+import type { ReactNode } from "react";
 import { expect, it, vi } from "vitest";
-import "../../../src/shared/styles/theme/global.css";
+import { render } from "vitest-browser-react";
 import "../../../src/ui/theme/reset.css";
 import { ActionListItem } from "../../../src/features/activity/ui/activity-page/components/action-list-item";
-import {
-  activityFeedContainerName,
-  widgetContainerName,
-} from "../../../src/shared/styles/tokens/containers.css";
-import { render } from "../../utils/test-utils";
 
 vi.mock("react-i18next", async (importOriginal) => {
   const actual = await importOriginal<object>();
@@ -37,71 +33,60 @@ vi.mock(
   })
 );
 
+// A size container of a fixed width, as the Widget root and the feed's list are.
+const SizeContainer = ({
+  width,
+  children,
+}: {
+  readonly width: number;
+  readonly children: ReactNode;
+}) => <div style={{ containerType: "inline-size", width }}>{children}</div>;
+
 const findExactText = (container: HTMLElement, text: string) =>
-  Array.from(container.querySelectorAll<HTMLParagraphElement>("p")).find(
+  Array.from(container.querySelectorAll<HTMLElement>("span")).find(
     (element) => element.textContent === text
   );
 
-it("hides activity amounts in the widget variant", async () => {
+it("hides activity amounts below the sm container size", async () => {
   const app = await render(
-    <div
-      data-rk="stakekit"
-      style={{
-        containerName: widgetContainerName,
-        containerType: "inline-size",
-        width: 368,
-      }}
-    >
+    <SizeContainer width={368}>
       <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
-    </div>
-  );
-  const amount = findExactText(app.container, "+0.001 POL");
-  const unavailableDetails = findExactText(
-    app.container,
-    "Yield details unavailable"
-  );
-
-  expect(amount).toBeDefined();
-  expect(findExactText(app.container, "Completed")).toBeDefined();
-  expect(unavailableDetails).toBeUndefined();
-  expect(getComputedStyle(amount!).display).toBe("none");
-});
-
-it("hides activity amounts in a narrow activity feed", async () => {
-  const app = await render(
-    <div
-      data-rk="activity-feed"
-      style={{
-        containerName: activityFeedContainerName,
-        containerType: "inline-size",
-        width: 320,
-      }}
-    >
-      <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
-    </div>
+    </SizeContainer>
   );
   const amount = findExactText(app.container, "+0.001 POL");
 
   expect(amount).toBeDefined();
   expect(findExactText(app.container, "Completed")).toBeDefined();
-  expect(getComputedStyle(amount!).display).toBe("none");
+  expect(
+    findExactText(app.container, "Yield details unavailable")
+  ).toBeUndefined();
+  expect(amount?.checkVisibility()).toBe(false);
 });
 
-it("keeps activity amounts visible outside narrow containers", async () => {
+it("follows the nearest container, not the window", async () => {
   const app = await render(
-    <div data-rk="stakekit" style={{ width: 560 }}>
-      <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
-    </div>
+    <SizeContainer width={800}>
+      <SizeContainer width={320}>
+        <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
+      </SizeContainer>
+    </SizeContainer>
   );
   const amount = findExactText(app.container, "+0.001 POL");
-  const unavailableDetails = findExactText(
-    app.container,
-    "Yield details unavailable"
-  );
 
   expect(amount).toBeDefined();
-  expect(unavailableDetails).toBeUndefined();
-  expect(getComputedStyle(amount!).display).not.toBe("none");
+  expect(amount?.checkVisibility()).toBe(false);
+});
+
+it("keeps activity amounts visible from the sm container size up", async () => {
+  const app = await render(
+    <SizeContainer width={560}>
+      <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
+    </SizeContainer>
+  );
+  const amount = findExactText(app.container, "+0.001 POL");
+
+  expect(amount).toBeDefined();
+  expect(amount?.checkVisibility()).toBe(true);
 });
 
 it("marks the selected feed item", async () => {
@@ -109,16 +94,11 @@ it("marks the selected feed item", async () => {
     <ActionListItem action={{} as never} isSelected onActionSelect={vi.fn()} />
   );
 
-  app.container.style.setProperty("--sk-color-accent", "#4a60ff");
-  app.container.style.setProperty(
-    "--sk-color-token-select-background",
-    "#f5f5f6"
-  );
-
   const selectedItem = app.container.querySelector<HTMLElement>(
-    '[data-rk="activity-list-item-selected"]'
+    '[data-testid="activity-list-item-selected"]'
   );
 
-  expect(selectedItem).not.toBeNull();
-  expect(getComputedStyle(selectedItem!).boxShadow).not.toBe("none");
+  if (selectedItem === null) throw new Error("Expected the selected item");
+  expect(selectedItem.getAttribute("aria-pressed")).toBe("true");
+  expect(getComputedStyle(selectedItem).outlineStyle).toBe("solid");
 });

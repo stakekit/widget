@@ -1,5 +1,8 @@
 {
   "shared": {
+    "amount": "Amount",
+    "clear_search": "Clear search",
+    "search": "Search",
     "insufficient_balance": "Insufficient balance",
     "confidential": {
       "decrypt": "Decrypt",
@@ -41,7 +44,12 @@
     "learn_more": "Learn more",
     "change": "Change",
     "manage_validators": "Manage validators",
-    "fee": "Fee"
+    "fee": "Fee",
+    "back": "Back",
+    "close": "Close",
+    "opens_in_new_tab": "opens in a new tab",
+    "powered_by_label": "Powered by",
+    "widget_sections": "Widget sections"
   },
   "errors": {
     "InvalidArgumentError": {
@@ -294,6 +302,10 @@
     }
   },
   "activity": {
+    "list_label": "Activity",
+    "loading_more": "Loading more activity",
+    "copy_hash": "Copy transaction hash",
+    "copied": "Copied",
     "complete": {
       "continue": "Continue"
     },
@@ -388,6 +400,7 @@
     },
     "showing_count": "Showing {{showing}} of {{total}}",
     "filters": {
+      "label": "Filter activity",
       "all": "All",
       "stake": "Stake",
       "defi": "DeFi",
@@ -627,6 +640,10 @@
       "reward_rate": "Reward rate",
       "about": "About",
       "read_docs": "Read the integration docs",
+      "pane_label": "Yield details",
+      "chart_history": "{{chart}} history",
+      "chart_period": "{{chart}} period",
+      "no_chart_data": "No chart data",
       "details": "Details",
       "network": "Network",
       "provider": "Provider",
@@ -949,13 +966,16 @@
     }
   },
   "review": {
-    "estimated_reward": "Estimated rewards",
+    "estimated_yearly_rewards": "Estimated yearly rewards",
+    "estimated_monthly_rewards": "Estimated monthly rewards",
     "estimated_gas_fee": "Estimated gas fee",
     "gas_fee_unavailable": "Unavailable",
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
     "terms_of_use": "By clicking confirm you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
+    "and_earn": "& earn {{interestRate}}",
+    "fee_info": "About {{fee}}",
+    "gas_warning": "This action is unlikely to succeed due to insufficient funds to cover gas fees",
     "additional_info": "Additional info",
     "deposit_fee": "Deposit fee",
     "management_fee": "Management fee",
@@ -1001,6 +1021,15 @@
     "encrypt_error": "Encryption failed. Retry to try again.",
     "prepare_rejected": "This request can't be completed. Go back and change it.",
     "approve_error": "Something went wrong",
+    "progress_label": "Transaction progress",
+    "state": {
+      "pending": "Not started",
+      "active": "In progress",
+      "signing": "Approve this transaction in your wallet",
+      "broadcasting": "Submitting transaction",
+      "done": "Completed",
+      "failed": "Failed"
+    },
     "view_transaction": "View transaction",
     "tx_type": {
       "DECRYPT": "Decrypt amount",
@@ -1435,7 +1464,10 @@
     "unstake_sign": {
       "title": "Verify Ownership",
       "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
-    }
+    },
+    "actions_label": "Position actions",
+    "copy_address": "Copy {{label}}",
+    "copied": "Copied"
   },
   "unstake_review": {
     "terms_of_use": "By clicking confirm your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
@@ -1488,6 +1520,8 @@
   "tos_modal": {
     "title": "Terms of Use",
     "accept_button": "I Accept",
+    "agree_checkbox": "I have read and agree to the Terms of Use",
+    "close": "Close",
     "introduction": "These StakeKit Terms of Use are entered into between you (\"you\" or \"your\") and StakeKit LLC, together with Omni Ltd. and its other affiliates (\"StakeKit\", \"we\", \"us\", and \"our\"). By accessing, downloading, using, or clicking on \"I Agree\" to accept any \"StakeKit Services\" provided by StakeKit, you agree that you have carefully read, understood, and accepted all of the terms and conditions within these Terms of Use (\"Terms\") as well as our Privacy Policy. Our Privacy Policy can be accessed here: StakeKit Privacy Policy.",
     "additional_terms": "In addition, when using some features of the Services, you may be subject to specific additional terms and conditions applicable to those features.",
     "risk_warning": "As with any asset, the values of \"Cryptocurrencies\" may fluctuate significantly and there is a substantial risk of economic losses when purchasing, selling, holding, or investing in Cryptocurrencies and their derivatives. By making use of StakeKit Services, you acknowledge and agree that (1) you are aware of the risks associated with transactions of Cryptocurrencies and their derivatives, (2) you shall assume all risks related to the use of StakeKit Services and transactions of digital currencies and their derivatives, and (3) StakeKit shall not be liable for any such risks or adverse outcomes.",

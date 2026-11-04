@@ -12,7 +12,7 @@ export const EarnPageCtaButton = ({ cta }: { readonly cta: PageCta }) => {
   return (
     <PageCtaSlot>
       <Button
-        data-rk="footer-button-primary"
+        hostHook="footer-button-primary"
         disabled={cta.disabled}
         loading={cta.isLoading}
         onClick={cta.onClick}

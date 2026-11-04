@@ -3,6 +3,7 @@ import { type AnimationDefinition, motion } from "motion/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Logo } from "../artwork/logo";
 import { useReducedMotion } from "../components/use-reduced-motion";
+import type { HostHook } from "../host-hook";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
@@ -10,7 +11,7 @@ import { elevation } from "../tokens/elevation.stylex";
 import { motionEasing, motionSeconds } from "../tokens/motion-timing";
 import { gutter } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { containerWidth } from "../tokens/size.stylex";
+import { containerWidth, frameMaxWidth } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/typography.stylex";
 
@@ -25,7 +26,8 @@ type WidgetFrameProps = {
   readonly brandName: string;
   /**
    * `narrow` caps the frame at the `sm` container size and centers it;
-   * `full` fills the width it is given.
+   * `wide` fills the width it is given up to a split-view frame's width and
+   * centers it; `full` fills the width it is given.
    */
   readonly width?: keyof typeof widthStyles;
   /**
@@ -36,9 +38,15 @@ type WidgetFrameProps = {
   /**
    * On mount the frame grows open from no height once `ready`, such as when
    * the first page can show. Unset, the frame shows at its height at once.
-   * Off under reduced motion.
+   * Off under reduced motion. `onRevealed` is called once the frame is open:
+   * when the opening ends, or once `ready` without motion.
    */
-  readonly reveal?: { readonly ready: boolean };
+  readonly reveal?: {
+    readonly ready: boolean;
+    readonly onRevealed?: () => void;
+  };
+  /** Rendered on the frame as `data-rk`. */
+  readonly hostHook?: HostHook;
 };
 
 /**
@@ -55,6 +63,7 @@ export const WidgetFrame = ({
   width = "narrow",
   animateHeight = false,
   reveal,
+  hostHook,
 }: WidgetFrameProps) => {
   const reduceMotion = useReducedMotion();
   const animated = !reduceMotion && (animateHeight || reveal !== undefined);
@@ -78,6 +87,12 @@ export const WidgetFrame = ({
   const height = closed ? 0 : (contentHeight ?? "auto");
   const target = animated ? { height } : { height: "auto" };
   const transition = transitionFor(animated, opening, animateHeight);
+  const open = revealed || (!animated && reveal?.ready === true);
+  const onRevealed = reveal?.onRevealed;
+
+  useEffect(() => {
+    if (open) onRevealed?.();
+  }, [open, onRevealed]);
 
   const onAnimationComplete = (definition: AnimationDefinition) => {
     const settled =
@@ -94,6 +109,7 @@ export const WidgetFrame = ({
       transition={transition}
       onAnimationComplete={onAnimationComplete}
       className={stylex.props(styles.root, widthStyles[width]).className}
+      data-rk={hostHook}
     >
       <div
         ref={content}
@@ -176,5 +192,6 @@ const styles = stylex.create({
 
 const widthStyles = stylex.create({
   narrow: { maxWidth: containerWidth.sm, width: "100%" },
+  wide: { maxWidth: frameMaxWidth.wide, width: "100%" },
   full: { width: "100%" },
 });

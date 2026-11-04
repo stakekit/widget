@@ -1,4 +1,4 @@
-import { Box } from "../../../../shared/ui/primitives/box";
+import { Stack } from "../../../../ui/index";
 import { AnimationPage } from "../../../widget-shell/views";
 import { PositionsPage } from "./positions/positions.page.tsx";
 import { Summary } from "./summary";
@@ -6,10 +6,10 @@ import { Summary } from "./summary";
 export const ManagePage = () => {
   return (
     <AnimationPage>
-      <Box display="flex" flexDirection="column" gap="8">
+      <Stack gap={32}>
         <Summary />
         <PositionsPage />
-      </Box>
+      </Stack>
     </AnimationPage>
   );
 };

@@ -3,7 +3,7 @@ import {
   formatBorrowProviderName,
   formatNetworkName,
 } from "../../../shared/lib/formatters";
-import { Text } from "../../../shared/ui/primitives/typography/text";
+import { Stack, Text } from "../../../ui/index";
 import {
   type BorrowTransactionFlowReview,
   getBorrowTransactionFlowTitle,
@@ -19,13 +19,13 @@ export const BorrowFlowHeading = ({
   const title = getBorrowTransactionFlowTitle(summary);
 
   return (
-    <>
-      <Text variant={{ weight: "bold" }}>
+    <Stack gap={4}>
+      <Text variant="title" as="h2">
         {t(title.key, { symbol: title.symbol })}
       </Text>
-      <Text variant={{ type: "muted", weight: "normal" }}>
+      <Text tone="muted">
         {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
       </Text>
-    </>
+    </Stack>
   );
 };

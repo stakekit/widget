@@ -1,5 +1,6 @@
 import { Meter as BaseMeter } from "@base-ui/react/meter";
 import * as stylex from "@stylexjs/stylex";
+import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -22,7 +23,26 @@ type MeterProps = {
   readonly valueText: string;
   /** Meaning through color, such as `warning` near a liquidation threshold. */
   readonly tone?: keyof typeof toneStyles;
+  /**
+   * A point on the scale drawn as a tick across the track, such as the
+   * liquidation threshold. Its label reads out with the value.
+   */
+  readonly marker?: {
+    readonly value: number;
+    /** Names the point, such as "Liquidation at 86%". */
+    readonly label: string;
+  };
+  /** Captions under the track's two ends, such as "Low risk". */
+  readonly scale?: {
+    readonly start?: string;
+    readonly end?: string;
+  };
 };
+
+const percentOf = (value: number, min: number, max: number) =>
+  max === min
+    ? 0
+    : Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 
 /**
  * A gauge of a measure within a known range, such as loan to value. It is a
@@ -35,23 +55,44 @@ export const Meter = ({
   max = 100,
   valueText,
   tone = "accent",
+  marker,
+  scale,
 }: MeterProps) => (
   <BaseMeter.Root
     value={value}
     min={min}
     max={max}
-    getAriaValueText={() => valueText}
+    getAriaValueText={() =>
+      marker === undefined ? valueText : `${valueText}, ${marker.label}`
+    }
     {...stylex.props(styles.root)}
   >
     <div {...stylex.props(styles.header)}>
       <BaseMeter.Label {...stylex.props(styles.label)}>{label}</BaseMeter.Label>
       <span {...stylex.props(styles.value)}>{valueText}</span>
     </div>
-    <BaseMeter.Track {...stylex.props(styles.track)}>
-      <BaseMeter.Indicator
-        {...stylex.props(styles.indicator, toneStyles[tone])}
-      />
-    </BaseMeter.Track>
+    <div {...stylex.props(styles.trackFrame)}>
+      <BaseMeter.Track {...stylex.props(styles.track)}>
+        <BaseMeter.Indicator
+          {...stylex.props(styles.indicator, toneStyles[tone])}
+        />
+      </BaseMeter.Track>
+      {marker !== undefined && (
+        <span
+          aria-hidden="true"
+          {...stylex.props(
+            styles.marker,
+            styles.markerPosition(`${percentOf(marker.value, min, max)}%`)
+          )}
+        />
+      )}
+    </div>
+    {scale !== undefined && (
+      <div {...stylex.props(styles.header)}>
+        <span {...stylex.props(styles.scale)}>{scale.start}</span>
+        <span {...stylex.props(styles.scale)}>{scale.end}</span>
+      </div>
+    )}
   </BaseMeter.Root>
 );
 
@@ -80,6 +121,7 @@ const styles = stylex.create({
     fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.label,
   },
+  trackFrame: { position: "relative" },
   track: {
     borderRadius: radius.pill,
     overflow: "hidden",
@@ -93,6 +135,21 @@ const styles = stylex.create({
     transitionProperty: "width",
     transitionTimingFunction: motion.easing,
     height: "100%",
+  },
+  // A tick across the track, taller than it so it reads over the fill.
+  marker: {
+    borderRadius: radius.pill,
+    insetBlock: `calc(-1 * ${space[2]})`,
+    backgroundColor: color.text,
+    position: "absolute",
+    transform: "translateX(-50%)",
+    width: borderWidth.thick,
+  },
+  markerPosition: (inset: string) => ({ insetInlineStart: inset }),
+  scale: {
+    color: color.textMuted,
+    fontSize: fontSize.caption,
+    lineHeight: lineHeight.caption,
   },
 });
 

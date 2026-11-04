@@ -30,6 +30,8 @@ type CommonProps = {
   readonly "aria-label"?: string;
   readonly "aria-labelledby"?: string;
   readonly children?: ReactNode;
+  /** Renders as the card's `data-testid`. */
+  readonly testId?: string;
 };
 
 type CardProps = CommonProps &
@@ -86,6 +88,7 @@ export const Card = (props: CardProps) => {
   const labelling = {
     "aria-label": props["aria-label"],
     "aria-labelledby": props["aria-labelledby"],
+    "data-testid": props.testId,
   };
 
   if (props.onClick !== undefined) {

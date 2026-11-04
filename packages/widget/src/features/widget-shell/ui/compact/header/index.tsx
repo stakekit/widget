@@ -1,80 +1,110 @@
-import { motion } from "motion/react";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
-import { XIcon } from "../../../../../shared/ui/primitives/icons/x-icon";
+import { type ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { IconButton, Stack } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
+import {
+  useMountAnimation,
+  useMountRevealReady,
+} from "../../../../mount-animation/index";
 import { AccountModal, ChainModal } from "../../../../wallet/views";
+import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { useHeader } from "../../../react/use-header";
-import { animationContainer } from "./styles.css";
+import { ShellFrame } from "../../shell-frame";
 
-export const Header = () => {
+/**
+ * The Compact Layout's frame: the back and disconnect buttons and the wallet
+ * controls above the page, shown only while one of them is. On mount the
+ * frame grows open once the first page can show, unless the host disables
+ * that animation; either way the mount animation's layout step finishes when
+ * the frame is open.
+ */
+export const CompactFrame = ({
+  children,
+}: {
+  readonly children: ReactNode;
+}) => {
+  const { t } = useTranslation();
   const {
-    headerRef,
     walletConfigReady,
     hidesHeaderWalletControl,
     hideChainSelector,
     isConnected,
+    isConnecting,
     showBack,
     onLeftIconPress,
     showDisconnect,
     onXPress,
-    isConnecting,
     leaveConfirmationDialog,
   } = useHeader();
+  const { state, dispatch } = useMountAnimation();
+  const disableInitLayoutAnimation = useWidgetConfig(
+    "disableInitLayoutAnimation"
+  );
+  const revealReady = useMountRevealReady();
+  const [revealsOnMount] = useState(
+    () => !state.layout && !disableInitLayoutAnimation
+  );
 
-  return (
-    <Box ref={headerRef} data-rk="header">
-      <Box paddingTop="4" paddingBottom="1">
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box
-            hw="7"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
+  useEffect(() => {
+    if (!revealsOnMount) dispatch({ type: "layout" });
+  }, [revealsOnMount, dispatch]);
+
+  const showsButtons = showBack || showDisconnect;
+  const showsWallet =
+    walletConfigReady &&
+    !hidesHeaderWalletControl &&
+    (isConnected || isConnecting);
+  const header =
+    showsButtons || showsWallet ? (
+      <Stack hostHook="header" gap={8}>
+        {showsButtons && (
+          <Stack
+            direction="row"
+            align="center"
+            justify={showBack ? "between" : "end"}
           >
-            {showBack ? (
-              <Box
-                as="button"
+            {showBack && (
+              <IconButton
+                icon="CaretLeftIcon"
+                label={t("shared.back")}
                 onClick={onLeftIconPress}
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <CaretLeftIcon />
-              </Box>
-            ) : (
-              <Box />
+              />
             )}
-          </Box>
-
-          {showDisconnect && (
-            <Box
-              as="button"
-              onClick={onXPress}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <XIcon hw={24} />
-            </Box>
-          )}
-        </Box>
-
-        {walletConfigReady &&
-        !hidesHeaderWalletControl &&
-        (isConnected || isConnecting) ? (
-          <motion.div
-            className={animationContainer}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.2 }}
-          >
+            {showDisconnect && (
+              <IconButton
+                icon="XIcon"
+                label={t("wallet_modal.disconnect")}
+                onClick={onXPress}
+              />
+            )}
+          </Stack>
+        )}
+        {showsWallet && (
+          <Stack direction="row" align="center" justify="center" gap={8}>
             {!hideChainSelector && <ChainModal />}
             <AccountModal />
-          </motion.div>
-        ) : null}
-      </Box>
+          </Stack>
+        )}
+      </Stack>
+    ) : undefined;
+
+  return (
+    <>
+      <ShellFrame
+        animateHeight
+        {...(header === undefined ? {} : { header })}
+        {...(revealsOnMount
+          ? {
+              reveal: {
+                ready: revealReady,
+                onRevealed: () => dispatch({ type: "layout" }),
+              },
+            }
+          : {})}
+      >
+        {children}
+      </ShellFrame>
       <LeaveConfirmationDialog {...leaveConfirmationDialog} />
-    </Box>
+    </>
   );
 };

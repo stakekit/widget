@@ -76,3 +76,20 @@ export const Responsive: Story = {
     await expect(getComputedStyle(wide).paddingTop).toBe("24px");
   },
 };
+
+/**
+ * `testId` renders as `data-testid` and `hostHook` as `data-rk`, on Box, Stack
+ * and Grid alike.
+ */
+export const TestIdAndHostHook: Story = {
+  args: {
+    padding: 8,
+    testId: "box-test-id",
+    hostHook: "estimated-reward__yearly",
+  },
+  play: async ({ canvasElement }) => {
+    const box = within(canvasElement).getByTestId("box-test-id");
+    await expect(box).toHaveTextContent("Box content");
+    await expect(box).toHaveAttribute("data-rk", "estimated-reward__yearly");
+  },
+};

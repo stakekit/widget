@@ -74,10 +74,10 @@ describe("compact mount geometry", () => {
         "[data-rk='widget-container']"
       );
       const skeleton = app.container.querySelector<HTMLElement>(
-        "[data-rk='earn-mount-skeleton']"
+        "[data-testid='earn-mount-skeleton']"
       );
       const livePresentation = app.container.querySelector<HTMLElement>(
-        "[data-rk='earn-live-presentation']"
+        "[data-testid='earn-live-presentation']"
       );
 
       expect(widgetContainer).not.toBeNull();
@@ -105,7 +105,7 @@ describe("compact mount geometry", () => {
           widgetContainer?.getBoundingClientRect().height ?? 0
         );
         const currentSkeleton = app.container.querySelector<HTMLElement>(
-          "[data-rk='earn-mount-skeleton']"
+          "[data-testid='earn-mount-skeleton']"
         );
         if (currentSkeleton) {
           skeletonHeights.push(currentSkeleton.getBoundingClientRect().height);

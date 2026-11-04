@@ -281,13 +281,12 @@ describe("Borrow position details", () => {
     expect(app.getByText("Supply APY").length).toBe(0);
 
     const borrowSection = app.container.querySelector(
-      '[data-rk="borrow-amount-section"]'
+      '[data-testid="borrow-amount-section"]'
     );
     expect(borrowSection?.textContent).not.toContain("available");
     expect(borrowSection?.textContent).not.toContain("Max");
 
     await app.getByTestId("borrow-market-select").click();
-    await app.getByTestId("borrow-market-select__group_usdc").click();
     expect(app.container.textContent).not.toContain("Max:");
     await app
       .getByTestId(
@@ -362,7 +361,9 @@ describe("Borrow position details", () => {
     );
     await expect.element(disableToggle).toHaveAttribute("aria-checked", "true");
     // Disabling the only collateral behind $400 of debt is a Risk Gate Block.
-    await expect.element(disableToggle).toBeDisabled();
+    await expect
+      .element(disableToggle)
+      .toHaveAttribute("aria-disabled", "true");
     await expect
       .element(
         app.getByText(

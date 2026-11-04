@@ -1,22 +1,21 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
-import {
-  PositionDetailsBreadcrumb as PositionDetailsBreadcrumbLayout,
-  PositionDetailsPane,
-} from "../../../../shared/ui/components/position-details";
-import { Box } from "../../../../shared/ui/primitives/box";
+import { SplitView, Stack } from "../../../../ui/index";
 import { useWidgetRoutePrefixMatch } from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import {
   AnimationPage,
   BackButton,
   BackButtonProvider,
-  SplitView,
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
 import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsInfo } from "./components/position-details-info";
+import {
+  PositionDetailsBreadcrumb,
+  PositionDetailsPane,
+} from "./components/position-details-layout";
 
 const PositionBreadcrumb = ({
   positionName,
@@ -27,7 +26,7 @@ const PositionBreadcrumb = ({
 
   return (
     <BackButtonProvider>
-      <PositionDetailsBreadcrumbLayout
+      <PositionDetailsBreadcrumb
         backButton={<BackButton />}
         positionName={positionName}
         rootLabel={t("dashboard.position_details.breadcrumb_root")}
@@ -39,15 +38,15 @@ const PositionBreadcrumb = ({
 const PositionDetailsPageComponent = () => {
   const { t } = useTranslation();
   const positionDetails = usePositionDetails();
-  const stakeFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionStake);
-  const unstakeFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionUnstake);
+  const enterFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionStake);
+  const exitFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionUnstake);
   const pendingActionFlow = useWidgetRoutePrefixMatch(
     widgetRoutes.positionPendingAction
   );
   const layout = resolvePositionDetailsPageLayout({
     ...positionDetails,
     flowActive:
-      stakeFlow !== null || unstakeFlow !== null || pendingActionFlow !== null,
+      enterFlow !== null || exitFlow !== null || pendingActionFlow !== null,
   });
 
   if (layout === "PositionLost") {
@@ -67,15 +66,9 @@ const PositionDetailsPageComponent = () => {
             <PositionDetailsPane kind="actions">
               <PositionBreadcrumb positionName={positionName} />
 
-              <Box
-                display="flex"
-                flex={1}
-                flexDirection="column"
-                gap="8"
-                justifyContent="space-between"
-              >
+              <Stack grow gap={32} justify="between">
                 <Outlet />
-              </Box>
+              </Stack>
             </PositionDetailsPane>
           ) : null
         }

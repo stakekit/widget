@@ -11,10 +11,8 @@ import {
   formatTokenAmountWithSymbol,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import { DetailRow } from "../../../../../ui/index";
 import { formatPendingBalanceTiming } from "../../../model/pending-balance-timing";
 
 export const PositionBalances = ({
@@ -42,59 +40,28 @@ export const PositionBalances = ({
     ? { context: "yearn_or_deposit" }
     : {};
 
+  const value = yieldBalance.isEncrypted
+    ? t("shared.confidential.hidden")
+    : `${formatTokenAmountWithSymbol(yieldBalance, locale)}${
+        yieldBalance.token.isPoints
+          ? ""
+          : ` (${formatUsd(yieldBalance.amountUsd, locale)})`
+      }`;
+  const caption = [
+    shares ? formatTokenAmountWithSymbol(shares, locale) : null,
+    durationUntilDate || null,
+  ]
+    .filter((line) => line !== null)
+    .join(" · ");
+
   return (
-    <Box
-      display="flex"
-      justifyContent="space-between"
-      alignItems="center"
-      gap="4"
-    >
-      <Text variant={{ weight: "normal" }}>
-        {t(
-          `position_details.balance_type.${yieldBalance.type}`,
-          balanceTypeOptions
-        )}
-      </Text>
-
-      <Box textAlign="end">
-        <Box display="flex" gap="1" alignItems="center">
-          {yieldBalance.token.isPoints && (
-            <Box as="span" display="inline-flex">
-              <TokenIcon
-                token={yieldBalance.token}
-                hideNetwork
-                tokenLogoHw="5"
-              />
-            </Box>
-          )}
-          <Text
-            overflowWrap="anywhere"
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {yieldBalance.isEncrypted ? (
-              t("shared.confidential.hidden")
-            ) : (
-              <>
-                {formatTokenAmountWithSymbol(yieldBalance, locale)}
-                {!yieldBalance.token.isPoints &&
-                  ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
-              </>
-            )}
-          </Text>
-        </Box>
-
-        {shares ? (
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {formatTokenAmountWithSymbol(shares, locale)}
-          </Text>
-        ) : null}
-
-        {!!durationUntilDate && (
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {durationUntilDate}
-          </Text>
-        )}
-      </Box>
-    </Box>
+    <DetailRow
+      label={t(
+        `position_details.balance_type.${yieldBalance.type}`,
+        balanceTypeOptions
+      )}
+      value={value}
+      {...(caption ? { caption } : {})}
+    />
   );
 };

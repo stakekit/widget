@@ -1,5 +1,4 @@
 import path from "node:path";
-import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import macros from "unplugin-macros/vite";
@@ -62,8 +61,6 @@ export const getConfig = (
           "vite-plugin-node-polyfills/shims/buffer",
           "vite-plugin-node-polyfills/shims/global",
           "vite-plugin-node-polyfills/shims/process",
-          "@vanilla-extract/recipes/createRuntimeFn",
-          "@vanilla-extract/sprinkles/createRuntimeSprinkles",
           "react-router/dom",
           // Every Base UI part the Design System imports (`src/ui`). The
           // dependency scan can miss a newly imported subpath when the cache
@@ -117,7 +114,6 @@ export const getConfig = (
             /[/\\]adapters[/\\]cosmos[/\\]chains[/\\]chain-registry\.ts$/,
           ],
         }),
-        vanillaExtractPlugin(),
         hostBundlerOutputPlugin(),
       ],
       css: {

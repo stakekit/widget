@@ -24,13 +24,15 @@ import {
   formatTokenAmount,
   formatUsd,
 } from "../../../../shared/lib/number-format";
-import type { DetailRowTone } from "../../../../shared/ui/components/details-section";
 import type { BorrowFormProjection } from "./borrow-entry";
+
+/** How a details row's value reads: at risk near or over a limit. */
+type BorrowDetailRowTone = "default" | "warning" | "danger";
 
 type BorrowDetailsRow = {
   readonly id: string;
   readonly label: string;
-  readonly tone?: DetailRowTone;
+  readonly tone?: BorrowDetailRowTone;
   readonly value: string;
 };
 
@@ -38,7 +40,7 @@ const riskLevelTone = {
   nearLimit: "warning",
   overLimit: "danger",
   safe: "default",
-} as const satisfies Record<RiskLevel, DetailRowTone>;
+} as const satisfies Record<RiskLevel, BorrowDetailRowTone>;
 
 type BorrowMetricCard = {
   readonly id: string;

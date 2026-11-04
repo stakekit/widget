@@ -1,30 +1,16 @@
 import { useTranslation } from "react-i18next";
-import { ShellNotice, ShellNoticeFrame } from "../shell-notice";
+import { ShellNotice } from "../shell-notice";
 
-const testId = "widget-unavailable";
-
+/**
+ * The notice shown when the Widget cannot load, also when no Widget
+ * Configuration exists (the initial Host Configuration was rejected).
+ */
 export const WidgetUnavailable = () => {
   const { t } = useTranslation();
 
   return (
     <ShellNotice
-      testId={testId}
-      title={t("help_modals.widget_unavailable.title")}
-      description={t("help_modals.widget_unavailable.description")}
-    />
-  );
-};
-
-/**
- * The same notice when no Widget Configuration exists (the initial Host
- * Configuration was rejected); the enclosing app container sets its Layout.
- */
-export const WidgetUnavailableWithoutConfiguration = () => {
-  const { t } = useTranslation();
-
-  return (
-    <ShellNoticeFrame
-      testId={testId}
+      testId="widget-unavailable"
       title={t("help_modals.widget_unavailable.title")}
       description={t("help_modals.widget_unavailable.description")}
     />
