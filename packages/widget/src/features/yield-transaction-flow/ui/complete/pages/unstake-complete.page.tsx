@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
@@ -8,7 +7,6 @@ import { useYieldFlowIntake } from "../../../react/yield-flow-route";
 import { CompletePage } from "./common.page.tsx";
 
 export const UnstakeCompletePage = () => {
-  const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const exitFlow = useYieldFlowIntake("Exit");
   const integrationData = exitFlow.integration;
@@ -19,11 +17,7 @@ export const UnstakeCompletePage = () => {
 
   return (
     <CompletePage
-      amount={
-        completion.approximate
-          ? t("complete.approximate_amount", { amount })
-          : amount
-      }
+      amount={amount}
       batched={
         completion.batched
           ? { side: "redemption", yieldDto: integrationData }
@@ -37,6 +31,7 @@ export const UnstakeCompletePage = () => {
       }}
       network={completion.token.symbol}
       providersDetails={exitFlow.providersDetails}
+      receiveToken={completion.receiveToken}
       token={completion.token}
       yieldType={getExtendedYieldType(integrationData)}
     />

@@ -152,6 +152,16 @@ export const formatTokenAmount = (
   );
 };
 
+/** A token amount, rounded down, followed by its token's symbol. */
+export const formatTokenAmountWithSymbol = (
+  tokenAmount: Readonly<{
+    readonly amount: NumericValue;
+    readonly token: Readonly<{ readonly symbol: string }>;
+  }>,
+  locale: string
+) =>
+  `${formatTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
+
 const isMissingNumericInput = (
   value: OptionalNumericValue
 ): value is null | undefined | "" => value == null || value === "";

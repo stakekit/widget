@@ -31,7 +31,7 @@ export const YieldDetailsHeader = ({
         name: yieldDto.metadata.name,
         provider: yieldDto.provider,
       }}
-      token={yieldDto.token}
+      token={yieldDto.outputToken ?? yieldDto.token}
       tokenLogoHw="12"
     />
 

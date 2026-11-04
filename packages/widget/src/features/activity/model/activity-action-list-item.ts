@@ -2,11 +2,20 @@ import type { DateTime } from "effect";
 import {
   ActionStatus,
   type ActionType,
+  findYieldToken,
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
-import { isConfidentialYield } from "../../../domain/earn/confidential";
+import {
+  type ConfidentialActionKind,
+  type ConfidentialSettlement,
+  getConfidentialActionKind,
+  getConfidentialSettlement,
+} from "../../../domain/earn/confidential";
+import { getExitAmountToken } from "../../../domain/earn/denomination";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
+import type { Token } from "../../../domain/token/token";
 import {
   formatDateTime,
   getActivityDayKind,
@@ -23,6 +32,8 @@ import type {
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
 export type ActivityStatusLabel =
+  /** A confidential deposit or private exit waiting for its batch to run. */
+  | "awaiting_settlement"
   | "canceled"
   | "completed"
   | "created"
@@ -37,7 +48,24 @@ export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
   /** Confidential deposits only settle when a later batch runs. */
   | { readonly _tag: "deposit_submitted"; readonly tokenSymbol: string | null }
+  /** A confidential deposit its batch cancelled. */
+  | { readonly _tag: "deposit_canceled"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
+  /** A confidential private exit only joins the next redemption batch. */
+  | {
+      readonly _tag: "private_withdrawal_requested";
+      readonly tokenSymbol: string | null;
+    }
+  /** A confidential private exit its batch cancelled. */
+  | {
+      readonly _tag: "private_withdrawal_canceled";
+      readonly tokenSymbol: string | null;
+    }
+  /** The WITHDRAW that pays out a confidential instant exit. */
+  | {
+      readonly _tag: "instant_withdrawal_finalized";
+      readonly tokenSymbol: string | null;
+    }
   | { readonly _tag: "rewards" }
   | {
       readonly _tag: "generic";
@@ -70,7 +98,8 @@ type ActivityActionListItemProjection = {
   readonly statusLabel: ActivityStatusLabel | null;
   readonly timestamp: ActivityActionTimestamp | null;
   readonly title: ActivityActionTitle;
-  readonly tokenSymbol: string | null;
+  /** The symbol of the token the amount is in. */
+  readonly amountTokenSymbol: string | null;
 };
 
 const getActivityDirection = (type: ActionType): ActivityDirection => {
@@ -133,11 +162,29 @@ const BORROW_ACTIVITY_STATUS_LABEL: Record<
   WAITING_FOR_NEXT: "processing",
 };
 
+/** How a confidential deposit's or private exit's batch resolved, if it is one. */
+export const getActivitySettlement = ({
+  actionData,
+  yieldData,
+}: YieldActivityItem): ConfidentialSettlement | null =>
+  yieldData ? getConfidentialSettlement(yieldData, actionData) : null;
+
+const SETTLEMENT_STATUS_LABEL: Record<
+  ConfidentialSettlement["_tag"],
+  ActivityStatusLabel
+> = {
+  Awaiting: "awaiting_settlement",
+  Cancelled: "canceled",
+  Settled: "completed",
+};
+
 /** Waiting actions show no badge: the user may have continued elsewhere. */
-export const projectActivityStatusLabel = (
+const projectActivityStatusLabel = (
   action: YieldActivityItem["actionData"],
+  settlement: ConfidentialSettlement | null,
   presentationTime: ActivityPresentationTime | null
 ): ActivityStatusLabel | null => {
+  if (settlement) return SETTLEMENT_STATUS_LABEL[settlement._tag];
   switch (action.status) {
     case ActionStatus.SUCCESS:
       return "completed";
@@ -177,13 +224,48 @@ const getReadableRawTokenSymbol = (
   return normalizedValue;
 };
 
-const resolveTokenSymbol = ({
+/**
+ * The tokens an action shows: its amount in the token of the field it came
+ * from, its title in what it put in or paid out. An enter is in its input
+ * token; an exit's amount is in the Exit Unit and its title names the Exit
+ * Receive Token; any other action pays the Value Token.
+ */
+export const resolveActivityActionTokens = (
+  yieldData: EarnYieldWithProvider,
+  action: YieldActivityItem["actionData"]
+): Readonly<{ readonly amountToken: Token; readonly titleToken: Token }> => {
+  switch (action.intent) {
+    case "enter": {
+      const token =
+        getActionInputToken({ actionDto: action, yieldDto: yieldData }) ??
+        yieldData.token;
+      return { amountToken: token, titleToken: token };
+    }
+    case "exit": {
+      const amountToken = getExitAmountToken(yieldData);
+      const outputToken = action.rawArguments?.outputToken;
+      return {
+        amountToken,
+        titleToken:
+          (outputToken ? findYieldToken(yieldData, outputToken) : undefined) ??
+          amountToken,
+      };
+    }
+    case "manage":
+      return { amountToken: yieldData.token, titleToken: yieldData.token };
+  }
+};
+
+const resolveTokenSymbols = ({
   action,
   direction,
 }: {
   readonly action: YieldActivityItem;
   readonly direction: ActivityDirection;
-}): string | null => {
+}): Readonly<{
+  readonly amountTokenSymbol: string | null;
+  readonly titleTokenSymbol: string | null;
+}> => {
   const yieldData = action.yieldData;
 
   if (!yieldData) {
@@ -192,21 +274,23 @@ const resolveTokenSymbol = ({
       direction === "withdraw" || direction === "neutral"
         ? (outputToken ?? inputToken)
         : (inputToken ?? outputToken);
+    const symbol = getReadableRawTokenSymbol(preferredToken);
 
-    return getReadableRawTokenSymbol(preferredToken);
+    return { amountTokenSymbol: symbol, titleTokenSymbol: symbol };
   }
 
   const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
-  if (direction === "withdraw" || direction === "neutral") {
-    return yieldTokenSymbol;
-  }
+  const { amountToken, titleToken } = resolveActivityActionTokens(
+    yieldData,
+    action.actionData
+  );
 
-  const inputToken = getActionInputToken({
-    actionDto: action.actionData,
-    yieldDto: yieldData,
-  });
-
-  return getReadableRawTokenSymbol(inputToken?.symbol) ?? yieldTokenSymbol;
+  return {
+    amountTokenSymbol:
+      getReadableRawTokenSymbol(amountToken.symbol) ?? yieldTokenSymbol,
+    titleTokenSymbol:
+      getReadableRawTokenSymbol(titleToken.symbol) ?? yieldTokenSymbol,
+  };
 };
 
 const resolveAmountSign = ({
@@ -224,19 +308,37 @@ const resolveAmountSign = ({
 
 const resolveTitle = ({
   action,
+  confidentialKind,
   direction,
+  settlement,
   tokenSymbol,
 }: {
   readonly action: YieldActivityItem;
+  readonly confidentialKind: ConfidentialActionKind | null;
   readonly direction: ActivityDirection;
+  readonly settlement: ConfidentialSettlement | null;
   readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
   switch (direction) {
     case "deposit":
-      return action.yieldData && isConfidentialYield(action.yieldData)
-        ? { _tag: "deposit_submitted", tokenSymbol }
-        : { _tag: "deposited", tokenSymbol };
+      if (confidentialKind !== "deposit" || settlement?._tag === "Settled") {
+        return { _tag: "deposited", tokenSymbol };
+      }
+      return settlement?._tag === "Cancelled"
+        ? { _tag: "deposit_canceled", tokenSymbol }
+        : { _tag: "deposit_submitted", tokenSymbol };
     case "withdraw":
+      if (confidentialKind === "privateExit") {
+        if (settlement?._tag === "Settled") {
+          return { _tag: "withdrew", tokenSymbol };
+        }
+        return settlement?._tag === "Cancelled"
+          ? { _tag: "private_withdrawal_canceled", tokenSymbol }
+          : { _tag: "private_withdrawal_requested", tokenSymbol };
+      }
+      if (confidentialKind === "instantExitPayout") {
+        return { _tag: "instant_withdrawal_finalized", tokenSymbol };
+      }
       return { _tag: "withdrew", tokenSymbol };
     case "rewards":
       return { _tag: "rewards" };
@@ -327,7 +429,7 @@ const projectBorrowActivityListItem = ({
       presentationTime,
     }),
     title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
-    tokenSymbol,
+    amountTokenSymbol: tokenSymbol,
   };
 };
 
@@ -345,7 +447,11 @@ export const projectActivityActionListItem = ({
   }
 
   const direction = getActivityDirection(action.actionData.type);
-  const tokenSymbol = resolveTokenSymbol({
+  const confidentialKind = action.yieldData
+    ? getConfidentialActionKind(action.yieldData, action.actionData)
+    : null;
+  const settlement = getActivitySettlement(action);
+  const { amountTokenSymbol, titleTokenSymbol } = resolveTokenSymbols({
     action,
     direction,
   });
@@ -361,6 +467,7 @@ export const projectActivityActionListItem = ({
     isPositive: direction === "deposit" || direction === "rewards",
     statusLabel: projectActivityStatusLabel(
       action.actionData,
+      settlement,
       presentationTime
     ),
     timestamp: resolveTimestamp({
@@ -368,7 +475,13 @@ export const projectActivityActionListItem = ({
       locale,
       presentationTime,
     }),
-    title: resolveTitle({ action, direction, tokenSymbol }),
-    tokenSymbol,
+    title: resolveTitle({
+      action,
+      confidentialKind,
+      direction,
+      settlement,
+      tokenSymbol: titleTokenSymbol,
+    }),
+    amountTokenSymbol,
   };
 };

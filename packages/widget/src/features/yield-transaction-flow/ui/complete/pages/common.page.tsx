@@ -43,6 +43,8 @@ type Props = {
   pendingActionLabelContext?: PendingActionLabelContext | undefined;
   /** The request was queued into this vault's next batch, not settled. */
   batched?: BatchedRequest | null;
+  /** The Exit Receive Token an exit pays out, as Review showed it. */
+  receiveToken?: Readonly<{ readonly symbol: string }> | null;
   providersDetails: ReadonlyArray<{
     logo?: string | undefined;
     name?: string;
@@ -66,6 +68,7 @@ export const CompletePageComponent = ({
   pendingActionType,
   pendingActionLabelContext,
   batched = null,
+  receiveToken = null,
   yieldType,
   providersDetails,
   integrationId,
@@ -186,6 +189,12 @@ export const CompletePageComponent = ({
                 })}
               </Heading>
             </motion.div>
+
+            {receiveToken ? (
+              <Text marginTop="2" variant={{ type: "muted" }}>
+                {t("complete.receive_token", { symbol: receiveToken.symbol })}
+              </Text>
+            ) : null}
 
             {nextBatchNote ? (
               <Text marginTop="2" variant={{ type: "muted" }}>

@@ -23,10 +23,36 @@ export const useActivityActionTitle = (title: ActivityActionTitle) => {
         ? t("activity.item.deposit_submitted", { token: tokenSymbol })
         : t("activity.item.deposit_submitted_without_token")
     ),
+    Match.when({ _tag: "deposit_canceled" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.deposit_canceled", { token: tokenSymbol })
+        : t("activity.item.deposit_canceled_without_token")
+    ),
     Match.when({ _tag: "withdrew" }, ({ tokenSymbol }) =>
       tokenSymbol
         ? t("activity.item.withdrew", { token: tokenSymbol })
         : t("activity.item.withdrew_without_token")
+    ),
+    Match.when({ _tag: "private_withdrawal_requested" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.private_withdrawal_requested", {
+            token: tokenSymbol,
+          })
+        : t("activity.item.private_withdrawal_requested_without_token")
+    ),
+    Match.when({ _tag: "private_withdrawal_canceled" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.private_withdrawal_canceled", {
+            token: tokenSymbol,
+          })
+        : t("activity.item.private_withdrawal_canceled_without_token")
+    ),
+    Match.when({ _tag: "instant_withdrawal_finalized" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.instant_withdrawal_finalized", {
+            token: tokenSymbol,
+          })
+        : t("activity.item.instant_withdrawal_finalized_without_token")
     ),
     Match.when({ _tag: "rewards" }, () => t("activity.item.rewards")),
     Match.when({ _tag: "generic" }, ({ actionLabel, tokenSymbol }) =>

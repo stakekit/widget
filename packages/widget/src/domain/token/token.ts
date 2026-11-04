@@ -55,6 +55,16 @@ export const tokenString = (token: TokenLike): TokenString =>
 export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b);
 
+// Symbols differ across lists (WBTC vs wBTC); compare contracts.
+export const sameTokenContract = (
+  a: Pick<Token, "address" | "network">,
+  b: Pick<Token, "address" | "network">
+) =>
+  a.network === b.network &&
+  !!a.address &&
+  !!b.address &&
+  a.address.toLowerCase() === b.address.toLowerCase();
+
 /**
  * Token reference hosts write in `token`, `initToken` and
  * `preferredTokenYieldsPerNetwork`: `${network}-${address}`, with an empty

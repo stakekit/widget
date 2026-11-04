@@ -421,6 +421,7 @@ type ActionFixtureOverrides = Partial<
     | "amountUsd"
     | "completedAt"
     | "createdAt"
+    | "events"
     | "id"
     | "rawArguments"
     | "transactions"
@@ -433,6 +434,13 @@ type ActionFixtureOverrides = Partial<
   readonly amountUsd?: typeof YieldAction.Encoded.amountUsd;
   readonly completedAt?: DateTime.Utc | null;
   readonly createdAt?: DateTime.Utc;
+  /** Encoded, as the API sends them. */
+  readonly events?: ReadonlyArray<{
+    readonly id: string;
+    readonly occurredAt: string;
+    readonly transactionHash: string | null;
+    readonly type: string;
+  }>;
   readonly id?: string;
   readonly rawArguments?: typeof YieldAction.Encoded.rawArguments;
   readonly transactions?: ReadonlyArray<ActionTransaction>;
@@ -500,6 +508,13 @@ const cShare = {
   network: "ethereum-sepolia",
   symbol: "csteakcUSDC",
 } as const;
+// Like the API's, a Sepolia vault's gas token is the chain's native ETH.
+const sepoliaEth = {
+  decimals: 18,
+  name: "Ethereum",
+  network: "ethereum-sepolia",
+  symbol: "ETH",
+} as const;
 
 const legsField = (options: ReadonlyArray<string>) => ({
   isArray: true,
@@ -548,9 +563,10 @@ export const confidentialYieldFixture = (
           ],
         },
       },
-      gasFeeToken: usdc,
+      gasFeeToken: sepoliaEth,
     },
     network: "ethereum-sepolia",
+    outputToken: cShare,
     token: usdc,
     tokens: [usdc],
     ...overrides,

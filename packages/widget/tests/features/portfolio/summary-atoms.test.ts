@@ -5,7 +5,11 @@ import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { EarnPosition } from "../../../src/domain/earn/models";
+import { fillConfidentialPosition } from "../../../src/domain/earn/confidential";
+import {
+  EarnPosition,
+  getEncryptedHandle,
+} from "../../../src/domain/earn/models";
 import { getYieldCategory } from "../../../src/domain/earn/yield";
 import type { exactDecimal } from "../../../src/domain/finance/exact";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
@@ -24,7 +28,7 @@ import {
   averageApySummaryAtom,
   getPositionsAverageApy,
   getPositionsTotal,
-  hasConfidentialPositions,
+  hasHiddenPositions,
   summaryViewAtom,
 } from "../../../src/features/portfolio/state/read-models/summary";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
@@ -56,11 +60,17 @@ import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 const makePosition = ({
   amount = "1",
   amountUsd,
+  handle,
+  revealed,
   rewardRate,
   yieldId,
 }: {
   readonly amount?: string;
   readonly amountUsd: string | null;
+  /** An encrypted balance's handle, for a confidential position. */
+  readonly handle?: string;
+  /** The cleartext the user revealed for that handle. */
+  readonly revealed?: bigint;
   readonly rewardRate: Parameters<typeof exactDecimal>[0];
   readonly yieldId: string;
 }) => {
@@ -68,17 +78,28 @@ const makePosition = ({
     id: yieldId,
     rewardRate: { components: [], rateType: "APY", total: rewardRate },
   });
-  const position = Schema.decodeSync(EarnPosition)({
+  const decoded = Schema.decodeSync(EarnPosition)({
     balances: [
       yieldBalanceFixture({
         amount,
         ...(amountUsd === null ? { amountUsd: null } : { amountUsd }),
+        ...(handle ? { isEncrypted: true, shareAmountRaw: handle } : {}),
         token: yieldDto.token,
       }),
     ],
     outputTokenBalance: null,
     yieldId: yieldDto.id,
   });
+  const encryptedHandle = decoded.balances[0]
+    ? getEncryptedHandle(decoded.balances[0])
+    : null;
+  const position =
+    encryptedHandle && revealed !== undefined
+      ? fillConfidentialPosition(
+          decoded,
+          new Map([[encryptedHandle, revealed]])
+        )
+      : decoded;
   const item = toPositionItems(toPositionsData([position]), false)[0]!;
 
   return { item, yieldDto };
@@ -116,27 +137,47 @@ describe("summary atom derivations", () => {
     );
   });
 
-  it("keeps revealed confidential positions out of the totals", () => {
+  it("leaves hidden confidential positions out of the totals until revealed", () => {
     const plain = makePosition({
       amountUsd: "4",
       rewardRate: 0.05,
       yieldId: "plain-vault",
     });
-    const confidential = makePosition({
+    const confidential = {
       amountUsd: "6",
+      handle: `0x${"ab".repeat(32)}`,
       rewardRate: 0.12,
       yieldId: confidentialYieldFixture().id,
+    };
+    const hidden = makePosition(confidential);
+    const revealed = makePosition({ ...confidential, revealed: 10n ** 18n });
+    const otherHidden = makePosition({
+      amountUsd: "3",
+      handle: `0x${"cd".repeat(32)}`,
+      rewardRate: 0.2,
+      yieldId: "other-confidential-vault",
     });
     const yields = new Map([
       [plain.yieldDto.id, plain.yieldDto],
-      [confidential.yieldDto.id, confidentialYieldFixture()],
+      [hidden.yieldDto.id, hidden.yieldDto],
+      [otherHidden.yieldDto.id, otherHidden.yieldDto],
     ]);
-    const positions = [plain.item, confidential.item];
 
-    expect(getPositionsTotal(positions, yields).toFixed()).toBe("4");
-    expect(getPositionsAverageApy(positions, yields).toFixed()).toBe("5");
-    expect(hasConfidentialPositions(positions, yields)).toBe(true);
-    expect(hasConfidentialPositions([plain.item], yields)).toBe(false);
+    const hiddenPositions = [plain.item, hidden.item];
+    expect(getPositionsTotal(hiddenPositions, yields).toFixed()).toBe("4");
+    expect(getPositionsAverageApy(hiddenPositions, yields).toFixed()).toBe("5");
+    expect(hasHiddenPositions(hiddenPositions)).toBe(true);
+
+    const revealedPositions = [plain.item, revealed.item];
+    expect(getPositionsTotal(revealedPositions, yields).toFixed()).toBe("10");
+    expect(getPositionsAverageApy(revealedPositions, yields).toFixed()).toBe(
+      "9.2"
+    );
+    expect(hasHiddenPositions(revealedPositions)).toBe(false);
+
+    const partiallyHidden = [plain.item, revealed.item, otherHidden.item];
+    expect(getPositionsTotal(partiallyHidden, yields).toFixed()).toBe("10");
+    expect(hasHiddenPositions(partiallyHidden)).toBe(true);
   });
 
   it("recomputes position total and weighted APY when source state changes", () => {

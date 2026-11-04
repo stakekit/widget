@@ -193,10 +193,15 @@ export const positionDetailsViewAtom = Atom.family(
         unstakeAmount: workflow.unstakeAmount,
         unstakeAmountError:
           action.submissionError || workflow.unstakeAmountError,
+        unstakeAmountGreaterThanAvailable:
+          workflow.unstakeAmountGreaterThanAvailable,
+        // An empty amount stays submittable so the click can flag it; an
+        // out-of-range amount is already flagged, so it cannot be submitted.
         unstakeDisabled:
           AsyncResult.isInitial(workflow.yieldOpportunity) ||
           !canUnstake ||
-          exitResources.kyc.isBlocking,
+          exitResources.kyc.isBlocking ||
+          workflow.unstakeAmountError,
         unstakeAmountUsd: workflow.exitBalance
           ? prorate({
               part: workflow.unstakeAmount,
@@ -204,15 +209,15 @@ export const positionDetailsViewAtom = Atom.family(
               whole: workflow.exitBalance.amount,
             })
           : null,
-        // A confidential exit in shares, restated in the underlying it redeems to.
-        unstakeAmountUnderlying: workflow.exitBalance?.underlying
+        // An exit in Shares, restated in the Value Token it redeems to.
+        unstakeAmountValue: workflow.exitBalance?.value
           ? {
               amount: prorate({
                 part: workflow.unstakeAmount,
-                value: workflow.exitBalance.underlying.amount,
+                value: workflow.exitBalance.value.amount,
                 whole: workflow.exitBalance.amount,
               }),
-              token: workflow.exitBalance.underlying.token,
+              token: workflow.exitBalance.value.token,
             }
           : null,
         unstakeIsGreaterOrLessIntegrationLimitError:

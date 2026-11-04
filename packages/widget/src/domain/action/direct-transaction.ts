@@ -39,6 +39,29 @@ export type DirectTransaction = Readonly<{
 }>;
 
 /**
+ * Gas assumed for a Direct Transaction that cannot be simulated yet: upper
+ * bounds for an ERC-20 approve and a confidential wrapper's wrap, so an
+ * estimate errs high.
+ */
+const directTransactionFallbackGas = {
+  APPROVAL: 60_000n,
+  RESET_APPROVAL: 60_000n,
+  WRAP: 400_000n,
+} as const satisfies Record<DirectTransaction["type"], bigint>;
+
+/**
+ * The gas a planned Direct Transaction is assumed to use when it cannot be
+ * simulated: only one after the first may revert in simulation because an
+ * earlier one has not landed (a wrap before its approval, USDT's approval
+ * before its reset). The first one's failure is real.
+ */
+export const getDirectTransactionFallbackGas = (
+  transaction: DirectTransaction,
+  position: number
+): bigint | null =>
+  position === 0 ? null : directTransactionFallbackGas[transaction.type];
+
+/**
  * Approves `amount`, or, as a reset, zero: tokens such as USDT revert when one
  * non-zero allowance changes to another. `id` names the approval; its reset is
  * named after it, so a reset planned upfront and one added before signing are

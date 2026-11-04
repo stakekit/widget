@@ -32,7 +32,8 @@ export type MetaInfoProps =
 
 type ReviewPageProps = {
   facts?: ComponentProps<typeof ReviewTopSection>["facts"];
-  fee: string;
+  /** Null when no gas estimate settled. */
+  fee: string | null;
   title: string;
   token: Token | null;
   metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
@@ -57,7 +58,7 @@ type PositionActionReview = {
   readonly amount: string;
   readonly cta: PageCta;
   readonly facts: ReviewPageProps["facts"];
-  readonly fee: string;
+  readonly fee: string | null;
   readonly gasCheckLoading: boolean;
   readonly integrationData: EarnYieldWithProvider;
   readonly isGasCheckWarning: boolean;
@@ -238,9 +239,10 @@ const GasFee = ({
   loading,
 }: {
   label: string;
-  price: string;
+  price: string | null;
   loading: boolean;
 }) => {
+  const { t } = useTranslation();
   return (
     <Box
       display="flex"
@@ -261,7 +263,7 @@ const GasFee = ({
           className={feeStyles}
           variant={{ type: "muted", weight: "normal" }}
         >
-          {price}
+          {price ?? t("review.gas_fee_unavailable")}
         </Text>
       )}
     </Box>

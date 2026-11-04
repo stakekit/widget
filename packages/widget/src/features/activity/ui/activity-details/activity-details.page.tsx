@@ -6,7 +6,6 @@ import { Trans, useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
-import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
 import {
   capitalizeFirstLetters,
   formatBorrowProviderName,
@@ -15,7 +14,6 @@ import { formatAddress } from "../../../../shared/lib/general";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
-import type { TokenIconProps } from "../../../../shared/ui/components/token-icon/props";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../shared/ui/primitives/icons/caret-left";
 import { CheckCircleIcon } from "../../../../shared/ui/primitives/icons/check-circle";
@@ -305,13 +303,11 @@ const BorrowReceiptRows = ({
 const Receipt = ({
   children,
   providerName,
-  token,
   transactionTypeContext,
   view,
 }: {
   readonly children?: ReactNode;
   readonly providerName: string | null;
-  readonly token: TokenIconProps["token"] | null;
   readonly transactionTypeContext: "ETHENA_USDE" | undefined;
   readonly view: ActivityActionDetailsProjection;
 }) => {
@@ -341,8 +337,8 @@ const Receipt = ({
       ) : null}
 
       <Box className={styles.header}>
-        {token ? (
-          <TokenIcon token={token} tokenLogoHw="12" />
+        {view.titleToken ? (
+          <TokenIcon token={view.titleToken} tokenLogoHw="12" />
         ) : (
           <ActivityIcon type="neutral" />
         )}
@@ -372,7 +368,7 @@ const Receipt = ({
       {view.amount ? (
         <Text className={styles.amount} variant={{ weight: "medium" }}>
           {view.amount}
-          {view.tokenSymbol ? ` ${view.tokenSymbol}` : ""}
+          {view.amountTokenSymbol ? ` ${view.amountTokenSymbol}` : ""}
         </Text>
       ) : null}
 
@@ -386,6 +382,12 @@ const Receipt = ({
           <ReceiptRow
             label={t("activity.details.completed")}
             value={view.completedAt}
+          />
+        ) : null}
+        {view.canceledAt ? (
+          <ReceiptRow
+            label={t("activity.details.canceled")}
+            value={view.canceledAt}
           />
         ) : null}
         {view.borrow ? <BorrowReceiptRows borrow={view.borrow} /> : null}
@@ -434,7 +436,6 @@ const YieldReceipt = ({
   return (
     <Receipt
       providerName={firstProvider?.name ?? firstProvider?.address ?? null}
-      token={item.yieldData?.token ?? null}
       transactionTypeContext={
         isEthenaUsdeStaking(item.actionData.yieldId) ? "ETHENA_USDE" : undefined
       }
@@ -465,11 +466,6 @@ const BorrowReceipt = ({
   <Receipt
     providerName={
       item.integration ? formatBorrowProviderName(item.integration.name) : null
-    }
-    token={
-      item.token
-        ? borrowTokenToAppToken({ network: item.network, token: item.token })
-        : null
     }
     transactionTypeContext={undefined}
     view={view}

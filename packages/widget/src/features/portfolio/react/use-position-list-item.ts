@@ -1,15 +1,16 @@
 import { useAtomValue } from "@effect/atom-react";
 import { exactZero } from "../../../domain/finance/exact";
-import { getPositionTotalAmount } from "../../../domain/portfolio/positions";
 import {
   formatRewardRatePercent,
-  formatTokenAmount,
+  formatTokenAmountWithSymbol,
+  formatUsd,
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import {
   positionYieldAtom,
   toInactiveValidatorStatus,
+  toPositionTotalDisplay,
 } from "../state/read-models/position-list-item";
 import type { PositionItem } from "../state/read-models/positions";
 
@@ -43,21 +44,11 @@ export const usePositionListItem = (item: PositionItem) => {
 
   const inactiveValidator = toInactiveValidatorStatus(providersDetails);
 
-  const tokenToDisplay = item.token;
-  const baseToken = integrationData?.token ?? null;
-
-  const amounts = baseToken
-    ? getPositionTotalAmount(item.balancesWithAmount, baseToken)
-    : null;
-
-  const totalAmount = amounts?.amount ?? null;
-
-  const amountUsd = amounts?.amountUsd ?? null;
-  const totalAmountUsd = amountUsd?.isGreaterThan(0) ? amountUsd : null;
-
-  const totalAmountFormatted = totalAmount
-    ? formatTokenAmount(totalAmount, locale, "down")
-    : null;
+  const total = toPositionTotalDisplay(item.total);
+  const getTotalFormatted = () => {
+    if (total.amount) return formatTokenAmountWithSymbol(total.amount, locale);
+    return total.amountUsd ? formatUsd(total.amountUsd, locale) : null;
+  };
 
   return {
     hasHiddenBalance: item.balancesWithAmount.some(
@@ -67,10 +58,8 @@ export const usePositionListItem = (item: PositionItem) => {
     providersDetails,
     rewardRateAverage,
     inactiveValidator,
-    totalAmount,
-    totalAmountUsd,
-    totalAmountFormatted,
-    baseToken,
-    tokenToDisplay,
+    totalFormatted: getTotalFormatted(),
+    // Several tokens show their USD total as the amount itself.
+    totalAmountUsd: total.amount ? total.amountUsd : null,
   };
 };

@@ -7,11 +7,14 @@ import {
   isOptionalPendingAction,
 } from "../../../domain/action/pending-action";
 import {
-  getBalanceRowDisplayAmount,
   isCancellingBalance,
   isConfidentialYield,
   isUnfinishedInstantExit,
 } from "../../../domain/earn/confidential";
+import {
+  getPositionShares,
+  type TokenAmount,
+} from "../../../domain/earn/denomination";
 import type {
   ConfidentialHandle,
   EarnBalance,
@@ -26,13 +29,15 @@ import {
   getYieldTypeLabels,
   getYieldWarmupPeriod,
 } from "../../../domain/earn/yield";
-import { exactDecimal, exactZero } from "../../../domain/finance/exact";
+import { exactDecimal } from "../../../domain/finance/exact";
 import type { RewardsSummary } from "../../../domain/portfolio/models";
 import {
+  getPositionValueTotal,
+  getTokenSumsUsd,
   groupPositionBalanceRows,
   type PositionBalanceRow,
   type PositionBalancesByType,
-  type PositionTokenSum,
+  sortBalancesByPriority,
   sumBalancesByToken,
   type YieldBalanceType,
 } from "../../../domain/portfolio/positions";
@@ -43,6 +48,7 @@ import {
 import {
   formatRoundedPercent,
   formatTokenAmount,
+  formatTokenAmountWithSymbol,
   formatUsd,
 } from "../../../shared/lib/number-format";
 import {
@@ -181,6 +187,11 @@ export const getPositionOverviewModel = ({
     promotedFactIds,
     t,
   });
+  const sharesMetric = getSharesMetric({
+    locale,
+    positionBalancesByType,
+    t,
+  });
   const rewardsMetric = getRewardsMetric({
     locale,
     pendingActions,
@@ -207,6 +218,7 @@ export const getPositionOverviewModel = ({
 
   const baseCards = [
     balanceMetric,
+    sharesMetric,
     rewardsMetric,
     apyMetric,
     statusMetric,
@@ -351,34 +363,58 @@ const getBalanceMetric = ({
   promotedFactIds: Set<string>;
   t: TFunction;
 }): PositionOverviewMetricCard | null => {
-  const activeSums = getPositiveTokenSums(
-    positionBalancesByType.get("active") ?? []
+  // The same total Manage shows, in the primary Value Token when priced.
+  const sums = getPositionValueTotal(
+    getBalancesByPriority(positionBalancesByType)
   );
-
-  if (activeSums.length > 0) {
-    promotedFactIds.add("balance");
-
-    return {
-      id: "balance",
-      label: t("dashboard.position_details.balance"),
-      subValue: formatUsdSubValue(sumUsd(activeSums), locale),
-      value: formatTokenSums(activeSums, locale),
-    };
+  const totalUsd = getTokenSumsUsd(sums);
+  // Hidden balances count zero, so a fully hidden position shows no Balance.
+  if (
+    !sums.some((sum) => sum.amount.isGreaterThan(0)) &&
+    !totalUsd.isGreaterThan(0)
+  ) {
+    return null;
   }
-
-  const totalUsd = getNonPointsBalances(positionBalancesByType).reduce(
-    (acc, balance) => acc.plus(balance.amountUsd ?? 0),
-    exactZero()
-  );
-
-  if (!totalUsd.isGreaterThan(0)) return null;
 
   promotedFactIds.add("balance");
 
   return {
     id: "balance",
     label: t("dashboard.position_details.balance"),
-    value: formatUsd(totalUsd, locale),
+    subValue: formatUsdSubValue(totalUsd, locale),
+    value: formatTokenSums(sums, locale),
+  };
+};
+
+/**
+ * The position's Shares, one line per share token, valued by the balances
+ * carrying them when all are priced.
+ */
+const getSharesMetric = ({
+  locale,
+  positionBalancesByType,
+  t,
+}: {
+  locale: string;
+  positionBalancesByType: PositionBalancesByType;
+  t: TFunction;
+}): PositionOverviewMetricCard | null => {
+  const shares = getPositionShares(
+    getBalancesByPriority(positionBalancesByType)
+  );
+  if (!shares) return null;
+  const label = t("dashboard.position_details.shares");
+  if (shares._tag === "Hidden") {
+    return { id: "shares", label, value: t("shared.confidential.hidden") };
+  }
+
+  return {
+    id: "shares",
+    label,
+    ...(shares.amountUsd
+      ? { subValue: formatUsdSubValue(shares.amountUsd, locale) }
+      : {}),
+    value: formatTokenSums(shares.groups, locale),
   };
 };
 
@@ -407,7 +443,7 @@ const getRewardsMetric = ({
     return {
       id: "rewards",
       label: t("dashboard.position_details.rewards"),
-      subValue: formatUsdSubValue(sumUsd(claimableSums), locale),
+      subValue: formatUsdSubValue(getTokenSumsUsd(claimableSums), locale),
       value: formatTokenSums(claimableSums, locale),
     };
   }
@@ -602,17 +638,20 @@ const getBreakdownRows = ({
       row,
       t,
     });
-    const subValue = [amountSubValue, batchTiming]
+    const shares =
+      row.shares && !row.isEncrypted
+        ? formatTokenAmountWithSymbol(row.shares, locale)
+        : null;
+    const subValue = [shares, amountSubValue, batchTiming]
       .filter((part) => !!part)
       .join(" · ");
-    const display = getBalanceRowDisplayAmount(integrationData, row);
     return {
       id: `${row.type}-${row.token.symbol}-${index}`,
       label: formatBalanceTypeLabel(row.type, t),
       ...(subValue ? { subValue } : {}),
       value: row.isEncrypted
         ? t("shared.confidential.hidden")
-        : `${formatTokenAmount(display.amount, locale, "down")} ${display.token.symbol}`,
+        : formatTokenAmountWithSymbol(row, locale),
     };
   });
 
@@ -765,22 +804,7 @@ const getAddressRows = (
 
 const getBalancesByPriority = (
   positionBalancesByType: PositionBalancesByType
-) =>
-  balanceTypePriority.flatMap((type) => positionBalancesByType.get(type) ?? []);
-
-const getNonPointsBalances = (positionBalancesByType: PositionBalancesByType) =>
-  getBalancesByPriority(positionBalancesByType).filter(
-    (balance) => !balance.token.isPoints
-  );
-
-const balanceTypePriority: YieldBalanceType[] = [
-  "active",
-  "entering",
-  "exiting",
-  "withdrawable",
-  "claimable",
-  "locked",
-];
+) => sortBalancesByPriority([...positionBalancesByType.values()].flat());
 
 const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
   t(`position_details.balance_type.${type}`);
@@ -790,17 +814,8 @@ const getPositiveTokenSums = (balances: ReadonlyArray<EarnBalance>) =>
     balances.filter((balance) => !balance.token.isPoints)
   ).filter((sum) => sum.amount.isGreaterThan(0));
 
-const sumUsd = (sums: ReadonlyArray<PositionTokenSum>) =>
-  sums.reduce((total, sum) => total.plus(sum.amountUsd), exactZero());
-
-const formatTokenSums = (
-  sums: ReadonlyArray<PositionTokenSum>,
-  locale: string
-) => {
-  const lines = sums.map(
-    (sum) =>
-      `${formatTokenAmount(sum.amount, locale, "down")} ${sum.token.symbol}`
-  );
+const formatTokenSums = (sums: ReadonlyArray<TokenAmount>, locale: string) => {
+  const lines = sums.map((sum) => formatTokenAmountWithSymbol(sum, locale));
 
   return lines.length === 1 ? (lines[0] ?? "") : lines;
 };

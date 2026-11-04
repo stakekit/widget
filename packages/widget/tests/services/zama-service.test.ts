@@ -276,10 +276,9 @@ describe("ZamaService", () => {
   );
 
   it.effect(
-    "encrypts a cUSDC deposit's amount and its zero-padded legs into the request",
+    "encrypts a cUSDC deposit's amount and its zero-padded legs into the request without revealing its balance",
     () =>
       Effect.gen(function* () {
-        sdk.balanceOf.mockResolvedValueOnce(5_000_000n);
         sdk.encrypt
           .mockImplementationOnce(() => encryptAs([amountHandle], "0xap"))
           .mockImplementationOnce(() => encryptAs(legHandles, "0xlp"));
@@ -288,6 +287,8 @@ describe("ZamaService", () => {
         const command = yield* ZamaService.use((zama) =>
           zama.encryptCommand(depositPreparation("asset"))
         ).pipe(Effect.provide(layer));
+
+        expect(sdk.balanceOf).not.toHaveBeenCalled();
 
         expect(
           sdk.encrypt.mock.calls.map(([input]) => [
@@ -327,19 +328,48 @@ describe("ZamaService", () => {
     })
   );
 
+  it.effect("rejects a cUSDC deposit above the hidden balance", () =>
+    Effect.gen(function* () {
+      sdk.balanceOf.mockResolvedValueOnce(4_999_999n);
+      const { layer } = yield* makeLayer({});
+
+      const error = yield* ZamaService.use((zama) =>
+        zama.checkConfidentialBalance(depositPreparation("asset"))
+      ).pipe(Effect.provide(layer), Effect.flip);
+
+      expect(error).toMatchObject({ retryable: false });
+      expect(sdk.balanceOf).toHaveBeenCalledTimes(1);
+      sdk.balanceOf.mockReset();
+    })
+  );
+
   it.effect(
-    "rejects a cUSDC deposit above the hidden balance without encrypting",
+    "checks a deposit against its already revealed balance without asking the wallet",
     () =>
       Effect.gen(function* () {
-        sdk.balanceOf.mockResolvedValueOnce(4_999_999n);
-        const { layer } = yield* makeLayer({});
+        const signPermit = vi.fn(() => Effect.die("unexpected permit"));
+        const { layer } = yield* makeLayer({ signPermit });
+        const preparation = depositPreparation("asset");
+        const token = preparation.balance?.token;
+        if (!token) return yield* Effect.die("Expected a spent balance");
 
-        const error = yield* ZamaService.use((zama) =>
-          zama.encryptCommand(depositPreparation("asset"))
-        ).pipe(Effect.provide(layer), Effect.flip);
+        const error = yield* Effect.gen(function* () {
+          const values = yield* RevealedBalances;
+          yield* values.addTokenBalance(
+            new ConfidentialTokenBalanceKey({ owner, token }),
+            4_000_000n
+          );
+          return yield* ZamaService.use((zama) =>
+            zama.checkConfidentialBalance(preparation)
+          );
+        }).pipe(Effect.provide(layer), Effect.flip);
 
-        expect(error).toMatchObject({ retryable: false });
-        expect(sdk.encrypt).not.toHaveBeenCalled();
+        expect(error).toMatchObject({
+          message: "Amount exceeds the confidential balance.",
+          retryable: false,
+        });
+        expect(sdk.balanceOf).not.toHaveBeenCalled();
+        expect(signPermit).not.toHaveBeenCalled();
       })
   );
 

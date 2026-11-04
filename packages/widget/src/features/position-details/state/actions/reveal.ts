@@ -1,75 +1,45 @@
-import { Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import {
-  getConfidentialChainId,
-  getConfidentialHandleContract,
-  isUserRevealableBalance,
-} from "../../../../domain/earn/confidential";
-import { getEncryptedHandle } from "../../../../domain/earn/models";
-import { resourceInvalidationKeys } from "../../../../services/resource-invalidation";
-import { RevealedBalances } from "../../../../services/zama/revealed-balances";
-import { ZamaService } from "../../../../services/zama/zama-service";
+  hideConfidentialPositions,
+  revealConfidentialPositions,
+} from "../../../../services/zama/confidential-positions";
 import type { PositionDetailsWorkflowKey } from "../workflow";
 import { positionDetailsWorkflowViewAtom } from "../workflow-view";
 
 export const revealPositionDetailsBalancesAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
     walletRuntime
-      .fn((_input: undefined, context) =>
-        Effect.gen(function* () {
-          const workflow = context(positionDetailsWorkflowViewAtom(key));
-          const integration = workflow.integrationData;
-          const chainId = integration
-            ? getConfidentialChainId(integration)
-            : null;
-          if (!integration || chainId === null) return;
-
-          const handles = [...(workflow.positionBalancesByType?.values() ?? [])]
-            .flat()
-            .filter(isUserRevealableBalance)
-            .flatMap((balance) => {
-              const contract = getConfidentialHandleContract(
-                integration,
-                balance
-              );
-              const handle = getEncryptedHandle(balance);
-              return handle && contract ? [{ contract, handle }] : [];
-            });
-          if (handles.length === 0) return;
-
-          const zama = yield* ZamaService;
-          yield* zama.revealHandles({
-            chainId,
-            handles,
-            owner: key.scope.address,
-          });
-          const reactivity = yield* Reactivity.Reactivity;
-          yield* reactivity.invalidate([
-            ...resourceInvalidationKeys.yieldPositions(key.scope),
-            ...resourceInvalidationKeys.singleYieldBalances(key.scope.address),
-          ]);
-        })
-      )
+      .fn((_input: undefined, context) => {
+        const workflow = context(positionDetailsWorkflowViewAtom(key));
+        const yieldDto = workflow.integrationData;
+        return revealConfidentialPositions(
+          key.scope,
+          yieldDto
+            ? [
+                {
+                  balances: [
+                    ...(workflow.positionBalancesByType?.values() ?? []),
+                  ].flat(),
+                  yieldDto,
+                },
+              ]
+            : []
+        );
+      })
       .pipe(Atom.withLabel("revealPositionDetailsBalancesAtom"))
 );
 
 export const hidePositionDetailsBalancesAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
     appRuntime
-      .fn(() =>
-        Effect.gen(function* () {
-          yield* (yield* RevealedBalances).forgetHandles;
-          const reactivity = yield* Reactivity.Reactivity;
-          yield* reactivity.invalidate([
-            ...resourceInvalidationKeys.yieldPositions(key.scope),
-            ...resourceInvalidationKeys.singleYieldBalances(key.scope.address),
-          ]);
-        })
-      )
+      .fn((_input: undefined, context) => {
+        // Resetting ends a reveal still running, which would add back what Hide forgets.
+        context.set(revealPositionDetailsBalancesAtom(key), Atom.Reset);
+        return hideConfidentialPositions(key.scope);
+      })
       .pipe(Atom.withLabel("hidePositionDetailsBalancesAtom"))
 );
 

@@ -31,7 +31,7 @@ vi.mock(
       timestampAbsolute: "Today · 13:43",
       timestampRelative: "21m ago",
       title: "Deposited POL",
-      tokenSymbol: "POL",
+      amountTokenSymbol: "POL",
     }),
   })
 );

@@ -305,6 +305,8 @@ const ValidatorAddressesArgument = makeRequiredArgument(
   "string"
 );
 const SubnetIdArgument = makeRequiredArgument("subnetId", "number");
+// Only its presence matters: whether an exit takes a plain amount.
+const AmountRawArgument = makeRequiredArgument("amountRaw", "string");
 const EncryptedAmountArgumentDomain = Schema.Struct({
   required: Schema.Boolean,
   options: Schema.Array(Schema.String),
@@ -343,6 +345,7 @@ const EncryptedLegAmountsArgument = decodeApiArgument(
 
 const EarnYieldArgumentFieldsDomain = Schema.Struct({
   amount: Schema.optionalKey(AmountArgument),
+  amountRaw: Schema.optionalKey(AmountRawArgument),
   encryptedAmount: Schema.optionalKey(EncryptedAmountArgument),
   encryptedLegAmounts: Schema.optionalKey(EncryptedLegAmountsArgument),
   outputToken: Schema.optionalKey(OutputTokenArgument),

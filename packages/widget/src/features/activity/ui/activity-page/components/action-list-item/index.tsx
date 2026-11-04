@@ -37,7 +37,7 @@ export const ActionListItem = ({
     providersDetails,
     iconType,
     title,
-    tokenSymbol,
+    amountTokenSymbol,
     amount,
     amountSign,
     isPositive,
@@ -55,6 +55,9 @@ export const ActionListItem = ({
       })
     : null;
   const viaLabel = providerLabel;
+  // Statuses that ask nothing of the user are not highlighted.
+  const neutralStatus =
+    statusLabel === "completed" || statusLabel === "awaiting_settlement";
 
   return (
     <Box py="1" width="full">
@@ -94,14 +97,12 @@ export const ActionListItem = ({
                   {badgeLabel && statusLabel ? (
                     <Box
                       className={
-                        statusLabel === "completed"
-                          ? completedStatusBadge
-                          : statusBadge
+                        neutralStatus ? completedStatusBadge : statusBadge
                       }
                     >
                       <Text
                         variant={{
-                          type: statusLabel === "completed" ? "muted" : "white",
+                          type: neutralStatus ? "muted" : "white",
                           size: "small",
                         }}
                         className={noWrap}
@@ -134,7 +135,7 @@ export const ActionListItem = ({
             {amount ? (
               <Text className={isPositive ? amountPositive : amountNeutral}>
                 {amountSign}
-                {tokenSymbol ? `${amount} ${tokenSymbol}` : amount}
+                {amountTokenSymbol ? `${amount} ${amountTokenSymbol}` : amount}
               </Text>
             ) : null}
 

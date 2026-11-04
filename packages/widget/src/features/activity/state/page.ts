@@ -1,4 +1,5 @@
-import { Array as EArray, Option } from "effect";
+import { Duration, Array as EArray, Option } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../../wallet/index";
 import { widgetConfigAtom } from "../../widget-configuration/index";
 import type { ActivityActionItem } from "../model/activity-action";
+import { getActivitySettlement } from "../model/activity-action-list-item";
 import type { ActivityFilter, ActivityFilterOption } from "../model/filters";
 import {
   ActivityActionsKey,
@@ -191,6 +193,13 @@ export const projectActivityPageView = ({
   };
 };
 
+// The API records a batch's settlement on the provider's schedule. Only the
+// feed the Activity page shows polls, and only while a confidential request in
+// it still awaits one; prefetched and other filters' feeds do not. A refresh
+// reloads the feed from its first page, so polling stops once the user has
+// loaded older pages rather than discarding them every minute.
+const settlementRefreshInterval = Duration.minutes(1);
+
 export const activityPageViewAtom = Atom.make((context) => {
   const walletStatus = resolveActivityPageWalletStatus({
     configResult: context(walletConfigResultAtom),
@@ -202,9 +211,31 @@ export const activityPageViewAtom = Atom.make((context) => {
   }
 
   const resources = resolveActivityPageResources(context);
+  const actionsResult = context(resources.actions);
+  const awaitingSettlement =
+    !actionsResult.waiting &&
+    Option.exists(
+      AsyncResult.value(actionsResult),
+      ({ items }) =>
+        items.length === 1 &&
+        items.some((batch) =>
+          batch.actions.some(
+            (item) =>
+              item._tag === "yield" &&
+              getActivitySettlement(item)?._tag === "Awaiting"
+          )
+        )
+    );
+  if (awaitingSettlement) {
+    const handle = setTimeout(
+      () => context.refresh(resources.actions),
+      Duration.toMillis(settlementRefreshInterval)
+    );
+    context.addFinalizer(() => clearTimeout(handle));
+  }
 
   return projectActivityPageView({
-    actionsResult: context(resources.actions),
+    actionsResult,
     filterOptionsResult: resources.filterOptionsResult,
     selectedFilter: resources.selectedFilter,
     walletStatus,

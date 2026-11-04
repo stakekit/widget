@@ -55,6 +55,7 @@ import {
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
@@ -348,6 +349,63 @@ describe("confidential transaction workflow", () => {
         false
       );
     }).pipe(Effect.scoped)
+  );
+
+  it.effect(
+    "runs the action Review prepared once its spent balance is checked, without preparing it again",
+    () =>
+      Effect.gen(function* () {
+        const checked: Array<ConfidentialPreparation> = [];
+        const directDeposit: ConfidentialPreparation = {
+          _tag: "Encrypt",
+          amount: 5n,
+          assetAddress: null,
+          balance: { chainId: 11155111, token: yieldApiYieldFixture().token },
+          command: { address, arguments: { amount: "5" }, yieldId },
+          conversion: null,
+          instant: false,
+          intent: "enter",
+          requiresPermitSigner: true,
+          yieldDto: {} as never,
+        };
+        const workflow = yield* startWorkflow(
+          capabilities({
+            yieldOperations: {
+              previewAction: () => Effect.die("Review already previewed it"),
+            },
+            zama: {
+              checkConfidentialBalance: (spent) =>
+                Effect.sync(() => checked.push(spent)),
+              encryptCommand: () => Effect.die("Review already encrypted it"),
+            },
+          }),
+          new ConfidentialTransactionWorkflowInput({
+            conversion: [],
+            inputToken: undefined,
+            ledger: makeDirectTransactionLedger(),
+            preparation: directDeposit,
+            prepared: preparedAction(),
+            providersDetails: [],
+            walletScope,
+            yieldId,
+          })
+        );
+
+        const completed = yield* awaitState(
+          workflow,
+          (state) => state._tag === "Completed"
+        );
+
+        expect(checked).toEqual([directDeposit]);
+        expect(
+          completed.context.batches.flatMap((batch) =>
+            batch.transactions.map(({ meta, source }) => [
+              source.transaction.id,
+              meta.done,
+            ])
+          )
+        ).toEqual([["deposit", true]]);
+      }).pipe(Effect.scoped)
   );
 
   it.effect(

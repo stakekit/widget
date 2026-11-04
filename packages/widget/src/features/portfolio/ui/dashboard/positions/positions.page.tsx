@@ -10,6 +10,7 @@ import { ZerionChainModal } from "../../../../wallet/views";
 import { FallbackContent } from "../../../../widget-shell/views";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { usePositions } from "../../../react/use-positions";
+import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
 import { useGroupedPositions } from "./hooks/use-grouped-positions";
@@ -78,30 +79,27 @@ export const PositionsPage = () => {
 
       {manageState.showPositionsList && (
         <>
-          <Box
-            my="1"
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            gap="1"
-          >
-            <Text
-              className={combineRecipeWithVariant({
-                rec: positionsTitle,
-                variant,
-              })}
-            >
-              {t("dashboard.details.my_positions")}
-            </Text>
-
-            {!!manageState.totalPositionsCount && (
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t("dashboard.details.positions_active", {
-                  count: manageState.totalPositionsCount,
+          <RevealBalancesHeader
+            leading={
+              <Text
+                className={combineRecipeWithVariant({
+                  rec: positionsTitle,
+                  variant,
                 })}
+              >
+                {t("dashboard.details.my_positions")}
               </Text>
-            )}
-          </Box>
+            }
+            trailing={
+              manageState.totalPositionsCount ? (
+                <Text variant={{ type: "muted", weight: "normal" }}>
+                  {t("dashboard.details.positions_active", {
+                    count: manageState.totalPositionsCount,
+                  })}
+                </Text>
+              ) : null
+            }
+          />
 
           <Box flex={1} display="flex" flexDirection="column">
             {manageState.hasPartialError && (

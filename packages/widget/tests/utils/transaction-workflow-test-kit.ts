@@ -112,6 +112,7 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
       EvmRpc.of({
         awaitOutcome: () => unexpectedWorkflowCall("EvmRpc.awaitOutcome"),
         broadcast: () => unexpectedWorkflowCall("EvmRpc.broadcast"),
+        estimateFee: () => unexpectedWorkflowCall("EvmRpc.estimateFee"),
         explorerUrl: () => null,
         prepare: () => unexpectedWorkflowCall("EvmRpc.prepare"),
         readAllowance: () => unexpectedWorkflowCall("EvmRpc.readAllowance"),

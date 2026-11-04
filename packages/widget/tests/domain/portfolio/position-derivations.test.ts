@@ -9,6 +9,7 @@ import {
   BalanceDataKey,
   getPositionBalances,
   getPositionData,
+  getPositionValueTotal,
   getSingleExitTokenSum,
   groupPositionBalanceRows,
   hasActivePositionForYield,
@@ -105,6 +106,94 @@ describe("position derivations", () => {
       { address: usdcA.address, amount: "3.3", amountUsd: "3.3" },
       { address: usdcB.address, amount: "3", amountUsd: "3.2" },
     ]);
+  });
+
+  describe("position total", () => {
+    const token = yieldApiYieldFixture().token;
+    const usdc = {
+      ...token,
+      address: "0x00000000000000000000000000000000000000a1",
+      symbol: "USDC",
+    };
+    const dai = {
+      ...usdc,
+      address: "0x00000000000000000000000000000000000000d1",
+      symbol: "DAI",
+    };
+    const foo = {
+      ...usdc,
+      address: "0x00000000000000000000000000000000000000f1",
+      symbol: "FOO",
+    };
+    const decode = (overrides: Parameters<typeof yieldBalanceFixture>[0]) =>
+      Schema.decodeSync(EarnBalance)(yieldBalanceFixture(overrides));
+    const summarize = (balances: ReadonlyArray<EarnBalance>) =>
+      getPositionValueTotal(balances).map((sum) => ({
+        amount: sum.amount.toFixed(),
+        amountUsd: sum.amountUsd.toFixed(),
+        symbol: sum.token.symbol,
+      }));
+
+    it("converts a priced second token into the primary Value Token", () => {
+      expect(
+        summarize([
+          decode({ amount: "1", amountUsd: "2", token: dai, type: "entering" }),
+          decode({ amount: "2", amountUsd: "2", token: usdc, type: "active" }),
+        ])
+      ).toEqual([{ amount: "4", amountUsd: "4", symbol: "USDC" }]);
+    });
+
+    it("keeps an unpriced second token apart instead of adding its raw amount", () => {
+      expect(
+        summarize([
+          decode({ amount: "5", amountUsd: "5", token: usdc, type: "active" }),
+          decode({
+            amount: "1000",
+            amountUsd: null,
+            token: foo,
+            type: "claimable",
+          }),
+        ])
+      ).toEqual([
+        { amount: "5", amountUsd: "5", symbol: "USDC" },
+        { amount: "1000", amountUsd: "0", symbol: "FOO" },
+      ]);
+    });
+
+    it("sums balances of one token", () => {
+      expect(
+        summarize([
+          decode({ amount: "2", amountUsd: "2", token: usdc, type: "active" }),
+          decode({ amount: "3", amountUsd: "3", token: usdc, type: "exiting" }),
+        ])
+      ).toEqual([{ amount: "5", amountUsd: "5", symbol: "USDC" }]);
+    });
+
+    it("is what a Manage row shows", () => {
+      const position = Schema.decodeSync(EarnPosition)({
+        balances: [
+          yieldBalanceFixture({
+            amount: "1",
+            amountUsd: "2",
+            token: dai,
+            type: "entering",
+          }),
+          yieldBalanceFixture({
+            amount: "2",
+            amountUsd: "2",
+            token: usdc,
+            type: "active",
+          }),
+        ],
+        outputTokenBalance: null,
+        yieldId: yieldApiYieldFixture().id,
+      });
+      const [item] = toPositionItems(toPositionsData([position]), false);
+
+      expect(
+        item?.total.map((sum) => [sum.amount.toFixed(), sum.token.symbol])
+      ).toEqual([["4", "USDC"]]);
+    });
   });
 
   it("groups display rows by status, token identity, and date with exact sums", () => {

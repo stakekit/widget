@@ -41,6 +41,7 @@ const renderStakeReview = ({
       Review,
       | "commissionFee"
       | "depositFee"
+      | "fee"
       | "feeConfigLoading"
       | "gasCheckLoading"
       | "isGasCheckWarning"
@@ -102,6 +103,14 @@ describe("Yield review fees", () => {
       .toBeInTheDocument();
     await expect
       .element(app.getByText("0.0021 ETH ($4.20)"))
+      .toBeInTheDocument();
+  });
+
+  it("shows the gas estimate as unavailable once none settled", async () => {
+    const app = await renderStakeReview({ fees: { fee: null } });
+
+    await expect
+      .element(app.getByTestId("estimated_gas_fee").getByText("Unavailable"))
       .toBeInTheDocument();
   });
 

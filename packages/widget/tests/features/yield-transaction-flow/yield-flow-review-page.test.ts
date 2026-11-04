@@ -5,6 +5,10 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+import {
+  type DirectTransaction,
+  DirectTransactionId,
+} from "../../../src/domain/action/direct-transaction";
 import { TokenBalance } from "../../../src/domain/finance/models";
 import {
   WalletAddress,
@@ -23,15 +27,25 @@ import {
   YieldFlowReviewVisit,
   yieldFlowReviewPage,
 } from "../../../src/features/yield-transaction-flow/state/review-page";
-import type { YieldOperations } from "../../../src/services/api/operations";
+import type {
+  ActionPreviewRequest,
+  YieldOperations,
+} from "../../../src/services/api/operations";
 import {
   ApiRequestError,
   InputValidationError,
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
+import type { EvmRpc } from "../../../src/services/evm-rpc/evm-rpc";
 import { resourceInvalidationKeys } from "../../../src/services/resource-invalidation";
 import {
+  ConfidentialPreparationError,
+  type ZamaService,
+} from "../../../src/services/zama/zama-service";
+import {
+  confidentialFixture,
+  confidentialYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
@@ -97,23 +111,29 @@ const unavailablePreview = () =>
   );
 
 type ReviewHarnessOptions = Readonly<{
+  readonly evmRpc?: Partial<EvmRpc["Service"]>;
   readonly getGasTokenBalances?: () => Effect.Effect<typeof gasBalances>;
   readonly previewAction?: YieldOperations["Service"]["previewAction"];
   readonly session: YieldFlowSession;
+  readonly zama?: Partial<ZamaService["Service"]>;
 }>;
 
 // Review's operations run on the wallet runtime (the kit's dependencies);
 // its resources (prices, gas balances, KYC) run on the app runtime, whose
 // sources never answer unless a case needs them.
 const makeReviewHarness = Effect.fn("test.makeReviewHarness")(function* ({
+  evmRpc,
   getGasTokenBalances = () => Effect.never,
   previewAction = () => Effect.never,
   session,
+  zama,
 }: ReviewHarnessOptions) {
   const kit = yield* makeYieldFlowTestKit({
+    ...(evmRpc ? { evmRpc } : {}),
     initialWalletState: makeConnectedWalletState(walletScope),
     // Like the API, each run of a preview effect is one request.
     previewAction: (request) => Effect.suspend(() => previewAction(request)),
+    ...(zama ? { zama } : {}),
   });
   const registry = AtomRegistry.make({
     initialValues: [
@@ -511,5 +531,317 @@ describe("Yield flow Review page", () => {
       expect(yield* Ref.get(handle.handoff)).toBeNull();
       expect(yield* kit.navigation.commands).toEqual([]);
     })
+  );
+});
+
+describe("confidential vault Review", () => {
+  const vault = confidentialYieldFixture();
+  // The chain's native token, which pays an EVM transaction's fee.
+  const { address: _gasTokenAddress, ...nativeGasToken } = gasToken;
+  const ether = { ...nativeGasToken, decimals: 18 };
+  const vaultAction = yieldApiActionFixture({
+    address,
+    id: "vault-action",
+    transactions: [
+      yieldApiTransactionFixture({
+        gasEstimate: JSON.stringify({ amount: "0.01", token: ether }),
+      }),
+    ],
+  });
+  const enterVault = (
+    pick: "asset" | "underlying",
+    gasFeeToken: typeof gasToken = ether
+  ) => {
+    const token = pick === "asset" ? vault.inputTokens[0]! : vault.token;
+    return makeYieldFlowSession(
+      {
+        intake: {
+          _tag: "Enter",
+          gasFeeToken,
+          providersDetails: [],
+          request: {
+            address,
+            arguments: {
+              amount: "5",
+              ...(token.address === undefined
+                ? {}
+                : { inputToken: token.address }),
+            },
+            yieldId: vault.id,
+          },
+          selectedProviderOption: null,
+          selectedStake: vault,
+          selectedToken: token,
+          selectedValidators: new Map(),
+          walletScope,
+        },
+        mount: { _tag: "Earn" },
+      },
+      walletScope
+    );
+  };
+  const encrypted: Partial<ZamaService["Service"]> = {
+    // Review never checks the hidden balance: revealing it may ask for a
+    // permit, and the test Zama layer fails any reveal.
+    checkConfidentialBalance: () =>
+      Effect.die("Review must not check the hidden balance"),
+    encryptCommand: ({ command }) =>
+      Effect.succeed({
+        ...command,
+        arguments: { ...command.arguments, encryptedAmount: "0xamount" },
+      }),
+  };
+  const direct = (type: DirectTransaction["type"]): DirectTransaction => ({
+    approval: null,
+    chainId: 11155111,
+    data: "0x00",
+    id: DirectTransactionId.make(`conversion-${type.toLowerCase()}`),
+    network: "ethereum-sepolia",
+    to: confidentialFixture.cUsdc.address,
+    type,
+  });
+
+  it.effect(
+    "shows a cUSDC deposit's API gas without a wallet prompt, and hands that action to Steps",
+    () =>
+      Effect.gen(function* () {
+        const previews: Array<ActionPreviewRequest> = [];
+        const { awaitView, confirm, handle, page } = yield* makeReviewHarness({
+          previewAction: (request) =>
+            Effect.sync(() => previews.push(request)).pipe(
+              Effect.as(vaultAction)
+            ),
+          session: enterVault("asset"),
+          zama: encrypted,
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasAmount }) => gasAmount !== null
+        );
+
+        expect(view.gasAmount?.toFixed()).toBe("0.01");
+        expect(previews).toEqual([
+          {
+            command: expect.objectContaining({
+              arguments: expect.objectContaining({
+                encryptedAmount: "0xamount",
+              }),
+            }),
+            intent: "enter",
+          },
+        ]);
+        expect(yield* confirm).toEqual({ _tag: "Confirmed" });
+        const source = (yield* Ref.get(handle.handoff))?.handoff.source;
+        expect(source?._tag === "Prepare" && source.prepared).toEqual(
+          vaultAction
+        );
+        expect(previews).toHaveLength(1);
+      })
+  );
+
+  it.effect(
+    "adds the approve and wrap of an underlying deposit, assuming a wrap's gas until its approval lands",
+    () =>
+      Effect.gen(function* () {
+        const estimated: Array<
+          Parameters<EvmRpc["Service"]["estimateFee"]>[0]
+        > = [];
+        const { awaitView, page } = yield* makeReviewHarness({
+          evmRpc: {
+            estimateFee: (input) =>
+              Effect.sync(() => estimated.push(input)).pipe(
+                Effect.as(2_000_000_000_000_000n)
+              ),
+          },
+          previewAction: () => Effect.succeed(vaultAction),
+          session: enterVault("underlying"),
+          zama: {
+            ...encrypted,
+            planConversion: () =>
+              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
+          },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasAmount }) => gasAmount !== null
+        );
+
+        expect(view.gasAmount?.toFixed()).toBe("0.012");
+        expect(
+          estimated.map(({ from, transactions }) => ({
+            fallbackGas: transactions.map(({ fallbackGas }) => fallbackGas),
+            from,
+          }))
+        ).toEqual([{ fallbackGas: [null, 400_000n], from: address }]);
+      })
+  );
+
+  it.effect(
+    "shows no gas rather than only the conversion's when the deposit has no estimate",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, page } = yield* makeReviewHarness({
+          evmRpc: {
+            estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
+          },
+          previewAction: () =>
+            Effect.succeed({
+              ...vaultAction,
+              transactions: [yieldApiTransactionFixture()],
+            }),
+          session: enterVault("underlying"),
+          zama: {
+            ...encrypted,
+            planConversion: () =>
+              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
+          },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasCheckLoading }) => !gasCheckLoading
+        );
+
+        expect(view.action).not.toBeNull();
+        expect(view.gasAmount).toBeNull();
+      })
+  );
+
+  it.effect(
+    "shows no gas when the approve and wrap would be priced in a non-native gas token",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, page } = yield* makeReviewHarness({
+          evmRpc: {
+            estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
+          },
+          previewAction: () => Effect.succeed(vaultAction),
+          session: enterVault("underlying", vault.token),
+          zama: {
+            ...encrypted,
+            planConversion: () =>
+              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
+          },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasCheckLoading }) => !gasCheckLoading
+        );
+
+        expect(view.action).not.toBeNull();
+        expect(view.gasAmount).toBeNull();
+      })
+  );
+
+  it.effect(
+    "shows the action's gas in a non-native gas token once no approve or wrap remains",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, page } = yield* makeReviewHarness({
+          previewAction: () => Effect.succeed(vaultAction),
+          session: enterVault("underlying", vault.token),
+          zama: { ...encrypted, planConversion: () => Effect.succeed([]) },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasAmount }) => gasAmount !== null
+        );
+
+        expect(view.gasAmount?.toFixed()).toBe("0.01");
+      })
+  );
+
+  it.effect.each([
+    ["a private withdrawal's API gas", {}, "0.01"],
+    [
+      "no gas for an instant withdrawal, whose finishing withdrawal Review cannot price",
+      { outputToken: vault.token.address },
+      null,
+    ],
+  ] as const)("shows %s", ([, outputArguments, expectedGas]) =>
+    Effect.gen(function* () {
+      const previews: Array<ActionPreviewRequest> = [];
+      const { awaitView, page } = yield* makeReviewHarness({
+        previewAction: (request) =>
+          Effect.sync(() => previews.push(request)).pipe(
+            Effect.as(vaultAction)
+          ),
+        session: makeYieldFlowSession(
+          {
+            intake: {
+              ...makeExitIntake(vault),
+              gasFeeToken: ether,
+              request: {
+                address,
+                arguments: {
+                  amount: "7",
+                  shareAmountRaw: "7000000",
+                  ...outputArguments,
+                },
+                yieldId: vault.id,
+              },
+            },
+            mount: {
+              _tag: "PositionExit",
+              balanceId: "default",
+              integrationId,
+            },
+          },
+          walletScope
+        ),
+        zama: encrypted,
+      });
+
+      // A priced flow then checks the gas balance, which this harness never
+      // answers; only an unpriced one settles the gas check.
+      const view = yield* awaitView(page.reviewViewAtom, (candidate) =>
+        expectedGas === null
+          ? !candidate.gasCheckLoading
+          : candidate.gasAmount !== null
+      );
+
+      expect(view.gasAmount?.toFixed() ?? null).toBe(expectedGas);
+      expect(previews.map(({ intent }) => intent)).toEqual(["exit"]);
+    })
+  );
+
+  it.effect(
+    "shows no gas once preparing fails, and lets Steps prepare the action on Confirm",
+    () =>
+      Effect.gen(function* () {
+        const { awaitView, confirm, handle, page } = yield* makeReviewHarness({
+          previewAction: () => Effect.die("nothing to preview"),
+          session: enterVault("asset"),
+          zama: {
+            ...encrypted,
+            encryptCommand: () =>
+              Effect.fail(
+                new ConfidentialPreparationError({
+                  cause: null,
+                  message: "Zama encrypt failed.",
+                  retryable: true,
+                })
+              ),
+          },
+        });
+
+        const view = yield* awaitView(
+          page.reviewViewAtom,
+          ({ gasCheckLoading }) => !gasCheckLoading
+        );
+
+        expect(view).toMatchObject({
+          action: null,
+          confirmDisabled: false,
+          gasAmount: null,
+        });
+        expect(yield* confirm).toEqual({ _tag: "Confirmed" });
+        const source = (yield* Ref.get(handle.handoff))?.handoff.source;
+        expect(source).toMatchObject({ _tag: "Prepare", prepared: null });
+      })
   );
 });

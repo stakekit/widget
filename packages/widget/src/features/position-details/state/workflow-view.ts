@@ -12,10 +12,11 @@ import {
   isPendingActionAmountRequired,
 } from "../../../domain/action/pending-action";
 import {
-  type ConfidentialExitBalance,
-  getConfidentialExitBalance,
-  isConfidentialYield,
-} from "../../../domain/earn/confidential";
+  getExitUnit,
+  getSharesExitBalance,
+  type SharesExitBalance,
+} from "../../../domain/earn/denomination";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { isYieldActionAmountEditable } from "../../../domain/earn/stake";
 import {
   exactZero,
@@ -38,7 +39,10 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { config } from "../../../shared/config/widget-defaults";
-import { getYieldAmountConstraints } from "../../yield-entry/index";
+import {
+  getYieldAmountConstraints,
+  getYieldEntryPriceToken,
+} from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
   type PendingActionAmountChange,
@@ -150,17 +154,16 @@ const projectPendingActionAmount = ({
   return { amount, validation };
 };
 
-/** A confidential exit also carries its value in the underlying. */
-type ExitBalance = PositionTokenSum &
-  Partial<Pick<ConfidentialExitBalance, "underlying">>;
+/** An exit in Shares also carries its value in the Value Token. */
+type ExitBalance = PositionTokenSum & Partial<Pick<SharesExitBalance, "value">>;
 
 const getExitBalance = (
-  integration: Parameters<typeof isConfidentialYield>[0] | null,
+  integration: EarnYieldWithProvider | null,
   activeBalances: Parameters<typeof getSingleExitTokenSum>[0] &
-    Parameters<typeof getConfidentialExitBalance>[0]
+    Parameters<typeof getSharesExitBalance>[0]
 ): ExitBalance | null =>
-  integration && isConfidentialYield(integration)
-    ? getConfidentialExitBalance(activeBalances)
+  integration && getExitUnit(integration, activeBalances) === "shares"
+    ? getSharesExitBalance(activeBalances)
     : getSingleExitTokenSum(activeBalances);
 
 const resolveUnstakeAmount = ({
@@ -265,6 +268,11 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
           : false) || unstakeIsLessThanMinForDisplay;
       const unstakeAmountError =
         unstakeIsLessThanMinForDisplay || unstakeIsGreaterThanMax;
+      // Distinct from the integration min/max: the amount is more than the
+      // position holds.
+      const unstakeAmountGreaterThanAvailable = exitBalance
+        ? unstakeAmount.isGreaterThan(exitBalance.amount)
+        : false;
       const pendingActionIndex = getPendingActionIndex(positionBalancesByType);
       const pendingActionProjections = new Map(
         [...pendingActionIndex].map(([pendingKey, pending]) => [
@@ -302,6 +310,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         stakedOrLiquidBalances,
         unstakeAmount,
         unstakeAmountError,
+        unstakeAmountGreaterThanAvailable,
         unstakeForceMaxAmount: amountConstraints.forceMax,
         unstakeAmountValid:
           unstakeAmount.isGreaterThanOrEqualTo(
@@ -406,6 +415,7 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 const projection =
                   view.pendingActionProjections.get(pendingKey);
                 const amount = projection?.amount ?? null;
+                // Encrypted rows carry the unpriced confidential asset.
                 const amountUsd =
                   prices && amount && baseToken
                     ? getTokenPriceInUSD({
@@ -413,7 +423,11 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                         baseToken,
                         pricePerShare: null,
                         prices,
-                        token: balance.token,
+                        token:
+                          getYieldEntryPriceToken(
+                            view.integrationData,
+                            balance.token
+                          ) ?? balance.token,
                       })
                     : null;
                 return {

@@ -3,10 +3,8 @@ import { toLowerCase } from "effect/String";
 import { Trans, useTranslation } from "react-i18next";
 import type { PendingAction } from "../../../../domain/action/models";
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
-import {
-  getCancelReturn,
-  isConfidentialYield,
-} from "../../../../domain/earn/confidential";
+import { isConfidentialYield } from "../../../../domain/earn/confidential";
+import { getPendingActionReturn } from "../../../../domain/earn/denomination";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
@@ -47,11 +45,7 @@ export const StaticActionBlock = ({
     yieldBalance.type,
     { confidential: isConfidentialYield(integration) }
   );
-  const cancelReturn = getCancelReturn(
-    integration,
-    pendingAction.type,
-    yieldBalance
-  );
+  const cancelReturn = getPendingActionReturn(pendingAction.type, yieldBalance);
 
   return (
     <Box

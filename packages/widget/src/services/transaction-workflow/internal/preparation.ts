@@ -1,6 +1,9 @@
 import { Data, Duration, Effect, Result, Schedule } from "effect";
 import { isHex, keccak256 } from "viem";
-import type { ManageActionCommand } from "../../../domain/action/models";
+import type {
+  ManageActionCommand,
+  YieldAction,
+} from "../../../domain/action/models";
 import { getValidStakeSessionTx } from "../../../domain/action/rules";
 import type { ConfidentialChainId } from "../../../domain/earn/confidential";
 import { getEncryptedHandle } from "../../../domain/earn/models";
@@ -12,6 +15,7 @@ import {
 } from "../../api/operations";
 import {
   type ConfidentialPreparationError,
+  prepareConfidentialCommand,
   ZamaService,
 } from "../../zama/zama-service";
 import {
@@ -36,9 +40,11 @@ const decryptionPoll = { interval: Duration.seconds(5), times: 5 } as const;
 
 /**
  * Creates a confidential workflow's action: its amount encrypted, or its
- * withdrawal decrypted, then previewed. The action's transactions join the
- * workflow only once the API accepted the prepared request. An instant exit
- * then finalizes the unwrap its action requested the same way.
+ * withdrawal decrypted, then previewed, unless Review already created it. A
+ * deposit's spent balance is checked first either way. The action's
+ * transactions join the workflow only once the API accepted the prepared
+ * request. An instant exit then finalizes the unwrap its action requested the
+ * same way.
  */
 export const makePrepareAction = Effect.gen(function* () {
   const [yieldOperations, zama] = yield* Effect.all([
@@ -51,6 +57,39 @@ export const makePrepareAction = Effect.gen(function* () {
     return (message: string, cause: unknown, retryable: boolean) =>
       new TransactionPrepareError({ cause, message, retryable, workflowId });
   };
+
+  /** Joins an action created for `input` to the workflow, once it is executable. */
+  const attachAction = Effect.fn("TransactionWorkflow.attachAction")(
+    function* ({
+      action,
+      context,
+      input,
+    }: {
+      readonly action: YieldAction;
+      readonly context: TransactionWorkflowContext;
+      readonly input: ConfidentialTransactionWorkflowInput;
+    }) {
+      const fail = failFor(context);
+      const validation = getValidStakeSessionTx(action);
+      if (Result.isFailure(validation)) {
+        return yield* fail(
+          "The action preview is not executable.",
+          validation.failure,
+          false
+        );
+      }
+      const prepared = makeYieldTransactionWorkflowInput({
+        action: validation.success,
+        inputToken: input.inputToken,
+        providersDetails: input.providersDetails,
+        walletScope: input.walletScope,
+      });
+      const inputError = validateTransactionWorkflowInput(prepared);
+      if (inputError) return yield* fail(inputError.message, inputError, false);
+
+      return attachPreparedYieldAction({ context, prepared });
+    }
+  );
 
   const attachPreview = Effect.fn("TransactionWorkflow.attachPreview")(
     function* ({
@@ -74,24 +113,7 @@ export const makePrepareAction = Effect.gen(function* () {
             )
           )
         );
-      const validation = getValidStakeSessionTx(action);
-      if (Result.isFailure(validation)) {
-        return yield* fail(
-          "The action preview is not executable.",
-          validation.failure,
-          false
-        );
-      }
-      const prepared = makeYieldTransactionWorkflowInput({
-        action: validation.success,
-        inputToken: input.inputToken,
-        providersDetails: input.providersDetails,
-        walletScope: input.walletScope,
-      });
-      const inputError = validateTransactionWorkflowInput(prepared);
-      if (inputError) return yield* fail(inputError.message, inputError, false);
-
-      return attachPreparedYieldAction({ context, prepared });
+      return yield* attachAction({ action, context, input });
     }
   );
 
@@ -104,23 +126,19 @@ export const makePrepareAction = Effect.gen(function* () {
       readonly input: ConfidentialTransactionWorkflowInput;
     }) {
       const fail = failFor(context);
-      const { preparation } = input;
-      const prepareRequest: Effect.Effect<
-        ActionPreviewRequest,
-        ConfidentialPreparationError
-      > =
-        preparation._tag === "Decrypt"
-          ? zama
-              .decryptCommand(preparation)
-              .pipe(Effect.map((command) => ({ command, intent: "manage" })))
-          : zama.encryptCommand(preparation).pipe(
-              Effect.map((command) => ({
-                command,
-                intent: preparation.intent,
-              }))
-            );
-      const request = yield* prepareRequest.pipe(
-        Effect.mapError((error) => fail(error.message, error, error.retryable))
+      const failPreparation = Effect.mapError(
+        (error: ConfidentialPreparationError) =>
+          fail(error.message, error, error.retryable)
+      );
+      const { preparation, prepared } = input;
+      if (preparation._tag === "Encrypt") {
+        yield* zama.checkConfidentialBalance(preparation).pipe(failPreparation);
+      }
+      if (prepared) {
+        return yield* attachAction({ action: prepared, context, input });
+      }
+      const request = yield* prepareConfidentialCommand(zama, preparation).pipe(
+        failPreparation
       );
       return yield* attachPreview({ context, input, request });
     }

@@ -1,6 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { getBalanceRowDisplayAmount } from "../../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getExtendedYieldType,
@@ -9,7 +8,7 @@ import {
 import type { PositionBalanceRow } from "../../../../../domain/portfolio/positions";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import {
-  formatTokenAmount,
+  formatTokenAmountWithSymbol,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
@@ -37,7 +36,7 @@ export const PositionBalances = ({
   });
 
   const yieldType = getExtendedYieldType(integrationData);
-  const display = getBalanceRowDisplayAmount(integrationData, yieldBalance);
+  const shares = yieldBalance.isEncrypted ? null : yieldBalance.shares;
 
   const balanceTypeOptions = isDepositYieldType(yieldType)
     ? { context: "yearn_or_deposit" }
@@ -76,14 +75,19 @@ export const PositionBalances = ({
               t("shared.confidential.hidden")
             ) : (
               <>
-                {formatTokenAmount(display.amount, locale, "down")}{" "}
-                {display.token.symbol}
+                {formatTokenAmountWithSymbol(yieldBalance, locale)}
                 {!yieldBalance.token.isPoints &&
                   ` (${formatUsd(yieldBalance.amountUsd, locale)})`}
               </>
             )}
           </Text>
         </Box>
+
+        {shares ? (
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {formatTokenAmountWithSymbol(shares, locale)}
+          </Text>
+        ) : null}
 
         {!!durationUntilDate && (
           <Text variant={{ type: "muted", weight: "normal" }}>

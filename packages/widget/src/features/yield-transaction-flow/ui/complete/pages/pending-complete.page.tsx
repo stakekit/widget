@@ -12,15 +12,18 @@ export const PendingCompletePage = () => {
   const { locale } = useWidgetPresentation();
   const manageFlow = useYieldFlowIntake("Manage");
   const integrationData = manageFlow.integration;
-  const token = manageFlow.cancelReturn?.token ?? manageFlow.interactedToken;
+  const rawAmount = manageFlow.request.arguments?.amount;
+  // An entered amount is in the balance's Value Token; without one a cancel
+  // shows what it returns.
+  const returned = rawAmount ? null : (manageFlow.cancelReturn ?? null);
+  const token = returned?.token ?? manageFlow.interactedToken;
 
   useTrackPage("pendingActionCompelete");
-  const rawAmount = manageFlow.request.arguments?.amount;
   // An encrypted balance's amount is unknown, not zero.
   const getAmount = () => {
     if (manageFlow.balanceHidden) return null;
-    if (manageFlow.cancelReturn) return manageFlow.cancelReturn.amount;
-    return rawAmount ? exactDecimal(rawAmount) : null;
+    if (rawAmount) return exactDecimal(rawAmount);
+    return returned?.amount ?? null;
   };
   const amount = getAmount();
 

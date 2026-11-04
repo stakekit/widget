@@ -4,12 +4,11 @@ import {
   ConfidentialTokenBalanceKey,
   getConfidentialAssetToken,
   type RevealedBalances,
-  sameTokenContract,
 } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { WalletAddress } from "../../../domain/identity/identifiers";
-import type { Token } from "../../../domain/token/token";
+import { sameTokenContract, type Token } from "../../../domain/token/token";
 
 /** The API cannot read a confidential asset's balance; the owner reveals it. */
 export const isHiddenTokenBalance = (

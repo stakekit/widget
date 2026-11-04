@@ -1,9 +1,6 @@
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import {
-  getConfidentialAssetToken,
-  sameTokenContract,
-} from "../../../../../domain/earn/confidential";
+import { getConfidentialAssetToken } from "../../../../../domain/earn/confidential";
 import type { YieldCategory } from "../../../../../domain/earn/contract";
 import {
   filterValidators,
@@ -11,7 +8,10 @@ import {
 } from "../../../../../domain/earn/yield";
 import { orderYieldsByProvider } from "../../../../../domain/earn/yield-provider-order";
 import { YieldId } from "../../../../../domain/identity/identifiers";
-import { hostTokenKey } from "../../../../../domain/token/token";
+import {
+  hostTokenKey,
+  sameTokenContract,
+} from "../../../../../domain/token/token";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
 import { resolveToken } from "./token";

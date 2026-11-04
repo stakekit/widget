@@ -362,7 +362,36 @@ describe("API responses with values added after client generation", () => {
       });
 
       expect(result.id).toBe(actionDto.id);
+      expect(result.events).toEqual([]);
     })
+  );
+
+  it.effect(
+    "keeps an action's known events when it also has unknown or malformed ones",
+    () =>
+      Effect.gen(function* () {
+        const settled = {
+          id: "settled",
+          occurredAt: "2026-10-02T00:00:00.000Z",
+          transactionHash: null,
+          type: "DEPOSIT_SETTLED",
+        };
+        const result = yield* decode(YieldAction, {
+          ...yieldApiActionDtoFixture(),
+          events: [
+            { ...settled, type: UNKNOWN },
+            { ...settled, occurredAt: UNKNOWN, type: "DEPOSIT_CANCELLED" },
+            settled,
+          ],
+        });
+        // The API omits `events` when an action has none.
+        const missing = yield* decode(YieldAction, yieldApiActionDtoFixture());
+
+        expect(result.events.map(({ type }) => type)).toEqual([
+          "DEPOSIT_SETTLED",
+        ]);
+        expect(missing.events).toEqual([]);
+      })
   );
 
   it.effect(

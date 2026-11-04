@@ -116,7 +116,7 @@ export const Summary = () => {
           }
         />
       </Box>
-      {allPositions?.excludesConfidential ? (
+      {allPositions?.excludesHidden ? (
         <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
           {t("dashboard.overview.summary.excludes_confidential")}
         </Text>
