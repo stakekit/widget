@@ -1,22 +1,27 @@
 import * as stylex from "@stylexjs/stylex";
 import { createElement, type ReactNode } from "react";
 import { color } from "../tokens/color.stylex";
+import { radius } from "../tokens/radius.stylex";
+import { space } from "../tokens/space.stylex";
 import {
   font,
   fontSize,
   fontWeight,
   lineHeight,
 } from "../tokens/typography.stylex";
+import { type TextTone, textToneStyles } from "./text-tone";
 
 /** Type roles that title something; they must name their element. */
 type HeadingRole = "display" | "title" | "heading";
 type BodyRole = "metric" | "body" | "label" | "caption" | "overline";
+/** A type role: size, line height and weight together. */
+export type TypeRole = HeadingRole | BodyRole;
 type HeadingElement = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 type TextElement = "p" | "span" | "div" | "label" | "strong" | "small";
 
 type CommonProps = {
   /** Meaning through color. Unset inherits the surrounding color. */
-  readonly tone?: keyof typeof toneStyles;
+  readonly tone?: TextTone;
   /** Overrides the role's weight. */
   readonly weight?: keyof typeof weightStyles;
   /** Tabular figures, so digits line up. `display` and `metric` always are. */
@@ -27,10 +32,7 @@ type CommonProps = {
   readonly children?: ReactNode;
 };
 
-/**
- * Text in one of the type roles. Heading roles require `as`, so a look never
- * decides the document outline.
- */
+/** A heading role must name its element; a body role defaults to `span`. */
 type TextProps = CommonProps &
   (
     | {
@@ -40,7 +42,7 @@ type TextProps = CommonProps &
     | { readonly variant?: BodyRole; readonly as?: TextElement }
   );
 
-export const Text = ({
+const TextRoot = ({
   variant = "body",
   as = "span",
   tone,
@@ -57,7 +59,7 @@ export const Text = ({
       ...stylex.props(
         styles.root,
         roleStyles[variant],
-        tone && toneStyles[tone],
+        tone && textToneStyles[tone],
         weight && weightStyles[weight],
         numeric && styles.numeric,
         truncate && styles.truncate
@@ -126,14 +128,38 @@ const roleStyles = stylex.create({
   },
 });
 
-const toneStyles = stylex.create({
-  default: { color: color.text },
-  muted: { color: color.textMuted },
-  subtle: { color: color.textSubtle },
-  accent: { color: color.accentText },
-  success: { color: color.success },
-  warning: { color: color.warning },
-  danger: { color: color.danger },
+/**
+ * Emphasis inside translated copy, for `<Trans components>`: it keeps the
+ * surrounding role and tone and strengthens the weight.
+ */
+const Strong = ({ children }: { readonly children?: ReactNode }) => (
+  <strong {...stylex.props(emphasisStyles.strong)}>{children}</strong>
+);
+
+/**
+ * A highlighted run inside translated copy, for `<Trans components>`, such as
+ * a token symbol or an amount the sentence is about.
+ */
+const Mark = ({ children }: { readonly children?: ReactNode }) => (
+  <mark {...stylex.props(emphasisStyles.mark)}>{children}</mark>
+);
+
+/**
+ * Text in one of the type roles. Heading roles require `as`, so a look never
+ * decides the document outline. `Text.Strong` and `Text.Mark` emphasize runs
+ * inside it.
+ */
+export const Text = Object.assign(TextRoot, { Strong, Mark });
+
+const emphasisStyles = stylex.create({
+  strong: { fontWeight: fontWeight.semibold },
+  mark: {
+    borderRadius: radius.badge,
+    paddingInline: space[4],
+    backgroundColor: color.accentSoft,
+    boxDecorationBreak: "clone",
+    color: color.text,
+  },
 });
 
 const weightStyles = stylex.create({

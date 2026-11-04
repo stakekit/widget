@@ -23,9 +23,15 @@ export default defineConfig(
       // Every project's server takes this list. The Storybook plugin's setup
       // file lives in the workspace's pnpm store, outside the package root,
       // which Vite takes for the workspace root because its package.json
-      // declares `workspaces`.
+      // declares `workspaces`. Allow the package and the store, not the
+      // whole monorepo.
       server: {
-        fs: { allow: [path.resolve(import.meta.dirname, "..", "..", "..")] },
+        fs: {
+          allow: [
+            path.resolve(import.meta.dirname, ".."),
+            path.resolve(import.meta.dirname, "..", "..", "..", "node_modules"),
+          ],
+        },
       },
       test: {
         projects: [
@@ -103,10 +109,7 @@ export default defineConfig(
             // Every Design System story renders in Chromium and fails on an
             // accessibility violation, a failed play or a console error.
             extends: true,
-            // Runtime injection imports this once a compiled module loads;
-            // found mid-run, it would reload the page and fail the run.
             // The Storybook plugin sets its own cache directory.
-            optimizeDeps: { include: ["@stylexjs/stylex/lib/stylex-inject"] },
             plugins: [
               storybookTest({
                 configDir: path.resolve(

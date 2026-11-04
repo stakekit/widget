@@ -26,6 +26,9 @@ jobs:
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        # The allowlist check compares against the merge base with main.
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: mise run lint:widget
       - run: mise run lint:ast
@@ -72,6 +75,17 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/playwright
       - run: mise run test:browser -- --shard=${{ matrix.shard }}/2
+
+  # Story tests: accessibility, play functions and console errors.
+  storybook:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/playwright
+      - run: mise run test:storybook
 
   # One invocation, so the widget build that both tasks depend on runs once.
   build:

@@ -4,9 +4,10 @@
  * the Design System yet, with the rules each one breaks.
  *
  * `check-design-system-allowlist.ts` (part of the widget `lint` script) fails
- * on an offender this list does not name and on a listed file that no longer
- * offends, so the list only shrinks. Each migration ticket deletes its
- * entries; the last one deletes this file.
+ * on an offender this list does not name, on a listed file that no longer
+ * offends, and on an entry (file and rule) that the list at the merge base
+ * with `main` does not have, so the list only shrinks. Each migration ticket
+ * deletes its entries; the last one deletes this file.
  *
  * dependency-cruiser reads this list directly. The ast-grep rules mirror their
  * entries in their `ignores`; after deleting entries, run
@@ -440,7 +441,6 @@ export const designSystemAllowlist: DesignSystemAllowlist = {
   "src/features/preferences/ui/help-modal/index.tsx": [
     "no-html-element-outside-design-system",
     "no-class-name-or-style-outside-design-system",
-    "design-system-owns-styling-libraries",
     "design-system-owns-style-modules",
   ],
   "src/features/preferences/ui/help-modal/style.css.ts": [
@@ -968,9 +968,6 @@ export const designSystemAllowlist: DesignSystemAllowlist = {
     "design-system-owns-style-modules",
   ],
   "src/shared/ui/primitives/icons/gift.tsx": [
-    "design-system-owns-style-modules",
-  ],
-  "src/shared/ui/primitives/icons/help.tsx": [
     "design-system-owns-style-modules",
   ],
   "src/shared/ui/primitives/icons/info.tsx": [

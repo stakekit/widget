@@ -778,6 +778,7 @@
     }
   },
   "help_modals": {
+    "close": "Fermer",
     "geo_block": {
       "title": "Bloquage Géographique",
       "ofac": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”). Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",

@@ -1,21 +1,15 @@
-import { Trigger } from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
-import { useEffect, useEffectEvent } from "react";
+import { isValidElement, useEffect, useEffectEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
-import type { SelectModalProps } from "../../../../shared/ui/components/select-modal";
-import { SelectModal } from "../../../../shared/ui/components/select-modal";
 import { SKAnchor } from "../../../../shared/ui/primitives/anchor";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { HelpIcon } from "../../../../shared/ui/primitives/icons/help";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Button, Icon, Modal } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import type { useGeoBlock } from "../../react/use-geo-block";
 import { WidgetTranslationGate } from "../../react/widget-translation-gate";
-import { container, imageStyle } from "./style.css";
+import { imageStyle } from "./style.css";
 
 type ModalType =
   | ({ type: "geoBlock"; onClose: () => void } & Exclude<
@@ -41,7 +35,6 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
     title: string;
     description: string | ReactNode;
     image: string;
-    link?: string;
     button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
@@ -196,7 +189,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   // same Application Runtime registry; tracking uses that tree's config.
   const trackEvent = useTrackEvent();
 
-  const { description, image, title, link, button } = getContent(modal);
+  const { description, image, title, button } = getContent(modal);
 
   const isGeoBlock = modal.type === "geoBlock";
 
@@ -210,67 +203,51 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
     reportOpened();
   }, [isGeoBlock]);
 
-  const getSelectModalProps = (): SelectModalProps => {
-    if (modal.type === "geoBlock") {
-      return {
-        dialogTitle: title,
-        state: {
-          isOpen: true,
-          setOpen: modal.onClose,
-        },
-      };
-    }
-
-    return {
-      dialogTitle: title,
-      onOpen: () => trackEvent("helpModalOpened", { modal: title }),
-      trigger: (
-        <Trigger asChild={!!customTrigger}>
-          {customTrigger ?? (
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <HelpIcon />
-            </Box>
-          )}
-        </Trigger>
-      ),
-    };
-  };
-  const selectModalProps = getSelectModalProps();
+  // A geo-block notice is open while it is rendered; help content opens from
+  // its trigger: the host's element, or a help icon button.
+  const openProps =
+    modal.type === "geoBlock"
+      ? {
+          open: true,
+          onOpenChange: (open: boolean) => {
+            if (!open) modal.onClose();
+          },
+        }
+      : {
+          trigger: isValidElement(customTrigger) ? (
+            customTrigger
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={customTrigger === undefined ? title : undefined}
+            >
+              {customTrigger ?? <Icon name="HelpIcon" />}
+            </Button>
+          ),
+          onOpenChange: (open: boolean) => {
+            if (open) trackEvent("helpModalOpened", { modal: title });
+          },
+        };
 
   return (
-    <SelectModal {...selectModalProps}>
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        className={container}
-      >
-        <Box as="img" src={image} className={imageStyle} />
-
-        <Heading variant={{ level: "h4" }}>{title}</Heading>
-
-        <Box marginTop="2" lineHeight="short">
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-          >
-            {description}
-          </Text>
-        </Box>
-
-        {!!link && <SKAnchor>{link}</SKAnchor>}
-
-        {button && (
-          <Box marginTop="4" width="full">
-            <Button variant={{ color: "secondary" }} onClick={button.onClick}>
-              <Text variant={{ weight: "bold" }}>{button.title}</Text>
-            </Button>
-          </Box>
-        )}
+    <Modal
+      {...openProps}
+      title={title}
+      description={description === "" ? undefined : description}
+      closeLabel={t("help_modals.close")}
+      footer={
+        button && (
+          <Button variant="secondary" size="cta" onClick={button.onClick}>
+            {button.title}
+          </Button>
+        )
+      }
+    >
+      <Box display="flex" justifyContent="center">
+        <Box as="img" src={image} alt="" className={imageStyle} />
       </Box>
-    </SelectModal>
+    </Modal>
   );
 };
 

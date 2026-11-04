@@ -7,15 +7,16 @@ import {
   saveConnectionSettings,
 } from "./connection-settings";
 import {
+  colorSchemes,
   decodeExtraProps,
   defaultPlaygroundConfig,
-  fixedVariantTheme,
+  fixedVariantColorScheme,
   hostVariants,
   languages,
+  legacyThemes,
   mountedBorrowEnabled,
-  mountedTheme,
+  mountedColorScheme,
   type PlaygroundConfig,
-  themes,
   walletModes,
   writePlaygroundConfig,
 } from "./playground-config";
@@ -209,7 +210,7 @@ export const PlaygroundPanel = ({
   );
   const [error, setError] = useState<string>();
   const [linkCopied, setLinkCopied] = useState(false);
-  const variantTheme = fixedVariantTheme(draft.variant);
+  const variantColorScheme = fixedVariantColorScheme(draft.variant);
 
   const update = <Key extends keyof PlaygroundConfig>(
     key: Key,
@@ -305,12 +306,22 @@ export const PlaygroundPanel = ({
           value={draft.variant}
         />
         <Choice
-          disabled={variantTheme !== undefined}
-          hint={variantTheme && `${draft.variant} is ${variantTheme} only`}
-          label="theme"
-          onChange={(value) => update("theme", value)}
-          options={themes}
-          value={mountedTheme(draft)}
+          disabled={variantColorScheme !== undefined}
+          hint={
+            variantColorScheme &&
+            `${draft.variant} is ${variantColorScheme} only`
+          }
+          label="appearance.colorScheme"
+          onChange={(value) => update("colorScheme", value)}
+          options={colorSchemes}
+          value={mountedColorScheme(draft)}
+        />
+        <Choice
+          hint="deprecated `theme`, mapped onto appearance"
+          label="theme (legacy)"
+          onChange={(value) => update("legacyTheme", value)}
+          options={legacyThemes}
+          value={draft.legacyTheme}
         />
         <Choice
           label="language"

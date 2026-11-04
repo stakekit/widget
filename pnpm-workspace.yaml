@@ -155,6 +155,7 @@ catalog:
   '@stylexjs/eslint-plugin': 0.19.1
   oxlint: 1.90.0
   storybook: 10.6.5
+  '@base-ui/react': 1.9.0
 
 minimumReleaseAge: 4320
 

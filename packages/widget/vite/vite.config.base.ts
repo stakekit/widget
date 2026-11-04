@@ -53,6 +53,7 @@ export const getConfig = (
   defineConfig(({ command }) => {
     const isBuild = command === "build";
     const shouldMinifyOutput = isBuild && overides?.build?.minify !== false;
+    const stylexInjection = options?.stylexInjection ?? "stylesheet";
 
     return mergeConfig(overides ?? {}, {
       root: path.resolve(import.meta.dirname, ".."),
@@ -64,16 +65,19 @@ export const getConfig = (
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
           "react-router/dom",
+          // Runtime injection imports this once a compiled module loads. The
+          // dependency scan can't see an import the transform adds; found
+          // mid-run, it would reload the page and fail a test run.
+          ...(stylexInjection === "runtime"
+            ? ["@stylexjs/stylex/lib/stylex-inject"]
+            : []),
         ],
       },
       plugins: [
         ...(options?.plugins ?? []),
         nodePolyfills({ include: ["buffer", "crypto", "stream"] }),
         macros(),
-        ...stylexPlugins({
-          command,
-          injection: options?.stylexInjection ?? "stylesheet",
-        }),
+        ...stylexPlugins({ command, injection: stylexInjection }),
         react({
           compiler: true,
           // Skip large generated and data-only modules that gain nothing from

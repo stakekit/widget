@@ -32,6 +32,7 @@ const withTheme: Decorator = (Story, { globals }) => {
       }}
     >
       <ThemeRoot
+        appearance={{}}
         appearancePreset={appearancePreset}
         callToActionSize="lg"
         colorScheme={colorScheme}

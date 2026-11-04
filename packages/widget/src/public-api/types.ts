@@ -12,12 +12,14 @@ import {
   SubstrateChainIds,
   type SupportedSKChainIds,
 } from "../domain/wallet/contract.js";
+import type { SKAppearance } from "./appearance.js";
 import type { SKTheme } from "./theme.js";
 
 export type {
   SupportedSKChainIds,
   WalletPolicy as SKWalletPolicy,
 } from "../domain/wallet/contract.js";
+export type { SKAppearance, SKColorRole } from "./appearance.js";
 export type { SKTheme } from "./theme.js";
 export {
   DomainYieldCategory as YieldCategory,
@@ -612,7 +614,15 @@ type SettingsPropsBase = {
   borrowMarketsScope?: SKBorrowMarketsScope;
   /** Yields API URL. Read at mount; remount the widget to change it. */
   yieldsApiUrl?: string;
-  /** Theme tokens, deep-merged over the light theme. */
+  /** Colors, color scheme, radius, control heights and fonts. Changes apply live. */
+  appearance?: SKAppearance;
+  /**
+   * Theme tokens, deep-merged over the light theme.
+   *
+   * @deprecated Use `appearance`. Customized values that have a Color Role
+   * or setting are carried over to `appearance`; the rest no longer apply to
+   * redesigned screens. Removed in the next major version.
+   */
   theme?: SKTheme;
   /** Analytics callbacks. */
   tracking?: SKTrackingConfig;

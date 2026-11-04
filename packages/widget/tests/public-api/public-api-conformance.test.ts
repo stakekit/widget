@@ -1,8 +1,12 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   packageEntries,
   transpileEntryDeclaration,
 } from "../../scripts/declarations/entry-declarations";
+import { widgetRoot } from "../../scripts/paths";
 import type {
   HelpModalProps as PublicHelpModalProps,
   SKAppProps as PublicSKAppProps,
@@ -200,6 +204,7 @@ const sharedEntryExports = [
   "MiscChainIds",
   "SKActionArguments",
   "SKActionType",
+  "SKAppearance",
   "SKBorrowExternalProviders",
   "SKBorrowMarketsScope",
   "SKBorrowSignatureResult",
@@ -207,6 +212,7 @@ const sharedEntryExports = [
   "SKBorrowTxMeta",
   "SKBorrowTxResult",
   "SKBorrowWallet",
+  "SKColorRole",
   "SKCustomTranslations",
   "SKEip712TypedData",
   "SKExternalProviders",
@@ -284,5 +290,48 @@ describe.each(packageEntries)("entry declarations: %s", (entry) => {
         new RegExp(`\\b${name}\\b`, "u").test(outputText)
       )
     ).toStrictEqual([]);
+  });
+
+  it("mark the legacy theme exports deprecated", async () => {
+    const { outputText } = await transpileEntryDeclaration(entry);
+
+    for (const name of ["darkTheme", "lightTheme"]) {
+      expect(outputText).toMatch(
+        new RegExp(`@deprecated[^/]*\\*/\\s*export declare const ${name}\\b`)
+      );
+    }
+  });
+});
+
+/** Every property signature named `name` in a source file. */
+const propertySignatures = (source: ts.SourceFile, name: string) => {
+  const found: Array<ts.PropertySignature> = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isPropertySignature(node) && node.name.getText(source) === name) {
+      found.push(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+};
+
+describe("legacy theme prop", () => {
+  it("is marked deprecated wherever hosts can pass it", async () => {
+    const path = join(widgetRoot, "src", "public-api", "types.ts");
+    const source = ts.createSourceFile(
+      path,
+      await readFile(path, "utf8"),
+      ts.ScriptTarget.ESNext,
+      true
+    );
+    const themeProps = propertySignatures(source, "theme");
+
+    expect(themeProps).not.toHaveLength(0);
+    for (const prop of themeProps) {
+      expect(ts.getJSDocTags(prop).map((tag) => tag.tagName.text)).toContain(
+        "deprecated"
+      );
+    }
   });
 });

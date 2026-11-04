@@ -5,6 +5,8 @@ valid:
   - 'const field = <Form.Field name="amount" />'
   - 'const fragment = <><Text>One</Text><Text>Two</Text></>'
   - 'const message = t("html.div")'
+  - 'const box = createElement(Box, { gap: "8" })'
+  - 'const node = document.createElement("div")'
 invalid:
   - 'const box = <div className="x" />'
   - 'const box = <div>content</div>'
@@ -13,3 +15,5 @@ invalid:
   - 'const link = <a href="https://yield.xyz">Docs</a>'
   - 'const label = <Text><span>nested</span></Text>'
   - 'const custom = <sk-widget />'
+  - 'const box = createElement("div", null, "content")'
+  - 'const icon = React.createElement("svg", { viewBox: "0 0 24 24" })'

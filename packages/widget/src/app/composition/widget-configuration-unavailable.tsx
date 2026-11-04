@@ -18,11 +18,12 @@ export const WidgetConfigurationUnavailable = ({
   readonly presentation: RejectedConfigurationPresentation;
 }) => {
   const [i18n] = useState(createWidgetI18nInstance);
-  const { layout, theme, variant } = presentation;
+  const { appearance, layout, theme, variant } = presentation;
 
   return (
     <I18nextProvider i18n={i18n}>
       <ThemeStyles
+        appearance={appearance}
         layout={layout}
         portalContainer={undefined}
         theme={theme}

@@ -16,8 +16,9 @@ export default {
   ],
   project: [
     "src/**/*.{ts,tsx}!",
-    // Stories are development-only.
+    // Stories and their helpers are development-only.
     "!src/**/*.stories.tsx!",
+    "!src/ui/storybook/**!",
     ".storybook/*.{ts,tsx}",
     "playground/**/*.{ts,tsx}",
     "scripts/**/*.{ts,mts}",
@@ -26,6 +27,9 @@ export default {
   ],
   ignoreIssues: {
     "src/generated/**": ["exports", "types"],
+    // Features migrate onto the Design System's interface in tickets 11–16;
+    // ticket 17 removes this so unused parts are reported again.
+    "src/ui/index.ts": ["exports", "types"],
   },
   ignoreDependencies: [
     "@effect/language-service",

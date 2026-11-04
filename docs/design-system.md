@@ -14,15 +14,16 @@ Presentation Setting) is in [the glossary](../GLOSSARY.md).
   composition: primitives, components, patterns and their finite prop types
   (`Tone`, sizes, type roles).
 - `src/ui/composition.ts` is for application composition only: the theme root,
-  the portal container, theme resolution for a color scheme, Appearance Preset
-  and Appearance, and the internal Appearance type that Widget Configuration
-  carries.
+  the portal container, and theme resolution for a color scheme, Appearance
+  Preset and Appearance. Application composition passes the theme root the
+  resolved color scheme and the Appearance that Widget Configuration carries.
 
 Nothing else under `src/ui/` is importable from outside it. The Design System
-imports nothing from Features, Resources, services, application composition,
-Domain or `public-api`. Its parts take plain values: formatted strings, URLs,
-callbacks and finite choices. A Feature formats its domain values and maps them
-onto Design System props.
+imports only its own modules and libraries: nothing from Features, Resources,
+services, application composition, Domain, `public-api`, `shared` or
+`generated`. Its parts take plain values: formatted strings, URLs, callbacks
+and finite choices. A Feature formats its domain values and maps them onto
+Design System props.
 
 Only the Design System uses StyleX, Base UI, `motion`, Recharts, TanStack
 Virtual and SVG icon markup.
@@ -114,7 +115,7 @@ explicit `as`, so headings form a real outline.
   thresholds for in-Widget layout, which responds to container width only.
 - **Viewport query**: only for how an overlay is presented: a bottom sheet below
   520px wide, a centered dialog above.
-- **Layers**: dropdown, overlay, modal, toast, tooltip, all inside the portal
+- **Layers**: overlay, modal, dropdown, toast, tooltip, all inside the portal
   container.
 - **Tones**: `neutral`, `accent`, `success`, `warning`, `danger`, `info`. Text
   tones: `default`, `muted`, `subtle`, `accent`, `success`, `warning`, `danger`.
@@ -151,6 +152,17 @@ named widths; `Text` takes a type role and tone; `as` accepts a fixed list of
 elements. Components and patterns take finite `tone`, `size` and `variant`
 props, so the compiler lists the looks that exist.
 
+A layout value can vary with the container's width: pass
+`{ base, sm, md, split }` instead of a single value, for example
+`<Stack direction={{ base: "column", md: "row" }} />`. `base` applies at every
+width and each other key from its container size up. The Widget root is the
+size container, so in-Widget layout never reads the viewport.
+
+Icons come from one component, `<Icon name="CopyIcon" />`, in sizes `sm`, `md`
+and `lg` (16, 20, 24) and the text tones; unset, an icon draws in the
+surrounding text color. Every icon name ends in `Icon`, and the SVG markup lives
+only in `src/ui/icons/`. A new icon joins that set; Features never draw SVG.
+
 A component shaped by one Feature, such as a Feature's details pane or metric
 card, lives in that Feature and composes Design System parts. It still follows
 the rules above.
@@ -183,20 +195,25 @@ deliberate exception and states its reason after ` -- `, for example
 
 `pnpm lint` and `pnpm check-hygiene` enforce the rules above:
 
-- dependency-cruiser (`design-system-owns-styling-libraries`,
-  `design-system-owns-style-modules`) keeps StyleX, Base UI, `motion`,
-  Recharts, TanStack Virtual, the legacy styling libraries (vanilla-extract,
-  Radix and its internals, clsx, the skeleton library) and style modules
-  (`*.stylex.ts`, `*.css.ts`, `.css`) inside `src/ui/`, and keeps other owners
-  on its two interfaces.
-- ast-grep rejects lowercase JSX elements
-  (`no-html-element-outside-design-system`) and `className` or `style`
-  (`no-class-name-or-style-outside-design-system`) in Features and application
-  composition, and, inside `src/ui/` outside the token definitions
+- dependency-cruiser keeps StyleX, Base UI, `motion`, Recharts, TanStack
+  Virtual and the legacy styling libraries (vanilla-extract, Radix and its
+  internals, clsx, the skeleton library) inside `src/ui/`
+  (`design-system-owns-styling-libraries`), and style modules (`*.stylex.ts`,
+  `*.css.ts`, `.css`) too (`design-system-owns-style-modules`). It keeps other
+  owners on the main interface (`design-system-internals-private`), lets only
+  application composition use the composition interface
+  (`design-system-composition-importers`), and lets `src/ui/` import only
+  itself (`layer-ui`). These run in `check-hygiene`.
+- ast-grep rejects lowercase JSX elements and `createElement` calls with a
+  lowercase tag (`no-html-element-outside-design-system`) and `className` or
+  `style`, as attributes or spread
+  (`no-class-name-or-style-outside-design-system`), in Features and
+  application composition, and, inside `src/ui/` outside the token definitions
   (`src/ui/tokens/`, the theme definitions in `src/ui/theme/*.ts`) and artwork
   (`src/ui/artwork/`), color literals (`no-color-literal-in-design-system`) and
   raw font sizes, weights, line heights, radii, shadows, z-indices, durations
-  and pixel values in StyleX definitions (`no-raw-design-value`).
+  and px, rem, em, ch, vw and vh lengths in StyleX definitions
+  (`no-raw-design-value`; `1em`, `100vw` and `100vh` stay allowed).
   `no-unexplained-design-system-suppression` fails a suppression of these
   rules, or of StyleX's lint rules, without a reason.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid
@@ -206,10 +223,12 @@ deliberate exception and states its reason after ` -- `, for example
 During the migration, files that have not moved yet are listed in
 `packages/widget/scripts/architecture/design-system-allowlist.ts` with the
 rules they break. `pnpm --filter @stakekit/widget check:design-system-allowlist`
-(part of `lint`) fails on an offender the list does not name and on an entry
-that no longer offends, so the list only shrinks. After migrating a file, delete
-its entry and run the check with `--write`, which copies the list into the
-ast-grep rules' `ignores`.
+(part of `lint`) fails on an offender the list does not name, on an entry that
+no longer offends, and on an entry (file and rule) that the list at the merge
+base with `main` does not have, so the list only shrinks. Without git or a
+`main` branch it skips that comparison and says so. After migrating a file,
+delete its entry and run the check with `--write`, which copies the list into
+the ast-grep rules' `ignores`.
 
 ## Artwork
 

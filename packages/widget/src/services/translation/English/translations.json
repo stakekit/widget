@@ -1152,6 +1152,7 @@
     }
   },
   "help_modals": {
+    "close": "Close",
     "geo_block": {
       "title": "Geo Block",
       "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",

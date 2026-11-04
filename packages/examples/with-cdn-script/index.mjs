@@ -1,7 +1,4 @@
-import {
-  lightTheme,
-  renderSKWidget,
-} from "https://unpkg.com/@stakekit/widget@0.0.249/dist/bundle/index.bundle.js";
+import { renderSKWidget } from "https://unpkg.com/@stakekit/widget@0.0.249/dist/bundle/index.bundle.js";
 
 const rootElement = document.getElementById("widget-container");
 
@@ -27,7 +24,7 @@ shadowBody.appendChild(shadowContainer);
 
 renderSKWidget({
   container: shadowContainer,
-  theme: lightTheme,
+  appearance: { colorScheme: "light" },
   apiKey: "__YOUR_API_KEY__",
   portalContainer: shadowContainer,
   dashboardVariant: true,

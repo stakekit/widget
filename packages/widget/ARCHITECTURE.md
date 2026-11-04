@@ -30,11 +30,12 @@ The Design System (`ui/`) owns tokens, themes, the scoped reset, primitives,
 components, patterns, icons, and artwork. It is the only owner that uses StyleX,
 Base UI, `motion`, Recharts, TanStack Virtual, or SVG icon markup. Features and
 application composition build UI only by composing its parts, never with HTML
-elements, `className`, `style`, or raw values. It depends on nothing in
-Features, Resources, services, application composition, Domain, or
-`public-api`: it receives plain values, and Features map their domain values
-onto its props. A component shaped by one Feature lives in that Feature and
-composes Design System parts. See
+elements, `className`, `style`, or raw values. It imports only its own modules
+and libraries, nothing from Features, Resources, services, application
+composition, Domain, `public-api`, `shared`, or `generated`: it receives plain
+values, and Features map their domain values onto its props. A component
+shaped by one Feature lives in that Feature and composes Design System parts.
+See
 [ADR 0015](../../docs/adr/0015-the-design-system-owns-every-visual-decision.md)
 and the [contributor guide](../../docs/design-system.md).
 
@@ -191,8 +192,10 @@ The Design System publishes:
 - `index.ts` for Features and application composition: primitives, components,
   patterns, and their finite prop types.
 - `composition.ts` for application composition only: the theme root, the
-  portal container, theme resolution, and the internal Appearance type that
-  Widget Configuration carries.
+  portal container, and theme resolution. The theme root takes the resolved
+  color scheme and the Appearance that Widget Configuration carries as plain
+  values; the `system` color scheme is resolved by a service in `services/`,
+  projected into an Atom.
 
 ## Application logic
 
@@ -299,9 +302,8 @@ and Effect Atom registry.
   styling libraries, and style definition modules only inside the Design
   System, with no cross-owner exception for style modules, restricts Features
   and application composition to its main interface and its composition
-  interface to application composition, and keeps the Design System free of
-  Features, Resources, services, application composition, Domain, and
-  `public-api`.
+  interface to application composition, and lets the Design System import only
+  itself (`layer-ui`).
 - Biome constrains barrels and keeps React out of domain, Resource, and service
   logic and out of Feature `model/` and `state/`.
 - ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
@@ -314,17 +316,19 @@ and Effect Atom registry.
   Configuration, Layout-named identifiers in Domain, Resource, service, and
   Feature `model/` and `state/` code, and Layout-named files outside `ui/` and
   `app/layouts/`.
-- ast-grep rejects lowercase JSX elements and `className` or `style` attributes
-  in Features and application composition, and, inside the Design System
-  outside its token definitions and artwork, color literals and raw font size,
-  weight, line height, radius, shadow, z-index, duration, and pixel values.
-  Every suppression of these rules states its reason.
+- ast-grep rejects lowercase JSX elements, `createElement` calls with a
+  lowercase tag, and `className` or `style` attributes (spread too) in Features
+  and application composition, and, inside the Design System outside its token
+  definitions and artwork, color literals and raw font size, weight, line
+  height, radius, shadow, z-index, duration, and px, rem, em, ch, vw, and vh
+  values. Every suppression of these rules states its reason.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid
   shorthands, sorted keys) on the Design System as part of the widget `lint`.
 - Until the migration ends, files that break a Design System rule are listed
   in `scripts/architecture/design-system-allowlist.ts`; its check, part of the
-  widget `lint`, fails on unlisted offenders and on entries that no longer
-  offend, so the list only shrinks. See
+  widget `lint`, fails on unlisted offenders, on entries that no longer offend,
+  and on entries the list at the merge base with `main` lacks, so the list only
+  shrinks. See
   [the contributor guide](../../docs/design-system.md#enforcement).
 - Design System parts omit `className` and `style` from their types, and `as`
   is a finite union.

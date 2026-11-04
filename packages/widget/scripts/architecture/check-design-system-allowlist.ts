@@ -5,17 +5,22 @@
  * file that breaks a Design System rule with no allowlist applied, using the
  * ast-grep rules and the dependency-cruiser configuration, then fails on an
  * offender `design-system-allowlist.ts` does not list and on a listed file
- * that no longer offends. It also fails when an ast-grep rule's `ignores` do
- * not mirror the allowlist; `--write` rewrites those mirrors from it.
+ * that no longer offends. It also fails on an entry (file and rule) that the
+ * allowlist at the merge base with `main` does not have, so the list only
+ * shrinks, and when an ast-grep rule's `ignores` do not mirror the allowlist;
+ * `--write` rewrites those mirrors from it.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { cruise } from "dependency-cruiser";
 import { parseDocument } from "yaml";
 import { repositoryRoot, widgetRoot } from "../paths";
 import { makeArchitectureConfiguration } from "./dependency-cruiser.config.mts";
 import {
+  type DesignSystemAllowlist,
   designSystemAllowlist,
   designSystemRuleIds,
 } from "./design-system-allowlist";
@@ -122,6 +127,45 @@ if (typeof cruiseOutput.output === "string") {
 }
 for (const violation of cruiseOutput.output.summary.violations) {
   addOffender(violation.rule.name, violation.from);
+}
+
+// Shrink-only: every entry must already be on the allowlist at the merge base
+// with `main`, so a newly offending file cannot be allowlisted.
+const allowlistPath = `${widgetPrefix}scripts/architecture/design-system-allowlist.ts`;
+const git = (args: ReadonlyArray<string>) =>
+  spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });
+const mergeBase = ["origin/main", "main"]
+  .map((ref) => git(["merge-base", "HEAD", ref]))
+  .find((result) => result.error === undefined && result.status === 0)
+  ?.stdout.trim();
+if (mergeBase === undefined) {
+  process.stdout.write(
+    "Design System migration allowlist: skipping the shrink-only check; git or a `main` branch to take the merge base with is unavailable.\n"
+  );
+} else {
+  const baseSource = git(["show", `${mergeBase}:${allowlistPath}`]);
+  if (baseSource.status !== 0) {
+    process.stdout.write(
+      `Design System migration allowlist: skipping the shrink-only check; the merge base ${mergeBase.slice(0, 12)} has no allowlist.\n`
+    );
+  } else {
+    const directory = mkdtempSync(join(tmpdir(), "design-system-allowlist-"));
+    // `.mts`: outside the package, a `.ts` file would load as CommonJS.
+    const basePath = join(directory, "design-system-allowlist.mts");
+    writeFileSync(basePath, baseSource.stdout);
+    // Dynamic: the module is the merge base's copy, written out at run time.
+    const baseModule: { designSystemAllowlist: DesignSystemAllowlist } =
+      await import(pathToFileURL(basePath).href);
+    rmSync(directory, { recursive: true });
+    for (const [file, rules] of allowlistEntries) {
+      const baseRules = new Set(baseModule.designSystemAllowlist[file] ?? []);
+      for (const rule of rules.filter((entry) => !baseRules.has(entry))) {
+        problems.push(
+          `${rule}: ${file} is not on the allowlist at the merge base ${mergeBase.slice(0, 12)}; the allowlist only shrinks. Compose or extend the Design System instead (docs/design-system.md).`
+        );
+      }
+    }
+  }
 }
 
 for (const rule of [

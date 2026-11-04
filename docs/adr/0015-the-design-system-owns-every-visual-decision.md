@@ -13,10 +13,11 @@ The Design System publishes two interfaces under ADR 0007: `index.ts` for
 Features and application composition (primitives, components, patterns and
 their finite prop types), and `composition.ts` for application composition only
 (the theme root, the portal container, theme resolution and the internal
-Appearance type that Widget Configuration carries). It depends on nothing in
-Features, Resources, services, application composition, Domain or `public-api`;
-it receives plain values, and Features map their domain values onto its props.
-`shared` keeps only neutral non-visual utilities.
+Appearance type that Widget Configuration carries). It imports only its own
+modules and libraries, nothing from Features, Resources, services, application
+composition, Domain, `public-api`, `shared` or `generated`; it receives plain
+values, and Features map their domain values onto its props. `shared` keeps
+only neutral non-visual utilities.
 
 ## Styling: StyleX
 

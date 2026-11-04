@@ -17,6 +17,7 @@ export type {
   EvmTx,
   SKActionArguments,
   SKActionType,
+  SKAppearance,
   SKBorrowExternalProviders,
   SKBorrowMarketsScope,
   SKBorrowSignatureResult,
@@ -24,6 +25,7 @@ export type {
   SKBorrowTxMeta,
   SKBorrowTxResult,
   SKBorrowWallet,
+  SKColorRole,
   SKCustomTranslations,
   SKEip712TypedData,
   SKExternalProviders,
@@ -66,5 +68,17 @@ export const renderSKWidget: (
   rerender: (newProps: BundledSKWidgetProps) => void;
   unmount: () => void;
 } = renderSKWidgetImplementation;
+/**
+ * The legacy dark theme tokens.
+ *
+ * @deprecated Use `appearance: { colorScheme: "dark" }`. Passed unchanged as
+ * `theme`, it gives the dark default. Removed in the next major version.
+ */
 export const darkTheme: SKTheme = darkThemeTokens;
+/**
+ * The legacy light theme tokens.
+ *
+ * @deprecated Use `appearance`. Passed unchanged as `theme`, it gives the
+ * light default. Removed in the next major version.
+ */
 export const lightTheme: SKTheme = lightThemeTokens;

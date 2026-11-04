@@ -16,10 +16,15 @@ React 19 or newer is required when using the component entrypoint.
 
 ```tsx
 import "@stakekit/widget/style.css";
-import { darkTheme, SKApp } from "@stakekit/widget";
+import { SKApp } from "@stakekit/widget";
 
 export function Staking() {
-  return <SKApp apiKey={import.meta.env.VITE_API_KEY} theme={darkTheme} />;
+  return (
+    <SKApp
+      apiKey={import.meta.env.VITE_API_KEY}
+      appearance={{ colorScheme: "dark" }}
+    />
+  );
 }
 ```
 
@@ -33,15 +38,15 @@ Use the bundled entrypoint when the host does not render React components:
 
 ```ts
 import "@stakekit/widget/style.css";
-import { darkTheme, renderSKWidget } from "@stakekit/widget/bundle";
+import { renderSKWidget } from "@stakekit/widget/bundle";
 
 const widget = renderSKWidget({
   container: document.querySelector("#stakekit-widget")!,
   apiKey: "your-api-key",
-  theme: darkTheme,
+  appearance: { colorScheme: "dark" },
 });
 
-widget.rerender({ apiKey: "your-api-key", theme: darkTheme });
+widget.rerender({ apiKey: "your-api-key", appearance: { colorScheme: "system" } });
 widget.unmount();
 ```
 
@@ -61,7 +66,8 @@ import type { BundledSKWidgetProps } from "@stakekit/widget/bundle";
 Common options include:
 
 - API endpoints and the required `apiKey`
-- `lightTheme`, `darkTheme`, or a custom `SKTheme`
+- `appearance`: Color Roles per color scheme, a `light`, `dark` or `system`
+  color scheme, radius, control heights, font and weights
 - compact or dashboard layout configuration
 - initial chain and yield preferences
 - translations, icon mappings, and declarative wallet filtering, grouping, and
@@ -75,7 +81,7 @@ mode, provider presence, connector construction, and related wallet setup, is
 fixed during bootstrap. Remount the widget to change it.
 
 The package exports the supported chain constants, yield categories,
-wallet types, Wallet Policy, transaction metadata types, and themes. Prefer
+wallet types, Wallet Policy, transaction metadata types, and `SKAppearance`. Prefer
 those exports over copying their shapes into host code.
 
 ## External providers
@@ -293,25 +299,47 @@ runs on the page's main thread.
 
 ## Styling
 
-Import `@stakekit/widget/style.css` once. Start with `lightTheme` or `darkTheme`
-and pass a partial custom theme when necessary:
+Import `@stakekit/widget/style.css` once. Theme the widget with `appearance`;
+every value is a CSS value, and changes apply to a mounted widget without a
+remount:
 
 ```tsx
-import { darkTheme, type SKTheme, SKApp } from "@stakekit/widget";
+import { type SKAppearance, SKApp } from "@stakekit/widget";
 
-const theme: SKTheme = {
-  ...darkTheme,
-  color: {
-    ...darkTheme.color,
-    primaryButtonBackground: "#6d5dfc",
+const appearance: SKAppearance = {
+  // "light" (the default), "dark", or "system" to follow the OS preference.
+  colorScheme: "system",
+  colors: {
+    light: { accent: "#6d5dfc" },
+    dark: { accent: "#8b7dff", background: "#101014" },
   },
+  radius: { control: "8px", card: "12px" },
+  controlHeight: { lg: "52px" },
+  font: { sans: "Inter, system-ui, sans-serif" },
+  fontWeight: { semibold: "650" },
 };
 
-<SKApp apiKey="your-api-key" theme={theme} />;
+<SKApp apiKey="your-api-key" appearance={appearance} />;
 ```
 
-Use the exported `SKTheme` type as the current contract rather than maintaining
-a handwritten list of theme tokens.
+Colors are set by Color Role (`SKColorRole`): `background`, `surface`,
+`surfaceHover`, `surfaceRaised`, `border`, `borderStrong`, `text`,
+`textMuted`, `textSubtle`, `accent`, `accentHover`, `onAccent`, `accentSoft`,
+`accentText`, `success`, `successSoft`, `warning`, `warningSoft`, `danger`,
+`dangerSoft`, `info`, `infoSoft`, `focusRing` and `scrim`. Setting `accent`
+alone also adjusts `accentHover`, `accentSoft`, `accentText`, `focusRing`,
+`info` and `infoSoft`; setting `success`, `warning` or `danger` adjusts its
+soft tint. A role you set explicitly is used as given. An invalid value is
+dropped with a warning; the rest of the configuration still applies.
+
+### Legacy `theme`
+
+`theme`, `lightTheme` and `darkTheme` are deprecated and will be removed in the
+next major version. Until then the widget maps a legacy theme onto
+`appearance`: an unchanged `lightTheme` or `darkTheme` gives the light or dark
+default, customized values that have a Color Role or setting carry over, and
+`appearance` wins key by key when both are passed. The widget logs a warning
+once per legacy key that no longer applies, naming it.
 
 ## Development
 

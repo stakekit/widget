@@ -11,3 +11,9 @@ export const focusRing = stylex.defineConsts({
   width: "2px",
   offset: "2px",
 });
+
+/** The ring that marks a selected surface, drawn inside its edge. */
+export const selectionRing = stylex.defineConsts({
+  width: "2px",
+  offset: "-2px",
+});

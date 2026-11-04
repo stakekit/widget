@@ -4,6 +4,10 @@ import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 
 // These packages coordinate work or DOM state with the embedding application.
 // Bundling a private copy separates React's cleanup queue and modal lock stacks.
+// The Radix internals stay shared until the last Radix screen moves to the
+// Design System. Base UI is deliberately absent: the Widget bundles its own
+// copy, and its popups coexist with host dialogs through the portal container
+// inside the Widget root (tests/app/journeys/overlays-in-host-dialogs).
 const sharedDependencies = [
   "scheduler",
   "@radix-ui/react-dismissable-layer",
@@ -55,14 +59,29 @@ const config = getConfig({
         {
           name: "check-shared-dependencies",
           generateBundle() {
-            for (const id of this.getModuleIds()) {
-              if (
-                sharedDependencies.some((name) =>
-                  id.replaceAll("\\", "/").includes(`/node_modules/${name}/`)
-                )
-              ) {
-                this.error(`Shared dependency was bundled: ${id}`);
-              }
+            const paths = [...this.getModuleIds()].map((id) =>
+              id.replaceAll("\\", "/")
+            );
+            const bundled = paths.find((path) =>
+              sharedDependencies.some((name) =>
+                path.includes(`/node_modules/${name}/`)
+              )
+            );
+            if (bundled) {
+              this.error(`Shared dependency was bundled: ${bundled}`);
+            }
+            // Worker bundles reuse these plugins; only the package entry
+            // renders Design System popups.
+            const isPackageEntry = paths.some((path) =>
+              path.endsWith("/src/index.package.ts")
+            );
+            if (
+              isPackageEntry &&
+              !paths.some((path) =>
+                path.includes("/node_modules/@base-ui/react/")
+              )
+            ) {
+              this.error("Base UI must be bundled into the package output.");
             }
           },
         },

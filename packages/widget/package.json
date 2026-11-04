@@ -94,6 +94,7 @@
     }
   },
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@radix-ui/react-dismissable-layer": "catalog:",
     "@radix-ui/react-focus-guards": "catalog:",
     "@radix-ui/react-focus-scope": "catalog:",

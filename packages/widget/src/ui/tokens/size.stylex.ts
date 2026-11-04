@@ -6,3 +6,50 @@ export const controlHeight = stylex.defineVars({
   md: "40px",
   lg: "48px",
 });
+
+/** Icon sizes. */
+export const iconSize = stylex.defineConsts({
+  sm: "16px",
+  md: "20px",
+  lg: "24px",
+});
+
+/** Avatar sizes: `sm` sits in a row of text, `xl` heads an account dialog. */
+export const avatarSize = stylex.defineConsts({
+  xs: "16px",
+  sm: "24px",
+  md: "32px",
+  lg: "48px",
+  xl: "80px",
+});
+
+/** The network badge on a token avatar, per avatar size. */
+export const avatarBadgeSize = stylex.defineConsts({
+  xs: "8px",
+  sm: "10px",
+  md: "14px",
+  lg: "20px",
+  xl: "32px",
+});
+
+/** Named widths, one per container size. */
+export const containerWidth = stylex.defineConsts({
+  sm: "400px",
+  md: "520px",
+  split: "800px",
+});
+
+/**
+ * Grid tracks: the narrowest metric before metrics wrap, and the aside of the
+ * split view.
+ */
+export const gridTrack = stylex.defineConsts({
+  metricMin: "120px",
+  splitAside: "380px",
+});
+
+/** The one-pixel box that keeps visually hidden content readable. */
+export const visuallyHiddenBox = stylex.defineConsts({
+  size: "1px",
+  margin: "-1px",
+});

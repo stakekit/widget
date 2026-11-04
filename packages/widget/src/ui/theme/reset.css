@@ -1,10 +1,11 @@
 /*
  * The Widget's scoped reset: the one global stylesheet the Design System owns.
  *
- * Every rule applies only inside the Widget root (`data-sk-root`), a portal
- * container the theme root marks (`data-sk-portal`), or a legacy Widget root
- * that screens not yet on the Design System portal their content into
- * (`data-rk="stakekit"`, removed with the legacy styles).
+ * Every rule applies only inside the Widget root (`data-sk-root`), the
+ * Widget-owned portal container (`data-sk-portal`, appended inside a host
+ * `portalContainer` rather than marking it, so host content is untouched), or
+ * a legacy Widget root that screens not yet on the Design System portal their
+ * content into (`data-rk="stakekit"`, removed with the legacy styles).
  *
  * Specificity sits between host and Widget styles: `html body` adds two type
  * selectors, so a reset rule beats a bare host element selector such as

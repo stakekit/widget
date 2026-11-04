@@ -95,3 +95,18 @@ export const Truncated: Story = {
     </div>
   ),
 };
+
+/** Emphasis inside translated copy, as `<Trans components>` renders it. */
+export const StrongAndMark: Story = {
+  render: () => (
+    <Text as="p">
+      Stake <Text.Mark>ETH</Text.Mark> and earn up to{" "}
+      <Text.Strong>4.21%</Text.Strong> a year.
+    </Text>
+  ),
+};
+
+export const StrongAndMarkDark: Story = {
+  ...StrongAndMark,
+  globals: { colorScheme: "dark" },
+};
