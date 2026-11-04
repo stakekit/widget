@@ -3,6 +3,10 @@ import * as stylex from "@stylexjs/stylex";
 import { type PropsWithChildren, useLayoutEffect } from "react";
 import { presentation } from "../tokens/presentation.stylex";
 import { controlHeight } from "../tokens/size.stylex";
+import {
+  type AppearancePreset,
+  appearancePresetThemes,
+} from "./appearance-presets";
 import { type ColorScheme, colorSchemeThemes } from "./color-schemes";
 
 /** The call-to-action height a Layout asks for. */
@@ -19,24 +23,27 @@ const callToActionThemes = { md: mediumCallToAction, lg: null };
 const portalAttribute = "data-sk-portal";
 
 /**
- * Applies the Design System's theme for a color scheme and presentation to
- * the Widget root it renders and to the portal container, so popups rendered
- * outside the root carry the same Color Roles. It sets no visual property on
- * the root itself: screens that have not moved to the Design System keep
- * their own styles.
+ * Applies the Design System's theme for a color scheme, Appearance Preset and
+ * presentation to the Widget root it renders and to the portal container, so
+ * popups rendered outside the root carry the same Color Roles. It sets no
+ * visual property on the root itself: screens that have not moved to the
+ * Design System keep their own styles.
  */
 export const ThemeRoot = ({
+  appearancePreset,
   callToActionSize,
   children,
   colorScheme,
   portalContainer,
 }: PropsWithChildren<{
+  readonly appearancePreset: AppearancePreset;
   readonly callToActionSize: CallToActionSize;
   readonly colorScheme: ColorScheme;
   readonly portalContainer: HTMLElement | undefined;
 }>) => {
   const { className = "" } = stylex.props(
     colorSchemeThemes[colorScheme],
+    appearancePresetThemes(appearancePreset, colorScheme),
     callToActionThemes[callToActionSize]
   );
 

@@ -29,11 +29,20 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   mounted as a host against the real API, configured from its panel and the
   page link, with a scripted host wallet on `window.skDev`. See the README's
   Development section. API mocking belongs to tests only.
-- `pnpm --filter @stakekit/widget lint` — widget formatting and type checks.
+- `pnpm --filter @stakekit/widget lint` — widget formatting, type checks,
+  StyleX lint on `src/ui`, and the Design System migration allowlist check
+  (`check:design-system-allowlist`; `--write` syncs the ast-grep mirrors).
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
 - `pnpm --filter @stakekit/widget test:browser:diagnostic` — Chromium tests with trace replay in `packages/widget/.vitest/index.html`; serve that directory over HTTP to view the report.
+- `pnpm --filter @stakekit/widget storybook` — Storybook for the Design System
+  (`packages/widget/src/ui/**/*.stories.tsx`) on port 6006, with color scheme
+  and Appearance Preset toolbars. `build-storybook` builds it into
+  `packages/widget/storybook-static`.
+- `pnpm --filter @stakekit/widget test:storybook` — every story as a Chromium
+  test; accessibility violations, failed plays and console errors fail it.
+  `pnpm test` and `pnpm check` include it.
 - `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication; run after changing the import graph or copying code between Modules.
 - `pnpm --filter @stakekit/widget gen:yield-providers` — regenerates the
   public `YieldProviderId` constants from the backend's yield provider enum,

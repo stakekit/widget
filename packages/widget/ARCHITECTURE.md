@@ -295,11 +295,13 @@ and Effect Atom registry.
   `services/transaction-workflow` private to their service, keeps API
   transport free of error presentation, and keeps `ui/compact/` and
   `ui/dashboard/` independent of each other and out of Layout-free code. It
-  allows StyleX, Base UI, `motion`, Recharts, TanStack Virtual, and style
-  definition modules only inside the Design System, restricts Features and
-  application composition to its main interface and its composition interface
-  to application composition, and keeps the Design System free of Features,
-  Resources, services, application composition, Domain, and `public-api`.
+  allows StyleX, Base UI, `motion`, Recharts, TanStack Virtual, the legacy
+  styling libraries, and style definition modules only inside the Design
+  System, with no cross-owner exception for style modules, restricts Features
+  and application composition to its main interface and its composition
+  interface to application composition, and keeps the Design System free of
+  Features, Resources, services, application composition, Domain, and
+  `public-api`.
 - Biome constrains barrels and keeps React out of domain, Resource, and service
   logic and out of Feature `model/` and `state/`.
 - ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
@@ -317,6 +319,13 @@ and Effect Atom registry.
   outside its token definitions and artwork, color literals and raw font size,
   weight, line height, radius, shadow, z-index, duration, and pixel values.
   Every suppression of these rules states its reason.
+- oxlint runs StyleX's lint rules (valid styles, unused styles, valid
+  shorthands, sorted keys) on the Design System as part of the widget `lint`.
+- Until the migration ends, files that break a Design System rule are listed
+  in `scripts/architecture/design-system-allowlist.ts`; its check, part of the
+  widget `lint`, fails on unlisted offenders and on entries that no longer
+  offend, so the list only shrinks. See
+  [the contributor guide](../../docs/design-system.md#enforcement).
 - Design System parts omit `className` and `style` from their types, and `as`
   is a finite union.
 - Every Design System part and variant has a story that runs as a Chromium

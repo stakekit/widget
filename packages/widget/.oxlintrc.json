@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "maxWarnings": 0,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "plugins": [],
+  "jsPlugins": ["@stylexjs/eslint-plugin"],
+  "categories": {
+    "correctness": "off"
+  },
+  "rules": {
+    "@stylexjs/valid-styles": "error",
+    "@stylexjs/no-unused": "error",
+    "@stylexjs/valid-shorthands": "error",
+    "@stylexjs/sort-keys": "error"
+  }
+}

@@ -1,15 +1,15 @@
 import * as stylex from "@stylexjs/stylex";
 
 /**
- * The Color Roles every Design System part reads. The defaults are the light
- * scheme; `theme/color-schemes.ts` holds the dark one. StyleX names each
- * custom property `--sk` followed directly by a hash, a namespace apart from
- * the legacy `--sk-*` theme variables. The names are not a host contract.
+ * The light scheme's Color Role values, which are the tokens' defaults.
+ * `theme/color-schemes.ts` holds the dark ones. They are plain data, so theme
+ * resolution, and the contrast test through it, reads the values the theme
+ * applies.
  *
  * `info` and `infoSoft` derive from the accent: the accent's text and soft
  * tint, so informational text keeps the accent's contrast.
  */
-export const color = stylex.defineVars({
+export const lightColorRoles = {
   background: "#FFFFFF",
   surface: "#F4F4F6",
   surfaceHover: "#ECECEF",
@@ -34,4 +34,17 @@ export const color = stylex.defineVars({
   infoSoft: "#EEF0FF",
   focusRing: "#4A60FF",
   scrim: "rgb(9 9 11 / 0.48)",
-});
+};
+
+/** A Color Role's name. */
+export type ColorRole = keyof typeof lightColorRoles;
+
+/** A value for every Color Role. */
+export type ColorRoles = Readonly<Record<ColorRole, string>>;
+
+/**
+ * The Color Roles every Design System part reads. StyleX names each custom
+ * property `--sk` followed directly by a hash, a namespace apart from the
+ * legacy `--sk-*` theme variables. The names are not a host contract.
+ */
+export const color = stylex.defineVars(lightColorRoles);

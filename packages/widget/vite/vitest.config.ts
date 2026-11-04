@@ -1,4 +1,5 @@
 import path from "node:path";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vite";
 import { getConfig } from "./vite.config.base.ts";
@@ -19,6 +20,13 @@ const testCacheDir = (project: "browser" | "dom" | "unit") =>
 export default defineConfig(
   getConfig(
     {
+      // Every project's server takes this list. The Storybook plugin's setup
+      // file lives in the workspace's pnpm store, outside the package root,
+      // which Vite takes for the workspace root because its package.json
+      // declares `workspaces`.
+      server: {
+        fs: { allow: [path.resolve(import.meta.dirname, "..", "..", "..")] },
+      },
       test: {
         projects: [
           {
@@ -81,6 +89,42 @@ export default defineConfig(
                 ),
               ],
               testTimeout: 20_000,
+              browser: {
+                enabled: true,
+                screenshotFailures: false,
+                provider: playwright(),
+                instances: [{ browser: "chromium" }],
+                viewport: { width: 800, height: 900 },
+                headless: true,
+              },
+            },
+          },
+          {
+            // Every Design System story renders in Chromium and fails on an
+            // accessibility violation, a failed play or a console error.
+            extends: true,
+            // Runtime injection imports this once a compiled module loads;
+            // found mid-run, it would reload the page and fail the run.
+            // The Storybook plugin sets its own cache directory.
+            optimizeDeps: { include: ["@stylexjs/stylex/lib/stylex-inject"] },
+            plugins: [
+              storybookTest({
+                configDir: path.resolve(
+                  import.meta.dirname,
+                  "..",
+                  ".storybook"
+                ),
+              }),
+            ],
+            test: {
+              name: "storybook",
+              setupFiles: [
+                path.resolve(
+                  import.meta.dirname,
+                  "..",
+                  "tests/utils/setup.storybook.ts"
+                ),
+              ],
               browser: {
                 enabled: true,
                 screenshotFailures: false,

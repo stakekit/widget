@@ -1,0 +1,15 @@
+id: no-html-element-outside-design-system
+valid:
+  - 'const row = <Box gap="8"><Text variant="label">Label</Text></Box>'
+  - 'const action = <Button variant="primary" size="cta" />'
+  - 'const field = <Form.Field name="amount" />'
+  - 'const fragment = <><Text>One</Text><Text>Two</Text></>'
+  - 'const message = t("html.div")'
+invalid:
+  - 'const box = <div className="x" />'
+  - 'const box = <div>content</div>'
+  - 'const action = <button type="button">Go</button>'
+  - 'const icon = <svg viewBox="0 0 24 24"><path d="M0 0" /></svg>'
+  - 'const link = <a href="https://yield.xyz">Docs</a>'
+  - 'const label = <Text><span>nested</span></Text>'
+  - 'const custom = <sk-widget />'

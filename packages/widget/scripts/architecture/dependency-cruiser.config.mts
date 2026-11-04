@@ -1,7 +1,14 @@
 /**
- * Layer and owned-Module import rules used by `check-architecture.ts`.
+ * Layer and owned-Module import rules used by `check-architecture.ts`, and
+ * the Design System's dependency rules with their migration allowlist
+ * (`design-system-allowlist.ts`).
  */
 import type { IConfiguration, IForbiddenRuleType } from "dependency-cruiser";
+import {
+  type DependencyCruiserRuleId,
+  type DesignSystemAllowlist,
+  designSystemAllowlist,
+} from "./design-system-allowlist";
 
 const layerNames = [
   "app",
@@ -294,7 +301,7 @@ const makeCollectionRules = (
     {
       name: `${prefix}-cross-module-internals-private`,
       severity: "error",
-      from: { path: collection.path, pathNot: "\\.css\\.ts$" },
+      from: { path: collection.path },
       to: {
         path: collection.anyPath,
         pathNot: [collection.sameOwnerPath, collection.interfacePath],
@@ -303,9 +310,7 @@ const makeCollectionRules = (
     {
       name: `${prefix}-internals-private`,
       severity: "error",
-      from: {
-        pathNot: [collection.anyPath, "\\.css\\.ts$"],
-      },
+      from: { pathNot: collection.anyPath },
       to: {
         path: collection.anyPath,
         pathNot: collection.interfacePath,
@@ -377,34 +382,6 @@ const makeCollectionRules = (
       }
     );
   }
-
-  rules.push(
-    {
-      name:
-        collection.kind === "feature"
-          ? "style-imports-only-target-styles"
-          : `${prefix}-style-imports-only-target-styles`,
-      severity: "error",
-      from: { path: `${collection.path.slice(0, -1)}.*\\.css\\.ts$` },
-      to: {
-        path: collection.anyPath,
-        pathNot: [
-          collection.sameOwnerPath,
-          collection.interfacePath,
-          "\\.css\\.ts$",
-        ],
-      },
-    },
-    {
-      name: `${prefix}-external-style-imports-only-target-styles`,
-      severity: "error",
-      from: { path: "\\.css\\.ts$", pathNot: collection.anyPath },
-      to: {
-        path: collection.anyPath,
-        pathNot: [collection.interfacePath, "\\.css\\.ts$"],
-      },
-    }
-  );
 
   if (collection.parentInterfacePath !== undefined) {
     rules.push({
@@ -489,7 +466,45 @@ const makeOwnedModuleRules = (
     ? makeApiModuleRules(declaration)
     : makeServiceModuleRules(declaration);
 
-const configuration: IConfiguration = {
+/**
+ * Styling and behavior libraries only the Design System may import. The
+ * legacy engine (vanilla-extract, Radix and its shared internals, clsx and the
+ * skeleton library) is listed so no new code adopts it before its removal.
+ * Unresolved specifiers (a library not installed yet) match by name.
+ */
+const designSystemLibraries = [
+  "@stylexjs/[^/]+",
+  "@base-ui/react",
+  "motion",
+  "recharts",
+  "@tanstack/react-virtual",
+  "@vanilla-extract/[^/]+",
+  "@radix-ui/[^/]+",
+  "react-remove-scroll",
+  "aria-hidden",
+  "clsx",
+  "react-loading-skeleton",
+];
+const designSystemLibraryPath = `(?:^|/node_modules/)(?:${designSystemLibraries.join("|")})(?:/|$)`;
+const styleModulePath = "\\.(?:stylex|css)\\.ts$|\\.css$";
+
+/** Exact-path patterns for the allowlisted importers of one rule. */
+const allowlisted = (
+  allowlist: DesignSystemAllowlist,
+  rule: DependencyCruiserRuleId
+): ReadonlyArray<string> =>
+  Object.entries(allowlist)
+    .filter(([, rules]) => rules.includes(rule))
+    .map(([path]) => `^${path.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
+
+/**
+ * The dependency-cruiser configuration with the given Design System
+ * migration allowlist; `check-design-system-allowlist.ts` builds it with an
+ * empty one to find every current offender.
+ */
+export const makeArchitectureConfiguration = (
+  allowlist: DesignSystemAllowlist
+): IConfiguration => ({
   forbidden: [
     {
       name: "undeclared-layer-imports",
@@ -565,6 +580,32 @@ const configuration: IConfiguration = {
       },
     },
     {
+      name: "design-system-owns-styling-libraries",
+      severity: "error",
+      comment:
+        "Only the Design System imports StyleX, Base UI, motion, Recharts, TanStack Virtual and the legacy styling libraries. Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
+      from: {
+        pathNot: [
+          "^src/ui/",
+          ...allowlisted(allowlist, "design-system-owns-styling-libraries"),
+        ],
+      },
+      to: { path: designSystemLibraryPath },
+    },
+    {
+      name: "design-system-owns-style-modules",
+      severity: "error",
+      comment:
+        "Only the Design System defines and imports style modules (`*.stylex.ts`, `*.css.ts`, `.css`). Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
+      from: {
+        pathNot: [
+          "^src/ui/",
+          ...allowlisted(allowlist, "design-system-owns-style-modules"),
+        ],
+      },
+      to: { path: styleModulePath },
+    },
+    {
       name: "design-system-internals-private",
       severity: "error",
       comment:
@@ -635,12 +676,12 @@ const configuration: IConfiguration = {
   options: {
     combinedDependencies: true,
     doNotFollow: { path: "node_modules" },
-    includeOnly: ["^src/"],
+    includeOnly: ["^src/", designSystemLibraryPath],
     moduleSystems: ["es6", "cjs"],
     progress: { type: "none" },
     tsConfig: { fileName: "tsconfig.json" },
     tsPreCompilationDeps: true,
   },
-};
+});
 
-export default configuration;
+export default makeArchitectureConfiguration(designSystemAllowlist);

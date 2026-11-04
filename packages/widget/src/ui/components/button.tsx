@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes } from "react";
+import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { presentation } from "../tokens/presentation.stylex";
@@ -55,24 +56,24 @@ export const Button = ({
 
 const styles = stylex.create({
   root: {
-    alignItems: "center",
+    margin: 0,
     borderColor: "transparent",
     borderRadius: radius.control,
     borderStyle: "solid",
-    borderWidth: 1,
+    borderWidth: borderWidth.thin,
+    gap: space[8],
+    paddingBlock: 0,
+    alignItems: "center",
     boxSizing: "border-box",
     cursor: { default: "pointer", ":disabled": "not-allowed" },
     display: "inline-flex",
     fontFamily: font.sans,
     fontWeight: fontWeight.semibold,
-    gap: space[8],
     justifyContent: "center",
-    margin: 0,
     outlineColor: color.focusRing,
-    outlineOffset: 2,
+    outlineOffset: focusRing.offset,
     outlineStyle: { default: "none", ":focus-visible": "solid" },
-    outlineWidth: 2,
-    paddingBlock: 0,
+    outlineWidth: focusRing.width,
     textAlign: "center",
     transform: {
       default: "none",
@@ -85,17 +86,17 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
   },
   spinner: {
+    borderColor: "currentColor",
+    borderRadius: radius.pill,
+    borderStyle: "solid",
+    borderWidth: borderWidth.thick,
     animationDuration: motion.spin,
     animationIterationCount: "infinite",
     animationName: spin,
-    animationTimingFunction: "linear",
-    borderColor: "currentColor",
-    borderRadius: radius.pill,
-    borderRightColor: "transparent",
-    borderStyle: "solid",
-    borderWidth: 2,
+    animationTimingFunction: motion.linear,
     boxSizing: "border-box",
     flexShrink: 0,
+    borderRightColor: "transparent",
     height: "1em",
     width: "1em",
   },
@@ -113,11 +114,11 @@ const variantStyles = stylex.create({
     color: { default: color.onAccent, ":disabled": color.textMuted },
   },
   secondary: {
+    borderColor: { default: color.borderStrong, ":disabled": color.border },
     backgroundColor: {
       default: color.surface,
       ":hover:not(:disabled)": color.surfaceHover,
     },
-    borderColor: { default: color.borderStrong, ":disabled": color.border },
     color: { default: color.text, ":disabled": color.textMuted },
   },
   ghost: {
@@ -129,39 +130,39 @@ const variantStyles = stylex.create({
   },
   // Status colors stay text on their soft tint; hover outlines the button.
   danger: {
-    backgroundColor: { default: color.dangerSoft, ":disabled": color.surface },
     borderColor: {
       default: "transparent",
       ":hover:not(:disabled)": color.danger,
     },
+    backgroundColor: { default: color.dangerSoft, ":disabled": color.surface },
     color: { default: color.danger, ":disabled": color.textMuted },
   },
 });
 
 const sizeStyles = stylex.create({
   sm: {
-    fontSize: fontSize.label,
-    height: controlHeight.sm,
-    lineHeight: lineHeight.label,
     paddingInline: space[12],
+    fontSize: fontSize.label,
+    lineHeight: lineHeight.label,
+    height: controlHeight.sm,
   },
   md: {
-    fontSize: fontSize.body,
-    height: controlHeight.md,
-    lineHeight: lineHeight.body,
     paddingInline: space[16],
+    fontSize: fontSize.body,
+    lineHeight: lineHeight.body,
+    height: controlHeight.md,
   },
   lg: {
-    fontSize: fontSize.heading,
-    height: controlHeight.lg,
-    lineHeight: lineHeight.heading,
     paddingInline: space[20],
+    fontSize: fontSize.heading,
+    lineHeight: lineHeight.heading,
+    height: controlHeight.lg,
   },
   cta: {
-    fontSize: fontSize.heading,
-    height: presentation.callToActionHeight,
-    lineHeight: lineHeight.heading,
     paddingInline: space[24],
+    fontSize: fontSize.heading,
+    lineHeight: lineHeight.heading,
+    height: presentation.callToActionHeight,
     width: "100%",
   },
 });

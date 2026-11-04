@@ -1,11 +1,15 @@
 import * as stylex from "@stylexjs/stylex";
-import { color } from "../tokens/color.stylex";
+import {
+  type ColorRoles,
+  color,
+  lightColorRoles,
+} from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 
 /** The color schemes the theme root applies. Light is the tokens' default. */
 export type ColorScheme = "light" | "dark";
 
-const darkColors = stylex.createTheme(color, {
+const darkColorRoles: ColorRoles = {
   background: "#151517",
   surface: "#202024",
   surfaceHover: "#2A2A2F",
@@ -30,7 +34,9 @@ const darkColors = stylex.createTheme(color, {
   infoSoft: "#1E2238",
   focusRing: "#8C9BFF",
   scrim: "rgb(0 0 0 / 0.64)",
-});
+};
+
+const darkColors = stylex.createTheme(color, darkColorRoles);
 
 // In dark, the shell is outlined in the border role instead of casting a shadow.
 const darkElevation = stylex.createTheme(elevation, {
@@ -48,4 +54,10 @@ const schemeStyles = stylex.create({
 export const colorSchemeThemes = {
   light: [schemeStyles.light],
   dark: [darkColors, darkElevation, schemeStyles.dark],
+};
+
+/** Every Color Role's value in each color scheme, before any preset. */
+export const colorSchemeRoles: Readonly<Record<ColorScheme, ColorRoles>> = {
+  light: lightColorRoles,
+  dark: darkColorRoles,
 };

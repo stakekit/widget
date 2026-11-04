@@ -176,13 +176,47 @@ around it in the Feature.
 8. Add its stories.
 
 Do not suppress a design-system rule to ship a screen. A suppression is a
-deliberate exception and states its reason.
+deliberate exception and states its reason after ` -- `, for example
+`// ast-grep-ignore: no-raw-design-value -- <why no token fits>`.
+
+## Enforcement
+
+`pnpm lint` and `pnpm check-hygiene` enforce the rules above:
+
+- dependency-cruiser (`design-system-owns-styling-libraries`,
+  `design-system-owns-style-modules`) keeps StyleX, Base UI, `motion`,
+  Recharts, TanStack Virtual, the legacy styling libraries (vanilla-extract,
+  Radix and its internals, clsx, the skeleton library) and style modules
+  (`*.stylex.ts`, `*.css.ts`, `.css`) inside `src/ui/`, and keeps other owners
+  on its two interfaces.
+- ast-grep rejects lowercase JSX elements
+  (`no-html-element-outside-design-system`) and `className` or `style`
+  (`no-class-name-or-style-outside-design-system`) in Features and application
+  composition, and, inside `src/ui/` outside the token definitions
+  (`src/ui/tokens/`, the theme definitions in `src/ui/theme/*.ts`) and artwork
+  (`src/ui/artwork/`), color literals (`no-color-literal-in-design-system`) and
+  raw font sizes, weights, line heights, radii, shadows, z-indices, durations
+  and pixel values in StyleX definitions (`no-raw-design-value`).
+  `no-unexplained-design-system-suppression` fails a suppression of these
+  rules, or of StyleX's lint rules, without a reason.
+- oxlint runs StyleX's lint rules (valid styles, unused styles, valid
+  shorthands, sorted keys) on `src/ui/`:
+  `pnpm --filter @stakekit/widget lint:stylex`.
+
+During the migration, files that have not moved yet are listed in
+`packages/widget/scripts/architecture/design-system-allowlist.ts` with the
+rules they break. `pnpm --filter @stakekit/widget check:design-system-allowlist`
+(part of `lint`) fails on an offender the list does not name and on an entry
+that no longer offends, so the list only shrinks. After migrating a file, delete
+its entry and run the check with `--write`, which copies the list into the
+ast-grep rules' `ignores`.
 
 ## Artwork
 
 Brand artwork (the logo, the Morpho mark) and the generated-avatar palette live
-in the Design System as artwork. They are exempt from the color-literal rule by
-location, and their colors never leak into controls or Color Roles.
+in the Design System as artwork, in `src/ui/artwork/`. They are exempt from the
+color-literal rule by location, and their colors never leak into controls or
+Color Roles.
 
 ## Stories
 

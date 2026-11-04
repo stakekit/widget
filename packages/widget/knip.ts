@@ -8,11 +8,17 @@ export default {
     "tests/package-types/*.ts",
     "tests/utils/setup.browser.ts",
     "tests/utils/setup.dom.ts",
+    "tests/utils/setup.storybook.ts",
     "tests/**/*.test.ts",
     "tests/**/*.test.tsx",
+    ".storybook/{main,preview}.{ts,tsx}",
+    "src/**/*.stories.tsx",
   ],
   project: [
     "src/**/*.{ts,tsx}!",
+    // Stories are development-only.
+    "!src/**/*.stories.tsx!",
+    ".storybook/*.{ts,tsx}",
     "playground/**/*.{ts,tsx}",
     "scripts/**/*.{ts,mts}",
     "tests/**/*.{ts,tsx}",

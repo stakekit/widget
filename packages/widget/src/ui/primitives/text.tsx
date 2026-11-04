@@ -68,13 +68,13 @@ export const Text = ({
 
 const styles = stylex.create({
   root: {
-    fontFamily: font.sans,
     margin: 0,
+    fontFamily: font.sans,
   },
   numeric: { fontVariantNumeric: "tabular-nums" },
   truncate: {
-    display: "block",
     overflow: "hidden",
+    display: "block",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },

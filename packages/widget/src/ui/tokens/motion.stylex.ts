@@ -10,5 +10,7 @@ export const motion = stylex.defineVars({
   // One turn of a loading spinner; 0ms stops it.
   spin: { default: "800ms", [REDUCED_MOTION]: "0ms" },
   easing: "cubic-bezier(0.2, 0, 0, 1)",
+  // Constant speed, for motion that loops, such as a spinner.
+  linear: "linear",
   press: { default: "scale(0.98)", [REDUCED_MOTION]: "none" },
 });

@@ -100,6 +100,8 @@ export const ThemeStyles = ({
         }}
       />
       <ThemeRoot
+        // Host Profiles name no Appearance Preset yet.
+        appearancePreset="default"
         callToActionSize={callToActionSizes[layout]}
         // Host Configuration does not choose a color scheme yet, so every
         // Widget renders the light default.

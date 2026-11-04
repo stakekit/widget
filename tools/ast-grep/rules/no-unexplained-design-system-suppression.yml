@@ -1,0 +1,15 @@
+id: no-unexplained-design-system-suppression
+language: Tsx
+severity: error
+message: 'A suppression of a Design System rule states its reason after ` -- `, for example `// ast-grep-ignore: no-raw-design-value -- <why this value cannot be a token>`. Prefer extending the Design System to suppressing its rules.'
+note: Covers the Design System's ast-grep rules and StyleX's oxlint rules, including blanket oxlint or ESLint disables.
+files:
+  - packages/widget/**
+rule:
+  all:
+    - kind: comment
+    - any:
+        - regex: ast-grep-ignore:[^\n]*\b(?:no-html-element-outside-design-system|no-class-name-or-style-outside-design-system|no-color-literal-in-design-system|no-raw-design-value)\b
+        - regex: (?:oxlint|eslint)-disable(?:-next-line|-line)?(?:\s*(?:\*/\s*)?$|\s[^\n]*@stylexjs/)
+    - not:
+        regex: \s--\s+\S

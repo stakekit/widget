@@ -149,6 +149,12 @@ catalog:
   vitest-browser-react: ^2.3.0
   wagmi: 3.7.9
   yaml: ^2.9.1
+  '@storybook/addon-a11y': 10.6.5
+  '@storybook/addon-vitest': 10.6.5
+  '@storybook/react-vite': 10.6.5
+  '@stylexjs/eslint-plugin': 0.19.1
+  oxlint: 1.90.0
+  storybook: 10.6.5
 
 minimumReleaseAge: 4320
 

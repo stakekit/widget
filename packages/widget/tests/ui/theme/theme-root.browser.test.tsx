@@ -19,6 +19,7 @@ describe("ThemeRoot", () => {
 
       const screen = await render(
         <ThemeRoot
+          appearancePreset="default"
           callToActionSize="lg"
           colorScheme={colorScheme}
           portalContainer={portalContainer}
@@ -45,6 +46,7 @@ describe("ThemeRoot", () => {
     const screen = await render(
       <>
         <ThemeRoot
+          appearancePreset="default"
           callToActionSize="lg"
           colorScheme="light"
           portalContainer={undefined}
@@ -52,6 +54,7 @@ describe("ThemeRoot", () => {
           <Button size="cta">Large</Button>
         </ThemeRoot>
         <ThemeRoot
+          appearancePreset="default"
           callToActionSize="md"
           colorScheme="light"
           portalContainer={undefined}

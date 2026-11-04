@@ -1,0 +1,117 @@
+id: no-class-name-or-style-outside-design-system
+language: Tsx
+severity: error
+message: 'Features and application composition pass no `className` or `style`. Choose a Design System prop (a tone, size, variant or spacing value); if none fits, extend the Design System instead of styling the screen.'
+note: |
+  See docs/design-system.md, "Extending instead of working around". The
+  exact-path `ignores` are the files not migrated yet, mirrored from
+  packages/widget/scripts/architecture/design-system-allowlist.ts.
+files:
+  - packages/widget/src/features/**
+  - packages/widget/src/app/**
+  - packages/widget/src/App.tsx
+rule:
+  kind: jsx_attribute
+  has:
+    kind: property_identifier
+    regex: ^(?:className|style)$
+ignores:
+  - packages/widget/src/app/layouts/compact/compact-routes.tsx
+  - packages/widget/src/app/layouts/dashboard/dashboard-overview.tsx
+  - packages/widget/src/app/layouts/dashboard/dashboard-shell.tsx
+  - packages/widget/src/app/layouts/dashboard/dashboard-tabs/index.tsx
+  - packages/widget/src/app/layouts/dashboard/dashboard-tabs/tab.tsx
+  - packages/widget/src/features/activity/ui/activity-details/activity-details.page.tsx
+  - packages/widget/src/features/activity/ui/activity-page/activity-page-presentation.tsx
+  - packages/widget/src/features/activity/ui/activity-page/components/action-list-item/index.tsx
+  - packages/widget/src/features/activity/ui/activity-page/components/activity-filters/index.tsx
+  - packages/widget/src/features/activity/ui/activity-page/components/activity-icon/index.tsx
+  - packages/widget/src/features/activity/ui/dashboard/activity/index.tsx
+  - packages/widget/src/features/borrow-transaction-flow/ui/complete.tsx
+  - packages/widget/src/features/borrow-transaction-flow/ui/review.tsx
+  - packages/widget/src/features/borrow-transaction-flow/ui/steps.tsx
+  - packages/widget/src/features/borrow/action-feedback/ui/notice.tsx
+  - packages/widget/src/features/borrow/amount-input/ui/amount-field.tsx
+  - packages/widget/src/features/borrow/borrow-entry/ui/components/asset-selector.tsx
+  - packages/widget/src/features/borrow/borrow-entry/ui/components/details-panel.tsx
+  - packages/widget/src/features/borrow/borrow-entry/ui/components/form-details.tsx
+  - packages/widget/src/features/borrow/borrow-entry/ui/components/market-select-modal.tsx
+  - packages/widget/src/features/borrow/borrow-entry/ui/components/notices.tsx
+  - packages/widget/src/features/borrow/borrow-entry/ui/layout.tsx
+  - packages/widget/src/features/borrow/market-position/ui/actions.page.tsx
+  - packages/widget/src/features/borrow/market-position/ui/components/collateral-list.tsx
+  - packages/widget/src/features/borrow/market-position/ui/components/ltv-gauge.tsx
+  - packages/widget/src/features/borrow/market-position/ui/components/skeletons.tsx
+  - packages/widget/src/features/borrow/market-position/ui/forms/amount-input-card.tsx
+  - packages/widget/src/features/borrow/market-position/ui/forms/repay-action-form.tsx
+  - packages/widget/src/features/borrow/market-position/ui/forms/withdraw-action-form.tsx
+  - packages/widget/src/features/earn/ui/compact/earn-page/components/select-provider/index.tsx
+  - packages/widget/src/features/earn/ui/compact/earn-page/components/select-validator-section/select-validator-trigger.tsx
+  - packages/widget/src/features/earn/ui/compact/earn-page/earn.page.tsx
+  - packages/widget/src/features/earn/ui/components/earn-provider-option-selection.tsx
+  - packages/widget/src/features/earn/ui/components/select-opportunity-list-item/index.tsx
+  - packages/widget/src/features/earn/ui/components/select-token-section/index.tsx
+  - packages/widget/src/features/earn/ui/components/select-token-section/select-token-list-item.tsx
+  - packages/widget/src/features/earn/ui/components/select-yield-section/index.tsx
+  - packages/widget/src/features/earn/ui/components/select-yield-section/select-opportunity.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/earn-details-metrics.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/external-link-icon.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/history-chart-section.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/integration-docs-link.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/network-detail-value.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/components/provider-selection-card.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/earn-details-model.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/index.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-details/reward-rate-chart.tsx
+  - packages/widget/src/features/earn/ui/dashboard/earn-page/index.tsx
+  - packages/widget/src/features/portfolio/ui/compact/positions-page/positions.page.tsx
+  - packages/widget/src/features/portfolio/ui/components/earn-position-list-item.tsx
+  - packages/widget/src/features/portfolio/ui/components/summary-item/index.tsx
+  - packages/widget/src/features/portfolio/ui/dashboard/positions/components/positions-list-item.tsx
+  - packages/widget/src/features/portfolio/ui/dashboard/positions/components/positions-section-header.tsx
+  - packages/widget/src/features/portfolio/ui/dashboard/positions/positions.page.tsx
+  - packages/widget/src/features/portfolio/ui/dashboard/summary/index.tsx
+  - packages/widget/src/features/position-details/ui/compact/components/provider-details.tsx
+  - packages/widget/src/features/position-details/ui/compact/position-details.page.tsx
+  - packages/widget/src/features/position-details/ui/components/static-action-block.tsx
+  - packages/widget/src/features/position-details/ui/dashboard/components/position-details-action-tabs.tsx
+  - packages/widget/src/features/position-details/ui/dashboard/components/position-details-hub.tsx
+  - packages/widget/src/features/position-details/ui/dashboard/components/position-details-info.tsx
+  - packages/widget/src/features/preferences/ui/help-modal/index.tsx
+  - packages/widget/src/features/preferences/ui/tos-modal/index.tsx
+  - packages/widget/src/features/wallet/ui/account-modal/index.tsx
+  - packages/widget/src/features/wallet/ui/chain-modal/index.tsx
+  - packages/widget/src/features/wallet/ui/connect-modal/index.tsx
+  - packages/widget/src/features/wallet/ui/wallet-dialog/avatar.tsx
+  - packages/widget/src/features/wallet/ui/wallet-dialog/chain-icon.tsx
+  - packages/widget/src/features/wallet/ui/wallet-dialog/index.tsx
+  - packages/widget/src/features/widget-shell/ui/animation-layout.tsx
+  - packages/widget/src/features/widget-shell/ui/animation-page.tsx
+  - packages/widget/src/features/widget-shell/ui/app-container.tsx
+  - packages/widget/src/features/widget-shell/ui/compact/compact-layout/index.tsx
+  - packages/widget/src/features/widget-shell/ui/compact/details/components/tab.tsx
+  - packages/widget/src/features/widget-shell/ui/compact/details/components/tabs.tsx
+  - packages/widget/src/features/widget-shell/ui/compact/header/index.tsx
+  - packages/widget/src/features/widget-shell/ui/dashboard/header.tsx
+  - packages/widget/src/features/widget-shell/ui/dashboard/split-view/index.tsx
+  - packages/widget/src/features/widget-shell/ui/page-container.tsx
+  - packages/widget/src/features/widget-shell/ui/page-cta.tsx
+  - packages/widget/src/features/widget-shell/ui/powered-by.tsx
+  - packages/widget/src/features/widget-shell/ui/rich-error-modal/index.tsx
+  - packages/widget/src/features/widget-shell/ui/shell-notice/index.tsx
+  - packages/widget/src/features/widget-shell/ui/under-maintenance/index.tsx
+  - packages/widget/src/features/yield-entry/ui/components/select-validator/index.tsx
+  - packages/widget/src/features/yield-entry/ui/components/select-validator/meta-info.tsx
+  - packages/widget/src/features/yield-entry/ui/components/select-validator/select-validator-list.tsx
+  - packages/widget/src/features/yield-summary/ui/components/estimated-reward-amounts/index.tsx
+  - packages/widget/src/features/yield-summary/ui/components/kyc-gate-card/index.tsx
+  - packages/widget/src/features/yield-summary/ui/components/kyc-gate-card/verification-modal.tsx
+  - packages/widget/src/features/yield-summary/ui/components/meta-info/index.tsx
+  - packages/widget/src/features/yield-summary/ui/components/reward-token-details/get-reward-token-symbols.tsx
+  - packages/widget/src/features/yield-summary/ui/components/reward-token-details/index.tsx
+  - packages/widget/src/features/yield-summary/ui/components/yield-details-header/index.tsx
+  - packages/widget/src/features/yield-summary/ui/components/yield-risk/index.tsx
+  - packages/widget/src/features/yield-transaction-flow/ui/review/pages/common-page/common.page.tsx
+  - packages/widget/src/features/yield-transaction-flow/ui/review/pages/common-page/components/review-top-section.tsx
+  - packages/widget/src/features/yield-transaction-flow/ui/review/pages/unstake-sign-popup.tsx
+  - packages/widget/src/features/yield-transaction-flow/ui/steps/pages/common.page.tsx
