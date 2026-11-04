@@ -590,7 +590,9 @@ describe("Borrow Entry atoms", () => {
           applicationRuntimeInitInitialValue({
             apiKey: "api-key",
             borrowEnabled: true,
-            borrowMarketsScope: configured,
+            ...(configured === undefined
+              ? {}
+              : { borrowMarketsScope: configured }),
             dashboardVariant: true,
             variant: "default",
           }),

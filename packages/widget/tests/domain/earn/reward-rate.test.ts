@@ -54,7 +54,7 @@ describe("getEffectiveYieldRewardRateDetails", () => {
     );
 
     const rewardRate = getEffectiveYieldRewardRateDetails({
-      selectedValidators: new Map([[validator.address, validator]]),
+      selectedValidators: new Map([[validator.key, validator]]),
       yieldDto,
     });
 
@@ -89,8 +89,8 @@ describe("getEffectiveYieldRewardRateDetails", () => {
 
     const rewardRate = getEffectiveYieldRewardRateDetails({
       selectedValidators: new Map([
-        [firstValidator.address, firstValidator],
-        [secondValidator.address, secondValidator],
+        [firstValidator.key, firstValidator],
+        [secondValidator.key, secondValidator],
       ]),
       yieldDto,
     });

@@ -1,5 +1,6 @@
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { ActionMetadata } from "../../../domain/borrow/execution/action";
+import type { MarketId } from "../../../domain/borrow/ids";
 import type { BorrowPositions } from "../../../domain/borrow/positions/borrow-positions";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import {
@@ -50,10 +51,10 @@ export const settleBorrowPosition = ({
   positions,
 }: {
   readonly action: Summary["action"];
-  readonly marketId: string;
+  readonly marketId: MarketId;
   readonly markets: ReadonlyArray<Market>;
   /** The position page's market; a pool collateral action targets another. */
-  readonly positionMarketId: string;
+  readonly positionMarketId: MarketId;
   readonly positions: BorrowPositions;
 }): BorrowSettledPosition | null => {
   const market = markets.find((candidate) => candidate.id === marketId);
@@ -170,7 +171,7 @@ export const projectBorrowCompletion = ({
   settled,
   summary,
 }: {
-  readonly metadata?: ActionMetadata;
+  readonly metadata?: ActionMetadata | undefined;
   readonly settled?: BorrowSettledPosition | null;
   readonly summary: Summary;
 }) => {

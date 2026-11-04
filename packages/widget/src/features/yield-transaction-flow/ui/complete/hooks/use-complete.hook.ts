@@ -51,9 +51,7 @@ export const useComplete = () => {
     isLoading: false,
     label:
       activityAction === null
-        ? t("complete.continue", {
-            context: opensLedgerEarn ? "ledger" : undefined,
-          })
+        ? t("complete.continue", opensLedgerEarn ? { context: "ledger" } : {})
         : t("activity.complete.continue"),
     onClick,
     hide: false,

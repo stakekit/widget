@@ -44,7 +44,7 @@ const formatValidatorTvl = (
   selectedStake: EarnYieldWithProvider,
   locale: string
 ) => {
-  const tvl = validator.tvl ?? validator.tvlRaw;
+  const tvl = validator.tvl;
 
   if (!tvl) return null;
 

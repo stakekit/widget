@@ -7,6 +7,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import { WalletAddress } from "../../../../domain/identity/identifiers";
 import { sameWalletScopeOwner } from "../../../../domain/wallet/wallet-scope";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import type { WalletRuntimeInvariantError } from "../../wallet-errors";
@@ -62,7 +63,7 @@ const makeContextStream = ({
 }) =>
   makeCompleteWalletStateStream({
     controller,
-    previous,
+    ...(previous === undefined ? {} : { previous }),
     projection: core,
     readStoredPublicKeys,
   }).pipe(
@@ -109,6 +110,8 @@ const makeTransitionContext = ({
   };
 };
 
+const isWalletAddress = Schema.is(WalletAddress);
+
 const hasSameCommandIdentity = (
   current: WalletStateContext,
   next: WalletCoreState
@@ -118,7 +121,7 @@ const hasSameCommandIdentity = (
   if (
     currentConnection.status !== "connected" ||
     nextConnection.status !== "connected" ||
-    !nextConnection.address ||
+    !isWalletAddress(nextConnection.address) ||
     !nextConnection.connector
   ) {
     return false;
@@ -203,7 +206,7 @@ export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
         makeContextStream({
           controller,
           core: next,
-          previous,
+          ...(previous === undefined ? {} : { previous }),
           readStoredPublicKeys,
         })
       ),

@@ -33,7 +33,12 @@ const chainIcons: Readonly<Partial<Record<number, ChainIcon>>> = {
   999: { iconUrl: hyperevm, iconBackground: "#000000" },
 };
 
-export const walletChainIcon = (chain: Chain): ChainIcon => ({
-  iconUrl: chain.iconUrl ?? chainIcons[chain.id]?.iconUrl,
-  iconBackground: chain.iconBackground ?? chainIcons[chain.id]?.iconBackground,
-});
+export const walletChainIcon = (chain: Chain): ChainIcon => {
+  const fallback = chainIcons[chain.id];
+  const iconUrl = chain.iconUrl ?? fallback?.iconUrl;
+  const iconBackground = chain.iconBackground ?? fallback?.iconBackground;
+  return {
+    ...(iconUrl === undefined ? {} : { iconUrl }),
+    ...(iconBackground === undefined ? {} : { iconBackground }),
+  };
+};

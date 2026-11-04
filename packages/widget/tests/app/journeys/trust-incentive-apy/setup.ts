@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
@@ -202,11 +202,10 @@ export const setup = async (
       },
     },
     metadata: {
-      ...legacyYieldBase.metadata,
+      ...Struct.omit(legacyYieldBase.metadata, ["rewardTokens"]),
       name: "Trust USDA Earn",
       type: "vault",
       token,
-      rewardTokens: undefined,
       gasFeeToken: token,
       provider: {
         id: legacyYieldBase.metadata.provider?.id ?? "benqi",

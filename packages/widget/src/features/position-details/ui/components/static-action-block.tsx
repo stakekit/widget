@@ -1,10 +1,8 @@
 import type BigNumber from "bignumber.js";
+import { toLowerCase } from "effect/String";
 import { Trans, useTranslation } from "react-i18next";
 import type { PendingAction } from "../../../../domain/action/models";
-import {
-  getPendingActionLabelContext,
-  type YieldPendingActionType,
-} from "../../../../domain/action/pending-action";
+import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import {
   getCancelReturn,
   isConfidentialYield,
@@ -43,8 +41,7 @@ export const StaticActionBlock = ({
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const actionKey =
-    pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>;
+  const actionKey = toLowerCase(pendingAction.type);
   const labelContext = getPendingActionLabelContext(
     pendingAction.type,
     yieldBalance.type,

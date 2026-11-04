@@ -60,6 +60,7 @@ export const VirtualList = <ItemData,>({
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
+  // biome-ignore lint/nursery/useReactCompiler: this component opts out with "use no memo", which Biome's incompatible-library check does not read.
   const rowVirtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => innerRef.current,
@@ -145,6 +146,7 @@ export const GroupedVirtualList = ({
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
+  // biome-ignore lint/nursery/useReactCompiler: this component opts out with "use no memo", which Biome's incompatible-library check does not read.
   const rowVirtualizer = useVirtualizer({
     count: groupCounts.reduce(
       (acc, numChildren) => acc + numChildren,
@@ -153,8 +155,12 @@ export const GroupedVirtualList = ({
     getScrollElement: () => innerRef.current,
     estimateSize,
     overscan: 10,
-    paddingStart: increaseViewportBy?.top,
-    paddingEnd: increaseViewportBy?.bottom,
+    ...(increaseViewportBy?.top === undefined
+      ? {}
+      : { paddingStart: increaseViewportBy.top }),
+    ...(increaseViewportBy?.bottom === undefined
+      ? {}
+      : { paddingEnd: increaseViewportBy.bottom }),
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
@@ -175,7 +181,7 @@ export const GroupedVirtualList = ({
 
   const { resultArray } = useMemo(
     () =>
-      groupCounts.reduce(
+      groupCounts.reduce<{ resultArray: ResultsArray[]; childIndex: number }>(
         (acc, numChildren, parentIndex) => {
           acc.resultArray.push({ type: "parent", index: parentIndex });
 
@@ -195,7 +201,7 @@ export const GroupedVirtualList = ({
 
           return acc;
         },
-        { resultArray: [] as ResultsArray[], childIndex: 0 }
+        { resultArray: [], childIndex: 0 }
       ),
     [groupCounts]
   );

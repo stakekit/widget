@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Fiber, Option, Queue, Scope } from "effect";
 import {
+  makeWalletConnectConnection,
   makeWalletConnectPresentation,
   type WalletConnectModal,
 } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
@@ -57,7 +58,10 @@ describe("WalletConnect presentation", () => {
               })
           );
         yield* presentation
-          .connect({ connection: Effect.never, subscribeUri })
+          .connect({
+            connection: makeWalletConnectConnection(Effect.never),
+            subscribeUri,
+          })
           .pipe(Effect.forkIn(scope, { startImmediately: true }));
         yield* Effect.promise(() => opened.promise);
 
@@ -75,7 +79,7 @@ describe("WalletConnect presentation", () => {
         expect(
           yield* Effect.flip(
             presentation.connect({
-              connection: Effect.never,
+              connection: makeWalletConnectConnection(Effect.never),
               subscribeUri: (publish) => Effect.sync(() => publish(uri)),
             })
           )
@@ -119,7 +123,7 @@ describe("WalletConnect presentation", () => {
         );
         const connection = yield* presentation
           .connect({
-            connection: Effect.never,
+            connection: makeWalletConnectConnection(Effect.never),
             subscribeUri: (publish) => Effect.sync(() => publish(uri)),
           })
           .pipe(Effect.forkScoped({ startImmediately: true }));
@@ -172,27 +176,29 @@ describe("WalletConnect presentation", () => {
             deepLinks.push(url);
           }
         );
-        const connection = Effect.tryPromise({
-          try: async (signal) => {
-            sdkStarts++;
-            emitUri?.(sdkStarts === 1 ? uri : "wc:next-proposal@2");
-            const approved = await (sdkStarts === 1
-              ? firstApproval.promise
-              : nextApproval.promise);
-            session = approved;
-            if (signal.aborted) {
-              disconnects++;
-              session = undefined;
-            }
-            return approved;
-          },
-          catch: (cause) =>
-            new WalletIntegrationError({
-              cause,
-              message: "SDK approval failed",
-              operation: "test-connect",
-            }),
-        });
+        const connection = makeWalletConnectConnection(
+          Effect.tryPromise({
+            try: async (signal) => {
+              sdkStarts++;
+              emitUri?.(sdkStarts === 1 ? uri : "wc:next-proposal@2");
+              const approved = await (sdkStarts === 1
+                ? firstApproval.promise
+                : nextApproval.promise);
+              session = approved;
+              if (signal.aborted) {
+                disconnects++;
+                session = undefined;
+              }
+              return approved;
+            },
+            catch: (cause) =>
+              new WalletIntegrationError({
+                cause,
+                message: "SDK approval failed",
+                operation: "test-connect",
+              }),
+          })
+        );
         const subscribeUri = (publish: (uri: string) => void) =>
           Effect.acquireRelease(
             Effect.promise(async () => {
@@ -266,15 +272,17 @@ describe("WalletConnect presentation", () => {
         }),
         () => {}
       );
-      const connection = Effect.tryPromise({
-        try: () => approval.promise,
-        catch: (cause) =>
-          new WalletIntegrationError({
-            cause,
-            message: "Approval failed",
-            operation: "test-connect",
-          }),
-      });
+      const connection = makeWalletConnectConnection(
+        Effect.tryPromise({
+          try: () => approval.promise,
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "Approval failed",
+              operation: "test-connect",
+            }),
+        })
+      );
       const input = {
         connection,
         subscribeUri: (publish: (uri: string) => void) =>
@@ -319,7 +327,9 @@ describe("WalletConnect presentation", () => {
         );
         const connecting = yield* presentation
           .connect({
-            connection: Effect.promise(() => approval.promise),
+            connection: makeWalletConnectConnection(
+              Effect.promise(() => approval.promise)
+            ),
             subscribeUri: (publish) =>
               Effect.sync(() => {
                 publishUri = publish;
@@ -379,7 +389,7 @@ describe("WalletConnect presentation", () => {
         yield* walletModal.openConnect;
         const connecting = yield* presentation
           .connect({
-            connection: Effect.never,
+            connection: makeWalletConnectConnection(Effect.never),
             subscribeUri: (publish) =>
               Effect.sync(() => {
                 publishUri = publish;
@@ -431,7 +441,7 @@ describe("WalletConnect presentation", () => {
         yield* walletModal.openConnect;
         const connecting = yield* presentation
           .connect({
-            connection: Effect.never,
+            connection: makeWalletConnectConnection(Effect.never),
             subscribeUri: (publish) =>
               Effect.sync(() => {
                 publishUri = publish;

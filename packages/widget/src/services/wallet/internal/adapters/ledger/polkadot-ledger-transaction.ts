@@ -1,14 +1,26 @@
-import type { RawTransaction } from "@ledgerhq/wallet-api-core";
+import type {
+  RawPolkadotTransaction,
+  RawTransaction,
+} from "@ledgerhq/wallet-api-core";
 import { TypeRegistry } from "@polkadot/types";
-import { Result } from "effect";
+import { Option, Result, Schema } from "effect";
 import type { YieldTransactionMeta } from "../../../wallet-transactions";
 import type { substratePayloadCodec } from "../substrate/transaction";
 
-type SubstrateHumanMethod = {
-  section: string;
-  method: string;
-  args: Record<string, unknown> | null;
-};
+const SubstrateHumanMethod = Schema.Struct({
+  method: Schema.String,
+  args: Schema.optional(
+    Schema.NullOr(Schema.Record(Schema.String, Schema.Unknown))
+  ),
+});
+
+const PolkadotRewardDestination = Schema.Literals([
+  "None",
+  "Staked",
+  "Stash",
+  "Controller",
+  "Account",
+]);
 
 export type BuildPolkadotLedgerTransaction = (params: {
   fee: string;
@@ -38,12 +50,18 @@ export const buildPolkadotLedgerTransaction: BuildPolkadotLedgerTransaction = ({
       { method: payload.tx.method },
       { version: payload.tx.version }
     );
-    const humanMethod = extrinsic.method.toHuman() as SubstrateHumanMethod;
-    const args = formatSubstrateArgs(humanMethod.args);
+    const humanMethod = Schema.decodeUnknownOption(SubstrateHumanMethod)(
+      extrinsic.method.toHuman()
+    );
+    if (Option.isNone(humanMethod)) {
+      return Result.fail("Invalid Polkadot transaction");
+    }
+    const { method } = humanMethod.value;
+    const args = formatSubstrateArgs(humanMethod.value.args ?? null);
     const recipient = payload.tx.address;
 
-    const ledgerTx = (() => {
-      switch (humanMethod.method) {
+    const ledgerTx = ((): RawPolkadotTransaction => {
+      switch (method) {
         case "bond":
           return {
             mode: "bond",
@@ -51,7 +69,9 @@ export const buildPolkadotLedgerTransaction: BuildPolkadotLedgerTransaction = ({
             amount: readString(args.value, txMeta.amountRaw),
             recipient,
             fee,
-            rewardDestination: readOptionalString(args.payee),
+            rewardDestination: Schema.decodeUnknownOption(
+              PolkadotRewardDestination
+            )(args.payee).pipe(Option.getOrUndefined),
           };
         case "bondExtra":
           return {
@@ -107,13 +127,11 @@ export const buildPolkadotLedgerTransaction: BuildPolkadotLedgerTransaction = ({
             fee,
           };
         default:
-          throw new Error(
-            `Unsupported Polkadot Ledger method: ${humanMethod.method}`
-          );
+          throw new Error(`Unsupported Polkadot Ledger method: ${method}`);
       }
     })();
 
-    return Result.succeed(ledgerTx as RawTransaction);
+    return Result.succeed(ledgerTx);
   } catch (error) {
     return Result.fail(
       error instanceof Error ? error.message : "Invalid Polkadot transaction"
@@ -121,9 +139,7 @@ export const buildPolkadotLedgerTransaction: BuildPolkadotLedgerTransaction = ({
   }
 };
 
-const formatSubstrateArgs = (
-  args: Record<string, unknown> | null
-): Record<string, unknown> => {
+const formatSubstrateArgs = (args: object | null): Record<string, unknown> => {
   if (!args) return {};
 
   return Object.entries(args).reduce<Record<string, unknown>>(
@@ -148,7 +164,7 @@ const normalizeSubstrateValue = (value: unknown): unknown => {
   }
 
   if (typeof value === "object" && value !== null) {
-    return formatSubstrateArgs(value as Record<string, unknown>);
+    return formatSubstrateArgs(value);
   }
 
   return value;
@@ -179,27 +195,16 @@ const readString = (
   return "0";
 };
 
-const readOptionalString = (value: unknown): string | undefined => {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "bigint") {
-    return value.toString();
-  }
-
-  return undefined;
-};
-
 const readValidatorTargets = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
 
   return value.flatMap((item) => {
     if (typeof item === "string") return [item];
     if (typeof item === "object" && item !== null && "Id" in item) {
-      const id = (item as { Id?: unknown }).Id;
-      return typeof id === "string" ? [id] : [];
+      return typeof item.Id === "string" ? [item.Id] : [];
     }
     if (typeof item === "object" && item !== null && "id" in item) {
-      const id = (item as { id?: unknown }).id;
-      return typeof id === "string" ? [id] : [];
+      return typeof item.id === "string" ? [item.id] : [];
     }
 
     return [];

@@ -90,6 +90,12 @@ const toRequest = ({
   ...(key.status ? { status: key.status } : {}),
 });
 
+const validatorBranches = [
+  "list",
+  "name",
+  "address",
+] as const satisfies ReadonlyArray<ValidatorBranch>;
+
 const validatorsCanonicalPullAtom = Atom.family((key: ValidatorsKey) =>
   appRuntime
     .pull(() => {
@@ -104,12 +110,11 @@ const validatorsCanonicalPullAtom = Atom.family((key: ValidatorsKey) =>
         } satisfies ValidatorPaginationState,
         (state) =>
           Effect.gen(function* () {
-            const activeBranches = (
-              Object.entries(state.cursor) as ReadonlyArray<
-                readonly [ValidatorBranch, number | null]
-              >
-            ).filter(
-              (entry): entry is [ValidatorBranch, number] => entry[1] !== null
+            const activeBranches = validatorBranches.flatMap(
+              (branch): Array<readonly [ValidatorBranch, number]> => {
+                const offset = state.cursor[branch];
+                return offset === null ? [] : [[branch, offset]];
+              }
             );
             const pages = yield* Effect.forEach(
               activeBranches,

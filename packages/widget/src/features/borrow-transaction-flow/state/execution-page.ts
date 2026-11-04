@@ -2,6 +2,7 @@ import { Data, Effect, Option, Ref, type Scope, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+import type { ActionId } from "../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../domain/borrow/network";
 import {
   BorrowMarketsKey,
@@ -37,7 +38,7 @@ import { leaveBorrowFlow } from "./borrow-flow-session";
 export const startBorrowFlowExecution = Effect.fn("startBorrowFlowExecution")(
   function* (
     { handoff, walletScope }: BorrowFlowSession,
-    actionId: string
+    actionId: ActionId
   ): Effect.fn.Return<
     TransactionWorkflowHandle,
     TransactionWorkflowInputError,
@@ -115,7 +116,7 @@ export const makeBorrowFlowSettledPositionAtom = (
 
 /** One handed-off action's Execution in a Session. */
 export class BorrowFlowExecutionKey extends Data.Class<{
-  readonly actionId: string;
+  readonly actionId: ActionId;
   readonly session: BorrowFlowSession;
 }> {}
 
@@ -136,7 +137,7 @@ export const borrowFlowExecutionPage = Atom.family(
 
 export const makeBorrowFlowExecutionPage = (
   session: BorrowFlowSession,
-  actionId: string
+  actionId: ActionId
 ) => {
   const workflowAtom = walletRuntime
     .atom(startBorrowFlowExecution(session, actionId))

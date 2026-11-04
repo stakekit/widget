@@ -56,7 +56,10 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
-import { makeTestTracking } from "../../utils/services/tracking-service";
+import {
+  makeTestTracking,
+  type TestTrackingOptions,
+} from "../../utils/services/tracking-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
 import { makeYieldFlowTestKit } from "../../utils/yield-flow-test-kit";
 
@@ -252,7 +255,7 @@ const manageBalance = Schema.decodeSync(EarnBalance)(
 );
 const manageAction = manageBalance.pendingActions[0]!;
 const workflowKey = new PositionDetailsWorkflowKey({
-  balanceId: "balance-1",
+  balanceId: "default",
   integrationId: selectedYield.id,
   pendingActionType: null,
   scope,
@@ -262,8 +265,8 @@ const positionKey = new PositionBalancesKey({
   scope,
   yieldId: selectedYield.id,
 });
-const exitReviewPath = `/positions/${selectedYield.id}/balance-1/unstake/review`;
-const manageReviewPath = `/positions/${selectedYield.id}/balance-1/pending-action/review`;
+const exitReviewPath = `/positions/${selectedYield.id}/default/unstake/review`;
+const manageReviewPath = `/positions/${selectedYield.id}/default/pending-action/review`;
 
 const makeConnectedWallet = (
   overrides: Partial<
@@ -293,7 +296,7 @@ const makeRegistry = ({
 }: {
   readonly push: Mock<Push>;
   readonly serviceWallet?: NormalizedWalletState;
-  readonly trackEvent: TrackingService["Service"]["trackEvent"];
+  readonly trackEvent: NonNullable<TestTrackingOptions["trackEvent"]>;
   readonly wallet?: NormalizedWalletState;
   readonly yieldBalance?: EarnBalance;
   readonly yieldOpportunity?: typeof selectedYield;

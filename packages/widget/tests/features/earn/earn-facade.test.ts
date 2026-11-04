@@ -146,7 +146,7 @@ describe("Earn facade", () => {
   it("projects client-side token and yield search from semantic options", () => {
     const selectedYield = yieldApiYieldFixture();
     const tokenOption = {
-      amount: "10",
+      amount: new BigNumber("10"),
       availableYields: [selectedYield.id],
       source: "balance",
       token: selectedYield.token,
@@ -188,7 +188,7 @@ describe("Earn facade", () => {
       address: string,
       amount: string | null
     ): EarnTokenOption => ({
-      amount,
+      amount: amount === null ? null : new BigNumber(amount),
       availableYields: [selectedYield.id],
       source: amount === null ? "default" : "balance",
       token: {
@@ -264,7 +264,7 @@ describe("Earn facade", () => {
       address: string,
       amount: string
     ): EarnTokenOption => ({
-      amount,
+      amount: new BigNumber(amount),
       availableYields: [selectedYield.id],
       source: "balance",
       token: {

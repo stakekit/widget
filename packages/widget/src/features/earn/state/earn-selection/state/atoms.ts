@@ -45,7 +45,8 @@ export const earnEntryAtom = Atom.make<EarnEntry>((context) => {
     categoryOrder: config.yieldCategoryOrder,
     categoryGrouping,
     initParams: context.get(initParamsAtom),
-    preferredTokenYieldsPerNetwork: config.preferredTokenYieldsPerNetwork,
+    preferredTokenYieldsPerNetwork:
+      config.preferredTokenYieldsPerNetwork ?? null,
     walletScope: wallet.walletScope,
     walletResolution: wallet.walletResolution,
     yieldProviderOrder: categoryGrouping ? config.yieldProviderOrder : {},

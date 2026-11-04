@@ -120,7 +120,7 @@ describe("BorrowPositions", () => {
     });
     expect(decodeTokenId({ symbol: "ETH" })).not.toBe(
       decodeTokenId({
-        address: addressedMarket.collateralTokens[0]!.token.address,
+        ...addressedMarket.collateralTokens[0]!.token,
         symbol: "ETH",
       })
     );
@@ -259,10 +259,9 @@ describe("BorrowPositions", () => {
       },
     });
 
-    const collateralTokenId = decodeTokenId({
-      address: usdcMarket.collateralTokens[0]!.token.address,
-      symbol: usdcMarket.collateralTokens[0]!.token.symbol,
-    });
+    const collateralTokenId = decodeTokenId(
+      usdcMarket.collateralTokens[0]!.token
+    );
     expect(
       newMarketRisk.assess([
         {
@@ -367,10 +366,7 @@ describe("BorrowPositions", () => {
       nonCollateralPositions.riskFor(usdcMarket).assess([
         {
           amount: new BigNumber(0.1),
-          tokenId: decodeTokenId({
-            address: usdcMarket.collateralTokens[0]!.token.address,
-            symbol: usdcMarket.collateralTokens[0]!.token.symbol,
-          }),
+          tokenId: decodeTokenId(usdcMarket.collateralTokens[0]!.token),
           type: "withdraw",
         },
       ])
@@ -572,10 +568,9 @@ describe("BorrowPositions", () => {
       id: "morpho-blue-borrow",
       name: "Morpho Blue",
     });
-    const collateralTokenId = decodeTokenId({
-      address: usdcMarket.collateralTokens[0]!.token.address,
-      symbol: usdcMarket.collateralTokens[0]!.token.symbol,
-    });
+    const collateralTokenId = decodeTokenId(
+      usdcMarket.collateralTokens[0]!.token
+    );
     const derive = ({
       collateral,
       debt,

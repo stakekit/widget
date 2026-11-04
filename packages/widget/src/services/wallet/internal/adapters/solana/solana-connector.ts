@@ -8,7 +8,6 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { Effect, Stream } from "effect";
-import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import type { HostProfile } from "../../../../config/host-profile";
@@ -22,6 +21,7 @@ import { WalletNotAvailableError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { SolanaWalletDescriptor } from "../../runtime/solana-runtime";
 import { WalletConnectSolanaAdapter } from "../../runtime/solana-wallet-connect-adapter";
+import { toWagmiAccount } from "../../wagmi-seam";
 import { solana } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
@@ -113,11 +113,10 @@ const createSolanaConnector = ({
           throw error;
         });
 
-        return wagmiConnectResult(
-          args?.withCapabilities,
-          [solanaWallet.adapter.publicKey?.toBase58() as Address],
-          solana.id
-        );
+        const address = solanaWallet.adapter.publicKey?.toBase58();
+        if (!address) throw new Error("No account found");
+
+        return wagmiConnectResult(args?.withCapabilities, [address], solana.id);
       },
       disconnect: () => {
         config.storage?.setItem("solana.disconnected", true);
@@ -126,7 +125,7 @@ const createSolanaConnector = ({
       getAccounts: async () => {
         const address = solanaWallet.adapter.publicKey?.toBase58();
         if (!address) throw new Error("No account found");
-        return [address as Address];
+        return [toWagmiAccount(address)];
       },
       switchChain: async () => solana,
       getChainId: async () => solana.id,
@@ -172,12 +171,13 @@ const availability = ({
   if (readyState === WalletReadyState.Unsupported) {
     return { _tag: "Injected", detect: Effect.succeed(false) };
   }
+  const installUrl = extensionInstallUrls[adapter.name];
   return {
     _tag: "Injected",
     detect: Effect.sync(
       () => adapter.readyState === WalletReadyState.Installed && isPresent()
     ),
-    installUrl: extensionInstallUrls[adapter.name],
+    ...(installUrl === undefined ? {} : { installUrl }),
   };
 };
 

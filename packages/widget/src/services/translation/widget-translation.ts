@@ -4,10 +4,12 @@ import {
   Effect,
   Equal,
   Layer,
+  Predicate,
   Ref,
   Schema,
   type Scope,
   Stream,
+  Struct,
 } from "effect";
 import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/http";
 import { createInstance } from "i18next";
@@ -57,8 +59,7 @@ type WidgetTranslationSettings = Pick<
 const selectWidgetTranslationSettings = (
   settings: WidgetConfig
 ): WidgetTranslationSettings => ({
-  customTranslations: settings.customTranslations,
-  language: settings.language,
+  ...Struct.pick(settings, ["customTranslations", "language"]),
   translationOverlay: settings.hostProfile.translationOverlay,
 });
 
@@ -131,7 +132,7 @@ export const reconcileWidgetI18n = ({
     i18n.addResourceBundle(
       resourceLanguage,
       "translation",
-      bundle.translation,
+      Predicate.isObject(bundle) ? bundle.translation : undefined,
       true,
       true
     );

@@ -29,7 +29,7 @@ const scopeB = new WalletScopeKey({
 
 const workflowAtom = positionDetailsWorkflowAtom(
   new PositionDetailsWorkflowKey({
-    balanceId: "balance-1",
+    balanceId: "default",
     integrationId: Schema.decodeSync(YieldId)("yield-1"),
     pendingActionType: null,
     scope: scopeA,
@@ -76,7 +76,7 @@ describe("position details workflow atoms", () => {
     );
     const walletBWorkflow = positionDetailsWorkflowAtom(
       new PositionDetailsWorkflowKey({
-        balanceId: "balance-1",
+        balanceId: "default",
         integrationId: Schema.decodeSync(YieldId)("yield-1"),
         pendingActionType: null,
         scope: scopeB,

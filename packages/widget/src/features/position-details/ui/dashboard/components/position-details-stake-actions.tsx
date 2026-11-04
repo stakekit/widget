@@ -1,6 +1,7 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
 import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
+import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
 import {
   formatNumber,
   formatTokenAmount,
@@ -11,12 +12,15 @@ import { AmountTokenSection } from "../../../../../shared/ui/components/amount-t
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetRouteMatch } from "../../../../navigation/index";
+import { useWalletScopeRoute } from "../../../../wallet/index";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import {
   ConfidentialTokenBalance,
   TronResourceSelection,
 } from "../../../../yield-entry/views";
 import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
+import { PositionDetailsStakeEntryKey } from "../../../state/stake-entry";
 import { usePositionDetailsStake } from "../hooks/use-position-details-stake";
 import { PositionDetailsStakeTokenSelect } from "./position-details-stake-token-select";
 
@@ -203,8 +207,12 @@ const PositionDetailsStakePrimaryAction = ({
   return <PageCtaButton cta={cta} />;
 };
 
-export const PositionDetailsStakeActions = () => {
-  const stake = usePositionDetailsStake();
+const PositionDetailsStakeActionsContent = ({
+  stakeKey,
+}: {
+  stakeKey: PositionDetailsStakeEntryKey;
+}) => {
+  const stake = usePositionDetailsStake(stakeKey);
 
   return (
     <>
@@ -214,5 +222,25 @@ export const PositionDetailsStakeActions = () => {
       <PositionDetailsStakeExtraArgs stake={stake} />
       <PositionDetailsStakePrimaryAction stake={stake} />
     </>
+  );
+};
+
+/** Staking more needs the position the route names; without one, nothing. */
+export const PositionDetailsStakeActions = () => {
+  const walletScope = useWalletScopeRoute();
+  const match = useWidgetRouteMatch(widgetRoutes.positionDetails);
+
+  if (!match) return null;
+
+  return (
+    <PositionDetailsStakeActionsContent
+      stakeKey={
+        new PositionDetailsStakeEntryKey({
+          balanceId: match.balanceId,
+          integrationId: match.integrationId,
+          walletScope,
+        })
+      }
+    />
   );
 };

@@ -83,8 +83,12 @@ const waitForWalletConnection = (
       .toBe(true);
   });
 
-const solanaAddress = "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ";
-const tonAddress = "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy";
+const solanaAddress = Schema.decodeSync(WalletAddress)(
+  "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ"
+);
+const tonAddress = Schema.decodeSync(WalletAddress)(
+  "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy"
+);
 
 const createYieldTxMeta = ({
   address,

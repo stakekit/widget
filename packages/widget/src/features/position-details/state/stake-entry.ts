@@ -2,12 +2,13 @@ import { Data } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import type { BalanceDataKey } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 
 type PositionDetailsStakeEntryParams = {
   integrationId: YieldId;
-  balanceId: string;
+  balanceId: BalanceDataKey;
   walletScope: WalletScopeKey;
 };
 

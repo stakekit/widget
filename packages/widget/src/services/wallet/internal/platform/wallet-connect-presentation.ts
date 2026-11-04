@@ -27,9 +27,27 @@ export type WalletConnectModal = Readonly<{
   subscribeState: (listener: (state: unknown) => void) => () => void;
 }>;
 
+type PendingConnection<A> = Readonly<{
+  fiber: Fiber.Fiber<A, WalletIntegrationError>;
+  uris: Stream.Stream<string>;
+}>;
+
+/**
+ * One pending SDK approval. Pass the same connection to every `connect` that
+ * should resume it rather than start another.
+ */
+export type WalletConnectConnection<A> = Readonly<{
+  effect: Effect.Effect<A, WalletIntegrationError>;
+  /** Its in-flight handoff, per presentation. */
+  pending: WeakMap<object, PendingConnection<A>>;
+}>;
+
+export const makeWalletConnectConnection = <A>(
+  effect: Effect.Effect<A, WalletIntegrationError>
+): WalletConnectConnection<A> => ({ effect, pending: new WeakMap() });
+
 type WalletConnectInput<A> = Readonly<{
-  /** Reuse this Effect to resume the same pending SDK approval. */
-  connection: Effect.Effect<A, WalletIntegrationError>;
+  connection: WalletConnectConnection<A>;
   subscribeUri: (
     publish: (uri: string) => void
   ) => Effect.Effect<void, WalletIntegrationError, Scope.Scope>;
@@ -45,11 +63,6 @@ export type WalletConnectPresentation = Readonly<{
   connect: <A>(
     input: WalletConnectInput<A>
   ) => Effect.Effect<A, WalletIntegrationError>;
-}>;
-
-type PendingConnection<A> = Readonly<{
-  fiber: Fiber.Fiber<A, WalletIntegrationError>;
-  uris: Stream.Stream<string>;
 }>;
 
 type PresentationEvent =
@@ -77,10 +90,8 @@ export const makeWalletConnectPresentation = Effect.fn(
   const walletModal = yield* WalletModal;
   const connectionPermit = yield* Semaphore.make(1);
   const modalPermit = yield* Semaphore.make(1);
-  const pendingConnections = new Map<
-    Effect.Effect<unknown, WalletIntegrationError>,
-    PendingConnection<unknown>
-  >();
+  // Keys this presentation's entries in each connection's `pending`.
+  const presentationKey = {};
   let loadedModal: WalletConnectModal | undefined;
   let presentationOwner: object | undefined;
   let loadingModal:
@@ -108,9 +119,8 @@ export const makeWalletConnectPresentation = Effect.fn(
 
   const getConnection = Effect.fn("WalletConnectPresentation.getConnection")(
     function* <A>({ connection, subscribeUri }: WalletConnectInput<A>) {
-      const existing = pendingConnections.get(connection);
-      // The exact Effect key carries the result type of its cached fiber.
-      if (existing) return existing as PendingConnection<A>;
+      const existing = connection.pending.get(presentationKey);
+      if (existing) return existing;
 
       const latestUri = yield* SubscriptionRef.make<string | undefined>(
         undefined
@@ -128,7 +138,9 @@ export const makeWalletConnectPresentation = Effect.fn(
           Effect.andThen(Effect.never),
           Effect.forkScoped({ startImmediately: true })
         );
-        return yield* connection.pipe(Effect.raceFirst(Fiber.join(source)));
+        return yield* connection.effect.pipe(
+          Effect.raceFirst(Fiber.join(source))
+        );
       }).pipe(Effect.scoped, Effect.forkIn(owner));
       const pending: PendingConnection<A> = {
         fiber,
@@ -137,9 +149,9 @@ export const makeWalletConnectPresentation = Effect.fn(
           Stream.changes
         ),
       };
-      pendingConnections.set(connection, pending);
+      connection.pending.set(presentationKey, pending);
       fiber.addObserver(() => {
-        pendingConnections.delete(connection);
+        connection.pending.delete(presentationKey);
       });
       return pending;
     },
@@ -240,7 +252,11 @@ export const makeWalletConnectPresentation = Effect.fn(
             }
             // Finish the SDK's non-abortable open before another request owns it.
             yield* Effect.tryPromise({
-              try: () => modal.open({ uri, namespace: input.namespace }),
+              try: () =>
+                modal.open({
+                  uri,
+                  ...(input.namespace && { namespace: input.namespace }),
+                }),
               catch: (cause) => presentationError("wallet-connect-open", cause),
             }).pipe(Effect.uninterruptible);
           }
@@ -270,6 +286,13 @@ export const makeWalletConnectPresentation = Effect.fn(
 
   return { connect } satisfies WalletConnectPresentation;
 });
+
+// AppKit declares its own networks' `assets` as possibly undefined, which its
+// `AppKitNetwork` rejects as an optional key: omit it when it is absent.
+const withDefinedAssets = <Network extends { readonly assets?: unknown }>({
+  assets,
+  ...network
+}: Network) => (assets === undefined ? network : { ...network, assets });
 
 const loadModal = Effect.tryPromise({
   try: async (): Promise<WalletConnectModal> => {
@@ -321,7 +344,13 @@ const loadModal = Effect.tryPromise({
       manualWCControl: true,
       metadata,
       universalProvider,
-      networks: [mainnet, solana, tronMainnet, cosmosNetwork, polkadotNetwork],
+      networks: [
+        mainnet,
+        withDefinedAssets(solana),
+        withDefinedAssets(tronMainnet),
+        cosmosNetwork,
+        polkadotNetwork,
+      ],
       // AppKit cannot chain-filter Stellar. Featured wallets remain discoverable
       // in its generic manual chooser without pretending Stellar is an EVM chain.
       featuredWalletIds: [

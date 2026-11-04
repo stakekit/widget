@@ -1,5 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import type { ValidatorInput as ValidatorDto } from "../../../domain/earn/validator";
+import type { EarnValidator } from "../../../domain/earn/models";
 import type { SelectModalProps } from "../../../shared/ui/components/select-modal";
 import { positionDetailsPendingActions } from "../state/actions/pending-action";
 import type { PositionDetailsWorkflowKey } from "../state/workflow";
@@ -29,10 +29,10 @@ export const useValidatorAddressesHandling = (
     closeModal: () => close(undefined),
     modalState,
     multiSelect: state.multiSelect,
-    onItemClick: (validator: ValidatorDto["address"]) => toggle(validator),
+    onItemClick: (validator: EarnValidator) => toggle(validator),
     openModal: open,
     pendingAction: isOpen ? state.pendingAction.pendingAction : null,
-    selectedValidators: state.selectedValidators,
+    selectedValidatorKeys: new Set(state.selectedValidators.keys()),
     showValidatorsModal: isOpen,
     submitDisabled: state.selectedValidators.size === 0,
     yieldBalance: isOpen ? state.pendingAction.yieldBalance : null,

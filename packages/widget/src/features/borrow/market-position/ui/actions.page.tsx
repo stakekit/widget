@@ -30,7 +30,7 @@ export const BorrowPositionActionsPage = () => {
 
   const onActionSelect = (action: BorrowPositionAction) => {
     if (!marketId) return;
-    navigation.push(
+    void navigation.push(
       widgetRoutes.borrowPositionAction.build("Dashboard", {
         actionId: action.id,
         marketId,

@@ -48,7 +48,7 @@ const positionValidator = yieldApiValidatorFixture({
   name: "Position validator",
 });
 const entryKey = new PositionDetailsStakeEntryKey({
-  balanceId: "balance-1",
+  balanceId: "default",
   integrationId: validatorYield.id,
   walletScope,
 });

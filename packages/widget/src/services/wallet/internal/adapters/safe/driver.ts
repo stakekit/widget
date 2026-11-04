@@ -6,7 +6,10 @@ import {
   WalletCapabilityUnavailableError,
   WalletDecodeError,
 } from "../../../wallet-errors";
-import type { WalletBroadcastResult } from "../../../wallet-transactions";
+import {
+  decodeWalletBroadcastResult,
+  type WalletBroadcastResult,
+} from "../../../wallet-transactions";
 import {
   decodeAndPrepareBorrowEvmTransaction,
   decodeAndPrepareEvmTransaction,
@@ -49,7 +52,11 @@ export const makeSafeWalletDriver = ({
       }
 
       const decode: Effect.Effect<
-        { readonly data: Hex; readonly to: Address; readonly value?: Hex },
+        {
+          readonly data: Hex;
+          readonly to: Address;
+          readonly value?: Hex | undefined;
+        },
         Schema.SchemaError
       > =
         family === "borrow"
@@ -113,6 +120,6 @@ export const makeSafeWalletDriver = ({
         )
       );
 
-      return { broadcasted: true, signedTx };
+      return yield* decodeWalletBroadcastResult(signedTx);
     }),
 });

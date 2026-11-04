@@ -5,70 +5,57 @@ import {
   themeContract,
 } from "../../public-api/theme";
 
+type ThemeSchema = Schema.Codec<unknown, unknown, never, never>;
+
 const makeThemeSchema = (
   contract: Readonly<Record<string, ThemeContractNode>>
-): Schema.Codec<unknown, unknown, never, never> => {
-  const fields = Object.fromEntries(
-    Object.entries(contract).map(([key, value]) => {
-      if (typeof value === "string") {
-        return [key, Schema.optionalKey(Schema.String)];
-      }
-
-      return [key, Schema.optionalKey(makeThemeSchema(value))];
-    })
+): ThemeSchema =>
+  Schema.Struct(
+    Object.fromEntries(
+      Object.entries(contract).map(([key, value]) => [
+        key,
+        Schema.optionalKey(
+          typeof value === "string" ? Schema.String : makeThemeSchema(value)
+        ),
+      ])
+    )
   );
-
-  return Schema.Struct(fields) as unknown as Schema.Codec<
-    unknown,
-    unknown,
-    never,
-    never
-  >;
-};
 
 const makeResilientThemeSchema = (
   contract: Readonly<Record<string, ThemeContractNode>>
-): Schema.Codec<unknown, unknown, never, never> => {
-  const fields = Object.fromEntries(
-    Object.entries(contract).map(([key, value]) => {
-      const target =
-        typeof value === "string"
-          ? Schema.String
-          : makeResilientThemeSchema(value);
-      const field = Schema.optionalKey(Schema.Unknown).pipe(
-        Schema.decodeTo(
-          Schema.optionalKey(target),
-          SchemaTransformation.transformOptional({
-            decode: Option.flatMap((input) =>
-              Schema.decodeUnknownOption(target)(input)
-            ),
-            encode: (input) => input,
-          })
-        )
-      );
+): ThemeSchema =>
+  Schema.Struct(
+    Object.fromEntries(
+      Object.entries(contract).map(([key, value]) => {
+        const target =
+          typeof value === "string"
+            ? Schema.String
+            : makeResilientThemeSchema(value);
+        const field = Schema.optionalKey(Schema.Unknown).pipe(
+          Schema.decodeTo(
+            Schema.optionalKey(target),
+            SchemaTransformation.transformOptional({
+              decode: Option.flatMap((input) =>
+                Schema.decodeUnknownOption(target)(input)
+              ),
+              encode: (input) => input,
+            })
+          )
+        );
 
-      return [key, field];
-    })
+        return [key, field];
+      })
+    )
   );
 
-  return Schema.Struct(fields) as unknown as Schema.Codec<
-    unknown,
-    unknown,
-    never,
-    never
-  >;
-};
+const Theme = makeThemeSchema(themeContract);
 
-const Theme = makeThemeSchema(themeContract) as unknown as Schema.Codec<
-  SKTheme,
-  unknown,
-  never,
-  never
->;
+const ResilientTheme = makeResilientThemeSchema(themeContract);
 
-const ResilientTheme = makeResilientThemeSchema(
-  themeContract
-) as unknown as Schema.Codec<SKTheme, unknown, never, never>;
+// The theme schema is built from the contract `SKTheme` is derived from, so a
+// value it accepts is an `SKTheme`.
+const isThemeShape = Schema.is(Theme);
+const isTheme = (value: unknown): value is SKTheme => isThemeShape(value);
 
 export type ThemeDecodeWarning = "invalid-theme-root" | "invalid-theme-token";
 
@@ -78,12 +65,16 @@ type ThemeDecodeResult = Readonly<{
 }>;
 
 export const decodeTheme = (input: unknown): ThemeDecodeResult => {
-  const strict = Schema.decodeUnknownOption(Theme)(input);
+  const strict = Schema.decodeUnknownOption(Theme)(input).pipe(
+    Option.filter(isTheme)
+  );
   if (Option.isSome(strict)) {
     return { theme: strict.value, warnings: [] };
   }
 
-  const resilient = Schema.decodeUnknownOption(ResilientTheme)(input);
+  const resilient = Schema.decodeUnknownOption(ResilientTheme)(input).pipe(
+    Option.filter(isTheme)
+  );
   if (Option.isSome(resilient)) {
     return {
       theme: resilient.value,

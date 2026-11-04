@@ -62,17 +62,12 @@ export const getWalletManager = ({
         walletConnectProtocol,
       }),
   ];
-  const { chains, cosmosWagmiChains } = Object.values(cosmosChainsMap).reduce(
-    (acc, next) => {
-      acc.cosmosWagmiChains.push(next.wagmiChain);
-      acc.chains.push(next.chain);
-
-      return acc;
-    },
-    {
-      cosmosWagmiChains: [] as Chain[],
-      chains: [] as CosmosChainsAssets[],
-    }
+  const cosmosChainEntries = Object.values(cosmosChainsMap);
+  const cosmosWagmiChains: Chain[] = cosmosChainEntries.map(
+    (entry) => entry.wagmiChain
+  );
+  const chains: CosmosChainsAssets[] = cosmosChainEntries.map(
+    (entry) => entry.chain
   );
 
   chains.sort((a) =>
@@ -103,7 +98,7 @@ export const getWalletManager = ({
       false,
       true,
       undefined,
-      cosmosAssets as ConstructorParameters<typeof WalletManager>[6]
+      cosmosAssets
     ),
   };
 };

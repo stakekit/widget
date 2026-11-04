@@ -1,4 +1,4 @@
-import { type Brand, Schema, SchemaTransformation, Struct } from "effect";
+import { Schema, SchemaTransformation, Struct } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { addressIdentity, TokenAddress } from "../identity/identifiers";
@@ -33,20 +33,24 @@ export const LegacyToken = LegacyApi.TokenDto.mapFields(
   ])
 ).pipe(Schema.decodeTo(Token));
 
-/** Internal token identity: `${network}-${symbol}-${address}`. Never host input. */
-export type TokenString = Brand.Branded<string, "TokenString">;
+/**
+ * Internal token identity: `${network}-${symbol}-${address}`. Never host input.
+ * `tokenString` is its only producer: it builds the value from a decoded
+ * token's network, symbol and address identity, so the brand holds by
+ * construction.
+ */
+const TokenString = Schema.String.pipe(Schema.brand("TokenString"));
+export type TokenString = typeof TokenString.Type;
 
-type TokenLike = Pick<Token, "symbol"> & {
-  network: string;
-  address?: string;
-};
+type TokenLike = Pick<Token, "symbol" | "network" | "address">;
 
 const identityAddress = (token: TokenLike) =>
   token.address === undefined ? "<no-address>" : addressIdentity(token.address);
 
-export const tokenString = (token: TokenLike): TokenString => {
-  return `${token.network}-${token.symbol}-${identityAddress(token)}` as TokenString;
-};
+export const tokenString = (token: TokenLike): TokenString =>
+  TokenString.make(
+    `${token.network}-${token.symbol}-${identityAddress(token)}`
+  );
 
 export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b);
@@ -66,7 +70,7 @@ export type HostTokenKey = typeof HostTokenKey.Type;
 
 const decodeHostTokenKey = Schema.decodeSync(HostTokenKey);
 
-export const hostTokenKey = (token: Omit<TokenLike, "symbol">) =>
+export const hostTokenKey = (token: Pick<Token, "network" | "address">) =>
   decodeHostTokenKey(`${token.network}-${token.address ?? ""}`);
 
 /** Yield API sentinel for a network's native token in `inputToken`/`outputToken`. */

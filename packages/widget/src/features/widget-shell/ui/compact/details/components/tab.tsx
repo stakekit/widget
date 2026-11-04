@@ -11,7 +11,7 @@ type Props = {
   onTabPress: () => void;
 } & (
   | { variant: "earn"; pendingActionsCount?: never }
-  | { variant: "positions"; pendingActionsCount?: number }
+  | { variant: "positions"; pendingActionsCount?: number | undefined }
   | { variant: "activity"; pendingActionsCount?: never }
 );
 

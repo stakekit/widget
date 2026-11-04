@@ -30,7 +30,7 @@ const chunkRelativePath = (filename: string, hostId: string) => {
 // and Vite hosts detect and copy into their own output. It resolves against
 // the chunk, so it stays correct wherever the host serves `dist`. Worker sites
 // wrap it once more; `hostBundlerOutputPlugin` collapses those.
-export const chunkRelativeAssetUrls: UserConfig["experimental"] = {
+export const chunkRelativeAssetUrls: NonNullable<UserConfig["experimental"]> = {
   renderBuiltUrl: (filename, { hostId, hostType }) =>
     hostType === "js"
       ? {
@@ -65,7 +65,7 @@ export const getConfig = (
       },
       plugins: [
         ...(options?.plugins ?? []),
-        nodePolyfills({ include: ["buffer", "crypto"] }),
+        nodePolyfills({ include: ["buffer", "crypto", "stream"] }),
         macros(),
         react({
           compiler: true,

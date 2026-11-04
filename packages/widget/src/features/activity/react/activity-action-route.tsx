@@ -108,9 +108,9 @@ const BoundActivityActionRoute = ({
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
   // The action whose Continuation this route mounted from its Review. Its
   // Session lives in this subtree across Review, Steps, and Complete.
-  const [continuedActionId, setContinuedActionId] = useState<string | null>(
-    null
-  );
+  const [continuedActionId, setContinuedActionId] = useState<
+    ActivityActionItem["actionData"]["id"] | null
+  >(null);
 
   if (result.status === "loading") {
     return <ContentLoaderSquare heightPx={320} />;

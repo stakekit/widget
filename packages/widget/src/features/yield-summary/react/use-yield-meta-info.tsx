@@ -254,9 +254,9 @@ export const useYieldMetaInfo = ({
               stakeToken,
               rewardTokens,
               providerName,
-              context: haveFeeConfigurationEnabled
-                ? "with_fee_configuration"
-                : undefined,
+              ...(haveFeeConfigurationEnabled
+                ? { context: "with_fee_configuration" }
+                : {}),
             }),
         withdrawnNotAvailable: null,
         ...def,
@@ -271,7 +271,9 @@ export const useYieldMetaInfo = ({
         description: t("details.vault.description", {
           stakeToken,
           depositToken: rewardTokens,
-          context: vaultDescriptionContext,
+          ...(vaultDescriptionContext === undefined
+            ? {}
+            : { context: vaultDescriptionContext }),
         }),
         earnPeriod: getVaultEarnPeriod(),
         earnRewards:

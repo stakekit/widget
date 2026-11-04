@@ -21,7 +21,7 @@ export type YieldTransactionCompletionUrl = {
 export const formatTransactionTypeLabel = (
   type: TransactionType | "DECRYPT" | "ENCRYPT" | "RESET_APPROVAL",
   t: TFunction,
-  options?: { readonly context?: "ETHENA_USDE" }
+  options?: { readonly context?: "ETHENA_USDE" | undefined }
 ) =>
   t(`steps.tx_type.${type}`, {
     context: options?.context,

@@ -5,10 +5,8 @@ import {
   WindowMessageTransport,
 } from "@ledgerhq/wallet-api-client";
 import { Effect, Result, Stream } from "effect";
-import type { Address } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
-import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import type { InitParams } from "../../../../../services/wallet/init-params";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type {
@@ -17,9 +15,9 @@ import type {
   WalletList,
 } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
-import { normalizeChainId } from "../../normalize-chain-id";
 import { walletImages } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { parseWalletRoutingId, toWagmiAccount } from "../../wagmi-seam";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
@@ -32,8 +30,11 @@ import {
   type PrepareLedgerLiveTransaction,
 } from "./prepare-ledger-live-transaction";
 import {
+  type EnabledChainsMap,
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
+  isSupportedLedgerLiveFamily,
+  type LedgerChainItem,
 } from "./utils";
 
 const createLedgerLiveConnector = ({
@@ -52,7 +53,7 @@ const createLedgerLiveConnector = ({
   walletDetailsParams: WalletDetailsParams;
 }) =>
   createConnector<unknown, ExtraProps>((config) => {
-    const noAccountPlaceholder = "N/A" as Address;
+    const noAccountPlaceholder = toWagmiAccount("N/A");
     const filteredChains = makeCurrentValueStream<Chain[]>([]);
     const disabledChains = makeCurrentValueStream<Chain[]>([]);
     const currentAccount = makeCurrentValueStream<Account | undefined>(
@@ -64,13 +65,14 @@ const createLedgerLiveConnector = ({
     );
     let ledgerAccounts: Account[] = [];
     const accountsOnCurrentChainState = makeCurrentValueStream<Account[]>([]);
-    let currentChain: ChainItem | null = null;
+    let currentChain: LedgerChainItem | null = null;
     let filteredSkSupportedChainsToCurrencyIdMap: Map<
       Chain["id"],
       Currency["id"]
     > | null = null;
-    let filteredSkSupportedChainsValues: ReturnType<
-      typeof getFilteredSupportedLedgerFamiliesWithCurrency
+    let filteredSkSupportedChainsValues: Map<
+      SupportedLedgerLiveFamilies,
+      Map<string, LedgerChainItem>
     > | null = null;
 
     const transport = new WindowMessageTransport();
@@ -141,50 +143,34 @@ const createLedgerLiveConnector = ({
       filteredSkSupportedChainsValues =
         filteredSupportedLedgerFamiliesWithCurrency;
 
-      const { enabled, disabled } = [
-        ...filteredSupportedLedgerFamiliesWithCurrency.values(),
-      ].reduce(
-        (acc, next) => {
-          next.forEach((v) => {
-            if (v.enabled) {
-              acc.enabled.push(v.chain);
-            } else {
-              acc.disabled.push(v.chain);
-            }
-          });
-
-          return acc;
-        },
-        { enabled: [] as Chain[], disabled: [] as Chain[] }
-      );
+      const enabled: Chain[] = [];
+      const disabled: Chain[] = [];
+      for (const items of filteredSupportedLedgerFamiliesWithCurrency.values()) {
+        for (const item of items.values()) {
+          if (item.enabled) {
+            enabled.push(item.chain);
+          } else {
+            disabled.push(item.chain);
+          }
+        }
+      }
 
       // Set chains to expose for switcher
       filteredChains.set([...enabled, ...disabled]);
       disabledChains.set(disabled);
 
       const accountsWithChain = allAccounts
-        .reduce(
-          (acc, next) => {
-            const family = ledgerCurrencies.get(next.currency);
+        .flatMap((account) => {
+          const family = ledgerCurrencies.get(account.currency);
 
-            if (!family) return acc;
+          if (!family || !isSupportedLedgerLiveFamily(family)) return [];
 
-            const itemMap = filteredSupportedLedgerFamiliesWithCurrency.get(
-              family as SupportedLedgerLiveFamilies
-            );
+          const itemMap =
+            filteredSupportedLedgerFamiliesWithCurrency.get(family);
+          const chainItem = itemMap?.get("*") || itemMap?.get(account.currency);
 
-            if (!family || !itemMap) return acc;
-
-            const chainItem = itemMap.get("*") || itemMap.get(next.currency);
-
-            if (chainItem) {
-              acc.push({ account: next, chainItem });
-            }
-
-            return acc;
-          },
-          [] as { account: Account; chainItem: ChainItem }[]
-        )
+          return chainItem ? [{ account, chainItem }] : [];
+        })
         .sort((a, b) => {
           const aPriority = ledgerChainPriority.get(a.chainItem.network) || 999;
           const bPriority = ledgerChainPriority.get(b.chainItem.network) || 999;
@@ -202,12 +188,12 @@ const createLedgerLiveConnector = ({
         accountsOnCurrentChainState.set([]);
         currentChain = defaultChain;
 
-        onAccountsChanged([noAccountPlaceholder as Address]);
+        onAccountsChanged([noAccountPlaceholder]);
         onChainChanged(defaultChain.chain.id.toString());
 
         return wagmiConnectResult(
           args?.withCapabilities,
-          [noAccountPlaceholder as Address],
+          [noAccountPlaceholder],
           defaultChain.chain.id
         );
       }
@@ -249,12 +235,12 @@ const createLedgerLiveConnector = ({
         Result.getOrThrow(getAccountsOnCurrentChain())
       );
 
-      onAccountsChanged([accountWithChain.account.address as Address]);
+      onAccountsChanged([accountWithChain.account.address]);
       onChainChanged(currentChain.chain.id.toString());
 
       return wagmiConnectResult(
         args?.withCapabilities,
-        [accountWithChain.account.address as Address],
+        [accountWithChain.account.address],
         currentChain.chain.id
       );
     };
@@ -269,7 +255,7 @@ const createLedgerLiveConnector = ({
         : Result.fail(new Error("Current chain not found"));
 
     const { onAccountsChanged, onChainChanged, onDisconnect } =
-      makeWagmiConnectorEvents(config.emitter, normalizeChainId);
+      makeWagmiConnectorEvents(config.emitter, parseWalletRoutingId);
 
     const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
       async () => ({});
@@ -290,11 +276,13 @@ const createLedgerLiveConnector = ({
       };
 
     const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
-      async () => [currentAccount.get()?.address as Address];
+      async () => [
+        toWagmiAccount(currentAccount.get()?.address ?? noAccountPlaceholder),
+      ];
 
     const switchAccount = (account: Account) => {
       currentAccount.set(account);
-      onAccountsChanged([account.address as Address]);
+      onAccountsChanged([account.address]);
     };
 
     const requestAndSwitchAccount = (chain: Chain) =>
@@ -368,7 +356,7 @@ const createLedgerLiveConnector = ({
       if (!selectedAccount) throw new Error("Account not found");
 
       onChainChanged(chainId.toString());
-      onAccountsChanged([selectedAccount.address as Address]);
+      onAccountsChanged([selectedAccount.address]);
 
       return skSupportedChain.chain;
     };
@@ -447,14 +435,3 @@ export const ledgerLiveConnector = ({
       ],
     };
   });
-
-type ChainItem = {
-  currencyId: string;
-  family: SupportedLedgerLiveFamilies;
-  network: WalletNetwork;
-  chain: Chain;
-};
-
-export type EnabledChainsMap = Parameters<
-  typeof getFilteredSupportedLedgerFamiliesWithCurrency
->[0]["enabledChainsMap"];

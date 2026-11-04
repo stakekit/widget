@@ -57,7 +57,7 @@ export const getActivityHistoryKey = (
     includeYield,
     scope: key.scope,
     statuses: ACTIVITY_ACTION_STATUSES,
-    yieldTypes,
+    yieldTypes: yieldTypes ?? [],
   });
 };
 

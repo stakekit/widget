@@ -1,10 +1,12 @@
 import { isSameAddress } from "@luno-kit/core/utils";
 import type { SignerPayloadJSON } from "@polkadot/types/types";
-import { Array as EArray, Effect, Predicate, Schema } from "effect";
+import { Array as EArray, Effect, Option, Predicate, Schema } from "effect";
 import { WalletIntegrationError } from "../../../wallet-errors";
-import type {
-  WalletConnectProtocol,
-  WalletConnectSession,
+import {
+  caipAddresses,
+  caipChainId,
+  type WalletConnectProtocol,
+  type WalletConnectSession,
 } from "../../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import type { SubstrateChain } from "./chains";
@@ -23,15 +25,10 @@ const SignerResult = Schema.Struct({
 
 /** WalletConnect identifies a Substrate chain by its genesis hash's first 16 bytes. */
 const toChainId = (genesisHash: string) =>
-  `polkadot:${genesisHash.slice(2, 34)}`;
+  caipChainId("polkadot", genesisHash.slice(2, 34));
 
 const walletError = (operation: string, message: string) =>
   new WalletIntegrationError({ message, operation });
-
-const addressesOn = (session: WalletConnectSession, chainId: string) =>
-  session.accounts.flatMap((account) =>
-    account.startsWith(`${chainId}:`) ? [account.slice(chainId.length + 1)] : []
-  );
 
 /**
  * A Substrate wallet over the shared WalletConnect protocol (namespace
@@ -49,9 +46,12 @@ export const makeSubstrateWalletConnect = ({
   readonly runWalletEffect: RunWalletEffect;
   readonly onDisconnect: () => void;
 }): SubstrateWallet => {
-  const chains = EArray.map(substrateChains, (chain) =>
-    toChainId(chain.genesisHash)
-  );
+  // Configured chains carry well-formed genesis hashes.
+  const configured = EArray.map(substrateChains, (chain) => ({
+    chain,
+    chainId: Option.getOrThrow(toChainId(chain.genesisHash)),
+  }));
+  const chains = EArray.map(configured, ({ chainId }) => chainId);
   const state: {
     session: WalletConnectSession | undefined;
     unsubscribeEnded: (() => void) | undefined;
@@ -60,7 +60,9 @@ export const makeSubstrateWalletConnect = ({
 
   const usable = (session: WalletConnectSession) =>
     session.methods.includes(signTransactionMethod) &&
-    chains.some((chainId) => addressesOn(session, chainId).length > 0);
+    chains.some(
+      (chainId) => caipAddresses(session.accounts, chainId).length > 0
+    );
 
   const restoredSession = protocol
     .sessions("polkadot")
@@ -128,11 +130,11 @@ export const makeSubstrateWalletConnect = ({
       if (topic) await runWalletEffect(protocol.disconnect(topic));
     },
     getAccounts: async (wagmiChainId) => {
-      const chain = substrateChains.find(
-        (candidate) => candidate.wagmiChain.id === wagmiChainId
-      );
-      return state.session && chain
-        ? addressesOn(state.session, toChainId(chain.genesisHash))
+      const chainId = configured.find(
+        ({ chain }) => chain.wagmiChain.id === wagmiChainId
+      )?.chainId;
+      return state.session && chainId
+        ? caipAddresses(state.session.accounts, chainId)
         : [];
     },
     canRestore: () =>
@@ -144,12 +146,14 @@ export const makeSubstrateWalletConnect = ({
           walletError("substrate-sign", "WalletConnect session not connected")
         );
       }
-      const chainId = toChainId(payload.genesisHash);
+      const chainId = Option.getOrUndefined(toChainId(payload.genesisHash));
       // Wallets may report the signer in another SS58 format.
-      const address = addressesOn(session, chainId).find((candidate) =>
-        isSameAddress(candidate, payload.address)
-      );
-      if (!address) {
+      const address = chainId
+        ? caipAddresses(session.accounts, chainId).find((candidate) =>
+            isSameAddress(candidate, payload.address)
+          )
+        : undefined;
+      if (!chainId || !address) {
         return Effect.fail(
           walletError(
             "substrate-sign",

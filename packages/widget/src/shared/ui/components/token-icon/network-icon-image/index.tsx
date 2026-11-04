@@ -6,7 +6,7 @@ import { logoContainer, logoImage } from "./style.css";
 type NetworkLogoImageProps = {
   networkLogoUri: string;
   networkName?: string;
-  tokenNetworkLogoHw?: Atoms["hw"];
+  tokenNetworkLogoHw?: Atoms["hw"] | undefined;
 };
 
 export const NetworkLogoImage = ({

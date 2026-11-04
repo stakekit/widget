@@ -1,8 +1,10 @@
 import { Effect, Predicate, Schema, SchemaTransformation } from "effect";
 import { WalletIntegrationError } from "../../../wallet-errors";
-import type {
-  WalletConnectProtocol,
-  WalletConnectSession,
+import {
+  CaipChainId,
+  caipAddresses,
+  type WalletConnectProtocol,
+  type WalletConnectSession,
 } from "../../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import {
@@ -13,7 +15,7 @@ import {
 import type { TronWallet } from "./tron-connector-meta";
 
 /** CAIP-2 id of Tron mainnet, the only Tron network the widget configures. */
-const mainnet = "tron:0x2b6653dc";
+const mainnet = Schema.decodeSync(CaipChainId)("tron:0x2b6653dc");
 
 // Wallets answer with the signed transaction, bare or in a `result` envelope.
 const SignTransactionResponse = Schema.Union([
@@ -30,9 +32,7 @@ const SignTransactionResponse = Schema.Union([
 ]);
 
 const mainnetAddress = (session: WalletConnectSession) =>
-  session.accounts
-    .find((account) => account.startsWith(`${mainnet}:`))
-    ?.slice(mainnet.length + 1);
+  caipAddresses(session.accounts, mainnet)[0];
 
 type Connection = Readonly<{
   session: WalletConnectSession;

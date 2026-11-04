@@ -1,3 +1,4 @@
+import { Effect, Schema } from "effect";
 import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
 import type {
@@ -6,9 +7,15 @@ import type {
 } from "../../domain/action/models";
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
+import {
+  SignedTransactionPayload,
+  TransactionHash,
+  WalletSignature,
+} from "../../domain/identity/identifiers";
 import type { Network } from "../../domain/network/network";
 import type { Token } from "../../domain/token/token";
 import * as LegacyApi from "../../generated/api/legacy-schema";
+import { WalletBroadcastError, WalletSigningError } from "./wallet-errors";
 
 type YieldProviderDetail = {
   readonly name: string;
@@ -33,6 +40,7 @@ export type YieldActionMeta = {
   readonly providersDetails: Array<YieldProviderDetail>;
 };
 
+/** Every field is always present (possibly `undefined`): hosts receive it as-is. */
 export type YieldTransactionMeta = YieldActionMeta & {
   readonly annotatedTransaction: ActionTransaction["annotatedTransaction"];
   readonly gasEstimate: ActionTransaction["gasEstimate"];
@@ -40,6 +48,8 @@ export type YieldTransactionMeta = YieldActionMeta & {
   readonly txId: ActionTransaction["id"];
   readonly txType: ActionTransaction["type"];
 };
+
+type BorrowRawArguments = NonNullable<BorrowAction["rawArguments"]>;
 
 export type BorrowTransactionMeta = {
   readonly actionId: BorrowAction["id"];
@@ -52,11 +62,13 @@ export type BorrowTransactionMeta = {
     readonly borrowAmount?: string;
     readonly collateralAmount?: string;
     readonly collateralAmountRaw?: string;
-    readonly collateralTokenAddress?: string;
-    readonly marketId: string;
+    readonly collateralTokenAddress?: NonNullable<
+      BorrowRawArguments["collateralTokenAddress"]
+    >;
+    readonly marketId: BorrowRawArguments["marketId"];
     readonly repayAll?: boolean;
     readonly targetLtv?: string;
-    readonly tokenAddress?: string;
+    readonly tokenAddress?: NonNullable<BorrowRawArguments["tokenAddress"]>;
   };
   readonly txId: BorrowTransaction["id"];
   readonly txType: BorrowTransaction["type"];
@@ -68,7 +80,8 @@ export type LegacyTransaction = typeof LegacyTransaction.Type;
 type WalletEvmTransactionInputCommon = {
   readonly account?: Address;
   readonly chainId?: number;
-  readonly connector?: Connector;
+  // `undefined` is passed to override a connector with Wagmi's current one.
+  readonly connector?: Connector | undefined;
   readonly data?: Hex;
   readonly gas?: bigint;
   readonly to: Address;
@@ -111,10 +124,41 @@ export type WalletSignTransactionInput = WalletSignTransactionInputFields &
 
 export type WalletSignedPayloadResult = {
   readonly broadcasted: false;
-  readonly signedTx: string;
+  readonly signedTx: SignedTransactionPayload;
 };
 
 export type WalletBroadcastResult = {
   readonly broadcasted: true;
-  readonly signedTx: string;
+  readonly signedTx: TransactionHash;
 };
+
+/** What a wallet answered for a transaction it signed and broadcast. */
+export const decodeWalletBroadcastResult = (
+  hash: unknown
+): Effect.Effect<WalletBroadcastResult, WalletBroadcastError> =>
+  Schema.decodeUnknownEffect(TransactionHash)(hash).pipe(
+    Effect.map((signedTx) => ({ broadcasted: true, signedTx }) as const),
+    Effect.mapError(
+      (cause) => new WalletBroadcastError({ cause, customMessage: null })
+    )
+  );
+
+/** What a wallet answered for a transaction it signed but did not broadcast. */
+export const decodeWalletSignedPayloadResult = (
+  payload: unknown
+): Effect.Effect<WalletSignedPayloadResult, WalletSigningError> =>
+  Schema.decodeUnknownEffect(SignedTransactionPayload)(payload).pipe(
+    Effect.map((signedTx) => ({ broadcasted: false, signedTx }) as const),
+    Effect.mapError(
+      (cause) => new WalletSigningError({ cause, operation: "transaction" })
+    )
+  );
+
+/** The signature a wallet answered for a message or typed data. */
+export const decodeWalletSignature = (
+  signature: unknown,
+  operation: "message" | "typed-data"
+): Effect.Effect<WalletSignature, WalletSigningError> =>
+  Schema.decodeUnknownEffect(WalletSignature)(signature).pipe(
+    Effect.mapError((cause) => new WalletSigningError({ cause, operation }))
+  );

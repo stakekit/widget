@@ -100,7 +100,7 @@ export const installSolanaConnectorMembership = Effect.fn(
       current.map((connector) => [connector.name, connector])
     );
     const desiredNames = new Set<string>(
-      snapshot.wallets.map((wallet) => wallet.adapter.name as string)
+      snapshot.wallets.map((wallet) => wallet.adapter.name)
     );
     const activeUids = new Set(config.state.connections.keys());
     const desired = yield* Effect.forEach(

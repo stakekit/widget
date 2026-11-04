@@ -22,7 +22,9 @@ export const MetricCards = ({
     };
     const toneClass = getToneClass();
 
-    return { ...card, valueClassName: toneClass };
+    return toneClass === undefined
+      ? card
+      : { ...card, valueClassName: toneClass };
   });
 
   return <PositionMetricCards cards={positionCards} />;

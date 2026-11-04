@@ -41,11 +41,13 @@ const rewardsPolicy = withApiResourcePolicy({
   staleTime: Duration.seconds(30),
 });
 
+const noRewardSummaries: RewardSummaries = {};
+
 const rewardSummariesCanonicalAtom = Atom.family((key: RewardSummariesKey) =>
   appRuntime
     .atom(() =>
       key.yieldIds.length === 0
-        ? Effect.succeed({} as RewardSummaries)
+        ? Effect.succeed(noRewardSummaries)
         : LegacyResourceSource.use((source) =>
             source
               .getRewardsSummaries({

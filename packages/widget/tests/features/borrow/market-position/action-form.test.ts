@@ -3,6 +3,7 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { Integration } from "../../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../../src/domain/borrow/catalog/market";
+import { TokenAddress } from "../../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import {
@@ -47,7 +48,9 @@ describe("Borrow position action form intent", () => {
     expect(
       applyBorrowWithdrawFormAction({
         action: {
-          tokenAddress: "0x0000000000000000000000000000000000000001",
+          tokenAddress: Schema.decodeSync(TokenAddress)(
+            "0x0000000000000000000000000000000000000001"
+          ),
           type: "token/select",
         },
         intent: changed,

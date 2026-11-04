@@ -239,7 +239,11 @@ describe("activity action atom boundary", () => {
         readonly offset: number;
       }) =>
         tracked({
-          items: [yieldApiValidatorFixture({ address: request.address })],
+          items: [
+            yieldApiValidatorFixture(
+              request.address === undefined ? {} : { address: request.address }
+            ),
+          ],
           limit: request.limit,
           offset: request.offset,
           total: 1,
@@ -436,7 +440,11 @@ const validatorPage = (request: {
   readonly limit: number;
   readonly offset: number;
 }) => ({
-  items: [yieldApiValidatorFixture({ address: request.address })],
+  items: [
+    yieldApiValidatorFixture(
+      request.address === undefined ? {} : { address: request.address }
+    ),
+  ],
   limit: request.limit,
   offset: request.offset,
   total: 1,

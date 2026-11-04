@@ -14,9 +14,10 @@ import {
   WalletSigningError,
   WalletSwitchError,
 } from "../../wallet-errors";
-import type {
-  WalletBroadcastResult,
-  WalletEvmTransactionInput,
+import {
+  decodeWalletBroadcastResult,
+  decodeWalletSignature,
+  type WalletEvmTransactionInput,
 } from "../../wallet-transactions";
 import { WagmiOperations } from "../platform/wagmi-operations";
 
@@ -76,13 +77,7 @@ export const makeWagmiActions = Effect.gen(function* () {
                 customMessage: null,
               })
           ),
-          Effect.map(
-            (signedTx) =>
-              ({
-                broadcasted: true,
-                signedTx,
-              }) satisfies WalletBroadcastResult
-          )
+          Effect.flatMap(decodeWalletBroadcastResult)
         );
     }),
     signMessage: Effect.fn("signMessage")(function* (
@@ -101,6 +96,9 @@ export const makeWagmiActions = Effect.gen(function* () {
                 cause: error.cause,
                 operation: "message",
               })
+          ),
+          Effect.flatMap((signature) =>
+            decodeWalletSignature(signature, "message")
           )
         );
     }),
@@ -116,6 +114,9 @@ export const makeWagmiActions = Effect.gen(function* () {
                 cause: error.cause,
                 operation: "typed-data",
               })
+          ),
+          Effect.flatMap((signature) =>
+            decodeWalletSignature(signature, "typed-data")
           )
         );
     }),

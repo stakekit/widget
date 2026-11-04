@@ -1,5 +1,3 @@
-import type { Address } from "viem";
-
 /**
  * Wagmi types `connect` as a generic whose return depends on `withCapabilities`.
  * A runtime ternary cannot satisfy that conditional type, so wagmi's own
@@ -7,12 +5,15 @@ import type { Address } from "viem";
  */
 export const wagmiConnectResult = (
   withCapabilities: boolean | undefined,
-  accounts: readonly Address[],
+  accounts: readonly string[],
   chainId: number
-) =>
-  ({
+) => {
+  const result = {
     accounts: withCapabilities
       ? accounts.map((address) => ({ address, capabilities: {} }))
       : accounts,
     chainId,
-  }) as never;
+  };
+  // biome-ignore lint/nursery/noUnsafeTypeAssertion: wagmi's connect return type is conditional on the withCapabilities generic, which a runtime value cannot satisfy
+  return result as never;
+};

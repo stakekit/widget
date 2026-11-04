@@ -138,7 +138,7 @@ const RuntimeHarness = ({
         onClick={() => {
           if (AsyncResult.isSuccess(tracking)) {
             // ast-grep-ignore: no-run-effect-in-test -- React event handlers are non-Effect boundaries
-            Effect.runFork(tracking.value.trackEvent("txSigned"));
+            Effect.runFork(tracking.value.trackEvent("txNotConfirmed"));
           }
         }}
       >

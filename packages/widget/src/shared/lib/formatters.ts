@@ -42,7 +42,7 @@ export const getGasFeeInUSD = ({
   if (!yieldDto || !gas) return "";
 
   const gasFeeInUSD = getTokenPriceInUSD({
-    amount: gas.toString(),
+    amount: gas,
     prices: prices ?? new Prices(new Map()),
     token: yieldDto.mechanics.gasFeeToken,
     pricePerShare: null,

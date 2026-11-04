@@ -45,7 +45,7 @@ const Tabs = ({ pendingActionsCount }: TabsProps) => {
 
     trackEvent("tabClicked", { selected });
 
-    navigation.push(TABS_MAP[selected]);
+    void navigation.push(TABS_MAP[selected]);
   };
 
   return (

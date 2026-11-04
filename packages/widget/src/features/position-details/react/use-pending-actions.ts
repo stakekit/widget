@@ -2,7 +2,6 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { PendingAction } from "../../../domain/action/models";
 import type { EarnBalance } from "../../../domain/earn/models";
 
-import type { ValidatorInput as ValidatorDto } from "../../../domain/earn/validator";
 import { positionDetailsPendingActions } from "../state/actions/pending-action";
 import type {
   PositionDetailsWorkflowAction as Actions,
@@ -46,7 +45,7 @@ export const usePendingActions = ({
     });
   };
 
-  const onValidatorsSubmit = (_selectedValidators: ValidatorDto["address"][]) =>
+  const onValidatorsSubmit = () =>
     runPendingAction({ _tag: "SubmitValidators" });
 
   return {

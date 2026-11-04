@@ -1,5 +1,4 @@
 import { Schema, Struct } from "effect";
-import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantArray, TolerantRecord } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
@@ -27,10 +26,10 @@ const RewardRateHistoryItem = Schema.Struct({
 });
 export type RewardRateHistoryItem = typeof RewardRateHistoryItem.Type;
 
+// `tvlRaw` is unread: the chart plots `tvl` in token units.
 const TvlHistoryItem = Schema.Struct({
   timestamp: UtcDateTimeFromString,
   tvl: ExactDecimal,
-  tvlRaw: Schema.String,
 });
 export type TvlHistoryItem = typeof TvlHistoryItem.Type;
 
@@ -54,8 +53,9 @@ export const TvlHistoryResponse = Schema.Struct({
   }),
 });
 
+// Only the reward total is read.
 export const RewardsSummary = Schema.Struct({
-  ...Struct.pick(LegacyApi.YieldRewardsSummaryResponseDto.fields, ["rewards"]),
+  rewards: Schema.Struct({ total: ExactDecimal }),
   token: LegacyToken,
 });
 export type RewardsSummary = typeof RewardsSummary.Type;

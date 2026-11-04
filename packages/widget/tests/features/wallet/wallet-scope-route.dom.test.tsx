@@ -69,7 +69,7 @@ const TestRouter = ({
   replacement,
 }: {
   readonly initialState: NormalizedWalletState;
-  readonly replacement?: NormalizedWalletState;
+  readonly replacement?: NormalizedWalletState | undefined;
 }) => {
   const [walletState, setWalletState] = useState(initialState);
 

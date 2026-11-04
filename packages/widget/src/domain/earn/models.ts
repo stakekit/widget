@@ -3,15 +3,16 @@ import {
   Option,
   Predicate,
   Schema,
+  type SchemaAST,
   SchemaGetter,
   SchemaParser,
+  SchemaTransformation,
   Struct,
 } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { PendingAction } from "../action/models";
 import { TronResource } from "../action/tron-resource";
 import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
-import { exactDecimal } from "../finance/exact";
 import {
   ExactBaseUnitAmount,
   ExactDecimal,
@@ -19,6 +20,7 @@ import {
   TolerantOptionalUtcDateTimeFromString,
 } from "../finance/scalars";
 import {
+  ContractAddress,
   ProviderId,
   ProviderOption,
   TokenAddress,
@@ -26,6 +28,13 @@ import {
   YieldId,
 } from "../identity/identifiers";
 import { Token } from "../token/token";
+
+/**
+ * An optional decimal the widget reads: a malformed value becomes `null` so
+ * only that field is lost, never the model holding it.
+ */
+const TolerantExactDecimal = (operation: string, field: string) =>
+  TolerantNullOr(ExactDecimal, { operation, field });
 
 // `yieldSource` stays open: reward-rate breakdowns already fall back for
 // sources they do not group.
@@ -122,18 +131,12 @@ const hasCoherentAmountBounds = (
 };
 
 const normalizeAmountMaximum = (
-  minimumValue: string | number,
-  maximumValue: string | number | null
-) => {
-  const minimum = exactDecimal(minimumValue);
-  const maximum = maximumValue === null ? null : exactDecimal(maximumValue);
-
-  return maximum !== null &&
-    minimum.isGreaterThanOrEqualTo(0) &&
-    maximum.isEqualTo(-1)
+  minimum: ExactDecimal,
+  maximum: ExactDecimal | null
+) =>
+  maximum !== null && minimum.isGreaterThanOrEqualTo(0) && maximum.isEqualTo(-1)
     ? null
-    : maximumValue;
-};
+    : maximum;
 
 const decodeApiArgument = <
   const Name extends ApiArgumentName,
@@ -161,10 +164,15 @@ const decodeApiArgument = <
     })
   );
 
-const AmountArgumentDomain = Schema.Struct({
-  required: Schema.Boolean,
+const AmountArgumentBounds = Schema.Struct({
   minimum: ExactDecimal,
   maximum: Schema.NullOr(ExactDecimal),
+});
+
+const AmountArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  minimum: Schema.toType(ExactDecimal),
+  maximum: Schema.NullOr(Schema.toType(ExactDecimal)),
 }).check(
   Schema.makeFilter((field) =>
     hasCoherentAmountBounds(field.minimum, field.maximum)
@@ -177,16 +185,20 @@ const AmountArgument = decodeApiArgument(
   "amount",
   "string",
   AmountArgumentDomain,
-  SchemaGetter.transform<typeof AmountArgumentDomain.Encoded, ApiArgumentField>(
-    (field) => {
-      const minimum = field.minimum ?? "0";
-
-      return {
-        maximum: normalizeAmountMaximum(minimum, field.maximum ?? null),
+  SchemaGetter.transformEffect<
+    typeof AmountArgumentDomain.Encoded,
+    ApiArgumentField
+  >((field, options) =>
+    SchemaParser.decodeEffect(AmountArgumentBounds)(
+      { maximum: field.maximum ?? null, minimum: field.minimum ?? "0" },
+      options
+    ).pipe(
+      Effect.map(({ maximum, minimum }) => ({
+        maximum: normalizeAmountMaximum(minimum, maximum),
         minimum,
         required: field.required ?? false,
-      };
-    }
+      }))
+    )
   )
 );
 
@@ -313,7 +325,7 @@ const EncryptedAmountArgument = decodeApiArgument(
 
 const EncryptedLegAmountsArgumentDomain = Schema.Struct({
   required: Schema.Boolean,
-  options: Schema.Array(Schema.String),
+  options: Schema.Array(ContractAddress),
 }).check(makeRequiredOptionsFilter("encryptedLegAmounts"));
 
 const EncryptedLegAmountsArgument = decodeApiArgument(
@@ -395,13 +407,9 @@ const EarnYieldArguments = Schema.Struct({
 
 // Provider `type` is not picked, so new provider kinds stay decodable.
 export const EarnProvider = Schema.Struct({
-  ...Struct.pick(YieldApi.ProviderDto.fields, [
-    "name",
-    "logoURI",
-    "website",
-    "tvlUsd",
-  ]),
+  ...Struct.pick(YieldApi.ProviderDto.fields, ["name", "logoURI", "website"]),
   id: ProviderId,
+  tvlUsd: TolerantExactDecimal("yield-provider", "tvlUsd"),
 });
 export type EarnProvider = typeof EarnProvider.Type;
 
@@ -412,14 +420,13 @@ export type EarnValidatorKey = typeof EarnValidatorKey.Type;
 
 const makeEarnValidatorKey = Schema.decodeSync(EarnValidatorKey);
 
+// `tvlRaw` is not decoded: TVL is displayed in token units from `tvl`.
 const EarnValidatorWire = Schema.Struct({
   ...Struct.pick(YieldApi.ValidatorDto.fields, [
     "name",
     "logoURI",
     "website",
     "commission",
-    "tvl",
-    "tvlRaw",
     "votingPower",
     "preferred",
     "nominatorCount",
@@ -429,6 +436,7 @@ const EarnValidatorWire = Schema.Struct({
   address: ValidatorAddress,
   providerId: Schema.optionalKey(ProviderId),
   rewardRate: Schema.optionalKey(EarnRewardRate),
+  tvl: Schema.optionalKey(TolerantExactDecimal("yield-validator", "tvl")),
 });
 
 export const EarnValidator = EarnValidatorWire.pipe(
@@ -463,9 +471,55 @@ const EarnYieldRequirements = Schema.Struct({
   ),
 });
 
-const EarnYieldState = YieldApi.YieldStateDto.mapFields(
-  Struct.pick(["pricePerShareState"])
-);
+const EarnPricePerShareState = Schema.Struct({
+  price: ExactDecimal,
+  shareToken: Token,
+});
+
+// A malformed price-per-share state only drops share pricing.
+const EarnYieldState = Schema.Struct({
+  pricePerShareState: Schema.optionalKey(
+    TolerantNullOr(EarnPricePerShareState, {
+      operation: "yield-state",
+      field: "pricePerShareState",
+    })
+  ),
+});
+
+// Only the statistics the widget reads are decoded; `tvl`/`tvlRaw` are unread.
+const EarnYieldStatistics = Schema.Struct({
+  ...Struct.pick(YieldApi.YieldStatisticsDto.fields, ["uniqueUsers"]),
+  averagePositionSizeUsd: Schema.optionalKey(
+    TolerantExactDecimal("yield-statistics", "averagePositionSizeUsd")
+  ),
+  tvlUsd: Schema.optionalKey(
+    TolerantExactDecimal("yield-statistics", "tvlUsd")
+  ),
+});
+
+// Fees are percentages; a malformed one drops only itself.
+const EarnYieldFee = Schema.Struct({
+  deposit: Schema.optionalKey(TolerantExactDecimal("yield-fee", "deposit")),
+  management: Schema.optionalKey(
+    TolerantExactDecimal("yield-fee", "management")
+  ),
+  performance: Schema.optionalKey(
+    TolerantExactDecimal("yield-fee", "performance")
+  ),
+  withdrawal: Schema.optionalKey(
+    TolerantExactDecimal("yield-fee", "withdrawal")
+  ),
+});
+
+// Token-unit limits; a malformed limit reads as no limit.
+const EarnYieldEntryLimits = Schema.Struct({
+  maximum: TolerantExactDecimal("yield-entry-limits", "maximum"),
+  minimum: TolerantExactDecimal("yield-entry-limits", "minimum"),
+  subsequentMinimum: TolerantExactDecimal(
+    "yield-entry-limits",
+    "subsequentMinimum"
+  ),
+});
 
 const EarnYieldRisk = Schema.Struct({
   ratings: Schema.Array(
@@ -505,11 +559,18 @@ const EarnInvestmentSchedule = Schema.Struct({
 });
 export type EarnInvestmentSchedule = typeof EarnInvestmentSchedule.Type;
 
+/** The contracts a yield's enter and exit transactions call. */
+const EarnExecutionContracts = Schema.Struct({
+  enter: Schema.optionalKey(Schema.Array(ContractAddress)),
+  exit: Schema.optionalKey(Schema.Array(ContractAddress)),
+});
+
 export const EarnYield = Schema.Struct({
-  ...Struct.pick(YieldApi.YieldDto.fields, ["network", "statistics", "status"]),
+  ...Struct.pick(YieldApi.YieldDto.fields, ["network", "status"]),
+  statistics: Schema.optionalKey(EarnYieldStatistics),
   // Malformed contracts leave the yield non-confidential.
   executionContracts: Schema.optionalKey(
-    TolerantNullOr(YieldApi.ExecutionContractsDto, {
+    TolerantNullOr(EarnExecutionContracts, {
       operation: "yield",
       field: "executionContracts",
     })
@@ -533,9 +594,9 @@ export const EarnYield = Schema.Struct({
       "lockupPeriod",
       "cooldownPeriod",
       "warmupPeriod",
-      "fee",
-      "entryLimits",
     ]),
+    entryLimits: Schema.optionalKey(EarnYieldEntryLimits),
+    fee: Schema.optionalKey(EarnYieldFee),
     arguments: Schema.optionalKey(EarnYieldArguments),
     gasFeeToken: Token,
     requirements: Schema.optionalKey(EarnYieldRequirements),
@@ -568,14 +629,74 @@ const OptionalKeyFromNullOr = <S extends Schema.Top>(schema: S) =>
     })
   );
 
-export const EarnBalance = Schema.Struct({
+/** The ciphertext handle a confidential balance's shares are hidden behind. */
+export const ConfidentialHandle = Schema.String.pipe(
+  Schema.decode(SchemaTransformation.toLowerCase()),
+  Schema.decodeTo(
+    Schema.TemplateLiteral(["0x", Schema.String])
+      .check(Schema.isPattern(/^0x[0-9a-f]{64}$/))
+      .pipe(Schema.brand("ConfidentialHandle"))
+  )
+);
+export type ConfidentialHandle = typeof ConfidentialHandle.Type;
+
+/**
+ * A balance's shares. The API sends an encrypted balance's handle where a
+ * plain balance has its base-unit share count; a revealed balance holds the
+ * decrypted count beside the handle it was decrypted from.
+ */
+export const EarnBalanceShares = Schema.TaggedUnion({
+  Plain: {
+    amount: Schema.optionalKey(Schema.toType(ExactDecimal)),
+    amountRaw: Schema.optionalKey(Schema.BigInt),
+  },
+  Encrypted: { handle: Schema.toType(ConfidentialHandle) },
+  Revealed: {
+    amount: Schema.toType(ExactDecimal),
+    amountRaw: Schema.BigInt,
+    handle: Schema.toType(ConfidentialHandle),
+  },
+});
+export type EarnBalanceShares = typeof EarnBalanceShares.Type;
+
+export type BalanceShares = Readonly<{
+  readonly shares?: EarnBalanceShares;
+}>;
+
+/** The handle a still-encrypted balance's shares are hidden behind. */
+export const getEncryptedHandle = (
+  balance: BalanceShares
+): ConfidentialHandle | null =>
+  balance.shares?._tag === "Encrypted" ? balance.shares.handle : null;
+
+/** The share count a balance shows: plain from the API, or revealed. */
+export const getVisibleShares = (balance: BalanceShares) =>
+  balance.shares === undefined || balance.shares._tag === "Encrypted"
+    ? null
+    : balance.shares;
+
+const PlainShareAmountRaw = TolerantNullOr(ExactBaseUnitAmount, {
+  operation: "yield-balance",
+  field: "shareAmountRaw",
+});
+
+const EncryptedShareHandle = TolerantNullOr(ConfidentialHandle, {
+  operation: "yield-balance",
+  field: "shareAmountRaw",
+});
+
+const EarnBalanceWire = Schema.Struct({
   ...Struct.pick(YieldApi.BalanceDto.fields, [
     "address",
     "type",
     "isEncrypted",
-    "shareAmount",
-    "shareAmountRaw",
   ]),
+  shareAmount: Schema.optionalKey(
+    TolerantExactDecimal("yield-balance", "shareAmount")
+  ),
+  // Its meaning depends on `isEncrypted`, so the tolerant decoders below
+  // check it; any wire value reaches them.
+  shareAmountRaw: Schema.optionalKey(Schema.Unknown),
   shareToken: Schema.optionalKey(Token),
   amount: ExactDecimal,
   amountRaw: ExactBaseUnitAmount,
@@ -595,13 +716,65 @@ export const EarnBalance = Schema.Struct({
     TolerantArray(EarnValidator, { operation: "balance-validators" })
   ),
 });
-/**
- * `revealedHandle` is set by the widget, never by the API: the handle a
- * revealed balance was decrypted from, which its `shareAmountRaw` no longer holds.
- */
-export type EarnBalance = typeof EarnBalance.Type & {
-  readonly revealedHandle?: string;
-};
+
+const EarnBalanceDomain = Schema.Struct({
+  ...Struct.map(
+    Struct.omit(EarnBalanceWire.fields, ["shareAmount", "shareAmountRaw"]),
+    Schema.toType
+  ),
+  shares: Schema.optionalKey(EarnBalanceShares),
+});
+
+type EarnBalanceWire = typeof EarnBalanceWire.Type;
+
+const decodeBalanceShares = (
+  {
+    isEncrypted,
+    shareAmount,
+    shareAmountRaw,
+  }: Pick<EarnBalanceWire, "isEncrypted" | "shareAmount" | "shareAmountRaw">,
+  options: SchemaAST.ParseOptions
+) =>
+  isEncrypted
+    ? SchemaParser.decodeEffect(EncryptedShareHandle)(
+        shareAmountRaw ?? null,
+        options
+      ).pipe(
+        Effect.map((handle): EarnBalanceShares | null =>
+          handle === null ? null : { _tag: "Encrypted", handle }
+        )
+      )
+    : SchemaParser.decodeEffect(PlainShareAmountRaw)(
+        shareAmountRaw ?? null,
+        options
+      ).pipe(
+        Effect.map((amountRaw): EarnBalanceShares | null =>
+          amountRaw === null && shareAmount == null
+            ? null
+            : {
+                _tag: "Plain",
+                ...(shareAmount == null ? {} : { amount: shareAmount }),
+                ...(amountRaw === null ? {} : { amountRaw }),
+              }
+        )
+      );
+
+export const EarnBalance = EarnBalanceWire.pipe(
+  Schema.decodeTo(EarnBalanceDomain, {
+    decode: SchemaGetter.transformEffect((wire, options) => {
+      const balance = Struct.omit(wire, ["shareAmount", "shareAmountRaw"]);
+      return decodeBalanceShares(wire, options).pipe(
+        Effect.map((shares) =>
+          shares === null ? balance : { ...balance, shares }
+        )
+      );
+    }),
+    encode: SchemaGetter.forbidden(
+      () => "Decoded Earn balances are decode-only"
+    ),
+  })
+);
+export type EarnBalance = typeof EarnBalance.Type;
 
 export const EarnPosition = Schema.Struct({
   yieldId: YieldId,
@@ -621,14 +794,14 @@ export type EarnPosition = typeof EarnPosition.Type;
 export const EarnYieldBalancesResponse = EarnPosition;
 export type EarnYieldBalancesResponse = EarnPosition;
 
-const YieldIdentifier = Schema.Struct({ id: Schema.String }).pipe(
+const YieldIdentifier = Schema.Struct({ id: YieldId }).pipe(
   Schema.decodeTo(Schema.String, {
     decode: SchemaGetter.transform((value) => value.id),
     encode: SchemaGetter.forbidden(() => "Yield identifier is decode-only"),
   })
 );
 
-const ValidatorIdentifier = Schema.Struct({ address: Schema.String }).pipe(
+const ValidatorIdentifier = Schema.Struct({ address: ValidatorAddress }).pipe(
   Schema.decodeTo(Schema.String, {
     decode: SchemaGetter.transform((value) => value.address),
     encode: SchemaGetter.forbidden(() => "Validator identifier is decode-only"),

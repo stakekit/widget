@@ -486,7 +486,7 @@ export const makeCompleteWalletStateStream = ({
               controller,
               forceAddress: config.env.forceAddress,
               ledgerState: ledger,
-              previous,
+              ...(previous === undefined ? {} : { previous }),
             });
 
             return {

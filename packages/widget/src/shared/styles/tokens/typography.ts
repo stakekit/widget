@@ -55,8 +55,6 @@ export const fontSizes: CompleteTheme["fontSize"] = {
   "6xl": "3.815rem",
 } as const;
 
-export type Heading = keyof CompleteTheme["heading"];
-
 export const headings: CompleteTheme["heading"] = {
   h1: {
     mobile: { fontSize: fontSizes["3xl"] },
@@ -75,8 +73,6 @@ export const headings: CompleteTheme["heading"] = {
     tablet: { fontSize: fontSizes.lgx },
   },
 };
-
-export type Text = keyof CompleteTheme["text"];
 
 export const texts: CompleteTheme["text"] = {
   large: {

@@ -4,6 +4,7 @@ import {
   WalletCapabilityUnavailableError,
   WalletSigningError,
 } from "../../../wallet-errors";
+import { decodeWalletSignedPayloadResult } from "../../../wallet-transactions";
 import {
   type CosmosChainWallet,
   isCosmosConnector,
@@ -34,6 +35,6 @@ export const makeCosmosWalletDriver = ({
           )
         );
 
-      return { broadcasted: false, signedTx };
+      return yield* decodeWalletSignedPayloadResult(signedTx);
     }),
 });

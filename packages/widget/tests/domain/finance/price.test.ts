@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { getTokenPriceInUSD } from "../../../src/domain/finance/price";
@@ -6,16 +7,13 @@ import { formatUsd } from "../../../src/shared/lib/number-format";
 
 describe("token USD prices", () => {
   it("formats a native-token amount from the API price key", () => {
-    const token = {
-      network: "ethereum",
-      symbol: "ETH",
-    };
+    const token = { network: "ethereum" } as const;
     const prices = Schema.decodeSync(PriceResponse)({
       "ethereum-undefined": { price: 1619.22, price_24_h: 0 },
     });
 
     const amountInUsd = getTokenPriceInUSD({
-      amount: "0.0012",
+      amount: new BigNumber("0.0012"),
       baseToken: null,
       pricePerShare: null,
       prices,

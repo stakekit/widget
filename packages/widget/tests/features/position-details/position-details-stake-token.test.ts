@@ -68,7 +68,7 @@ const addTokenBalanceAtom = appRuntime.fn(
 const makeRegistry = (selectedYield: EarnYield) => {
   const reveals: Array<{ chainId: number; owner: string; token: string }> = [];
   const entryKey = new PositionDetailsStakeEntryKey({
-    balanceId: "balance-1",
+    balanceId: "default",
     integrationId: selectedYield.id,
     walletScope,
   });

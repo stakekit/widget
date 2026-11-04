@@ -1,18 +1,18 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useEffect, useEffectEvent } from "react";
 import type {
-  Properties,
+  TrackPageArgs,
   TrackPageKey,
 } from "../../../services/tracking/types";
 import { trackPageViewAtom } from "../state/commands";
 
-export const useTrackPage = (
-  pageName: TrackPageKey,
-  properties?: Properties
+export const useTrackPage = <Page extends TrackPageKey>(
+  pageName: Page,
+  ...[properties]: TrackPageArgs<Page>
 ) => {
   const trackPageView = useAtomSet(trackPageViewAtom);
 
-  const reportPageView = useEffectEvent((page: TrackPageKey) =>
+  const reportPageView = useEffectEvent((page: Page) =>
     trackPageView({ page, properties })
   );
 

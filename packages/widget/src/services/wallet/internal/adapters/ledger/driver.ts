@@ -7,9 +7,9 @@ import {
   WalletDecodeError,
   WalletSwitchError,
 } from "../../../wallet-errors";
-import type {
-  WalletBroadcastResult,
-  WalletSignTransactionInput,
+import {
+  decodeWalletBroadcastResult,
+  type WalletSignTransactionInput,
 } from "../../../wallet-transactions";
 import {
   isLedgerLiveConnector,
@@ -53,7 +53,7 @@ export const makeLedgerWalletDriver = ({
           family: input.family,
           network: input.network,
           tx: input.tx,
-          txMeta: input.family === "yield" ? input.txMeta : undefined,
+          ...(input.family === "yield" ? { txMeta: input.txMeta } : {}),
         })
         .pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
       const deserializedTransaction = yield* Effect.try({
@@ -71,10 +71,7 @@ export const makeLedgerWalletDriver = ({
           new WalletBroadcastError({ cause, customMessage: null }),
       });
 
-      return {
-        broadcasted: true,
-        signedTx: signedTx as string,
-      } satisfies WalletBroadcastResult;
+      return yield* decodeWalletBroadcastResult(signedTx);
     }),
   switchAccount: ({ account }: WalletSwitchAccountInput) =>
     requireLedgerConnector(connector).pipe(

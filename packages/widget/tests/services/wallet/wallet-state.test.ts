@@ -6,12 +6,14 @@ import {
   Layer,
   Option,
   Ref,
+  Schema,
   Stream,
   SubscriptionRef,
 } from "effect";
 import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import type { Connector } from "wagmi";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import type { WalletNetwork } from "../../../src/domain/wallet/network";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
@@ -35,7 +37,10 @@ import { makeWalletTestController } from "./wallet-test-controller";
 
 const address = "0x0000000000000000000000000000000000000001";
 const nextAddress = "0x0000000000000000000000000000000000000002";
-const expectedOwner = { address, network: "ethereum" } as const;
+const expectedOwner = {
+  address: Schema.decodeSync(WalletAddress)(address),
+  network: "ethereum",
+} as const;
 
 const disconnectedConnection = {
   address: undefined,

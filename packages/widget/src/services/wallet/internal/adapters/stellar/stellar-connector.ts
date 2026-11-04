@@ -1,5 +1,5 @@
 import { Effect, Option, Schema, Stream } from "effect";
-import type { Address, Chain } from "viem";
+import type { Chain } from "viem";
 import { createConnector } from "wagmi";
 import type {
   WalletDetailsParams,
@@ -9,6 +9,7 @@ import { WalletIntegrationError } from "../../../wallet-errors";
 import type { StellarWalletClient } from "../../platform/stellar-wallets-kit-platform";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { toWagmiAccounts } from "../../wagmi-seam";
 import { stellar } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
@@ -37,7 +38,7 @@ const createStellarConnector = ({
   readonly walletDetailsParams: WalletDetailsParams;
 }) =>
   createConnector<StellarWalletClient, ExtraProps, StellarStorage>((config) => {
-    let currentAddress: Address | null = null;
+    let currentAddress: string | null = null;
 
     const readReconnectRecord = async () => {
       const stored = await config.storage?.getItem(reconnectStorageKey);
@@ -94,7 +95,7 @@ const createStellarConnector = ({
             address: result.address,
             connectorId: client.id,
           });
-          currentAddress = result.address as Address;
+          currentAddress = result.address;
         } catch (error) {
           await runWalletEffect(client.disconnect).catch(() => undefined);
           await clearLocalConnection();
@@ -111,7 +112,8 @@ const createStellarConnector = ({
         await runWalletEffect(client.disconnect).catch(() => undefined);
         await clearLocalConnection();
       },
-      getAccounts: async () => (currentAddress ? [currentAddress] : []),
+      getAccounts: async () =>
+        toWagmiAccounts(currentAddress ? [currentAddress] : []),
       getChainId: async () => stellar.id,
       getProvider: async () => client,
       isAuthorized: async () => {
@@ -123,7 +125,7 @@ const createStellarConnector = ({
           config.emitter.emit("disconnect");
           return;
         }
-        config.emitter.emit("change", { accounts: accounts as Address[] });
+        config.emitter.emit("change", { accounts: toWagmiAccounts(accounts) });
       },
       onChainChanged: (chainId) => {
         config.emitter.emit("change", { chainId: Number(chainId) });

@@ -1,12 +1,8 @@
 import type BigNumber from "bignumber.js";
-import { equalTokens } from "../token/token";
+import { equalTokens, type Token } from "../token/token";
 import type { TokenBalance } from "./models";
 
-type ComparableToken = {
-  readonly address?: string;
-  readonly network: string;
-  readonly symbol: string;
-};
+type ComparableToken = Pick<Token, "symbol" | "network" | "address">;
 
 type CheckGasAmountIfStake =
   | { isStake: true; stakeToken: ComparableToken; stakeAmount: BigNumber }

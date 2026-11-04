@@ -1,6 +1,7 @@
+import { Schema } from "effect";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
-import type { Network } from "../../../domain/network/network";
+import { Network } from "../../../domain/network/network";
 import type { Token } from "../../../domain/token/token";
 import { isWalletNetwork } from "../../../domain/wallet/network";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
@@ -8,6 +9,8 @@ import {
   type WidgetPresentation,
   WidgetPresentationProvider,
 } from "../../../shared/ui/widget-presentation";
+
+const isNetwork = Schema.is(Network);
 
 /**
  * Populates the shared UI kit's rendering environment from widget config, so
@@ -33,7 +36,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
     hostTokenIconMapping,
     layout: layout === "Dashboard" ? "dashboard" : "compact",
     locale: i18n.resolvedLanguage ?? i18n.language,
-    mapNetworkIconUrl: (network: Network) => {
+    mapNetworkIconUrl: (network: Token["network"]) => {
       if (!isWalletNetwork(network)) return undefined;
 
       return typeof chainIconMapping === "function"
@@ -42,10 +45,14 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
     },
     mapTokenIconUrl: (token: Token) => {
       if (!tokenIconMapping) return undefined;
+      if (typeof tokenIconMapping !== "function") {
+        return tokenIconMapping[token.symbol];
+      }
 
-      return typeof tokenIconMapping === "function"
-        ? tokenIconMapping(token as Parameters<typeof tokenIconMapping>[0])
-        : tokenIconMapping[token.symbol];
+      // Hosts receive an `SKToken`, whose network is limited to `Network`.
+      return isNetwork(token.network)
+        ? tokenIconMapping({ ...token, network: token.network })
+        : undefined;
     },
     portalContainer,
     variant,

@@ -29,7 +29,7 @@ export const WalletDialog = ({
   className,
 }: PropsWithChildren<{
   readonly open: boolean;
-  readonly suspended?: boolean;
+  readonly suspended?: boolean | undefined;
   readonly onOpenChange: (open: boolean) => void;
   readonly testId: string;
   readonly className?: string;

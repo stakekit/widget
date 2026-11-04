@@ -5,7 +5,10 @@ import {
   WalletCapabilityUnavailableError,
   WalletDecodeError,
 } from "../../../wallet-errors";
-import type { WalletBroadcastResult } from "../../../wallet-transactions";
+import {
+  decodeWalletBroadcastResult,
+  type WalletBroadcastResult,
+} from "../../../wallet-transactions";
 import { isSolanaConnector } from "./solana-connector-meta";
 import { unsignedSolanaTransactionCodec } from "./transaction";
 
@@ -39,6 +42,6 @@ export const makeSolanaWalletDriver = ({
           new WalletBroadcastError({ cause, customMessage: null }),
       });
 
-      return { broadcasted: true, signedTx };
+      return yield* decodeWalletBroadcastResult(signedTx);
     }),
 });

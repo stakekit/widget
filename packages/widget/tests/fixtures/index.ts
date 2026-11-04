@@ -446,7 +446,7 @@ export const yieldApiActionFixture = (
   const intent = overrides?.intent ?? getYieldActionIntent(type);
   const { completedAt, createdAt, transactions, ...rest } = overrides ?? {};
 
-  return Schema.decodeSync(YieldAction)({
+  const action = Schema.decodeSync(YieldAction)({
     ...yieldApiActionDtoFixture(),
     ...rest,
     ...(completedAt === undefined
@@ -459,15 +459,11 @@ export const yieldApiActionFixture = (
       ? {}
       : { createdAt: DateTime.formatIso(createdAt) }),
     intent,
-    ...(transactions
-      ? {
-          transactions: transactions.map((transaction) =>
-            Schema.encodeSync(ActionTransaction)(transaction)
-          ),
-        }
-      : {}),
     type,
   });
+
+  // Overridden transactions are already decoded.
+  return transactions ? { ...action, transactions } : action;
 };
 
 const getYieldActionIntent = (type: YieldAction["type"]) => {

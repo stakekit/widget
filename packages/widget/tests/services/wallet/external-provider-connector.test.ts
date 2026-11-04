@@ -250,13 +250,9 @@ describe("external-provider connector", () => {
   });
 
   it.effect.each([
-    { supportedChainIds: [], currentChain: undefined, chainId: mainnet.id },
+    { supportedChainIds: [], chainId: mainnet.id },
     { supportedChainIds: [], currentChain: polygon.id, chainId: polygon.id },
-    {
-      supportedChainIds: [arbitrum.id],
-      currentChain: undefined,
-      chainId: mainnet.id,
-    },
+    { supportedChainIds: [arbitrum.id], chainId: mainnet.id },
     {
       supportedChainIds: [arbitrum.id],
       currentChain: arbitrum.id,

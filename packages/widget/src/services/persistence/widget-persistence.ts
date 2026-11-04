@@ -11,7 +11,7 @@ import {
   SubscriptionRef,
 } from "effect";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
-import type { WalletAddress } from "../../domain/identity/identifiers";
+import { WalletAddress } from "../../domain/identity/identifiers";
 import { config } from "../../shared/config/widget-defaults";
 
 const storageKey = <Name extends string>(name: Name) =>
@@ -22,7 +22,7 @@ export const widgetStorageKeys = {
   tosAccepted: storageKey("tosAccepted"),
 } as const;
 
-export const StoredPublicKeys = Schema.Record(Schema.String, Schema.String);
+export const StoredPublicKeys = Schema.Record(WalletAddress, Schema.String);
 export type StoredPublicKeys = typeof StoredPublicKeys.Type;
 
 export const TosAcknowledged = Schema.Boolean;

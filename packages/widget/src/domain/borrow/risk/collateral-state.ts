@@ -30,10 +30,7 @@ export const getDefinitions = (
 
   for (const market of markets) {
     for (const collateralToken of market.collateralTokens) {
-      const tokenId = decodeTokenId({
-        address: collateralToken.token.address,
-        symbol: collateralToken.token.symbol,
-      });
+      const tokenId = decodeTokenId(collateralToken.token);
       const previous = definitions.get(tokenId);
       const definition = {
         liquidationThreshold: collateralToken.liquidationThreshold,

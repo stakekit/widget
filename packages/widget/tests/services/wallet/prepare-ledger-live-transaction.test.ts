@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { vi } from "vitest";
 import { ValidatorAddress } from "../../../src/domain/identity/identifiers";
+import type { Network } from "../../../src/domain/network/network";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 import type { YieldTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
 
@@ -33,7 +34,7 @@ vi.mock("@polkadot/types", () => ({
 
 type PrepareParams = {
   family?: "borrow" | "yield";
-  network: string;
+  network: Network;
   tx: string;
   txMeta?: YieldTransactionMeta;
 };
@@ -110,7 +111,7 @@ const polkadotTx = JSON.stringify({
   },
 });
 
-const polkadotBondParams = {
+const polkadotBondParams: PrepareParams = {
   network: "polkadot",
   tx: polkadotTx,
   txMeta: createTxMeta({

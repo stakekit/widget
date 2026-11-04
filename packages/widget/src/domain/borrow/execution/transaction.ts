@@ -1,6 +1,12 @@
 import { Effect, Schema, SchemaTransformation, Struct } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
+import { TolerantNullOr } from "../../decoding/response-schema";
 import { ExactBaseUnitAmount } from "../../finance/scalars";
+import {
+  SignedTransactionPayload,
+  TransactionHash,
+  WalletSignature,
+} from "../../identity/identifiers";
 import { TransactionId, WalletAddress } from "../ids";
 import { BorrowNetwork } from "../network";
 
@@ -135,16 +141,25 @@ export const decodeBorrowTypedDataForWallet = (transaction: Transaction) =>
     })
   );
 
-export const SubmitTransactionCommand = Schema.Struct(
-  BorrowApi.SubmitTransactionDto.fields
-);
+/** A typed-data step is submitted as its signature, a transaction as its payload. */
+export const SubmitTransactionCommand = Schema.Struct({
+  signedPayload: Schema.optionalKey(
+    Schema.Union([SignedTransactionPayload, WalletSignature])
+  ),
+  transactionHash: Schema.optionalKey(TransactionHash),
+});
 export type SubmitTransactionCommand = typeof SubmitTransactionCommand.Type;
 
-export const SubmitTransactionResult = Schema.Struct(
-  Struct.pick(BorrowApi.SubmitTransactionResponseDto.fields, [
-    "transactionHash",
+export const SubmitTransactionResult = Schema.Struct({
+  ...Struct.pick(BorrowApi.SubmitTransactionResponseDto.fields, [
     "link",
     "status",
-  ])
-);
+  ]),
+  transactionHash: Schema.optionalKey(
+    TolerantNullOr(TransactionHash, {
+      operation: "borrow-transaction-submit",
+      field: "transactionHash",
+    })
+  ),
+});
 export type SubmitTransactionResult = typeof SubmitTransactionResult.Type;

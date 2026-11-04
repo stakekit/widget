@@ -1,8 +1,13 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Context, Effect, Layer, Schema } from "effect";
 import { FetchHttpClient } from "effect/http";
-import { TransactionId as BorrowTransactionId } from "../../../src/domain/borrow/ids";
 import {
+  ActionId as BorrowActionId,
+  TransactionId as BorrowTransactionId,
+} from "../../../src/domain/borrow/ids";
+import {
+  SignedTransactionPayload,
+  TransactionHash,
   TransactionId,
   WalletAddress,
   YieldId,
@@ -31,6 +36,7 @@ const transactionId = Schema.decodeSync(TransactionId)("transaction-1");
 const borrowTransactionId = Schema.decodeSync(BorrowTransactionId)(
   "borrow-transaction-1"
 );
+const borrowActionId = Schema.decodeSync(BorrowActionId)("borrow-action");
 
 type ApiContext = Context.Context<
   | BorrowOperations
@@ -78,7 +84,7 @@ const writes: ReadonlyArray<ApiCall> = [
     name: "transaction hash submission",
     run: (context) =>
       Context.get(context, YieldOperations).submitTransactionHash({
-        payload: { hash: "0xhash" },
+        payload: { hash: TransactionHash.make("0xhash") },
         transactionId,
       }),
   },
@@ -86,7 +92,9 @@ const writes: ReadonlyArray<ApiCall> = [
     name: "signed transaction submission",
     run: (context) =>
       Context.get(context, YieldOperations).submitSignedTransaction({
-        payload: { signedTransaction: "0xsigned" },
+        payload: {
+          signedTransaction: SignedTransactionPayload.make("0xsigned"),
+        },
         transactionId,
       }),
   },
@@ -103,7 +111,7 @@ const writes: ReadonlyArray<ApiCall> = [
   {
     name: "Borrow action step",
     run: (context) =>
-      Context.get(context, BorrowOperations).stepAction("borrow-action"),
+      Context.get(context, BorrowOperations).stepAction(borrowActionId),
   },
   {
     name: "Borrow transaction submission",
@@ -145,7 +153,7 @@ const reads: ReadonlyArray<ApiCall> = [
   {
     name: "Borrow action lookup",
     run: (context) =>
-      Context.get(context, BorrowOperations).getAction("borrow-action"),
+      Context.get(context, BorrowOperations).getAction(borrowActionId),
   },
 ];
 

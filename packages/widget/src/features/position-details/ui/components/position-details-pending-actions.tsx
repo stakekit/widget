@@ -1,8 +1,6 @@
+import { toLowerCase } from "effect/String";
 import { useTranslation } from "react-i18next";
-import {
-  getPendingActionLabelContext,
-  type YieldPendingActionType,
-} from "../../../../domain/action/pending-action";
+import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
@@ -56,14 +54,14 @@ export const PositionDetailsPendingActions = ({
         }
 
         const labelKey =
-          `position_details.pending_action_button.${val.pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>}` as const;
-        const labelOptions = {
-          context: getPendingActionLabelContext(
-            val.pendingAction.type,
-            val.yieldBalance.type,
-            { confidential: isConfidentialYield(integrationData) }
-          ),
-        };
+          `position_details.pending_action_button.${toLowerCase(val.pendingAction.type)}` as const;
+        const labelContext = getPendingActionLabelContext(
+          val.pendingAction.type,
+          val.yieldBalance.type,
+          { confidential: isConfidentialYield(integrationData) }
+        );
+        const labelOptions =
+          labelContext === undefined ? {} : { context: labelContext };
         const label = humanizesUntranslatedLabels
           ? t(labelKey, {
               ...labelOptions,

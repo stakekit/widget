@@ -2,10 +2,13 @@ import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import {
-  type ConfidentialHandle,
   isConfidentialYield,
   isUserRevealableBalance,
 } from "../../../domain/earn/confidential";
+import {
+  type ConfidentialHandle,
+  getVisibleShares,
+} from "../../../domain/earn/models";
 import {
   getRewardRateBreakdown,
   type YieldRewardRate,
@@ -102,23 +105,15 @@ export const positionDetailsViewAtom = Atom.family(
         integration && workflow.positionBalancesByType
           ? [...workflow.positionBalancesByType.values()].reduce(
               (conversions, balances) => {
-                balances
-                  .filter(
-                    (balance) =>
-                      !balance.isEncrypted &&
-                      balance.shareAmount &&
-                      balance.amount &&
-                      !balance.token.isPoints
-                  )
-                  .forEach((balance) => {
-                    conversions.set(tokenString(balance.token), {
-                      rate: exactDecimal(balance.shareAmount ?? 0).dividedBy(
-                        exactDecimal(balance.amount ?? 0)
-                      ),
-                      shareSymbol: balance.shareToken?.symbol,
-                      symbol: balance.token.symbol,
-                    });
+                balances.forEach((balance) => {
+                  const shareAmount = getVisibleShares(balance)?.amount;
+                  if (!shareAmount || balance.token.isPoints) return;
+                  conversions.set(tokenString(balance.token), {
+                    rate: shareAmount.dividedBy(balance.amount),
+                    shareSymbol: balance.shareToken?.symbol,
+                    symbol: balance.token.symbol,
                   });
+                });
                 return conversions;
               },
               new Map<TokenString, PositionDetailsShareConversion>()
@@ -226,7 +221,7 @@ export const positionDetailsViewAtom = Atom.family(
         unstakeMaxAmount:
           amountArgument && !forceMax ? (amountArgument.maximum ?? null) : null,
         unstakeMinAmount:
-          amountArgument && !forceMax && exactDecimal(minimum).isGreaterThan(0)
+          amountArgument && !forceMax && minimum.isGreaterThan(0)
             ? minimum
             : null,
         unstakeToken: workflow.unstakeToken,

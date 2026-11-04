@@ -7,7 +7,10 @@ import {
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
-import { positionYieldAtom } from "../state/read-models/position-list-item";
+import {
+  positionYieldAtom,
+  toInactiveValidatorStatus,
+} from "../state/read-models/position-list-item";
 import type { PositionItem } from "../state/read-models/positions";
 
 export const usePositionListItem = (item: PositionItem) => {
@@ -38,12 +41,7 @@ export const usePositionListItem = (item: PositionItem) => {
         )
       : null;
 
-  const inactiveValidator = providersDetails?.find(
-    (provider) => provider.status !== "active"
-  )?.status as Exclude<
-    NonNullable<NonNullable<typeof providersDetails>[number]["status"]>,
-    "active"
-  > | null;
+  const inactiveValidator = toInactiveValidatorStatus(providersDetails);
 
   const tokenToDisplay = item.token;
   const baseToken = integrationData?.token ?? null;

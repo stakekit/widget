@@ -1,4 +1,4 @@
-import type { Stream } from "effect";
+import { Stream } from "effect";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
 
@@ -9,8 +9,9 @@ export type ConnectorWithFilteredChains = {
 export const isConnectorWithFilteredChains = (
   connector: Connector
 ): connector is Connector & ConnectorWithFilteredChains => {
-  return !!(connector as unknown as ConnectorWithFilteredChains)
-    .$filteredChains;
+  return (
+    "$filteredChains" in connector && Stream.isStream(connector.$filteredChains)
+  );
 };
 
 const connectorsWithoutDisconnect = new Set([

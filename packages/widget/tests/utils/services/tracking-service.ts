@@ -1,23 +1,27 @@
 import { Effect, Layer, Ref } from "effect";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import type {
-  Properties,
+  AnyTrackEventProperties,
+  AnyTrackPageProperties,
   TrackEventKey,
   TrackPageKey,
 } from "../../../src/services/tracking/types";
 
 export type TrackedEvent = Readonly<{
   readonly event: TrackEventKey;
-  readonly properties?: Properties;
+  readonly properties?: AnyTrackEventProperties;
 }>;
 
 export type TrackedPageView = Readonly<{
   readonly page: TrackPageKey;
-  readonly properties?: Properties;
+  readonly properties?: AnyTrackPageProperties;
 }>;
 
 export type TestTrackingOptions = Readonly<{
-  readonly trackEvent?: TrackingService["Service"]["trackEvent"];
+  readonly trackEvent?: (
+    event: TrackEventKey,
+    properties?: AnyTrackEventProperties
+  ) => Effect.Effect<void>;
 }>;
 
 export const makeTestTracking = Effect.fn("makeTestTracking")(function* (
@@ -27,9 +31,12 @@ export const makeTestTracking = Effect.fn("makeTestTracking")(function* (
   const pageViews = yield* Ref.make<ReadonlyArray<TrackedPageView>>([]);
   const trackEvent = Effect.fn("makeTestTracking.trackEvent")(function* (
     event: TrackEventKey,
-    properties?: Properties
+    properties?: AnyTrackEventProperties
   ) {
-    yield* Ref.update(events, (current) => [...current, { event, properties }]);
+    yield* Ref.update(events, (current) => [
+      ...current,
+      properties === undefined ? { event } : { event, properties },
+    ]);
     if (!options.trackEvent) return;
     if (properties === undefined) {
       yield* options.trackEvent(event);
@@ -39,11 +46,11 @@ export const makeTestTracking = Effect.fn("makeTestTracking")(function* (
   });
   const trackPageView = Effect.fn("makeTestTracking.trackPageView")(function* (
     page: TrackPageKey,
-    properties?: Properties
+    properties?: AnyTrackPageProperties
   ) {
     yield* Ref.update(pageViews, (current) => [
       ...current,
-      { page, properties },
+      properties === undefined ? { page } : { page, properties },
     ]);
   });
   const service = TrackingService.of({

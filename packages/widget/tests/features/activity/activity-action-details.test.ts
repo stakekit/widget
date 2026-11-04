@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../../src/domain/action/models";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type {
   BorrowActivityItem,
   YieldActivityItem,
@@ -46,7 +47,7 @@ describe("Activity action details projection", () => {
     });
     const approval = yieldApiTransactionFixture({
       broadcastedAt: DateTime.makeUnsafe("2026-08-26T10:05:00.000Z"),
-      hash: "0xabc",
+      hash: TransactionHash.make("0xabc"),
       id: "approval",
       status: "CONFIRMED",
       stepIndex: 0,

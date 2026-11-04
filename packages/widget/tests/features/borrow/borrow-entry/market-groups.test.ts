@@ -1,6 +1,7 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 import { Market } from "../../../../src/domain/borrow/catalog/market";
+import { IntegrationId } from "../../../../src/domain/borrow/ids";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import {
   type BorrowCollateralOption,
@@ -124,8 +125,11 @@ const aaveUsdt = makeMarket({
 });
 
 const integrations = [
-  { id: "aave-borrow", name: "Aave V3" },
-  { id: "morpho-blue-borrow", name: "Morpho Blue" },
+  { id: Schema.decodeSync(IntegrationId)("aave-borrow"), name: "Aave V3" },
+  {
+    id: Schema.decodeSync(IntegrationId)("morpho-blue-borrow"),
+    name: "Morpho Blue",
+  },
 ];
 
 const markets = [aaveUsdc, morphoUsdc, aaveUsdt];

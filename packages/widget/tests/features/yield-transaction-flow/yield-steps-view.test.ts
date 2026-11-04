@@ -2,9 +2,11 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   type DirectTransaction,
+  DirectTransactionId,
   makeErc20Approval,
 } from "../../../src/domain/action/direct-transaction";
 import {
+  TransactionHash,
   TransactionWorkflowId,
   WalletAddress,
   YieldId,
@@ -44,19 +46,19 @@ const approval = {
 } as const;
 const reset = makeErc20Approval({
   ...approval,
-  id: "conversion-approval",
+  id: DirectTransactionId.make("conversion-approval"),
   type: "RESET_APPROVAL",
 });
 const approve = makeErc20Approval({
   ...approval,
-  id: "conversion-approval",
+  id: DirectTransactionId.make("conversion-approval"),
   type: "APPROVAL",
 });
 const wrap: DirectTransaction = {
   approval: null,
   chainId: 11155111,
   data: "0x00",
-  id: "conversion-wrap",
+  id: DirectTransactionId.make("conversion-wrap"),
   network: "ethereum",
   to: approval.spender,
   type: "WRAP",
@@ -152,8 +154,12 @@ describe("Yield Steps view", () => {
       makeInput([wrap]),
       new Map([
         [
-          "conversion-wrap",
-          { _tag: "Confirmed", hash: "0x01", transaction: wrap },
+          wrap.id,
+          {
+            _tag: "Confirmed",
+            hash: TransactionHash.make("0x01"),
+            transaction: wrap,
+          },
         ],
       ])
     );
@@ -205,7 +211,7 @@ describe("Yield Steps view", () => {
           batchId: "yield",
           message: "receipt unavailable",
           network: "ethereum",
-          transactionId: "conversion-wrap",
+          transactionId: wrap.id,
           workflowId: TransactionWorkflowId.make("w"),
         }),
       })

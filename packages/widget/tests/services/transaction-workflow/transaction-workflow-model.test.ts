@@ -4,6 +4,7 @@ import type { ActionTransaction } from "../../../src/domain/action/models";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
 import {
+  TransactionId,
   TransactionWorkflowId,
   WalletAddress,
   YieldId,
@@ -287,7 +288,7 @@ describe("transaction workflow model", () => {
     const common = {
       batchId: "yield",
       message: "failed",
-      transactionId: "yield-1",
+      transactionId: TransactionId.make("yield-1"),
       workflowId: TransactionWorkflowId.make("action-1"),
     };
     const states = [
@@ -360,7 +361,7 @@ describe("transaction workflow model", () => {
         }),
         operation: "transaction",
       },
-      transactionId: "yield-1",
+      transactionId: TransactionId.make("yield-1"),
       workflowId: TransactionWorkflowId.make("action-1"),
     });
     expect(withCustom.message).toBe("Transaction signing failed.");
@@ -372,7 +373,7 @@ describe("transaction workflow model", () => {
       batchId: "yield",
       network: "ethereum",
       reason: { _tag: "WalletUnavailable", detail: "disconnected" },
-      transactionId: "yield-1",
+      transactionId: TransactionId.make("yield-1"),
       workflowId: TransactionWorkflowId.make("action-1"),
     });
     expect(withoutCustom.message).toBe(
@@ -396,7 +397,7 @@ describe("transaction workflow model", () => {
         }),
         operation: "message",
       },
-      transactionId: "yield-1",
+      transactionId: TransactionId.make("yield-1"),
       workflowId: TransactionWorkflowId.make("action-1"),
     });
 
@@ -424,7 +425,7 @@ describe("transaction workflow model", () => {
     const common = {
       batchId: "yield",
       message: "failed",
-      transactionId: "yield-1",
+      transactionId: TransactionId.make("yield-1"),
       workflowId: TransactionWorkflowId.make("action-1"),
     };
     const phases = (
@@ -565,7 +566,7 @@ describe("transaction workflow model", () => {
       message: "declined",
       network: "ethereum",
       reason: { _tag: "WalletRequestCancelled", operation: "transaction" },
-      transactionId: "yield-2",
+      transactionId: TransactionId.make("yield-2"),
       workflowId: TransactionWorkflowId.make("action-1"),
     });
 

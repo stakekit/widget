@@ -27,53 +27,34 @@ export const getKycUrl = ({ status, yieldDto }: KycUrlSource) =>
   yieldDto?.mechanics.requirements?.kyc?.authorizeUrl ??
   yieldDto?.provider?.website;
 
-const getKycGateUrlFields = ({
-  kycUrl,
-  yieldDto,
-}: {
-  readonly kycUrl?: string;
-  readonly yieldDto?: EarnYieldWithProvider | null;
-}) => ({
+const getKycGateUrlFields = (
+  kycUrl: string | undefined,
+  yieldDto: EarnYieldWithProvider | null | undefined
+) => ({
   ...(kycUrl ? { kycUrl } : {}),
   ...(kycUrl && yieldDto?.mechanics.requirements?.kyc?.iframeAllowed === true
     ? { iframeAllowed: true as const }
     : {}),
 });
 
-export const mapKycStatusToGate = ({
-  status,
-  yieldDto,
-}: {
+export const mapKycStatusToGate = (source: {
   readonly status?: KycStatus | null;
   readonly yieldDto?: EarnYieldWithProvider | null;
 }): KycGate => {
-  const kycUrl = getKycUrl({ status, yieldDto });
+  const urlFields = getKycGateUrlFields(getKycUrl(source), source.yieldDto);
 
-  switch (status?.kycStatus) {
+  switch (source.status?.kycStatus) {
     case "not_required":
     case "approved":
       return { state: "pass" };
     case "not_started":
-      return {
-        state: "start_kyc",
-        ...getKycGateUrlFields({ kycUrl, yieldDto }),
-      };
+      return { state: "start_kyc", ...urlFields };
     case "pending":
-      return {
-        state: "pending",
-        ...getKycGateUrlFields({ kycUrl, yieldDto }),
-      };
+      return { state: "pending", ...urlFields };
     case "rejected":
-      return {
-        state: "rejected",
-        ...getKycGateUrlFields({ kycUrl, yieldDto }),
-      };
+      return { state: "rejected", ...urlFields };
     default:
-      return {
-        state: "unknown",
-        retryable: true,
-        ...getKycGateUrlFields({ kycUrl, yieldDto }),
-      };
+      return { state: "unknown", retryable: true, ...urlFields };
   }
 };
 

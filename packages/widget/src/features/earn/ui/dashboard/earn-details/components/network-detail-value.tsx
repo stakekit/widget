@@ -7,8 +7,8 @@ import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 
 import * as styles from "../styles.css";
 
-export const NetworkDetailValue = ({ network }: { network: string }) => {
-  const networkLogoUri = useVariantNetworkUrls(network as Network);
+export const NetworkDetailValue = ({ network }: { network: Network }) => {
+  const networkLogoUri = useVariantNetworkUrls(network);
   const networkName = formatNetworkName(network);
 
   return (

@@ -5,6 +5,7 @@ import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import type { BorrowPositionActionKey } from "../../../../domain/borrow/positions/position-action-key";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
@@ -38,7 +39,7 @@ import {
 } from "../model/details";
 
 class BorrowPositionActionRouteKey extends Data.Class<{
-  readonly actionId: string;
+  readonly actionId: BorrowPositionActionKey;
   readonly marketId: MarketId;
   readonly network: BorrowNetwork;
 }> {}
@@ -53,7 +54,7 @@ export const makeBorrowPositionActionRouteKey = (
   });
 
 class BorrowPositionActionFormKey extends Data.Class<{
-  readonly actionId: string;
+  readonly actionId: BorrowPositionActionKey;
   readonly marketId: MarketId;
   readonly network: BorrowNetwork;
   readonly owner: WalletScopeOwnerKey;

@@ -3,15 +3,13 @@ import type {
   deserializeTransaction,
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
-import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import type { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { Chain } from "../../../wallet-descriptors";
 import type { WalletIntegrationError } from "../../../wallet-errors";
-import type { YieldTransactionMeta } from "../../../wallet-transactions";
-import type { LedgerTransactionPreparationError } from "./prepare-ledger-live-transaction";
+import type { PrepareLedgerLiveTransaction } from "./prepare-ledger-live-transaction";
 
 export const configMeta = {
   id: "ledgerLive",
@@ -30,17 +28,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
   switchAccount: (account: Account) => void;
   noAccountPlaceholder: Address;
   deserializeTransaction: typeof deserializeTransaction;
-  prepareTransaction: ({
-    family,
-    network,
-    tx,
-    txMeta,
-  }: {
-    family: "borrow" | "yield";
-    network: string;
-    tx: string;
-    txMeta?: YieldTransactionMeta;
-  }) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
+  prepareTransaction: PrepareLedgerLiveTransaction;
 };
 
 type LedgerLiveConnector = Connector & ExtraProps;

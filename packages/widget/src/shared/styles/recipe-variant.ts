@@ -10,8 +10,8 @@ export const combineRecipeWithVariant = ({
 }: {
   rec: ReturnType<typeof recipe>;
   variant: WidgetVariant | undefined;
-  state?: string;
-  type?: string;
+  state?: string | undefined;
+  type?: string | undefined;
 }) => {
   if (rec.classNames.variants.variant?.[variant]) {
     return rec({ variant, state, type });

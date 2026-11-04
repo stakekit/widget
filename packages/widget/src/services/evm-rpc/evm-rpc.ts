@@ -18,6 +18,7 @@ import {
   waitForTransactionReceipt,
 } from "viem/actions";
 import type { Erc20Approval } from "../../domain/action/direct-transaction";
+import type { EvmChainIds } from "../../domain/wallet/chain-ids";
 import { WalletService } from "../wallet/wallet-service";
 
 export class EvmRpcError extends Data.TaggedError("EvmRpcError")<{
@@ -38,7 +39,7 @@ type EvmTransactionOutcome = "Confirmed" | "Dropped" | "Reverted";
 type EvmRpcApi = Readonly<{
   /** The unsigned EIP-1559 transaction a wallet signs, gas and fees estimated. */
   readonly prepare: (input: {
-    readonly chainId: number;
+    readonly chainId: EvmChainIds;
     readonly data: Hex;
     readonly from: Hex;
     readonly to: Hex;
@@ -48,21 +49,21 @@ type EvmRpcApi = Readonly<{
    * Only an error the node answered while not holding it is a rejection.
    */
   readonly broadcast: (input: {
-    readonly chainId: number;
+    readonly chainId: EvmChainIds;
     readonly hash: Hex;
     readonly signedTx: Hex;
   }) => Effect.Effect<void, EvmBroadcastRejectedError | EvmRpcError>;
   readonly awaitOutcome: (input: {
-    readonly chainId: number;
+    readonly chainId: EvmChainIds;
     readonly hash: Hex;
   }) => Effect.Effect<EvmTransactionOutcome, EvmRpcError>;
   readonly explorerUrl: (input: {
-    readonly chainId: number;
+    readonly chainId: EvmChainIds;
     readonly hash: Hex;
   }) => string | null;
   /** How much of `token` `owner` currently lets `spender` move. */
   readonly readAllowance: (
-    input: Omit<Erc20Approval, "amount"> & { readonly chainId: number }
+    input: Omit<Erc20Approval, "amount"> & { readonly chainId: EvmChainIds }
   ) => Effect.Effect<bigint, EvmRpcError>;
 }>;
 
@@ -83,6 +84,7 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
     EvmRpc,
     Effect.gen(function* () {
       const { wagmiConfig } = yield* WalletService;
+      // Wagmi types one client per configured chain; a number reads the common client.
       const clientFor = (chainId: number) =>
         Effect.try({
           try: () => wagmiConfig.getClient({ chainId }),

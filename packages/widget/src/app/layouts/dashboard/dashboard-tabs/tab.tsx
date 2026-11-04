@@ -39,7 +39,7 @@ export const DashboardTab = ({ isSelected, variant, onTabPress }: Props) => {
           pressAnimation,
           combineRecipeWithVariant({
             rec: tab,
-            state: isSelected ? "active" : undefined,
+            ...(isSelected ? { state: "active" } : {}),
             variant: appVariant,
           }),
         ])}
@@ -48,7 +48,7 @@ export const DashboardTab = ({ isSelected, variant, onTabPress }: Props) => {
         <Text
           className={combineRecipeWithVariant({
             rec: tabText,
-            state: isSelected ? "selected" : undefined,
+            ...(isSelected ? { state: "selected" } : {}),
             variant: appVariant,
           })}
           data-state={isSelected ? "selected" : "default"}

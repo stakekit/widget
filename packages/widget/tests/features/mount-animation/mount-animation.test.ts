@@ -14,7 +14,9 @@ const makeWidgetConfig = (
   apiKey: "api-key",
   dashboardVariant,
   disableInitLayoutAnimation: false,
-  onMountAnimationComplete,
+  ...(onMountAnimationComplete === undefined
+    ? {}
+    : { onMountAnimationComplete }),
   variant: "default" as const,
 });
 

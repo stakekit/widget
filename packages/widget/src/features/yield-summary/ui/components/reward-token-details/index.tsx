@@ -1,3 +1,4 @@
+import { toLowerCase } from "effect/String";
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
 import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
@@ -28,18 +29,18 @@ export const RewardTokenDetails = ({
     }
 
     if (rest.type === "pendingAction") {
-      return `pending_action_review.pending_action_type.${
-        rest.pendingAction.toLowerCase() as Lowercase<YieldPendingActionType>
-      }` as const;
+      return `pending_action_review.pending_action_type.${toLowerCase(
+        rest.pendingAction
+      )}` as const;
     }
 
     return "unstake_review.unstake_from";
   })();
 
-  const i18nDefaults =
+  const i18nDefaultsProps =
     rest.type === "pendingAction"
-      ? humanizePendingActionType(rest.pendingAction)
-      : undefined;
+      ? { defaults: humanizePendingActionType(rest.pendingAction) }
+      : {};
 
   if (!rewardToken) return null;
   const symbols = getRewardTokenSymbols(rewardToken.rewardTokens);
@@ -70,7 +71,7 @@ export const RewardTokenDetails = ({
       <Text variant={{ weight: "semibold" }}>
         <Trans
           i18nKey={i18nKey}
-          defaults={i18nDefaults}
+          {...i18nDefaultsProps}
           values={{ providerName: rewardToken.providerName }}
           components={{
             symbols1: (

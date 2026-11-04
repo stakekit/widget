@@ -21,21 +21,16 @@ const borrowChainsByNetwork: Record<BorrowNetwork, Chain> = {
   optimism,
 };
 
-const borrowChainEntries = Object.entries(borrowChainsByNetwork) as [
-  BorrowNetwork,
-  Chain,
-][];
-
-const borrowChainIdsToNetworks = Object.fromEntries(
-  borrowChainEntries.map(([network, chain]) => [
-    decodeChainId(chain.id),
+const borrowChainIdsToNetworks = new Map<ChainId, BorrowNetwork>(
+  borrowNetworks.map((network) => [
+    decodeChainId(borrowChainsByNetwork[network].id),
     network,
   ])
-) as Record<ChainId, BorrowNetwork>;
+);
 
 export const isBorrowNetwork = Schema.is(BorrowNetwork);
 
 export const getBorrowNetworkForChainId = (
   chainId: number | string
 ): BorrowNetwork | null =>
-  borrowChainIdsToNetworks[decodeChainId(chainId)] ?? null;
+  borrowChainIdsToNetworks.get(decodeChainId(chainId)) ?? null;

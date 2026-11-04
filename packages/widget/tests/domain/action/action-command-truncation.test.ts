@@ -48,7 +48,6 @@ describe("executable token amount truncation", () => {
     const selectedYield = yieldApiYieldFixture();
     const view = projectYieldEntry({
       input: {
-        additionalValidationErrors: undefined,
         amountInitialization: "PreserveIntent",
         availableAmount: new BigNumber("1.5"),
         connected: true,
@@ -88,7 +87,6 @@ describe("executable token amount truncation", () => {
     const token = { ...selectedYield.token, decimals: 6 };
     const truncated = projectYieldEntry({
       input: {
-        additionalValidationErrors: undefined,
         amountInitialization: "PreserveIntent",
         availableAmount: new BigNumber("2"),
         connected: true,
@@ -120,7 +118,6 @@ describe("executable token amount truncation", () => {
     });
     const dust = projectYieldEntry({
       input: {
-        additionalValidationErrors: undefined,
         amountInitialization: "PreserveIntent",
         availableAmount: new BigNumber("2"),
         connected: true,
@@ -177,7 +174,6 @@ describe("executable token amount truncation", () => {
     });
     const view = projectYieldEntry({
       input: {
-        additionalValidationErrors: undefined,
         amountInitialization: "PreserveIntent",
         availableAmount: new BigNumber("2"),
         connected: true,

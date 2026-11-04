@@ -17,7 +17,6 @@ const projectEnter = (token: Token, availableAmount = new BigNumber("1")) => {
   const selectedYield = yieldApiYieldFixture();
   return projectYieldEntry({
     input: {
-      additionalValidationErrors: undefined,
       amountInitialization: "PreserveIntent",
       availableAmount,
       connected: true,

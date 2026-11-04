@@ -22,20 +22,26 @@ describe("application tracking ingress", () => {
     );
     const hook = await renderHook(
       () => {
-        useTrackPage("earn", { source: "test" });
+        useTrackPage("positionDetails", { yield: "Test yield" });
         return useTrackEvent();
       },
       { wrapper }
     );
 
-    hook.result.current("txSigned", { txId: "transaction-1" });
+    hook.result.current("txSigned", {
+      network: "ethereum",
+      txId: "transaction-1",
+      yieldId: "ethereum-eth-lido-staking",
+    });
 
     await vi.waitFor(() => {
       expect(tracking.trackEvent).toHaveBeenCalledWith("Transaction signed", {
+        network: "ethereum",
         txId: "transaction-1",
+        yieldId: "ethereum-eth-lido-staking",
       });
-      expect(tracking.trackPageView).toHaveBeenCalledWith("Earn", {
-        source: "test",
+      expect(tracking.trackPageView).toHaveBeenCalledWith("Position details", {
+        yield: "Test yield",
       });
     });
   });

@@ -1,5 +1,5 @@
 import { createSprinkles, defineProperties } from "@vanilla-extract/sprinkles";
-import type { Breakpoint } from "../tokens/breakpoints";
+import { Record as ERecord } from "effect";
 import { breakpoints, minMediaQuery } from "../tokens/breakpoints";
 import { responsiveProperties, unresponsiveProperties } from "./properties";
 
@@ -8,19 +8,10 @@ const unresponsiveAtomicProperties = defineProperties({
 });
 
 const responsiveAtomicProperties = defineProperties({
-  conditions: Object.keys(breakpoints).reduce(
-    (acc, key) => {
-      const k = key as Breakpoint;
-
-      if (k === "mobile") {
-        acc[k] = {};
-      } else {
-        acc[k] = { "@media": minMediaQuery(k) };
-      }
-
-      return acc;
-    },
-    {} as { [Key in Breakpoint]: { "@media"?: string } }
+  conditions: ERecord.map(
+    breakpoints,
+    (_, breakpoint): { "@media"?: string } =>
+      breakpoint === "mobile" ? {} : { "@media": minMediaQuery(breakpoint) }
   ),
 
   defaultCondition: "mobile",

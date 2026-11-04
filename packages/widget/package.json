@@ -134,6 +134,7 @@
     "@tronweb3/tronwallet-adapter-bitkeep": "catalog:",
     "@tronweb3/tronwallet-adapter-ledger": "catalog:",
     "@tronweb3/tronwallet-adapter-tronlink": "catalog:",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@typescript/native": "catalog:",

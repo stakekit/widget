@@ -97,10 +97,13 @@ export const makePresentableResource = <
       : Effect.void;
   });
 
-  const foreground = Atom.transform(local, (get) => {
+  const transformed = Atom.transform(local, (get) => {
     get.mount(reporterAtom);
     return get(local);
-  }) as unknown as Atom.WithoutSerializable<ResourceAtom>;
+  });
+  const foreground: Atom.WithoutSerializable<ResourceAtom> =
+    // biome-ignore lint/nursery/noUnsafeTypeAssertion: Atom.transform's return is a conditional type over the generic ResourceAtom that TypeScript cannot relate to Atom.WithoutSerializable<ResourceAtom>.
+    transformed as unknown as Atom.WithoutSerializable<ResourceAtom>;
 
   return Object.assign(foreground, { foreground, local });
 };

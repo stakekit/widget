@@ -13,7 +13,7 @@ export const BorrowAssetSelectorList = ({
   title,
 }: {
   readonly children: ReactNode;
-  readonly columnLabel?: string;
+  readonly columnLabel?: string | undefined;
   readonly title: string;
 }) => (
   <Box className={styles.assetSelectorList} mx="4">
@@ -56,11 +56,11 @@ export const BorrowAssetSelectorRow = ({
   readonly indented?: boolean;
   readonly label: string;
   /** Muted note on the label line, e.g. collateral yield. */
-  readonly labelMeta?: string;
+  readonly labelMeta?: string | undefined;
   readonly meta?: string;
   readonly onClick: () => void;
-  readonly rate?: string;
-  readonly rateMeta?: string;
+  readonly rate?: string | undefined;
+  readonly rateMeta?: string | undefined;
   readonly selected?: boolean;
   readonly testId?: string;
   readonly token: Token;

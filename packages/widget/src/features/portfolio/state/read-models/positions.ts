@@ -10,11 +10,11 @@ import { getYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
+  type BalanceDataKey,
   type PositionData,
   type PositionValidators,
   toPositionsData,
 } from "../../../../domain/portfolio/positions";
-import type { YieldBalanceLabel } from "../../../../domain/portfolio/token-balance";
 import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import {
   BorrowPositionsKey,
@@ -32,7 +32,7 @@ export type PositionItem = {
   readonly integrationId: YieldId;
   readonly balancesWithAmount: EarnBalance[];
   readonly allBalances: EarnBalance[];
-  readonly balanceId: string;
+  readonly balanceId: BalanceDataKey;
   readonly actionRequired: boolean;
   /**
    * Only optional cancellations are pending, or an Instant Exit is still to
@@ -42,7 +42,6 @@ export type PositionItem = {
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
   readonly hasPendingClaimRewards: boolean;
   readonly token: EarnBalance["token"] | null;
-  readonly yieldLabelDto: YieldBalanceLabel | null;
 } & (
   | { readonly type: "validators"; readonly validators: PositionValidators }
   | { readonly type: "default" }
@@ -106,7 +105,6 @@ export const toPositionItems = (
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,
-          yieldLabelDto: null,
           token:
             [...value.balances].sort(
               (a, b) => priorityOrder[a.type] - priorityOrder[b.type]

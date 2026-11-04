@@ -15,14 +15,18 @@ import {
   WalletIntegrationError,
   WalletNotAvailableError,
 } from "../../wallet-errors";
-import type {
-  WalletConnectProtocol,
-  WalletConnectSession,
+import {
+  CaipChainId,
+  caipAddresses,
+  type WalletConnectProtocol,
+  type WalletConnectSession,
+  type WalletConnectTopic,
 } from "./wallet-connect-protocol";
 
 const publicNetworkPassphrase =
   getProtocolChainIdentity("stellar").networkPassphrase;
-const walletConnectPublicChain = "stellar:pubnet";
+const walletConnectPublicChain =
+  Schema.decodeSync(CaipChainId)("stellar:pubnet");
 const walletConnectSignMethod = "stellar_signXDR";
 
 const AddressResult = Schema.Struct({ address: Schema.String });
@@ -273,7 +277,7 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
 )(function* (
   protocol: WalletConnectProtocol
 ): Effect.fn.Return<StellarWalletClient, never, Scope.Scope> {
-  let selected: { address: string; topic: string } | undefined;
+  let selected: { address: string; topic: WalletConnectTopic } | undefined;
   let unsubscribeEnded: (() => void) | undefined;
   const endedListeners = new Set<() => void>();
   const cancelled = () => integrationError("stellar-wallet-connect-cancelled");
@@ -296,8 +300,9 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
   );
 
   const supportsAccount = (session: WalletConnectSession, address: string) =>
-    session.accounts.includes(`${walletConnectPublicChain}:${address}`) &&
-    session.methods.includes(walletConnectSignMethod);
+    caipAddresses(session.accounts, walletConnectPublicChain).includes(
+      address
+    ) && session.methods.includes(walletConnectSignMethod);
   const unavailable = (operation: string) =>
     new WalletIntegrationError({
       message: "The Stellar WalletConnect session expired",
@@ -348,12 +353,10 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
             "stellar_signMessage",
           ],
         });
-        const account = session.accounts.find(
-          (account) =>
-            account.startsWith(`${walletConnectPublicChain}:`) &&
-            account.split(":").length === 3
-        );
-        const address = account?.slice(walletConnectPublicChain.length + 1);
+        const address = caipAddresses(
+          session.accounts,
+          walletConnectPublicChain
+        )[0];
         if (!address || !supportsAccount(session, address)) {
           return yield* unavailable("stellar-wallet-connect-approval");
         }

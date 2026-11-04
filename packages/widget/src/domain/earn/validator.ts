@@ -2,7 +2,6 @@ import { addressIdentity } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import type { EarnValidator } from "./models";
 
-export type ValidatorKey = string;
 export type ValidatorInput = Omit<EarnValidator, "key">;
 
 export const validatorAddressIdentity = addressIdentity;

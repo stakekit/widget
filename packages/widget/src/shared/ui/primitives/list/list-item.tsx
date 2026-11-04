@@ -15,7 +15,7 @@ export const ListItem = ({
 }: PropsWithChildren<
   {
     onClick?: () => void;
-    testId?: string;
+    testId?: string | undefined;
     variant?: ItemContainerVariants;
   } & BoxProps
 >) => {

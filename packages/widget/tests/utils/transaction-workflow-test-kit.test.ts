@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Cause, Context, Effect, Exit, Layer } from "effect";
+import { Cause, Context, Effect, Exit, Layer, Schema } from "effect";
+import { ActionId as BorrowActionId } from "../../src/domain/borrow/ids";
 import type { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeOwnerKey } from "../../src/domain/wallet/wallet-scope";
 import { BorrowOperations } from "../../src/services/api/operations";
@@ -16,6 +17,7 @@ const owner = new WalletScopeOwnerKey({
   address: "0x0000000000000000000000000000000000000001" as WalletAddress,
   network: "ethereum",
 });
+const borrowActionId = Schema.decodeSync(BorrowActionId)("id");
 
 describe("makeTransactionWorkflowTestKit", () => {
   it.effect("provides a fresh Workflow layer and adapter controls", () =>
@@ -51,7 +53,7 @@ describe("makeTransactionWorkflowTestKit", () => {
       const context = yield* Layer.build(kit.layer);
 
       expect(
-        yield* Context.get(context, BorrowOperations).getAction("id")
+        yield* Context.get(context, BorrowOperations).getAction(borrowActionId)
       ).toBe(null);
     })
   );
@@ -63,7 +65,7 @@ describe("makeTransactionWorkflowTestKit", () => {
       });
       const context = yield* Layer.build(kit.layer);
       const exit = yield* Effect.exit(
-        Context.get(context, BorrowOperations).getAction("id")
+        Context.get(context, BorrowOperations).getAction(borrowActionId)
       );
 
       expect(Exit.isFailure(exit)).toBe(true);

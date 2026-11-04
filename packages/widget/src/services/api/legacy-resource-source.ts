@@ -70,13 +70,7 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   const getTokenOptions = Effect.fn("LegacyResourceSource.getTokenOptions")(
     function* (request: EarnTokenCatalogRequest) {
       return yield* legacyApi
-        .TokenControllerGetTokens({
-          params: {
-            enter: request.enter,
-            network: request.network,
-            yieldTypes: request.yieldTypes,
-          },
-        })
+        .TokenControllerGetTokens({ params: request })
         .pipe(
           decodeApiResponse(
             "legacy-token-options",

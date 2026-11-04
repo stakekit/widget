@@ -64,7 +64,7 @@ export const SelectOpportunityListItem = <T extends EarnYieldWithProvider>({
           name: item.metadata.name,
           provider,
         }}
-        token={item.token as Parameters<typeof ProviderIcon>[0]["token"]}
+        token={item.token}
       />
 
       <Box

@@ -1,10 +1,8 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { toLowerCase } from "effect/String";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  getPendingActionLabelContext,
-  type YieldPendingActionType,
-} from "../../../../../domain/action/pending-action";
+import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
@@ -44,10 +42,10 @@ export const usePendingActionReview = () => {
     { confidential: isConfidentialYield(integrationData) }
   );
   const title = t(
-    `position_details.pending_action_button.${
-      manageFlow.request.action.toLowerCase() as Lowercase<YieldPendingActionType>
-    }` as const,
-    { context: labelContext }
+    `position_details.pending_action_button.${toLowerCase(
+      manageFlow.request.action
+    )}` as const,
+    labelContext === undefined ? {} : { context: labelContext }
   );
 
   const fee = getGasFeeInUSD({

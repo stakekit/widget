@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Record as ERecord, Schema } from "effect";
 import type { Network } from "../network/network";
 import { EvmChainIds, MiscChainIds, SubstrateChainIds } from "./chain-ids.ts";
 
@@ -175,10 +175,7 @@ export type WalletMiscNetwork = Exclude<
   WalletEvmNetwork | WalletCosmosNetwork | WalletSubstrateNetwork
 >;
 
-const walletNetworks = Object.keys(walletNetworkCatalog) as [
-  WalletNetwork,
-  ...WalletNetwork[],
-];
+const walletNetworks = ERecord.keys(walletNetworkCatalog);
 
 export const WalletNetwork = Schema.Literals(walletNetworks);
 
@@ -190,11 +187,7 @@ const networksForProtocol = <Family extends WalletProtocolFamily>(
       walletNetworkCatalog[network].protocolFamily === protocolFamily
   );
 
-const walletEvmNetworks = networksForProtocol("evm");
 export const walletCosmosNetworks = networksForProtocol("cosmos");
-
-const walletEvmNetworkSet = new Set<WalletNetwork>(walletEvmNetworks);
-const walletCosmosNetworkSet = new Set<WalletNetwork>(walletCosmosNetworks);
 
 export const getWalletProtocolFamily = <NetworkId extends WalletNetwork>(
   network: NetworkId
@@ -211,14 +204,14 @@ export const getProtocolChainIdentity = <NetworkId extends WalletNetwork>(
 ): (typeof walletNetworkCatalog)[NetworkId]["protocolChainIdentity"] =>
   walletNetworkCatalog[network].protocolChainIdentity;
 
+export const isWalletNetwork = Schema.is(WalletNetwork);
+
 export const isEvmWalletNetwork = (
   network: string
 ): network is WalletEvmNetwork =>
-  walletEvmNetworkSet.has(network as WalletNetwork);
+  isWalletNetwork(network) && getWalletProtocolFamily(network) === "evm";
 
 export const isCosmosWalletNetwork = (
   network: string
 ): network is WalletCosmosNetwork =>
-  walletCosmosNetworkSet.has(network as WalletNetwork);
-
-export const isWalletNetwork = Schema.is(WalletNetwork);
+  isWalletNetwork(network) && getWalletProtocolFamily(network) === "cosmos";

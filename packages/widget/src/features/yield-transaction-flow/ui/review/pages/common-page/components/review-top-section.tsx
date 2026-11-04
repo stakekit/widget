@@ -13,16 +13,22 @@ import {
 import { headingStyles } from "../../style.css";
 
 type Props = {
-  facts?: ReadonlyArray<Readonly<{ label: string; value: string }>>;
+  facts?: ReadonlyArray<Readonly<{ label: string; value: string }>> | undefined;
   title: string;
   token: Token | null;
   metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
   info: ReactNode;
-  rewardTokenDetailsProps?: ComponentProps<typeof RewardTokenDetails> | null;
-  estimatedRewardAmounts?: {
-    earnYearly: string;
-    earnMonthly: string;
-  } | null;
+  rewardTokenDetailsProps?:
+    | ComponentProps<typeof RewardTokenDetails>
+    | null
+    | undefined;
+  estimatedRewardAmounts?:
+    | {
+        earnYearly: string;
+        earnMonthly: string;
+      }
+    | null
+    | undefined;
 };
 
 const ReviewTopSection = ({

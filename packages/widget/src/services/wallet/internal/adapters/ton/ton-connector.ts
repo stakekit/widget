@@ -1,15 +1,11 @@
-import {
-  Cell,
-  type CommonMessageInfoRelaxedInternal,
-  loadMessageRelaxed,
-} from "@ton/core";
+import { Cell, loadMessageRelaxed } from "@ton/core";
 import {
   TonConnectUI,
   toUserFriendlyAddress,
   type Wallet,
 } from "@tonconnect/ui";
 import { Clock, Duration, Effect, Option, Schema, Stream } from "effect";
-import type { Address, Chain } from "viem";
+import type { Chain } from "viem";
 import { createConnector } from "wagmi";
 import type {
   WalletDetailsParams,
@@ -19,6 +15,7 @@ import { WalletIntegrationError } from "../../../wallet-errors";
 import type { WalletModal } from "../../../wallet-modal";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { toWagmiAccount } from "../../wagmi-seam";
 import { ton } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
@@ -124,7 +121,13 @@ const createTonConnector = (
               }),
           });
 
-          const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
+          const info = parsedTx.info;
+          if (info.type !== "internal") {
+            return yield* new WalletIntegrationError({
+              message: "Unsupported TON message: expected an internal message",
+              operation: "ton-decode-message",
+            });
+          }
           const now = yield* Clock.currentTimeMillis;
 
           const result = yield* Effect.tryPromise({
@@ -180,7 +183,7 @@ const createTonConnector = (
 
         return wagmiConnectResult(
           args?.withCapabilities,
-          [userFriendlyAddress as Address],
+          [userFriendlyAddress],
           ton.id
         );
       },
@@ -195,7 +198,9 @@ const createTonConnector = (
         if (!connectedWallet) throw new Error("No wallet connected");
 
         return [
-          toUserFriendlyAddress(connectedWallet.account.address) as Address,
+          toWagmiAccount(
+            toUserFriendlyAddress(connectedWallet.account.address)
+          ),
         ];
       },
       switchChain: async () => ton,

@@ -1,3 +1,4 @@
+import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { isConfidentialYield } from "../../../../../domain/earn/confidential";
@@ -20,6 +21,7 @@ import {
   getYieldWarmupPeriod,
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/earn/yield";
+import { Network } from "../../../../../domain/network/network";
 import {
   formatNetworkName,
   humanizeEnumValue,
@@ -141,7 +143,7 @@ export const canPresentRewardRateHistory = (yieldDto: EarnYieldWithProvider) =>
 
 export const getEarnDetailsModel = ({
   locale,
-  selectedValidators,
+  selectedValidators = null,
   t,
   yieldDto,
 }: {
@@ -214,7 +216,7 @@ const getPromotedFactIds = (
 
 const toMetricCard = (fact: EarnDetailFact): EarnDetailsMetricCard => ({
   label: fact.label,
-  subValue: fact.subValue,
+  ...(fact.subValue === undefined ? {} : { subValue: fact.subValue }),
   value: fact.value,
 });
 
@@ -265,7 +267,11 @@ const getDetailRows = ({
   {
     id: "network",
     label: t("dashboard.earn_details.network"),
-    value: <NetworkDetailValue network={yieldDto.network} />,
+    value: Schema.is(Network)(yieldDto.network) ? (
+      <NetworkDetailValue network={yieldDto.network} />
+    ) : (
+      formatNetworkName(yieldDto.network)
+    ),
   },
   {
     id: "provider",

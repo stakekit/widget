@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
+import { Option, Struct } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
@@ -528,10 +528,11 @@ describe("external provider runtime generations", () => {
       );
     const withoutCurrentChain = (
       supportedChainIds: SKExternalProviders["supportedChainIds"]
-    ): SKExternalProviders => ({
-      ...externalProvider(firstAddress, mainnet.id, supportedChainIds),
-      currentChain: undefined,
-    });
+    ): SKExternalProviders =>
+      Struct.omit(
+        externalProvider(firstAddress, mainnet.id, supportedChainIds),
+        ["currentChain"]
+      );
 
     try {
       const mounted = await mountWallet(
@@ -562,21 +563,24 @@ describe("external provider runtime generations", () => {
     worker,
   }) => {
     worker.use(enabledNetworks);
-    const mounted = await mountWallet({
-      ...externalProvider(firstAddress, mainnet.id, [plasmaChainId]),
-      currentChain: undefined,
-    });
+    const mounted = await mountWallet(
+      Struct.omit(externalProvider(firstAddress, mainnet.id, [plasmaChainId]), [
+        "currentChain",
+      ])
+    );
 
     await waitForChainsEnabled(mounted, false);
     await waitForUnsupported(mounted);
 
-    await mounted.updateProvider({
-      ...externalProvider(firstAddress, mainnet.id, [
-        plasmaChainId,
-        optimism.id,
-      ]),
-      currentChain: undefined,
-    });
+    await mounted.updateProvider(
+      Struct.omit(
+        externalProvider(firstAddress, mainnet.id, [
+          plasmaChainId,
+          optimism.id,
+        ]),
+        ["currentChain"]
+      )
+    );
     await waitForIdentity(mounted, firstAddress, optimism.id);
     await waitForChainsEnabled(mounted, true);
   });
@@ -604,16 +608,18 @@ describe("external provider runtime generations", () => {
     worker,
   }) => {
     worker.use(enabledNetworks);
-    const mounted = await mountWallet({
-      ...externalProvider(firstAddress, mainnet.id),
-      supportedChainIds: undefined,
-    });
+    const mounted = await mountWallet(
+      Struct.omit(externalProvider(firstAddress, mainnet.id), [
+        "supportedChainIds",
+      ])
+    );
     await waitForIdentity(mounted, firstAddress, mainnet.id);
 
-    await mounted.updateProvider({
-      ...externalProvider(secondAddress, optimism.id),
-      supportedChainIds: undefined,
-    });
+    await mounted.updateProvider(
+      Struct.omit(externalProvider(secondAddress, optimism.id), [
+        "supportedChainIds",
+      ])
+    );
     await waitForIdentity(mounted, secondAddress, optimism.id);
   });
 

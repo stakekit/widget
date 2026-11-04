@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import {
+  ValidatorAddress,
   WalletAddress,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
@@ -62,7 +63,7 @@ describe("Earn Entry amount clearing on workflow start", () => {
         pendingaction: null,
         tab: null,
         token: null,
-        validator: "validator-a",
+        validator: Schema.decodeSync(ValidatorAddress)("validator-a"),
         yieldId: Schema.decodeSync(YieldId)("seeded-yield"),
       },
       intent: {

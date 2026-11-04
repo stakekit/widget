@@ -5,7 +5,6 @@ import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../domain/earn/yield";
-import { exactDecimal } from "../../../../../domain/finance/exact";
 import type { Token } from "../../../../../domain/token/token";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { Divider } from "../../../../../shared/ui/components/divider";
@@ -96,11 +95,9 @@ export const SelectYieldRewardDetails = ({
                   yieldDto.metadata.name,
               },
             ];
-        const pricePerShare = exactDecimal(
-          yieldDto.state?.pricePerShareState?.price ?? 1
-        );
+        const pricePerShare = yieldDto.state?.pricePerShareState?.price;
         const outputAmount =
-          pricePerShare.isFinite() && !pricePerShare.isZero()
+          pricePerShare && !pricePerShare.isZero()
             ? stakeAmount.dividedBy(pricePerShare)
             : stakeAmount;
 

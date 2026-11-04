@@ -82,7 +82,7 @@ const renderStakeReview = ({
       <TestWidgetConfigProvider
         apiKey="test-key"
         baseUrl="https://api.example.com"
-        hideGasFee={hideGasFee}
+        {...(hideGasFee === undefined ? {} : { hideGasFee })}
         variant="default"
       >
         <MemoryRouter>

@@ -36,21 +36,23 @@ const earnTokenCatalogCanonicalAtom = Atom.family((key: EarnTokenCatalogKey) =>
     .atom(() =>
       Effect.gen(function* () {
         const source = yield* LegacyResourceSource;
-        const network = key.network ?? undefined;
-        const yieldTypes = key.category
-          ? getApiYieldTypesForYieldCategory(key.category)
-          : undefined;
-        const displayOnlyYieldTypes = getDisplayOnlyYieldTypes({
-          network,
-          yieldTypes,
-        });
+        const scope = {
+          ...(key.network === null ? {} : { network: key.network }),
+          ...(key.category === null
+            ? {}
+            : { yieldTypes: getApiYieldTypesForYieldCategory(key.category) }),
+        };
+        const displayOnlyYieldTypes = getDisplayOnlyYieldTypes(scope);
         // The display-only request is supplemental: its failure must not hide
         // the enterable yields, so it degrades to no display-only yields.
         const offered =
           displayOnlyYieldTypes.length === 0
             ? Effect.succeed([])
             : source
-                .getTokenOptions({ network, yieldTypes: displayOnlyYieldTypes })
+                .getTokenOptions({
+                  ...scope,
+                  yieldTypes: displayOnlyYieldTypes,
+                })
                 .pipe(
                   Effect.catch((cause) =>
                     Effect.logWarning("Display-only yields unavailable").pipe(
@@ -65,7 +67,7 @@ const earnTokenCatalogCanonicalAtom = Atom.family((key: EarnTokenCatalogKey) =>
         const [enterableTokens, offeredTokens] = yield* Effect.all(
           [
             source
-              .getTokenOptions({ enter: true, network, yieldTypes })
+              .getTokenOptions({ enter: true, ...scope })
               .pipe(
                 Effect.mapError((cause) => new EarnTokenCatalogError({ cause }))
               ),

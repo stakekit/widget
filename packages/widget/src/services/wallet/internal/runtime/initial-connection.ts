@@ -65,7 +65,9 @@ export const makeInitializeWallet = Effect.gen(function* () {
         yield* operations
           .connect(wagmiConfig, {
             connector: injectedConnector,
-            chainId: queryParamsInitChainId,
+            ...(queryParamsInitChainId === undefined
+              ? {}
+              : { chainId: queryParamsInitChainId }),
           })
           .pipe(
             Effect.mapError(

@@ -1,6 +1,10 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
 import type { YieldPendingActionType } from "../../domain/action/pending-action";
-import type { YieldId } from "../../domain/identity/identifiers";
+import type {
+  ValidatorAddress,
+  YieldId,
+} from "../../domain/identity/identifiers";
+import type { BalanceDataKey } from "../../domain/portfolio/positions";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
@@ -24,15 +28,15 @@ type YieldFlowStartInput = Parameters<
 type PendingActionIntent = Readonly<{
   readonly address: WalletScopeKey["address"];
   readonly network: WalletScopeKey["network"];
-  readonly pendingAction: string;
-  readonly validator: string | null;
-  readonly yieldId: string;
+  readonly pendingAction: YieldPendingActionType;
+  readonly validator: ValidatorAddress | null;
+  readonly yieldId: YieldId;
 }>;
 
 export type PendingActionDeepLinkObservation =
   | Readonly<{
       readonly _tag: "OpenValidatorSelection";
-      readonly balanceId: string;
+      readonly balanceId: BalanceDataKey;
       readonly intent: PendingActionIntent;
       readonly pendingActionType: YieldPendingActionType;
       readonly walletScope: WalletScopeKey;
@@ -49,7 +53,7 @@ export type DeepLinkRouteObservation = Readonly<{
   readonly maintenance: boolean;
   readonly pendingAction: PendingActionDeepLinkObservation | null;
   readonly position: {
-    readonly balanceId: string;
+    readonly balanceId: BalanceDataKey;
     readonly yieldId: YieldId;
   } | null;
   readonly ready: boolean;

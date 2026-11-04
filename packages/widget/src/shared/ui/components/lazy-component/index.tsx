@@ -18,6 +18,7 @@ export const lazyComponent = <
 ): Module[Name] => {
   const Loaded = lazy(async () => {
     // The wrapper below hands this component exactly the props it was given.
+    // biome-ignore lint/nursery/noUnsafeTypeAssertion: React's ComponentType is contravariant in props, so a generic export cannot be widened to the wrapper's `object` props without an assertion.
     const component = (await load())[name] as ComponentType<object>;
     return { default: component };
   });
@@ -31,5 +32,6 @@ export const lazyComponent = <
 
   // The wrapper forwards every prop, so it takes the props of the export.
   const typed: ComponentType<never> = LazyComponent;
+  // biome-ignore lint/nursery/noUnsafeTypeAssertion: React cannot type a props-forwarding wrapper as the generic export `Module[Name]` it stands in for.
   return typed as Module[Name];
 };

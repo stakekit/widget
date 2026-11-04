@@ -880,12 +880,6 @@
     }
   },
   "position_details": {
-    "labels": {
-      "hasFrozenV1": {
-        "label": "Gelé 1.0",
-        "details": "{{amount}} TRX sont gelés avec Legacy Stake 1.0. Pour migrer vers 2.0 : Il suffit de déstaker {{amount}} TRX dans Yield.xyz et de les staker à nouveau (Yield.xyz priorise automatiquement le déstaking du solde de Stake 1.0)"
-      }
-    },
     "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Récompenses",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> disponibles pour {{pendingAction, lowercase}}",

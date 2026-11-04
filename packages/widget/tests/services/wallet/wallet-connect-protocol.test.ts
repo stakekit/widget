@@ -1,7 +1,9 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Fiber, Option, Queue, Schema } from "effect";
 import {
+  CaipChainId,
   sharedSignClients,
+  WalletConnectTopic,
   walletConnectSessionHint,
   walletConnectSessionOwners,
 } from "../../../src/services/wallet/internal/platform/wallet-connect-protocol";
@@ -14,7 +16,9 @@ import {
   walletConnectSession,
 } from "../../utils/wallet-connect";
 
-const solanaChain = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+const toChain = Schema.decodeSync(CaipChainId);
+const toTopic = Schema.decodeSync(WalletConnectTopic);
+const solanaChain = toChain("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
 const solanaAccount = `${solanaChain}:wallet-public-key`;
 const solanaProposal = {
   namespace: "solana",
@@ -92,7 +96,7 @@ describe("WalletConnect protocol", () => {
       yield* protocol
         .connect({
           namespace: "stellar",
-          chains: ["stellar:pubnet"],
+          chains: [toChain("stellar:pubnet")],
           requiredMethods: ["stellar_signXDR"],
           optionalMethods: ["stellar_signMessage"],
         })
@@ -275,8 +279,10 @@ describe("WalletConnect protocol", () => {
       );
       yield* protocol.sessions("solana");
       const ended: Array<string> = [];
-      protocol.subscribeEnded("first-topic", () => ended.push("first"));
-      const unsubscribe = protocol.subscribeEnded("second-topic", () =>
+      protocol.subscribeEnded(toTopic("first-topic"), () =>
+        ended.push("first")
+      );
+      const unsubscribe = protocol.subscribeEnded(toTopic("second-topic"), () =>
         ended.push("second")
       );
 
@@ -303,7 +309,7 @@ describe("WalletConnect protocol", () => {
         })
       );
 
-      yield* protocol.disconnect("first-topic");
+      yield* protocol.disconnect(toTopic("first-topic"));
 
       expect(signClient.state.disconnects).toEqual(["first-topic"]);
       expect(
@@ -318,7 +324,7 @@ describe("WalletConnect protocol", () => {
       Effect.gen(function* () {
         const { protocol, signClient } = yield* makeTestWalletConnect();
         const request = {
-          topic: "session-topic",
+          topic: toTopic("session-topic"),
           chainId: solanaChain,
           method: "solana_signMessage",
           params: { message: "hello" },
@@ -406,7 +412,7 @@ describe("WalletConnect protocol", () => {
       const connecting = yield* firstPage.protocol
         .connect({
           namespace: "cosmos",
-          chains: ["cosmos:cosmoshub-4"],
+          chains: [toChain("cosmos:cosmoshub-4")],
           requiredMethods: [],
           optionalMethods: ["cosmos_signDirect"],
         })
@@ -501,14 +507,14 @@ describe("WalletConnect protocol", () => {
           (yield* protocol.sessions("solana")).map(({ topic }) => topic)
         ).toEqual(["ended", "disconnected", "live"]);
         signClient.end("ended");
-        yield* protocol.disconnect("disconnected");
+        yield* protocol.disconnect(toTopic("disconnected"));
         // Lets the remote end's owner removal run.
         yield* Effect.sleep("10 millis");
 
         const owners = walletConnectSessionOwners(store);
         expect(
           yield* Effect.forEach(topics, (topic) =>
-            owners.get(topic).pipe(Effect.map(Option.getOrUndefined))
+            owners.get(toTopic(topic)).pipe(Effect.map(Option.getOrUndefined))
           )
         ).toEqual([undefined, undefined, undefined, "solana"]);
       }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
@@ -527,7 +533,7 @@ describe("WalletConnect protocol", () => {
         });
         const cosmosProposal = {
           namespace: "cosmos",
-          chains: ["cosmos:cosmoshub-4"],
+          chains: [toChain("cosmos:cosmoshub-4")],
           requiredMethods: [],
         } as const;
         const firstConnecting = yield* firstTab.protocol
@@ -662,7 +668,7 @@ describe("WalletConnect protocol", () => {
           }),
           { store }
         );
-        yield* firstPage.protocol.disconnect("only-topic");
+        yield* firstPage.protocol.disconnect(toTopic("only-topic"));
 
         const reloaded = yield* makeTestWalletConnect(makeFakeSignClient(), {
           store,

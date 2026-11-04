@@ -4,7 +4,10 @@ import {
   WalletCapabilityUnavailableError,
   WalletSigningError,
 } from "../../../wallet-errors";
-import type { WalletSignedPayloadResult } from "../../../wallet-transactions";
+import {
+  decodeWalletSignedPayloadResult,
+  type WalletSignedPayloadResult,
+} from "../../../wallet-transactions";
 import { isCardanoConnector } from "./cardano-connector-meta";
 
 export const makeCardanoWalletDriver = ({
@@ -37,6 +40,6 @@ export const makeCardanoWalletDriver = ({
           )
         );
 
-      return { broadcasted: false, signedTx };
+      return yield* decodeWalletSignedPayloadResult(signedTx);
     }),
 });

@@ -24,7 +24,10 @@ import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import { GlobalModals } from "../../../features/widget-shell/composition";
 // import { RewardsTabPage } from "../../../domain/portfolio/rewards";
 import { createYieldFlowRoutes } from "../../../features/yield-transaction-flow/composition";
-import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../services/navigation/widget-routes";
 import { BorrowFeatureRoute } from "../../routes/ui/borrow-feature-route";
 import { dashboardEarnRoute } from "./dashboard-earn-route";
 import {
@@ -33,7 +36,10 @@ import {
   DashboardOverview,
 } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
-import { resolveDashboardRouteTab } from "./dashboard-tabs";
+import {
+  type DashboardRouteTab,
+  resolveDashboardRouteTab,
+} from "./dashboard-tabs";
 
 const borrowRouteComposition = {
   WalletScopeRouteGuard,
@@ -48,7 +54,9 @@ export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
  * transition (exit, then enter); steps inside one page, such as the Earn form
  * into its Review or a position into its unstake flow, keep the same key.
  */
-const resolveDashboardPageKey = (pathname: string): string => {
+const resolveDashboardPageKey = (
+  pathname: string
+): Exclude<DashboardRouteTab, "manage"> | WidgetPath => {
   const tab = resolveDashboardRouteTab(pathname);
   if (tab !== "manage") return tab;
   // A position's pages share its key: a market position, a yield position,

@@ -31,11 +31,7 @@ type Price = {
 export class Prices {
   constructor(public readonly value: Map<string, Price>) {}
 
-  getByToken(token: {
-    readonly symbol: string;
-    readonly network: string;
-    readonly address?: string;
-  }) {
+  getByToken(token: Pick<Token, "network" | "address">) {
     const priceKey = `${token.network}-${token.address?.toLowerCase() ?? ""}`;
     const price = this.value.get(priceKey);
 
@@ -88,8 +84,10 @@ export const PriceResponse = PriceEntries.pipe(
           Array.from(prices.value, ([key, value]) => [
             key,
             {
-              price: value.price,
-              price_24_h: value.price24H,
+              ...(value.price === undefined ? {} : { price: value.price }),
+              ...(value.price24H === undefined
+                ? {}
+                : { price_24_h: value.price24H }),
             },
           ])
         ),

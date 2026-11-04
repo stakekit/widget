@@ -58,8 +58,8 @@ export const applyWalletPolicy = <Wallet extends WalletIdentity>(
     ...available.map(({ groupName }) => groupName),
     ...Object.values(policy.groups ?? {}),
   ].filter((groupName, index, names) => names.indexOf(groupName) === index);
-  const grouped = new Map(
-    groupNames.map((groupName) => [groupName, [] as Array<Wallet>])
+  const grouped = new Map<string, Array<Wallet>>(
+    groupNames.map((groupName) => [groupName, []])
   );
 
   for (const group of available) {

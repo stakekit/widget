@@ -5,7 +5,7 @@ import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
-import { decodeTokenId } from "../../../../domain/borrow/ids";
+import { decodeTokenId, type MarketId } from "../../../../domain/borrow/ids";
 import {
   type BorrowNetwork,
   isBorrowNetwork,
@@ -286,7 +286,7 @@ export const setBorrowCollateralMaxAmountAtom = appRuntime
   .pipe(Atom.withLabel("setBorrowCollateralMaxAmountAtom"));
 
 export const selectBorrowMarketAtom = appRuntime
-  .fn((marketId: string, context) => {
+  .fn((marketId: MarketId, context) => {
     context.set(currentBorrowEntryAtom, {
       marketId,
       type: "market/select",

@@ -42,8 +42,12 @@ export const rejectedWidgetConfigAtom = Atom.make((get) =>
     : null
 ).pipe(Atom.withLabel("rejectedWidgetConfigAtom"));
 
-export const widgetConfigFieldAtom = Atom.family((field: keyof WidgetConfig) =>
-  selectAtom(widgetConfigAtom, (settings) => settings[field])
+/** One atom per config field; the family keeps each field's value type. */
+export const widgetConfigFieldAtom = Atom.family(
+  <Field extends keyof WidgetConfig>(
+    field: Field
+  ): Atom.Atom<WidgetConfig[Field]> =>
+    selectAtom(widgetConfigAtom, (settings) => settings[field])
 );
 
 export const widgetBootstrapSnapshotAtom = Atom.make((get) => {

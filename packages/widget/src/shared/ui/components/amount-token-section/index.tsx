@@ -48,22 +48,22 @@ export const AmountTokenSectionTitle = ({
 type AmountTokenSectionProps = {
   readonly value: NumberInputProps["value"];
   readonly onChange: NumberInputProps["onChange"];
-  readonly disabled?: boolean;
-  readonly isInvalid?: boolean;
+  readonly disabled?: boolean | undefined;
+  readonly isInvalid?: boolean | undefined;
   /** Right-hand control: selected token chip, token picker, or small CTA. */
   readonly accessory: ReactNode;
   readonly formattedPrice: string;
   readonly balance?: ReactNode;
-  readonly balanceError?: boolean;
-  readonly onMaxClick?: (() => void) | null;
-  readonly maxButtonProps?: Pick<BoxProps, "background">;
-  readonly minMaxLabel?: string | null;
+  readonly balanceError?: boolean | undefined;
+  readonly onMaxClick?: (() => void) | null | undefined;
+  readonly maxButtonProps?: Pick<BoxProps, "background"> | undefined;
+  readonly minMaxLabel?: string | null | undefined;
   readonly minMaxError?: boolean;
   readonly state?: "default" | "danger";
   /** Stake/unstake token border vs muted action-card border. */
   readonly tone?: "stake" | "action";
   readonly marginTop?: BoxProps["marginTop"];
-  readonly dataRk?: string;
+  readonly dataRk?: string | undefined;
   readonly header?: ReactNode;
   readonly children?: ReactNode;
 };

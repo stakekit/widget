@@ -15,7 +15,7 @@ export const ContentLoaderSquare = ({
   return (
     <Skeleton
       height={heightPx}
-      containerClassName={containerClassName}
+      {...(containerClassName === undefined ? {} : { containerClassName })}
       baseColor={vars.color.skeletonLoaderBase}
       highlightColor={vars.color.skeletonLoaderHighlight}
       enableAnimation
@@ -40,8 +40,8 @@ export const ContentLoaderLine = ({
   return (
     <Skeleton
       height={heightPx}
-      width={widthPx}
-      containerClassName={containerClassName}
+      {...(widthPx === undefined ? {} : { width: widthPx })}
+      {...(containerClassName === undefined ? {} : { containerClassName })}
       baseColor={vars.color.skeletonLoaderBase}
       highlightColor={vars.color.skeletonLoaderHighlight}
       enableAnimation

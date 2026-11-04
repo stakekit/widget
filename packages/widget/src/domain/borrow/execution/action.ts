@@ -61,8 +61,22 @@ export const Action = Schema.Struct({
 });
 export type Action = typeof Action.Type;
 
-export const isUnsuccessfulBorrowActionStatus = (status: string) =>
-  status === "FAILED" || status === "CANCELED" || status === "STALE";
+/** Every action status is classified, so a new one must be placed here. */
+const borrowActionStatusOutcome = {
+  CREATED: "Running",
+  WAITING_FOR_NEXT: "Running",
+  PROCESSING: "Running",
+  SUCCESS: "Succeeded",
+  FAILED: "Unsuccessful",
+  CANCELED: "Unsuccessful",
+  STALE: "Unsuccessful",
+} as const satisfies Record<
+  Action["status"],
+  "Running" | "Succeeded" | "Unsuccessful"
+>;
 
-export const isTerminalBorrowActionStatus = (status: string) =>
-  status === "SUCCESS" || isUnsuccessfulBorrowActionStatus(status);
+export const isUnsuccessfulBorrowActionStatus = (status: Action["status"]) =>
+  borrowActionStatusOutcome[status] === "Unsuccessful";
+
+export const isTerminalBorrowActionStatus = (status: Action["status"]) =>
+  borrowActionStatusOutcome[status] !== "Running";

@@ -5,6 +5,7 @@ import { appRuntime } from "../../app/runtime/app-runtime";
 import type { YieldBalancesCommand } from "../../domain/finance/models";
 import type { YieldId } from "../../domain/identity/identifiers";
 import {
+  type BalanceDataKey,
   getPositionBalances,
   getPositionData,
   type PositionBalancesByType,
@@ -121,7 +122,7 @@ export const positionDataAtom = Atom.family((key: PositionDataKey) =>
 );
 
 export class PositionBalancesKey extends Data.Class<{
-  readonly balanceId: string | null;
+  readonly balanceId: BalanceDataKey | null;
   readonly scope: WalletScopeKey;
   readonly yieldId: YieldId | null;
 }> {}

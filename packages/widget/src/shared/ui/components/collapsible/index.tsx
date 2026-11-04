@@ -139,7 +139,7 @@ const AnimateContent = ({
         setDisableTransitionDuration(false);
       };
 
-      enterAnimation();
+      void enterAnimation();
     } else {
       const exitAnimation = async () => {
         setDisableTransitionDuration(true);
@@ -148,7 +148,7 @@ const AnimateContent = ({
         safeToRemove();
       };
 
-      exitAnimation();
+      void exitAnimation();
     }
   }, [animate, isPresent, safeToRemove, scope, setDisableTransitionDuration]);
 

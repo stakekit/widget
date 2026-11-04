@@ -7,13 +7,18 @@ import {
   utilaPalette,
 } from "./palettes";
 
-const getFineryPalette = (theme: typeof lightTheme) =>
+/** The only base-theme value the Finery overrides depend on. */
+export type FineryBaseTheme = {
+  readonly color: Pick<(typeof lightTheme)["color"], "primary">;
+};
+
+const getFineryPalette = (theme: FineryBaseTheme) =>
   theme.color.primary === darkTheme.color.primary
     ? fineryDarkPalette
     : fineryLightPalette;
 
 export const getFineryThemeOverrides = (
-  theme: typeof lightTheme
+  theme: FineryBaseTheme
 ): RecursivePartial<typeof lightTheme> => {
   const palette = getFineryPalette(theme);
 

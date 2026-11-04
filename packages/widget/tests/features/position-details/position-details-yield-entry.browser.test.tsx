@@ -64,7 +64,7 @@ const walletScope = new WalletScopeKey({
 });
 const selectedYield = yieldApiYieldFixture();
 const entryKey = new PositionDetailsStakeEntryKey({
-  balanceId: "balance-1",
+  balanceId: "default",
   integrationId: selectedYield.id,
   walletScope,
 });
@@ -155,7 +155,7 @@ const ReviewGuard = () => {
       intake._tag === "Enter" &&
       intake.selectedStake.id === selectedYield.id &&
       mount._tag === "PositionStake" &&
-      mount.balanceId === "balance-1"
+      mount.balanceId === "default"
   );
   return carriesPositionStake ? (
     <div>Position stake review</div>
@@ -170,11 +170,11 @@ const Runtime = () => {
       <NavigationBridge />
       <Routes>
         <Route
-          path={`/positions/${selectedYield.id}/balance-1`}
+          path={`/positions/${selectedYield.id}/default`}
           element={<PositionEntry />}
         />
         <Route
-          path={`/positions/${selectedYield.id}/balance-1/stake/review`}
+          path={`/positions/${selectedYield.id}/default/stake/review`}
           element={<ReviewGuard />}
         />
         <Route path="/missing" element={<div>Missing Flow Session</div>} />
@@ -207,7 +207,7 @@ const TestApp = () => {
           applicationBaseRuntime.layer,
           Layer.merge(
             ApplicationRouter.layer(applicationRoutes, {
-              initialEntries: [`/positions/${selectedYield.id}/balance-1`],
+              initialEntries: [`/positions/${selectedYield.id}/default`],
             }),
             WidgetConfigService.layer({
               apiKey: "test",

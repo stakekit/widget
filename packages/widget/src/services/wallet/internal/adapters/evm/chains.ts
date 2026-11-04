@@ -29,12 +29,14 @@ import {
 import { getNetworkLogo } from "../../../network-assets";
 import type { Chain } from "../../../wallet-descriptors";
 
+type EvmChainEntry<Key extends WalletEvmNetwork> = {
+  type: "evm";
+  network: Key;
+  wagmiChain: Chain;
+};
+
 export type EvmChainsMap = {
-  [Key in WalletEvmNetwork]: {
-    type: "evm";
-    network: Key;
-    wagmiChain: Chain;
-  };
+  [Key in WalletEvmNetwork]: EvmChainEntry<Key>;
 };
 
 const evmChainConfiguration: EvmChainsMap = {
@@ -276,15 +278,43 @@ const evmChainConfiguration: EvmChainsMap = {
   },
 };
 
-export const evmChainsMap = Object.fromEntries(
-  Object.entries(evmChainConfiguration).map(([network, configuration]) => [
-    network,
-    {
-      ...configuration,
-      wagmiChain: {
-        ...configuration.wagmiChain,
-        id: getWalletRoutingId(network as WalletEvmNetwork),
-      },
-    },
-  ])
-) as EvmChainsMap;
+const withWalletRoutingId = <Key extends WalletEvmNetwork>(
+  entry: EvmChainEntry<Key>
+): EvmChainEntry<Key> => ({
+  ...entry,
+  wagmiChain: {
+    ...entry.wagmiChain,
+    id: getWalletRoutingId(entry.network),
+  },
+});
+
+const configured = evmChainConfiguration;
+
+export const evmChainsMap: EvmChainsMap = {
+  ethereum: withWalletRoutingId(configured.ethereum),
+  polygon: withWalletRoutingId(configured.polygon),
+  optimism: withWalletRoutingId(configured.optimism),
+  arbitrum: withWalletRoutingId(configured.arbitrum),
+  "avalanche-c": withWalletRoutingId(configured["avalanche-c"]),
+  celo: withWalletRoutingId(configured.celo),
+  harmony: withWalletRoutingId(configured.harmony),
+  viction: withWalletRoutingId(configured.viction),
+  binance: withWalletRoutingId(configured.binance),
+  base: withWalletRoutingId(configured.base),
+  linea: withWalletRoutingId(configured.linea),
+  core: withWalletRoutingId(configured.core),
+  sonic: withWalletRoutingId(configured.sonic),
+  "ethereum-hoodi": withWalletRoutingId(configured["ethereum-hoodi"]),
+  "ethereum-goerli": withWalletRoutingId(configured["ethereum-goerli"]),
+  "ethereum-sepolia": withWalletRoutingId(configured["ethereum-sepolia"]),
+  unichain: withWalletRoutingId(configured.unichain),
+  gnosis: withWalletRoutingId(configured.gnosis),
+  plasma: withWalletRoutingId(configured.plasma),
+  katana: withWalletRoutingId(configured.katana),
+  hyperevm: withWalletRoutingId(configured.hyperevm),
+  "monad-testnet": withWalletRoutingId(configured["monad-testnet"]),
+  monad: withWalletRoutingId(configured.monad),
+  robinhood: withWalletRoutingId(configured.robinhood),
+  "robinhood-testnet": withWalletRoutingId(configured["robinhood-testnet"]),
+  pharos: withWalletRoutingId(configured.pharos),
+};

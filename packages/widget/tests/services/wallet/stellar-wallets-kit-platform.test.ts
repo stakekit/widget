@@ -7,6 +7,7 @@ import {
   makeWalletConnectStellarWalletClient,
   type StellarWalletModule,
 } from "../../../src/services/wallet/internal/platform/stellar-wallets-kit-platform";
+import { makeWalletConnectConnection } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import {
   makeFakeSignClient,
@@ -21,7 +22,6 @@ const publicNetworkPassphrase =
 const makeModule = (
   overrides: Partial<StellarWalletModule> = {}
 ): StellarWalletModule => ({
-  disconnect: undefined,
   getAddress: vi.fn(async () => ({ address })),
   getNetwork: vi.fn(async () => ({
     network: "PUBLIC",
@@ -306,7 +306,7 @@ describe("Stellar Wallets Kit platform", () => {
         yield* client.reconnect(address);
         yield* presentation
           .connect({
-            connection: Effect.never,
+            connection: makeWalletConnectConnection(Effect.never),
             subscribeUri: (publish) =>
               Effect.sync(() => publish("wc:solana-proposal@2")),
           })

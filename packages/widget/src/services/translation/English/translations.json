@@ -1253,12 +1253,6 @@
     }
   },
   "position_details": {
-    "labels": {
-      "hasFrozenV1": {
-        "label": "Frozen 1.0",
-        "details": "{{amount}} TRX are frozen with Legacy Stake 1.0. To migrate to 2.0: Simply unstake {{amount}} TRX in Yield.xyz and stake again (Yield.xyz automatically prioritizes unstaking of Stake 1.0 balance)"
-      }
-    },
     "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Rewards",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",

@@ -9,6 +9,7 @@ import {
   WalletAddress,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
+import { BalanceDataKey } from "../../../src/domain/portfolio/positions";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { findPendingActionDeepLinkTarget } from "../../../src/features/earn/model/pending-action-deep-link";
 import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
@@ -40,6 +41,7 @@ const otherAddress = Schema.decodeSync(WalletAddress)(
 );
 const scope = new WalletScopeKey({ address, network: "ethereum" });
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
+const decodeBalanceDataKey = Schema.decodeSync(BalanceDataKey);
 
 const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
   maintenance: false,
@@ -49,7 +51,7 @@ const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
       intake: { walletScope: ownerScope } as never,
       mount: {
         _tag: "PositionManage",
-        balanceId: "balance-1",
+        balanceId: "default",
         integrationId: yieldId,
       },
     },
@@ -58,7 +60,7 @@ const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
       network: ownerScope.network,
       pendingAction: "CLAIM_REWARDS",
       validator: null,
-      yieldId: "yield-1",
+      yieldId,
     },
     walletScope: ownerScope,
   },
@@ -176,11 +178,11 @@ describe("DeepLinkCoordinator", () => {
       expect(pending.pendingAction?._tag).toBe("StartYieldFlow");
       expect(started).toHaveLength(1);
       expect(started[0]?.path).toBe(
-        "/positions/yield-1/balance-1/pending-action/review"
+        "/positions/yield-1/default/pending-action/review"
       );
       expect(started[0]?.session.mount).toEqual({
         _tag: "PositionManage",
-        balanceId: "balance-1",
+        balanceId: "default",
         integrationId: "yield-1",
       });
       expect(started[0]?.session.intake.walletScope).toEqual(scope);
@@ -254,7 +256,7 @@ describe("DeepLinkCoordinator", () => {
         const position = {
           maintenance: false,
           pendingAction: null,
-          position: { balanceId: "balance-1", yieldId },
+          position: { balanceId: "default", yieldId },
           ready: true,
         } satisfies DeepLinkRouteObservation;
 
@@ -271,7 +273,7 @@ describe("DeepLinkCoordinator", () => {
 
         expect(navigate).toHaveBeenCalledTimes(2);
         expect(navigate).toHaveBeenCalledWith(
-          "/positions/yield-1/balance-1",
+          "/positions/yield-1/default",
           expect.anything()
         );
       })
@@ -286,7 +288,7 @@ describe("DeepLinkCoordinator", () => {
           {
             maintenance: false,
             pendingAction: null,
-            position: { balanceId: "balance-1", yieldId },
+            position: { balanceId: "default", yieldId },
             ready: true,
           },
         ],
@@ -326,7 +328,7 @@ describe("findPendingActionDeepLinkTarget", () => {
 
   it("targets the balance matching balanceId even when an earlier balance has the same action", () => {
     const target = findPendingActionDeepLinkTarget({
-      balanceId: "validator::validator-b",
+      balanceId: decodeBalanceDataKey("validator::validator-b"),
       balances,
       pendingActionType: "CLAIM_REWARDS",
       validator: null,
@@ -339,7 +341,7 @@ describe("findPendingActionDeepLinkTarget", () => {
   it("returns no action for an unknown balanceId", () => {
     expect(
       findPendingActionDeepLinkTarget({
-        balanceId: "validator::unknown",
+        balanceId: decodeBalanceDataKey("validator::unknown"),
         balances,
         pendingActionType: "CLAIM_REWARDS",
         validator: null,
@@ -350,7 +352,7 @@ describe("findPendingActionDeepLinkTarget", () => {
   it("returns no action when the matching balance lacks the action type", () => {
     expect(
       findPendingActionDeepLinkTarget({
-        balanceId: "validator::validator-b",
+        balanceId: decodeBalanceDataKey("validator::validator-b"),
         balances,
         pendingActionType: "UNLOCK_LOCKED",
         validator: null,

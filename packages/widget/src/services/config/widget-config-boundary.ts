@@ -1,5 +1,17 @@
-import { Data, Predicate, Result, Schema, SchemaIssue } from "effect";
+import {
+  Data,
+  Option,
+  Predicate,
+  Result,
+  Schema,
+  SchemaGetter,
+  SchemaIssue,
+} from "effect";
 import { YieldCategory } from "../../domain/earn/contract";
+import type { PreferredTokenYieldsPerNetwork } from "../../domain/earn/yield";
+import type { YieldProviderOrder } from "../../domain/earn/yield-provider-order";
+import { ProviderId, YieldId } from "../../domain/identity/identifiers";
+import { Network } from "../../domain/network/network";
 import { HostTokenKey } from "../../domain/token/token";
 import {
   EvmChainIds,
@@ -21,8 +33,17 @@ import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
 import type { WidgetLayout } from "./widget-config-model";
 
-const optional = <S extends Schema.Constraint>(schema: S) =>
-  Schema.optionalKey(Schema.UndefinedOr(schema));
+// Hosts may pass `undefined` for any optional setting; decoding normalizes it
+// to an absent key so consumers see a single "not set" representation.
+const optional = <S extends Schema.Top>(schema: S) =>
+  Schema.optionalKey(Schema.UndefinedOr(schema)).pipe(
+    Schema.decodeTo(Schema.optionalKey(Schema.toType(schema)), {
+      decode: SchemaGetter.transformOptional(
+        Option.filter(Predicate.isNotUndefined)
+      ),
+      encode: SchemaGetter.passthroughSubtype(),
+    })
+  );
 
 const exhaustiveLiterals =
   <All extends number | string>() =>
@@ -115,8 +136,8 @@ const customTranslationFields = {
 const CustomTranslations = Schema.Struct(customTranslationFields);
 
 type ValidatorPolicySettings = NonNullable<
-  SettingsProps["validatorsConfig"]
->[string];
+  NonNullable<SettingsProps["validatorsConfig"]>["*"]
+>;
 
 const validatorPolicyFields = {
   allowed: optional(Schema.Array(Schema.String)),
@@ -129,10 +150,10 @@ const validatorPolicyFields = {
 const ValidatorPolicy = Schema.Struct(validatorPolicyFields);
 
 const IconMapping = Schema.Record(Schema.String, Schema.String);
-const PreferredTokenYieldsPerNetwork = Schema.Record(
-  Schema.String,
-  Schema.Record(HostTokenKey, Schema.String)
-);
+// Fields recovered entry by entry: only their outer shape is decoded with the
+// Host Configuration, so an invalid entry drops only itself.
+const LooseRecord = Schema.Record(Schema.String, Schema.Unknown);
+const PreferredYield = Schema.Union([Schema.Literal("*"), YieldId]);
 
 type ExternalProviderSettings = NonNullable<SettingsProps["externalProviders"]>;
 type ExternalProviderValueKey = Exclude<
@@ -170,15 +191,6 @@ const walletPolicyFields = {
 
 const WalletPolicy = Schema.Struct(walletPolicyFields);
 
-const yieldProviderOrderFields = {
-  [YieldCategory.RWA]: optional(Schema.Array(Schema.String)),
-  [YieldCategory.DeFi]: optional(Schema.Array(Schema.String)),
-  [YieldCategory.Stake]: optional(Schema.Array(Schema.String)),
-} satisfies Record<
-  keyof NonNullable<SettingsProps["yieldProviderOrder"]>,
-  Schema.Constraint
->;
-
 type OpaqueHostConfigurationKey =
   | "mapWalletFn"
   | "onMountAnimationComplete"
@@ -195,7 +207,7 @@ const hostConfigurationValueFields = {
   borrowApiUrl: optional(Schema.String),
   borrowEnabled: optional(Schema.Boolean),
   borrowMarketsScope: optional(Schema.Literals(borrowMarketsScopeValues)),
-  chainIconMapping: optional(IconMapping),
+  chainIconMapping: optional(LooseRecord),
   customTranslations: optional(CustomTranslations),
   dashboardVariant: optional(Schema.Boolean),
   yieldCategoryOrder: optional(
@@ -214,15 +226,15 @@ const hostConfigurationValueFields = {
   institutionalWallets: optional(Schema.Boolean),
   isSafe: optional(Schema.Boolean),
   language: optional(Schema.Literals(hostLanguageValues)),
-  preferredTokenYieldsPerNetwork: optional(PreferredTokenYieldsPerNetwork),
+  preferredTokenYieldsPerNetwork: optional(LooseRecord),
   theme: optional(Schema.Unknown),
   tokenIconMapping: optional(IconMapping),
   tonConnectManifestUrl: optional(Schema.String),
-  validatorsConfig: optional(Schema.Record(Schema.String, ValidatorPolicy)),
+  validatorsConfig: optional(LooseRecord),
   variant: optional(Schema.Literals(hostVariantValues)),
   walletPolicy: optional(WalletPolicy),
   yieldGrouping: optional(Schema.Literals(hostYieldGroupingValues)),
-  yieldProviderOrder: optional(Schema.Struct(yieldProviderOrderFields)),
+  yieldProviderOrder: optional(LooseRecord),
   yieldsApiUrl: optional(Schema.String),
 } satisfies Record<HostConfigurationValueKey, Schema.Constraint>;
 
@@ -245,11 +257,17 @@ type TokenIconMapper = Extract<
 /**
  * Host settings fixed at mount (ADR 0004). A decode given them uses them in
  * place of the host's values, so cross-field rules hold for the published value.
+ * Every key is present: an unset mount value (`undefined`) still overrides the
+ * host's later value.
  */
-export type MountFixedHostSettings = Pick<
-  SKHostConfiguration,
-  "apiKey" | "baseUrl" | "borrowApiUrl" | "borrowEnabled" | "yieldsApiUrl"
->;
+export type MountFixedHostSettings = {
+  readonly [Key in
+    | "apiKey"
+    | "baseUrl"
+    | "borrowApiUrl"
+    | "borrowEnabled"
+    | "yieldsApiUrl"]: SKHostConfiguration[Key];
+};
 
 // Borrow follows `borrowEnabled`, which may be fixed at mount while the
 // provider comes from a later update, so its settings are not narrowed here.
@@ -269,13 +287,20 @@ type HostCapabilities = Readonly<{
   tracking: SettingsProps["tracking"];
 }>;
 
+/** Host Configuration fields keyed by network. */
+type NetworkKeyedField =
+  | "chainIconMapping"
+  | "preferredTokenYieldsPerNetwork"
+  | "validatorsConfig";
+
 export type DecodedHostConfiguration = Omit<
   HostConfigurationValueData,
   | "chainModal"
   | "externalProviders"
   | "tokenIconMapping"
-  | "chainIconMapping"
+  | NetworkKeyedField
   | "theme"
+  | "yieldProviderOrder"
 > &
   Readonly<{
     chainIconMapping: SettingsProps["chainIconMapping"];
@@ -284,9 +309,14 @@ export type DecodedHostConfiguration = Omit<
     mapWalletFn: SettingsProps["mapWalletFn"];
     onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
     portalContainer: SettingsProps["portalContainer"];
+    preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | undefined;
     theme: SKTheme | undefined;
     tokenIconMapping: SettingsProps["tokenIconMapping"];
     tracking: SettingsProps["tracking"];
+    validatorsConfig:
+      | Partial<Record<Network | "*", typeof ValidatorPolicy.Type>>
+      | undefined;
+    yieldProviderOrder: YieldProviderOrder | undefined;
   }>;
 
 export type InvalidHostConfigurationIssue =
@@ -304,10 +334,23 @@ export class InvalidHostConfiguration extends Data.TaggedError(
   readonly issues: ReadonlyArray<InvalidHostConfigurationIssue>;
 }> {}
 
-export type HostConfigurationWarning = Readonly<{
-  readonly _tag: "Theme";
-  readonly issue: ThemeDecodeWarning;
-}>;
+export type HostConfigurationWarning =
+  | Readonly<{
+      readonly _tag: "Theme";
+      readonly issue: ThemeDecodeWarning;
+    }>
+  /** An entry under a key that names no network; only that entry is dropped. */
+  | Readonly<{
+      readonly _tag: "UnknownNetworkKey";
+      readonly field: NetworkKeyedField;
+      readonly key: string;
+    }>
+  /** A value that does not decode; only its entry is dropped. */
+  | Readonly<{
+      readonly _tag: "InvalidEntry";
+      readonly field: NetworkKeyedField | "yieldProviderOrder";
+      readonly path: string;
+    }>;
 
 export type HostConfigurationDecodeSuccess = Readonly<{
   configuration: DecodedHostConfiguration;
@@ -321,6 +364,108 @@ const issuePaths = (error: Schema.SchemaError): ReadonlyArray<string> => [
     )
   ),
 ];
+
+const isNetwork = Schema.is(Network);
+
+const isNetworkOrAnyKey = (key: string): key is Network | "*" =>
+  key === "*" || isNetwork(key);
+
+type NetworkKeyedEntries<Key extends string, Value> = Readonly<{
+  entries: Partial<Record<Key, Value>> | undefined;
+  warnings: ReadonlyArray<HostConfigurationWarning>;
+}>;
+
+/**
+ * Keeps the entries under a network key whose value decodes. An unknown key
+ * is dropped before its value is read; each dropped entry is a warning.
+ * `decodeValue` may add warnings for entries nested in a value it keeps.
+ */
+const keepNetworkEntries = <Key extends string, Value>(
+  field: NetworkKeyedField,
+  record: Readonly<Record<string, unknown>> | undefined,
+  isKey: (key: string) => key is Key,
+  decodeValue: (
+    value: unknown,
+    key: Key,
+    warnings: Array<HostConfigurationWarning>
+  ) => Option.Option<Value>
+): NetworkKeyedEntries<Key, Value> => {
+  if (record === undefined) return { entries: undefined, warnings: [] };
+  const entries: Partial<Record<Key, Value>> = {};
+  const warnings: Array<HostConfigurationWarning> = [];
+  for (const [key, raw] of Object.entries(record)) {
+    if (!isKey(key)) {
+      warnings.push({ _tag: "UnknownNetworkKey", field, key });
+      continue;
+    }
+    const value = decodeValue(raw, key, warnings);
+    if (Option.isSome(value)) entries[key] = value.value;
+    else warnings.push({ _tag: "InvalidEntry", field, path: key });
+  }
+  return { entries, warnings };
+};
+
+const decodeIconUrl = Schema.decodeUnknownOption(Schema.String);
+const decodeValidatorPolicy = Schema.decodeUnknownOption(ValidatorPolicy);
+const decodeHostTokenKey = Schema.decodeUnknownOption(HostTokenKey);
+const decodePreferredYield = Schema.decodeUnknownOption(PreferredYield);
+const decodeProviderId = Schema.decodeUnknownOption(ProviderId);
+
+/** One network's preferred token yields that decode; each other is a warning. */
+const decodePreferredYields = (
+  tokens: unknown,
+  network: Network,
+  warnings: Array<HostConfigurationWarning>
+): Option.Option<Partial<Record<HostTokenKey, YieldId | "*">>> => {
+  if (!Predicate.isObject(tokens)) return Option.none();
+  const kept: Partial<Record<HostTokenKey, YieldId | "*">> = {};
+  for (const [token, yieldId] of Object.entries(tokens)) {
+    const key = decodeHostTokenKey(token);
+    const value = decodePreferredYield(yieldId);
+    if (Option.isSome(key) && Option.isSome(value)) {
+      kept[key.value] = value.value;
+    } else {
+      warnings.push({
+        _tag: "InvalidEntry",
+        field: "preferredTokenYieldsPerNetwork",
+        path: `${network}.${token}`,
+      });
+    }
+  }
+  return Option.some(kept);
+};
+
+/** Keeps each category's provider IDs that decode; each other is a warning. */
+const keepProviderIds = (
+  order: HostConfigurationValueData["yieldProviderOrder"]
+) => {
+  if (order === undefined) return { order: undefined, warnings: [] };
+  const warnings: Array<HostConfigurationWarning> = [];
+  const kept: Partial<Record<YieldCategory, ReadonlyArray<ProviderId>>> = {};
+  for (const category of yieldCategoryValues) {
+    const providerIds = order[category];
+    if (providerIds === undefined) continue;
+    if (!Array.isArray(providerIds)) {
+      warnings.push({
+        _tag: "InvalidEntry",
+        field: "yieldProviderOrder",
+        path: category,
+      });
+      continue;
+    }
+    kept[category] = providerIds.flatMap((providerId: unknown, index) => {
+      const decoded = decodeProviderId(providerId);
+      if (Option.isSome(decoded)) return [decoded.value];
+      warnings.push({
+        _tag: "InvalidEntry",
+        field: "yieldProviderOrder",
+        path: `${category}.${index}`,
+      });
+      return [];
+    });
+  }
+  return { order: kept, warnings };
+};
 
 const makeCapabilities = (
   hostConfiguration: SKHostConfiguration,
@@ -412,11 +557,13 @@ const combineExternalProvider = (
 
   const common = {
     currentAddress: values.currentAddress,
-    currentChain: values.currentChain,
-    initToken: values.initToken,
-    supportedChainIds: values.supportedChainIds
-      ? [...values.supportedChainIds]
-      : undefined,
+    ...(values.currentChain === undefined
+      ? {}
+      : { currentChain: values.currentChain }),
+    ...(values.initToken === undefined ? {} : { initToken: values.initToken }),
+    ...(values.supportedChainIds
+      ? { supportedChainIds: [...values.supportedChainIds] }
+      : {}),
     type: values.type,
   };
 
@@ -511,20 +658,41 @@ export const decodeHostConfiguration = (
     decoded.success.theme === undefined
       ? { theme: undefined, warnings: [] }
       : decodeTheme(decoded.success.theme);
+  const chainIcons = keepNetworkEntries(
+    "chainIconMapping",
+    decoded.success.chainIconMapping,
+    isNetwork,
+    (value) => decodeIconUrl(value)
+  );
+  const preferredTokenYields = keepNetworkEntries(
+    "preferredTokenYieldsPerNetwork",
+    decoded.success.preferredTokenYieldsPerNetwork,
+    isNetwork,
+    decodePreferredYields
+  );
+  const providerOrder = keepProviderIds(decoded.success.yieldProviderOrder);
+  const validators = keepNetworkEntries(
+    "validatorsConfig",
+    decoded.success.validatorsConfig,
+    isNetworkOrAnyKey,
+    (value) => decodeValidatorPolicy(value)
+  );
 
   const configuration: DecodedHostConfiguration = {
     ...decoded.success,
-    chainIconMapping:
-      capabilities.chainIconMapper ?? decoded.success.chainIconMapping,
+    chainIconMapping: capabilities.chainIconMapper ?? chainIcons.entries,
     chainModal: capabilities.chainModal,
     externalProviders: externalProviders.success,
     mapWalletFn: capabilities.mapWalletFn,
     onMountAnimationComplete: capabilities.onMountAnimationComplete,
     portalContainer: capabilities.portalContainer,
+    preferredTokenYieldsPerNetwork: preferredTokenYields.entries,
     theme: theme.theme,
     tokenIconMapping:
       capabilities.tokenIconMapper ?? decoded.success.tokenIconMapping,
     tracking: capabilities.tracking,
+    validatorsConfig: validators.entries,
+    yieldProviderOrder: providerOrder.order,
   };
   const issues = semanticIssues(configuration);
   if (issues.length > 0) {
@@ -540,7 +708,15 @@ export const decodeHostConfiguration = (
 
   return Result.succeed({
     configuration,
-    warnings: theme.warnings.map((issue) => ({ _tag: "Theme", issue })),
+    warnings: [
+      ...theme.warnings.map(
+        (issue): HostConfigurationWarning => ({ _tag: "Theme", issue })
+      ),
+      ...chainIcons.warnings,
+      ...preferredTokenYields.warnings,
+      ...validators.warnings,
+      ...providerOrder.warnings,
+    ],
   });
 };
 

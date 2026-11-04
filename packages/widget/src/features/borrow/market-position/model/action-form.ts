@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+import type { TokenAddress } from "../../../../domain/borrow/ids";
 import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
@@ -46,7 +47,7 @@ export type BorrowRepayFormAction =
 
 export type BorrowWithdrawFormIntent = {
   readonly amount: string;
-  readonly selectedTokenAddress: string | null;
+  readonly selectedTokenAddress: TokenAddress | null;
 };
 
 export type BorrowWithdrawFormAction =
@@ -56,7 +57,7 @@ export type BorrowWithdrawFormAction =
     }
   | {
       readonly type: "token/select";
-      readonly tokenAddress: string;
+      readonly tokenAddress: TokenAddress;
     }
   | {
       readonly type: "reset";

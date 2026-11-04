@@ -1,4 +1,4 @@
-import type { Effect } from "effect";
+import { type Effect, Struct } from "effect";
 import type { Chain as ViemChain } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import type { WalletConnectParameters } from "wagmi/connectors";
@@ -106,7 +106,7 @@ export const connectorsForWallets = (
   for (const [groupIndex, group] of walletList.entries()) {
     for (const createWallet of group.wallets) {
       const wallet = createWallet({
-        appIcon: options.appIcon,
+        ...Struct.pick(options, ["appIcon"]),
         appName: options.appName,
         projectId: options.projectId,
         walletConnectParameters: { metadata },

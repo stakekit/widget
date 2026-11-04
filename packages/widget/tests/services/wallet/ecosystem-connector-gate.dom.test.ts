@@ -190,14 +190,11 @@ const buildControllerEffect = (
     return yield* buildWagmiConfig(
       {
         chainIconMapping: undefined,
-        walletListFactory: undefined,
         disableInjectedProviderDiscovery: true,
         enabledNetworks: new Set(["ethereum", "cosmos", "polkadot", "tron"]),
         institutionalWallets: false,
         isLedgerLive: false,
         isSafe: false,
-        mapWalletFn: undefined,
-        walletPolicy: undefined,
         persistPublicKey: () => Effect.void,
         queryParams,
         solanaConnection: {} as SolanaConnection,

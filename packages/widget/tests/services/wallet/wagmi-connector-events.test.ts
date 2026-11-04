@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { makeWagmiConnectorEvents } from "../../../src/services/wallet/internal/adapters/wagmi-connector-events";
-import { normalizeChainId } from "../../../src/services/wallet/internal/normalize-chain-id";
+import { parseWalletRoutingId } from "../../../src/services/wallet/internal/wagmi-seam";
 
 const makeEmitter = () => {
   const emit = vi.fn();
@@ -43,7 +43,7 @@ describe("makeWagmiConnectorEvents", () => {
 
   it("maps chain ids through a supplied mapper", () => {
     const { emit, emitter } = makeEmitter();
-    const events = makeWagmiConnectorEvents(emitter, normalizeChainId);
+    const events = makeWagmiConnectorEvents(emitter, parseWalletRoutingId);
 
     events.onChainChanged("42");
     events.onChainChanged("not-numeric");

@@ -1,5 +1,4 @@
 import type BigNumber from "bignumber.js";
-import { exactDecimal } from "./exact";
 
 const minimumFundedUsdValue = 0.01;
 const minimumFundedUnitAmount = 0.000001;
@@ -13,13 +12,12 @@ export const isFundedBalance = ({
   amount,
   priceUsd,
 }: {
-  readonly amount: string | BigNumber;
+  readonly amount: BigNumber;
   readonly priceUsd: BigNumber | null;
 }): boolean => {
-  const exactAmount = exactDecimal(amount);
-  if (!exactAmount.isGreaterThan(0)) return false;
+  if (!amount.isGreaterThan(0)) return false;
 
   return priceUsd?.isGreaterThan(0)
-    ? exactAmount.times(priceUsd).isGreaterThanOrEqualTo(minimumFundedUsdValue)
-    : exactAmount.isGreaterThanOrEqualTo(minimumFundedUnitAmount);
+    ? amount.times(priceUsd).isGreaterThanOrEqualTo(minimumFundedUsdValue)
+    : amount.isGreaterThanOrEqualTo(minimumFundedUnitAmount);
 };

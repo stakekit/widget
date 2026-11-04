@@ -39,7 +39,7 @@ type ProviderCardItem = {
   logo: string | undefined;
   name: string;
   preferred: boolean | undefined;
-  stakedBalance: ProviderDetailsItem["stakedBalance"] | EarnValidator["tvlRaw"];
+  stakedBalance: ProviderDetailsItem["stakedBalance"];
   status: ProviderDetailsItem["status"] | EarnValidator["status"];
   validator: EarnValidator | undefined;
   website: string | undefined;
@@ -332,8 +332,7 @@ const getProviderCardItems = ({
         logo: providerDetails?.logo ?? validator.logoURI,
         name: providerDetails?.name ?? name,
         preferred: providerDetails?.preferred ?? validator.preferred,
-        stakedBalance:
-          providerDetails?.stakedBalance ?? validator.tvl ?? validator.tvlRaw,
+        stakedBalance: providerDetails?.stakedBalance ?? validator.tvl,
         status: providerDetails?.status ?? validator.status,
         validator,
         website: providerDetails?.website ?? validator.website,

@@ -25,7 +25,6 @@ const { options: configuredOptions = {}, ...ruleSet } =
 const cruiseOutput = await cruise(["src"], {
   ...configuredOptions,
   baseDir: widgetRoot,
-  outputType: undefined,
   ruleSet,
   validate: true,
 });

@@ -8,6 +8,7 @@ import {
 } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
+import type { WalletAddress } from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 
 /** The API cannot read a confidential asset's balance; the owner reveals it. */
@@ -35,7 +36,7 @@ type YieldEntryTokenBalance = Readonly<{
 }>;
 
 export type YieldEntryTokenBalanceInput = Readonly<{
-  readonly owner: string | null;
+  readonly owner: WalletAddress | null;
   /** Balance the API reports for a non-confidential token. */
   readonly publicAmount: BigNumber | null;
   readonly token: Token | null;

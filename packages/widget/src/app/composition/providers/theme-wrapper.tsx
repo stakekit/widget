@@ -1,4 +1,5 @@
 import { assignInlineVars } from "@vanilla-extract/dynamic";
+import { Predicate } from "effect";
 import type { PropsWithChildren } from "react";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import type { WidgetConfig } from "../../../services/config/widget-config-model";
@@ -6,7 +7,10 @@ import { mergeDeep } from "../../../shared/effect/merge-deep";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id, rootSelector } from "../../../shared/styles/theme/ids";
 import { lightTheme } from "../../../shared/styles/theme/themes";
-import { getFineryThemeOverrides } from "../../../shared/styles/theme/variant-overrides/finery";
+import {
+  type FineryBaseTheme,
+  getFineryThemeOverrides,
+} from "../../../shared/styles/theme/variant-overrides/finery";
 import { portoThemeOverrides } from "../../../shared/styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../../../shared/styles/theme/variant-overrides/utila";
 import type { RecursivePartial } from "../../../shared/types/utils";
@@ -15,7 +19,7 @@ export const getThemeOverrides = ({
   baseTheme,
   variant,
 }: {
-  baseTheme: typeof lightTheme;
+  baseTheme: FineryBaseTheme;
   variant: WidgetConfig["variant"];
 }): RecursivePartial<typeof lightTheme> => {
   if (variant === "utila") {
@@ -33,6 +37,25 @@ export const getThemeOverrides = ({
   return {};
 };
 
+/**
+ * CSS variable assignments for a merged theme, read through the theme
+ * contract: each contract leaf (a `var(--…)` reference) takes the merged value
+ * at the same path. Values off the contract are not emitted.
+ */
+const themeVarEntries = (
+  contract: unknown,
+  tokens: unknown
+): ReadonlyArray<readonly [string, string]> => {
+  if (typeof contract === "string") {
+    return typeof tokens === "string" ? [[contract, tokens]] : [];
+  }
+  if (!Predicate.isObject(contract) || !Predicate.isObject(tokens)) return [];
+
+  return Object.entries(contract).flatMap(([key, node]) =>
+    themeVarEntries(node, tokens[key])
+  );
+};
+
 /** Theme variables for a host theme and variant, read from props. */
 export const ThemeStyles = ({
   children,
@@ -42,19 +65,21 @@ export const ThemeStyles = ({
   readonly theme: WidgetConfig["theme"];
   readonly variant: WidgetConfig["variant"];
 }>) => {
-  const baseTheme = mergeDeep(lightTheme, theme);
   const overrides = getThemeOverrides({
-    baseTheme,
+    baseTheme: {
+      color: { primary: theme?.color?.primary ?? lightTheme.color.primary },
+    },
     variant,
   });
   const finalTheme = mergeDeep(lightTheme, theme, overrides);
+  const themeVars = Object.fromEntries(themeVarEntries(vars, finalTheme));
 
   return (
     <div data-rk={id}>
       <style
         // biome-ignore lint: false
         dangerouslySetInnerHTML={{
-          __html: `${rootSelector} {${assignInlineVars(vars, finalTheme)}}`,
+          __html: `${rootSelector} {${assignInlineVars(themeVars)}}`,
         }}
       />
       {children}

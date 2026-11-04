@@ -39,9 +39,9 @@ export const PositionBalances = ({
   const yieldType = getExtendedYieldType(integrationData);
   const display = getBalanceRowDisplayAmount(integrationData, yieldBalance);
 
-  const balanceTypeContext = isDepositYieldType(yieldType)
-    ? "yearn_or_deposit"
-    : undefined;
+  const balanceTypeOptions = isDepositYieldType(yieldType)
+    ? { context: "yearn_or_deposit" }
+    : {};
 
   return (
     <Box
@@ -51,9 +51,10 @@ export const PositionBalances = ({
       gap="4"
     >
       <Text variant={{ weight: "normal" }}>
-        {t(`position_details.balance_type.${yieldBalance.type}`, {
-          context: balanceTypeContext,
-        })}
+        {t(
+          `position_details.balance_type.${yieldBalance.type}`,
+          balanceTypeOptions
+        )}
       </Text>
 
       <Box textAlign="end">

@@ -45,7 +45,7 @@ export type PlaygroundConfig = typeof PlaygroundConfigSchema.Type;
 export const defaultPlaygroundConfig: PlaygroundConfig = {
   wallet: "builtin",
   scriptedAddress: scriptedWalletAccount,
-  trackingLog: true,
+  trackingLog: false,
   variant: "default",
   theme: "dark",
   language: "auto",
