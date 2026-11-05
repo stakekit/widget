@@ -22,8 +22,8 @@ export const gutter = stylex.defineVars({
  * Marks the theme root and the host portal container, which carry the
  * Presentation Settings that change which styles apply rather than a value:
  * `data-sk-tabs-indicator` (`underline` or `pill`) and
- * `data-sk-surface-style` (`filled` or `elevated`). A component reads one
- * with an ancestor condition written in its own style map:
+ * `data-sk-surface-style` (`filled`, `elevated` or `outlined`). A component
+ * reads one with an ancestor condition written in its own style map:
  * `[stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)]`.
  */
 export const presentationMarker = stylex.defineMarker();

@@ -5,6 +5,8 @@ export const overlaySize = stylex.defineConsts({
   dialogWidth: "440px",
   // A dialog for a compact choice, such as a network.
   pickerDialogWidth: "400px",
+  // A `page` dialog's width: an embedded page laid out in one column.
+  pageDialogWidth: "800px",
   // A dialog's height cap: a long list scrolls in a dialog that keeps its
   // scale in a tall viewport, and a sheet leaves the page in view above it.
   dialogMaxHeight: "min(560px, 80dvh)",

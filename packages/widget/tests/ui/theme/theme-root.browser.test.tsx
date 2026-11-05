@@ -6,7 +6,7 @@ import {
   resolveColorRoles,
   ThemeRoot,
 } from "../../../src/ui/composition";
-import { Box, Button, Card, Modal, Text } from "../../../src/ui/index";
+import { Box, Button, Card, ListRow, Modal, Text } from "../../../src/ui/index";
 import { render } from "../../utils/test-utils";
 
 const backgroundOf = (element: Element) =>
@@ -173,6 +173,28 @@ describe("ThemeRoot", () => {
     const card = screen.getByText("Filled").element().parentElement;
 
     expect(card ? getComputedStyle(card).boxShadow : undefined).toBe("none");
+  });
+
+  it("edges filled cards and rows in the border role under the outlined surface style", async () => {
+    const screen = await render(
+      <ThemeRoot {...themeRootProps({ surfaceStyle: "outlined" })}>
+        <Card>
+          <Text>Outlined</Text>
+        </Card>
+        <ListRow title="Row" testId="row" />
+      </ThemeRoot>
+    );
+
+    const border = hexToRgb(resolveColorRoles("light", "default").border);
+    const card = screen.getByText("Outlined").element().parentElement;
+    const row = screen.getByTestId("row").element();
+    const cardStyle = card ? getComputedStyle(card) : undefined;
+
+    expect(cardStyle?.borderTopColor).toBe(border);
+    expect(cardStyle?.boxShadow).toBe("none");
+    const rowStyle = getComputedStyle(row);
+    expect(rowStyle.outlineStyle).toBe("solid");
+    expect(rowStyle.outlineColor).toBe(border);
   });
 
   it("presents a preset's fixed color scheme whatever the request", async () => {

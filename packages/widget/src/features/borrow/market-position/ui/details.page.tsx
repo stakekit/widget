@@ -5,13 +5,9 @@ import { Outlet } from "react-router";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { toPresentable } from "../../../../shared/effect/async-result";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { Notice, SplitView, Stack } from "../../../../ui/index";
 import {
-  Notice,
-  SplitView,
-  type SplitViewSide,
-  Stack,
-} from "../../../../ui/index";
-import {
+  useWidgetNavigate,
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,
 } from "../../../navigation/index";
@@ -34,7 +30,10 @@ import {
   BorrowPositionActionsSkeleton,
   BorrowPositionInfoSkeleton,
 } from "./components/skeletons";
-import type { BorrowPositionContext } from "./context";
+import type {
+  BorrowPositionActionSelection,
+  BorrowPositionContext,
+} from "./context";
 
 export const BorrowPositionDetailsPage = () => {
   useTrackPage("positionDetails");
@@ -44,14 +43,30 @@ export const BorrowPositionDetailsPage = () => {
   )?.marketId;
   const hasNestedRoute =
     useWidgetRouteMatch(widgetRoutes.borrowPosition) === null;
+  const actionMatch = useWidgetRouteMatch(widgetRoutes.borrowPositionAction);
+  const routeActionId = actionMatch?.actionId ?? null;
+  // The actions pane shows on the position and on a link to one action; a
+  // flow's Review, Steps or Complete takes its place.
+  const showsActionsPane = !hasNestedRoute || actionMatch !== null;
+  const navigation = useWidgetNavigate();
+  // The page owns the tab, so the risk alert's Repay can select it without
+  // a route change that would remount the form. A link to an action selects
+  // its tab whenever the link changes.
+  const [selection, setSelection] = useState<BorrowPositionActionSelection>({
+    actionId: routeActionId,
+    focusRequest: 0,
+  });
+  const [linkedActionId, setLinkedActionId] = useState(routeActionId);
+  if (routeActionId !== linkedActionId) {
+    setLinkedActionId(routeActionId);
+    if (routeActionId !== null) {
+      setSelection({ actionId: routeActionId, focusRequest: 0 });
+    }
+  }
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
   const borrowPosition = useBorrowPosition(marketId);
-  // Nested routes remount the split on the Actions side; returning to the
-  // position restores the side the user last chose, e.g. Details after a
-  // collateral toggle review.
-  const [baseSide, setBaseSide] = useState<SplitViewSide>("primary");
   // A failed or in-flight refetch keeps the last known position on screen.
   const presentablePosition = toPresentable(borrowPosition.positionResult);
   const position =
@@ -71,7 +86,28 @@ export const BorrowPositionDetailsPage = () => {
     actions,
     borrowPosition,
     model,
+    onSelectAction: (actionId) => setSelection({ actionId, focusRequest: 0 }),
     position,
+    selection,
+  };
+
+  // Repay from the risk alert: selects the Repay tab and focuses its amount,
+  // keeping what was typed; from a flow, opens the position on Repay.
+  const startRepay = (repay: BorrowPositionAction) => {
+    if (showsActionsPane) {
+      setSelection((current) => ({
+        actionId: repay.id,
+        focusRequest: current.focusRequest + 1,
+      }));
+      return;
+    }
+    if (marketId === undefined) return;
+    void navigation.push(
+      widgetRoutes.borrowPositionAction.build("Dashboard", {
+        actionId: repay.id,
+        marketId,
+      })
+    );
   };
 
   const startCollateralReview = (action: BorrowPositionAction) =>
@@ -81,8 +117,7 @@ export const BorrowPositionDetailsPage = () => {
     return (
       <AnimationPage>
         <SplitView
-          primaryBarLabel={t("dashboard.split_view.actions")}
-          secondaryBarLabel={t("dashboard.split_view.details")}
+          secondaryLabel={t("dashboard.split_view.details")}
           primary={
             <Stack gap={16}>
               <BorrowPositionBreadcrumb positionName={null} />
@@ -116,6 +151,7 @@ export const BorrowPositionDetailsPage = () => {
         content={position && model ? "details" : "fallback"}
         model={model}
         onActionSelect={startCollateralReview}
+        onRepay={startRepay}
         position={position}
       />
     );
@@ -124,12 +160,7 @@ export const BorrowPositionDetailsPage = () => {
   return (
     <AnimationPage>
       <SplitView
-        key={hasNestedRoute ? "nested" : "base"}
-        {...(hasNestedRoute
-          ? {}
-          : { activeSide: baseSide, onActiveSideChange: setBaseSide })}
-        primaryBarLabel={t("dashboard.split_view.actions")}
-        secondaryBarLabel={t("dashboard.split_view.details")}
+        secondaryLabel={t("dashboard.split_view.details")}
         primary={
           shouldShowLeftPane ? (
             <Stack gap={16}>

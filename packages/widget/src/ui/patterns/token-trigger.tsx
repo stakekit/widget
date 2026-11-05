@@ -9,6 +9,7 @@ import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { tokenTriggerHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -120,18 +121,40 @@ export const TokenTrigger = ({
   );
 };
 
+// Raised off the card it sits in, except under the `elevated` surface style:
+// there the card itself is raised, so the trigger fills with `surface` and
+// edges in `border` instead (a dark raised card can share its fill), keeping
+// elevation to one level.
 const styles = stylex.create({
   root: {
     margin: 0,
-    borderColor: "transparent",
+    borderColor: {
+      default: "transparent",
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.border,
+    },
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     gap: space[6],
     paddingBlock: 0,
     alignItems: "center",
-    backgroundColor: color.surfaceRaised,
-    boxShadow: elevation.raised,
+    backgroundColor: {
+      default: color.surfaceRaised,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surface,
+    },
+    boxShadow: {
+      default: elevation.raised,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: "none",
+    },
     boxSizing: "border-box",
     color: color.text,
     display: "inline-flex",
@@ -145,9 +168,14 @@ const styles = stylex.create({
   readOnly: { cursor: "default" },
   button: {
     appearance: "none",
+    // The hover rule's `:not(:disabled)` outranks the ancestor condition.
     backgroundColor: {
       default: color.surfaceRaised,
       ":hover:not(:disabled)": color.surfaceHover,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surface,
     },
     color: { default: color.text, ":disabled": color.textMuted },
     cursor: { default: "pointer", ":disabled": "not-allowed" },

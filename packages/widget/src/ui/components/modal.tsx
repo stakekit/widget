@@ -11,7 +11,6 @@ import { layer } from "../tokens/layer.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { overlaySize } from "../tokens/overlay.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { containerWidth } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/typography.stylex";
 import { viewport } from "../tokens/viewport.stylex";
@@ -355,7 +354,7 @@ const styles = stylex.create({
     maxHeight: "none",
     width: {
       default: "100%",
-      [viewport.dialog]: `min(${containerWidth.split}, ${viewportFit})`,
+      [viewport.dialog]: `min(${overlaySize.pageDialogWidth}, ${viewportFit})`,
     },
   },
   body: {

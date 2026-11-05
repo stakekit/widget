@@ -138,6 +138,8 @@ export const earnEntryViewAtom = Atom.make((get) => {
       : null;
 
   return {
+    /** The user entered an amount, or the yield forces the balance. */
+    amountEntered: input.amountEntered,
     appLoading: entry.appLoading,
     buttonDisabled:
       entry.connected &&

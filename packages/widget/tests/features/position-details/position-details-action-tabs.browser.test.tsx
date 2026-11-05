@@ -24,12 +24,10 @@ const vaultYield = yieldApiYieldFixture({
 });
 
 const ControlledTabs = ({
-  canEnter = true,
-  canExit = true,
+  modes = ["exit", "enter"],
   integration = yieldApiYieldFixture(),
 }: {
-  canEnter?: boolean;
-  canExit?: boolean;
+  modes?: ReadonlyArray<PositionDetailsActionMode>;
   integration?: EarnYieldWithProvider;
 }) => {
   const [selectedMode, setSelectedMode] =
@@ -38,9 +36,18 @@ const ControlledTabs = ({
   return (
     <>
       <PositionDetailsActionTabs
-        canEnter={canEnter}
-        canExit={canExit}
         integration={integration}
+        modes={modes}
+        pendingActions={[
+          {
+            pendingAction: { type: "CLAIM_REWARDS" },
+            yieldBalance: { type: "claimable" },
+          },
+          {
+            pendingAction: { type: "WITHDRAW" },
+            yieldBalance: { type: "withdrawable" },
+          },
+        ]}
         selectedMode={selectedMode}
         onSelectMode={setSelectedMode}
       />
@@ -120,6 +127,25 @@ describe("position details action tabs", () => {
       .toHaveTextContent("/positions/yield-1/default");
   });
 
+  it("offers each pending action as a tab named as its button", async () => {
+    const app = await render(
+      <I18nextProvider i18n={i18nInstance}>
+        <MemoryRouter>
+          <ControlledTabs modes={["exit", "enter", "CLAIM_REWARDS"]} />
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+
+    await userEvent.click(app.getByRole("tab", { name: "Claim" }));
+
+    await expect
+      .element(app.getByTestId("selected-mode"))
+      .toHaveTextContent("CLAIM_REWARDS");
+    await expect
+      .element(app.getByRole("tab", { name: "Claim" }))
+      .toHaveAttribute("aria-selected", "true");
+  });
+
   it("names the tabs Withdraw and Deposit for a vault", async () => {
     const app = await render(
       <I18nextProvider i18n={i18nInstance}>
@@ -137,6 +163,26 @@ describe("position details action tabs", () => {
       .toBeInTheDocument();
   });
 
+  it("tells a vault's Withdraw exit from its pending withdrawal", async () => {
+    const app = await render(
+      <I18nextProvider i18n={i18nInstance}>
+        <MemoryRouter>
+          <ControlledTabs
+            integration={vaultYield}
+            modes={["exit", "enter", "WITHDRAW"]}
+          />
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+
+    await expect
+      .element(app.getByRole("tab", { name: "Withdraw", exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("tab", { name: "Withdraw unlocked" }))
+      .toBeInTheDocument();
+  });
+
   it("does not render a selector when there is only one available action", async () => {
     const app = await render(
       <I18nextProvider i18n={i18nInstance}>
@@ -144,7 +190,7 @@ describe("position details action tabs", () => {
           <Routes>
             <Route
               path="positions/:integrationId/:balanceId"
-              element={<ControlledTabs canExit={false} />}
+              element={<ControlledTabs modes={["enter"]} />}
             />
           </Routes>
         </MemoryRouter>

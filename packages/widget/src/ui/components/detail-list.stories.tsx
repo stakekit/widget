@@ -92,3 +92,50 @@ export const Copy: Story = {
     );
   },
 };
+
+/**
+ * A row's meter draws its value as a thin gauge across the row, under the
+ * label and value, in the row's tone; it reads out as a `meter` named by the
+ * row's label.
+ */
+export const WithMeter: Story = {
+  args: {
+    children: (
+      <>
+        <DetailRow
+          label="LTV ratio"
+          testId="ltv-row"
+          value="72%"
+          tone="warning"
+          meter={{
+            value: 72,
+            valueText: "72%",
+            marker: { value: 80, label: "Max LTV 80%" },
+          }}
+        />
+        <DetailRow label="Health factor" value="1.18" tone="warning" />
+      </>
+    ),
+  },
+  render: (args) => (
+    <div style={{ width: 320 }}>
+      <DetailList {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const meter = canvas.getByRole("meter", { name: "LTV ratio" });
+    await expect(meter).toHaveAttribute("aria-valuetext", "72%, Max LTV 80%");
+    // The gauge sits under the label and value and spans the row.
+    const row = canvas.getByTestId("ltv-row");
+    const value = canvas.getByText("72%").getBoundingClientRect();
+    const gauge = meter.getBoundingClientRect();
+    await expect(gauge.top).toBeGreaterThanOrEqual(value.bottom);
+    await expect(gauge.width).toBe(row.getBoundingClientRect().width);
+  },
+};
+
+export const WithMeterDark: Story = {
+  ...WithMeter,
+  globals: { colorScheme: "dark" },
+};

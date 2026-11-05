@@ -11,7 +11,10 @@ import { TokenAddress } from "../../../src/domain/identity/identifiers";
 import { RewardsSummary } from "../../../src/domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../src/domain/portfolio/positions";
 
-import { getPositionOverviewModel } from "../../../src/features/position-details/model/position-overview";
+import {
+  getPositionHeaderModel,
+  getPositionOverviewModel,
+} from "../../../src/features/position-details/model/position-overview";
 import {
   confidentialFixture,
   confidentialYieldFixture,
@@ -67,6 +70,11 @@ const t = (key: string, options?: Record<string, unknown>): string => {
       "Withdrawal unavailable",
     "details.risk.sources.credora": "Credora",
     "details.validators_inactive": "Inactive",
+    "details.validators_jailed": "Jailed",
+    "positions.action_required": "Action required",
+    "positions.claim_rewards": "Claim rewards",
+    "positions.in_progress": "In progress",
+    "position_details.pending_action.merge": "Merge stake accounts",
     "position_details.balance_type.active": "Active",
     "position_details.balance_type.claimable": "Claimable",
     "position_details.balance_type.entering": "Entering",
@@ -163,10 +171,30 @@ const makePositionBalances = (): PositionBalancesByType => {
   ]);
 };
 
+type OverviewInput = Parameters<typeof getPositionOverviewModel>[0];
+
+/** The header status of the position an overview test builds. */
+const headerOf = ({
+  cancellingHandles,
+  canUnstake,
+  integrationData,
+  pendingActions,
+  positionBalancesByType,
+  providersDetails,
+}: OverviewInput & { readonly canUnstake: boolean }) =>
+  getPositionHeaderModel({
+    ...(cancellingHandles === undefined ? {} : { cancellingHandles }),
+    canUnstake,
+    integrationData,
+    pendingActions,
+    positionBalancesByType,
+    providersDetails,
+    t: t as TFunction,
+  }).status;
+
 describe("getPositionOverviewModel", () => {
-  it("promotes current balance, claimable rewards, APY, and status without unsupported facts", () => {
+  it("promotes current balance, claimable rewards and APY", () => {
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -177,11 +205,12 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
+    // The status heads the page, so the reward token fills the grid's cell.
     expect(model.metricCards.map((card) => card.id)).toEqual([
       "balance",
       "rewards",
       "apy",
-      "status",
+      "reward-token",
     ]);
     // The Balance is the position total Manage shows, in its primary token.
     expect(
@@ -225,7 +254,6 @@ describe("getPositionOverviewModel", () => {
     });
 
     const model = getPositionOverviewModel({
-      canUnstake: false,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -262,7 +290,6 @@ describe("getPositionOverviewModel", () => {
       symbol: "FOO",
     };
     const model = getPositionOverviewModel({
-      canUnstake: false,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -327,7 +354,6 @@ describe("getPositionOverviewModel", () => {
     });
 
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -403,7 +429,6 @@ describe("getPositionOverviewModel", () => {
     });
 
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       integrationData: makeYield({
         investmentSchedule: {
@@ -452,7 +477,6 @@ describe("getPositionOverviewModel", () => {
 
   it("gives a confidential vault's undated pending balance no next-batch estimate", () => {
     const model = getPositionOverviewModel({
-      canUnstake: false,
       locale: "en",
       integrationData: {
         ...confidentialYieldFixture(),
@@ -513,9 +537,8 @@ describe("getPositionOverviewModel", () => {
       }),
       tokenPriceInUsd: new BigNumber(1),
     });
-    const model = getPositionOverviewModel({
+    const input: OverviewInput = {
       cancellingHandles: new Set([cancelling]),
-      canUnstake: true,
       locale: "en",
       integrationData: {
         ...confidentialYieldFixture(),
@@ -561,23 +584,23 @@ describe("getPositionOverviewModel", () => {
       ]),
       providersDetails: [],
       t: t as TFunction,
-    });
+    };
+    const model = getPositionOverviewModel(input);
 
     expect(model.breakdownRows.map(({ subValue }) => subValue)).toEqual([
       "Cancelling…",
       "$1.00 · Cancelling…",
       "$2.00 · 2 days remaining",
     ]);
-    expect(model.statusSummary).toEqual({
-      label: "Status",
-      tone: "default",
-      value: "Cancelling…",
+    // The header reads the cancel as the position's state.
+    expect(headerOf({ ...input, canUnstake: true })).toEqual({
+      label: "Cancelling…",
+      tone: "neutral",
     });
   });
 
   it("shows no static redemption or warmup for a confidential vault", () => {
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       integrationData: {
         ...confidentialYieldFixture(),
@@ -602,7 +625,6 @@ describe("getPositionOverviewModel", () => {
   it("shows a confidential withdrawal in the confidential asset with its Shares beside it", () => {
     const { cShare, cUsdc } = confidentialFixture;
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       integrationData: {
         ...confidentialYieldFixture(),
@@ -651,7 +673,6 @@ describe("getPositionOverviewModel", () => {
     const integrationData = makeYield();
 
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       integrationData: {
         ...integrationData,
@@ -714,7 +735,6 @@ describe("getPositionOverviewModel", () => {
     });
 
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -748,7 +768,7 @@ describe("getPositionOverviewModel", () => {
     });
   });
 
-  it("keeps claimable balances out of status when no action is pending", () => {
+  it("keeps claimable balances out of the header status when no action is pending", () => {
     const activeToken = yieldApiYieldFixture().token;
     const activeBalance = makeBalance({
       amount: "0.000205427561919412",
@@ -773,7 +793,7 @@ describe("getPositionOverviewModel", () => {
       type: "claimable",
     });
 
-    const model = getPositionOverviewModel({
+    const status = headerOf({
       canUnstake: false,
       locale: "en",
       now: null,
@@ -802,14 +822,13 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.statusSummary).toEqual({
-      label: "Status",
-      tone: "default",
-      value: "Withdrawal unavailable",
+    expect(status).toEqual({
+      label: "Withdrawal unavailable",
+      tone: "neutral",
     });
   });
 
-  it("summarizes pending actions and keeps claim CTA information separate", () => {
+  it("calls out claiming rewards as the row does, and keeps the claim CTA separate", () => {
     const pendingActions: PositionOverviewPendingAction[] = [
       {
         amount: null,
@@ -824,7 +843,6 @@ describe("getPositionOverviewModel", () => {
     ];
 
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -835,13 +853,19 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    // Claiming rewards is an action the user is asked to take: it reads in
-    // the one tone every "Action required" status wears.
-    expect(model.statusSummary).toEqual({
-      label: "Action required",
-      tone: "action",
-      value: "Claim rewards",
-    });
+    // Claiming rewards asks something of the user: the header reads it as
+    // the positions list's row does, in the warning tone.
+    expect(
+      headerOf({
+        canUnstake: true,
+        integrationData: makeYield(),
+        locale: "en",
+        pendingActions,
+        positionBalancesByType: new Map(),
+        providersDetails: [{ name: "Rocket Pool", status: "active" }],
+        t: t as TFunction,
+      })
+    ).toEqual({ label: "Claim rewards", tone: "warning" });
     expect(
       model.metricCards.find((card) => card.id === "rewards")
     ).toMatchObject({
@@ -850,14 +874,10 @@ describe("getPositionOverviewModel", () => {
     });
   });
 
-  it.each([
-    ["entering", "Cancel deposit"],
-    ["exiting", "Cancel withdrawal"],
-    ["withdrawable", "Cancel pending request"],
-  ] as const)(
-    "names the optional cancel action by the %s request it cancels",
-    (balanceType, value) => {
-      const model = getPositionOverviewModel({
+  it.each(["entering", "exiting", "withdrawable"] as const)(
+    "reads a cancel of the %s request as in progress, as the row does",
+    (balanceType) => {
+      const status = headerOf({
         canUnstake: true,
         locale: "en",
         integrationData: makeYield(),
@@ -879,16 +899,12 @@ describe("getPositionOverviewModel", () => {
         t: t as TFunction,
       });
 
-      expect(model.statusSummary).toEqual({
-        label: "Action available",
-        tone: "default",
-        value,
-      });
+      expect(status).toEqual({ label: "In progress", tone: "info" });
     }
   );
 
   it("lets a required action outrank an earlier optional cancellation", () => {
-    const model = getPositionOverviewModel({
+    const status = headerOf({
       canUnstake: true,
       locale: "en",
       integrationData: makeYield(),
@@ -920,15 +936,11 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.statusSummary).toEqual({
-      label: "Action required",
-      tone: "action",
-      value: "Withdraw",
-    });
+    expect(status).toEqual({ label: "Action required", tone: "warning" });
   });
 
   it("names a confidential vault's unfinished instant withdrawal as in progress, not as required", () => {
-    const model = getPositionOverviewModel({
+    const status = headerOf({
       canUnstake: true,
       locale: "en",
       integrationData: {
@@ -956,40 +968,32 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.statusSummary).toEqual({
-      label: "Status",
-      tone: "default",
-      value: "Instant withdrawal in progress",
-    });
+    expect(status).toEqual({ label: "In progress", tone: "info" });
   });
 
   it("summarises several optional actions by their count rather than picking one", () => {
-    const cancel = (type: "entering" | "exiting") => ({
+    const merge = (passthrough: string) => ({
       amount: null,
       amountUsd: null,
       pendingAction: {
         intent: "manage" as const,
-        passthrough: `cancel-${type}`,
-        type: "CANCEL_PENDING" as const,
+        passthrough,
+        type: "MERGE" as const,
       },
-      yieldBalance: makeBalance({ type }),
+      yieldBalance: makeBalance({ type: "active" }),
     });
-    const model = getPositionOverviewModel({
+    const status = headerOf({
       canUnstake: true,
       locale: "en",
       integrationData: makeYield(),
-      pendingActions: [cancel("entering"), cancel("exiting")],
+      pendingActions: [merge("merge-a"), merge("merge-b")],
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
       t: t as TFunction,
     });
 
-    expect(model.statusSummary).toEqual({
-      label: "Status",
-      tone: "default",
-      value: "2 actions available",
-    });
+    expect(status).toEqual({ label: "2 actions available", tone: "neutral" });
   });
 
   it("times redemption by the user's own pending withdrawal, not the vault's next batch", () => {
@@ -999,7 +1003,6 @@ describe("getPositionOverviewModel", () => {
       tokenPriceInUsd: new BigNumber(1),
     });
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       integrationData: makeYield({
         investmentSchedule: {
@@ -1022,6 +1025,8 @@ describe("getPositionOverviewModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         ["active", [balance({ amount: "1" })]],
+        // Rewards make three cards, so the redemption time fills the fourth.
+        ["claimable", [balance({ amount: "0.1", type: "claimable" })]],
         [
           "exiting",
           [
@@ -1042,8 +1047,8 @@ describe("getPositionOverviewModel", () => {
     ).toMatchObject({ label: "Redemption time", value: "3 hours remaining" });
   });
 
-  it("keeps a stake account merge optional in the status summary", () => {
-    const model = getPositionOverviewModel({
+  it("keeps a stake account merge optional in the header status", () => {
+    const status = headerOf({
       canUnstake: true,
       locale: "en",
       integrationData: makeYield(),
@@ -1065,10 +1070,7 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.statusSummary).toMatchObject({
-      label: "Action available",
-      tone: "default",
-    });
+    expect(status).toEqual({ label: "Merge stake accounts", tone: "neutral" });
   });
 
   it("fills an odd card count with a fallback fact and removes it from the details list", () => {
@@ -1088,10 +1090,24 @@ describe("getPositionOverviewModel", () => {
           },
         ],
       ],
+      // Rewards make three cards, so a fallback fact fills the fourth.
+      [
+        "claimable",
+        [
+          {
+            ...makeBalance({
+              amount: "0.1",
+              amountUsd: "345",
+              token,
+              type: "claimable",
+            }),
+            tokenPriceInUsd: new BigNumber(3450),
+          },
+        ],
+      ],
     ]);
 
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield({
@@ -1109,8 +1125,8 @@ describe("getPositionOverviewModel", () => {
 
     expect(model.metricCards.map((card) => card.id)).toEqual([
       "balance",
+      "rewards",
       "apy",
-      "status",
       "unstaking-period",
     ]);
     expect(
@@ -1124,7 +1140,6 @@ describe("getPositionOverviewModel", () => {
 
   it("renders balance breakdown rows, points metadata, mechanics, and copyable addresses", () => {
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -1175,7 +1190,6 @@ describe("getPositionOverviewModel", () => {
 
   it("does not mark auto-claiming position reward tokens as yield-bearing without price per share", () => {
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield(),
@@ -1186,17 +1200,15 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.detailRows.find((row) => row.id === "reward-token")).toEqual({
-      id: "reward-token",
-      label: "Reward token",
-      value: "rETH",
-    });
+    // An odd card count promotes the reward token from the details to a card.
+    expect(
+      model.metricCards.find((card) => card.id === "reward-token")
+    ).toMatchObject({ label: "Reward token", value: "rETH" });
   });
 
   it("marks position output tokens with price per share as yield-bearing", () => {
     const baseYield = yieldApiYieldFixture();
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield({
@@ -1232,16 +1244,13 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
-    expect(model.detailRows.find((row) => row.id === "reward-token")).toEqual({
-      id: "reward-token",
-      label: "Reward token",
-      value: "mUSDC (yield-bearing)",
-    });
+    expect(
+      model.metricCards.find((card) => card.id === "reward-token")
+    ).toMatchObject({ label: "Reward token", value: "mUSDC (yield-bearing)" });
   });
 
   it("includes price per share in details when yield state provides it", () => {
     const model = getPositionOverviewModel({
-      canUnstake: true,
       locale: "en",
       now: null,
       integrationData: makeYield({
@@ -1285,7 +1294,6 @@ describe("getPositionOverviewModel", () => {
     });
     const overview = (positionBalancesByType: PositionBalancesByType) =>
       getPositionOverviewModel({
-        canUnstake: true,
         locale: "en",
         now: null,
         integrationData: makeYield(),
@@ -1322,12 +1330,12 @@ describe("getPositionOverviewModel", () => {
         subValue: "$110.00",
         value: "100 steakUSDC",
       });
-      // Balance, Shares, APY, and Status fill the grid; no filler is needed.
+      // Balance, Shares and APY leave a cell the reward token fills.
       expect(model.metricCards.map((card) => card.id)).toEqual([
         "balance",
         "shares",
         "apy",
-        "status",
+        "reward-token",
       ]);
     });
 
@@ -1457,7 +1465,7 @@ describe("getPositionOverviewModel", () => {
       ).not.toBe("Hidden");
     });
 
-    it("leaves unclaimed rewards out of the Shares but in the Balance, and fills an odd grid", () => {
+    it("leaves unclaimed rewards out of the Shares but in the Balance", () => {
       const model = overview(
         new Map([
           [
@@ -1491,15 +1499,12 @@ describe("getPositionOverviewModel", () => {
 
       expect(card("shares")?.value).toBe("100 steakUSDC");
       expect(card("balance")?.value).toBe("112 USDC");
-      // Balance, Shares, Rewards, APY, and Status leave a cell the reward
-      // token fills.
+      // Balance, Shares, Rewards and APY fill the grid; no filler is needed.
       expect(model.metricCards.map((metric) => metric.id)).toEqual([
         "balance",
         "shares",
         "rewards",
         "apy",
-        "status",
-        "reward-token",
       ]);
     });
 
@@ -1509,6 +1514,43 @@ describe("getPositionOverviewModel", () => {
       expect(model.metricCards.some((card) => card.id === "shares")).toBe(
         false
       );
+    });
+  });
+});
+
+describe("getPositionHeaderModel", () => {
+  const header = (pendingActions: PositionOverviewPendingAction[]) =>
+    getPositionHeaderModel({
+      canUnstake: true,
+      integrationData: makeYield(),
+      pendingActions,
+      positionBalancesByType: new Map(),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      t: t as TFunction,
+    });
+
+  it("names a required action as the status, in the warning tone", () => {
+    const model = header([
+      {
+        amount: null,
+        amountUsd: null,
+        pendingAction: {
+          intent: "manage",
+          passthrough: "claim",
+          type: "CLAIM_REWARDS",
+        },
+        yieldBalance: makeBalance({ type: "claimable" }),
+      },
+    ]);
+
+    expect(model.status).toEqual({ label: "Claim rewards", tone: "warning" });
+    expect(model.providerName).toBe("Rocket Pool");
+  });
+
+  it("reads a position with nothing to do as active, in the neutral tone", () => {
+    expect(header([]).status).toEqual({
+      label: "Active",
+      tone: "neutral",
     });
   });
 });

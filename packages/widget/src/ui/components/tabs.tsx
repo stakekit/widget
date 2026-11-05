@@ -1,6 +1,7 @@
 import { Tabs as BaseTabs } from "@base-ui/react/tabs";
 import * as stylex from "@stylexjs/stylex";
 import { Fragment, type ReactNode } from "react";
+import type { HostHook } from "../host-hook";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
@@ -31,6 +32,8 @@ export type TabOption<T extends string = string> = {
   readonly count?: number;
   /** Draws a divider before the tab, so it starts a new group. */
   readonly separated?: boolean;
+  /** Rendered on the tab as `data-rk`, where a host finds it. */
+  readonly hostHook?: HostHook;
 };
 
 type TabsProps<T extends string> = {
@@ -74,6 +77,7 @@ export const Tabs = <const T extends string>({
           <BaseTabs.Tab
             value={tab.value}
             disabled={tab.disabled}
+            data-rk={tab.hostHook}
             {...stylex.props(styles.tab, focusRingStyles.visible)}
           >
             {tab.label}

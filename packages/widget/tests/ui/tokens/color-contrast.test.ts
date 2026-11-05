@@ -230,9 +230,10 @@ describe("filled surface separation", () => {
 });
 
 // A soft badge mixes its tone's text color into `surface`, the fill of the
-// rows and cards it sits on, by the `badgeTint` weights. Its 1px edge, not
-// its faint fill, sets it off the surface; a hairline needs more than the
-// 1.3:1 a filled area would.
+// rows and cards it sits on, by the `badgeTint` weights; under elevated
+// surfaces, whose cards are `surfaceRaised`, its fill mixes into that. Its
+// 1px edge, not its faint fill, sets it off the surface; a hairline needs
+// more than the 1.3:1 a filled area would.
 const badgeEdgeContrast = 1.5;
 
 // Each soft badge tone: the text color it mixes and its edge's weight.
@@ -248,22 +249,30 @@ const badgeTones = {
 >;
 
 const badgeCases = themes.flatMap((theme) =>
-  Object.entries(badgeTones).map(([tone, badge]) => ({
-    ...theme,
-    ...badge,
-    tone,
-  }))
+  Object.entries(badgeTones).flatMap(([tone, badge]) =>
+    (elevatedPresets.includes(theme.preset)
+      ? (["surface", "surfaceRaised"] as const)
+      : (["surface"] as const)
+    ).map((base) => ({ ...theme, ...badge, base, tone }))
+  )
 );
 
 describe("soft badge contrast", () => {
   it.each(badgeCases)(
-    "$colorScheme $preset, $accent: $tone badge reads on every surface",
-    ({ colorScheme, preset, hostColors, textRole, edgeWeight }) => {
+    "$colorScheme $preset, $accent: $tone badge filled over $base reads on every surface",
+    ({ colorScheme, preset, hostColors, textRole, edgeWeight, base }) => {
       const roles = resolveColorRoles(colorScheme, preset, hostColors);
       const toneText = parseColor(roles[textRole]);
-      const surface = parseColor(roles.surface);
-      const fill = mix(toneText, Number.parseFloat(badgeTint.fill), surface);
-      const edge = mix(toneText, Number.parseFloat(edgeWeight), surface);
+      const fill = mix(
+        toneText,
+        Number.parseFloat(badgeTint.fill),
+        parseColor(roles[base])
+      );
+      const edge = mix(
+        toneText,
+        Number.parseFloat(edgeWeight),
+        parseColor(roles.surface)
+      );
 
       expect(contrast(toneText, fill)).toBeGreaterThanOrEqual(textContrast);
       for (const background of surfaces) {

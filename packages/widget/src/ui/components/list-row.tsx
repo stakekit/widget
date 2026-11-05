@@ -10,9 +10,10 @@ import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
-import { borderWidth, focusRing } from "../tokens/border.stylex";
+import { borderWidth, focusRing, insetEdge } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { container } from "../tokens/container.stylex";
+import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { selectionControlSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -569,6 +570,19 @@ const styles = stylex.create({
     boxSizing: "border-box",
     color: color.text,
     display: "flex",
+    // Under the `outlined` surface style a filled row edges in `border`, as a
+    // filled card does: an outline just inside its edge, so its height holds.
+    // The focus ring, applied after, replaces it while focused.
+    outlineColor: color.border,
+    outlineOffset: insetEdge.offset,
+    outlineStyle: {
+      default: null,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: "solid",
+    },
+    outlineWidth: borderWidth.thin,
     minWidth: 0,
   },
   interactive: {
@@ -585,7 +599,7 @@ const styles = stylex.create({
     minWidth: 0,
   },
   link: { textDecoration: "none" },
-  flat: { backgroundColor: "transparent" },
+  flat: { backgroundColor: "transparent", boxShadow: "none" },
   condensed: {
     paddingBlock: space[8],
     minHeight: `${condensedRowHeight}px`,

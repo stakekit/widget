@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+import { exactDecimal } from "../../../../domain/finance/exact";
 import { EmptyState, SplitView, Stack } from "../../../../ui/index";
 import {
   type BorrowEntryFlowDetails,
@@ -32,8 +33,7 @@ const BorrowSplitView = ({ details }: { readonly details: ReactNode }) => {
 
   return (
     <SplitView
-      primaryBarLabel={t("dashboard.split_view.actions")}
-      secondaryBarLabel={t("dashboard.split_view.details")}
+      secondaryLabel={t("dashboard.split_view.details")}
       primary={
         <Stack gap={8} grow>
           <Outlet />
@@ -71,8 +71,10 @@ export const BorrowEntryLayout = () => {
 
 const BorrowFlowDetails = ({
   captured,
+  projectedMaxLtv,
 }: {
   readonly captured: BorrowEntryFlowDetails;
+  readonly projectedMaxLtv: string | undefined;
 }) => {
   const details = useAtomValue(borrowFlowDetailsAtom(captured));
 
@@ -81,22 +83,31 @@ const BorrowFlowDetails = ({
       collateralToken={details.collateralToken}
       integration={details.integration}
       market={details.market}
+      {...(projectedMaxLtv === undefined
+        ? {}
+        : { projectedMaxLtv: exactDecimal(projectedMaxLtv) })}
     />
   );
 };
 
 /**
  * Review, steps and complete beside the market the flow started on, never the
- * entry form's current selection.
+ * entry form's current selection, with the max LTV the flow projected so the
+ * card reads the same limit as Review's LTV meter.
  */
 export const BorrowFlowLayout = () => {
-  const { entry } = useBorrowTransactionFlow().intake;
+  const { entry, summary } = useBorrowTransactionFlow().intake;
+  const projectedMaxLtv =
+    summary.riskStatus === "available" ? summary.maxLtv : undefined;
 
   return (
     <BorrowSplitView
       details={
         entry._tag === "BorrowEntry" ? (
-          <BorrowFlowDetails captured={entry.details} />
+          <BorrowFlowDetails
+            captured={entry.details}
+            projectedMaxLtv={projectedMaxLtv}
+          />
         ) : null
       }
     />

@@ -1,35 +1,55 @@
-export type PositionDetailsActionMode = "enter" | "exit";
+import {
+  isOptionalPendingAction,
+  type YieldPendingActionType,
+} from "../../../domain/action/pending-action";
+
+/**
+ * A tab of the position's actions: exiting it, entering it further, or one
+ * type of pending action, such as claiming rewards.
+ */
+export type PositionDetailsActionMode =
+  | "enter"
+  | "exit"
+  | YieldPendingActionType;
 
 export type PositionDetailsActionCapabilities = {
   readonly canEnter: boolean;
   readonly canExit: boolean;
 };
 
-export const resolvePositionDetailsActionMode = ({
+/** The tabs in order: exit, enter, then each pending action type once. */
+export const resolvePositionDetailsActionModes = ({
   canEnter,
   canExit,
-}: PositionDetailsActionCapabilities): PositionDetailsActionMode | null => {
-  if (canExit) return "exit";
-  if (canEnter) return "enter";
-  return null;
-};
-
-export const resolveSelectedPositionDetailsActionMode = ({
-  canEnter,
-  canExit,
-  selectedMode,
+  pendingActionTypes,
 }: PositionDetailsActionCapabilities & {
-  selectedMode: PositionDetailsActionMode | null;
-}): PositionDetailsActionMode | null => {
-  if (selectedMode === "enter" && canEnter) return "enter";
-  if (selectedMode === "exit" && canExit) return "exit";
-  return resolvePositionDetailsActionMode({ canEnter, canExit });
-};
+  readonly pendingActionTypes: ReadonlyArray<YieldPendingActionType>;
+}): ReadonlyArray<PositionDetailsActionMode> => [
+  ...(canExit ? (["exit"] as const) : []),
+  ...(canEnter ? (["enter"] as const) : []),
+  ...new Set(pendingActionTypes),
+];
 
-export const shouldShowPositionDetailsActionTabs = ({
-  canEnter,
-  canExit,
-}: PositionDetailsActionCapabilities) => canEnter && canExit;
+/**
+ * The user's tab while it is still offered; else the first pending action
+ * the position asks for, such as claiming rewards, else the first tab.
+ */
+export const resolveSelectedPositionDetailsActionMode = ({
+  modes,
+  selectedMode,
+}: {
+  readonly modes: ReadonlyArray<PositionDetailsActionMode>;
+  readonly selectedMode: PositionDetailsActionMode | null;
+}): PositionDetailsActionMode | null => {
+  if (selectedMode !== null && modes.includes(selectedMode)) {
+    return selectedMode;
+  }
+  const required = modes.find(
+    (mode) =>
+      mode !== "enter" && mode !== "exit" && !isOptionalPendingAction(mode)
+  );
+  return required ?? modes[0] ?? null;
+};
 
 const positionDetailsEnterHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;

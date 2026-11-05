@@ -6,12 +6,8 @@ import {
   getBorrowMarketPairLabel,
   type Market,
 } from "../../../../domain/borrow/catalog/market";
-import {
-  classifyHealthFactor,
-  classifyLtv,
-  type RiskLevel,
-} from "../../../../domain/borrow/risk/ltv-limits";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
+import { classifyRiskBand } from "../../../../domain/borrow/risk/risk-band";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
@@ -25,23 +21,23 @@ import {
   formatUsd,
   unavailableFigure,
 } from "../../../../shared/lib/number-format";
+import {
+  type LtvMeter,
+  type RiskValueTone,
+  riskBandValueTone,
+  toLtvMeter,
+} from "../../../borrow-transaction-flow/index";
 import type { BorrowFormProjection } from "./borrow-entry";
-
-/** How a details row's value reads: at risk near or over a limit. */
-type BorrowDetailRowTone = "default" | "warning" | "danger";
 
 type BorrowDetailsRow = {
   readonly id: string;
   readonly label: string;
-  readonly tone?: BorrowDetailRowTone;
+  /** How the value reads: in its risk band, or plain. */
+  readonly tone?: RiskValueTone;
   readonly value: string;
+  /** The value as a thin gauge under the row: the projected LTV. */
+  readonly meter?: LtvMeter;
 };
-
-const riskLevelTone = {
-  nearLimit: "warning",
-  overLimit: "danger",
-  safe: "default",
-} as const satisfies Record<RiskLevel, BorrowDetailRowTone>;
 
 type BorrowMetricCard = {
   readonly id: string;
@@ -88,6 +84,7 @@ export const getBorrowDetailsModel = ({
   locale,
   market,
   projection,
+  projectedMaxLtv,
   t,
 }: {
   readonly borrowAmount: BigNumber;
@@ -97,6 +94,11 @@ export const getBorrowDetailsModel = ({
   readonly locale: string;
   readonly market: Market;
   readonly projection?: BorrowFormProjection | undefined;
+  /**
+   * The max LTV a captured flow projected, such as Review's: account-weighted
+   * across the collaterals, as the projection would read it.
+   */
+  readonly projectedMaxLtv?: BigNumber | undefined;
   readonly t: TFunction;
 }) => {
   const borrowUsd = getTokenUsdValue({
@@ -113,7 +115,10 @@ export const getBorrowDetailsModel = ({
   });
   const marketRisk = deriveMarketRiskLimits(market);
   const maxLtv =
-    projection?.maxLtv ?? collateralToken?.maxLtv ?? marketRisk.maxLtv;
+    projectedMaxLtv ??
+    projection?.maxLtv ??
+    collateralToken?.maxLtv ??
+    marketRisk.maxLtv;
   const displayedProjectedLtv = projection?.projectedLtv ?? projectedLtv;
   const existingLtv = projection
     ? deriveLtv({
@@ -169,6 +174,13 @@ export const getBorrowDetailsModel = ({
     });
   };
   const ltvValue = getLtvValue();
+  // One band for the LTV, its meter and the health factor the form projects.
+  const riskBand = classifyRiskBand({
+    healthFactor,
+    ltv: displayedProjectedLtv,
+    maxLtv,
+  });
+  const riskTone = riskBand === null ? "default" : riskBandValueTone[riskBand];
 
   const getLoanValue = (): string => {
     if (hasExistingPosition) {
@@ -190,10 +202,14 @@ export const getBorrowDetailsModel = ({
           {
             id: "ltv",
             label: t("dashboard.borrow.form.ltv_ratio"),
-            tone: riskLevelTone[
-              classifyLtv({ ltv: displayedProjectedLtv, maxLtv })
-            ],
+            tone: riskTone,
             value: ltvValue,
+            meter: toLtvMeter({
+              locale,
+              ltv: displayedProjectedLtv,
+              maxLtv,
+              t,
+            }),
           },
         ]),
     {
@@ -227,7 +243,7 @@ export const getBorrowDetailsModel = ({
           {
             id: "health-factor",
             label: t("dashboard.borrow.form.health_factor"),
-            tone: riskLevelTone[classifyHealthFactor(healthFactor)],
+            tone: riskTone,
             value: formatHealthFactor(healthFactor, locale),
           },
         ]),

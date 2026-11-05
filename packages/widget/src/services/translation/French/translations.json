@@ -1125,6 +1125,10 @@
       "description": "Vous devez vérifier la propriété de cette adresse avant de procéder. Vous serez invité(e) à signer un message qui sera utilisé pour confirmer que vous possédez bien cette adresse."
     },
     "actions_label": "Actions de la position",
+    "pending_action_tab": {
+      "withdraw": "Retirer le débloqué",
+      "other": "{{label}} (en attente)"
+    },
     "copy_address": "Copier {{label}}",
     "copied": "Copié"
   },
@@ -1180,9 +1184,7 @@
   "chain_modal_disclaimer": "Alimenté par Yield.xyz",
   "dashboard": {
     "split_view": {
-      "earn": "Earn",
-      "details": "Détails",
-      "actions": "Actions"
+      "details": "Détails"
     },
     "details": {
       "tabs": {
@@ -1390,6 +1392,16 @@
           "withdraw": "Retirer une garantie peut augmenter le LTV et le risque de liquidation."
         }
       },
+      "risk": {
+        "max_ltv_marker": "LTV max. {{value}}",
+        "alert": {
+          "caution_title": "Proche de la liquidation",
+          "danger_title": "Risque de liquidation élevé",
+          "price_drop": "Une baisse de {{drop}} de la valeur de la garantie entraînerait la liquidation de cette position. Remboursez la dette pour réduire le risque.",
+          "liquidatable": "Cette position peut être liquidée dès maintenant. Remboursez la dette pour réduire le risque.",
+          "near_max_ltv": "Le LTV est proche du LTV maximal du marché. Remboursez la dette pour réduire le risque."
+        }
+      },
       "risk_block": {
         "title": "Cette action ne peut pas être confirmée",
         "healthFactor": "Le facteur de santé projeté passerait sous 1 : le protocole rejetterait cette action ou la position pourrait être liquidée. Réduisez le montant ou ajoutez une garantie.",
@@ -1486,11 +1498,10 @@
           "withdraw_balance": "Le montant dépasse le solde retirable.",
           "withdraw_ltv": "Le retrait dépasserait la limite LTV du marché."
         },
-        "action_descriptions": {
-          "disableCollateral": "Vérifiez l'impact sur la santé avant de désactiver cette garantie.",
-          "enableCollateral": "Vérifiez l'impact sur la santé avant d'activer cette garantie.",
-          "repay": "Choisissez un montant ou remboursez toute la dette.",
-          "withdraw": "Choisissez la garantie et le montant à retirer."
+        "risk_status": {
+          "safe": "Risque faible",
+          "caution": "Prudence",
+          "danger": "Risque élevé"
         },
         "actions": {
           "disableCollateral": "Désactiver la garantie",
@@ -1501,12 +1512,9 @@
       }
     },
     "position_details": {
-      "action_available": "Action disponible",
-      "action_required": "Action requise",
       "actions_available_one": "{{count}} action disponible",
       "actions_available_other": "{{count}} actions disponibles",
       "active": "Actif",
-      "instant_withdrawal_in_progress": "Retrait instantané en cours",
       "balance": "Solde",
       "shares": "Parts",
       "breadcrumb_root": "Positions",
@@ -1516,7 +1524,6 @@
       "no_actions": "Aucune action disponible",
       "rewards": "Recompenses",
       "rewards_total": "Total gagne",
-      "status": "Statut",
       "withdrawal_unavailable": "Retrait indisponible"
     },
     "position_details_info": {

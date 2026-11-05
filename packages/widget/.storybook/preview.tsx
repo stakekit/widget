@@ -10,7 +10,11 @@ import {
 
 const colorSchemes: ReadonlyArray<ColorScheme> = ["light", "dark"];
 const tabsIndicators: ReadonlyArray<TabsIndicator> = ["underline", "pill"];
-const surfaceStyles: ReadonlyArray<SurfaceStyle> = ["filled", "elevated"];
+const surfaceStyles: ReadonlyArray<SurfaceStyle> = [
+  "filled",
+  "elevated",
+  "outlined",
+];
 
 /**
  * Themes the story with the toolbar's color scheme, Appearance Preset and

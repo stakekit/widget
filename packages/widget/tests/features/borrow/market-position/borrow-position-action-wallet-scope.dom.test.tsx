@@ -186,7 +186,9 @@ const PositionOutlet = ({
       actions: [action],
       borrowPosition: null,
       model: null,
+      onSelectAction: () => undefined,
       position,
+      selection: { actionId: action.id, focusRequest: 0 },
     }}
   />
 );

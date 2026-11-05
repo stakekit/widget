@@ -27,6 +27,7 @@ export const BorrowAmountField = ({
   amount,
   balance,
   disabled = false,
+  focusRequest = 0,
   label,
   onAmountChange,
   onMaxClick,
@@ -38,6 +39,8 @@ export const BorrowAmountField = ({
   readonly amount: BigNumber;
   readonly balance?: BorrowAmountBalance | undefined;
   readonly disabled?: boolean | undefined;
+  /** Each new value above zero focuses the amount. */
+  readonly focusRequest?: number;
   readonly label: string;
   readonly onAmountChange: (amount: BigNumber) => void;
   readonly onMaxClick?: (() => void) | null | undefined;
@@ -61,6 +64,7 @@ export const BorrowAmountField = ({
       token={accessory}
       fiatValue={formatUsd(usdValue, locale)}
       disabled={disabled}
+      focusRequest={focusRequest}
       testIds={{
         input: "number-input",
         max: "stake-token-section-max-button",

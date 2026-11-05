@@ -6,10 +6,6 @@ import {
   getYieldTypeLabels,
 } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
-import {
-  formatTokenAmount,
-  unavailableFigure,
-} from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   Avatar,
@@ -26,6 +22,7 @@ import {
   RewardRateBreakdown,
 } from "../../../../yield-summary/views";
 import { useEarnEntry } from "../../../react/use-earn-facades";
+import { formatEntryFigure } from "./entry-figure";
 
 type StrategyProvider = {
   key: string;
@@ -45,6 +42,7 @@ export const SelectYieldRewardDetails = ({
 
   const { view } = useEarnEntry();
   const {
+    amountEntered,
     rewardToken,
     estimatedRewards,
     rewardsTokenSymbol,
@@ -62,10 +60,10 @@ export const SelectYieldRewardDetails = ({
     : null;
 
   const earnYearly = estimatedRewards
-    ? `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`
+    ? `${formatEntryFigure({ amount: estimatedRewards.yearly, amountEntered, locale })} ${rewardsTokenSymbol}`
     : "";
   const earnMonthly = estimatedRewards
-    ? `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`
+    ? `${formatEntryFigure({ amount: estimatedRewards.monthly, amountEntered, locale })} ${rewardsTokenSymbol}`
     : "";
   const strategyDetails = selectedStake
     ? (() => {
@@ -106,7 +104,11 @@ export const SelectYieldRewardDetails = ({
             : stakeAmount;
 
         return {
-          outputAmount: formatTokenAmount(outputAmount, locale, "nearest"),
+          outputAmount: formatEntryFigure({
+            amount: outputAmount,
+            amountEntered,
+            locale,
+          }),
           outputToken,
           providers: strategyProviders,
           yieldType: getYieldTypeLabels(yieldDto, t).title,

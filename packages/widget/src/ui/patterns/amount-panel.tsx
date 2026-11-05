@@ -84,6 +84,8 @@ type AmountPanelProps = {
     readonly input?: string;
     readonly max?: string;
   };
+  /** Each new value above zero focuses the amount; zero never does. */
+  readonly focusRequest?: number;
 };
 
 /**
@@ -107,6 +109,7 @@ export const AmountPanel = ({
   onBlur,
   shrink = true,
   testIds,
+  focusRequest = 0,
 }: AmountPanelProps) => (
   <Card
     padding={16}
@@ -127,6 +130,7 @@ export const AmountPanel = ({
             invalid={invalid || error !== undefined}
             disabled={disabled}
             shrink={shrink}
+            focusRequest={focusRequest}
             {...(onBlur === undefined ? {} : { onBlur })}
             {...(testIds?.input === undefined ? {} : { testId: testIds.input })}
           />

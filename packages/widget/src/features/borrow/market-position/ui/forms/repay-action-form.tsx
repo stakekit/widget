@@ -26,9 +26,12 @@ import { useStartBorrowPositionReview } from "./use-start-review";
 export const RepayActionForm = ({
   action,
   context,
+  focusRequest = 0,
 }: {
   readonly action: BorrowPositionAction;
   readonly context: BorrowRepayActionContext;
+  /** Each new value above zero focuses the repay amount. */
+  readonly focusRequest?: number;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -54,6 +57,7 @@ export const RepayActionForm = ({
           symbol: debtBalance.tokenSymbol,
         })}
         disabled={view.repayAll}
+        focusRequest={focusRequest}
         label={t("dashboard.borrow.position_details.actions.repay")}
         onAmountChange={(amount) => dispatch({ amount, type: "amount/set" })}
         tokenSymbol={debtBalance.tokenSymbol}
@@ -88,6 +92,7 @@ export const RepayActionForm = ({
             <LtvTransitionRow
               currentLtv={view.currentLtv}
               projectedLtv={view.projectedLtv}
+              projectedRisk={view.projectedRisk}
             />
             <DetailRow
               label={t("dashboard.borrow.form.loan")}

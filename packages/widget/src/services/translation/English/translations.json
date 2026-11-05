@@ -612,9 +612,7 @@
   },
   "dashboard": {
     "split_view": {
-      "earn": "Earn",
-      "details": "Details",
-      "actions": "Actions"
+      "details": "Details"
     },
     "details": {
       "tabs": {
@@ -822,6 +820,16 @@
           "withdraw": "Withdrawing collateral can increase LTV and liquidation risk."
         }
       },
+      "risk": {
+        "max_ltv_marker": "Max LTV {{value}}",
+        "alert": {
+          "caution_title": "Close to liquidation",
+          "danger_title": "High liquidation risk",
+          "price_drop": "A {{drop}} drop in collateral value would liquidate this position. Repay debt to lower the risk.",
+          "liquidatable": "This position can be liquidated now. Repay debt to lower the risk.",
+          "near_max_ltv": "The LTV is close to the market's max LTV. Repay debt to lower the risk."
+        }
+      },
       "risk_block": {
         "title": "This action can't be confirmed",
         "healthFactor": "The projected health factor would fall below 1, so the protocol would reject this action or the position could be liquidated. Reduce the amount or add collateral.",
@@ -918,11 +926,10 @@
           "withdraw_balance": "Amount exceeds withdrawable balance.",
           "withdraw_ltv": "Withdrawal would exceed the market LTV limit."
         },
-        "action_descriptions": {
-          "disableCollateral": "Review the health impact before disabling this collateral.",
-          "enableCollateral": "Review the health impact before enabling this collateral.",
-          "repay": "Choose an amount or repay the full debt.",
-          "withdraw": "Choose collateral and amount to withdraw."
+        "risk_status": {
+          "safe": "Low risk",
+          "caution": "Caution",
+          "danger": "High risk"
         },
         "actions": {
           "disableCollateral": "Disable collateral",
@@ -933,12 +940,9 @@
       }
     },
     "position_details": {
-      "action_available": "Action available",
-      "action_required": "Action required",
       "actions_available_one": "{{count}} action available",
       "actions_available_other": "{{count}} actions available",
       "active": "Active",
-      "instant_withdrawal_in_progress": "Instant withdrawal in progress",
       "balance": "Balance",
       "shares": "Shares",
       "breadcrumb_root": "Positions",
@@ -948,7 +952,6 @@
       "no_actions": "No actions available",
       "rewards": "Rewards",
       "rewards_total": "Total earned",
-      "status": "Status",
       "withdrawal_unavailable": "Withdrawal unavailable"
     },
     "position_details_info": {
@@ -1501,6 +1504,10 @@
       "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
     },
     "actions_label": "Position actions",
+    "pending_action_tab": {
+      "withdraw": "Withdraw unlocked",
+      "other": "{{label}} (pending)"
+    },
     "copy_address": "Copy {{label}}",
     "copied": "Copied"
   },

@@ -28,6 +28,12 @@ type AssetHeaderProps = {
     readonly label: string;
     readonly tone?: Tone;
   }>;
+  /**
+   * `default` heads a details pane with a 48px logo and a title; `compact`
+   * heads a position's page with a 40px logo and a heading, so the actions
+   * under it stay in view.
+   */
+  readonly density?: "default" | "compact";
 };
 
 /**
@@ -41,11 +47,20 @@ export const AssetHeader = ({
   provider,
   details = [],
   badges = [],
+  density = "default",
 }: AssetHeaderProps) => (
   <Stack direction="row" align="center" gap={12}>
-    <TokenAvatar {...token} size="lg" decorative />
-    <Stack gap={4} grow>
-      <Text variant="title" as={as} truncate>
+    <TokenAvatar
+      {...token}
+      size={density === "compact" ? "card" : "lg"}
+      decorative
+    />
+    <Stack gap={density === "compact" ? 2 : 4} grow>
+      <Text
+        variant={density === "compact" ? "heading" : "title"}
+        as={as}
+        truncate
+      >
         {title}
       </Text>
       {(provider !== undefined || details.length > 0 || badges.length > 0) && (

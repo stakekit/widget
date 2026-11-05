@@ -11,6 +11,7 @@ import {
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
 import { usePositionDetails } from "../../react/use-position-details";
+import { PositionHeader } from "../components/position-header";
 import { PositionDetailsInfo } from "./components/position-details-info";
 import {
   PositionDetailsBreadcrumb,
@@ -43,10 +44,11 @@ const PositionDetailsPageComponent = () => {
   const pendingActionFlow = useWidgetRoutePrefixMatch(
     widgetRoutes.positionPendingAction
   );
+  const flowActive =
+    enterFlow !== null || exitFlow !== null || pendingActionFlow !== null;
   const layout = resolvePositionDetailsPageLayout({
     ...positionDetails,
-    flowActive:
-      enterFlow !== null || exitFlow !== null || pendingActionFlow !== null,
+    flowActive,
   });
 
   if (layout === "PositionLost") {
@@ -54,17 +56,21 @@ const PositionDetailsPageComponent = () => {
   }
 
   const shouldShowActions = layout === "Actions";
-  const positionName = positionDetails.integrationData?.metadata.name ?? null;
+  // Off a flow the header names the position, so the trail stops at its root.
+  const positionName = flowActive
+    ? (positionDetails.integrationData?.metadata.name ?? null)
+    : null;
+  const header = flowActive ? null : <PositionHeader />;
 
   return (
     <AnimationPage>
       <SplitView
-        primaryBarLabel={t("dashboard.split_view.actions")}
-        secondaryBarLabel={t("dashboard.split_view.details")}
+        secondaryLabel={t("dashboard.split_view.details")}
         primary={
           shouldShowActions ? (
             <PositionDetailsPane kind="actions">
               <PositionBreadcrumb positionName={positionName} />
+              {header}
 
               <Stack grow gap={32} justify="between">
                 <Outlet />
@@ -75,7 +81,10 @@ const PositionDetailsPageComponent = () => {
         secondary={
           <PositionDetailsPane kind="info">
             {shouldShowActions ? null : (
-              <PositionBreadcrumb positionName={positionName} />
+              <>
+                <PositionBreadcrumb positionName={positionName} />
+                {header}
+              </>
             )}
 
             <PositionDetailsInfo />

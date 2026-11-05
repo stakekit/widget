@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import {
-  Badge,
   Box,
   Card,
   DetailList,
@@ -21,7 +20,7 @@ export const PositionDetailsPane = ({
   readonly kind: "actions" | "info";
 }) =>
   kind === "actions" ? (
-    <Box grow maxWidth="sm">
+    <Box grow>
       <Stack gap={16}>{children}</Stack>
     </Box>
   ) : (
@@ -53,18 +52,9 @@ export const PositionDetailsBreadcrumb = ({
 
 type MetricCard = PositionOverviewModel["metricCards"][number];
 
-/**
- * A card's value: its lines, or the status it names as a badge. A status that
- * asks something of the user wears the warning tone, as the positions list and
- * the Manage tab's count do.
- */
+/** A card's value: one line, or one line per token. */
 const MetricValue = ({ card }: { readonly card: MetricCard }) => {
-  if (typeof card.value === "string") {
-    if (card.tone === "action") {
-      return <Badge tone="warning">{card.value}</Badge>;
-    }
-    return card.value;
-  }
+  if (typeof card.value === "string") return card.value;
 
   return (
     <Stack as="span">

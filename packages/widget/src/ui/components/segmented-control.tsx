@@ -1,10 +1,12 @@
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
 import * as stylex from "@stylexjs/stylex";
+import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
+import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -59,7 +61,11 @@ export const SegmentedControl = <const T extends string>({
         key={option.value}
         value={option.value}
         disabled={option.disabled}
-        {...stylex.props(styles.segment, focusRingStyles.visible)}
+        {...stylex.props(
+          styles.segment,
+          option.value === value && styles.chosen,
+          focusRingStyles.visible
+        )}
       >
         {option.label}
       </Toggle>
@@ -67,27 +73,65 @@ export const SegmentedControl = <const T extends string>({
   </ToggleGroup>
 );
 
+// It marks its choice the way the tabs do: under the `pill` tabs indicator, a
+// raised segment in a filled track; under `underline`, an accent line under
+// the chosen label on a bare track. Each underline value sits under the
+// ancestor condition inline: StyleX compiles `stylex.when` only where a style
+// map uses it.
 const styles = stylex.create({
   group: {
-    padding: space[2],
-    borderRadius: radius.control,
-    gap: space[2],
-    backgroundColor: color.surface,
+    padding: {
+      default: space[2],
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: 0,
+    },
+    borderRadius: {
+      default: radius.control,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: 0,
+    },
+    gap: {
+      default: space[2],
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: space[12],
+    },
+    backgroundColor: {
+      default: color.surface,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: "transparent",
+    },
     boxSizing: "border-box",
     display: "inline-flex",
     height: controlHeight.sm,
   },
   segment: {
     margin: 0,
-    borderRadius: radius.controlInner,
+    borderRadius: {
+      default: radius.controlInner,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: 0,
+    },
     borderStyle: "none",
     paddingBlock: 0,
-    paddingInline: space[12],
-    backgroundColor: {
-      default: "transparent",
-      ":is([data-pressed])": color.surfaceRaised,
+    paddingInline: {
+      default: space[12],
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: space[4],
     },
-    boxShadow: { default: "none", ":is([data-pressed])": elevation.raised },
+    backgroundColor: "transparent",
+    boxShadow: "none",
     color: {
       default: color.textMuted,
       ":hover:not([data-disabled])": color.text,
@@ -105,5 +149,34 @@ const styles = stylex.create({
     transitionProperty: "background-color, box-shadow, color, opacity",
     transitionTimingFunction: motion.easing,
     whiteSpace: "nowrap",
+  },
+  // The chosen segment: raised in the pill track, underlined on a bare one.
+  chosen: {
+    backgroundPosition: "bottom",
+    backgroundColor: {
+      default: color.surfaceRaised,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: "transparent",
+    },
+    // A thick accent line along the bottom, painted as a background so the
+    // segment's size holds.
+    backgroundImage: {
+      default: null,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: `linear-gradient(${color.accent}, ${color.accent})`,
+    },
+    backgroundRepeat: "no-repeat",
+    backgroundSize: `100% ${borderWidth.thick}`,
+    boxShadow: {
+      default: elevation.raised,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: "none",
+    },
   },
 });

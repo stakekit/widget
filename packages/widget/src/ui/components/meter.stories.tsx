@@ -70,3 +70,31 @@ export const WithMarkerDark: Story = {
   ...WithMarker,
   globals: { colorScheme: "dark" },
 };
+
+/**
+ * A compact meter draws only a thin track, for under a row that shows the
+ * label and value; both still read out, and the tone colors the fill.
+ */
+export const Compact: Story = {
+  args: {
+    size: "compact",
+    tone: "danger",
+    value: 92,
+    valueText: "92%",
+    marker: { value: 80, label: "Max LTV 80%" },
+  },
+  play: async ({ canvasElement }) => {
+    const meter = within(canvasElement).getByRole("meter", {
+      name: "Loan to value",
+    });
+    await expect(meter).toHaveAttribute("aria-valuetext", "92%, Max LTV 80%");
+    await expect(within(canvasElement).queryByText("92%")).toBeNull();
+    // Only the thin track takes up room: the label and value are not drawn.
+    await expect(meter.getBoundingClientRect().height).toBe(4);
+  },
+};
+
+export const CompactDark: Story = {
+  ...Compact,
+  globals: { colorScheme: "dark" },
+};

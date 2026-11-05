@@ -16,13 +16,25 @@ const badgeTones = {
   auto: "accent",
 } as const;
 
+/**
+ * A yield's or position's header. A position's page passes `compact` and its
+ * status, which leads the badges. Compact, the title is the yield's own name:
+ * the line under it already names the provider.
+ */
 export const YieldDetailsHeader = ({
+  density = "default",
   headerBadges,
   providerName,
+  status,
   yieldDto,
 }: {
+  readonly density?: "default" | "compact";
   readonly headerBadges: ReadonlyArray<YieldDetailsHeaderBadge>;
   readonly providerName: string;
+  readonly status?: {
+    readonly label: string;
+    readonly tone: "info" | "neutral" | "warning";
+  } | null;
   readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
@@ -37,7 +49,12 @@ export const YieldDetailsHeader = ({
 
   return (
     <AssetHeader
-      title={formatDetailsTitle({ providerName, yieldDto })}
+      density={density}
+      title={
+        density === "compact"
+          ? yieldDto.metadata.name
+          : formatDetailsTitle({ providerName, yieldDto })
+      }
       token={token}
       provider={{
         name: providerName,
@@ -48,10 +65,13 @@ export const YieldDetailsHeader = ({
         formatNetworkName(yieldDto.network),
         formatDisplayTokenSymbol(yieldDto),
       ]}
-      badges={headerBadges.map((badge) => ({
-        label: badge.label,
-        tone: badgeTones[badge.tone],
-      }))}
+      badges={[
+        ...(status ? [status] : []),
+        ...headerBadges.map((badge) => ({
+          label: badge.label,
+          tone: badgeTones[badge.tone],
+        })),
+      ]}
     />
   );
 };

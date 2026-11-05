@@ -37,7 +37,11 @@ const porto: HostProfile = {
   ...standard,
   appearancePreset: "porto",
   earnPresentation: compact,
-  presentation: { callToActionSize: "md" },
+  presentation: {
+    callToActionSize: "md",
+    surfaceStyle: "outlined",
+    tabsIndicator: "pill",
+  },
   walletCatalogue: "porto",
 };
 
@@ -45,7 +49,12 @@ const utila: HostProfile = {
   ...standard,
   appearancePreset: "utila",
   earnPresentation: compact,
-  presentation: { callToActionSize: "md" },
+  presentation: {
+    callToActionSize: "md",
+    gutter: "md",
+    surfaceStyle: "outlined",
+    tabsIndicator: "underline",
+  },
   requiresTermsAcknowledgement: true,
   showsPendingApprovalsNotice: true,
   translationOverlay: "utila",

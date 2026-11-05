@@ -3,12 +3,13 @@ import * as stylex from "@stylexjs/stylex";
 /**
  * Container sizes, the only thresholds for in-Widget layout. Each query
  * applies from its width up and reads the nearest size container: the Widget
- * root is one. The split view expands above 800px.
+ * root is one. The split view expands above 960px; narrower, the Dashboard
+ * stacks in one column.
  */
 export const container = stylex.defineConsts({
   sm: "@container (min-width: 400px)",
   md: "@container (min-width: 520px)",
-  split: "@container (min-width: 801px)",
+  split: "@container (min-width: 961px)",
 });
 
 /**
@@ -19,6 +20,6 @@ export const container = stylex.defineConsts({
  */
 export const containerBand = stylex.defineConsts({
   sm: "@container (400px <= width < 520px)",
-  md: "@container (520px <= width < 801px)",
-  split: "@container (min-width: 801px)",
+  md: "@container (520px <= width < 961px)",
+  split: "@container (min-width: 961px)",
 });

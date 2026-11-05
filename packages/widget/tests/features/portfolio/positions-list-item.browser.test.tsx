@@ -5,7 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
-import type { InactiveValidatorStatus } from "../../../src/features/portfolio/state/read-models/position-list-item";
+import type { InactiveValidatorStatus } from "../../../src/domain/portfolio/position-callout";
 import type { PositionItem } from "../../../src/features/portfolio/state/read-models/positions";
 import { PositionsListItem as CompactPositionsListItem } from "../../../src/features/portfolio/ui/compact/positions-page/components/positions-list-item";
 import { SmallBalances } from "../../../src/features/portfolio/ui/components/small-balances";

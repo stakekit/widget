@@ -322,6 +322,13 @@ change, made from its Risk Position projection. It is the only widget-side
 block and blocks only changes the protocol would reject; Risk Unavailable
 allows.
 
+**Risk Band**: How close a position with debt sits to liquidation: safe,
+caution (health factor below 1.5, or LTV within 90% of max LTV) or danger
+(health factor below 1.1, or LTV past max LTV). One band, the worse of the two
+figures, tones the LTV, its meter and the health factor alike: safe reads
+plain, caution as a warning, danger as danger; caution and danger raise an
+alert with Repay. It informs only; the Risk Gate decides.
+
 **Action Rejection Reason**: The API's own message when it refuses to create an
 action. Review shows it in place of generic failure copy.
 

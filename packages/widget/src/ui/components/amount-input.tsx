@@ -1,6 +1,6 @@
 import { Input } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -88,6 +88,11 @@ type AmountInputProps = {
   readonly shrink?: boolean;
   /** Renders as the input's `data-testid`. */
   readonly testId?: string;
+  /**
+   * Each new value above zero focuses the input, such as when a prompt
+   * elsewhere on the page asks for an amount. Zero never does.
+   */
+  readonly focusRequest?: number;
 };
 
 /**
@@ -111,6 +116,7 @@ export const AmountInput = ({
   onBlur,
   shrink = true,
   testId,
+  focusRequest = 0,
 }: AmountInputProps) => {
   // `null` while not focused, which shows `value`.
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -122,6 +128,10 @@ export const AmountInput = ({
   const digitRef = useRef<HTMLSpanElement>(null);
   // Where the caret goes once regrouped text renders; `null` leaves it.
   const caretRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (focusRequest > 0) inputRef.current?.focus();
+  }, [focusRequest]);
 
   useLayoutEffect(() => {
     const caret = caretRef.current;

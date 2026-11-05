@@ -200,7 +200,7 @@ describe("Borrow position details", () => {
     await expect
       .element(app.getByText("Loan to value"))
       .not.toBeInTheDocument();
-    await app.getByTestId("borrow-position-action__withdraw").click();
+    await app.getByRole("tab", { name: "Withdraw" }).click();
     await userEvent.click(app.getByTestId("number-input"));
     await userEvent.keyboard("0.6");
 
@@ -341,25 +341,32 @@ describe("Borrow position details", () => {
     await expect.element(app.getByText("Health factor")).toBeInTheDocument();
     // 2.125 truncates to two places, never rounding up.
     await expect.element(app.getByText("2.12")).toBeInTheDocument();
+    // A safe position raises no liquidation alert.
+    await expect
+      .element(app.getByTestId("borrow-position-risk-alert"))
+      .not.toBeInTheDocument();
     await expect.element(app.getByText("Loan to value")).toBeInTheDocument();
     await expect.element(app.getByText("Collateral value")).toBeInTheDocument();
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
     expect(app.container.textContent).toContain("Ethereum");
     expect(app.container.textContent).toContain("$400.00");
-    // Each action card's button names its own verb.
+    // The actions are tabs, Repay open first with its form inline.
     await expect
-      .element(app.getByTestId("borrow-position-action__repay"))
-      .toHaveTextContent("Repay");
+      .element(app.getByRole("tab", { name: "Repay" }))
+      .toHaveAttribute("aria-selected", "true");
     await expect
-      .element(app.getByTestId("borrow-position-action__withdraw"))
-      .toHaveTextContent("Withdraw");
+      .element(app.getByRole("tab", { name: "Withdraw" }))
+      .toHaveAttribute("aria-selected", "false");
+    await expect
+      .element(app.getByRole("button", { name: "Review repayment" }))
+      .toBeInTheDocument();
     await expect
       .element(app.getByText("USDC outstanding", { exact: false }))
       .toBeInTheDocument();
     await expect
-      .element(app.getByTestId("borrow-position-action__disableCollateral"))
+      .element(app.getByRole("tab", { name: "Disable collateral" }))
       .not.toBeInTheDocument();
-    await app.getByRole("button", { name: "Details" }).click();
+    // The collateral switches stay with the collateral in the details.
     const disableToggle = app.getByTestId(
       "borrow-collateral-toggle__disableCollateral"
     );
@@ -375,9 +382,7 @@ describe("Borrow position details", () => {
         )
       )
       .toBeInTheDocument();
-    await app.getByRole("button", { name: "Actions" }).click();
-
-    await app.getByTestId("borrow-position-action__withdraw").click();
+    await app.getByRole("tab", { name: "Withdraw" }).click();
 
     await expect
       .element(app.getByText("0.5 WETH withdrawable"))
@@ -421,7 +426,9 @@ describe("Borrow position details", () => {
     await expect.element(app.getByText("Borrow details")).toBeInTheDocument();
     await app.getByRole("button", { name: "Back to position" }).click();
 
-    await expect.element(app.getByText("Actions")).toBeInTheDocument();
+    await expect
+      .element(app.getByRole("tab", { name: "Repay" }))
+      .toBeInTheDocument();
 
     const breadcrumbBack = app.container.querySelector<HTMLButtonElement>(
       '[data-testid="borrow-position-details-back"]'
@@ -433,6 +440,104 @@ describe("Borrow position details", () => {
 
     await expect.element(app.getByText("My positions")).toBeInTheDocument();
     await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("alerts a position at 92% LTV as in danger and offers Repay", async ({
+    worker,
+  }) => {
+    // $920 of debt behind $1,000 of collateral: past the 80% max LTV, a 2.91%
+    // fall in collateral value from liquidation.
+    const riskyPosition: PositionDto = {
+      ...position,
+      currentLtv: "0.92",
+      debtBalances: position.debtBalances.map((debt) => ({
+        ...debt,
+        balance: "920",
+        balanceRaw: "920000000",
+        balanceUsd: "920",
+      })),
+      healthFactor: "1.03",
+      netWorthUsd: "80",
+      supplyBalances: [
+        {
+          ...wethSupplyBalance,
+          positionState: {
+            ...wethSupplyBalance.positionState,
+            currentLtv: "0.92",
+            healthFactor: "1.03",
+          },
+        },
+      ],
+      totalBorrowedUsd: "920",
+    };
+    worker.use(
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          items: [market],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        })
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json(riskyPosition)
+      )
+    );
+
+    const app = await renderApp({
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Manage"));
+    await userEvent.click(app.getByText("WETH/USDC"));
+
+    const alert = app.getByTestId("borrow-position-risk-alert");
+    await expect
+      .element(alert.getByText("High liquidation risk"))
+      .toBeInTheDocument();
+    await expect
+      .element(
+        alert.getByText(
+          "A 2.91% drop in collateral value would liquidate this position. Repay debt to lower the risk."
+        )
+      )
+      .toBeInTheDocument();
+    // The alert sits over the position's loan to value gauge.
+    await expect
+      .element(app.getByRole("meter", { name: "Loan to value" }))
+      .toHaveAttribute("aria-valuenow", "92");
+
+    // From another tab, Repay selects the Repay tab and focuses its amount.
+    await app.getByRole("tab", { name: "Withdraw" }).click();
+    await alert.getByRole("button", { name: "Repay" }).click();
+
+    await expect
+      .element(app.getByRole("tab", { name: "Repay" }))
+      .toHaveAttribute("aria-selected", "true");
+    await expect
+      .element(app.getByRole("button", { name: "Review repayment" }))
+      .toBeInTheDocument();
+    const amount = app.getByTestId("number-input");
+    await expect.element(amount).toHaveFocus();
+
+    // Already on Repay, it keeps the typed amount and focuses it again.
+    await userEvent.keyboard("10");
+    await userEvent.click(app.getByText("Loan to value", { exact: true }));
+    await expect.element(amount).not.toHaveFocus();
+    await alert.getByRole("button", { name: "Repay" }).click();
+
+    await expect.element(amount).toHaveFocus();
+    await expect.element(amount).toHaveValue("10");
 
     await app.unmount();
   });
@@ -517,7 +622,6 @@ describe("Borrow position details", () => {
 
     await userEvent.click(app.getByText("Manage"));
     await userEvent.click(app.getByText("USDC", { exact: true }).first());
-    await app.getByRole("button", { name: "Details" }).click();
     await app
       .getByTestId("borrow-collateral-toggle__disableCollateral")
       .click();
@@ -608,7 +712,6 @@ describe("Borrow position details", () => {
 
     await userEvent.click(app.getByText("Manage"));
     await userEvent.click(app.getByText("USDC", { exact: true }).first());
-    await app.getByRole("button", { name: "Details" }).click();
     await expect
       .poll(
         () =>
@@ -617,8 +720,7 @@ describe("Borrow position details", () => {
       )
       .toBe(2);
 
-    await app.getByRole("button", { name: "Actions" }).click();
-    await app.getByTestId("borrow-position-action__withdraw").click();
+    await app.getByRole("tab", { name: "Withdraw" }).click();
     await expect
       .element(app.getByText("0.5 WETH withdrawable"))
       .toBeInTheDocument();
@@ -721,7 +823,7 @@ describe("Borrow position details", () => {
 
     await userEvent.click(app.getByText("Manage"));
     await userEvent.click(app.getByText("WETH/USDC"));
-    await app.getByTestId("borrow-position-action__withdraw").click();
+    await app.getByRole("tab", { name: "Withdraw" }).click();
     await userEvent.click(app.getByTestId("number-input"));
     await userEvent.keyboard("0.1");
     await app.getByRole("button", { name: "Review withdrawal" }).click();

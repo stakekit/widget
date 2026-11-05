@@ -1,6 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
 import { TokenAvatar } from "../components/avatar";
-import { DetailList, DetailRow } from "../components/detail-list";
+import {
+  DetailList,
+  DetailRow,
+  type DetailRowMeter,
+} from "../components/detail-list";
 import { Divider } from "../components/divider";
 import { InfoTip } from "../components/info-tip";
 import { Skeleton } from "../components/skeleton";
@@ -23,6 +27,8 @@ type ReviewRow = {
   readonly caption?: string;
   /** The value's text tone, such as `danger` for a figure at risk. */
   readonly tone?: "default" | "warning" | "danger";
+  /** The value as a thin gauge under the row, such as the LTV it leaves. */
+  readonly meter?: DetailRowMeter;
   /** Renders as the row's `data-testid`. */
   readonly testId?: string;
   /** Renders as the row's `data-rk`, for hosts to locate it. */
@@ -161,6 +167,7 @@ const ReviewRows = ({ rows }: { readonly rows: ReadonlyArray<ReviewRow> }) => (
           label={row.label}
           {...(row.caption === undefined ? {} : { caption: row.caption })}
           {...(row.tone === undefined ? {} : { tone: row.tone })}
+          {...(row.meter === undefined ? {} : { meter: row.meter })}
           {...(row.testId === undefined ? {} : { testId: row.testId })}
           {...(row.hostHook === undefined ? {} : { hostHook: row.hostHook })}
           value={

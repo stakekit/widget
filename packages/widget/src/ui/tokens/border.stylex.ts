@@ -26,3 +26,11 @@ export const selectionRing = stylex.defineConsts({
   width: "2px",
   offset: "-2px",
 });
+
+/**
+ * A thin edge drawn just inside a part with `outline`, so its size holds:
+ * `offset` pulls a `borderWidth.thin` outline in by its own width.
+ */
+export const insetEdge = stylex.defineConsts({
+  offset: "-1px",
+});

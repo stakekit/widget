@@ -27,8 +27,11 @@ type GutterSize = "md" | "lg";
 /** How the selected tab is marked: a line under it or a filled pill. */
 export type TabsIndicator = "underline" | "pill";
 
-/** Whether surfaces sit on the canvas as fills or lift off it with a shadow. */
-export type SurfaceStyle = "filled" | "elevated";
+/**
+ * How surfaces sit on the canvas: as fills, lifted off it with a shadow, or
+ * as fills edged in the `border` role.
+ */
+export type SurfaceStyle = "filled" | "elevated" | "outlined";
 
 /** Every Presentation Setting the theme root applies. */
 export type PresentationSettings = Readonly<{

@@ -177,7 +177,7 @@ export const InsideThemeRoot: Story = {
 };
 
 /**
- * `page` is as wide as the split container size and fills the dialog's
+ * `page` is a page dialog's width, 800px, and fills the dialog's
  * height; its body holds an embedded page edge to edge.
  */
 export const Page: Story = {

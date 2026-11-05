@@ -48,6 +48,36 @@ export const Default: Story = {};
 export const Dark: Story = { globals: { colorScheme: "dark" } };
 
 /**
+ * Under the underline tabs indicator it marks its choice as the tabs do: an
+ * accent line under the chosen label, on a bare track.
+ */
+export const Underline: Story = {
+  globals: { tabsIndicator: "underline" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const group = canvas.getByRole("group", { name: "Chart period" });
+    const chosen = canvas.getByRole("button", { name: "1W" });
+    // No track fill (alpha 0).
+    await expect(getComputedStyle(group).backgroundColor).toMatch(/, 0\)$/);
+    await expect(getComputedStyle(chosen).backgroundImage).toMatch(
+      /linear-gradient/
+    );
+  },
+};
+
+/** Under the pill tabs indicator the chosen segment is raised in a track. */
+export const Pill: Story = {
+  globals: { tabsIndicator: "pill" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const group = canvas.getByRole("group", { name: "Chart period" });
+    const chosen = canvas.getByRole("button", { name: "1W" });
+    await expect(getComputedStyle(group).backgroundColor).not.toMatch(/, 0\)$/);
+    await expect(getComputedStyle(chosen).boxShadow).not.toMatch(/inset|none/);
+  },
+};
+
+/**
  * The group is one tab stop. Arrows move between segments, skipping a
  * disabled one; Enter and Space choose. The chosen segment is pressed, and
  * choosing it again keeps it.

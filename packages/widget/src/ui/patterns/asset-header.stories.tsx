@@ -83,3 +83,19 @@ export const FallbackAndLongName: Story = {
     provider: { name: "Figment", label: "via Figment" },
   },
 };
+
+/** Compact, a position's page header: a 40px logo beside a heading. */
+export const Compact: Story = {
+  args: {
+    density: "compact",
+    badges: [{ label: "Action required", tone: "warning" }],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const heading = canvas.getByRole("heading", { name: "Lido Staked ETH" });
+    const logo = heading.parentElement?.previousElementSibling;
+    if (!(logo instanceof HTMLElement)) throw new Error("Expected a logo");
+    await expect(logo.getBoundingClientRect().height).toBe(40);
+    await expect(canvas.getByText("Action required")).toBeVisible();
+  },
+};

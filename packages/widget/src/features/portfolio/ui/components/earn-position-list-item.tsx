@@ -2,6 +2,12 @@ import type BigNumber from "bignumber.js";
 import type { ComponentProps, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
+import {
+  formatPositionCallout,
+  getPositionCallout,
+  type InactiveValidatorStatus,
+  type PositionCallout,
+} from "../../../../domain/portfolio/position-callout";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatTokenAmount,
@@ -13,7 +19,6 @@ import { useWidgetPresentation } from "../../../../shared/react/widget-presentat
 import { Box, ListRow, Skeleton, TokenAvatar } from "../../../../ui/index";
 import { useWidgetLinkProps } from "../../../navigation/index";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
-import type { InactiveValidatorStatus } from "../../state/read-models/position-list-item";
 import type { PositionItem } from "../../state/read-models/positions";
 
 export type EarnPositionListItemDetails = {
@@ -35,15 +40,17 @@ export type EarnPositionListItemDetails = {
 type RowStatus = NonNullable<ComponentProps<typeof ListRow>["status"]>;
 
 /**
- * How each kind of status a row calls out reads. Every status that asks
- * something of the user, rewards to claim among them, shares the warning
- * tone the Manage tab's count wears; work already under way is info.
+ * How each status a row calls out reads. Every status that asks something of
+ * the user, rewards to claim among them, shares the warning tone the Manage
+ * tab's count wears; work already under way is info.
  */
-const statusLook = {
-  attention: { tone: "warning", icon: "WarningIcon" },
-  claimable: { tone: "warning", icon: "GiftIcon" },
-  pending: { tone: "info", icon: "HistoryIcon" },
-} as const satisfies Record<string, Omit<RowStatus, "text">>;
+const calloutLook = {
+  actionRequired: { tone: "warning", icon: "WarningIcon" },
+  validatorsJailed: { tone: "warning", icon: "WarningIcon" },
+  validatorsInactive: { tone: "warning", icon: "WarningIcon" },
+  claimRewards: { tone: "warning", icon: "GiftIcon" },
+  inProgress: { tone: "info", icon: "HistoryIcon" },
+} as const satisfies Record<PositionCallout, Omit<RowStatus, "text">>;
 
 /** The one status a row shows, the most pressing first. */
 const useStatus = (
@@ -51,23 +58,10 @@ const useStatus = (
   inactiveValidator: InactiveValidatorStatus | null
 ): RowStatus | null => {
   const { t } = useTranslation();
+  const callout = getPositionCallout({ attention: item, inactiveValidator });
 
-  if (item.actionRequired) {
-    return { text: t("positions.action_required"), ...statusLook.attention };
-  }
-  if (inactiveValidator === "jailed") {
-    return { text: t("details.validators_jailed"), ...statusLook.attention };
-  }
-  if (inactiveValidator) {
-    return { text: t("details.validators_inactive"), ...statusLook.attention };
-  }
-  if (item.hasPendingClaimRewards) {
-    return { text: t("positions.claim_rewards"), ...statusLook.claimable };
-  }
-  if (item.hasPendingRequest) {
-    return { text: t("positions.in_progress"), ...statusLook.pending };
-  }
-  return null;
+  if (callout === null) return null;
+  return { text: formatPositionCallout(callout, t), ...calloutLook[callout] };
 };
 
 /** The row's figures: the total and its USD estimate, or a placeholder. */

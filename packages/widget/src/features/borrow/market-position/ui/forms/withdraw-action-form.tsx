@@ -171,6 +171,7 @@ export const WithdrawActionForm = ({
           <LtvTransitionRow
             currentLtv={view.currentLtv}
             projectedLtv={view.projectedLtv}
+            projectedRisk={view.projectedRisk}
           />
           <DetailRow
             label={t("dashboard.borrow.form.collateral_value")}

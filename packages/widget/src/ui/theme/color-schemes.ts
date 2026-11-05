@@ -87,22 +87,27 @@ export type PresetPalette = Readonly<{
 // StyleX reads only values declared in this module. Light palettes override
 // the defaults the variables declare, so they list only what they change.
 
-// Finery: a teal accent, too light for white text, so `onAccent` is dark. In
-// light, its brand teal (#16C7B0) is darkened to #119A88 (same hue), the
-// lightest that still marks a selected control at 3:1 on every surface
-// (3.02:1 on `surfaceHover`) while keeping dark text at 5.06:1; hover
-// lightens under the dark text (5.50:1). Its accent text and focus ring are
-// a deeper teal in light. Its light greys are its translucent ones
-// composited over its canvas, so contrast reads the colors the browser
-// paints. Its dark surfaces sit closer to the canvas than its translucent
-// greys, with white text, so text derived from a host accent keeps its
-// contrast on them. Its danger is lighter than the dark scheme's, which
-// reads 4.11:1 on its hover surface.
+// Finery: elevated and airy. Its neutrals are tinted toward its teal, and
+// white cards lift off a near-white canvas on a soft, teal-tinted shadow
+// (`fineryLightElevation`). The teal accent is too light for white text, so
+// `onAccent` is dark. In light, its brand teal (#16C7B0) is darkened to
+// #119A88 (same hue), the lightest that still marks a selected control at 3:1
+// on every surface (3.02:1 on `surfaceHover`, which is as deep as its tinted
+// greys go) while keeping dark text at 5.06:1; hover lightens under the dark
+// text (5.50:1). Its accent text and focus ring are a deeper teal in light.
+// Its dark surfaces sit closer to the canvas than its translucent greys, with
+// white text, so text derived from a host accent keeps its contrast on them.
+// Its danger is lighter than the dark scheme's, which reads 4.11:1 on its
+// hover surface.
 const fineryLightColors = {
-  background: "#FDFDFD",
-  surface: "#F5F5F5",
-  surfaceHover: "#EEEEEE",
+  background: "#FCFDFD",
+  surface: "#EEF5F3",
+  surfaceHover: "#E7F0EE",
   surfaceRaised: "#FFFFFF",
+  border: "#DCE7E4",
+  borderStrong: "#C8D8D4",
+  textMuted: "#566664",
+  textSubtle: "#879593",
   accent: "#119A88",
   accentHover: "#12A18E",
   onAccent: "#18181B",
@@ -113,7 +118,17 @@ const fineryLightColors = {
   focusRing: "#0B7468",
 };
 
-const fineryLightTheme = stylex.createTheme(color, fineryLightColors);
+// A wide, faint shadow in the teal's shade, so a card floats rather than
+// sits; the dark scheme's outlined elevation stays in dark.
+const fineryLightElevation = stylex.createTheme(elevation, {
+  raised: "0 1px 2px rgb(16 56 50 / 0.04), 0 6px 20px rgb(16 56 50 / 0.07)",
+  overlay: "0 16px 48px rgb(16 56 50 / 0.16)",
+  shell: "0 12px 40px rgb(16 56 50 / 0.10)",
+});
+
+const fineryLightColorTheme = stylex.createTheme(color, fineryLightColors);
+
+const fineryLightTheme = [fineryLightColorTheme, fineryLightElevation];
 
 const fineryDarkColors = {
   background: "#243034",
@@ -141,24 +156,27 @@ const fineryDarkTheme = stylex.createTheme(color, {
   ...fineryDarkColors,
 });
 
-// Porto: dark only, with a lavender accent too light for white text
-// (2.48:1), so `onAccent` is dark.
+// Porto: dark only and high contrast: a near-black canvas, white text, and
+// flat surfaces edged in `border` rather than shadowed (`portoElevation`).
+// Its lavender accent is too light for white text (2.48:1), so `onAccent` is
+// dark; its soft tint and accent text are lavender too.
 const portoColors = {
-  background: "#171717",
-  surface: "#282828",
-  surfaceHover: "#333333",
-  surfaceRaised: "#282828",
-  border: "#333333",
-  borderStrong: "#3F3F3F",
-  textMuted: "#A3A5B5",
-  textSubtle: "#87899C",
+  background: "#0F0F10",
+  surface: "#1F1F21",
+  surfaceHover: "#2A2A2D",
+  surfaceRaised: "#1F1F21",
+  border: "#343438",
+  borderStrong: "#4A4A50",
+  text: "#FFFFFF",
+  textMuted: "#B4B5C3",
+  textSubtle: "#8A8B9C",
   accent: "#AB95FF",
   accentHover: "#BDA8FF",
   onAccent: "#171717",
-  accentSoft: "#2B2640",
+  accentSoft: "#2D2649",
   accentText: "#AB95FF",
   info: "#AB95FF",
-  infoSoft: "#2B2640",
+  infoSoft: "#2D2649",
   focusRing: "#AB95FF",
 };
 
@@ -167,9 +185,13 @@ const portoTheme = stylex.createTheme(color, {
   ...portoColors,
 });
 
-// Utila: light only, the default accent and surface on its greys.
+// Utila: light only and crisp: the default accent on cool greys, with a
+// visible `border` that edges its cards and raised parts.
 const utilaColors = {
-  border: "#E4E4E7",
+  background: "#FFFFFF",
+  surface: "#EDEEF2",
+  surfaceHover: "#E4E6EB",
+  border: "#D9DCE3",
   borderStrong: "#C9CFFF",
   accentSoft: "#F4F5FF",
   infoSoft: "#F4F5FF",

@@ -295,7 +295,7 @@ const renderBorrowApp = (wallet: SKBorrowWallet) =>
 const confirmWithdraw = async (app: RenderResult) => {
   await userEvent.click(app.getByText("Manage"));
   await userEvent.click(app.getByText("WETH/USDC"));
-  await app.getByTestId("borrow-position-action__withdraw").click();
+  // The position's only action, Withdraw, opens inline without tabs.
   await userEvent.click(app.getByTestId("number-input"));
   await userEvent.keyboard("0.1");
   await app.getByRole("button", { name: "Review withdrawal" }).click();

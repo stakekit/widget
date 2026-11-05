@@ -49,8 +49,7 @@ Virtual and SVG icon markup.
 - **Artwork**: `MorphoMark`, `Spot` (a flat illustration: one icon of the
   set on a tone's soft disc, used by `EmptyState`, `ErrorState` and dialogs
   instead of raster artwork).
-- **Prop types**: `Tone`, `IconName`, `HostHook`, `TabOption`, `ToggleOption`,
-  `SplitViewSide`.
+- **Prop types**: `Tone`, `IconName`, `HostHook`, `TabOption`, `ToggleOption`.
 
 A part added to or removed from `src/ui/index.ts` updates this list. Parts used
 only inside the Design System stay unexported until a Feature needs them.
@@ -177,11 +176,13 @@ explicit `as`, so headings form a real outline.
   `motion` (`AnimatedNumber`, `PageTransition`) read the same values in
   seconds from `ui/tokens/motion-timing.ts`, read the preference themselves and
   show their final state at once under reduced motion.
-- **Container sizes**: `sm` 400, `md` 520, `split` 800. These are the only
-  thresholds for in-Widget layout, which responds to container width only. A
-  property that reads a value at more than one size uses `containerBand`, whose
-  queries do not overlap: overlapping queries of equal specificity resolve by
-  source order, which StyleX does not guarantee.
+- **Container sizes**: `sm` 400, `md` 520, `split` 960. These are the only
+  thresholds for in-Widget layout, which responds to container width only.
+  Below `split` the Dashboard stacks in one column: a `SplitView` puts its
+  secondary pane under the primary one. A property that reads a value at more
+  than one size uses `containerBand`, whose queries do not overlap:
+  overlapping queries of equal specificity resolve by source order, which
+  StyleX does not guarantee.
 - **Viewport query**: only for how an overlay is presented: a bottom sheet below
   520px wide, a centered dialog above.
 - **Layers**: overlay, modal, dropdown, toast, tooltip, all inside the portal
@@ -207,17 +208,33 @@ box and are no size container, so the content flows as if unwrapped.
   scheme then does not apply. Preset palettes sit beside the scheme roles in
   `ui/theme/color-schemes.ts`: a StyleX theme replaces any other theme over the
   same variables on an element, so a dark palette is built over every dark role.
+- Presets differ beyond color but keep their accents. Finery is elevated and
+  airy: teal-tinted neutrals, white cards on one level of soft shadow, softer
+  radii (card 20, control 14) and lighter headings. Porto is dark, high
+  contrast and flat: a near-black canvas, tight radii (card 6, control 4),
+  raised parts outlined instead of shadowed, outlined surfaces and pill tabs.
+  Utila is light, crisp and compact: 8px radii, outlined surfaces, shorter
+  controls (28/36/44), the `md` gutter and underline tabs. Radius, weight,
+  control height and elevation are preset themes in
+  `ui/theme/appearance-presets.ts`; the surface style, tabs indicator and
+  gutter are the Host Profile's Presentation Settings.
 - Layout differences arrive as Presentation Settings (call-to-action size,
   gutter, tabs indicator, surface style), named after the difference. Components
   never read which Layout is active.
 - Call-to-action size and gutter are values: themes over the `callToAction`
   and `gutter` variable groups, one group per setting so their themes compose.
   Tabs indicator (`underline`, `pill`) and surface style (`filled`,
-  `elevated`) change which styles apply: the theme root and the portal container
-  carry `data-sk-tabs-indicator` and `data-sk-surface-style` with
+  `elevated`, `outlined`) change which styles apply: the theme root and the
+  portal container carry `data-sk-tabs-indicator` and `data-sk-surface-style` with
   `presentationMarker`, and a component reads one with
   `stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)`
   in its own style map. Components never take them as props.
+- Under `elevated`, filled cards lift off the canvas as `surfaceRaised` with
+  the `raised` elevation, so parts inside them (the token trigger) stay flat on
+  `surface` and soft badges fill from `surfaceRaised`: one level of
+  elevation. Under `outlined`, filled cards and rows keep their fill and edge
+  in `border`. A `SegmentedControl` marks its choice as the tabs do: a raised
+  segment under `pill`, an accent underline under `underline`.
 
 ## Composing the Design System in Features
 

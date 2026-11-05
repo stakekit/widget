@@ -58,4 +58,64 @@ describe("Borrow flow summary rows", () => {
       expect.objectContaining({ label: "Health factor", tone: "danger" }),
     ]);
   });
+
+  it("reads the LTV, its meter and the health factor in one band", () => {
+    const rows = getBorrowFlowPositionChangeRows({
+      change: {
+        collateralUsd: null,
+        debtUsd: null,
+        healthFactor: { after: "1.3", before: "2.5" },
+        ltv: { after: "0.4", before: "0.2" },
+        maxLtv: "0.8",
+      },
+      locale: "en",
+      t,
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        label: "LTV",
+        tone: "warning",
+        meter: {
+          value: 40,
+          valueText: "40%",
+          marker: { value: 80, label: "Max LTV 80%" },
+        },
+      }),
+      expect.objectContaining({ label: "Health factor", tone: "warning" }),
+    ]);
+  });
+
+  it("reads a safe position's figures plain with a meter, and a closed one's with none", () => {
+    const safe = getBorrowFlowPositionChangeRows({
+      change: {
+        collateralUsd: null,
+        debtUsd: null,
+        healthFactor: { after: "2.1", before: null },
+        ltv: { after: "0.4", before: null },
+        maxLtv: "0.8",
+      },
+      locale: "en",
+      t,
+    });
+    const closed = getBorrowFlowPositionChangeRows({
+      change: {
+        collateralUsd: null,
+        debtUsd: null,
+        healthFactor: null,
+        ltv: { after: "0", before: "0.4" },
+        maxLtv: "0.8",
+      },
+      locale: "en",
+      t,
+    });
+
+    // Safe reads plain: green is for positive rates and claimable amounts.
+    expect(safe.map((row) => row.tone)).toEqual([undefined, undefined]);
+    expect(safe[0]?.meter).toEqual(expect.objectContaining({ value: 40 }));
+    expect(closed).toEqual([
+      expect.not.objectContaining({ tone: expect.anything() }),
+    ]);
+    expect(closed[0]?.meter).toBeUndefined();
+  });
 });

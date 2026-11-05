@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { exactZero } from "../../../domain/finance/exact";
+import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
 import {
   formatRewardRatePercent,
   formatShortTokenAmountWithSymbol,
@@ -9,7 +10,6 @@ import { useWidgetPresentation } from "../../../shared/react/widget-presentation
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import {
   positionYieldAtom,
-  toInactiveValidatorStatus,
   toPositionTotalDisplay,
 } from "../state/read-models/position-list-item";
 import type { PositionItem } from "../state/read-models/positions";

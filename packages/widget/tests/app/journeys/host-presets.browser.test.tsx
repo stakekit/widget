@@ -22,10 +22,20 @@ const earnCallToAction = async (app: RenderResult) => {
   return element;
 };
 
+/** The nearest ancestor that paints a fill: the card a part sits in. */
+const filledAncestor = (element: Element): Element => {
+  const parent = element.parentElement;
+  if (parent === null) throw new Error("No filled ancestor");
+  return getComputedStyle(parent).backgroundColor === "rgba(0, 0, 0, 0)"
+    ? filledAncestor(parent)
+    : parent;
+};
+
 /**
- * The Earn call-to-action's look for a host. Utila hosts acknowledge the
- * terms of service first, whose dialog hides the page until then; the
- * acknowledgement persists, so each render starts without it.
+ * The Earn page's look for a host: its call-to-action, the amount card and
+ * the token trigger in it. Utila hosts acknowledge the terms of service
+ * first, whose dialog hides the page until then; the acknowledgement
+ * persists, so each render starts without it.
  */
 const renderEarnCallToAction = async (props: HostProps) => {
   localStorage.removeItem(widgetStorageKeys.tosAccepted);
@@ -41,11 +51,22 @@ const renderEarnCallToAction = async (props: HostProps) => {
     await app.getByRole("button", { name: "I accept" }).click();
   }
   const style = getComputedStyle(await earnCallToAction(app));
+  const trigger = app.getByTestId("select-token").element();
+  const card = getComputedStyle(filledAncestor(trigger));
   const read = {
     background: style.backgroundColor,
+    card: {
+      border: card.borderTopColor,
+      radius: card.borderTopLeftRadius,
+      shadow: card.boxShadow,
+    },
     colorScheme: style.colorScheme,
     height: style.height,
+    tabsIndicator: document
+      .querySelector("[data-sk-root]")
+      ?.getAttribute("data-sk-tabs-indicator"),
     text: style.color,
+    triggerShadow: getComputedStyle(trigger).boxShadow,
   };
 
   await app.unmount();
@@ -140,12 +161,55 @@ describe("Host Profile Appearance Presets", () => {
   });
 });
 
+const transparent = "rgba(0, 0, 0, 0)";
+
+describe("Appearance Preset identities", () => {
+  it("lifts Finery's cards on one level of shadow, with softer corners", async () => {
+    const finery = await renderEarnCallToAction({ variant: "finery" });
+    const standard = await renderEarnCallToAction({});
+
+    expect(finery.card.shadow).not.toBe("none");
+    expect(finery.card.border).toBe(transparent);
+    // The card is raised, so the token trigger in it is not.
+    expect(finery.triggerShadow).toBe("none");
+    expect(finery.card.radius).toBe("20px");
+    expect(finery.tabsIndicator).toBe("underline");
+    expect(standard.card.shadow).toBe("none");
+    expect(standard.triggerShadow).not.toBe("none");
+    expect(standard.card.radius).toBe("16px");
+  });
+
+  it("keeps Porto flat, edged and tight-cornered, with pill tabs", async () => {
+    const porto = await renderEarnCallToAction({ variant: "porto" });
+
+    expect(porto.card.shadow).toBe("none");
+    expect(porto.card.border).toBe("rgb(52, 52, 56)");
+    expect(porto.card.radius).toBe("6px");
+    // Raised parts are outlined, not shadowed.
+    expect(porto.triggerShadow).toBe("rgb(74, 74, 80) 0px 0px 0px 1px");
+    expect(porto.tabsIndicator).toBe("pill");
+  });
+
+  it("edges Utila's cards at 8px corners, with compact controls", async () => {
+    const utila = await renderEarnCallToAction({
+      layout: "dashboard",
+      variant: "utila",
+    });
+
+    expect(utila.card.shadow).toBe("none");
+    expect(utila.card.border).toBe("rgb(217, 220, 227)");
+    expect(utila.card.radius).toBe("8px");
+    expect(utila.height).toBe("36px");
+    expect(utila.tabsIndicator).toBe("underline");
+  });
+});
+
 describe("Earn call-to-action height", () => {
   it.each([
     ["the Compact Layout", { layout: "compact" }, "48px"],
     ["the Dashboard Layout", { layout: "dashboard" }, "40px"],
     ["Porto in the Compact Layout", { variant: "porto" }, "40px"],
-    ["Utila in the Compact Layout", { variant: "utila" }, "40px"],
+    ["Utila in the Compact Layout", { variant: "utila" }, "36px"],
     ["Finery in the Compact Layout", { variant: "finery" }, "48px"],
   ] satisfies ReadonlyArray<readonly [string, HostProps, string]>)(
     "follows %s",

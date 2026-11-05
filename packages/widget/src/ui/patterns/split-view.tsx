@@ -1,67 +1,41 @@
 import * as stylex from "@stylexjs/stylex";
-import { type ReactNode, useState } from "react";
-import { focusRingStyles } from "../components/focus-ring";
+import type { ReactNode } from "react";
 import { ScrollArea } from "../components/scroll-area";
-import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { container } from "../tokens/container.stylex";
-import { motion } from "../tokens/motion.stylex";
-import { gutter } from "../tokens/presentation.stylex";
-import { radius } from "../tokens/radius.stylex";
 import { gridTrack, splitPaneMinHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
-import {
-  font,
-  fontSize,
-  fontWeight,
-  lineHeight,
-} from "../tokens/typography.stylex";
-
-/** The two panes of a split view. */
-export type SplitViewSide = "primary" | "secondary";
 
 type SplitViewProps = {
   /** The main pane, such as a form; capped at the aside width when split. */
   readonly primary: ReactNode;
   /**
-   * The pane beside it, such as the details of the form's selection. It takes
-   * the primary pane's height, at least a set minimum, and scrolls what
-   * overflows it.
+   * The pane beside it, such as the details of the form's selection. Split,
+   * it takes the primary pane's height, at least a set minimum, and scrolls
+   * what overflows it.
    */
   readonly secondary: ReactNode;
-  /** Names the bar that reveals the primary pane while collapsed. */
-  readonly primaryBarLabel: string;
-  /** Names the bar that reveals the secondary pane while collapsed. */
-  readonly secondaryBarLabel: string;
-  /** The pane shown while collapsed; unset, the split view keeps its own. */
-  readonly activeSide?: SplitViewSide;
-  readonly onActiveSideChange?: (side: SplitViewSide) => void;
+  /** Names the secondary pane's scrolling region. */
+  readonly secondaryLabel: string;
 };
 
 /**
  * Two panes side by side from the `split` container size up, divided by a
- * rule. Narrower, it shows one pane at a time and a bar beside it, named for
- * the other pane, that swaps them. Without both panes, it shows the one it
- * has. The secondary pane never sets the split view's height: it scrolls
- * within the primary pane's height, or its minimum when that is taller.
+ * rule. Narrower, they stack in one column, the secondary pane under the
+ * primary one past a rule, at their full height. Without both panes, it
+ * shows the one it has. Split, the secondary pane never sets the split
+ * view's height: it scrolls within the primary pane's height, or its minimum
+ * when that is taller.
  */
 export const SplitView = ({
   primary,
   secondary,
-  primaryBarLabel,
-  secondaryBarLabel,
-  activeSide: controlledSide,
-  onActiveSideChange,
+  secondaryLabel,
 }: SplitViewProps) => {
-  const [ownSide, setOwnSide] = useState<SplitViewSide>("primary");
-  // Only a swap slides the shown pane in, not the first render.
-  const [swapped, setSwapped] = useState(false);
-  const activeSide = controlledSide ?? ownSide;
-
   const secondaryPane = (
     <div {...stylex.props(styles.fill)}>
-      <ScrollArea label={secondaryBarLabel}>{secondary}</ScrollArea>
+      <ScrollArea label={secondaryLabel}>{secondary}</ScrollArea>
     </div>
   );
 
@@ -75,169 +49,53 @@ export const SplitView = ({
     );
   }
 
-  const primaryActive = activeSide === "primary";
-  const revealLabel = primaryActive ? secondaryBarLabel : primaryBarLabel;
-
   return (
     <div {...stylex.props(styles.root)}>
-      <div
-        {...stylex.props(
-          styles.pane,
-          styles.primary,
-          primaryActive
-            ? swapped && styles.enterFromStart
-            : styles.collapsedHidden
-        )}
-      >
-        {primary}
-      </div>
-      <button
-        type="button"
-        aria-label={revealLabel}
-        onClick={() => {
-          const next = primaryActive ? "secondary" : "primary";
-          setOwnSide(next);
-          setSwapped(true);
-          onActiveSideChange?.(next);
-        }}
-        {...stylex.props(
-          styles.bar,
-          focusRingStyles.visible,
-          primaryActive ? styles.barBleedEnd : styles.barBleedStart
-        )}
-      >
-        <span
-          {...stylex.props(styles.barIcon, !primaryActive && styles.flipped)}
-        >
-          <Icon name="CaretLeftIcon" size="sm" />
-        </span>
-        <span aria-hidden="true" {...stylex.props(styles.barLabel)}>
-          {revealLabel}
-        </span>
-      </button>
+      <div {...stylex.props(styles.pane, styles.primary)}>{primary}</div>
       <span aria-hidden="true" {...stylex.props(styles.rule)} />
-      <div
-        {...stylex.props(
-          styles.pane,
-          styles.bounded,
-          primaryActive
-            ? styles.collapsedHidden
-            : swapped && styles.enterFromEnd
-        )}
-      >
-        {secondaryPane}
-      </div>
+      <div {...stylex.props(styles.pane, styles.bounded)}>{secondaryPane}</div>
     </div>
   );
 };
-
-const enterFromStart = stylex.keyframes({
-  from: { opacity: 0, transform: `translateX(calc(-1 * ${space[16]}))` },
-  to: { opacity: 1, transform: "none" },
-});
-
-const enterFromEnd = stylex.keyframes({
-  from: { opacity: 0, transform: `translateX(${space[16]})` },
-  to: { opacity: 1, transform: "none" },
-});
 
 const styles = stylex.create({
   root: {
     gap: space[24],
     alignItems: "stretch",
     display: "flex",
-    flexDirection: "row",
+    flexDirection: { default: "column", [container.split]: "row" },
     minWidth: 0,
     width: "100%",
   },
   pane: {
     display: "flex",
-    flexBasis: 0,
+    flexBasis: { default: "auto", [container.split]: 0 },
     flexDirection: "column",
     flexGrow: 1,
     minWidth: 0,
   },
-  // The secondary pane's content leaves the flow, so the pane's height is
-  // the row's: the primary pane's, or the minimum when that is taller.
+  // Split, the secondary pane's content leaves the flow, so the pane's
+  // height is the row's: the primary pane's, or the minimum when that is
+  // taller. Stacked, it keeps its content's height.
   bounded: {
     position: "relative",
-    minHeight: splitPaneMinHeight.secondary,
+    minHeight: { default: 0, [container.split]: splitPaneMinHeight.secondary },
   },
   fill: {
-    inset: 0,
+    inset: { default: "auto", [container.split]: 0 },
     display: "flex",
     flexDirection: "column",
-    position: "absolute",
+    position: { default: "static", [container.split]: "absolute" },
   },
   primary: {
     maxWidth: { default: "none", [container.split]: gridTrack.splitAside },
   },
-  // Collapsed, the pane not shown leaves the layout.
-  collapsedHidden: {
-    display: { default: "none", [container.split]: "flex" },
-  },
-  // Collapsed, the pane shown slides in from its side.
-  enterFromStart: {
-    animationDuration: { default: motion.slow, [container.split]: "0s" },
-    animationName: enterFromStart,
-    animationTimingFunction: motion.easing,
-  },
-  enterFromEnd: {
-    animationDuration: { default: motion.slow, [container.split]: "0s" },
-    animationName: enterFromEnd,
-    animationTimingFunction: motion.easing,
-  },
-  bar: {
-    margin: 0,
-    borderRadius: radius.control,
-    borderStyle: "none",
-    gap: space[8],
-    paddingBlock: space[12],
-    paddingInline: 0,
-    alignItems: "center",
-    alignSelf: "stretch",
-    backgroundColor: {
-      default: color.surface,
-      ":hover": color.surfaceHover,
-    },
-    color: color.text,
-    cursor: "pointer",
-    display: { default: "flex", [container.split]: "none" },
-    flexDirection: "column",
-    flexShrink: 0,
-    justifyContent: "center",
-    transitionDuration: motion.fast,
-    transitionProperty: "background-color",
-    transitionTimingFunction: motion.easing,
-    width: space[32],
-  },
-  // The bar reaches into the gutter on the side it sits, short of the edge.
-  barBleedEnd: {
-    marginInlineEnd: `calc(${space[8]} - ${gutter.size})`,
-  },
-  barBleedStart: {
-    marginInlineStart: `calc(${space[8]} - ${gutter.size})`,
-  },
-  barIcon: {
-    display: "flex",
-    transitionDuration: motion.base,
-    transitionProperty: "transform",
-    transitionTimingFunction: motion.easing,
-  },
-  flipped: { transform: "rotate(180deg)" },
-  barLabel: {
-    fontFamily: font.sans,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.semibold,
-    lineHeight: lineHeight.label,
-    whiteSpace: "nowrap",
-    writingMode: "vertical-rl",
-  },
+  // A row between the stacked panes; a column between the split ones.
   rule: {
     alignSelf: "stretch",
     backgroundColor: color.border,
-    display: { default: "none", [container.split]: "block" },
     flexShrink: 0,
-    width: borderWidth.thin,
+    height: { default: borderWidth.thin, [container.split]: "auto" },
+    width: { default: "auto", [container.split]: borderWidth.thin },
   },
 });

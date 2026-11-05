@@ -43,8 +43,7 @@ const DashboardOverviewSplitView = ({
 
   return (
     <SplitView
-      primaryBarLabel={t("dashboard.split_view.earn")}
-      secondaryBarLabel={t("dashboard.split_view.details")}
+      secondaryLabel={t("dashboard.split_view.details")}
       primary={
         <Stack grow gap={32} justify="between">
           <BackButtonProvider>

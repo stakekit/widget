@@ -9,7 +9,6 @@ import {
 import {
   isCancellingBalance,
   isConfidentialYield,
-  isUnfinishedInstantExit,
 } from "../../../domain/earn/confidential";
 import {
   getPositionShares,
@@ -31,6 +30,12 @@ import {
 } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { RewardsSummary } from "../../../domain/portfolio/models";
+import {
+  formatPositionCallout,
+  getPositionAttention,
+  getPositionCallout,
+  toInactiveValidatorStatus,
+} from "../../../domain/portfolio/position-callout";
 import {
   getPositionValueTotal,
   getTokenSumsUsd,
@@ -66,26 +71,13 @@ import {
 } from "../../yield-summary/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
 
-/**
- * `action` is a status that asks something of the user, claiming rewards
- * among them, as the positions list and the Manage tab's count read it.
- */
-type PositionOverviewStatusTone = "action" | "default";
-
 type PositionOverviewMetricCard = {
   id: string;
   label: string;
   subValue?: string | undefined;
-  tone?: PositionOverviewStatusTone;
   /** Several lines when a card lists one amount per token. */
   value: string | ReadonlyArray<string>;
 };
-
-type PositionOverviewStatusSummary = {
-  label: string;
-  tone: PositionOverviewStatusTone;
-  value: string;
-} | null;
 
 type PositionOverviewBreakdownRow = {
   id: string;
@@ -123,8 +115,6 @@ export type PositionOverviewModel = {
   chartSections: PositionOverviewChartSection[];
   detailRows: PositionOverviewDetailRow[];
   metricCards: PositionOverviewMetricCard[];
-  providerName: string;
-  statusSummary: PositionOverviewStatusSummary;
 };
 
 type PositionOverviewPendingAction = {
@@ -143,7 +133,6 @@ type ProviderDetail = {
 
 export const getPositionOverviewModel = ({
   cancellingHandles = new Set(),
-  canUnstake,
   integrationData,
   locale,
   now = null,
@@ -156,7 +145,6 @@ export const getPositionOverviewModel = ({
 }: {
   /** Handles of pending balances whose cancel is in flight. */
   cancellingHandles?: ReadonlySet<ConfidentialHandle>;
-  canUnstake: boolean;
   integrationData: EarnYieldWithProvider;
   locale: string;
   /** Presentation time; batch timing is omitted without it. */
@@ -176,14 +164,6 @@ export const getPositionOverviewModel = ({
   const providerName = getPositionProviderName({
     integrationData,
     providersDetails,
-  });
-  const statusSummary = getStatusSummary({
-    canUnstake,
-    cancelling: balanceRows.some((row) => row.cancelling),
-    pendingActions,
-    positionBalancesByType,
-    providersDetails,
-    t,
   });
   const balanceMetric = getBalanceMetric({
     locale,
@@ -211,21 +191,12 @@ export const getPositionOverviewModel = ({
     promotedFactIds,
     t,
   });
-  const statusMetric = statusSummary
-    ? {
-        id: "status",
-        label: statusSummary.label,
-        tone: statusSummary.tone,
-        value: statusSummary.value,
-      }
-    : null;
-
+  // The status heads the page beside the position's name, not a card.
   const baseCards = [
     balanceMetric,
     sharesMetric,
     rewardsMetric,
     apyMetric,
-    statusMetric,
   ].filter((card): card is PositionOverviewMetricCard => !!card);
 
   // Keep the 2-column grid balanced: when there is an odd number of cards,
@@ -259,8 +230,6 @@ export const getPositionOverviewModel = ({
       t,
     }),
     metricCards: fillerMetric ? [...baseCards, fillerMetric] : baseCards,
-    providerName,
-    statusSummary,
   };
 };
 
@@ -513,110 +482,49 @@ const getApyMetric = ({
   };
 };
 
-const getStatusSummary = ({
+/**
+ * A position's state when the positions list calls nothing out: the optional
+ * actions it offers, a cancel in flight, the balance in motion, else whether
+ * it is active.
+ */
+const getPositionState = ({
   canUnstake,
   cancelling,
   pendingActions,
   positionBalancesByType,
-  providersDetails,
   t,
 }: {
   canUnstake: boolean;
   cancelling: boolean;
   pendingActions: PositionOverviewPendingAction[];
   positionBalancesByType: PositionBalancesByType;
-  providersDetails: ProviderDetail[];
   t: TFunction;
-}): PositionOverviewStatusSummary => {
-  const inactiveProvider = providersDetails.find(
-    (provider) => provider.status && provider.status !== "active"
+}): string => {
+  const optionalActions = pendingActions.filter((action) =>
+    isOptionalPendingAction(action.pendingAction.type)
   );
-
-  if (inactiveProvider) {
-    return {
-      label: t("dashboard.position_details.action_required"),
-      tone: "action",
-      value:
-        inactiveProvider.status === "jailed"
-          ? t("details.validators_jailed")
-          : t("details.validators_inactive"),
-    };
-  }
-
-  // Optional pending actions are outranked by any other for the status card.
-  const requiredAction = pendingActions.find(
-    (action) => !isOptionalPendingAction(action.pendingAction.type)
-  );
+  const [onlyOptionalAction, ...otherOptionalActions] = optionalActions;
   // Several optional requests are counted; none is singled out over another.
-  if (!requiredAction && pendingActions.length > 1) {
-    return {
-      label: t("dashboard.position_details.status"),
-      tone: "default",
-      value: t("dashboard.position_details.actions_available", {
-        count: pendingActions.length,
-      }),
-    };
+  if (otherOptionalActions.length > 0) {
+    return t("dashboard.position_details.actions_available", {
+      count: optionalActions.length,
+    });
   }
-  const pendingAction = requiredAction ?? pendingActions[0];
-
-  // Finalizing an Instant Exit finishes work already under way.
-  if (
-    pendingAction &&
-    isUnfinishedInstantExit(
-      pendingAction.yieldBalance,
-      pendingAction.pendingAction.type
-    )
-  ) {
-    return {
-      label: t("dashboard.position_details.status"),
-      tone: "default",
-      value: t("dashboard.position_details.instant_withdrawal_in_progress"),
-    };
-  }
-
-  if (pendingAction) {
-    const optional = isOptionalPendingAction(pendingAction.pendingAction.type);
-
-    return {
-      label: optional
-        ? t("dashboard.position_details.action_available")
-        : t("dashboard.position_details.action_required"),
-      tone: getPendingActionTone(pendingAction.pendingAction.type),
-      value: formatPendingActionLabel(pendingAction, t),
-    };
-  }
-
-  if (cancelling) {
-    return {
-      label: t("dashboard.position_details.status"),
-      tone: "default",
-      value: t("position_details.cancelling"),
-    };
-  }
+  if (onlyOptionalAction)
+    return formatPendingActionLabel(onlyOptionalAction, t);
+  if (cancelling) return t("position_details.cancelling");
 
   const statusBalance = getBalancesByPriority(positionBalancesByType).find(
     (balance) =>
-      balance.type === "locked" ||
       balance.type === "withdrawable" ||
       balance.type === "exiting" ||
       balance.type === "entering"
   );
+  if (statusBalance) return formatBalanceTypeLabel(statusBalance.type, t);
 
-  if (statusBalance) {
-    return {
-      label: t("dashboard.position_details.status"),
-      tone: "default",
-      value: formatBalanceTypeLabel(statusBalance.type, t),
-    };
-  }
-
-  return {
-    label: t("dashboard.position_details.status"),
-    tone: "default",
-    value: canUnstake
-      ? t("dashboard.position_details.active")
-      : t("dashboard.position_details.withdrawal_unavailable"),
-  };
+  return canUnstake
+    ? t("dashboard.position_details.active")
+    : t("dashboard.position_details.withdrawal_unavailable");
 };
 
 const getBreakdownRows = ({
@@ -824,11 +732,6 @@ const formatTokenSums = (sums: ReadonlyArray<TokenAmount>, locale: string) => {
   return lines.length === 1 ? (lines[0] ?? "") : lines;
 };
 
-const getPendingActionTone = (
-  type: PendingAction["type"]
-): PositionOverviewStatusTone =>
-  isOptionalPendingAction(type) ? "default" : "action";
-
 // Pending action types come from the API and can outpace our translation map
 // (e.g. RWA-specific actions). Fall back to a humanized version of the type so
 // the card never renders a raw translation key.
@@ -884,4 +787,84 @@ export const getPositionHeaderBadges = (
   }
 
   return badges;
+};
+
+/**
+ * What heads a position's page beside its name: who provides it and the
+ * position's status. A status the positions list calls out reads as its row
+ * does, in the same tone; otherwise the status is the position's state, such
+ * as Active or Unstaking, in the neutral tone.
+ */
+export const getPositionHeaderModel = ({
+  cancellingHandles = new Set(),
+  canUnstake,
+  integrationData,
+  pendingActions,
+  positionBalancesByType,
+  providersDetails,
+  t,
+}: {
+  cancellingHandles?: ReadonlySet<ConfidentialHandle>;
+  canUnstake: boolean;
+  integrationData: EarnYieldWithProvider;
+  pendingActions: PositionOverviewPendingAction[];
+  positionBalancesByType: PositionBalancesByType;
+  providersDetails: ProviderDetail[];
+  t: TFunction;
+}): {
+  readonly providerName: string;
+  readonly status: {
+    readonly label: string;
+    readonly tone: "info" | "neutral" | "warning";
+  };
+} => {
+  const balances = getBalancesByPriority(positionBalancesByType);
+  const callout = getPositionCallout({
+    attention: getPositionAttention({
+      balanceTypes: balances
+        .filter((balance) => hasPositionAmount(balance))
+        .map((balance) => balance.type),
+      pendingActions: pendingActions.map(({ pendingAction, yieldBalance }) => ({
+        type: pendingAction.type,
+        balance: yieldBalance,
+      })),
+    }),
+    inactiveValidator: toInactiveValidatorStatus(providersDetails),
+  });
+  const providerName = getPositionProviderName({
+    integrationData,
+    providersDetails,
+  });
+
+  if (callout !== null) {
+    return {
+      providerName,
+      status: {
+        label: formatPositionCallout(callout, t),
+        tone: callout === "inProgress" ? "info" : "warning",
+      },
+    };
+  }
+
+  return {
+    providerName,
+    status: {
+      label: getPositionState({
+        canUnstake,
+        cancelling: groupPositionBalanceRows(balances, (balance) =>
+          isCancellingBalance(balance, cancellingHandles)
+        ).some((row) => row.cancelling),
+        pendingActions,
+        positionBalancesByType,
+        t,
+      }),
+      tone: "neutral",
+    },
+  };
+};
+
+/** A balance with an amount, or one whose amount is hidden. */
+const hasPositionAmount = (balance: EarnBalance) => {
+  const amount = exactDecimal(balance.amount);
+  return balance.isEncrypted === true || (!amount.isZero() && !amount.isNaN());
 };

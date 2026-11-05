@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { isCancellingBalance } from "../../../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
@@ -8,16 +7,8 @@ import {
   formatRewardRatePercent,
   formatTokenAmount,
 } from "../../../../shared/lib/number-format";
-import { useTokenLogo } from "../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
-import {
-  Box,
-  Button,
-  DetailList,
-  Stack,
-  Text,
-  TokenAvatar,
-} from "../../../../ui/index";
+import { Box, Button, DetailList, Stack, Text } from "../../../../ui/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
@@ -27,6 +18,7 @@ import { PositionDetailsExitActions } from "../components/position-details-exit-
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
 import { PositionDetailsSkeleton } from "../components/position-details-skeleton";
 import { PositionDetailsValidatorModal } from "../components/position-details-validator-modal";
+import { PositionHeader } from "../components/position-header";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
 import { YieldDetails } from "./components/yield-details";
@@ -79,7 +71,9 @@ const PositionDetails = () => {
         {isLoading ? <PositionDetailsSkeleton /> : null}
         {!isLoading && integrationDataValue && positionBalancesByTypeValue ? (
           <Stack grow gap={4}>
-            <PositionHeading integrationData={integrationDataValue} />
+            <Box paddingBlock={8}>
+              <PositionHeader />
+            </Box>
 
             {personalizedRewardRate ? (
               <Box paddingBlock={8}>
@@ -218,34 +212,6 @@ const PositionDetails = () => {
         ) : null}
       </PageContainer>
     </AnimationPage>
-  );
-};
-
-/** The position's logo, name and token, centered over its details. */
-const PositionHeading = ({
-  integrationData,
-}: {
-  readonly integrationData: EarnYieldWithProvider;
-}) => {
-  const token = integrationData.outputToken ?? integrationData.token;
-  const logo = useTokenLogo(token, {
-    metadata: {
-      logoURI: integrationData.metadata.logoURI,
-      name: integrationData.metadata.name,
-      provider: integrationData.provider,
-    },
-  });
-
-  return (
-    <Stack align="center" gap={12}>
-      <TokenAvatar {...logo} size="xl" decorative />
-      <Stack align="center">
-        <Text variant="title" as="h2" align="center">
-          {integrationData.metadata.name}
-        </Text>
-        <Text tone="muted">{token.symbol}</Text>
-      </Stack>
-    </Stack>
   );
 };
 

@@ -303,6 +303,26 @@ describe("borrow position items", () => {
     );
   });
 
+  it("shows the max LTV a captured flow projected over the market's own", () => {
+    const model = getBorrowDetailsModel({
+      collateralToken: null,
+      borrowAmount: new BigNumber(0),
+      collateralAmount: new BigNumber(0),
+      integration: null,
+      locale: "en",
+      market: Schema.decodeSync(Market)(marketDto),
+      projectedMaxLtv: new BigNumber("0.8098"),
+      t,
+    });
+
+    expect(model.metricCards.find((card) => card.id === "max-ltv")?.value).toBe(
+      "80.98%"
+    );
+    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).toBe(
+      "80.98%"
+    );
+  });
+
   it("omits unavailable entry risk facts without placeholder values", () => {
     const market = Schema.decodeSync(Market)(marketDto);
     const model = getBorrowDetailsModel({
@@ -343,9 +363,14 @@ describe("borrow position items", () => {
       expected: { hf: ["2", "default"], ltv: ["40%", "default"] },
     },
     {
+      hf: "1.3",
+      ltv: "0.5",
+      expected: { hf: ["1.3", "warning"], ltv: ["50%", "warning"] },
+    },
+    {
       hf: "1.05",
       ltv: "0.7",
-      expected: { hf: ["1.05", "warning"], ltv: ["70%", "warning"] },
+      expected: { hf: ["1.05", "danger"], ltv: ["70%", "danger"] },
     },
     {
       hf: "0.9",
@@ -358,7 +383,7 @@ describe("borrow position items", () => {
       expected: { hf: ["<0.01", "danger"], ltv: [">100%", "danger"] },
     },
   ])(
-    "flags projected LTV $ltv and health factor $hf against a 75% max LTV",
+    "reads projected LTV $ltv and health factor $hf in one band against a 75% max LTV",
     ({ expected, hf, ltv }) => {
       const model = getBorrowDetailsModel({
         collateralToken: null,
@@ -392,6 +417,38 @@ describe("borrow position items", () => {
       expect(row("health-factor")).toEqual(expected.hf);
     }
   );
+
+  it("draws the projected LTV as a meter under its row, with max LTV marked", () => {
+    const model = getBorrowDetailsModel({
+      collateralToken: null,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(1),
+      integration: null,
+      locale: "en",
+      market: Schema.decodeSync(Market)(marketDto),
+      projection: {
+        borrowMaxAmount: new BigNumber(10),
+        borrowUsd: new BigNumber(1),
+        collateralMaxAmount: new BigNumber(10),
+        collateralUsd: new BigNumber(1),
+        existingCollateralUsd: new BigNumber(0),
+        existingDebtUsd: new BigNumber(0),
+        maxLtv: new BigNumber("0.75"),
+        projectedCollateralUsd: new BigNumber(1),
+        projectedDebtUsd: new BigNumber(1),
+        projectedHealthFactor: new BigNumber("1.3"),
+        projectedLtv: new BigNumber("0.5"),
+        riskStatus: "available",
+      },
+      t,
+    });
+
+    expect(model.formRows.find((row) => row.id === "ltv")?.meter).toEqual({
+      value: 50,
+      valueText: "50%",
+      marker: { value: 75, label: "dashboard.borrow.risk.max_ltv_marker" },
+    });
+  });
   it("keeps same-token collateral isolated by market and preserves API risk state", () => {
     const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
     const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";

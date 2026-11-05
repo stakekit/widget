@@ -36,4 +36,28 @@ describe("Dashboard Layout height", () => {
 
     await app.unmount();
   });
+
+  it("stacks the details under the form at a 900px width", async () => {
+    await page.viewport(900, 1000);
+    const app = await renderApp({
+      skProps: { apiKey: import.meta.env.VITE_API_KEY, layout: "dashboard" },
+    });
+
+    const cta = app.getByRole("button", { name: "Connect wallet" });
+    await expect.element(cta).toBeEnabled();
+    const details = app.getByRole("region", { name: "Details" });
+    await expect.element(details).toBeVisible();
+
+    const form = cta.element().getBoundingClientRect();
+    const pane = details.element().getBoundingClientRect();
+    // One column: the details start below the form, as wide as it.
+    expect(pane.top).toBeGreaterThanOrEqual(form.bottom);
+    expect(pane.left).toBe(form.left);
+    expect(pane.width).toBeGreaterThanOrEqual(form.width);
+    // Nothing overflows the stacked pane: it keeps its content's height.
+    const region = details.element();
+    expect(region.scrollHeight).toBeLessThanOrEqual(region.clientHeight + 1);
+
+    await app.unmount();
+  });
 });

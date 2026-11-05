@@ -130,10 +130,17 @@ export const Dark: Story = {
   globals: { colorScheme: "dark" },
 };
 
-/** The elevated surface style keeps the pill raised. */
+/**
+ * Under the elevated surface style the card it sits in is raised, so the pill
+ * fills with `surface`, edges in `border` and casts no shadow of its own.
+ */
 export const Elevated: Story = {
   ...Default,
   globals: { surfaceStyle: "elevated" },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", { name: "ETH" });
+    await expect(getComputedStyle(trigger).boxShadow).toBe("none");
+  },
 };
 
 /** Keyboard users reach it with Tab and open it with Enter. */

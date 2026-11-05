@@ -16,12 +16,8 @@ import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../yield-summary/index";
+import { YieldRiskRatingActions } from "../../../../yield-summary/views";
 import {
-  YieldDetailsHeader,
-  YieldRiskRatingActions,
-} from "../../../../yield-summary/views";
-import {
-  getPositionHeaderBadges,
   getPositionOverviewModel,
   type PositionOverviewDetailValue,
 } from "../../../model/position-overview";
@@ -75,7 +71,6 @@ export const PositionDetailsInfo = () => {
 
   const model = getPositionOverviewModel({
     cancellingHandles: positionDetails.cancellingHandles,
-    canUnstake: positionDetails.canUnstake,
     integrationData,
     locale,
     now: presentationTime?.now ?? null,
@@ -92,12 +87,6 @@ export const PositionDetailsInfo = () => {
 
   return (
     <Stack gap={24}>
-      <YieldDetailsHeader
-        headerBadges={getPositionHeaderBadges(integrationData, t)}
-        providerName={model.providerName}
-        yieldDto={integrationData}
-      />
-
       <PositionMetricCards cards={model.metricCards} />
 
       {model.breakdownRows.length > 0 && (

@@ -1,9 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../domain/borrow/positions/market-position";
 import { formatAddress } from "../../../../../shared/lib/general";
-import { useTokenLogo } from "../../../../../shared/react/token-logo";
 import {
-  AssetHeader,
   DetailList,
   DetailRow,
   Disclosure,
@@ -17,6 +15,7 @@ import type {
 import { CollateralList } from "./collateral-list";
 import { LtvGauge } from "./ltv-gauge";
 import { MetricCards } from "./metric-cards";
+import { BorrowPositionRiskAlertNotice } from "./risk-alert";
 
 type BorrowPositionDetailsModel = ReturnType<
   typeof getBorrowPositionDetailsModel
@@ -27,12 +26,15 @@ export const BorrowPositionInfo = ({
   content,
   model,
   onActionSelect,
+  onRepay,
   position,
 }: {
   readonly actions: BorrowPositionAction[];
   readonly content: "details" | "fallback";
   readonly model: BorrowPositionDetailsModel | null;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
+  /** Takes the user to repaying, as the risk alert's Repay asks. */
+  readonly onRepay: (repay: BorrowPositionAction) => void;
   readonly position: MarketPosition | null;
 }) => {
   const { t } = useTranslation();
@@ -46,6 +48,7 @@ export const BorrowPositionInfo = ({
       actions={actions}
       model={model}
       onActionSelect={onActionSelect}
+      onRepay={onRepay}
       position={position}
     />
   );
@@ -55,42 +58,33 @@ const BorrowPositionDetails = ({
   actions,
   model,
   onActionSelect,
+  onRepay,
   position,
 }: {
   readonly actions: BorrowPositionAction[];
   readonly model: BorrowPositionDetailsModel;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
+  readonly onRepay: (repay: BorrowPositionAction) => void;
   readonly position: MarketPosition;
 }) => {
   const { t } = useTranslation();
-  const headerLogo = useTokenLogo(model.headerToken);
-  const providerLogo = position.integration.metadata.logoURI;
 
   return (
     <Stack gap={24}>
-      <AssetHeader
-        title={model.title}
-        token={headerLogo}
-        provider={{
-          name: model.providerName,
-          label: t("positions.via", {
-            providerName: model.providerName,
-            count: 1,
-          }),
-          ...(providerLogo ? { src: providerLogo } : {}),
-        }}
-        details={[model.marketLabel]}
-      />
+      {model.riskAlert && (
+        <BorrowPositionRiskAlertNotice
+          actions={actions}
+          alert={model.riskAlert}
+          onRepay={onRepay}
+        />
+      )}
 
-      <MetricCards
-        cards={model.metricCards}
-        healthFactor={model.healthFactor}
-      />
+      <MetricCards cards={model.metricCards} />
 
       <LtvGauge
         currentLtv={model.currentLtv}
         liquidationThreshold={model.liquidationThreshold}
-        maxLtv={model.maxLtv}
+        riskBand={model.riskBand}
       />
 
       <CollateralList

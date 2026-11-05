@@ -19,7 +19,8 @@ import { toneBorderStyles, toneSoftStyles } from "./tone-styles";
 type CommonProps = {
   /**
    * `filled` sits on the canvas, `outline` draws an edge, `raised` lifts off
-   * it. Under the `elevated` surface style, `filled` lifts off it as `raised`.
+   * it. Under the `elevated` surface style, `filled` lifts off it as `raised`;
+   * under `outlined`, it keeps its fill and edges in the `border` role.
    */
   readonly variant?: keyof typeof variantStyles;
   readonly padding?: Responsive<Space>;
@@ -143,9 +144,16 @@ const styles = stylex.create({
 });
 
 // The `elevated` surface style, which the theme root carries, lifts filled
-// surfaces off the canvas.
+// surfaces off the canvas; `outlined` edges them in `border`.
 const variantStyles = stylex.create({
   filled: {
+    borderColor: {
+      default: "transparent",
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: color.border,
+    },
     backgroundColor: {
       default: color.surface,
       [stylex.when.ancestor(

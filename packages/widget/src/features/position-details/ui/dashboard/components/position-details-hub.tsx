@@ -5,8 +5,8 @@ import {
   type PositionDetailsActionMode,
   positionDetailsHubHasContent,
   resolvePositionDetailsActionCapabilities,
+  resolvePositionDetailsActionModes,
   resolveSelectedPositionDetailsActionMode,
-  shouldShowPositionDetailsActionTabs,
 } from "../../../model/hub";
 import { usePositionDetails } from "../../../react/use-position-details";
 import { PositionDetailsExitActions } from "../../components/position-details-exit-actions";
@@ -16,6 +16,10 @@ import { PositionDetailsValidatorModal } from "../../components/position-details
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { PositionDetailsEnterActions } from "./position-details-enter-actions";
 
+/**
+ * The position's actions as tabs, exit, enter and each type of pending
+ * action, with the selected action's form under them.
+ */
 export const PositionDetailsHub = () => {
   const { t } = useTranslation();
   const positionDetails = usePositionDetails();
@@ -34,13 +38,6 @@ export const PositionDetailsHub = () => {
     return null;
   }
 
-  const capabilities =
-    resolvePositionDetailsActionCapabilities(positionDetails);
-  const mode = resolveSelectedPositionDetailsActionMode({
-    ...capabilities,
-    selectedMode,
-  });
-
   if (!positionDetailsHubHasContent(positionDetails)) {
     return (
       <Stack grow align="center" justify="center">
@@ -49,25 +46,44 @@ export const PositionDetailsHub = () => {
     );
   }
 
+  const pendingActions = positionDetails.pendingActions ?? [];
+  const modes = resolvePositionDetailsActionModes({
+    ...resolvePositionDetailsActionCapabilities(positionDetails),
+    pendingActionTypes: pendingActions.map(
+      (action) => action.pendingAction.type
+    ),
+  });
+  const mode = resolveSelectedPositionDetailsActionMode({
+    modes,
+    selectedMode,
+  });
+
   return (
     <Stack grow gap={12}>
-      {shouldShowPositionDetailsActionTabs(capabilities) ? (
+      {mode === null ? null : (
         <PositionDetailsActionTabs
-          {...capabilities}
           integration={positionDetails.integrationData}
-          selectedMode={mode ?? "exit"}
+          modes={modes}
+          pendingActions={pendingActions}
+          selectedMode={mode}
           onSelectMode={setSelectedMode}
         />
-      ) : null}
-
-      <PositionDetailsPendingActions
-        flagsInvalidAmount={false}
-        humanizesUntranslatedLabels
-        positionDetails={positionDetails}
-      />
+      )}
 
       {mode === "exit" ? <PositionDetailsExitActions /> : null}
       {mode === "enter" ? <PositionDetailsEnterActions /> : null}
+      {mode !== null && mode !== "exit" && mode !== "enter" ? (
+        <PositionDetailsPendingActions
+          flagsInvalidAmount={false}
+          humanizesUntranslatedLabels
+          positionDetails={{
+            ...positionDetails,
+            pendingActions: pendingActions.filter(
+              (action) => action.pendingAction.type === mode
+            ),
+          }}
+        />
+      ) : null}
 
       <PositionDetailsValidatorModal />
     </Stack>

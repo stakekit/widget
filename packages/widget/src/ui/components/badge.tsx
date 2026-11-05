@@ -3,6 +3,7 @@ import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { badgeTint, color } from "../tokens/color.stylex";
+import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -74,10 +75,19 @@ const styles = stylex.create({
   outline: { backgroundColor: "transparent" },
   // The tone's text color, `currentColor`, mixed into `surface`: the fill
   // stays faint so the text keeps its contrast, and the edge carries the
-  // badge's shape on a row.
+  // badge's shape on a row. Under the `elevated` surface style cards are
+  // `surfaceRaised`, so the fill mixes into that instead and the badge reads
+  // as a light, edged tag rather than a grey fill; the edge stays as strong.
   soft: {
     borderColor: `color-mix(in srgb, currentColor ${badgeTint.edge}, ${color.surface})`,
-    backgroundColor: `color-mix(in srgb, currentColor ${badgeTint.fill}, ${color.surface})`,
+    backgroundColor: {
+      default: `color-mix(in srgb, currentColor ${badgeTint.fill}, ${color.surface})`,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]:
+        `color-mix(in srgb, currentColor ${badgeTint.fill}, ${color.surfaceRaised})`,
+    },
   },
   // Text reads stronger than a hue, so its edge takes less of it.
   softNeutral: {

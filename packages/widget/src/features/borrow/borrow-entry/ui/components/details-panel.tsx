@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
@@ -85,11 +86,14 @@ export const BorrowMarketDetails = ({
   integration,
   market,
   projection,
+  projectedMaxLtv,
 }: {
   readonly collateralToken: CollateralToken | null;
   readonly integration: Integration | null;
   readonly market: Market;
   readonly projection?: BorrowFormProjection;
+  /** The max LTV a captured flow projected, which the card shows. */
+  readonly projectedMaxLtv?: BigNumber | undefined;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -101,6 +105,7 @@ export const BorrowMarketDetails = ({
     locale,
     market,
     projection,
+    projectedMaxLtv,
     t,
   });
   const loanTokenLogo = useTokenLogo(

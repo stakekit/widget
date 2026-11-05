@@ -92,7 +92,7 @@ export const tokenTriggerHeight = stylex.defineConsts({
 export const containerWidth = stylex.defineConsts({
   sm: "400px",
   md: "520px",
-  split: "800px",
+  split: "960px",
 });
 
 /** The widest a `WidgetFrame` grows: a frame that lays out a split view. */

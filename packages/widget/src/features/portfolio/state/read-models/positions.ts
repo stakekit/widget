@@ -1,19 +1,15 @@
 import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { isOptionalPendingAction } from "../../../../domain/action/pending-action";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import {
-  classifyHealthFactor,
-  classifyLtv,
-} from "../../../../domain/borrow/risk/ltv-limits";
-import { isUnfinishedInstantExit } from "../../../../domain/earn/confidential";
+import { classifyRiskBand } from "../../../../domain/borrow/risk/risk-band";
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import type { EarnBalance } from "../../../../domain/earn/models";
 import { getYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
+import { getPositionAttention } from "../../../../domain/portfolio/position-callout";
 import {
   type BalanceDataKey,
   getPositionValueTotal,
@@ -94,46 +90,21 @@ export const toPositionItems = (
 
         if (balancesWithAmount.length === 0) continue;
 
-        const pendingTypes = balancesWithAmount.flatMap((balance) =>
-          balance.pendingActions.map((action) => action.type)
-        );
-        // An Instant Exit already began; finalizing it is in progress.
-        const hasUnfinishedInstantExit = balancesWithAmount.some((balance) =>
-          balance.pendingActions.some(({ type }) =>
-            isUnfinishedInstantExit(balance, type)
-          )
-        );
-        // Claims have their own badge; optional actions require nothing.
-        const hasRequiredPendingAction = balancesWithAmount.some((balance) =>
-          balance.pendingActions.some(
-            ({ type }) =>
-              type !== "CLAIM_REWARDS" &&
-              !isOptionalPendingAction(type) &&
-              !isUnfinishedInstantExit(balance, type)
-          )
-        );
-        const actionRequired =
-          balancesWithAmount.some((balance) => balance.type === "locked") ||
-          hasRequiredPendingAction;
         items.push({
           ...value,
+          ...getPositionAttention({
+            balanceTypes: balancesWithAmount.map((balance) => balance.type),
+            pendingActions: balancesWithAmount.flatMap((balance) =>
+              balance.pendingActions.map(({ type }) => ({ type, balance }))
+            ),
+          }),
           integrationId: position.yieldId,
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,
           total: getPositionValueTotal(balancesWithAmount),
-          actionRequired,
-          hasPendingRequest:
-            !actionRequired &&
-            (pendingTypes.includes("CANCEL_PENDING") ||
-              hasUnfinishedInstantExit),
           pointsRewardTokenBalances: balancesWithAmount.filter(
             (balance) => !!balance.token.isPoints
-          ),
-          hasPendingClaimRewards: balancesWithAmount.some((balance) =>
-            balance.pendingActions.some(
-              (action) => action.type === "CLAIM_REWARDS"
-            )
           ),
         });
       }
@@ -187,22 +158,27 @@ type BorrowManageFigures = {
   readonly risk: Pick<MarketPosition["risk"], "current">;
 };
 
+/** A position in the caution or danger risk band. */
+const isAtRisk = ({ risk: { current } }: BorrowManageFigures) => {
+  if (current.status !== "available") return false;
+  const band = classifyRiskBand({
+    healthFactor: current.healthFactor,
+    ltv: current.ltv,
+    maxLtv: current.maxLtv,
+  });
+  return band === "caution" || band === "danger";
+};
+
 /**
- * Borrow positions in Manage order: those whose LTV or health factor is near
- * or over its limit first, then by supplied USD value, largest first.
+ * Borrow positions in Manage order: those at risk, in the caution or danger
+ * band, first, then by supplied USD value, largest first.
  */
 export const toBorrowManageOrder = <P extends BorrowManageFigures>(
   positions: ReadonlyArray<P>
 ): P[] =>
   sortByManageOrder(
     positions,
-    ({ risk: { current } }) =>
-      current.status === "available" &&
-      (classifyLtv({ ltv: current.ltv, maxLtv: current.maxLtv }) !== "safe" ||
-        (current.healthFactor !== null &&
-          classifyHealthFactor(current.healthFactor) !== "safe"))
-        ? 0
-        : 1,
+    (position) => (isAtRisk(position) ? 0 : 1),
     (position) => position.metrics.totalSuppliedUsd
   );
 

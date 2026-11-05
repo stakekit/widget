@@ -18,7 +18,8 @@ type EarnPresentation = Readonly<{
  */
 type PresentationOverrides = Readonly<{
   callToActionSize?: "md" | "lg";
-  surfaceStyle?: "filled" | "elevated";
+  gutter?: "md" | "lg";
+  surfaceStyle?: "filled" | "elevated" | "outlined";
   tabsIndicator?: "underline" | "pill";
 }>;
 
@@ -74,14 +75,23 @@ export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
       ...standardProfile,
       appearancePreset: "porto",
       earnPresentation: { condensed: true, zerion: false },
-      presentation: { callToActionSize: "md" },
+      presentation: {
+        callToActionSize: "md",
+        surfaceStyle: "outlined",
+        tabsIndicator: "pill",
+      },
       walletCatalogue: "porto",
     },
     utila: {
       ...standardProfile,
       appearancePreset: "utila",
       earnPresentation: { condensed: true, zerion: false },
-      presentation: { callToActionSize: "md" },
+      presentation: {
+        callToActionSize: "md",
+        gutter: "md",
+        surfaceStyle: "outlined",
+        tabsIndicator: "underline",
+      },
       requiresTermsAcknowledgement: true,
       showsPendingApprovalsNotice: true,
       translationOverlay: "utila",

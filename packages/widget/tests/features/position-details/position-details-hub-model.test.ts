@@ -3,55 +3,64 @@ import {
   positionDetailsExitHasContent,
   positionDetailsHubHasContent,
   resolvePositionDetailsActionCapabilities,
-  resolvePositionDetailsActionMode,
+  resolvePositionDetailsActionModes,
   resolveSelectedPositionDetailsActionMode,
-  shouldShowPositionDetailsActionTabs,
 } from "../../../src/features/position-details/model/hub";
 import { yieldApiYieldFixture } from "../../fixtures";
 
 describe("position details hub model", () => {
-  it("defaults to exit when it is supported, else enter", () => {
+  it("orders the tabs exit, enter, then each pending action type once", () => {
     expect(
-      resolvePositionDetailsActionMode({ canEnter: true, canExit: true })
+      resolvePositionDetailsActionModes({
+        canEnter: true,
+        canExit: true,
+        pendingActionTypes: ["CLAIM_REWARDS", "WITHDRAW", "CLAIM_REWARDS"],
+      })
+    ).toEqual(["exit", "enter", "CLAIM_REWARDS", "WITHDRAW"]);
+    expect(
+      resolvePositionDetailsActionModes({
+        canEnter: false,
+        canExit: false,
+        pendingActionTypes: [],
+      })
+    ).toEqual([]);
+  });
+
+  it("opens on the first action the position asks for, else the first tab", () => {
+    expect(
+      resolveSelectedPositionDetailsActionMode({
+        modes: ["exit", "enter", "MERGE", "CLAIM_REWARDS"],
+        selectedMode: null,
+      })
+    ).toBe("CLAIM_REWARDS");
+    expect(
+      resolveSelectedPositionDetailsActionMode({
+        modes: ["exit", "enter", "MERGE"],
+        selectedMode: null,
+      })
     ).toBe("exit");
     expect(
-      resolvePositionDetailsActionMode({ canEnter: true, canExit: false })
-    ).toBe("enter");
-    expect(
-      resolvePositionDetailsActionMode({ canEnter: false, canExit: true })
-    ).toBe("exit");
-    expect(
-      resolvePositionDetailsActionMode({ canEnter: false, canExit: false })
+      resolveSelectedPositionDetailsActionMode({
+        modes: [],
+        selectedMode: null,
+      })
     ).toBe(null);
   });
 
-  it("keeps an explicit tab selection when that action stays supported", () => {
+  it("keeps an explicit tab selection while that action stays offered", () => {
     expect(
       resolveSelectedPositionDetailsActionMode({
-        canEnter: true,
-        canExit: true,
+        modes: ["exit", "enter", "CLAIM_REWARDS"],
         selectedMode: "enter",
       })
     ).toBe("enter");
+    // Once claimed, the Claim tab is gone and the default takes over.
     expect(
       resolveSelectedPositionDetailsActionMode({
-        canEnter: true,
-        canExit: false,
-        selectedMode: "exit",
+        modes: ["exit", "enter"],
+        selectedMode: "CLAIM_REWARDS",
       })
-    ).toBe("enter");
-  });
-
-  it("shows action tabs only when both enter and exit are supported", () => {
-    expect(
-      shouldShowPositionDetailsActionTabs({ canEnter: true, canExit: true })
-    ).toBe(true);
-    expect(
-      shouldShowPositionDetailsActionTabs({ canEnter: true, canExit: false })
-    ).toBe(false);
-    expect(
-      shouldShowPositionDetailsActionTabs({ canEnter: false, canExit: true })
-    ).toBe(false);
+    ).toBe("exit");
   });
 
   it("treats exit support as exit capability, not pending actions", () => {
@@ -100,13 +109,12 @@ describe("position details hub model", () => {
     const capabilities = resolvePositionDetailsActionCapabilities(lockedOnly);
 
     expect(capabilities).toEqual({ canEnter: true, canExit: false });
-    expect(shouldShowPositionDetailsActionTabs(capabilities)).toBe(false);
     expect(
-      resolveSelectedPositionDetailsActionMode({
+      resolvePositionDetailsActionModes({
         ...capabilities,
-        selectedMode: null,
+        pendingActionTypes: [],
       })
-    ).toBe("enter");
+    ).toEqual(["enter"]);
   });
 
   it("treats the hub as actionable when exit is supported even without form readiness", () => {

@@ -1,9 +1,5 @@
 import type { TFunction } from "i18next";
-import {
-  classifyHealthFactor,
-  classifyLtv,
-  type RiskLevel,
-} from "../../../domain/borrow/risk/ltv-limits";
+import { classifyRiskBand } from "../../../domain/borrow/risk/risk-band";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatFigureChange,
@@ -14,13 +10,20 @@ import {
   unavailableFigure,
 } from "../../../shared/lib/number-format";
 import type { BorrowPositionChange } from "../model/borrow-completion";
+import {
+  type LtvMeter,
+  riskBandValueTone,
+  toLtvMeter,
+} from "../model/risk-display";
 
 /** One label-value row of a Borrow flow's Review or Complete summary. */
 export type BorrowFlowRow = {
   readonly label: string;
   readonly value: string;
-  /** A figure at risk: LTV or health factor near or over its limit. */
+  /** A risk figure, LTV or health factor, in caution or danger after the action. */
   readonly tone?: "warning" | "danger";
+  /** The LTV the action leaves, as a thin gauge under the row. */
+  readonly meter?: LtvMeter;
 };
 
 type Formatting = {
@@ -83,18 +86,11 @@ export const getBorrowFlowOriginationRows = ({
   };
 };
 
-const riskLevelTone = {
-  nearLimit: "warning",
-  overLimit: "danger",
-  safe: null,
-} as const satisfies Record<RiskLevel, BorrowFlowRow["tone"] | null>;
-
-const withRiskTone = (row: BorrowFlowRow, level: RiskLevel): BorrowFlowRow => {
-  const tone = riskLevelTone[level];
-  return tone ? { ...row, tone } : row;
-};
-
-/** Collateral, debt, LTV, and health factor as they move with the action. */
+/**
+ * Collateral, debt, LTV, and health factor as they move with the action. The
+ * LTV and health factor read in the one band of the position the action
+ * leaves, and the LTV of a position with debt carries a meter of it.
+ */
 export const getBorrowFlowPositionChangeRows = ({
   change,
   locale,
@@ -114,6 +110,28 @@ export const getBorrowFlowPositionChangeRows = ({
     change.healthFactor,
     locale
   );
+  const maxLtv = change.maxLtv ? exactDecimal(change.maxLtv) : null;
+  const ltvAfter = change.ltv ? exactDecimal(change.ltv.after) : null;
+  const band = classifyRiskBand({
+    healthFactor: change.healthFactor
+      ? exactDecimal(change.healthFactor.after)
+      : null,
+    ltv: ltvAfter,
+    maxLtv,
+  });
+  const riskTone = band === null ? "default" : riskBandValueTone[band];
+  const withRiskTone = (row: BorrowFlowRow): BorrowFlowRow =>
+    riskTone === "default" ? row : { ...row, tone: riskTone };
+  const getLtvRow = (): BorrowFlowRow | null => {
+    if (!ltv || !ltvAfter) return null;
+    const row = withRiskTone({
+      label: t("dashboard.borrow.review_page.ltv"),
+      value: ltv,
+    });
+    if (band === null) return row;
+    return { ...row, meter: toLtvMeter({ locale, ltv: ltvAfter, maxLtv, t }) };
+  };
+  const ltvRow = getLtvRow();
 
   return [
     ...(collateral
@@ -127,26 +145,13 @@ export const getBorrowFlowPositionChangeRows = ({
     ...(debt
       ? [{ label: t("dashboard.borrow.position_details.debt"), value: debt }]
       : []),
-    ...(ltv && change.ltv
+    ...(ltvRow ? [ltvRow] : []),
+    ...(healthFactor
       ? [
-          withRiskTone(
-            { label: t("dashboard.borrow.review_page.ltv"), value: ltv },
-            classifyLtv({
-              ltv: exactDecimal(change.ltv.after),
-              maxLtv: change.maxLtv ? exactDecimal(change.maxLtv) : null,
-            })
-          ),
-        ]
-      : []),
-    ...(healthFactor && change.healthFactor
-      ? [
-          withRiskTone(
-            {
-              label: t("dashboard.borrow.review_page.health_factor"),
-              value: healthFactor,
-            },
-            classifyHealthFactor(exactDecimal(change.healthFactor.after))
-          ),
+          withRiskTone({
+            label: t("dashboard.borrow.review_page.health_factor"),
+            value: healthFactor,
+          }),
         ]
       : []),
   ];

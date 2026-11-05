@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import {
@@ -6,6 +7,11 @@ import {
 } from "../../../../domain/borrow/positions/market-position";
 import type { BorrowPositionActionKey } from "../../../../domain/borrow/positions/position-action-key";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
+import {
+  classifyRiskBand,
+  liquidationPriceDrop,
+  type RiskBand,
+} from "../../../../domain/borrow/risk/risk-band";
 import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
 import {
   formatBorrowProviderName,
@@ -17,16 +23,62 @@ import {
   formatTokenAmount,
   formatUsd,
 } from "../../../../shared/lib/number-format";
+import {
+  type RiskValueTone,
+  riskBandValueTone,
+} from "../../../borrow-transaction-flow/index";
 import type {
   BorrowPositionPendingActionContext,
   BorrowWithdrawTokenOption,
 } from "../../action-preparation/index";
 
-type BorrowPositionMetricCard = {
+export type BorrowPositionMetricCard = {
   readonly id: string;
   readonly label: string;
   readonly subValue?: string;
   readonly value: string;
+  /** A risk figure's tone: the position's risk band. */
+  readonly tone?: RiskValueTone;
+};
+
+/**
+ * The alert a position at risk of liquidation raises: a warning in caution,
+ * danger in danger, with Repay as its way out.
+ */
+export type BorrowPositionRiskAlert = {
+  readonly tone: "warning" | "danger";
+  readonly title: string;
+  readonly body: string;
+};
+
+const getRiskAlert = ({
+  band,
+  healthFactor,
+  locale,
+  t,
+}: {
+  readonly band: RiskBand | null;
+  readonly healthFactor: BigNumber | null;
+  readonly locale: string;
+  readonly t: TFunction;
+}): BorrowPositionRiskAlert | null => {
+  if (band === null || band === "safe") return null;
+
+  const drop =
+    healthFactor === null ? null : liquidationPriceDrop(healthFactor);
+  const getBody = () => {
+    if (drop === null) return t("dashboard.borrow.risk.alert.near_max_ltv");
+    if (drop.isZero()) return t("dashboard.borrow.risk.alert.liquidatable");
+    return t("dashboard.borrow.risk.alert.price_drop", {
+      drop: formatPercent(drop, locale),
+    });
+  };
+
+  return {
+    tone: band === "danger" ? "danger" : "warning",
+    title: t(`dashboard.borrow.risk.alert.${band}_title`),
+    body: getBody(),
+  };
 };
 
 type BorrowPositionRow = {
@@ -226,6 +278,9 @@ export const getBorrowPositionDetailsModel = ({
     currentRisk.status === "available"
       ? currentRisk.liquidationThreshold
       : marketRisk.liquidationThreshold;
+  // One band for the LTV, its meter and the health factor.
+  const riskBand = classifyRiskBand({ healthFactor, ltv: currentLtv, maxLtv });
+  const riskTone = riskBand === null ? "default" : riskBandValueTone[riskBand];
   const metricCards: BorrowPositionMetricCard[] = [
     {
       id: "net-worth",
@@ -245,6 +300,7 @@ export const getBorrowPositionDetailsModel = ({
             id: "ltv",
             label: t("dashboard.borrow.position_details.ltv"),
             value: formatPercent(currentLtv, locale),
+            tone: riskTone,
           },
         ]),
     ...(healthFactor === null
@@ -254,6 +310,7 @@ export const getBorrowPositionDetailsModel = ({
             id: "health-factor",
             label: t("dashboard.borrow.position_details.health_factor"),
             value: formatHealthFactor(healthFactor, locale),
+            tone: riskTone,
           },
         ]),
   ];
@@ -356,6 +413,8 @@ export const getBorrowPositionDetailsModel = ({
     marketLabel: getBorrowMarketPairLabel(position.market),
     maxLtv,
     metricCards,
+    riskBand,
+    riskAlert: getRiskAlert({ band: riskBand, healthFactor, locale, t }),
     providerName: formatBorrowProviderName(position.integration.name),
     totalCollateralUsd: formatUsd(position.metrics.totalCollateralUsd, locale),
     title: overview.title,
