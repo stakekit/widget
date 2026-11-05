@@ -159,8 +159,8 @@ const renderActivity = async (
                 path="/activity"
                 element={
                   <ActivityActionRoute
+                    receiptPlacement="pane"
                     selectsDefaultAction
-                    showsBackButton={false}
                     source="yield"
                   />
                 }
@@ -174,8 +174,8 @@ const renderActivity = async (
               path="/activity/:actionId"
               element={
                 <ActivityActionRoute
+                  receiptPlacement="pane"
                   selectsDefaultAction={selectsDefaultAction}
-                  showsBackButton={false}
                   source="yield"
                 />
               }

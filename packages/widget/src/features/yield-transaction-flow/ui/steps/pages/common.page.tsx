@@ -1,15 +1,13 @@
 import type { TFunction } from "i18next";
-import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
-import {
-  Button,
-  FlowSteps,
-  Notice,
-  Stack,
-  Text,
-} from "../../../../../ui/index";
+import { Notice, Stack, Text } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
+import {
+  getTransactionStepState,
+  type TransactionStep,
+  TransactionSteps,
+} from "../../../../transaction-steps/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   AnimationPage,
@@ -22,36 +20,12 @@ import {
 } from "../../../model/yield-transaction-workflow";
 import { useSteps } from "../hooks/use-steps.hook";
 
-type FlowStep = ComponentProps<typeof FlowSteps>["steps"][number];
-
-/** Where a row's sign, broadcast and confirm phases put it as a flow step. */
-const getStepState = ({
-  done,
-  phases,
-}: YieldStepRow): Pick<FlowStep, "state"> & {
-  readonly failedPhase?: "sign" | "broadcast" | "confirm";
-} => {
-  if (done) return { state: "done" };
-  if (phases.sign === "failed") return { failedPhase: "sign", state: "failed" };
-  if (phases.broadcast === "failed") {
-    return { failedPhase: "broadcast", state: "failed" };
-  }
-  if (phases.confirm === "failed") {
-    return { failedPhase: "confirm", state: "failed" };
-  }
-  if (phases.sign === "active") return { state: "signing" };
-  if (phases.broadcast === "active") return { state: "broadcasting" };
-  if (phases.confirm === "active") return { state: "active" };
-  if (phases.confirm === "done") return { state: "done" };
-  return { state: "pending" };
-};
-
 /** A preparation runs in the browser: one phase, with its own messages. */
 const getPreparationStep = (
   t: TFunction,
   row: YieldStepRow,
   kind: "encrypt" | "decrypt"
-): Pick<FlowStep, "state" | "message"> => {
+): Pick<TransactionStep, "state" | "message"> => {
   switch (row.done ? "done" : row.phases.sign) {
     case "done":
       return { state: "done" };
@@ -69,21 +43,6 @@ const getPreparationStep = (
   }
 };
 
-const getTransactionStep = (
-  t: TFunction,
-  row: YieldStepRow
-): Pick<FlowStep, "state" | "message"> => {
-  const { failedPhase, state } = getStepState(row);
-  if (failedPhase === undefined) return { state };
-  return {
-    message:
-      failedPhase === "sign"
-        ? t("steps.approve_error")
-        : t("shared.something_went_wrong"),
-    state,
-  };
-};
-
 export const StepsPage = () => {
   const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
@@ -95,25 +54,20 @@ export const StepsPage = () => {
     cta,
     customSignErrorMessage,
     leaveConfirmationDialog,
+    summary,
     yieldId,
   } = useSteps();
 
   const { t } = useTranslation();
 
-  const steps = txStates.map((row, index): FlowStep => {
+  const steps = txStates.map((row, index): TransactionStep => {
     const type = formatTransactionTypeLabel(row.type, t, {
       context: isEthenaUsdeStaking(yieldId) ? "ETHENA_USDE" : undefined,
     });
-    const progress =
-      row.type === "ENCRYPT" || row.type === "DECRYPT"
-        ? getPreparationStep(
-            t,
-            row,
-            row.type === "ENCRYPT" ? "encrypt" : "decrypt"
-          )
-        : getTransactionStep(t, row);
 
     return {
+      explorerUrl: row.explorerUrl,
+      hash: row.hash,
       id: row.id,
       // Unnumbered: the singular form shows no index.
       label: t("steps.tx_of", {
@@ -121,7 +75,13 @@ export const StepsPage = () => {
         current: numbered ? index + 1 : undefined,
         type,
       }),
-      ...progress,
+      ...(row.type === "ENCRYPT" || row.type === "DECRYPT"
+        ? getPreparationStep(
+            t,
+            row,
+            row.type === "ENCRYPT" ? "encrypt" : "decrypt"
+          )
+        : getTransactionStepState(t, row.done, row.phases)),
     };
   });
 
@@ -149,29 +109,19 @@ export const StepsPage = () => {
             </Notice>
           )}
 
-          <FlowSteps
-            label={t("steps.progress_label")}
-            stateLabels={{
-              active: t("steps.state.active"),
-              broadcasting: t("steps.state.broadcasting"),
-              done: t("steps.state.done"),
-              failed: t("steps.state.failed"),
-              pending: t("steps.state.pending"),
-              signing: t("steps.state.signing"),
-            }}
+          <TransactionSteps
+            {...(summary ? { summary } : {})}
+            {...(retry
+              ? {
+                  retry: {
+                    hostHook: "footer-button-primary",
+                    label: t("shared.retry"),
+                    onClick: retry,
+                  },
+                }
+              : {})}
             steps={steps}
           />
-
-          {retry && (
-            <Button
-              hostHook="footer-button-primary"
-              onClick={retry}
-              size="cta"
-              variant="primary"
-            >
-              {t("shared.retry")}
-            </Button>
-          )}
         </Stack>
 
         <PageCtaButton cta={cta} />

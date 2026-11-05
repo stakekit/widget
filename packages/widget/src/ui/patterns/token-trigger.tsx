@@ -10,6 +10,7 @@ import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
+import { tokenTriggerHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/typography.stylex";
 import type { TokenLogo } from "./token";
@@ -55,11 +56,11 @@ export const TokenTrigger = ({
   const content = (
     <>
       {account === undefined ? (
-        <TokenAvatar {...token} size="sm" decorative />
+        <TokenAvatar {...token} size="control" decorative />
       ) : (
-        <TokenAvatar account={account} size="sm" />
+        <TokenAvatar account={account} size="control" />
       )}
-      <Text weight="semibold" truncate>
+      <Text variant="heading" as="span" weight="semibold" truncate>
         {token.name}
       </Text>
     </>
@@ -98,8 +99,8 @@ const styles = stylex.create({
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
-    gap: space[6],
-    paddingBlock: space[4],
+    gap: space[8],
+    paddingBlock: 0,
     alignItems: "center",
     backgroundColor: color.surfaceRaised,
     boxShadow: elevation.raised,
@@ -109,7 +110,8 @@ const styles = stylex.create({
     flexShrink: 0,
     fontFamily: font.sans,
     paddingInlineEnd: space[12],
-    paddingInlineStart: space[4],
+    paddingInlineStart: space[6],
+    height: tokenTriggerHeight.md,
     maxWidth: "100%",
     minWidth: 0,
   },

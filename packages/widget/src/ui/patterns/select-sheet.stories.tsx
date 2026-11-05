@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
+import { outlineWithin, shareLine, viewportBox } from "../storybook/geometry";
 import { networkLogo, tokenLogo } from "../storybook/images";
 import { SelectSheet } from "./select-sheet";
 import { TokenTrigger } from "./token-trigger";
@@ -863,4 +864,81 @@ export const LoadingWithOptions: Story = {
       within(sheet).getByRole("option", { name: /^ETH/ })
     ).toBeVisible();
   },
+};
+
+/**
+ * The option the keys reached draws its focus ring inside the scrolling
+ * list, also the first one, at the list's top edge.
+ */
+export const ActiveRingInside: Story = {
+  play: async ({ canvasElement }) => {
+    const sheet = await openSheet(canvasElement);
+    const listbox = within(sheet).getByRole("listbox", { name: "Tokens" });
+    const scroller = listbox.parentElement ?? listbox;
+    await waitFor(async () => {
+      const first = within(listbox).getByRole("option", {
+        name: /^ETH Ethereum/,
+      });
+      await expect(outlineWithin(first, viewportBox(scroller))).toBe(true);
+    });
+    await userEvent.keyboard("{ArrowDown}");
+    const second = within(listbox).getByRole("option", {
+      name: /^USDC Ethereum/,
+    });
+    await expect(outlineWithin(second, viewportBox(scroller))).toBe(true);
+  },
+};
+
+/**
+ * A group with `logo` heads its run with the token's avatar and symbol in
+ * normal case, and `caption` at the header's end.
+ */
+export const GroupHeaderWithLogo: Story = {
+  render: ({ options: _options, groups: _groups, ...args }) => (
+    <SelectSheet
+      {...args}
+      open
+      title="Select a market"
+      listLabel="Markets"
+      groups={[
+        {
+          key: "usdc",
+          label: "USDC",
+          logo: { name: "USDC", src: tokenLogo },
+          caption: "from 0.02%",
+          options: [
+            { id: "usdc-eth", title: "ETH collateral", value: "0.02%" },
+            { id: "usdc-wbtc", title: "WBTC collateral", value: "0.04%" },
+          ],
+        },
+        {
+          key: "eth",
+          label: "ETH",
+          logo: { name: "ETH", src: tokenLogo },
+          caption: "from 1.20%",
+          options: [
+            { id: "eth-usdc", title: "USDC collateral", value: "1.20%" },
+          ],
+        },
+      ]}
+    />
+  ),
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", {
+      name: "Select a market",
+    });
+    await waitFor(() => expect(sheet).toBeVisible());
+    const label = within(sheet).getByText("USDC");
+    const caption = within(sheet).getByText("from 0.02%");
+    await expect(getComputedStyle(label).textTransform).toBe("none");
+    await expect(shareLine(label, caption)).toBe(true);
+    await expect(caption.getBoundingClientRect().left).toBeGreaterThan(
+      label.getBoundingClientRect().right
+    );
+  },
+};
+
+export const GroupHeaderWithLogoDark: Story = {
+  ...GroupHeaderWithLogo,
+  globals: { colorScheme: "dark" },
 };

@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
@@ -9,13 +9,7 @@ import {
 } from "../../../../shared/lib/number-format";
 import { useTokenLogo } from "../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
-import {
-  Badge,
-  Box,
-  ListRow,
-  Skeleton,
-  TokenAvatar,
-} from "../../../../ui/index";
+import { Box, ListRow, Skeleton, TokenAvatar } from "../../../../ui/index";
 import { useWidgetLinkProps } from "../../../navigation/index";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { InactiveValidatorStatus } from "../../state/read-models/position-list-item";
@@ -33,32 +27,36 @@ export type EarnPositionListItemDetails = {
   readonly totalAmountUsd: BigNumber | null;
 };
 
-type StatusBadge = {
-  readonly label: string;
-  readonly tone: "danger" | "success" | "warning";
-};
+type RowStatus = NonNullable<ComponentProps<typeof ListRow>["status"]>;
+
+/** How each kind of status a row calls out reads. */
+const statusLook = {
+  attention: { tone: "danger", icon: "WarningIcon" },
+  claimable: { tone: "success", icon: "GiftIcon" },
+  pending: { tone: "warning", icon: "HistoryIcon" },
+} as const satisfies Record<string, Omit<RowStatus, "text">>;
 
 /** The one status a row shows, the most pressing first. */
-const useStatusBadge = (
+const useStatus = (
   item: PositionItem,
   inactiveValidator: InactiveValidatorStatus | null
-): StatusBadge | null => {
+): RowStatus | null => {
   const { t } = useTranslation();
 
   if (item.actionRequired) {
-    return { label: t("positions.action_required"), tone: "danger" };
+    return { text: t("positions.action_required"), ...statusLook.attention };
   }
   if (inactiveValidator === "jailed") {
-    return { label: t("details.validators_jailed"), tone: "danger" };
+    return { text: t("details.validators_jailed"), ...statusLook.attention };
   }
   if (inactiveValidator) {
-    return { label: t("details.validators_inactive"), tone: "danger" };
+    return { text: t("details.validators_inactive"), ...statusLook.attention };
   }
   if (item.hasPendingClaimRewards) {
-    return { label: t("positions.claim_rewards"), tone: "success" };
+    return { text: t("positions.claim_rewards"), ...statusLook.claimable };
   }
   if (item.hasPendingRequest) {
-    return { label: t("positions.in_progress"), tone: "warning" };
+    return { text: t("positions.in_progress"), ...statusLook.pending };
   }
   return null;
 };
@@ -120,7 +118,7 @@ const EarnPositionRow = ({
       provider: integrationData.provider,
     },
   });
-  const badge = useStatusBadge(item, details.inactiveValidator);
+  const status = useStatus(item, details.inactiveValidator);
   const values = useValueProps({ details, showsMissingAmountPlaceholder });
   const provider = details.providersDetails?.[0];
   const rewardRate = showsRewardRate ? details.rewardRateAverage : null;
@@ -138,11 +136,12 @@ const EarnPositionRow = ({
             }),
           }
         : {})}
-      {...(badge
-        ? { badges: <Badge tone={badge.tone}>{badge.label}</Badge> }
-        : {})}
+      {...(status ? { status } : {})}
       {...(rewardRate
-        ? { figure: { text: rewardRate, tone: "success" as const } }
+        ? {
+            // A narrow row keeps its room for the title and the value.
+            figure: { text: rewardRate, tone: "success", from: "sm" } as const,
+          }
         : {})}
       {...values}
       {...(item.pointsRewardTokenBalances.length > 0

@@ -40,22 +40,8 @@ export const useActionListItem = (action: ActivityActionItem) => {
     presentationTime,
   });
   const title = useActivityActionTitle(projection.title);
-  const timestamp = projection.timestamp;
-  const timestampAbsolute = timestamp
-    ? Match.value(timestamp.dayKind).pipe(
-        Match.when(
-          "today",
-          () => `${t("activity.date_group_labels.today")} · ${timestamp.time}`
-        ),
-        Match.when("yesterday", () =>
-          t("activity.date_group_labels.yesterday")
-        ),
-        Match.when("other", () => timestamp.date),
-        Match.exhaustive
-      )
-    : "";
-  const timestampRelative = timestamp
-    ? Match.value(timestamp.relative).pipe(
+  const timestampRelative = projection.relativeTime
+    ? Match.value(projection.relativeTime).pipe(
         Match.when({ unit: "now" }, () => t("activity.time.now")),
         Match.when({ unit: "minutes" }, ({ value }) =>
           t("activity.time.minutes_ago", { count: value })
@@ -75,9 +61,8 @@ export const useActionListItem = (action: ActivityActionItem) => {
     providersDetails,
     iconType: ICON_TYPE_MAP[projection.direction],
     title,
-    timestampAbsolute,
     timestampRelative,
-    badgeLabel: projection.statusLabel
+    statusText: projection.statusLabel
       ? t(`activity.status.${projection.statusLabel}`)
       : null,
   };

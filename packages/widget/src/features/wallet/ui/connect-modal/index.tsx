@@ -117,7 +117,7 @@ const ConnectModal = () => {
       {activeEcosystem ? (
         <WalletGroups groups={activeEcosystem.groups} onConnect={connect} />
       ) : (
-        <ListGroup>
+        <ListGroup density="condensed">
           {ecosystems.map(({ chainGroup }) => (
             <ListRow
               key={chainGroup.id}
@@ -157,7 +157,7 @@ const WalletGroups = ({
 
   if (groups.length === 1) {
     return (
-      <ListGroup>
+      <ListGroup density="condensed">
         {groups[0]?.wallets.map((wallet) => (
           <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
         ))}
@@ -166,7 +166,11 @@ const WalletGroups = ({
   }
 
   return groups.map((walletGroup) => (
-    <ListGroup key={walletGroup.id} label={groupTitle(walletGroup)}>
+    <ListGroup
+      key={walletGroup.id}
+      label={groupTitle(walletGroup)}
+      density="condensed"
+    >
       {walletGroup.wallets.map((wallet) => (
         <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
       ))}
@@ -231,5 +235,6 @@ const OptionIcon = ({
     src={useAtomValue(walletIconUrlAtom(iconUrl))}
     fallback={Array.from(title.trim())[0]?.toUpperCase() ?? ""}
     shape="square"
+    size="control"
   />
 );

@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
-import type { IconName } from "../icons/glyphs";
+import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
@@ -17,9 +17,6 @@ import {
 } from "../tokens/typography.stylex";
 import { focusRingStyles } from "./focus-ring";
 
-/** An icon a button shows beside its label. `ArrowIcon` needs a direction, so buttons take the caret icons instead. */
-export type ButtonIconName = Exclude<IconName, "ArrowIcon">;
-
 export type ButtonVariant = keyof typeof buttonVariantStyles;
 export type ButtonSize = keyof typeof buttonSizeStyles;
 
@@ -29,9 +26,9 @@ export type ButtonLookProps = {
   /** `cta` fills the width at the call-to-action height the Layout asks for. */
   readonly size?: ButtonSize;
   /** An icon before the label. */
-  readonly iconStart?: ButtonIconName;
+  readonly iconStart?: FixedIconName;
   /** An icon after the label. */
-  readonly iconEnd?: ButtonIconName;
+  readonly iconEnd?: FixedIconName;
 };
 
 /** The class names of a button's look, for a `button` or an `a`. */
@@ -51,8 +48,8 @@ export const ButtonContent = ({
   children,
 }: {
   readonly size: ButtonSize;
-  readonly iconStart: ButtonIconName | undefined;
-  readonly iconEnd: ButtonIconName | undefined;
+  readonly iconStart: FixedIconName | undefined;
+  readonly iconEnd: FixedIconName | undefined;
   readonly children: ReactNode;
 }) => {
   const iconSize = size === "sm" || size === "md" ? "sm" : "md";

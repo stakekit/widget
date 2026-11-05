@@ -1,23 +1,15 @@
 import { useTranslation } from "react-i18next";
-import { Badge, Box, ListRow, type Tone } from "../../../../../../ui/index";
+import { Box, ListRow } from "../../../../../../ui/index";
 import type { ActivityActionItem } from "../../../../model/activity-action";
-import type { ActivityStatusLabel } from "../../../../model/activity-action-list-item";
+import { toActivityStatusCallout } from "../../../components/activity-status";
 import { useActionListItem } from "../../hooks/use-action-list-item";
 import { ActivityIcon } from "../activity-icon";
 
-// Statuses that ask nothing of the user are not highlighted.
-const statusTone = (status: ActivityStatusLabel): Tone => {
-  switch (status) {
-    case "completed":
-    case "awaiting_settlement":
-      return "neutral";
-    case "failed":
-      return "danger";
-    default:
-      return "warning";
-  }
-};
-
+/**
+ * An action on two lines: what happened beside its amount, then who ran it
+ * and its status unless it completed, beside how long ago. Its full date is
+ * the receipt's.
+ */
 export const ActionListItem = ({
   action,
   isSelected = false,
@@ -39,9 +31,8 @@ export const ActionListItem = ({
     amountTokenSymbol,
     amount,
     amountSign,
-    timestampAbsolute,
     timestampRelative,
-    badgeLabel,
+    statusText,
     statusLabel,
   } = listItemView;
 
@@ -52,20 +43,11 @@ export const ActionListItem = ({
         count: Math.max((providersDetails?.length ?? 0) - 1, 1),
       })
     : undefined;
-  const amountFigure:
-    | {
-        readonly text: string;
-        readonly from: "sm";
-      }
-    | undefined = amount
-    ? {
-        text: amountTokenSymbol
-          ? `${amountSign}${amount} ${amountTokenSymbol}`
-          : `${amountSign}${amount}`,
-        // A narrow row keeps its room for the title and the time. Green is
-        // for positive rates and claimable amounts only, so amounts stay neutral.
-        from: "sm",
-      }
+  const status = toActivityStatusCallout(statusLabel, statusText);
+  // Green is for positive rates and claimable amounts only, so amounts stay
+  // neutral.
+  const amountText = amount
+    ? [`${amountSign}${amount}`, amountTokenSymbol].filter(Boolean).join(" ")
     : undefined;
 
   return (
@@ -74,16 +56,9 @@ export const ActionListItem = ({
         leading={<ActivityIcon type={iconType} />}
         title={title}
         {...(viaLabel === undefined ? {} : { subtitle: viaLabel })}
-        {...(badgeLabel && statusLabel
-          ? {
-              badges: (
-                <Badge tone={statusTone(statusLabel)}>{badgeLabel}</Badge>
-              ),
-            }
-          : {})}
-        {...(amountFigure === undefined ? {} : { figure: amountFigure })}
-        {...(timestampAbsolute ? { value: timestampAbsolute } : {})}
-        {...(timestampRelative ? { subvalue: timestampRelative } : {})}
+        {...(status === null ? {} : { status })}
+        {...(amountText === undefined ? {} : { value: amountText })}
+        {...(timestampRelative === "" ? {} : { subvalue: timestampRelative })}
         onClick={() => onActionSelect(action)}
         selected={isSelected}
         testId={

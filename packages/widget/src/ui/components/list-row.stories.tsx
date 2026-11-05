@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { ContainerFrame, narrowAndWide } from "../storybook/container-frame";
+import {
+  isOneLine,
+  isTruncated,
+  isWithin,
+  outlineBox,
+  outlineWithin,
+  shareLine,
+} from "../storybook/geometry";
 import { tokenLogo } from "../storybook/images";
 import { TokenAvatar } from "./avatar";
 import { Badge } from "./badge";
@@ -345,5 +353,223 @@ export const NewTabLink: Story = {
     const link = within(canvasElement).getByRole("link", { name: /Ethereum/ });
     await expect(link).toHaveAttribute("target", "_blank");
     await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  },
+};
+
+const longRow = {
+  title: "Liquid staked Ether by a provider with a long name",
+  subtitle: "via Lido",
+  value: "12,345,678.1234 ETH",
+  subvalue: "$40,123,456.78",
+};
+
+/**
+ * At the `sm` container size a long title truncates while a long value and
+ * the figure before it stay on one line, inside the row.
+ */
+export const LongTitleAndValue: Story = {
+  args: { ...longRow, figure: { text: "3.21%", tone: "success" } },
+  render: (args) => (
+    <ContainerFrame width={400}>
+      <ListRow {...args} testId="row" />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = canvas.getByTestId("row").getBoundingClientRect();
+    const title = canvas.getByText(longRow.title);
+    const value = canvas.getByText(longRow.value);
+    const figure = canvas.getByText("3.21%");
+
+    await expect(isTruncated(title)).toBe(true);
+    await expect(isOneLine(value)).toBe(true);
+    await expect(isOneLine(canvas.getByText(longRow.subvalue))).toBe(true);
+    await expect(isOneLine(figure)).toBe(true);
+    await expect(shareLine(figure, value)).toBe(true);
+    await expect(title.getBoundingClientRect().right).toBeLessThanOrEqual(
+      figure.getBoundingClientRect().left
+    );
+    await expect(isWithin(value.getBoundingClientRect(), row)).toBe(true);
+  },
+};
+
+export const LongTitleAndValueDark: Story = {
+  ...LongTitleAndValue,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * Below the `sm` container size badges move to the second line, so the
+ * title keeps the first; from `sm` they follow the title.
+ */
+export const BadgesBelowSm: Story = {
+  args: {
+    ...longRow,
+    badges: (
+      <Badge tone="warning" variant="soft">
+        Pending
+      </Badge>
+    ),
+  },
+  render: (args) => (
+    <>
+      <ContainerFrame width={360}>
+        <ListRow {...args} />
+      </ContainerFrame>
+      <ContainerFrame width={480}>
+        <ListRow {...args} />
+      </ContainerFrame>
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [narrowTitle, wideTitle] = narrowAndWide(
+      canvas.getAllByText(longRow.title)
+    );
+    const [narrowBadge, wideBadge] = narrowAndWide(
+      canvas.getAllByText("Pending")
+    );
+    const [narrowSubtitle] = narrowAndWide(canvas.getAllByText("via Lido"));
+    const [narrowValue, wideValue] = narrowAndWide(
+      canvas.getAllByText(longRow.value)
+    );
+
+    await expect(
+      narrowBadge.getBoundingClientRect().top
+    ).toBeGreaterThanOrEqual(narrowTitle.getBoundingClientRect().bottom);
+    await expect(shareLine(narrowBadge, narrowSubtitle)).toBe(true);
+    await expect(shareLine(wideBadge, wideTitle)).toBe(true);
+    await expect(wideBadge.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+      wideTitle.getBoundingClientRect().right
+    );
+    await expect(isOneLine(narrowValue)).toBe(true);
+    await expect(isOneLine(wideValue)).toBe(true);
+  },
+};
+
+/**
+ * `status` follows the subtitle on the second line as colored text with an
+ * icon, not a chip.
+ */
+export const WithStatus: Story = {
+  args: {
+    ...rowContent,
+    subtitle: "via Lido",
+    status: { text: "Action required", tone: "warning", icon: "WarningIcon" },
+  },
+  render: (args) => (
+    <ContainerFrame width={400}>
+      <ListRow {...args} />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const subtitle = canvas.getByText("via Lido");
+    const status = canvas.getByText("Action required");
+    await expect(shareLine(subtitle, status)).toBe(true);
+    await expect(status.getBoundingClientRect().left).toBeGreaterThan(
+      subtitle.getBoundingClientRect().right
+    );
+    await expect(isOneLine(status)).toBe(true);
+  },
+};
+
+export const WithStatusDark: Story = {
+  ...WithStatus,
+  globals: { colorScheme: "dark" },
+};
+
+/** Every status tone, for review in both schemes. */
+export const StatusTones: Story = {
+  render: () => (
+    <ContainerFrame width={400}>
+      <ListGroup>
+        <ListRow
+          {...rowContent}
+          status={{ text: "Completed", tone: "success", icon: "CheckIcon" }}
+        />
+        <ListRow
+          {...rowContent}
+          status={{ text: "Pending", tone: "warning", icon: "WarningIcon" }}
+        />
+        <ListRow
+          {...rowContent}
+          status={{ text: "Failed", tone: "danger", icon: "XIcon" }}
+        />
+        <ListRow
+          {...rowContent}
+          status={{ text: "Unstaking", tone: "info", icon: "InfoIcon" }}
+        />
+      </ListGroup>
+    </ContainerFrame>
+  ),
+};
+
+export const StatusTonesDark: Story = {
+  ...StatusTones,
+  globals: { colorScheme: "dark" },
+};
+
+const networks = [
+  { name: "Ethereum", subtitle: "Connected" },
+  { name: "Arbitrum One", subtitle: "Layer 2" },
+  { name: "Base", subtitle: "Layer 2" },
+];
+
+const onPickNetwork = fn();
+
+/**
+ * Condensed rows for a picker, through their group: shorter rows with no
+ * surface of their own, and a trailing check, not a ring, on the choice.
+ */
+export const Condensed: Story = {
+  render: () => (
+    <ContainerFrame width={400}>
+      <ListGroup density="condensed">
+        {networks.map((network, index) => (
+          <ListRow
+            key={network.name}
+            leading={
+              <TokenAvatar src={tokenLogo} name={network.name} size="control" />
+            }
+            title={network.name}
+            subtitle={network.subtitle}
+            onClick={onPickNetwork}
+            selected={index === 0}
+          />
+        ))}
+      </ListGroup>
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chosen = canvas.getByRole("button", { name: /Ethereum/ });
+    const other = canvas.getByRole("button", { name: /Base/ });
+
+    await expect(chosen).toHaveAttribute("aria-pressed", "true");
+    await expect(outlineBox(chosen)).toBeUndefined();
+    await expect(chosen.querySelectorAll("svg")).toHaveLength(1);
+    await expect(other.querySelectorAll("svg")).toHaveLength(0);
+    await expect(chosen.getBoundingClientRect().height).toBeLessThanOrEqual(56);
+
+    await userEvent.click(other);
+    await expect(onPickNetwork).toHaveBeenCalled();
+  },
+};
+
+export const CondensedDark: Story = {
+  ...Condensed,
+  globals: { colorScheme: "dark" },
+};
+
+/** The selection ring and the focus ring draw inside the row's edge. */
+export const RingsInside: Story = {
+  args: { onClick: fn(), selected: true, testId: "row" },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByTestId("row");
+    await expect(outlineWithin(row, row.getBoundingClientRect())).toBe(true);
+    await userEvent.tab();
+    await expect(row).toHaveFocus();
+    await expect(outlineWithin(row, row.getBoundingClientRect())).toBe(true);
   },
 };

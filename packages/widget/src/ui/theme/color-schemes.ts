@@ -89,7 +89,8 @@ export type PresetPalette = Readonly<{
 // composited over its canvas, so contrast reads the colors the browser
 // paints. Its dark surfaces sit closer to the canvas than its translucent
 // greys, with white text, so text derived from a host accent keeps its
-// contrast on them.
+// contrast on them. Its danger is lighter than the dark scheme's, which
+// reads 4.11:1 on its hover surface.
 const fineryLightColors = {
   background: "#FDFDFD",
   surface: "#F5F5F5",
@@ -125,6 +126,7 @@ const fineryDarkColors = {
   info: "#5EE3D0",
   infoSoft: "#233C3E",
   focusRing: "#16C7B0",
+  danger: "#FC9090",
 };
 
 const fineryDarkTheme = stylex.createTheme(color, {

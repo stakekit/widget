@@ -11,7 +11,10 @@ export const toneSoftStyles = stylex.create({
   info: { backgroundColor: color.infoSoft, color: color.info },
 });
 
-/** A tone's text color, for text and icons on the canvas or a soft tint. */
+/**
+ * A tone's text color, for text and icons on the canvas, a surface or a soft
+ * tint.
+ */
 export const toneTextStyles = stylex.create({
   neutral: { color: color.text },
   accent: { color: color.accentText },

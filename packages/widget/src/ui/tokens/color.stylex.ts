@@ -48,3 +48,18 @@ export type ColorRoles = Readonly<Record<ColorRole, string>>;
  * legacy `--sk-*` theme variables. The names are not a host contract.
  */
 export const color = stylex.defineVars(lightColorRoles);
+
+/**
+ * How far a soft badge moves from `surface`, the fill of the rows and cards
+ * it sits on, toward its tone's text color, as `color-mix` weights: a faint
+ * `fill`, so the text keeps 4.5:1 on it, and a stronger 1px `edge` that sets
+ * the badge off every surface. The neutral tone's text contrasts far more
+ * with the surface than a status color does, so its edge, `neutralEdge`,
+ * takes less of it to read as strongly. Mixed at paint time, they follow a
+ * host's colors.
+ */
+export const badgeTint = stylex.defineConsts({
+  fill: "8%",
+  edge: "45%",
+  neutralEdge: "25%",
+});

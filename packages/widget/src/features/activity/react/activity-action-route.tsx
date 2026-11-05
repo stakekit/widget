@@ -12,7 +12,6 @@ import {
 } from "../../navigation/index";
 import { WidgetNavigate } from "../../navigation/views";
 import { walletScopeAtom } from "../../wallet/index";
-import type { YieldSummaryProvider } from "../../yield-summary/index";
 import { YieldActionContinuationSessionRoute } from "../../yield-transaction-flow/views";
 import {
   type ActivityActionItem,
@@ -32,11 +31,16 @@ import {
   ActivityDetailsUnavailable,
 } from "../ui/activity-details/activity-details-status";
 
+/**
+ * Where an action's receipt sits: on the page itself, under the shell's back
+ * button, or in a pane of its own beside the Activity list.
+ */
+export type ActivityReceiptPlacement = "page" | "pane";
+
 type ActivityActionRouteValue = Readonly<{
   readonly continuationReady: boolean;
   readonly item: ActivityActionItem;
-  readonly showsBackButton: boolean;
-  readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
+  readonly receiptPlacement: ActivityReceiptPlacement;
 }>;
 
 const ActivityActionRouteContext =
@@ -49,12 +53,12 @@ export const useActivityActionRoute = (): ActivityActionRouteValue => {
 };
 
 export const ActivityActionRoute = ({
+  receiptPlacement,
   selectsDefaultAction,
-  showsBackButton,
   source,
 }: {
+  readonly receiptPlacement: ActivityReceiptPlacement;
   readonly selectsDefaultAction: boolean;
-  readonly showsBackButton: boolean;
   readonly source: ActivitySelectionTarget["source"];
 }) => {
   const borrowActionId = useWidgetRoutePrefixMatch(
@@ -85,7 +89,7 @@ export const ActivityActionRoute = ({
 
   return (
     <BoundActivityActionRoute
-      showsBackButton={showsBackButton}
+      receiptPlacement={receiptPlacement}
       selectionKey={
         new ActivitySelectionKey({
           intent: parsed.intent,
@@ -98,11 +102,11 @@ export const ActivityActionRoute = ({
 };
 
 const BoundActivityActionRoute = ({
+  receiptPlacement,
   selectionKey,
-  showsBackButton,
 }: {
+  readonly receiptPlacement: ActivityReceiptPlacement;
   readonly selectionKey: ActivitySelectionKey;
-  readonly showsBackButton: boolean;
 }) => {
   const result = useAtomValue(activityDetailsViewAtom(selectionKey));
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
@@ -157,8 +161,7 @@ const BoundActivityActionRoute = ({
       value={{
         continuationReady,
         item,
-        providersDetails: result.providersDetails,
-        showsBackButton,
+        receiptPlacement,
       }}
     >
       {continuationReady && item._tag === "yield" && item.yieldData ? (

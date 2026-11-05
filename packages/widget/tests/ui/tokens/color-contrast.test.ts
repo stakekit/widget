@@ -6,6 +6,7 @@ import {
   presetColorScheme,
   resolveColorRoles,
 } from "../../../src/ui/composition";
+import { badgeTint } from "../../../src/ui/tokens/color.stylex";
 
 type Rgb = readonly [red: number, green: number, blue: number];
 
@@ -21,22 +22,25 @@ const parseHex = (value: string): Rgb => {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
-// A derived role is a CSS `color-mix(in srgb, a p%, b)` of two opaque colors:
-// each sRGB channel is a weighted average, as the browser computes it.
+// `color-mix(in srgb, a p%, b)` of two opaque colors: each sRGB channel is a
+// weighted average, as the browser computes it.
+const mix = (first: Rgb, percent: number, second: Rgb): Rgb => {
+  const weight = percent / 100;
+  return [
+    first[0] * weight + second[0] * (1 - weight),
+    first[1] * weight + second[1] * (1 - weight),
+    first[2] * weight + second[2] * (1 - weight),
+  ];
+};
+
+// A derived role is a CSS `color-mix` of two opaque colors.
 const colorMix =
   /^color-mix\(in srgb, (#[0-9a-f]{6}) (\d+(?:\.\d+)?)%, (#[0-9a-f]{6})\)$/i;
 
 const parseColor = (value: string): Rgb => {
   const match = colorMix.exec(value);
   if (!match?.[1] || !match[2] || !match[3]) return parseHex(value);
-  const weight = Number(match[2]) / 100;
-  const first = parseHex(match[1]);
-  const second = parseHex(match[3]);
-  return [
-    first[0] * weight + second[0] * (1 - weight),
-    first[1] * weight + second[1] * (1 - weight),
-    first[2] * weight + second[2] * (1 - weight),
-  ];
+  return mix(parseHex(match[1]), Number(match[2]), parseHex(match[3]));
 };
 
 // WCAG relative luminance: each sRGB channel linearized, then weighted.
@@ -48,9 +52,9 @@ const linear = (channel: number) => {
 const luminance = ([red, green, blue]: Rgb) =>
   0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
 
-const contrast = (foreground: string, background: string) => {
-  const a = luminance(parseColor(foreground));
-  const b = luminance(parseColor(background));
+const contrast = (foreground: Rgb, background: Rgb) => {
+  const a = luminance(foreground);
+  const b = luminance(background);
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 };
 
@@ -80,10 +84,11 @@ const pairs: ReadonlyArray<Pair> = [
   ...text("textMuted", surfaces),
   ...text("onAccent", ["accent", "accentHover"]),
   ...text("accentText", [...surfaces, "accentSoft"]),
-  ...text("success", ["successSoft", "background"]),
-  ...text("warning", ["warningSoft", "background"]),
-  ...text("danger", ["dangerSoft", "background"]),
-  ...text("info", ["infoSoft"]),
+  // Status text sits on rows and cards as well as its own tint.
+  ...text("success", [...surfaces, "successSoft"]),
+  ...text("warning", [...surfaces, "warningSoft"]),
+  ...text("danger", [...surfaces, "dangerSoft"]),
+  ...text("info", [...surfaces, "infoSoft"]),
   // A focus ring is drawn outside its control, over whichever surface holds it.
   ...nonText("focusRing", surfaces),
   // `borderStrong` is not checked: it is a decorative boundary. Outlined
@@ -106,29 +111,27 @@ const hostAccents = ["#0E7C66", "#AB95FF"];
 // Every Appearance Preset × each color scheme it presents, so a new preset
 // joins the check, with and without a host accent. A preset that fixes the
 // scheme is checked in that scheme only.
-const cases = appearancePresets.flatMap((preset) =>
+const themes = appearancePresets.flatMap((preset) =>
   [
     ...new Set(
       colorSchemes.map((requested) => presetColorScheme(preset, requested))
     ),
   ].flatMap((colorScheme) => [
-    ...[...pairs, ...shippedAccentPairs].map((pair) => ({
-      accent: "default accent",
+    { accent: "default accent", colorScheme, hostColors: {}, preset },
+    ...hostAccents.map((accent) => ({
+      accent,
       colorScheme,
-      hostColors: {},
+      hostColors: { accent },
       preset,
-      ...pair,
     })),
-    ...hostAccents.flatMap((accent) =>
-      pairs.map((pair) => ({
-        accent,
-        colorScheme,
-        hostColors: { accent },
-        preset,
-        ...pair,
-      }))
-    ),
   ])
+);
+
+const cases = themes.flatMap((theme) =>
+  [
+    ...pairs,
+    ...(theme.accent === "default accent" ? shippedAccentPairs : []),
+  ].map((pair) => ({ ...theme, ...pair }))
 );
 
 it("checks every preset in the schemes it presents", () => {
@@ -187,9 +190,59 @@ describe("Color Role contrast", () => {
     "$colorScheme $preset, $accent: $foreground on $background reaches $minimum:1",
     ({ colorScheme, preset, hostColors, foreground, background, minimum }) => {
       const roles = resolveColorRoles(colorScheme, preset, hostColors);
-      const ratio = contrast(roles[foreground], roles[background]);
+      const ratio = contrast(
+        parseColor(roles[foreground]),
+        parseColor(roles[background])
+      );
 
       expect(ratio).toBeGreaterThanOrEqual(minimum);
+    }
+  );
+});
+
+// A soft badge mixes its tone's text color into `surface`, the fill of the
+// rows and cards it sits on, by the `badgeTint` weights. Its 1px edge, not
+// its faint fill, sets it off the surface; a hairline needs more than the
+// 1.3:1 a filled area would.
+const badgeEdgeContrast = 1.5;
+
+// Each soft badge tone: the text color it mixes and its edge's weight.
+const badgeTones = {
+  neutral: { textRole: "text", edgeWeight: badgeTint.neutralEdge },
+  accent: { textRole: "accentText", edgeWeight: badgeTint.edge },
+  success: { textRole: "success", edgeWeight: badgeTint.edge },
+  warning: { textRole: "warning", edgeWeight: badgeTint.edge },
+  danger: { textRole: "danger", edgeWeight: badgeTint.edge },
+  info: { textRole: "info", edgeWeight: badgeTint.edge },
+} as const satisfies Readonly<
+  Record<string, { textRole: ColorRole; edgeWeight: string }>
+>;
+
+const badgeCases = themes.flatMap((theme) =>
+  Object.entries(badgeTones).map(([tone, badge]) => ({
+    ...theme,
+    ...badge,
+    tone,
+  }))
+);
+
+describe("soft badge contrast", () => {
+  it.each(badgeCases)(
+    "$colorScheme $preset, $accent: $tone badge reads on every surface",
+    ({ colorScheme, preset, hostColors, textRole, edgeWeight }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const toneText = parseColor(roles[textRole]);
+      const surface = parseColor(roles.surface);
+      const fill = mix(toneText, Number.parseFloat(badgeTint.fill), surface);
+      const edge = mix(toneText, Number.parseFloat(edgeWeight), surface);
+
+      expect(contrast(toneText, fill)).toBeGreaterThanOrEqual(textContrast);
+      for (const background of surfaces) {
+        expect(
+          contrast(edge, parseColor(roles[background])),
+          background
+        ).toBeGreaterThanOrEqual(badgeEdgeContrast);
+      }
     }
   );
 });

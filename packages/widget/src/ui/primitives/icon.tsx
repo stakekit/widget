@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { glyphs, type IconName } from "../icons/glyphs";
+import { type FixedIconName, glyphs } from "../icons/glyphs";
 import { iconSize } from "../tokens/size.stylex";
 import { type TextTone, textToneStyles } from "./text-tone";
 
@@ -19,7 +19,7 @@ type IconProps = CommonProps &
   (
     | { readonly name: "ArrowIcon"; readonly direction: ArrowDirection }
     | {
-        readonly name: Exclude<IconName, "ArrowIcon">;
+        readonly name: FixedIconName;
         readonly direction?: never;
       }
   );

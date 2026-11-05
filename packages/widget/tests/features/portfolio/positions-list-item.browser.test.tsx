@@ -39,15 +39,21 @@ type RowDetails = {
 
 const hookState = vi.hoisted(() => ({
   details: undefined as unknown as RowDetails,
+  /** Per-Yield details, for a list of rows; others take `details`. */
+  detailsByYield: new Map<string, RowDetails>(),
 }));
 
 vi.mock("../../../src/features/portfolio/react/use-position-list-item", () => ({
-  usePositionListItem: () => hookState.details,
+  usePositionListItem: (item: { integrationId: string }) =>
+    hookState.detailsByYield.get(item.integrationId) ?? hookState.details,
 }));
 
 vi.mock(
   "../../../src/features/portfolio/ui/dashboard/positions/hooks/use-position-list-item",
-  () => ({ usePositionListItem: () => hookState.details })
+  () => ({
+    usePositionListItem: (item: { integrationId: string }) =>
+      hookState.detailsByYield.get(item.integrationId) ?? hookState.details,
+  })
 );
 
 const integrationData = yieldApiYieldFixture();
@@ -69,7 +75,10 @@ const createItem = (
   overrides: Partial<
     Pick<
       PositionItem,
-      "actionRequired" | "hasPendingClaimRewards" | "hasPendingRequest"
+      | "actionRequired"
+      | "hasPendingClaimRewards"
+      | "hasPendingRequest"
+      | "integrationId"
     >
   > = {}
 ): PositionItem => ({
@@ -117,6 +126,145 @@ const presentations = [
 
 afterEach(() => {
   vi.restoreAllMocks();
+  hookState.detailsByYield.clear();
+});
+
+/** A text's line boxes: one when it doesn't wrap. */
+const lineCount = (element: Element) => {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  return range.getClientRects().length;
+};
+
+/**
+ * A Manage list as a 400px compact Widget holds it: rows of every status,
+ * long names and long amounts. The list's inline size is the Widget's less
+ * its 16px page insets.
+ */
+const manageRows = [
+  {
+    name: "Ether.fi Liquid Restaking Vault Extra Long Name",
+    item: { actionRequired: true },
+    value: "0.00107 ETH",
+    fiat: exactDecimal("2.59"),
+  },
+  {
+    name: "POL Native Staking",
+    item: { hasPendingRequest: true },
+    value: "12.34M POL",
+    fiat: exactDecimal("1234567"),
+  },
+  {
+    name: "Lido Ethereum Staking",
+    item: { hasPendingClaimRewards: true },
+    value: "<0.000001 ETH",
+    fiat: null,
+  },
+  {
+    name: "Cosmos Hub Native Staking",
+    inactiveValidator: "jailed" as const,
+    item: {},
+    value: "1,234.56 ATOM",
+    fiat: exactDecimal("5000"),
+  },
+  {
+    name: "Resolv USDC vault",
+    item: {},
+    value: "1.2994 USDC",
+    fiat: exactDecimal("1.3"),
+  },
+];
+
+describe.each(presentations)("A $name Manage list", ({ row }) => {
+  it("shows every row at one height, its value on one line", async () => {
+    for (const [index, entry] of manageRows.entries()) {
+      hookState.detailsByYield.set(
+        `yield-${index}`,
+        createDetails({
+          integrationData: {
+            ...integrationData,
+            id: `yield-${index}`,
+            metadata: { ...integrationData.metadata, name: entry.name },
+          },
+          inactiveValidator: entry.inactiveValidator ?? null,
+          providersDetails: [{ address: "0xvalidator", name: "Luganodes" }],
+          totalFormatted: entry.value,
+          totalAmountUsd: entry.fiat,
+        })
+      );
+    }
+    const app = await renderRow(
+      <div style={{ containerType: "inline-size", width: 368 }}>
+        {manageRows.map((entry, index) => (
+          <div key={entry.name}>
+            {row(
+              createItem({
+                ...entry.item,
+                integrationId: `yield-${index}` as YieldId,
+              })
+            )}
+          </div>
+        ))}
+      </div>
+    );
+
+    await expect.element(app.getByText("Resolv USDC vault")).toBeVisible();
+    const links = app.getByRole("link").elements();
+    expect(links).toHaveLength(manageRows.length);
+
+    const heights = links.map((link) =>
+      Math.round(link.getBoundingClientRect().height)
+    );
+    expect(new Set(heights).size).toBe(1);
+
+    for (const [index, entry] of manageRows.entries()) {
+      const link = links[index];
+      expect(link).toBeDefined();
+      if (!link) continue;
+      // Nothing spills past the row's edge.
+      expect(link.scrollWidth).toBeLessThanOrEqual(link.clientWidth);
+
+      const value = app.getByText(entry.value, { exact: true }).element();
+      expect(lineCount(value)).toBe(1);
+      expect(value.getBoundingClientRect().right).toBeLessThanOrEqual(
+        link.getBoundingClientRect().right
+      );
+    }
+  });
+
+  it.each([
+    { expected: "Action required", item: { actionRequired: true } },
+    { expected: "Claim rewards", item: { hasPendingClaimRewards: true } },
+    { expected: "In progress", item: { hasPendingRequest: true } },
+  ])(
+    "shows $expected on the provider line, under the title",
+    async ({ expected, item }) => {
+      hookState.details = createDetails();
+      const app = await renderRow(
+        <div style={{ containerType: "inline-size", width: 368 }}>
+          {row(createItem(item))}
+        </div>
+      );
+
+      const status = app.getByText(expected).element().getBoundingClientRect();
+      const provider = app
+        .getByText("via Validator A")
+        .element()
+        .getBoundingClientRect();
+      const title = app
+        .getByText(integrationData.metadata.name)
+        .element()
+        .getBoundingClientRect();
+
+      expect(status.top).toBeGreaterThanOrEqual(title.bottom - 1);
+      expect(
+        Math.abs(
+          status.top + status.height / 2 - (provider.top + provider.height / 2)
+        )
+      ).toBeLessThan(4);
+      expect(status.left).toBeGreaterThan(provider.right);
+    }
+  );
 });
 
 describe("Earn position list item", () => {

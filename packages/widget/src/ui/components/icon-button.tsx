@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes, Ref } from "react";
+import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
@@ -7,7 +8,6 @@ import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
-import type { ButtonIconName } from "./button-styles";
 import { focusRingStyles } from "./focus-ring";
 
 type IconButtonProps = Omit<
@@ -15,7 +15,7 @@ type IconButtonProps = Omit<
   "className" | "style" | "children" | "aria-label" | "type"
 > & {
   readonly ref?: Ref<HTMLButtonElement>;
-  readonly icon: ButtonIconName;
+  readonly icon: FixedIconName;
   /** The button's accessible name; it has no visible text. */
   readonly label: string;
   readonly variant?: keyof typeof variantStyles;

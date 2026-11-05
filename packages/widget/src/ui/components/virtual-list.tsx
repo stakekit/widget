@@ -5,6 +5,7 @@ import {
   useVirtualizer,
 } from "@tanstack/react-virtual";
 import { type ReactNode, useEffect, useEffectEvent, useRef } from "react";
+import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -13,10 +14,16 @@ import { space } from "../tokens/space.stylex";
 import { focusRingStyles } from "./focus-ring";
 import { Spinner } from "./spinner";
 
-/** A titled run of items; its title heads the run in the list. */
+/**
+ * A titled run of items; its title heads the run in the list. With
+ * `leading`, such as the token's avatar, the title shows in normal case
+ * after it; `caption`, such as "from 0.02%", aligns to the header's end.
+ */
 export type VirtualListGroup<T> = {
   readonly key: string;
   readonly label: string;
+  readonly leading?: ReactNode;
+  readonly caption?: string;
   readonly items: ReadonlyArray<T>;
 };
 
@@ -75,8 +82,15 @@ type VirtualListProps<T> = ItemsOrGroups<T> & {
   readonly loadingMoreLabel?: string;
 };
 
+/** A group's header row: all of the group but its items. */
+type GroupHeading = Omit<VirtualListGroup<never>, "items">;
+
 type Row<T> =
-  | { readonly kind: "header"; readonly key: string; readonly label: string }
+  | {
+      readonly kind: "header";
+      readonly key: string;
+      readonly group: GroupHeading;
+    }
   | {
       readonly kind: "item";
       readonly key: string;
@@ -104,7 +118,7 @@ const toRows = <T,>(
   }
   return props.groups.flatMap(
     (group, groupIndex): ReadonlyArray<Row<T>> => [
-      { kind: "header", key: `group:${group.key}`, label: group.label },
+      { kind: "header", key: `group:${group.key}`, group },
       ...group.items.map(
         (item, offset): Row<T> => ({
           kind: "item",
@@ -122,6 +136,36 @@ const headerAbove = (
   headerRows: ReadonlyArray<number>,
   row: number
 ): number | undefined => headerRows.findLast((header) => header <= row);
+
+/** A group's title, after its avatar, with its caption at the end. */
+const GroupHeader = ({ group }: { readonly group: GroupHeading }) => (
+  <Stack direction="row" align="center" gap={8}>
+    {group.leading !== undefined && (
+      // The label names the group; its avatar is decoration.
+      <span aria-hidden="true" {...stylex.props(styles.headerLeading)}>
+        {group.leading}
+      </span>
+    )}
+    <span {...stylex.props(styles.headerLabel)}>
+      {group.leading === undefined ? (
+        <Text variant="overline" tone="muted" as="div" truncate>
+          {group.label}
+        </Text>
+      ) : (
+        <Text weight="medium" truncate>
+          {group.label}
+        </Text>
+      )}
+    </span>
+    {group.caption !== undefined && (
+      <span {...stylex.props(styles.headerCaption)}>
+        <Text variant="caption" tone="muted" numeric>
+          {group.caption}
+        </Text>
+      </span>
+    )}
+  </Stack>
+);
 
 /**
  * A long list that renders only the rows in view, in a focusable scrolling
@@ -255,9 +299,7 @@ export const VirtualList = <T,>({
         )}
       >
         {row.kind === "header" ? (
-          <Text variant="overline" tone="muted" as="div">
-            {row.label}
-          </Text>
+          <GroupHeader group={row.group} />
         ) : (
           renderItem(row.item, row.index)
         )}
@@ -350,6 +392,9 @@ const styles = stylex.create({
     paddingInline: space[16],
     backgroundColor: color.background,
   },
+  headerLeading: { display: "flex", flexShrink: 0 },
+  headerLabel: { flexGrow: 1, minWidth: 0 },
+  headerCaption: { flexShrink: 0, whiteSpace: "nowrap" },
   loadingMore: {
     paddingBlock: space[16],
     display: "flex",

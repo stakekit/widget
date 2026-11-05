@@ -177,6 +177,36 @@ describe("Yield Steps view", () => {
     ).toEqual(["prepare-encrypt", "conversion-wrap", "deposit-tx"]);
   });
 
+  it("carries a sent transaction's hash and explorer link", () => {
+    const prepared = prepare(initializeTransactionWorkflow(makeInput([])));
+    const hash = TransactionHash.make("0xabc");
+    const context = {
+      ...prepared,
+      batches: prepared.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) => ({
+          ...transaction,
+          meta: {
+            ...transaction.meta,
+            broadcasted: true as const,
+            done: true,
+            signedTx: hash,
+            url: "https://etherscan.io/tx/0xabc",
+          },
+        })),
+      })),
+    };
+
+    expect(
+      view({ _tag: "Completed", context }).txStates.map(
+        ({ explorerUrl, hash, id }) => [id, explorerUrl, hash]
+      )
+    ).toEqual([
+      ["prepare-encrypt", null, null],
+      ["deposit-tx", "https://etherscan.io/tx/0xabc", hash],
+    ]);
+  });
+
   it("shows a preparation the API rejected as final", () => {
     const { context } = initializeTransactionWorkflow(makeInput([]));
 

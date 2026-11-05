@@ -187,9 +187,10 @@ const styles = stylex.create({
   icon: { backgroundColor: color.background, color: color.text },
   // A provider's logo is a square tile; `badge` matches its small size.
   square: { borderRadius: radius.badge },
+  // `contain` fits a logo drawn with its own padding whole, never cropped.
   image: {
     display: "block",
-    objectFit: "cover",
+    objectFit: "contain",
     height: "100%",
     width: "100%",
   },
@@ -198,6 +199,8 @@ const styles = stylex.create({
     flexShrink: 0,
     position: "relative",
   },
+  // The ring counts toward the badge's size, so the badge, anchored at the
+  // bottom end, stays inside the avatar's footprint.
   badge: {
     borderColor: color.background,
     borderRadius: radius.pill,
@@ -205,7 +208,7 @@ const styles = stylex.create({
     borderWidth: borderWidth.thin,
     overflow: "hidden",
     backgroundColor: color.background,
-    boxSizing: "content-box",
+    boxSizing: "border-box",
     display: "flex",
     insetInlineEnd: 0,
     position: "absolute",
@@ -217,6 +220,7 @@ const styles = stylex.create({
 const sizeStyles = stylex.create({
   xs: { height: avatarSize.xs, width: avatarSize.xs },
   sm: { height: avatarSize.sm, width: avatarSize.sm },
+  control: { height: avatarSize.control, width: avatarSize.control },
   md: { height: avatarSize.md, width: avatarSize.md },
   lg: { height: avatarSize.lg, width: avatarSize.lg },
   xl: { height: avatarSize.xl, width: avatarSize.xl },
@@ -225,6 +229,7 @@ const sizeStyles = stylex.create({
 const fallbackTextStyles = stylex.create({
   xs: { fontSize: fontSize.overline, lineHeight: lineHeight.overline },
   sm: { fontSize: fontSize.overline, lineHeight: lineHeight.overline },
+  control: { fontSize: fontSize.label, lineHeight: lineHeight.label },
   md: { fontSize: fontSize.label, lineHeight: lineHeight.label },
   lg: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
   xl: { fontSize: fontSize.title, lineHeight: lineHeight.title },
@@ -234,6 +239,7 @@ const fallbackTextStyles = stylex.create({
 const emojiStyles = stylex.create({
   xs: { fontSize: fontSize.overline, lineHeight: lineHeight.overline },
   sm: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
+  control: { fontSize: fontSize.title, lineHeight: lineHeight.title },
   md: { fontSize: fontSize.title, lineHeight: lineHeight.title },
   lg: { fontSize: fontSize.display, lineHeight: lineHeight.display },
   xl: { fontSize: fontSize.display, lineHeight: lineHeight.display },
@@ -242,6 +248,7 @@ const emojiStyles = stylex.create({
 const badgeSizeStyles = stylex.create({
   xs: { height: avatarBadgeSize.xs, width: avatarBadgeSize.xs },
   sm: { height: avatarBadgeSize.sm, width: avatarBadgeSize.sm },
+  control: { height: avatarBadgeSize.control, width: avatarBadgeSize.control },
   md: { height: avatarBadgeSize.md, width: avatarBadgeSize.md },
   lg: { height: avatarBadgeSize.lg, width: avatarBadgeSize.lg },
   xl: { height: avatarBadgeSize.xl, width: avatarBadgeSize.xl },

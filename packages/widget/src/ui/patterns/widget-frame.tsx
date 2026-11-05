@@ -31,10 +31,13 @@ type WidgetFrameProps = {
    */
   readonly width?: keyof typeof widthStyles;
   /**
-   * The frame's height eases to its content's as pages change, rather than
-   * jumping. Off under reduced motion.
+   * Names the page shown. When it changes, the frame's height eases to the
+   * new page's for as long as the page is settling in, rather than jumping;
+   * otherwise the frame follows its content's height, so what resizes within
+   * a page, such as a disclosure, animates on its own. Unset, the frame never
+   * eases between pages. Off under reduced motion.
    */
-  readonly animateHeight?: boolean;
+  readonly pageKey?: string;
   /**
    * On mount the frame grows open from no height once `ready`, such as when
    * the first page can show. Unset, the frame shows at its height at once.
@@ -61,15 +64,39 @@ export const WidgetFrame = ({
   poweredByLabel,
   brandName,
   width = "narrow",
-  animateHeight = false,
+  pageKey,
   reveal,
   hostHook,
 }: WidgetFrameProps) => {
   const reduceMotion = useReducedMotion();
-  const animated = !reduceMotion && (animateHeight || reveal !== undefined);
+  const animated =
+    !reduceMotion && (pageKey !== undefined || reveal !== undefined);
   const content = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number>();
+  // The height the frame eases to during a page change.
+  const [pageHeight, setPageHeight] = useState<number>();
   const [revealed, setRevealed] = useState(reveal === undefined);
+  const [shownPageKey, setShownPageKey] = useState(pageKey);
+  // Set anew on each page change, so each restarts the settle wait. `from`
+  // is the frame's height as the change begins.
+  const [pageChange, setPageChange] = useState<{
+    readonly to: string | undefined;
+    readonly from: number | undefined;
+  } | null>(null);
+  // The old page's height, held for the commit that swaps the page in: until
+  // a page change the frame fits its content as laid out, so that commit
+  // would resize it at once. Released once the easing writes a height.
+  const [pinnedHeight, setPinnedHeight] = useState<number>();
+
+  if (pageKey !== shownPageKey) {
+    setShownPageKey(pageKey);
+    if (animated && revealed) {
+      const from = pageChange === null ? contentHeight : pageHeight;
+      setPageChange({ to: pageKey, from });
+      setPageHeight(from);
+      if (pageChange === null) setPinnedHeight(from);
+    }
+  }
 
   useEffect(() => {
     const element = content.current;
@@ -82,11 +109,55 @@ export const WidgetFrame = ({
     return () => observer.disconnect();
   }, [animated]);
 
+  // During a page change the frame grows with its content at once but
+  // shrinks only once a smaller height has held for the shrink delay, so the
+  // moment between pages, empty or still loading, never dips it. The change
+  // lasts until the content's height has held still for the settle time,
+  // which covers the old page's exit and the new page's first layout.
+  useEffect(() => {
+    const element = content.current;
+    if (pageChange === null || element === null) return;
+    let shown = pageChange.from ?? 0;
+    let settleTimer = 0;
+    let shrinkTimer = 0;
+    const settle = () => {
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        setPageChange(null);
+        setPinnedHeight(undefined);
+      }, settleMs);
+    };
+    const show = (height: number) => {
+      shown = height;
+      setPageHeight(height);
+    };
+    settle();
+    const observer = new ResizeObserver(([entry]) => {
+      settle();
+      const height = entry?.borderBoxSize[0]?.blockSize;
+      if (height === undefined) return;
+      window.clearTimeout(shrinkTimer);
+      if (height >= shown) show(height);
+      else shrinkTimer = window.setTimeout(() => show(height), shrinkDelayMs);
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(shrinkTimer);
+    };
+  }, [pageChange]);
+
   const opening = animated && !revealed;
   const closed = opening && reveal?.ready !== true;
-  const height = closed ? 0 : (contentHeight ?? "auto");
-  const target = animated ? { height } : { height: "auto" };
-  const transition = transitionFor(animated, opening, animateHeight);
+  const easing = animated && pageChange !== null;
+  const target = heightFor({
+    closed,
+    height: opening ? contentHeight : pageHeight,
+    opening,
+    easing,
+  });
+  const transition = transitionFor(opening, easing);
   const open = revealed || (!animated && reveal?.ready === true);
   const onRevealed = reveal?.onRevealed;
 
@@ -107,8 +178,15 @@ export const WidgetFrame = ({
       initial={opening ? { height: 0 } : false}
       animate={target}
       transition={transition}
+      onUpdate={() => {
+        if (pinnedHeight !== undefined) setPinnedHeight(undefined);
+      }}
       onAnimationComplete={onAnimationComplete}
-      className={stylex.props(styles.root, widthStyles[width]).className}
+      {...stylex.props(
+        styles.root,
+        widthStyles[width],
+        pinnedHeight !== undefined && styles.pinned(`${pinnedHeight}px`)
+      )}
       data-rk={hostHook}
     >
       <div
@@ -133,17 +211,33 @@ export const WidgetFrame = ({
   );
 };
 
-/** The mount reveal is slower than a page change; without motion, no time. */
-const transitionFor = (
-  animated: boolean,
-  opening: boolean,
-  animateHeight: boolean
-) => {
-  if (!animated) return { duration: 0 };
+const settleMs = motionSeconds.pageSettle * 1000;
+const shrinkDelayMs = motionSeconds.pageShrinkDelay * 1000;
+
+/**
+ * While it grows open or eases between pages the frame takes the measured
+ * `height`; otherwise it fits its content as laid out.
+ */
+const heightFor = ({
+  closed,
+  height,
+  opening,
+  easing,
+}: {
+  readonly closed: boolean;
+  readonly height: number | undefined;
+  readonly opening: boolean;
+  readonly easing: boolean;
+}) => {
+  if (closed) return { height: 0 };
+  if (opening || easing) return { height: height ?? "auto" };
+  return { height: "auto" };
+};
+
+/** The mount reveal is slower than a page change; otherwise no time. */
+const transitionFor = (opening: boolean, easing: boolean) => {
   if (opening) return { duration: motionSeconds.reveal, ease: motionEasing };
-  if (animateHeight) {
-    return { duration: motionSeconds.slow, ease: motionEasing };
-  }
+  if (easing) return { duration: motionSeconds.slow, ease: motionEasing };
   return { duration: 0 };
 };
 
@@ -162,6 +256,9 @@ const styles = stylex.create({
     fontFamily: font.sans,
     position: "relative",
   },
+  // Wins over the height `motion` writes inline, which is `auto` until the
+  // easing starts.
+  pinned: (height: string) => ({ maxHeight: height, minHeight: height }),
   content: {
     display: "flex",
     flexDirection: "column",

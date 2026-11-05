@@ -14,37 +14,7 @@ export const formatDateTime = (
   { timeZone, ...options }: DateTimeFormatOptions
 ) => DateTime.format(DateTime.setZone(value, timeZone), options);
 
-type ActivityDayKind = "today" | "yesterday" | "other";
-
-const isSameCalendarDay = (
-  left: DateTime.DateTime,
-  right: DateTime.DateTime
-) => {
-  const leftParts = DateTime.toParts(left);
-  const rightParts = DateTime.toParts(right);
-
-  return (
-    leftParts.year === rightParts.year &&
-    leftParts.month === rightParts.month &&
-    leftParts.day === rightParts.day
-  );
-};
-
-export const getActivityDayKind = (
-  date: DateTime.Utc,
-  now: DateTime.Utc,
-  timeZone: DateTime.TimeZone
-): ActivityDayKind => {
-  const localDate = DateTime.setZone(date, timeZone);
-  const localNow = DateTime.setZone(now, timeZone);
-  const localYesterday = DateTime.subtract(localNow, { days: 1 });
-
-  if (isSameCalendarDay(localDate, localNow)) return "today";
-  if (isSameCalendarDay(localDate, localYesterday)) return "yesterday";
-  return "other";
-};
-
-type ActivityRelativeTime =
+export type ActivityRelativeTime =
   | { unit: "now" }
   | { unit: "minutes" | "hours" | "days"; value: number };
 

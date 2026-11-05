@@ -15,12 +15,13 @@ export const ShellFrameWidthContext = createContext<ShellFrameWidth>("narrow");
 export const ShellFrame = ({
   header,
   children,
-  animateHeight = false,
+  pageKey,
   reveal,
 }: {
   readonly header?: ReactNode;
   readonly children: ReactNode;
-  readonly animateHeight?: boolean;
+  /** Names the page shown; when it changes the frame eases to its height. */
+  readonly pageKey?: string;
   readonly reveal?: {
     readonly ready: boolean;
     readonly onRevealed?: () => void;
@@ -35,7 +36,7 @@ export const ShellFrame = ({
       width={width}
       poweredByLabel={t("shared.powered_by_label")}
       brandName={t("shared.stake_kit")}
-      animateHeight={animateHeight}
+      {...(pageKey === undefined ? {} : { pageKey })}
       {...(header === undefined ? {} : { header })}
       {...(reveal === undefined ? {} : { reveal })}
     >

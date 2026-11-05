@@ -13,12 +13,13 @@ export const useWalletChainIconUrl = (chain: Chain | undefined) =>
   );
 
 /**
- * A chain's icon, decorative beside the chain's name; the name's initial
- * shows while it loads, when it fails or without one.
+ * A chain's icon, decorative beside the chain's name in a compact picker row;
+ * the name's initial shows while it loads, when it fails or without one.
  */
 export const WalletChainIcon = ({ chain }: { readonly chain: Chain }) => (
   <Avatar
     src={useWalletChainIconUrl(chain)}
     fallback={Array.from(chain.name.trim())[0]?.toUpperCase() ?? ""}
+    size="control"
   />
 );

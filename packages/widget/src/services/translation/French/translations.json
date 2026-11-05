@@ -281,7 +281,6 @@
     "close": "Fermer",
     "copy_address": "Copier l'adresse",
     "copied": "Copié !",
-    "connected": "Connecté",
     "confirm": "Confirmer dans le portefeuille",
     "confirm_error": "Erreur de changement de réseau",
     "wrong_network": "Mauvais réseau détecté, changez ou déconnectez-vous pour continuer.",
@@ -310,7 +309,6 @@
       "continue": "Continuer"
     },
     "details": {
-      "back": "Retour à l'activité",
       "canceled": "Annulée",
       "collateral_fee": "Frais de garantie",
       "completed": "Terminée",
@@ -319,14 +317,15 @@
       "health_factor": "Facteur de santé",
       "ltv": "LTV",
       "market": "Marché",
+      "network": "Réseau",
       "origination_fee": "Frais d'ouverture",
+      "provider": "Fournisseur",
+      "status": "Statut",
       "unavailable_description": "Cette action n'existe pas ou appartient à un autre portefeuille.",
       "unavailable_title": "Activité indisponible",
-      "via_network": "via {{provider}} · {{network}}"
-    },
-    "date_group_labels": {
-      "today": "Aujourd'hui",
-      "yesterday": "Hier"
+      "validators_one": "Validateur",
+      "validators_other": "Validateurs",
+      "view_on_explorer": "Voir dans l'explorateur"
     },
     "review": {
       "transactions": "Transactions",
@@ -645,13 +644,15 @@
     "prepare_rejected": "Cette demande ne peut pas aboutir. Revenez en arrière pour la modifier.",
     "approve_error": "Une erreur s'est produite",
     "progress_label": "Progression de la transaction",
+    "progress_count": "{{confirmed}} sur {{total}} confirmées",
+    "summary": "{{action}} {{amount}}",
     "state": {
-      "pending": "Pas commencée",
+      "pending": "En attente",
       "active": "En cours",
-      "signing": "Autorisez cette transaction dans votre portefeuille",
-      "broadcasting": "Envoi de la transaction",
-      "done": "Complétée",
-      "failed": "Echouée"
+      "signing": "En attente de signature",
+      "broadcasting": "Diffusion",
+      "done": "Confirmée",
+      "failed": "Échouée"
     },
     "view_transaction": "Voir la transaction",
     "tx_type": {

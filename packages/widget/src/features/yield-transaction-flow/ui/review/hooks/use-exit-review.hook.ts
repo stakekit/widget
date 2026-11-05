@@ -1,15 +1,12 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
-import {
-  getExtendedYieldType,
-  isUnstakeYieldType,
-} from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
+import { getExitActionTitle } from "../../../model/action-title";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
@@ -40,9 +37,7 @@ export const useExitReview = () => {
 
   const formattedAmount = formatTokenAmount(amount, locale, "down");
 
-  const title = isUnstakeYieldType(getExtendedYieldType(integrationData))
-    ? t("position_details.unstake")
-    : t("position_details.withdraw");
+  const title = getExitActionTitle(t, integrationData);
 
   const fee = getGasFeeInUSD({
     gas: stakeExitTxGas,

@@ -99,8 +99,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem(),
-      showsBackButton: false,
-      providersDetails: [{ name: "StakeKit" }],
+      receiptPlacement: "page",
     };
 
     const app = await renderDetails();
@@ -118,7 +117,7 @@ describe("Activity details receipt", () => {
     expect(app.container.textContent).not.toContain("Continue");
     expect(rows.map((row) => row.textContent)).toEqual([
       "1. ApprovalConfirmed",
-      "2. StakeFailed · Execution reverted0x1234…1234",
+      "2. StakeFailed0x1234…1234Execution reverted",
     ]);
     expect(rows[0]?.tagName).not.toBe("BUTTON");
     expect(
@@ -130,7 +129,7 @@ describe("Activity details receipt", () => {
             document.getElementById(id)?.getAttribute("aria-label") ??
             document.getElementById(id)?.textContent
         )
-    ).toEqual(["Failed", "Failed · Execution reverted"]);
+    ).toEqual(["Failed", "Execution reverted"]);
 
     await act(async () => explorer?.click());
     expect(open).toHaveBeenCalledWith("https://explorer.test/failed", "_blank");
@@ -143,8 +142,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem({ status: "WAITING_FOR_NEXT", withYield: false }),
-      showsBackButton: true,
-      providersDetails: [],
+      receiptPlacement: "page",
     };
 
     const app = await renderDetails();
@@ -199,15 +197,15 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item,
-      showsBackButton: false,
-      providersDetails: [],
+      receiptPlacement: "pane",
     };
 
     const app = await renderDetails();
     const text = app.container.textContent;
 
     expect(text).toContain("Supplied and borrowed");
-    expect(text).toContain("via Morpho · Ethereum");
+    expect(text).toContain("ProviderMorpho");
+    expect(text).toContain("NetworkEthereum");
     expect(text).toContain("MarketWETH / USDC");
     expect(text).toContain("Origination fee1.2 USDC");
     expect(text).toContain("LTV0% → 50%");

@@ -281,7 +281,6 @@
     "close": "Close",
     "copy_address": "Copy Address",
     "copied": "Copied!",
-    "connected": "Connected",
     "confirm": "Confirm in Wallet",
     "confirm_error": "Error switching chain",
     "wrong_network": "Wrong network detected, switch or disconnect to continue.",
@@ -310,7 +309,6 @@
       "continue": "Continue"
     },
     "details": {
-      "back": "Back to Activity",
       "canceled": "Canceled",
       "collateral_fee": "Collateral fee",
       "completed": "Completed",
@@ -319,14 +317,15 @@
       "health_factor": "Health factor",
       "ltv": "LTV",
       "market": "Market",
+      "network": "Network",
       "origination_fee": "Origination fee",
+      "provider": "Provider",
+      "status": "Status",
       "unavailable_description": "This action does not exist or belongs to another wallet.",
       "unavailable_title": "Activity unavailable",
-      "via_network": "via {{provider}} · {{network}}"
-    },
-    "date_group_labels": {
-      "today": "Today",
-      "yesterday": "Yesterday"
+      "validators_one": "Validator",
+      "validators_other": "Validators",
+      "view_on_explorer": "View on explorer"
     },
     "review": {
       "transactions": "Transactions",
@@ -1022,12 +1021,14 @@
     "prepare_rejected": "This request can't be completed. Go back and change it.",
     "approve_error": "Something went wrong",
     "progress_label": "Transaction progress",
+    "progress_count": "{{confirmed}} of {{total}} confirmed",
+    "summary": "{{action}} {{amount}}",
     "state": {
-      "pending": "Not started",
+      "pending": "Waiting",
       "active": "In progress",
-      "signing": "Approve this transaction in your wallet",
-      "broadcasting": "Submitting transaction",
-      "done": "Completed",
+      "signing": "Waiting for signature",
+      "broadcasting": "Broadcasting",
+      "done": "Confirmed",
       "failed": "Failed"
     },
     "view_transaction": "View transaction",

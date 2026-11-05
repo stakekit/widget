@@ -2,7 +2,6 @@ import { DateTime, Duration } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   formatDateTime,
-  getActivityDayKind,
   getActivityRelativeTime,
   getDisplayDurationUntil,
 } from "../../../src/shared/lib/date";
@@ -10,22 +9,6 @@ import {
 const utc = (value: string) => DateTime.makeUnsafe(value);
 
 describe("date presentation helpers", () => {
-  it("classifies local calendar days across a daylight-saving transition", () => {
-    const now = utc("2026-03-08T07:30:00.000Z");
-    const earlier = utc("2026-03-08T04:30:00.000Z");
-
-    expect(
-      getActivityDayKind(
-        earlier,
-        now,
-        DateTime.zoneMakeNamedUnsafe("America/New_York")
-      )
-    ).toBe("yesterday");
-    expect(
-      getActivityDayKind(earlier, now, DateTime.zoneMakeNamedUnsafe("UTC"))
-    ).toBe("today");
-  });
-
   it.each([
     ["UTC", "Jul 28, 2026, 23:30"],
     ["Pacific/Kiritimati", "Jul 29, 2026, 13:30"],

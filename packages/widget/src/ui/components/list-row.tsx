@@ -6,6 +6,7 @@ import {
   use,
   useId,
 } from "react";
+import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
@@ -18,9 +19,29 @@ import { space } from "../tokens/space.stylex";
 import { CopyButton } from "./copy-button";
 import { interactiveStyles } from "./interactive-styles";
 import { Spinner } from "./spinner";
+import { toneTextStyles } from "./tone-styles";
 import { useCopy } from "./use-copy";
 
-const InListGroup = createContext(false);
+/**
+ * `condensed` is for pickers, such as of a network, an account or a wallet: a
+ * shorter row with no surface of its own that tints on hover, and a trailing
+ * check for `selected` in place of the selection ring. Its avatar takes the
+ * `control` size.
+ */
+type ListRowDensity = "comfortable" | "condensed";
+
+/** Set inside a `ListGroup`: its rows' density. */
+const InListGroup = createContext<
+  { readonly density: ListRowDensity } | undefined
+>(undefined);
+
+/** A state on a row's second line, such as "Action required". */
+type ListRowStatus = {
+  readonly text: string;
+  readonly tone: "success" | "warning" | "danger" | "info";
+  /** A small leading icon, such as `WarningIcon`. */
+  readonly icon?: FixedIconName;
+};
 
 /** One label-value row under a `ListRow`'s main line. */
 type ListRowDetail = {
@@ -41,9 +62,22 @@ type CommonProps = {
   readonly leading?: ReactNode;
   readonly title: string;
   readonly subtitle?: string;
-  /** Badges beside the title. */
+  /**
+   * Badges beside the title; below the `sm` container size they move to the
+   * second line, so the title keeps its room.
+   */
   readonly badges?: ReactNode;
-  /** The trailing figure, such as a formatted balance. */
+  /**
+   * A state after the subtitle on the second line, as colored text with an
+   * optional icon rather than a chip, such as "⚠ Action required".
+   */
+  readonly status?: ListRowStatus;
+  /** Unset, the row takes its `ListGroup`'s density, else `comfortable`. */
+  readonly density?: ListRowDensity;
+  /**
+   * The trailing figure, such as a formatted balance. It never wraps: the
+   * title truncates first.
+   */
   readonly value?: string;
   /**
    * A figure before the value column, such as a reward rate. `success` is
@@ -156,18 +190,22 @@ type ListRowOption = {
 };
 
 /**
- * One row of a list: a leading avatar, a title and subtitle with badges, and
- * a trailing value over its subvalue in tabular figures, and optional
- * detail rows under them. With `onClick` the row is a button; `selected`
- * reads as pressed. With `link` it is a link. With `option` it is an option
- * of a listbox. With `check` a check box shows the selection, for a choice
- * of several.
+ * One row of a list: a leading avatar, a title with badges over a subtitle
+ * and status, and a trailing value over its subvalue in tabular figures, and
+ * optional detail rows under them. The value never wraps; the title
+ * truncates. With `onClick` the row is a button; `selected` reads as
+ * pressed. With `link` it is a link. With `option` it is an option of a
+ * listbox. With `check` a check box shows the selection, for a choice of
+ * several. Rings draw inside the row's edge, so a scrolling list never clips
+ * them.
  */
 export const ListRow = ({
   leading,
   title,
   subtitle,
   badges,
+  status,
+  density,
   value,
   figure,
   subvalue,
@@ -181,17 +219,25 @@ export const ListRow = ({
   option,
   link,
 }: ListRowProps) => {
-  const grouped = use(InListGroup);
+  const group = use(InListGroup);
+  const condensed = (density ?? group?.density) === "condensed";
   const groupLabelId = useId();
   const { copied, copy } = useCopy();
   const checked = option === undefined ? selected === true : option.selected;
-  const checkBox = (option?.check ?? check) && (
+  const showsCheckBox = option?.check ?? check;
+  // A condensed row marks its choice with a check after its values; others
+  // draw the selection ring.
+  const ringsSelection = checked && !showsCheckBox && !condensed;
+  const checkBox = showsCheckBox && (
     <span
       aria-hidden="true"
       {...stylex.props(styles.check, checked && styles.checked)}
     >
       {checked && <Icon name="CheckIcon" size="sm" />}
     </span>
+  );
+  const checkMark = checked && !showsCheckBox && condensed && (
+    <Icon name="CheckIcon" tone="accent" />
   );
   const values = (value !== undefined || subvalue !== undefined) && (
     <Stack as="span" gap={2} align="end">
@@ -207,11 +253,9 @@ export const ListRow = ({
       )}
     </Stack>
   );
-  const trailing =
-    figure === undefined ? (
-      values
-    ) : (
-      <Stack as="span" direction="row" align="center" gap={16}>
+  const trailing = (figure !== undefined || values) && (
+    <span {...stylex.props(styles.trailing)}>
+      {figure !== undefined && (
         <span
           {...stylex.props(
             styles.figure,
@@ -222,29 +266,58 @@ export const ListRow = ({
             {figure.text}
           </Text>
         </span>
-        {values}
-      </Stack>
-    );
+      )}
+      {values}
+    </span>
+  );
+  const secondLine = (subtitle !== undefined || status !== undefined) && (
+    <span {...stylex.props(styles.secondLine)}>
+      {subtitle !== undefined && (
+        <Text variant="caption" tone="muted" truncate>
+          {subtitle}
+        </Text>
+      )}
+      {subtitle !== undefined && status !== undefined && (
+        <span aria-hidden="true" {...stylex.props(styles.separator)}>
+          <Text variant="caption" tone="muted">
+            ·
+          </Text>
+        </span>
+      )}
+      {status !== undefined && (
+        <span {...stylex.props(styles.status, toneTextStyles[status.tone])}>
+          {status.icon !== undefined && <Icon name={status.icon} size="sm" />}
+          <Text variant="caption" weight="medium">
+            {status.text}
+          </Text>
+        </span>
+      )}
+    </span>
+  );
   const main = (
     <>
       {checkBox}
       {leading !== undefined && (
         <span {...stylex.props(styles.leading)}>{leading}</span>
       )}
-      <Stack as="span" gap={2} grow>
-        <Stack as="span" direction="row" align="center" gap={8}>
+      <span
+        {...stylex.props(
+          styles.text,
+          badges === undefined && !secondLine && styles.textTitleOnly
+        )}
+      >
+        <span {...stylex.props(styles.title)}>
           <Text weight="medium" truncate>
             {title}
           </Text>
-          {badges}
-        </Stack>
-        {subtitle !== undefined && (
-          <Text variant="caption" tone="muted" truncate>
-            {subtitle}
-          </Text>
+        </span>
+        {badges !== undefined && (
+          <span {...stylex.props(styles.badges)}>{badges}</span>
         )}
-      </Stack>
+        {secondLine}
+      </span>
       {trailing}
+      {checkMark}
       {busy && <Spinner size="sm" tone="muted" />}
     </>
   );
@@ -295,6 +368,15 @@ export const ListRow = ({
         </Stack>
       </Stack>
     );
+  const surface = [styles.root, condensed && styles.condensed];
+  const pressable = [
+    surface,
+    interactiveStyles.root,
+    styles.interactive,
+    condensed && styles.condensedInteractive,
+    ringsSelection && interactiveStyles.selected,
+    interactiveStyles.inset,
+  ];
   const row = (() => {
     if (option !== undefined) {
       const select = option.disabled === true ? undefined : option.onSelect;
@@ -329,14 +411,10 @@ export const ListRow = ({
             }
           }}
           {...stylex.props(
-            styles.root,
-            interactiveStyles.root,
-            styles.interactive,
-            option.selected &&
-              option.check !== true &&
-              interactiveStyles.selected,
+            pressable,
             option.active && styles.active,
-            option.disabled === true && styles.optionDisabled
+            option.disabled === true && styles.optionDisabled,
+            option.disabled === true && condensed && styles.condensedDisabled
           )}
         >
           {content}
@@ -359,12 +437,7 @@ export const ListRow = ({
             : {})}
           data-testid={testId}
           aria-busy={busy || undefined}
-          {...stylex.props(
-            styles.root,
-            interactiveStyles.root,
-            styles.interactive,
-            styles.link
-          )}
+          {...stylex.props(pressable, styles.link)}
         >
           {content}
         </a>
@@ -375,7 +448,7 @@ export const ListRow = ({
         <div
           data-testid={testId}
           aria-busy={busy || undefined}
-          {...stylex.props(styles.root)}
+          {...stylex.props(surface)}
         >
           {content}
         </div>
@@ -389,12 +462,7 @@ export const ListRow = ({
         data-testid={testId}
         aria-busy={busy || undefined}
         aria-pressed={selected}
-        {...stylex.props(
-          styles.root,
-          interactiveStyles.root,
-          styles.interactive,
-          selected === true && !check && interactiveStyles.selected
-        )}
+        {...stylex.props(pressable)}
       >
         {content}
       </button>
@@ -414,7 +482,7 @@ export const ListRow = ({
       </div>
     );
 
-  return grouped ? <li>{withCopies}</li> : withCopies;
+  return group === undefined ? withCopies : <li>{withCopies}</li>;
 };
 
 /** The value of the detail copy icon a press on an option landed on. */
@@ -427,18 +495,23 @@ const pressedCopyValue = (
   return index == null ? undefined : details?.[Number(index)]?.copy?.value;
 };
 
-/** Rows read as one list, under an optional overline heading. */
+/**
+ * Rows read as one list, under an optional overline heading. `density` is
+ * its rows'; condensed rows sit closer together.
+ */
 export const ListGroup = ({
   label,
+  density = "comfortable",
   children,
 }: {
   readonly label?: string;
+  readonly density?: ListRowDensity;
   readonly children: ReactNode;
 }) => {
   const labelId = useId();
 
   return (
-    <InListGroup value>
+    <InListGroup value={{ density }}>
       <Stack gap={8}>
         {label !== undefined && (
           <Text variant="overline" tone="muted" id={labelId}>
@@ -447,7 +520,7 @@ export const ListGroup = ({
         )}
         <Stack
           as="ul"
-          gap={8}
+          gap={density === "condensed" ? 2 : 8}
           aria-labelledby={label === undefined ? undefined : labelId}
         >
           {children}
@@ -487,8 +560,87 @@ const styles = stylex.create({
     minWidth: 0,
   },
   link: { textDecoration: "none" },
+  condensed: {
+    paddingBlock: space[8],
+    backgroundColor: "transparent",
+  },
+  condensedInteractive: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover:not(:disabled)": color.surfaceHover,
+    },
+  },
+  condensedDisabled: { backgroundColor: "transparent" },
   leading: { display: "flex", flexShrink: 0 },
-  figure: { display: "flex", flexShrink: 0, whiteSpace: "nowrap" },
+  // The title and badges over the second line. Below `sm` the badges trail
+  // the second line, so the title has the whole first line; from `sm` they
+  // follow the title, which truncates before they move.
+  text: {
+    gridTemplateAreas: {
+      default: '"title title" "second badges"',
+      [container.sm]: '"title badges" "second second"',
+    },
+    alignItems: "center",
+    columnGap: space[8],
+    display: "grid",
+    flexGrow: 1,
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr) auto",
+      [container.sm]: "minmax(0, max-content) minmax(max-content, 1fr)",
+    },
+    rowGap: space[2],
+    minWidth: 0,
+  },
+  textTitleOnly: {
+    gridTemplateAreas: '"title"',
+    gridTemplateColumns: "minmax(0, 1fr)",
+  },
+  // Each part takes its named area of `text`.
+  title: {
+    gridColumnEnd: "title",
+    gridColumnStart: "title",
+    gridRowEnd: "title",
+    gridRowStart: "title",
+    minWidth: 0,
+  },
+  badges: {
+    gap: space[4],
+    alignItems: "center",
+    display: "flex",
+    gridColumnEnd: "badges",
+    gridColumnStart: "badges",
+    gridRowEnd: "badges",
+    gridRowStart: "badges",
+    justifySelf: { default: "end", [container.sm]: "start" },
+    whiteSpace: "nowrap",
+  },
+  secondLine: {
+    gap: space[4],
+    alignItems: "center",
+    display: "flex",
+    gridColumnEnd: "second",
+    gridColumnStart: "second",
+    gridRowEnd: "second",
+    gridRowStart: "second",
+    minWidth: 0,
+  },
+  separator: { display: "flex", flexShrink: 0 },
+  status: {
+    gap: space[2],
+    alignItems: "center",
+    display: "inline-flex",
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  },
+  // Values and figures never wrap or shrink: the title truncates first.
+  trailing: {
+    gap: space[16],
+    alignItems: "center",
+    display: "flex",
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  },
+  figure: { display: "flex", flexShrink: 0 },
   figureFromSm: { display: { default: "none", [container.sm]: "flex" } },
   check: {
     borderColor: color.textMuted,
@@ -523,7 +675,7 @@ const styles = stylex.create({
   active: {
     backgroundColor: color.surfaceHover,
     outlineColor: color.focusRing,
-    outlineOffset: focusRing.offset,
+    outlineOffset: focusRing.insetOffset,
     outlineStyle: "solid",
     outlineWidth: focusRing.width,
   },

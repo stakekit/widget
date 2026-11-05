@@ -18,7 +18,8 @@ type ScrollAreaProps = {
 
 /**
  * A region that scrolls its content vertically with a thin overlay
- * scrollbar, and keeps the scroll from chaining to the page behind it. Arrow
+ * scrollbar, and keeps the scroll from chaining to the page behind it. While
+ * it overflows, the content keeps clear of the scrollbar's gutter. Arrow
  * keys scroll it once focused.
  */
 export const ScrollArea = ({ label, maxHeight, children }: ScrollAreaProps) => (
@@ -31,7 +32,9 @@ export const ScrollArea = ({ label, maxHeight, children }: ScrollAreaProps) => (
       tabIndex={0}
       {...stylex.props(styles.viewport, focusRingStyles.visible)}
     >
-      {children}
+      <BaseScrollArea.Content {...stylex.props(styles.content)}>
+        {children}
+      </BaseScrollArea.Content>
     </BaseScrollArea.Viewport>
     <BaseScrollArea.Scrollbar {...stylex.props(styles.scrollbar)}>
       <BaseScrollArea.Thumb {...stylex.props(styles.thumb)} />
@@ -46,6 +49,14 @@ const styles = stylex.create({
     position: "relative",
     height: "100%",
     minHeight: 0,
+  },
+  // The gutter is the scrollbar's width, so nothing sits under it. Base UI
+  // gives the content `min-width: fit-content`; sized as if empty across, the
+  // content takes the viewport's width and no more, so a long line, such as
+  // truncated text, truncates rather than scrolling the area sideways.
+  content: {
+    contain: "inline-size",
+    paddingInlineEnd: { default: 0, ":is([data-has-overflow-y])": space[8] },
   },
   viewport: {
     borderRadius: radius.badge,

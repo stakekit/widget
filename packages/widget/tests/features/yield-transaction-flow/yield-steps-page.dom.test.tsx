@@ -1,13 +1,21 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
+import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type { YieldStepRow } from "../../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
 import { StepsPage } from "../../../src/features/yield-transaction-flow/ui/steps/pages/common.page";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { render } from "../../utils/test-utils.dom";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 
+type StepsMock = {
+  numbered: boolean;
+  retry?: () => void;
+  summary?: { title: string; detail?: string; token: { name: string } };
+  txStates: ReadonlyArray<YieldStepRow>;
+};
+
 const steps = vi.hoisted(() => ({
-  current: { numbered: true, txStates: [] as ReadonlyArray<YieldStepRow> },
+  current: { numbered: true, txStates: [] } as StepsMock,
 }));
 
 vi.mock(
@@ -23,7 +31,8 @@ vi.mock(
         open: false,
       },
       numbered: steps.current.numbered,
-      retry: undefined,
+      retry: steps.current.retry,
+      summary: steps.current.summary ?? null,
       txStates: steps.current.txStates,
       yieldId: "zama-vault",
     }),
@@ -39,17 +48,16 @@ const idle = { broadcast: "idle", confirm: "idle", sign: "idle" } as const;
 
 const row = (type: YieldStepRow["type"]): YieldStepRow => ({
   done: false,
+  explorerUrl: null,
+  hash: null,
   id: type,
   phases: idle,
   rejected: false,
   type,
 });
 
-const stepLabels = async (numbered: boolean) => {
-  steps.current = {
-    numbered,
-    txStates: [row("ENCRYPT"), row("DEPOSIT")],
-  };
+const renderSteps = async (mock: StepsMock) => {
+  steps.current = mock;
   const app = await render(
     <I18nextProvider i18n={i18n}>
       <TestWidgetConfigProvider apiKey="test-key" variant="default">
@@ -57,7 +65,17 @@ const stepLabels = async (numbered: boolean) => {
       </TestWidgetConfigProvider>
     </I18nextProvider>
   );
-  await expect.poll(() => app.container.querySelectorAll("li").length).toBe(2);
+  await expect
+    .poll(() => app.container.querySelectorAll("li").length)
+    .toBe(mock.txStates.length);
+  return app;
+};
+
+const stepLabels = async (numbered: boolean) => {
+  const app = await renderSteps({
+    numbered,
+    txStates: [row("ENCRYPT"), row("DEPOSIT")],
+  });
   const labels = Array.from(app.container.querySelectorAll("li"), (item) =>
     item.textContent?.trim()
   );
@@ -79,5 +97,81 @@ describe("Yield Steps page headers", () => {
     expect(labels[0]).toMatch(/^Transaction - /);
     expect(labels[1]).toContain("Transaction - Deposit");
     expect(labels.join(" ")).not.toContain(" / ");
+  });
+});
+
+const hash = TransactionHash.make(
+  "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+);
+
+describe("Yield Steps page progress", () => {
+  it("heads the steps with the action and counts the confirmed ones", async () => {
+    const app = await renderSteps({
+      numbered: true,
+      summary: {
+        detail: "via Lido",
+        title: "Stake 0.01 ETH",
+        token: { name: "ETH" },
+      },
+      txStates: [
+        {
+          ...row("APPROVAL"),
+          done: true,
+          explorerUrl: "https://etherscan.io/tx/0x1",
+          hash,
+        },
+        { ...row("STAKE"), phases: { ...idle, sign: "active" } },
+      ],
+    });
+
+    const text = app.container.textContent ?? "";
+    expect(text).toContain("Stake 0.01 ETH");
+    expect(text).toContain("via Lido");
+    expect(text).toContain("1 of 2 confirmed");
+    const [approve, stake] = app.container.querySelectorAll("li");
+    expect(approve?.textContent).toContain("Confirmed");
+    expect(stake?.textContent).toContain("Waiting for signature");
+    const link = approve?.querySelector("a");
+    expect(link?.getAttribute("href")).toBe("https://etherscan.io/tx/0x1");
+    expect(link?.textContent).toContain("View transaction, 0x1234\u2026cdef");
+    app.unmount();
+  });
+
+  it("links a sent transaction only once it is confirmed", async () => {
+    const app = await renderSteps({
+      numbered: true,
+      txStates: [
+        {
+          ...row("STAKE"),
+          explorerUrl: "https://etherscan.io/tx/0x1",
+          hash,
+          phases: { broadcast: "done", confirm: "active", sign: "done" },
+        },
+      ],
+    });
+
+    const [stake] = app.container.querySelectorAll("li");
+    expect(stake?.textContent).toContain("In progress");
+    expect(stake?.querySelector("a")).toBeNull();
+    expect(stake?.textContent).not.toContain("0x1234\u2026cdef");
+    app.unmount();
+  });
+
+  it("retries from the failed step", async () => {
+    const retry = vi.fn();
+    const app = await renderSteps({
+      numbered: true,
+      retry,
+      txStates: [{ ...row("STAKE"), phases: { ...idle, sign: "failed" } }],
+    });
+
+    const [stake] = app.container.querySelectorAll("li");
+    expect(stake?.textContent).toContain("Failed");
+    const button = stake?.querySelector("button");
+    expect(button?.textContent).toBe("Try Again");
+    expect(button?.dataset.rk).toBe("footer-button-primary");
+    button?.click();
+    expect(retry).toHaveBeenCalledOnce();
+    app.unmount();
   });
 });

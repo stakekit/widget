@@ -2,6 +2,15 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { ContainerFrame } from "../storybook/container-frame";
+import {
+  isOneLine,
+  isTruncated,
+  outlineWithin,
+  shareLine,
+  viewportBox,
+} from "../storybook/geometry";
+import { tokenLogo } from "../storybook/images";
+import { TokenAvatar } from "./avatar";
 import { ListRow } from "./list-row";
 import { VirtualList, type VirtualListGroup } from "./virtual-list";
 
@@ -135,6 +144,113 @@ export const StickyHeaders: Story = {
       );
     });
   },
+};
+
+const longName = "Validator with a very long name that cannot fit the row";
+
+/**
+ * In a 400px container a row's long title truncates and its long value stays
+ * on one line; the focus and selection rings draw inside the scrolling
+ * region, which would clip a ring drawn outside the row.
+ */
+export const RingsInsideViewport: Story = {
+  render: () => (
+    <ContainerFrame width={400}>
+      <VirtualList
+        label="Validators"
+        items={validators(0, 40)}
+        getKey={(validator) => validator.id}
+        renderItem={(validator, index) => (
+          <ListRow
+            title={index === 0 ? longName : validator.name}
+            subtitle="Commission 5%"
+            value="1,234,567.891 ETH"
+            onClick={fn()}
+            selected={index === 1}
+            testId={validator.id}
+          />
+        )}
+        maxHeight="md"
+      />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const scroller = region(canvasElement);
+    const first = within(scroller).getByTestId("validator-0");
+    const selected = within(scroller).getByTestId("validator-1");
+
+    await expect(isTruncated(within(first).getByText(longName))).toBe(true);
+    for (const value of within(scroller).getAllByText("1,234,567.891 ETH")) {
+      await expect(isOneLine(value)).toBe(true);
+    }
+    await expect(outlineWithin(selected, viewportBox(scroller))).toBe(true);
+
+    // The region is the first tab stop, its first row the next.
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect(first).toHaveFocus();
+    await expect(outlineWithin(first, viewportBox(scroller))).toBe(true);
+  },
+};
+
+export const RingsInsideViewportDark: Story = {
+  ...RingsInsideViewport,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * A group with `leading` heads its run with the avatar and its title in
+ * normal case, and `caption` at the header's end.
+ */
+export const GroupHeaderWithAvatar: Story = {
+  render: () => (
+    <ContainerFrame width={400}>
+      <VirtualList
+        label="Markets"
+        groups={[
+          {
+            key: "usdc",
+            label: "USDC",
+            leading: <TokenAvatar src={tokenLogo} name="USDC" size="control" />,
+            caption: "from 0.02%",
+            items: validators(0, 3),
+          },
+          {
+            key: "eth",
+            label: "ETH",
+            leading: <TokenAvatar src={tokenLogo} name="ETH" size="control" />,
+            caption: "from 1.20%",
+            items: validators(3, 3),
+          },
+        ]}
+        getKey={(validator) => validator.id}
+        renderItem={renderRow}
+        maxHeight="md"
+        stickyHeaders
+      />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const scroller = region(canvasElement, "Markets");
+    const label = within(scroller).getByText("USDC");
+    const caption = within(scroller).getByText("from 0.02%");
+    const header = viewportBox(scroller);
+
+    await expect(getComputedStyle(label).textTransform).toBe("none");
+    await expect(shareLine(label, caption)).toBe(true);
+    // The caption ends the header, past the middle of the list.
+    await expect(caption.getBoundingClientRect().left).toBeGreaterThan(
+      (header.left + header.right) / 2
+    );
+    await expect(caption.getBoundingClientRect().right).toBeLessThanOrEqual(
+      header.right
+    );
+  },
+};
+
+export const GroupHeaderWithAvatarDark: Story = {
+  ...GroupHeaderWithAvatar,
+  globals: { colorScheme: "dark" },
 };
 
 const onEndReached = fn();

@@ -1,8 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ComponentProps, useState } from "react";
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useState,
+} from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Button } from "../components/button";
 import { Card } from "../components/card";
+import { Disclosure } from "../components/disclosure";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { PageHeader } from "./page-header";
@@ -94,15 +100,60 @@ const frameParts = (canvasElement: HTMLElement) => {
   return { frame, content };
 };
 
-/** Shows a longer page on request, as a page change would. */
-const GrowingPage = () => {
-  const [long, setLong] = useState(false);
-  return (
+/** The frame's and its content's heights, once per frame for `ms`. */
+const sampleHeights = async (canvasElement: HTMLElement, ms: number) => {
+  const { frame, content } = frameParts(canvasElement);
+  const samples: { frame: number; content: number }[] = [];
+  const end = performance.now() + ms;
+  while (performance.now() < end) {
+    const { promise, resolve } = Promise.withResolvers<number>();
+    requestAnimationFrame(resolve);
+    await promise;
+    samples.push({
+      frame: frame.getBoundingClientRect().height,
+      content: content.getBoundingClientRect().height,
+    });
+  }
+  return samples;
+};
+
+const lagging = (samples: { frame: number; content: number }[]) =>
+  samples.filter((sample) => Math.abs(sample.frame - sample.content) > 0.5);
+
+/**
+ * Renders nothing for a few frames, as a page still loading would; well
+ * within the frame's shrink delay.
+ */
+const LatePage = ({ children }: { readonly children: ReactNode }) => {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShown(true), 60);
+    return () => clearTimeout(timer);
+  }, []);
+  return shown ? children : null;
+};
+
+/**
+ * Two pages, short and long, the long one a card taller and empty for a
+ * moment before it shows; each page holds a disclosure that resizes it in
+ * place.
+ */
+const PagedHost = (args: ComponentProps<typeof WidgetFrame>) => {
+  const [page, setPage] = useState<"short" | "long">("short");
+  const body = (
     <Stack gap="gutter">
-      <Button variant="primary" onClick={() => setLong(true)}>
-        Show more
+      <Button
+        variant="primary"
+        onClick={() => setPage(page === "short" ? "long" : "short")}
+      >
+        Next page
       </Button>
-      {long && (
+      <Disclosure title="More details">
+        <Text as="p">Rewards are paid every epoch.</Text>
+        <Text as="p">Unstaking takes about a week.</Text>
+        <Text as="p">Fees are taken from the rewards.</Text>
+      </Disclosure>
+      {page === "long" && (
         <Card>
           <Text as="p">A longer page needs more of the frame's height.</Text>
           <Text as="p">The frame eases to it rather than jumping.</Text>
@@ -110,28 +161,77 @@ const GrowingPage = () => {
       )}
     </Stack>
   );
+  return (
+    <div data-testid="host">
+      <WidgetFrame {...args} pageKey={page}>
+        {page === "short" ? body : <LatePage>{body}</LatePage>}
+      </WidgetFrame>
+    </div>
+  );
 };
 
-/** With `animateHeight`, the frame eases to a page's new height. */
-export const AnimateHeight: Story = {
-  args: { animateHeight: true, children: <GrowingPage /> },
-  render: (args) => (
-    <div data-testid="host">
-      <WidgetFrame {...args} />
-    </div>
-  ),
+/**
+ * When its `pageKey` changes, the frame eases to the new page's height. While
+ * the page area is empty between the two pages it holds the old page's
+ * height, so it never dips below the shorter of the two.
+ */
+export const PageChange: Story = {
+  render: (args) => <PagedHost {...args} />,
   play: async ({ canvasElement }) => {
     const { frame, content } = frameParts(canvasElement);
+    // Let the frame measure the first page, as it has long before a reader
+    // can change pages.
+    await sampleHeights(canvasElement, 100);
     const before = frame.getBoundingClientRect().height;
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Show more" })
+      within(canvasElement).getByRole("button", { name: "Next page" })
     );
+    const samples = await sampleHeights(canvasElement, 800);
+    await expect(lagging(samples).length).toBeGreaterThan(2);
     await waitFor(() =>
       expect(frame.getBoundingClientRect().height).toBe(
         content.getBoundingClientRect().height
       )
     );
-    await expect(frame.getBoundingClientRect().height).toBeGreaterThan(before);
+    const after = frame.getBoundingClientRect().height;
+    await expect(after).toBeGreaterThan(before);
+    const lowest = Math.min(...samples.map((sample) => sample.frame));
+    await expect(lowest).toBeGreaterThanOrEqual(Math.min(before, after) - 0.5);
+
+    // Back to the shorter page: the frame eases down to it.
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Next page" })
+    );
+    const back = await sampleHeights(canvasElement, 900);
+    await expect(lagging(back).length).toBeGreaterThan(2);
+    await expect(back.at(-1)?.frame).toBeCloseTo(before, 0);
+  },
+};
+
+/**
+ * Within a page the frame follows its content's height every frame, so a
+ * disclosure's own animation is the only one: opening and closing it never
+ * eases the frame after it.
+ */
+export const InPageResize: Story = {
+  render: (args) => <PagedHost {...args} />,
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", {
+      name: "More details",
+    });
+    const heights = (samples: { content: number }[]) =>
+      samples.map((sample) => sample.content);
+
+    await userEvent.click(trigger);
+    const opening = await sampleHeights(canvasElement, 400);
+    await expect(Math.max(...heights(opening))).toBeGreaterThan(
+      Math.min(...heights(opening))
+    );
+    await expect(lagging(opening)).toEqual([]);
+
+    await userEvent.click(trigger);
+    const closing = await sampleHeights(canvasElement, 400);
+    await expect(lagging(closing)).toEqual([]);
   },
 };
 

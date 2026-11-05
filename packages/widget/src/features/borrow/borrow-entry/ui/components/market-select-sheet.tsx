@@ -10,12 +10,14 @@ import {
 } from "../../../../../domain/borrow/catalog/market";
 import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/execution/origination-fee";
 import type { MarketId } from "../../../../../domain/borrow/ids";
+import type { Token } from "../../../../../domain/token/token";
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
   formatPercent,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
 import {
+  type ResolvedTokenLogo,
   useTokenLogo,
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
@@ -124,18 +126,25 @@ const MarketSelect = ({
       empty={{ title: t("dashboard.borrow.form.no_assets") }}
       groups={marketGroups.map((group) => {
         const bestRate = formatPercent(group.bestRate, locale);
-        const rate =
-          group.marketItems.length > 1
-            ? t("dashboard.borrow.form.rate_from", { rate: bestRate })
-            : bestRate;
+        const loanLogo = resolveLogo(
+          toBorrowEntryToken({
+            network: group.network,
+            token: group.loanToken,
+          })
+        );
 
         return {
           key: group.key,
-          label: `${group.loanToken.symbol} · ${rate}`,
+          label: group.loanToken.symbol,
+          logo: { ...loanLogo, name: group.loanToken.symbol },
+          caption:
+            group.marketItems.length > 1
+              ? t("dashboard.borrow.form.rate_from", { rate: bestRate })
+              : bestRate,
           options: group.marketItems.map((market) => {
+            const integration = integrationsById.get(market.integrationId);
             const providerName = formatBorrowProviderName(
-              integrationsById.get(market.integrationId)?.name ??
-                market.integrationId
+              integration?.name ?? market.integrationId
             );
             const isPool = market.type === "pool";
             const feeBps = getBorrowOriginationFeeBps(market);
@@ -165,16 +174,57 @@ const MarketSelect = ({
                     ]
                   : []),
               ].join(" · "),
-              logo: resolveLogo(
-                toBorrowEntryToken({
-                  network: market.network,
-                  token: market.loanToken,
-                })
-              ),
+              logo: marketLogo({
+                loanLogo,
+                market,
+                providerLogoUri: integration?.metadata.logoURI,
+                providerName,
+                resolveLogo,
+              }),
             };
           }),
         };
       })}
     />
   );
+};
+
+/**
+ * A row's logo tells its market apart from the group's lent token in the
+ * header: an isolated market shows its collateral, a pool its provider.
+ */
+const marketLogo = ({
+  loanLogo,
+  market,
+  providerLogoUri,
+  providerName,
+  resolveLogo,
+}: {
+  readonly loanLogo: ResolvedTokenLogo;
+  readonly market: Market;
+  readonly providerLogoUri: string | undefined;
+  readonly providerName: string;
+  readonly resolveLogo: (token: Token) => ResolvedTokenLogo;
+}): ResolvedTokenLogo => {
+  const collateralToken =
+    market.type === "isolated" ? market.collateralTokens[0] : undefined;
+
+  if (collateralToken) {
+    return {
+      ...resolveLogo(
+        toBorrowEntryToken({
+          network: market.network,
+          token: collateralToken.token,
+        })
+      ),
+      name: collateralToken.token.symbol,
+    };
+  }
+
+  // The provider stands for the pool, on the lent token's network badge.
+  return {
+    name: providerName,
+    ...(providerLogoUri ? { src: providerLogoUri } : {}),
+    ...(loanLogo.networkSrc ? { networkSrc: loanLogo.networkSrc } : {}),
+  };
 };

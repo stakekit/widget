@@ -123,7 +123,7 @@ const ReadyActivityPage = ({
             loadingMore={infiniteScroll.loadingMore}
             loadingMoreLabel={t("activity.loading_more")}
             onEndReached={onLoadMore}
-            estimateSize={80}
+            estimateSize={72}
             maxHeight="lg"
             renderItem={(item) => (
               <ActionListItem

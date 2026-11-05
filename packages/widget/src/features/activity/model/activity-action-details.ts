@@ -9,11 +9,14 @@ import type { ConfidentialSettlement } from "../../../domain/earn/confidential";
 import type { Token } from "../../../domain/token/token";
 import { borrowTokenToAppToken } from "../../../shared/lib/borrow-token";
 import { formatDateTime } from "../../../shared/lib/date";
+import { formatBorrowProviderName } from "../../../shared/lib/formatters";
+import { formatAddress } from "../../../shared/lib/general";
 import {
   formatFigureChange,
   formatHealthFactor,
   formatLtv,
   formatTokenAmount,
+  formatUsd,
 } from "../../../shared/lib/number-format";
 import type {
   ActivityActionItem,
@@ -78,6 +81,8 @@ type ActivityBorrowDetailsProjection = Readonly<{
 
 export type ActivityActionDetailsProjection = Readonly<{
   readonly amount: string | null;
+  /** The amount's USD value when the action was made. */
+  readonly amountFiat: string | null;
   readonly borrow: ActivityBorrowDetailsProjection | null;
   readonly canContinue: boolean;
   /** When a confidential batch cancelled the request. */
@@ -86,6 +91,8 @@ export type ActivityActionDetailsProjection = Readonly<{
   readonly continuationUnavailable: boolean;
   readonly createdAt: string;
   readonly network: string;
+  /** Who runs the yield or market. */
+  readonly providerName: string | null;
   readonly statusLabel: ActivityStatusLabel | null;
   readonly title: ActivityActionTitle;
   /** The token beside the title, whose icon heads the receipt. */
@@ -93,6 +100,8 @@ export type ActivityActionDetailsProjection = Readonly<{
   readonly amountTokenSymbol: string | null;
   readonly transactions: ReadonlyArray<ActivityDetailsTransaction>;
   readonly transactionsSummary: ActivityDetailsTransactionsSummary;
+  /** The validators the action staked with, by name or short address. */
+  readonly validators: ReadonlyArray<string>;
 }>;
 
 const formatDate = (
@@ -230,6 +239,9 @@ const projectYieldActivityDetails = ({
 
   return {
     amount,
+    amountFiat: action.amountUsd?.isGreaterThan(0)
+      ? formatUsd(action.amountUsd, locale)
+      : null,
     borrow: null,
     canContinue,
     canceledAt:
@@ -250,6 +262,7 @@ const projectYieldActivityDetails = ({
       continuationWindowOpen,
     createdAt: formatDate(action.createdAt, locale, presentationTime.timeZone),
     network: item.yieldData?.token.network ?? item.walletScope.network,
+    providerName: item.yieldData?.provider?.name ?? null,
     statusLabel,
     title: listItem.title,
     titleToken: item.yieldData
@@ -258,6 +271,9 @@ const projectYieldActivityDetails = ({
     amountTokenSymbol: listItem.amountTokenSymbol,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
+    validators: item.validatorsData.map(
+      (validator) => validator.name ?? formatAddress(validator.address)
+    ),
   };
 };
 
@@ -320,6 +336,8 @@ const projectBorrowActivityDetails = ({
     amount: exactAmount
       ? `${listItem.amountSign}${formatTokenAmount(exactAmount, locale, "down")}`
       : null,
+    // Borrow actions carry no USD value.
+    amountFiat: null,
     borrow: {
       collateralFee: formatBorrowFee(
         metadata?.feeAmount,
@@ -356,6 +374,9 @@ const projectBorrowActivityDetails = ({
     continuationUnavailable: false,
     createdAt: formatDate(action.createdAt, locale, presentationTime.timeZone),
     network: item.network,
+    providerName: item.integration
+      ? formatBorrowProviderName(item.integration.name)
+      : null,
     statusLabel: listItem.statusLabel,
     title: listItem.title,
     titleToken: item.token
@@ -364,6 +385,7 @@ const projectBorrowActivityDetails = ({
     amountTokenSymbol: listItem.amountTokenSymbol,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
+    validators: [],
   };
 };
 

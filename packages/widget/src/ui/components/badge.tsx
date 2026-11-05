@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
-import type { IconName } from "../icons/glyphs";
+import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
+import { badgeTint, color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -11,13 +12,12 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 import type { Tone } from "../tone";
-import {
-  toneBorderStyles,
-  toneSoftStyles,
-  toneTextStyles,
-} from "./tone-styles";
+import { toneBorderStyles, toneTextStyles } from "./tone-styles";
 
-/** A short status label: `soft` on the tone's tint, `outline` edged in it. */
+/**
+ * A short status label: `soft` tinted and edged in its tone over the
+ * surface it sits on, `outline` edged in the tone itself.
+ */
 export const Badge = ({
   tone = "neutral",
   variant = "soft",
@@ -29,7 +29,7 @@ export const Badge = ({
   readonly tone?: Tone;
   readonly variant?: "soft" | "outline";
   /** A decorative icon before the label. */
-  readonly icon?: Exclude<IconName, "ArrowIcon">;
+  readonly icon?: FixedIconName;
   readonly children: string;
   /** Rendered as `data-testid`. */
   readonly testId?: string;
@@ -41,9 +41,10 @@ export const Badge = ({
     role={role}
     {...stylex.props(
       styles.root,
+      toneTextStyles[tone],
       variant === "soft"
-        ? toneSoftStyles[tone]
-        : [styles.outline, toneTextStyles[tone], toneBorderStyles[tone]]
+        ? [styles.soft, tone === "neutral" && styles.softNeutral]
+        : [styles.outline, toneBorderStyles[tone]]
     )}
   >
     {icon && <Icon name={icon} size="sm" />}
@@ -71,4 +72,15 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
   },
   outline: { backgroundColor: "transparent" },
+  // The tone's text color, `currentColor`, mixed into `surface`: the fill
+  // stays faint so the text keeps its contrast, and the edge carries the
+  // badge's shape on a row.
+  soft: {
+    borderColor: `color-mix(in srgb, currentColor ${badgeTint.edge}, ${color.surface})`,
+    backgroundColor: `color-mix(in srgb, currentColor ${badgeTint.fill}, ${color.surface})`,
+  },
+  // Text reads stronger than a hue, so its edge takes less of it.
+  softNeutral: {
+    borderColor: `color-mix(in srgb, currentColor ${badgeTint.neutralEdge}, ${color.surface})`,
+  },
 });

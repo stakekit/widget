@@ -48,8 +48,8 @@ export const createCompactRoutes = () => {
             }
           >
             {createActivityActionRoutes({
+              receiptPlacement: "page",
               selectsDefaultAction: false,
-              showsBackButton: true,
             })}
           </Route>
         </Route>
@@ -122,7 +122,7 @@ export const CompactRoutes = () => {
 
   return (
     <>
-      <CompactFrame>
+      <CompactFrame pageKey={location.pathname}>
         <PageTransition pageKey={key} variant="rise" waitForExit fill>
           <Routes location={location}>{createCompactRoutes()}</Routes>
         </PageTransition>

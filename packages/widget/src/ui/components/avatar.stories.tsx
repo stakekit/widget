@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
 import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
@@ -14,7 +14,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const sizes = ["xs", "sm", "md", "lg", "xl"] as const;
+const sizes = ["xs", "sm", "control", "md", "lg", "xl"] as const;
 
 export const Image: Story = { args: { src: tokenLogo } };
 
@@ -45,7 +45,10 @@ export const Sizes: Story = {
   ),
 };
 
-/** A token's logo with its network badge. */
+/**
+ * A token's logo with its network badge. The logo is fitted whole, never
+ * cropped, and the badge sits inside the avatar's footprint at its bottom end.
+ */
 export const Token: Story = {
   render: () => (
     <Stack direction="row" align="center" gap={8}>
@@ -60,6 +63,37 @@ export const Token: Story = {
       ))}
     </Stack>
   ),
+  play: async ({ canvasElement }) => {
+    const avatars = within(canvasElement).getAllByRole("img", { name: "ETH" });
+    await expect(avatars).toHaveLength(sizes.length);
+
+    for (const avatar of avatars) {
+      const footprint = avatar.parentElement;
+      const badge = footprint?.lastElementChild;
+      await expect(badge).not.toBe(avatar);
+
+      const box = avatar.getBoundingClientRect();
+      const badgeBox = badge?.getBoundingClientRect();
+      await expect(footprint?.getBoundingClientRect()).toMatchObject({
+        width: box.width,
+        height: box.height,
+      });
+      await expect(badgeBox?.left).toBeGreaterThanOrEqual(box.left);
+      await expect(badgeBox?.top).toBeGreaterThanOrEqual(box.top);
+      await expect(badgeBox?.right).toBeLessThanOrEqual(box.right);
+      await expect(badgeBox?.bottom).toBeLessThanOrEqual(box.bottom);
+      // About two fifths of the avatar: readable, yet the logo stays in view.
+      await expect(badgeBox?.width).toBeGreaterThanOrEqual(box.width * 0.35);
+      await expect(badgeBox?.width).toBeLessThanOrEqual(box.width * 0.45);
+
+      const logo = await waitFor(() => {
+        const image = avatar.querySelector("img");
+        if (image === null) throw new Error("The logo has not loaded.");
+        return image;
+      });
+      await expect(getComputedStyle(logo).objectFit).toBe("contain");
+    }
+  },
 };
 
 /** An icon in an avatar's circle, decorative beside the text that names it. */

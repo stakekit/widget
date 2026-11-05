@@ -64,10 +64,17 @@ type OptionsOrGroups =
       readonly groups?: never;
     }
   | {
-      /** Titled runs of options, such as "Your tokens" and "All tokens". */
+      /**
+       * Titled runs of options, such as "Your tokens" and "All tokens". A
+       * group with `logo`, such as a market's token, heads its run with the
+       * avatar and its label in normal case; `caption`, such as
+       * "from 0.02%", aligns to the header's end.
+       */
       readonly groups: ReadonlyArray<{
         readonly key: string;
         readonly label: string;
+        readonly logo?: TokenLogo;
+        readonly caption?: string;
         readonly options: ReadonlyArray<SelectSheetOption>;
       }>;
       readonly options?: never;
@@ -361,6 +368,14 @@ export const SelectSheet = ({
           key: group.key,
           label: group.label,
           items: group.options,
+          ...(group.logo === undefined
+            ? {}
+            : {
+                leading: (
+                  <TokenAvatar {...group.logo} size="control" decorative />
+                ),
+              }),
+          ...(group.caption === undefined ? {} : { caption: group.caption }),
         }))}
       />
     );

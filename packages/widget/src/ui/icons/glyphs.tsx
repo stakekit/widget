@@ -282,3 +282,9 @@ export const glyphs = {
 
 /** Every icon the Design System draws. */
 export type IconName = keyof typeof glyphs;
+
+/**
+ * An icon drawn one way only: every icon but `ArrowIcon`, which needs a
+ * direction. Parts that show an icon by name alone take these.
+ */
+export type FixedIconName = Exclude<IconName, "ArrowIcon">;

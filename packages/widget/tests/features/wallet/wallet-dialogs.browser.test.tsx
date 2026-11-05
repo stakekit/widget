@@ -114,6 +114,30 @@ describe("wallet connection picker", () => {
         yield* Effect.promise(() => expect.element(opener).toHaveFocus());
       })
   );
+
+  it.live("lists wallets in compact rows", () =>
+    Effect.gen(function* () {
+      yield* renderPicker({
+        groups: [
+          {
+            groupName: "Wallets",
+            wallets: [{ id: "metamask" }, { id: "rabby" }],
+          },
+        ],
+      });
+      for (const id of ["metamask", "rabby"]) {
+        const row = page.getByTestId(`connect-wallet-evm-${id}`);
+        yield* Effect.promise(() => expect.element(row).toBeVisible());
+        expect(
+          row.element().getBoundingClientRect().height
+        ).toBeLessThanOrEqual(56);
+        // A picker row has no surface of its own; it tints on hover only.
+        expect(getComputedStyle(row.element()).backgroundColor).toBe(
+          "rgba(0, 0, 0, 0)"
+        );
+      }
+    })
+  );
 });
 
 it("keeps every chain reachable by keyboard inside a short viewport", async ({
@@ -171,6 +195,49 @@ it("keeps every chain reachable by keyboard inside a short viewport", async ({
   }
 });
 
+it("lists networks in compact rows and marks the connected one without a chip", async ({
+  worker,
+}) => {
+  setup(worker);
+  const app = await renderApp({
+    skProps: {
+      apiKey: import.meta.env.VITE_API_KEY,
+      externalProviders: {
+        type: "generic",
+        currentAddress: "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7",
+        supportedChainIds: [mainnet.id, avalanche.id],
+        provider: {
+          switchChain: async () => {},
+          signMessage: async () => "signature",
+          sendTransaction: async () => "hash",
+        },
+      },
+    },
+  });
+  await app.getByRole("button", { name: "Ethereum", exact: true }).click();
+  const dialog = page.getByTestId("wallet-chain-dialog");
+  const current = dialog.getByTestId(`wallet-chain-${mainnet.id}`);
+  const other = dialog.getByTestId(`wallet-chain-${avalanche.id}`);
+  await expect.element(current).toBeVisible();
+
+  await expect.element(current).toHaveAttribute("aria-pressed", "true");
+  await expect.element(other).toHaveAttribute("aria-pressed", "false");
+  await expect
+    .element(dialog.getByText("Connected", { exact: true }))
+    .not.toBeInTheDocument();
+  const heights = [current, other].map(
+    (row) => row.element().getBoundingClientRect().height
+  );
+  for (const height of heights) expect(height).toBeLessThanOrEqual(56);
+  expect(heights[0]).toBe(heights[1]);
+  // Rows have no surface of their own; they tint on hover only.
+  expect(getComputedStyle(other.element()).backgroundColor).toBe(
+    "rgba(0, 0, 0, 0)"
+  );
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect.element(dialog).not.toBeInTheDocument();
+});
+
 it("copies the full account address and clears copied feedback", async ({
   worker,
 }) => {
@@ -215,6 +282,63 @@ it("copies the full account address and clears copied feedback", async ({
   }
 });
 
+it("lays out the account actions as one centered row on a narrow viewport", async ({
+  worker,
+}) => {
+  setup(worker);
+  await page.viewport(360, 720);
+  try {
+    const app = await renderApp({
+      walletListFactory: mockWalletListFactory({
+        accounts: ["0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7"],
+      }),
+      skProps: { apiKey: import.meta.env.VITE_API_KEY },
+    });
+    await app.getByRole("button", { name: "0xB6…B2F7", exact: true }).click();
+    const dialog = page.getByTestId("wallet-account-dialog");
+    const copy = dialog.getByRole("button", {
+      name: "Copy Address",
+      exact: true,
+    });
+    const disconnect = dialog.getByTestId("wallet-account-disconnect");
+    await expect.element(copy).toBeVisible();
+    await expect.element(disconnect).toBeVisible();
+
+    const dialogBox = dialog.element().getBoundingClientRect();
+    const copyBox = copy.element().getBoundingClientRect();
+    const disconnectBox = disconnect.element().getBoundingClientRect();
+    // One row: both actions share a line, copy first.
+    expect(disconnectBox.top).toBe(copyBox.top);
+    expect(copyBox.right).toBeLessThanOrEqual(disconnectBox.left);
+    // Centered in the dialog, and both inside it.
+    const leftSpace = copyBox.left - dialogBox.left;
+    const rightSpace = dialogBox.right - disconnectBox.right;
+    expect(Math.abs(leftSpace - rightSpace)).toBeLessThanOrEqual(1);
+    expect(leftSpace).toBeGreaterThan(0);
+    // Neither label wraps or overflows its button.
+    for (const button of [copy.element(), disconnect.element()]) {
+      expect(textLineCount(button)).toBe(1);
+      expect(button.scrollWidth).toBeLessThanOrEqual(button.clientWidth);
+    }
+  } finally {
+    await page.viewport(1280, 720);
+  }
+});
+
+/** How many lines the text inside an element runs over. */
+const textLineCount = (element: Element) => {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const tops = new Set<number>();
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    for (const rect of range.getClientRects()) {
+      if (rect.width > 0) tops.add(Math.round(rect.top));
+    }
+  }
+  return tops.size;
+};
+
 it("clears a failed network selection when the dialog is reopened", async ({
   worker,
 }) => {
@@ -242,6 +366,8 @@ it("clears a failed network selection when the dialog is reopened", async ({
   await dialog.getByTestId(`wallet-chain-${avalanche.id}`).click();
   await expect.element(dialog.getByRole("status")).toBeVisible();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  // The connected network's row is also named "Ethereum" until it unmounts.
+  await expect.element(dialog).not.toBeInTheDocument();
   await open.click();
   await expect.element(dialog.getByRole("status")).not.toBeInTheDocument();
 });

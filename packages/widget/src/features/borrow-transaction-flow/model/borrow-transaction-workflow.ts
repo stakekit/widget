@@ -6,6 +6,7 @@ import {
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
   getTransactionStepProgress,
+  getTransactionWorkflowTransactionReference,
   type TransactionStepProgress,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
@@ -14,6 +15,8 @@ import {
 type BorrowExecutionStep = {
   readonly done: boolean;
   readonly explorerUrl: string | null;
+  /** The sent transaction's hash, once it has one. */
+  readonly hash: TransactionHash | null;
   readonly id: Transaction["id"];
   readonly progress: TransactionStepProgress;
   readonly type: Transaction["type"];
@@ -126,24 +129,21 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
     phase: status.phase,
     state,
     steps: flattenTransactionWorkflowTransactions(state.context).flatMap(
-      (transaction): ReadonlyArray<BorrowExecutionStep> => {
-        if (transaction.source._tag !== "Borrow") return [];
-
-        const submission =
-          transaction.meta.submissionIndex === null
-            ? null
-            : state.context.submissions[transaction.meta.submissionIndex];
-
-        return [
-          {
-            done: transaction.meta.done,
-            explorerUrl: transaction.meta.url ?? submission?.link ?? null,
-            id: transaction.source.transaction.id,
-            progress: getTransactionStepProgress(state, transaction),
-            type: transaction.source.transaction.type,
-          },
-        ];
-      }
+      (transaction): ReadonlyArray<BorrowExecutionStep> =>
+        transaction.source._tag === "Borrow"
+          ? [
+              {
+                ...getTransactionWorkflowTransactionReference(
+                  state.context,
+                  transaction
+                ),
+                done: transaction.meta.done,
+                id: transaction.source.transaction.id,
+                progress: getTransactionStepProgress(state, transaction),
+                type: transaction.source.transaction.type,
+              },
+            ]
+          : []
     ),
     totalSteps: currentBatch?.totalSteps ?? action.totalSteps,
   } as const;

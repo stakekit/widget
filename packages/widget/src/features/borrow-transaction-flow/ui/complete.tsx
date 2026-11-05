@@ -4,7 +4,7 @@ import {
   formatBorrowProviderName,
   formatNetworkName,
 } from "../../../shared/lib/formatters";
-import { formatAddress } from "../../../shared/lib/general";
+import { formatTransactionHash } from "../../../shared/lib/general";
 import { formatTokenAmount } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
@@ -165,10 +165,7 @@ export const BorrowCompletePage = () => {
                           {transaction.hash ? (
                             <>
                               <VisuallyHidden>{`${viewLabel}, `}</VisuallyHidden>
-                              {formatAddress(transaction.hash, {
-                                leadingChars: 6,
-                                trailingChars: 4,
-                              })}
+                              {formatTransactionHash(transaction.hash)}
                             </>
                           ) : (
                             viewLabel

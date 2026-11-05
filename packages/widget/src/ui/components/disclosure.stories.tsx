@@ -80,3 +80,53 @@ export const Keyboard: Story = {
     await expect(trigger).toHaveFocus();
   },
 };
+
+/** The height of the panel holding the first line, once per frame for `ms`. */
+const sampleHeights = async (canvasElement: HTMLElement, ms: number) => {
+  const heights: number[] = [];
+  const end = performance.now() + ms;
+  while (performance.now() < end) {
+    const { promise, resolve } = Promise.withResolvers<number>();
+    requestAnimationFrame(resolve);
+    await promise;
+    const panel = within(canvasElement)
+      .queryByText("Rewards are paid every epoch.")
+      ?.closest("[data-open], [data-closed]");
+    heights.push(panel?.getBoundingClientRect().height ?? 0);
+  }
+  return heights;
+};
+
+/**
+ * The content grows open from no height and shrinks closed, passing through
+ * the heights between, rather than snapping.
+ */
+export const AnimatesHeight: Story = {
+  args: {
+    children: (
+      <>
+        <Text as="p">Rewards are paid every epoch.</Text>
+        <Text as="p">Unstaking takes about a week.</Text>
+        <Text as="p">Fees are taken from the rewards.</Text>
+      </>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", {
+      name: "More details",
+    });
+    const between = (heights: number[]) => {
+      const full = Math.max(...heights);
+      return heights.filter((height) => height > 1 && height < full - 1);
+    };
+
+    await userEvent.click(trigger);
+    const opening = await sampleHeights(canvasElement, 400);
+    await expect(Math.max(...opening)).toBeGreaterThan(40);
+    await expect(between(opening).length).toBeGreaterThan(2);
+
+    await userEvent.click(trigger);
+    const closing = await sampleHeights(canvasElement, 400);
+    await expect(between(closing).length).toBeGreaterThan(2);
+  },
+};

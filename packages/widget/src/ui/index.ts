@@ -41,7 +41,7 @@ export { TimeSeriesChart } from "./components/time-series-chart";
 export { Tooltip } from "./components/tooltip";
 export { VirtualList } from "./components/virtual-list";
 export type { HostHook } from "./host-hook";
-export type { IconName } from "./icons/glyphs";
+export type { FixedIconName } from "./icons/glyphs";
 export { AmountPanel } from "./patterns/amount-panel";
 export { AssetHeader } from "./patterns/asset-header";
 export { EmptyState } from "./patterns/empty-state";

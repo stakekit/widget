@@ -6,7 +6,7 @@ import { DetailsTabs } from "./components/tabs";
 export const Details = ({
   pendingActionsCount,
 }: Readonly<{ readonly pendingActionsCount: number }>) => (
-  <Stack grow gap={4}>
+  <Stack grow gap={16}>
     <DetailsTabs pendingActionsCount={pendingActionsCount} />
     <Stack grow>
       <Outlet />

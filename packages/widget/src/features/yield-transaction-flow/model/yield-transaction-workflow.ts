@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type { TransactionType } from "../../../domain/action/rules";
+import type { TransactionHash } from "../../../domain/identity/identifiers";
 import type {
   TransactionPhaseProgress,
   TransactionWorkflowContext,
@@ -11,6 +12,7 @@ import {
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
   getTransactionStepProgress,
+  getTransactionWorkflowTransactionReference,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
 import { sentenceCaseEnumValue } from "../../../shared/lib/formatters";
 
@@ -51,6 +53,10 @@ export const isYieldTransactionWorkflowFinished = (
 /** One row of Steps: a transaction, or the step that prepares the action. */
 export type YieldStepRow = Readonly<{
   readonly done: boolean;
+  /** The transaction on a block explorer, once it has been sent. */
+  readonly explorerUrl: string | null;
+  /** The sent transaction's hash, once it has one. */
+  readonly hash: TransactionHash | null;
   readonly id: string;
   readonly phases: TransactionPhaseProgress;
   /** A preparation the API rejected: only going back can change it. */
@@ -79,6 +85,8 @@ const toPreparationRow = (
   { done, id, type }: Pick<YieldStepRow, "done" | "id" | "type">
 ): YieldStepRow => ({
   done,
+  explorerUrl: null,
+  hash: null,
   id,
   phases: getPreparationPhases(state, done),
   rejected: !done && state._tag === "PrepareFailed" && !state.error.retryable,
@@ -130,6 +138,8 @@ export const getYieldTransactionStepsView = (
   ).map(
     (type, index): YieldStepRow => ({
       done: false,
+      explorerUrl: null,
+      hash: null,
       id: `planned-${index}-${type}`,
       phases: idle,
       rejected: false,
@@ -144,6 +154,10 @@ export const getYieldTransactionStepsView = (
         ? []
         : [
             {
+              ...getTransactionWorkflowTransactionReference(
+                machineState.context,
+                transaction
+              ),
               done: transaction.meta.done,
               id: transaction.source.transaction.id,
               phases: getTransactionStepProgress(machineState, transaction)

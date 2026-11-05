@@ -3,12 +3,12 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { FlowSteps } from "./flow-steps";
 
 const stateLabels = {
-  pending: "waiting",
-  active: "in progress",
-  signing: "Approve in your wallet",
-  broadcasting: "Submitting to the network",
-  done: "done",
-  failed: "failed",
+  pending: "Waiting",
+  active: "In progress",
+  signing: "Waiting for signature",
+  broadcasting: "Broadcasting",
+  done: "Confirmed",
+  failed: "Failed",
 } as const;
 
 const meta = {
@@ -21,7 +21,6 @@ const meta = {
       label: "View transaction",
       newTabLabel: "opens in a new tab",
     },
-    retry: { label: "Try again", onClick: fn() },
     steps: [
       { id: "approve", label: "Approve", state: "done" },
       { id: "stake", label: "Stake", state: "signing" },
@@ -42,12 +41,12 @@ const stepItems = (canvasElement: HTMLElement) =>
     within(canvasElement).getByRole("list", { name: "Transaction progress" })
   ).getAllByRole("listitem");
 
-/** Waiting its turn, a step reads as waiting and is not the current one. */
+/** Waiting its turn, a step says so and is not the current one. */
 export const Pending: Story = {
   args: { steps: [{ id: "stake", label: "Stake", state: "pending" }] },
   play: async ({ canvasElement }) => {
     const [stake] = stepItems(canvasElement);
-    await expect(stake).toHaveTextContent("Stake, waiting");
+    await expect(stake).toHaveTextContent("Stake, Waiting");
     await expect(stake).not.toHaveAttribute("aria-current");
   },
 };
@@ -58,18 +57,16 @@ export const Active: Story = {
   play: async ({ canvasElement }) => {
     const [stake] = stepItems(canvasElement);
     await expect(stake).toHaveAttribute("aria-current", "step");
-    await expect(stake).toHaveTextContent("Stake, in progress");
+    await expect(stake).toHaveTextContent("Stake, In progress");
   },
 };
 
-/** Waiting for the signature, the step says what to do. */
+/** Waiting for the signature, the step says so. */
 export const Signing: Story = {
   play: async ({ canvasElement }) => {
     const [, stake] = stepItems(canvasElement);
     await expect(stake).toHaveAttribute("aria-current", "step");
-    await expect(stake).toHaveTextContent(
-      "Stake, in progressApprove in your wallet"
-    );
+    await expect(stake).toHaveTextContent("Stake, Waiting for signature");
   },
 };
 
@@ -86,11 +83,11 @@ export const Broadcasting: Story = {
   play: async ({ canvasElement }) => {
     const [stake] = stepItems(canvasElement);
     await expect(stake).toHaveAttribute("aria-current", "step");
-    await expect(stake).toHaveTextContent("Submitting to the network");
+    await expect(stake).toHaveTextContent("Stake, Broadcasting");
   },
 };
 
-/** Done, the step links to its transaction; no retry shows. */
+/** Done, the step links to its transaction. */
 export const Done: Story = {
   args: {
     steps: [
@@ -105,19 +102,39 @@ export const Done: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const [stake] = stepItems(canvasElement);
-    await expect(stake).toHaveTextContent("Stake, done");
+    await expect(stake).toHaveTextContent("Stake, Confirmed");
     await expect(
       canvas.getByRole("link", { name: "View transaction opens in a new tab" })
     ).toHaveAttribute("href", "https://etherscan.io/tx/0x1");
-    await expect(
-      canvas.queryByRole("button", { name: "Try again" })
-    ).toBeNull();
   },
 };
 
-/** Failed, the step says what went wrong, and the retry button retries. */
+/** With its hash, a done step's link shows the hash and reads what it opens. */
+export const DoneWithHash: Story = {
+  args: {
+    steps: [
+      {
+        id: "stake",
+        label: "Stake",
+        state: "done",
+        explorerUrl: "https://etherscan.io/tx/0x1",
+        hash: "0x1234…abcd",
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const link = within(canvasElement).getByRole("link", {
+      name: "View transaction, 0x1234…abcd opens in a new tab",
+    });
+    await expect(link).toHaveAttribute("href", "https://etherscan.io/tx/0x1");
+    await expect(link).toHaveTextContent("0x1234…abcd");
+  },
+};
+
+/** Failed, the step says what went wrong, and its retry button retries. */
 export const Failed: Story = {
   args: {
+    retry: { label: "Try again", onClick: fn() },
     steps: [
       { id: "approve", label: "Approve", state: "done" },
       {
@@ -129,12 +146,15 @@ export const Failed: Story = {
     ],
   },
   play: async ({ args, canvasElement }) => {
-    const [, stake] = stepItems(canvasElement);
+    const [approve, stake] = stepItems(canvasElement);
     await expect(stake).toHaveTextContent(
-      "Stake, failedThe transaction was rejected."
+      "Stake, FailedThe transaction was rejected.Try again"
     );
+    await expect(
+      within(approve ?? canvasElement).queryByRole("button")
+    ).toBeNull();
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Try again" })
+      within(stake ?? canvasElement).getByRole("button", { name: "Try again" })
     );
     await expect(args.retry?.onClick).toHaveBeenCalledOnce();
   },
@@ -143,6 +163,41 @@ export const Failed: Story = {
 export const FailedDark: Story = {
   ...Failed,
   globals: { colorScheme: "dark" },
+};
+
+/** With no step showing the failure, the retry button sits under the list. */
+export const RetryWithoutFailedStep: Story = {
+  args: {
+    retry: { label: "Try again", onClick: fn() },
+    steps: [{ id: "stake", label: "Stake", state: "pending" }],
+  },
+  play: async ({ args, canvasElement }) => {
+    const [stake] = stepItems(canvasElement);
+    await expect(
+      within(stake ?? canvasElement).queryByRole("button")
+    ).toBeNull();
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Try again" })
+    );
+    await expect(args.retry?.onClick).toHaveBeenCalledOnce();
+  },
+};
+
+/** Failed before any step was listed, the flow shows only its retry button. */
+export const RetryWithoutSteps: Story = {
+  args: {
+    retry: { label: "Try again", onClick: fn() },
+    steps: [],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.queryByRole("list", { name: "Transaction progress" })
+    ).toBeNull();
+    await expect(
+      canvas.getByRole("button", { name: "Try again" })
+    ).toBeVisible();
+  },
 };
 
 /** While the retry runs, its button is busy. */
@@ -160,6 +215,40 @@ export const Retrying: Story = {
   },
 };
 
+/** The action the steps run heads them, with how far the flow got. */
+export const WithSummary: Story = {
+  args: {
+    summary: {
+      title: "Stake 0.01 ETH",
+      detail: "via Lido",
+      token: { name: "ETH" },
+    },
+    progressLabel: ({ confirmed, total }) =>
+      `${confirmed} of ${total} confirmed`,
+    steps: [
+      {
+        id: "approve",
+        label: "Approve",
+        state: "done",
+        explorerUrl: "https://etherscan.io/tx/0x1",
+        hash: "0x1234…abcd",
+      },
+      { id: "stake", label: "Stake", state: "signing" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Stake 0.01 ETH")).toBeVisible();
+    await expect(canvas.getByText("via Lido")).toBeVisible();
+    await expect(canvas.getByText("1 of 2 confirmed")).toBeVisible();
+  },
+};
+
+export const WithSummaryDark: Story = {
+  ...WithSummary,
+  globals: { colorScheme: "dark" },
+};
+
 /** Every state in one flow. */
 export const AllStates: Story = {
   args: {
@@ -175,12 +264,12 @@ export const AllStates: Story = {
   play: async ({ canvasElement }) => {
     const steps = stepItems(canvasElement);
     await expect(steps.map((step) => step.textContent)).toEqual([
-      "Approve, done",
-      "Wrap, failedOut of gas.",
-      "Stake, in progressSubmitting to the network",
-      "Delegate, in progressApprove in your wallet",
-      "Bridge, in progress",
-      "Claim, waiting",
+      "Approve, Confirmed",
+      "Wrap, FailedOut of gas.",
+      "Stake, Broadcasting",
+      "Delegate, Waiting for signature",
+      "Bridge, In progress",
+      "Claim, Waiting",
     ]);
   },
 };

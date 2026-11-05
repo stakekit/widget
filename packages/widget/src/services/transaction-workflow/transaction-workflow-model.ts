@@ -533,6 +533,32 @@ export const flattenTransactionWorkflowTransactions = (
 ): ReadonlyArray<TransactionWorkflowTransaction> =>
   context.batches.flatMap((batch) => batch.transactions);
 
+/** Where a sent transaction is found, each part once it is known. */
+type TransactionWorkflowTransactionReference = Readonly<{
+  explorerUrl: string | null;
+  hash: TransactionHash | null;
+}>;
+
+/**
+ * A transaction's hash and block explorer link: its submission's, or the
+ * hash the wallet returned when it broadcast the transaction itself.
+ */
+export const getTransactionWorkflowTransactionReference = (
+  context: TransactionWorkflowContext,
+  { meta }: TransactionWorkflowTransaction
+): TransactionWorkflowTransactionReference => {
+  const submission =
+    meta.submissionIndex === null
+      ? undefined
+      : context.submissions[meta.submissionIndex];
+
+  return {
+    explorerUrl: meta.url ?? submission?.link ?? null,
+    hash:
+      submission?.hash ?? (meta.broadcasted === true ? meta.signedTx : null),
+  };
+};
+
 /**
  * Whether ending the workflow now abandons work already under way: a wallet
  * request or broadcast in flight, or a transaction signed, sent, or done.

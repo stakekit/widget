@@ -1,13 +1,11 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { toLowerCase } from "effect/String";
 import { useTranslation } from "react-i18next";
-import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
-import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
+import { getManageActionTitle } from "../../../model/action-title";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
@@ -43,17 +41,11 @@ export const usePendingActionReview = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  const labelContext = getPendingActionLabelContext(
-    manageFlow.request.action,
-    manageFlow.balanceType,
-    { confidential: isConfidentialYield(integrationData) }
-  );
-  const title = t(
-    `position_details.pending_action_button.${toLowerCase(
-      manageFlow.request.action
-    )}` as const,
-    labelContext === undefined ? {} : { context: labelContext }
-  );
+  const title = getManageActionTitle(t, {
+    balanceType: manageFlow.balanceType,
+    type: manageFlow.request.action,
+    yieldDto: integrationData,
+  });
 
   const fee = getGasFeeInUSD({
     gas: pendingTxGas,

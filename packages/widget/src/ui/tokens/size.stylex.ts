@@ -14,6 +14,11 @@ export const iconSize = stylex.defineConsts({
   lg: "24px",
 });
 
+/** A `Steps` marker: the circle that shows a step's status. */
+export const stepMarkerSize = stylex.defineConsts({
+  md: "28px",
+});
+
 /**
  * Checkbox and switch boxes. The switch thumb travels the track's width less
  * its height.
@@ -37,22 +42,37 @@ export const chartHeight = stylex.defineConsts({
   md: "160px",
 });
 
-/** Avatar sizes: `sm` sits in a row of text, `xl` heads an account dialog. */
+/**
+ * Avatar sizes: `sm` sits in a row of text, `lg` heads the account dialog and
+ * `xl` a position's or a finished transaction's page. `control` is not a step
+ * of the scale but a role: the avatar that leads a control, a token trigger
+ * or a condensed picker row, sized to that control's height.
+ */
 export const avatarSize = stylex.defineConsts({
   xs: "16px",
   sm: "24px",
+  control: "28px",
   md: "32px",
   lg: "48px",
   xl: "80px",
 });
 
-/** The network badge on a token avatar, per avatar size. */
+/**
+ * The network badge on a token avatar, per avatar size: about two fifths of
+ * the avatar, its ring included, so it stays inside the avatar's footprint.
+ */
 export const avatarBadgeSize = stylex.defineConsts({
-  xs: "8px",
+  xs: "7px",
   sm: "10px",
+  control: "12px",
   md: "14px",
   lg: "20px",
   xl: "32px",
+});
+
+/** A token trigger's height: a touch-sized pill around a `control` avatar. */
+export const tokenTriggerHeight = stylex.defineConsts({
+  md: "44px",
 });
 
 /** Named widths, one per container size. */

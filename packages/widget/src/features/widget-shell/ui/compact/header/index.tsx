@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { IconButton, Stack } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
+  isMountAnimationFinished,
   useMountAnimation,
   useMountRevealReady,
 } from "../../../../mount-animation/index";
@@ -16,11 +17,15 @@ import { ShellFrame } from "../../shell-frame";
  * controls above the page, shown only while one of them is. On mount the
  * frame grows open once the first page can show, unless the host disables
  * that animation; either way the mount animation's layout step finishes when
- * the frame is open.
+ * the frame is open. When `pageKey` changes the frame eases to the new page's
+ * height; so it does as the mount animation finishes, when the first page's
+ * stand-in gives way to the page.
  */
 export const CompactFrame = ({
+  pageKey,
   children,
 }: {
+  readonly pageKey: string;
   readonly children: ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -91,7 +96,7 @@ export const CompactFrame = ({
   return (
     <>
       <ShellFrame
-        animateHeight
+        pageKey={isMountAnimationFinished(state) ? pageKey : mountingPageKey}
         {...(header === undefined ? {} : { header })}
         {...(revealsOnMount
           ? {
@@ -108,3 +113,6 @@ export const CompactFrame = ({
     </>
   );
 };
+
+/** The frame's page while the mount animation runs, before any route's. */
+const mountingPageKey = "mounting";

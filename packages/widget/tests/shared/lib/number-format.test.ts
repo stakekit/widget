@@ -10,6 +10,8 @@ import {
   formatPercent,
   formatRewardRatePercent,
   formatRoundedPercent,
+  formatShortTokenAmount,
+  formatShortTokenAmountWithSymbol,
   formatTokenAmount,
   formatUsd,
 } from "../../../src/shared/lib/number-format";
@@ -120,6 +122,37 @@ describe("formatTokenAmount", () => {
     expect(formatTokenAmount("9007199254740993.123456789", "en", "down")).toBe(
       "9,007,199,254,740,993.12"
     );
+  });
+});
+
+describe("formatShortTokenAmount", () => {
+  it.each([
+    ["an amount below 1,000 in full", "999.98765", "999.9876"],
+    ["a small amount in full", "0.0001044", "0.0001044"],
+    ["thousands compactly", "1234.5678", "1.23K"],
+    ["millions compactly", "12345678.9", "12.34M"],
+    ["billions compactly", "9876543210.12", "9.87B"],
+  ])("shows %s, rounded down", (_label, value, expected) => {
+    expect(formatShortTokenAmount(value, "en", "down")).toBe(expected);
+  });
+
+  it("rounds a compact debt up", () => {
+    expect(formatShortTokenAmount("1234.5678", "en", "up")).toBe("1.24K");
+  });
+
+  it("uses the language's compact notation", () => {
+    expect(formatShortTokenAmount("1234.5678", "fr", "down")).toBe(
+      `1,23${nbsp}k`
+    );
+  });
+
+  it("follows the amount with its token's symbol", () => {
+    expect(
+      formatShortTokenAmountWithSymbol(
+        { amount: "12345678.9", token: { symbol: "USDC" } },
+        "en"
+      )
+    ).toBe("12.34M USDC");
   });
 });
 

@@ -7,6 +7,7 @@ import {
   useYieldFlowExecution,
   useYieldFlowSession,
 } from "../../../react/yield-flow-route";
+import { useStepsSummary } from "./use-steps-summary.hook";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
@@ -19,6 +20,7 @@ export const useSteps = () => {
   );
 
   const trackEvent = useTrackEvent();
+  const summary = useStepsSummary();
 
   const onClick = () =>
     leaveConfirmation.confirm(() => {
@@ -49,6 +51,7 @@ export const useSteps = () => {
     cta: resolveCta(),
     customSignErrorMessage: steps.customSignErrorMessage,
     leaveConfirmationDialog: leaveConfirmation.dialog,
+    summary,
     yieldId: steps.yieldId,
   };
 };

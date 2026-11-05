@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import { formatAddress } from "../../../../shared/lib/general";
 import {
-  Icon,
+  Button,
   ListGroup,
   ListRow,
   Modal,
@@ -66,16 +66,41 @@ export const AccountModal = () => {
         title={displayAddress}
         closeLabel={t("wallet_modal.close")}
       >
-        <Stack align="center">
-          <TokenAvatar account={wallet.address} size="xl" />
+        <Stack align="center" gap={16}>
+          <TokenAvatar account={wallet.address} size="lg" />
+          <Stack direction="row" justify="center" gap={8} wrap>
+            <Button
+              testId="wallet-account-copy"
+              iconStart={copied ? "CheckIcon" : "CopyIcon"}
+              onClick={() => copyAddress(undefined)}
+            >
+              {t(copied ? "wallet_modal.copied" : "wallet_modal.copy_address")}
+            </Button>
+            {showDisconnect && (
+              <Button
+                testId="wallet-account-disconnect"
+                iconStart="DisconnectIcon"
+                onClick={() =>
+                  leaveConfirmation.confirm(() => {
+                    setOpen(false);
+                    logout();
+                  })
+                }
+              >
+                {t("wallet_modal.disconnect")}
+              </Button>
+            )}
+          </Stack>
         </Stack>
         {otherAccounts.length > 0 && (
-          <ListGroup>
+          <ListGroup density="condensed">
             {otherAccounts.map((account) => (
               <ListRow
                 key={account.address}
                 testId={`wallet-account-${account.address}`}
-                leading={<TokenAvatar account={account.address} size="sm" />}
+                leading={
+                  <TokenAvatar account={account.address} size="control" />
+                }
                 title={formatAddress(account.address)}
                 onClick={() =>
                   leaveConfirmation.confirm(() => {
@@ -87,29 +112,6 @@ export const AccountModal = () => {
             ))}
           </ListGroup>
         )}
-        <ListGroup>
-          <ListRow
-            testId="wallet-account-copy"
-            leading={<Icon name={copied ? "CheckIcon" : "CopyIcon"} />}
-            title={t(
-              copied ? "wallet_modal.copied" : "wallet_modal.copy_address"
-            )}
-            onClick={() => copyAddress(undefined)}
-          />
-          {showDisconnect && (
-            <ListRow
-              testId="wallet-account-disconnect"
-              leading={<Icon name="DisconnectIcon" />}
-              title={t("wallet_modal.disconnect")}
-              onClick={() =>
-                leaveConfirmation.confirm(() => {
-                  setOpen(false);
-                  logout();
-                })
-              }
-            />
-          )}
-        </ListGroup>
         <VisuallyHidden role="status">
           {copied ? t("wallet_modal.copied") : ""}
         </VisuallyHidden>

@@ -86,34 +86,45 @@ const SelectYieldSheet = ({
         clearLabel: t("shared.clear_search"),
       }}
       empty={{ title: t("details.opportunities_no_results") }}
-      groups={groups.map((group) => ({
-        key: group.key,
-        label: group.label,
-        options: group.items.map(({ item, index }) => {
-          const rateType = getRewardTypeFormatted(item.rewardRate.rateType);
+      groups={groups.map((group) => {
+        const rateTypes = new Set(
+          group.items.map(({ item }) =>
+            getRewardTypeFormatted(item.rewardRate.rateType)
+          )
+        );
+        // A rate type every row shares heads the group, above the rates.
+        const [sharedRateType] = rateTypes.size === 1 ? [...rateTypes] : [];
 
-          return {
-            id: item.id,
-            testId: `select-opportunity__item_${item.id}-${index}`,
-            title: item.metadata.name,
-            subtitle: item.provider?.name
-              ? t("details.opportunity_item_subtitle_no_network", {
-                  provider: item.provider.name,
-                })
-              : capitalizeFirstLetters(item.token.network),
-            value: formatRewardRatePercent(item.rewardRate.total, locale),
-            ...(rateType ? { subvalue: rateType } : {}),
-            logo: resolveLogo(item.token, {
-              badge: "provider",
-              metadata: {
-                logoURI: item.metadata.logoURI,
-                name: item.metadata.name,
-                provider: item.provider,
-              },
-            }),
-          };
-        }),
-      }))}
+        return {
+          key: group.key,
+          label: group.label,
+          ...(sharedRateType ? { caption: sharedRateType } : {}),
+          options: group.items.map(({ item, index }) => {
+            const rateType = getRewardTypeFormatted(item.rewardRate.rateType);
+
+            return {
+              id: item.id,
+              testId: `select-opportunity__item_${item.id}-${index}`,
+              title: item.metadata.name,
+              subtitle: item.provider?.name
+                ? t("details.opportunity_item_subtitle_no_network", {
+                    provider: item.provider.name,
+                  })
+                : capitalizeFirstLetters(item.token.network),
+              value: formatRewardRatePercent(item.rewardRate.total, locale),
+              ...(rateType && !sharedRateType ? { subvalue: rateType } : {}),
+              logo: resolveLogo(item.token, {
+                badge: "provider",
+                metadata: {
+                  logoURI: item.metadata.logoURI,
+                  name: item.metadata.name,
+                  provider: item.provider,
+                },
+              }),
+            };
+          }),
+        };
+      })}
       selectedId={selected.id}
       onSelect={(id) => {
         const item = view.filtered.find((candidate) => candidate.id === id);

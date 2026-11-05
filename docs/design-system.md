@@ -88,7 +88,7 @@ properties on the Widget root and the portal container.
 | `textSubtle` | Disabled and decorative text only |
 | `accent` / `accentHover` | Primary actions and their hover |
 | `onAccent` | Text on accent |
-| `accentSoft` | Chips, KYC badge, selection tint |
+| `accentSoft` | Chips, selection tint, accent cards and notices, marked text |
 | `accentText` | Links, chip text |
 | `success` / `successSoft` | Positive rates and claimable amounts only |
 | `warning` / `warningSoft` | Pending, risk, KYC notice |
@@ -100,8 +100,13 @@ properties on the Widget root and the portal container.
 Rules:
 
 - The accent is the same hue in light and dark.
-- Status colors appear as text or icons on their soft tint, never as white text
-  on a solid status fill.
+- Status colors appear as text or icons on their soft tint or straight on a
+  surface role, such as a `ListRow`'s status line, never as white text on a
+  solid status fill. Each status text role is checked on every surface role
+  as well as its tint.
+- A soft `Badge` sits on rows and cards, not the canvas, so it mixes its tone's
+  text color into `surface` by the `badgeTint` weights: a faint fill that keeps
+  the text at 4.5:1, and a 1px edge at least 1.5:1 on every surface.
 - Text roles keep at least 4.5:1 contrast on every surface role they sit on, and
   focus rings and non-text indicators at least 3:1, in every color scheme and
   Appearance Preset. The contrast test enforces this; a new role pair joins it.

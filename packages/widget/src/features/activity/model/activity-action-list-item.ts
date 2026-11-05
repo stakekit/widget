@@ -17,8 +17,7 @@ import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
 import {
-  formatDateTime,
-  getActivityDayKind,
+  type ActivityRelativeTime,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
@@ -83,20 +82,14 @@ export type ActivityPresentationTime = {
   readonly timeZone: DateTime.TimeZone;
 };
 
-type ActivityActionTimestamp = {
-  readonly date: string;
-  readonly dayKind: ReturnType<typeof getActivityDayKind>;
-  readonly relative: ReturnType<typeof getActivityRelativeTime>;
-  readonly time: string;
-};
-
 type ActivityActionListItemProjection = {
   readonly amount: string | null;
   readonly amountSign: "" | "+" | "-";
   readonly direction: ActivityDirection;
   readonly isPositive: boolean;
   readonly statusLabel: ActivityStatusLabel | null;
-  readonly timestamp: ActivityActionTimestamp | null;
+  /** How long ago the action was created; the receipt gives its full date. */
+  readonly relativeTime: ActivityRelativeTime | null;
   readonly title: ActivityActionTitle;
   /** The symbol of the token the amount is in. */
   readonly amountTokenSymbol: string | null;
@@ -353,41 +346,6 @@ const resolveTitle = ({
   }
 };
 
-const resolveTimestamp = ({
-  createdAt,
-  locale,
-  presentationTime,
-}: {
-  readonly createdAt: DateTime.Utc | null | undefined;
-  readonly locale: string;
-  readonly presentationTime: ActivityPresentationTime | null;
-}): ActivityActionTimestamp | null => {
-  if (!createdAt || !presentationTime) return null;
-
-  return {
-    date: formatDateTime(createdAt, {
-      locale,
-      timeZone: presentationTime.timeZone,
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
-    dayKind: getActivityDayKind(
-      createdAt,
-      presentationTime.now,
-      presentationTime.timeZone
-    ),
-    relative: getActivityRelativeTime(createdAt, presentationTime.now),
-    time: formatDateTime(createdAt, {
-      locale,
-      timeZone: presentationTime.timeZone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }),
-  };
-};
-
 // Borrow actions carry either a decimal amount or base units in the token's decimals.
 export const resolveBorrowActivityAmount = ({
   actionData,
@@ -423,11 +381,9 @@ const projectBorrowActivityListItem = ({
     direction,
     isPositive: direction === "deposit",
     statusLabel: BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status],
-    timestamp: resolveTimestamp({
-      createdAt: borrowAction.createdAt,
-      locale,
-      presentationTime,
-    }),
+    relativeTime: presentationTime
+      ? getActivityRelativeTime(borrowAction.createdAt, presentationTime.now)
+      : null,
     title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
     amountTokenSymbol: tokenSymbol,
   };
@@ -470,11 +426,12 @@ export const projectActivityActionListItem = ({
       settlement,
       presentationTime
     ),
-    timestamp: resolveTimestamp({
-      createdAt: action.actionData.createdAt,
-      locale,
-      presentationTime,
-    }),
+    relativeTime: presentationTime
+      ? getActivityRelativeTime(
+          action.actionData.createdAt,
+          presentationTime.now
+        )
+      : null,
     title: resolveTitle({
       action,
       confidentialKind,

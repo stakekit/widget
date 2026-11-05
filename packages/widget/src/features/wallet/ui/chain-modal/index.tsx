@@ -70,7 +70,7 @@ const ChainDialog = ({
       closeLabel={t("wallet_modal.close")}
     >
       {notice}
-      <ListGroup>
+      <ListGroup density="condensed">
         {chains.map((chain) => {
           const selected = currentChainId === chain.id;
 
@@ -111,9 +111,8 @@ const ChainRow = ({
 }) => {
   const { t } = useTranslation();
   const status = (() => {
-    if (selected) {
-      return <Badge tone="success">{t("wallet_modal.connected")}</Badge>;
-    }
+    // The connected network shows the row's trailing check.
+    if (selected) return undefined;
     if (failed) {
       return (
         <Badge tone="danger" role="status">
@@ -240,6 +239,7 @@ export const ChainModal = () => {
             <>
               <Divider />
               <ListRow
+                density="condensed"
                 leading={<Icon name="DisconnectSquareIcon" size="lg" />}
                 title={t("wallet_modal.disconnect")}
                 onClick={() =>

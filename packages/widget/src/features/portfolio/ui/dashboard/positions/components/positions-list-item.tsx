@@ -33,8 +33,9 @@ const BorrowMarketPositionListItem = ({
           providerName: model.providerName,
           count: 1,
         })}
-        // A borrow rate is a cost, not a positive rate, so it stays neutral.
-        figure={{ text: model.borrowApy }}
+        // A borrow rate is a cost, not a positive rate, so it stays neutral;
+        // a narrow row keeps its room for the title and the value.
+        figure={{ text: model.borrowApy, from: "sm" }}
         value={model.balanceText}
         subvalue={model.subValue}
       />

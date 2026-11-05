@@ -105,37 +105,12 @@ describe("Activity action list item projection", () => {
       amountSign: "",
       direction: "deposit",
       isPositive: true,
-      timestamp: {
-        dayKind: "today",
-        relative: { unit: "hours", value: 2 },
-      },
+      relativeTime: { unit: "hours", value: 2 },
       title: {
         _tag: "deposited",
         tokenSymbol: yieldData.token.symbol,
       },
       amountTokenSymbol: yieldData.token.symbol,
-    });
-  });
-
-  it("formats the date and time in the presentation time zone", () => {
-    const projection = projectActivityActionListItem({
-      action: makeItem(
-        yieldApiActionFixture({
-          createdAt: DateTime.makeUnsafe("2026-07-28T12:00:00.000Z"),
-        }),
-        null
-      ),
-      locale: "en-US",
-      presentationTime: {
-        now: DateTime.makeUnsafe("2026-07-28T13:00:00.000Z"),
-        timeZone: DateTime.zoneMakeNamedUnsafe("Pacific/Kiritimati"),
-      },
-    });
-
-    expect(projection.timestamp).toMatchObject({
-      date: "Jul 29, 2026",
-      dayKind: "today",
-      time: "02:00",
     });
   });
 
@@ -553,7 +528,7 @@ describe("Activity action list item projection", () => {
       amount: "1.5",
       amountSign: "+",
       statusLabel: "completed",
-      timestamp: { dayKind: "today", relative: { unit: "hours", value: 2 } },
+      relativeTime: { unit: "hours", value: 2 },
       title: { _tag: "borrow", action: "supply", tokenSymbol: "USDC" },
       amountTokenSymbol: "USDC",
     });

@@ -25,6 +25,32 @@ export const Default: Story = {
   },
 };
 
+/**
+ * A touch-sized pill: about 44px tall, the logo large enough to recognise and
+ * the symbol at heading size, all on one line.
+ */
+export const Size: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "ETH" });
+    const box = trigger.getBoundingClientRect();
+    await expect(box.height).toBeGreaterThanOrEqual(42);
+    await expect(box.height).toBeLessThanOrEqual(46);
+
+    const logo = trigger.firstElementChild?.getBoundingClientRect();
+    await expect(logo?.height).toBe(28);
+    await expect(logo?.width).toBe(28);
+    await expect(logo?.top).toBeGreaterThan(box.top);
+    await expect(logo?.bottom).toBeLessThan(box.bottom);
+
+    const symbol = canvas.getByText("ETH");
+    await expect(getComputedStyle(symbol).fontSize).toBe("16px");
+    await expect(Number(getComputedStyle(symbol).fontWeight)).toBe(600);
+    const symbolBox = symbol.getBoundingClientRect();
+    await expect(symbolBox.height).toBeLessThan(box.height / 1.5);
+  },
+};
+
 export const Dark: Story = {
   ...Default,
   globals: { colorScheme: "dark" },

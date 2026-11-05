@@ -156,8 +156,8 @@ export const createDashboardRoutes = ({
       <Route path={widgetRoutes.activity.pattern} element={<ActivityTabPage />}>
         {createActivityActionRoutes({
           ActionScopeGuard: WalletScopeRouteGuard,
+          receiptPlacement: "pane",
           selectsDefaultAction: true,
-          showsBackButton: false,
         })}
       </Route>
     </>

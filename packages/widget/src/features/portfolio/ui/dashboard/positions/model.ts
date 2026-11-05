@@ -9,7 +9,7 @@ import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
   formatPercent,
-  formatTokenAmount,
+  formatShortTokenAmount,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
 
@@ -39,7 +39,7 @@ export const getBorrowMarketPositionListItemModel = ({
 
   return {
     balanceText: debtBalance
-      ? `${formatTokenAmount(debtBalance.balance, locale, "up")} ${debtBalance.tokenSymbol}`
+      ? `${formatShortTokenAmount(debtBalance.balance, locale, "up")} ${debtBalance.tokenSymbol}`
       : formatUsd(position.metrics.totalSuppliedUsd.toString(), locale),
     borrowApy: formatPercent(position.metrics.borrowApy, locale),
     headerToken,

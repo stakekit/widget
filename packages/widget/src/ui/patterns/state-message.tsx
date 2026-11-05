@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { Button } from "../components/button";
-import type { ButtonIconName } from "../components/button-styles";
 import { toneSoftStyles } from "../components/tone-styles";
+import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
@@ -12,7 +12,7 @@ import { space } from "../tokens/space.stylex";
 /** The props `EmptyState` and `ErrorState` share. */
 export type StateMessageProps = {
   /** The icon over the title. */
-  readonly icon?: ButtonIconName;
+  readonly icon?: FixedIconName;
   readonly title: string;
   /** The heading level the page's outline needs. */
   readonly as?: "h2" | "h3" | "h4";

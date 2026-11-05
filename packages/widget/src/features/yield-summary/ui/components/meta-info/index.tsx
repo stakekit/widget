@@ -6,8 +6,8 @@ import type {
 } from "../../../../../domain/earn/models";
 import type { Token } from "../../../../../domain/token/token";
 import {
+  type FixedIconName,
   Icon,
-  type IconName,
   Skeleton,
   Stack,
   Text,
@@ -25,7 +25,7 @@ type Props = {
 
 type MetaInfoItem = {
   readonly text: ReactNode;
-  readonly icon: Exclude<IconName, "ArrowIcon">;
+  readonly icon: FixedIconName;
 };
 
 export const MetaInfo = ({

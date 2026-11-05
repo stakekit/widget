@@ -199,6 +199,21 @@ const intlFormatOptions = {
     maximumFractionDigits: 2,
     roundingMode: "trunc",
   },
+  "compact-token-amount-down": {
+    notation: "compact",
+    maximumFractionDigits: 2,
+    roundingMode: "trunc",
+  },
+  "compact-token-amount-up": {
+    notation: "compact",
+    maximumFractionDigits: 2,
+    roundingMode: "expand",
+  },
+  "compact-token-amount-nearest": {
+    notation: "compact",
+    maximumFractionDigits: 2,
+    roundingMode: "halfExpand",
+  },
 } satisfies Record<string, Intl.NumberFormatOptions>;
 
 const intlFormatters = new Map<string, Intl.NumberFormat>();
@@ -225,6 +240,39 @@ export const formatCompactNumber = (
 
   return getIntlFormatter("compact", locale).format(amount.toNumber());
 };
+
+const shortTokenAmountFloor = exactDecimal(1000);
+
+/**
+ * A token amount for a narrow place, such as a list row: in full below
+ * 1,000, as `formatTokenAmount` shows it, and in compact notation ("1.23K")
+ * from 1,000, as `formatUsd` shows USD values. Display only.
+ */
+export const formatShortTokenAmount = (
+  number: NumericValue,
+  locale: string,
+  rounding: TokenAmountRounding
+) => {
+  const value = exactDecimal(number);
+
+  if (value.abs().lt(shortTokenAmountFloor)) {
+    return formatTokenAmount(value, locale, rounding);
+  }
+
+  return getIntlFormatter(`compact-token-amount-${rounding}`, locale).format(
+    value.toNumber()
+  );
+};
+
+/** A short token amount, rounded down, followed by its token's symbol. */
+export const formatShortTokenAmountWithSymbol = (
+  tokenAmount: Readonly<{
+    readonly amount: NumericValue;
+    readonly token: Readonly<{ readonly symbol: string }>;
+  }>,
+  locale: string
+) =>
+  `${formatShortTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
 
 const minimumUsd = exactDecimal("0.01");
 

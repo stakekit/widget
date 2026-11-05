@@ -6,7 +6,8 @@ import { motion } from "../tokens/motion.stylex";
 /**
  * Shared by surfaces a user can press (cards and rows rendered as a button or
  * link): the native control reset, press feedback and the focus ring.
- * Selection is a ring plus the accent tint, never a shadow.
+ * Selection is a ring plus the accent tint, never a shadow. `inset` draws
+ * both rings inside the edge, for rows a scrolling list would clip.
  */
 export const interactiveStyles = stylex.create({
   root: {
@@ -42,4 +43,6 @@ export const interactiveStyles = stylex.create({
     outlineStyle: "solid",
     outlineWidth: selectionRing.width,
   },
+  // After `selected`: it replaces both of its offsets.
+  inset: { outlineOffset: focusRing.insetOffset },
 });
