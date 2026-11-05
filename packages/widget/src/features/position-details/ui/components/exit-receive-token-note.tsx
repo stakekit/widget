@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { Token } from "../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
-import { Icon, Stack, Text } from "../../../../ui/index";
+import { Stack, Text } from "../../../../ui/index";
 import {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
@@ -38,14 +38,8 @@ export const ExitReceiveTokenNote = ({
           })
         : null;
     return (
-      <Stack
-        testId="position-details-exit-receive-token-note"
-        direction="row"
-        align="center"
-        gap={4}
-      >
-        <Icon name="InfoIcon" size="sm" tone="muted" />
-        <Text variant="caption" tone="muted">
+      <Stack testId="position-details-exit-receive-token-note">
+        <Text variant="caption" tone="muted" icon="InfoIcon">
           {t(
             `position_details.receive_token.confidential_${selection.confidentialExit}`,
             {
@@ -74,14 +68,8 @@ export const ExitReceiveTokenNote = ({
       });
 
   return (
-    <Stack
-      testId="position-details-exit-receive-token-note"
-      direction="row"
-      align="center"
-      gap={4}
-    >
-      <Icon name="InfoIcon" size="sm" tone="muted" />
-      <Text variant="caption" tone="muted">
+    <Stack testId="position-details-exit-receive-token-note">
+      <Text variant="caption" tone="muted" icon="InfoIcon">
         {message}
       </Text>
     </Stack>

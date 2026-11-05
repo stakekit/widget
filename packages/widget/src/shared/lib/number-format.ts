@@ -60,17 +60,24 @@ export const getLocaleNumberSymbols = (locale: string): LocaleNumberSymbols => {
   return symbols;
 };
 
-const formatExact = (value: BigNumber, locale: string) => {
+const formatExact = (
+  value: BigNumber,
+  locale: string,
+  fixedDecimals?: number
+) => {
   const { decimal, group } = getLocaleNumberSymbols(locale);
-
-  return value.toFormat({
+  const format = {
     decimalSeparator: decimal,
     groupSeparator: group,
     groupSize: 3,
     secondaryGroupSize: 0,
     fractionGroupSeparator: "",
     fractionGroupSize: 0,
-  });
+  };
+
+  return fixedDecimals === undefined
+    ? value.toFormat(format)
+    : value.toFormat(fixedDecimals, BigNumber.ROUND_HALF_UP, format);
 };
 
 /**
@@ -314,15 +321,35 @@ export const formatPercent = (value: OptionalNumericValue, locale: string) => {
   return withPercentAffixes(formatNumber(amount.times(100), locale, 2), locale);
 };
 
+/** The percent of a decimal ratio, rounded half-up to two places. */
+const roundedPercent = (value: NumericValue) =>
+  exactDecimal(value).times(100).decimalPlaces(2);
+
 /**
  * Formats a decimal ratio as a percent rounded half-up to two places, used for
  * reward rates and commissions.
  */
 export const formatRoundedPercent = (value: NumericValue, locale: string) =>
-  withPercentAffixes(
-    formatNumber(exactDecimal(value).times(100).decimalPlaces(2), locale),
-    locale
-  );
+  withPercentAffixes(formatNumber(roundedPercent(value), locale), locale);
+
+/**
+ * `formatRoundedPercent` of `target` split as `AnimatedNumber`'s props for a
+ * figure that counts to it: the percent affixes stay apart, and `format`
+ * keeps every step to the target's decimal places, so the digits change count
+ * only when the integer part does and the last step reads exactly as the
+ * target.
+ */
+export const getRoundedPercentParts = (target: number, locale: string) => {
+  const { percentPrefix, percentSuffix } = getLocaleNumberSymbols(locale);
+  const decimals = roundedPercent(target).decimalPlaces() ?? 0;
+
+  return {
+    prefix: percentPrefix,
+    suffix: percentSuffix,
+    format: (value: number) =>
+      formatExact(roundedPercent(value), locale, decimals),
+  };
+};
 
 /** Formats a decimal ratio as its exact percent, used for fee percentages. */
 export const formatExactPercent = (value: NumericValue, locale: string) =>

@@ -14,6 +14,7 @@ import {
   formatShortTokenAmountWithSymbol,
   formatTokenAmount,
   formatUsd,
+  getRoundedPercentParts,
 } from "../../../src/shared/lib/number-format";
 
 // French separators: U+202F groups digits, U+00A0 precedes `%` and `$`.
@@ -240,6 +241,28 @@ describe("formatPercent", () => {
     expect(formatExactPercent(exactDecimal("12.345678"), "en")).toBe(
       "1,234.5678%"
     );
+  });
+});
+
+describe("getRoundedPercentParts", () => {
+  it("keeps the affixes apart and every step to the target's places", () => {
+    const parts = getRoundedPercentParts(0.062, "en");
+    expect(parts).toMatchObject({ prefix: "", suffix: "%" });
+    expect([0, 0.048, 0.0573, 0.062].map(parts.format)).toEqual([
+      "0.0",
+      "4.8",
+      "5.7",
+      "6.2",
+    ]);
+  });
+
+  it("reads the last step exactly as formatRoundedPercent", () => {
+    const parts = getRoundedPercentParts(0.123456, "fr");
+    expect(`${parts.prefix}${parts.format(0.123456)}${parts.suffix}`).toBe(
+      formatRoundedPercent(0.123456, "fr")
+    );
+    expect(parts.format(0.05)).toBe("5,00");
+    expect(getRoundedPercentParts(0.05, "en").format(0.0123)).toBe("1");
   });
 });
 

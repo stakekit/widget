@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { createElement, type ReactNode } from "react";
+import type { FixedIconName } from "../icons/glyphs";
 import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
@@ -9,13 +10,11 @@ import {
   fontWeight,
   lineHeight,
 } from "../tokens/typography.stylex";
+import { Icon } from "./icon";
+import { InlineIcon } from "./inline-icon";
 import { type TextTone, textToneStyles } from "./text-tone";
+import type { BodyRole, HeadingRole } from "./type-role";
 
-/** Type roles that title something; they must name their element. */
-type HeadingRole = "display" | "title" | "heading";
-type BodyRole = "metric" | "body" | "label" | "caption" | "overline";
-/** A type role: size, line height and weight together. */
-export type TypeRole = HeadingRole | BodyRole;
 type HeadingElement = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 type TextElement = "p" | "span" | "div" | "label" | "strong" | "small";
 
@@ -32,6 +31,12 @@ type CommonProps = {
   readonly align?: keyof typeof alignStyles;
   /** Breaks a long unbroken run, such as a full-precision amount, anywhere. */
   readonly breakAnywhere?: boolean;
+  /**
+   * A small icon inline at the start of the first line, in the text's tone,
+   * such as `InfoIcon` on an info line. Wrapped lines start under the icon,
+   * at the text's own left edge.
+   */
+  readonly icon?: FixedIconName;
   readonly id?: string;
   readonly children?: ReactNode;
 };
@@ -55,6 +60,7 @@ const TextRoot = ({
   truncate = false,
   align,
   breakAnywhere = false,
+  icon,
   children,
   ...rest
 }: TextProps) =>
@@ -73,6 +79,11 @@ const TextRoot = ({
         breakAnywhere && styles.breakAnywhere
       ),
     },
+    icon && (
+      <InlineIcon variant={variant} gap={4}>
+        <Icon name={icon} size="sm" />
+      </InlineIcon>
+    ),
     children
   );
 

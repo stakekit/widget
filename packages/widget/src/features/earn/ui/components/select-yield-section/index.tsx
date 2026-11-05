@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import {
   formatRewardRatePercent,
-  formatRoundedPercent,
+  getRoundedPercentParts,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
@@ -57,7 +57,7 @@ export const SelectYieldSection = ({
     return (
       <AnimatedNumber
         value={percent.ratio}
-        format={(value) => formatRoundedPercent(value, locale)}
+        {...getRoundedPercentParts(percent.ratio, locale)}
         initial={0}
       />
     );

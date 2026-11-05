@@ -59,6 +59,7 @@ export { WidgetFrame } from "./patterns/widget-frame";
 export { Box } from "./primitives/box";
 export { Grid } from "./primitives/grid";
 export { Icon } from "./primitives/icon";
+export { InlineIcon } from "./primitives/inline-icon";
 export { Stack } from "./primitives/stack";
 export { Text } from "./primitives/text";
 export { VisuallyHidden } from "./primitives/visually-hidden";

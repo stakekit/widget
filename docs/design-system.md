@@ -32,7 +32,8 @@ Virtual and SVG icon markup.
 
 `src/ui/index.ts` exports:
 
-- **Primitives**: `Box`, `Stack`, `Grid`, `Text`, `Icon`, `VisuallyHidden`.
+- **Primitives**: `Box`, `Stack`, `Grid`, `Text`, `Icon`, `InlineIcon`,
+  `VisuallyHidden`.
 - **Components**: `AlertDialog`, `AmountInput`, `AnimatedNumber`, `Avatar`,
   `IconAvatar`, `TokenAvatar`, `Badge`, `Button`, `Card`, `Checkbox`,
   `ChipGroup`, `CopyButton`, `DetailList`, `DetailRow`, `Disclosure`,
@@ -215,6 +216,14 @@ Icons come from one component, `<Icon name="CopyIcon" />`, in sizes `sm`, `md`
 and `lg` (16, 20, 24) and the text tones; unset, an icon draws in the
 surrounding text color. Every icon name ends in `Icon`, and the SVG markup lives
 only in `src/ui/icons/`. A new icon joins that set; Features never draw SVG.
+
+A leading icon never indents a block of text. On a note, callout or status
+line it sits inline at the start of the first line, so wrapped lines, bodies
+and actions start at the text's own left edge: `<Text icon="InfoIcon">` for an
+icon, an untitled `Notice`, or `InlineIcon` inside a `Text` for a spinner. This
+holds for a stack of separate notes too, such as a position's exit notes. Only
+a list of facts that each carry their own icon, such as a yield's meta-info
+list (swap, history, gift, info), keeps the icons in a column, as bullets.
 
 A component shaped by one Feature, such as a Feature's details pane or metric
 card, lives in that Feature and composes Design System parts. It still follows

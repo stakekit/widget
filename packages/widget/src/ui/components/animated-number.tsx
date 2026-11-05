@@ -7,20 +7,32 @@ import { useReducedMotion } from "./use-reduced-motion";
 
 type AnimatedNumberProps = {
   readonly value: number;
-  /** Formats every value it passes through, such as "4.21%". */
+  /**
+   * Formats the digits of every value it passes through, such as "4.21".
+   * Keep the decimal places fixed so the digits change count only when the
+   * integer part does.
+   */
   readonly format: (value: number) => string;
+  /** Static text before the digits, such as a currency sign. */
+  readonly prefix?: string;
+  /** Static text after the digits, such as "%". */
+  readonly suffix?: string;
   /** Counts up from this value on mount; unset, the value shows at once. */
   readonly initial?: number;
 };
 
 /**
- * A number that counts to each new value, formatted at every step, in
- * tabular figures inside the surrounding text. Under reduced motion it shows
- * the new value at once. Assistive technology reads only the final value.
+ * A number that counts to each new value, in tabular figures inside the
+ * surrounding text. Only the digits change while it counts; the prefix and
+ * suffix stay put and move only as the digits' width does. Under reduced
+ * motion it shows the new value at once. Assistive technology reads only the
+ * final value.
  */
 export const AnimatedNumber = ({
   value,
   format,
+  prefix = "",
+  suffix = "",
   initial,
 }: AnimatedNumberProps) => {
   const reduceMotion = useReducedMotion();
@@ -41,8 +53,12 @@ export const AnimatedNumber = ({
 
   return (
     <span {...stylex.props(styles.root)}>
-      <motion.span aria-hidden="true">{shown}</motion.span>
-      <VisuallyHidden>{format(value)}</VisuallyHidden>
+      <span aria-hidden="true">
+        {prefix && <span>{prefix}</span>}
+        <motion.span>{shown}</motion.span>
+        {suffix && <span>{suffix}</span>}
+      </span>
+      <VisuallyHidden>{`${prefix}${format(value)}${suffix}`}</VisuallyHidden>
     </span>
   );
 };

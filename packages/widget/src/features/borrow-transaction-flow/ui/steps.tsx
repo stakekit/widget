@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   Button,
   IconButton,
+  InlineIcon,
   Notice,
   Spinner,
   Stack,
@@ -90,12 +91,12 @@ export const BorrowStepsPage = () => {
           ) : null}
 
           {execution.phase === "advancing" && execution.isRunning ? (
-            <Stack direction="row" align="center" gap={12}>
-              <Spinner />
-              <Text tone="muted">
-                {t("dashboard.borrow.execution_page.preparing_next_step")}
-              </Text>
-            </Stack>
+            <Text tone="muted">
+              <InlineIcon variant="body" gap={8}>
+                <Spinner />
+              </InlineIcon>
+              {t("dashboard.borrow.execution_page.preparing_next_step")}
+            </Text>
           ) : null}
 
           {executionErrorMessage && (

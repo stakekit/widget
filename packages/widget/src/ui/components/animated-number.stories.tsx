@@ -6,7 +6,7 @@ import { Text } from "../primitives/text";
 import { AnimatedNumber } from "./animated-number";
 import { Button } from "./button";
 
-const formatPercent = (value: number) => `${value.toFixed(2)}%`;
+const formatFigure = (value: number) => value.toFixed(2);
 
 /** A reward rate that changes when another yield is chosen. */
 const RewardRate = ({
@@ -22,7 +22,8 @@ const RewardRate = ({
       <Text variant="display" as="p">
         <AnimatedNumber
           value={rates[index] ?? 0}
-          format={formatPercent}
+          format={formatFigure}
+          suffix="%"
           {...(initial === undefined ? {} : { initial })}
         />
       </Text>
@@ -51,6 +52,16 @@ const figure = (canvasElement: HTMLElement) => {
   if (painted === null) throw new Error("Expected the painted figure");
   return painted;
 };
+
+/** The suffix painted after the counting digits. */
+const suffix = (canvasElement: HTMLElement) => {
+  const painted = figure(canvasElement).lastElementChild;
+  if (painted === null) throw new Error("Expected the painted suffix");
+  return painted;
+};
+
+const nextFrame = () =>
+  new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 /** Shows its value at once on mount, then counts to each new value. */
 export const Default: Story = {
@@ -88,5 +99,27 @@ export const FinalValueForAssistiveTechnology: Story = {
 
     const readable = canvas.getByText("12.50%", { ignore: "[aria-hidden]" });
     await expect(readable.closest("[aria-hidden]")).toBeNull();
+  },
+};
+
+/**
+ * Only the digits count: the suffix is one element that keeps its text on
+ * every frame, never re-rendered with the digits.
+ */
+export const StaticSuffix: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const painted = suffix(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Next yield" }));
+
+    const steps = new Set<string>();
+    for (let frame = 0; frame < 20; frame++) {
+      await nextFrame();
+      steps.add(figure(canvasElement).textContent);
+      await expect(suffix(canvasElement)).toBe(painted);
+      await expect(painted).toHaveTextContent(/^%$/);
+      await expect(painted.childNodes).toHaveLength(1);
+    }
+    await expect(steps.size).toBeGreaterThan(2);
   },
 };

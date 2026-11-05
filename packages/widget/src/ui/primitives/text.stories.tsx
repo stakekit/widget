@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
+import { iconLeadsInline } from "../storybook/geometry";
 import { Text } from "./text";
 
 const meta = {
@@ -108,6 +109,30 @@ export const Centered: Story = {
   play: async ({ canvasElement }) => {
     const text = canvasElement.querySelector("p");
     await expect(text && getComputedStyle(text).textAlign).toBe("center");
+  },
+};
+
+/**
+ * A leading icon sits inline on the first line, so wrapped lines start at
+ * the text's left edge, under the icon, rather than beside it.
+ */
+export const WithIcon: Story = {
+  args: {
+    as: "p",
+    variant: "caption",
+    tone: "muted",
+    icon: "InfoIcon",
+    children: "When unstaking it takes 28 days for your tokens to be available",
+  },
+  render: (args) => (
+    <div style={{ width: 200 }}>
+      <Text {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const text = canvasElement.querySelector("p");
+    const icon = text?.querySelector("svg");
+    await expect(text && icon && iconLeadsInline(text, icon)).toBe(true);
   },
 };
 

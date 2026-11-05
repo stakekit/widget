@@ -18,7 +18,6 @@ import { useWidgetPresentation } from "../../../../shared/react/widget-presentat
 import {
   AmountPanel,
   Button,
-  Icon,
   Stack,
   Text,
   TokenTrigger,
@@ -195,12 +194,9 @@ export const ExitInfo = ({
   return values.length > 0 ? (
     <Stack gap={8}>
       {values.map((value, i) => (
-        <Stack key={i} direction="row" align="center" gap={4}>
-          <Icon name="InfoIcon" size="sm" tone="muted" />
-          <Text variant="caption" tone="muted">
-            {value}
-          </Text>
-        </Stack>
+        <Text key={i} variant="caption" tone="muted" icon="InfoIcon">
+          {value}
+        </Text>
       ))}
     </Stack>
   ) : null;

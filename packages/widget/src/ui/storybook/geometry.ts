@@ -80,3 +80,30 @@ export const shareLine = (first: Element, second: Element) => {
     middle(b) <= a.bottom
   );
 };
+
+/**
+ * Whether `icon` leads `text` inline, to within a pixel: the text wraps, its
+ * second line starts at the icon's left edge rather than beside it, and the
+ * icon is centered on the first line. `text` holds the icon and then the text.
+ */
+export const iconLeadsInline = (text: Element, icon: Element) => {
+  const lines = [...text.childNodes]
+    .filter((node) => node.nodeType === Node.TEXT_NODE)
+    .flatMap((node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return [...range.getClientRects()];
+    })
+    .filter((box) => box.width > 0)
+    .toSorted((a, b) => a.top - b.top);
+  const secondLine = lines.find((box) => box.top > (lines[0]?.bottom ?? 0) - 1);
+  const iconBox = icon.getBoundingClientRect();
+  const firstLineMiddle =
+    text.getBoundingClientRect().top +
+    Number.parseFloat(getComputedStyle(text).lineHeight) / 2;
+  return (
+    secondLine !== undefined &&
+    Math.abs(secondLine.left - iconBox.left) <= 1 &&
+    Math.abs((iconBox.top + iconBox.bottom) / 2 - firstLineMiddle) <= 1
+  );
+};
