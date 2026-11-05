@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import type { YieldMetadata } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
-import { ReviewSummary } from "../../../../../ui/index";
+import { type HostHook, ReviewSummary } from "../../../../../ui/index";
 
 type ReviewSummaryProps = ComponentProps<typeof ReviewSummary>;
 
@@ -10,6 +10,7 @@ export type ReviewFact = Readonly<{
   label: string;
   value: string;
   testId?: string;
+  hostHook?: HostHook;
 }>;
 
 type Props = {
@@ -52,6 +53,7 @@ export const ReviewOverview = ({
         label: fact.label,
         value: fact.value,
         ...(fact.testId === undefined ? {} : { testId: fact.testId }),
+        ...(fact.hostHook === undefined ? {} : { hostHook: fact.hostHook }),
       }))}
       {...(fees === undefined ? {} : { fees })}
     />

@@ -20,9 +20,9 @@ export type BorrowAmountBalance = {
 const dangerTone = { tone: "danger" } satisfies { tone: "danger" };
 
 /**
- * Titled amount panel for borrow forms. A warning shows under the amount like
- * earn's limits; it advises rather than invalidates, since the form's own
- * validation decides whether Review can start.
+ * Titled amount panel for borrow forms. A warning shows under the amount as
+ * its error; the form's own validation still decides whether Review can
+ * start.
  */
 export const BorrowAmountField = ({
   accessory,
@@ -79,7 +79,7 @@ export const BorrowAmountField = ({
               ...(balanceError ? dangerTone : {}),
             },
           })}
-      {...(warning ? { limits: warning } : {})}
+      {...(warning ? { error: warning } : {})}
       {...(onMaxClick
         ? { max: { label: t("shared.max"), onClick: onMaxClick } }
         : {})}

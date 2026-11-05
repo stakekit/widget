@@ -15,9 +15,11 @@ export const Providers = ({
       <WidgetPresentationAdapter>
         <MountAnimationEffects />
         <WagmiConfigProvider>
-          <WalletPresentationProvider>
-            <ThemeWrapper>{children}</ThemeWrapper>
-          </WalletPresentationProvider>
+          {/* The wallet dialogs render beside the children, so they sit
+              inside the theme root and portal into its container too. */}
+          <ThemeWrapper>
+            <WalletPresentationProvider>{children}</WalletPresentationProvider>
+          </ThemeWrapper>
         </WagmiConfigProvider>
       </WidgetPresentationAdapter>
     </WidgetTranslationProvider>

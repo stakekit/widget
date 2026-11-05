@@ -74,6 +74,21 @@ type ModalProps = {
 const enteringOrLeaving = ":is([data-starting-style], [data-ending-style])";
 
 /**
+ * A ref callback reporting whether an element's content overflows it. The
+ * element changes size whenever its overflow can change: a modal body grows
+ * with its content up to the dialog's height cap.
+ */
+const observeOverflow =
+  (onChange: (overflows: boolean) => void) => (element: HTMLElement | null) => {
+    if (element === null) return;
+    const observer = new ResizeObserver(() => {
+      onChange(element.scrollHeight > element.clientHeight);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  };
+
+/**
  * A dialog: a bottom sheet below a 520px viewport and a centered dialog from
  * there up. It traps focus, closes on Escape and returns focus to its opener,
  * also after being `suspended` in between.
@@ -101,6 +116,8 @@ export const Modal = ({
   const opener = useRef<HTMLElement | null>(null);
   const [resuming, setResuming] = useState(false);
   const [bodyOverflows, setBodyOverflows] = useState(false);
+  // Created once, so re-renders keep the body's observer connected.
+  const [observeBody] = useState(() => observeOverflow(setBodyOverflows));
   // A modal shown again after being suspended keeps its original opener.
   if (open === true && suspended && !resuming) setResuming(true);
   if (open !== true && resuming) setResuming(false);
@@ -166,16 +183,7 @@ export const Modal = ({
             />
           </div>
           <div
-            ref={(body) => {
-              if (body === null) return;
-              // The body changes size whenever its overflow can change: it
-              // grows with its content up to the dialog's height cap.
-              const observer = new ResizeObserver(() => {
-                setBodyOverflows(body.scrollHeight > body.clientHeight);
-              });
-              observer.observe(body);
-              return () => observer.disconnect();
-            }}
+            ref={observeBody}
             data-testid={bodyTestId}
             {...stylex.props(
               styles.body,

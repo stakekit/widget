@@ -158,7 +158,10 @@ explicit `as`, so headings form a real outline.
 The theme root applies one theme per color scheme × Appearance Preset, plus the
 Presentation Settings, to the Widget root and the portal container. Host
 `appearance` values win over the mapped legacy `theme`, which wins over the
-Host Profile's Appearance Preset, which wins over the base scheme.
+Host Profile's Appearance Preset, which wins over the base scheme. An `inline`
+theme root themes standalone content placed in a host's own layout, such as the
+public `HelpModal` among `SKApp` children: its root and content generate no
+box and are no size container, so the content flows as if unwrapped.
 
 - A Host Profile names an Appearance Preset and may override Presentation
   Settings. Preset values live in the Design System. Components never branch

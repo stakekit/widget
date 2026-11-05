@@ -1,4 +1,5 @@
 import {
+  type ComponentProps,
   type ReactElement,
   type ReactNode,
   useId,
@@ -39,12 +40,10 @@ type SelectSheetOption = {
   }>;
   /**
    * Label-value rows under the option, such as a validator's commission and
-   * staked balance, already formatted.
+   * staked balance, already formatted. A detail with `copy` shows a copy
+   * control that copies without choosing the option.
    */
-  readonly details?: ReadonlyArray<{
-    readonly label: string;
-    readonly value: string;
-  }>;
+  readonly details?: ComponentProps<typeof ListRow>["details"];
   readonly disabled?: boolean;
   /** Renders as the option row's `data-testid`. */
   readonly testId?: string;
@@ -143,7 +142,11 @@ type SelectSheetProps = OptionsOrGroups &
      * of a `multiple` choice; several stack in the order given.
      */
     readonly footer?: SelectSheetAction | ReadonlyArray<SelectSheetAction>;
-    /** Shows a spinner, named by `loadingLabel`, instead of the options. */
+    /**
+     * Shows a spinner, named by `loadingLabel`: in place of the options while
+     * there are none, and over them while they are replaced, such as for a
+     * new query.
+     */
     readonly loading?: boolean;
     readonly loadingLabel?: string;
     /** Called when the last option scrolls into view while `hasMore` is set. */
@@ -234,7 +237,7 @@ export const SelectSheet = ({
     flat.findIndex((option) => isSelected(option) && option.disabled !== true);
   const active = activeIndex < flat.length ? activeIndex : -1;
   const optionId = (index: number) => `${baseId}-option-${index}`;
-  const showsOptions = !loading && error === undefined && flat.length > 0;
+  const showsOptions = error === undefined && flat.length > 0;
   const showsEmpty = !loading && error === undefined && flat.length === 0;
 
   const setOpen = (next: boolean) => {
@@ -318,18 +321,18 @@ export const SelectSheet = ({
     ...(loadingMoreLabel === undefined ? {} : { loadingMoreLabel }),
   } as const;
 
+  const spinner = loading && (
+    <Stack align="center">
+      {loadingLabel === undefined ? (
+        <Spinner />
+      ) : (
+        <Spinner label={loadingLabel} />
+      )}
+    </Stack>
+  );
+
   const body = (): ReactNode => {
-    if (loading) {
-      return (
-        <Stack align="center">
-          {loadingLabel === undefined ? (
-            <Spinner />
-          ) : (
-            <Spinner label={loadingLabel} />
-          )}
-        </Stack>
-      );
-    }
+    if (loading && flat.length === 0) return spinner;
     if (error !== undefined) {
       return (
         <ErrorState
@@ -362,6 +365,7 @@ export const SelectSheet = ({
       />
     );
   };
+  const replacing = loading && flat.length > 0 && error === undefined;
 
   return (
     <Modal
@@ -431,6 +435,7 @@ export const SelectSheet = ({
             : null}
         </VisuallyHidden>
       )}
+      {replacing && spinner}
       {body()}
     </Modal>
   );

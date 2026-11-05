@@ -104,10 +104,11 @@ const PositionDetailsEnterTokenSection = ({
   if (isLoading) return <Skeleton shape="rect" height="lg" />;
 
   const limitProps = (() => {
-    if (!minMaxLabel) return {};
-    return stakeAmountLessThanMin
-      ? { error: minMaxLabel }
-      : { limits: minMaxLabel };
+    if (stakeAmountLessThanMin && minMaxLabel) return { error: minMaxLabel };
+    if (stakeAmountGreaterThanAvailableAmount) {
+      return { error: t("shared.insufficient_balance") };
+    }
+    return minMaxLabel ? { limits: minMaxLabel } : {};
   })();
 
   return (

@@ -574,6 +574,9 @@ describe("Renders initial page", () => {
       )
       .click();
     await expect.element(app.getByText("WBTC / USDC")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-collateral-select"))
+      .toMatchTextContent("WBTC");
 
     await app.getByTestId("borrow-market-select").click();
     await expect
@@ -584,12 +587,18 @@ describe("Renders initial page", () => {
       .getByTestId("borrow-market-select__item_aave-v3-ethereum-dai")
       .click();
     await expect.element(app.getByText("WETH / DAI")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-market-select"))
+      .toMatchTextContent("DAI");
 
     await userEvent.click(app.getByTestId("number-input").last());
     await userEvent.keyboard("1");
     await expect
       .element(app.getByText("Amount exceeds wallet balance."))
       .toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("number-input").last())
+      .toHaveAttribute("aria-invalid", "true");
     expect(app.container.textContent).not.toContain("3M");
     expect(tokenBalanceRequestSignals.every((signal) => !signal.aborted)).toBe(
       true

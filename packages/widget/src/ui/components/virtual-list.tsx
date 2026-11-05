@@ -63,8 +63,9 @@ type VirtualListProps<T> = ItemsOrGroups<T> & {
   readonly listId?: string;
   /**
    * Called when the last row comes into view while `hasMore` is set, once per
-   * last row: after a failed load it is called again only once the rows
-   * change.
+   * set of rows (their count and last row): after a failed load it is called
+   * again only once the rows change, also when a page lands before the last
+   * row.
    */
   readonly onEndReached?: () => void;
   readonly hasMore?: boolean;
@@ -181,9 +182,11 @@ export const VirtualList = <T,>({
 
   const lastRendered = virtualRows.at(-1)?.index ?? -1;
   const endReached = rows.length > 0 && lastRendered >= rows.length - 1;
-  const lastKey = rows.at(-1)?.key;
-  // The last row more were asked after, so a failed load isn't retried in a
-  // loop while `hasMore` stays set.
+  // The rows loaded so far: their count and last key. A page sorted in before
+  // the same last row still changes the count.
+  const loadedRows = `${rows.length}:${rows.at(-1)?.key ?? ""}`;
+  // The rows more were asked after, so a failed load isn't retried in a loop
+  // while `hasMore` stays set.
   const requestedAfter = useRef<string | undefined>(undefined);
   const requestMore = useEffectEvent(() => onEndReached?.());
   useEffect(() => {
@@ -191,12 +194,12 @@ export const VirtualList = <T,>({
       endReached &&
       hasMore &&
       !loadingMore &&
-      requestedAfter.current !== lastKey
+      requestedAfter.current !== loadedRows
     ) {
-      requestedAfter.current = lastKey;
+      requestedAfter.current = loadedRows;
       requestMore();
     }
-  }, [endReached, hasMore, loadingMore, lastKey]);
+  }, [endReached, hasMore, loadingMore, loadedRows]);
 
   const revealActive = useEffectEvent((itemIndex: number) => {
     const scrollElement = scrollRef.current;

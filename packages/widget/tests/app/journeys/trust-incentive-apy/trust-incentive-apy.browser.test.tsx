@@ -3,6 +3,30 @@ import { renderApp } from "../../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Trust incentive APY", () => {
+  it("shows the average rate for a variable-rate yield", async ({ worker }) => {
+    const { account, customConnectors, legacyYield, setUrl } = await setup(
+      worker,
+      { discoveryRateType: "variable" }
+    );
+
+    setUrl({
+      accountId: account,
+      yieldId: legacyYield.id,
+    });
+
+    const app = await renderApp({
+      walletListFactory: customConnectors,
+    });
+
+    await expect
+      .element(
+        app.getByTestId("estimated-reward__percent").getByText("4.55%").first()
+      )
+      .toBeInTheDocument();
+
+    await app.unmount();
+  });
+
   it("shows APY composition during discovery", async ({ worker }) => {
     const { account, customConnectors, legacyYield, setUrl } =
       await setup(worker);

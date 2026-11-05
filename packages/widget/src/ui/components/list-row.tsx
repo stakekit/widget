@@ -15,10 +15,26 @@ import { container } from "../tokens/container.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { selectionControlSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
+import { CopyButton } from "./copy-button";
 import { interactiveStyles } from "./interactive-styles";
 import { Spinner } from "./spinner";
+import { useCopy } from "./use-copy";
 
 const InListGroup = createContext(false);
+
+/** One label-value row under a `ListRow`'s main line. */
+type ListRowDetail = {
+  readonly label: string;
+  readonly value: string;
+  /** Copies `value` in full, whatever the detail shows. */
+  readonly copy?: {
+    readonly value: string;
+    /** Names the copy control, such as "Copy address". */
+    readonly label: string;
+    /** Announced once copied, such as "Copied". */
+    readonly copiedLabel: string;
+  };
+};
 
 type CommonProps = {
   /** An avatar: `TokenAvatar`, `Avatar` or an icon. */
@@ -43,12 +59,12 @@ type CommonProps = {
   readonly subvalue?: string;
   /**
    * Label-value rows under the row's main line, such as a validator's
-   * commission and staked balance.
+   * commission and staked balance. A detail with `copy` copies its value
+   * without pressing the row: a copy button follows the row, outside its own
+   * control, or, as a listbox holds options only, a pointer's press on a copy
+   * icon beside the detail copies in place of choosing the option.
    */
-  readonly details?: ReadonlyArray<{
-    readonly label: string;
-    readonly value: string;
-  }>;
+  readonly details?: ReadonlyArray<ListRowDetail>;
   /** Renders as the row's `data-testid`. */
   readonly testId?: string;
   /**
@@ -167,6 +183,7 @@ export const ListRow = ({
 }: ListRowProps) => {
   const grouped = use(InListGroup);
   const groupLabelId = useId();
+  const { copied, copy } = useCopy();
   const checked = option === undefined ? selected === true : option.selected;
   const checkBox = (option?.check ?? check) && (
     <span
@@ -231,6 +248,14 @@ export const ListRow = ({
       {busy && <Spinner size="sm" tone="muted" />}
     </>
   );
+  // A listbox holds options only, so an option's copies are icons in it;
+  // other rows' are buttons after them.
+  const copies =
+    option === undefined
+      ? (details ?? []).flatMap((detail) =>
+          detail.copy === undefined ? [] : [detail.copy]
+        )
+      : [];
   const content =
     details === undefined || details.length === 0 ? (
       main
@@ -238,7 +263,7 @@ export const ListRow = ({
       <Stack as="span" gap={8} grow>
         <span {...stylex.props(styles.main)}>{main}</span>
         <Stack as="span" gap={4}>
-          {details.map((detail) => (
+          {details.map((detail, index) => (
             <Stack
               key={detail.label}
               as="span"
@@ -249,9 +274,22 @@ export const ListRow = ({
               <Text variant="caption" tone="muted">
                 {detail.label}
               </Text>
-              <Text variant="caption" numeric>
-                {detail.value}
-              </Text>
+              <Stack as="span" direction="row" align="center" gap={4}>
+                <Text variant="caption" numeric>
+                  {detail.value}
+                </Text>
+                {option !== undefined && detail.copy !== undefined && (
+                  // The option's press copies when it lands here.
+                  <span
+                    aria-hidden="true"
+                    title={detail.copy.label}
+                    data-copy={index}
+                    {...stylex.props(styles.optionCopy)}
+                  >
+                    <Icon name={copied ? "CheckIcon" : "CopyIcon"} size="sm" />
+                  </span>
+                )}
+              </Stack>
             </Stack>
           ))}
         </Stack>
@@ -279,7 +317,11 @@ export const ListRow = ({
             position === undefined ? undefined : (position.count ?? -1)
           }
           onMouseDown={(event) => event.preventDefault()}
-          onClick={select}
+          onClick={(event) => {
+            const copyValue = pressedCopyValue(event.target, details);
+            if (copyValue === undefined) select?.();
+            else copy(copyValue);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -359,7 +401,30 @@ export const ListRow = ({
     );
   })();
 
-  return grouped ? <li>{row}</li> : row;
+  // A control may not nest in the row's own, so copy buttons follow it.
+  const withCopies =
+    copies.length === 0 ? (
+      row
+    ) : (
+      <div {...stylex.props(styles.withCopies)}>
+        <div {...stylex.props(styles.copiesRow)}>{row}</div>
+        {copies.map((detailCopy) => (
+          <CopyButton key={detailCopy.label} {...detailCopy} size="sm" />
+        ))}
+      </div>
+    );
+
+  return grouped ? <li>{withCopies}</li> : withCopies;
+};
+
+/** The value of the detail copy icon a press on an option landed on. */
+const pressedCopyValue = (
+  target: EventTarget,
+  details: ReadonlyArray<ListRowDetail> | undefined
+) => {
+  if (!(target instanceof Element)) return undefined;
+  const index = target.closest("[data-copy]")?.getAttribute("data-copy");
+  return index == null ? undefined : details?.[Number(index)]?.copy?.value;
 };
 
 /** Rows read as one list, under an optional overline heading. */
@@ -440,6 +505,20 @@ const styles = stylex.create({
     width: selectionControlSize.checkbox,
   },
   checked: { borderColor: color.accent, backgroundColor: color.accent },
+  withCopies: {
+    gap: space[4],
+    alignItems: "center",
+    display: "flex",
+    minWidth: 0,
+  },
+  copiesRow: { flexGrow: 1, minWidth: 0 },
+  optionCopy: {
+    alignItems: "center",
+    color: { default: color.textMuted, ":hover": color.text },
+    cursor: "copy",
+    display: "inline-flex",
+    flexShrink: 0,
+  },
   // The focus ring marks the option the owner's keys reached, as focus would.
   active: {
     backgroundColor: color.surfaceHover,

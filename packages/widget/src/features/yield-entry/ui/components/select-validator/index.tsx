@@ -166,7 +166,8 @@ export const SelectValidator = ({
             },
           })}
       {...(footer.length ? { footer } : {})}
-      loading={isLoading && !validators.length}
+      loading={isLoading}
+      loadingLabel={t("details.validators_loading")}
       hasMore={loadsPages && hasMore}
       loadingMore={loadsPages && isLoadingMore}
       {...(loadsPages ? { onEndReached: onLoadMore } : {})}
@@ -204,9 +205,21 @@ const useValidatorOptions = (selectedStake: EarnYieldWithProvider) => {
       t,
       locale
     );
-    const details = Object.values(meta).flatMap((entry) =>
-      entry ? [{ label: entry.title, value: entry.val }] : []
-    );
+    const details = Object.values(meta).flatMap((entry) => {
+      if (!entry) return [];
+      const detail = { label: entry.title, value: entry.val };
+      if (entry.copyValue === undefined) return [detail];
+      return [
+        {
+          ...detail,
+          copy: {
+            value: entry.copyValue,
+            label: t("position_details.copy_address", { label: entry.title }),
+            copiedLabel: t("position_details.copied"),
+          },
+        },
+      ];
+    });
     const getStatusBadge = () => {
       if (validator.status === "jailed") {
         return {

@@ -295,6 +295,36 @@ describe("Widget portal container", () => {
     await app.unmount();
   });
 
+  it("renders the wallet connect dialog into the host portalContainer in the dark Appearance", async () => {
+    const portalContainer = document.createElement("div");
+    document.body.append(portalContainer);
+    onTestFinished(() => portalContainer.remove());
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        appearance: { colorScheme: "dark" },
+        portalContainer,
+      },
+    });
+
+    const connect = app.getByRole("button", { name: "Connect Wallet" });
+    await expect.element(connect).toBeEnabled();
+    await userEvent.click(connect);
+
+    const dialog = app.getByTestId("wallet-connect-dialog");
+    await expect.element(dialog).toBeVisible();
+    const widgetPortal = portalContainer.querySelector(
+      ":scope > [data-sk-portal]"
+    );
+    expect(widgetPortal?.contains(dialog.element())).toBe(true);
+    // The dark default `background` role.
+    expect(getComputedStyle(dialog.element()).backgroundColor).toBe(
+      "rgb(21, 21, 23)"
+    );
+
+    await app.unmount();
+  });
+
   it("stacks a Select's list above the Modal it opens in", async () => {
     const screen = await render(
       <ThemeRoot

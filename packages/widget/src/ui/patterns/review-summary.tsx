@@ -4,6 +4,7 @@ import { DetailList, DetailRow } from "../components/detail-list";
 import { Divider } from "../components/divider";
 import { InfoTip } from "../components/info-tip";
 import { Skeleton } from "../components/skeleton";
+import type { HostHook } from "../host-hook";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";
@@ -20,6 +21,8 @@ type ReviewRow = {
   };
   /** Renders as the row's `data-testid`. */
   readonly testId?: string;
+  /** Renders as the row's `data-rk`, for hosts to locate it. */
+  readonly hostHook?: HostHook;
 } & (
   | {
       /** The formatted value, such as "$1.20" or "0.5%". */
@@ -142,6 +145,7 @@ const ReviewRows = ({ rows }: { readonly rows: ReadonlyArray<ReviewRow> }) => (
           key={row.label}
           label={row.label}
           {...(row.testId === undefined ? {} : { testId: row.testId })}
+          {...(row.hostHook === undefined ? {} : { hostHook: row.hostHook })}
           value={
             row.info === undefined ? (
               value

@@ -59,9 +59,11 @@ const callToActionThemes = { md: mediumCallToAction, lg: largeCallToAction };
 const gutterThemes = { md: mediumGutter, lg: largeGutter };
 
 // The Widget root only, not a host portal container: a stacking context of
-// its own.
+// its own. An inline root generates no box, so content placed in a host's
+// text or flex row keeps its own size and place there.
 const rootStyles = stylex.create({
   root: { isolation: "isolate" },
+  inline: { display: "contents" },
 });
 
 /**
@@ -76,6 +78,10 @@ const rootStyles = stylex.create({
  * Value settings (call-to-action size, gutter) are themes over their own
  * variable groups; the tabs indicator and surface style are attributes
  * components read through `presentationMarker`.
+ *
+ * `inline` themes standalone content placed in a host's own layout, such as a
+ * single trigger in a footer row: the root and its content generate no box
+ * and are no size container, so the content sizes and flows as if unwrapped.
  */
 export const ThemeRoot = ({
   appearance,
@@ -84,6 +90,7 @@ export const ThemeRoot = ({
   children,
   colorScheme: requestedColorScheme,
   gutter,
+  inline = false,
   portalContainer,
   surfaceStyle,
   tabsIndicator,
@@ -93,6 +100,8 @@ export const ThemeRoot = ({
     readonly appearancePreset: AppearancePreset;
     /** The scheme the host requests; a preset may fix another. */
     readonly colorScheme: ColorScheme;
+    /** Themes content placed in a host's own layout without a box of its own. */
+    readonly inline?: boolean;
     readonly portalContainer: HTMLElement | undefined;
   }
 >) => {
@@ -104,7 +113,9 @@ export const ThemeRoot = ({
     gutterThemes[gutter],
     presentationMarker
   );
-  const { className: rootClassName = "" } = stylex.props(rootStyles.root);
+  const { className: rootClassName = "" } = stylex.props(
+    inline ? rootStyles.inline : rootStyles.root
+  );
   const properties = appearanceProperties(
     { requested: requestedColorScheme, presented: colorScheme },
     resolveColorRoles(colorScheme, appearancePreset),
@@ -124,6 +135,7 @@ export const ThemeRoot = ({
     >
       <PortalContainerProvider
         hostContainer={portalContainer}
+        inline={inline}
         themeAttributes={attributes}
         themeClassName={themeClassName}
         themeProperties={properties}

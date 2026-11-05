@@ -198,6 +198,66 @@ export const IncrementalLoading: Story = {
   },
 };
 
+const onEndReachedSorted = fn();
+
+/** The row every sorted page lands above: the lowest rate stays last. */
+const lowestRate: Validator = { id: "validator-lowest", name: "Lowest rate" };
+
+/**
+ * A list that sorts what it has loaded, as a list by rate does: each page
+ * lands before the same last row.
+ */
+const SortedPagedList = () => {
+  const [loaded, setLoaded] = useState(() => validators(0, 20));
+  const [loadingMore, setLoadingMore] = useState(false);
+  return (
+    <div style={{ width: 360 }}>
+      <VirtualList
+        label="Validators"
+        items={[...loaded, lowestRate]}
+        getKey={(validator) => validator.id}
+        renderItem={renderRow}
+        maxHeight="md"
+        hasMore={loaded.length < 60}
+        loadingMore={loadingMore}
+        loadingMoreLabel="Loading more validators"
+        onEndReached={() => {
+          onEndReachedSorted();
+          setLoadingMore(true);
+          setTimeout(() => {
+            setLoaded((current) => [
+              ...current,
+              ...validators(current.length, 20),
+            ]);
+            setLoadingMore(false);
+          }, 200);
+        }}
+      />
+    </div>
+  );
+};
+
+/** A page landing before the last row still lets the end ask for the next. */
+export const SortedPages: Story = {
+  render: () => <SortedPagedList />,
+  play: async ({ canvasElement }) => {
+    onEndReachedSorted.mockClear();
+    const scroller = region(canvasElement);
+    const loading = () =>
+      within(scroller).queryByRole("status", {
+        name: "Loading more validators",
+      });
+
+    scroller.scrollTop = scroller.scrollHeight;
+    await waitFor(() => expect(onEndReachedSorted).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(loading()).not.toBeNull());
+    await waitFor(() => expect(loading()).toBeNull());
+
+    scroller.scrollTop = scroller.scrollHeight;
+    await waitFor(() => expect(onEndReachedSorted).toHaveBeenCalledTimes(2));
+  },
+};
+
 const onEndReachedOnce = fn();
 
 /** A list whose loads fail: `hasMore` stays set and no rows arrive. */

@@ -212,7 +212,7 @@ describe("Borrow position details", () => {
       .toBeInTheDocument();
     await expect
       .element(app.getByTestId("number-input"))
-      .not.toHaveAttribute("aria-invalid", "true");
+      .toHaveAttribute("aria-invalid", "true");
     await expect
       .element(app.getByRole("button", { name: "Review withdrawal" }))
       .toBeEnabled();
@@ -629,6 +629,9 @@ describe("Borrow position details", () => {
     await expect
       .element(app.getByText("0.04 WBTC withdrawable"))
       .toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-withdraw-token-select"))
+      .toMatchTextContent("WBTC");
     await app.getByTestId("borrow-withdraw-token-select").click();
     await expect
       .element(app.getByRole("dialog").getByRole("button", { name: /WBTC/ }))

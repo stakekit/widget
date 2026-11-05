@@ -140,6 +140,9 @@ export const AmountBlock = ({
     : {};
   const limitProps = (() => {
     if (limitError && limits) return { error: limits };
+    if (exitProps?.exitAmountGreaterThanAvailable) {
+      return { error: t("shared.insufficient_balance") };
+    }
     return limits ? { limits } : {};
   })();
 

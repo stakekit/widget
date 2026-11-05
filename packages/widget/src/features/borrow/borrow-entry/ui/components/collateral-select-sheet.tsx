@@ -76,12 +76,15 @@ const CollateralSelect = ({
   const resolveLogo = useTokenLogoResolver();
   const selectCollateralToken = useAtomSet(selectBorrowCollateralTokenAtom);
   const [search, setSearch] = useState("");
-  const logo = useTokenLogo(
-    toBorrowEntryToken({
-      network: marketNetwork,
-      token: selectedCollateralToken.token,
-    })
-  );
+  const logo = {
+    ...useTokenLogo(
+      toBorrowEntryToken({
+        network: marketNetwork,
+        token: selectedCollateralToken.token,
+      })
+    ),
+    name: selectedCollateralToken.token.symbol,
+  };
 
   if (collateralOptions.length <= 1) {
     return (

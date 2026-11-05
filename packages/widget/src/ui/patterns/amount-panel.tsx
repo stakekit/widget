@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { AmountInput } from "../components/amount-input";
 import type { AmountSeparators } from "../components/amount-input-text";
@@ -7,6 +8,9 @@ import { ExpandableAmount } from "../components/expandable-amount";
 import { Field } from "../components/field";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { focusRing } from "../tokens/border.stylex";
+import { color } from "../tokens/color.stylex";
+import { radius } from "../tokens/radius.stylex";
 
 type AmountPanelProps = {
   /** Names the amount, shown above it, such as "Stake". */
@@ -34,6 +38,15 @@ type AmountPanelProps = {
     readonly full?: string;
     /** `danger` when the amount is more than the balance. */
     readonly tone?: "danger";
+    /**
+     * Fills in the balance as the amount, as some hosts expect: a tap on the
+     * balance calls `onClick` in place of the precision toggle, and `label`,
+     * such as "Max", adds what it does to the balance's name.
+     */
+    readonly fill?: {
+      readonly label: string;
+      readonly onClick: () => void;
+    };
     /**
      * A chip after the balance, such as "Reveal" for a confidential balance
      * still masked, or "Hide" once it shows.
@@ -130,11 +143,7 @@ export const AmountPanel = ({
           <Stack direction="row" align="center" gap={8}>
             {balance !== undefined && (
               <Text variant="caption" tone={balance.tone ?? "muted"} numeric>
-                {balance.full === undefined ? (
-                  balance.short
-                ) : (
-                  <ExpandableAmount short={balance.short} full={balance.full} />
-                )}
+                <BalanceAmount balance={balance} disabled={disabled} />
               </Text>
             )}
             {balance?.action !== undefined && (
@@ -160,3 +169,51 @@ export const AmountPanel = ({
     </Stack>
   </Card>
 );
+
+/** The balance's figure: filling it in, toggling its precision, or as is. */
+const BalanceAmount = ({
+  balance,
+  disabled,
+}: {
+  readonly balance: NonNullable<AmountPanelProps["balance"]>;
+  readonly disabled: boolean;
+}) => {
+  if (balance.fill !== undefined) {
+    return (
+      <button
+        type="button"
+        // The name starts with the text shown, then says what a tap does.
+        aria-label={`${balance.short}, ${balance.fill.label}`}
+        onClick={balance.fill.onClick}
+        disabled={disabled}
+        {...stylex.props(styles.fill)}
+      >
+        {balance.short}
+      </button>
+    );
+  }
+  if (balance.full === undefined) return balance.short;
+  return <ExpandableAmount short={balance.short} full={balance.full} />;
+};
+
+const styles = stylex.create({
+  // Reads as the balance text it is, as `ExpandableAmount` does.
+  fill: {
+    margin: 0,
+    padding: 0,
+    borderRadius: radius.badge,
+    borderStyle: "none",
+    backgroundColor: "transparent",
+    color: "inherit",
+    cursor: { default: "pointer", ":disabled": "not-allowed" },
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontWeight: "inherit",
+    lineHeight: "inherit",
+    outlineColor: color.focusRing,
+    outlineOffset: focusRing.offset,
+    outlineStyle: { default: "none", ":focus-visible": "solid" },
+    outlineWidth: focusRing.width,
+    textAlign: "inherit",
+  },
+});

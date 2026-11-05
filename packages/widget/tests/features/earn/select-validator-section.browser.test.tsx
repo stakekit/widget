@@ -230,4 +230,53 @@ describe("SelectValidatorSection", () => {
 
     await expect.poll(() => onLoadMoreValidators.mock.calls.length).toBe(1);
   });
+
+  it("copies a validator's address without choosing the validator", async () => {
+    const address = "cosmosvaloper1copyaddress0000000000000000000000";
+    const onItemClick = vi.fn();
+    const writeText = vi.fn(async (_text: string) => {});
+    const clipboard = navigator.clipboard;
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    hookState.current = createHookValue({
+      onItemClick,
+      validatorsData: [
+        decodeValidator(
+          yieldApiValidatorFixture({ address, name: "Copy Validator" })
+        ),
+      ],
+    });
+
+    const app = await renderSection();
+    await userEvent.click(app.container.querySelector("button") as HTMLElement);
+    await expect.element(app.getByText("Copy Validator")).toBeInTheDocument();
+
+    await userEvent.click(app.getByTitle("Copy Address"));
+
+    expect(writeText).toHaveBeenCalledWith(address);
+    expect(onItemClick).not.toHaveBeenCalled();
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: clipboard,
+    });
+  });
+
+  it("shows that validators load while a search replaces those shown", async () => {
+    hookState.current = createHookValue({
+      isLoading: true,
+      validatorSearch: "stake",
+    });
+
+    const app = await renderSection();
+    await userEvent.click(app.container.querySelector("button") as HTMLElement);
+
+    await expect
+      .element(app.getByText("StakeKit Validator"))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("status", { name: "Loading validators" }))
+      .toBeInTheDocument();
+  });
 });

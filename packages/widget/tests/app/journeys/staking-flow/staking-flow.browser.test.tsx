@@ -134,6 +134,12 @@ describe("Staking flow", () => {
           .getByText(`0.00042 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("estimated-reward__yearly"))
+      .toHaveAttribute("data-rk", "estimated-reward__yearly");
+    await expect
+      .element(app.getByTestId("estimated-reward__monthly"))
+      .toHaveAttribute("data-rk", "estimated-reward__monthly");
 
     const confirmButton = app.getByRole("button", {
       exact: true,

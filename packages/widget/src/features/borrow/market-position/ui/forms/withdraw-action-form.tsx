@@ -45,12 +45,15 @@ const WithdrawTokenSelect = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const resolveLogo = useTokenLogoResolver();
-  const selectedLogo = useTokenLogo(
-    borrowTokenToAppToken({
-      network,
-      token: selectedToken.collateralToken.token,
-    })
-  );
+  const selectedLogo = {
+    ...useTokenLogo(
+      borrowTokenToAppToken({
+        network,
+        token: selectedToken.collateralToken.token,
+      })
+    ),
+    name: selectedToken.collateralToken.token.symbol,
+  };
 
   return (
     <SelectSheet

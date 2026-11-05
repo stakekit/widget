@@ -570,6 +570,7 @@
     "validators_jailed": "Jailed",
     "validators_empty": "No validators available",
     "validators_no_results": "No validators found",
+    "validators_loading": "Loading validators",
     "validators_staked_balance": "Validator stake",
     "validators_voting_power": "Voting power",
     "validators_address": "Address",

@@ -185,6 +185,29 @@ export const ExpandBalance: Story = {
   },
 };
 
+const fillBalance = fn();
+
+/**
+ * With `fill`, a tap on the balance fills it in, as some hosts expect; its
+ * name adds what it does to the balance it shows.
+ */
+export const FillBalance: Story = {
+  args: {
+    balance: {
+      short: "12.5 ETH available",
+      fill: { label: "Max", onClick: fillBalance },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    fillBalance.mockClear();
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "12.5 ETH available, Max" })
+    );
+    await expect(fillBalance).toHaveBeenCalledOnce();
+  },
+};
+
 /** A balance over the amount's reach reads in the danger tone. */
 export const BalanceDanger: Story = {
   args: { balance: { short: "12.5 ETH available", tone: "danger" } },

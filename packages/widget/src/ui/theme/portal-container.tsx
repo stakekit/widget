@@ -25,6 +25,9 @@ const styles = stylex.create({
   // outside it: before Safari 18.4, `container-type` also contains
   // `position: fixed` descendants, which would pin popups to the Widget.
   content: { containerType: "inline-size" },
+  // An inline theme root's content and portal container generate no box, so
+  // they leave the host's layout as it is.
+  inline: { display: "contents" },
 });
 
 /**
@@ -64,11 +67,14 @@ const isWidgetPopupEscape = (
 export const PortalContainerProvider = ({
   children,
   hostContainer,
+  inline,
   themeAttributes,
   themeClassName,
   themeProperties,
 }: PropsWithChildren<{
   readonly hostContainer: HTMLElement | undefined;
+  /** Whether the theme root is inline: no box and no size container. */
+  readonly inline: boolean;
   /** The Presentation Setting attributes the theme root carries. */
   readonly themeAttributes: Readonly<Record<`data-sk-${string}`, string>>;
   readonly themeClassName: string;
@@ -94,7 +100,10 @@ export const PortalContainerProvider = ({
 
   return (
     <PortalContainerContext value={container}>
-      <div {...stylex.props(styles.content)} ref={setContent}>
+      <div
+        {...stylex.props(inline ? styles.inline : styles.content)}
+        ref={setContent}
+      >
         {children}
       </div>
       {hostContainer ? (
@@ -109,7 +118,11 @@ export const PortalContainerProvider = ({
           hostContainer
         )
       ) : (
-        <div data-sk-portal="" ref={setContainer} />
+        <div
+          data-sk-portal=""
+          {...stylex.props(inline && styles.inline)}
+          ref={setContainer}
+        />
       )}
     </PortalContainerContext>
   );

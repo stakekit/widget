@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+import type { HostHook } from "../host-hook";
 import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";
 import { CopyButton } from "./copy-button";
@@ -30,6 +31,7 @@ export const DetailRow = ({
   copyable,
   tone = "default",
   testId,
+  hostHook,
 }: {
   readonly label: string;
   /** The formatted value, or a part such as a `Badge` or `ExpandableAmount`. */
@@ -41,8 +43,10 @@ export const DetailRow = ({
   readonly tone?: "default" | "warning" | "danger";
   /** Renders as the row's `data-testid`. */
   readonly testId?: string;
+  /** Renders as the row's `data-rk`, for hosts to locate it. */
+  readonly hostHook?: HostHook;
 }) => (
-  <div data-testid={testId} {...stylex.props(styles.row)}>
+  <div data-testid={testId} data-rk={hostHook} {...stylex.props(styles.row)}>
     <dt {...stylex.props(styles.term)}>
       <Text tone="muted">{label}</Text>
     </dt>

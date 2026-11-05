@@ -254,3 +254,49 @@ export const Suspended: Story = {
     await waitFor(() => expect(opener).toHaveFocus());
   },
 };
+
+/** The modal bodies a `ResizeObserver` started observing during a story. */
+const observedBodies: HTMLElement[] = [];
+
+const RerenderingModal = () => {
+  const [count, setCount] = useState(0);
+  return (
+    <Modal open title="Counter" closeLabel="Close" bodyTestId="modal-body">
+      <Button onClick={() => setCount(count + 1)}>Rendered {count}</Button>
+    </Modal>
+  );
+};
+
+/**
+ * The body's overflow observer is set up once: re-rendering the open modal
+ * keeps observing the same body instead of reconnecting an observer.
+ */
+export const ObservesBodyOnce: Story = {
+  render: () => <RerenderingModal />,
+  beforeEach: () => {
+    const observe = ResizeObserver.prototype.observe;
+    observedBodies.length = 0;
+    ResizeObserver.prototype.observe = function (target, options) {
+      if (
+        target instanceof HTMLElement &&
+        target.dataset.testid === "modal-body"
+      ) {
+        observedBodies.push(target);
+      }
+      observe.call(this, target, options);
+    };
+    return () => {
+      ResizeObserver.prototype.observe = observe;
+    };
+  },
+  play: async () => {
+    const popup = await screen.findByRole("dialog", { name: "Counter" });
+    for (const rendered of [0, 1, 2]) {
+      await userEvent.click(
+        within(popup).getByRole("button", { name: `Rendered ${rendered}` })
+      );
+    }
+    await within(popup).findByRole("button", { name: "Rendered 3" });
+    await expect(observedBodies).toHaveLength(1);
+  },
+};

@@ -148,6 +148,26 @@ export const LoadingOneFee: Story = {
   },
 };
 
+/** A row's `hostHook` renders as its `data-rk`, for hosts to locate it. */
+export const RowHostHook: Story = {
+  args: {
+    facts: [
+      {
+        label: "Estimated yearly rewards",
+        value: "0.05 ETH",
+        testId: "yearly",
+        hostHook: "estimated-reward__yearly",
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByTestId("yearly")).toHaveAttribute(
+      "data-rk",
+      "estimated-reward__yearly"
+    );
+  },
+};
+
 /**
  * A full-precision amount in a 400px frame, inside its gutters, wraps rather
  * than overflow.

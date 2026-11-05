@@ -720,3 +720,147 @@ export const FooterActionsAndTestIds: Story = {
     await expect(onViewAll).toHaveBeenCalledOnce();
   },
 };
+
+const validatorAddress = "cosmosvaloper1abcdefghijklmnopqrstuvwxyz0123456789";
+
+const copyableValidators = [
+  {
+    id: "figment",
+    title: "Figment",
+    value: "5.10%",
+    details: [
+      { label: "Commission", value: "5%" },
+      {
+        label: "Address",
+        value: "cosmosva…23456789",
+        copy: {
+          value: validatorAddress,
+          label: "Copy address",
+          copiedLabel: "Copied",
+        },
+      },
+    ],
+  },
+  { id: "p2p", title: "P2P", value: "4.80%" },
+];
+
+/** Replaces the clipboard, so nothing leaves the page. */
+const stubClipboard = () => {
+  const clipboard = navigator.clipboard;
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: fn(async (_text: string) => {}) },
+  });
+
+  return () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: clipboard,
+    });
+  };
+};
+
+/**
+ * In a listbox, a press on a detail's copy icon copies the full value in
+ * place of choosing the option; the option still reads the value it shows.
+ */
+export const CopyDetail: Story = {
+  beforeEach: stubClipboard,
+  render: (args) => (
+    <SelectSheet
+      title="Select a validator"
+      closeLabel="Close"
+      listLabel="Validators"
+      open
+      options={copyableValidators}
+      selectedId="p2p"
+      onSelect={args.onSelect}
+      search={{
+        value: "",
+        onValueChange: fn(),
+        label: "Search validators",
+        clearLabel: "Clear search",
+      }}
+    />
+  ),
+  play: async ({ args }) => {
+    const sheet = await screen.findByRole("dialog", {
+      name: "Select a validator",
+    });
+    await expect(
+      within(sheet).getByRole("option", { name: /^Figment/ })
+    ).toHaveAccessibleName(/Address\s*cosmosva…23456789/);
+
+    await userEvent.click(within(sheet).getByTitle("Copy address"));
+
+    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      validatorAddress
+    );
+    await expect(args.onSelect).not.toHaveBeenCalled();
+    await expect(sheet).toBeVisible();
+  },
+};
+
+/** Without a search field, a copy button follows the row, outside it. */
+export const CopyDetailWithoutSearch: Story = {
+  beforeEach: stubClipboard,
+  render: (args) => (
+    <SelectSheet
+      title="Select a validator"
+      closeLabel="Close"
+      listLabel="Validators"
+      open
+      options={copyableValidators}
+      selectedId="p2p"
+      onSelect={args.onSelect}
+    />
+  ),
+  play: async ({ args }) => {
+    const sheet = await screen.findByRole("dialog", {
+      name: "Select a validator",
+    });
+
+    await userEvent.click(
+      within(sheet).getByRole("button", { name: "Copy address" })
+    );
+
+    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      validatorAddress
+    );
+    await expect(args.onSelect).not.toHaveBeenCalled();
+    await expect(
+      within(sheet).getByRole("button", { name: /^Figment/ })
+    ).toHaveAttribute("aria-pressed", "false");
+  },
+};
+
+/**
+ * While options load to replace those shown, such as for a new query, a
+ * spinner names the work and the current options stay.
+ */
+export const LoadingWithOptions: Story = {
+  render: ({ options: _options, groups: _groups, ...args }) => (
+    <SelectSheet
+      {...args}
+      open
+      loading
+      loadingLabel="Loading tokens"
+      options={tokens.slice(0, 4)}
+      search={{
+        value: "E",
+        onValueChange: fn(),
+        label: "Search tokens",
+        clearLabel: "Clear search",
+      }}
+    />
+  ),
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a token" });
+    await expect(
+      within(sheet).getByRole("status", { name: "Loading tokens" })
+    ).toBeVisible();
+    await expect(
+      within(sheet).getByRole("option", { name: /^ETH/ })
+    ).toBeVisible();
+  },
+};

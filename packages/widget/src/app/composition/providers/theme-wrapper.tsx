@@ -98,11 +98,14 @@ export const ThemeStyles = ({
   appearance,
   children,
   hostLook,
+  inline = false,
   layout,
   portalContainer,
 }: PropsWithChildren<{
   readonly appearance: ConformingAppearance;
   readonly hostLook: HostLook;
+  /** Themes content placed in the host's own layout, without a box. */
+  readonly inline?: boolean;
   readonly layout: WidgetLayout;
   readonly portalContainer: HTMLElement | undefined;
 }>) => {
@@ -121,6 +124,7 @@ export const ThemeStyles = ({
       callToActionSize={presentation.callToActionSize}
       colorScheme={requestedColorScheme}
       gutter={presentation.gutter}
+      inline={inline}
       portalContainer={portalContainer}
       surfaceStyle={presentation.surfaceStyle}
       tabsIndicator={presentation.tabsIndicator}
@@ -130,7 +134,14 @@ export const ThemeStyles = ({
   );
 };
 
-export const ThemeWrapper = ({ children }: PropsWithChildren) => {
+/**
+ * The theme root for Widget Configuration. `inline` themes standalone content
+ * in the host's own layout, such as a `HelpModal` among `SKApp` children.
+ */
+export const ThemeWrapper = ({
+  children,
+  inline = false,
+}: PropsWithChildren<{ readonly inline?: boolean }>) => {
   const appearance = useWidgetConfig("appearance");
   const hostProfile = useWidgetConfig("hostProfile");
   const layout = useWidgetConfig("layout");
@@ -140,6 +151,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
     <ThemeStyles
       appearance={appearance}
       hostLook={hostProfile}
+      inline={inline}
       layout={layout}
       portalContainer={portalContainer}
     >

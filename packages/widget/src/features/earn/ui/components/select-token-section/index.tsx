@@ -31,6 +31,7 @@ export const SelectTokenSection = ({
   const disableResizingInputFontSize = useWidgetConfig(
     "disableResizingInputFontSize"
   );
+  const { earnPresentation } = useWidgetConfig("hostProfile");
 
   const {
     hideTokenBalance,
@@ -80,12 +81,20 @@ export const SelectTokenSection = ({
     return undefined;
   };
   const error = getError();
+  // A hidden balance has no known maximum yet.
+  const canFillMax = !isStakeTokenSameAsGasToken && !view.hiddenTokenBalance;
+  const fillMax = () => setMaxAmount(undefined);
 
   const balance = useConfidentialTokenBalance({
     balance: selectedTokenAvailableAmount
       ? {
           short: `${formatTokenAmount(selectedTokenAvailableAmount.amount, locale, "down")} ${selectedTokenAvailableAmount.symbol} ${t("shared.available")}`,
-          full: `${formatNumber(selectedTokenAvailableAmount.amount, locale)} ${selectedTokenAvailableAmount.symbol} ${t("shared.available")}`,
+          // Zerion fills in the maximum from a tap on the balance.
+          ...(earnPresentation.zerion && canFillMax
+            ? { fill: { label: t("shared.max"), onClick: fillMax } }
+            : {
+                full: `${formatNumber(selectedTokenAvailableAmount.amount, locale)} ${selectedTokenAvailableAmount.symbol} ${t("shared.available")}`,
+              }),
           ...(stakeAmountGreaterThanAvailableAmount
             ? { tone: "danger" as const }
             : {}),
@@ -125,15 +134,9 @@ export const SelectTokenSection = ({
         stakeAmountGreaterThanMax ||
         stakeAmountLessThanMin
       }
-      // A hidden balance has no known maximum yet.
-      {...(isStakeTokenSameAsGasToken || view.hiddenTokenBalance
-        ? {}
-        : {
-            max: {
-              label: t("shared.max"),
-              onClick: () => setMaxAmount(undefined),
-            },
-          })}
+      {...(canFillMax
+        ? { max: { label: t("shared.max"), onClick: fillMax } }
+        : {})}
       testIds={{
         root: "stake-token-section",
         input: "number-input",

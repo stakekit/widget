@@ -72,12 +72,15 @@ const MarketSelect = ({
   const resolveLogo = useTokenLogoResolver();
   const selectMarket = useAtomSet(selectBorrowMarketAtom);
   const [search, setSearch] = useState("");
-  const logo = useTokenLogo(
-    toBorrowEntryToken({
-      network: selectedMarket.network,
-      token: selectedMarket.loanToken,
-    })
-  );
+  const logo = {
+    ...useTokenLogo(
+      toBorrowEntryToken({
+        network: selectedMarket.network,
+        token: selectedMarket.loanToken,
+      })
+    ),
+    name: selectedMarket.loanToken.symbol,
+  };
 
   if (markets.length <= 1) {
     return <TokenTrigger readOnly testId="borrow-market-select" token={logo} />;
