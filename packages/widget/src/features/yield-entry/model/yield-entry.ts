@@ -167,7 +167,11 @@ type YieldEntryCtaActionOf<Tag extends string> = Readonly<{
 type YieldEntryCtaAction =
   | YieldEntryCtaActionOf<"AddLedgerAccount">
   | YieldEntryCtaActionOf<"ConnectWallet">
-  | YieldEntryCtaActionOf<"Submit">;
+  | (YieldEntryCtaActionOf<"Submit"> &
+      Readonly<{
+        /** Why the disabled CTA cannot submit, once nothing is loading. */
+        readonly blocker: YieldEntryCtaBlocker | null;
+      }>);
 
 type YieldEntryCta =
   | Readonly<{ readonly _tag: "Hidden" }>
@@ -181,8 +185,17 @@ type YieldEntryValidationErrors = Readonly<{
   readonly tronResource: boolean;
 }>;
 
+/** Why a connected entry cannot be submitted, for the CTA to name. */
+export type YieldEntryCtaBlocker =
+  | "AboveMaximum"
+  | "BelowMinimum"
+  | "EnterAmount"
+  | "InsufficientBalance"
+  | "VerifyIdentity";
+
 export const getYieldEntryCta = ({
   amountExceedsBalance,
+  blocker,
   connected,
   externalProviders,
   hasNoYields,
@@ -193,6 +206,7 @@ export const getYieldEntryCta = ({
   readiness,
 }: {
   readonly amountExceedsBalance: boolean;
+  readonly blocker: YieldEntryCtaBlocker | null;
   readonly connected: boolean;
   readonly externalProviders: boolean;
   readonly hasNoYields: boolean;
@@ -204,14 +218,18 @@ export const getYieldEntryCta = ({
 }): YieldEntryCta => {
   if (connected && hasNoYields) return { _tag: "Hidden" };
   if (connected && !ledgerAccountPlaceholder) {
+    const disabled =
+      readiness._tag !== "Ready" ||
+      !preparationAvailable ||
+      kycBlocking ||
+      amountExceedsBalance;
+    const loading = readiness._tag === "Refreshing" || kycLoading;
+    const settled = disabled && !loading && readiness._tag !== "Loading";
     return {
       _tag: "Submit",
-      disabled:
-        readiness._tag !== "Ready" ||
-        !preparationAvailable ||
-        kycBlocking ||
-        amountExceedsBalance,
-      loading: readiness._tag === "Refreshing" || kycLoading,
+      blocker: settled ? blocker : null,
+      disabled,
+      loading,
     };
   }
   if (externalProviders) return { _tag: "Hidden" };
@@ -346,6 +364,35 @@ const getYieldEntryValidation = ({
   } as const;
 };
 
+/**
+ * The first reason, in the order the user can act on them. The limits hold
+ * without a known balance too (a hidden confidential one), as submission
+ * checks them either way.
+ */
+const getYieldEntryCtaBlocker = ({
+  amount,
+  amountValidation,
+  forceMax,
+  kycBlocking,
+  maximum,
+  minimum,
+}: {
+  readonly amount: BigNumber;
+  readonly amountValidation: ReturnType<typeof getYieldAmountValidation>;
+  readonly forceMax: boolean;
+  readonly kycBlocking: boolean;
+  readonly maximum: BigNumber | null;
+  readonly minimum: BigNumber;
+}): YieldEntryCtaBlocker | null => {
+  if (kycBlocking) return "VerifyIdentity";
+  // A force-max yield takes the whole balance, so a zero amount means none.
+  if (amount.isZero()) return forceMax ? "InsufficientBalance" : "EnterAmount";
+  if (amountValidation.amountGreaterThanAvailable) return "InsufficientBalance";
+  if (amount.isLessThan(minimum)) return "BelowMinimum";
+  if (maximum && amount.isGreaterThan(maximum)) return "AboveMaximum";
+  return null;
+};
+
 export const projectYieldEntry = ({
   input,
   submitted,
@@ -393,6 +440,14 @@ export const projectYieldEntry = ({
     cta: getYieldEntryCta({
       amountExceedsBalance:
         validation.errors.stakeAmountGreaterThanAvailableAmount,
+      blocker: getYieldEntryCtaBlocker({
+        amount: executableAmount,
+        amountValidation,
+        forceMax: constraints.forceMax,
+        kycBlocking: input.isKycBlocking,
+        maximum: constraints.maximum,
+        minimum: constraints.allowedMinimum,
+      }),
       connected: input.connected,
       externalProviders: input.externalProviders,
       hasNoYields: input.hasNoYields,

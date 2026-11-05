@@ -16,7 +16,6 @@ import {
   formatHealthFactor,
   formatLtv,
   formatTokenAmount,
-  formatUsd,
 } from "../../../shared/lib/number-format";
 import type {
   ActivityActionItem,
@@ -98,6 +97,8 @@ export type ActivityActionDetailsProjection = Readonly<{
   /** The token beside the title, whose icon heads the receipt. */
   readonly titleToken: Token | null;
   readonly amountTokenSymbol: string | null;
+  /** The amount the receipt heads with, signed: see the list item's. */
+  readonly amountText: string | null;
   readonly transactions: ReadonlyArray<ActivityDetailsTransaction>;
   readonly transactionsSummary: ActivityDetailsTransactionsSummary;
   /** The validators the action staked with, by name or short address. */
@@ -239,9 +240,7 @@ const projectYieldActivityDetails = ({
 
   return {
     amount,
-    amountFiat: action.amountUsd?.isGreaterThan(0)
-      ? formatUsd(action.amountUsd, locale)
-      : null,
+    amountFiat: listItem.amountFiat,
     borrow: null,
     canContinue,
     canceledAt:
@@ -269,6 +268,7 @@ const projectYieldActivityDetails = ({
       ? resolveActivityActionTokens(item.yieldData, action).titleToken
       : null,
     amountTokenSymbol: listItem.amountTokenSymbol,
+    amountText: listItem.amountText,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
     validators: item.validatorsData.map(
@@ -383,6 +383,7 @@ const projectBorrowActivityDetails = ({
       ? borrowTokenToAppToken({ network: item.network, token: item.token })
       : null,
     amountTokenSymbol: listItem.amountTokenSymbol,
+    amountText: listItem.amountText,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
     validators: [],

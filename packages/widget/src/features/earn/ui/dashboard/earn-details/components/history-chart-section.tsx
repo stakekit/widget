@@ -25,18 +25,20 @@ const periods = [
 ] as const satisfies ReadonlyArray<ToggleOption<HistoryPeriod>>;
 
 export const HistoryChartSection = ({
+  formatValue,
+  formatValueAxis,
   onPeriodChange,
-  tickFormatter,
   title,
   value,
-  valueFormatter,
   view,
 }: {
+  /** Formats a hovered value. */
+  formatValue: (value: number) => string;
+  /** Formats the value axis's ticks together, in one precision. */
+  formatValueAxis: (ticks: ReadonlyArray<number>) => ReadonlyArray<string>;
   onPeriodChange: (period: HistoryPeriod) => void;
-  tickFormatter: (value: number) => string;
   title: string;
   value: string;
-  valueFormatter?: (value: number) => string;
   view: YieldHistoryChartView;
 }) => {
   const { t } = useTranslation();
@@ -65,7 +67,8 @@ export const HistoryChartSection = ({
       <TimeSeriesChart
         label={t("dashboard.earn_details.chart_history", { chart: title })}
         data={data}
-        formatValue={tickFormatter}
+        formatValue={formatValue}
+        formatValueAxis={formatValueAxis}
         formatTime={(time) =>
           formatDateTime(DateTime.makeUnsafe(time), {
             timeZone: historyTimeZone,
@@ -83,7 +86,6 @@ export const HistoryChartSection = ({
             year: "numeric",
           })
         }
-        {...(valueFormatter ? { formatTooltipValue: valueFormatter } : {})}
         loading={view.isLoading || refreshing}
         emptyLabel={t("dashboard.earn_details.no_chart_data")}
       />

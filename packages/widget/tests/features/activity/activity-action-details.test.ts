@@ -71,7 +71,7 @@ describe("Activity action details projection", () => {
     });
 
     expect(view).toMatchObject({
-      amount: "-1,000,000,000,000,000.12",
+      amount: "\u22121,000,000,000,000,000.1234",
       canContinue: false,
       statusLabel: "failed",
       transactions: [
@@ -96,7 +96,7 @@ describe("Activity action details projection", () => {
     });
 
     // French groups digits with U+202F and uses a decimal comma.
-    expect(view.amount).toBe("+1\u202f234,56");
+    expect(view.amount).toBe("+1\u202f234,5678");
   });
 
   it("lists the fiat value, the provider and the validators", () => {

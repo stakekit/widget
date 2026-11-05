@@ -396,7 +396,7 @@ describe("Borrow with an external provider", () => {
       .element(app.getByRole("button", { name: "Cancel" }))
       .toBeEnabled();
 
-    await app.getByRole("button", { name: "Try Again" }).click();
+    await app.getByRole("button", { name: "Try again" }).click();
     await expect
       .element(app.getByText("Borrow transaction could not be submitted."))
       .toBeInTheDocument();
@@ -440,9 +440,9 @@ describe("Borrow with an external provider", () => {
     const cancel = app.getByRole("button", { name: "Cancel" });
     await expect.element(cancel).toBeEnabled();
 
-    // Try Again leads the page's footer, full width above Cancel, under the
+    // Try again leads the page's footer, full width above Cancel, under the
     // steps rather than inside the failed one.
-    const retry = app.getByRole("button", { name: "Try Again" });
+    const retry = app.getByRole("button", { name: "Try again" });
     await expect.element(retry).toBeVisible();
     const retryElement = retry.element();
     expect(retryElement.getAttribute("data-rk")).toBe("borrow-steps-retry");
@@ -609,7 +609,7 @@ describe("Borrow on a network outside Borrow", () => {
     await app.getByTestId(`wallet-chain-${base.id}`).click();
     await expect.poll(() => switchChain).toHaveBeenCalledWith(base.id);
     await expect
-      .element(app.getByRole("status").getByText("Confirm in Wallet"))
+      .element(app.getByRole("status").getByText("Confirm in wallet"))
       .toBeInTheDocument();
 
     await userEvent.keyboard("{Escape}");

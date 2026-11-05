@@ -87,12 +87,13 @@ type CommonProps = {
   readonly value?: string;
   /**
    * A figure before the value column, such as a reward rate. `success` is
-   * for positive rates and claimable amounts only. With `from` it shows only
-   * from that container size up, so a narrow row keeps room for its title.
+   * for positive rates and claimable amounts only; `muted` is for a rate of
+   * zero or none, such as "—". With `from` it shows only from that container
+   * size up, so a narrow row keeps room for its title.
    */
   readonly figure?: {
     readonly text: string;
-    readonly tone?: "default" | "success";
+    readonly tone?: "default" | "success" | "muted";
     readonly from?: "sm";
   };
   /** Context under the value, such as its fiat equivalent. */

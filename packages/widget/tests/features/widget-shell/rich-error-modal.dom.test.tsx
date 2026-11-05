@@ -45,7 +45,7 @@ describe("RichErrorModal", () => {
     await renderModal();
 
     expect(document.body.textContent).toContain(
-      "Insufficient SOL for Account Rent"
+      "Insufficient SOL for account rent"
     );
     expect(document.body.textContent).toContain(
       "There is not enough SOL to fund the account rent required by Kamino Lending"

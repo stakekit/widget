@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { DetailRow } from "../../../ui/index";
@@ -64,14 +65,14 @@ export const BorrowFlowOriginationRows = ({
 
   const feeUsd = origination.feeUsd
     ? formatUsd(origination.feeUsd, locale)
-    : "-";
+    : unavailableFigure;
   const fee = `${formatTokenAmount(origination.feeAmount, locale, "up")} ${origination.symbol}`;
 
   return (
     <>
       <DetailRow
         label={t("dashboard.borrow.review_page.origination_fee")}
-        value={feeUsd === "-" ? fee : `${fee} (${feeUsd})`}
+        value={feeUsd === unavailableFigure ? fee : `${fee} (${feeUsd})`}
       />
       <DetailRow
         label={t("dashboard.borrow.review_page.debt_principal")}

@@ -256,6 +256,8 @@ const positionDetailsEnterFacadeAtom = Atom.family(
       })();
 
       return {
+        // The amount defaults to the minimum, so there is always one.
+        amountEntered: true,
         amountInitialization: "DefaultToMinimum",
         availableAmount: balance.availableAmount,
         entry: {

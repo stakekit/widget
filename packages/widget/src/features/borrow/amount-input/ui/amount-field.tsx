@@ -17,8 +17,6 @@ export type BorrowAmountBalance = {
   readonly full?: string;
 };
 
-const dangerTone = { tone: "danger" } satisfies { tone: "danger" };
-
 /**
  * Titled amount panel for borrow forms. A warning shows under the amount as
  * its error; the form's own validation still decides whether Review can
@@ -28,7 +26,6 @@ export const BorrowAmountField = ({
   accessory,
   amount,
   balance,
-  balanceError = false,
   disabled = false,
   label,
   onAmountChange,
@@ -40,7 +37,6 @@ export const BorrowAmountField = ({
   readonly accessory: ReactNode;
   readonly amount: BigNumber;
   readonly balance?: BorrowAmountBalance | undefined;
-  readonly balanceError?: boolean;
   readonly disabled?: boolean | undefined;
   readonly label: string;
   readonly onAmountChange: (amount: BigNumber) => void;
@@ -70,15 +66,7 @@ export const BorrowAmountField = ({
         max: "stake-token-section-max-button",
         ...(testId === undefined ? {} : { root: testId }),
       }}
-      {...(balance === undefined
-        ? {}
-        : {
-            balance: {
-              short: balance.short,
-              ...(balance.full === undefined ? {} : { full: balance.full }),
-              ...(balanceError ? dangerTone : {}),
-            },
-          })}
+      {...(balance === undefined ? {} : { balance })}
       {...(warning ? { error: warning } : {})}
       {...(onMaxClick
         ? { max: { label: t("shared.max"), onClick: onMaxClick } }

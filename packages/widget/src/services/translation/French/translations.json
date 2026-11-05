@@ -357,13 +357,13 @@
     "no_previous_activity": "Aucune activité précédente",
     "item": {
       "deposited": "Dépôt de {{token}}",
-      "deposited_without_token": "Dépôt",
+      "deposited_without_token": "Dépôt · actif inconnu",
       "deposit_submitted": "Dépôt de {{token}} soumis",
       "deposit_submitted_without_token": "Dépôt soumis",
       "deposit_canceled": "Dépôt de {{token}} annulé",
       "deposit_canceled_without_token": "Dépôt annulé",
       "withdrew": "Retrait de {{token}}",
-      "withdrew_without_token": "Retrait",
+      "withdrew_without_token": "Retrait · actif inconnu",
       "private_withdrawal_requested": "Retrait privé de {{token}} demandé",
       "private_withdrawal_requested_without_token": "Retrait privé demandé",
       "private_withdrawal_canceled": "Retrait privé de {{token}} annulé",
@@ -375,15 +375,15 @@
       "generic_without_token": "{{action}}",
       "borrow": {
         "supply": "Fourniture de {{token}}",
-        "supply_without_token": "Fourniture",
+        "supply_without_token": "Fourniture · actif inconnu",
         "borrow": "Emprunt de {{token}}",
-        "borrow_without_token": "Emprunt",
+        "borrow_without_token": "Emprunt · actif inconnu",
         "supplyAndBorrow": "Fourniture et emprunt de {{token}}",
-        "supplyAndBorrow_without_token": "Fourniture et emprunt",
+        "supplyAndBorrow_without_token": "Fourniture et emprunt · actif inconnu",
         "repay": "Remboursement de {{token}}",
-        "repay_without_token": "Remboursement",
+        "repay_without_token": "Remboursement · actif inconnu",
         "withdraw": "Retrait de {{token}}",
-        "withdraw_without_token": "Retrait",
+        "withdraw_without_token": "Retrait · actif inconnu",
         "enableCollateral": "{{token}} activé comme garantie",
         "enableCollateral_without_token": "Garantie activée",
         "disableCollateral": "{{token}} désactivé comme garantie",
@@ -425,6 +425,13 @@
     "yield_strategy": "Stratégie de rendement",
     "via": "via {{providerName}}",
     "additional_info": "Infos supplémentaires",
+    "cta_blocker": {
+      "above_maximum": "Supérieur au maximum",
+      "below_minimum": "Inférieur au minimum",
+      "enter_amount": "Saisissez un montant",
+      "insufficient_token": "{{symbol}} insuffisant",
+      "verify_identity": "Vérifiez d'abord votre identité"
+    },
     "kyc_gate": {
       "check_status": "Vérifier le statut",
       "modal": {
@@ -609,9 +616,9 @@
     "fee_info": "À propos : {{fee}}",
     "gas_warning": "Cette action risque d'échouer : les fonds sont insuffisants pour couvrir les frais de gas",
     "additional_info": "Infos supplémentaires",
-    "deposit_fee": "Frais de Dépôt",
-    "management_fee": "Frais de Gestion",
-    "performance_fee": "Frais de Performance",
+    "deposit_fee": "Frais de dépôt",
+    "management_fee": "Frais de gestion",
+    "performance_fee": "Frais de performance",
     "deposit_fee_explanation": "Une commission fixe déduite lors du dépôt, réduisant le capital investi.",
     "management_fee_explanation": "Une commission annuelle fixe déduite des dépôts du vault en émettant de nouvelles parts, ce qui dilue les participants. Calculée en fonction du temps écoulé depuis la dernière récolte et appliquée lors de la récolte.",
     "performance_fee_explanation": "Une commission déduite des gains lorsqu'un vault récolte une stratégie. Elle n'est appliquée qu'après avoir dépassé un seuil variable.",
@@ -817,7 +824,7 @@
   "help_modals": {
     "close": "Fermer",
     "geo_block": {
-      "title": "Bloquage Géographique",
+      "title": "Non disponible dans votre région",
       "ofac": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”). Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
       "ofsi": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFSI et ses programmes de sanctions via ce lien : <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
       "pending_litigation": "Cette fonctionnalité n'est actuellement pas disponible en {{nameOfRegion}} du fait des litiges en cours au sujet du staking des cryptomonnaies",
@@ -828,11 +835,11 @@
       "default": "Cette fonctionnalité n'est pas disponible en {{countryName}}."
     },
     "get_in_touch": {
-      "title": "Une question? Besoin d'aide?",
+      "title": "Une question ? Besoin d'aide ?",
       "button": "Contactez-nous"
     },
     "what_is_stakekit": {
-      "title": "Qu'est-ce que Yield.xyz?",
+      "title": "Qu'est-ce que Yield.xyz ?",
       "description": "Yield.xyz est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. Yield.xyz abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de Yield.xyz sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
     },
     "under_maintenance": {
@@ -854,7 +861,7 @@
     }
   },
   "positions": {
-    "title": "Mes Positions",
+    "title": "Mes positions",
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} autres",
     "connect_wallet": "Connecter un portefeuille",
@@ -863,7 +870,7 @@
     "claim_rewards": "Réclamer les récompenses",
     "action_required": "Action requise",
     "in_progress": "En cours",
-    "dont_see_position": "Vous ne voyez pas une position?",
+    "dont_see_position": "Vous ne voyez pas une position ?",
     "import_validator": "Importez un validateur à qui vous avez délégué des fonds pour voir votre position",
     "import_button": "Importer",
     "import_validator_modal_title": "Importer un validateur",
@@ -872,32 +879,32 @@
   },
   "yield_types": {
     "native_staking": {
-      "title": "Staking Native",
+      "title": "Staking natif",
       "review": "Staker",
       "cta": "Staker"
     },
     "pooled_staking": {
-      "title": "Staking Pooled",
+      "title": "Staking mutualisé",
       "review": "Staker",
       "cta": "Staker"
     },
     "fixed_yield": {
-      "title": "Rendement Fixe",
+      "title": "Rendement fixe",
       "review": "Déposer",
       "cta": "Déposer"
     },
     "real_world_asset": {
-      "title": "Actif Réel",
+      "title": "Actif réel",
       "review": "Déposer",
       "cta": "Déposer"
     },
     "concentrated_liquidity_pool": {
-      "title": "Liquidité Concentrée",
+      "title": "Liquidité concentrée",
       "review": "Déposer",
       "cta": "Déposer"
     },
     "liquidity_pool": {
-      "title": "Pool de Liquidité",
+      "title": "Pool de liquidité",
       "review": "Déposer",
       "cta": "Déposer"
     },
@@ -907,12 +914,12 @@
       "cta": "Staker"
     },
     "liquid-staking": {
-      "title": "Staking Liquide",
+      "title": "Staking liquide",
       "review": "Staker",
       "cta": "Staker"
     },
     "liquid_staking": {
-      "title": "Staking Liquide",
+      "title": "Staking liquide",
       "review": "Staker",
       "cta": "Staker"
     },
@@ -1517,7 +1524,7 @@
       }
     },
     "activity_details": {
-      "your_position": "Votre Position"
+      "your_position": "Votre position"
     },
     "enabled_rewards_summary_yield_names": {
       "polkadot_dot_validator_staking": "Staking natif DOT",
@@ -1543,7 +1550,7 @@
         "content": "StakeKit vous permet de staker des actifs de cryptomonnaies sur toutes les principales blockchains et vous permet de gagner des intérêts sur vos cryptomonnaies. Les Services StakeKit incluent la création de portefeuilles de cryptomonnaies où la garde et les clés personnelles restent avec l'utilisateur. Les Services incluent également la possibilité d'envoyer, recevoir, staker, faire des ponts et échanger des actifs de cryptomonnaies. Les actifs de cryptomonnaies supportés par StakeKit sont sujets à changement."
       },
       "agreement_to_terms": {
-        "title": "Accord aux Conditions",
+        "title": "Accord aux conditions",
         "content": "Lorsque vous cliquez sur « J'accepte » ou lorsque vous accédez à l'application StakeKit ou utilisez l'un des Services StakeKit, vous acceptez d'être lié par ces conditions. Si vous n'acceptez pas ces Conditions, n'acceptez pas ou n'utilisez pas les Services."
       },
       "intellectual_property": {

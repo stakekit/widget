@@ -44,7 +44,7 @@ describe("HelpModal as SKApp children", () => {
     expect(footer.element().contains(dialog.element())).toBe(true);
     // The dark default `background` role.
     expect(getComputedStyle(dialog.element()).backgroundColor).toBe(
-      "rgb(21, 21, 23)"
+      "rgb(17, 17, 19)"
     );
 
     await app.unmount();

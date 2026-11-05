@@ -24,20 +24,24 @@ const listItems = {
     providersDetails: [{ name: "The Ape Foundation Liquid Staking" }],
     statusLabel: "completed",
     statusText: "Completed",
-    timestampRelative: "1004d ago",
+    timestamp: "Aug 5, 2026",
     title: "Deposited Wrapped Staked Ether",
     amountTokenSymbol: "wstETH",
+    amountFiat: "$3,086,419,727.50",
+    amountText: "+1,234,567.891 wstETH",
   },
   failed: {
     amount: "1",
-    amountSign: "-",
+    amountSign: "\u2212",
     iconType: "out",
     providersDetails: [{ name: "Lido" }],
     statusLabel: "failed",
     statusText: "Failed",
-    timestampRelative: "21m ago",
+    timestamp: "21m ago",
     title: "Withdrew POL",
     amountTokenSymbol: "POL",
+    amountFiat: null,
+    amountText: "\u22121 POL",
   },
   processing: {
     amount: "0.001",
@@ -46,9 +50,25 @@ const listItems = {
     providersDetails: [{ name: "StakeKit" }],
     statusLabel: "processing",
     statusText: "Processing",
-    timestampRelative: "just now",
+    timestamp: "just now",
     title: "Deposited POL",
     amountTokenSymbol: "POL",
+    amountFiat: null,
+    amountText: "+0.001 POL",
+  },
+  // A Yield the API no longer lists: no token, no provider.
+  unknownToken: {
+    amount: "0.1",
+    amountSign: "+",
+    iconType: "in",
+    providersDetails: [],
+    statusLabel: "completed",
+    statusText: "Completed",
+    timestamp: "Nov 10, 2023",
+    title: "Deposited · unknown asset",
+    amountTokenSymbol: null,
+    amountFiat: "$0.14",
+    amountText: "+$0.14",
   },
 } as const;
 
@@ -115,7 +135,7 @@ describe("activity rows", () => {
       const rows = rowsOf(app.container);
       const heights = rows.map((row) => row.getBoundingClientRect().height);
 
-      expect(rows).toHaveLength(3);
+      expect(rows).toHaveLength(4);
       expect(new Set(heights).size).toBe(1);
       for (const row of rows) {
         expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth);
@@ -132,23 +152,30 @@ describe("activity rows", () => {
 
   it("puts the action beside its amount over the provider and status beside the time", async () => {
     const app = await renderRows(400);
-    const [completed, failed, processing] = rowsOf(app.container);
+    const [completed, failed, processing, unknownToken] = rowsOf(app.container);
 
     expect(completed?.textContent).toBe(
       "Deposited Wrapped Staked Ether" +
         "via The Ape Foundation Liquid Staking" +
-        "+1,234,567.891 wstETH1004d ago"
+        "+1,234,567.891 wstETHAug 5, 2026"
     );
     expect(failed?.textContent).toBe(
-      "Withdrew POLvia Lido·Failed-1 POL21m ago"
+      "Withdrew POLvia Lido·Failed\u22121 POL21m ago"
     );
     expect(processing?.textContent).toBe(
       "Deposited POLvia StakeKit·Processing+0.001 POLjust now"
     );
+    // A bare "+0.1" would not say of what, so the row shows its USD value.
+    expect(unknownToken?.textContent).toBe(
+      "Deposited · unknown asset+$0.14Nov 10, 2023"
+    );
     const top = (text: string) =>
       findExactText(app.container, text)?.getBoundingClientRect().top;
     // Each line's start and end share a baseline row.
-    expect(top("-1 POL")).toBeCloseTo(top("Withdrew POL") ?? Number.NaN, 0);
+    expect(top("\u22121 POL")).toBeCloseTo(
+      top("Withdrew POL") ?? Number.NaN,
+      0
+    );
     expect(top("21m ago")).toBeCloseTo(top("via Lido") ?? Number.NaN, 0);
   });
 

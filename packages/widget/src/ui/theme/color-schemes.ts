@@ -10,17 +10,21 @@ import { elevation } from "../tokens/elevation.stylex";
 /** The color schemes the theme root applies. Light is the tokens' default. */
 export type ColorScheme = "light" | "dark";
 
+// `surface` stands 1.21:1 off the canvas, so a filled card's edge reads.
+// `surfaceRaised` sits just above `surface`: in dark a shadow does not show,
+// so the `raised` elevation outlines it instead (see `darkElevation`).
 const darkColorRoles: ColorRoles = {
-  background: "#151517",
-  surface: "#202024",
-  surfaceHover: "#2A2A2F",
-  surfaceRaised: "#26262B",
-  border: "#2C2C31",
-  borderStrong: "#3B3B42",
+  background: "#111113",
+  surface: "#232328",
+  surfaceHover: "#2B2B31",
+  surfaceRaised: "#28282D",
+  border: "#303036",
+  borderStrong: "#3F3F47",
   text: "#F4F4F5",
   textMuted: "#A1A1AA",
   textSubtle: "#71717A",
-  // 3.06:1 on `surfaceHover`, so a selected control's accent cue reads.
+  // 3.01:1 on `surfaceHover`, so a selected control's accent cue reads; the
+  // greys above are as light as that allows.
   accent: "#4C62FF",
   accentHover: "#4F64FF",
   onAccent: "#FFFFFF",
@@ -40,11 +44,14 @@ const darkColorRoles: ColorRoles = {
 
 const darkColors = stylex.createTheme(color, darkColorRoles);
 
-// In dark, the shell is outlined in the border role instead of casting a shadow.
+// In dark, a shadow does not show on the canvas: the shell is outlined in
+// the border role instead, and a raised surface (a selected tab or segment,
+// the token trigger, an elevated card) adds a `borderStrong` outline to its
+// shadow, so it reads against the surface it sits on.
 const darkElevation = stylex.createTheme(elevation, {
-  raised: "0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.32)",
+  raised: `0 0 0 1px ${color.borderStrong}, 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.32)`,
   overlay: "0 12px 32px rgb(0 0 0 / 0.48)",
-  shell: "0 0 0 1px #2C2C31",
+  shell: `0 0 0 1px ${color.border}`,
 });
 
 const schemeStyles = stylex.create({
@@ -160,9 +167,8 @@ const portoTheme = stylex.createTheme(color, {
   ...portoColors,
 });
 
-// Utila: light only, the default accent on its greys.
+// Utila: light only, the default accent and surface on its greys.
 const utilaColors = {
-  surface: "#F5F5F6",
   border: "#E4E4E7",
   borderStrong: "#C9CFFF",
   accentSoft: "#F4F5FF",

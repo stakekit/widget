@@ -10,6 +10,7 @@ import {
   formatNumber,
   formatRewardRatePercent,
   formatRoundedPercent,
+  unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 
@@ -161,4 +162,4 @@ export const getValidatorMetaInfo = (
 const formatBigNumber = (
   value: BigNumber,
   format: (value: BigNumber) => string
-) => (value.isNaN() ? "-" : format(value));
+) => (value.isNaN() ? unavailableFigure : format(value));

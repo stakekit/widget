@@ -65,7 +65,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__yearly")
-          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+          .getByText(`0.0051 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -73,7 +73,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__monthly")
-          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+          .getByText(`0.0004 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -123,7 +123,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__yearly")
-          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+          .getByText(`0.0051 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -131,7 +131,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__monthly")
-          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+          .getByText(`0.0004 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
     await expect
@@ -150,7 +150,7 @@ describe("Staking flow", () => {
 
     await userEvent.click(confirmButton);
 
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })

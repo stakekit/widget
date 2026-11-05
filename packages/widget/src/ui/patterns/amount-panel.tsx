@@ -36,8 +36,6 @@ type AmountPanelProps = {
      * a tap on the balance toggles between the two.
      */
     readonly full?: string;
-    /** `danger` when the amount is more than the balance. */
-    readonly tone?: "danger";
     /**
      * Fills in the balance as the amount, as some hosts expect: a tap on the
      * balance calls `onClick` in place of the precision toggle, and `label`,
@@ -142,7 +140,7 @@ export const AmountPanel = ({
         {(balance !== undefined || max !== undefined) && (
           <Stack direction="row" align="center" gap={8}>
             {balance !== undefined && (
-              <Text variant="caption" tone={balance.tone ?? "muted"} numeric>
+              <Text variant="caption" tone="muted" numeric>
                 <BalanceAmount balance={balance} disabled={disabled} />
               </Text>
             )}

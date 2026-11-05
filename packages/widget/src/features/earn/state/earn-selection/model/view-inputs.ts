@@ -42,6 +42,13 @@ export type ValidatorObservation =
 export type EarnViewObservations = Readonly<{
   readonly category: CategoryObservation;
   readonly initial: InitialViewObservations;
+  /**
+   * The yields of every funded token, read only when the token picked for
+   * the user has no yield they can reach; null otherwise.
+   */
+  readonly reachableDefaultYields: EarnResourceResult<
+    ReadonlyArray<EarnYieldWithProvider>
+  > | null;
   readonly tokenOptions: EarnResourceResult<ReadonlyArray<EarnTokenOption>>;
   readonly validators: ValidatorObservation;
   readonly yieldCatalog: EarnResourceResult<

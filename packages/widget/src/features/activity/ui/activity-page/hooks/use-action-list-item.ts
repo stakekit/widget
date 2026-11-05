@@ -40,8 +40,8 @@ export const useActionListItem = (action: ActivityActionItem) => {
     presentationTime,
   });
   const title = useActivityActionTitle(projection.title);
-  const timestampRelative = projection.relativeTime
-    ? Match.value(projection.relativeTime).pipe(
+  const timestamp = projection.time
+    ? Match.value(projection.time).pipe(
         Match.when({ unit: "now" }, () => t("activity.time.now")),
         Match.when({ unit: "minutes" }, ({ value }) =>
           t("activity.time.minutes_ago", { count: value })
@@ -52,6 +52,7 @@ export const useActionListItem = (action: ActivityActionItem) => {
         Match.when({ unit: "days" }, ({ value }) =>
           t("activity.time.days_ago", { count: value })
         ),
+        Match.when({ unit: "date" }, ({ label }) => label),
         Match.exhaustive
       )
     : "";
@@ -61,7 +62,7 @@ export const useActionListItem = (action: ActivityActionItem) => {
     providersDetails,
     iconType: ICON_TYPE_MAP[projection.direction],
     title,
-    timestampRelative,
+    timestamp,
     statusText: projection.statusLabel
       ? t(`activity.status.${projection.statusLabel}`)
       : null,

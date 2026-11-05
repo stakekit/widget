@@ -1,5 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import {
+  formatFigureChange,
+  formatTokenAmount,
+  unavailableFigure,
+} from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   Card,
@@ -87,11 +91,14 @@ export const RepayActionForm = ({
             />
             <DetailRow
               label={t("dashboard.borrow.form.loan")}
-              value={`${formatTokenAmount(debtBalance.balance, locale, "up")} -> ${formatTokenAmount(
-                view.remainingDebt,
-                locale,
-                "up"
-              )} ${debtBalance.tokenSymbol}`}
+              value={`${
+                formatFigureChange(
+                  (amount, language) =>
+                    formatTokenAmount(amount, language, "up"),
+                  { before: debtBalance.balance, after: view.remainingDebt },
+                  locale
+                ) ?? unavailableFigure
+              } ${debtBalance.tokenSymbol}`}
             />
           </DetailList>
         </Stack>

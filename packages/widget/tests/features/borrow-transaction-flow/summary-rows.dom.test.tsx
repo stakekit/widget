@@ -27,15 +27,15 @@ describe("Borrow flow summary rows", () => {
         <BorrowFlowAmountRows
           action="borrow"
           projected={{
-            borrow: { amount: "12345.678", symbol: "USDC" },
+            borrow: { amount: "12345.67891", symbol: "USDC" },
             collateral: { amount: "1000.5", symbol: "cbBTC" },
           }}
         />
         <BorrowFlowOriginationRows
           origination={{
-            feeAmount: "1234.501",
+            feeAmount: "1234.50001",
             feeUsd: null,
-            principalAmount: "13579.001",
+            principalAmount: "13579.00001",
             symbol: "USDC",
           }}
         />
@@ -43,9 +43,9 @@ describe("Borrow flow summary rows", () => {
     );
     const text = app.container.textContent;
 
-    expect(text).toContain(`12${nnbsp}345,67 USDC`);
+    expect(text).toContain(`12${nnbsp}345,6789 USDC`);
     expect(text).toContain(`1${nnbsp}000,5 cbBTC`);
-    expect(text).toContain(`1${nnbsp}234,51 USDC`);
-    expect(text).toContain(`13${nnbsp}579,01 USDC`);
+    expect(text).toContain(`1${nnbsp}234,5001 USDC`);
+    expect(text).toContain(`13${nnbsp}579,0001 USDC`);
   });
 });

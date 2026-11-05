@@ -53,14 +53,15 @@ export const PositionDetailsBreadcrumb = ({
 
 type MetricCard = PositionOverviewModel["metricCards"][number];
 
-/** A card's value: its lines, or the status it names as a badge. */
+/**
+ * A card's value: its lines, or the status it names as a badge. A status that
+ * asks something of the user wears the warning tone, as the positions list and
+ * the Manage tab's count do.
+ */
 const MetricValue = ({ card }: { readonly card: MetricCard }) => {
   if (typeof card.value === "string") {
     if (card.tone === "action") {
-      return <Badge tone="danger">{card.value}</Badge>;
-    }
-    if (card.tone === "claim") {
-      return <Badge tone="success">{card.value}</Badge>;
+      return <Badge tone="warning">{card.value}</Badge>;
     }
     return card.value;
   }

@@ -6,7 +6,9 @@ import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatAddress } from "../../../../../shared/lib/general";
 import {
   formatPercent,
+  formatPercentAxis,
   formatUsd,
+  formatUsdAxis,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
@@ -148,10 +150,16 @@ const EarnDetailsPanel = ({
 
       {presentsRewardRateHistory && rewardRateChart.view.canRender && (
         <HistoryChartSection
-          onPeriodChange={rewardRateChart.selectPeriod}
-          tickFormatter={(value) =>
+          formatValue={(value) =>
             formatPercent(exactDecimal(value).div(100), locale)
           }
+          formatValueAxis={(ticks) =>
+            formatPercentAxis(
+              ticks.map((tick) => exactDecimal(tick).div(100)),
+              locale
+            )
+          }
+          onPeriodChange={rewardRateChart.selectPeriod}
           title={t("dashboard.earn_details.reward_rate")}
           value={rewardRateFormatted}
           view={rewardRateChart.view}
@@ -160,8 +168,9 @@ const EarnDetailsPanel = ({
 
       {!isStakeCategory && tvlChart.view.canRender && (
         <HistoryChartSection
+          formatValue={(value) => formatUsd(value, locale)}
+          formatValueAxis={(ticks) => formatUsdAxis(ticks, locale)}
           onPeriodChange={tvlChart.selectPeriod}
-          tickFormatter={(value) => formatUsd(value, locale)}
           title={t("dashboard.earn_details.tvl")}
           value={tvlChartValue}
           view={tvlChart.view}

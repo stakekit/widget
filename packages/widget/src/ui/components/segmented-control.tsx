@@ -4,6 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -90,7 +91,6 @@ const styles = stylex.create({
     color: {
       default: color.textMuted,
       ":hover:not([data-disabled])": color.text,
-      ":is([data-disabled])": color.textSubtle,
       ":is([data-pressed])": color.text,
     },
     cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
@@ -100,8 +100,9 @@ const styles = stylex.create({
     fontSize: fontSize.label,
     fontWeight: fontWeight.medium,
     lineHeight: lineHeight.label,
+    opacity: { default: 1, ":is([data-disabled])": opacity.disabled },
     transitionDuration: motion.fast,
-    transitionProperty: "background-color, box-shadow, color",
+    transitionProperty: "background-color, box-shadow, color, opacity",
     transitionTimingFunction: motion.easing,
     whiteSpace: "nowrap",
   },

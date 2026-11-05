@@ -72,7 +72,6 @@ const PositionDetailsEnterTokenSection = ({
     stakeAmountGreaterThanAvailableAmount ||
     stakeAmountGreaterThanMax ||
     stakeAmountLessThanMin;
-  const errorBalance = stakeAmountGreaterThanAvailableAmount;
   const available = stake.selectedTokenAvailableAmount;
   const min =
     stake.stakeMinAmount === null
@@ -88,7 +87,6 @@ const PositionDetailsEnterTokenSection = ({
     ? {
         short: `${formatTokenAmount(available.amount, locale, "down")} ${available.symbol} ${t("shared.available")}`,
         full: `${formatNumber(available.amount, locale)} ${available.symbol} ${t("shared.available")}`,
-        ...(errorBalance ? { tone: "danger" as const } : {}),
       }
     : null;
   const balance = useConfidentialTokenBalance({

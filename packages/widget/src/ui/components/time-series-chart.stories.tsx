@@ -185,6 +185,22 @@ export const NarrowContainerDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/**
+ * `formatValueAxis` labels the value ticks together, so every label of the
+ * axis shares one precision.
+ */
+export const SharedAxisPrecision: Story = {
+  args: {
+    formatValueAxis: (ticks) => ticks.map((tick) => `${tick.toFixed(1)}%`),
+  },
+  play: async ({ canvasElement }) => {
+    const frame = chart(canvasElement);
+    await waitFor(() =>
+      expect(within(frame).getAllByText(/^\d+\.\d%$/u)).toHaveLength(3)
+    );
+  },
+};
+
 /** Hovering a point shows its value and time, formatted for the tooltip. */
 export const Tooltip: Story = {
   play: async ({ canvasElement }) => {

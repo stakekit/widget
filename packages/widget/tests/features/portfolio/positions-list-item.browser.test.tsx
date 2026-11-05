@@ -31,7 +31,10 @@ type RowDetails = {
   readonly integrationData: unknown;
   readonly providersDetails: unknown;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-  readonly rewardRateAverage: string | null;
+  readonly rewardRateAverage: {
+    readonly text: string;
+    readonly isPositive: boolean;
+  } | null;
   readonly hasHiddenBalance?: boolean;
   readonly totalFormatted: string | null;
   readonly totalAmountUsd: BigNumber | null;
@@ -65,7 +68,7 @@ const createDetails = (overrides: Partial<RowDetails> = {}): RowDetails => ({
     { address: "0xvalidator-b", name: "Validator B" },
   ],
   inactiveValidator: null,
-  rewardRateAverage: "4.2%",
+  rewardRateAverage: { text: "4.2%", isPositive: true },
   totalFormatted: `12.5 ${integrationData.token.symbol}`,
   totalAmountUsd: exactDecimal("25"),
   ...overrides,
@@ -265,6 +268,49 @@ describe.each(presentations)("A $name Manage list", ({ row }) => {
       expect(status.left).toBeGreaterThan(provider.right);
     }
   );
+
+  it("draws every status the Manage tab counts in one tone, apart from In progress", async () => {
+    const statusRows = [
+      { expected: "Action required", item: { actionRequired: true } },
+      { expected: "Claim rewards", item: { hasPendingClaimRewards: true } },
+      { expected: "Jailed", inactiveValidator: "jailed" as const, item: {} },
+      { expected: "Inactive", inactiveValidator: "other" as const, item: {} },
+      { expected: "In progress", item: { hasPendingRequest: true } },
+    ];
+    for (const [index, entry] of statusRows.entries()) {
+      hookState.detailsByYield.set(
+        `yield-${index}`,
+        createDetails({
+          integrationData: { ...integrationData, id: `yield-${index}` },
+          inactiveValidator: entry.inactiveValidator ?? null,
+        })
+      );
+    }
+    const app = await renderRow(
+      <div style={{ containerType: "inline-size", width: 368 }}>
+        {statusRows.map((entry, index) => (
+          <div key={entry.expected}>
+            {row(
+              createItem({
+                ...entry.item,
+                integrationId: `yield-${index}` as YieldId,
+              })
+            )}
+          </div>
+        ))}
+      </div>
+    );
+
+    await expect.element(app.getByText("In progress")).toBeVisible();
+    const colorOf = (text: string) =>
+      getComputedStyle(app.getByText(text, { exact: true }).element()).color;
+    const attention = colorOf("Action required");
+
+    for (const counted of ["Claim rewards", "Jailed", "Inactive"]) {
+      expect(colorOf(counted), counted).toBe(attention);
+    }
+    expect(colorOf("In progress")).not.toBe(attention);
+  });
 });
 
 describe("Earn position list item", () => {
@@ -376,6 +422,49 @@ describe("Earn position list item", () => {
       }
     );
 
+    it.runIf(name === "dashboard")(
+      "shows a positive rate in the success tone and an unavailable one muted",
+      async () => {
+        hookState.detailsByYield.set(
+          "positive",
+          createDetails({
+            integrationData: { ...integrationData, id: "positive" },
+            rewardRateAverage: { text: "4.2%", isPositive: true },
+          })
+        );
+        hookState.detailsByYield.set(
+          "unavailable",
+          createDetails({
+            integrationData: { ...integrationData, id: "unavailable" },
+            rewardRateAverage: { text: "—", isPositive: false },
+          })
+        );
+        // Wide enough for the rate, which a narrow row leaves out.
+        const app = await renderRow(
+          <div style={{ containerType: "inline-size", width: 640 }}>
+            {row(createItem({ integrationId: "positive" as YieldId }))}
+            {row(createItem({ integrationId: "unavailable" as YieldId }))}
+          </div>
+        );
+
+        await expect.element(app.getByText("—")).toBeVisible();
+        const colorOf = (text: string) =>
+          getComputedStyle(app.getByText(text, { exact: true }).element())
+            .color;
+        const muted = getComputedStyle(
+          app.getByText("via Validator A").first().element()
+        ).color;
+
+        expect(colorOf("—")).toBe(muted);
+        expect(colorOf("4.2%")).not.toBe(muted);
+        expect(colorOf("4.2%")).not.toBe(
+          getComputedStyle(
+            app.getByText(integrationData.metadata.name).first().element()
+          ).color
+        );
+      }
+    );
+
     it("shows no action badge without a pending action", async () => {
       hookState.details = createDetails();
       const app = await renderRow(row(createItem()));
@@ -409,7 +498,7 @@ describe("Earn position list item", () => {
     const dashboard = await renderRow(presentations[1].row(createItem()));
 
     await expect
-      .element(dashboard.getByText("-", { exact: true }))
+      .element(dashboard.getByText("—", { exact: true }))
       .toBeInTheDocument();
     await dashboard.unmount();
 
@@ -419,7 +508,7 @@ describe("Earn position list item", () => {
       .element(compact.getByText(integrationData.metadata.name))
       .toBeInTheDocument();
     await expect
-      .element(compact.getByText("-", { exact: true }))
+      .element(compact.getByText("—", { exact: true }))
       .not.toBeInTheDocument();
   });
 
@@ -434,7 +523,7 @@ describe("Earn position list item", () => {
 
       await expect.element(app.getByText("Hidden")).toBeInTheDocument();
       await expect
-        .element(app.getByText("-", { exact: true }))
+        .element(app.getByText("—", { exact: true }))
         .not.toBeInTheDocument();
     }
   );

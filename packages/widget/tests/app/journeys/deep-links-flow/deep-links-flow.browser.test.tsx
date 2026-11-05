@@ -106,7 +106,7 @@ describe("Deep links flow", () => {
 
     await confirmButton.click();
 
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
@@ -181,7 +181,7 @@ describe("Deep links flow", () => {
 
     await app.getByRole("button", { name: "Confirm" }).click();
 
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })

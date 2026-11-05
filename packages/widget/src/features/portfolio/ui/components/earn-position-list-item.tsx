@@ -6,6 +6,7 @@ import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../../shared/lib/number-format";
 import { useTokenLogo } from "../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
@@ -20,7 +21,11 @@ export type EarnPositionListItemDetails = {
   readonly integrationData: EarnYieldWithProvider | null;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider> | null;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-  readonly rewardRateAverage: string | null;
+  /** The average rate as shown, and whether it is a gain. */
+  readonly rewardRateAverage: {
+    readonly text: string;
+    readonly isPositive: boolean;
+  } | null;
   /** The total: its amount and token, or its USD value across tokens. */
   readonly totalFormatted: string | null;
   /** USD value beside a single-token total, when priced. */
@@ -29,11 +34,15 @@ export type EarnPositionListItemDetails = {
 
 type RowStatus = NonNullable<ComponentProps<typeof ListRow>["status"]>;
 
-/** How each kind of status a row calls out reads. */
+/**
+ * How each kind of status a row calls out reads. Every status that asks
+ * something of the user, rewards to claim among them, shares the warning
+ * tone the Manage tab's count wears; work already under way is info.
+ */
 const statusLook = {
-  attention: { tone: "danger", icon: "WarningIcon" },
-  claimable: { tone: "success", icon: "GiftIcon" },
-  pending: { tone: "warning", icon: "HistoryIcon" },
+  attention: { tone: "warning", icon: "WarningIcon" },
+  claimable: { tone: "warning", icon: "GiftIcon" },
+  pending: { tone: "info", icon: "HistoryIcon" },
 } as const satisfies Record<string, Omit<RowStatus, "text">>;
 
 /** The one status a row shows, the most pressing first. */
@@ -76,7 +85,7 @@ const useValueProps = ({
     return { value: t("shared.confidential.hidden") };
   }
   if (!details.totalFormatted) {
-    return showsMissingAmountPlaceholder ? { value: "-" } : {};
+    return showsMissingAmountPlaceholder ? { value: unavailableFigure } : {};
   }
   return details.totalAmountUsd
     ? {
@@ -122,6 +131,8 @@ const EarnPositionRow = ({
   const values = useValueProps({ details, showsMissingAmountPlaceholder });
   const provider = details.providersDetails?.[0];
   const rewardRate = showsRewardRate ? details.rewardRateAverage : null;
+  // Success is for gains only: zero or an unknown rate reads muted.
+  const rewardRateTone = rewardRate?.isPositive ? "success" : "muted";
 
   return (
     <ListRow
@@ -140,7 +151,11 @@ const EarnPositionRow = ({
       {...(rewardRate
         ? {
             // A narrow row keeps its room for the title and the value.
-            figure: { text: rewardRate, tone: "success", from: "sm" } as const,
+            figure: {
+              text: rewardRate.text,
+              tone: rewardRateTone,
+              from: "sm",
+            } as const,
           }
         : {})}
       {...values}
@@ -167,7 +182,7 @@ export const EarnPositionListItem = ({
   readonly details: EarnPositionListItemDetails;
   /** Whether opening Position Details runs a view transition. */
   readonly opensDetailsWithViewTransition: boolean;
-  /** Whether an unpriced or unloaded amount renders a "-" placeholder. */
+  /** Whether an unpriced or unloaded amount renders a "—" placeholder. */
   readonly showsMissingAmountPlaceholder: boolean;
   /** Whether the row shows the average reward rate next to the amount. */
   readonly showsRewardRate: boolean;

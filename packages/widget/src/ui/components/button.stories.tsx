@@ -188,6 +188,36 @@ export const Disabled: Story = {
   },
 };
 
+/**
+ * A disabled button keeps its variant's look, faded: a disabled primary still
+ * reads as the primary action, not as a card or a secondary button.
+ */
+export const DisabledLook: Story = {
+  render: (args) => (
+    <div style={{ display: "flex", gap: 12 }}>
+      <Button {...args} variant="primary">
+        Enabled
+      </Button>
+      <Button {...args} variant="primary" disabled>
+        Disabled
+      </Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const enabled = getComputedStyle(
+      canvas.getByRole("button", { name: "Enabled" })
+    );
+    const disabled = getComputedStyle(
+      canvas.getByRole("button", { name: "Disabled" })
+    );
+
+    await expect(disabled.backgroundColor).toBe(enabled.backgroundColor);
+    await expect(Number(disabled.opacity)).toBeLessThan(0.5);
+    await expect(Number(enabled.opacity)).toBe(1);
+  },
+};
+
 /** A loading button is busy, shows a spinner and ignores activation. */
 export const Loading: Story = {
   args: { variant: "primary", loading: true },

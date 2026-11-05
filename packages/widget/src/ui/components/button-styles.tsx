@@ -5,6 +5,7 @@ import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { callToAction } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
@@ -107,13 +108,16 @@ const buttonStyles = stylex.create({
     fontFamily: font.sans,
     fontWeight: fontWeight.semibold,
     justifyContent: "center",
+    // A loading button is disabled too, but busy: it keeps its full look.
+    opacity: { default: 1, ":disabled:not([aria-busy])": opacity.disabled },
     textAlign: "center",
     transform: {
       default: "none",
       ":active:not(:disabled)": motion.press,
     },
     transitionDuration: motion.fast,
-    transitionProperty: "background-color, border-color, color, transform",
+    transitionProperty:
+      "background-color, border-color, color, opacity, transform",
     transitionTimingFunction: motion.easing,
     userSelect: "none",
     whiteSpace: "nowrap",
@@ -127,31 +131,30 @@ const buttonStyles = stylex.create({
   },
 });
 
-// Disabled buttons sit on the surface with muted text, which keeps their
-// label legible (5.7:1 in light) while reading as unavailable.
+// A disabled button keeps its variant's look at the disabled opacity, so a
+// disabled primary still reads as the primary action.
 const buttonVariantStyles = stylex.create({
   primary: {
     backgroundColor: {
       default: color.accent,
       ":hover:not(:disabled)": color.accentHover,
-      ":disabled": color.surface,
     },
-    color: { default: color.onAccent, ":disabled": color.textMuted },
+    color: color.onAccent,
   },
   secondary: {
-    borderColor: { default: color.borderStrong, ":disabled": color.border },
+    borderColor: color.borderStrong,
     backgroundColor: {
       default: color.surface,
       ":hover:not(:disabled)": color.surfaceHover,
     },
-    color: { default: color.text, ":disabled": color.textMuted },
+    color: color.text,
   },
   ghost: {
     backgroundColor: {
       default: "transparent",
       ":hover:not(:disabled)": color.surfaceHover,
     },
-    color: { default: color.text, ":disabled": color.textMuted },
+    color: color.text,
   },
   // Status colors stay text on their soft tint; hover outlines the button.
   danger: {
@@ -159,17 +162,17 @@ const buttonVariantStyles = stylex.create({
       default: "transparent",
       ":hover:not(:disabled)": color.danger,
     },
-    backgroundColor: { default: color.dangerSoft, ":disabled": color.surface },
-    color: { default: color.danger, ":disabled": color.textMuted },
+    backgroundColor: color.dangerSoft,
+    color: color.danger,
   },
   // The danger color on a secondary button's surface; hover tints it softly.
   dangerOutline: {
-    borderColor: { default: color.danger, ":disabled": color.border },
+    borderColor: color.danger,
     backgroundColor: {
       default: color.surface,
       ":hover:not(:disabled)": color.dangerSoft,
     },
-    color: { default: color.danger, ":disabled": color.textMuted },
+    color: color.danger,
   },
 });
 

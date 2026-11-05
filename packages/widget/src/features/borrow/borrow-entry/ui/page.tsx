@@ -182,7 +182,6 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
               symbol: collateralSymbol,
             }),
           }}
-          balanceError={collateralAmountGreaterThanBalance}
           label={t("dashboard.borrow.form.collateral")}
           onAmountChange={setCollateralAmount}
           onMaxClick={

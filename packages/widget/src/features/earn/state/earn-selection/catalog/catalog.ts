@@ -7,6 +7,7 @@ import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { exactZero } from "../../../../../domain/finance/exact";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
+import type { Prices } from "../../../../../domain/health/models";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
 import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
@@ -15,6 +16,10 @@ import {
   earnTokenCatalogResourceAtom,
 } from "../../../../../resources/earn-token-catalog/index";
 import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/index";
+import {
+  PricesKey,
+  pricesAtom,
+} from "../../../../../resources/token-prices/index";
 import {
   preferredValidatorsResourceAtom,
   ValidatorsKey,
@@ -25,6 +30,7 @@ import {
   YieldDirectoryKey,
 } from "../../../../../resources/yield-directory/index";
 import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/index";
+import { config } from "../../../../../shared/config/widget-defaults";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import { makeEmptyPositionsData } from "../model/view-model";
 import {
@@ -52,6 +58,7 @@ const toTokenOption = (item: {
 }): EarnTokenOption => ({
   ...item,
   amount: null,
+  funded: false,
   source: "default",
 });
 
@@ -173,35 +180,85 @@ const tokenBalancesResult = (
     : result;
 };
 
+type RankedTokenOption = {
+  readonly index: number;
+  readonly option: EarnTokenOption;
+  /** The balance's USD value; null while unpriced. */
+  readonly valueUsd: BigNumber | null;
+};
+
+const rankTokenOption = (
+  option: EarnTokenOption,
+  index: number,
+  prices: Prices | null
+): RankedTokenOption => {
+  const amount = option.amount;
+  const price = amount?.isGreaterThan(0)
+    ? (prices?.getByToken(option.token)?.price ?? null)
+    : null;
+  const priced = price?.isGreaterThan(0) ? price : null;
+  return {
+    index,
+    // The one funded check Earn's selection ranks and defaults by.
+    option: {
+      ...option,
+      funded: amount !== null && isFundedBalance({ amount, priceUsd: priced }),
+    },
+    valueUsd: amount && priced ? amount.times(priced) : null,
+  };
+};
+
+/** Funded and priced first, by value; funded unpriced next; then the rest. */
+const tokenRankGroup = (ranked: RankedTokenOption) => {
+  if (!ranked.option.funded) return 2;
+  return ranked.valueUsd ? 0 : 1;
+};
+
+/**
+ * Balances the user holds the most of, by USD value, come first; without a
+ * price a balance falls back to the unit threshold of the funded-balance rule.
+ */
 const enrichTokenOptions = (
+  canonical: ReadonlyArray<EarnTokenOption>,
+  balances: ReadonlyMap<string, BigNumber> | null,
+  prices: Prices | null
+) =>
+  canonical
+    .map((option, index) =>
+      rankTokenOption(
+        balances
+          ? ({
+              ...option,
+              amount: balances.get(tokenString(option.token)) ?? exactZero(),
+              source: "balance",
+            } satisfies EarnTokenOption)
+          : option,
+        index,
+        prices
+      )
+    )
+    .sort((left, right) => {
+      const group = tokenRankGroup(left) - tokenRankGroup(right);
+      if (group !== 0) return group;
+      const value =
+        left.valueUsd && right.valueUsd
+          ? (right.valueUsd.comparedTo(left.valueUsd) ?? 0)
+          : 0;
+      return value || left.index - right.index;
+    })
+    .map(({ option }) => option);
+
+const positiveBalanceTokens = (
   canonical: ReadonlyArray<EarnTokenOption>,
   balances: ReadonlyMap<string, BigNumber> | null
 ) =>
-  canonical
-    .map((option, index) => ({
-      index,
-      option: balances
-        ? ({
-            ...option,
-            amount: balances.get(tokenString(option.token)) ?? exactZero(),
-            source: "balance",
-          } satisfies EarnTokenOption)
-        : option,
-    }))
-    .sort((left, right) => {
-      // Prices are not loaded in the catalog, so sorting uses the unit
-      // threshold of the funded-balance rule.
-      const leftFunded =
-        left.option.amount !== null &&
-        isFundedBalance({ amount: left.option.amount, priceUsd: null });
-      const rightFunded =
-        right.option.amount !== null &&
-        isFundedBalance({ amount: right.option.amount, priceUsd: null });
-      return (
-        Number(rightFunded) - Number(leftFunded) || left.index - right.index
-      );
-    })
-    .map(({ option }) => option);
+  balances
+    ? canonical
+        .filter((option) =>
+          balances.get(tokenString(option.token))?.isGreaterThan(0)
+        )
+        .map((option) => option.token)
+    : [];
 
 export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
   const catalogKey = new EarnTokenCatalogKey({
@@ -210,11 +267,40 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
   });
 
   return Atom.make<EarnTokenOptionsState>((get) => {
-    const catalog = get(earnTokenCatalogAtom(catalogKey));
-    const balances = tokenBalancesResult(get, key);
-    return AsyncResult.all({ balances, catalog }).pipe(
+    const merged = AsyncResult.all({
+      balances: tokenBalancesResult(get, key),
+      catalog: get(earnTokenCatalogAtom(catalogKey)),
+    });
+    const loaded = AsyncResult.value(merged).pipe(Option.getOrNull);
+    const tokenList = loaded
+      ? positiveBalanceTokens(loaded.catalog, loaded.balances)
+      : [];
+    // The same request the token sheet prices its balances with.
+    const prices = get(
+      pricesAtom.foreground(
+        new PricesKey({
+          request:
+            tokenList.length > 0
+              ? { currency: config.currency, tokenList }
+              : null,
+        })
+      )
+    );
+    // The first ranking waits for prices; a later one ranks without them
+    // rather than drop back to loading while new prices arrive.
+    if (
+      loaded &&
+      AsyncResult.isInitial(prices) &&
+      get
+        .self<EarnTokenOptionsState>()
+        .pipe(Option.flatMap(AsyncResult.value), Option.isNone)
+    ) {
+      return AsyncResult.initial(true);
+    }
+    const priced = prices.pipe(AsyncResult.value, Option.getOrNull);
+    return merged.pipe(
       AsyncResult.map(({ balances, catalog }) =>
-        enrichTokenOptions(catalog, balances)
+        enrichTokenOptions(catalog, balances, priced)
       )
     );
   }).pipe(Atom.withLabel("mergedEarnTokenOptionsAtom"));

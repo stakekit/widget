@@ -17,6 +17,7 @@ import {
   formatRoundedPercent,
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../shared/lib/number-format";
 
 export const formatDisplayTokenSymbol = (yieldDto: EarnYieldWithProvider) =>
@@ -106,7 +107,7 @@ export const formatCommission = (
 
   const formatted = formatPercent(commission, locale);
 
-  return formatted === "-" ? null : `Commission ${formatted}`;
+  return formatted === unavailableFigure ? null : `Commission ${formatted}`;
 };
 
 export const formatProviderTvl = (
@@ -118,7 +119,9 @@ export const formatProviderTvl = (
 
   const formatted = formatCompactNumber(tvl, locale);
 
-  return formatted === "-" ? null : `TVL ${formatted} ${tokenSymbol}`;
+  return formatted === unavailableFigure
+    ? null
+    : `TVL ${formatted} ${tokenSymbol}`;
 };
 
 export const formatProviderStatus = (
@@ -203,7 +206,7 @@ export const formatMeaningfulCompactUsd = (
 
   const formatted = formatUsd(value, locale);
 
-  return formatted === "-" ? null : formatted;
+  return formatted === unavailableFigure ? null : formatted;
 };
 
 export const formatMeaningfulCompactNumber = (
@@ -214,5 +217,5 @@ export const formatMeaningfulCompactNumber = (
 
   const formatted = formatCompactNumber(value, locale);
 
-  return formatted === "-" ? null : formatted;
+  return formatted === unavailableFigure ? null : formatted;
 };

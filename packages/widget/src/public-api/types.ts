@@ -698,7 +698,10 @@ type SettingsPropsBase = {
    * @deprecated Use `layout: "dashboard"`.
    */
   dashboardVariant?: boolean;
-  /** Order of yield categories. Omitted categories follow in the default order. */
+  /**
+   * Order of yield categories; the first is selected by default. Omitted
+   * categories follow in the default order: DeFi, Stake, RWA.
+   */
   yieldCategoryOrder?: YieldCategory[];
   /**
    * Lists these yield providers first within each category tab, and selects

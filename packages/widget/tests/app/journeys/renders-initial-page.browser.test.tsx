@@ -207,7 +207,7 @@ describe("Renders initial page", () => {
 
     await expect.element(app.getByTestId("number-input")).toBeInTheDocument();
     await expect.element(app.getByText("Manage")).toBeInTheDocument();
-    await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
+    await expect.element(app.getByText("Connect wallet")).toBeInTheDocument();
 
     await app.unmount();
   });
@@ -358,11 +358,17 @@ describe("Renders initial page", () => {
       app.getByRole("tab", { name: label, exact: true });
     const clickTab = (label: string) => tab(label).click();
 
-    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
-
-    await clickTab("DeFi");
+    // DeFi leads the default order and opens selected.
     await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
-    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "false");
+    const tabsText =
+      app.container.querySelector("[data-rk='tabs-section']")?.textContent ??
+      "";
+    expect(tabsText.indexOf("DeFi")).toBeLessThan(tabsText.indexOf("Stake"));
+    expect(tabsText.indexOf("Stake")).toBeLessThan(tabsText.indexOf("RWA"));
+
+    await clickTab("RWA");
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "false");
 
     await clickTab("Borrow");
     await expect
@@ -377,16 +383,16 @@ describe("Renders initial page", () => {
       .element(tab("Manage"))
       .toHaveAttribute("aria-selected", "true");
 
-    await clickTab("RWA");
-    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
+    await clickTab("DeFi");
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
 
     await clickTab("Activity");
     await expect
       .element(tab("Activity"))
       .toHaveAttribute("aria-selected", "true");
 
-    await clickTab("DeFi");
-    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
+    await clickTab("RWA");
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
 
     await app.unmount();
   });

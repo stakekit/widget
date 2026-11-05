@@ -1,10 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
-import {
-  amountSeparators,
-  fromAmountValue,
-  toAmountValue,
-} from "../../../../../shared/lib/amount-value";
+import { amountSeparators } from "../../../../../shared/lib/amount-value";
 import {
   formatNumber,
   formatTokenAmount,
@@ -46,7 +42,7 @@ export const SelectTokenSection = ({
     appLoading,
     selectedTokenAvailableAmount,
     priceUsd,
-    stakeAmount,
+    amountValue,
     validation,
     stakeMaxAmount,
     stakeMinAmount,
@@ -95,9 +91,6 @@ export const SelectTokenSection = ({
             : {
                 full: `${formatNumber(selectedTokenAvailableAmount.amount, locale)} ${selectedTokenAvailableAmount.symbol} ${t("shared.available")}`,
               }),
-          ...(stakeAmountGreaterThanAvailableAmount
-            ? { tone: "danger" as const }
-            : {}),
         }
       : null,
     hidden: view.hiddenTokenBalance,
@@ -120,11 +113,13 @@ export const SelectTokenSection = ({
           ? getYieldTypeLabels(view.selectedStake, t).title
           : t("shared.amount")
       }
-      value={toAmountValue(stakeAmount)}
-      onValueChange={(value) => setAmount(fromAmountValue(value))}
+      value={amountValue}
+      onValueChange={setAmount}
       separators={amountSeparators(locale)}
       token={<SelectToken canSelect={canSelectToken} />}
-      fiatValue={priceUsd ? formatUsd(priceUsd, locale) : ""}
+      fiatValue={
+        priceUsd && amountValue !== "" ? formatUsd(priceUsd, locale) : ""
+      }
       {...(balance === undefined ? {} : { balance })}
       {...(limits ? { limits } : {})}
       {...(error === undefined ? {} : { error })}

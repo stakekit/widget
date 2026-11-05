@@ -102,22 +102,30 @@ export const MaxChip: Story = {
 };
 
 /**
- * An error replaces the limits, marks the amount invalid and describes it;
- * the balance it exceeds turns danger.
+ * An error replaces the limits, marks the amount invalid and describes it.
+ * Only the error line reads in the danger tone: the amount and the balance
+ * it exceeds stay as they were.
  */
 export const Invalid: Story = {
   args: {
     value: "20",
     fiatValue: "$48,000.00",
     error: "Insufficient balance",
-    balance: { short: "12.5 ETH available", tone: "danger" },
+    balance: { short: "12.5 ETH available" },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const amount = canvas.getByRole("textbox", { name: "Stake" });
+    const colorOf = (element: Element) => getComputedStyle(element).color;
     await expect(amount).toHaveAttribute("aria-invalid", "true");
     await expect(amount).toHaveAccessibleDescription("Insufficient balance");
     await expect(canvas.queryByText("Min 0.01 ETH")).toBeNull();
+
+    const error = canvas.getByText("Insufficient balance");
+    await expect(colorOf(amount)).not.toBe(colorOf(error));
+    await expect(colorOf(canvas.getByText("12.5 ETH available"))).toBe(
+      colorOf(canvas.getByText("$48,000.00"))
+    );
   },
 };
 
@@ -205,17 +213,6 @@ export const FillBalance: Story = {
       canvas.getByRole("button", { name: "12.5 ETH available, Max" })
     );
     await expect(fillBalance).toHaveBeenCalledOnce();
-  },
-};
-
-/** A balance over the amount's reach reads in the danger tone. */
-export const BalanceDanger: Story = {
-  args: { balance: { short: "12.5 ETH available", tone: "danger" } },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const toneOf = (text: string) =>
-      getComputedStyle(canvas.getByText(text)).color;
-    await expect(toneOf("12.5 ETH available")).not.toBe(toneOf("$0.00"));
   },
 };
 

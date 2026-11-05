@@ -66,7 +66,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const amountInput = (canvasElement: HTMLElement) =>
-  within(canvasElement).getByRole("textbox", { name: "Amount" });
+  within(canvasElement).getByRole<HTMLInputElement>("textbox", {
+    name: "Amount",
+  });
 
 export const Empty: Story = {};
 
@@ -96,11 +98,15 @@ export const Invalid: Story = {
 /**
  * More digits than a JavaScript `number` holds round-trip exactly, both ways:
  * the amount that leaves is the text typed, digit for digit, and the text
- * rebuilt from that amount is the same digits again.
+ * rebuilt from that amount is the same digits again. Unfocused, an amount too
+ * long for the input drops the fraction digits that do not fit; focused, it
+ * shows in full again.
  */
 export const ExactRoundTrip: Story = {
   play: async ({ args, canvasElement }) => {
     const typed = "123456789012345678901234567890.123456789012345678901234567";
+    const grouped =
+      "123,456,789,012,345,678,901,234,567,890.123456789012345678901234567";
     const input = amountInput(canvasElement);
 
     await userEvent.click(input);
@@ -108,35 +114,140 @@ export const ExactRoundTrip: Story = {
 
     await expect(args.onValueChange).toHaveBeenLastCalledWith(typed);
     await expect(String(Number(typed))).not.toBe(typed);
+    await expect(input).toHaveValue(grouped);
 
     await userEvent.tab();
     await expect(input).not.toHaveFocus();
-    await expect(input).toHaveValue(
-      "123,456,789,012,345,678,901,234,567,890.123456789012345678901234567"
+    await waitFor(() =>
+      expect(input).toHaveValue("123,456,789,012,345,678,901,234,567,890")
     );
     await userEvent.tab({ shift: true });
     await expect(input).toHaveFocus();
-    await expect(input).toHaveValue(typed);
+    await expect(input).toHaveValue(grouped);
   },
 };
 
-/** An amount handed in with more than 17 digits shows exactly. */
+/** An amount handed in with more than 17 digits stays exact. */
 export const ExactInitial: Story = {
   args: { initial: "98765432109876543210.0123456789" },
   play: async ({ canvasElement }) => {
     const input = amountInput(canvasElement);
 
-    await expect(input).toHaveValue("98,765,432,109,876,543,210.0123456789");
     await userEvent.tab();
     await expect(input).toHaveFocus();
-    await expect(input).toHaveValue("98765432109876543210.0123456789");
+    await expect(input).toHaveValue("98,765,432,109,876,543,210.0123456789");
+  },
+};
+
+/**
+ * A full-precision amount, such as Max fills, shows unfocused with only the
+ * fraction digits that fit, rounded down; the amount itself is unchanged.
+ */
+export const FitsFullPrecision: Story = {
+  args: { initial: "12345.570555185041210512345" },
+  play: async ({ args, canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await waitFor(() => expect(input.scrollWidth).toBe(input.clientWidth));
+    const shown = String(input.value);
+    await expect(shown).toMatch(/^12,345\.5705\d*$/u);
+    await expect("12,345.570555185041210512345".startsWith(shown)).toBe(true);
+    await expect(shown).not.toBe("12,345.570555185041210512345");
+    await expect(args.onValueChange).not.toHaveBeenCalled();
+
+    await userEvent.tab();
+    await expect(input).toHaveValue("12,345.570555185041210512345");
+  },
+};
+
+const tinyAmount = `0.${"0".repeat(70)}123456789`;
+
+/**
+ * A tiny amount that does not fit keeps fraction digits up to its first
+ * non-zero one, so it never shows as zero.
+ */
+export const FitsTinyAmount: Story = {
+  args: { initial: tinyAmount },
+  play: async ({ canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await waitFor(() => expect(input).not.toHaveValue(tinyAmount));
+    await expect(input).toHaveValue(`0.${"0".repeat(70)}1`);
+  },
+};
+
+/** The integer part stays grouped while typing. */
+export const GroupsWhileTyping: Story = {
+  play: async ({ args, canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await userEvent.click(input);
+    await userEvent.keyboard("1234567.50");
+    await expect(input).toHaveValue("1,234,567.50");
+    await expect(args.onValueChange).toHaveBeenLastCalledWith("1234567.50");
+  },
+};
+
+/** A digit typed mid-amount regroups it and keeps the caret after the digit. */
+export const EditsMidAmount: Story = {
+  args: { initial: "1234" },
+  play: async ({ args, canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await userEvent.click(input);
+    await expect(input).toHaveValue("1,234");
+    input.setSelectionRange(1, 1);
+    await userEvent.keyboard("5");
+    await expect(input).toHaveValue("15,234");
+    await expect(args.onValueChange).toHaveBeenLastCalledWith("15234");
+    await expect(input.selectionStart).toBe(2);
+
+    await userEvent.keyboard("6");
+    await expect(input).toHaveValue("156,234");
+    await expect(input.selectionStart).toBe(3);
+  },
+};
+
+/** Forward-Delete just before a group separator deletes the digit after it. */
+export const DeletesForwardPastGroup: Story = {
+  args: { initial: "1234" },
+  play: async ({ args, canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await userEvent.click(input);
+    input.setSelectionRange(1, 1);
+    await userEvent.keyboard("{Delete}");
+    await expect(input).toHaveValue("134");
+    await expect(args.onValueChange).toHaveBeenLastCalledWith("134");
+    await expect(input.selectionStart).toBe(1);
+  },
+};
+
+/**
+ * A paste whose only group separator is followed by one or two digits reads
+ * as another language's decimal separator, so it is refused rather than
+ * regrouped; deleting down to the same text still regroups.
+ */
+export const RefusesMixedLocalePaste: Story = {
+  play: async ({ args, canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await userEvent.click(input);
+    await userEvent.paste("123,45");
+    await expect(input).toHaveValue("");
+    await expect(args.onValueChange).not.toHaveBeenCalled();
+
+    await userEvent.paste("1,234");
+    await userEvent.keyboard("{Backspace}");
+    await expect(input).toHaveValue("123");
+    await expect(args.onValueChange).toHaveBeenLastCalledWith("123");
   },
 };
 
 /**
  * Input follows the language's separators: a pasted grouped amount is read
  * out, other characters are refused, and the amount leaves as a plain decimal
- * string. Focused, the amount shows ungrouped; unfocused, grouped.
+ * string, grouped in the language's separators while focused and not.
  */
 export const LocaleSeparators: Story = {
   args: { separators: german },
@@ -155,7 +266,7 @@ export const LocaleSeparators: Story = {
     await userEvent.tab();
     await expect(input).toHaveValue("1.234,5");
     await userEvent.tab({ shift: true });
-    await expect(input).toHaveValue("1234,5");
+    await expect(input).toHaveValue("1.234,5");
   },
 };
 
@@ -173,7 +284,7 @@ export const SeparatorsChangeWhileFocused: Story = {
     );
 
     await expect(input).toHaveFocus();
-    await expect(input).toHaveValue("1234,5");
+    await expect(input).toHaveValue("1.234,5");
     await userEvent.keyboard("6");
     await expect(args.onValueChange).toHaveBeenLastCalledWith("1234.56");
   },

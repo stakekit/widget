@@ -6,7 +6,10 @@ import {
   getYieldTypeLabels,
 } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
-import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import {
+  formatTokenAmount,
+  unavailableFigure,
+} from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   Avatar,
@@ -59,10 +62,10 @@ export const SelectYieldRewardDetails = ({
     : null;
 
   const earnYearly = estimatedRewards
-    ? `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`
+    ? `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`
     : "";
   const earnMonthly = estimatedRewards
-    ? `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`
+    ? `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`
     : "";
   const strategyDetails = selectedStake
     ? (() => {

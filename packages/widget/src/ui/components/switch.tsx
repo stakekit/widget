@@ -5,6 +5,7 @@ import type { HostHook } from "../host-hook";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { selectionControlSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -73,6 +74,7 @@ export const Switch = ({
 const styles = stylex.create({
   labelFirst: { flexDirection: "row-reverse", justifyContent: "space-between" },
   // Off is a muted track and on the accent; the thumb's position says it too.
+  // Disabled, it keeps its on or off look at the disabled opacity.
   track: {
     margin: 0,
     padding: space[2],
@@ -81,14 +83,14 @@ const styles = stylex.create({
     backgroundColor: {
       default: color.textMuted,
       ":is([data-checked])": color.accent,
-      ":is([data-disabled])": color.border,
     },
     boxSizing: "border-box",
     cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
     display: "inline-flex",
     flexShrink: 0,
+    opacity: { default: 1, ":is([data-disabled])": opacity.disabled },
     transitionDuration: motion.fast,
-    transitionProperty: "background-color",
+    transitionProperty: "background-color, opacity",
     transitionTimingFunction: motion.easing,
     height: selectionControlSize.switchHeight,
     width: selectionControlSize.switchWidth,
@@ -98,7 +100,6 @@ const styles = stylex.create({
     backgroundColor: {
       default: color.background,
       ":is([data-checked])": color.onAccent,
-      ":is([data-disabled])": color.surface,
     },
     display: "block",
     transform: {

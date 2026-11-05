@@ -5,6 +5,7 @@ import { exactZero } from "../../../../../domain/finance/exact";
 import {
   formatPercent,
   formatUsd,
+  unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
@@ -33,9 +34,11 @@ const SummaryMetric = ({
 }) => {
   const { locale } = useWidgetPresentation();
   const formatted = (() => {
-    if (!value) return "-";
+    if (!value) return unavailableFigure;
     if (kind === "percent") {
-      return value.gt(0) ? formatPercent(value.dividedBy(100), locale) : "-";
+      return value.gt(0)
+        ? formatPercent(value.dividedBy(100), locale)
+        : unavailableFigure;
     }
     return formatUsd(value, locale);
   })();

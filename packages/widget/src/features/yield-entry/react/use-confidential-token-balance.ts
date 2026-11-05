@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 type AmountPanelBalance = {
   readonly short: string;
   readonly full?: string;
-  readonly tone?: "danger";
   readonly fill?: {
     readonly label: string;
     readonly onClick: () => void;

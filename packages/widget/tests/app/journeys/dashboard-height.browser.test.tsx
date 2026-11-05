@@ -12,7 +12,7 @@ describe("Dashboard Layout height", () => {
       skProps: { apiKey: import.meta.env.VITE_API_KEY, layout: "dashboard" },
     });
 
-    const cta = app.getByRole("button", { name: "Connect Wallet" });
+    const cta = app.getByRole("button", { name: "Connect wallet" });
     await expect.element(cta).toBeEnabled();
     const details = app.getByRole("region", { name: "Details" });
     await expect.element(details).toBeVisible();

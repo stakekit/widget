@@ -21,7 +21,7 @@ const emulateColorScheme = (value: "light" | "dark" | "") =>
   });
 
 const earnCallToAction = async (app: RenderResult) => {
-  const cta = app.getByRole("button", { name: "Connect Wallet" });
+  const cta = app.getByRole("button", { name: "Connect wallet" });
   // Disabled, it sits on the surface; enabled, it fills with the accent.
   await expect.element(cta).toBeEnabled();
   const element = cta.element();

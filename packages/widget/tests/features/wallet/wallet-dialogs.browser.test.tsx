@@ -271,7 +271,7 @@ it("lists networks in compact rows and marks the connected one without a chip", 
 
   // Each icon starts on the title's edge.
   const edge = dialog
-    .getByRole("heading", { name: "Switch Networks", exact: true })
+    .getByRole("heading", { name: "Switch networks", exact: true })
     .element()
     .getBoundingClientRect().left;
   for (const row of [current, other]) {
@@ -374,7 +374,7 @@ it("copies the full account address and clears copied feedback", async ({
     await app.getByRole("button", { name: "0xB6…B2F7", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Account", exact: true });
     const copy = dialog.getByTestId("wallet-account-copy");
-    await expect.element(copy).toHaveAccessibleName("Copy Address");
+    await expect.element(copy).toHaveAccessibleName("Copy address");
 
     await copy.click();
 
@@ -383,7 +383,7 @@ it("copies the full account address and clears copied feedback", async ({
     const copied = dialog.getByText("Copied!", { exact: true }).first();
     await expect.element(copied).toBeVisible();
     expect(copied.element().getBoundingClientRect().width).toBeGreaterThan(1);
-    await expect.element(copy).toHaveAccessibleName("Copy Address");
+    await expect.element(copy).toHaveAccessibleName("Copy address");
     await expect.element(copied).not.toBeInTheDocument();
   } finally {
     writeText.mockRestore();

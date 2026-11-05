@@ -200,6 +200,32 @@ describe("Color Role contrast", () => {
   );
 });
 
+// A filled card, row or input is `surface` straight on the canvas, with no
+// edge of its own, so its fill alone has to set it off `background`. The
+// ratio is far below a text threshold: it is what keeps a card's edge visible
+// on a dim display, not a legibility bar. Finery's Host Profile presents
+// elevated surfaces, which lift its cards off the canvas as `surfaceRaised`
+// with the `raised` elevation, so its `surface` does not bound a card.
+const surfaceSeparation = 1.15;
+const elevatedPresets: ReadonlyArray<string> = ["finery"];
+
+const filledSurfaceThemes = themes.filter(
+  ({ preset }) => !elevatedPresets.includes(preset)
+);
+
+describe("filled surface separation", () => {
+  it.each(filledSurfaceThemes)(
+    "$colorScheme $preset, $accent: surface stands off background",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+
+      expect(
+        contrast(parseColor(roles.surface), parseColor(roles.background))
+      ).toBeGreaterThanOrEqual(surfaceSeparation);
+    }
+  );
+});
+
 // A soft badge mixes its tone's text color into `surface`, the fill of the
 // rows and cards it sits on, by the `badgeTint` weights. Its 1px edge, not
 // its faint fill, sets it off the surface; a hairline needs more than the

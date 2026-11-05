@@ -12,7 +12,11 @@ import {
 } from "../tokens/typography.stylex";
 import {
   type AmountSeparators,
-  isAmountText,
+  deleteForwardPastGroup,
+  dropFractionDigits,
+  isOtherDecimalSeparator,
+  regroupAmountText,
+  regroupedCaret,
   toAmountText,
   toDecimalString,
 } from "./amount-input-text";
@@ -28,12 +32,18 @@ const shake = stylex.keyframes({
 const steps = ["step0", "step1", "step2", "step3"] as const;
 type Step = (typeof steps)[number];
 
+/**
+ * The type step the text takes, and how many trailing fraction digits the
+ * unfocused text drops when it does not fit even the last step.
+ */
+type Fit = { readonly step: Step; readonly droppedDigits: number };
+
 /** What the user is typing, in the separators it was typed in. */
 type Draft = { readonly text: string; readonly separators: AmountSeparators };
 
-/** The text an amount is edited as: ungrouped, and empty for none or zero. */
+/** The text an amount is edited as: grouped, and empty for none or zero. */
 const editText = (value: string, separators: AmountSeparators) =>
-  value === "" || value === "0" ? "" : toAmountText(value, separators, false);
+  value === "" || value === "0" ? "" : toAmountText(value, separators, true);
 
 /**
  * The input's text: grouped while not focused; while focused, the draft, or
@@ -66,7 +76,11 @@ type AmountInputProps = {
   readonly separators: AmountSeparators;
   /** Names the input, unless a `Field` label does. */
   readonly label?: string;
-  /** Marks the amount invalid: danger text, and a brief shake when it becomes so. */
+  /**
+   * Marks the amount invalid: announced as such, with a brief shake when it
+   * becomes so. The amount keeps its text color; the message that says why
+   * carries the danger tone.
+   */
   readonly invalid?: boolean;
   readonly disabled?: boolean;
   readonly onBlur?: () => void;
@@ -78,10 +92,14 @@ type AmountInputProps = {
 
 /**
  * The amount field, in the `display` type role with tabular figures. Typing
- * accepts only an amount in the Widget language's separators, and the value
- * stays exact: it goes in and out as a decimal string. While focused it shows
- * the amount ungrouped; otherwise grouped. As the amount fills the input its
- * type steps down 32 → 28 → 24 → 20.
+ * accepts only an amount in the Widget language's separators, refusing text
+ * that reads as another language's decimal separator, and the value stays
+ * exact: it goes in and out as a decimal string. The integer part stays
+ * grouped while typing, the caret keeping its place among the digits. As the
+ * amount fills the input its type steps down 32 → 28 → 24 → 20; an unfocused
+ * amount that still does not fit, such as a full-precision Max, shows only as
+ * many fraction digits as fit, rounded down but never to zero. The value is
+ * unchanged and focusing shows it in full.
  */
 export const AmountInput = ({
   value,
@@ -97,31 +115,53 @@ export const AmountInput = ({
   // `null` while not focused, which shows `value`.
   const [draft, setDraft] = useState<Draft | null>(null);
   const text = inputText(draft, value, separators);
-  const [step, setStep] = useState<Step>("step0");
+  const [fit, setFit] = useState<Fit>({ step: "step0", droppedDigits: 0 });
 
   const inputRef = useRef<HTMLInputElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
+  const digitRef = useRef<HTMLSpanElement>(null);
+  // Where the caret goes once regrouped text renders; `null` leaves it.
+  const caretRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const caret = caretRef.current;
+    if (caret === null) return;
+    caretRef.current = null;
+    inputRef.current?.setSelectionRange(caret, caret);
+  });
 
   // The largest step whose text fits the input. One hidden copy at the first
   // step is measured and scaled to the others; observing the copy and the
-  // input measures again as the text changes and as the input resizes.
+  // input measures again as the text changes and as the input resizes. Past
+  // the last step, a hidden digit's width tells how many fraction digits to
+  // drop; figures are tabular, so every digit is that wide.
   useLayoutEffect(() => {
     const input = inputRef.current;
     const copy = measureRef.current;
-    if (!shrink || !input || !copy) return;
+    const digit = digitRef.current;
+    if (!shrink || !input || !copy || !digit) return;
 
     const observer = new ResizeObserver(() => {
       const width = input.clientWidth;
       const textWidth = copy.offsetWidth;
       const baseSize = Number.parseFloat(displayShrinkSize.step0);
       // Text width scales with font size at a fixed family and weight.
-      setStep(
-        steps.find(
-          (candidate) =>
-            (textWidth * Number.parseFloat(displayShrinkSize[candidate])) /
-              baseSize <=
-            width
-        ) ?? "step3"
+      const scale = (candidate: Step) =>
+        Number.parseFloat(displayShrinkSize[candidate]) / baseSize;
+      const step = steps.find(
+        (candidate) => textWidth * scale(candidate) <= width
+      );
+      const lastScale = scale("step3");
+      setFit(
+        step
+          ? { step, droppedDigits: 0 }
+          : {
+              step: "step3",
+              droppedDigits: Math.ceil(
+                (textWidth * lastScale - width) /
+                  (digit.offsetWidth * lastScale)
+              ),
+            }
       );
     });
     observer.observe(input);
@@ -129,7 +169,12 @@ export const AmountInput = ({
     return () => observer.disconnect();
   }, [shrink]);
 
-  const shownStep = shrink ? step : "step0";
+  const shownStep = shrink ? fit.step : "step0";
+  const shownText =
+    draft === null && shrink
+      ? dropFractionDigits(text, separators, fit.droppedDigits)
+      : text;
+
   return (
     <div {...stylex.props(styles.root, invalid && styles.invalid)}>
       <Input
@@ -145,11 +190,33 @@ export const AmountInput = ({
         aria-invalid={invalid || undefined}
         data-testid={testId}
         disabled={disabled}
-        value={text}
+        value={shownText}
         onChange={(event) => {
-          const next = event.currentTarget.value;
-          if (!isAmountText(next, separators)) return;
+          const { nativeEvent } = event;
+          const inputType =
+            nativeEvent instanceof InputEvent ? nativeEvent.inputType : "";
+          const caret =
+            event.currentTarget.selectionStart ??
+            event.currentTarget.value.length;
+          const typed =
+            inputType === "deleteContentForward"
+              ? deleteForwardPastGroup(
+                  text,
+                  event.currentTarget.value,
+                  caret,
+                  separators
+                )
+              : event.currentTarget.value;
+          if (
+            !inputType.startsWith("delete") &&
+            isOtherDecimalSeparator(typed, separators)
+          ) {
+            return;
+          }
+          const next = regroupAmountText(typed, separators);
+          if (next === null) return;
 
+          caretRef.current = regroupedCaret(typed, caret, next, separators);
           setDraft({ text: next, separators });
           if (next === "") {
             onValueChange("");
@@ -172,13 +239,22 @@ export const AmountInput = ({
         )}
       />
       {shrink && (
-        <span
-          aria-hidden="true"
-          ref={measureRef}
-          {...stylex.props(styles.measure, stepStyles.step0)}
-        >
-          {text === "" ? "0" : text}
-        </span>
+        <>
+          <span
+            aria-hidden="true"
+            ref={measureRef}
+            {...stylex.props(styles.measure, stepStyles.step0)}
+          >
+            {text === "" ? "0" : text}
+          </span>
+          <span
+            aria-hidden="true"
+            ref={digitRef}
+            {...stylex.props(styles.measure, stepStyles.step0)}
+          >
+            0
+          </span>
+        </>
       )}
     </div>
   );
@@ -206,7 +282,7 @@ const styles = stylex.create({
     backgroundColor: "transparent",
     color: {
       default: color.text,
-      ":is([aria-invalid])": color.danger,
+      // An invalid amount keeps its color: the field's error carries the tone.
       ":disabled": color.textMuted,
     },
     flexGrow: 1,

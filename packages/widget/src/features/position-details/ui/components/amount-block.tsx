@@ -131,9 +131,6 @@ export const AmountBlock = ({
             amount: formatNumber(balance.amount, locale),
             symbol: balance.token.symbol,
           }),
-          ...(exitProps?.exitAmountGreaterThanAvailable
-            ? { tone: "danger" as const }
-            : {}),
         },
       }
     : {};

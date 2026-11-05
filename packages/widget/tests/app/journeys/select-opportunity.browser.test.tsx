@@ -281,9 +281,9 @@ describe("Select opportunity", () => {
       .element(app.getByTestId("yield-risk-rating-summary"))
       .not.toBeInTheDocument();
 
-    await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
+    await expect.element(app.getByText("Connect wallet")).toBeInTheDocument();
 
-    await app.getByText("Connect Wallet").click();
+    await app.getByText("Connect wallet").click();
 
     await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
 

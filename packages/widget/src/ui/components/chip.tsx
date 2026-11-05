@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -50,16 +51,14 @@ const styles = stylex.create({
     borderWidth: borderWidth.thin,
     paddingBlock: space[2],
     paddingInline: space[12],
-    backgroundColor: {
-      default: color.accentSoft,
-      ":disabled": color.surface,
-    },
-    color: { default: color.accentText, ":disabled": color.textMuted },
+    backgroundColor: color.accentSoft,
+    color: color.accentText,
     cursor: { default: "pointer", ":disabled": "not-allowed" },
     fontFamily: font.sans,
     fontSize: fontSize.label,
     fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.label,
+    opacity: { default: 1, ":disabled": opacity.disabled },
     outlineColor: color.focusRing,
     outlineOffset: focusRing.offset,
     outlineStyle: { default: "none", ":focus-visible": "solid" },
@@ -69,13 +68,12 @@ const styles = stylex.create({
       ":active:not(:disabled)": motion.press,
     },
     transitionDuration: motion.fast,
-    transitionProperty: "background-color, border-color, color, transform",
+    transitionProperty:
+      "background-color, border-color, color, opacity, transform",
     transitionTimingFunction: motion.easing,
     userSelect: "none",
     whiteSpace: "nowrap",
   },
   // The ring marks the chosen chip besides its pressed state.
-  selected: {
-    borderColor: { default: color.accent, ":disabled": color.border },
-  },
+  selected: { borderColor: color.accent },
 });

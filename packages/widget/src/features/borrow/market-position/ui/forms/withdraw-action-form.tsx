@@ -2,8 +2,10 @@ import { useTranslation } from "react-i18next";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import {
+  formatFigureChange,
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import {
   useTokenLogo,
@@ -172,10 +174,16 @@ export const WithdrawActionForm = ({
           />
           <DetailRow
             label={t("dashboard.borrow.form.collateral_value")}
-            value={`${formatUsd(
-              view.currentCollateralUsd.toString(),
-              locale
-            )} -> ${formatUsd(view.projectedCollateralUsd.toString(), locale)}`}
+            value={
+              formatFigureChange(
+                formatUsd,
+                {
+                  before: view.currentCollateralUsd,
+                  after: view.projectedCollateralUsd,
+                },
+                locale
+              ) ?? unavailableFigure
+            }
           />
         </DetailList>
       </Card>

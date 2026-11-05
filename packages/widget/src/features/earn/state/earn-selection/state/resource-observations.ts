@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type * as Atom from "effect/reactivity/Atom";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { isYieldValidatorSelectionRequired } from "../../../../../domain/earn/yield";
+import { tokenString } from "../../../../../domain/token/token";
 import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
 import { EarnTokenCatalogKey } from "../../../../../resources/earn-token-catalog/index";
 import {
@@ -21,6 +22,7 @@ import {
   YieldValidatorsKey,
   YieldValidatorsPullKey,
 } from "../catalog/keys";
+import { defaultTokenCandidates, isDefaultTokenChoice } from "../model/token";
 import { matchesRequestedValidator } from "../model/validators";
 import { resolveEarnView } from "../model/view";
 import type {
@@ -30,6 +32,7 @@ import type {
   InitialViewObservations,
   ValidatorObservation,
 } from "../model/view-inputs";
+import { isReachableDefaultYield } from "../model/yield";
 import type {
   EarnEntry,
   EarnEntryIntent,
@@ -195,6 +198,77 @@ const bindValidatorsKey = (
   },
 });
 
+/**
+ * The yields of every default candidate on the selected token's network, when
+ * the token picked for the user has no yield they can reach and another
+ * candidate might. A yield catalog read is per network, so a candidate on
+ * another network (only listed without a wallet) is not considered.
+ */
+const readReachableDefaultYields = (
+  context: Atom.AtomContext,
+  {
+    entry,
+    intent,
+    positions,
+    view,
+    yieldCatalog,
+  }: {
+    readonly entry: EarnEntry;
+    readonly intent: EarnEntryIntent;
+    readonly positions: InitialViewObservations["positions"];
+    readonly view: EarnSelectionView;
+    readonly yieldCatalog: EarnResourceResult<
+      ReadonlyArray<EarnYieldWithProvider>
+    >;
+  }
+): EarnResourceResult<ReadonlyArray<EarnYieldWithProvider>> | null => {
+  const token = view.selection.token;
+  if (
+    !token ||
+    !isDefaultTokenChoice(entry, intent) ||
+    Option.isNone(AsyncResult.value(yieldCatalog))
+  ) {
+    return null;
+  }
+  const selectedYield = view.selection.yield;
+  if (
+    selectedYield &&
+    isReachableDefaultYield({
+      availableAmount: token.amount,
+      positions: view.resources.positions.data,
+      yieldOption: selectedYield,
+    })
+  ) {
+    return null;
+  }
+  const network = token.token.network;
+  const candidates = defaultTokenCandidates(
+    entry,
+    view.resources.tokenOptions.items
+  ).filter((option) => option.token.network === network);
+  const selectedKey = tokenString(token.token);
+  if (!candidates.some((option) => tokenString(option.token) !== selectedKey)) {
+    return null;
+  }
+  // A holder's minimum can differ, so the move waits for the positions.
+  if (
+    Option.isNone(AsyncResult.value(positions)) &&
+    !AsyncResult.isFailure(positions)
+  ) {
+    return AsyncResult.initial(true);
+  }
+  return context.get(
+    earnYieldCatalogAtom(
+      new YieldCatalogKey({
+        category: null,
+        network,
+        token: null,
+        yieldIds: candidates.flatMap((option) => option.availableYields),
+      })
+    )
+  );
+};
+
 export const resolveEarnViewFromResources = (
   context: Atom.AtomContext,
   { entry, intent, previous = null }: EarnViewResolutionInput
@@ -207,6 +281,7 @@ export const resolveEarnViewFromResources = (
   ): EarnViewObservations => ({
     category,
     initial,
+    reachableDefaultYields: null,
     tokenOptions: loading(),
     validators: { _tag: "disabled" },
     yieldCatalog: loading(),
@@ -231,11 +306,34 @@ export const resolveEarnViewFromResources = (
   view = resolveEarnView({ entry, intent, observations, previous });
   if (!view.selection.token) return bindValidatorsKey(view, null);
 
-  const yieldCatalog = readYieldCatalog(context, {
+  let yieldCatalog = readYieldCatalog(context, {
     selectedToken: view.selection.token,
   });
   observations = makeObservations({ tokenOptions, yieldCatalog });
   view = resolveEarnView({ entry, intent, observations, previous });
+
+  const reachableDefaultYields = readReachableDefaultYields(context, {
+    entry,
+    intent,
+    positions: initial.positions,
+    view,
+    yieldCatalog,
+  });
+  if (reachableDefaultYields) {
+    observations = makeObservations({ reachableDefaultYields, tokenOptions });
+    view = resolveEarnView({ entry, intent, observations, previous });
+    if (!view.selection.token) return bindValidatorsKey(view, null);
+
+    yieldCatalog = readYieldCatalog(context, {
+      selectedToken: view.selection.token,
+    });
+    observations = makeObservations({
+      reachableDefaultYields,
+      tokenOptions,
+      yieldCatalog,
+    });
+    view = resolveEarnView({ entry, intent, observations, previous });
+  }
   if (!view.selection.yield) return bindValidatorsKey(view, null);
 
   const validators = readValidators(context, {
@@ -243,6 +341,7 @@ export const resolveEarnViewFromResources = (
     selectedYield: view.selection.yield,
   });
   observations = makeObservations({
+    reachableDefaultYields,
     tokenOptions,
     validators: validators.observation,
     yieldCatalog,

@@ -4,6 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -76,7 +77,6 @@ const styles = stylex.create({
     margin: 0,
     borderColor: {
       default: color.borderStrong,
-      ":is([data-disabled])": color.border,
       ":is([data-pressed])": color.accent,
     },
     borderRadius: radius.pill,
@@ -93,7 +93,6 @@ const styles = stylex.create({
     },
     color: {
       default: color.text,
-      ":is([data-disabled])": color.textMuted,
       ":is([data-pressed])": color.accentText,
     },
     cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
@@ -102,12 +101,14 @@ const styles = stylex.create({
     fontSize: fontSize.label,
     fontWeight: fontWeight.medium,
     lineHeight: lineHeight.label,
+    opacity: { default: 1, ":is([data-disabled])": opacity.disabled },
     transform: {
       default: "none",
       ":active:not([data-disabled])": motion.press,
     },
     transitionDuration: motion.fast,
-    transitionProperty: "background-color, border-color, color, transform",
+    transitionProperty:
+      "background-color, border-color, color, opacity, transform",
     transitionTimingFunction: motion.easing,
     whiteSpace: "nowrap",
   },

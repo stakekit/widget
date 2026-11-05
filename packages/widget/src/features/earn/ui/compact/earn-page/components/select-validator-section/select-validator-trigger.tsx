@@ -6,6 +6,7 @@ import type {
 import {
   formatCompactNumber,
   formatRoundedPercent,
+  unavailableFigure,
 } from "../../../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../../../shared/react/widget-presentation";
 import {
@@ -35,7 +36,7 @@ const formatValidatorTvl = (
 
   const formatted = formatCompactNumber(tvl, locale);
 
-  return formatted === "-"
+  return formatted === unavailableFigure
     ? null
     : `${formatted} ${selectedStake.token.symbol}`;
 };
@@ -167,7 +168,7 @@ const SelectedValidatorCard = ({
   ].filter((part): part is string => !!part);
   const getStatusBadge = () => {
     if (validator.status === "jailed") {
-      return <Badge tone="danger">{t("details.validators_jailed")}</Badge>;
+      return <Badge tone="warning">{t("details.validators_jailed")}</Badge>;
     }
     if (validator.status && validator.status !== "active") {
       return <Badge tone="warning">{t("details.validators_inactive")}</Badge>;

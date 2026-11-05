@@ -81,6 +81,7 @@ const makeFacadeInput = (
 ): YieldEntryFacadeInput => {
   const selectedYield = yieldApiYieldFixture();
   return {
+    amountEntered: true,
     amountInitialization: "PreserveIntent",
     availableAmount: new BigNumber(10),
     entry: {
@@ -246,6 +247,7 @@ describe("Yield Entry", () => {
       const view = registry.get(facade.viewAtom);
       expect(view.cta).toEqual({
         _tag: "Submit",
+        blocker: null,
         disabled: false,
         loading: false,
       });
@@ -359,22 +361,71 @@ describe("Yield Entry", () => {
       override: { ledgerAccountPlaceholder: true },
     },
     {
-      expected: { _tag: "Submit", disabled: true, loading: false },
+      expected: {
+        _tag: "Submit",
+        blocker: null,
+        disabled: true,
+        loading: false,
+      },
       name: "entry is blocked",
       override: { readiness: { _tag: "Blocked" as const } },
     },
     {
-      expected: { _tag: "Submit", disabled: true, loading: false },
+      expected: {
+        _tag: "Submit",
+        blocker: "VerifyIdentity",
+        disabled: true,
+        loading: false,
+      },
       name: "KYC blocks submission",
-      override: { kycBlocking: true },
+      override: { blocker: "VerifyIdentity" as const, kycBlocking: true },
     },
     {
-      expected: { _tag: "Submit", disabled: true, loading: false },
+      expected: {
+        _tag: "Submit",
+        blocker: "InsufficientBalance",
+        disabled: true,
+        loading: false,
+      },
       name: "amount exceeds the available balance",
-      override: { amountExceedsBalance: true },
+      override: {
+        amountExceedsBalance: true,
+        blocker: "InsufficientBalance" as const,
+      },
     },
     {
-      expected: { _tag: "Submit", disabled: false, loading: false },
+      expected: {
+        _tag: "Submit",
+        blocker: "EnterAmount",
+        disabled: true,
+        loading: false,
+      },
+      name: "blocked entry names its blocker",
+      override: {
+        blocker: "EnterAmount" as const,
+        readiness: { _tag: "Blocked" as const },
+      },
+    },
+    {
+      expected: {
+        _tag: "Submit",
+        blocker: null,
+        disabled: true,
+        loading: true,
+      },
+      name: "refreshing entry does not name a blocker yet",
+      override: {
+        blocker: "EnterAmount" as const,
+        readiness: { _tag: "Refreshing" as const },
+      },
+    },
+    {
+      expected: {
+        _tag: "Submit",
+        blocker: null,
+        disabled: false,
+        loading: false,
+      },
       name: "connected entry is valid",
       override: {},
     },
@@ -382,6 +433,7 @@ describe("Yield Entry", () => {
     expect(
       getYieldEntryCta({
         amountExceedsBalance: false,
+        blocker: null,
         connected: true,
         externalProviders: false,
         hasNoYields: false,
@@ -393,6 +445,112 @@ describe("Yield Entry", () => {
         ...override,
       })
     ).toEqual(expected);
+  });
+
+  describe("an Earn entry's CTA names why it cannot submit", () => {
+    const baseDto = yieldApiYieldDtoFixture();
+    const limitedYield = yieldApiYieldFixture({
+      mechanics: {
+        ...baseDto.mechanics,
+        arguments: {
+          ...baseDto.mechanics.arguments,
+          enter: {
+            fields: [
+              {
+                label: "Amount",
+                maximum: "5",
+                minimum: "2",
+                name: "amount",
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const viewFor = (
+      amount: string,
+      amountEntered: boolean,
+      availableAmount: BigNumber | null = new BigNumber(10)
+    ) => {
+      const baseInput = makeFacadeInput();
+      const facade = makeYieldEntry(
+        Atom.make(
+          makeFacadeInput({
+            amountEntered,
+            availableAmount,
+            entry: {
+              ...baseInput.entry,
+              amount: new BigNumber(amount),
+              token: limitedYield.token,
+              yield: limitedYield,
+            },
+            // As Earn's selection reports an amount it cannot submit.
+            readiness: { _tag: "Blocked" },
+          })
+        )
+      );
+      const registry = makeObservableRegistry(makeObservablePorts());
+      try {
+        return registry.get(facade.viewAtom);
+      } finally {
+        registry.dispose();
+      }
+    };
+
+    it.each([
+      {
+        amount: "0",
+        amountEntered: false,
+        availableAmount: new BigNumber(10),
+        blocker: "EnterAmount",
+        name: "no amount yet",
+      },
+      {
+        amount: "20",
+        amountEntered: true,
+        availableAmount: new BigNumber(10),
+        blocker: "InsufficientBalance",
+        name: "an amount above the balance",
+      },
+      {
+        amount: "1",
+        amountEntered: true,
+        availableAmount: new BigNumber(10),
+        blocker: "BelowMinimum",
+        name: "an amount below the minimum",
+      },
+      {
+        amount: "8",
+        amountEntered: true,
+        availableAmount: new BigNumber(10),
+        blocker: "AboveMaximum",
+        name: "an amount above the maximum",
+      },
+      {
+        amount: "1",
+        amountEntered: true,
+        availableAmount: null,
+        blocker: "BelowMinimum",
+        name: "an amount below the minimum of a hidden confidential balance",
+      },
+    ] as const)(
+      "$name",
+      ({ amount, amountEntered, availableAmount, blocker }) => {
+        expect(viewFor(amount, amountEntered, availableAmount).cta).toEqual({
+          _tag: "Submit",
+          blocker,
+          disabled: true,
+          loading: false,
+        });
+      }
+    );
+
+    it("validates the amount only once one is entered", () => {
+      expect(viewFor("0", false).validation.hasErrors).toBe(false);
+      const typed = viewFor("1", true);
+      expect(typed.validation.errors.stakeAmountLessThanMin).toBe(true);
+    });
   });
 
   it("starts and navigates only for an eligible submission", async () => {
@@ -472,6 +630,7 @@ describe("Yield Entry", () => {
     try {
       expect(registry.get(facade.viewAtom).cta).toEqual({
         _tag: "Submit",
+        blocker: null,
         disabled: true,
         loading: false,
       });

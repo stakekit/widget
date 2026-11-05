@@ -4,10 +4,15 @@ import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
+import { exactDecimal } from "../../../src/domain/finance/exact";
 import { UtcDateTimeFromString } from "../../../src/domain/finance/scalars";
 import type { HistoryPoint } from "../../../src/domain/portfolio/models";
 import { HistoryChartSection } from "../../../src/features/earn/ui/dashboard/earn-details/components/history-chart-section";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
+import {
+  formatPercent,
+  formatPercentAxis,
+} from "../../../src/shared/lib/number-format";
 import {
   useWidgetPresentation,
   WidgetPresentationProvider,
@@ -63,8 +68,16 @@ const renderSection = ({
       <Presentation locale={locale}>
         <div style={{ width: 400 }}>
           <HistoryChartSection
+            formatValue={(value) =>
+              formatPercent(exactDecimal(value).div(100), locale)
+            }
+            formatValueAxis={(ticks) =>
+              formatPercentAxis(
+                ticks.map((tick) => exactDecimal(tick).div(100)),
+                locale
+              )
+            }
             onPeriodChange={onPeriodChange}
-            tickFormatter={(value) => `${value.toFixed(2)}%`}
             title="Reward rate"
             value="7.19%"
             view={view({ points })}
@@ -81,6 +94,17 @@ describe("HistoryChartSection", () => {
     await expect
       .element(screen.getByRole("figure", { name: "Reward rate history" }))
       .toHaveTextContent("No chart data");
+  });
+
+  it("labels the value axis in one precision", async () => {
+    const screen = await renderSection();
+    const chart = screen.getByRole("img", { name: "Reward rate history" });
+
+    for (const tick of ["6.1%", "6.8%", "7.5%"]) {
+      await expect
+        .element(chart.getByText(tick, { exact: true }))
+        .toBeVisible();
+    }
   });
 
   it("shows the hovered point's value and its UTC date", async () => {

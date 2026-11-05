@@ -637,7 +637,7 @@ describe("getPositionOverviewModel", () => {
       `0.1 ${cUsdc.symbol}`,
     ]);
     expect(model.breakdownRows[0]?.subValue).toContain(
-      `0.09716 ${cShare.symbol}`
+      `0.0971 ${cShare.symbol}`
     );
   });
 
@@ -835,9 +835,11 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
     });
 
+    // Claiming rewards is an action the user is asked to take: it reads in
+    // the one tone every "Action required" status wears.
     expect(model.statusSummary).toEqual({
       label: "Action required",
-      tone: "claim",
+      tone: "action",
       value: "Claim rewards",
     });
     expect(

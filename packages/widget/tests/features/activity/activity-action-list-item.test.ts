@@ -105,12 +105,107 @@ describe("Activity action list item projection", () => {
       amountSign: "",
       direction: "deposit",
       isPositive: true,
-      relativeTime: { unit: "hours", value: 2 },
+      time: { unit: "hours", value: 2 },
       title: {
         _tag: "deposited",
         tokenSymbol: yieldData.token.symbol,
       },
       amountTokenSymbol: yieldData.token.symbol,
+    });
+  });
+
+  it.each([
+    ["2026-07-21T10:00:01.000Z", { unit: "days", value: 6 }],
+    ["2026-07-21T10:00:00.000Z", { unit: "date", label: "Jul 21, 2026" }],
+    ["2025-12-31T23:30:00.000Z", { unit: "date", label: "Jan 1, 2026" }],
+  ] as const)(
+    "shows how long ago within a week, then the date in the presentation zone (%s)",
+    (createdAt, time) => {
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            createdAt: DateTime.makeUnsafe(createdAt),
+            type: "STAKE",
+          }),
+          null
+        ),
+        locale: "en-US",
+        presentationTime: {
+          now: DateTime.makeUnsafe("2026-07-28T10:00:00.000Z"),
+          timeZone: DateTime.zoneMakeNamedUnsafe("Europe/Paris"),
+        },
+      });
+
+      expect(projection.time).toEqual(time);
+    }
+  );
+
+  it("values an action whose token is unknown in USD instead", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          amount: "0.1",
+          amountUsd: "0.13921006537367514",
+          type: "STAKE",
+        }),
+        null
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({
+      amountFiat: "$0.14",
+      amountTokenSymbol: null,
+      title: { _tag: "deposited", tokenSymbol: null },
+    });
+  });
+
+  it("keeps the withdrawal sign on the USD it falls back to", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          amount: "0.1",
+          amountUsd: "0.13921006537367514",
+          type: "UNSTAKE",
+        }),
+        null
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection.amountText).toBe("\u2212$0.14");
+  });
+
+  it("shows a token amount with its symbol, signed", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({ amount: "1", type: "UNSTAKE" }),
+        yieldApiYieldFixture()
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection.amountText).toBe(
+      `\u22121 ${yieldApiYieldFixture().token.symbol}`
+    );
+  });
+
+  it("sentence-cases a generic action's title", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({ type: "VOTE_LOCKED" }),
+        yieldApiYieldFixture()
+      ),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection.title).toMatchObject({
+      _tag: "generic",
+      actionLabel: "Vote locked",
     });
   });
 
@@ -260,7 +355,7 @@ describe("Activity action list item projection", () => {
       });
 
       expect(projection).toMatchObject({
-        amountSign: "-",
+        amountSign: "\u2212",
         direction: "withdraw",
         isPositive: false,
       });
@@ -528,7 +623,7 @@ describe("Activity action list item projection", () => {
       amount: "1.5",
       amountSign: "+",
       statusLabel: "completed",
-      relativeTime: { unit: "hours", value: 2 },
+      time: { unit: "hours", value: 2 },
       title: { _tag: "borrow", action: "supply", tokenSymbol: "USDC" },
       amountTokenSymbol: "USDC",
     });
@@ -547,7 +642,32 @@ describe("Activity action list item projection", () => {
 
     expect(projection).toMatchObject({
       amount: "1.5",
+      amountFiat: null,
       amountTokenSymbol: "USDC",
+    });
+  });
+
+  it("shows no amount for a Borrow action whose token is unknown", () => {
+    // Borrow actions carry no USD value, and a number without its unit is no
+    // amount, so the row shows none.
+    const projection = projectActivityActionListItem({
+      action: {
+        ...makeBorrowItem({
+          action: "withdraw",
+          amount: "1.5",
+          status: "SUCCESS",
+        }),
+        token: null,
+      },
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({
+      amount: "1.5",
+      amountFiat: null,
+      amountText: null,
+      amountTokenSymbol: null,
     });
   });
 

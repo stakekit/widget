@@ -29,6 +29,8 @@ export type EarnTokenOption = {
   readonly token: Token;
   readonly availableYields: ReadonlyArray<YieldId>;
   readonly amount: BigNumber | null;
+  /** The balance is worth depositing, not dust, by the funded-balance rule. */
+  readonly funded: boolean;
   readonly source: "balance" | "default";
 };
 export type EarnTokenKey = TokenString;
@@ -60,7 +62,6 @@ export type EarnEntry = {
 };
 
 export type EarnEntryIntent = {
-  amountInput: "manual" | "max" | "untouched";
   selectedTokenKey: EarnTokenKey | null;
   selectedYieldId: YieldId | null;
   selectedValidators: ReadonlyArray<EarnValidator> | null;
@@ -68,9 +69,14 @@ export type EarnEntryIntent = {
   requestedValidator: string | null;
   selectedProviderOption: ProviderOption | null;
   selectedCategory: YieldCategory | null;
+  /** The entered amount as a decimal string; `""` until the user enters one. */
   stakeAmount: string;
+  /** The user has entered an amount since the yield was chosen; validation waits for it. */
+  amountTouched: boolean;
   useMaxAmount: boolean;
   tronResource: TronResource | null;
+  /** The token or yield came from init params; a default never replaces it. */
+  seededSelection: boolean;
 };
 
 export type EarnSelection = {
@@ -83,6 +89,8 @@ export type EarnSelection = {
 export type EarnSelectionForm = {
   providerOption: ProviderOption | null;
   stakeAmount: string;
+  /** The amount is validated: the user entered one, or the yield forces the balance. */
+  amountTouched: boolean;
   useMaxAmount: boolean;
   tronResource: TronResource | null;
 };
@@ -161,15 +169,16 @@ export type EarnSelectionView = {
 };
 
 export const makeDefaultEarnIntent = (
-  requestedValidator: string | null = null
+  initParams: InitParams | null = null
 ): EarnEntryIntent => ({
-  amountInput: "untouched",
-  requestedValidator,
+  amountTouched: false,
+  requestedValidator: initParams?.validator ?? null,
+  seededSelection: !!(initParams?.token || initParams?.yieldId),
   selectedProviderOption: null,
   selectedTokenKey: null,
   selectedValidators: null,
   selectedYieldId: null,
-  stakeAmount: "0",
+  stakeAmount: "",
   tronResource: null,
   useMaxAmount: false,
   selectedCategory: null,

@@ -104,6 +104,11 @@ export const addYieldEntryLedgerAccount = Effect.fn(
 });
 
 export type YieldEntryFacadeInput = Readonly<{
+  /**
+   * Whether the user has entered an amount. Earn validates the amount only
+   * once one is entered; a Position's stake form always validates.
+   */
+  readonly amountEntered: boolean;
   readonly amountInitialization: YieldEntryAmountInitialization;
   readonly availableAmount: BigNumber | null;
   readonly entry: YieldEntryProjectionInput["entry"];
@@ -165,7 +170,9 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
         providers: summaryView.providers,
         readiness,
         selectedYieldHasActivePosition: input.selectedYieldHasActivePosition,
-        validateAmount: connected || input.mount._tag === "PositionStake",
+        validateAmount:
+          input.mount._tag === "PositionStake" ||
+          (connected && input.amountEntered),
         wallet: {
           additionalAddresses: connected ? wallet.additionalAddresses : null,
           address: connected ? wallet.address : null,

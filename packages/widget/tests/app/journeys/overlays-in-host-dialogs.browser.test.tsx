@@ -151,7 +151,9 @@ describe.each(hosts)(
         options: { container: await widgetMount() },
       });
 
-      const modal = app.getByRole("dialog", { name: "Geo Block" });
+      const modal = app.getByRole("dialog", {
+        name: "Not available in your region",
+      });
       await expect.element(modal).toBeVisible();
       const modalElement = modal.element();
 
@@ -162,7 +164,10 @@ describe.each(hosts)(
       }
 
       await userEvent.click(
-        app.getByRole("heading", { level: 2, name: "Geo Block" })
+        app.getByRole("heading", {
+          level: 2,
+          name: "Not available in your region",
+        })
       );
       await expect.element(modal).toBeInTheDocument();
       expect(hostDialog()).not.toBeNull();
@@ -248,7 +253,9 @@ describe("Widget portal container", () => {
     geoBlock(worker);
     const app = await renderApp();
 
-    const modal = app.getByRole("dialog", { name: "Geo Block" });
+    const modal = app.getByRole("dialog", {
+      name: "Not available in your region",
+    });
     await expect.element(modal).toBeVisible();
     const root = modal.element().closest("[data-sk-root]");
     expect(root).not.toBeNull();
@@ -275,7 +282,9 @@ describe("Widget portal container", () => {
       },
     });
 
-    const modal = app.getByRole("dialog", { name: "Geo Block" });
+    const modal = app.getByRole("dialog", {
+      name: "Not available in your region",
+    });
     await expect.element(modal).toBeVisible();
     expect(modal.element().closest("[data-sk-root]")).toBeNull();
     // The Widget themes an element of its own inside the host's container and
@@ -307,7 +316,7 @@ describe("Widget portal container", () => {
       },
     });
 
-    const connect = app.getByRole("button", { name: "Connect Wallet" });
+    const connect = app.getByRole("button", { name: "Connect wallet" });
     await expect.element(connect).toBeEnabled();
     await userEvent.click(connect);
 
@@ -319,7 +328,7 @@ describe("Widget portal container", () => {
     expect(widgetPortal?.contains(dialog.element())).toBe(true);
     // The dark default `background` role.
     expect(getComputedStyle(dialog.element()).backgroundColor).toBe(
-      "rgb(21, 21, 23)"
+      "rgb(17, 17, 19)"
     );
 
     await app.unmount();
@@ -369,7 +378,9 @@ describe("Widget portal container", () => {
     await page.viewport(400, 800);
     const app = await renderApp();
 
-    const modal = app.getByRole("dialog", { name: "Geo Block" });
+    const modal = app.getByRole("dialog", {
+      name: "Not available in your region",
+    });
     await expect.element(modal).toBeVisible();
     await expect
       .poll(() => Math.round(modal.element().getBoundingClientRect().bottom))

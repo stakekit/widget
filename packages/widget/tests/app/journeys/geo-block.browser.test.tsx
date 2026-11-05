@@ -23,10 +23,17 @@ describe("Geo block", () => {
     const app = await renderApp();
 
     await expect
-      .element(app.getByRole("dialog", { name: "Geo Block" }))
+      .element(
+        app.getByRole("dialog", { name: "Not available in your region" })
+      )
       .toBeInTheDocument();
     await expect
-      .element(app.getByRole("heading", { level: 2, name: "Geo Block" }))
+      .element(
+        app.getByRole("heading", {
+          level: 2,
+          name: "Not available in your region",
+        })
+      )
       .toBeInTheDocument();
     await expect
       .element(app.getByText("This feature is not available in Austria."))

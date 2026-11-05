@@ -107,6 +107,17 @@ export const WithFigureDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/** A rate of zero or none reads muted, like the subtitle, not as a gain. */
+export const WithMutedFigure: Story = {
+  args: { figure: { text: "—", tone: "muted" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const colorOf = (text: string) =>
+      getComputedStyle(canvas.getByText(text)).color;
+    await expect(colorOf("—")).toBe(colorOf("Lido"));
+  },
+};
+
 /**
  * With `from: "sm"` the figure shows only from the `sm` container size up:
  * a narrow row keeps room for its title.

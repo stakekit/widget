@@ -179,15 +179,15 @@ describe("Yield Steps page progress", () => {
     expect(stake?.textContent).toContain("Something went wrong");
     expect(stake?.querySelector("button")).toBeNull();
 
-    // In document order: the steps, then Try Again, then Cancel.
+    // In document order: the steps, then Try again, then Cancel.
     const order = [...app.container.querySelectorAll("ol, button")].map(
       (element) => (element.tagName === "OL" ? "steps" : element.textContent)
     );
-    expect(order.slice(-3)).toEqual(["steps", "Try Again", "Cancel"]);
+    expect(order.slice(-3)).toEqual(["steps", "Try again", "Cancel"]);
     const button = app.container.querySelector<HTMLButtonElement>(
       '[data-rk="footer-button-primary"]'
     );
-    expect(button?.textContent).toBe("Try Again");
+    expect(button?.textContent).toBe("Try again");
     button?.click();
     expect(retry).toHaveBeenCalledOnce();
     app.unmount();

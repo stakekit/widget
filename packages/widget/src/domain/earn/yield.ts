@@ -89,10 +89,11 @@ export type ValidatorsConfig = ReadonlyMap<
   }>
 >;
 
+/** The default Yield Category order: DeFi first, and so selected first. */
 export const yieldCategories = [
-  YieldCategory.RWA,
   YieldCategory.DeFi,
   YieldCategory.Stake,
+  YieldCategory.RWA,
 ] as const satisfies ReadonlyArray<YieldCategoryType>;
 
 /**

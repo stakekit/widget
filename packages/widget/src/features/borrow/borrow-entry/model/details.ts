@@ -23,6 +23,7 @@ import {
   formatPercent,
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../../shared/lib/number-format";
 import type { BorrowFormProjection } from "./borrow-entry";
 
@@ -55,7 +56,7 @@ const formatTransition = ({
 }: {
   readonly current: string;
   readonly projected: string;
-}) => (current === projected ? projected : `${current} -> ${projected}`);
+}) => (current === projected ? projected : `${current} → ${projected}`);
 
 const getTokenUsdValue = ({
   amount,
@@ -177,7 +178,7 @@ export const getBorrowDetailsModel = ({
       });
     }
     return borrowAmount.isZero()
-      ? "-"
+      ? unavailableFigure
       : `${formatTokenAmount(borrowAmount, locale, "up")} ${market.loanToken.symbol}`;
   };
   const loanValue = getLoanValue();

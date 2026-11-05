@@ -29,6 +29,7 @@ import {
 import {
   formatRoundedPercent,
   formatUsd,
+  unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import {
   formatCooldownDays,
@@ -182,7 +183,8 @@ export const getEarnDetailsModel = ({
       yieldDto,
     }),
     rewardRateFormatted:
-      formatRewardRate(effectiveRewardRate, yieldDto, locale) ?? "-",
+      formatRewardRate(effectiveRewardRate, yieldDto, locale) ??
+      unavailableFigure,
     tvlChartValue: formatUsd(yieldDto.statistics?.tvlUsd, locale),
   };
 };

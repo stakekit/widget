@@ -36,7 +36,7 @@
     "ok": "Ok",
     "something_went_wrong": "Something went wrong",
     "not_enough_gas_token": "Not enough gas token",
-    "retry": "Try Again",
+    "retry": "Try again",
     "unsupported_network": "Unsupported network",
     "points": "Points",
     "continue": "Continue",
@@ -53,217 +53,217 @@
   },
   "errors": {
     "InvalidArgumentError": {
-      "title": "Invalid Argument",
+      "title": "Invalid argument",
       "details": "One or more arguments are invalid for this operation",
       "solution": "Check the submitted information and try again"
     },
     "InvalidAddressError": {
-      "title": "Invalid Address",
+      "title": "Invalid address",
       "details": "The address is invalid or is not supported by the selected network",
       "solution": "Check the address and network, then try again"
     },
     "BlockHeightUnavailableError": {
-      "title": "Block Height Unavailable",
+      "title": "Block height unavailable",
       "details": "The current block height is temporarily unavailable",
       "solution": "Try again later or contact StakeKit support"
     },
     "MinimumAmountNotReachedError": {
-      "title": "Minimum Amount Not Reached",
+      "title": "Minimum amount not reached",
       "details": "The amount is below the minimum required for this operation",
       "solution": "Increase the amount and try again"
     },
     "MaximumAmountExceededError": {
-      "title": "Maximum Amount Exceeded",
+      "title": "Maximum amount exceeded",
       "details": "The amount exceeds the maximum allowed for this operation",
       "solution": "Reduce the amount and try again"
     },
     "DelegationNotActiveError": {
-      "title": "Delegation Not Active",
+      "title": "Delegation not active",
       "details": "The delegation must be active before this operation can be performed",
       "solution": "Wait for the delegation to become active and try again"
     },
     "UnstakeTemporarilyDisabledError": {
-      "title": "Unstaking Temporarily Disabled",
+      "title": "Unstaking temporarily disabled",
       "details": "Unstaking is temporarily unavailable for this yield",
       "solution": "Try again later or contact StakeKit support"
     },
     "StakeTemporarilyDisabledError": {
-      "title": "Staking Temporarily Disabled",
+      "title": "Staking temporarily disabled",
       "details": "Staking is temporarily unavailable for this yield",
       "solution": "Try again later or contact StakeKit support"
     },
     "ValidatorNotActiveError": {
-      "title": "Validator Not Active",
+      "title": "Validator not active",
       "details": "The selected validator is not currently active",
       "solution": "Select an active validator and try again"
     },
     "FigmentValidatorNotExitableError": {
-      "title": "Validator Cannot Exit",
+      "title": "Validator cannot exit",
       "details": "The selected validator is not currently eligible to exit",
       "solution": "Try again when the validator becomes eligible or contact StakeKit support"
     },
     "UnauthorizedError": {
-      "title": "Unauthorized Request",
+      "title": "Unauthorized request",
       "details": "This request is not authorized",
       "solution": "Reconnect the wallet and try again or contact StakeKit support"
     },
     "TransactionConstructorNotFound": {
-      "title": "Transaction Construction Unsupported",
+      "title": "Transaction construction unsupported",
       "details": "Transactions cannot currently be constructed for this operation",
       "solution": "Try again later or contact StakeKit support"
     },
     "ShareConversionDidNotConvergeError": {
-      "title": "Share Conversion Failed",
+      "title": "Share conversion failed",
       "details": "The share amount could not be calculated reliably",
       "solution": "Try again later or contact StakeKit support"
     },
     "RpcTimeoutError": {
-      "title": "Network Request Timed Out",
+      "title": "Network request timed out",
       "details": "The blockchain network did not respond in time",
       "solution": "Try again later or contact StakeKit support"
     },
     "ApiUnreachableError": {
-      "title": "Can't Reach the Server",
+      "title": "Can't reach the server",
       "details": "The request got no answer. You may be offline, or the service may be temporarily unavailable",
       "solution": "Check your internet connection and try again"
     },
     "WithdrawalLimitExceededError": {
-      "title": "Withdrawal Limit Exceeded",
+      "title": "Withdrawal limit exceeded",
       "details": "The requested amount exceeds the current withdrawal limit",
       "solution": "Reduce the amount or try again later"
     },
     "DecommissionedError": {
-      "title": "Service No Longer Available",
+      "title": "Service no longer available",
       "details": "This staking service has been decommissioned",
       "solution": "Select another yield or contact StakeKit support"
     },
     "SparkPoolFrozenError": {
-      "title": "Spark Pool Frozen",
+      "title": "Spark pool frozen",
       "details": "The Spark pool is currently frozen and unavailable",
       "solution": "Try again later or contact StakeKit support"
     },
     "SparkTokenPairNotFoundError": {
-      "title": "Spark Token Pair Not Found",
+      "title": "Spark token pair not found",
       "details": "The specified Spark token pair could not be found",
       "solution": "Try again later or contact StakeKit support"
     },
     "Snx420LockupPeriodNotElapsedError": {
-      "title": "Lockup Period Not Complete",
+      "title": "Lockup period not complete",
       "details": "The Synthetix lockup period has not yet elapsed",
       "solution": "Wait until the lockup period ends and try again"
     },
     "ContractFunctionNotFoundError": {
-      "title": "Contract Function Not Found",
+      "title": "Contract function not found",
       "details": "The required smart contract function is not available",
       "solution": "Try again later or contact StakeKit support"
     },
     "CardanoRewardAddressNotFoundError": {
-      "title": "Reward Address Not Found",
+      "title": "Reward address not found",
       "details": "A Cardano reward address could not be found for this account",
       "solution": "Check the connected account and try again"
     },
     "CardanoStakeAccountNotActiveError": {
-      "title": "Stake Account Not Active",
+      "title": "Stake account not active",
       "details": "The Cardano stake account is not active",
       "solution": "Activate the stake account and try again"
     },
     "CardanoNoUtxosFoundError": {
-      "title": "No UTXOs Found",
+      "title": "No UTXOs found",
       "details": "No spendable Cardano transaction outputs were found",
       "solution": "Add funds to the account and try again"
     },
     "CosmosAccountNotFoundError": {
-      "title": "Cosmos Account Not Found",
+      "title": "Cosmos account not found",
       "details": "The specified Cosmos account could not be found",
       "solution": "Check the account and try again or contact StakeKit support"
     },
     "TonInvalidAddressError": {
-      "title": "Invalid TON Address",
+      "title": "Invalid TON address",
       "details": "The TON address is invalid",
       "solution": "Check the address and try again"
     },
     "TronInvalidAddressError": {
-      "title": "Invalid Tron Address",
+      "title": "Invalid Tron address",
       "details": "The Tron address is invalid",
       "solution": "Check the address and try again"
     },
     "SolanaUnstakeRequiresFullAmountError": {
-      "title": "Full Unstake Required",
+      "title": "Full unstake required",
       "details": "This Solana position can only be unstaked in full",
       "solution": "Select the full staked amount and try again"
     },
     "SolanaUnableToEstimateGasForTransactionError": {
-      "title": "Unable to Estimate Transaction Fee",
+      "title": "Unable to estimate transaction fee",
       "details": "The fee for the Solana transaction could not be estimated",
       "solution": "Try again later or contact StakeKit support"
     },
     "SolanaTransactionSimulationError": {
-      "title": "Transaction Simulation Failed",
+      "title": "Transaction simulation failed",
       "details": "The Solana transaction failed during simulation",
       "solution": "Review the transaction and try again or contact StakeKit support"
     },
     "SolanaStakeAccountsDeactivationLimitExceeded": {
-      "title": "Stake Account Deactivation Limit Exceeded",
+      "title": "Stake account deactivation limit exceeded",
       "details": "Too many Solana stake accounts would need to be deactivated",
       "solution": "Reduce the amount or number of stake accounts and try again"
     },
     "SolanaMarinadeMinStakeUnavailableError": {
-      "title": "Marinade Minimum Stake Unavailable",
+      "title": "Marinade minimum stake unavailable",
       "details": "The minimum Marinade stake amount is temporarily unavailable",
       "solution": "Try again later or contact StakeKit support"
     },
     "DriftLendingNoDepositsFoundError": {
-      "title": "No Drift Deposits Found",
+      "title": "No Drift deposits found",
       "details": "No Drift lending deposits were found for this account",
       "solution": "Check the account and try again"
     },
     "DriftLendingUserAccountDoesNotExistError": {
-      "title": "Drift Account Not Found",
+      "title": "Drift account not found",
       "details": "A Drift user account does not exist for this wallet",
       "solution": "Create or initialize the Drift account and try again"
     },
     "DriftLendingInsufficientBalanceError": {
-      "title": "Insufficient Drift Balance",
+      "title": "Insufficient Drift balance",
       "details": "The Drift lending balance is insufficient for this operation",
       "solution": "Reduce the amount or add funds and try again"
     },
     "DriftLendingWithdrawalLimitExceededError": {
-      "title": "Drift Withdrawal Limit Exceeded",
+      "title": "Drift withdrawal limit exceeded",
       "details": "The requested amount exceeds the current Drift withdrawal limit",
       "solution": "Reduce the amount or try again later"
     },
     "DriftLendingInsufficientSolForRentError": {
-      "title": "Insufficient SOL for Account Rent",
+      "title": "Insufficient SOL for account rent",
       "details": "There is not enough SOL to fund the account rent required by Drift",
       "solution": "Add SOL to the account and try again"
     },
     "KaminoLendingNoDepositsFoundError": {
-      "title": "No Kamino Deposits Found",
+      "title": "No Kamino deposits found",
       "details": "No Kamino lending deposits were found for this account",
       "solution": "Check the account and try again"
     },
     "KaminoLendingInsufficientBalanceError": {
-      "title": "Insufficient Kamino Balance",
+      "title": "Insufficient Kamino balance",
       "details": "The Kamino lending balance is insufficient for this operation",
       "solution": "Reduce the amount or add funds and try again"
     },
     "KaminoLendingInsufficientSolForRentError": {
-      "title": "Insufficient SOL for Account Rent",
+      "title": "Insufficient SOL for account rent",
       "details": "There is not enough SOL to fund the account rent required by Kamino Lending",
       "solution": "Add SOL to the account and try again"
     },
     "KaminoVaultNoDepositsFoundError": {
-      "title": "No Kamino Vault Deposits Found",
+      "title": "No Kamino vault deposits found",
       "details": "No Kamino vault deposits were found for this account",
       "solution": "Check the account and try again"
     },
     "KaminoVaultInsufficientBalanceError": {
-      "title": "Insufficient Kamino Vault Balance",
+      "title": "Insufficient Kamino vault balance",
       "details": "The Kamino vault balance is insufficient for this operation",
       "solution": "Reduce the amount or add funds and try again"
     },
     "KaminoVaultInsufficientSolForRentError": {
-      "title": "Insufficient SOL for Account Rent",
+      "title": "Insufficient SOL for account rent",
       "details": "There is not enough SOL to fund the account rent required by Kamino Vaults",
       "solution": "Add SOL to the account and try again"
     }
@@ -280,15 +280,15 @@
   },
   "init": {
     "get_started": "Connect your wallet to get started…",
-    "connect_wallet": "Connect Wallet",
+    "connect_wallet": "Connect wallet",
     "ledger_add_account": "Add account"
   },
   "wallet_modal": {
     "account": "Account",
     "close": "Close",
-    "copy_address": "Copy Address",
+    "copy_address": "Copy address",
     "copied": "Copied!",
-    "confirm": "Confirm in Wallet",
+    "confirm": "Confirm in wallet",
     "confirm_error": "Error switching chain",
     "wrong_network": "Wrong network detected, switch or disconnect to continue.",
     "chain_error": "Couldn't switch networks. Try again.",
@@ -301,7 +301,7 @@
     "connected_to": "Connected to {{network}}",
     "other_accounts": "Other accounts",
     "view_on_explorer": "View on explorer",
-    "network": "Switch Networks",
+    "network": "Switch networks",
     "install": "Install",
     "checking": "Checking",
     "groups": {
@@ -343,7 +343,7 @@
       "continue": "Continue",
       "unknown_error": "Unknown error",
       "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-      "in_progress": "In Progress",
+      "in_progress": "In progress",
       "confirmed": "Confirmed",
       "not_submitted": "Not submitted",
       "transactions_all_confirmed_one": "{{count}} · confirmed",
@@ -357,13 +357,13 @@
     "no_previous_activity": "No previous activity",
     "item": {
       "deposited": "Deposited {{token}}",
-      "deposited_without_token": "Deposited",
+      "deposited_without_token": "Deposited · unknown asset",
       "deposit_submitted": "{{token}} deposit submitted",
       "deposit_submitted_without_token": "Deposit submitted",
       "deposit_canceled": "{{token}} deposit canceled",
       "deposit_canceled_without_token": "Deposit canceled",
       "withdrew": "Withdrew {{token}}",
-      "withdrew_without_token": "Withdrew",
+      "withdrew_without_token": "Withdrew · unknown asset",
       "private_withdrawal_requested": "{{token}} private withdrawal requested",
       "private_withdrawal_requested_without_token": "Private withdrawal requested",
       "private_withdrawal_canceled": "{{token}} private withdrawal canceled",
@@ -375,15 +375,15 @@
       "generic_without_token": "{{action}}",
       "borrow": {
         "supply": "Supplied {{token}}",
-        "supply_without_token": "Supplied",
+        "supply_without_token": "Supplied · unknown asset",
         "borrow": "Borrowed {{token}}",
-        "borrow_without_token": "Borrowed",
+        "borrow_without_token": "Borrowed · unknown asset",
         "supplyAndBorrow": "Supplied and borrowed {{token}}",
-        "supplyAndBorrow_without_token": "Supplied and borrowed",
+        "supplyAndBorrow_without_token": "Supplied and borrowed · unknown asset",
         "repay": "Repaid {{token}}",
-        "repay_without_token": "Repaid",
+        "repay_without_token": "Repaid · unknown asset",
         "withdraw": "Withdrew {{token}}",
-        "withdraw_without_token": "Withdrew",
+        "withdraw_without_token": "Withdrew · unknown asset",
         "enableCollateral": "Enabled {{token}} as collateral",
         "enableCollateral_without_token": "Enabled collateral",
         "disableCollateral": "Disabled {{token}} as collateral",
@@ -425,6 +425,13 @@
     "yield_strategy": "Yield strategy",
     "via": "via {{providerName}}",
     "additional_info": "Additional info",
+    "cta_blocker": {
+      "above_maximum": "Above maximum",
+      "below_minimum": "Below minimum",
+      "enter_amount": "Enter an amount",
+      "insufficient_token": "Insufficient {{symbol}}",
+      "verify_identity": "Verify identity first"
+    },
     "kyc_gate": {
       "check_status": "Check status",
       "modal": {
@@ -463,8 +470,8 @@
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
       "receive_output": "You'll receive",
-      "yearly": "Estimated Yearly Earnings",
-      "monthly": "Estimated Monthly Earnings"
+      "yearly": "Estimated yearly earnings",
+      "monthly": "Estimated monthly earnings"
     },
     "tron_resources": {
       "label": "Resource",
@@ -626,7 +633,7 @@
       "positions_active_one": "{{count}} active",
       "positions_active_other": "{{count}} active",
       "positions_yield": "Yield",
-      "positions_reward_rate": "Reward Rate",
+      "positions_reward_rate": "Reward rate",
       "positions_amount": "Amount",
       "positions_rewards": "Rewards",
       "positions_connect_wallet": "Connect wallet to see your positions",
@@ -715,8 +722,8 @@
         "select_market": "Select borrow market",
         "select_collateral": "Select collateral",
         "search_assets": "Search assets...",
-        "borrowable_assets": "Borrowable Assets",
-        "collateral_assets": "Collateral Assets",
+        "borrowable_assets": "Borrowable assets",
+        "collateral_assets": "Collateral assets",
         "no_assets": "No assets found",
         "collateral_terms": "Max LTV {{maxLtv}} · Liq. {{liquidationThreshold}}",
         "collateral_earns": "Earns {{rate}}",
@@ -963,7 +970,7 @@
       }
     },
     "activity_details": {
-      "your_position": "Your Position"
+      "your_position": "Your position"
     },
     "enabled_rewards_summary_yield_names": {
       "polkadot_dot_validator_staking": "DOT native staking",
@@ -1002,7 +1009,7 @@
     "leave": "Leave"
   },
   "steps": {
-    "title": "Follow Steps",
+    "title": "Follow steps",
     "sign_transaction": "Sign transaction",
     "sign_transaction_desc": "Go back to connected wallet to approve transaction",
     "transaction_status": "Transaction status",
@@ -1194,7 +1201,7 @@
   "help_modals": {
     "close": "Close",
     "geo_block": {
-      "title": "Geo Block",
+      "title": "Not available in your region",
       "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
       "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
       "pending_litigation": "This feature is currently unavailable in {{nameOfRegion}} due to pending litigation on the subject of staking cryptocurrencies",
@@ -1213,7 +1220,7 @@
       "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it's fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     },
     "under_maintenance": {
-      "title": "Under Maintenance",
+      "title": "Under maintenance",
       "description": "Yield.xyz is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
       "description2": "We appreciate your patience and encourage you to check back shortly!"
     },
@@ -1231,7 +1238,7 @@
     }
   },
   "positions": {
-    "title": "My Positions",
+    "title": "My positions",
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} more",
     "connect_wallet": "Connect wallet",
@@ -1249,32 +1256,32 @@
   },
   "yield_types": {
     "native_staking": {
-      "title": "Native Staking",
+      "title": "Native staking",
       "review": "Stake",
       "cta": "Stake"
     },
     "pooled_staking": {
-      "title": "Pooled Staking",
+      "title": "Pooled staking",
       "review": "Stake",
       "cta": "Stake"
     },
     "fixed_yield": {
-      "title": "Fixed Yield",
+      "title": "Fixed yield",
       "review": "Deposit",
       "cta": "Deposit"
     },
     "real_world_asset": {
-      "title": "Real-World Asset",
+      "title": "Real-world asset",
       "review": "Deposit",
       "cta": "Deposit"
     },
     "concentrated_liquidity_pool": {
-      "title": "Concentrated Liquidity",
+      "title": "Concentrated liquidity",
       "review": "Deposit",
       "cta": "Deposit"
     },
     "liquidity_pool": {
-      "title": "Liquidity Pool",
+      "title": "Liquidity pool",
       "review": "Deposit",
       "cta": "Deposit"
     },
@@ -1284,13 +1291,13 @@
       "cta": "Stake"
     },
     "liquid-staking": {
-      "title": "Liquid Staking",
-      "review": "Liquid Staking",
+      "title": "Liquid staking",
+      "review": "Liquid staking",
       "cta": "Stake"
     },
     "liquid_staking": {
-      "title": "Liquid Staking",
-      "review": "Liquid Staking",
+      "title": "Liquid staking",
+      "review": "Liquid staking",
       "cta": "Stake"
     },
     "vault": {
@@ -1473,7 +1480,7 @@
       "cancel_pending_withdrawal": "Cancel withdrawal"
     },
     "unstake_sign": {
-      "title": "Verify Ownership",
+      "title": "Verify ownership",
       "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
     },
     "actions_label": "Position actions",
@@ -1529,8 +1536,8 @@
   },
   "chain_modal_disclaimer": "Powered by Yield.xyz",
   "tos_modal": {
-    "title": "Terms of Use",
-    "accept_button": "I Accept",
+    "title": "Terms of use",
+    "accept_button": "I accept",
     "agree_checkbox": "I have read and agree to the Terms of Use",
     "close": "Close",
     "introduction": "These StakeKit Terms of Use are entered into between you (\"you\" or \"your\") and StakeKit LLC, together with Omni Ltd. and its other affiliates (\"StakeKit\", \"we\", \"us\", and \"our\"). By accessing, downloading, using, or clicking on \"I Agree\" to accept any \"StakeKit Services\" provided by StakeKit, you agree that you have carefully read, understood, and accepted all of the terms and conditions within these Terms of Use (\"Terms\") as well as our Privacy Policy. Our Privacy Policy can be accessed here: StakeKit Privacy Policy.",
@@ -1539,26 +1546,26 @@
     "agreement_binding": "By accessing, using, or attempting to use StakeKit Services in any capacity, you acknowledge that you accept and agree to be bound by these Terms. These Terms supersede and replace any and all prior oral and/or written agreements between StakeKit and you regarding the Services.",
     "sections": {
       "stakekit_services": {
-        "title": "StakeKit Services",
+        "title": "StakeKit services",
         "content": "StakeKit allows you to stake Cryptocurrency assets across all major blockchains and allows you to earn interest on your Cryptocurrencies. StakeKit Services include the creation of Cryptocurrency wallets where custody and personal keys remain with the user. Services also include the ability to send, receive, stake, bridge, and swap Cryptocurrency assets. The Cryptocurrency assets that are supported by StakeKit are subject to change."
       },
       "agreement_to_terms": {
-        "title": "Agreement to Terms",
+        "title": "Agreement to terms",
         "content": "When you click \"I Agree\" or when you access the StakeKit application or use any of the StakeKit Services, you agree to be bound by these terms. If you do not agree to these Terms, do not agree to or use the Services."
       },
       "intellectual_property": {
-        "title": "Intellectual Property Rights",
+        "title": "Intellectual property rights",
         "content_1": "The StakeKit application and websites, and their entire contents, features, and functionality (including software, text, images, videos, audio, design, and information) are owned by StakeKit LLC, its licensors, affiliates, or other providers of such material and are protected by both United States and international intellectual property laws (including copyright, trademark, patent, trade secret and other intellectual or proprietary rights laws).",
         "content_2": "Under these Terms, you are permitted to make use of the StakeKit application for your personal, non-commercial use only."
       },
       "user_content": {
-        "title": "User Content",
+        "title": "User content",
         "content_1": "Any content that you make available to StakeKit through its Services constitutes User Content. You must possess the right and the authority to submit your User Content and that your User Content does not infringe upon any intellectual property rights or the rights of a third party. StakeKit reserves the right to a worldwide, non-exclusive, royalty-free, sub-licensable, and transferable license to use, copy, distribute, create derivative works of, and display the User Content that you upload, submit, store, send, or receive on the StakeKit application.",
         "content_2": "You must acknowledge that there may be certain instances in which you may have deleted specific User Content, and some of your User Content may not be completely removed and copies of your User Content may continue to exist on the Services. StakeKit is not responsible or liable for the deletion of any of your User Content.",
         "content_3": "StakeKit maintains no obligation to monitor User Content. When you access StakeKit Services, you must understand that you may be exposed to User Content that is offensive, indecent, or objectionable. StakeKit is neither responsible nor reserves any liability for User Content, including any loss or damage to your User Content."
       },
       "acceptable_use": {
-        "title": "Acceptable Use",
+        "title": "Acceptable use",
         "intro": "You may only use the StakeKit application and Services for lawful purposes and in compliance with these Terms. You may not use the StakeKit application in the following ways:",
         "violation_laws": "• In any way that violates any applicable federal, state, local, or international law or regulation (including, without limitation, any laws regarding the export of data or software to and from the United States or other countries).",
         "harm_minors": "• For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way by exposing them to inappropriate content, asking for personally identifiable information, or otherwise.",
@@ -1568,7 +1575,7 @@
         "additional": "Additionally, you agree not to otherwise attempt to interfere with the proper working of the StakeKit application and Services."
       },
       "termination": {
-        "title": "Termination of Use",
+        "title": "Termination of use",
         "content": "StakeKit reserves the right to terminate your access and use to the StakeKit application and/or Services at our sole discretion."
       },
       "fees": {
@@ -1576,7 +1583,7 @@
         "content": "StakeKit may charge fees for certain Services. We reserve the right to make changes to the fee amount at our discretion. We will disclose the amount of fees that we will charge you for the applicable Services when you access the Services."
       },
       "taxes": {
-        "title": "Taxes and Withholdings",
+        "title": "Taxes and withholdings",
         "content": "You are responsible for paying all taxes, assessments, charges, fees, and levies that may be imposed by any governmental authority in connection with your use of StakeKit Services."
       },
       "confidentiality": {
@@ -1585,47 +1592,47 @@
         "content_2": "A party's Confidential Information includes, but is not limited to, (a) that party's trade secrets, technical information, know-how, technology, prototypes, methods, ideas, data, cost information, client information, financial information, supplier and customer identities and lists, and business and marketing plans, and (b) any copies, extracts, analyses, compilations, forecasts, studies or other documents containing or reflecting that party's Confidential Information that are prepared by, on behalf of, or in cooperation with the other party. StakeKit's Confidential Information includes but is not limited to StakeKit application and Services, subject to the rights and permissions granted to you under these Terms."
       },
       "non_disclosure": {
-        "title": "Confidentiality and Non-Disclosure",
+        "title": "Confidentiality and non-disclosure",
         "content_1": "The recipient acknowledges that the disclosing party's Confidential Information is an asset of considerable value, and that disclosure of that Confidential Information to third parties would be damaging. The recipient will: (a) keep the disclosing party's Confidential Information confidential and use it solely for the purposes of exercising its rights and performing its obligations under the Agreement; (b) not directly, or indirectly, without authorization, reveal, report, publish, disclose or transfer the disclosing party's Confidential Information to any third party except as expressly authorized under this Agreement or otherwise in writing by the disclosing party; (c) use procedures constituting a high degree of care to maintain the security of the disclosing party's Confidential Information, but in no event less than a reasonable standard of care under the circumstances; and (d) disclose the disclosing party's Confidential Information to the recipient's employees, consultants and subcontractors solely as permitted under this Agreement, and in any case only on a need-to-know basis as required in connection with recipient's performance of its duties and exercise of its rights under the Agreement.",
         "content_2": "The parties may disclose the general nature of the Agreement; however, all other terms of the Agreement are StakeKit's Confidential Information and may not be disclosed to any third party without StakeKit's prior written consent."
       },
       "required_disclosures": {
-        "title": "Required Disclosures",
+        "title": "Required disclosures",
         "content": "If the recipient is required by law or court order to disclose any of the disclosing party's Confidential Information, the recipient will: (a) notify the disclosing party in writing as soon as possible, but in no event less than ten days prior to any required disclosure; (b) cooperate with the disclosing party to preserve the confidentiality of its Confidential Information consistent with applicable law; and (c) limit any disclosure to the minimum disclosure necessary to comply with the applicable law or court order."
       },
       "return_confidential": {
-        "title": "Return of Confidential Information",
+        "title": "Return of confidential information",
         "content": "Subject to your rights in previously acquired Confidential Information in accordance with the Termination clause, the recipient shall return or destroy the disclosing party's Confidential Information within 20 days after the effective date of termination of this Agreement. The recipient will not be required to search archived electronic files for the disclosing party's Confidential Information in order to purge that information from its files. The recipient may retain copies of the disclosing party's Confidential Information as necessary to comply with applicable laws, the recipient's written document retention or information governance policies, or any applicable professional standard."
       },
       "limitation_liability": {
-        "title": "Limitation of Liability",
+        "title": "Limitation of liability",
         "content_1": "TO THE FULLEST EXTENT PROVIDED BY LAW, IN NO EVENT WILL STAKEKIT, ITS AFFILIATES, OR THEIR LICENSORS, SERVICE PROVIDERS, EMPLOYEES, AGENTS, OFFICERS, OR DIRECTORS BE LIABLE FOR DAMAGES OF ANY KIND, UNDER ANY LEGAL THEORY, ARISING OUT OF OR IN CONNECTION WITH YOUR USE, OR INABILITY TO USE, THE APPLICATION, ANY SERVICES LINKED TO IT, ANY CONTENT ON THE APPLICATION, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO, PERSONAL INJURY, PAIN AND SUFFERING, EMOTIONAL DISTRESS, LOSS OF REVENUE, LOSS OF PROFITS, LOSS OF BUSINESS OR ANTICIPATED SAVINGS, LOSS OF USE, LOSS OF GOODWILL, LOSS OF DATA, AND WHETHER CAUSED BY TORT (INCLUDING NEGLIGENCE), BREACH OF CONTRACT, OR OTHERWISE, EVEN IF FORESEEABLE.",
         "content_2": "THE FOREGOING DOES NOT AFFECT ANY LIABILITY THAT CANNOT BE EXCLUDED OR LIMITED UNDER APPLICABLE LAW. IN NO EVENT SHALL THE TOTAL LIABILITY TO YOU FROM STAKEKIT FOR ALL DAMAGES EXCEED THE AMOUNT OF ONE HUNDRED U.S. DOLLARS ($100.00) OR ITS EQUIVALENT IN THE LOCAL CURRENCY OF THE APPLICABLE JURISDICTION."
       },
       "dispute_resolution": {
-        "title": "Dispute Resolution",
+        "title": "Dispute resolution",
         "content_1": "You and StakeKit will work together in good faith first to resolve any issues through discussions between their respective relationship managers. If the relationship managers are unable to resolve the issue within 30 days after their discussions on that issue begin, then they will escalate the dispute to their senior management. If an issue is not resolved within 30 days after escalation to senior management, either party may initiate arbitration pursuant to the commercial rules of the American Arbitration Association (\"AAA\").",
         "content_2": "The arbitration will be conducted in New York, New York by one arbitrator agreed upon by the parties or, in the absence of agreement, selected by the AAA. Each party will pay its own expenses arising from the arbitration, and the parties will share equally the expenses of the arbitrator and the AAA. The prevailing party in the arbitration proceedings will be entitled to recover reasonable attorneys' fees and expenses incurred in connection with the proceeding, in addition to any other relief to which the prevailing party may be entitled.",
         "content_3": "Any arbitration award will be final, and judgment on it may be entered in any court of competent jurisdiction. If a party breaches or threatens to breach its obligations under these Terms, the other party may suffer harm that may not be adequately compensated by monetary damages. In that case, the other party may, in addition to pursuing arbitration in accordance with this clause, seek specific performance and injunctive or other equitable relief in any court of competent jurisdiction."
       },
       "governing_law": {
-        "title": "Governing Law and Jurisdiction",
+        "title": "Governing law and jurisdiction",
         "content": "These Terms will be governed by, and construed under, the laws of Delaware, without application of its conflict of laws rules. Subject the preceding Dispute Resolution clause, the parties hereby consent to the exclusive jurisdiction of, and venue in, the courts of Delaware. IF THE ARBITRATION PROVISION IN THE PRECEDING DISPUTE RESOLUTION CLAUSE IS HELD TO BE INVALID AND TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU AND STAKEKIT HEREBY WAIVE ANY RIGHT TO TRIAL BY JURY IN ANY ACTION OR PROCEEDING REGARDING ANY LITIGATION RELATED TO THIS AGREEMENT."
       },
       "class_action": {
-        "title": "Class Action Restrictions",
+        "title": "Class action restrictions",
         "content": "YOU AND STAKEKIT HEREBY AGREE THAT EACH PARTY MAY BRING CLAIMS AGAINST THE OTHER ONLY ON AN INDIVIDUAL BASIS AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE ACTION OR PROCEEDING. UNLESS BOTH PARTIES AGREE OTHERWISE, THE ARBITRATOR MAY NOT CONSOLIDATE OR JOIN MORE THAN ONE PERSON'S OR PARTY'S CLAIMS AND MAY NOT OTHERWISE PRESIDE OVER ANY FORM OF A CONSOLIDATED, REPRESENTATIVE, OR CLASS PROCEEDING."
       },
       "time_limits": {
-        "title": "Time Limits on Claims",
+        "title": "Time limits on claims",
         "content": "No action against StakeKit arising from or relating to the violation of any rights pertaining to these Terms may be brought more than two years after the date on which the alleged claim arose."
       },
       "changes_terms": {
-        "title": "Changes to the Terms of Use",
+        "title": "Changes to the terms of use",
         "content": "It is the sole discretion of StakeKit to periodically revise and update these Terms of Use. These revisions and updates are effective immediately when we post them and apply to all access to and use of StakeKit. It is your responsibility to periodically check our Terms of Use page so that you are up to date on any changes made, since the changes are binding on you. If you continue to access and use StakeKit after a revision or update to the Terms of Use, then accept and agree to the changes."
       },
       "privacy_policy": {
-        "title": "Privacy Policy",
+        "title": "Privacy policy",
         "content_1": "All of the information that StakeKit collects from its users is subject to the StakeKit Privacy Policy, which could be found here: StakeKit Privacy Policy.",
         "content_2": "By using our website and StakeKit Services, you consent to all of our actions with respect to your personal information in compliance with the StakeKit Privacy Policy."
       },

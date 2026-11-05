@@ -5,6 +5,7 @@ import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
@@ -23,8 +24,9 @@ export type TabOption<T extends string = string> = {
   readonly label: string;
   readonly disabled?: boolean;
   /**
-   * A number beside the label that needs attention, such as pending
-   * actions; part of the tab's name. Unset or zero, none shows.
+   * A number beside the label that needs attention, such as positions with
+   * an action to take, in the warning tone; part of the tab's name. Unset or
+   * zero, none shows.
    */
   readonly count?: number;
   /** Draws a divider before the tab, so it starts a new group. */
@@ -78,7 +80,7 @@ export const Tabs = <const T extends string>({
             {tab.count !== undefined && tab.count > 0 && (
               <>
                 {" "}
-                <span {...stylex.props(styles.count, toneSoftStyles.danger)}>
+                <span {...stylex.props(styles.count, toneSoftStyles.warning)}>
                   {tab.count}
                 </span>
               </>
@@ -228,7 +230,6 @@ const styles = stylex.create({
       default: color.textMuted,
       ":hover:not([data-disabled])": color.text,
       ":is([data-active])": color.text,
-      ":is([data-disabled])": color.textSubtle,
     },
     cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
     flexShrink: 0,
@@ -236,9 +237,10 @@ const styles = stylex.create({
     fontSize: fontSize.label,
     fontWeight: fontWeight.medium,
     lineHeight: lineHeight.label,
+    opacity: { default: 1, ":is([data-disabled])": opacity.disabled },
     position: "relative",
     transitionDuration: motion.fast,
-    transitionProperty: "color",
+    transitionProperty: "color, opacity",
     transitionTimingFunction: motion.easing,
     whiteSpace: "nowrap",
   },

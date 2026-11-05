@@ -6,10 +6,18 @@ import { exactDecimal } from "../../domain/finance/exact";
  * language explicitly. Truncation and rounding happen in exact decimal
  * arithmetic; the locale only supplies separators and affixes, and Intl only
  * renders currency and compact notation after the exact work is done.
+ * Negative figures read with the minus sign (U+2212), and a figure that is
+ * unknown or unavailable reads as `unavailableFigure`.
  */
 
 type NumericValue = string | BigNumber | number;
 type OptionalNumericValue = NumericValue | null | undefined;
+
+/** What every formatter shows for a figure that is unknown or unavailable. */
+export const unavailableFigure = "—";
+
+/** Typographic minus sign in place of the hyphen-minus formatters emit. */
+const withMinusSign = (formatted: string) => formatted.replace("-", "\u2212");
 
 type LocaleNumberSymbols = {
   readonly decimal: string;
@@ -74,17 +82,18 @@ const formatExact = (
     fractionGroupSeparator: "",
     fractionGroupSize: 0,
   };
-
-  return fixedDecimals === undefined
-    ? value.toFormat(format)
-    : value.toFormat(fixedDecimals, BigNumber.ROUND_HALF_UP, format);
+  return withMinusSign(
+    fixedDecimals === undefined
+      ? value.toFormat(format)
+      : value.toFormat(fixedDecimals, BigNumber.ROUND_HALF_UP, format)
+  );
 };
 
 /**
  * Formats a number for display. With `decimals`, the value is truncated
  * (ROUND_DOWN) to that many places; a non-zero value that truncates to zero is
  * shown as below the smallest unit at that precision (`<0.000001`,
- * `>-0.000001`) instead of its full dust digits. Without `decimals`, the exact
+ * `>−0.000001`) instead of its full dust digits. Without `decimals`, the exact
  * value is formatted.
  */
 export const formatNumber = (
@@ -122,24 +131,14 @@ const tokenAmountRoundingModes = {
   up: BigNumber.ROUND_UP,
 } satisfies Record<TokenAmountRounding, BigNumber.RoundingMode>;
 
-const tokenAmountDustDecimals = 6;
-const tokenAmountDustFloor = exactDecimal(1).shiftedBy(
-  -tokenAmountDustDecimals
-);
-const tokenAmountSignificantDigits = 4;
-
-const roundTokenAmount = (value: BigNumber, mode: BigNumber.RoundingMode) => {
-  const magnitude = value.abs();
-
-  if (magnitude.gte(1000)) return value.decimalPlaces(2, mode);
-  if (magnitude.gte(1)) return value.decimalPlaces(4, mode);
-  return value.precision(tokenAmountSignificantDigits, mode);
-};
+const tokenAmountDecimals = 4;
+const tokenAmountFloor = exactDecimal(1).shiftedBy(-tokenAmountDecimals);
 
 /**
- * Token amounts at a precision that follows their magnitude: two decimals from
- * 1,000, four from 1, four significant digits below 1, and the dust marker
- * below 0.000001. Display only; state keeps the exact amount.
+ * Token amounts with at most four decimals at every magnitude, trailing zeros
+ * dropped; a non-zero amount below 0.0001 reads `<0.0001` (`>−0.0001` when
+ * negative), never 0, whichever way it rounds. Display only; state keeps the
+ * exact amount.
  */
 export const formatTokenAmount = (
   number: NumericValue,
@@ -149,12 +148,15 @@ export const formatTokenAmount = (
   const value = exactDecimal(number);
 
   if (value.isZero()) return formatExact(value, locale);
-  if (value.abs().lt(tokenAmountDustFloor)) {
-    return formatNumber(value, locale, tokenAmountDustDecimals);
+  if (value.abs().lt(tokenAmountFloor)) {
+    return formatNumber(value, locale, tokenAmountDecimals);
   }
 
   return formatExact(
-    roundTokenAmount(value, tokenAmountRoundingModes[rounding]),
+    value.decimalPlaces(
+      tokenAmountDecimals,
+      tokenAmountRoundingModes[rounding]
+    ),
     locale
   );
 };
@@ -243,9 +245,11 @@ export const formatCompactNumber = (
   locale: string
 ) => {
   const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
+  if (!amount) return unavailableFigure;
 
-  return getIntlFormatter("compact", locale).format(amount.toNumber());
+  return withMinusSign(
+    getIntlFormatter("compact", locale).format(amount.toNumber())
+  );
 };
 
 const shortTokenAmountFloor = exactDecimal(1000);
@@ -266,8 +270,10 @@ export const formatShortTokenAmount = (
     return formatTokenAmount(value, locale, rounding);
   }
 
-  return getIntlFormatter(`compact-token-amount-${rounding}`, locale).format(
-    value.toNumber()
+  return withMinusSign(
+    getIntlFormatter(`compact-token-amount-${rounding}`, locale).format(
+      value.toNumber()
+    )
   );
 };
 
@@ -283,9 +289,13 @@ export const formatShortTokenAmountWithSymbol = (
 
 const minimumUsd = exactDecimal("0.01");
 
+/**
+ * USD values with two decimals below 1,000 and in compact notation ("$1.25K")
+ * from 1,000; a non-zero value below a cent reads `<$0.01`.
+ */
 export const formatUsd = (value: OptionalNumericValue, locale: string) => {
   const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
+  if (!amount) return unavailableFigure;
 
   const usd = getIntlFormatter("usd", locale);
 
@@ -295,13 +305,15 @@ export const formatUsd = (value: OptionalNumericValue, locale: string) => {
 
   if (absoluteAmount.lt(minimumUsd)) {
     return amount.isNegative()
-      ? `>${usd.format(minimumUsd.negated().toNumber())}`
+      ? withMinusSign(`>${usd.format(minimumUsd.negated().toNumber())}`)
       : `<${usd.format(minimumUsd.toNumber())}`;
   }
 
-  return absoluteAmount.lt(1000)
-    ? usd.format(amount.decimalPlaces(2, BigNumber.ROUND_HALF_UP).toNumber())
-    : getIntlFormatter("compact-usd", locale).format(amount.toNumber());
+  return withMinusSign(
+    absoluteAmount.lt(1000)
+      ? usd.format(amount.decimalPlaces(2, BigNumber.ROUND_HALF_UP).toNumber())
+      : getIntlFormatter("compact-usd", locale).format(amount.toNumber())
+  );
 };
 
 const withPercentAffixes = (formatted: string, locale: string) => {
@@ -316,7 +328,7 @@ const withPercentAffixes = (formatted: string, locale: string) => {
  */
 export const formatPercent = (value: OptionalNumericValue, locale: string) => {
   const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
+  if (!amount) return unavailableFigure;
 
   return withPercentAffixes(formatNumber(amount.times(100), locale, 2), locale);
 };
@@ -327,10 +339,21 @@ const roundedPercent = (value: NumericValue) =>
 
 /**
  * Formats a decimal ratio as a percent rounded half-up to two places, used for
- * reward rates and commissions.
+ * reward rates and commissions. A non-zero ratio that rounds to zero reads
+ * `<0.01%` (`>−0.01%` when negative), so no rate that exists reads as 0%.
  */
-export const formatRoundedPercent = (value: NumericValue, locale: string) =>
-  withPercentAffixes(formatNumber(roundedPercent(value), locale), locale);
+export const formatRoundedPercent = (value: NumericValue, locale: string) => {
+  const exact = exactDecimal(value);
+  const rounded = roundedPercent(exact);
+
+  if (!exact.isZero() && rounded.isZero()) {
+    return exact.isNegative()
+      ? `>${withPercentAffixes(formatExact(exactDecimal("-0.01"), locale), locale)}`
+      : `<${withPercentAffixes(formatExact(exactDecimal("0.01"), locale), locale)}`;
+  }
+
+  return withPercentAffixes(formatNumber(rounded, locale), locale);
+};
 
 /**
  * `formatRoundedPercent` of `target` split as `AnimatedNumber`'s props for a
@@ -364,12 +387,12 @@ export const formatRewardRatePercent = (
   locale: string
 ) =>
   rewardRate == null || exactDecimal(rewardRate).isZero()
-    ? "- %"
+    ? unavailableFigure
     : formatRoundedPercent(rewardRate, locale);
 
 /** LTV past 100% means debt exceeds collateral; the exact figure adds nothing. */
 export const formatLtv = (value: OptionalNumericValue, locale: string) => {
-  if (isMissingNumericInput(value)) return "-";
+  if (isMissingNumericInput(value)) return unavailableFigure;
 
   return exactDecimal(value).gt(1)
     ? `>${withPercentAffixes(formatNumber(100, locale), locale)}`
@@ -390,7 +413,7 @@ export const formatHealthFactor = (
   locale: string
 ) => {
   const amount = toFiniteDecimal(value);
-  if (!amount) return "-";
+  if (!amount) return unavailableFigure;
 
   if (amount.gt(0) && amount.lt(minimumHealthFactor)) {
     return `<${formatNumber(minimumHealthFactor, locale)}`;
@@ -409,19 +432,99 @@ export const formatHealthFactor = (
 
 /**
  * A figure as it moves with an action: `before → after`, or just `after` when
- * the two match or `before` is unknown. `-` is the formatters' unavailable
- * marker, so an unavailable `after` formats to null.
+ * the two match or `before` is unknown. An unavailable `after` formats to
+ * null.
  */
 export const formatFigureChange = <Value>(
   format: (value: Value, locale: string) => string,
   figure: { readonly after: Value; readonly before: Value | null } | null,
   locale: string
 ): string | null => {
-  const after = figure ? format(figure.after, locale) : "-";
-  if (!figure || after === "-") return null;
-  const before = figure.before === null ? "-" : format(figure.before, locale);
+  const after = figure ? format(figure.after, locale) : unavailableFigure;
+  if (!figure || after === unavailableFigure) return null;
+  const before =
+    figure.before === null ? unavailableFigure : format(figure.before, locale);
 
-  return before !== "-" && before !== after ? `${before} → ${after}` : after;
+  return before !== unavailableFigure && before !== after
+    ? `${before} → ${after}`
+    : after;
+};
+
+/**
+ * The fewest decimals, up to two, whose last place is at most a fifth of the
+ * spacing between axis ticks, so a rounded label stays close to where its
+ * tick sits; every tick of an axis then shows that many.
+ */
+const axisDecimals = (ticks: ReadonlyArray<BigNumber>) => {
+  const spacing = BigNumber.min(
+    ...ticks
+      .slice(1)
+      .map((tick, index) => tick.minus(ticks[index] ?? tick).abs())
+  );
+
+  return (
+    [0, 1].find((decimals) =>
+      exactDecimal(1).shiftedBy(-decimals).lte(spacing.div(5))
+    ) ?? 2
+  );
+};
+
+/**
+ * Value-axis labels for decimal ratios, such as "5.6% / 6.5% / 7.4%": one
+ * decimal count for the whole axis, rounded half-up.
+ */
+export const formatPercentAxis = (
+  ratios: ReadonlyArray<NumericValue>,
+  locale: string
+): ReadonlyArray<string> => {
+  const percents = ratios.map((ratio) => exactDecimal(ratio).times(100));
+  const decimals = axisDecimals(percents);
+
+  return percents.map((percent) =>
+    withPercentAffixes(formatExact(percent, locale, decimals), locale)
+  );
+};
+
+const usdAxisUnits = [1e12, 1e9, 1e6, 1e3].map((unit) => exactDecimal(unit));
+
+/**
+ * Value-axis labels for USD values, such as "$0.6K / $1.2K / $1.8K": every
+ * tick in the compact unit of the largest, with one decimal count for the
+ * whole axis, rounded half-up.
+ */
+export const formatUsdAxis = (
+  values: ReadonlyArray<NumericValue>,
+  locale: string
+): ReadonlyArray<string> => {
+  const amounts = values.map((value) => exactDecimal(value));
+  const largest = BigNumber.max(0, ...amounts.map((amount) => amount.abs()));
+  const unit = usdAxisUnits.find((candidate) => largest.gte(candidate));
+  // The language's currency and compact affixes around a sample of the unit;
+  // each tick's own digits go where the sample's are.
+  const sampleParts = unit
+    ? getIntlFormatter("compact-usd", locale).formatToParts(unit.toNumber())
+    : getIntlFormatter("usd", locale).formatToParts(1);
+  const firstNumeric = sampleParts.findIndex(
+    (part) => numericPartTypes[part.type]
+  );
+  const lastNumeric = sampleParts.findLastIndex(
+    (part) => numericPartTypes[part.type]
+  );
+  const prefix = sampleParts
+    .slice(0, firstNumeric)
+    .map((part) => part.value)
+    .join("");
+  const suffix = sampleParts
+    .slice(lastNumeric + 1)
+    .map((part) => part.value)
+    .join("");
+  const scaled = amounts.map((amount) => (unit ? amount.div(unit) : amount));
+  const decimals = axisDecimals(scaled);
+
+  return scaled.map(
+    (amount) =>
+      `${amount.isNegative() ? "\u2212" : ""}${prefix}${formatExact(amount.abs(), locale, decimals)}${suffix}`
+  );
 };
 
 export const toRepresentationNumber = (

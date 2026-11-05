@@ -1127,7 +1127,7 @@ describe("borrow execution flow component", () => {
         );
 
         yield* Effect.promise(() =>
-          userEvent.click(app.getByRole("button", { name: "Try Again" }))
+          userEvent.click(app.getByRole("button", { name: "Try again" }))
         );
         yield* Effect.promise(() => expect.poll(() => signAttempts).toBe(2));
         // Wait until Steps is guarded again before checking nothing reopened.
@@ -1202,7 +1202,7 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByRole("button", { name: "Try Again" }))
+          .element(app.getByRole("button", { name: "Try again" }))
           .toBeInTheDocument()
       );
       yield* Effect.promise(() =>

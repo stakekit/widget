@@ -54,7 +54,7 @@ export const ProviderDetails = ({
               <Icon name="PreferredIcon" size="sm" />
             ) : null}
             {inactive ? (
-              <Badge tone="danger">
+              <Badge tone="warning">
                 {t(
                   providerDetails.status === "jailed"
                     ? "details.validators_jailed"

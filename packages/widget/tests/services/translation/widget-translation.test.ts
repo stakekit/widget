@@ -385,7 +385,7 @@ describe("WidgetTranslation resource ownership", () => {
         translation: {
           errors: {
             KaminoLendingInsufficientSolForRentError: {
-              title: "Insufficient SOL for Account Rent",
+              title: "Insufficient SOL for account rent",
             },
           },
         },

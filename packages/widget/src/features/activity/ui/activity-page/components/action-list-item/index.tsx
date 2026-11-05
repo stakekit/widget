@@ -7,8 +7,9 @@ import { ActivityIcon } from "../activity-icon";
 
 /**
  * An action on two lines: what happened beside its amount, then who ran it
- * and its status unless it completed, beside how long ago. Its full date is
- * the receipt's.
+ * and its status unless it completed, beside when: how long ago within a
+ * week, its date after that. Its full date and time are the receipt's. An
+ * amount whose token is unknown shows in USD, never as a bare number.
  */
 export const ActionListItem = ({
   action,
@@ -28,10 +29,8 @@ export const ActionListItem = ({
     providersDetails,
     iconType,
     title,
-    amountTokenSymbol,
-    amount,
-    amountSign,
-    timestampRelative,
+    amountText,
+    timestamp,
     statusText,
     statusLabel,
   } = listItemView;
@@ -44,12 +43,8 @@ export const ActionListItem = ({
       })
     : undefined;
   const status = toActivityStatusCallout(statusLabel, statusText);
-  // Green is for positive rates and claimable amounts only, so amounts stay
-  // neutral.
-  const amountText = amount
-    ? [`${amountSign}${amount}`, amountTokenSymbol].filter(Boolean).join(" ")
-    : undefined;
 
+  // Amounts stay neutral: green is for positive rates and claimable amounts.
   return (
     <Box paddingBlock={4} width="full">
       <ListRow
@@ -57,8 +52,8 @@ export const ActionListItem = ({
         title={title}
         {...(viaLabel === undefined ? {} : { subtitle: viaLabel })}
         {...(status === null ? {} : { status })}
-        {...(amountText === undefined ? {} : { value: amountText })}
-        {...(timestampRelative === "" ? {} : { subvalue: timestampRelative })}
+        {...(amountText === null ? {} : { value: amountText })}
+        {...(timestamp === "" ? {} : { subvalue: timestamp })}
         onClick={() => onActionSelect(action)}
         selected={isSelected}
         testId={

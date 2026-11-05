@@ -29,6 +29,14 @@ type TimeSeriesChartProps = {
   readonly data: ReadonlyArray<TimeSeriesPoint>;
   /** Formats a value for the value axis, such as "4.2%". */
   readonly formatValue: (value: number) => string;
+  /**
+   * Formats the value axis's ticks together, lowest first, so they can share
+   * one precision, such as "5.6% / 6.5% / 7.4%"; unset, each tick takes
+   * `formatValue`.
+   */
+  readonly formatValueAxis?: (
+    ticks: ReadonlyArray<number>
+  ) => ReadonlyArray<string>;
   /** Formats a time for the time axis, such as "Mar 4". */
   readonly formatTime: (time: number) => string;
   /** Formats the hovered value; unset, `formatValue`. */
@@ -69,6 +77,7 @@ export const TimeSeriesChart = ({
   label,
   data,
   formatValue,
+  formatValueAxis,
   formatTime,
   formatTooltipValue = formatValue,
   formatTooltipTime = formatTime,
@@ -103,6 +112,7 @@ export const TimeSeriesChart = ({
   }
 
   const valueTicks = valueDomain(data.map((point) => point.value));
+  const valueTickLabels = formatValueAxis?.(valueTicks);
   const first = data[0]?.time ?? 0;
   const last = data.at(-1)?.time ?? first;
   const timeTicks = [first, (first + last) / 2, last];
@@ -167,7 +177,9 @@ export const TimeSeriesChart = ({
             domain={[valueTicks[0], valueTicks[2]]}
             orientation="right"
             tick={{ className: tickClassName }}
-            tickFormatter={(value: number) => formatValue(value)}
+            tickFormatter={(value: number) =>
+              valueTickLabels?.[valueTicks.indexOf(value)] ?? formatValue(value)
+            }
             tickLine={false}
             ticks={[...valueTicks]}
             type="number"

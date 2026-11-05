@@ -1,4 +1,4 @@
-import type { DateTime } from "effect";
+import { DateTime, Duration } from "effect";
 import {
   ActionStatus,
   type ActionType,
@@ -18,10 +18,14 @@ import { exactDecimal } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
 import {
   type ActivityRelativeTime,
+  formatDateTime,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
-import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
-import { formatTokenAmount } from "../../../shared/lib/number-format";
+import { sentenceCaseEnumValue } from "../../../shared/lib/formatters";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
 import type {
   ActivityActionItem,
   BorrowActivityItem,
@@ -82,17 +86,56 @@ export type ActivityPresentationTime = {
   readonly timeZone: DateTime.TimeZone;
 };
 
+/** How long ago an action was created within a week, its date after that. */
+type ActivityListTime =
+  | ActivityRelativeTime
+  | { readonly unit: "date"; readonly label: string };
+
 type ActivityActionListItemProjection = {
   readonly amount: string | null;
-  readonly amountSign: "" | "+" | "-";
+  /** `−` is the minus sign (U+2212), as negative figures read everywhere. */
+  readonly amountSign: "" | "+" | "−";
   readonly direction: ActivityDirection;
   readonly isPositive: boolean;
   readonly statusLabel: ActivityStatusLabel | null;
-  /** How long ago the action was created; the receipt gives its full date. */
-  readonly relativeTime: ActivityRelativeTime | null;
+  /** When the action was created; the receipt gives its full date and time. */
+  readonly time: ActivityListTime | null;
   readonly title: ActivityActionTitle;
   /** The symbol of the token the amount is in. */
   readonly amountTokenSymbol: string | null;
+  /** The amount in USD, which a row shows when its token is unknown. */
+  readonly amountFiat: string | null;
+  /** The amount a row shows, signed: see `resolveAmountText`. */
+  readonly amountText: string | null;
+};
+
+const RELATIVE_TIME_WINDOW = Duration.days(7);
+
+const projectActivityListTime = (
+  createdAt: DateTime.Utc,
+  locale: string,
+  presentationTime: ActivityPresentationTime | null
+): ActivityListTime | null => {
+  if (!presentationTime) return null;
+  if (
+    Duration.isLessThan(
+      DateTime.distance(createdAt, presentationTime.now),
+      RELATIVE_TIME_WINDOW
+    )
+  ) {
+    return getActivityRelativeTime(createdAt, presentationTime.now);
+  }
+
+  return {
+    unit: "date",
+    label: formatDateTime(createdAt, {
+      locale,
+      timeZone: presentationTime.timeZone,
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+  };
 };
 
 const getActivityDirection = (type: ActionType): ActivityDirection => {
@@ -287,16 +330,38 @@ const resolveTokenSymbols = ({
 };
 
 const resolveAmountSign = ({
-  amount,
+  shown,
   direction,
 }: {
-  readonly amount: string | null;
+  /** The amount shown, in its token or in USD. */
+  readonly shown: string | null;
   readonly direction: ActivityDirection;
-}): "" | "+" | "-" => {
-  if (!amount) return "";
-  if (direction === "withdraw") return "-";
+}): "" | "+" | "−" => {
+  if (!shown) return "";
+  if (direction === "withdraw") return "−";
   if (direction === "deposit" || direction === "rewards") return "+";
   return "";
+};
+
+/**
+ * The amount a row shows, signed: in its token, or in USD when the token is
+ * unknown. With neither, none: a number without its unit is no amount.
+ */
+const resolveAmountText = ({
+  amount,
+  amountFiat,
+  amountSign,
+  amountTokenSymbol,
+}: {
+  readonly amount: string | null;
+  readonly amountFiat: string | null;
+  readonly amountSign: "" | "+" | "−";
+  readonly amountTokenSymbol: string | null;
+}) => {
+  if (amount && amountTokenSymbol) {
+    return `${amountSign}${amount} ${amountTokenSymbol}`;
+  }
+  return amountFiat ? `${amountSign}${amountFiat}` : null;
 };
 
 const resolveTitle = ({
@@ -338,9 +403,7 @@ const resolveTitle = ({
     default:
       return {
         _tag: "generic",
-        actionLabel: capitalizeFirstLetters(
-          action.actionData.type.replaceAll("_", " ")
-        ),
+        actionLabel: sentenceCaseEnumValue(action.actionData.type),
         tokenSymbol,
       };
   }
@@ -375,17 +438,30 @@ const projectBorrowActivityListItem = ({
     ? formatTokenAmount(exactAmount, locale, "down")
     : null;
 
+  const amountSign = resolveAmountSign({ shown: amount, direction });
+  // Borrow actions carry no USD value.
+  const amountFiat = null;
+
   return {
     amount,
-    amountSign: resolveAmountSign({ amount, direction }),
+    amountSign,
     direction,
     isPositive: direction === "deposit",
     statusLabel: BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status],
-    relativeTime: presentationTime
-      ? getActivityRelativeTime(borrowAction.createdAt, presentationTime.now)
-      : null,
+    time: projectActivityListTime(
+      borrowAction.createdAt,
+      locale,
+      presentationTime
+    ),
     title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
     amountTokenSymbol: tokenSymbol,
+    amountFiat,
+    amountText: resolveAmountText({
+      amount,
+      amountFiat,
+      amountSign,
+      amountTokenSymbol: tokenSymbol,
+    }),
   };
 };
 
@@ -415,10 +491,17 @@ export const projectActivityActionListItem = ({
     action.actionData.amount == null
       ? null
       : formatTokenAmount(action.actionData.amount, locale, "down");
+  const amountFiat = action.actionData.amountUsd?.isGreaterThan(0)
+    ? formatUsd(action.actionData.amountUsd, locale)
+    : null;
+  const amountSign = resolveAmountSign({
+    shown: amount ?? amountFiat,
+    direction,
+  });
 
   return {
     amount,
-    amountSign: resolveAmountSign({ amount, direction }),
+    amountSign,
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
     statusLabel: projectActivityStatusLabel(
@@ -426,12 +509,11 @@ export const projectActivityActionListItem = ({
       settlement,
       presentationTime
     ),
-    relativeTime: presentationTime
-      ? getActivityRelativeTime(
-          action.actionData.createdAt,
-          presentationTime.now
-        )
-      : null,
+    time: projectActivityListTime(
+      action.actionData.createdAt,
+      locale,
+      presentationTime
+    ),
     title: resolveTitle({
       action,
       confidentialKind,
@@ -440,5 +522,12 @@ export const projectActivityActionListItem = ({
       tokenSymbol: titleTokenSymbol,
     }),
     amountTokenSymbol,
+    amountFiat,
+    amountText: resolveAmountText({
+      amount,
+      amountFiat,
+      amountSign,
+      amountTokenSymbol,
+    }),
   };
 };

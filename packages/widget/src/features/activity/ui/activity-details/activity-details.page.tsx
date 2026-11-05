@@ -309,6 +309,8 @@ const Receipt = ({
   const [onlyTransaction, ...otherTransactions] = view.transactions;
   const explorerUrl =
     otherTransactions.length === 0 ? onlyTransaction?.explorerUrl : null;
+  // The USD value stands under a token amount; with no token it is the amount.
+  const showsTokenAmount = Boolean(view.amount && view.amountTokenSymbol);
 
   const openTransaction = (url: string) => {
     window.open(url, "_blank");
@@ -336,14 +338,12 @@ const Receipt = ({
           </Stack>
         </Stack>
 
-        {view.amount ? (
+        {view.amountText ? (
           <Stack gap={4}>
             <Text variant="display" as="p" breakAnywhere>
-              {view.amountTokenSymbol
-                ? `${view.amount} ${view.amountTokenSymbol}`
-                : view.amount}
+              {view.amountText}
             </Text>
-            {view.amountFiat ? (
+            {showsTokenAmount && view.amountFiat ? (
               <Text tone="muted" numeric>
                 {view.amountFiat}
               </Text>

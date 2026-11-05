@@ -91,10 +91,10 @@ properties on the Widget root and the portal container.
 | `onAccent` | Text on accent |
 | `accentSoft` | Chips, selection tint, accent cards and notices, marked text |
 | `accentText` | Links, chip text |
-| `success` / `successSoft` | Positive rates and claimable amounts only |
-| `warning` / `warningSoft` | Pending, risk, KYC notice |
-| `danger` / `dangerSoft` | Errors, action required |
-| `info` / `infoSoft` | Informational notices |
+| `success` / `successSoft` | Positive rates and claimable amounts only; a rate of zero or none is `textMuted`, shown as "—" |
+| `warning` / `warningSoft` | Action required (rewards to claim among it, and the Manage tab's count), a jailed or inactive validator, risk, KYC notice |
+| `danger` / `dangerSoft` | Errors and failures; on an invalid amount, only the line that says why |
+| `info` / `infoSoft` | Informational notices; pending requests and positions in progress |
 | `focusRing` | Focus indicator |
 | `scrim` | Overlay backdrop |
 
@@ -111,6 +111,9 @@ Rules:
 - Text roles keep at least 4.5:1 contrast on every surface role they sit on, and
   focus rings and non-text indicators at least 3:1, in every color scheme and
   Appearance Preset. The contrast test enforces this; a new role pair joins it.
+- A filled `surface` stands at least 1.15:1 off `background`, so a card's edge
+  reads without a border, in every color scheme and Appearance Preset whose
+  surfaces are filled. The contrast test enforces this too.
 - `textSubtle` is never used for information the user needs.
 
 ### Type roles
@@ -140,7 +143,13 @@ explicit `as`, so headings form a real outline.
   the named insets `gutter` and `section`.
 - **Control heights**: `sm` 32, `md` 40, `lg` 48.
 - **Elevation**: `raised`, `overlay`, `shell`. In dark, the shell uses a border
-  instead of a shadow. Selection is a ring plus a tint, never a shadow.
+  instead of a shadow, and a raised surface adds a `borderStrong` outline.
+  Selection is a ring plus a tint, never a shadow; hover is `surfaceHover`
+  alone, never the selection.
+- **Disabled**: a control that cannot be used keeps its variant and state at
+  the `disabled` opacity (40%), so a disabled primary button still reads as
+  the primary action and a disabled switch as on or off; a busy button keeps
+  its full look.
 - **Motion**: 120, 200 and 320 ms with one standard easing; 0 under
   `prefers-reduced-motion`; press feedback scales to 0.98. Parts animated with
   `motion` (`AnimatedNumber`, `PageTransition`) read the same values in
@@ -228,6 +237,34 @@ list (swap, history, gift, info), keeps the icons in a column, as bullets.
 A component shaped by one Feature, such as a Feature's details pane or metric
 card, lives in that Feature and composes Design System parts. It still follows
 the rules above.
+
+Numbers reach the Design System already formatted, by the one formatter in
+`src/shared/lib/number-format.ts`, which keeps values exact (ADR 0006) and
+only shapes their display:
+
+- token amounts: at most four decimals at every magnitude, trailing zeros
+  dropped; a non-zero amount below 0.0001 reads `<0.0001`, never 0. Narrow
+  places use the compact form from 1,000 ("1.23K").
+- USD: two decimals below 1,000, compact from 1,000 ("$1.25K"); below a cent
+  `<$0.01`.
+- percents: reward rates and commissions rounded to two places; a non-zero
+  rate that rounds to zero reads `<0.01%`.
+- a chart's value axis uses one decimal count, and for USD one compact unit,
+  for all its ticks (`formatPercentAxis`, `formatUsdAxis` into
+  `TimeSeriesChart`'s `formatValueAxis`).
+- negative figures use the minus sign `−` (U+2212); a figure that moves reads
+  `before → after`; an unknown or unavailable figure reads `—`
+  (`unavailableFigure`).
+
+`AmountInput` keeps the integer part grouped while typing, and refuses text
+that reads as another language's decimal separator (`123,45` in English)
+rather than regrouping it. Max fills the exact maximum the Feature allows (the
+balance, or less where a limit or gas reserve applies), and that exact amount
+is what is validated and submitted: display never rounds it, so Max never
+submits more than the balance. When the amount does not fit the input even at
+the smallest `display` step, the unfocused input shows only the fraction
+digits that fit, rounded down but never past the first non-zero digit, so a
+non-zero amount never reads 0; focusing shows every digit again.
 
 Hosts and tests locate elements by `data-rk`. A part that takes `hostHook`
 renders it as `data-rk`; the values are the `HostHook` union in

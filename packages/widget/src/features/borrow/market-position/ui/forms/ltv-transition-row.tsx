@@ -1,7 +1,10 @@
 import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { formatLtv } from "../../../../../shared/lib/number-format";
+import {
+  formatFigureChange,
+  formatLtv,
+} from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { DetailRow } from "../../../../../ui/index";
 
@@ -15,12 +18,12 @@ export const LtvTransitionRow = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  if (projectedLtv === null) return null;
-
-  const value =
-    currentLtv === null
-      ? formatLtv(projectedLtv, locale)
-      : `${formatLtv(currentLtv, locale)} -> ${formatLtv(projectedLtv, locale)}`;
+  const value = formatFigureChange(
+    formatLtv,
+    projectedLtv === null ? null : { before: currentLtv, after: projectedLtv },
+    locale
+  );
+  if (value === null) return null;
 
   return (
     <DetailRow label={t("dashboard.borrow.form.ltv_ratio")} value={value} />

@@ -1,4 +1,3 @@
-import type BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
@@ -75,6 +74,9 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     : false;
 
   return {
+    amountEntered: input.amountTouched,
+    /** The amount as typed, a decimal string; `""` for none. */
+    amountValue: input.stakeAmount,
     amountInitialization: "PreserveIntent",
     availableAmount: tokenBalance.availableAmount,
     hiddenTokenBalance: tokenBalance.hiddenTokenBalance,
@@ -184,6 +186,7 @@ export const earnEntryViewAtom = Atom.make((get) => {
     selectedToken,
     selectedTokenAvailableAmount,
     selectedValidators,
+    amountValue: input.amountValue,
     stakeAmount: entry.amount,
     stakeMaxAmount,
     stakeMinAmount,
@@ -195,8 +198,9 @@ export const earnEntryViewAtom = Atom.make((get) => {
   } as const;
 }).pipe(Atom.withLabel("earnEntryViewAtom"));
 
-export const setEarnAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
-  context.set(setEarnSelectionAmountAtom, amount.toString(10))
+/** Takes the amount input's decimal string, `""` once cleared. */
+export const setEarnAmountAtom = Atom.fnSync((amount: string, context) =>
+  context.set(setEarnSelectionAmountAtom, amount)
 ).pipe(Atom.withLabel("setEarnAmountAtom"));
 
 export const earnProviderOptionsViewAtom = Atom.make((get) => ({

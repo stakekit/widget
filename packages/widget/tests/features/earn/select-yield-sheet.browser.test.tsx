@@ -161,7 +161,7 @@ describe("select yield sheet", () => {
     expect(row("lending-b").element().textContent).toContain("APR");
 
     // A missing rate beside a long name stays on one line.
-    expect(lineCount(leafWithText("staking-a", "- %"))).toBe(1);
+    expect(lineCount(leafWithText("staking-a", "—"))).toBe(1);
     expect(lineCount(leafWithText("staking-b", "1.86%"))).toBe(1);
   });
 });

@@ -29,18 +29,23 @@ export const usePositionListItem = (item: PositionItem) => {
     )
   ).providers;
 
-  const rewardRateAverage =
-    providersDetails && integrationData
-      ? formatRewardRatePercent(
-          providersDetails
-            .reduce(
-              (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
-              exactZero()
-            )
-            .dividedBy(providersDetails.length),
-          locale
-        )
-      : null;
+  // The rate as shown, and whether it is a gain: only a positive rate reads
+  // in the success tone, not zero or an unknown rate.
+  const getRewardRateAverage = () => {
+    if (!providersDetails || !integrationData) return null;
+    const average = providersDetails
+      .reduce(
+        (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
+        exactZero()
+      )
+      .dividedBy(providersDetails.length);
+
+    return {
+      text: formatRewardRatePercent(average, locale),
+      isPositive: average.isGreaterThan(0),
+    };
+  };
+  const rewardRateAverage = getRewardRateAverage();
 
   const inactiveValidator = toInactiveValidatorStatus(providersDetails);
 

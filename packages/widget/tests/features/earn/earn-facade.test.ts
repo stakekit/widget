@@ -99,6 +99,7 @@ describe("Earn facade", () => {
         Atom.initialValue(earnSelectionViewAtom, {
           canSubmit: false,
           form: {
+            amountTouched: false,
             providerOption: null,
             stakeAmount: "0",
             tronResource: null,
@@ -148,6 +149,7 @@ describe("Earn facade", () => {
     const tokenOption = {
       amount: new BigNumber("10"),
       availableYields: [selectedYield.id],
+      funded: true,
       source: "balance",
       token: selectedYield.token,
     } satisfies EarnTokenOption;
@@ -190,6 +192,7 @@ describe("Earn facade", () => {
     ): EarnTokenOption => ({
       amount: amount === null ? null : new BigNumber(amount),
       availableYields: [selectedYield.id],
+      funded: amount !== null,
       source: amount === null ? "default" : "balance",
       token: {
         ...selectedYield.token,
@@ -266,6 +269,7 @@ describe("Earn facade", () => {
     ): EarnTokenOption => ({
       amount: new BigNumber(amount),
       availableYields: [selectedYield.id],
+      funded: false,
       source: "balance",
       token: {
         ...selectedYield.token,

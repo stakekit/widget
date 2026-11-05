@@ -11,10 +11,12 @@ import * as stylex from "@stylexjs/stylex";
  */
 export const lightColorRoles = {
   background: "#FFFFFF",
-  surface: "#F4F4F6",
-  surfaceHover: "#ECECEF",
+  // `surface` stands 1.16:1 off the canvas, so a filled card's edge reads
+  // without a border of its own.
+  surface: "#EEEEF1",
+  surfaceHover: "#E6E6EA",
   surfaceRaised: "#FFFFFF",
-  border: "#E4E4E7",
+  border: "#DFDFE4",
   borderStrong: "#D4D4D8",
   text: "#18181B",
   textMuted: "#5F5F6B",

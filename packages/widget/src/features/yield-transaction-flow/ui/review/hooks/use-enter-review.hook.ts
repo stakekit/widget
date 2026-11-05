@@ -10,6 +10,7 @@ import {
   formatExactPercent,
   formatRewardRatePercent,
   formatTokenAmount,
+  unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
@@ -49,8 +50,8 @@ export const useEnterReview = () => {
 
   const estimatedRewardAmounts = estimatedRewards
     ? {
-        earnYearly: `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`,
-        earnMonthly: `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : "-"} ${rewardsTokenSymbol}`,
+        earnYearly: `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`,
+        earnMonthly: `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`,
       }
     : null;
 

@@ -1,6 +1,9 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { formatUsd } from "../../../../../../../shared/lib/number-format";
+import {
+  formatUsd,
+  unavailableFigure,
+} from "../../../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../../../shared/react/widget-presentation";
 import {
   Button,
@@ -30,7 +33,7 @@ const getProviderTvl = (
 
   const formatted = formatUsd(tvlUsd, locale);
 
-  return formatted === "-" ? null : formatted;
+  return formatted === unavailableFigure ? null : formatted;
 };
 
 const ProviderOptionSummary = ({

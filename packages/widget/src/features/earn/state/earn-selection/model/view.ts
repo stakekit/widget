@@ -14,7 +14,7 @@ import {
 } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
-import { resolveToken } from "./token";
+import { findReachableDefaultToken, resolveToken } from "./token";
 import { resolveValidators } from "./validators";
 import {
   disabledValidatorsViewResource,
@@ -172,18 +172,13 @@ export const resolveEarnView = ({
 
   const tokenResult = observations.tokenOptions;
   const tokenOptions = getAvailableValue(tokenResult, []);
-  const previousToken =
-    previous?.selection.category === category.category
-      ? previous.selection.token
-      : null;
-  const selectedToken = resolveToken({
-    entry,
-    previousToken,
-    selectedTokenKey: intent.selectedTokenKey,
-    tokenOptions,
-  });
   const tokenLoading = isResolving(tokenResult) && tokenOptions.length === 0;
   const tokenFailure = isBlockingFailure(tokenResult);
+  const reachableDefaultYields = observations.reachableDefaultYields;
+  const reachableDefaultLoading =
+    reachableDefaultYields !== null &&
+    !hasAvailableValue(reachableDefaultYields) &&
+    isResolving(reachableDefaultYields);
   const tokenFacts: EarnViewFacts = {
     ...categoryFacts,
     blockingFailure: tokenFailure,
@@ -194,8 +189,9 @@ export const resolveEarnView = ({
     loading: {
       ...categoryFacts.loading,
       initialSelection:
-        tokenLoading &&
-        (!!entry.initParams?.token || !!entry.initParams?.yieldId),
+        reachableDefaultLoading ||
+        (tokenLoading &&
+          (!!entry.initParams?.token || !!entry.initParams?.yieldId)),
       tokens: tokenLoading,
     },
     resources: {
@@ -203,6 +199,31 @@ export const resolveEarnView = ({
       tokenOptions: { items: tokenOptions, waiting: tokenResult.waiting },
     },
   };
+
+  // Waits rather than show a yield the user cannot reach and then switch.
+  if (reachableDefaultLoading) {
+    return makeEarnView({ ...tokenFacts, intent });
+  }
+
+  const previousToken =
+    previous?.selection.category === category.category
+      ? previous.selection.token
+      : null;
+  const selectedToken =
+    (reachableDefaultYields
+      ? findReachableDefaultToken({
+          entry,
+          positions: positionsData,
+          tokenOptions,
+          yields: getAvailableValue(reachableDefaultYields, []),
+        })
+      : null) ??
+    resolveToken({
+      entry,
+      previousToken,
+      selectedTokenKey: intent.selectedTokenKey,
+      tokenOptions,
+    });
 
   if (!selectedToken || tokenFailure) {
     return makeEarnView({ ...tokenFacts, intent });
@@ -221,6 +242,7 @@ export const resolveEarnView = ({
       : null;
   const selectedYield = resolveYield({
     entry,
+    positions: positionsData,
     previousYield,
     selectedToken,
     selectedYieldId: intent.selectedYieldId,

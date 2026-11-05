@@ -224,7 +224,7 @@ const useValidatorOptions = (selectedStake: EarnYieldWithProvider) => {
       if (validator.status === "jailed") {
         return {
           label: t("details.validators_jailed"),
-          tone: "danger",
+          tone: "warning",
         } as const;
       }
       if (validator.status && validator.status !== "active") {

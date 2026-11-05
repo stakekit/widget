@@ -64,7 +64,7 @@ describe("Design System isolation", () => {
     const app = await renderApp();
 
     await expect
-      .element(app.getByRole("button", { name: "Connect Wallet" }))
+      .element(app.getByRole("button", { name: "Connect wallet" }))
       .toBeInTheDocument();
 
     expect(computedFormControlStyles(document)).toEqual(expected);
@@ -85,7 +85,7 @@ describe("Design System isolation", () => {
       const app = await renderApp({
         skProps: { apiKey: import.meta.env.VITE_API_KEY, ...skProps },
       });
-      const cta = app.getByRole("button", { name: "Connect Wallet" });
+      const cta = app.getByRole("button", { name: "Connect wallet" });
 
       await expect.element(cta).toBeInTheDocument();
 
@@ -101,7 +101,7 @@ describe("Design System isolation", () => {
 
   it("shows a focus ring on the call-to-action reached by keyboard", async () => {
     const app = await renderApp();
-    const cta = app.getByRole("button", { name: "Connect Wallet" });
+    const cta = app.getByRole("button", { name: "Connect wallet" });
 
     await expect.element(cta).toBeEnabled();
 

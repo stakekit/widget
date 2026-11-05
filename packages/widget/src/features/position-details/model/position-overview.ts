@@ -66,7 +66,11 @@ import {
 } from "../../yield-summary/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
 
-type PositionOverviewStatusTone = "action" | "claim" | "default";
+/**
+ * `action` is a status that asks something of the user, claiming rewards
+ * among them, as the positions list and the Manage tab's count read it.
+ */
+type PositionOverviewStatusTone = "action" | "default";
 
 type PositionOverviewMetricCard = {
   id: string;
@@ -822,11 +826,8 @@ const formatTokenSums = (sums: ReadonlyArray<TokenAmount>, locale: string) => {
 
 const getPendingActionTone = (
   type: PendingAction["type"]
-): PositionOverviewStatusTone => {
-  if (type === "CLAIM_REWARDS") return "claim";
-  if (isOptionalPendingAction(type)) return "default";
-  return "action";
-};
+): PositionOverviewStatusTone =>
+  isOptionalPendingAction(type) ? "default" : "action";
 
 // Pending action types come from the API and can outpace our translation map
 // (e.g. RWA-specific actions). Fall back to a humanized version of the type so

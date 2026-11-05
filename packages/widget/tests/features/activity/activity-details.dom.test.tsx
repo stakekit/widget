@@ -112,7 +112,9 @@ describe("Activity details receipt", () => {
       'button[aria-label="View Stake transaction"]'
     );
 
-    expect(app.container.textContent).toContain("-1,000,000,000,000,000.12");
+    expect(app.container.textContent).toContain(
+      "\u22121,000,000,000,000,000.1234"
+    );
     expect(app.container.textContent).toContain("1 failed");
     expect(app.container.textContent).not.toContain("Continue");
     expect(rows.map((row) => row.textContent)).toEqual([
@@ -229,7 +231,7 @@ describe("Activity details receipt", () => {
       </I18nextProvider>
     );
     const retry = Array.from(app.container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Try Again"
+      (button) => button.textContent === "Try again"
     );
 
     expect(app.container.textContent).toContain("Something went wrong");

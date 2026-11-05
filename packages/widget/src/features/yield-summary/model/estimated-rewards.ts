@@ -43,12 +43,12 @@ export const getYieldEstimatedRewards = ({
   // Exact amounts; the presentation layer formats them in the Widget language.
   return {
     monthly: rewardRateAverage.isGreaterThan(0)
-      ? rewardAmount.times(rewardRateAverage).dividedBy(12).decimalPlaces(5)
+      ? rewardAmount.times(rewardRateAverage).dividedBy(12)
       : null,
     rewardRateAverage,
     rewardType: selectedYield.rewardRate.rateType?.toLowerCase(),
     yearly: rewardRateAverage.isGreaterThan(0)
-      ? rewardAmount.times(rewardRateAverage).decimalPlaces(5)
+      ? rewardAmount.times(rewardRateAverage)
       : null,
   } as const;
 };

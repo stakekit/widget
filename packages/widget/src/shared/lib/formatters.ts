@@ -50,9 +50,11 @@ export const getGasFeeInUSD = ({
     baseToken: null,
   });
 
-  return `${formatTokenAmount(gas, locale, "up")} ${
-    yieldDto.mechanics.gasFeeToken.symbol
-  } ${gasFeeInUSD.isGreaterThan(0) ? ` (${formatUsd(gasFeeInUSD, locale)})` : ""}`;
+  const fee = `${formatTokenAmount(gas, locale, "up")} ${yieldDto.mechanics.gasFeeToken.symbol}`;
+
+  return gasFeeInUSD.isGreaterThan(0)
+    ? `${fee} (${formatUsd(gasFeeInUSD, locale)})`
+    : fee;
 };
 
 export const getFeesInUSD = ({
@@ -76,9 +78,11 @@ export const getFeesInUSD = ({
     baseToken: null,
   });
 
-  return `${formatTokenAmount(amount, locale, "up")} ${token.symbol} ${
-    feeInUSD.isGreaterThan(0) ? ` (${formatUsd(feeInUSD, locale)})` : ""
-  }`;
+  const fee = `${formatTokenAmount(amount, locale, "up")} ${token.symbol}`;
+
+  return feeInUSD.isGreaterThan(0)
+    ? `${fee} (${formatUsd(feeInUSD, locale)})`
+    : fee;
 };
 
 export const formatNetworkName = (network: string) =>

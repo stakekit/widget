@@ -139,7 +139,7 @@ const ControlledModal = () => {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title="Geo Block"
+        title="Not available in your region"
         closeLabel="Close"
         description="This feature is not available in your region."
       />
@@ -151,7 +151,9 @@ const ControlledModal = () => {
 export const Controlled: Story = {
   render: () => <ControlledModal />,
   play: async () => {
-    const popup = await screen.findByRole("dialog", { name: "Geo Block" });
+    const popup = await screen.findByRole("dialog", {
+      name: "Not available in your region",
+    });
     await waitFor(() => expect(popup).toBeVisible());
     await expect(popup).toHaveAccessibleDescription(
       "This feature is not available in your region."

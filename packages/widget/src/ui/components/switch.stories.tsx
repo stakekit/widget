@@ -96,6 +96,37 @@ export const Disabled: Story = {
   },
 };
 
+/**
+ * A disabled switch keeps its on look, faded, so it reads as on but locked
+ * rather than as another enabled switch.
+ */
+export const DisabledLook: Story = {
+  render: () => (
+    <div style={{ display: "grid", gap: 12, width: 280 }}>
+      <Switch checked onCheckedChange={fn()} label="Enabled" />
+      <Switch checked onCheckedChange={fn()} label="Disabled" disabled />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const enabled = getComputedStyle(
+      canvas.getByRole("switch", { name: "Enabled" })
+    );
+    const disabled = getComputedStyle(
+      canvas.getByRole("switch", { name: "Disabled" })
+    );
+
+    await expect(disabled.backgroundColor).toBe(enabled.backgroundColor);
+    await expect(Number(disabled.opacity)).toBeLessThan(0.5);
+    await expect(Number(enabled.opacity)).toBe(1);
+  },
+};
+
+export const DisabledDark: Story = {
+  ...DisabledLook,
+  globals: { colorScheme: "dark" },
+};
+
 /** A hidden label still names the switch for assistive technology. */
 export const LabelHidden: Story = {
   args: { labelHidden: true },
