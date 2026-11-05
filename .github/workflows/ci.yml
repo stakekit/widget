@@ -60,7 +60,7 @@ jobs:
       - uses: ./.github/actions/setup
       - run: mise run test:dom
 
-  # Browser test files run serially (fileParallelism: false); shards split them across runners.
+  # Browser test files run two at a time within a runner; shards split them across runners.
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

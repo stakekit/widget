@@ -1,23 +1,21 @@
 import { test as base, describe, expect, vi } from "@effect/vitest";
-import { worker } from "../mocks/worker";
+import { NetworkReadyState } from "msw/experimental";
+import { network } from "../mocks/network";
 import { makeFixtureMethods } from "./effect-test";
 
-export type TestWorker = typeof worker;
+export type TestWorker = typeof network;
 
-let isWorkerStarted = false;
-
-const test = base.extend<{ worker: typeof worker }>({
+const test = base.extend<{ worker: typeof network }>({
   worker: [
     // biome-ignore lint/correctness/noEmptyPattern: Vitest fixtures require object destructuring here.
     async ({}, use) => {
-      if (!isWorkerStarted) {
-        await worker.start({ quiet: true });
-        isWorkerStarted = true;
+      if (network.readyState === NetworkReadyState.DISABLED) {
+        await network.enable();
       }
 
-      await use(worker);
+      await use(network);
 
-      worker.resetHandlers();
+      network.resetHandlers();
     },
     {
       auto: true,

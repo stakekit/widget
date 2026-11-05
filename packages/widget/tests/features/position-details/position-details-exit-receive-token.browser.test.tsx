@@ -110,9 +110,15 @@ describe("Position Details Exit Receive Token selector", () => {
 
     await userEvent.click(app.getByText("USDC"));
 
+    // The chip also renders token and network icons, whose monogram fallback
+    // adds initials to its text content.
     await expect
-      .element(app.getByTestId("position-details-exit-receive-token"))
-      .toHaveTextContent("USDC");
+      .element(
+        app
+          .getByTestId("position-details-exit-receive-token")
+          .getByText("USDC", { exact: true })
+      )
+      .toBeInTheDocument();
     await expect
       .element(app.getByText("You will receive USDC when you withdraw."))
       .toBeInTheDocument();

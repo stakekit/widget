@@ -114,6 +114,7 @@
     "@luno-kit/core": "catalog:",
     "@meshsdk/wallet": "catalog:",
     "@msw/playwright": "catalog:",
+    "@mswjs/interceptors": "catalog:",
     "@polkadot/types": "catalog:",
     "@polkadot/util": "catalog:",
     "@radix-ui/react-dialog": "catalog:",
@@ -187,10 +188,5 @@
     "vitest-browser-react": "catalog:",
     "wagmi": "catalog:",
     "yaml": "catalog:"
-  },
-  "msw": {
-    "workerDirectory": [
-      "tests/mocks/public"
-    ]
   }
 }

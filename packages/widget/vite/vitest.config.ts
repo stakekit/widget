@@ -76,16 +76,12 @@ export default defineConfig(
           {
             extends: true,
             cacheDir: testCacheDir("browser"),
-            // MSW's service worker script is test infrastructure: only the
-            // browser tests serve it, never the playground or its builds.
-            publicDir: path.resolve(
-              import.meta.dirname,
-              "..",
-              "tests/mocks/public"
-            ),
             test: {
               name: "browser",
-              fileParallelism: false,
+              // Files run in parallel pages. More than two at once starves
+              // Playwright's user events (locator.click timeouts) on a 10-core
+              // machine, and CI runners have four cores.
+              maxWorkers: 2,
               include: [browserTestPattern],
               setupFiles: [
                 path.resolve(
@@ -98,7 +94,16 @@ export default defineConfig(
               browser: {
                 enabled: true,
                 screenshotFailures: false,
-                provider: playwright(),
+                // MSW intercepts fetch and XMLHttpRequest in the page; images,
+                // fonts, scripts and frames bypass it. Resolving every host but
+                // the Vitest server to nothing keeps those off the real network.
+                provider: playwright({
+                  launchOptions: {
+                    args: [
+                      "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1",
+                    ],
+                  },
+                }),
                 instances: [{ browser: "chromium" }],
                 viewport: { width: 800, height: 900 },
                 headless: true,

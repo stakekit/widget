@@ -60,7 +60,11 @@ Install dependencies only when manifests, the lockfile, or the task require it.
 Use the normal pnpm store rather than creating a project-local store.
 
 Test project selection is filename-based: `*.browser.test.*` uses Chromium,
-`*.dom.test.*` uses jsdom, and other tests run in Node.
+`*.dom.test.*` uses jsdom, and other tests run in Node. Chromium test files run
+two at a time, each mocking the API in its own page through MSW's `fetch` and
+`XMLHttpRequest` interceptors (`tests/mocks/network.ts`, no service worker);
+Chromium resolves no host but the Vitest server, so images, fonts and scripts
+never reach the real network.
 
 ## Working rules
 
