@@ -66,13 +66,20 @@ One look per concept:
 - **Action cards.** An action a position offers, such as Claim, Withdraw or a
   borrow position's Repay, is one `ActionCard`: a filled card with the
   summary beside a small `soft` button that names the verb. Sibling action
-  cards sit 8px apart; the button keeps its row at every width.
+  cards sit 8px apart; the button keeps its row at every width. It stays
+  `soft`, not primary, so the screen's call to action (Unstake) stays the one
+  accent fill.
 - **Step indicator.** `Steps` (and `FlowSteps` over it) draws every step as a
   24px disc: waiting is a ring on the surface, the step under way an accent
-  spinner, a step waiting for the wallet's signature a wallet glyph on the
-  accent tint, done a success outline check, failed a danger outline cross.
-  A finished step's connector turns success; accent stays with the current
-  step.
+  arc turning on its ring, a step waiting for the wallet's signature a wallet
+  glyph on the accent tint with a slow halo pulsing out behind it, done a
+  success outline check, failed a danger outline cross. The connector below
+  a step under way fills in the accent by its stage, a third while it is
+  submitted and two thirds while it is confirmed; a finished step's connector
+  turns success. Under reduced motion the arc and the halo hold still and the
+  fill changes at once. `FlowSteps` adds, under the steps, a card asking to
+  check the wallet while a signature is awaited, and a card of the flow's
+  details.
 
 ## Tokens
 
@@ -93,7 +100,10 @@ properties on the Widget root and the portal container.
    `dangerSoft` are derived from their base role the same way. `onAccent` is
    whichever of the scheme's `onAccent` and dark text contrasts more with an
    opaque hex or `rgb()` accent (the scheme's otherwise), and hover moves the
-   accent away from it. A host may set any derived role explicitly.
+   accent away from it until it stands at least 1.2:1 off the accent, keeping
+   `onAccent` at 4.5:1 (an accent already at that end moves toward `onAccent`
+   instead). Every shipped `accentHover` stands at least 1.15:1 off its
+   accent. A host may set any derived role explicitly.
 
 ### Color Roles
 
@@ -129,6 +139,11 @@ Rules:
 - A soft `Badge` sits on rows and cards, not the canvas, so it mixes its tone's
   text color into `surface` by the `badgeTint` weights: a faint fill that keeps
   the text at 4.5:1, and a 1px edge at least 1.5:1 on every surface.
+- A `soft` button's and a `Chip`'s tint nearly matches the `surface` of the
+  card it sits on, and a tint deep enough to stand off it would drop its
+  accent text below 4.5:1, so each has a 1px edge too: its label color mixed
+  into `surface` by `softControlTint.edge`, at least 1.5:1 on every surface.
+  A selected chip's edge is the accent instead.
 - Text roles keep at least 4.5:1 contrast on every surface role they sit on, and
   focus rings and non-text indicators at least 3:1, in every color scheme and
   Appearance Preset. The contrast test enforces this; a new role pair joins it.
@@ -172,10 +187,17 @@ explicit `as`, so headings form a real outline.
   the primary action and a disabled switch as on or off; a busy button keeps
   its full look.
 - **Motion**: 120, 200 and 320 ms with one standard easing; 0 under
-  `prefers-reduced-motion`; press feedback scales to 0.98. Parts animated with
+  `prefers-reduced-motion`; press feedback scales to 0.98, and a filled
+  button's fill also changes while pressed (`pressTint`: the primary deepens
+  past its hover, a soft or danger fill takes a little of its label color).
+  Loops have their own durations, also 0 under reduced motion: `spin` (800 ms)
+  for a spinner's turn, `pulse` (1600 ms) for a skeleton's breath, `halo`
+  (2400 ms) for a signing step's halo. Parts animated with
   `motion` (`AnimatedNumber`, `PageTransition`) read the same values in
   seconds from `ui/tokens/motion-timing.ts`, read the preference themselves and
-  show their final state at once under reduced motion.
+  show their final state at once under reduced motion. Keyframes that more
+  than one part plays, such as `drawIn` for a drawn check, live once in
+  `ui/tokens/keyframes.stylex.ts`.
 - **Container sizes**: `sm` 400, `md` 520, `split` 960. These are the only
   thresholds for in-Widget layout, which responds to container width only.
   Below `split` the Dashboard stacks in one column: a `SplitView` puts its

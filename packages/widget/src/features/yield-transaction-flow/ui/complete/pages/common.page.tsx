@@ -13,8 +13,10 @@ import {
   isEthenaUsdeStaking,
 } from "../../../../../domain/earn/yield";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
+import type { Token } from "../../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { formatTransactionHash } from "../../../../../shared/lib/general";
+import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { CompleteSummary } from "../../../../../ui/index";
 import {
   AnimationPage,
@@ -37,6 +39,11 @@ type Props = {
   amount: string;
   /** The amount's token symbol, after the amount in the title. */
   network: string;
+  /**
+   * The token the action returned, whose logo leads the summary; without
+   * one, the provider's logo does.
+   */
+  receivedToken: Token | null;
   pendingActionType?: YieldPendingActionType;
   pendingActionLabelContext?: PendingActionLabelContext | undefined;
   /** The request was queued into this vault's next batch, not settled. */
@@ -63,6 +70,7 @@ type CompletePageProps = Omit<Props, "completion">;
 export const CompletePageComponent = ({
   amount,
   network,
+  receivedToken,
   pendingActionType,
   pendingActionLabelContext,
   batched = null,
@@ -75,6 +83,7 @@ export const CompletePageComponent = ({
 }: Props) => {
   const { t } = useTranslation();
   const presentationTime = useAtomValue(presentationClockAtom);
+  const resolveTokenLogo = useTokenLogoResolver();
 
   const {
     cta,
@@ -140,6 +149,12 @@ export const CompletePageComponent = ({
   const providerNames = (providersDetails ?? [])
     .flatMap((provider) => (provider.name ? [provider.name] : []))
     .join(", ");
+  const receivedLogo = receivedToken
+    ? resolveTokenLogo(receivedToken, { badge: "none" })
+    : null;
+  const providerLogo = providersDetails?.find(
+    (provider) => provider.logo
+  )?.logo;
 
   const transactions = urls.map((transaction, index) => {
     const type = capitalize(
@@ -165,6 +180,11 @@ export const CompletePageComponent = ({
       <PageContainer>
         <CompleteSummary
           as="h1"
+          mark={{
+            name: receivedLogo?.name ?? network,
+            tokenSrc: receivedLogo?.src,
+            providerSrc: providerLogo,
+          }}
           title={t(successKey, {
             action,
             amount,

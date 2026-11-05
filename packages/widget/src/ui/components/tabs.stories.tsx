@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { Text } from "../primitives/text";
+import { outlineUnclipped } from "../storybook/geometry";
 import { type TabOption, Tabs } from "./tabs";
 
 type Section = "earn" | "positions" | "activity";
@@ -191,4 +192,45 @@ export const CountAndGroups: Story = {
     await expect(within(list).getAllByRole("tab")).toHaveLength(3);
     await expect(list.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
   },
+};
+
+/**
+ * In a narrow bar that scrolls its tabs across, each tab draws its focus ring
+ * inside its edge, where the bar would cut off one drawn outside, at either
+ * end of the bar.
+ */
+export const RingInsideScrollingBar: Story = {
+  render: (args) => (
+    <div style={{ width: 140, overflowX: "auto" }}>
+      <Tabs
+        tabs={grouped}
+        value="earn"
+        onValueChange={args.onValueChange}
+        label="Sections"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const earn = canvas.getByRole("tab", { name: "Earn" });
+    const activity = canvas.getByRole("tab", { name: "Activity" });
+
+    await userEvent.tab();
+    await expect(earn).toHaveFocus();
+    await expect(outlineUnclipped(earn)).toBe(true);
+
+    await userEvent.keyboard("{ArrowLeft}");
+    await expect(activity).toHaveFocus();
+    await expect(outlineUnclipped(activity)).toBe(true);
+  },
+};
+
+export const RingInsideScrollingBarPill: Story = {
+  ...RingInsideScrollingBar,
+  globals: { tabsIndicator: "pill" },
+};
+
+export const RingInsideScrollingBarDark: Story = {
+  ...RingInsideScrollingBar,
+  globals: { colorScheme: "dark" },
 };

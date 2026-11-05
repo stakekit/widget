@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { Stack } from "../primitives/stack";
+import { softControlSetOff } from "../storybook/painted-color";
+import { Card } from "./card";
 import { Chip } from "./chip";
 
 const meta = {
@@ -34,6 +36,36 @@ export const States: Story = {
 
 export const StatesDark: Story = {
   ...States,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * On a filled card, such as the amount panel's "Max", the chip's tint nearly
+ * matches the card's surface, so a 1px accent edge, at least 1.5:1 on the
+ * card (as the contrast test holds it), bounds it in either scheme.
+ */
+export const SetOffTheSurface: Story = {
+  render: (args) => (
+    <Card padding={16} testId="surface">
+      <Chip {...args} />
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const setOff = softControlSetOff(
+      canvas.getByRole("button", { name: "Max" }),
+      getComputedStyle(canvas.getByTestId("surface")).backgroundColor
+    );
+
+    await expect(setOff.fillDiffers).toBe(true);
+    await expect(setOff.edgeWidth).toBe("1px");
+    await expect(setOff.edgeOpaque).toBe(true);
+    await expect(setOff.edgeContrast).toBeGreaterThanOrEqual(1.5);
+  },
+};
+
+export const SetOffTheSurfaceDark: Story = {
+  ...SetOffTheSurface,
   globals: { colorScheme: "dark" },
 };
 

@@ -10,10 +10,12 @@ import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 
 type StepsMock = {
   cta?: PageCta;
+  details?: ReadonlyArray<{ label: string; value: string; caption?: string }>;
   numbered: boolean;
   retry?: () => void;
   summary?: { title: string; detail?: string; token: { name: string } };
   txStates: ReadonlyArray<YieldStepRow>;
+  wallet?: { name: string; logo?: string } | null;
 };
 
 const steps = vi.hoisted(() => ({
@@ -36,6 +38,8 @@ vi.mock(
       retry: steps.current.retry,
       summary: steps.current.summary ?? null,
       txStates: steps.current.txStates,
+      details: steps.current.details ?? [],
+      wallet: steps.current.wallet ?? null,
       yieldId: "zama-vault",
     }),
   })
@@ -191,5 +195,61 @@ describe("Yield Steps page progress", () => {
     button?.click();
     expect(retry).toHaveBeenCalledOnce();
     app.unmount();
+  });
+
+  it("asks to approve the signing transaction in the wallet, then lists the details", async () => {
+    const app = await renderSteps({
+      details: [
+        { caption: "$24.20", label: "Amount", value: "0.01 ETH" },
+        { label: "Estimated gas", value: "0.0002 ETH" },
+      ],
+      numbered: true,
+      txStates: [
+        { ...row("APPROVAL"), done: true },
+        { ...row("STAKE"), phases: { ...idle, sign: "active" } },
+      ],
+      wallet: { name: "MetaMask" },
+    });
+
+    const prompt = app.container.querySelector(
+      '[data-testid="flow-steps-signature-prompt"]'
+    );
+    expect(prompt?.textContent).toContain("Check your wallet");
+    expect(prompt?.textContent).toContain(
+      "Approve the Stake transaction in MetaMask"
+    );
+    const details = app.container.querySelector(
+      '[data-testid="flow-steps-details"]'
+    );
+    expect(details?.textContent).toContain("Amount0.01 ETH$24.20");
+    expect(details?.textContent).toContain("Estimated gas0.0002 ETH");
+    app.unmount();
+  });
+
+  it("names no wallet it does not know, and asks nothing once no step signs", async () => {
+    const signing = await renderSteps({
+      numbered: true,
+      txStates: [{ ...row("STAKE"), phases: { ...idle, sign: "active" } }],
+    });
+    expect(signing.container.textContent).toContain(
+      "Approve the Stake transaction in your wallet"
+    );
+    signing.unmount();
+
+    const sending = await renderSteps({
+      numbered: true,
+      txStates: [
+        {
+          ...row("STAKE"),
+          phases: { broadcast: "active", confirm: "idle", sign: "done" },
+        },
+      ],
+      wallet: { name: "MetaMask" },
+    });
+    expect(sending.container.textContent).not.toContain("Check your wallet");
+    expect(
+      sending.container.querySelector('[data-testid="flow-steps-details"]')
+    ).toBeNull();
+    sending.unmount();
   });
 });

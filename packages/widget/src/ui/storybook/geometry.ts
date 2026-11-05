@@ -68,6 +68,35 @@ export const viewportBox = (element: Element) => {
   };
 };
 
+/** The nearest ancestor that clips what overflows it, such as a scroller. */
+const clippingAncestor = (element: Element): Element | undefined => {
+  const parent = element.parentElement;
+  if (parent === null) return undefined;
+  const { overflowX, overflowY } = getComputedStyle(parent);
+  return overflowX === "visible" && overflowY === "visible"
+    ? clippingAncestor(parent)
+    : parent;
+};
+
+/**
+ * Whether the element draws an outline, such as its focus ring, and the
+ * nearest clipping ancestor shows all of it rather than cutting it off. It
+ * allows half a pixel: a scroll lands on whole pixels, so a part scrolled to
+ * the end can overhang the clip by a fraction no ring loses.
+ */
+export const outlineUnclipped = (element: Element) => {
+  const clip = clippingAncestor(element);
+  if (clip === undefined) return false;
+  const box = viewportBox(clip);
+  const slack = 0.5;
+  return outlineWithin(element, {
+    top: box.top - slack,
+    right: box.right + slack,
+    bottom: box.bottom + slack,
+    left: box.left - slack,
+  });
+};
+
 /** Whether two boxes share a line: each one's middle lies within the other. */
 export const shareLine = (first: Element, second: Element) => {
   const a = first.getBoundingClientRect();

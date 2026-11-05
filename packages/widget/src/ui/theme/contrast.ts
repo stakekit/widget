@@ -58,6 +58,28 @@ export const contrastRatio = (
 };
 
 /**
+ * `color-mix(in srgb, first percent%, second)` of two opaque colors as the
+ * browser paints it, as `#RRGGBB`; `undefined` when either is not an opaque
+ * hex or `rgb()` color.
+ */
+export const mixOpaqueColors = (
+  first: string,
+  percent: number,
+  second: string
+): string | undefined => {
+  const a = parseOpaqueColor(first);
+  const b = parseOpaqueColor(second);
+  if (a === undefined || b === undefined) return undefined;
+  const weight = percent / 100;
+  const channel = (from: number, to: number) =>
+    Math.round(from * weight + to * (1 - weight))
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
+  return `#${channel(a[0], b[0])}${channel(a[1], b[1])}${channel(a[2], b[2])}`;
+};
+
+/**
  * Of two colors, the one with the higher WCAG contrast on `background`;
  * `first` when any of the three cannot be measured.
  */

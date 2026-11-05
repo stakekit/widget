@@ -223,7 +223,10 @@ export const Tooltip: Story = {
   },
 };
 
-/** The chart takes no focus: Tab moves straight past it. */
+/**
+ * The chart takes no focus: Tab moves straight past it, and a press on the
+ * plot leaves focus where it was rather than ringing the plot.
+ */
 export const NoFocusStop: Story = {
   render: (args) => (
     <ContainerFrame width={520}>
@@ -241,5 +244,11 @@ export const NoFocusStop: Story = {
 
     await userEvent.tab();
     await expect(canvas.getByRole("button", { name: "After" })).toHaveFocus();
+
+    const surface = chart(canvasElement).querySelector("svg");
+    if (surface === null) throw new Error("Expected the chart surface");
+    await userEvent.click(surface);
+    await expect(surface).not.toHaveFocus();
+    await expect(surface).not.toHaveAttribute("tabindex");
   },
 };

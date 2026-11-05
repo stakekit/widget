@@ -11,6 +11,8 @@ import {
   Scope,
   Stream,
 } from "effect";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
 import {
@@ -766,6 +768,39 @@ describe("startBorrowFlowExecution", () => {
         });
         expect(yield* Ref.get(handle.handoff)).toBeNull();
       })
+  );
+
+  // Steps first reads the Atom that starts its workflow while React renders,
+  // and the Atom runtime runs what that read forks before it returns. The
+  // workflow's first wallet request and lifecycle event must not land there.
+  it.effect("makes no workflow in the Atom read that starts it", () =>
+    Effect.gen(function* () {
+      const action = makeAction("CREATED", "render-read");
+      const handle = openSession();
+      const makeWorkflow = vi.fn<TransactionWorkflowService["Service"]["make"]>(
+        (input) => Effect.succeed(idleWorkflow(input))
+      );
+      const kit = yield* makeKit({
+        executeAction: () => Effect.succeed(action),
+        makeWorkflow,
+      });
+      yield* confirmBorrowAction(handle).pipe(Effect.provide(kit.layer));
+      // Built up front, so the read cannot wait on the layer instead.
+      const services = yield* Layer.build(kit.layer);
+      const executionAtom = Atom.runtime(Layer.succeedContext(services)).atom(
+        startBorrowFlowExecution(handle, action.id)
+      );
+      const registry = AtomRegistry.make();
+      const unmount = registry.mount(executionAtom);
+
+      registry.get(executionAtom);
+
+      expect(makeWorkflow).not.toHaveBeenCalled();
+      yield* Effect.promise(() =>
+        vi.waitFor(() => expect(makeWorkflow).toHaveBeenCalledOnce())
+      );
+      unmount();
+    })
   );
 
   it.effect("interrupts an Execution started before any handoff", () =>

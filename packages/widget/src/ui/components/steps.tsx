@@ -4,11 +4,11 @@ import { Text } from "../primitives/text";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
+import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { stepMarkerSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { ExternalLink } from "./external-link";
-import { Spinner } from "./spinner";
 
 /**
  * Where a step stands: waiting its turn, under way, waiting for the wallet's
@@ -27,11 +27,19 @@ type Step = {
    * for signature". Unset, that line shows its status's label.
    */
   readonly state?: string;
+  /**
+   * How far an active step got: its connector to the next step fills a third
+   * while it is submitted and two thirds while it is confirmed. Read for an
+   * active step only.
+   */
+  readonly stage?: StepStage;
   /** Shown under the state, such as how long it takes or what went wrong. */
   readonly description?: string;
   /** A link under the step, such as its transaction on a block explorer. */
   readonly link?: StepLink;
 };
+
+type StepStage = "submitting" | "confirming";
 
 type StepLink = {
   readonly href: string;
@@ -57,7 +65,9 @@ type StepsProps = {
  * Steps as a vertical timeline, such as a transaction's sign, submit and
  * confirm. Each step's marker shows its status, and the line under its label
  * says what it is doing, which assistive technology reads after the label;
- * the active or signing step is the current one.
+ * the active or signing step is the current one. A signing step's marker
+ * pulses a halo, an active step's turns an arc around it while its connector
+ * fills by its stage; under reduced motion both hold still.
  */
 export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
   <ol aria-label={label} {...stylex.props(styles.list)}>
@@ -72,16 +82,31 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
         {...stylex.props(styles.step)}
       >
         {index < steps.length - 1 && (
-          <span
-            aria-hidden="true"
-            {...stylex.props(
-              styles.connector,
-              step.status === "done" && styles.connectorDone
-            )}
-          />
+          <span aria-hidden="true" {...stylex.props(styles.connector)}>
+            <span
+              data-step-part="connector-fill"
+              {...stylex.props(styles.connectorFill, connectorFill(step))}
+            />
+          </span>
         )}
         <span {...stylex.props(styles.marker, markerStyles[step.status])}>
-          <StepMarker status={step.status} />
+          {step.status === "signing" && (
+            <span
+              aria-hidden="true"
+              data-step-part="halo"
+              {...stylex.props(styles.halo)}
+            />
+          )}
+          {step.status === "active" && (
+            <span
+              aria-hidden="true"
+              data-step-part="arc"
+              {...stylex.props(styles.arc)}
+            />
+          )}
+          <span {...stylex.props(styles.glyph)}>
+            <StepMarker status={step.status} />
+          </span>
         </span>
         <span {...stylex.props(styles.text)}>
           <Text
@@ -127,16 +152,33 @@ const StepMarker = ({ status }: { readonly status: StepStatus }) => {
   switch (status) {
     case "done":
       return <Icon name="CheckIcon" size="sm" />;
-    case "active":
-      return <Spinner size="lg" />;
     case "signing":
       return <Icon name="WalletIcon" size="sm" />;
     case "failed":
       return <Icon name="XIcon" size="sm" />;
+    case "active":
     case "idle":
       return null;
   }
 };
+
+/** How much of a step's connector is filled: all once it is done. */
+const connectorFill = ({ status, stage }: Step) => {
+  if (status === "done") return fillStyles.done;
+  if (status !== "active") return fillStyles.empty;
+  return stage === "confirming" ? fillStyles.confirming : fillStyles.submitting;
+};
+
+// A signature's halo breathes out from the marker and fades; held still, it
+// rests as a soft ring around it.
+const haloPulse = stylex.keyframes({
+  from: { opacity: 0.9, transform: "scale(1)" },
+  to: { opacity: 0, transform: "scale(1.8)" },
+});
+
+const arcSpin = stylex.keyframes({
+  to: { transform: "rotate(360deg)" },
+});
 
 const styles = stylex.create({
   list: {
@@ -154,6 +196,7 @@ const styles = stylex.create({
   },
   // Runs from each marker down to the next one, through the step's lines.
   connector: {
+    overflow: "hidden",
     backgroundColor: color.border,
     position: "absolute",
     bottom: 0,
@@ -161,9 +204,18 @@ const styles = stylex.create({
     top: stepMarkerSize.md,
     width: borderWidth.medium,
   },
-  // A finished step's connector leads on in the success tone, as far as it
-  // got; the accent stays with the step under way.
-  connectorDone: { backgroundColor: color.success },
+  // Fills from the marker down: accent while the step is under way, the
+  // success tone once it is done.
+  connectorFill: {
+    backgroundColor: color.accent,
+    display: "block",
+    transformOrigin: "top",
+    transitionDuration: motion.slow,
+    transitionProperty: "transform, background-color",
+    transitionTimingFunction: motion.easing,
+    height: "100%",
+    width: "100%",
+  },
   marker: {
     borderRadius: radius.pill,
     borderStyle: "solid",
@@ -173,8 +225,41 @@ const styles = stylex.create({
     display: "flex",
     flexShrink: 0,
     justifyContent: "center",
+    position: "relative",
     height: stepMarkerSize.md,
     width: stepMarkerSize.md,
+  },
+  // Painted over the halo and the arc.
+  glyph: { display: "flex", position: "relative" },
+  halo: {
+    inset: 0,
+    borderRadius: radius.pill,
+    animationDuration: motion.halo,
+    animationIterationCount: "infinite",
+    animationName: haloPulse,
+    animationTimingFunction: motion.easing,
+    backgroundColor: color.accentSoft,
+    opacity: 0.6,
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "scale(1.4)",
+  },
+  // The marker's ring: a quarter of it in the accent, turning on the rest,
+  // which is drawn as a waiting step's ring so it holds 3:1 on every surface.
+  arc: {
+    inset: 0,
+    borderColor: color.textMuted,
+    borderRadius: radius.pill,
+    borderStyle: "solid",
+    borderWidth: borderWidth.medium,
+    animationDuration: motion.spin,
+    animationIterationCount: "infinite",
+    animationName: arcSpin,
+    animationTimingFunction: motion.linear,
+    boxSizing: "border-box",
+    pointerEvents: "none",
+    position: "absolute",
+    borderTopColor: color.accent,
   },
   // The label's first line sits centred on the marker.
   text: {
@@ -187,15 +272,26 @@ const styles = stylex.create({
   extras: { paddingTop: space[6] },
 });
 
+const fillStyles = stylex.create({
+  empty: { transform: "scaleY(0)" },
+  submitting: { transform: "scaleY(0.33)" },
+  confirming: { transform: "scaleY(0.67)" },
+  // A finished step's connector leads on in the success tone, as far as it
+  // got; the accent stays with the step under way.
+  done: { backgroundColor: color.success, transform: "none" },
+});
+
 // Every marker is a 24px disc: waiting is a ring on the surface, in
 // `textMuted` so the ring alone reaches 3:1 (WCAG 1.4.11), the step under
-// way an accent spinner, a signature a wallet on the accent tint, and done
-// and failed an outline check and cross in their status tones.
+// way an accent arc turning on its ring, a signature a wallet on the accent
+// tint, and done and failed an outline check and cross in their status
+// tones. The arc and the halo fill the marker, which draws no border of its
+// own under them.
 const markerStyles = stylex.create({
   idle: { borderColor: color.textMuted, backgroundColor: color.surface },
-  active: { borderColor: "transparent", color: color.accentText },
+  active: { borderWidth: 0, color: color.accentText },
   signing: {
-    borderColor: "transparent",
+    borderWidth: 0,
     backgroundColor: color.accentSoft,
     color: color.accentText,
   },

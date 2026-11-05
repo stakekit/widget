@@ -85,6 +85,33 @@ export const Paddings: Story = {
   ),
 };
 
+/** With `grow`, a card takes the space its row or column has left. */
+export const Grow: Story = {
+  render: () => (
+    <div style={{ width: 480 }}>
+      <Stack direction="row" gap={8}>
+        <Card testId="fixed card" padding={12}>
+          <Text>Fits its content</Text>
+        </Card>
+        <Card testId="grown card" padding={12} grow>
+          <Text>Takes the rest</Text>
+        </Card>
+      </Stack>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const widthOf = (testId: string) =>
+      canvas.getByTestId(testId).getBoundingClientRect().width;
+
+    await expect(widthOf("grown card")).toBeGreaterThan(widthOf("fixed card"));
+    await expect(widthOf("fixed card") + 8 + widthOf("grown card")).toBeCloseTo(
+      480,
+      0
+    );
+  },
+};
+
 /** With `onClick` the card is one button: Tab reaches it, Enter and Space press it. */
 export const Interactive: Story = {
   args: { onClick: fn() },

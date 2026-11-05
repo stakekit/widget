@@ -6,39 +6,14 @@ import { ZerionChainModal } from "../../../../wallet/views";
 import { MountAnimatedPage } from "../../../../widget-shell/views";
 import { usePositions } from "../../../react/use-positions";
 import {
-  type PositionItem,
-  splitSmallBalances,
-} from "../../../state/read-models/positions";
-import {
   PositionsConnectWallet,
   PositionsEmpty,
   PositionsLoadFailed,
   PositionsSkeleton,
 } from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
-import { SmallBalances } from "../../components/small-balances";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSummary } from "./components/positions-summary";
-
-/** A row of the list: a position, or the small balances collapsed at its end. */
-type PositionsRow =
-  | { readonly kind: "position"; readonly item: PositionItem }
-  | {
-      readonly kind: "small-balances";
-      readonly items: ReadonlyArray<PositionItem>;
-    };
-
-const toPositionsRows = (
-  positions: ReadonlyArray<PositionItem>
-): ReadonlyArray<PositionsRow> => {
-  const { shown, small } = splitSmallBalances(positions);
-  const rows: PositionsRow[] = shown.map((item) => ({
-    kind: "position",
-    item,
-  }));
-  if (small.length > 0) rows.push({ kind: "small-balances", items: small });
-  return rows;
-};
 
 const PositionsPage = () => {
   useTrackPage("positions");
@@ -85,24 +60,11 @@ const PositionsPage = () => {
 
           <VirtualList
             label={t("positions.title")}
-            items={toPositionsRows(positions)}
-            getKey={(row) =>
-              row.kind === "position"
-                ? `${row.item.integrationId}:${row.item.balanceId}`
-                : "small-balances"
-            }
+            items={positions}
+            getKey={(item) => `${item.integrationId}:${item.balanceId}`}
             estimateSize={68}
             maxHeight="lg"
-            renderItem={(row) =>
-              row.kind === "position" ? (
-                <PositionsListItem item={row.item} />
-              ) : (
-                <SmallBalances
-                  items={row.items}
-                  renderItem={(item) => <PositionsListItem item={item} />}
-                />
-              )
-            }
+            renderItem={(item) => <PositionsListItem item={item} />}
           />
         </Stack>
       )}

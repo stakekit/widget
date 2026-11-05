@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
-import { color } from "../tokens/color.stylex";
+import { color, softControlTint } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -45,7 +45,9 @@ export const Chip = ({
 const styles = stylex.create({
   root: {
     margin: 0,
-    borderColor: "transparent",
+    // Its tint nearly matches the card it sits on: a 1px edge of the label
+    // mixed into `surface` bounds it (`softControlTint`).
+    borderColor: `color-mix(in srgb, currentColor ${softControlTint.edge}, ${color.surface})`,
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,

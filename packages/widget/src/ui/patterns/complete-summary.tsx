@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
+import { TokenAvatar } from "../components/avatar";
 import { Card } from "../components/card";
 import { DetailList, DetailRow } from "../components/detail-list";
 import { ExternalLink } from "../components/external-link";
@@ -9,8 +10,30 @@ import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { color } from "../tokens/color.stylex";
+import { keyframes } from "../tokens/keyframes.stylex";
+import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { avatarSize } from "../tokens/size.stylex";
+
+// The mark grows in as the summary appears.
+const scaleIn = stylex.keyframes({
+  from: { opacity: 0, transform: "scale(0.6)" },
+  to: { opacity: 1, transform: "none" },
+});
+
+/**
+ * The art over a completed action's title: the received token's logo, else
+ * the provider's, with a success check badge; without either, or when both
+ * fail to load, a plain check.
+ */
+type CompleteMark = {
+  /** The received token's symbol or name: the initial while a logo loads. */
+  readonly name: string;
+  /** The received token's logo URL. */
+  readonly tokenSrc?: string | undefined;
+  /** The provider's logo URL, shown when the token's is missing or fails. */
+  readonly providerSrc?: string | undefined;
+};
 
 /** One label-value row of what the action did, such as what it returned. */
 type CompleteRow = {
@@ -41,8 +64,9 @@ type CompleteTransaction = {
 type CompleteSummaryProps = {
   /** What happened, such as "Successfully staked 0.5 ETH". */
   readonly title: string;
-  /** The heading level the page's outline needs. */
   readonly as?: "h1" | "h2" | "h3";
+  /** The art over the title; unset, a plain check. */
+  readonly mark?: CompleteMark;
   /** Under the title, such as "via Lido" or "Aave V3 · Ethereum". */
   readonly detail?: string;
   /** What the action did, such as what it returned and what it cost. */
@@ -87,14 +111,65 @@ const CompleteRows = ({
   </DetailList>
 );
 
+type MarkSource = {
+  readonly src: string;
+  readonly shape: "round" | "square";
+};
+
+/**
+ * The first of `sources` that loads, as a hero avatar with a success badge,
+ * else the plain check. Each source is probed in turn; one that fails to
+ * load gives way to the next.
+ */
+const CompleteMarkArt = ({
+  name,
+  sources,
+}: {
+  readonly name: string;
+  readonly sources: ReadonlyArray<MarkSource>;
+}) => {
+  const [failedCount, setFailedCount] = useState(0);
+  const source = sources[failedCount];
+  const src = source?.src;
+
+  useEffect(() => {
+    if (src === undefined) return;
+    const probe = new Image();
+    probe.onerror = () => setFailedCount((count) => count + 1);
+    probe.src = src;
+    return () => {
+      probe.onerror = null;
+    };
+  }, [src]);
+
+  return source === undefined ? (
+    <span {...stylex.props(styles.check)}>
+      <span {...stylex.props(styles.drawCheck)}>
+        <Icon name="CheckIcon" size="xl" />
+      </span>
+    </span>
+  ) : (
+    <TokenAvatar
+      src={source.src}
+      name={name}
+      decorative
+      shape={source.shape}
+      size="hero"
+      success
+    />
+  );
+};
+
 /**
  * The summary of a completed action: a success mark over what happened,
  * what it did, what is left to do, and its transactions as a compact list
- * of explorer links.
+ * of explorer links. The mark grows in and its check draws as the summary
+ * appears, at once under reduced motion.
  */
 export const CompleteSummary = ({
   title,
   as = "h2",
+  mark,
   detail,
   rows = [],
   sections = [],
@@ -102,12 +177,30 @@ export const CompleteSummary = ({
   transactions,
 }: CompleteSummaryProps) => {
   const transactionsId = useId();
+  // A provider logo that is the token's own adds nothing once that fails.
+  const markSources: ReadonlyArray<MarkSource> = [
+    ...(mark?.tokenSrc
+      ? [{ src: mark.tokenSrc, shape: "round" as const }]
+      : []),
+    ...(mark?.providerSrc && mark.providerSrc !== mark.tokenSrc
+      ? [{ src: mark.providerSrc, shape: "square" as const }]
+      : []),
+  ];
 
   return (
     <Stack gap={20}>
       <Stack align="center" gap={8}>
-        <span aria-hidden="true" {...stylex.props(styles.mark)}>
-          <Icon name="CheckIcon" size="lg" />
+        <span
+          aria-hidden="true"
+          data-testid="complete-mark"
+          {...stylex.props(styles.mark)}
+        >
+          <CompleteMarkArt
+            // New sources start the probe over from the first.
+            key={markSources.map((source) => source.src).join(" ")}
+            name={mark?.name ?? ""}
+            sources={markSources}
+          />
         </span>
         <Text variant="title" as={as} align="center" breakAnywhere>
           {title}
@@ -183,8 +276,15 @@ export const CompleteSummary = ({
 };
 
 const styles = stylex.create({
-  // The success tint behind a success-colored check, never white on a fill.
   mark: {
+    animationDuration: motion.slow,
+    animationFillMode: "both",
+    animationName: scaleIn,
+    animationTimingFunction: motion.easing,
+    display: "inline-flex",
+  },
+  // The success tint behind a success-colored check, never white on a fill.
+  check: {
     borderRadius: radius.pill,
     alignItems: "center",
     backgroundColor: color.successSoft,
@@ -192,7 +292,16 @@ const styles = stylex.create({
     display: "inline-flex",
     flexShrink: 0,
     justifyContent: "center",
-    height: avatarSize.lg,
-    width: avatarSize.lg,
+    height: avatarSize.hero,
+    width: avatarSize.hero,
+  },
+  // The check draws once the mark has grown most of the way in.
+  drawCheck: {
+    animationDelay: motion.base,
+    animationDuration: motion.slow,
+    animationFillMode: "both",
+    animationName: keyframes.drawIn,
+    animationTimingFunction: motion.easing,
+    display: "flex",
   },
 });

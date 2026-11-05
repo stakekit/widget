@@ -4,8 +4,6 @@ import { describe, expect, it } from "vitest";
 import { EarnPosition } from "../../../src/domain/earn/models";
 import { toPositionsData } from "../../../src/domain/portfolio/positions";
 import {
-  isSmallBalance,
-  splitSmallBalances,
   toBorrowManageOrder,
   toPositionItems,
 } from "../../../src/features/portfolio/state/read-models/positions";
@@ -147,43 +145,28 @@ describe("Borrow Manage order", () => {
   });
 });
 
-describe("small balances", () => {
-  const items = toPositionItems(
-    toPositionsData([
-      makePosition({ yieldId: "dust", amountUsd: "0.004" }),
-      makePosition({ yieldId: "cent", amountUsd: "0.01" }),
-      makePosition({ yieldId: "unpriced", amountUsd: null }),
-      makePosition({
-        yieldId: "dust-claim",
-        amountUsd: "0.001",
-        type: "claimable",
-        pendingAction: "CLAIM_REWARDS",
-      }),
-    ]),
-    false
-  );
-  const byId = (id: string) => {
-    const item = items.find((candidate) => candidate.integrationId === id);
-    if (item === undefined) throw new Error(`Expected position ${id}.`);
-    return item;
-  };
+describe("positions worth less than a cent", () => {
+  it("stay in the list, sinking below larger positions unless they ask for action", () => {
+    const items = toPositionItems(
+      toPositionsData([
+        makePosition({ yieldId: "dust", amountUsd: "0.004" }),
+        makePosition({ yieldId: "large", amountUsd: "25" }),
+        makePosition({
+          yieldId: "dust-claim",
+          amountUsd: "0.001",
+          type: "claimable",
+          pendingAction: "CLAIM_REWARDS",
+        }),
+        makePosition({ yieldId: "cent", amountUsd: "0.01" }),
+      ]),
+      false
+    );
 
-  it("are priced positions worth less than a cent that ask for nothing", () => {
-    expect(isSmallBalance(byId("dust"))).toBe(true);
-    expect(isSmallBalance(byId("cent"))).toBe(false);
-    // An unknown worth may be large, and an action stays in view.
-    expect(isSmallBalance(byId("unpriced"))).toBe(false);
-    expect(isSmallBalance(byId("dust-claim"))).toBe(false);
-  });
-
-  it("split from the shown positions, each side keeping its order", () => {
-    const { shown, small } = splitSmallBalances(items);
-
-    expect(shown.map((item) => item.integrationId)).toEqual([
+    expect(items.map((item) => item.integrationId)).toEqual([
       "dust-claim",
+      "large",
       "cent",
-      "unpriced",
+      "dust",
     ]);
-    expect(small.map((item) => item.integrationId)).toEqual(["dust"]);
   });
 });

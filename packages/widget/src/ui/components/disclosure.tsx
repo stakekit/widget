@@ -44,9 +44,14 @@ export const Disclosure = ({
     onOpenChange={(next) => onOpenChange?.(next)}
     defaultOpen={defaultOpen}
   >
+    {/* Full width, in a container that may scroll: the ring draws inside. */}
     <Collapsible.Trigger
       data-testid={testId}
-      {...stylex.props(disclosureStyles.trigger, focusRingStyles.visible)}
+      {...stylex.props(
+        disclosureStyles.trigger,
+        focusRingStyles.visible,
+        focusRingStyles.inset
+      )}
     >
       {leading === undefined && badges === undefined ? (
         title

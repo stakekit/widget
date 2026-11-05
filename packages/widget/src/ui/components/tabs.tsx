@@ -74,11 +74,16 @@ export const Tabs = <const T extends string>({
           {tab.separated === true && (
             <span aria-hidden="true" {...stylex.props(styles.separator)} />
           )}
+          {/* The ring draws inside: a bar that scrolls the tabs would clip it. */}
           <BaseTabs.Tab
             value={tab.value}
             disabled={tab.disabled}
             data-rk={tab.hostHook}
-            {...stylex.props(styles.tab, focusRingStyles.visible)}
+            {...stylex.props(
+              styles.tab,
+              focusRingStyles.visible,
+              focusRingStyles.inset
+            )}
           >
             {tab.label}
             {tab.count !== undefined && tab.count > 0 && (

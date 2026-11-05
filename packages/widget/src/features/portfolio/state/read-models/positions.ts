@@ -66,12 +66,7 @@ export type PositionsListRow =
       readonly count: number;
       readonly kind: "section";
     }
-  | { readonly item: UnifiedPositionItem; readonly kind: "position" }
-  | {
-      /** Positions worth less than a cent, collapsed under one row. */
-      readonly items: ReadonlyArray<PositionItem>;
-      readonly kind: "small-balances";
-    };
+  | { readonly item: UnifiedPositionItem; readonly kind: "position" };
 
 export const toPositionItems = (
   positions: ReadonlyMap<YieldId, PositionData>,
@@ -182,34 +177,6 @@ export const toBorrowManageOrder = <P extends BorrowManageFigures>(
     (position) => position.metrics.totalSuppliedUsd
   );
 
-/** Below a cent, a position counts as a small balance. */
-const smallBalanceUsd = 0.01;
-
-/**
- * A position worth less than a cent that asks for nothing: every balance
- * priced and none hidden, so its worth is known, and no action, claim or
- * request pending.
- */
-export const isSmallBalance = (item: PositionItem) =>
-  !needsAction(item) &&
-  !item.hasPendingRequest &&
-  item.total.length > 0 &&
-  item.balancesWithAmount.every(
-    (balance) =>
-      balance.isEncrypted !== true &&
-      (balance.token.isPoints === true || balance.amountUsd != null)
-  ) &&
-  getTokenSumsUsd(item.total).isLessThan(smallBalanceUsd);
-
-/**
- * The positions a list shows as rows, and the small balances it collapses
- * under one row after them; each keeps its order.
- */
-export const splitSmallBalances = (items: ReadonlyArray<PositionItem>) => ({
-  shown: items.filter((item) => !isSmallBalance(item)),
-  small: items.filter(isSmallBalance),
-});
-
 const positionsDataAtom = yieldBalancesScanAtom.pipe(
   Atom.map(({ result }) =>
     result.pipe(AsyncResult.map((page) => toPositionsData(page.items)))
@@ -267,14 +234,9 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
 export const currentGroupedPositionsAtom = Atom.make(
   (get): PositionsListRow[] => {
     const config = get(widgetConfigAtom);
-    const { shown: earnPositions, small: smallBalances } = splitSmallBalances(
-      get(positionsTableDataAtom).pipe(AsyncResult.getOrElse(() => []))
+    const earnPositions = get(positionsTableDataAtom).pipe(
+      AsyncResult.getOrElse(() => [])
     );
-    // Small balances close the list, collapsed under one row.
-    const smallBalancesRows: PositionsListRow[] =
-      smallBalances.length > 0
-        ? [{ items: smallBalances, kind: "small-balances" }]
-        : [];
     const borrowManageEnabled = config.borrowEnabled;
     const borrowPositions = get(
       borrowPositionsResourceAtom.local(
@@ -298,7 +260,6 @@ export const currentGroupedPositionsAtom = Atom.make(
           item: { kind: "borrow" as const, position },
           kind: "position" as const,
         })),
-        ...smallBalancesRows,
       ];
     }
 
@@ -365,6 +326,6 @@ export const currentGroupedPositionsAtom = Atom.make(
       }
     }
 
-    return [...rows, ...smallBalancesRows];
+    return rows;
   }
 ).pipe(Atom.withLabel("currentGroupedPositionsAtom"));

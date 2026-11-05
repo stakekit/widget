@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
+import { tokenLogo } from "../storybook/images";
 import { FlowSteps } from "./flow-steps";
 
 const stateLabels = {
@@ -215,4 +216,119 @@ export const AllStates: Story = {
       "Claim, Waiting",
     ]);
   },
+};
+
+const signaturePrompt = {
+  title: "Check your wallet",
+  description: "Approve the Stake transaction in MetaMask",
+  wallet: { name: "MetaMask", logo: tokenLogo },
+};
+
+const details = [
+  { label: "Amount", value: "0.01 ETH", caption: "$24.20" },
+  { label: "Yield", value: "Lido Staking via Lido" },
+  { label: "Estimated gas", value: "0.0002 ETH ($0.48)" },
+  { label: "You'll receive", value: "0.01 stETH" },
+];
+
+/**
+ * While a signature is awaited, a card under the steps asks to approve it
+ * in the wallet, with the wallet's logo; the flow's details follow it.
+ */
+export const AwaitingSignature: Story = {
+  args: { signaturePrompt, details },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const prompt = canvas.getByTestId("flow-steps-signature-prompt");
+    await expect(prompt).toHaveTextContent(
+      "Check your walletApprove the Stake transaction in MetaMask"
+    );
+    await waitFor(() =>
+      expect(prompt.querySelector("img")).toHaveAttribute("src", tokenLogo)
+    );
+
+    const card = canvas.getByTestId("flow-steps-details");
+    const terms = within(card).getAllByRole("term");
+    await expect(terms.map((term) => term.textContent)).toEqual([
+      "Amount",
+      "Yield",
+      "Estimated gas",
+      "You'll receive",
+    ]);
+    await expect(card).toHaveTextContent("0.01 ETH$24.20");
+
+    // Steps, then the wallet prompt, then the details.
+    const list = canvas.getByRole("list", { name: "Transaction progress" });
+    await expect(
+      list.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    await expect(
+      prompt.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  },
+};
+
+export const AwaitingSignatureDark: Story = {
+  ...AwaitingSignature,
+  globals: { colorScheme: "dark" },
+};
+
+/** A wallet whose logo is not known shows a wallet icon in its place. */
+export const AwaitingUnknownWallet: Story = {
+  args: {
+    signaturePrompt: {
+      title: "Check your wallet",
+      description: "Approve the Stake transaction in your wallet",
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const prompt = within(canvasElement).getByTestId(
+      "flow-steps-signature-prompt"
+    );
+    await expect(prompt).toHaveTextContent(
+      "Approve the Stake transaction in your wallet"
+    );
+    await expect(prompt.querySelector("img")).toBeNull();
+    await expect(prompt.querySelector("svg")).not.toBeNull();
+    await expect(
+      within(canvasElement).queryByTestId("flow-steps-details")
+    ).toBeNull();
+  },
+};
+
+/**
+ * Being sent fills a third of a step's connector, confirming two thirds;
+ * both turn an arc on the step's marker.
+ */
+export const Sending: Story = {
+  args: {
+    steps: [
+      { id: "approve", label: "Approve", state: "broadcasting" },
+      { id: "stake", label: "Stake", state: "active" },
+      { id: "wrap", label: "Wrap", state: "pending" },
+    ],
+    details,
+  },
+  play: async ({ canvasElement }) => {
+    const [approve, stake] = stepItems(canvasElement);
+    const filled = (item: HTMLElement | undefined) => {
+      const fill = item?.querySelector("[data-step-part='connector-fill']");
+      const track = fill?.parentElement?.getBoundingClientRect().height ?? 0;
+      return (fill?.getBoundingClientRect().height ?? 0) / track;
+    };
+    await expect(filled(approve)).toBeCloseTo(0.33, 2);
+    await expect(filled(stake)).toBeCloseTo(0.67, 2);
+    await expect(
+      approve?.querySelector("[data-step-part='arc']")
+    ).not.toBeNull();
+    await expect(stake?.querySelector("[data-step-part='arc']")).not.toBeNull();
+    await expect(
+      within(canvasElement).queryByTestId("flow-steps-signature-prompt")
+    ).toBeNull();
+  },
+};
+
+export const SendingDark: Story = {
+  ...Sending,
+  globals: { colorScheme: "dark" },
 };

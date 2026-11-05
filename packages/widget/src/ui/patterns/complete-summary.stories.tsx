@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
 import { CompleteSummary } from "./complete-summary";
 
 const meta = {
@@ -46,6 +47,85 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const markOf = (canvasElement: HTMLElement) =>
+  within(canvasElement).getByTestId("complete-mark");
+
+/** The mark's box once its entrance (a scale-in) finishes. */
+const settledMarkBox = async (mark: HTMLElement) => {
+  await Promise.all(
+    mark.getAnimations({ subtree: true }).map((animation) => animation.finished)
+  );
+  return mark.getBoundingClientRect();
+};
+
+/**
+ * The mark shows `src` at 56px, with the success badge's check; the badge
+ * sits at the bottom end, inside the avatar's footprint.
+ */
+const expectMarkImage = async (canvasElement: HTMLElement, src: string) => {
+  const mark = markOf(canvasElement);
+  await waitFor(() =>
+    expect(mark.querySelector("img")?.getAttribute("src")).toBe(src)
+  );
+  const box = await settledMarkBox(mark);
+  await expect(box.width).toBe(56);
+  await expect(box.height).toBe(56);
+  const check = mark.querySelector("svg")?.getBoundingClientRect();
+  await expect(check).toBeDefined();
+  if (check === undefined) return;
+  await expect(check.left).toBeGreaterThan(box.left + box.width / 2);
+  await expect(check.top).toBeGreaterThan(box.top + box.height / 2);
+  await expect(check.right).toBeLessThanOrEqual(box.right);
+  await expect(check.bottom).toBeLessThanOrEqual(box.bottom);
+};
+
+/**
+ * The received token's logo leads the summary with a success check badge in
+ * its corner, where a token's network badge sits.
+ */
+export const TokenMark: Story = {
+  args: {
+    mark: { name: "eETH", tokenSrc: tokenLogo, providerSrc: networkLogo },
+  },
+  play: async ({ canvasElement }) => {
+    await expectMarkImage(canvasElement, tokenLogo);
+  },
+};
+
+export const TokenMarkDark: Story = {
+  ...TokenMark,
+  globals: { colorScheme: "dark" },
+};
+
+/** A token logo that fails gives way to the provider's logo. */
+export const ProviderMarkFallback: Story = {
+  args: {
+    mark: { name: "eETH", tokenSrc: brokenImage, providerSrc: networkLogo },
+  },
+  play: async ({ canvasElement }) => {
+    await expectMarkImage(canvasElement, networkLogo);
+  },
+};
+
+/**
+ * Without a logo that loads, the plain check shows: no image, and no
+ * loading initial in place of one. It draws in as the mark settles.
+ */
+export const CheckMarkFallback: Story = {
+  args: {
+    mark: { name: "eETH", tokenSrc: brokenImage, providerSrc: brokenImage },
+  },
+  play: async ({ canvasElement }) => {
+    const mark = markOf(canvasElement);
+    await waitFor(() => expect(mark).toHaveTextContent(/^$/u));
+    await expect(mark.querySelector("img")).toBeNull();
+    const check = mark.querySelector("svg");
+    await expect(check).not.toBeNull();
+    await expect(check?.parentElement?.getAnimations()).toHaveLength(1);
+    await expect((await settledMarkBox(mark)).width).toBe(56);
+  },
+};
 
 /**
  * A success mark over what happened, what it returned, and its transactions

@@ -1052,6 +1052,18 @@
     "progress_label": "Transaction progress",
     "progress_count": "{{confirmed}} of {{total}} confirmed",
     "summary": "{{action}} {{amount}}",
+    "check_wallet": {
+      "title": "Check your wallet",
+      "description": "Approve the {{type}} transaction in {{wallet}}",
+      "description_unknown_wallet": "Approve the {{type}} transaction in your wallet"
+    },
+    "details": {
+      "amount": "Amount",
+      "yield": "Yield",
+      "market": "Market",
+      "gas": "Estimated gas",
+      "receive": "You'll receive"
+    },
     "state": {
       "pending": "Waiting",
       "active": "In progress",
@@ -1266,7 +1278,6 @@
     "claim_rewards": "Claim rewards",
     "action_required": "Action required",
     "in_progress": "In progress",
-    "small_balances": "Small balances ({{count}})",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
     "import_button": "Import",

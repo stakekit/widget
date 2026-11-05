@@ -230,7 +230,7 @@ const connectedWalletState = {
   additionalAddresses: null,
   address,
   chain: base,
-  connector: { id: "test", uid: "test" } as Connector,
+  connector: { id: "test", name: "Test Wallet", uid: "test" } as Connector,
   connectorChains: [base],
   isLedgerLive: false,
   isLedgerLiveAccountPlaceholder: false,
@@ -408,6 +408,8 @@ const renderExecution = (
     readonly session?: BorrowFlowSession;
     readonly stepsElement?: ReactNode;
     readonly wallet?: WalletOperations;
+    /** The connector the flow's wallet state shows, such as the host's. */
+    readonly walletConnector?: Connector;
   } = {}
 ) =>
   Effect.gen(function* () {
@@ -446,7 +448,9 @@ const renderExecution = (
       addLedgerAccount: activeWallet.addLedgerAccount,
       enabledNetworks: activeWallet.enabledNetworks,
       initialState: {
-        connection: connectedWalletState,
+        connection: options.walletConnector
+          ? { ...connectedWalletState, connector: options.walletConnector }
+          : connectedWalletState,
         ledger: {
           accounts: [],
           currentAccountId: undefined,
@@ -1064,6 +1068,69 @@ describe("borrow execution flow component", () => {
         yield* Effect.promise(() =>
           expect.element(app.getByText("Borrow home")).toBeInTheDocument()
         );
+      })
+  );
+
+  it.live(
+    "asks to approve the signing transaction in the wallet, above what the borrow runs",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          stepsElement: <BorrowStepsPage />,
+          wallet: {
+            ...wallet,
+            signTransaction: () => Effect.never,
+          },
+        });
+
+        const prompt = app.getByTestId("flow-steps-signature-prompt");
+        yield* Effect.promise(() =>
+          expect
+            .element(prompt)
+            .toHaveTextContent(
+              "Check your walletApprove the Borrow transaction in Test Wallet"
+            )
+        );
+        const details = app.getByTestId("flow-steps-details");
+        expect(
+          details.getByTestId("steps-details-amount").element().textContent
+        ).toBe("Amount25 USDC$25.00");
+        expect(
+          details.getByTestId("steps-details-market").element().textContent
+        ).toBe("MarketcbBTC / USDCMorpho Blue · Base");
+        // No gas is estimated before a borrow's steps run.
+        expect(details.getByTestId("steps-details-gas").query()).toBeNull();
+      })
+  );
+
+  it.live(
+    "asks to approve in the user's wallet, unnamed, when the host's External Provider signs",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          stepsElement: <BorrowStepsPage />,
+          wallet: {
+            ...wallet,
+            signTransaction: () => Effect.never,
+          },
+          walletConnector: {
+            id: "externalProviderConnector",
+            name: "External Provider",
+            uid: "external",
+          } as Connector,
+        });
+
+        const prompt = app.getByTestId("flow-steps-signature-prompt");
+        yield* Effect.promise(() =>
+          expect
+            .element(prompt)
+            .toHaveTextContent(
+              "Check your walletApprove the Borrow transaction in your wallet"
+            )
+        );
+        // A wallet icon stands in for a logo.
+        expect(prompt.element().querySelector("img")).toBeNull();
+        expect(prompt.element().querySelector("svg")).not.toBeNull();
       })
   );
 

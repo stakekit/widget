@@ -1,6 +1,7 @@
 import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -53,14 +54,21 @@ const styles = stylex.create({
   // The gutter is the scrollbar's width, so nothing sits under it. Base UI
   // gives the content `min-width: fit-content`; sized as if empty across, the
   // content takes the viewport's width and no more, so a long line, such as
-  // truncated text, truncates rather than scrolling the area sideways.
+  // truncated text, truncates rather than scrolling the area sideways. While
+  // it overflows, the end leaves room for the ring of a control scrolled to it.
   content: {
     contain: "inline-size",
+    paddingBlockEnd: {
+      default: 0,
+      ":is([data-has-overflow-y])": focusRing.extent,
+    },
     paddingInlineEnd: { default: 0, ":is([data-has-overflow-y])": space[8] },
   },
+  // Scrolling a control into view, as Tab does, leaves room for its ring.
   viewport: {
     borderRadius: radius.badge,
     overscrollBehavior: "contain",
+    scrollPaddingBlock: focusRing.extent,
     flexGrow: 1,
     minHeight: 0,
   },

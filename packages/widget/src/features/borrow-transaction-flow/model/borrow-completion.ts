@@ -4,7 +4,9 @@ import type { ActionMetadata } from "../../../domain/borrow/execution/action";
 import type { MarketId } from "../../../domain/borrow/ids";
 import type { BorrowPositions } from "../../../domain/borrow/positions/borrow-positions";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
+import type { Token } from "../../../domain/token/token";
 import {
+  type BorrowTransactionFlowEntry,
   type BorrowTransactionFlowReview,
   type ProjectedBorrowTransactionFlowSummary as ProjectedSummary,
   projectBorrowTransactionFlowSummary,
@@ -205,6 +207,51 @@ const getCollateralFee = (projected: ProjectedSummary) => {
   if (!exactDecimal(collateral.feeAmount).isGreaterThan(0)) return null;
 
   return { amount: collateral.feeAmount, symbol: collateral.symbol };
+};
+
+/**
+ * The logos a completed action's summary leads with, from the market the
+ * flow started on: the token the action is about (the loan for debt actions,
+ * else the collateral) and the provider's. A flow started from a position
+ * keeps only the market's id, so it has neither.
+ */
+export const getBorrowCompletionLogos = (
+  summary: Summary,
+  entry: BorrowTransactionFlowEntry
+): { readonly token: Token | null; readonly providerSrc: string | null } => {
+  if (entry._tag === "MarketPosition")
+    return { providerSrc: null, token: null };
+  const { integration, market } = entry.details;
+  const borrowToken = (() => {
+    switch (summary.action) {
+      case "borrow":
+      case "borrowAndSupply":
+      case "repay":
+        return market.loanToken;
+      case "supply":
+      case "withdraw":
+      case "disableCollateral":
+      case "enableCollateral":
+        return market.collateralTokens.find(
+          (collateral) =>
+            collateral.token.symbol === summary.collateralTokenSymbol
+        )?.token;
+    }
+  })();
+
+  return {
+    providerSrc: integration?.metadata.logoURI || null,
+    token: borrowToken
+      ? {
+          decimals: borrowToken.decimals,
+          name: borrowToken.name,
+          network: market.network,
+          symbol: borrowToken.symbol,
+          ...(borrowToken.address ? { address: borrowToken.address } : {}),
+          ...(borrowToken.logoURI ? { logoURI: borrowToken.logoURI } : {}),
+        }
+      : null,
+  };
 };
 
 /**

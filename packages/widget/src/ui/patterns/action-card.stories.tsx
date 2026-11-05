@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { ContainerFrame } from "../storybook/container-frame";
+import { softControlSetOff } from "../storybook/painted-color";
 import { ActionCard } from "./action-card";
 
 const onClaim = fn();
@@ -83,6 +84,37 @@ export const Default: Story = {
 
 export const DefaultDark: Story = {
   ...Default,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * The soft button stands off its filled card in either scheme: its tint
+ * nearly matches the card's surface, so a 1px accent edge, at least 1.5:1 on
+ * the card (as the contrast test holds it), bounds it.
+ */
+export const SetOffTheCard: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    for (const name of ["Claim", "Withdraw"]) {
+      const button = canvas.getByRole("button", { name });
+      const card = button.parentElement?.parentElement;
+      if (card == null) throw new Error("Expected the button's card.");
+      const setOff = softControlSetOff(
+        button,
+        getComputedStyle(card).backgroundColor
+      );
+
+      await expect(setOff.fillDiffers).toBe(true);
+      await expect(setOff.edgeWidth).toBe("1px");
+      await expect(setOff.edgeOpaque).toBe(true);
+      await expect(setOff.edgeContrast).toBeGreaterThanOrEqual(1.5);
+    }
+  },
+};
+
+export const SetOffTheCardDark: Story = {
+  ...SetOffTheCard,
   globals: { colorScheme: "dark" },
 };
 

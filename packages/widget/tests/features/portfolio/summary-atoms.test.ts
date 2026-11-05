@@ -551,7 +551,7 @@ describe("summary atom derivations", () => {
     registry.dispose();
   });
 
-  it("collapses small balances into one row after the grouped positions", async () => {
+  it("lists a position worth less than a cent as a row in its category", async () => {
     const position = makePosition({
       amountUsd: "5",
       rewardRate: 0.05,
@@ -572,10 +572,10 @@ describe("summary atom derivations", () => {
           Layer.succeed(YieldResourceSource, {
             listYields: () =>
               Effect.succeed({
-                items: [position.yieldDto],
+                items: [position.yieldDto, dust.yieldDto],
                 limit: 100,
                 offset: 0,
-                total: 1,
+                total: 2,
               }),
           } as never)
         ),
@@ -589,7 +589,7 @@ describe("summary atom derivations", () => {
         }),
         [
           positionsTableDataAtom,
-          AsyncResult.success([dust.item, position.item]),
+          AsyncResult.success([position.item, dust.item]),
         ],
       ],
     });
@@ -599,12 +599,12 @@ describe("summary atom derivations", () => {
     await vi.waitFor(() =>
       expect(registry.get(resource)).toEqual([
         { kind: "chain-modal" },
-        { category, count: 1, kind: "section" },
+        { category, count: 2, kind: "section" },
         {
           item: { kind: "earn", position: position.item },
           kind: "position",
         },
-        { items: [dust.item], kind: "small-balances" },
+        { item: { kind: "earn", position: dust.item }, kind: "position" },
       ])
     );
 

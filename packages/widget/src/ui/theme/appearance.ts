@@ -3,7 +3,7 @@ import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { font, fontWeight } from "../tokens/typography.stylex";
 import { type ColorScheme, colorSchemeRoles } from "./color-schemes";
-import { contrastRatio, mostContrasting } from "./contrast";
+import { contrastRatio, mixOpaqueColors, mostContrasting } from "./contrast";
 
 /**
  * Host-supplied theme values over the color scheme and Appearance Preset:
@@ -28,11 +28,47 @@ const mix = (first: string, percent: number, second: string) =>
 // How far each derived role moves from its base. Soft tints sit closer to the
 // canvas in light than in dark, matching the defaults.
 const softTint = { light: 10, dark: 16 } as const;
-const accentHoverWeight = 88;
+// Hover stands at least this WCAG ratio off the accent, so it reads as a
+// change, while `onAccent` keeps text contrast on it (WCAG 2.2 1.4.3). The
+// weights are tried nearest the accent first; an accent the derivation cannot
+// measure takes `fallbackAccentHoverWeight`.
+const accentHoverSeparation = 1.2;
+const onAccentContrast = 4.5;
+const accentHoverWeights = [88, 84, 80, 76, 72, 68, 64, 60];
+const fallbackAccentHoverWeight = 80;
 const accentTextWeight = 55;
 const focusRingWeight = 70;
 // WCAG 2.2 1.4.11: a focus ring's contrast on the surface around it.
 const focusRingContrast = 3;
+
+/**
+ * The accent's hover: the accent moved away from `onAccent` toward `away`
+ * until it stands `accentHoverSeparation` off the accent, so the text gains
+ * contrast; an accent already at that end (near black under white text)
+ * moves toward `onAccent` instead, as far as the text keeps its contrast.
+ * The text never loses contrast it had on the accent below 4.5:1.
+ */
+const deriveAccentHover = (
+  accent: string,
+  onAccent: string,
+  away: string
+): string => {
+  const accentTextContrast = contrastRatio(onAccent, accent) ?? 0;
+  const textFloor = Math.min(onAccentContrast, accentTextContrast);
+  const reads = (hover: string | undefined): hover is string =>
+    hover !== undefined &&
+    (contrastRatio(hover, accent) ?? 0) >= accentHoverSeparation &&
+    (contrastRatio(onAccent, hover) ?? 0) >= textFloor;
+  return (
+    [away, onAccent]
+      .flatMap((target) =>
+        accentHoverWeights.map((weight) =>
+          mixOpaqueColors(accent, weight, target)
+        )
+      )
+      .find(reads) ?? mix(accent, fallbackAccentHoverWeight, away)
+  );
+};
 
 /**
  * Derives the roles a host did not set from the ones it did: the accent's
@@ -77,11 +113,11 @@ const deriveColorRoles = (
         focusRingContrast;
     return {
       onAccent,
-      // Hover moves the accent away from `onAccent`, so the text keeps its
-      // contrast: deeper under light text, lighter under dark text.
-      accentHover: mix(
+      // Hover deepens the accent under light text and lightens it under dark
+      // text (see `deriveAccentHover`).
+      accentHover: deriveAccentHover(
         accent,
-        accentHoverWeight,
+        onAccent,
         mostContrasting(onAccent, darkest, lightest)
       ),
       accentSoft,

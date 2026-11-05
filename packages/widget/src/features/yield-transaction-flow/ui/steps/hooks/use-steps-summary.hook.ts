@@ -1,22 +1,38 @@
+import { useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { getActionInputToken } from "../../../../../domain/action/rules";
 import { getConfidentialActionKind } from "../../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
+import {
+  getYieldOutputAmount,
+  getYieldTypeLabels,
+} from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import type { Token } from "../../../../../domain/token/token";
-import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import {
+  formatTokenAmountInUSD,
+  getGasFeeInUSD,
+} from "../../../../../shared/lib/formatters";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import type { TransactionStepsDetail } from "../../../../transaction-steps/views";
 import {
   getExitActionTitle,
   getManageActionTitle,
   getPendingActionTitle,
 } from "../../../model/action-title";
 import type { YieldTransactionFlowIntake } from "../../../model/yield-transaction-flow";
-import { useYieldFlowSession } from "../../../react/yield-flow-route";
+import {
+  useYieldFlowExecution,
+  useYieldFlowSession,
+} from "../../../react/yield-flow-route";
+import { formatReviewDestination } from "../../review/hooks/review-facts";
 
 type ContinuationIntake = Extract<
   YieldTransactionFlowIntake,
@@ -142,4 +158,72 @@ export const useStepsSummary = () => {
       },
     }),
   };
+};
+
+/**
+ * What the Steps run, as Review showed it, under them: the amount and its
+ * fiat value, the yield and its provider, the estimated gas, and what an
+ * entry returns. A part not known here is left out.
+ */
+export const useStepsDetails = (): ReadonlyArray<TransactionStepsDetail> => {
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+  const { intake } = useYieldFlowSession();
+  const { amountUsd, gasAmount, prices } = useAtomValue(
+    useYieldFlowExecution().pricingViewAtom
+  );
+  const subject = getStepsSubject(t, intake);
+  if (!subject) return [];
+
+  const { amount, token, yieldDto } = subject;
+  // A hidden amount shows no value of it either.
+  const shown = amount === "hidden" ? null : amount;
+  const fiat =
+    shown &&
+    (amountUsd?.isGreaterThan(0)
+      ? formatUsd(amountUsd, locale)
+      : formatTokenAmountInUSD({ amount: shown, locale, prices, token }));
+  const gas = getGasFeeInUSD({ gas: gasAmount, locale, prices, yieldDto });
+  const received =
+    intake._tag === "Enter" && shown
+      ? getYieldOutputAmount(yieldDto, shown)
+      : null;
+
+  return [
+    {
+      label: t("steps.details.amount"),
+      testId: "steps-details-amount",
+      value: shown
+        ? `${formatTokenAmount(shown, locale, "down")} ${token.symbol}`
+        : t("shared.confidential.hidden"),
+      ...(fiat ? { caption: fiat } : {}),
+    },
+    {
+      label: t("steps.details.yield"),
+      testId: "steps-details-yield",
+      value: formatReviewDestination({
+        providerName: yieldDto.provider?.name,
+        t,
+        yieldName: yieldDto.metadata.name,
+      }),
+    },
+    ...(gas
+      ? [
+          {
+            label: t("steps.details.gas"),
+            testId: "steps-details-gas",
+            value: gas,
+          },
+        ]
+      : []),
+    ...(received
+      ? [
+          {
+            label: t("steps.details.receive"),
+            testId: "steps-details-receive",
+            value: `${formatTokenAmount(received.amount, locale, "nearest")} ${received.token.symbol}`,
+          },
+        ]
+      : []),
+  ];
 };

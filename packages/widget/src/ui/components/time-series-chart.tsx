@@ -71,7 +71,8 @@ const valueDomain = (values: ReadonlyArray<number>) => {
  * reward-rate or TVL history, with a value axis, a time axis and a tooltip
  * for the hovered point. Axis labels stay inside the chart at every container
  * width: the value axis takes the width its labels need and the edge time
- * labels align to the edges. The chart takes no focus.
+ * labels align to the edges. The chart takes no focus, by Tab or by a press:
+ * its surface has no tab index, so it never draws a focus ring.
  */
 export const TimeSeriesChart = ({
   label,
@@ -147,7 +148,6 @@ export const TimeSeriesChart = ({
           margin={plotMargin}
           responsive
           style={chartSize}
-          tabIndex={-1}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">

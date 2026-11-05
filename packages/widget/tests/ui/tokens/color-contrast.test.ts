@@ -6,7 +6,11 @@ import {
   presetColorScheme,
   resolveColorRoles,
 } from "../../../src/ui/composition";
-import { badgeTint } from "../../../src/ui/tokens/color.stylex";
+import {
+  badgeTint,
+  pressTint,
+  softControlTint,
+} from "../../../src/ui/tokens/color.stylex";
 
 type Rgb = readonly [red: number, green: number, blue: number];
 
@@ -92,7 +96,8 @@ const pairs: ReadonlyArray<Pair> = [
   // A focus ring is drawn outside its control, over whichever surface holds it.
   ...nonText("focusRing", surfaces),
   // A waiting step's ring is its only mark, drawn in `textMuted` over
-  // whichever surface holds the timeline.
+  // whichever surface holds the timeline; a step under way turns its accent
+  // arc on the same ring.
   ...nonText("textMuted", surfaces),
   // `borderStrong` is not checked: it is a decorative boundary. Outlined
   // cards are read without their outline, and inputs are identified by their
@@ -229,6 +234,90 @@ describe("filled surface separation", () => {
   );
 });
 
+// A primary button's hover is its only pointer cue besides the cursor, so it
+// stands this WCAG ratio off the accent to read as a change, with `onAccent`
+// still at text contrast on it. Beyond the host accents checked above, an
+// accent near black under white text, near white under dark text, and a
+// saturated mid-tone must derive a distinct hover too.
+const accentHoverSeparation = 1.15;
+const hoverHostAccents = [...hostAccents, "#222222", "#FFD400", "#4C62FF"];
+
+const hoverThemes = themes
+  .filter((theme) => theme.accent === "default accent")
+  .flatMap((theme) => [
+    theme,
+    ...hoverHostAccents.map((accent) => ({
+      ...theme,
+      accent,
+      hostColors: { accent },
+    })),
+  ]);
+
+describe("accent hover", () => {
+  it.each(hoverThemes)(
+    "$colorScheme $preset, $accent: hover stands off the accent under readable onAccent",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const accent = parseColor(roles.accent);
+      const hover = parseColor(roles.accentHover);
+
+      expect(contrast(accent, hover)).toBeGreaterThanOrEqual(
+        accentHoverSeparation
+      );
+      expect(
+        contrast(parseColor(roles.onAccent), hover)
+      ).toBeGreaterThanOrEqual(textContrast);
+    }
+  );
+});
+
+// A pressed filled button mixes its fill by the `pressTint` weights: the
+// primary's hover takes `shade` of `ink`; a soft fill takes `toneFill` of its
+// label color. The label keeps text contrast on the pressed fill.
+const pressCases = themes.flatMap((theme) =>
+  (
+    [
+      { variant: "soft", label: "accentText", fill: "accentSoft" },
+      { variant: "danger", label: "danger", fill: "dangerSoft" },
+    ] as const
+  ).map((press) => ({ ...theme, ...press }))
+);
+
+describe("pressed button contrast", () => {
+  it.each(themes)(
+    "$colorScheme $preset, $accent: onAccent reads on the pressed primary",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const pressed = mix(
+        parseColor(roles.accentHover),
+        100 - Number.parseFloat(pressTint.shade),
+        parseHex(pressTint.ink)
+      );
+
+      expect(
+        contrast(parseColor(roles.onAccent), pressed)
+      ).toBeGreaterThanOrEqual(textContrast);
+    }
+  );
+
+  it.each(pressCases)(
+    "$colorScheme $preset, $accent: $label reads on the pressed $variant button",
+    ({ colorScheme, preset, hostColors, label, fill }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const labelColor = parseColor(roles[label]);
+      const pressed = mix(
+        labelColor,
+        Number.parseFloat(pressTint.toneFill),
+        parseColor(roles[fill])
+      );
+
+      expect(contrast(labelColor, pressed)).toBeGreaterThanOrEqual(
+        textContrast
+      );
+    }
+  );
+});
+
 // A soft badge mixes its tone's text color into `surface`, the fill of the
 // rows and cards it sits on, by the `badgeTint` weights; under elevated
 // surfaces, whose cards are `surfaceRaised`, its fill mixes into that. Its
@@ -281,6 +370,52 @@ describe("soft badge contrast", () => {
           background
         ).toBeGreaterThanOrEqual(badgeEdgeContrast);
       }
+    }
+  );
+});
+
+// A soft control (an `ActionCard`'s Claim or Withdraw button, the amount
+// panel's "Max" chip) sits on a filled card whose `surface` its `accentSoft`
+// fill nearly matches in every scheme: a tint faint enough to keep the accent
+// text at 4.5:1 cannot stand 1.3:1 off `surface` (the default light accent
+// reaches 1.29:1 only at 4.38:1 text). So, as a soft badge does, it is set
+// off by a 1px edge: its label color mixed into `surface` by
+// `softControlTint.edge`, at least the badge edge's 1.5:1 on every surface.
+// The soft button's hover fill moves toward `surfaceHover`, under the same
+// label.
+describe("soft control contrast", () => {
+  it.each(themes)(
+    "$colorScheme $preset, $accent: a soft control's edge reads on every surface",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const edge = mix(
+        parseColor(roles.accentText),
+        Number.parseFloat(softControlTint.edge),
+        parseColor(roles.surface)
+      );
+
+      for (const background of surfaces) {
+        expect(
+          contrast(edge, parseColor(roles[background])),
+          background
+        ).toBeGreaterThanOrEqual(badgeEdgeContrast);
+      }
+    }
+  );
+
+  it.each(themes)(
+    "$colorScheme $preset, $accent: accentText reads on the hovered soft button",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const hovered = mix(
+        parseColor(roles.accentSoft),
+        50,
+        parseColor(roles.surfaceHover)
+      );
+
+      expect(
+        contrast(parseColor(roles.accentText), hovered)
+      ).toBeGreaterThanOrEqual(textContrast);
     }
   );
 });

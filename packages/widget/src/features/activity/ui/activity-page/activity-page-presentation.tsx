@@ -122,7 +122,7 @@ const ReadyActivityPage = ({
   const infiniteScroll = resolveInfiniteScroll(view.pagination);
 
   return (
-    <Stack gap={12}>
+    <Stack grow gap={12}>
       <ActivityFilters
         options={view.filterOptions}
         selectedFilter={view.selectedFilter}
@@ -130,7 +130,7 @@ const ReadyActivityPage = ({
       />
 
       {view.actions.length > 0 ? (
-        <Stack gap={8}>
+        <Stack grow gap={8}>
           <Stack direction="row" justify="end">
             <Text variant="caption" tone="muted">
               {t("activity.showing_count", {
@@ -150,6 +150,7 @@ const ReadyActivityPage = ({
             onEndReached={onLoadMore}
             estimateSize={72}
             maxHeight="lg"
+            grow
             renderItem={(item) => (
               <ActionListItem
                 action={item}

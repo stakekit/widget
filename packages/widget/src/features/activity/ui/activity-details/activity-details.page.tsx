@@ -430,7 +430,7 @@ const Receipt = ({
   );
 
   return receiptPlacement === "pane" ? (
-    <Card padding={24} testId="activity-details-receipt">
+    <Card grow padding={24} testId="activity-details-receipt">
       {body}
     </Card>
   ) : (

@@ -14,7 +14,6 @@ import {
   PositionsSkeleton,
 } from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
-import { SmallBalances } from "../../components/small-balances";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
 import { useGroupedPositions } from "./hooks/use-grouped-positions";
@@ -23,7 +22,6 @@ import { getUnifiedManagePositionsState } from "./model";
 const positionsListRowKey = (row: PositionsListRow) => {
   if (row.kind === "chain-modal") return "chain-modal";
   if (row.kind === "section") return `section:${row.category}`;
-  if (row.kind === "small-balances") return "small-balances";
   return row.item.kind === "borrow"
     ? `borrow:${row.item.position.id}`
     : `earn:${row.item.position.integrationId}:${row.item.position.balanceId}`;
@@ -104,6 +102,7 @@ export const PositionsPage = () => {
               getKey={positionsListRowKey}
               estimateSize={68}
               maxHeight="lg"
+              grow={!manageState.showEmptyPositions}
               renderItem={(row) => {
                 if (row.kind === "chain-modal") return <ZerionChainModal />;
                 if (row.kind === "section") {
@@ -111,18 +110,6 @@ export const PositionsPage = () => {
                     <PositionsSectionHeader
                       category={row.category}
                       count={row.count}
-                    />
-                  );
-                }
-                if (row.kind === "small-balances") {
-                  return (
-                    <SmallBalances
-                      items={row.items}
-                      renderItem={(item) => (
-                        <PositionsListItem
-                          item={{ kind: "earn", position: item }}
-                        />
-                      )}
                     />
                   );
                 }

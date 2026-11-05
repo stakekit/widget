@@ -14,7 +14,16 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const sizes = ["xs", "sm", "control", "md", "card", "lg", "xl"] as const;
+const sizes = [
+  "xs",
+  "sm",
+  "control",
+  "md",
+  "card",
+  "lg",
+  "hero",
+  "xl",
+] as const;
 
 export const Image: Story = { args: { src: tokenLogo } };
 
@@ -132,6 +141,45 @@ export const TokenFallback: Story = {
 
 export const TokenDark: Story = {
   ...Token,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * `success` marks a finished action: a check badge in the success color, in
+ * place of the network's, at the bottom end inside the avatar's footprint.
+ */
+export const TokenSuccess: Story = {
+  render: () => (
+    <TokenAvatar
+      src={tokenLogo}
+      name="eETH"
+      networkSrc={networkLogo}
+      size="hero"
+      success
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const avatar = within(canvasElement).getByRole("img", { name: "eETH" });
+    const token = avatar.parentElement;
+    if (token === null) throw new Error("Expected the avatar's wrapper");
+    // The token's logo loads; the network's gives way to the check.
+    await waitFor(() =>
+      expect(token.querySelector("img")?.getAttribute("src")).toBe(tokenLogo)
+    );
+    await expect(token.querySelectorAll("img")).toHaveLength(1);
+    const badge = token.querySelector("svg")?.parentElement?.parentElement;
+    if (!badge) throw new Error("Expected the success badge");
+    const box = token.getBoundingClientRect();
+    const badgeBox = badge.getBoundingClientRect();
+    await expect(box.width).toBe(56);
+    await expect(badgeBox.width).toBe(22);
+    await expect(badgeBox.right).toBe(box.right);
+    await expect(badgeBox.bottom).toBe(box.bottom);
+  },
+};
+
+export const TokenSuccessDark: Story = {
+  ...TokenSuccess,
   globals: { colorScheme: "dark" },
 };
 

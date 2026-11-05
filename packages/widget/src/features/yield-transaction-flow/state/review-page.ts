@@ -1,4 +1,3 @@
-import type BigNumber from "bignumber.js";
 import { Data, Effect, Option, Predicate, Ref, Result } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
@@ -8,10 +7,7 @@ import {
   getDirectTransactionFallbackGas,
 } from "../../../domain/action/direct-transaction";
 import type { YieldAction } from "../../../domain/action/models";
-import {
-  getTransactionGasEstimate,
-  getValidStakeSessionTx,
-} from "../../../domain/action/rules";
+import { getValidStakeSessionTx } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import { getConfidentialRedeemOperators } from "../../../domain/earn/confidential";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
@@ -21,11 +17,7 @@ import {
   gasTokenBalancesResourceAtom,
   walletScopeGasTokenBalancesKey,
 } from "../../../resources/gas-token-balances/index";
-import {
-  getTokensPricesRequest,
-  PricesKey,
-  pricesAtom,
-} from "../../../resources/token-prices/index";
+import { pricesAtom } from "../../../resources/token-prices/index";
 import {
   type ActionPreviewRequest,
   YieldOperations,
@@ -50,10 +42,10 @@ import {
 } from "../../yield-summary/index";
 import {
   getYieldFlowConfidentialPreparation,
+  getYieldFlowGasAmount,
   getYieldFlowPlannedStepTypes,
   getYieldTransactionFlowGasWarningInput,
   getYieldTransactionFlowKycYield,
-  getYieldTransactionFlowReviewPricingInput,
   type YieldFlowExecutionSource,
   YieldFlowHandoff,
   type YieldFlowSession,
@@ -61,6 +53,7 @@ import {
   type YieldTransactionFlowIntake,
 } from "../model/yield-transaction-flow";
 import { getYieldFlowTransactionsToSign } from "../model/yield-transaction-workflow";
+import { getYieldFlowReviewPricesKey } from "./review-prices";
 import { makeYieldFlowStakeReviewViewAtom } from "./yield-summary";
 
 class YieldFlowPreviewError extends Data.TaggedError("YieldFlowPreviewError")<{
@@ -252,28 +245,6 @@ export const handOffYieldFlowSource = Effect.fn("handOffYieldFlowSource")(
     );
   }
 );
-
-/**
- * What Review estimates the flow's transactions cost in the gas token: the
- * action's, plus the conversion before it. Null when any part is unknown, so
- * Review never shows a partial total.
- */
-const getGasAmount = (
-  action: YieldAction | null,
-  conversionGas: BigNumber | null
-) => {
-  if (!action || !conversionGas) return null;
-
-  const estimates = action.transactions.map(getTransactionGasEstimate);
-  if (estimates.some((estimate) => !estimate)) return null;
-
-  const total = estimates.reduce(
-    (sum, estimate) => sum.plus(estimate?.amount ?? 0),
-    conversionGas
-  );
-
-  return total.isZero() ? null : total;
-};
 
 type ConfirmDecision =
   | Readonly<{
@@ -527,15 +498,7 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     )
     .pipe(Atom.withLabel("yieldFlowReviewPreview"));
 
-  const pricingInput = getYieldTransactionFlowReviewPricingInput(intake);
-  const pricesKey = new PricesKey({
-    request: pricingInput
-      ? getTokensPricesRequest({
-          token: pricingInput.token,
-          yieldDto: pricingInput.yield,
-        })
-      : null,
-  });
+  const pricesKey = getYieldFlowReviewPricesKey(intake);
   const gasWarningInput = getYieldTransactionFlowGasWarningInput(intake);
   const gasBalancesKey = walletScopeGasTokenBalancesKey(
     gasWarningInput.walletScope,
@@ -584,7 +547,7 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     const conversionGas = get(conversionGasAtom);
     const conversionGasLoading =
       AsyncResult.isInitial(conversionGas) || conversionGas.waiting;
-    const gasAmount = getGasAmount(
+    const gasAmount = getYieldFlowGasAmount(
       action,
       AsyncResult.getOrElse(conversionGas, () => null)
     );

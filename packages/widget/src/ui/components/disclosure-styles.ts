@@ -23,9 +23,10 @@ export const disclosureStyles = stylex.create({
     borderStyle: "none",
     gap: space[8],
     paddingBlock: space[8],
-    paddingInline: 0,
+    paddingInline: space[4],
     alignItems: "center",
     backgroundColor: "transparent",
+    boxSizing: "border-box",
     color: { default: color.text, ":disabled": color.textMuted },
     cursor: { default: "pointer", ":disabled": "not-allowed" },
     display: "flex",
@@ -55,5 +56,12 @@ export const disclosureStyles = stylex.create({
     transitionProperty: "height, opacity",
     transitionTimingFunction: motion.easing,
   },
-  content: { paddingBottom: space[8] },
+  // Inset as far as the trigger's title. The panel clips to animate its
+  // height; the inset keeps a control at its edge, such as a copy button
+  // ending a row, clear of the clip with its whole focus ring.
+  content: {
+    paddingInline: space[4],
+    paddingBottom: space[8],
+    paddingTop: space[4],
+  },
 });

@@ -65,3 +65,31 @@ export const badgeTint = stylex.defineConsts({
   edge: "45%",
   neutralEdge: "25%",
 });
+
+/**
+ * How a filled button's fill changes while it is pressed, as `color-mix`
+ * weights, on top of the press scale: the primary's hover fill takes `shade`
+ * of `ink`, so it deepens past the hover; a soft fill (the soft and danger
+ * buttons) takes `toneFill` of its label color, so it fills in toward the
+ * label while the label keeps 4.5:1 on it (a host accent's derived text and
+ * tint leave little room: 8% falls below it under Finery dark). Mixed at
+ * paint time, they follow a host's colors.
+ */
+export const pressTint = stylex.defineConsts({
+  shade: "10%",
+  toneFill: "6%",
+  ink: "#000000",
+});
+
+/**
+ * How far a soft control's 1px edge (the soft button's, and the `Chip`'s)
+ * moves from `surface`, the fill of the cards it sits on, toward its accent
+ * label color, as a `color-mix` weight. Its `accentSoft` tint nearly matches
+ * `surface` in every scheme, and a tint deep enough to stand off it would
+ * drop the label below 4.5:1, so the edge bounds it, at least 1.5:1 on every
+ * surface as a soft badge's is. Mixed at paint time, it follows a host's
+ * colors.
+ */
+export const softControlTint = stylex.defineConsts({
+  edge: "45%",
+});

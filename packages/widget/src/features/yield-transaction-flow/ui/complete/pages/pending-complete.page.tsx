@@ -39,6 +39,7 @@ export const PendingCompletePage = () => {
       )}
       pendingActionType={manageFlow.pendingActionType}
       providersDetails={manageFlow.providersDetails}
+      receivedToken={token}
       yieldType={getExtendedYieldType(integrationData)}
     />
   );

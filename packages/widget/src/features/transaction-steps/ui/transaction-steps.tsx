@@ -13,10 +13,24 @@ type FlowStep = FlowStepsProps["steps"][number];
 export type TransactionStep = Omit<FlowStep, "explorerUrl" | "hash"> & {
   readonly explorerUrl: string | null;
   readonly hash: TransactionHash | null;
+  /** What the transaction does, such as "Approval": named in the wallet prompt. */
+  readonly type: string;
 };
 
-type TransactionStepsProps = Pick<FlowStepsProps, "summary"> & {
+/** The wallet asked for signatures: its name and logo, once known. */
+type TransactionStepsWallet = {
+  readonly name: string;
+  readonly logo?: string;
+};
+
+/** One row of the details under the steps, such as the amount. */
+export type TransactionStepsDetail = NonNullable<
+  FlowStepsProps["details"]
+>[number];
+
+type TransactionStepsProps = Pick<FlowStepsProps, "summary" | "details"> & {
   readonly steps: ReadonlyArray<TransactionStep>;
+  readonly wallet?: TransactionStepsWallet | null;
 };
 
 /**
@@ -42,18 +56,53 @@ export const getTransactionStepState = (
   return { state: "pending" };
 };
 
+/** The card asking to approve a `type` transaction in the wallet. */
+const getSignaturePrompt = (
+  t: TFunction,
+  type: string,
+  wallet: TransactionStepsWallet | null | undefined
+): NonNullable<FlowStepsProps["signaturePrompt"]> => {
+  const title = t("steps.check_wallet.title");
+  if (!wallet) {
+    return {
+      title,
+      description: t("steps.check_wallet.description_unknown_wallet", {
+        type,
+      }),
+    };
+  }
+  return {
+    title,
+    description: t("steps.check_wallet.description", {
+      type,
+      wallet: wallet.name,
+    }),
+    wallet,
+  };
+};
+
 /**
  * A flow's transactions as its Steps page shows them: how many are
  * confirmed, each state by name, and each done transaction's short hash
  * linking to its block explorer. A step not yet done shows no link, so a
- * transaction still being sent or confirmed reads as unfinished.
+ * transaction still being sent or confirmed reads as unfinished. While a
+ * step waits for its signature, a card asks to approve it in the wallet,
+ * named and shown once known.
  */
-export const TransactionSteps = ({ steps, ...flow }: TransactionStepsProps) => {
+export const TransactionSteps = ({
+  steps,
+  wallet,
+  ...flow
+}: TransactionStepsProps) => {
   const { t } = useTranslation();
+  const signing = steps.find((step) => step.state === "signing");
 
   return (
     <FlowSteps
       {...flow}
+      {...(signing === undefined
+        ? {}
+        : { signaturePrompt: getSignaturePrompt(t, signing.type, wallet) })}
       label={t("steps.progress_label")}
       progressLabel={({ confirmed, total }) =>
         t("steps.progress_count", { confirmed, total })
@@ -70,7 +119,7 @@ export const TransactionSteps = ({ steps, ...flow }: TransactionStepsProps) => {
         label: t("steps.view_transaction"),
         newTabLabel: t("shared.opens_in_new_tab"),
       }}
-      steps={steps.map(({ explorerUrl, hash, ...step }) =>
+      steps={steps.map(({ explorerUrl, hash, type: _type, ...step }) =>
         step.state === "done" && explorerUrl !== null
           ? {
               ...step,

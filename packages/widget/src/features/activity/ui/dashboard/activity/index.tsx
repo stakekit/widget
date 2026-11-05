@@ -33,7 +33,7 @@ export const ActivityTabPage = () => {
 
   return (
     <AnimationPage>
-      <Grid columns={{ base: 1, split: 2 }} gap={24} align="stretch">
+      <Grid grow columns={{ base: 1, split: 2 }} gap={24} align="stretch">
         <Stack>
           <ActivityPageContent allowDefaultSelection />
         </Stack>

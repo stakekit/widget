@@ -1,16 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+import { Box } from "../primitives/box";
+import { Stack } from "../primitives/stack";
 import { ContainerFrame } from "../storybook/container-frame";
 import {
   isOneLine,
   isTruncated,
+  outlineUnclipped,
   outlineWithin,
   shareLine,
   viewportBox,
 } from "../storybook/geometry";
 import { tokenLogo } from "../storybook/images";
 import { TokenAvatar } from "./avatar";
+import { Button } from "./button";
 import { ListRow } from "./list-row";
 import { VirtualList, type VirtualListGroup } from "./virtual-list";
 
@@ -630,5 +634,122 @@ export const Listbox: Story = {
     await expect(
       within(listbox).getByRole("option", { name: "Validator 1" })
     ).toHaveAttribute("aria-selected", "true");
+  },
+};
+
+const GrowColumn = ({
+  label,
+  count,
+  minHeight,
+  height,
+}: {
+  readonly label: string;
+  readonly count: number;
+  readonly minHeight?: number;
+  readonly height?: number;
+}) => (
+  <div
+    data-testid={`${label} column`}
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      width: 240,
+      minHeight,
+      height,
+    }}
+  >
+    <VirtualList
+      label={label}
+      items={validators(0, count)}
+      getKey={(validator) => validator.id}
+      renderItem={renderRow}
+      maxHeight="md"
+      grow
+    />
+  </div>
+);
+
+/**
+ * With `grow`, the list asks its column for its rows' height up to its cap,
+ * takes whatever taller height the column has, and shrinks into a shorter
+ * one, scrolling within it.
+ */
+export const Grow: Story = {
+  render: () => (
+    <div style={{ display: "flex", alignItems: "start", gap: 16 }}>
+      <GrowColumn label="Tall column" count={1000} minHeight={600} />
+      <GrowColumn label="Capped" count={1000} />
+      <GrowColumn label="Few rows" count={2} />
+      <GrowColumn label="Short column" count={1000} height={200} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const heightOf = (element: HTMLElement) =>
+      element.getBoundingClientRect().height;
+
+    const tall = region(canvasElement, "Tall column");
+    await expect(heightOf(tall)).toBe(
+      heightOf(canvas.getByTestId("Tall column column"))
+    );
+    await expect(heightOf(tall)).toBe(600);
+    await expect(tall.scrollHeight).toBeGreaterThan(tall.clientHeight);
+
+    // Its column fits its content: the list holds at its cap.
+    await expect(heightOf(region(canvasElement, "Capped"))).toBe(320);
+
+    // Shorter than the cap, it asks for no more than its rows.
+    const few = region(canvasElement, "Few rows");
+    const rows = within(few).getAllByRole("listitem");
+    await waitFor(() =>
+      expect(heightOf(few)).toBe(
+        rows.reduce((sum, row) => sum + heightOf(row), 0)
+      )
+    );
+
+    // A column shorter than the cap holds it to the column's height.
+    const short = region(canvasElement, "Short column");
+    await expect(heightOf(short)).toBe(200);
+    await expect(short.scrollHeight).toBeGreaterThan(short.clientHeight);
+  },
+};
+
+/**
+ * Tabbing down scrolls each control into view with room for its focus ring:
+ * a control that lands at the list's bottom edge keeps its whole ring. Each
+ * row holds its control clear of the row's edge, as a row's padding does.
+ */
+export const KeepsRingAtEdge: Story = {
+  render: () => (
+    <div style={{ width: 360 }}>
+      <VirtualList
+        label="Validators"
+        items={validators(0, 12)}
+        getKey={(validator) => validator.id}
+        renderItem={(validator) => (
+          <Box paddingBlock={8}>
+            <Stack align="center">
+              <Button variant="secondary">{validator.name}</Button>
+            </Stack>
+          </Box>
+        )}
+        estimateSize={48}
+        maxHeight="sm"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const scroller = region(canvasElement);
+
+    await userEvent.tab();
+    await expect(scroller).toHaveFocus();
+    for (const validator of validators(0, 12)) {
+      await userEvent.tab();
+      const button = within(scroller).getByRole("button", {
+        name: validator.name,
+      });
+      await expect(button).toHaveFocus();
+      await expect(outlineUnclipped(button)).toBe(true);
+    }
   },
 };

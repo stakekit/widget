@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { outlineUnclipped } from "../storybook/geometry";
 import { TokenAvatar } from "./avatar";
 import { Badge } from "./badge";
+import { CopyButton } from "./copy-button";
 import { Disclosure } from "./disclosure";
+import { ScrollArea } from "./scroll-area";
 
 const meta = {
   title: "Components/Disclosure",
@@ -128,5 +132,61 @@ export const AnimatesHeight: Story = {
     await userEvent.click(trigger);
     const closing = await sampleHeights(canvasElement, 400);
     await expect(between(closing).length).toBeGreaterThan(2);
+  },
+};
+
+/**
+ * In a scrolling area the trigger spans its width, so its focus ring draws
+ * inside its edge, where the area would cut off one drawn outside.
+ */
+export const RingInsideScrollArea: Story = {
+  args: { defaultOpen: true },
+  render: (args) => (
+    <div style={{ width: 320 }}>
+      <ScrollArea label="Details" maxHeight="sm">
+        <Disclosure {...args} />
+      </ScrollArea>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", {
+      name: "More details",
+    });
+
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
+    await expect(outlineUnclipped(trigger)).toBe(true);
+  },
+};
+
+export const RingInsideScrollAreaDark: Story = {
+  ...RingInsideScrollArea,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * The panel clips its content to animate its height; a control at its side,
+ * such as a copy button ending a row, still keeps its whole focus ring.
+ */
+export const PanelKeepsContentRings: Story = {
+  args: {
+    defaultOpen: true,
+    children: (
+      <Stack direction="row" align="center" justify="between">
+        <Text as="p">0x52bc…e1f0</Text>
+        <CopyButton value="0x52bc" label="Copy address" copiedLabel="Copied" />
+      </Stack>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const copy = within(canvasElement).getByRole("button", {
+      name: "Copy address",
+    });
+
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect(copy).toHaveFocus();
+    await expect(outlineUnclipped(copy)).toBe(true);
   },
 };

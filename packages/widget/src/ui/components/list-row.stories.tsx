@@ -6,6 +6,7 @@ import {
   isTruncated,
   isWithin,
   outlineBox,
+  outlineUnclipped,
   outlineWithin,
   shareLine,
 } from "../storybook/geometry";
@@ -13,6 +14,7 @@ import { tokenLogo } from "../storybook/images";
 import { TokenAvatar } from "./avatar";
 import { Badge } from "./badge";
 import { ListGroup, ListRow } from "./list-row";
+import { ScrollArea } from "./scroll-area";
 
 const rowContent = {
   leading: <TokenAvatar src={tokenLogo} name="ETH" />,
@@ -629,4 +631,48 @@ export const RingsInside: Story = {
     await expect(row).toHaveFocus();
     await expect(outlineWithin(row, row.getBoundingClientRect())).toBe(true);
   },
+};
+
+/**
+ * Card rows in a scrolling area span its width; each draws its focus ring
+ * inside its edge, so the area never cuts it off, even at its ends.
+ */
+export const RingsInsideScrollArea: Story = {
+  args: { onClick: fn() },
+  render: (args) => (
+    <div style={{ width: 320 }}>
+      <ScrollArea label="Positions" maxHeight="sm">
+        <ListGroup>
+          {["Ethereum", "Solana", "Polygon", "Cosmos", "Avalanche"].map(
+            (title) => (
+              <ListRow key={title} {...args} title={title} />
+            )
+          )}
+        </ListGroup>
+      </ScrollArea>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const rows = canvas.getAllByRole("button");
+    const first = rows[0];
+    const last = rows.at(-1);
+    if (first === undefined || last === undefined) {
+      throw new Error("Expected rows");
+    }
+
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect(first).toHaveFocus();
+    await expect(outlineUnclipped(first)).toBe(true);
+
+    await userEvent.keyboard("{Tab}".repeat(rows.length - 1));
+    await expect(last).toHaveFocus();
+    await expect(outlineUnclipped(last)).toBe(true);
+  },
+};
+
+export const RingsInsideScrollAreaDark: Story = {
+  ...RingsInsideScrollArea,
+  globals: { colorScheme: "dark" },
 };

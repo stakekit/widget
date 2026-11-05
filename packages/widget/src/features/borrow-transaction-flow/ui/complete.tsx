@@ -9,6 +9,7 @@ import {
   formatTokenAmount,
   formatUsd,
 } from "../../../shared/lib/number-format";
+import { useTokenLogoResolver } from "../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { CompleteSummary, Stack } from "../../../ui/index";
 import { useTrackPage } from "../../tracking/index";
@@ -18,7 +19,10 @@ import {
   type PageCta,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { projectBorrowCompletion } from "../model/borrow-completion";
+import {
+  getBorrowCompletionLogos,
+  projectBorrowCompletion,
+} from "../model/borrow-completion";
 import { getBorrowTransactionFlowAmountLabelKey } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
@@ -42,6 +46,7 @@ export const BorrowCompletePage = () => {
 
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const resolveTokenLogo = useTokenLogoResolver();
   const flow = useBorrowTransactionFlow();
   const executionFlow = useBorrowTransactionFlowExecution();
   const settled = useAtomValue(executionFlow.settledPositionAtom);
@@ -58,6 +63,10 @@ export const BorrowCompletePage = () => {
   const { collateralFee, collateralSupplied, origination } = completion.details;
   const { headline, position } = completion;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
+  const logos = getBorrowCompletionLogos(summary, flow.intake.entry);
+  const tokenLogo = logos.token
+    ? resolveTokenLogo(logos.token, { badge: "none" })
+    : null;
 
   if (!result) return null;
 
@@ -90,6 +99,11 @@ export const BorrowCompletePage = () => {
       <PageContainer>
         <Stack hostHook="borrow-complete-page" gap={20}>
           <CompleteSummary
+            mark={{
+              name: tokenLogo?.name ?? headline.symbol,
+              tokenSrc: tokenLogo?.src,
+              providerSrc: logos.providerSrc ?? undefined,
+            }}
             title={t(`dashboard.borrow.success_page.titles.${summary.action}`, {
               symbol: headline.symbol,
             })}

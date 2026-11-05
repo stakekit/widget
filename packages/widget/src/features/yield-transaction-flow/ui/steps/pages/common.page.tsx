@@ -56,6 +56,8 @@ export const StepsPage = () => {
     customSignErrorMessage,
     leaveConfirmationDialog,
     summary,
+    details,
+    wallet,
     yieldId,
   } = useSteps();
 
@@ -76,6 +78,7 @@ export const StepsPage = () => {
         current: numbered ? index + 1 : undefined,
         type,
       }),
+      type,
       ...(row.type === "ENCRYPT" || row.type === "DECRYPT"
         ? getPreparationStep(
             t,
@@ -110,7 +113,12 @@ export const StepsPage = () => {
             </Notice>
           )}
 
-          <TransactionSteps {...(summary ? { summary } : {})} steps={steps} />
+          <TransactionSteps
+            {...(summary ? { summary } : {})}
+            details={details}
+            steps={steps}
+            wallet={wallet}
+          />
         </Stack>
 
         <PageCtaSlot>

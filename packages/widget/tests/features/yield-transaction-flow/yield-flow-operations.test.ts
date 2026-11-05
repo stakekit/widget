@@ -6,12 +6,15 @@ import {
   Effect,
   Exit,
   Fiber,
+  Layer,
   Option,
   Ref,
   Schema,
   Scope,
   Stream,
 } from "effect";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import type { YieldAction } from "../../../src/domain/action/models";
 import { EarnValidator } from "../../../src/domain/earn/models";
 import {
@@ -741,6 +744,38 @@ describe("startYieldFlowExecution", () => {
         });
         expect(yield* Ref.get(handle.handoff)).toBeNull();
       })
+  );
+
+  // Steps first reads the Atom that starts its workflow while React renders,
+  // and the Atom runtime runs what that read forks before it returns. The
+  // workflow's first wallet request and lifecycle event must not land there.
+  it.effect("makes no workflow in the Atom read that starts it", () =>
+    Effect.gen(function* () {
+      const handle = openEnterSession();
+      const makeWorkflow = vi.fn<TransactionWorkflowService["Service"]["make"]>(
+        (input) => Effect.succeed(idleWorkflow(input))
+      );
+      const kit = yield* makeKit({ makeWorkflow });
+      yield* handOffAction(handle, yieldApiActionFixture()).pipe(
+        Effect.provide(kit.layer)
+      );
+      const handoff = yield* heldHandoff(handle);
+      // Built up front, so the read cannot wait on the layer instead.
+      const services = yield* Layer.build(kit.layer);
+      const executionAtom = Atom.runtime(Layer.succeedContext(services)).atom(
+        startYieldFlowExecution(handle, handoff)
+      );
+      const registry = AtomRegistry.make();
+      const unmount = registry.mount(executionAtom);
+
+      registry.get(executionAtom);
+
+      expect(makeWorkflow).not.toHaveBeenCalled();
+      yield* Effect.promise(() =>
+        vi.waitFor(() => expect(makeWorkflow).toHaveBeenCalledOnce())
+      );
+      unmount();
+    })
   );
 
   it.effect("interrupts an Execution started before any handoff", () =>

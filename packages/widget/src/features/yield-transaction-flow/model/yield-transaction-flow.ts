@@ -8,7 +8,10 @@ import type {
 } from "../../../domain/action/models";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
-import { getActionInputToken } from "../../../domain/action/rules";
+import {
+  getActionInputToken,
+  getTransactionGasEstimate,
+} from "../../../domain/action/rules";
 import {
   getConfidentialActionKind,
   getConfidentialAssetToken,
@@ -380,6 +383,28 @@ export const getYieldFlowRouteGroup = (pathname: string): WidgetPath | null =>
       )
     )
   );
+
+/**
+ * What the flow's transactions are estimated to cost in the gas token: the
+ * action's, plus the conversion before it. Null when any part is unknown, so
+ * no partial total shows.
+ */
+export const getYieldFlowGasAmount = (
+  action: YieldAction | null,
+  conversionGas: BigNumber | null
+) => {
+  if (!action || !conversionGas) return null;
+
+  const estimates = action.transactions.map(getTransactionGasEstimate);
+  if (estimates.some((estimate) => !estimate)) return null;
+
+  const total = estimates.reduce(
+    (sum, estimate) => sum.plus(estimate?.amount ?? 0),
+    conversionGas
+  );
+
+  return total.isZero() ? null : total;
+};
 
 type YieldTransactionFlowReviewPricingInput = {
   readonly token: Token;

@@ -1,3 +1,4 @@
+import { findYieldToken } from "../../../../../domain/action/rules";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
@@ -24,6 +25,10 @@ export const ExitCompletePage = () => {
     receiveSymbol: completion.receiveToken?.symbol ?? null,
     symbol: completion.token.symbol,
   });
+  // A payout in another token shows that token, when the yield lists it.
+  const receivedToken = completion.receiveToken
+    ? (findYieldToken(integrationData, completion.receiveToken.address) ?? null)
+    : completion.token;
 
   return (
     <CompletePage
@@ -37,6 +42,7 @@ export const ExitCompletePage = () => {
       network={completion.token.symbol}
       note={note}
       providersDetails={exitFlow.providersDetails}
+      receivedToken={receivedToken}
       rows={rows}
       yieldType={getExtendedYieldType(integrationData)}
     />

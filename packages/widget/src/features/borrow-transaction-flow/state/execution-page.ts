@@ -26,6 +26,7 @@ import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
 } from "../../../services/transaction-workflow/transaction-workflow-service";
+import { afterCurrentRender } from "../../../shared/effect/after-render";
 import { settleBorrowPosition } from "../model/borrow-completion";
 import type { BorrowFlowSession } from "../model/borrow-transaction-flow";
 import {
@@ -61,6 +62,9 @@ export const startBorrowFlowExecution = Effect.fn("startBorrowFlowExecution")(
       (started) => (started ? Ref.set(handoff, null) : Effect.void)
     );
     if (!action) return yield* Effect.interrupt;
+
+    // Steps first reads this Atom while React renders.
+    yield* afterCurrentRender;
     const workflows = yield* TransactionWorkflowService;
     return yield* workflows.make(
       new BorrowTransactionWorkflowInput({ action, walletScope })

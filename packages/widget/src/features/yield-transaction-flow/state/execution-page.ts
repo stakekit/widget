@@ -7,7 +7,9 @@ import {
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { getConfidentialActionBatchSide } from "../../../domain/earn/confidential";
+import { exactZero } from "../../../domain/finance/exact";
 import { equalTokens } from "../../../domain/token/token";
+import { pricesAtom } from "../../../resources/token-prices/index";
 import {
   PositionDataKey,
   positionDataAtom,
@@ -25,10 +27,12 @@ import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
 } from "../../../services/transaction-workflow/transaction-workflow-service";
+import { afterCurrentRender } from "../../../shared/effect/after-render";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import {
   getYieldFlowExit,
   getYieldFlowExitUnlockDate,
+  getYieldFlowGasAmount,
   getYieldFlowPositionBalanceId,
   getYieldFlowWorkflowInput,
   getYieldFlowYieldId,
@@ -37,6 +41,7 @@ import {
   type YieldFlowSession,
 } from "../model/yield-transaction-flow";
 import { getYieldTransactionStepsView } from "../model/yield-transaction-workflow";
+import { getYieldFlowReviewPricesKey } from "./review-prices";
 
 // A started router navigation cannot be cancelled, so a page that ends
 // meanwhile waits for it instead of abandoning it mid-flight.
@@ -70,6 +75,8 @@ export const startYieldFlowExecution = Effect.fn("startYieldFlowExecution")(
     );
     if (!started) return yield* Effect.interrupt;
 
+    // Steps first reads this Atom while React renders.
+    yield* afterCurrentRender;
     const transactionWorkflow = yield* TransactionWorkflowService;
     return yield* transactionWorkflow.make(
       getYieldFlowWorkflowInput({ session, source: handoff.source })
@@ -183,6 +190,30 @@ export const makeYieldFlowExecutionPage = (
     } as const;
   }).pipe(Atom.withLabel("yieldFlowExecutionView"));
 
+  // What Review priced, again for Steps' details: the prices load from the
+  // same request, so they are usually already there.
+  const pricesKey = getYieldFlowReviewPricesKey(intake);
+  const action =
+    handoff.source._tag === "Action"
+      ? handoff.source.action
+      : handoff.source.prepared;
+  const pricingViewAtom = Atom.make((get) => ({
+    /** The action's USD value as the API priced it; null without one. */
+    amountUsd: action?.amountUsd ?? null,
+    /**
+     * The estimated gas of every transaction; null when any is unknown, as
+     * for the conversion a confidential deposit runs first.
+     */
+    gasAmount: getYieldFlowGasAmount(
+      action,
+      handoff.source._tag === "Action" ? exactZero() : null
+    ),
+    prices: AsyncResult.getOrElse(
+      get(pricesAtom.foreground(pricesKey)),
+      () => null
+    ),
+  })).pipe(Atom.withLabel("yieldFlowExecutionPricing"));
+
   return {
     activityCompleteViewAtom: Atom.make((get) => {
       const { state } = get(workflowViewAtom);
@@ -268,6 +299,8 @@ export const makeYieldFlowExecutionPage = (
         .pipe(Atom.withLabel("dispatchYieldFlowWorkflow")),
       viewAtom: workflowViewAtom,
     },
+    /** The amount's value, the gas and the prices Steps' details show. */
+    pricingViewAtom,
     executionAtom,
   } as const;
 };

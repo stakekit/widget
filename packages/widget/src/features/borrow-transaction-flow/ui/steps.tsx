@@ -1,6 +1,15 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import {
+  formatBorrowProviderName,
+  formatNetworkName,
+} from "../../../shared/lib/formatters";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import {
   Button,
   IconButton,
   InlineIcon,
@@ -15,14 +24,20 @@ import { useTrackPage } from "../../tracking/index";
 import {
   getTransactionStepState,
   TransactionSteps,
+  type TransactionStepsDetail,
 } from "../../transaction-steps/views";
+import { useConnectedWallet } from "../../wallet/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
   PageCtaSlot,
 } from "../../widget-shell/views";
-import { getBorrowTransactionFlowDestination } from "../model/borrow-transaction-flow";
+import { getBorrowFlowHeadline } from "../model/borrow-completion";
+import {
+  getBorrowTransactionFlowDestination,
+  projectBorrowTransactionFlowSummary,
+} from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
@@ -34,6 +49,8 @@ export const BorrowStepsPage = () => {
   useTrackPage("borrowSteps");
 
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+  const wallet = useConnectedWallet();
   const flow = useBorrowTransactionFlow();
   const executionFlow = useBorrowTransactionFlowExecution();
   const back = useAtomSet(executionFlow.leaveAtom);
@@ -45,6 +62,33 @@ export const BorrowStepsPage = () => {
   const executionErrorMessage = execution.errorMessage;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
   const failed = Boolean(executionErrorMessage) || execution.cancelled;
+  // What Review showed, under the steps: the amount with its value, and the
+  // market with who runs it. Gas is not estimated before the steps run.
+  const { summary } = flow.intake;
+  const headline = getBorrowFlowHeadline(
+    summary,
+    projectBorrowTransactionFlowSummary(summary)
+  );
+  const details: ReadonlyArray<TransactionStepsDetail> = [
+    ...(headline.amount === null
+      ? []
+      : [
+          {
+            label: t("steps.details.amount"),
+            testId: "steps-details-amount",
+            value: `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`,
+            ...(headline.usd
+              ? { caption: formatUsd(headline.usd, locale) }
+              : {}),
+          },
+        ]),
+    {
+      caption: `${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`,
+      label: t("steps.details.market"),
+      testId: "steps-details-market",
+      value: summary.marketLabel,
+    },
+  ];
 
   return (
     <AnimationPage>
@@ -74,19 +118,29 @@ export const BorrowStepsPage = () => {
 
           {execution.steps.length > 0 ? (
             <TransactionSteps
-              steps={execution.steps.map((step, index) => ({
-                explorerUrl: step.explorerUrl,
-                hash: step.hash,
-                id: step.id,
-                label: t("steps.tx_of", {
-                  count: execution.steps.length,
-                  current: index + 1,
-                  type: t(
-                    `dashboard.borrow.execution_page.tx_type.${step.type}`
+              details={details}
+              wallet={wallet}
+              steps={execution.steps.map((step, index) => {
+                const type = t(
+                  `dashboard.borrow.execution_page.tx_type.${step.type}`
+                );
+                return {
+                  explorerUrl: step.explorerUrl,
+                  hash: step.hash,
+                  id: step.id,
+                  label: t("steps.tx_of", {
+                    count: execution.steps.length,
+                    current: index + 1,
+                    type,
+                  }),
+                  type,
+                  ...getTransactionStepState(
+                    t,
+                    step.done,
+                    step.progress.phases
                   ),
-                }),
-                ...getTransactionStepState(t, step.done, step.progress.phases),
-              }))}
+                };
+              })}
             />
           ) : null}
 
@@ -103,7 +157,7 @@ export const BorrowStepsPage = () => {
             <Notice
               tone="danger"
               title={t(
-                `dashboard.borrow.execution_page.error_titles.${flow.intake.summary.action}`
+                `dashboard.borrow.execution_page.error_titles.${summary.action}`
               )}
             >
               {executionErrorMessage}

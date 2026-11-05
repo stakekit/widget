@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
+import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { outlineUnclipped } from "../storybook/geometry";
+import { Button } from "./button";
 import { ScrollArea } from "./scroll-area";
 
 const rows = Array.from({ length: 40 }, (_, index) => `Validator ${index + 1}`);
@@ -132,5 +135,43 @@ export const TruncatesLongLines: Story = {
     await expect(line.getBoundingClientRect().right).toBeLessThanOrEqual(
       region.getBoundingClientRect().right
     );
+  },
+};
+
+const actions = Array.from({ length: 12 }, (_, index) => `Action ${index + 1}`);
+
+/**
+ * Tabbing down scrolls each control into view with room for its focus ring:
+ * the one that lands at the area's bottom edge keeps its whole ring. Scroll
+ * padding cannot move content at rest, so the content opens with a heading,
+ * not a control flush with the top edge.
+ */
+export const KeepsRingAtEdge: Story = {
+  args: {
+    children: (
+      <Stack gap={8} align="center">
+        <Text as="p">Validators</Text>
+        {actions.map((action) => (
+          <Button key={action} variant="secondary">
+            {action}
+          </Button>
+        ))}
+      </Stack>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const region = canvas.getByRole("region", { name: "Validators" });
+    const last = canvas.getByRole("button", { name: "Action 12" });
+
+    await userEvent.tab();
+    await expect(region).toHaveFocus();
+    for (const action of actions) {
+      await userEvent.tab();
+      const button = canvas.getByRole("button", { name: action });
+      await expect(button).toHaveFocus();
+      await expect(outlineUnclipped(button)).toBe(true);
+    }
+    await expect(last).toHaveFocus();
   },
 };

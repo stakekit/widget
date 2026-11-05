@@ -673,6 +673,18 @@
     "progress_label": "Progression de la transaction",
     "progress_count": "{{confirmed}} sur {{total}} confirmées",
     "summary": "{{action}} {{amount}}",
+    "check_wallet": {
+      "title": "Vérifiez votre portefeuille",
+      "description": "Approuvez la transaction {{type}} dans {{wallet}}",
+      "description_unknown_wallet": "Approuvez la transaction {{type}} dans votre portefeuille"
+    },
+    "details": {
+      "amount": "Montant",
+      "yield": "Rendement",
+      "market": "Marché",
+      "gas": "Gas estimé",
+      "receive": "Vous recevrez"
+    },
     "state": {
       "pending": "En attente",
       "active": "En cours",
@@ -887,7 +899,6 @@
     "claim_rewards": "Réclamer les récompenses",
     "action_required": "Action requise",
     "in_progress": "En cours",
-    "small_balances": "Petits soldes ({{count}})",
     "dont_see_position": "Vous ne voyez pas une position ?",
     "import_validator": "Importez un validateur à qui vous avez délégué des fonds pour voir votre position",
     "import_button": "Importer",

@@ -12,13 +12,16 @@ export const borderWidth = stylex.defineConsts({
 
 /**
  * The keyboard focus ring every interactive part draws on `:focus-visible`.
- * `insetOffset` draws it inside the edge, for list rows a scrolling list
- * would otherwise clip.
+ * `insetOffset` draws it inside the edge, for full-width parts a clipping or
+ * scrolling container would otherwise cut it off. `extent` is how far a ring
+ * drawn outside reaches past the edge, its offset plus its width: the room a
+ * scrolling container leaves when it scrolls a control into view.
  */
 export const focusRing = stylex.defineConsts({
   width: "2px",
   offset: "2px",
   insetOffset: "-2px",
+  extent: "4px",
 });
 
 /** The ring that marks a selected surface, drawn inside its edge. */

@@ -24,7 +24,8 @@ type SplitViewProps = {
  * Two panes side by side from the `split` container size up, divided by a
  * rule. Narrower, they stack in one column, the secondary pane under the
  * primary one past a rule, at their full height. Without both panes, it
- * shows the one it has. Split, the secondary pane never sets the split
+ * shows the one it has. It grows into the rest of its column, such as a
+ * frame's minimum height. Split, the secondary pane never sets the split
  * view's height: it scrolls within the primary pane's height, or its minimum
  * when that is taller.
  */
@@ -59,11 +60,13 @@ export const SplitView = ({
 };
 
 const styles = stylex.create({
+  // Grows into the rest of the page, so both panes reach its foot.
   root: {
     gap: space[24],
     alignItems: "stretch",
     display: "flex",
     flexDirection: { default: "column", [container.split]: "row" },
+    flexGrow: 1,
     minWidth: 0,
     width: "100%",
   },

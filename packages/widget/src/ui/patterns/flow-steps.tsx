@@ -1,5 +1,8 @@
-import { TokenAvatar } from "../components/avatar";
+import { IconAvatar, TokenAvatar } from "../components/avatar";
+import { Card } from "../components/card";
+import { DetailList, DetailRow } from "../components/detail-list";
 import { Steps } from "../components/steps";
+import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import type { TokenLogo } from "./token";
@@ -62,6 +65,36 @@ type FlowStepsProps = {
     readonly label: string;
     readonly newTabLabel: string;
   };
+  /**
+   * Asks the user to check their wallet, in a card under the steps: given
+   * while a step waits for its signature.
+   */
+  readonly signaturePrompt?: {
+    /** Such as "Check your wallet". */
+    readonly title: string;
+    /** Such as "Approve the Stake transaction in MetaMask". */
+    readonly description: string;
+    /** The wallet asked; unset or without a logo, a wallet icon shows. */
+    readonly wallet?: {
+      readonly name: string;
+      readonly logo?: string;
+    };
+  };
+  /**
+   * What the flow runs, as its Review showed it, in a card under the steps:
+   * such as the amount, where it goes, and the estimated gas.
+   */
+  readonly details?: ReadonlyArray<FlowStepsDetail>;
+};
+
+/** One label-value row of a flow's details. */
+type FlowStepsDetail = {
+  readonly label: string;
+  readonly value: string;
+  /** Under the value, such as its fiat value. */
+  readonly caption?: string;
+  /** Renders as the row's `data-testid`. */
+  readonly testId?: string;
 };
 
 const stepStatus = {
@@ -73,10 +106,17 @@ const stepStatus = {
   failed: "failed",
 } as const satisfies Record<FlowStepState, string>;
 
+// Being sent fills a third of the way to the next step; confirming, two.
+const stepStage = {
+  broadcasting: "submitting",
+  active: "confirming",
+} as const satisfies Partial<Record<FlowStepState, string>>;
+
 /**
  * A flow's transactions as a `Steps` timeline under a summary of the action
  * they run: how many are done, each transaction's state under its label, and
- * its explorer link once it has one.
+ * its explorer link once it has one. Under the steps, a card asks to check
+ * the wallet while it is given, and another lists the flow's details.
  */
 export const FlowSteps = ({
   steps,
@@ -85,6 +125,8 @@ export const FlowSteps = ({
   summary,
   progressLabel,
   explorerLink,
+  signaturePrompt,
+  details = [],
 }: FlowStepsProps) => {
   const confirmed = steps.filter((step) => step.state === "done").length;
 
@@ -127,6 +169,9 @@ export const FlowSteps = ({
             label: step.label,
             status: stepStatus[step.state],
             state: stateLabels[step.state],
+            ...(step.state === "broadcasting" || step.state === "active"
+              ? { stage: stepStage[step.state] }
+              : {}),
             ...(step.message === undefined
               ? {}
               : { description: step.message }),
@@ -143,6 +188,50 @@ export const FlowSteps = ({
                 }),
           }))}
         />
+      )}
+      {signaturePrompt !== undefined && (
+        <Card testId="flow-steps-signature-prompt">
+          <Stack direction="row" align="center" gap={12}>
+            {signaturePrompt.wallet?.logo === undefined ? (
+              <IconAvatar size="card">
+                <Icon name="WalletIcon" size="md" />
+              </IconAvatar>
+            ) : (
+              <TokenAvatar
+                src={signaturePrompt.wallet.logo}
+                name={signaturePrompt.wallet.name}
+                shape="square"
+                size="card"
+                decorative
+              />
+            )}
+            <Stack gap={2} grow>
+              <Text weight="semibold">{signaturePrompt.title}</Text>
+              <Text variant="caption" tone="muted" breakAnywhere>
+                {signaturePrompt.description}
+              </Text>
+            </Stack>
+          </Stack>
+        </Card>
+      )}
+      {details.length > 0 && (
+        <Card testId="flow-steps-details">
+          <DetailList>
+            {details.map((detail) => (
+              <DetailRow
+                key={detail.label}
+                label={detail.label}
+                value={detail.value}
+                {...(detail.caption === undefined
+                  ? {}
+                  : { caption: detail.caption })}
+                {...(detail.testId === undefined
+                  ? {}
+                  : { testId: detail.testId })}
+              />
+            ))}
+          </DetailList>
+        </Card>
       )}
     </Stack>
   );

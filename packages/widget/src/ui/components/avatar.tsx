@@ -2,8 +2,11 @@ import { Avatar as BaseAvatar } from "@base-ui/react/avatar";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactElement } from "react";
 import { accountAvatar } from "../artwork/account-avatar";
+import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
+import { keyframes } from "../tokens/keyframes.stylex";
+import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { avatarBadgeSize, avatarSize } from "../tokens/size.stylex";
 import {
@@ -73,6 +76,11 @@ type TokenAvatarProps = { readonly size?: AvatarSize } & (
       /** The network's logo URL, drawn as a badge at the bottom end. */
       readonly networkSrc?: string;
       /**
+       * Marks a finished action: a success check badge at the bottom end, in
+       * place of the network's, whose check draws in as it mounts.
+       */
+      readonly success?: boolean;
+      /**
        * Hides the avatar from assistive technology, beside text that already
        * names the token, such as a token trigger's symbol.
        */
@@ -92,6 +100,7 @@ type TokenAvatarProps = { readonly size?: AvatarSize } & (
       readonly src?: never;
       readonly name?: never;
       readonly networkSrc?: never;
+      readonly success?: never;
       readonly decorative?: never;
       readonly shape?: never;
     }
@@ -132,17 +141,32 @@ export const TokenAvatar = (props: TokenAvatarProps) => {
         size={size}
         {...(props.shape === undefined ? {} : { shape: props.shape })}
       />
-      {props.networkSrc !== undefined && (
-        <BaseAvatar.Root
+      {props.success === true ? (
+        <span
           aria-hidden="true"
-          {...stylex.props(styles.badge, badgeSizeStyles[size])}
+          {...stylex.props(
+            styles.badge,
+            styles.successBadge,
+            badgeSizeStyles[size]
+          )}
         >
-          <BaseAvatar.Image
-            src={props.networkSrc}
-            alt=""
-            {...stylex.props(styles.image)}
-          />
-        </BaseAvatar.Root>
+          <span {...stylex.props(styles.drawCheck)}>
+            <Icon name="CheckIcon" size="sm" />
+          </span>
+        </span>
+      ) : (
+        props.networkSrc !== undefined && (
+          <BaseAvatar.Root
+            aria-hidden="true"
+            {...stylex.props(styles.badge, badgeSizeStyles[size])}
+          >
+            <BaseAvatar.Image
+              src={props.networkSrc}
+              alt=""
+              {...stylex.props(styles.image)}
+            />
+          </BaseAvatar.Root>
+        )
       )}
     </span>
   );
@@ -214,6 +238,24 @@ const styles = stylex.create({
     position: "absolute",
     bottom: 0,
   },
+  // The success color under a check in the canvas color, which reads on it
+  // in either scheme; the badge's ring sets it off the avatar.
+  successBadge: {
+    alignItems: "center",
+    backgroundColor: color.success,
+    color: color.background,
+    justifyContent: "center",
+  },
+  // The check wipes in from its start, as if drawn, once the badge is in;
+  // the motion tokens are zero under reduced motion, so it shows at once.
+  drawCheck: {
+    animationDelay: motion.base,
+    animationDuration: motion.slow,
+    animationFillMode: "both",
+    animationName: keyframes.drawIn,
+    animationTimingFunction: motion.easing,
+    display: "flex",
+  },
   generated: (backgroundColor: string) => ({ backgroundColor }),
 });
 
@@ -224,6 +266,7 @@ const sizeStyles = stylex.create({
   md: { height: avatarSize.md, width: avatarSize.md },
   card: { height: avatarSize.card, width: avatarSize.card },
   lg: { height: avatarSize.lg, width: avatarSize.lg },
+  hero: { height: avatarSize.hero, width: avatarSize.hero },
   xl: { height: avatarSize.xl, width: avatarSize.xl },
 });
 
@@ -234,6 +277,7 @@ const fallbackTextStyles = stylex.create({
   md: { fontSize: fontSize.label, lineHeight: lineHeight.label },
   card: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
   lg: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
+  hero: { fontSize: fontSize.title, lineHeight: lineHeight.title },
   xl: { fontSize: fontSize.title, lineHeight: lineHeight.title },
 });
 
@@ -245,6 +289,7 @@ const emojiStyles = stylex.create({
   md: { fontSize: fontSize.title, lineHeight: lineHeight.title },
   card: { fontSize: fontSize.display, lineHeight: lineHeight.display },
   lg: { fontSize: fontSize.display, lineHeight: lineHeight.display },
+  hero: { fontSize: fontSize.display, lineHeight: lineHeight.display },
   xl: { fontSize: fontSize.display, lineHeight: lineHeight.display },
 });
 
@@ -255,5 +300,6 @@ const badgeSizeStyles = stylex.create({
   md: { height: avatarBadgeSize.md, width: avatarBadgeSize.md },
   card: { height: avatarBadgeSize.card, width: avatarBadgeSize.card },
   lg: { height: avatarBadgeSize.lg, width: avatarBadgeSize.lg },
+  hero: { height: avatarBadgeSize.hero, width: avatarBadgeSize.hero },
   xl: { height: avatarBadgeSize.xl, width: avatarBadgeSize.xl },
 });

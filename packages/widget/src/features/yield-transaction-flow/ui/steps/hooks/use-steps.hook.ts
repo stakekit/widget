@@ -2,12 +2,13 @@ import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useExecutionLeaveConfirmation } from "../../../../leave-confirmation/index";
 import { useTrackEvent } from "../../../../tracking/index";
+import { useConnectedWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
 import {
   useYieldFlowExecution,
   useYieldFlowSession,
 } from "../../../react/yield-flow-route";
-import { useStepsSummary } from "./use-steps-summary.hook";
+import { useStepsDetails, useStepsSummary } from "./use-steps-summary.hook";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
@@ -21,6 +22,8 @@ export const useSteps = () => {
 
   const trackEvent = useTrackEvent();
   const summary = useStepsSummary();
+  const details = useStepsDetails();
+  const wallet = useConnectedWallet();
 
   const onClick = () =>
     leaveConfirmation.confirm(() => {
@@ -52,6 +55,8 @@ export const useSteps = () => {
     customSignErrorMessage: steps.customSignErrorMessage,
     leaveConfirmationDialog: leaveConfirmation.dialog,
     summary,
+    details,
+    wallet,
     yieldId: steps.yieldId,
   };
 };

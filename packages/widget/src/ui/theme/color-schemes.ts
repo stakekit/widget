@@ -24,9 +24,11 @@ const darkColorRoles: ColorRoles = {
   textMuted: "#A1A1AA",
   textSubtle: "#71717A",
   // 3.01:1 on `surfaceHover`, so a selected control's accent cue reads; the
-  // greys above are as light as that allows.
+  // greys above are as light as that allows. Hover deepens it (1.25:1 off the
+  // accent) under the white text, which a lighter hover would drop below
+  // 4.5:1.
   accent: "#4C62FF",
-  accentHover: "#4F64FF",
+  accentHover: "#3B50F0",
   onAccent: "#FFFFFF",
   accentSoft: "#1E2238",
   accentText: "#9AA6FF",
@@ -94,7 +96,8 @@ export type PresetPalette = Readonly<{
 // #119A88 (same hue), the lightest that still marks a selected control at 3:1
 // on every surface (3.02:1 on `surfaceHover`, which is as deep as its tinted
 // greys go) while keeping dark text at 5.06:1; hover lightens under the dark
-// text (5.50:1). Its accent text and focus ring are a deeper teal in light.
+// text, 1.26:1 off the accent (6.37:1). Its accent text and focus ring are a
+// deeper teal in light.
 // Its dark surfaces sit closer to the canvas than its translucent greys, with
 // white text, so text derived from a host accent keeps its contrast on them.
 // Its danger is lighter than the dark scheme's, which reads 4.11:1 on its
@@ -109,7 +112,7 @@ const fineryLightColors = {
   textMuted: "#566664",
   textSubtle: "#879593",
   accent: "#119A88",
-  accentHover: "#12A18E",
+  accentHover: "#14AE9A",
   onAccent: "#18181B",
   accentSoft: "#EBF9F7",
   accentText: "#0B7468",

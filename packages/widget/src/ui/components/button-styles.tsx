@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
-import { color } from "../tokens/color.stylex";
+import { color, pressTint, softControlTint } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
 import { callToAction } from "../tokens/presentation.stylex";
@@ -134,12 +134,16 @@ const buttonStyles = stylex.create({
 });
 
 // A disabled button keeps its variant's look at the disabled opacity, so a
-// disabled primary still reads as the primary action.
+// disabled primary still reads as the primary action. A filled button's fill
+// also changes while pressed (`pressTint`), on top of the press scale, which
+// reduced motion removes; its hover leaves off while pressed, as the two
+// share a specificity and StyleX does not order them.
 const buttonVariantStyles = stylex.create({
   primary: {
     backgroundColor: {
       default: color.accent,
-      ":hover:not(:disabled)": color.accentHover,
+      ":active:not(:disabled)": `color-mix(in srgb, ${color.accentHover}, ${pressTint.ink} ${pressTint.shade})`,
+      ":hover:not(:disabled, :active)": color.accentHover,
     },
     color: color.onAccent,
   },
@@ -158,22 +162,30 @@ const buttonVariantStyles = stylex.create({
     },
     color: color.text,
   },
-  // The accent text on its soft tint; hover moves the tint toward the hover
-  // surface, as a toned card's does.
+  // The accent text on its soft tint, bounded by a 1px edge of the text mixed
+  // into `surface` (`softControlTint`), as the tint alone vanishes into a
+  // filled card; hover moves the tint toward the hover surface, as a toned
+  // card's does, and a press fills it toward the text.
   soft: {
+    borderColor: `color-mix(in srgb, currentColor ${softControlTint.edge}, ${color.surface})`,
     backgroundColor: {
       default: color.accentSoft,
-      ":hover:not(:disabled)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,
+      ":active:not(:disabled)": `color-mix(in srgb, currentColor ${pressTint.toneFill}, ${color.accentSoft})`,
+      ":hover:not(:disabled, :active)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,
     },
     color: color.accentText,
   },
-  // Status colors stay text on their soft tint; hover outlines the button.
+  // Status colors stay text on their soft tint; hover outlines the button,
+  // and a press fills the tint toward the text.
   danger: {
     borderColor: {
       default: "transparent",
       ":hover:not(:disabled)": color.danger,
     },
-    backgroundColor: color.dangerSoft,
+    backgroundColor: {
+      default: color.dangerSoft,
+      ":active:not(:disabled)": `color-mix(in srgb, currentColor ${pressTint.toneFill}, ${color.dangerSoft})`,
+    },
     color: color.danger,
   },
   // The danger color on a secondary button's surface; hover tints it softly.

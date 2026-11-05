@@ -7,6 +7,7 @@ import {
 import { type ReactNode, useEffect, useEffectEvent, useRef } from "react";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
 import { scrollAreaMaxHeight } from "../tokens/size.stylex";
@@ -53,6 +54,13 @@ type VirtualListProps<T> = ItemsOrGroups<T> & {
   readonly estimateSize?: number;
   /** Caps the height; unset, the list fills its parent's height. */
   readonly maxHeight?: keyof typeof maxHeightStyles;
+  /**
+   * With `maxHeight`, the list still asks its column for no more than the cap
+   * (or its rows' height when shorter), but grows past it into the space the
+   * column has left, such as a frame's minimum height, and shrinks below it
+   * when the column is shorter. Its parent must be a column that stretches.
+   */
+  readonly grow?: boolean;
   /**
    * The item, by the same index as `renderItem`, kept scrolled into view, such
    * as the one arrow keys select.
@@ -181,6 +189,7 @@ export const VirtualList = <T,>({
   renderItem,
   estimateSize = 64,
   maxHeight,
+  grow = false,
   activeIndex,
   listRole = "list",
   multiselectable = false,
@@ -270,12 +279,10 @@ export const VirtualList = <T,>({
     if (activeIndex !== undefined) revealActive(activeIndex);
   }, [activeIndex]);
 
+  const totalSize = virtualizer.getTotalSize();
   const listProps = {
     id: listId,
-    ...stylex.props(
-      styles.list,
-      dynamicStyles.height(virtualizer.getTotalSize())
-    ),
+    ...stylex.props(styles.list, dynamicStyles.height(totalSize)),
   };
   const listRows = virtualRows.map((virtualRow) => {
     const row = rows[virtualRow.index];
@@ -321,7 +328,9 @@ export const VirtualList = <T,>({
     ...stylex.props(
       styles.root,
       focusRingStyles.visible,
-      maxHeight && maxHeightStyles[maxHeight]
+      maxHeight && maxHeightStyles[maxHeight],
+      maxHeight && grow && styles.grow,
+      maxHeight && grow && growBasisStyles[maxHeight](totalSize)
     ),
   };
 
@@ -363,6 +372,8 @@ export const VirtualList = <T,>({
 const styles = stylex.create({
   root: {
     overscrollBehavior: "contain",
+    // Scrolling a control into view, as Tab does, leaves room for its ring.
+    scrollPaddingBlock: focusRing.extent,
     containerType: "inline-size",
     flexGrow: 1,
     scrollbarWidth: "thin",
@@ -371,6 +382,10 @@ const styles = stylex.create({
     overflowY: "auto",
     width: "100%",
   },
+  // Grown, it lifts its cap: its flex basis below is what it asks for, and
+  // the column's leftover space is what it takes beyond that. Its minimum
+  // stays 0, so a shorter column shrinks it.
+  grow: { maxHeight: "none", minHeight: 0 },
   list: {
     position: "relative",
     width: "100%",
@@ -407,6 +422,19 @@ const maxHeightStyles = stylex.create({
   sm: { height: "auto", maxHeight: scrollAreaMaxHeight.sm },
   md: { height: "auto", maxHeight: scrollAreaMaxHeight.md },
   lg: { height: "auto", maxHeight: scrollAreaMaxHeight.lg },
+});
+
+// Grown, the list asks for its rows' height up to its cap.
+const growBasisStyles = stylex.create({
+  sm: (total: number) => ({
+    flexBasis: `min(${total}px, ${scrollAreaMaxHeight.sm})`,
+  }),
+  md: (total: number) => ({
+    flexBasis: `min(${total}px, ${scrollAreaMaxHeight.md})`,
+  }),
+  lg: (total: number) => ({
+    flexBasis: `min(${total}px, ${scrollAreaMaxHeight.lg})`,
+  }),
 });
 
 // Virtualizer sizes are runtime values.

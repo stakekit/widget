@@ -114,6 +114,121 @@ export const SigningDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/** A step's motion part: its signing halo, active arc or connector fill. */
+const stepPart = (
+  item: HTMLElement | undefined,
+  part: "halo" | "arc" | "connector-fill"
+) => {
+  const element = item?.querySelector(`[data-step-part="${part}"]`);
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`Expected the step's ${part}.`);
+  }
+  return element;
+};
+
+/**
+ * Waiting for its signature, a step's wallet pulses a halo, slowly, around
+ * its marker; no other step has one. Reduced motion holds it still: see
+ * `steps-reduced-motion.browser.test.tsx`.
+ */
+export const SigningHalo: Story = {
+  ...Signing,
+  play: async ({ canvasElement }) => {
+    const [approve, stake, confirm] =
+      within(canvasElement).getAllByRole("listitem");
+    const halo = getComputedStyle(stepPart(stake, "halo"));
+    await expect(halo.animationName).not.toBe("none");
+    await expect(halo.animationIterationCount).toBe("infinite");
+    // Slower than the arc's turn.
+    await expect(Number.parseFloat(halo.animationDuration)).toBeGreaterThan(
+      Number.parseFloat(
+        getComputedStyle(stepPart(confirm, "arc")).animationDuration
+      )
+    );
+    await expect(approve?.querySelector("[data-step-part='halo']")).toBeNull();
+
+    // The halo centres on the marker, behind its wallet icon.
+    const marker = Array.from(stake?.children ?? []).at(-2);
+    const haloBox = stepPart(stake, "halo").getBoundingClientRect();
+    const markerBox = marker?.getBoundingClientRect();
+    await expect(haloBox.left + haloBox.width / 2).toBeCloseTo(
+      (markerBox?.left ?? 0) + (markerBox?.width ?? 0) / 2,
+      0
+    );
+  },
+};
+
+export const SigningHaloDark: Story = {
+  ...SigningHalo,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * Under way, a step's marker turns an accent arc on its ring, and its
+ * connector fills toward the next step by its stage: a third while it is
+ * submitted, two thirds while it is confirmed, all once it is done.
+ */
+export const Progressing: Story = {
+  args: {
+    steps: [
+      { id: "approve", label: "Approve", status: "done" },
+      { id: "stake", label: "Stake", status: "active", stage: "submitting" },
+      { id: "wrap", label: "Wrap", status: "active", stage: "confirming" },
+      { id: "confirm", label: "Confirm", status: "idle" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const [approve, stake, wrap, confirm] =
+      within(canvasElement).getAllByRole("listitem");
+    const arc = stepPart(stake, "arc");
+    const turning = getComputedStyle(arc);
+    await expect(turning.animationName).not.toBe("none");
+    await expect(turning.animationIterationCount).toBe("infinite");
+    await expect(Number.parseFloat(turning.animationDuration)).toBeGreaterThan(
+      0
+    );
+    // The arc lies on the marker's ring (layout boxes: the arc turns).
+    const marker = Array.from(stake?.children ?? []).at(-2);
+    await expect(arc.offsetWidth).toBe(
+      marker instanceof HTMLElement ? marker.offsetWidth : -1
+    );
+    await expect(approve?.querySelector("[data-step-part='arc']")).toBeNull();
+    // The ring reads as a waiting step's (held to 3:1 by the contrast test);
+    // its turning quarter is the accent, apart from it.
+    const waitingMarker = Array.from(confirm?.children ?? []).at(-2);
+    const waitingRing =
+      waitingMarker instanceof HTMLElement
+        ? getComputedStyle(waitingMarker).borderTopColor
+        : "";
+    await expect(turning.borderBottomColor).toBe(waitingRing);
+    await expect(turning.borderTopColor).not.toBe(turning.borderBottomColor);
+
+    const filled = (item: HTMLElement | undefined) => {
+      const fill = stepPart(item, "connector-fill");
+      const track = fill.parentElement?.getBoundingClientRect().height ?? 0;
+      return fill.getBoundingClientRect().height / track;
+    };
+    await expect(filled(approve)).toBe(1);
+    await expect(filled(stake)).toBeCloseTo(0.33, 2);
+    await expect(filled(wrap)).toBeCloseTo(0.67, 2);
+    // The last step has no connector.
+    await expect(
+      confirm?.querySelector("[data-step-part='connector-fill']")
+    ).toBeNull();
+    // Done leads on in the success tone; under way, in the accent.
+    await expect(
+      getComputedStyle(stepPart(approve, "connector-fill")).backgroundColor
+    ).not.toBe(
+      getComputedStyle(stepPart(stake, "connector-fill")).backgroundColor
+    );
+  },
+};
+
+export const ProgressingDark: Story = {
+  ...Progressing,
+  globals: { colorScheme: "dark" },
+};
+
 export const Failed: Story = {
   args: {
     steps: [

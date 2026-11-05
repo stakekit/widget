@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { createElement, type ReactNode } from "react";
 import {
+  flexItemStyles,
   layoutStyles,
   paddingBlockStyles,
   paddingInlineStyles,
@@ -31,6 +32,8 @@ type CommonProps = {
   readonly "aria-label"?: string;
   readonly "aria-labelledby"?: string;
   readonly children?: ReactNode;
+  /** Takes the remaining space in a parent row or column. */
+  readonly grow?: boolean;
   /** Renders as the card's `data-testid`. */
   readonly testId?: string;
 };
@@ -69,6 +72,7 @@ export const Card = (props: CardProps) => {
     padding = 16,
     tone = "neutral",
     selected,
+    grow = false,
     children,
   } = props;
   const interactive = props.onClick !== undefined || props.href !== undefined;
@@ -84,7 +88,8 @@ export const Card = (props: CardProps) => {
     tone !== "neutral" && toneSoftStyles[tone],
     tone !== "neutral" && interactive && toneHoverStyles[tone],
     tone !== "neutral" && variant === "outline" && toneBorderStyles[tone],
-    selected && interactiveStyles.selected
+    selected && interactiveStyles.selected,
+    grow && flexItemStyles.grow
   );
   const labelling = {
     "aria-label": props["aria-label"],
