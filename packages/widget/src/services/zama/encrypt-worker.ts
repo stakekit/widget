@@ -1,5 +1,5 @@
 import encryptWorkerUrl from "@zama-fhe/sdk/encrypt.worker.js?worker&url";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import type { HttpClient } from "effect/http";
 
 /**
@@ -9,6 +9,13 @@ import type { HttpClient } from "effect/http";
 export type EncryptWorkerSource = string | (() => Worker) | undefined;
 
 const javaScriptContentType = /\b(?:java|ecma)script\b/i;
+
+/** The inlined encrypt worker chunk could not be loaded. */
+class EncryptWorkerLoadError extends Data.TaggedError(
+  "EncryptWorkerLoadError"
+)<{
+  readonly cause: unknown;
+}> {}
 
 /**
  * Whether the host serves the built encrypt worker script beside the widget.
@@ -46,7 +53,10 @@ export const loadEncryptWorker = Effect.fn("loadEncryptWorker")(function* (
   if (yield* isEncryptWorkerServed(client, url, globalThis.location.origin)) {
     return url satisfies EncryptWorkerSource;
   }
-  return yield* Effect.tryPromise(() => import("./encrypt-worker-inline")).pipe(
+  return yield* Effect.tryPromise({
+    try: () => import("./encrypt-worker-inline"),
+    catch: (cause) => new EncryptWorkerLoadError({ cause }),
+  }).pipe(
     Effect.map(
       ({ default: InlineEncryptWorker }): EncryptWorkerSource =>
         () =>

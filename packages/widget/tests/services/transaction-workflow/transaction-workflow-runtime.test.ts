@@ -561,7 +561,7 @@ describe("transaction workflow runtime", () => {
           _tag: "SignFailed",
           error: {
             _tag: "TransactionSignError",
-            message: "Borrow transaction payload could not be decoded.",
+            message: "The transaction payload could not be decoded.",
             reason: { _tag: "DecodeFailed" },
           },
         });

@@ -42,8 +42,10 @@ export const decodeEvmTransaction = (
   tx: string
 ): Effect.Effect<WalletEvmTransactionInput, WalletDecodeError> =>
   decodeUnsignedEvmTransactionJson(tx).pipe(
-    Effect.mapError((cause) => new WalletDecodeError({ cause })),
-    Effect.map(prepareEvmTransaction)
+    Effect.mapBoth({
+      onFailure: (cause) => new WalletDecodeError({ cause }),
+      onSuccess: prepareEvmTransaction,
+    })
   );
 
 /**

@@ -52,7 +52,7 @@ const widgetStorageDefaults: {
 };
 
 export class WidgetPersistence extends Context.Service<WidgetPersistence>()(
-  "stakekit/widget/WidgetPersistence",
+  "@stakekit/widget/services/persistence/widget-persistence/WidgetPersistence",
   {
     make: Effect.gen(function* () {
       const store = yield* KeyValueStore.KeyValueStore;

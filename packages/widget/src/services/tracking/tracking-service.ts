@@ -13,19 +13,24 @@ import {
 } from "./types";
 
 export class TrackingService extends Context.Service<TrackingService>()(
-  "stakekit/widget/TrackingService",
+  "@stakekit/widget/services/tracking/tracking-service/TrackingService",
   {
     make: Effect.gen(function* () {
       const widgetConfig = yield* WidgetConfigService;
       const getVariantTracking = yield* Effect.cached(
         Effect.tryPromise({
-          try: async () => {
-            const module = await import("./tracking-variants");
-            module.initMixpanel(config.zerion.tracking);
-            return module.tracking;
-          },
+          try: () => import("./tracking-variants"),
           catch: () => undefined,
-        }).pipe(Effect.orElseSucceed(() => undefined))
+        }).pipe(
+          Effect.tap((module) =>
+            Effect.try({
+              try: () => module.initMixpanel(config.zerion.tracking),
+              catch: () => undefined,
+            })
+          ),
+          Effect.map((module) => module.tracking),
+          Effect.orElseSucceed(() => undefined)
+        )
       );
 
       const sendEvent = Effect.fn("TrackingService.trackEvent")(

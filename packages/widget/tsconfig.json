@@ -4,6 +4,7 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "lib": ["dom", "dom.iterable", "ESNext"],
+    "verbatimModuleSyntax": true,
     "plugins": [
       {
         "name": "@effect/language-service",
@@ -12,9 +13,112 @@
         "ignoreEffectSuggestionsInTscExitCode": false,
         "ignoreEffectWarningsInTscExitCode": false,
         "ignoreEffectErrorsInTscExitCode": false,
+        // Rules on by default already fail `tsc`. The default-off rules are
+        // enforced in `src` (overrides below); tests, scripts, the playground
+        // and Vite config keep the defaults. These stay off everywhere:
         "diagnosticSeverity": {
-          "unstableApiUsage": "off"
-        }
+          // `effect/reactivity` and `effect/unstable/*` are the widget's
+          // foundation (docs/adr/0002); every Effect package upgrades together.
+          "unstableApiUsage": "off",
+          // Reports every export typed with an Atom, for the same reason.
+          "apiStabilityLeak": "off",
+          // Flags every non-boolean condition, even objects that can't be
+          // falsy, so it trades a rare truthiness bug for noise.
+          "strictBooleanExpressions": "off",
+          // Native Array, String and Object methods are not a defect; moving
+          // to effect/Array, String and Record is churn without a bug class.
+          "preferEffectArray": "off",
+          "preferEffectString": "off",
+          "preferEffectRecord": "off",
+          // Dual (pipeable) signatures are API design for a library, not for
+          // application modules with one caller shape.
+          "missingPipeableSignature": "off",
+          // Module constants decode once at load, outside any Effect;
+          // `schemaSyncInEffect` still rejects sync decoding inside Effects.
+          "schemaSync": "off",
+          // Errors that never cross a boundary need no schema: Schema owns
+          // value-shaped boundary decoding (docs/adr/0009).
+          "preferSchemaTaggedError": "off",
+          // Rewrites hook and Atom family calls such as
+          // `useAtomValue(viewAtom(key))` into `key.pipe(viewAtom, useAtomValue)`.
+          "missedPipeableOpportunity": "off"
+        },
+        "overrides": [
+          {
+            "include": ["src/**/*"],
+            "options": {
+              "diagnosticSeverity": {
+                "anyUnknownInErrorContext": "error",
+                "asyncFunction": "error",
+                "cryptoRandomUUID": "error",
+                "cryptoRandomUUIDInEffect": "error",
+                "deterministicKeys": "error",
+                "effectDoNotation": "error",
+                "effectTryWithoutCatch": "error",
+                "extendsNativeError": "error",
+                "globalConsole": "error",
+                "globalConsoleInEffect": "error",
+                "globalDate": "error",
+                "globalDateInEffect": "error",
+                "globalFetch": "error",
+                "globalFetchInEffect": "error",
+                "globalJson": "error",
+                "globalJsonInEffect": "error",
+                "globalRandom": "error",
+                "globalRandomInEffect": "error",
+                "globalTimers": "error",
+                "globalTimersInEffect": "error",
+                "instanceOfSchema": "error",
+                "mapMapErrorToMapBoth": "error",
+                "missingEffectServiceDependency": "error",
+                "nestedEffectGenYield": "error",
+                "newPromise": "error",
+                "newSchemaClass": "error",
+                "nodeBuiltinImport": "error",
+                "preferSchemaTypeProperty": "error",
+                "provideMergeAllToArray": "error",
+                "processEnv": "error",
+                "processEnvInEffect": "error",
+                "schemaUnionOfLiterals": "error",
+                "serviceNotAsClass": "error",
+                "strictEffectProvide": "error",
+                "typeUnionToSchemaUnion": "error",
+                "unnecessaryArrowBlock": "error",
+                "unsafeEffectTypeAssertion": "error",
+                "yieldInCallArgument": "error"
+              }
+            }
+          },
+          {
+            // React event handlers take promises, and the wallet internals
+            // (adapters, SDK platform clients, the Solana WalletConnect
+            // adapter) implement the Promise-based contracts of wallet SDKs.
+            "include": ["src/**/*.tsx", "src/services/wallet/internal/**/*"],
+            "options": { "diagnosticSeverity": { "asyncFunction": "off" } }
+          },
+          {
+            // React hooks and Design System components own their timers; no
+            // Effect runtime runs there.
+            "include": ["src/shared/react/**/*", "src/ui/**/*"],
+            "options": { "diagnosticSeverity": { "globalTimers": "off" } }
+          },
+          {
+            // Storybook play functions wait on real promises and timers.
+            "include": ["src/**/*.stories.tsx"],
+            "options": { "diagnosticSeverity": { "newPromise": "off" } }
+          },
+          {
+            // Wallet adapters build the promises and retry delays the wallet
+            // SDKs' connector contracts await, outside any Effect.
+            "include": ["src/services/wallet/internal/adapters/**/*"],
+            "options": {
+              "diagnosticSeverity": {
+                "newPromise": "off",
+                "globalTimers": "off"
+              }
+            }
+          }
+        ]
       }
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"

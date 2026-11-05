@@ -7,9 +7,8 @@ import {
 } from "../../../services/wallet/wallet-state";
 import { currentWalletLedgerStateAtom } from "../state/root-atom";
 
-export const useLedgerState = (): LedgerConnectorState => {
-  return useAtomValue(currentWalletLedgerStateAtom).pipe(
+export const useLedgerState = (): LedgerConnectorState =>
+  useAtomValue(currentWalletLedgerStateAtom).pipe(
     AsyncResult.value,
     Option.getOrElse(() => disconnectedLedgerConnectorState)
   );
-};

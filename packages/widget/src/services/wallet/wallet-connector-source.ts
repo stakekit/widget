@@ -11,7 +11,9 @@ type WalletConnectorSourceService = Readonly<{
 export class WalletConnectorSource extends Context.Service<
   WalletConnectorSource,
   WalletConnectorSourceService
->()("stakekit/widget/services/wallet/WalletConnectorSource") {
+>()(
+  "@stakekit/widget/services/wallet/wallet-connector-source/WalletConnectorSource"
+) {
   static readonly defaultLayer = Layer.succeed(
     WalletConnectorSource,
     WalletConnectorSource.of({ walletListFactory: undefined })

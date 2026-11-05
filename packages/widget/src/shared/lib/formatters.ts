@@ -11,9 +11,7 @@ export const formatCountryCode = ({
 }: {
   language: string;
   countryCode: string;
-}) => {
-  return new Intl.DisplayNames([language], { type: "region" }).of(countryCode);
-};
+}) => new Intl.DisplayNames([language], { type: "region" }).of(countryCode);
 
 export const getRewardTypeFormatted = (rewardType: string | undefined) => {
   switch (rewardType?.toLowerCase()) {

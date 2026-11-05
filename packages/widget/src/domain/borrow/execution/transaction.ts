@@ -98,10 +98,14 @@ const optionalBaseUnitAmount = <K extends string>(
   value: bigint | undefined
 ) => (value === undefined ? {} : { [key]: value.toString() });
 
+const encodeWalletPayloadJson = Schema.encodeEffect(
+  Schema.fromJsonString(Schema.Unknown)
+);
+
 export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
   Schema.decodeUnknownEffect(BorrowWalletEvmTransactionInput)(transaction).pipe(
-    Effect.map(({ signablePayload: payload }) =>
-      JSON.stringify({
+    Effect.flatMap(({ signablePayload: payload }) =>
+      encodeWalletPayloadJson({
         chainId: payload.chainId ?? transaction.chainId,
         data: payload.data,
         from: payload.from,

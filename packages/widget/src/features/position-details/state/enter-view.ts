@@ -40,6 +40,7 @@ import {
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { toPresentable } from "../../../shared/effect/async-result";
 import { getPullResultItems } from "../../../shared/effect/pagination";
+import { compositeKey } from "../../../shared/lib/composite-key";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
 import { walletScopeAtom } from "../../wallet/index";
 import {
@@ -74,7 +75,7 @@ const getPositionDetailsEnterValidationKey = (
   key: PositionDetailsEnterKey,
   token: Token | null
 ): string =>
-  JSON.stringify([
+  compositeKey([
     key.integrationId,
     key.balanceId,
     key.walletScope.network,

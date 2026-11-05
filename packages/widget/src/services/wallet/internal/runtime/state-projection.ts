@@ -45,16 +45,13 @@ const wagmiNetworkToSKNetwork = ({
   cosmosChainsMap: Partial<CosmosChainsMap>;
   miscChainsMap: Partial<MiscChainsMap>;
   substrateChainsMap: Partial<SubstrateChainsMap>;
-}): WalletNetwork | null => {
-  return (
-    Object.values({
-      ...evmChainsMap,
-      ...cosmosChainsMap,
-      ...miscChainsMap,
-      ...substrateChainsMap,
-    }).find((c) => c.wagmiChain.id === chain.id)?.network ?? null
-  );
-};
+}): WalletNetwork | null =>
+  Object.values({
+    ...evmChainsMap,
+    ...cosmosChainsMap,
+    ...miscChainsMap,
+    ...substrateChainsMap,
+  }).find((c) => c.wagmiChain.id === chain.id)?.network ?? null;
 
 export type WalletStateController = {
   readonly cosmosConfig: { readonly cosmosChainsMap: Partial<CosmosChainsMap> };

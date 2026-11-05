@@ -331,6 +331,19 @@ and Effect Atom registry.
 - Every Design System part and variant has a story that runs as a Chromium
   test, with accessibility violations failing it; a contrast test checks every
   text/surface Color Role pair in every scheme and Appearance Preset.
+- The Effect language service (`tsc`, configured in `tsconfig.json`) fails on
+  every Effect diagnostic. In `src` it also enforces the default-off rules:
+  deterministic service keys, Schema class constructors, typed `Effect.try`
+  failures, Effect APIs over global JSON, timers, dates, randomness and
+  promises, and Effect code over `async` functions. `.tsx` files and the
+  wallet internals may declare `async` functions (React event handlers and the
+  Promise-based wallet SDK contracts), wallet adapters may build promises and
+  timers for those contracts, `shared/react` and the Design System (`ui/`) may
+  use timers, and stories may build promises for their play functions. Each
+  exemption, each rule kept off and each single-line
+  `@effect-diagnostics` directive carries its reason. Build a string key from
+  JSON parts with `compositeKey` (`shared/lib/composite-key.ts`), not
+  `JSON.stringify`.
 - Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
 - jscpd fails when duplicated source and tooling code (tests and generated API

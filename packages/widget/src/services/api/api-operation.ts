@@ -79,7 +79,7 @@ export const withApiRequestError = (operation: string) =>
       Effect.catch((cause) =>
         toApiFailure(cause).pipe(
           Effect.flatMap((failure) =>
-            Effect.fail(new ApiRequestError({ cause, failure, operation }))
+            Effect.fail(ApiRequestError.make({ cause, failure, operation }))
           )
         )
       )
@@ -124,13 +124,12 @@ export const withResponseDecodeError = (operation: string) =>
     effect: Effect.Effect<A, Schema.SchemaError, R>
   ) {
     return effect.pipe(
-      Effect.mapError(
-        (cause) =>
-          new ResponseDecodeError({
-            operation,
-            issue: cause.message,
-            cause,
-          })
+      Effect.mapError((cause) =>
+        ResponseDecodeError.make({
+          operation,
+          issue: cause.message,
+          cause,
+        })
       )
     );
   };
@@ -143,13 +142,12 @@ export const encodeApiRequest = <
 ) =>
   function encodeRequest(request: RequestSchema["Type"]) {
     return Schema.encodeEffect(schema)(request).pipe(
-      Effect.mapError(
-        (cause) =>
-          new InputValidationError({
-            operation,
-            issue: cause.message,
-            cause,
-          })
+      Effect.mapError((cause) =>
+        InputValidationError.make({
+          operation,
+          issue: cause.message,
+          cause,
+        })
       )
     );
   };

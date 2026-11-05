@@ -78,8 +78,8 @@ const walletBootstrapSourceLayer = Layer.effect(
       effect: Effect.Effect<A, E>
     ): Effect.Effect<A, WalletBootstrapSourceReadError> =>
       effect.pipe(
-        Effect.mapError(
-          (cause) => new WalletBootstrapSourceReadError({ cause })
+        Effect.mapError((cause) =>
+          WalletBootstrapSourceReadError.make({ cause })
         )
       );
 

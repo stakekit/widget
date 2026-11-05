@@ -158,7 +158,7 @@ export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
       readStoredPublicKeys,
     }).pipe(Stream.runHead);
     if (Option.isNone(initialOption)) {
-      return yield* new WalletStateInitializationError({
+      return yield* WalletStateInitializationError.make({
         cause: new Error(
           "Wallet State stream completed before its first value"
         ),

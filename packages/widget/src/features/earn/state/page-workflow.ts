@@ -2,6 +2,7 @@ import { Equal } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { tokenString } from "../../../domain/token/token";
 import { fromAmountValue } from "../../../shared/lib/amount-value";
+import { compositeKey } from "../../../shared/lib/composite-key";
 import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
 
 export const earnPageSearchAtom = Atom.make({
@@ -10,7 +11,7 @@ export const earnPageSearchAtom = Atom.make({
 }).pipe(Atom.withLabel("earnPageSearchAtom"));
 
 export const getEarnPageValidationKey = (selection: EarnSelection): string =>
-  JSON.stringify([
+  compositeKey([
     selection.category,
     selection.yield?.id ?? null,
     selection.token ? tokenString(selection.token.token) : null,

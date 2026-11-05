@@ -166,20 +166,18 @@ export const formatPricePerShare = (
   return price?.isGreaterThan(0) ? formatRatio(price, locale) : null;
 };
 
-export const formatCooldownDays = (days: number, t: TFunction): string => {
-  return days > 0
+export const formatCooldownDays = (days: number, t: TFunction): string =>
+  days > 0
     ? t("dashboard.earn_details.cooldown_days", { count: days })
     : t("dashboard.earn_details.instant");
-};
 
 export const formatRewardClaiming = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
-): string => {
-  return yieldDto.mechanics.rewardClaiming === "auto"
+): string =>
+  yieldDto.mechanics.rewardClaiming === "auto"
     ? t("dashboard.earn_details.auto_compounding")
     : t("dashboard.earn_details.manual");
-};
 
 export const formatOptionalDays = (
   days: number | undefined,

@@ -205,7 +205,9 @@ const makeWalletChainSelection = Effect.fn("makeWalletChainSelection")(
 export class WalletChainSelection extends Context.Service<
   WalletChainSelection,
   WalletChainSelectionService
->()("stakekit/widget/services/wallet/WalletChainSelection") {
+>()(
+  "@stakekit/widget/services/wallet/wallet-chain-selection/WalletChainSelection"
+) {
   static readonly layer = Layer.effect(
     WalletChainSelection,
     makeWalletChainSelection()

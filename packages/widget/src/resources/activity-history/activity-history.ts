@@ -147,8 +147,10 @@ const activityActionCanonicalAtom = Atom.family((key: ActivityActionKey) =>
               })
             )
           ),
-          Effect.map(Option.getOrNull),
-          Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+          Effect.mapBoth({
+            onFailure: (cause) => new ActivityHistoryError({ cause }),
+            onSuccess: Option.getOrNull,
+          })
         )
       )
     )
@@ -551,8 +553,10 @@ const activityCountCanonicalAtom = Atom.family((key: ActivityHistoryKey) =>
         ],
         { concurrency: "unbounded" }
       ).pipe(
-        Effect.map(([yieldCount, borrowCount]) => yieldCount + borrowCount),
-        Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+        Effect.mapBoth({
+          onFailure: (cause) => new ActivityHistoryError({ cause }),
+          onSuccess: ([yieldCount, borrowCount]) => yieldCount + borrowCount,
+        })
       )
     )
     .pipe(

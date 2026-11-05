@@ -528,7 +528,9 @@ const load = Effect.fn("StellarWalletsKitPlatform.load")(function* (
 export class StellarWalletsKitPlatform extends Context.Service<
   StellarWalletsKitPlatform,
   StellarWalletsKitPlatformService
->()("stakekit/widget/wallet/platform/StellarWalletsKitPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/stellar-wallets-kit-platform/StellarWalletsKitPlatform"
+) {
   static readonly layer = Layer.succeed(
     StellarWalletsKitPlatform,
     StellarWalletsKitPlatform.of({ load })

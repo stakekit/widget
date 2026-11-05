@@ -153,16 +153,15 @@ export const makeSubmitCurrent = Effect.gen(function* () {
             });
 
         return submit.pipe(
-          Effect.mapError((cause) =>
-            fail(
-              broadcasted
-                ? "Transaction hash submission failed."
-                : "Signed transaction submission failed.",
-              cause
-            )
-          ),
-          Effect.map(
-            (response) =>
+          Effect.mapBoth({
+            onFailure: (cause) =>
+              fail(
+                broadcasted
+                  ? "Transaction hash submission failed."
+                  : "Signed transaction submission failed.",
+                cause
+              ),
+            onSuccess: (response) =>
               ({
                 batchId: batch.id,
                 hash: signed.broadcasted
@@ -173,8 +172,8 @@ export const makeSubmitCurrent = Effect.gen(function* () {
                 source,
                 status: response.status ?? null,
                 transactionId: source.transaction.id,
-              }) satisfies TransactionWorkflowSubmission
-          )
+              }) satisfies TransactionWorkflowSubmission,
+          })
         );
       }),
       Match.tag("Borrow", ({ transaction }) => {
@@ -188,11 +187,10 @@ export const makeSubmitCurrent = Effect.gen(function* () {
             transactionId: source.transaction.id,
           })
           .pipe(
-            Effect.mapError((cause) =>
-              fail("Borrow transaction could not be submitted.", cause)
-            ),
-            Effect.map(
-              (response) =>
+            Effect.mapBoth({
+              onFailure: (cause) =>
+                fail("Borrow transaction could not be submitted.", cause),
+              onSuccess: (response) =>
                 ({
                   batchId: batch.id,
                   hash: signed.broadcasted
@@ -203,8 +201,8 @@ export const makeSubmitCurrent = Effect.gen(function* () {
                   source,
                   status: response.status ?? null,
                   transactionId: source.transaction.id,
-                }) satisfies TransactionWorkflowSubmission
-            )
+                }) satisfies TransactionWorkflowSubmission,
+            })
           );
       }),
       Match.exhaustive

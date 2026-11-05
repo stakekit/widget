@@ -58,7 +58,9 @@ const fromHeadlessRuntime = Effect.fn("fromHeadlessRuntime")(function* (
 export class SolanaPlatform extends Context.Service<
   SolanaPlatform,
   SolanaPlatformService
->()("stakekit/widget/wallet/platform/SolanaPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/solana-platform/SolanaPlatform"
+) {
   static readonly layer = Layer.effect(
     SolanaPlatform,
     Effect.gen(function* () {

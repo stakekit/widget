@@ -34,7 +34,7 @@ export type TransactionWorkflowHandle = {
 };
 
 export class TransactionWorkflowService extends Context.Service<TransactionWorkflowService>()(
-  "stakekit/widget/workflow/TransactionWorkflowService",
+  "@stakekit/widget/services/transaction-workflow/transaction-workflow-service/TransactionWorkflowService",
   {
     make: Effect.gen(function* () {
       const heldHashes = yield* makeHeldHashRegistration;

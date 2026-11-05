@@ -79,7 +79,7 @@ const makeApiTransport = Effect.gen(function* () {
 });
 
 export class ApiTransportService extends Context.Service<ApiTransportService>()(
-  "stakekit/widget/services/api/ApiTransportService",
+  "@stakekit/widget/services/api/transport/ApiTransportService",
   {
     make: makeApiTransport,
   }

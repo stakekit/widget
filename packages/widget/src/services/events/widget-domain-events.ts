@@ -30,7 +30,9 @@ type WidgetDomainEventsApi = Readonly<{
 export class WidgetDomainEvents extends Context.Service<
   WidgetDomainEvents,
   WidgetDomainEventsApi
->()("stakekit/widget/events/WidgetDomainEvents") {
+>()(
+  "@stakekit/widget/services/events/widget-domain-events/WidgetDomainEvents"
+) {
   static readonly layer = Layer.effect(
     WidgetDomainEvents,
     Effect.gen(function* () {

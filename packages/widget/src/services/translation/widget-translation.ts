@@ -269,7 +269,9 @@ export class WidgetTranslation extends Context.Service<
   {
     readonly i18n: WidgetI18nInstance;
   }
->()("stakekit/widget/translation/WidgetTranslation") {
+>()(
+  "@stakekit/widget/services/translation/widget-translation/WidgetTranslation"
+) {
   static readonly layerNoDeps = Layer.effect(
     WidgetTranslation,
     makeWidgetTranslation()

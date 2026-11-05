@@ -85,7 +85,7 @@ const observeWagmiSnapshot = <A>(
             return unsubscribe;
           },
           catch: (cause) =>
-            new WagmiPlatformError({ cause, operation: "observe-core" }),
+            WagmiPlatformError.make({ cause, operation: "observe-core" }),
         }),
         (unsubscribe) => Effect.sync(unsubscribe)
       ),
@@ -116,8 +116,8 @@ const observeCore = Effect.fn("observeCore")(function* (
     Stream.toQueue({ capacity: 16, strategy: "sliding" })
   );
   const initial = yield* Queue.take(queue).pipe(
-    Effect.mapError(
-      (cause) => new WagmiPlatformError({ cause, operation: "observe-core" })
+    Effect.mapError((cause) =>
+      WagmiPlatformError.make({ cause, operation: "observe-core" })
     )
   );
   const state = yield* SubscriptionRef.make(initial);
@@ -135,7 +135,9 @@ const observeCore = Effect.fn("observeCore")(function* (
 export class WagmiPlatform extends Context.Service<
   WagmiPlatform,
   WagmiPlatformService
->()("stakekit/widget/wallet/platform/WagmiPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/wagmi-platform/WagmiPlatform"
+) {
   static readonly layer = Layer.effect(
     WagmiPlatform,
     Effect.gen(function* () {
@@ -158,9 +160,8 @@ export class WagmiPlatform extends Context.Service<
           walletConnectProtocolPlatform,
           walletModal
         ).pipe(
-          Effect.mapError(
-            (cause) =>
-              new WagmiPlatformError({ cause, operation: "build-config" })
+          Effect.mapError((cause) =>
+            WagmiPlatformError.make({ cause, operation: "build-config" })
           )
         );
         yield* Effect.acquireRelease(

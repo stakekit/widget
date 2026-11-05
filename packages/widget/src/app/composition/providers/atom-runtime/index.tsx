@@ -16,19 +16,14 @@ export const SKAtomRegistryProvider = ({
   hostConfiguration,
   isLedgerLive = false,
   routes,
-}: SKAtomRegistryProviderProps) => {
-  return (
-    <RegistryProvider
-      initialValues={[
-        [
-          applicationRuntimeInitAtom,
-          { hostConfiguration, isLedgerLive, routes },
-        ],
-      ]}
-    >
-      <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
-        {children}
-      </WidgetConfigBoundaryAdapter>
-    </RegistryProvider>
-  );
-};
+}: SKAtomRegistryProviderProps) => (
+  <RegistryProvider
+    initialValues={[
+      [applicationRuntimeInitAtom, { hostConfiguration, isLedgerLive, routes }],
+    ]}
+  >
+    <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
+      {children}
+    </WidgetConfigBoundaryAdapter>
+  </RegistryProvider>
+);

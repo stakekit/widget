@@ -32,6 +32,7 @@ import type {
 } from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
+import { compositeKey } from "../../../shared/lib/composite-key";
 
 class PendingActionAttemptId extends Data.Class<{
   readonly value: string;
@@ -131,14 +132,14 @@ export const makeAutomaticPendingActionModalState = (
   makeOpenPendingActionModalState({
     ...input,
     attemptId: new PendingActionAttemptId({
-      value: JSON.stringify([
+      value: compositeKey([
         "automatic",
         input.yieldBalance.address,
         input.yieldBalance.type,
         input.pendingAction.intent,
         input.pendingAction.type,
         input.pendingAction.passthrough,
-        input.pendingAction.amount ?? null,
+        input.pendingAction.amount?.toJSON() ?? null,
       ]),
     }),
   });

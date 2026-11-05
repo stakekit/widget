@@ -9,7 +9,7 @@ type PresentableApiRequest = {
 export type RichErrorRetry = () => void;
 
 export class RichErrorService extends Context.Service<RichErrorService>()(
-  "stakekit/widget/RichErrorService",
+  "@stakekit/widget/services/errors/rich-error-service/RichErrorService",
   {
     make: Effect.gen(function* () {
       const current = yield* SubscriptionRef.make<RichError | null>(null);

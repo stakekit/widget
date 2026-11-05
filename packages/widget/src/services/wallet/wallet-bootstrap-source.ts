@@ -23,4 +23,6 @@ type WalletBootstrapSourceService = {
 export class WalletBootstrapSource extends Context.Service<
   WalletBootstrapSource,
   WalletBootstrapSourceService
->()("stakekit/widget/services/wallet/WalletBootstrapSource") {}
+>()(
+  "@stakekit/widget/services/wallet/wallet-bootstrap-source/WalletBootstrapSource"
+) {}

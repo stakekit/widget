@@ -252,6 +252,6 @@ export const CompletePageComponent = ({
   );
 };
 
-export const CompletePage = (props: CompletePageProps) => {
-  return <CompletePageComponent {...props} completion={useComplete()} />;
-};
+export const CompletePage = (props: CompletePageProps) => (
+  <CompletePageComponent {...props} completion={useComplete()} />
+);

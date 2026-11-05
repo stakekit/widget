@@ -343,7 +343,7 @@ const logHostConfigurationWarnings = (
 export class WidgetConfigService extends Context.Service<
   WidgetConfigService,
   WidgetConfigServiceValue
->()("stakekit/widget/WidgetConfigService") {
+>()("@stakekit/widget/services/config/widget-config/WidgetConfigService") {
   static layer(
     initialHostConfiguration: SKHostConfiguration,
     options: { readonly isLedgerLive?: boolean } = {}

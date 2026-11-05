@@ -77,7 +77,7 @@ class LedgerTransactionPreparationError extends Schema.TaggedError<
 const transactionPreparationError = (
   message: string
 ): LedgerTransactionPreparationError =>
-  new LedgerTransactionPreparationError({ message });
+  LedgerTransactionPreparationError.make({ message });
 
 /**
  * The Polkadot builder pulls in `@polkadot/types`, whose evaluation inflates a
