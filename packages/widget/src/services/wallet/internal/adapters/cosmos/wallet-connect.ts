@@ -291,7 +291,7 @@ const makeSession = ({
     isAuthorized: async () => (await restorable()) !== undefined,
     disconnect: async () => {
       const topics = [...owned.values()].map(({ topic }) => topic);
-      for (const chainId of [...owned.keys()]) release(chainId);
+      for (const chainId of owned.keys()) release(chainId);
       activeChainId = undefined;
       activation++;
       await storage?.removeItem(cosmosWalletConnectStorageKey);

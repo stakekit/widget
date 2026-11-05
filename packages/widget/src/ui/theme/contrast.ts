@@ -11,7 +11,10 @@ const rgb = new RegExp(
 const parseHex = (digits: string): Rgb => {
   const full =
     digits.length === 3
-      ? [...digits].map((digit) => `${digit}${digit}`).join("")
+      ? digits
+          .split("")
+          .map((digit) => `${digit}${digit}`)
+          .join("")
       : digits;
   const n = Number.parseInt(full, 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];

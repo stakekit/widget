@@ -33,7 +33,8 @@ const isGroup = (character: string, group: string) =>
  */
 const isIntegerText = (text: string, group: string) => {
   // Each group separator becomes a line break, which no digit is.
-  const parts = [...text]
+  const parts = text
+    .split("")
     .map((character) => (isGroup(character, group) ? "\n" : character))
     .join("")
     .split("\n");
@@ -84,7 +85,8 @@ export const toDecimalString = (
   if (!/\d/u.test(text)) return null;
 
   const { integer, fraction } = splitAtDecimal(text, separators.decimal);
-  const digits = [...integer]
+  const digits = integer
+    .split("")
     .filter((character) => !isGroup(character, separators.group))
     .join("");
   const whole = digits === "" ? "0" : digits;
@@ -122,7 +124,8 @@ export const regroupAmountText = (
   separators: AmountSeparators
 ): string | null => {
   const { integer, fraction } = splitAtDecimal(text, separators.decimal);
-  const digits = [...integer]
+  const digits = integer
+    .split("")
     .filter((character) => !isGroup(character, separators.group))
     .join("");
   const ungrouped =
@@ -147,14 +150,18 @@ export const regroupedCaret = (
   regrouped: string,
   separators: AmountSeparators
 ) => {
-  const kept = [...typed.slice(0, caret)].filter(
-    (character) => !isGroup(character, separators.group)
-  ).length;
+  const kept = typed
+    .slice(0, caret)
+    .split("")
+    .filter((character) => !isGroup(character, separators.group)).length;
   if (kept === 0) return 0;
 
-  const keptAt = [...regrouped].flatMap((character, index) =>
-    isGroup(character, separators.group) ? [] : [index]
-  );
+  // Caret positions count UTF-16 units, so the text is read unit by unit.
+  const keptAt = regrouped
+    .split("")
+    .flatMap((character, index) =>
+      isGroup(character, separators.group) ? [] : [index]
+    );
   return (keptAt[kept - 1] ?? regrouped.length - 1) + 1;
 };
 

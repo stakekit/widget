@@ -321,10 +321,10 @@ export const Reveal: Story = {
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "Ready" })
     );
-    await waitFor(() => {
+    await waitFor(async () => {
       const height = frame.getBoundingClientRect().height;
-      expect(height).toBeGreaterThan(0);
-      expect(height).toBe(content.getBoundingClientRect().height);
+      await expect(height).toBeGreaterThan(0);
+      await expect(height).toBe(content.getBoundingClientRect().height);
     });
   },
 };

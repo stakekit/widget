@@ -435,6 +435,7 @@ const RerenderingModal = () => {
 export const ObservesBodyOnce: Story = {
   render: () => <RerenderingModal />,
   beforeEach: () => {
+    // oxlint-disable-next-line typescript/unbound-method -- kept to restore the prototype; the patch calls it with `.call(this, …)`
     const observe = ResizeObserver.prototype.observe;
     observedBodies.length = 0;
     ResizeObserver.prototype.observe = function (target, options) {

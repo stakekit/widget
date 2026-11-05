@@ -94,7 +94,7 @@ export const composeWidgetTranslationResources = ({
 export const createWidgetI18nInstance = () => {
   const instance = createInstance();
 
-  instance
+  void instance
     .use(initReactI18next)
     .use(LanguageDetector)
     .init({
@@ -138,7 +138,7 @@ export const reconcileWidgetI18n = ({
     );
   }
 
-  i18n.changeLanguage(language);
+  void i18n.changeLanguage(language);
 };
 
 const resolveSupportedLanguage = (

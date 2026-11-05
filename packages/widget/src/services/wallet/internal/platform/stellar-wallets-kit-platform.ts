@@ -289,7 +289,8 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
     unsubscribeEnded = protocol.subscribeEnded(next.topic, () => {
       if (selected !== next) return;
       select(undefined);
-      for (const listener of [...endedListeners]) listener();
+      // Snapshot: a listener may unsubscribe or subscribe while this runs.
+      for (const listener of Array.from(endedListeners)) listener();
     });
   };
   yield* Effect.addFinalizer(() =>

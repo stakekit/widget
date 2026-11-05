@@ -411,7 +411,7 @@ export const PlaygroundPanel = ({
         <button className="pg-primary" onClick={apply} type="button">
           Apply and reload
         </button>
-        <button onClick={copyLink} type="button">
+        <button onClick={() => void copyLink()} type="button">
           {linkCopied ? "Copied ✓" : "Copy link"}
         </button>
         <button

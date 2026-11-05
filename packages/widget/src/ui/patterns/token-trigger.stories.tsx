@@ -73,7 +73,7 @@ const frameFill = (element: Element) => {
   ) {
     const fill = getComputedStyle(ancestor).backgroundColor;
     // Skip fully transparent fills (alpha 0).
-    if (!/, 0\)$/.test(fill) && fill !== "transparent") return fill;
+    if (!fill.endsWith(", 0)") && fill !== "transparent") return fill;
   }
   return undefined;
 };

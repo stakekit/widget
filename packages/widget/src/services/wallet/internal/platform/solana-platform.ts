@@ -26,9 +26,7 @@ type SolanaPlatformService = {
   }) => Effect.Effect<SolanaRuntime, never, Scope.Scope>;
 };
 
-const fromHeadlessRuntime = Effect.fn("fromHeadlessRuntime")(function* (
-  runtime: HeadlessSolanaRuntime
-) {
+const fromHeadlessRuntime = (runtime: HeadlessSolanaRuntime): SolanaRuntime => {
   const changes = Stream.callback<SolanaWalletSnapshot>(
     (queue) =>
       Effect.acquireRelease(
@@ -52,8 +50,8 @@ const fromHeadlessRuntime = Effect.fn("fromHeadlessRuntime")(function* (
     connection: runtime.connection,
     current: Effect.sync(runtime.getWalletSnapshot),
     states: changes,
-  } satisfies SolanaRuntime;
-});
+  };
+};
 
 export class SolanaPlatform extends Context.Service<
   SolanaPlatform,
@@ -74,7 +72,7 @@ export class SolanaPlatform extends Context.Service<
             walletConnectProtocol,
             runWalletEffect,
           });
-          return yield* fromHeadlessRuntime(runtime);
+          return fromHeadlessRuntime(runtime);
         }
       );
       return SolanaPlatform.of({ makeRuntime });

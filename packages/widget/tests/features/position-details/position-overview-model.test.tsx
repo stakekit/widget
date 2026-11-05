@@ -54,13 +54,16 @@ const makeRewardsSummary = ({
   } as const;
 };
 
+const text = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" ? `${value}` : "";
+
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
-    "dashboard.earn_details.asset": `Asset (${options?.symbol ?? ""})`,
+    "dashboard.earn_details.asset": `Asset (${text(options?.symbol)})`,
     "dashboard.earn_details.auto_compound": "Auto-compound",
     "dashboard.earn_details.cooldown": "Redemption time",
-    "dashboard.earn_details.cooldown_days": `${options?.count ?? ""} days`,
-    "dashboard.earn_details.daily_batch": `Daily batch · ${options?.time ?? ""} ${options?.timezone ?? ""}`,
+    "dashboard.earn_details.cooldown_days": `${text(options?.count)} days`,
+    "dashboard.earn_details.daily_batch": `Daily batch · ${text(options?.time)} ${text(options?.timezone)}`,
     "dashboard.earn_details.warmup": "Warmup",
     "dashboard.earn_details.instant": "Instant",
     "dashboard.earn_details.min_stake": "Min stake",
@@ -70,13 +73,13 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.earn_details.reward_claiming": "Reward claiming",
     "dashboard.earn_details.reward_schedule": "Reward schedule",
     "dashboard.earn_details.reward_token": "Reward token",
-    "dashboard.earn_details.yield_bearing_reward_token": `${options?.symbol ?? ""} (yield-bearing)`,
+    "dashboard.earn_details.yield_bearing_reward_token": `${text(options?.symbol)} (yield-bearing)`,
     "dashboard.earn_details.risk": "Risk",
     "dashboard.earn_details.type": "Type",
     "dashboard.earn_details.vault": "Vault",
     "dashboard.position_details.action_available": "Action available",
     "dashboard.position_details.action_required": "Action required",
-    "dashboard.position_details.actions_available": `${options?.count ?? ""} actions available`,
+    "dashboard.position_details.actions_available": `${text(options?.count)} actions available`,
     "dashboard.position_details.active": "Active",
     "dashboard.position_details.instant_withdrawal_in_progress":
       "Instant withdrawal in progress",
@@ -100,10 +103,10 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "position_details.balance_type.claimable": "Claimable",
     "position_details.balance_type.entering": "Entering",
     "position_details.balance_type.exiting": "Exiting",
-    "position_details.duration.days": `${options?.count ?? ""} days`,
-    "position_details.duration.hours": `${options?.count ?? ""} hours`,
-    "position_details.unstaking_duration": `${options?.duration ?? ""} remaining`,
-    "position_details.next_batch_in": `Next batch in ${options?.duration ?? ""}`,
+    "position_details.duration.days": `${text(options?.count)} days`,
+    "position_details.duration.hours": `${text(options?.count)} hours`,
+    "position_details.unstaking_duration": `${text(options?.duration)} remaining`,
+    "position_details.next_batch_in": `Next batch in ${text(options?.duration)}`,
     "position_details.cancelling": "Cancelling…",
     "position_details.balance_type.locked": "Locked",
     "position_details.pending_action.cancel_pending": "Cancel pending request",

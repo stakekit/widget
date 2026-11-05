@@ -24,9 +24,9 @@ type TransactionWorkflowTransaction =
 type TransactionWorkflowSource = TransactionWorkflowTransaction["source"];
 type TransactionWorkflowDomainContext = TransactionWorkflowContext["domain"];
 
+// Yield and Borrow transactions share one status set.
 type TransactionWorkflowRemoteStatus =
-  | YieldAction["transactions"][number]["status"]
-  | BorrowAction["transactions"][number]["status"];
+  YieldAction["transactions"][number]["status"];
 
 /** Every remote status is classified, so a new one must be placed here. */
 const transactionWorkflowStatusProgress = {

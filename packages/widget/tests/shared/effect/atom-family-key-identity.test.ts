@@ -31,8 +31,8 @@ const firstAddress = Schema.decodeSync(WalletAddress)("0xwallet-a");
 const secondAddress = Schema.decodeSync(WalletAddress)("0xwallet-b");
 
 const connectedWalletState = ({
-  additionalAddresses = null,
-  address = firstAddress,
+  additionalAddresses,
+  address,
 }: Pick<
   Extract<NormalizedWalletState, { readonly status: "connected" }>,
   "additionalAddresses" | "address"

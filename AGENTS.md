@@ -29,8 +29,11 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   mounted as a host against the real API, configured from its panel and the
   page link, with a scripted host wallet on `window.skDev`. See the README's
   Development section. API mocking belongs to tests only.
-- `pnpm --filter @stakekit/widget lint` — widget formatting, type checks, and
-  StyleX lint on `src/ui`.
+- `pnpm --filter @stakekit/widget lint` — widget oxlint (type-aware, with
+  StyleX's rules on `src/ui` and the widget's rule plugins in
+  `scripts/oxlint/`) and type checks; `lint:fix` applies oxlint's fixes.
+- `pnpm format` — formats the repository with oxfmt (`.oxfmtrc.json`), imports
+  sorted; `pnpm lint:format` checks it.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
@@ -47,7 +50,7 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   public `YieldProviderId` constants from the backend's yield provider enum,
   read from `YIELD_PROVIDERS_ENUM_PATH` (set in `mise.local.toml`) or
   `--source <enum file>`. Commit the regenerated file.
-- `pnpm lint` — all workspaces plus the root ast-grep rules.
+- `pnpm lint` — formatting plus every workspace's oxlint and type checks.
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild
   hosts such as Angular can resolve the built `dist`; part of `build`.

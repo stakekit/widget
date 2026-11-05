@@ -121,7 +121,7 @@ export const preparePendingActionCommand = ({
     command: {
       action: pendingAction.type,
       address,
-      arguments: { ...args, ...(additionalAddresses ?? {}) },
+      arguments: { ...args, ...additionalAddresses },
       passthrough: pendingAction.passthrough,
       yieldId: integration.id,
     },

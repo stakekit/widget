@@ -102,7 +102,7 @@ const setWorkflowState = (
   const state = workflows.at(-1);
   if (!state) throw new Error("Expected a running Execution workflow");
   return act(async () => {
-    // ast-grep-ignore: no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
+    // oxlint-disable-next-line effect/no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
     await Effect.runPromise(SubscriptionRef.update(state, next));
   });
 };
@@ -183,7 +183,7 @@ const TestNavigationBridge = ({
 }) => {
   const navigate = useNavigate();
   useEffect(() => {
-    // biome-ignore lint/nursery/useReactCompiler: Test bridge intentionally publishes navigation outside React.
+    // oxlint-disable-next-line react/immutability -- Test bridge intentionally publishes navigation outside React.
     channel.navigate = navigate;
     return () => {
       channel.navigate = null;
@@ -204,10 +204,10 @@ const StartPage = () => {
       >
         Start
       </button>
-      <button type="button" onClick={() => navigate("/review")}>
+      <button type="button" onClick={() => void navigate("/review")}>
         Review
       </button>
-      <button type="button" onClick={() => navigate("/steps")}>
+      <button type="button" onClick={() => void navigate("/steps")}>
         Steps
       </button>
     </>
@@ -236,10 +236,10 @@ const ReviewPage = () => {
       >
         Confirm
       </button>
-      <button type="button" onClick={() => navigate(1)}>
+      <button type="button" onClick={() => void navigate(1)}>
         Browser Forward
       </button>
-      <button type="button" onClick={() => navigate("/steps")}>
+      <button type="button" onClick={() => void navigate("/steps")}>
         Host Steps
       </button>
       <button
@@ -267,13 +267,16 @@ const StepsPage = () => {
       <button type="button" onClick={() => back(undefined)}>
         Back
       </button>
-      <button type="button" onClick={() => navigate(-1)}>
+      <button type="button" onClick={() => void navigate(-1)}>
         Browser Back
       </button>
-      <button type="button" onClick={() => navigate("/complete", { state })}>
+      <button
+        type="button"
+        onClick={() => void navigate("/complete", { state })}
+      >
         Complete
       </button>
-      <button type="button" onClick={() => navigate("/review")}>
+      <button type="button" onClick={() => void navigate("/review")}>
         Host Review
       </button>
     </>
@@ -287,10 +290,10 @@ const CompletePage = () => {
   return (
     <>
       <output data-testid="complete-execution">{workflows.length}</output>
-      <button type="button" onClick={() => navigate(-1)}>
+      <button type="button" onClick={() => void navigate(-1)}>
         History Back
       </button>
-      <button type="button" onClick={() => navigate("/steps")}>
+      <button type="button" onClick={() => void navigate("/steps")}>
         Host Steps
       </button>
     </>
@@ -378,20 +381,20 @@ const FlowTestApp = ({
   const navigation = makeWidgetNavigation({
     back: () =>
       Effect.sync(() => {
-        testNavigationChannel.navigate?.(-1);
+        void testNavigationChannel.navigate?.(-1);
       }),
     push: (to) =>
       Effect.sync(() => {
         if (!testNavigationChannel.navigate) {
           throw new Error("Test navigation bridge is unavailable");
         }
-        testNavigationChannel.navigate(widgetTargetPath(to), {
+        void testNavigationChannel.navigate(widgetTargetPath(to), {
           state: widgetTargetState(to),
         });
       }),
     replace: (to) =>
       Effect.sync(() => {
-        testNavigationChannel.navigate?.(widgetTargetPath(to), {
+        void testNavigationChannel.navigate?.(widgetTargetPath(to), {
           replace: true,
           state: widgetTargetState(to),
         });

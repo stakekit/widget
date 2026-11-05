@@ -67,13 +67,13 @@ import { describe, expect, it, vi } from "../../utils/test-extend";
 import { render, renderHook } from "../../utils/test-utils";
 
 const baseConnectorSourceProbeAtom = applicationBaseRuntime.atom(
-  WalletConnectorSource.use((source) => Effect.succeed(source))
+  Effect.service(WalletConnectorSource)
 );
 const appConnectorSourceProbeAtom = appRuntime.atom(
-  WalletConnectorSource.use((source) => Effect.succeed(source))
+  Effect.service(WalletConnectorSource)
 );
 const walletConnectorSourceProbeAtom = walletRuntime.atom(
-  WalletConnectorSource.use((source) => Effect.succeed(source))
+  Effect.service(WalletConnectorSource)
 );
 
 const RuntimeConnectorSourceObserver = ({
@@ -196,7 +196,7 @@ const makeSolanaConnectorFactory = (wallet: SolanaWalletDescriptor) =>
   }));
 
 const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
-  const listeners = new Set<() => Promise<void> | void>();
+  const listeners = new Set<() => void>();
   let snapshot = initial;
   const runtime = {
     connection: {} as Connection,
@@ -219,7 +219,7 @@ const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
   return {
     emit: async (next: SolanaWalletSnapshot) => {
       snapshot = next;
-      await Promise.all([...listeners].map((listener) => listener()));
+      for (const listener of listeners) listener();
     },
     listenerCount: () => listeners.size,
     runtime,

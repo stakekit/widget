@@ -522,11 +522,9 @@ export const resolveYieldProviderOption = (
 export const isYieldValidatorSelectionRequired = (
   yieldDto: EarnYieldWithProvider
 ) =>
-  !!(
-    yieldDto.mechanics.requiresValidatorSelection ||
-    isYieldActionArgRequired(yieldDto, "enter", "validatorAddress") ||
-    isYieldActionArgRequired(yieldDto, "enter", "validatorAddresses")
-  );
+  yieldDto.mechanics.requiresValidatorSelection ||
+  isYieldActionArgRequired(yieldDto, "enter", "validatorAddress") ||
+  isYieldActionArgRequired(yieldDto, "enter", "validatorAddresses");
 
 const decodeYieldId = Schema.decodeSync(YieldId);
 

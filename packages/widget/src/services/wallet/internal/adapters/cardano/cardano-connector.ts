@@ -119,7 +119,7 @@ const createCardanoConnector = ({
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
-        config.storage?.removeItem("cardano.disconnected");
+        await config.storage?.removeItem("cardano.disconnected");
 
         if (!isInjected(wallet.id)) {
           throw new WalletNotAvailableError({ walletId: wallet.id });
@@ -130,7 +130,7 @@ const createCardanoConnector = ({
           .getUsedAddress()
           .then((address) => address.toBech32());
 
-        config.storage?.setItem("cardano.lastConnectedWallet", {
+        await config.storage?.setItem("cardano.lastConnectedWallet", {
           address,
           id: wallet.id,
         });
@@ -142,8 +142,8 @@ const createCardanoConnector = ({
         );
       },
       disconnect: async () => {
-        config.storage?.setItem("cardano.disconnected", true);
-        config.storage?.removeItem("cardano.lastConnectedWallet");
+        await config.storage?.setItem("cardano.disconnected", true);
+        await config.storage?.removeItem("cardano.lastConnectedWallet");
         connectedWallet = null;
       },
       getAccounts: async () => {

@@ -2,8 +2,8 @@
 
 This document records stable ownership and dependency boundaries. Behavior,
 route topology, failure presentation, and detailed workflows belong in code and
-tests. Executable policy lives in Biome, dependency-cruiser, Knip, jscpd, and
-ast-grep.
+tests. Executable policy lives in oxlint, dependency-cruiser, the Effect
+language service, Knip, and jscpd.
 
 ## Ownership
 
@@ -303,24 +303,29 @@ and Effect Atom registry.
   exception for style modules, restricts Features and application composition
   to its main interface and its composition interface to application
   composition, and lets the Design System import only itself (`layer-ui`).
-- Biome constrains barrels and keeps React out of domain, Resource, and service
-  logic and out of Feature `model/` and `state/`.
-- ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
-  Compiler memoizes, and only functions with a `"use no memo"` directive may
-  memoize by hand), ad hoc Atom runtimes, direct Effect runtime execution,
-  native `Date`, global `fetch`, throws in Effect generators, wildcard Module
-  exports, Resources that read an API ResourceSource without
-  `makePresentableResource`, literal absolute Widget paths outside the Route
-  Registry, Layout reads outside application composition and Widget
-  Configuration, Layout-named identifiers in Domain, Resource, service, and
-  Feature `model/` and `state/` code, and Layout-named files outside `ui/` and
-  `app/layouts/`.
-- ast-grep rejects lowercase JSX elements, `createElement` calls with a
-  lowercase tag, and `className` or `style` attributes (spread too) in Features
-  and application composition, and, inside the Design System outside its token
-  definitions and artwork, color literals and raw font size, weight, line
-  height, radius, shadow, z-index, duration, and px, rem, em, ch, vw, and vh
-  values. Every suppression of these rules states its reason.
+- oxlint (the shared rules in the root `.oxlintrc.json`, the widget's in
+  `packages/widget/.oxlintrc.json`) constrains barrels and keeps React out of
+  domain, Resource, and service logic and out of Feature `model/` and `state/`.
+  With type information (oxlint-tsgolint) it rejects floating and misused
+  promises, non-exhaustive switches and unsafe type assertions in `src`.
+- The widget's oxlint plugins (`scripts/oxlint/`, one rule per policy, each
+  carrying its own file scope, tested in `tests/scripts/oxlint/`) reject
+  manual memoization (`useMemo`, `useCallback`, `memo`; React Compiler
+  memoizes, and only functions with a `"use no memo"` directive may memoize by
+  hand), ad hoc Atom runtimes, direct Effect runtime execution, native `Date`,
+  throws in Effect generators, wildcard Module exports, Resources that read an
+  API ResourceSource without `makePresentableResource`, literal absolute
+  Widget paths outside the Route Registry, Layout reads outside application
+  composition and Widget Configuration, Layout-named identifiers in Domain,
+  Resource, service, and Feature `model/` and `state/` code, Layout-named files
+  outside `ui/` and `app/layouts/`, and suppressions that name no rule or give
+  no reason after `--`.
+- The `design-system` oxlint plugin rejects lowercase JSX elements,
+  `createElement` calls with a lowercase tag, and `className` or `style`
+  attributes (spread too) in Features and application composition, and,
+  inside the Design System outside its token definitions and artwork, color
+  literals and raw font size, weight, line height, radius, shadow, z-index,
+  duration, and px, rem, em, ch, vw, and vh values.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid
   shorthands, sorted keys) on the Design System as part of the widget `lint`.
 - The Design System rules apply to every file, with no exemption list; the

@@ -241,14 +241,14 @@ const enterAmount = async (container: HTMLElement, value: string) => {
     '[data-testid="number-input"]'
   );
   if (!input) throw new Error("Expected amount input");
-  const setValue = Object.getOwnPropertyDescriptor(
+  const valueProperty = Object.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
     "value"
-  )?.set;
-  if (!setValue) throw new Error("Expected native input setter");
+  );
+  if (!valueProperty?.set) throw new Error("Expected native input setter");
 
   await act(async () => {
-    setValue.call(input, value);
+    valueProperty.set?.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 };

@@ -17,7 +17,9 @@ describe("External Provider", () => {
   }) => {
     setup(worker);
 
-    const switchChainSpy = vi.fn(async (_: number) => {});
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     const skProps = {

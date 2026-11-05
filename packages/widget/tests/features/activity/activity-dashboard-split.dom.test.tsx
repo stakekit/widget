@@ -92,6 +92,7 @@ describe("Dashboard Activity split view", () => {
   it("keeps the action route mounted from Review into execution", async () => {
     const navigation: { current: NavigateFunction | null } = { current: null };
     const NavigationCapture = () => {
+      // oxlint-disable-next-line react/immutability -- Test capture publishes the router's navigate to the test body outside React.
       navigation.current = useNavigate();
       return null;
     };

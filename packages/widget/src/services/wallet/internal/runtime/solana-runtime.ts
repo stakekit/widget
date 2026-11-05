@@ -348,7 +348,7 @@ const makeHeadlessSolanaRuntime = (
           }
           standardAdapters.set(wallet, deps.createStandardAdapter(wallet));
         }
-        publish();
+        void publish();
       };
 
       const removeStandardWallets = (
@@ -393,7 +393,7 @@ const makeHeadlessSolanaRuntime = (
       if (includeWalletAdapters) {
         addStandardWallets(deps.registry.get());
       } else {
-        publish();
+        void publish();
       }
 
       return {

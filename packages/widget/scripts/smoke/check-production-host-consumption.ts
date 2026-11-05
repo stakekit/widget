@@ -896,7 +896,7 @@ const run = async () => {
     await main();
   } catch (error) {
     console.error(
-      `[smoke] FAIL ${error instanceof Error ? (error.stack ?? error.message) : error}`
+      `[smoke] FAIL ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
     );
     process.exitCode = 1;
   } finally {

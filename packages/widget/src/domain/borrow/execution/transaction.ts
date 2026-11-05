@@ -18,7 +18,7 @@ export const Transaction = Schema.Struct({
     "signablePayload",
   ]),
   address: WalletAddress,
-  // ast-grep-ignore: no-financial-finite-from-string -- chain IDs stay safe integer numbers
+  // oxlint-disable-next-line widget/no-financial-finite-from-string -- chain IDs stay safe integer numbers
   chainId: Schema.FiniteFromString,
   id: TransactionId,
   network: BorrowNetwork,

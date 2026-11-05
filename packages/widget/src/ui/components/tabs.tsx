@@ -93,7 +93,8 @@ export const Tabs = <const T extends string>({
   const hiddenEdges = useHiddenEdges(listRef, tabs);
 
   // Keeps the selected tab out of the faded ends, scrolling the row only.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `value` re-runs it after the selected tab changes; the effect reads the selection from the DOM.
+  // `value` re-runs it after the selected tab changes; the effect reads the
+  // selection from the DOM.
   useEffect(() => {
     const list = listRef.current;
     const selected = list?.querySelector<HTMLElement>(

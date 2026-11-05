@@ -29,19 +29,16 @@ run = "pnpm --filter @stakekit/widget lint"
 depends = ["build:widget"]
 run = "pnpm --filter './packages/examples/*' run lint"
 
-[tasks."lint:ast"]
-depends = ["test:ast"]
-run = "pnpm exec ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never"
-
-[tasks."test:ast"]
-run = "pnpm exec ast-grep test --skip-snapshot-tests --color=never"
+# One oxfmt pass formats the whole repository; oxlint runs per package.
+[tasks."lint:format"]
+run = "pnpm exec oxfmt --check ."
 
 [tasks.lint]
-description = "Widget, example and ast-grep lint"
-depends = ["lint:widget", "lint:examples", "lint:ast"]
+description = "Formatting, widget and example lint"
+depends = ["lint:format", "lint:widget", "lint:examples"]
 
 [tasks.format]
-run = "pnpm --recursive run format"
+run = "pnpm exec oxfmt ."
 
 [tasks.clean]
 run = "pnpm --recursive run clean"

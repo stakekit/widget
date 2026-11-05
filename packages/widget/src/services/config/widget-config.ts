@@ -498,7 +498,7 @@ export class WidgetConfigService extends Context.Service<
           yield* reportDeprecatedOptions(nextResult.success.deprecatedOptions);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
-        }, updatePermit.withPermit);
+        }, updatePermit.withPermits(1));
 
         return WidgetConfigService.of({ current, update, values });
       })

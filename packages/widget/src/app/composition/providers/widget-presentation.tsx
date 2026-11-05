@@ -26,7 +26,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
   const tokenIconMapping = useWidgetConfig("tokenIconMapping");
 
   const value: WidgetPresentation = {
-    hideNetworkLogo: !!hideNetworkLogo,
+    hideNetworkLogo,
     hostTokenIconMapping,
     locale: i18n.resolvedLanguage ?? i18n.language,
     mapNetworkIconUrl: (network: Token["network"]) => {

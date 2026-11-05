@@ -1,8 +1,0 @@
-id: no-default-atom-idle-ttl
-valid:
-  - "AtomRegistry.make({ timeoutResolution: 1 })"
-  - "<RegistryProvider>{children}</RegistryProvider>"
-invalid:
-  - "AtomRegistry.make({ defaultIdleTTL: 300_000 })"
-  - "<RegistryProvider defaultIdleTTL={300_000}>{children}</RegistryProvider>"
-  - '<RegistryProvider defaultIdleTTL="300000">{children}</RegistryProvider>'

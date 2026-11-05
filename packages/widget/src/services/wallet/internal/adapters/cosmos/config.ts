@@ -93,7 +93,7 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
     }),
     {
       onFailure: () => {
-        // biome-ignore lint/nursery/noUnsafeTypeAssertion: @cosmos-kit/core declares _restoreAccounts private and untyped; it is the only restore path after a failed mount
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- @cosmos-kit/core declares _restoreAccounts private and untyped; it is the only restore path after a failed mount
         const restorableWalletManager = walletManager as unknown as {
           _restoreAccounts: () => Promise<void>;
         };

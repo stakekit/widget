@@ -158,7 +158,7 @@ const createTonConnector = (
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
-        config.storage?.removeItem("ton.disconnected");
+        await config.storage?.removeItem("ton.disconnected");
 
         const wallet: Wallet =
           connectedWallet ??
@@ -188,7 +188,7 @@ const createTonConnector = (
         );
       },
       disconnect: async () => {
-        config.storage?.setItem("ton.disconnected", true);
+        await config.storage?.setItem("ton.disconnected", true);
         await tonconnectUI.disconnect();
         connectedWallet = null;
       },

@@ -578,8 +578,8 @@ around it in the Feature.
 8. Add its stories.
 
 Do not suppress a design-system rule to ship a screen. A suppression is a
-deliberate exception and states its reason after ` -- `, for example
-`// ast-grep-ignore: no-raw-design-value -- <why no token fits>`.
+deliberate exception and states its reason after `--`, for example
+`// oxlint-disable-next-line design-system/no-raw-design-value -- <why no token fits>`.
 
 ## Enforcement
 
@@ -592,8 +592,10 @@ deliberate exception and states its reason after ` -- `, for example
   lets only application composition use the composition interface
   (`design-system-composition-importers`), and lets `src/ui/` import only
   itself (`layer-ui`). These run in `check-hygiene`.
-- ast-grep rejects lowercase JSX elements and `createElement` calls with a
-  lowercase tag (`no-html-element-outside-design-system`) and `className` or
+- The widget's `design-system` oxlint plugin
+  (`packages/widget/scripts/oxlint/design-system-plugin.ts`) rejects lowercase
+  JSX elements and `createElement` calls with a lowercase tag
+  (`no-html-element-outside-design-system`) and `className` or
   `style`, as attributes or spread
   (`no-class-name-or-style-outside-design-system`), in Features and
   application composition, and, inside `src/ui/` outside the token definitions
@@ -602,11 +604,11 @@ deliberate exception and states its reason after ` -- `, for example
   raw font sizes, weights, line heights, radii, shadows, z-indices, durations
   and px, rem, em, ch, vw and vh lengths in StyleX definitions
   (`no-raw-design-value`; `1em`, `100vw` and `100vh` stay allowed).
-  `no-unexplained-design-system-suppression` fails a suppression of these
-  rules, or of StyleX's lint rules, without a reason.
+  `widget/no-blanket-disable` fails any oxlint suppression, of these rules or
+  any other, that names no rule or gives no reason after `--`.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid
-  shorthands, sorted keys) on `src/ui/`:
-  `pnpm --filter @stakekit/widget lint:stylex`.
+  shorthands, sorted keys) on `src/ui/` as part of
+  `pnpm --filter @stakekit/widget lint`.
 
 Every rule applies to every file; the only exceptions are suppressions that
 state their reason.

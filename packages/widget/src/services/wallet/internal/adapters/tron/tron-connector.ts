@@ -102,13 +102,13 @@ const createTronConnector = ({
 
         await wallet.connect({ isReconnecting: args?.isReconnecting ?? false });
 
-        config.storage?.removeItem("tron.disconnected");
+        await config.storage?.removeItem("tron.disconnected");
 
         return wagmiConnectResult(args?.withCapabilities, accounts(), tron.id);
       },
-      disconnect: () => {
-        config.storage?.setItem("tron.disconnected", true);
-        return wallet.disconnect();
+      disconnect: async () => {
+        await config.storage?.setItem("tron.disconnected", true);
+        await wallet.disconnect();
       },
       getAccounts: async () => accounts(),
       switchChain: async () => tron,

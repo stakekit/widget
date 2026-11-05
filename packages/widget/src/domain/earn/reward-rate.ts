@@ -64,7 +64,7 @@ export const getEffectiveYieldRewardRateDetails = ({
 }: {
   selectedValidators?: SelectedValidators | null;
   yieldDto: YieldWithRewardRate | null | undefined;
-}): YieldRewardRate | ValidatorRewardRateDto | undefined =>
+}): YieldRewardRate | undefined =>
   getSelectedValidatorsRewardRate(selectedValidators) ??
   getYieldRewardRateDetails(yieldDto);
 

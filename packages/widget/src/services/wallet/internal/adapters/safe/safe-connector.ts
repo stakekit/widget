@@ -88,7 +88,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
       async getChainId() {
         const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
-        return Number(provider.chainId);
+        return provider.chainId;
       },
       async isAuthorized() {
         try {

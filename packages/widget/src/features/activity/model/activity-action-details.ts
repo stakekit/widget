@@ -128,9 +128,10 @@ const formatDate = (
     minute: "2-digit",
   });
 
-// Yield and Borrow transactions share the same ten statuses.
+// Yield and Borrow transactions share the same ten statuses, so one type
+// covers both.
 const projectTransactionStatus = (
-  status: ActionTransaction["status"] | BorrowActivityTransaction["status"]
+  status: ActionTransaction["status"]
 ): ActivityDetailsTransactionStatus => {
   switch (status) {
     case "CONFIRMED":

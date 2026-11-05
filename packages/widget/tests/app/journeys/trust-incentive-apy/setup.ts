@@ -241,13 +241,13 @@ export const setup = async (
     providerId: "trust",
     rewardRate: encodeYieldRewardRateFixture(discoveryRewardRate),
     metadata: {
-      ...(rawYieldBase.metadata ?? {}),
+      ...rawYieldBase.metadata,
       name: "Trust USDA Earn",
       description: "Trust campaign vault",
       logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
     },
     mechanics: {
-      ...(rawYieldBase.mechanics ?? {}),
+      ...rawYieldBase.mechanics,
       type: "vault",
       gasFeeToken: token,
       rewardClaiming: "auto",

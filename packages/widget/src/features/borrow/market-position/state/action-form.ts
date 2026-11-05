@@ -65,7 +65,9 @@ const makeFormKey = (
   scope: WalletScopeKey
 ) =>
   new BorrowPositionActionFormKey({
-    ...key,
+    actionId: key.actionId,
+    marketId: key.marketId,
+    network: key.network,
     owner: walletScopeOwnerKey(scope),
   });
 

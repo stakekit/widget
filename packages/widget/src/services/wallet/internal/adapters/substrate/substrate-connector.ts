@@ -193,19 +193,19 @@ const createSubstrateConnector = ({
           if (accounts.length === 0) continue;
 
           state.chainId = chain.id;
-          config.storage?.removeItem("substrate.disconnected");
-          config.storage?.setItem("substrate.lastConnectedId", id);
+          await config.storage?.removeItem("substrate.disconnected");
+          await config.storage?.setItem("substrate.lastConnectedId", id);
 
           return wagmiConnectResult(args?.withCapabilities, accounts, chain.id);
         }
 
         throw new Error("No accounts found");
       },
-      disconnect: () => {
+      disconnect: async () => {
         state.chainId = undefined;
-        config.storage?.setItem("substrate.disconnected", true);
-        config.storage?.removeItem("substrate.lastConnectedId");
-        return wallet.disconnect();
+        await config.storage?.setItem("substrate.disconnected", true);
+        await config.storage?.removeItem("substrate.lastConnectedId");
+        await wallet.disconnect();
       },
       getAccounts: () =>
         wallet.getAccounts(currentChainId()).then(toWagmiAccounts),

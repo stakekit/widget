@@ -3,10 +3,9 @@ packages:
   - packages/examples/*
 
 allowBuilds:
-  "@ast-grep/cli": true
-  '@parcel/watcher': false
-  '@reown/appkit': false
-  '@stellar/stellar-sdk': false
+  "@parcel/watcher": false
+  "@reown/appkit": false
+  "@stellar/stellar-sdk": false
   blake-hash: false
   bufferutil: false
   chacha-native: false
@@ -29,8 +28,6 @@ catalog:
   "@angular/compiler-cli": 22.2.4
   "@angular/core": 22.2.4
   "@angular/platform-browser": 22.2.4
-  "@ast-grep/cli": 0.51.1
-  "@biomejs/biome": ^2.6.4
   "@commitlint/cli": ^21.2.4
   "@commitlint/config-conventional": ^21.2.4
   # @cosmos-kit/core 2.18 depends on @cosmjs 0.36 and cosmjs-types 0.10; newer lines duplicate its types.
@@ -138,13 +135,16 @@ catalog:
   vitest-browser-react: ^2.3.0
   wagmi: 3.7.9
   yaml: ^2.9.1
-  '@storybook/addon-a11y': 10.6.5
-  '@storybook/addon-vitest': 10.6.5
-  '@storybook/react-vite': 10.6.5
-  '@stylexjs/eslint-plugin': 0.19.1
+  "@storybook/addon-a11y": 10.6.5
+  "@storybook/addon-vitest": 10.6.5
+  "@storybook/react-vite": 10.6.5
+  "@stylexjs/eslint-plugin": 0.19.1
+  oxfmt: 0.75.0
   oxlint: 1.90.0
+  # The type checker behind oxlint --type-aware; oxlint 1.90 needs >=7.0.2005.
+  oxlint-tsgolint: 7.0.2005
   storybook: 10.6.5
-  '@base-ui/react': 1.9.0
+  "@base-ui/react": 1.9.0
 
 minimumReleaseAge: 4320
 

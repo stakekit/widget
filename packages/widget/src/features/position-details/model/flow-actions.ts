@@ -356,7 +356,7 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
         ...confidentialArguments,
         ...optionArguments,
         ...validatorArguments,
-        ...(facts.additionalAddresses ?? {}),
+        ...facts.additionalAddresses,
       },
       yieldId: facts.integration.id,
     }),

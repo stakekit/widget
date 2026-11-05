@@ -148,7 +148,7 @@ const makeYieldEntryActionCommand = ({
           ? { providerId: entry.selectedProviderOption }
           : {}),
         ...validatorArguments,
-        ...(wallet.additionalAddresses ?? {}),
+        ...wallet.additionalAddresses,
       },
     }),
     gasFeeToken: selectedYield.mechanics.gasFeeToken,

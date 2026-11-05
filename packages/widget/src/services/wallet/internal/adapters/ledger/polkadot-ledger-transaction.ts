@@ -182,10 +182,7 @@ const toCamelCase = (key: string): string =>
 const isNumericString = (value: string): boolean =>
   /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(value.trim());
 
-const readString = (
-  value: unknown,
-  fallback: string | null | undefined = undefined
-): string => {
+const readString = (value: unknown, fallback?: string | null): string => {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "bigint") {
     return value.toString();

@@ -10,8 +10,7 @@
     "dev": "mise run dev --",
     "build": "mise run build --",
     "lint": "mise run lint --",
-    "lint:ast": "mise run lint:ast --",
-    "test:ast": "mise run test:ast --",
+    "lint:format": "mise run lint:format --",
     "test": "mise run test --",
     "test:smoke": "mise run test:smoke --",
     "format": "mise run format --",
@@ -21,11 +20,12 @@
     "check": "mise run check --"
   },
   "devDependencies": {
-    "@ast-grep/cli": "catalog:",
-    "@biomejs/biome": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/tsgo": "catalog:",
-    "husky": "catalog:"
+    "husky": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:"
   }
 }

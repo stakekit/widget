@@ -45,7 +45,7 @@ type ElementProps = Readonly<{
 const nameOf = (element: ReactElement | null): string | null => {
   if (!element) return null;
   const type = element.type;
-  const name = typeof type === "function" ? type.name : String(type);
+  const name = typeof type === "function" ? type.name : type;
   const props = element.props as ElementProps;
   if (props.selectsDefaultAction !== undefined) {
     return `${name}(selectsDefaultAction=${props.selectsDefaultAction}, receiptPlacement=${props.receiptPlacement})`;

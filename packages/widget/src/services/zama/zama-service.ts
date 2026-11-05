@@ -402,7 +402,6 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     return {
       on: () => {},
       removeListener: () => {},
-      // biome-ignore lint/nursery/noUnsafeTypeAssertion: viem types a client's `request` by its RPC schema, which its own `EIP1193Provider["request"]` overloads do not accept though both send the same EIP-1193 requests.
       request: client.request as EIP1193Provider["request"],
     };
   };

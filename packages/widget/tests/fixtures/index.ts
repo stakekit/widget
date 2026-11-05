@@ -15,21 +15,21 @@ import type {
 } from "../generated/yield-api-types";
 
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
-// ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for random APY values
+// oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture helper for random APY values
 const apyFaker = () => Effect.runSync(Random.nextBetween(0, 0.05));
 
 const ethereumAddressArbitrary = Arbitrary.schema(
   Schema.String.check(Schema.isPattern(/^0x[a-f0-9]{40}$/))
 );
 const ethereumAddressFaker = () =>
-  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for generated addresses
+  // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture helper for generated addresses
   Effect.runSync(
     Arbitrary.sampleEffect(ethereumAddressArbitrary, { count: 1 })
   )[0]!;
 
 const uuidArbitrary = Arbitrary.schema(Schema.String.check(Schema.isUUID(4)));
 const uuidFaker = () =>
-  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for generated UUIDs
+  // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture helper for generated UUIDs
   Effect.runSync(Arbitrary.sampleEffect(uuidArbitrary, { count: 1 }))[0]!;
 
 type ExactDecimalFixtureInput = Parameters<typeof exactDecimal>[0];
@@ -76,7 +76,6 @@ const decodeWireYieldSource = Schema.decodeUnknownSync(
 export const encodeYieldRewardRateFixture = (
   rewardRate:
     | YieldRewardRateFixtureInput
-    | NonNullable<YieldApiYieldDto["rewardRate"]>
     | NonNullable<ValidatorDto["rewardRate"]>
 ): NonNullable<ValidatorDto["rewardRate"]> => {
   return {

@@ -262,7 +262,7 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     const state = workflows.at(-1);
     if (!state) throw new Error("Expected a running Execution workflow");
     return act(async () => {
-      // ast-grep-ignore: no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
+      // oxlint-disable-next-line effect/no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
       await Effect.runPromise(SubscriptionRef.update(state, next));
     });
   };

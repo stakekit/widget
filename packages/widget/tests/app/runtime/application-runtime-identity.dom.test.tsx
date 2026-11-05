@@ -55,7 +55,7 @@ type WorkflowProbe = {
 
 const stagedWorkflowAtom = Atom.make("empty");
 const trackingServiceProbeAtom = appRuntime.atom(
-  TrackingService.use((tracking) => Effect.succeed(tracking))
+  Effect.service(TrackingService)
 );
 const runtimeLifecycleAtom = Atom.family((probe: LifecycleProbe) =>
   appRuntime.atom(
@@ -137,7 +137,7 @@ const RuntimeHarness = ({
         disabled={!AsyncResult.isSuccess(tracking)}
         onClick={() => {
           if (AsyncResult.isSuccess(tracking)) {
-            // ast-grep-ignore: no-run-effect-in-test -- React event handlers are non-Effect boundaries
+            // oxlint-disable-next-line effect/no-run-effect-in-test -- React event handlers are non-Effect boundaries
             Effect.runFork(tracking.value.trackEvent("txNotConfirmed"));
           }
         }}

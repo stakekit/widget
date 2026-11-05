@@ -26,12 +26,9 @@ jobs:
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        # The allowlist check compares against the merge base with main.
-        with:
-          fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: mise run lint:widget
-      - run: mise run lint:ast
+      - run: mise run lint:format
 
   hygiene:
     runs-on: ubuntu-24.04

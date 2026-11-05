@@ -1,18 +1,167 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "options": {
-    "maxWarnings": 0,
-    "reportUnusedDisableDirectives": "error"
-  },
-  "plugins": [],
-  "jsPlugins": ["@stylexjs/eslint-plugin"],
-  "categories": {
-    "correctness": "off"
-  },
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  // Shared rules for every workspace; overrides below are relative to this
+  // package.
+  "extends": ["../../.oxlintrc.json"],
+  "jsPlugins": [
+    "@stylexjs/eslint-plugin",
+    "./scripts/oxlint/design-system-plugin.ts",
+    "./scripts/oxlint/effect-plugin.ts",
+    "./scripts/oxlint/layout-plugin.ts",
+    "./scripts/oxlint/widget-plugin.ts"
+  ],
+  // The widget's own rules. Each one scopes itself to the files it governs.
   "rules": {
-    "@stylexjs/valid-styles": "error",
-    "@stylexjs/no-unused": "error",
-    "@stylexjs/valid-shorthands": "error",
-    "@stylexjs/sort-keys": "error"
-  }
+    "effect/no-ad-hoc-atom-runtime": "error",
+    "effect/no-async-result-in-feature-ui": "error",
+    "effect/no-default-atom-idle-ttl": "error",
+    "effect/no-direct-atom-idle-ttl": "error",
+    "effect/no-direct-atom-lifecycle-in-features": "error",
+    "effect/no-direct-effect-runtime-execution": "error",
+    "effect/no-effect-atom-in-feature-logic": "error",
+    "effect/no-literal-effect-failure": "error",
+    "effect/no-native-date": "error",
+    "effect/no-native-effect-failure": "error",
+    "effect/no-run-effect-in-test": "error",
+    "effect/no-runtime-provide-service": "error",
+    "effect/no-throw-in-effect-generator": "error",
+    "effect/no-unknown-async-result-failure": "error",
+    "effect/no-unknown-effect-failure": "error",
+    "effect/no-unsafe-date-time": "error",
+    "effect/presentable-resource-sources": "error",
+    "widget/no-barrel-file": "error",
+    "widget/no-blanket-disable": "error",
+    "widget/no-direct-bignumber-construction": "error",
+    "widget/no-direct-date-format": "error",
+    "widget/no-direct-number-format": "error",
+    "widget/no-financial-finite-from-string": "error",
+    "widget/no-local-storage": "error",
+    "widget/no-manual-memo": "error",
+    "widget/no-source-less-type-export": "error",
+    "widget/no-tonumber-outside-representation": "error",
+    "widget/no-unbranded-domain-identifier": "error",
+    "widget/no-wildcard-module-interface-export": "error",
+    "layout/no-host-variant-comparison": "error",
+    "layout/no-layout-name-in-logic": "error",
+    "layout/no-layout-path-outside-layout-ui": "error",
+    "layout/no-layout-read-in-features": "error",
+    "layout/no-raw-widget-path": "error",
+    "design-system/no-class-name-or-style-outside-design-system": "error",
+    "design-system/no-color-literal-in-design-system": "error",
+    "design-system/no-html-element-outside-design-system": "error",
+    "design-system/no-raw-design-value": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/**"],
+      "rules": {
+        "typescript/no-unsafe-type-assertion": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/index.package", "**/index.bundle"],
+                "message": "Public widget entrypoints are outbound-only; import from the defining module."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/domain/**", "src/resources/**", "src/services/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react/**",
+                  "react-dom",
+                  "react-dom/**",
+                  "@effect/atom-react",
+                  "@effect/atom-react/**"
+                ],
+                "message": "Headless domain, resource, and service modules must not import React integrations."
+              },
+              {
+                "group": ["**/index.package", "**/index.bundle"],
+                "message": "Public widget entrypoints are outbound-only; import from the defining module."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/**/model/**", "src/features/**/state/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react/**",
+                  "react-dom",
+                  "react-dom/**",
+                  "react-router",
+                  "react-router/**",
+                  "@effect/atom-react",
+                  "@effect/atom-react/**"
+                ],
+                "message": "Feature model and state modules are headless; React adapters live in react/ and ui/."
+              },
+              {
+                "group": ["**/index.package", "**/index.bundle"],
+                "message": "Public widget entrypoints are outbound-only; import from the defining module."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      // Effect services' `Service.use(...)` reads as a React hook. Headless
+      // modules and non-JSX tests hold no hooks; JSX tests keep the check.
+      "files": [
+        "src/app/runtime/**",
+        "src/domain/**",
+        "src/resources/**",
+        "src/services/**",
+        "src/**/model/**",
+        "src/**/state/**",
+        "tests/**/*.ts"
+      ],
+      "rules": {
+        "react/rules-of-hooks": "off"
+      }
+    },
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off"
+      }
+    },
+    {
+      // StyleX's own rules for the Design System's style definitions.
+      "files": ["src/ui/**"],
+      "rules": {
+        "@stylexjs/valid-styles": "error",
+        "@stylexjs/no-unused": "error",
+        "@stylexjs/valid-shorthands": "error",
+        "@stylexjs/sort-keys": "error"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "src/generated/api/**",
+    // Compiled against the packed tarball by check:package-types; without
+    // `dist`, the type-aware rules see its imports as error types.
+    "tests/package-types/**"
+  ]
 }

@@ -3,6 +3,7 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { CopyButton } from "./copy-button";
 
 const address = "0x1234567890abcdef1234567890abcdef12345678";
+const writeText = fn(async (_text: string) => {});
 
 const meta = {
   title: "Components/CopyButton",
@@ -11,9 +12,10 @@ const meta = {
   // The story replaces the clipboard, so nothing leaves the page.
   beforeEach: () => {
     const clipboard = navigator.clipboard;
+    writeText.mockClear();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
-      value: { writeText: fn(async (_text: string) => {}) },
+      value: { writeText },
     });
 
     return () => {
@@ -44,7 +46,7 @@ export const KeyboardCopy: Story = {
     await expect(button).toHaveFocus();
     await userEvent.keyboard("{Enter}");
 
-    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(address);
+    await expect(writeText).toHaveBeenCalledWith(address);
     await waitFor(() =>
       expect(canvas.getByRole("status")).toHaveTextContent("Copied")
     );

@@ -7,10 +7,10 @@ export type TestWorker = typeof network;
 
 const test = base.extend<{ worker: typeof network }>({
   worker: [
-    // biome-ignore lint/correctness/noEmptyPattern: Vitest fixtures require object destructuring here.
+    // oxlint-disable-next-line eslint/no-empty-pattern -- Vitest fixtures require object destructuring here.
     async ({}, use) => {
       if (network.readyState === NetworkReadyState.DISABLED) {
-        await network.enable();
+        network.enable();
       }
 
       await use(network);

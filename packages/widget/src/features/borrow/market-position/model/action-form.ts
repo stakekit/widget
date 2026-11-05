@@ -73,8 +73,9 @@ export type BorrowActionFormRisk = {
   readonly maxLtv: BigNumber | null;
 };
 
+// Repay and withdraw projections share one risk type.
 const toProjectedRisk = (
-  risk: RepayProjection["risk"] | WithdrawProjection["risk"]
+  risk: RepayProjection["risk"]
 ): BorrowActionFormRisk =>
   risk.status === "available"
     ? {

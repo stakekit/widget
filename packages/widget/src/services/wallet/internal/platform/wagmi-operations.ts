@@ -60,8 +60,11 @@ const connectionOwner = (config: Config) => {
 
 const detachCoreListeners = (config: Config, connector: Connector) => {
   const events = config._internal.events;
+  // oxlint-disable-next-line typescript/unbound-method -- wagmi's core listeners are plain functions that never read `this`
   connector.emitter.off("connect", events.connect);
+  // oxlint-disable-next-line typescript/unbound-method -- wagmi's core listeners are plain functions that never read `this`
   connector.emitter.off("change", events.change);
+  // oxlint-disable-next-line typescript/unbound-method -- wagmi's core listeners are plain functions that never read `this`
   connector.emitter.off("disconnect", events.disconnect);
 };
 

@@ -42,5 +42,6 @@ Widget Configuration normalizes it to the Layout. The deprecated
 `dashboardVariant` option is still accepted and mapped to `layout`, and `layout`
 wins when a host passes both. dependency-cruiser forbids imports between
 `ui/compact/` and `ui/dashboard/` and from Layout-free folders into either, and
-ast-grep rejects Layout reads outside application composition and Widget
+oxlint (`layout/no-layout-read-in-features`) rejects Layout reads outside
+application composition and Widget
 Configuration.

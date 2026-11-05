@@ -369,7 +369,8 @@ export const makeWalletConnectProtocol = Effect.fn("makeWalletConnectProtocol")(
       client = loaded;
       unsubscribeEnded = loaded.subscribeEnded((topic) => {
         runFork(sessionOwners.remove(topic).pipe(Effect.ignore));
-        for (const listener of [...(endedListeners.get(topic) ?? [])])
+        // Snapshot: a listener may unsubscribe or subscribe while this runs.
+        for (const listener of Array.from(endedListeners.get(topic) ?? []))
           listener();
       });
       return loaded;
