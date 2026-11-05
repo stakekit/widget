@@ -1,15 +1,16 @@
 import { Effect } from "effect";
 import { HttpResponse, http } from "msw";
-import { avalanche, mainnet } from "viem/chains";
+import { avalanche, mainnet, sepolia } from "viem/chains";
 import { page, userEvent } from "vitest/browser";
 import { SKApp } from "../../../src/App";
+import type { SupportedSKChainIds } from "../../../src/domain/wallet/chain-ids";
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import {
   solana,
   ton,
 } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import { setup } from "../../app/journeys/external-provider/setup";
-import { legacyApiRoute } from "../../mocks/api-routes";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { mockWalletListFactory } from "../../utils/mock-connector";
 import { describe, expect, it, vi } from "../../utils/test-extend";
@@ -142,33 +143,67 @@ describe("wallet connection picker", () => {
   );
 });
 
+/** Opens the network picker of a generic wallet connected to Ethereum. */
+const openNetworkPicker = async ({
+  api,
+  supportedChainIds,
+  switchChain = async () => {},
+  dashboardVariant = false,
+  networks,
+}: {
+  readonly api: typeof worker;
+  readonly supportedChainIds: ReadonlyArray<SupportedSKChainIds>;
+  readonly switchChain?: (chainId: number) => Promise<void>;
+  readonly dashboardVariant?: boolean;
+  /** The networks the API enables, in place of the setup's. */
+  readonly networks?: ReadonlyArray<string>;
+}) => {
+  setup(api);
+  if (networks !== undefined) {
+    api.use(
+      http.get(yieldApiRoute("/v1/networks"), () =>
+        HttpResponse.json(networks.map((id) => ({ id })))
+      )
+    );
+  }
+  const app = await renderApp({
+    skProps: {
+      apiKey: import.meta.env.VITE_API_KEY,
+      dashboardVariant,
+      externalProviders: {
+        type: "generic",
+        currentAddress: "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7",
+        supportedChainIds: [...supportedChainIds],
+        provider: {
+          switchChain,
+          signMessage: async () => "signature",
+          sendTransaction: async () => "hash",
+        },
+      },
+    },
+  });
+  await app.getByRole("button", { name: "Ethereum", exact: true }).click();
+  const dialog = page.getByTestId("wallet-chain-dialog");
+  await expect.element(dialog).toBeVisible();
+  const search = dialog.getByRole("combobox", {
+    name: "Search networks",
+    exact: true,
+  });
+  return { app, dialog, search } as const;
+};
+
 it("keeps every chain reachable by keyboard inside a short viewport", async ({
   worker,
 }) => {
-  setup(worker);
   const switchChain = vi.fn(async (_chainId: number) => {});
   await page.viewport(420, 240);
 
   try {
-    const app = await renderApp({
-      skProps: {
-        apiKey: import.meta.env.VITE_API_KEY,
-        externalProviders: {
-          type: "generic",
-          currentAddress: "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7",
-          supportedChainIds: [mainnet.id, avalanche.id, solana.id, ton.id],
-          provider: {
-            switchChain,
-            signMessage: async () => "signature",
-            sendTransaction: async () => "hash",
-          },
-        },
-      },
+    const { app, dialog, search } = await openNetworkPicker({
+      api: worker,
+      supportedChainIds: [mainnet.id, avalanche.id, solana.id, ton.id],
+      switchChain,
     });
-
-    await app.getByRole("button", { name: "Ethereum", exact: true }).click();
-    const dialog = page.getByRole("dialog");
-    await expect.element(dialog).toBeVisible();
     await expect
       .poll(() => {
         const bounds = dialog.element().getBoundingClientRect();
@@ -176,17 +211,20 @@ it("keeps every chain reachable by keyboard inside a short viewport", async ({
       })
       .toBe(true);
 
-    const close = dialog.getByRole("button", { name: "Close", exact: true });
-    await expect.element(close).toBeVisible();
-    close.element().focus();
-
-    for (const chainId of [mainnet.id, avalanche.id, solana.id, ton.id]) {
-      await userEvent.keyboard("[Tab]");
+    // The arrow keys move from the connected network through the rest.
+    await expect.element(search).toHaveFocus();
+    for (const chainId of [avalanche.id, solana.id, ton.id]) {
+      await userEvent.keyboard("[ArrowDown]");
       const choice = app.getByTestId(`wallet-chain-${chainId}`);
-      await expect.element(choice).toHaveFocus();
-      const bounds = choice.element().getBoundingClientRect();
-      expect(bounds.top).toBeGreaterThanOrEqual(0);
-      expect(bounds.bottom).toBeLessThanOrEqual(window.innerHeight);
+      await expect
+        .element(search)
+        .toHaveAttribute("aria-activedescendant", choice.element().id);
+      await expect
+        .poll(() => {
+          const bounds = choice.element().getBoundingClientRect();
+          return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+        })
+        .toBe(true);
     }
 
     await userEvent.keyboard("[Enter]");
@@ -200,44 +238,112 @@ it("keeps every chain reachable by keyboard inside a short viewport", async ({
 it("lists networks in compact rows and marks the connected one without a chip", async ({
   worker,
 }) => {
-  setup(worker);
-  const app = await renderApp({
-    skProps: {
-      apiKey: import.meta.env.VITE_API_KEY,
-      externalProviders: {
-        type: "generic",
-        currentAddress: "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7",
-        supportedChainIds: [mainnet.id, avalanche.id],
-        provider: {
-          switchChain: async () => {},
-          signMessage: async () => "signature",
-          sendTransaction: async () => "hash",
-        },
-      },
-    },
+  const { dialog, search } = await openNetworkPicker({
+    api: worker,
+    supportedChainIds: [mainnet.id, avalanche.id],
   });
-  await app.getByRole("button", { name: "Ethereum", exact: true }).click();
-  const dialog = page.getByTestId("wallet-chain-dialog");
   const current = dialog.getByTestId(`wallet-chain-${mainnet.id}`);
   const other = dialog.getByTestId(`wallet-chain-${avalanche.id}`);
   await expect.element(current).toBeVisible();
 
-  await expect.element(current).toHaveAttribute("aria-pressed", "true");
-  await expect.element(other).toHaveAttribute("aria-pressed", "false");
+  // Focus starts in the search field, so the close button shows no ring.
+  await expect.element(search).toHaveFocus();
+  const close = dialog.getByRole("button", { name: "Close", exact: true });
+  expect(getComputedStyle(close.element()).outlineStyle).toBe("none");
+
+  await expect.element(current).toHaveAttribute("aria-selected", "true");
+  await expect.element(other).toHaveAttribute("aria-selected", "false");
   await expect
     .element(dialog.getByText("Connected", { exact: true }))
     .not.toBeInTheDocument();
   const heights = [current, other].map(
     (row) => row.element().getBoundingClientRect().height
   );
-  for (const height of heights) expect(height).toBeLessThanOrEqual(56);
+  for (const height of heights) expect(height).toBeLessThanOrEqual(40);
   expect(heights[0]).toBe(heights[1]);
-  // Rows have no surface of their own; they tint on hover only.
+  // The connected network is tinted; others tint on hover only.
+  expect(getComputedStyle(current.element()).backgroundColor).not.toBe(
+    "rgba(0, 0, 0, 0)"
+  );
   expect(getComputedStyle(other.element()).backgroundColor).toBe(
     "rgba(0, 0, 0, 0)"
   );
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+
+  // Each icon starts on the title's edge.
+  const edge = dialog
+    .getByRole("heading", { name: "Switch Networks", exact: true })
+    .element()
+    .getBoundingClientRect().left;
+  for (const row of [current, other]) {
+    const icon = row.element().firstElementChild?.getBoundingClientRect();
+    expect(icon?.width).toBe(24);
+    expect(Math.abs((icon?.left ?? 0) - edge)).toBeLessThanOrEqual(1);
+  }
+  await close.click();
   await expect.element(dialog).not.toBeInTheDocument();
+});
+
+it("lists the connected network first, then the networks, then the testnets", async ({
+  worker,
+}) => {
+  const { dialog } = await openNetworkPicker({
+    api: worker,
+    supportedChainIds: [avalanche.id, sepolia.id, mainnet.id],
+    networks: ["ethereum", "avalanche-c", "ethereum-sepolia"],
+  });
+  await expect
+    .element(dialog.getByTestId(`wallet-chain-${sepolia.id}`))
+    .toBeInTheDocument();
+  const options = dialog.getByRole("option").elements();
+  expect(options.map((option) => option.getAttribute("data-testid"))).toEqual(
+    [mainnet.id, avalanche.id, sepolia.id].map((id) => `wallet-chain-${id}`)
+  );
+  const [current, network, testnet] = options;
+  expect(current).toHaveAccessibleDescription("Current");
+  expect(network).toHaveAccessibleDescription("Networks");
+  expect(testnet).toHaveAccessibleDescription("Testnets");
+});
+
+it("filters networks by name and switches to the one Enter chooses", async ({
+  worker,
+}) => {
+  const switchChain = vi.fn(async (_chainId: number) => {});
+  const { dialog, search } = await openNetworkPicker({
+    api: worker,
+    supportedChainIds: [mainnet.id, avalanche.id, solana.id],
+    switchChain,
+  });
+  await userEvent.type(search, "zzz");
+  // Shown in place of the list, and announced from the search field's status.
+  await expect
+    .element(dialog.getByRole("status"))
+    .toHaveTextContent("No networks found");
+  expect(dialog.getByRole("option").elements()).toEqual([]);
+
+  await userEvent.clear(search);
+  await userEvent.type(search, "aval");
+  await expect
+    .poll(() =>
+      dialog
+        .getByRole("option")
+        .elements()
+        .map((option) => option.getAttribute("data-testid"))
+    )
+    .toEqual([`wallet-chain-${avalanche.id}`]);
+
+  await userEvent.keyboard("[ArrowDown][Enter]");
+  await expect.poll(() => switchChain).toHaveBeenCalledWith(avalanche.id);
+});
+
+it("narrows the Dashboard's network picker to 400px", async ({ worker }) => {
+  const { dialog } = await openNetworkPicker({
+    api: worker,
+    supportedChainIds: [mainnet.id, avalanche.id],
+    dashboardVariant: true,
+  });
+  expect(dialog.element().getBoundingClientRect().width).toBeLessThanOrEqual(
+    400
+  );
 });
 
 it("copies the full account address and clears copied feedback", async ({
@@ -461,12 +567,17 @@ it("clears a failed network selection when the dialog is reopened", async ({
   await open.click();
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId(`wallet-chain-${avalanche.id}`).click();
-  await expect.element(dialog.getByRole("status")).toBeVisible();
+  // The search field's own status announces only a search with no match.
+  const failed = dialog
+    .getByRole("status")
+    .filter({ hasText: "Error switching chain" });
+  await expect.element(failed).toBeVisible();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   // The connected network's row is also named "Ethereum" until it unmounts.
   await expect.element(dialog).not.toBeInTheDocument();
   await open.click();
-  await expect.element(dialog.getByRole("status")).not.toBeInTheDocument();
+  await expect.element(dialog).toBeVisible();
+  await expect.element(failed).not.toBeInTheDocument();
 });
 
 it("keeps the header wallet summary mounted while switching networks", async ({

@@ -389,7 +389,8 @@ const styles = stylex.create({
   },
   header: {
     paddingBlock: space[8],
-    paddingInline: space[16],
+    // As a `ListRow`'s, so a title lines up with its rows' avatars.
+    paddingInline: space[12],
     backgroundColor: color.background,
   },
   headerLeading: { display: "flex", flexShrink: 0 },

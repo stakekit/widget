@@ -269,7 +269,14 @@
     }
   },
   "chain_modal": {
-    "disabled_chain_info": "Ajoutez un portefeuille"
+    "disabled_chain_info": "Ajoutez un portefeuille",
+    "search": "Rechercher un réseau",
+    "no_results": "Aucun réseau trouvé",
+    "groups": {
+      "current": "Actuel",
+      "networks": "Réseaux",
+      "testnets": "Réseaux de test"
+    }
   },
   "init": {
     "get_started": "Connectez votre portefeuille pour commencer…",

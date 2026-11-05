@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
+import { Avatar } from "../components/avatar";
+import { Button } from "../components/button";
 import {
   isWithin,
   outlineWithin,
@@ -980,4 +982,258 @@ export const GroupHeaderWithLogo: Story = {
 export const GroupHeaderWithLogoDark: Story = {
   ...GroupHeaderWithLogo,
   globals: { colorScheme: "dark" },
+};
+
+/** Whether two edges line up, within a pixel of rounding. */
+const alignsWith = (left: number, edge: number) => Math.abs(left - edge) <= 1;
+
+/** A computed color with no alpha: the element draws no fill. */
+const transparent = /^rgba\(\d+, \d+, \d+, 0\)$/;
+
+/**
+ * A comfortable row's surface lines up with the title and the close button,
+ * as the search field does.
+ */
+export const RowsAlignWithTitle: Story = {
+  play: async ({ canvasElement }) => {
+    const sheet = await openSheet(canvasElement);
+    const title = within(sheet).getByRole("heading", {
+      name: "Select a token",
+    });
+    const close = within(sheet).getByRole("button", { name: "Close" });
+    const option = await within(sheet).findByRole("option", {
+      name: /^ETH Ethereum/,
+    });
+    const row = option.getBoundingClientRect();
+    await expect(alignsWith(row.left, title.getBoundingClientRect().left)).toBe(
+      true
+    );
+    await expect(
+      alignsWith(row.right, close.getBoundingClientRect().right)
+    ).toBe(true);
+  },
+};
+
+const networks = [
+  "Ethereum",
+  "Polygon",
+  "Arbitrum One",
+  "Avalanche",
+  "Base",
+  "Optimism",
+  "Sepolia",
+].map((name) => ({ id: name, name }));
+
+/** A condensed sheet, as a network picker builds it. */
+const NetworkSheet = ({
+  onSelect,
+}: {
+  readonly onSelect: (id: string) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState("Ethereum");
+  const matches = networks.filter((network) =>
+    network.name.toLowerCase().includes(query.trim().toLowerCase())
+  );
+  const option = (network: (typeof networks)[number]) => ({
+    id: network.id,
+    title: network.name,
+    leading: (
+      <Avatar src={networkLogo} fallback={network.name.slice(0, 1)} size="sm" />
+    ),
+  });
+  const groups = [
+    {
+      key: "current",
+      label: "Current",
+      options: matches.filter((network) => network.id === selectedId),
+    },
+    {
+      key: "networks",
+      label: "Networks",
+      options: matches.filter((network) => network.id !== selectedId),
+    },
+  ].flatMap((group) =>
+    group.options.length === 0
+      ? []
+      : [{ ...group, options: group.options.map(option) }]
+  );
+
+  return (
+    <SelectSheet
+      open
+      density="condensed"
+      closesOnSelect={false}
+      title="Switch networks"
+      closeLabel="Close"
+      listLabel="Networks"
+      notice={<span>Your wallet is on another network.</span>}
+      search={{
+        value: query,
+        onValueChange: setQuery,
+        label: "Search networks",
+        placeholder: "Search",
+        clearLabel: "Clear search",
+      }}
+      groups={groups}
+      selectedId={selectedId}
+      onSelect={(id) => {
+        setSelectedId(id);
+        onSelect(id);
+      }}
+    />
+  );
+};
+
+/**
+ * `condensed` is a compact choice, such as a network: 40px rows with 24px
+ * icons in a 400px dialog. The current choice is tinted and checked; with
+ * `closesOnSelect` off, the sheet stays open after a choice.
+ */
+export const Condensed: Story = {
+  render: (args) => <NetworkSheet onSelect={args.onSelect} />,
+  play: async ({ args }) => {
+    const sheet = await screen.findByRole("dialog", {
+      name: "Switch networks",
+    });
+    await waitFor(() => expect(sheet).toBeVisible());
+    await expect(sheet.getBoundingClientRect().width).toBe(400);
+    await expect(
+      within(sheet).getByText("Your wallet is on another network.")
+    ).toBeVisible();
+
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search networks",
+    });
+    await waitFor(() => expect(search).toHaveFocus());
+    const close = within(sheet).getByRole("button", { name: "Close" });
+    await expect(getComputedStyle(close).outlineStyle).toBe("none");
+
+    const edge = within(sheet)
+      .getByRole("heading", { name: "Switch networks" })
+      .getBoundingClientRect().left;
+    const options = within(sheet).getAllByRole("option");
+    for (const option of options) {
+      await expect(option.getBoundingClientRect().height).toBeLessThanOrEqual(
+        40
+      );
+      const leading = option.firstElementChild?.getBoundingClientRect();
+      await expect(leading?.width).toBe(24);
+      await expect(alignsWith(leading?.left ?? 0, edge)).toBe(true);
+    }
+    const header = within(sheet).getByText("Networks", {
+      ignore: "script, style, [hidden]",
+    });
+    await expect(alignsWith(header.getBoundingClientRect().left, edge)).toBe(
+      true
+    );
+
+    const current = within(sheet).getByRole("option", { name: /^Ethereum/ });
+    await expect(current).toHaveAttribute("aria-selected", "true");
+    await expect(getComputedStyle(current).backgroundColor).not.toMatch(
+      transparent
+    );
+    await expect(current.querySelector("svg")).not.toBeNull();
+
+    await userEvent.type(search, "arb");
+    await waitFor(() =>
+      expect(within(sheet).getAllByRole("option")).toHaveLength(1)
+    );
+    await expect(
+      within(sheet).getByRole("option", { name: /^Arbitrum One/ })
+    ).toBeVisible();
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    await expect(args.onSelect).toHaveBeenCalledWith("Arbitrum One");
+    await expect(sheet).toBeVisible();
+  },
+};
+
+export const CondensedDark: Story = {
+  ...Condensed,
+  globals: { colorScheme: "dark" },
+};
+
+/** A suspended sheet hides without closing, and shows again as it resumes. */
+const SuspendableSheet = ({
+  onOpenChange,
+}: {
+  readonly onOpenChange: (open: boolean) => void;
+}) => {
+  const [suspended, setSuspended] = useState(false);
+
+  return (
+    <>
+      <Button onClick={() => setSuspended(false)}>Resume</Button>
+      <SelectSheet
+        open
+        suspended={suspended}
+        onOpenChange={onOpenChange}
+        title="Select a token"
+        closeLabel="Close"
+        listLabel="Tokens"
+        options={tokens.slice(0, 3)}
+        onSelect={fn()}
+        footer={{ label: "Ask", onClick: () => setSuspended(true) }}
+      />
+    </>
+  );
+};
+
+export const Suspended: Story = {
+  render: (args) => (
+    <SuspendableSheet onOpenChange={(open) => args.onOpenChange?.(open)} />
+  ),
+  play: async ({ args, canvasElement }) => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a token" });
+    await waitFor(() => expect(sheet).toBeVisible());
+    await userEvent.click(within(sheet).getByRole("button", { name: "Ask" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Select a token" })
+      ).not.toBeInTheDocument()
+    );
+    await expect(args.onOpenChange).not.toHaveBeenCalledWith(false);
+
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Resume" })
+    );
+    const resumed = await screen.findByRole("dialog", {
+      name: "Select a token",
+    });
+    await waitFor(() => expect(resumed).toBeVisible());
+  },
+};
+
+/** A badge with `announce` is a status, so a state that appears is read out. */
+export const AnnouncedBadge: Story = {
+  render: (args) => (
+    <SelectSheet
+      open
+      title="Switch networks"
+      closeLabel="Close"
+      listLabel="Networks"
+      density="condensed"
+      onSelect={args.onSelect}
+      options={[
+        {
+          id: "polygon",
+          title: "Polygon",
+          badges: [
+            { label: "Confirm in wallet", tone: "warning", announce: true },
+          ],
+        },
+        { id: "base", title: "Base", badges: [{ label: "New" }] },
+      ]}
+    />
+  ),
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", {
+      name: "Switch networks",
+    });
+    await waitFor(() => expect(sheet).toBeVisible());
+    await expect(within(sheet).getByRole("status")).toHaveTextContent(
+      "Confirm in wallet"
+    );
+    await expect(within(sheet).getAllByRole("status")).toHaveLength(1);
+  },
 };

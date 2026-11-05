@@ -1,21 +1,18 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import {
-  Badge,
-  Divider,
-  Icon,
-  ListGroup,
-  ListRow,
-  Modal,
   Notice,
+  SelectSheet,
+  type SelectSheetAction,
   TokenTrigger,
 } from "../../../../ui/index";
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
+import { networkPickerGroups } from "../../model/network-picker";
 import { useLedgerDisabledChain } from "../../react/use-ledger-disabled-chains";
 import { useScopedWalletChainSelection } from "../../react/use-scoped-wallet-chain-selection";
 import { useSKWallet } from "../../react/use-wallet";
@@ -37,7 +34,8 @@ type ChainDialogProps = {
   readonly chains: ReadonlyArray<Chain>;
   readonly currentChainId: number | null;
   readonly disabledChainIds: ReadonlySet<number>;
-  readonly footer: ReactNode;
+  /** A button under the networks, such as disconnecting the wallet. */
+  readonly footer?: SelectSheetAction;
   readonly notice: ReactNode;
   readonly onOpenChange: (open: boolean) => void;
   readonly onSelect: (chain: Chain) => void;
@@ -46,6 +44,11 @@ type ChainDialogProps = {
   readonly suspended?: boolean;
 };
 
+/**
+ * The network picker: the connected network, then the networks and the
+ * testnets, filtered by name. It stays open while a chosen network is
+ * confirmed in the wallet; choosing the connected one closes it.
+ */
 const ChainDialog = ({
   chains,
   currentChainId,
@@ -59,88 +62,86 @@ const ChainDialog = ({
 }: ChainDialogProps) => {
   const { t } = useTranslation();
   const selection = useAtomValue(walletChainSelectionAtom);
+  // The sheet clears it as it closes.
+  const [query, setQuery] = useState("");
+  const groupLabels = {
+    Current: t("chain_modal.groups.current"),
+    Networks: t("chain_modal.groups.networks"),
+    Testnets: t("chain_modal.groups.testnets"),
+  } as const;
+  const chainsById = new Map(chains.map((chain) => [String(chain.id), chain]));
+
+  const option = (chain: Chain) => {
+    const selected = currentChainId === chain.id;
+    const failed = !selected && selection?.failedChainId === chain.id;
+    const pending = !selected && selection?.pendingChainId === chain.id;
+    const badge = (() => {
+      if (failed) {
+        return {
+          label: t("wallet_modal.confirm_error"),
+          tone: "danger",
+          announce: true,
+        } as const;
+      }
+      if (pending) {
+        return {
+          label: t("wallet_modal.confirm"),
+          tone: "warning",
+          announce: true,
+        } as const;
+      }
+      return undefined;
+    })();
+
+    return {
+      id: String(chain.id),
+      title: chain.name,
+      testId: `wallet-chain-${chain.id}`,
+      leading: <WalletChainIcon chain={chain} size="sm" />,
+      ...(badge === undefined ? {} : { badges: [badge] }),
+      ...(disabledChainIds.has(chain.id) && !selected && badge === undefined
+        ? { subtitle: t("chain_modal.disabled_chain_info") }
+        : {}),
+    };
+  };
 
   return (
-    <Modal
+    <SelectSheet
       open={open}
       onOpenChange={onOpenChange}
       suspended={suspended}
-      testId="wallet-chain-dialog"
+      density="condensed"
+      closesOnSelect={false}
+      testIds={{ container: "wallet-chain-dialog" }}
       title={t("wallet_modal.network")}
       closeLabel={t("wallet_modal.close")}
-    >
-      {notice}
-      <ListGroup density="condensed">
-        {chains.map((chain) => {
-          const selected = currentChainId === chain.id;
-
-          return (
-            <ChainRow
-              key={chain.id}
-              chain={chain}
-              selected={selected}
-              pending={!selected && selection?.pendingChainId === chain.id}
-              failed={!selected && selection?.failedChainId === chain.id}
-              disabled={disabledChainIds.has(chain.id)}
-              onSelect={() => {
-                if (!selected) onSelect(chain);
-              }}
-            />
-          );
-        })}
-      </ListGroup>
-      {footer}
-    </Modal>
-  );
-};
-
-const ChainRow = ({
-  chain,
-  selected,
-  pending,
-  failed,
-  disabled,
-  onSelect,
-}: {
-  readonly chain: Chain;
-  readonly selected: boolean;
-  readonly pending: boolean;
-  readonly failed: boolean;
-  readonly disabled: boolean;
-  readonly onSelect: () => void;
-}) => {
-  const { t } = useTranslation();
-  const status = (() => {
-    // The connected network shows the row's trailing check.
-    if (selected) return undefined;
-    if (failed) {
-      return (
-        <Badge tone="danger" role="status">
-          {t("wallet_modal.confirm_error")}
-        </Badge>
-      );
-    }
-    if (pending) {
-      return (
-        <Badge tone="warning" role="status">
-          {t("wallet_modal.confirm")}
-        </Badge>
-      );
-    }
-    return undefined;
-  })();
-
-  return (
-    <ListRow
-      testId={`wallet-chain-${chain.id}`}
-      leading={<WalletChainIcon chain={chain} />}
-      title={chain.name}
-      {...(status === undefined ? {} : { badges: status })}
-      {...(disabled && !selected && !pending && !failed
-        ? { subtitle: t("chain_modal.disabled_chain_info") }
-        : {})}
-      selected={selected}
-      onClick={onSelect}
+      listLabel={t("wallet_modal.network")}
+      notice={notice}
+      search={{
+        value: query,
+        onValueChange: setQuery,
+        label: t("chain_modal.search"),
+        placeholder: t("shared.search"),
+        clearLabel: t("shared.clear_search"),
+      }}
+      empty={{ title: t("chain_modal.no_results") }}
+      groups={networkPickerGroups({ chains, currentChainId, query }).map(
+        (group) => ({
+          key: group.kind,
+          label: groupLabels[group.kind],
+          options: group.chains.map(option),
+        })
+      )}
+      {...(currentChainId === null
+        ? {}
+        : { selectedId: String(currentChainId) })}
+      onSelect={(id) => {
+        const chain = chainsById.get(id);
+        if (chain === undefined) return;
+        if (chain.id === currentChainId) onOpenChange(false);
+        else onSelect(chain);
+      }}
+      {...(footer === undefined ? {} : { footer })}
     />
   );
 };
@@ -178,7 +179,6 @@ const ScopedWalletChainPicker = ({
       chains={chains}
       currentChainId={wallet?.chain?.id ?? null}
       disabledChainIds={disabledChainIds}
-      footer={null}
       notice={null}
       onOpenChange={onOpenChange}
       onSelect={selectChain}
@@ -242,25 +242,18 @@ export const ChainModal = ({
         chains={chains}
         currentChainId={wallet.chain.id}
         disabledChainIds={disabledChainIds}
-        footer={
-          !currentChain &&
-          shouldShowDisconnect(wallet.connector) && (
-            <>
-              <Divider />
-              <ListRow
-                density="condensed"
-                leading={<Icon name="DisconnectSquareIcon" size="lg" />}
-                title={t("wallet_modal.disconnect")}
-                onClick={() =>
+        {...(!currentChain && shouldShowDisconnect(wallet.connector)
+          ? {
+              footer: {
+                label: t("wallet_modal.disconnect"),
+                onClick: () =>
                   leaveConfirmation.confirm(() => {
                     setChainOpen(false);
                     logout();
-                  })
-                }
-              />
-            </>
-          )
-        }
+                  }),
+              },
+            }
+          : {})}
         notice={
           !currentChain && (
             <Notice tone="warning">{t("wallet_modal.wrong_network")}</Notice>

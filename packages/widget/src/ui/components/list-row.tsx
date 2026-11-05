@@ -24,11 +24,17 @@ import { useCopy } from "./use-copy";
 
 /**
  * `condensed` is for pickers, such as of a network, an account or a wallet: a
- * shorter row with no surface of its own that tints on hover, and a trailing
- * check for `selected` in place of the selection ring. Its avatar takes the
- * `control` size.
+ * shorter row with no surface of its own that tints on hover, and the accent
+ * tint with a trailing check for `selected` in place of the selection ring.
+ * Its avatar takes the `control` size, or `sm` in a 40px row.
  */
 type ListRowDensity = "comfortable" | "condensed";
+
+/**
+ * A condensed row's height in pixels with a `sm` avatar: its least height, for
+ * a virtualized list's estimate.
+ */
+export const condensedRowHeight = 40;
 
 /** Set inside a `ListGroup`: its rows' density. */
 const InListGroup = createContext<
@@ -225,8 +231,8 @@ export const ListRow = ({
   const { copied, copy } = useCopy();
   const checked = option === undefined ? selected === true : option.selected;
   const showsCheckBox = option?.check ?? check;
-  // A condensed row marks its choice with a check after its values; others
-  // draw the selection ring.
+  // A condensed row marks its choice with a tint and a check; others draw
+  // the selection ring.
   const ringsSelection = checked && !showsCheckBox && !condensed;
   const checkBox = showsCheckBox && (
     <span
@@ -236,9 +242,8 @@ export const ListRow = ({
       {checked && <Icon name="CheckIcon" size="sm" />}
     </span>
   );
-  const checkMark = checked && !showsCheckBox && condensed && (
-    <Icon name="CheckIcon" tone="accent" />
-  );
+  const checksSelection = checked && !showsCheckBox && condensed;
+  const checkMark = checksSelection && <Icon name="CheckIcon" tone="accent" />;
   const values = (value !== undefined || subvalue !== undefined) && (
     <Stack as="span" gap={2} align="end">
       {value !== undefined && (
@@ -375,6 +380,7 @@ export const ListRow = ({
     styles.interactive,
     condensed && styles.condensedInteractive,
     ringsSelection && interactiveStyles.selected,
+    checksSelection && styles.condensedSelected,
     interactiveStyles.inset,
   ];
   const row = (() => {
@@ -413,6 +419,8 @@ export const ListRow = ({
           {...stylex.props(
             pressable,
             option.active && styles.active,
+            // The tint stays on the choice the keys reach.
+            option.active && checksSelection && styles.condensedSelected,
             option.disabled === true && styles.optionDisabled,
             option.disabled === true && condensed && styles.condensedDisabled
           )}
@@ -563,6 +571,7 @@ const styles = stylex.create({
   condensed: {
     paddingBlock: space[8],
     backgroundColor: "transparent",
+    minHeight: `${condensedRowHeight}px`,
   },
   condensedInteractive: {
     backgroundColor: {
@@ -571,6 +580,13 @@ const styles = stylex.create({
     },
   },
   condensedDisabled: { backgroundColor: "transparent" },
+  // Moves toward the hover surface, as an unselected row moves to it.
+  condensedSelected: {
+    backgroundColor: {
+      default: color.accentSoft,
+      ":hover:not(:disabled)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,
+    },
+  },
   leading: { display: "flex", flexShrink: 0 },
   // The title and badges over the second line. Below `sm` the badges trail
   // the second line, so the title has the whole first line; from `sm` they

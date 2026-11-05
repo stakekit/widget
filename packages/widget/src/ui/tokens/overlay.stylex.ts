@@ -3,6 +3,8 @@ import * as stylex from "@stylexjs/stylex";
 /** Overlay dimensions: dialog width and height caps, popup width limits. */
 export const overlaySize = stylex.defineConsts({
   dialogWidth: "440px",
+  // A dialog for a compact choice, such as a network.
+  pickerDialogWidth: "400px",
   // A dialog's height cap: a long list scrolls in a dialog that keeps its
   // scale in a tall viewport, and a sheet leaves the page in view above it.
   dialogMaxHeight: "min(560px, 80dvh)",

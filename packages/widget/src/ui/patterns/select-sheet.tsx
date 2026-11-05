@@ -1,7 +1,10 @@
+import * as stylex from "@stylexjs/stylex";
 import {
   type ComponentProps,
   type ReactElement,
   type ReactNode,
+  useEffect,
+  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -9,7 +12,7 @@ import {
 import { TokenAvatar } from "../components/avatar";
 import { Badge } from "../components/badge";
 import { Button } from "../components/button";
-import { ListRow } from "../components/list-row";
+import { condensedRowHeight, ListRow } from "../components/list-row";
 import { Modal } from "../components/modal";
 import { SearchInput } from "../components/search-input";
 import { Spinner } from "../components/spinner";
@@ -17,6 +20,7 @@ import { VirtualList } from "../components/virtual-list";
 import { Box } from "../primitives/box";
 import { Stack } from "../primitives/stack";
 import { VisuallyHidden } from "../primitives/visually-hidden";
+import { space } from "../tokens/space.stylex";
 import type { Tone } from "../tone";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
@@ -34,9 +38,16 @@ type SelectSheetOption = {
   readonly subvalue?: string;
   /** The leading logo, with its network badge. */
   readonly logo?: TokenLogo;
+  /**
+   * A leading element in place of `logo`, such as a network's icon that loads
+   * on demand.
+   */
+  readonly leading?: ReactNode;
   readonly badges?: ReadonlyArray<{
     readonly label: string;
     readonly tone?: Tone;
+    /** Announces the badge as it appears, such as a pending state. */
+    readonly announce?: boolean;
   }>;
   /**
    * Label-value rows under the option, such as a validator's commission and
@@ -50,7 +61,7 @@ type SelectSheetOption = {
 };
 
 /** A button under a select sheet's options. */
-type SelectSheetAction = {
+export type SelectSheetAction = {
   readonly label: string;
   readonly onClick: () => void;
   readonly variant?: "primary" | "secondary";
@@ -99,6 +110,18 @@ type SelectSheetProps = OptionsOrGroups &
   Selection & {
     /** Names the sheet, such as "Select a token". */
     readonly title: string;
+    /**
+     * `condensed` is for a compact choice, such as a network: 40px rows, with
+     * a 24px `leading` icon, in the narrower `picker` dialog.
+     */
+    readonly density?: "comfortable" | "condensed";
+    /**
+     * Unset, a choice closes the sheet. Off, the sheet stays open, such as
+     * while a chosen network is confirmed in the wallet.
+     */
+    readonly closesOnSelect?: boolean;
+    /** Shown over the search field, such as a warning. */
+    readonly notice?: ReactNode;
     /** Names the close button. */
     readonly closeLabel: string;
     /**
@@ -110,16 +133,18 @@ type SelectSheetProps = OptionsOrGroups &
     readonly open?: boolean;
     /** Called on open and close, including the close after a choice. */
     readonly onOpenChange?: (open: boolean) => void;
+    /** Hidden, without closing, while another surface asks over it. */
+    readonly suspended?: boolean;
     /** Names the list of options, such as "Tokens". */
     readonly listLabel: string;
     /**
      * Called with the chosen option's id; the sheet then closes, unless it
-     * takes `multiple` choices.
+     * takes `multiple` choices or `closesOnSelect` is off.
      */
     readonly onSelect: (id: string) => void;
     /**
      * The search field over the options. Filtering is the caller's: it passes
-     * the options that match `value`.
+     * the options that match `value`. Closing the sheet clears the query.
      */
     readonly search?: {
       readonly value: string;
@@ -192,11 +217,17 @@ const nextEnabled = (
  * With a search field, focus stays in it while the arrow keys move through
  * the options and Enter chooses one; Escape clears the query, then closes.
  * It opens on the current choice, scrolled into view. Choosing an option
- * closes the sheet, unless it takes `multiple` choices.
+ * closes the sheet, unless it takes `multiple` choices or `closesOnSelect` is
+ * off. A comfortable row's surface lines up with the title; a condensed row,
+ * which has none, lines up its content and lets its tint reach past it.
  */
 export const SelectSheet = ({
   title,
+  density = "comfortable",
+  closesOnSelect = true,
+  notice,
   closeLabel,
+  suspended = false,
   trigger,
   open,
   onOpenChange,
@@ -221,9 +252,25 @@ export const SelectSheet = ({
   const listId = `${baseId}-list`;
   const searchRef = useRef<HTMLInputElement>(null);
   const [ownOpen, setOwnOpen] = useState(false);
+  const shown = open ?? ownOpen;
   // Unset until the keys or the query move it, the active option is the
   // current choice.
   const [movedIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  // A sheet its owner reopens starts on the current choice again.
+  const [wasShown, setWasShown] = useState(shown);
+  if (shown !== wasShown) {
+    setWasShown(shown);
+    setActiveIndex(undefined);
+  }
+  // However it closes, by its own controls or by its owner, it reopens with
+  // every option listed.
+  const clearSearch = useEffectEvent(() => {
+    if (search !== undefined && search.value !== "") search.onValueChange("");
+  });
+  useEffect(() => {
+    if (!shown) clearSearch();
+  }, [shown]);
+  const layout = densityLayouts[density];
 
   const flat =
     optionsOrGroups.groups === undefined
@@ -256,25 +303,33 @@ export const SelectSheet = ({
   const choose = (option: SelectSheetOption) => {
     if (option.disabled === true) return;
     onSelect(option.id);
-    if (multiple === undefined) setOpen(false);
+    if (multiple === undefined && closesOnSelect) setOpen(false);
   };
 
   const renderOption = (option: SelectSheetOption, index: number) => {
+    const leading =
+      option.leading ??
+      (option.logo === undefined ? undefined : (
+        <TokenAvatar {...option.logo} decorative />
+      ));
     const rowContent = {
       title: option.title,
+      density,
       ...(option.subtitle === undefined ? {} : { subtitle: option.subtitle }),
       ...(option.value === undefined ? {} : { value: option.value }),
       ...(option.subvalue === undefined ? {} : { subvalue: option.subvalue }),
       ...(option.details === undefined ? {} : { details: option.details }),
       ...(option.testId === undefined ? {} : { testId: option.testId }),
-      ...(option.logo === undefined
-        ? {}
-        : { leading: <TokenAvatar {...option.logo} decorative /> }),
+      ...(leading === undefined ? {} : { leading }),
       ...(option.badges === undefined
         ? {}
         : {
             badges: option.badges.map((badge) => (
-              <Badge key={badge.label} tone={badge.tone ?? "neutral"}>
+              <Badge
+                key={badge.label}
+                tone={badge.tone ?? "neutral"}
+                {...(badge.announce === true ? { role: "status" } : {})}
+              >
                 {badge.label}
               </Badge>
             )),
@@ -285,7 +340,7 @@ export const SelectSheet = ({
     const groupLabel = groupLabels[index];
 
     return (
-      <Box paddingBlock={2} role="presentation">
+      <Box paddingBlock={optionSpacing} role="presentation">
         {search === undefined ? (
           <ListRow
             {...rowContent}
@@ -318,6 +373,9 @@ export const SelectSheet = ({
     getKey: (option: SelectSheetOption) => option.id,
     renderItem: renderOption,
     maxHeight: "lg",
+    ...(layout.estimateSize === undefined
+      ? {}
+      : { estimateSize: layout.estimateSize }),
     listRole: search === undefined ? "list" : "listbox",
     multiselectable: multiple !== undefined,
     listId,
@@ -357,37 +415,40 @@ export const SelectSheet = ({
         />
       );
     }
-    if (optionsOrGroups.groups === undefined) {
-      return <VirtualList {...listProps} items={optionsOrGroups.options} />;
-    }
-    return (
-      <VirtualList
-        {...listProps}
-        stickyHeaders
-        groups={optionsOrGroups.groups.map((group) => ({
-          key: group.key,
-          label: group.label,
-          items: group.options,
-          ...(group.logo === undefined
-            ? {}
-            : {
-                leading: (
-                  <TokenAvatar {...group.logo} size="control" decorative />
-                ),
-              }),
-          ...(group.caption === undefined ? {} : { caption: group.caption }),
-        }))}
-      />
-    );
+    const list =
+      optionsOrGroups.groups === undefined ? (
+        <VirtualList {...listProps} items={optionsOrGroups.options} />
+      ) : (
+        <VirtualList
+          {...listProps}
+          stickyHeaders
+          groups={optionsOrGroups.groups.map((group) => ({
+            key: group.key,
+            label: group.label,
+            items: group.options,
+            ...(group.logo === undefined
+              ? {}
+              : {
+                  leading: (
+                    <TokenAvatar {...group.logo} size="control" decorative />
+                  ),
+                }),
+            ...(group.caption === undefined ? {} : { caption: group.caption }),
+          }))}
+        />
+      );
+    return <div {...stylex.props(styles.list, layout.list)}>{list}</div>;
   };
   const replacing = loading && flat.length > 0 && error === undefined;
 
   return (
     <Modal
-      open={open ?? ownOpen}
+      open={shown}
+      suspended={suspended}
       onOpenChange={setOpen}
       title={title}
       closeLabel={closeLabel}
+      size={layout.dialogSize}
       {...(testIds?.container === undefined
         ? {}
         : { testId: testIds.container })}
@@ -410,6 +471,7 @@ export const SelectSheet = ({
             )),
           })}
     >
+      {notice}
       {search !== undefined && (
         <SearchInput
           inputRef={searchRef}
@@ -455,3 +517,32 @@ export const SelectSheet = ({
     </Modal>
   );
 };
+
+const styles = stylex.create({
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1,
+    minHeight: 0,
+  },
+  // Past the body's inline padding by a row's own, so the rows' content lines
+  // up with the title while their tint reaches into the margin.
+  condensedList: { marginInline: `calc(-1 * ${space[12]})` },
+});
+
+/** The spacing above and under each option's row. */
+const optionSpacing = 2;
+
+/**
+ * What a density sets beyond its rows: the dialog's size, the list's reach
+ * past the body's padding and the rows' expected height, unset for the
+ * virtualized list's own.
+ */
+const densityLayouts = {
+  comfortable: { dialogSize: "default", list: null, estimateSize: undefined },
+  condensed: {
+    dialogSize: "picker",
+    list: styles.condensedList,
+    estimateSize: condensedRowHeight + 2 * optionSpacing,
+  },
+} as const;

@@ -51,7 +51,7 @@ export { FlowSteps } from "./patterns/flow-steps";
 export { PageHeader } from "./patterns/page-header";
 export { PageTransition } from "./patterns/page-transition";
 export { ReviewSummary } from "./patterns/review-summary";
-export { SelectSheet } from "./patterns/select-sheet";
+export { SelectSheet, type SelectSheetAction } from "./patterns/select-sheet";
 export { SplitView, type SplitViewSide } from "./patterns/split-view";
 export { StandIn } from "./patterns/stand-in";
 export { TokenTrigger } from "./patterns/token-trigger";

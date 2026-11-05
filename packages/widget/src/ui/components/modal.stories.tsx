@@ -208,6 +208,19 @@ export const Page: Story = {
   },
 };
 
+/** `picker` is a narrower dialog for a compact choice, such as a network. */
+export const Picker: Story = {
+  args: { size: "picker" },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Learn more" })
+    );
+    const popup = await dialog();
+    await waitFor(() => expect(popup).toBeVisible());
+    await expect(popup.getBoundingClientRect().width).toBe(400);
+  },
+};
+
 // Choices, as in a network picker: the keyboard scrolls the body by them.
 const thirtyRows = Array.from({ length: 30 }, (_, index) => (
   <Button key={index}>Network {index + 1}</Button>

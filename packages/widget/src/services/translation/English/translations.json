@@ -269,7 +269,14 @@
     }
   },
   "chain_modal": {
-    "disabled_chain_info": "Add account"
+    "disabled_chain_info": "Add account",
+    "search": "Search networks",
+    "no_results": "No networks found",
+    "groups": {
+      "current": "Current",
+      "networks": "Networks",
+      "testnets": "Testnets"
+    }
   },
   "init": {
     "get_started": "Connect your wallet to get started…",

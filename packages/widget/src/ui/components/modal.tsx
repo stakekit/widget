@@ -53,9 +53,10 @@ type ModalProps = {
   readonly closeTestId?: string;
   /**
    * `page` is a full-height dialog, as wide as the split container size, whose
-   * body holds a page edge to edge, such as an `EmbeddedPage`.
+   * body holds a page edge to edge, such as an `EmbeddedPage`. `picker` is a
+   * narrower dialog for a compact choice, such as a network.
    */
-  readonly size?: "default" | "page";
+  readonly size?: "default" | "picker" | "page";
   /** A back button before the title, such as returning to a previous step. */
   readonly back?: {
     /** The back button's accessible name. */
@@ -76,6 +77,9 @@ type ModalProps = {
 };
 
 const enteringOrLeaving = ":is([data-starting-style], [data-ending-style])";
+
+/** The widest a centered dialog gets: the viewport less its inset each side. */
+const viewportFit = `calc(100vw - 2 * ${overlaySize.dialogInset})`;
 
 /** What the keyboard can reach: its own focus moves the scroll with it. */
 const focusableSelector = [
@@ -204,7 +208,11 @@ export const Modal = ({
           }}
           ref={popup}
           data-testid={testId}
-          {...stylex.props(styles.popup, size === "page" && styles.pagePopup)}
+          {...stylex.props(
+            styles.popup,
+            size === "picker" && styles.pickerPopup,
+            size === "page" && styles.pagePopup
+          )}
         >
           <div {...stylex.props(styles.header)}>
             {back && (
@@ -312,7 +320,7 @@ const styles = stylex.create({
     top: { default: "auto", [viewport.dialog]: "50%" },
     width: {
       default: "100%",
-      [viewport.dialog]: `min(${overlaySize.dialogWidth}, calc(100vw - 2 * ${overlaySize.dialogInset}))`,
+      [viewport.dialog]: `min(${overlaySize.dialogWidth}, ${viewportFit})`,
     },
   },
   header: {
@@ -331,6 +339,12 @@ const styles = stylex.create({
     flexGrow: 1,
     minWidth: 0,
   },
+  pickerPopup: {
+    width: {
+      default: "100%",
+      [viewport.dialog]: `min(${overlaySize.pickerDialogWidth}, ${viewportFit})`,
+    },
+  },
   // Fills the viewport but a scrim's margin, so an embedded page has room,
   // past the cap of a list's dialog; a sheet below 520px.
   pagePopup: {
@@ -341,7 +355,7 @@ const styles = stylex.create({
     maxHeight: "none",
     width: {
       default: "100%",
-      [viewport.dialog]: `min(${containerWidth.split}, calc(100vw - 2 * ${overlaySize.dialogInset}))`,
+      [viewport.dialog]: `min(${containerWidth.split}, ${viewportFit})`,
     },
   },
   body: {
