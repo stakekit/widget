@@ -3,7 +3,10 @@ import { Data, Effect, Option, Predicate, Ref, Result } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { getDirectTransactionFallbackGas } from "../../../domain/action/direct-transaction";
+import {
+  type DirectTransaction,
+  getDirectTransactionFallbackGas,
+} from "../../../domain/action/direct-transaction";
 import type { YieldAction } from "../../../domain/action/models";
 import {
   getTransactionGasEstimate,
@@ -57,6 +60,7 @@ import {
   type YieldPreviewIntake,
   type YieldTransactionFlowIntake,
 } from "../model/yield-transaction-flow";
+import { getYieldFlowTransactionsToSign } from "../model/yield-transaction-workflow";
 import { makeYieldFlowStakeReviewViewAtom } from "./yield-summary";
 
 class YieldFlowPreviewError extends Data.TaggedError("YieldFlowPreviewError")<{
@@ -352,30 +356,38 @@ const planYieldFlowConversion = Effect.fn("planYieldFlowConversion")(function* (
 });
 
 /**
+ * The approve and wrap a confidential deposit of the underlying token still
+ * needs: what the Session already sent is left out. Nothing for any other
+ * action.
+ */
+const planPendingYieldFlowConversion = Effect.fn(
+  "planPendingYieldFlowConversion"
+)(function* (session: YieldFlowSession, preparation: ConfidentialPreparation) {
+  const sent = yield* Ref.get(session.ledger);
+  return (yield* planYieldFlowConversion(session, preparation)).filter(
+    ({ id }) => !sent.has(id)
+  );
+});
+
+/**
  * What the transactions around a confidential action cost, in the gas token:
- * the approve and wrap a deposit of the underlying token needs; what the
- * Session already sent costs nothing more. Null when it cannot be estimated,
- * as for an instant exit, whose finishing withdrawal only exists once its
- * unwrap confirms, or when the gas token is not the chain's native one the
- * node prices fees in.
+ * the approve and wrap a deposit of the underlying token still needs. Null
+ * when it cannot be estimated, as for an instant exit, whose finishing
+ * withdrawal only exists once its unwrap confirms, or when the gas token is
+ * not the chain's native one the node prices fees in.
  */
 const estimateYieldFlowConversionGas = Effect.fn(
   "estimateYieldFlowConversionGas"
 )(
   function* (
-    session: YieldFlowSession,
     preparation: ConfidentialPreparation,
+    pending: ReadonlyArray<DirectTransaction>,
     gasFeeToken: Token
   ) {
     if (preparation._tag === "Encrypt" && preparation.instant) return null;
     if (preparation._tag !== "Encrypt" || !preparation.conversion) {
       return exactZero();
     }
-    const sent = yield* Ref.get(session.ledger);
-    const pending = (yield* planYieldFlowConversion(
-      session,
-      preparation
-    )).filter(({ id }) => !sent.has(id));
     if (pending.length === 0) return exactZero();
     if (gasFeeToken.address !== undefined) return null;
     const evmRpc = yield* EvmRpc;
@@ -531,18 +543,31 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
   );
 
   const preparation = getYieldFlowConfidentialPreparation(intake);
-  // A deposit of the underlying token also pays for its approve and wrap;
-  // anything else converts nothing.
+  // A deposit of the underlying token also signs and pays for its approve
+  // and wrap; anything else converts nothing.
+  const conversionAtom = walletRuntime
+    .atom((get) =>
+      !preparation || get(kycBlockingAtom)
+        ? Effect.succeed([])
+        : planPendingYieldFlowConversion(session, preparation)
+    )
+    .pipe(Atom.withLabel("yieldFlowReviewConversion"));
   const conversionGasAtom = walletRuntime
     .atom((get) => {
       if (!preparation) return Effect.succeed(exactZero());
       return get(kycBlockingAtom)
         ? Effect.succeed(null)
-        : estimateYieldFlowConversionGas(
-            session,
-            preparation,
-            gasWarningInput.gasFeeToken
-          );
+        : get
+            .result(conversionAtom)
+            .pipe(
+              Effect.flatMap((pending) =>
+                estimateYieldFlowConversionGas(
+                  preparation,
+                  pending,
+                  gasWarningInput.gasFeeToken
+                )
+              )
+            );
     })
     .pipe(Atom.withLabel("yieldFlowReviewConversionGas"));
 
@@ -553,6 +578,9 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     const previewError = Option.getOrNull(AsyncResult.error(preview));
     const actionPreviewLoading =
       AsyncResult.isInitial(preview) || preview.waiting;
+    const conversion = get(conversionAtom);
+    const conversionLoading =
+      AsyncResult.isInitial(conversion) || conversion.waiting;
     const conversionGas = get(conversionGasAtom);
     const conversionGasLoading =
       AsyncResult.isInitial(conversionGas) || conversionGas.waiting;
@@ -581,6 +609,15 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     return {
       action,
       actionPreviewLoading,
+      /** What the wallet still signs, in order; null until it is known. */
+      transactionsToSign:
+        action && !conversionLoading
+          ? getYieldFlowTransactionsToSign(
+              action,
+              AsyncResult.getOrElse(conversion, () => [])
+            )
+          : null,
+      transactionsToSignLoading: actionPreviewLoading || conversionLoading,
       confirmDisabled:
         kyc.isBlocking ||
         (previewError !== null && !isRetryablePreviewError(previewError)),

@@ -2,14 +2,19 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
-import { formatTokenAmount } from "../../../shared/lib/number-format";
+import {
+  formatBorrowProviderName,
+  formatNetworkName,
+} from "../../../shared/lib/formatters";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
-  DetailList,
-  DetailRow,
-  Divider,
   IconButton,
   Notice,
+  ReviewSummary,
   Stack,
   Text,
 } from "../../../ui/index";
@@ -19,9 +24,13 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { estimateBorrowPositionChange } from "../model/borrow-completion";
+import {
+  estimateBorrowPositionChange,
+  getBorrowFlowHeadline,
+} from "../model/borrow-completion";
 import {
   getBorrowReviewRiskBlock,
+  getBorrowTransactionFlowTitle,
   projectBorrowTransactionFlowSummary,
 } from "../model/borrow-transaction-flow";
 import {
@@ -29,11 +38,10 @@ import {
   useBorrowTransactionFlowReview,
 } from "../react/borrow-flow-route";
 import { BorrowReviewConfirmationFailure } from "../state/review-page";
-import { BorrowFlowHeading } from "./flow-heading";
-import { BorrowFlowPositionChangeRows } from "./position-change-rows";
 import {
-  BorrowFlowAmountRows,
-  BorrowFlowOriginationRows,
+  getBorrowFlowCollateralAmountRow,
+  getBorrowFlowOriginationRows,
+  getBorrowFlowPositionChangeRows,
 } from "./summary-rows";
 
 export const BorrowReviewPage = () => {
@@ -52,6 +60,8 @@ export const BorrowReviewPage = () => {
   const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
   const riskBlock = getBorrowReviewRiskBlock(reviewState);
+  const title = getBorrowTransactionFlowTitle(summary);
+  const headline = getBorrowFlowHeadline(summary, projectedSummary);
   const createActionErrorDescription = Option.map(
     confirmation.failure,
     BorrowReviewConfirmationFailure.match({
@@ -78,55 +88,86 @@ export const BorrowReviewPage = () => {
       ? `${formatTokenAmount(projectedSummary.collateral.effectiveAmount, locale, "down")} ${projectedSummary.collateral.symbol}`
       : null;
 
+  const origination = getBorrowFlowOriginationRows({
+    locale,
+    origination: projectedSummary.origination,
+    t,
+  });
+  // The headline shows the amount the action is about; the rows show the
+  // rest of what it moves and the position it leaves.
+  const facts = [
+    {
+      label: t("dashboard.borrow.review_page.market"),
+      value: summary.marketLabel,
+    },
+    // A borrow's headline is the loan, so the collateral it supplies is a row.
+    ...(projectedSummary.borrow && projectedSummary.collateral
+      ? [
+          getBorrowFlowCollateralAmountRow({
+            collateral: projectedSummary.collateral,
+            locale,
+            t,
+          }),
+        ]
+      : []),
+    ...(effectiveCollateral
+      ? [
+          {
+            label: t("dashboard.borrow.review_page.effective_collateral"),
+            value: effectiveCollateral,
+          },
+        ]
+      : []),
+    ...getBorrowFlowPositionChangeRows({
+      change: estimateBorrowPositionChange(projectedSummary),
+      locale,
+      t,
+    }),
+    ...(origination ? [origination.principal] : []),
+  ];
+  const feeRows = [
+    ...(collateralFee
+      ? [
+          {
+            label: t("dashboard.borrow.review_page.collateral_fee"),
+            value: collateralFee,
+          },
+        ]
+      : []),
+    ...(origination ? [origination.fee] : []),
+  ];
+
   return (
     <AnimationPage>
       <PageContainer>
         <Stack gap={16}>
-          <Stack gap={8}>
-            <IconButton
-              icon="CaretLeftIcon"
-              label={
-                isPositionFlow
-                  ? t("dashboard.borrow.review_page.back_to_position")
-                  : t("dashboard.borrow.review_page.back")
-              }
-              size="sm"
-              onClick={() => back(undefined)}
-            />
+          <IconButton
+            icon="CaretLeftIcon"
+            label={
+              isPositionFlow
+                ? t("dashboard.borrow.review_page.back_to_position")
+                : t("dashboard.borrow.review_page.back")
+            }
+            size="sm"
+            onClick={() => back(undefined)}
+          />
 
-            <BorrowFlowHeading summary={summary} />
-          </Stack>
-
-          <Divider />
-
-          <DetailList>
-            <DetailRow
-              label={t("dashboard.borrow.review_page.market")}
-              value={summary.marketLabel}
-            />
-            <BorrowFlowAmountRows
-              action={summary.action}
-              projected={projectedSummary}
-            />
-            {effectiveCollateral ? (
-              <DetailRow
-                label={t("dashboard.borrow.review_page.effective_collateral")}
-                value={effectiveCollateral}
-              />
-            ) : null}
-            <BorrowFlowPositionChangeRows
-              change={estimateBorrowPositionChange(projectedSummary)}
-            />
-            {collateralFee ? (
-              <DetailRow
-                label={t("dashboard.borrow.review_page.collateral_fee")}
-                value={collateralFee}
-              />
-            ) : null}
-            <BorrowFlowOriginationRows
-              origination={projectedSummary.origination}
-            />
-          </DetailList>
+          <ReviewSummary
+            title={t(title.key, { symbol: title.symbol })}
+            amount={
+              headline.amount === null
+                ? headline.symbol
+                : `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`
+            }
+            {...(headline.usd
+              ? { amountFiat: formatUsd(headline.usd, locale) }
+              : {})}
+            destination={`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
+            facts={facts}
+            {...(feeRows.length > 0
+              ? { fees: { heading: t("shared.fees"), rows: feeRows } }
+              : {})}
+          />
 
           {Option.match(createActionErrorDescription, {
             onNone: () => null,
@@ -166,16 +207,16 @@ export const BorrowReviewPage = () => {
               `dashboard.borrow.review_page.risk_disclosures.${summary.action}`
             )}
           </Text>
-
-          <PageCtaButton
-            cta={{
-              disabled: confirmation.pending || riskBlock !== null,
-              isLoading: confirmation.pending,
-              label: t("dashboard.borrow.review_page.confirm"),
-              onClick: () => confirm(undefined),
-            }}
-          />
         </Stack>
+
+        <PageCtaButton
+          cta={{
+            disabled: confirmation.pending || riskBlock !== null,
+            isLoading: confirmation.pending,
+            label: t("dashboard.borrow.review_page.confirm"),
+            onClick: () => confirm(undefined),
+          }}
+        />
       </PageContainer>
     </AnimationPage>
   );

@@ -8,6 +8,7 @@ import type { YieldId } from "../../../src/domain/identity/identifiers";
 import type { InactiveValidatorStatus } from "../../../src/features/portfolio/state/read-models/position-list-item";
 import type { PositionItem } from "../../../src/features/portfolio/state/read-models/positions";
 import { PositionsListItem as CompactPositionsListItem } from "../../../src/features/portfolio/ui/compact/positions-page/components/positions-list-item";
+import { SmallBalances } from "../../../src/features/portfolio/ui/components/small-balances";
 import { PositionsListItem as DashboardPositionsListItem } from "../../../src/features/portfolio/ui/dashboard/positions/components/positions-list-item";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import {
@@ -310,6 +311,37 @@ describe.each(presentations)("A $name Manage list", ({ row }) => {
       expect(colorOf(counted), counted).toBe(attention);
     }
     expect(colorOf("In progress")).not.toBe(attention);
+  });
+
+  it("collapses small balances under one row that names their count", async () => {
+    const items = ["dust-a", "dust-b"].map((id) => {
+      hookState.detailsByYield.set(
+        id,
+        createDetails({
+          integrationData: {
+            ...integrationData,
+            id,
+            metadata: { ...integrationData.metadata, name: `Position ${id}` },
+          },
+        })
+      );
+      return createItem({ integrationId: id as YieldId });
+    });
+    const app = await renderRow(
+      <SmallBalances items={items} renderItem={(item) => row(item)} />
+    );
+    const trigger = app.getByRole("button", { name: "Small balances (2)" });
+
+    await expect.element(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect
+      .element(app.getByText("Position dust-a"))
+      .not.toBeInTheDocument();
+
+    await trigger.click();
+
+    await expect.element(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect.element(app.getByText("Position dust-a")).toBeVisible();
+    await expect.element(app.getByText("Position dust-b")).toBeVisible();
   });
 });
 

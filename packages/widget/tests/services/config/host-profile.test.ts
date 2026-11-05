@@ -14,7 +14,6 @@ const standard: HostProfile = {
   appearancePreset: "default",
   earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
-  hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
   hostTracking: false,
@@ -55,7 +54,6 @@ const utila: HostProfile = {
 const zerion: HostProfile = {
   ...standard,
   earnPresentation: { condensed: false, zerion: true },
-  hidesEarnLoadingSpinner: true,
   hidesHeaderWalletControl: true,
   hostTokenIconMapping: true,
   hostTracking: true,

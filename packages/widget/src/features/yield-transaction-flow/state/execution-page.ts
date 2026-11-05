@@ -2,12 +2,21 @@ import { Data, Effect, Option, Ref, type Scope, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { getActionInputToken } from "../../../domain/action/rules";
+import {
+  findYieldToken,
+  getActionInputToken,
+} from "../../../domain/action/rules";
 import { getConfidentialActionBatchSide } from "../../../domain/earn/confidential";
+import { equalTokens } from "../../../domain/token/token";
+import {
+  PositionDataKey,
+  positionDataAtom,
+} from "../../../resources/yield-positions/index";
 import {
   WidgetNavigation,
   type WidgetNavigationCommand,
 } from "../../../services/navigation/widget-navigation";
+import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import type {
   TransactionWorkflowCommand,
   TransactionWorkflowInputError,
@@ -16,8 +25,13 @@ import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
 } from "../../../services/transaction-workflow/transaction-workflow-service";
+import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import {
+  getYieldFlowExit,
+  getYieldFlowExitUnlockDate,
+  getYieldFlowPositionBalanceId,
   getYieldFlowWorkflowInput,
+  getYieldFlowYieldId,
   getYieldTransactionFlowIntakeVariant,
   type YieldFlowHandoff,
   type YieldFlowSession,
@@ -98,12 +112,43 @@ export const makeYieldFlowExecutionPage = (
   handoff: YieldFlowHandoff
 ) => {
   const { intake } = session;
-  const yieldId =
-    intake._tag === "YieldActionContinuation"
-      ? intake.action.yieldId
-      : intake.request.yieldId;
+  const yieldId = getYieldFlowYieldId(session);
   const plannedStepTypes =
     handoff.source._tag === "Prepare" ? handoff.source.plannedStepTypes : [];
+
+  // The workflow refreshes positions as it completes, so the balance shows
+  // up here once the portfolio holds it.
+  const positionAtom = Atom.make((get) =>
+    AsyncResult.getOrElse(
+      get(
+        positionDataAtom(
+          new PositionDataKey({ scope: intake.walletScope, yieldId })
+        )
+      ),
+      () => null
+    )
+  ).pipe(Atom.withLabel("yieldFlowPosition"));
+  const positionBalanceIdAtom = Atom.make((get) => {
+    const position = get(positionAtom);
+    return position
+      ? getYieldFlowPositionBalanceId(session, [...position.balanceData.keys()])
+      : null;
+  }).pipe(Atom.withLabel("yieldFlowPositionBalanceId"));
+  const exit = getYieldFlowExit(session);
+  const exitUnlockDateAtom = Atom.make((get) => {
+    const presentationTime = get(presentationClockAtom);
+    if (!exit || !presentationTime) return null;
+    const balanceId = get(positionBalanceIdAtom);
+    const balances = balanceId
+      ? (get(positionAtom)?.balanceData.get(balanceId)?.balances ?? [])
+      : [];
+    return getYieldFlowExitUnlockDate({
+      balances,
+      batched: exit.batched,
+      now: presentationTime.now,
+      yieldDto: exit.yieldDto,
+    });
+  }).pipe(Atom.withLabel("yieldFlowExitUnlockDate"));
 
   const executionAtom = walletRuntime
     .atom(startYieldFlowExecution(session, handoff))
@@ -148,16 +193,27 @@ export const makeYieldFlowExecutionPage = (
       );
       if (!activity) return null;
       const { action } = activity;
+      const inputToken =
+        getActionInputToken({
+          actionDto: action,
+          yieldDto: activity.selectedYield,
+        }) ?? null;
+      const outputToken = action.rawArguments?.outputToken;
+      const payoutToken =
+        action.intent === "exit" && outputToken
+          ? findYieldToken(activity.selectedYield, outputToken)
+          : undefined;
       return {
         batchSide: getConfidentialActionBatchSide(
           activity.selectedYield,
           action
         ),
-        inputToken:
-          getActionInputToken({
-            actionDto: action,
-            yieldDto: activity.selectedYield,
-          }) ?? null,
+        inputToken,
+        /** The token an exit pays out in, when it is not the exited one. */
+        receiveToken:
+          payoutToken && !(inputToken && equalTokens(payoutToken, inputToken))
+            ? payoutToken
+            : null,
         selectedAction: {
           amount: action.amount?.toFixed() ?? null,
           intent: action.intent,
@@ -178,6 +234,27 @@ export const makeYieldFlowExecutionPage = (
         initialValue: undefined,
       })
       .pipe(Atom.withLabel("finishYieldFlowExecution")),
+    /** When an exit's funds unlock; null for other flows or without one. */
+    exitUnlockDateAtom,
+    /** The position the finished flow leads to; null until it exists. */
+    positionBalanceIdAtom,
+    viewPositionAtom: walletRuntime
+      .fn(
+        (_input: undefined, get) => {
+          const balanceId = get(positionBalanceIdAtom);
+          return balanceId
+            ? navigate({
+                _tag: "Push",
+                to: widgetRoutes.positionDetails.build({
+                  balanceId,
+                  integrationId: yieldId,
+                }),
+              })
+            : Effect.void;
+        },
+        { initialValue: undefined }
+      )
+      .pipe(Atom.withLabel("viewYieldFlowPosition")),
     stateAtom,
     workflow: {
       dispatchAtom: walletRuntime

@@ -1,7 +1,10 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../../../domain/finance/exact";
-import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import {
+  formatTokenAmountInUSD,
+  getGasFeeInUSD,
+} from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
@@ -11,6 +14,8 @@ import {
   useYieldFlowReview,
 } from "../../../react/yield-flow-route";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
+import type { ReviewFact } from "../pages/review-overview";
+import { formatReviewDestination, getSignaturesFact } from "./review-facts";
 
 export const usePendingActionReview = () => {
   const manageFlow = useYieldFlowIntake("Manage");
@@ -64,19 +69,50 @@ export const usePendingActionReview = () => {
   });
 
   const metaInfo: MetaInfoProps = { showMetaInfo: false };
-  const facts = returnToken
-    ? [{ label: t("review.receive_token"), value: returnToken.symbol }]
-    : [];
+  const facts = [
+    returnToken
+      ? {
+          label: t("review.you_receive"),
+          testId: "review-receive",
+          // A cancel returns its whole request, unless still encrypted.
+          value:
+            requestAmount || manageFlow.balanceHidden
+              ? returnToken.symbol
+              : `${formatTokenAmount(amount, locale, "down")} ${returnToken.symbol}`,
+        }
+      : null,
+    getSignaturesFact({
+      loading: review.transactionsToSignLoading,
+      t,
+      transactions: review.transactionsToSign,
+    }),
+  ].filter((fact): fact is ReviewFact => fact !== null);
+  const destination = formatReviewDestination({
+    providerName:
+      manageFlow.providersDetails[0]?.name ?? integrationData.provider?.name,
+    t,
+    yieldName: integrationData.metadata.name,
+  });
 
   // An encrypted balance has no known amount until it is revealed.
   const formattedAmount = manageFlow.balanceHidden
     ? t("shared.confidential.hidden")
     : formatTokenAmount(amount, locale, "down");
+  const amountFiat = manageFlow.balanceHidden
+    ? null
+    : formatTokenAmountInUSD({
+        amount,
+        locale,
+        prices,
+        token: interactedToken,
+      });
 
   return {
     integrationData,
     title,
     amount: formattedAmount,
+    amountFiat,
+    destination,
     facts,
     fee,
     token: interactedToken,

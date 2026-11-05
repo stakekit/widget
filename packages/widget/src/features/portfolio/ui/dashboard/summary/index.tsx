@@ -1,61 +1,10 @@
-import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { emptyBorrowPositions } from "../../../../../domain/borrow/positions/borrow-positions";
 import { exactZero } from "../../../../../domain/finance/exact";
-import {
-  formatPercent,
-  formatUsd,
-  unavailableFigure,
-} from "../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import {
-  Box,
-  Card,
-  Metric,
-  MetricGroup,
-  Skeleton,
-  Stack,
-  Text,
-} from "../../../../../ui/index";
+import { Box, Card, MetricGroup, Stack, Text } from "../../../../../ui/index";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { useSummary } from "../../../react/use-summary";
-
-/** A summary figure: the label above its neutral value, or a loader. */
-const SummaryMetric = ({
-  label,
-  value,
-  isLoading,
-  kind,
-}: {
-  readonly label: string;
-  readonly value: BigNumber | undefined;
-  readonly isLoading: boolean;
-  readonly kind: "usd" | "percent";
-}) => {
-  const { locale } = useWidgetPresentation();
-  const formatted = (() => {
-    if (!value) return unavailableFigure;
-    if (kind === "percent") {
-      return value.gt(0)
-        ? formatPercent(value.dividedBy(100), locale)
-        : unavailableFigure;
-    }
-    return formatUsd(value, locale);
-  })();
-
-  return (
-    <Metric
-      label={label}
-      value={
-        isLoading ? (
-          <Skeleton shape="rect" height="sm" width="half" />
-        ) : (
-          formatted
-        )
-      }
-    />
-  );
-};
+import { SummaryMetric } from "../../components/summary-metric";
 
 export const Summary = () => {
   const summary = useSummary();
@@ -129,7 +78,7 @@ export const Summary = () => {
               label={t(
                 hasBorrowPositions
                   ? "dashboard.overview.summary.total_supplied"
-                  : "dashboard.overview.summary.total_staked"
+                  : "dashboard.overview.summary.total_value"
               )}
               value={totalPositionsValue}
               isLoading={

@@ -1,6 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
 import { createElement } from "react";
-import { containerWidth } from "../tokens/size.stylex";
+import {
+  containerWidth,
+  controlHeight,
+  tokenTriggerHeight,
+} from "../tokens/size.stylex";
 import {
   flexItemStyles,
   type LayoutElementProps,
@@ -21,6 +25,12 @@ type BoxProps = LayoutElementProps & {
   readonly width?: keyof typeof widthStyles;
   /** Caps the width at a container size. */
   readonly maxWidth?: keyof typeof maxWidthStyles;
+  /**
+   * Holds at least a control height, or a pill `Tabs` list's (`tabs`), such
+   * as a row kept for controls that are not shown yet, so what follows does
+   * not move when they appear.
+   */
+  readonly minHeight?: keyof typeof minHeightStyles;
   /** Takes the remaining space in a row or column. */
   readonly grow?: boolean;
   readonly position?: keyof typeof positionStyles;
@@ -35,6 +45,7 @@ export const Box = ({
   paddingInline = padding,
   width,
   maxWidth,
+  minHeight,
   grow = false,
   position,
   overflow,
@@ -57,6 +68,7 @@ export const Box = ({
         paddingInlineStyles(paddingInline),
         width && widthStyles[width],
         maxWidth && maxWidthStyles[maxWidth],
+        minHeight && minHeightStyles[minHeight],
         grow && flexItemStyles.grow,
         position && positionStyles[position],
         overflow && overflowStyles[overflow]
@@ -78,6 +90,13 @@ const maxWidthStyles = stylex.create({
   sm: { maxWidth: containerWidth.sm },
   md: { maxWidth: containerWidth.md },
   split: { maxWidth: containerWidth.split },
+});
+
+const minHeightStyles = stylex.create({
+  controlSm: { minHeight: controlHeight.sm },
+  controlMd: { minHeight: controlHeight.md },
+  controlLg: { minHeight: controlHeight.lg },
+  tabs: { minHeight: tokenTriggerHeight.tabs },
 });
 
 const positionStyles = stylex.create({

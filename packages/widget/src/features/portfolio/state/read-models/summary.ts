@@ -114,6 +114,29 @@ export const averageApySummaryAtom = Atom.make((get) =>
   )
 );
 
+/**
+ * What the positions' claimable rewards are worth in USD: every claimable
+ * balance with a known value, points left out as they have no price.
+ */
+export const getClaimableRewardsUsd = (
+  positions: ReadonlyArray<PositionItem>
+) =>
+  positions
+    .flatMap((position) => position.balancesWithAmount)
+    .reduce(
+      (sum, balance) =>
+        balance.type === "claimable" &&
+        balance.isEncrypted !== true &&
+        balance.token.isPoints !== true
+          ? sum.plus(balance.amountUsd ?? 0)
+          : sum,
+      exactZero()
+    );
+
+const claimableRewardsSummaryAtom = Atom.make((get) =>
+  get(positionsResultAtom).pipe(AsyncResult.map(getClaimableRewardsUsd))
+);
+
 const availableBalancePricesResultAtom = Atom.make((get) => {
   const tokenBalances = AsyncResult.getOrElse(
     get(tokenBalancesScanAtom).result,
@@ -169,4 +192,5 @@ export const summaryViewAtom = Atom.make((get) => ({
   allPositions: toPresentable(get(allPositionsSummaryAtom)),
   availableBalance: toPresentable(get(availableBalanceSummaryAtom)),
   averageApy: toPresentable(get(averageApySummaryAtom)),
+  claimableRewards: toPresentable(get(claimableRewardsSummaryAtom)),
 })).pipe(Atom.withLabel("summaryViewAtom"));

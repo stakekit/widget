@@ -1,8 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
 
-/** Stroke widths: `thin` for borders, `thick` for spinners and rings. */
+/**
+ * Stroke widths: `thin` for borders, `medium` for step markers and their
+ * connectors, `thick` for spinners and rings.
+ */
 export const borderWidth = stylex.defineConsts({
   thin: "1px",
+  medium: "1.5px",
   thick: "2px",
 });
 

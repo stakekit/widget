@@ -50,3 +50,8 @@ export const underMaintenanceAtom = Atom.make((get) => {
     ? health.value.status !== "OK"
     : AsyncResult.isFailure(result);
 }).pipe(Atom.withLabel("underMaintenanceAtom"));
+
+/** Checks health again now, as from the maintenance notice's retry. */
+export const refreshWidgetHealthAtom = Atom.fnSync((_input: undefined, get) =>
+  get.refresh(healthRequestAtom)
+).pipe(Atom.withLabel("refreshWidgetHealthAtom"));

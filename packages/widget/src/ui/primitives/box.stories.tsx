@@ -93,3 +93,12 @@ export const TestIdAndHostHook: Story = {
     await expect(box).toHaveAttribute("data-rk", "estimated-reward__yearly");
   },
 };
+
+/** `minHeight` holds a control's height with nothing in it yet. */
+export const ReservedRow: Story = {
+  args: { minHeight: "controlSm", testId: "reserved-row", children: null },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByTestId("reserved-row");
+    await expect(row.getBoundingClientRect().height).toBe(32);
+  },
+};

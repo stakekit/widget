@@ -1,15 +1,44 @@
 import { useTranslation } from "react-i18next";
-import { Box, Stack, Text, VirtualList } from "../../../../../ui/index";
+import { Box, Stack, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
-import {
-  FallbackContent,
-  MountAnimatedPage,
-} from "../../../../widget-shell/views";
+import { MountAnimatedPage } from "../../../../widget-shell/views";
 import { usePositions } from "../../../react/use-positions";
+import {
+  type PositionItem,
+  splitSmallBalances,
+} from "../../../state/read-models/positions";
+import {
+  PositionsConnectWallet,
+  PositionsEmpty,
+  PositionsLoadFailed,
+  PositionsSkeleton,
+} from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
+import { SmallBalances } from "../../components/small-balances";
 import { PositionsListItem } from "./components/positions-list-item";
+import { PositionsSummary } from "./components/positions-summary";
+
+/** A row of the list: a position, or the small balances collapsed at its end. */
+type PositionsRow =
+  | { readonly kind: "position"; readonly item: PositionItem }
+  | {
+      readonly kind: "small-balances";
+      readonly items: ReadonlyArray<PositionItem>;
+    };
+
+const toPositionsRows = (
+  positions: ReadonlyArray<PositionItem>
+): ReadonlyArray<PositionsRow> => {
+  const { shown, small } = splitSmallBalances(positions);
+  const rows: PositionsRow[] = shown.map((item) => ({
+    kind: "position",
+    item,
+  }));
+  if (small.length > 0) rows.push({ kind: "small-balances", items: small });
+  return rows;
+};
 
 const PositionsPage = () => {
   useTrackPage("positions");
@@ -24,24 +53,14 @@ const PositionsPage = () => {
 
   const renderContent = () => {
     if (positionsView._tag === "Loading" && isConnected) {
-      return <FallbackContent type="spinner" />;
+      return <PositionsSkeleton />;
     }
     if (!isConnected && !isConnecting) {
       return (
-        <Stack grow justify="end">
-          <Stack grow align="center" justify="center">
-            <Text variant="heading" as="p" align="center">
-              {t("positions.connect_wallet_manage")}
-            </Text>
-          </Stack>
-
-          <FallbackContent type="not_connected" />
-        </Stack>
+        <PositionsConnectWallet title={t("positions.connect_wallet_manage")} />
       );
     }
-    if (positionsView._tag === "Failed") {
-      return <FallbackContent type="something_wrong" />;
-    }
+    if (positionsView._tag === "Failed") return <PositionsLoadFailed />;
 
     return null;
   };
@@ -54,21 +73,36 @@ const PositionsPage = () => {
         <Stack grow>
           <ZerionChainModal />
 
-          <RevealBalancesHeader />
-
-          {isConnected && !positions.length && (
-            <Box paddingBlock={16}>
-              <FallbackContent type="no_current_positions" />
+          {positions.length > 0 && (
+            <Box paddingBlock={8}>
+              <PositionsSummary />
             </Box>
           )}
 
+          <RevealBalancesHeader />
+
+          {isConnected && !positions.length && <PositionsEmpty />}
+
           <VirtualList
             label={t("positions.title")}
-            items={positions}
-            getKey={(item) => `${item.integrationId}:${item.balanceId}`}
+            items={toPositionsRows(positions)}
+            getKey={(row) =>
+              row.kind === "position"
+                ? `${row.item.integrationId}:${row.item.balanceId}`
+                : "small-balances"
+            }
             estimateSize={68}
             maxHeight="lg"
-            renderItem={(item) => <PositionsListItem item={item} />}
+            renderItem={(row) =>
+              row.kind === "position" ? (
+                <PositionsListItem item={row.item} />
+              ) : (
+                <SmallBalances
+                  items={row.items}
+                  renderItem={(item) => <PositionsListItem item={item} />}
+                />
+              )
+            }
           />
         </Stack>
       )}

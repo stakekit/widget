@@ -1,13 +1,20 @@
 import { useTranslation } from "react-i18next";
-import { Box, Stack, Text, VirtualList } from "../../../../../ui/index";
+import { Stack, Text, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
-import { FallbackContent } from "../../../../widget-shell/views";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { usePositions } from "../../../react/use-positions";
 import type { PositionsListRow } from "../../../state/read-models/positions";
+import {
+  PositionsConnectWallet,
+  PositionsEmpty,
+  PositionsLoadFailed,
+  PositionsPartiallyLoaded,
+  PositionsSkeleton,
+} from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
+import { SmallBalances } from "../../components/small-balances";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
 import { useGroupedPositions } from "./hooks/use-grouped-positions";
@@ -16,6 +23,7 @@ import { getUnifiedManagePositionsState } from "./model";
 const positionsListRowKey = (row: PositionsListRow) => {
   if (row.kind === "chain-modal") return "chain-modal";
   if (row.kind === "section") return `section:${row.category}`;
+  if (row.kind === "small-balances") return "small-balances";
   return row.item.kind === "borrow"
     ? `borrow:${row.item.position.id}`
     : `earn:${row.item.position.integrationId}:${row.item.position.balanceId}`;
@@ -44,26 +52,22 @@ export const PositionsPage = () => {
   const { t } = useTranslation();
   const renderContent = () => {
     // Keep the list mounted while a source refreshes; only the first load with
-    // nothing to show uses the full-page spinner.
+    // nothing to show stands in skeleton rows.
     if (
       manageState.isAnyPositionsLoading &&
       isConnected &&
       !manageState.showPositionsList
     ) {
-      return <FallbackContent type="spinner" />;
+      return <PositionsSkeleton />;
     }
     if (manageState.showConnectWallet) {
       return (
-        <Stack grow align="center" justify="center">
-          <Text variant="heading" as="p" align="center">
-            {t("dashboard.details.positions_connect_wallet")}
-          </Text>
-        </Stack>
+        <PositionsConnectWallet
+          title={t("dashboard.details.positions_connect_wallet")}
+        />
       );
     }
-    if (manageState.hasOnlyErrors) {
-      return <FallbackContent type="something_wrong" />;
-    }
+    if (manageState.hasOnlyErrors) return <PositionsLoadFailed />;
 
     return null;
   };
@@ -92,11 +96,7 @@ export const PositionsPage = () => {
           />
 
           <Stack grow gap={8}>
-            {manageState.hasPartialError && (
-              <Text tone="danger">
-                {t("dashboard.details.positions_partial_error")}
-              </Text>
-            )}
+            {manageState.hasPartialError && <PositionsPartiallyLoaded />}
 
             <VirtualList
               label={t("dashboard.details.my_positions")}
@@ -114,15 +114,23 @@ export const PositionsPage = () => {
                     />
                   );
                 }
+                if (row.kind === "small-balances") {
+                  return (
+                    <SmallBalances
+                      items={row.items}
+                      renderItem={(item) => (
+                        <PositionsListItem
+                          item={{ kind: "earn", position: item }}
+                        />
+                      )}
+                    />
+                  );
+                }
                 return <PositionsListItem item={row.item} />;
               }}
             />
 
-            {manageState.showEmptyPositions && (
-              <Box paddingBlock={16}>
-                <FallbackContent type="no_current_positions" />
-              </Box>
-            )}
+            {manageState.showEmptyPositions && <PositionsEmpty />}
           </Stack>
         </>
       )}

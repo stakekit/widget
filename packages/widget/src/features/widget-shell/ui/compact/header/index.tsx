@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IconButton, Stack } from "../../../../../ui/index";
+import { Box, IconButton, Stack } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
   isMountAnimationFinished,
@@ -14,7 +14,8 @@ import { ShellFrame } from "../../shell-frame";
 
 /**
  * The Compact Layout's frame: the back and disconnect buttons and the wallet
- * controls above the page, shown only while one of them is. On mount the
+ * controls above the page. The wallet row keeps its height while no wallet
+ * is connected, so the tabs stay put when one connects. On mount the
  * frame grows open once the first page can show, unless the host disables
  * that animation; either way the mount animation's layout step finishes when
  * the frame is open. When `pageKey` changes the frame eases to the new page's
@@ -55,12 +56,11 @@ export const CompactFrame = ({
   }, [revealsOnMount, dispatch]);
 
   const showsButtons = showBack || showDisconnect;
+  const showsWalletRow = !hidesHeaderWalletControl;
   const showsWallet =
-    walletConfigReady &&
-    !hidesHeaderWalletControl &&
-    (isConnected || isConnecting);
+    showsWalletRow && walletConfigReady && (isConnected || isConnecting);
   const header =
-    showsButtons || showsWallet ? (
+    showsButtons || showsWalletRow ? (
       <Stack hostHook="header" gap={8}>
         {showsButtons && (
           <Stack
@@ -84,11 +84,15 @@ export const CompactFrame = ({
             )}
           </Stack>
         )}
-        {showsWallet && (
-          <Stack direction="row" align="center" justify="center" gap={8}>
-            {!hideChainSelector && <ChainModal triggerSize="sm" />}
-            <AccountModal triggerSize="sm" />
-          </Stack>
+        {showsWalletRow && (
+          <Box minHeight="controlSm">
+            {showsWallet && (
+              <Stack direction="row" align="center" justify="center" gap={8}>
+                {!hideChainSelector && <ChainModal triggerSize="sm" />}
+                <AccountModal triggerSize="sm" />
+              </Stack>
+            )}
+          </Box>
         )}
       </Stack>
     ) : undefined;

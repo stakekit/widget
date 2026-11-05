@@ -26,7 +26,9 @@ export type ButtonLookProps = {
   /**
    * `dangerOutline` is a secondary button drawn in the danger color, label
    * and edge, for a destructive action beside a secondary one, such as
-   * disconnecting.
+   * disconnecting. `soft` is the accent text on its soft tint, for an action
+   * on a filled surface that a secondary button's fill would vanish into,
+   * such as an `ActionCard`'s.
    */
   readonly variant?: ButtonVariant;
   /** `cta` fills the width at the call-to-action height the Layout asks for. */
@@ -155,6 +157,15 @@ const buttonVariantStyles = stylex.create({
       ":hover:not(:disabled)": color.surfaceHover,
     },
     color: color.text,
+  },
+  // The accent text on its soft tint; hover moves the tint toward the hover
+  // surface, as a toned card's does.
+  soft: {
+    backgroundColor: {
+      default: color.accentSoft,
+      ":hover:not(:disabled)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,
+    },
+    color: color.accentText,
   },
   // Status colors stay text on their soft tint; hover outlines the button.
   danger: {

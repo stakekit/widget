@@ -38,20 +38,42 @@ Virtual and SVG icon markup.
   `IconAvatar`, `TokenAvatar`, `Badge`, `Button`, `Card`, `Checkbox`,
   `ChipGroup`, `CopyButton`, `DetailList`, `DetailRow`, `Disclosure`,
   `Divider`, `EmbeddedPage`, `ExternalLink`, `Field`, `IconButton`,
-  `Illustration`, `InfoTip`, `ListGroup`, `ListRow`, `Meter`, `Metric`,
+  `InfoTip`, `ListGroup`, `ListRow`, `Meter`, `Metric`,
   `MetricGroup`, `Modal`, `Notice`, `ScrollArea`, `SegmentedControl`, `Select`,
   `Skeleton`, `Spinner`, `Switch`, `Tabs`, `TimeSeriesChart`, `Tooltip`,
   `VirtualList`.
-- **Patterns**: `AmountPanel`, `AssetHeader`, `EmptyState`, `Entrance`,
-  `ErrorState`, `FlowSteps`, `PageHeader`, `PageTransition`,
+- **Patterns**: `ActionCard`, `AmountPanel`, `AssetHeader`, `CompleteSummary`, `EmptyState`, `Entrance`,
+  `ErrorState`, `FlowSteps`, `ListSkeleton`, `PageHeader`, `PageTransition`,
   `ReviewSummary`, `SelectSheet`, `SplitView`, `StandIn`, `TokenTrigger`,
   `WidgetFrame`.
-- **Artwork**: `MorphoMark`.
+- **Artwork**: `MorphoMark`, `Spot` (a flat illustration: one icon of the
+  set on a tone's soft disc, used by `EmptyState`, `ErrorState` and dialogs
+  instead of raster artwork).
 - **Prop types**: `Tone`, `IconName`, `HostHook`, `TabOption`, `ToggleOption`,
   `SplitViewSide`.
 
 A part added to or removed from `src/ui/index.ts` updates this list. Parts used
 only inside the Design System stay unexported until a Feature needs them.
+
+One look per concept:
+
+- **List rows.** `ListRow` has one look per context. Lists of what the user
+  owns or did (positions, activity) use `card` rows: a filled surface each,
+  8px apart, a selection ring when selected. Pickers (every `SelectSheet`,
+  the network, account and wallet lists) use `flat` rows: no surface until
+  hovered, then the accent tint with a trailing check for the choice, so hover
+  and selection never look alike; their content lines up with the sheet's
+  title while the tint reaches past it. Condensed rows are always flat.
+- **Action cards.** An action a position offers, such as Claim, Withdraw or a
+  borrow position's Repay, is one `ActionCard`: a filled card with the
+  summary beside a small `soft` button that names the verb. Sibling action
+  cards sit 8px apart; the button keeps its row at every width.
+- **Step indicator.** `Steps` (and `FlowSteps` over it) draws every step as a
+  24px disc: waiting is a ring on the surface, the step under way an accent
+  spinner, a step waiting for the wallet's signature a wallet glyph on the
+  accent tint, done a success outline check, failed a danger outline cross.
+  A finished step's connector turns success; accent stays with the current
+  step.
 
 ## Tokens
 

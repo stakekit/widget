@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { images } from "../../../../shared/assets/images";
-import { Card, Illustration, Modal, Stack, Text } from "../../../../ui/index";
+import { Button, Card, Modal, Spot, Stack, Text } from "../../../../ui/index";
 import { richErrorInterpolationValues } from "../../model/rich-error-interpolation-values";
 import { useRichErrors } from "../../react/use-rich-errors";
 
 /**
- * The rich error dialog: the error's Error Copy (title, details and a
- * potential solution), or "Something went wrong" for an error without copy.
+ * The rich error dialog, for a failure no page section shows on its own: the
+ * error's Error Copy (title, details and a potential solution), or, for an
+ * error without copy, "Something went wrong" and what to do next. It always
+ * ends with a way to close it.
  */
 export const RichErrorModal = () => {
   const { i18n, t } = useTranslation();
@@ -34,10 +35,15 @@ export const RichErrorModal = () => {
           : t("shared.something_went_wrong")
       }
       closeLabel={t("shared.close")}
+      footer={
+        <Button variant="secondary" size="cta" onClick={resetError}>
+          {t("error_modal.dismiss")}
+        </Button>
+      }
     >
       <Stack align="center" gap={16}>
-        <Illustration src={images.whatIsLiquidStaking} size="md" />
-        {knownMessage && (
+        <Spot icon="WarningIcon" tone="danger" size="lg" />
+        {knownMessage ? (
           <>
             <Text as="p" tone="muted" align="center">
               {t(
@@ -56,6 +62,10 @@ export const RichErrorModal = () => {
               </Card>
             </Stack>
           </>
+        ) : (
+          <Text as="p" tone="muted" align="center">
+            {t("error_modal.generic_description")}
+          </Text>
         )}
       </Stack>
     </Modal>

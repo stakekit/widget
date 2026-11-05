@@ -63,11 +63,12 @@ describe("activity and completion workflows", () => {
       app.container.querySelector('[data-testid="activity-connect-wallet"]')
         ?.textContent
     ).toContain("Connect");
+    // The connect-wallet state offers the connect action itself (UX I1).
     expect(
       app.container.querySelector(
         '[data-testid="activity-connect-wallet"] button'
-      )
-    ).toBeNull();
+      )?.textContent
+    ).toBe("Connect wallet");
 
     await app.rerender(wrap(activityPage({ status: "connecting" })));
     expect(
@@ -86,10 +87,11 @@ describe("activity and completion workflows", () => {
     await act(async () => pageRetry?.click());
     expect(onRetry).toHaveBeenCalledOnce();
 
+    // No activity at all leads to Earn.
     await app.rerender(wrap(activityPage({ status: "empty" })));
-    expect(
-      app.container.querySelector('[data-testid="activity-empty"]')?.textContent
-    ).toContain("No previous activity");
+    const empty = app.container.querySelector('[data-testid="activity-empty"]');
+    expect(empty?.textContent).toContain("No activity yet");
+    expect(empty?.querySelector("button")?.textContent).toBe("Start earning");
 
     await app.rerender(
       wrap(
@@ -108,7 +110,7 @@ describe("activity and completion workflows", () => {
       )
     );
     expect(app.container.textContent).toContain("DeFi");
-    expect(app.container.textContent).toContain("No previous activity");
+    expect(app.container.textContent).toContain("No activity of this type");
 
     const yieldModel = yieldApiYieldFixture();
     const item: ActivityActionItem = {
@@ -158,13 +160,14 @@ describe("activity and completion workflows", () => {
             onViewTransactionClick,
             pendingActionMatch: false,
             unstakeMatch: false,
-            urls: [{ type: "STAKE", url: "https://explorer.test/tx" }],
+            urls: [
+              { hash: null, type: "STAKE", url: "https://explorer.test/tx" },
+            ],
+            viewPositionCta: null,
           }}
           integrationId={YieldId.make("test-yield")}
-          metadata={null}
           network="ethereum"
           providersDetails={null}
-          token={null}
           yieldType={null}
         />
       )

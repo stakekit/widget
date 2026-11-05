@@ -573,6 +573,52 @@ export const CondensedDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/**
+ * A comfortable row in a picker is `flat`: no surface of its own until
+ * hovered, and the accent tint with a trailing check, not a ring, on the
+ * choice, so hover and selection read apart.
+ */
+export const Flat: Story = {
+  render: () => (
+    <ContainerFrame width={400}>
+      <ListGroup>
+        {networks.map((network, index) => (
+          <ListRow
+            key={network.name}
+            variant="flat"
+            leading={<TokenAvatar src={tokenLogo} name={network.name} />}
+            title={network.name}
+            subtitle={network.subtitle}
+            value="1.25 ETH"
+            subvalue="≈ $4,120.50"
+            onClick={onPickNetwork}
+            selected={index === 0}
+          />
+        ))}
+      </ListGroup>
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chosen = canvas.getByRole("button", { name: /Ethereum/ });
+    const other = canvas.getByRole("button", { name: /Base/ });
+
+    await expect(outlineBox(chosen)).toBeUndefined();
+    await expect(chosen.querySelectorAll("svg")).toHaveLength(1);
+    await expect(getComputedStyle(other).backgroundColor).toMatch(
+      /^rgba\(\d+, \d+, \d+, 0\)$/
+    );
+    await expect(getComputedStyle(chosen).backgroundColor).not.toMatch(
+      /^rgba\(\d+, \d+, \d+, 0\)$/
+    );
+  },
+};
+
+export const FlatDark: Story = {
+  ...Flat,
+  globals: { colorScheme: "dark" },
+};
+
 /** The selection ring and the focus ring draw inside the row's edge. */
 export const RingsInside: Story = {
   args: { onClick: fn(), selected: true, testId: "row" },

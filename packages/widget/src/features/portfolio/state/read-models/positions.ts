@@ -1,8 +1,13 @@
+import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { isOptionalPendingAction } from "../../../../domain/action/pending-action";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
+import {
+  classifyHealthFactor,
+  classifyLtv,
+} from "../../../../domain/borrow/risk/ltv-limits";
 import { isUnfinishedInstantExit } from "../../../../domain/earn/confidential";
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import type { EarnBalance } from "../../../../domain/earn/models";
@@ -12,6 +17,7 @@ import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
   type BalanceDataKey,
   getPositionValueTotal,
+  getTokenSumsUsd,
   type PositionData,
   type PositionTokenSum,
   type PositionValidators,
@@ -64,7 +70,12 @@ export type PositionsListRow =
       readonly count: number;
       readonly kind: "section";
     }
-  | { readonly item: UnifiedPositionItem; readonly kind: "position" };
+  | { readonly item: UnifiedPositionItem; readonly kind: "position" }
+  | {
+      /** Positions worth less than a cent, collapsed under one row. */
+      readonly items: ReadonlyArray<PositionItem>;
+      readonly kind: "small-balances";
+    };
 
 export const toPositionItems = (
   positions: ReadonlyMap<YieldId, PositionData>,
@@ -132,14 +143,96 @@ export const toPositionItems = (
     []
   );
 
-  return prioritizePendingClaims
-    ? [...rows].sort((a, b) => {
-        if (a.hasPendingClaimRewards) return -1;
-        if (b.hasPendingClaimRewards) return 1;
-        return 0;
-      })
-    : rows;
+  return toManageOrder(rows, prioritizePendingClaims);
 };
+
+/** A position that asks something of the user: an action or a claim. */
+const needsAction = (item: PositionItem) =>
+  item.actionRequired || item.hasPendingClaimRewards;
+
+/**
+ * Sorts by rank, lowest first, then by USD value, largest first. The sort is
+ * stable, so equal positions keep the API's order. Values are computed once.
+ */
+const sortByManageOrder = <A>(
+  items: ReadonlyArray<A>,
+  rank: (item: A) => number,
+  valueUsd: (item: A) => BigNumber
+): A[] =>
+  items
+    .map((item) => ({ item, rank: rank(item), valueUsd: valueUsd(item) }))
+    .sort((a, b) => a.rank - b.rank || (b.valueUsd.comparedTo(a.valueUsd) ?? 0))
+    .map(({ item }) => item);
+
+/**
+ * Manage order: positions that ask for action first, a Host Profile that
+ * prioritizes claims putting those ahead of them, then by USD value.
+ */
+const toManageOrder = (
+  items: ReadonlyArray<PositionItem>,
+  prioritizePendingClaims: boolean
+): PositionItem[] =>
+  sortByManageOrder(
+    items,
+    (item) => {
+      if (prioritizePendingClaims && item.hasPendingClaimRewards) return 0;
+      return needsAction(item) ? 1 : 2;
+    },
+    (item) => getTokenSumsUsd(item.total)
+  );
+
+/** What Manage orders a borrow position by: its risk and supplied value. */
+type BorrowManageFigures = {
+  readonly metrics: Pick<MarketPosition["metrics"], "totalSuppliedUsd">;
+  readonly risk: Pick<MarketPosition["risk"], "current">;
+};
+
+/**
+ * Borrow positions in Manage order: those whose LTV or health factor is near
+ * or over its limit first, then by supplied USD value, largest first.
+ */
+export const toBorrowManageOrder = <P extends BorrowManageFigures>(
+  positions: ReadonlyArray<P>
+): P[] =>
+  sortByManageOrder(
+    positions,
+    ({ risk: { current } }) =>
+      current.status === "available" &&
+      (classifyLtv({ ltv: current.ltv, maxLtv: current.maxLtv }) !== "safe" ||
+        (current.healthFactor !== null &&
+          classifyHealthFactor(current.healthFactor) !== "safe"))
+        ? 0
+        : 1,
+    (position) => position.metrics.totalSuppliedUsd
+  );
+
+/** Below a cent, a position counts as a small balance. */
+const smallBalanceUsd = 0.01;
+
+/**
+ * A position worth less than a cent that asks for nothing: every balance
+ * priced and none hidden, so its worth is known, and no action, claim or
+ * request pending.
+ */
+export const isSmallBalance = (item: PositionItem) =>
+  !needsAction(item) &&
+  !item.hasPendingRequest &&
+  item.total.length > 0 &&
+  item.balancesWithAmount.every(
+    (balance) =>
+      balance.isEncrypted !== true &&
+      (balance.token.isPoints === true || balance.amountUsd != null)
+  ) &&
+  getTokenSumsUsd(item.total).isLessThan(smallBalanceUsd);
+
+/**
+ * The positions a list shows as rows, and the small balances it collapses
+ * under one row after them; each keeps its order.
+ */
+export const splitSmallBalances = (items: ReadonlyArray<PositionItem>) => ({
+  shown: items.filter((item) => !isSmallBalance(item)),
+  small: items.filter(isSmallBalance),
+});
 
 const positionsDataAtom = yieldBalancesScanAtom.pipe(
   Atom.map(({ result }) =>
@@ -170,7 +263,7 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
   const scope = get(walletScopeAtom);
   const connected = enabled && scope !== null && isBorrowNetwork(scope.network);
   const borrowPositionsResult = get(
-    borrowPositionsResourceAtom.foreground(
+    borrowPositionsResourceAtom.local(
       new BorrowPositionsKey({
         scope: connected ? scope : null,
       })
@@ -198,18 +291,23 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
 export const currentGroupedPositionsAtom = Atom.make(
   (get): PositionsListRow[] => {
     const config = get(widgetConfigAtom);
-    const earnPositions = get(positionsTableDataAtom).pipe(
-      AsyncResult.getOrElse(() => [])
+    const { shown: earnPositions, small: smallBalances } = splitSmallBalances(
+      get(positionsTableDataAtom).pipe(AsyncResult.getOrElse(() => []))
     );
+    // Small balances close the list, collapsed under one row.
+    const smallBalancesRows: PositionsListRow[] =
+      smallBalances.length > 0
+        ? [{ items: smallBalances, kind: "small-balances" }]
+        : [];
     const borrowManageEnabled = config.borrowEnabled;
     const borrowPositions = get(
-      borrowPositionsResourceAtom.foreground(
+      borrowPositionsResourceAtom.local(
         new BorrowPositionsKey({
           scope: borrowManageEnabled ? get(walletScopeAtom) : null,
         })
       )
     ).pipe(
-      AsyncResult.map((positions) => positions.items),
+      AsyncResult.map((positions) => toBorrowManageOrder(positions.items)),
       AsyncResult.getOrElse(() => [])
     );
 
@@ -224,6 +322,7 @@ export const currentGroupedPositionsAtom = Atom.make(
           item: { kind: "borrow" as const, position },
           kind: "position" as const,
         })),
+        ...smallBalancesRows,
       ];
     }
 
@@ -290,6 +389,6 @@ export const currentGroupedPositionsAtom = Atom.make(
       }
     }
 
-    return rows;
+    return [...rows, ...smallBalancesRows];
   }
 ).pipe(Atom.withLabel("currentGroupedPositionsAtom"));

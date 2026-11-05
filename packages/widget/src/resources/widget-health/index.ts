@@ -1,1 +1,1 @@
-export { underMaintenanceAtom } from "./widget-health";
+export { refreshWidgetHealthAtom, underMaintenanceAtom } from "./widget-health";

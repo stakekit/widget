@@ -3,6 +3,7 @@
  * composition: primitives, components, patterns and their finite prop types.
  */
 export { MorphoMark } from "./artwork/morpho-mark";
+export { Spot } from "./artwork/spot";
 export { AlertDialog } from "./components/alert-dialog";
 export { AmountInput } from "./components/amount-input";
 export { AnimatedNumber } from "./components/animated-number";
@@ -20,7 +21,6 @@ export { EmbeddedPage } from "./components/embedded-page";
 export { ExternalLink } from "./components/external-link";
 export { Field } from "./components/field";
 export { IconButton } from "./components/icon-button";
-export { Illustration } from "./components/illustration";
 export { InfoTip } from "./components/info-tip";
 export { ListGroup, ListRow } from "./components/list-row";
 export { Meter } from "./components/meter";
@@ -42,12 +42,15 @@ export { Tooltip } from "./components/tooltip";
 export { VirtualList } from "./components/virtual-list";
 export type { HostHook } from "./host-hook";
 export type { FixedIconName } from "./icons/glyphs";
+export { ActionCard } from "./patterns/action-card";
 export { AmountPanel } from "./patterns/amount-panel";
 export { AssetHeader } from "./patterns/asset-header";
+export { CompleteSummary } from "./patterns/complete-summary";
 export { EmptyState } from "./patterns/empty-state";
 export { Entrance } from "./patterns/entrance";
 export { ErrorState } from "./patterns/error-state";
 export { FlowSteps } from "./patterns/flow-steps";
+export { ListSkeleton } from "./patterns/list-skeleton";
 export { PageHeader } from "./patterns/page-header";
 export { PageTransition } from "./patterns/page-transition";
 export { ReviewSummary } from "./patterns/review-summary";

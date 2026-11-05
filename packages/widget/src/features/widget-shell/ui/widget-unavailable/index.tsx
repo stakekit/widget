@@ -11,6 +11,8 @@ export const WidgetUnavailable = () => {
   return (
     <ShellNotice
       testId="widget-unavailable"
+      failure
+      icon="WarningIcon"
       title={t("help_modals.widget_unavailable.title")}
       description={t("help_modals.widget_unavailable.description")}
     />

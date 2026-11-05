@@ -62,3 +62,21 @@ export const TitleOnly: Story = {
     </div>
   ),
 };
+
+/** `lg` and `fill`: a notice that fills the Widget, with a second action. */
+export const Large: Story = {
+  args: {
+    size: "lg",
+    fill: true,
+    icon: "ArrowsLeftRightIcon",
+    title: "Network not supported",
+    body: "Switch to a supported network to continue.",
+    action: { label: "Switch network", onClick: fn() },
+    secondaryAction: { label: "Learn more", onClick: fn() },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Learn more" }));
+    await expect(args.secondaryAction?.onClick).toHaveBeenCalledOnce();
+  },
+};

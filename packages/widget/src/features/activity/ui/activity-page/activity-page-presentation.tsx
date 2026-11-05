@@ -1,7 +1,15 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
-import { Skeleton, Stack, Text, VirtualList } from "../../../../ui/index";
-import { FallbackContent } from "../../../widget-shell/views";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
+import {
+  EmptyState,
+  ListSkeleton,
+  Stack,
+  Text,
+  VirtualList,
+} from "../../../../ui/index";
+import { useWidgetNavigate } from "../../../navigation/index";
+import { ConnectWalletState } from "../../../wallet/views";
 import {
   type ActivityActionItem,
   type ActivitySelectionTarget,
@@ -18,41 +26,58 @@ import { ActivityFilters } from "./components/activity-filters";
 
 type ActivityPageReadyView = Extract<ActivityPageView, { status: "ready" }>;
 
-const skeletonRows = [...Array(5).keys()];
+const ActivityPageSkeleton = () => {
+  const { t } = useTranslation();
 
-const ActivityPageSkeleton = () => (
-  <Stack aria-busy="true" gap={4} testId="activity-page-skeleton">
-    {skeletonRows.map((item) => (
-      <Skeleton key={item} shape="rect" height="lg" />
-    ))}
-  </Stack>
-);
+  return (
+    <ListSkeleton
+      testId="activity-page-skeleton"
+      label={t("activity.loading")}
+    />
+  );
+};
 
 const ActivityPageError = ({
   testId,
   onRetry,
+  fill = false,
 }: {
   readonly testId: string;
   readonly onRetry: () => void;
-}) => (
-  <Stack align="center" justify="center" testId={testId}>
-    <ActivityRetryMessage onRetry={onRetry} />
-  </Stack>
-);
+  readonly fill?: boolean;
+}) => {
+  const { t } = useTranslation();
 
-const ActivityPageMessage = ({
-  testId,
-  children,
-}: {
-  readonly testId: string;
-  readonly children: string;
-}) => (
-  <Stack align="center" justify="center" grow testId={testId}>
-    <Text variant="heading" as="p" align="center">
-      {children}
-    </Text>
-  </Stack>
-);
+  return (
+    <Stack align="stretch" justify="center" grow={fill} testId={testId}>
+      <ActivityRetryMessage
+        onRetry={onRetry}
+        fill={fill}
+        title={t("activity.load_failed_title")}
+      />
+    </Stack>
+  );
+};
+
+/** No activity at all: it leads to Earn, where activity starts. */
+const ActivityPageEmpty = () => {
+  const { t } = useTranslation();
+  const navigation = useWidgetNavigate();
+
+  return (
+    <EmptyState
+      fill
+      testId="activity-empty"
+      icon="HistoryIcon"
+      title={t("activity.empty_title")}
+      body={t("activity.empty_description")}
+      action={{
+        label: t("shared.start_earning"),
+        onClick: () => void navigation.push(widgetRoutes.earn.build()),
+      }}
+    />
+  );
+};
 
 const resolveInfiniteScroll = (
   pagination: ActivityPagePagination
@@ -142,7 +167,11 @@ const ReadyActivityPage = ({
           )}
         </Stack>
       ) : (
-        <FallbackContent type="no_previous_activity" />
+        <EmptyState
+          testId="activity-filter-empty"
+          icon="HistoryIcon"
+          title={t("activity.filter_empty_title")}
+        />
       )}
     </Stack>
   );
@@ -167,20 +196,17 @@ export const ActivityPagePresentation = ({
 
   const content = Match.value(view).pipe(
     Match.when({ status: "connect-wallet" }, () => (
-      <ActivityPageMessage testId="activity-connect-wallet">
-        {t("dashboard.details.activity_connect_wallet")}
-      </ActivityPageMessage>
+      <ConnectWalletState
+        testId="activity-connect-wallet"
+        title={t("dashboard.details.activity_connect_wallet")}
+      />
     )),
     Match.when({ status: "connecting" }, () => <ActivityPageSkeleton />),
     Match.when({ status: "loading" }, () => <ActivityPageSkeleton />),
     Match.when({ status: "failed" }, () => (
-      <ActivityPageError testId="activity-page-error" onRetry={onRetry} />
+      <ActivityPageError fill testId="activity-page-error" onRetry={onRetry} />
     )),
-    Match.when({ status: "empty" }, () => (
-      <ActivityPageMessage testId="activity-empty">
-        {t("activity.no_previous_activity")}
-      </ActivityPageMessage>
-    )),
+    Match.when({ status: "empty" }, () => <ActivityPageEmpty />),
     Match.when({ status: "ready" }, (readyView) => (
       <ReadyActivityPage
         onActionSelect={onActionSelect}

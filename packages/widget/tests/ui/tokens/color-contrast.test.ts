@@ -91,6 +91,9 @@ const pairs: ReadonlyArray<Pair> = [
   ...text("info", [...surfaces, "infoSoft"]),
   // A focus ring is drawn outside its control, over whichever surface holds it.
   ...nonText("focusRing", surfaces),
+  // A waiting step's ring is its only mark, drawn in `textMuted` over
+  // whichever surface holds the timeline.
+  ...nonText("textMuted", surfaces),
   // `borderStrong` is not checked: it is a decorative boundary. Outlined
   // cards are read without their outline, and inputs are identified by their
   // surface fill and the focus ring.

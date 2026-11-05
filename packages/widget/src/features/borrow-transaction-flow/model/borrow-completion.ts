@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { ActionMetadata } from "../../../domain/borrow/execution/action";
 import type { MarketId } from "../../../domain/borrow/ids";
@@ -134,7 +135,51 @@ const withoutStaticZeros = (
   maxLtv: position.maxLtv,
 });
 
-const getHeadline = (summary: Summary, projected: ProjectedSummary) => {
+/** A positive USD figure as an exact string; null for none. */
+const positiveUsd = (value: BigNumber) =>
+  value.isGreaterThan(0) ? value.toString(10) : null;
+
+/** What the headline amount is worth: the loan at its price, else the move. */
+const getHeadlineUsd = (summary: Summary): string | null => {
+  switch (summary.action) {
+    case "borrow":
+    case "borrowAndSupply":
+      return positiveUsd(
+        exactDecimal(summary.borrowAmount).multipliedBy(
+          summary.loanTokenPriceUsd
+        )
+      );
+    case "repay":
+      return positiveUsd(
+        exactDecimal(summary.existingDebtUsd).minus(summary.projectedDebtUsd)
+      );
+    case "supply":
+      return positiveUsd(
+        exactDecimal(summary.projectedCollateralUsd).minus(
+          summary.existingCollateralUsd
+        )
+      );
+    case "withdraw":
+      return positiveUsd(
+        exactDecimal(summary.existingCollateralUsd).minus(
+          summary.projectedCollateralUsd
+        )
+      );
+    case "disableCollateral":
+    case "enableCollateral":
+      return null;
+  }
+};
+
+/**
+ * The amount an action is about, its symbol, and its USD value: the loan
+ * for debt actions, else the collateral; a collateral toggle names only it.
+ */
+export const getBorrowFlowHeadline = (
+  summary: Summary,
+  projected: ProjectedSummary
+) => {
+  const usd = getHeadlineUsd(summary);
   switch (summary.action) {
     case "borrow":
     case "borrowAndSupply":
@@ -145,11 +190,12 @@ const getHeadline = (summary: Summary, projected: ProjectedSummary) => {
       return {
         amount: amount?.amount ?? null,
         symbol: amount?.symbol ?? "",
+        usd,
       };
     }
     case "disableCollateral":
     case "enableCollateral":
-      return { amount: null, symbol: summary.collateralTokenSymbol };
+      return { amount: null, symbol: summary.collateralTokenSymbol, usd };
   }
 };
 
@@ -189,7 +235,7 @@ export const projectBorrowCompletion = ({
           : null,
       origination: projected.origination,
     },
-    headline: getHeadline(summary, projected),
+    headline: getBorrowFlowHeadline(summary, projected),
     position: settled
       ? {
           change: withoutStaticZeros(settledPositionChange(projected, settled)),

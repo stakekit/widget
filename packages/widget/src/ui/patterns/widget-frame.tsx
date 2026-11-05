@@ -11,7 +11,11 @@ import { elevation } from "../tokens/elevation.stylex";
 import { motionEasing, motionSeconds } from "../tokens/motion-timing";
 import { gutter } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { containerWidth, frameMaxWidth } from "../tokens/size.stylex";
+import {
+  containerWidth,
+  frameMaxWidth,
+  frameMinHeight,
+} from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/typography.stylex";
 
@@ -27,7 +31,8 @@ type WidgetFrameProps = {
   /**
    * `narrow` caps the frame at the `sm` container size and centers it;
    * `wide` fills the width it is given up to a split-view frame's width and
-   * centers it; `full` fills the width it is given.
+   * centers it; `full` fills the width it is given. `narrow` and `wide` keep
+   * a least height, so short pages and states don't shrink the Widget.
    */
   readonly width?: keyof typeof widthStyles;
   /**
@@ -191,7 +196,11 @@ export const WidgetFrame = ({
     >
       <div
         ref={content}
-        {...stylex.props(styles.content, animated && styles.measured)}
+        {...stylex.props(
+          styles.content,
+          minHeightStyles[width],
+          animated && styles.measured
+        )}
       >
         {header !== undefined && (
           <div {...stylex.props(styles.header)}>{header}</div>
@@ -291,4 +300,12 @@ const widthStyles = stylex.create({
   narrow: { maxWidth: containerWidth.sm, width: "100%" },
   wide: { maxWidth: frameMaxWidth.wide, width: "100%" },
   full: { width: "100%" },
+});
+
+// On the content, not the frame, so the frame can still grow open from no
+// height; the page grows into the space, and the footer stays at the foot.
+const minHeightStyles = stylex.create({
+  narrow: { minHeight: frameMinHeight.narrow },
+  wide: { minHeight: frameMinHeight.wide },
+  full: { minHeight: null },
 });

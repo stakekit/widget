@@ -35,7 +35,6 @@ export type HostProfile = Readonly<{
   appearancePreset: "default" | "finery" | "porto" | "utila";
   earnPresentation: EarnPresentation;
   forcesInstitutionalWallets: boolean;
-  hidesEarnLoadingSpinner: boolean;
   hidesHeaderWalletControl: boolean;
   hostTokenIconMapping: boolean;
   hostTracking: boolean;
@@ -51,7 +50,6 @@ const standardProfile: HostProfile = {
   appearancePreset: "default",
   earnPresentation: { condensed: false, zerion: false },
   forcesInstitutionalWallets: false,
-  hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
   hostTracking: false,
@@ -91,7 +89,6 @@ export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
     zerion: {
       ...standardProfile,
       earnPresentation: { condensed: false, zerion: true },
-      hidesEarnLoadingSpinner: true,
       hidesHeaderWalletControl: true,
       hostTokenIconMapping: true,
       hostTracking: true,

@@ -111,12 +111,12 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
 
-    // Review shows the amount with its symbol, and the rate it earns under it.
+    // Review shows the amount with its symbol, and the rate it earns as a row.
     await expect
       .element(app.getByText(`${stakeAmount} ${yieldOp.token.symbol}`).first())
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("& earn 5.08%").first())
+      .element(app.getByTestId("review-reward-rate").getByText("5.08%"))
       .toBeInTheDocument();
 
     await expect
@@ -174,7 +174,7 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("View Stake transaction"))
+      .element(app.getByRole("link", { name: /^View Stake transaction/u }))
       .toBeInTheDocument();
     await app.unmount();
   });

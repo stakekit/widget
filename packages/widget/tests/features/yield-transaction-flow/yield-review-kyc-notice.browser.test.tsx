@@ -33,14 +33,15 @@ const renderStakeReview = ({
 }) => {
   hookState.current = {
     amount: "1",
+    amountFiat: null,
     commissionFee: null,
     cta: null,
     depositFee: null,
-    estimatedRewardAmounts: null,
+    destination: "Test yield via Test provider",
+    facts: [],
     fee: "0",
     feeConfigLoading: false,
     gasCheckLoading: false,
-    interestRate: "",
     isGasCheckWarning: false,
     kycGate: gate,
     kycProviderName: "Superstate",

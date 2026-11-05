@@ -23,12 +23,20 @@ import { toneTextStyles } from "./tone-styles";
 import { useCopy } from "./use-copy";
 
 /**
- * `condensed` is for pickers, such as of a network, an account or a wallet: a
- * shorter row with no surface of its own that tints on hover, and the accent
- * tint with a trailing check for `selected` in place of the selection ring.
- * Its avatar takes the `control` size, or `sm` in a 40px row.
+ * `condensed` is a shorter row, for a compact choice such as a network, an
+ * account or a wallet. Its avatar takes the `control` size, or `sm` in a 40px
+ * row. A condensed row is `flat`.
  */
 type ListRowDensity = "comfortable" | "condensed";
+
+/**
+ * One row look per context. `card` is for lists of what the user owns or
+ * did, such as positions or activity: each row a filled surface, a selection
+ * ring for `selected`. `flat` is for pickers, every `SelectSheet` among them:
+ * no surface of its own, a tint on hover, and the accent tint with a
+ * trailing check for `selected`.
+ */
+type ListRowVariant = "card" | "flat";
 
 /**
  * A condensed row's height in pixels with a `sm` avatar: its least height, for
@@ -80,6 +88,8 @@ type CommonProps = {
   readonly status?: ListRowStatus;
   /** Unset, the row takes its `ListGroup`'s density, else `comfortable`. */
   readonly density?: ListRowDensity;
+  /** Unset, `flat` for a condensed row, else `card`. */
+  readonly variant?: ListRowVariant;
   /**
    * The trailing figure, such as a formatted balance. It never wraps: the
    * title truncates first.
@@ -213,6 +223,7 @@ export const ListRow = ({
   badges,
   status,
   density,
+  variant,
   value,
   figure,
   subvalue,
@@ -228,13 +239,14 @@ export const ListRow = ({
 }: ListRowProps) => {
   const group = use(InListGroup);
   const condensed = (density ?? group?.density) === "condensed";
+  const flat = (variant ?? (condensed ? "flat" : "card")) === "flat";
   const groupLabelId = useId();
   const { copied, copy } = useCopy();
   const checked = option === undefined ? selected === true : option.selected;
   const showsCheckBox = option?.check ?? check;
-  // A condensed row marks its choice with a tint and a check; others draw
+  // A flat row marks its choice with a tint and a check; a card row draws
   // the selection ring.
-  const ringsSelection = checked && !showsCheckBox && !condensed;
+  const ringsSelection = checked && !showsCheckBox && !flat;
   const checkBox = showsCheckBox && (
     <span
       aria-hidden="true"
@@ -243,7 +255,7 @@ export const ListRow = ({
       {checked && <Icon name="CheckIcon" size="sm" />}
     </span>
   );
-  const checksSelection = checked && !showsCheckBox && condensed;
+  const checksSelection = checked && !showsCheckBox && flat;
   const checkMark = checksSelection && <Icon name="CheckIcon" tone="accent" />;
   const values = (value !== undefined || subvalue !== undefined) && (
     <Stack as="span" gap={2} align="end">
@@ -374,14 +386,18 @@ export const ListRow = ({
         </Stack>
       </Stack>
     );
-  const surface = [styles.root, condensed && styles.condensed];
+  const surface = [
+    styles.root,
+    flat && styles.flat,
+    condensed && styles.condensed,
+  ];
   const pressable = [
     surface,
     interactiveStyles.root,
     styles.interactive,
-    condensed && styles.condensedInteractive,
+    flat && styles.flatInteractive,
     ringsSelection && interactiveStyles.selected,
-    checksSelection && styles.condensedSelected,
+    checksSelection && styles.flatSelected,
     interactiveStyles.inset,
   ];
   const row = (() => {
@@ -421,9 +437,9 @@ export const ListRow = ({
             pressable,
             option.active && styles.active,
             // The tint stays on the choice the keys reach.
-            option.active && checksSelection && styles.condensedSelected,
+            option.active && checksSelection && styles.flatSelected,
             option.disabled === true && styles.optionDisabled,
-            option.disabled === true && condensed && styles.condensedDisabled
+            option.disabled === true && flat && styles.flatDisabled
           )}
         >
           {content}
@@ -569,20 +585,20 @@ const styles = stylex.create({
     minWidth: 0,
   },
   link: { textDecoration: "none" },
+  flat: { backgroundColor: "transparent" },
   condensed: {
     paddingBlock: space[8],
-    backgroundColor: "transparent",
     minHeight: `${condensedRowHeight}px`,
   },
-  condensedInteractive: {
+  flatInteractive: {
     backgroundColor: {
       default: "transparent",
       ":hover:not(:disabled)": color.surfaceHover,
     },
   },
-  condensedDisabled: { backgroundColor: "transparent" },
+  flatDisabled: { backgroundColor: "transparent" },
   // Moves toward the hover surface, as an unselected row moves to it.
-  condensedSelected: {
+  flatSelected: {
     backgroundColor: {
       default: color.accentSoft,
       ":hover:not(:disabled)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,

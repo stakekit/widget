@@ -94,7 +94,9 @@ export const activityActionsPullAtom = Atom.family(
     if (!historyKey || !key.scope) return emptyActivityActionsPullAtom;
 
     const walletScope = key.scope;
-    const source = activityHistoryPullAtom.foreground(historyKey);
+    // The page shows its own error with a retry, so a failure raises no
+    // global error sheet.
+    const source = activityHistoryPullAtom.local(historyKey);
 
     return Atom.transform(
       source,

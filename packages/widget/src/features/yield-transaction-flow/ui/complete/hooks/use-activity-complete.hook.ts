@@ -49,14 +49,6 @@ export const useActivityCompleteView = <
 
   return {
     amount: formatTokenAmount(selectedAction.amount ?? 0, locale, "down"),
-    inputToken: inputToken ?? null,
-    metadata: selectedYield
-      ? {
-          logoURI: selectedYield.metadata.logoURI,
-          name: selectedYield.metadata.name,
-          provider: selectedYield.provider,
-        }
-      : null,
     network: inputToken?.symbol ?? "",
     providerDetails: yieldSummary.providers,
     selectedAction,

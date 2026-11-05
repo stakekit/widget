@@ -909,24 +909,29 @@ export const LoadingWithOptions: Story = {
 
 /**
  * The option the keys reached draws its focus ring inside the scrolling
- * list, also the first one, at the list's top edge.
+ * list, also the first one, at the list's top edge. On open the current
+ * choice has none: the keys haven't moved yet.
  */
 export const ActiveRingInside: Story = {
   play: async ({ canvasElement }) => {
     const sheet = await openSheet(canvasElement);
     const listbox = within(sheet).getByRole("listbox", { name: "Tokens" });
     const scroller = listbox.parentElement ?? listbox;
-    await waitFor(async () => {
-      const first = within(listbox).getByRole("option", {
-        name: /^ETH Ethereum/,
-      });
-      await expect(outlineWithin(first, viewportBox(scroller))).toBe(true);
+    const first = await within(listbox).findByRole("option", {
+      name: /^ETH Ethereum/,
     });
+    await expect(getComputedStyle(first).outlineStyle).toBe("none");
+
     await userEvent.keyboard("{ArrowDown}");
     const second = within(listbox).getByRole("option", {
       name: /^USDC Ethereum/,
     });
     await expect(outlineWithin(second, viewportBox(scroller))).toBe(true);
+
+    await userEvent.keyboard("{ArrowUp}");
+    await waitFor(async () => {
+      await expect(outlineWithin(first, viewportBox(scroller))).toBe(true);
+    });
   },
 };
 
@@ -991,8 +996,9 @@ const alignsWith = (left: number, edge: number) => Math.abs(left - edge) <= 1;
 const transparent = /^rgba\(\d+, \d+, \d+, 0\)$/;
 
 /**
- * A comfortable row's surface lines up with the title and the close button,
- * as the search field does.
+ * A comfortable sheet's rows are flat, as every picker's: no surface of
+ * their own, and their content lines up with the title and the close button,
+ * as the search field does, while their tint reaches past it.
  */
 export const RowsAlignWithTitle: Story = {
   play: async ({ canvasElement }) => {
@@ -1004,13 +1010,23 @@ export const RowsAlignWithTitle: Story = {
     const option = await within(sheet).findByRole("option", {
       name: /^ETH Ethereum/,
     });
-    const row = option.getBoundingClientRect();
-    await expect(alignsWith(row.left, title.getBoundingClientRect().left)).toBe(
-      true
-    );
+    const leading = option.firstElementChild?.getBoundingClientRect();
     await expect(
-      alignsWith(row.right, close.getBoundingClientRect().right)
+      alignsWith(leading?.left ?? 0, title.getBoundingClientRect().left)
     ).toBe(true);
+    const padding = Number.parseFloat(getComputedStyle(option).paddingRight);
+    await expect(
+      alignsWith(
+        option.getBoundingClientRect().right - padding,
+        close.getBoundingClientRect().right
+      )
+    ).toBe(true);
+    await expect(option.getBoundingClientRect().left).toBeLessThan(
+      title.getBoundingClientRect().left
+    );
+    // On open, the current choice carries no ring: the search field's is the
+    // only one.
+    await expect(getComputedStyle(option).outlineStyle).toBe("none");
   },
 };
 

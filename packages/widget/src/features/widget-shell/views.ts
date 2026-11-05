@@ -7,7 +7,6 @@ export {
   BackButton,
   BackButtonProvider,
 } from "./ui/back-button";
-export { FallbackContent } from "./ui/fallback-content";
 export { MountAnimatedPage } from "./ui/mount-animated-page";
 export { PageContainer } from "./ui/page-container";
 export type { PageCta } from "./ui/page-cta";

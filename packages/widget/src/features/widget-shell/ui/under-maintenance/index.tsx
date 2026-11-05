@@ -1,27 +1,27 @@
+import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { images } from "../../../../shared/assets/images";
-import { Illustration, Stack, Text } from "../../../../ui/index";
-import { ShellFrame } from "../shell-frame";
+import { refreshWidgetHealthAtom } from "../../../../resources/widget-health/index";
+import { ShellNotice } from "../shell-notice";
 
-/** Widget Maintenance: the whole Widget says the service is down for now. */
+/**
+ * Widget Maintenance: the whole Widget says the service is down for now. It
+ * checks again on its own; "Try again" checks now.
+ */
 const UnderMaintenance = () => {
   const { t } = useTranslation();
+  const refreshHealth = useAtomSet(refreshWidgetHealthAtom);
 
   return (
-    <ShellFrame>
-      <Stack testId="under-maintenance" align="center" gap={16}>
-        <Illustration src={images.fees} size="lg" />
-        <Text variant="title" as="h2" align="center">
-          {t("help_modals.under_maintenance.title")}
-        </Text>
-        <Text as="p" tone="muted" align="center">
-          {t("help_modals.under_maintenance.description")}
-        </Text>
-        <Text as="p" tone="muted" align="center">
-          {t("help_modals.under_maintenance.description2")}
-        </Text>
-      </Stack>
-    </ShellFrame>
+    <ShellNotice
+      testId="under-maintenance"
+      icon="WrenchIcon"
+      title={t("help_modals.under_maintenance.title")}
+      description={t("help_modals.under_maintenance.description")}
+      action={{
+        label: t("shared.retry"),
+        onClick: () => refreshHealth(undefined),
+      }}
+    />
   );
 };
 

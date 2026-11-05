@@ -26,6 +26,7 @@ import {
   allPositionsSummaryAtom,
   availableBalanceSummaryAtom,
   averageApySummaryAtom,
+  getClaimableRewardsUsd,
   getPositionsAverageApy,
   getPositionsTotal,
   hasHiddenPositions,
@@ -104,6 +105,42 @@ const makePosition = ({
 
   return { item, yieldDto };
 };
+
+describe("claimable rewards", () => {
+  it("sums the USD value of every position's claimable balances", () => {
+    const yieldDto = yieldApiYieldFixture({ id: "rewarding-yield" });
+    const position = Schema.decodeSync(EarnPosition)({
+      balances: [
+        yieldBalanceFixture({
+          amount: "10",
+          amountUsd: "10",
+          token: yieldDto.token,
+        }),
+        yieldBalanceFixture({
+          amount: "2",
+          amountUsd: "2.5",
+          token: yieldDto.token,
+          type: "claimable",
+        }),
+      ],
+      outputTokenBalance: null,
+      yieldId: yieldDto.id,
+    });
+    const unclaimable = makePosition({
+      amountUsd: "7",
+      rewardRate: 0.05,
+      yieldId: "plain-yield",
+    });
+
+    expect(
+      getClaimableRewardsUsd([
+        ...toPositionItems(toPositionsData([position]), false),
+        unclaimable.item,
+      ]).toFixed()
+    ).toBe("2.5");
+    expect(getClaimableRewardsUsd([unclaimable.item]).toFixed()).toBe("0");
+  });
+});
 
 describe("summary atom derivations", () => {
   it("matches the Manage summary zeros when a position has amount but no amountUsd", () => {
@@ -509,6 +546,67 @@ describe("summary atom derivations", () => {
       ])
     );
     expect(listYields).toHaveBeenCalledOnce();
+
+    unmount();
+    registry.dispose();
+  });
+
+  it("collapses small balances into one row after the grouped positions", async () => {
+    const position = makePosition({
+      amountUsd: "5",
+      rewardRate: 0.05,
+      yieldId: "yield-1",
+    });
+    const dust = makePosition({
+      amount: "0.0000001",
+      amountUsd: "0.0003",
+      rewardRate: 0.05,
+      yieldId: "yield-2",
+    });
+    const category = getYieldCategory(position.yieldDto);
+    if (!category) throw new Error("expected a dashboard Yield category");
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(YieldResourceSource, {
+            listYields: () =>
+              Effect.succeed({
+                items: [position.yieldDto],
+                limit: 100,
+                offset: 0,
+                total: 1,
+              }),
+          } as never)
+        ),
+        applicationRuntimeInitInitialValue({
+          apiKey: "test-key",
+          baseUrl: "https://api.example.com",
+          dashboardVariant: true,
+          variant: "default",
+          yieldGrouping: "category",
+          yieldsApiUrl: "https://yield.example.com",
+        }),
+        [
+          positionsTableDataAtom,
+          AsyncResult.success([dust.item, position.item]),
+        ],
+      ],
+    });
+    const resource = currentGroupedPositionsAtom;
+    const unmount = registry.mount(resource);
+
+    await vi.waitFor(() =>
+      expect(registry.get(resource)).toEqual([
+        { kind: "chain-modal" },
+        { category, count: 1, kind: "section" },
+        {
+          item: { kind: "earn", position: position.item },
+          kind: "position",
+        },
+        { items: [dust.item], kind: "small-balances" },
+      ])
+    );
 
     unmount();
     registry.dispose();

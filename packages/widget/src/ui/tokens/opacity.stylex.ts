@@ -5,7 +5,9 @@ import * as stylex from "@stylexjs/stylex";
  * switch, to its look at 40%: it keeps its variant and state, so a disabled
  * primary button still reads as the primary action and a disabled switch as
  * on or off, yet it clearly stands apart from one that can be used.
+ * `halo` fades a `Spot`'s ring to half its disc's tint.
  */
 export const opacity = stylex.defineConsts({
   disabled: "0.4",
+  halo: "0.5",
 });

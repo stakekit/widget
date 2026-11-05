@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { images } from "../../../../../shared/assets/images";
-import { Button, Illustration, Modal, Stack } from "../../../../../ui/index";
+import { Button, Modal, Spot, Stack } from "../../../../../ui/index";
 
 /** Asks to sign a message proving address ownership before an exit. */
 export const ExitSignDialog = ({
@@ -30,7 +29,7 @@ export const ExitSignDialog = ({
       }
     >
       <Stack align="center">
-        <Illustration src={images.poweredBy} />
+        <Spot icon="PenIcon" tone="accent" size="lg" />
       </Stack>
     </Modal>
   );

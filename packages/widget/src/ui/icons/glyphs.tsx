@@ -138,6 +138,22 @@ export const glyphs = {
       />
     ),
   },
+  /** The globe, such as for a region or a network. */
+  GlobeIcon: {
+    viewBox: "0 0 16 16",
+    body: (
+      <>
+        <circle cx={8} cy={8} r={6} stroke="currentColor" strokeWidth={1.5} />
+        <path
+          d="M2 8h12M8 2c1.6 1.7 2.4 3.7 2.4 6s-.8 4.3-2.4 6c-1.6-1.7-2.4-3.7-2.4-6S6.4 3.7 8 2Z"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </>
+    ),
+  },
   HelpIcon: {
     viewBox: "4 4 24 24",
     body: (
@@ -193,6 +209,19 @@ export const glyphs = {
       />
     ),
   },
+  /** Stacked layers, such as for a list of positions. */
+  LayersIcon: {
+    viewBox: "0 0 16 16",
+    body: (
+      <path
+        d="m8 2 6 3.25L8 8.5 2 5.25 8 2ZM2 8l6 3.25L14 8M2 10.75 8 14l6-3.25"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+  },
   MinusIcon: {
     viewBox: "0 0 16 16",
     body: (
@@ -200,6 +229,19 @@ export const glyphs = {
         d="M3 8h10"
         stroke="currentColor"
         strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+  },
+  /** A pen, such as for signing a message. */
+  PenIcon: {
+    viewBox: "0 0 24 24",
+    body: (
+      <path
+        d="M12 20h9M16.376 3.622a2.12 2.12 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854L16.376 3.622Z"
+        stroke="currentColor"
+        strokeWidth={2.25}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -235,13 +277,20 @@ export const glyphs = {
       />
     ),
   },
-  StepCheckIcon: {
-    viewBox: "0 0 448 512",
+  /** A wallet, such as for a step waiting for the wallet's signature. */
+  WalletIcon: {
+    viewBox: "0 0 16 16",
     body: (
-      <path
-        d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"
-        fill="currentColor"
-      />
+      <>
+        <path
+          d="M11.5 5V3.75a.75.75 0 0 0-.75-.75h-7A1.25 1.25 0 0 0 2.5 4.25M2.5 4.25A1.25 1.25 0 0 0 3.75 5.5h8.5a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-.75.75h-8.5a1.25 1.25 0 0 1-1.25-1.25v-7.5Z"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx={10.25} cy={9.25} r={0.875} fill="currentColor" />
+      </>
     ),
   },
   WarningIcon: {
@@ -264,6 +313,19 @@ export const glyphs = {
         />
         <circle cx={8.656} cy={11.325} r={0.924} fill="currentColor" />
       </>
+    ),
+  },
+  /** A wrench, such as for maintenance. */
+  WrenchIcon: {
+    viewBox: "0 0 24 24",
+    body: (
+      <path
+        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94L14.7 6.3Z"
+        stroke="currentColor"
+        strokeWidth={2.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     ),
   },
   XIcon: {

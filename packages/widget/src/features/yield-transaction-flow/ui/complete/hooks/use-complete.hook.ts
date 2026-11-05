@@ -14,6 +14,8 @@ export const useComplete = () => {
   const execution = useYieldFlowExecution();
   const session = useYieldFlowSession();
   const finish = useAtomSet(execution.finishAtom);
+  const viewPosition = useAtomSet(execution.viewPositionAtom);
+  const positionBalanceId = useAtomValue(execution.positionBalanceIdAtom);
   const workflowView = useAtomValue(execution.workflow.viewAtom);
 
   // Ledger Live desktop leaves for its Earn dashboard; elsewhere the flow finishes in the widget.
@@ -59,11 +61,24 @@ export const useComplete = () => {
     hide: false,
   });
 
+  // Once the portfolio holds the position the flow acted on, it leads there;
+  // Ledger Live's own dashboard shows positions instead.
+  const viewPositionCta: PageCta =
+    positionBalanceId && !opensLedgerEarn
+      ? {
+          disabled: false,
+          isLoading: false,
+          label: t("complete.view_position"),
+          onClick: () => viewPosition(undefined),
+        }
+      : null;
+
   return {
     urls,
     unstakeMatch: unstake,
     pendingActionMatch: pendingAction,
     onViewTransactionClick,
     cta: resolveCta(),
+    viewPositionCta,
   };
 };

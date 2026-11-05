@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Equal, Match, Option, Ref, Schema } from "effect";
+import { DateTime, Equal, Match, Option, Ref, Schema } from "effect";
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type {
   ActionCommand,
@@ -21,11 +21,13 @@ import {
 import type { TokenAmount } from "../../../domain/earn/denomination";
 import type {
   ConfidentialHandle,
+  EarnBalance,
   EarnProvider,
   EarnValidator,
   EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
+import { getYieldCooldownDuration } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type {
   ProviderOption,
@@ -542,6 +544,125 @@ export const getYieldFlowExitCompletion = (
   receiveToken: intake.receiveToken,
   token: intake.unstakeToken,
 });
+
+/**
+ * The exit a flow makes, from a position or continued from Activity: its
+ * yield, and whether it only joined the next redemption batch. Null for any
+ * other flow.
+ */
+export const getYieldFlowExit = ({
+  intake,
+}: YieldFlowSession): Readonly<{
+  readonly batched: boolean;
+  readonly yieldDto: EarnYieldWithProvider;
+}> | null => {
+  if (intake._tag === "Exit") {
+    return {
+      batched: getYieldFlowExitCompletion(intake).batched,
+      yieldDto: intake.integration,
+    };
+  }
+  if (
+    intake._tag === "YieldActionContinuation" &&
+    intake.action.intent === "exit"
+  ) {
+    return {
+      batched:
+        getConfidentialActionKind(intake.selectedYield, intake.action) ===
+        "privateExit",
+      yieldDto: intake.selectedYield,
+    };
+  }
+  return null;
+};
+
+/**
+ * When an exit's funds unlock: the latest date ahead the API gives the
+ * position's exiting balances, else now plus the yield's cooldown. Null for a
+ * batched exit, whose batch says when instead, or one without a cooldown.
+ */
+export const getYieldFlowExitUnlockDate = ({
+  balances,
+  batched,
+  now,
+  yieldDto,
+}: {
+  readonly balances: ReadonlyArray<Pick<EarnBalance, "date" | "type">>;
+  readonly batched: boolean;
+  readonly now: DateTime.Utc;
+  readonly yieldDto: EarnYieldWithProvider;
+}): DateTime.Utc | null => {
+  if (batched) return null;
+  const apiDate = balances.reduce<DateTime.Utc | null>(
+    (latest, { date, type }) =>
+      type === "exiting" &&
+      date &&
+      DateTime.isGreaterThan(date, now) &&
+      (!latest || DateTime.isGreaterThan(date, latest))
+        ? date
+        : latest,
+    null
+  );
+  if (apiDate) return apiDate;
+  const cooldown = getYieldCooldownDuration(yieldDto);
+  return cooldown ? DateTime.addDuration(now, cooldown) : null;
+};
+
+const getIntakeValidators = (
+  intake: YieldTransactionFlowIntake
+): ReadonlyArray<EarnValidator> => {
+  switch (intake._tag) {
+    case "Enter":
+      return [...intake.selectedValidators.values()];
+    case "YieldActionContinuation":
+      return intake.selectedValidators;
+    case "Exit":
+    case "Manage":
+      return [];
+  }
+};
+
+const getValidatorsBalanceId = (
+  validators: ReadonlyArray<EarnValidator>
+): BalanceDataKey => {
+  const [only, ...others] = validators;
+  if (!only) return "default";
+  return others.length > 0 ? "validators" : `validator::${only.key}`;
+};
+
+/**
+ * The position balance a finished flow leads to, among the balances the
+ * portfolio holds for its yield: a position page's own balance, or the one
+ * the flow's validators stake into. A flow without validators falls back to
+ * the yield's only balance; a flow with validators to the only balance one of
+ * them holds, never another validator's. Null without one.
+ */
+export const getYieldFlowPositionBalanceId = (
+  { intake, mount }: YieldFlowSession,
+  balanceIds: ReadonlyArray<BalanceDataKey>
+): BalanceDataKey | null => {
+  if (mount._tag !== "Earn" && mount._tag !== "YieldActionContinuation") {
+    return balanceIds.includes(mount.balanceId) ? mount.balanceId : null;
+  }
+  const validators = getIntakeValidators(intake);
+  const preferred = getValidatorsBalanceId(validators);
+  if (balanceIds.includes(preferred)) return preferred;
+  const validatorBalanceIds = new Set(
+    validators.map((validator): BalanceDataKey => `validator::${validator.key}`)
+  );
+  const candidates =
+    validators.length === 0
+      ? balanceIds
+      : balanceIds.filter((balanceId) => validatorBalanceIds.has(balanceId));
+  const [only, ...others] = candidates;
+  return only && others.length === 0 ? only : null;
+};
+
+/** The yield a flow acts on. */
+export const getYieldFlowYieldId = ({ intake }: YieldFlowSession): YieldId =>
+  intake._tag === "YieldActionContinuation"
+    ? intake.action.yieldId
+    : intake.request.yieldId;
 
 /**
  * How a confidential vault's Execution creates its action, once confirmed:

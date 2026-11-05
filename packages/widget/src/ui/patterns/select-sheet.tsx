@@ -218,8 +218,8 @@ const nextEnabled = (
  * the options and Enter chooses one; Escape clears the query, then closes.
  * It opens on the current choice, scrolled into view. Choosing an option
  * closes the sheet, unless it takes `multiple` choices or `closesOnSelect` is
- * off. A comfortable row's surface lines up with the title; a condensed row,
- * which has none, lines up its content and lets its tint reach past it.
+ * off. Its rows are `flat`, as every picker's: their content lines up with
+ * the title while their tint reaches past it.
  */
 export const SelectSheet = ({
   title,
@@ -344,6 +344,7 @@ export const SelectSheet = ({
         {search === undefined ? (
           <ListRow
             {...rowContent}
+            variant="flat"
             onClick={() => choose(option)}
             selected={selected}
             check={check}
@@ -352,11 +353,15 @@ export const SelectSheet = ({
         ) : (
           <ListRow
             {...rowContent}
+            variant="flat"
             option={{
               id: optionId(index),
               selected,
               check,
-              active: index === active,
+              // The focus ring follows the keys: on open, the current choice
+              // is active but reads by its tint and check alone, so the
+              // search field's ring is the only one.
+              active: index === active && movedIndex !== undefined,
               onSelect: () => choose(option),
               disabled: option.disabled === true,
               position: hasMore ? { index } : { index, count: flat.length },
@@ -437,7 +442,7 @@ export const SelectSheet = ({
           }))}
         />
       );
-    return <div {...stylex.props(styles.list, layout.list)}>{list}</div>;
+    return <div {...stylex.props(styles.list, styles.flatList)}>{list}</div>;
   };
   const replacing = loading && flat.length > 0 && error === undefined;
 
@@ -527,22 +532,20 @@ const styles = stylex.create({
   },
   // Past the body's inline padding by a row's own, so the rows' content lines
   // up with the title while their tint reaches into the margin.
-  condensedList: { marginInline: `calc(-1 * ${space[12]})` },
+  flatList: { marginInline: `calc(-1 * ${space[12]})` },
 });
 
 /** The spacing above and under each option's row. */
 const optionSpacing = 2;
 
 /**
- * What a density sets beyond its rows: the dialog's size, the list's reach
- * past the body's padding and the rows' expected height, unset for the
- * virtualized list's own.
+ * What a density sets beyond its rows: the dialog's size and the rows'
+ * expected height, unset for the virtualized list's own.
  */
 const densityLayouts = {
-  comfortable: { dialogSize: "default", list: null, estimateSize: undefined },
+  comfortable: { dialogSize: "default", estimateSize: undefined },
   condensed: {
     dialogSize: "picker",
-    list: styles.condensedList,
     estimateSize: condensedRowHeight + 2 * optionSpacing,
   },
 } as const;

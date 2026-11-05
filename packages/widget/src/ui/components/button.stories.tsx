@@ -15,6 +15,7 @@ const variants = [
   "primary",
   "secondary",
   "ghost",
+  "soft",
   "danger",
   "dangerOutline",
 ] as const;
@@ -23,6 +24,8 @@ const sizes = ["sm", "md", "lg", "cta"] as const;
 export const Primary: Story = { args: { variant: "primary" } };
 export const Secondary: Story = { args: { variant: "secondary" } };
 export const Ghost: Story = { args: { variant: "ghost" } };
+/** `soft` is the accent on its tint, for an action on a filled surface. */
+export const Soft: Story = { args: { variant: "soft", children: "Claim" } };
 export const Danger: Story = {
   args: { variant: "danger", children: "Unstake" },
 };

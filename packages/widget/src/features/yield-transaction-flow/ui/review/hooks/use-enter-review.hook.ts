@@ -1,8 +1,13 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
-import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
 import {
+  getYieldOutputAmount,
+  getYieldTypeLabels,
+} from "../../../../../domain/earn/yield";
+import {
+  formatTokenAmountInUSD,
   getFeesInUSD,
   getGasFeeInUSD,
 } from "../../../../../shared/lib/formatters";
@@ -10,16 +15,31 @@ import {
   formatExactPercent,
   formatRewardRatePercent,
   formatTokenAmount,
+  formatUsd,
   unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import type { HostHook } from "../../../../../ui/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import type { PageCta } from "../../../../widget-shell/views";
+import { formatRewardRateLabel } from "../../../../yield-summary/index";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
 } from "../../../react/yield-flow-route";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
+import type { ReviewFact } from "../pages/review-overview";
+import {
+  formatReviewDestination,
+  getLockupPeriodFact,
+  getSignaturesFact,
+  getUnlockPeriodFact,
+} from "./review-facts";
+
+const rewardHostHooks = {
+  monthly: "estimated-reward__monthly",
+  yearly: "estimated-reward__yearly",
+} as const satisfies Record<string, HostHook>;
 
 export const useEnterReview = () => {
   const { t } = useTranslation();
@@ -42,18 +62,86 @@ export const useEnterReview = () => {
   const yieldType = getYieldTypeLabels(selectedStake, t).review;
 
   const amount = formatTokenAmount(stakeAmount, locale, "down");
+  const previewedUsd = review.action?.amountUsd;
+  const amountFiat = previewedUsd?.isGreaterThan(0)
+    ? formatUsd(previewedUsd, locale)
+    : formatTokenAmountInUSD({
+        amount: stakeAmount,
+        locale,
+        prices: stakeReview.prices,
+        token: selectedToken,
+      });
   const interestRate = estimatedRewards
     ? formatRewardRatePercent(estimatedRewards.rewardRateAverage, locale)
     : "";
 
   const rewardsTokenSymbol = stakeReview.rewardsTokenSymbol;
+  // Rewards paid in the deposited token carry its fiat value.
+  const rewardFact = (
+    reward: BigNumber | null | undefined,
+    period: "yearly" | "monthly"
+  ): ReviewFact => {
+    const caption =
+      reward && rewardsTokenSymbol === selectedToken.symbol
+        ? formatTokenAmountInUSD({
+            amount: reward,
+            locale,
+            prices: stakeReview.prices,
+            token: selectedToken,
+          })
+        : null;
+    return {
+      label: t(`review.estimated_${period}_rewards`),
+      testId: `estimated-reward__${period}`,
+      hostHook: rewardHostHooks[period],
+      value: `${reward ? formatTokenAmount(reward, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`,
+      ...(caption ? { caption } : {}),
+    };
+  };
 
-  const estimatedRewardAmounts = estimatedRewards
+  const received = getYieldOutputAmount(selectedStake, stakeAmount);
+  const receiveFact: ReviewFact | null = received
     ? {
-        earnYearly: `${estimatedRewards.yearly ? formatTokenAmount(estimatedRewards.yearly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`,
-        earnMonthly: `${estimatedRewards.monthly ? formatTokenAmount(estimatedRewards.monthly, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`,
+        label: t("review.you_receive"),
+        testId: "review-receive",
+        value: `${formatTokenAmount(received.amount, locale, "nearest")} ${received.token.symbol}`,
       }
     : null;
+
+  const facts = [
+    ...(interestRate
+      ? [
+          {
+            label: formatRewardRateLabel(selectedStake, t),
+            testId: "review-reward-rate",
+            value: interestRate,
+          },
+        ]
+      : []),
+    ...(estimatedRewards
+      ? [
+          rewardFact(estimatedRewards.yearly, "yearly"),
+          rewardFact(estimatedRewards.monthly, "monthly"),
+        ]
+      : []),
+    receiveFact,
+    getLockupPeriodFact(selectedStake, t),
+    getUnlockPeriodFact(selectedStake, t),
+    getSignaturesFact({
+      loading: review.transactionsToSignLoading,
+      t,
+      transactions: review.transactionsToSign,
+    }),
+  ].filter((fact): fact is ReviewFact => fact !== null);
+
+  const providerNames = enterFlow.providersDetails
+    .flatMap((provider) => (provider.name ? [provider.name] : []))
+    .join(", ");
+  const destination = formatReviewDestination({
+    providerName: providerNames || selectedStake.provider?.name,
+    t,
+    yieldName: selectedStake.metadata.name,
+  });
 
   const fee = getGasFeeInUSD({
     gas: stakeReview.gasAmount,
@@ -117,9 +205,10 @@ export const useEnterReview = () => {
   return {
     token: selectedToken,
     amount,
+    amountFiat,
+    destination,
+    facts,
     fee,
-    interestRate,
-    estimatedRewardAmounts,
     yieldType,
     metadata,
     metaInfo,

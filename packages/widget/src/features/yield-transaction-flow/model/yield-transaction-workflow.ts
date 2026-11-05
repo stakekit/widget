@@ -1,5 +1,10 @@
 import type { TFunction } from "i18next";
-import type { TransactionType } from "../../../domain/action/rules";
+import type { DirectTransaction } from "../../../domain/action/direct-transaction";
+import type { YieldAction } from "../../../domain/action/models";
+import type {
+  TransactionStatus,
+  TransactionType,
+} from "../../../domain/action/rules";
 import type { TransactionHash } from "../../../domain/identity/identifiers";
 import type {
   TransactionPhaseProgress,
@@ -19,6 +24,8 @@ import { sentenceCaseEnumValue } from "../../../shared/lib/formatters";
 export type YieldTransactionCompletionUrl = {
   readonly type: TransactionType;
   readonly url: string;
+  /** The sent transaction's hash, when the workflow knows it. */
+  readonly hash: TransactionHash | null;
 };
 
 export const formatTransactionTypeLabel = (
@@ -31,16 +38,57 @@ export const formatTransactionTypeLabel = (
     defaultValue: sentenceCaseEnumValue(type),
   });
 
+/** Whether the wallet still signs a transaction in each status. */
+const awaitsSignature: Record<TransactionStatus, boolean> = {
+  BLOCKED: true,
+  BROADCASTED: false,
+  CONFIRMED: false,
+  CREATED: true,
+  FAILED: true,
+  NOT_FOUND: true,
+  PENDING: false,
+  SIGNED: false,
+  SKIPPED: false,
+  WAITING_FOR_SIGNATURE: true,
+};
+
+/** A transaction the wallet signs: an action's, or a planned conversion's. */
+export type YieldFlowTransactionToSign =
+  | TransactionType
+  | DirectTransaction["type"];
+
+/**
+ * The transactions the wallet still signs for an action, in order: the
+ * approve and wrap planned before it, then its own not yet signed.
+ */
+export const getYieldFlowTransactionsToSign = (
+  action: Pick<YieldAction, "transactions">,
+  conversion: ReadonlyArray<Pick<DirectTransaction, "type">>
+): ReadonlyArray<YieldFlowTransactionToSign> => [
+  ...conversion.map(({ type }) => type),
+  ...action.transactions
+    .filter(({ status }) => awaitsSignature[status])
+    .map(({ type }) => type),
+];
+
 export const getYieldTransactionCompletionUrls = (
   context: TransactionWorkflowContext
 ): ReadonlyArray<YieldTransactionCompletionUrl> =>
-  flattenTransactionWorkflowTransactions(context)
-    .filter((transaction) => transaction.source._tag === "Yield")
-    .map((transaction) => ({
-      type: transaction.source.transaction.type,
-      url: transaction.meta.url,
-    }))
-    .filter((value): value is YieldTransactionCompletionUrl => !!value.url);
+  flattenTransactionWorkflowTransactions(context).flatMap(
+    (transaction): ReadonlyArray<YieldTransactionCompletionUrl> =>
+      transaction.source._tag === "Yield" && transaction.meta.url
+        ? [
+            {
+              hash: getTransactionWorkflowTransactionReference(
+                context,
+                transaction
+              ).hash,
+              type: transaction.source.transaction.type,
+              url: transaction.meta.url,
+            },
+          ]
+        : []
+  );
 
 /**
  * Terminal success of a Yield workflow: every transaction completed, or the

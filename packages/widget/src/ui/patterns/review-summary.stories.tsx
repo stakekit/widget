@@ -9,11 +9,18 @@ const meta = {
   args: {
     title: "Stake",
     amount: "1.5 ETH",
+    amountFiat: "$3,630.00",
     destination: "Lido Staked ETH via Lido",
     token: { name: "ETH", src: tokenLogo, networkSrc: networkLogo },
     facts: [
       { label: "Reward rate", value: "3.2% APY" },
       { label: "You receive", value: "1.5 stETH" },
+      {
+        label: "Wallet signatures",
+        value: "2",
+        caption: "Approve, Stake",
+        testId: "signatures",
+      },
     ],
     fees: {
       heading: "Fees",
@@ -40,7 +47,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** The action heads the summary; its facts and fees read as label-value pairs. */
+/**
+ * The action heads the summary; the amount leads with its token and fiat
+ * value, and its facts and fees read as label-value pairs.
+ */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -48,11 +58,51 @@ export const Default: Story = {
       canvas.getByRole("heading", { level: 2, name: "Stake" })
     ).toBeVisible();
     await expect(canvas.getByText("1.5 ETH")).toBeVisible();
+    await expect(canvas.getByText("$3,630.00")).toBeVisible();
+    await expect(canvas.getByRole("img", { name: "ETH" })).toBeVisible();
+    await expect(
+      within(canvas.getByTestId("signatures")).getByText("Approve, Stake")
+    ).toBeVisible();
     await expect(
       canvas.getByRole("heading", { level: 3, name: "Fees" })
     ).toBeVisible();
     await expect(canvas.getByText("Estimated gas fee")).toBeVisible();
     await expect(canvas.getByText("$1.20")).toBeVisible();
+  },
+};
+
+/** The token's logo sits at the start of the amount, not apart from it. */
+export const TokenBesideAmount: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const logo = canvas
+      .getByRole("img", { name: "ETH" })
+      .getBoundingClientRect();
+    const amount = canvas.getByText("1.5 ETH").getBoundingClientRect();
+    await expect(logo.right).toBeLessThanOrEqual(amount.left);
+    await expect(logo.bottom).toBeGreaterThan(amount.top);
+    await expect(logo.top).toBeLessThan(amount.bottom);
+  },
+};
+
+/** A figure at risk takes its tone. */
+export const RowTone: Story = {
+  args: {
+    facts: [
+      {
+        label: "Health factor",
+        value: "2.5 → 1.08",
+        tone: "danger",
+        testId: "health",
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(within(canvasElement).getByTestId("health")).getByText(
+        "2.5 → 1.08"
+      )
+    ).toBeVisible();
   },
 };
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Spinner, Stack, Text } from "../../../../../ui/index";
+import { Stack, Text } from "../../../../../ui/index";
 import {
   type PositionDetailsActionMode,
   positionDetailsHubHasContent,
@@ -11,6 +11,7 @@ import {
 import { usePositionDetails } from "../../../react/use-position-details";
 import { PositionDetailsExitActions } from "../../components/position-details-exit-actions";
 import { PositionDetailsPendingActions } from "../../components/position-details-pending-actions";
+import { PositionDetailsSkeleton } from "../../components/position-details-skeleton";
 import { PositionDetailsValidatorModal } from "../../components/position-details-validator-modal";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { PositionDetailsEnterActions } from "./position-details-enter-actions";
@@ -24,13 +25,7 @@ export const PositionDetailsHub = () => {
   const [selectedMode, setSelectedMode] =
     useState<PositionDetailsActionMode | null>(null);
 
-  if (positionDetails.isLoading) {
-    return (
-      <Stack grow align="center" justify="center">
-        <Spinner />
-      </Stack>
-    );
-  }
+  if (positionDetails.isLoading) return <PositionDetailsSkeleton />;
 
   if (
     !positionDetails.integrationData ||

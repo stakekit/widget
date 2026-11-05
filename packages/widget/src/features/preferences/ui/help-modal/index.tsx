@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { isValidElement, useEffect, useEffectEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
 import {
   Button,
+  type FixedIconName,
   Icon,
-  Illustration,
   Modal,
+  Spot,
   Stack,
   Text,
 } from "../../../../ui/index";
@@ -39,7 +39,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   ): {
     title: string;
     description: string | ReactNode;
-    image: string;
+    icon: FixedIconName;
     button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
@@ -60,7 +60,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
@@ -73,7 +73,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("Crypto Ban")) {
@@ -86,7 +86,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("OFAC")) {
@@ -99,7 +99,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("OFSI")) {
@@ -112,7 +112,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("Pending Litigation")) {
@@ -128,7 +128,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("Staking Ban")) {
@@ -141,7 +141,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
 
@@ -154,7 +154,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               components={{ link0: <TranslatedLink /> }}
             />
           ),
-          image: images.fees,
+          icon: "GlobeIcon",
         };
       }
 
@@ -167,7 +167,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               window.open("https://twitter.com/yield_xyz", "_blank"),
           },
           description: "",
-          image: images.whatIsLiquidStaking,
+          icon: "HelpIcon",
         };
       }
 
@@ -186,7 +186,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               }}
             />
           ),
-          image: images.poweredBy,
+          icon: "InfoIcon",
         };
       }
     }
@@ -196,7 +196,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   // same Application Runtime registry; tracking uses that tree's config.
   const trackEvent = useTrackEvent();
 
-  const { description, image, title, button } = getContent(modal);
+  const { description, icon, title, button } = getContent(modal);
 
   const isGeoBlock = modal.type === "geoBlock";
 
@@ -252,7 +252,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
       }
     >
       <Stack align="center">
-        <Illustration src={image} size="lg" />
+        <Spot icon={icon} tone="accent" size="lg" />
       </Stack>
     </Modal>
   );

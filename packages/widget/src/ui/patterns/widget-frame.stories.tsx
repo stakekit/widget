@@ -176,6 +176,8 @@ const PagedHost = (args: ComponentProps<typeof WidgetFrame>) => {
  * height, so it never dips below the shorter of the two.
  */
 export const PageChange: Story = {
+  // `full` keeps no least height, so both pages set the frame's height.
+  args: { width: "full" },
   render: (args) => <PagedHost {...args} />,
   play: async ({ canvasElement }) => {
     const { frame, content } = frameParts(canvasElement);
@@ -214,6 +216,7 @@ export const PageChange: Story = {
  * eases the frame after it.
  */
 export const InPageResize: Story = {
+  args: { width: "full" },
   render: (args) => <PagedHost {...args} />,
   play: async ({ canvasElement }) => {
     const trigger = within(canvasElement).getByRole("button", {
@@ -232,6 +235,26 @@ export const InPageResize: Story = {
     await userEvent.click(trigger);
     const closing = await sampleHeights(canvasElement, 400);
     await expect(lagging(closing)).toEqual([]);
+  },
+};
+
+/**
+ * `narrow` and `wide` keep a least height: a short page grows into it, and
+ * the footer stays at the foot, so the Widget doesn't shrink between states.
+ */
+export const MinHeight: Story = {
+  render: (args) => (
+    <div data-testid="host">
+      <WidgetFrame {...args}>
+        <Text as="p">A short page.</Text>
+      </WidgetFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const { frame } = frameParts(canvasElement);
+    await expect(frame.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+      640
+    );
   },
 };
 

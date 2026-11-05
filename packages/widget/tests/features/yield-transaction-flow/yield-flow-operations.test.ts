@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import {
+  DateTime,
   Deferred,
   Effect,
   Exit,
@@ -12,6 +13,7 @@ import {
   Stream,
 } from "effect";
 import type { YieldAction } from "../../../src/domain/action/models";
+import { EarnValidator } from "../../../src/domain/earn/models";
 import {
   TransactionWorkflowId,
   WalletAddress,
@@ -19,6 +21,8 @@ import {
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
+  getYieldFlowExitUnlockDate,
+  getYieldFlowPositionBalanceId,
   makeYieldActionContinuationSession,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
@@ -63,6 +67,7 @@ import type { WalletState } from "../../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
 import {
@@ -1047,4 +1052,149 @@ describe("leaveYieldFlowExecution", () => {
       ]);
     })
   );
+});
+
+const makeValidator = (address: string) =>
+  Schema.decodeSync(EarnValidator)(yieldApiValidatorFixture({ address }));
+
+describe("getYieldFlowPositionBalanceId", () => {
+  it("leads an Earn flow to the yield's default balance", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldFlowSession(enterStart(), walletScope),
+        ["validators", "default"]
+      )
+    ).toBe("default");
+  });
+
+  it("leads an Earn flow to the yield's only balance", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldFlowSession(enterStart(), walletScope),
+        ["validators"]
+      )
+    ).toBe("validators");
+  });
+
+  it("leads nowhere before the portfolio holds the position", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldFlowSession(enterStart(), walletScope),
+        []
+      )
+    ).toBeNull();
+  });
+
+  it("returns a position page's flow to its own balance while it exists", () => {
+    const session = makeYieldFlowSession(exitStart(), walletScope);
+    expect(
+      getYieldFlowPositionBalanceId(session, ["validators", "default"])
+    ).toBe("default");
+    expect(getYieldFlowPositionBalanceId(session, ["validators"])).toBeNull();
+  });
+
+  it("leads a continued action to the yield's default balance", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldActionContinuationSession(makeContinuationIntake()),
+        ["default"]
+      )
+    ).toBe("default");
+  });
+
+  it("hides the position when only another validator's balance remains", () => {
+    const exited = makeValidator("0xexited");
+    const remaining = makeValidator("0xremaining");
+    const session = makeYieldActionContinuationSession({
+      ...makeContinuationIntake(),
+      selectedValidators: [exited],
+    });
+
+    expect(
+      getYieldFlowPositionBalanceId(session, [`validator::${remaining.key}`])
+    ).toBeNull();
+    expect(
+      getYieldFlowPositionBalanceId(session, [`validator::${exited.key}`])
+    ).toBe(`validator::${exited.key}`);
+  });
+
+  it("leads a flow over several validators to the one balance left among them", () => {
+    const first = makeValidator("0xfirst");
+    const second = makeValidator("0xsecond");
+    const other = makeValidator("0xother");
+    const session = makeYieldActionContinuationSession({
+      ...makeContinuationIntake(),
+      selectedValidators: [first, second],
+    });
+
+    expect(
+      getYieldFlowPositionBalanceId(session, [
+        `validator::${first.key}`,
+        `validator::${other.key}`,
+      ])
+    ).toBe(`validator::${first.key}`);
+    expect(
+      getYieldFlowPositionBalanceId(session, [`validator::${other.key}`])
+    ).toBeNull();
+  });
+});
+
+describe("getYieldFlowExitUnlockDate", () => {
+  const now = DateTime.makeUnsafe("2026-11-05T12:00:00Z");
+  const sixHourCooldown = {
+    ...yieldApiYieldFixture(),
+    mechanics: {
+      ...yieldApiYieldFixture().mechanics,
+      cooldownPeriod: { seconds: 6 * 3600 },
+    },
+  };
+
+  it("prefers the API's date for the exiting balance", () => {
+    const apiDate = DateTime.makeUnsafe("2026-11-09T08:00:00Z");
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [
+          {
+            date: DateTime.makeUnsafe("2026-11-01T00:00:00Z"),
+            type: "exiting",
+          },
+          { date: apiDate, type: "exiting" },
+          { date: DateTime.makeUnsafe("2026-12-01T00:00:00Z"), type: "active" },
+        ],
+        batched: false,
+        now,
+        yieldDto: sixHourCooldown,
+      })
+    ).toEqual(apiDate);
+  });
+
+  it("falls back to the cooldown to the hour", () => {
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [],
+        batched: false,
+        now,
+        yieldDto: sixHourCooldown,
+      })
+    ).toEqual(DateTime.makeUnsafe("2026-11-05T18:00:00Z"));
+  });
+
+  it("leaves a batched exit or one without a cooldown undated", () => {
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [],
+        batched: true,
+        now,
+        yieldDto: sixHourCooldown,
+      })
+    ).toBeNull();
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [],
+        batched: false,
+        now,
+        yieldDto: yieldApiYieldFixture(),
+      })
+    ).toBeNull();
+  });
 });

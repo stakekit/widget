@@ -10,8 +10,11 @@ import { space } from "../tokens/space.stylex";
 import { ExternalLink } from "./external-link";
 import { Spinner } from "./spinner";
 
-/** Where a step stands. */
-type StepStatus = "idle" | "active" | "failed" | "done";
+/**
+ * Where a step stands: waiting its turn, under way, waiting for the wallet's
+ * signature, failed, or done.
+ */
+type StepStatus = "idle" | "active" | "signing" | "failed" | "done";
 
 /** One step of a `Steps` timeline. */
 type Step = {
@@ -54,14 +57,18 @@ type StepsProps = {
  * Steps as a vertical timeline, such as a transaction's sign, submit and
  * confirm. Each step's marker shows its status, and the line under its label
  * says what it is doing, which assistive technology reads after the label;
- * the active step is the current one.
+ * the active or signing step is the current one.
  */
 export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
   <ol aria-label={label} {...stylex.props(styles.list)}>
     {steps.map((step, index) => (
       <li
         key={step.id}
-        aria-current={step.status === "active" ? "step" : undefined}
+        aria-current={
+          step.status === "active" || step.status === "signing"
+            ? "step"
+            : undefined
+        }
         {...stylex.props(styles.step)}
       >
         {index < steps.length - 1 && (
@@ -119,9 +126,11 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
 const StepMarker = ({ status }: { readonly status: StepStatus }) => {
   switch (status) {
     case "done":
-      return <Icon name="StepCheckIcon" size="sm" />;
+      return <Icon name="CheckIcon" size="sm" />;
     case "active":
       return <Spinner size="lg" />;
+    case "signing":
+      return <Icon name="WalletIcon" size="sm" />;
     case "failed":
       return <Icon name="XIcon" size="sm" />;
     case "idle":
@@ -148,16 +157,17 @@ const styles = stylex.create({
     backgroundColor: color.border,
     position: "absolute",
     bottom: 0,
-    left: `calc(${stepMarkerSize.md} / 2 - ${borderWidth.thick} / 2)`,
+    left: `calc(${stepMarkerSize.md} / 2 - ${borderWidth.medium} / 2)`,
     top: stepMarkerSize.md,
-    width: borderWidth.thick,
+    width: borderWidth.medium,
   },
-  // A finished step's connector leads on in the accent, as far as it got.
-  connectorDone: { backgroundColor: color.accent },
+  // A finished step's connector leads on in the success tone, as far as it
+  // got; the accent stays with the step under way.
+  connectorDone: { backgroundColor: color.success },
   marker: {
     borderRadius: radius.pill,
     borderStyle: "solid",
-    borderWidth: borderWidth.thick,
+    borderWidth: borderWidth.medium,
     alignItems: "center",
     boxSizing: "border-box",
     display: "flex",
@@ -172,22 +182,23 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     minWidth: 0,
-    paddingTop: space[4],
+    paddingTop: space[2],
   },
   extras: { paddingTop: space[6] },
 });
 
+// Every marker is a 24px disc: waiting is a ring on the surface, in
+// `textMuted` so the ring alone reaches 3:1 (WCAG 1.4.11), the step under
+// way an accent spinner, a signature a wallet on the accent tint, and done
+// and failed an outline check and cross in their status tones.
 const markerStyles = stylex.create({
-  idle: { borderColor: color.textMuted, color: color.textMuted },
+  idle: { borderColor: color.textMuted, backgroundColor: color.surface },
   active: { borderColor: "transparent", color: color.accentText },
-  failed: {
-    borderColor: color.dangerSoft,
-    backgroundColor: color.dangerSoft,
-    color: color.danger,
+  signing: {
+    borderColor: "transparent",
+    backgroundColor: color.accentSoft,
+    color: color.accentText,
   },
-  done: {
-    borderColor: color.accent,
-    backgroundColor: color.accent,
-    color: color.onAccent,
-  },
+  failed: { borderColor: color.danger, color: color.danger },
+  done: { borderColor: color.success, color: color.success },
 });

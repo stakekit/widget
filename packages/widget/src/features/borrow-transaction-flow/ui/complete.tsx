@@ -5,32 +5,37 @@ import {
   formatNetworkName,
 } from "../../../shared/lib/formatters";
 import { formatTransactionHash } from "../../../shared/lib/general";
-import { formatTokenAmount } from "../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
-  Card,
-  DetailList,
-  DetailRow,
-  ExternalLink,
-  Icon,
-  Stack,
-  Text,
-  VisuallyHidden,
-} from "../../../ui/index";
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import { CompleteSummary, Stack } from "../../../ui/index";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
+  type PageCta,
   PageCtaButton,
 } from "../../widget-shell/views";
 import { projectBorrowCompletion } from "../model/borrow-completion";
+import { getBorrowTransactionFlowAmountLabelKey } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
 } from "../react/borrow-flow-route";
-import { BorrowFlowPositionChangeRows } from "./position-change-rows";
-import { BorrowFlowOriginationRows } from "./summary-rows";
+import {
+  getBorrowFlowOriginationRows,
+  getBorrowFlowPositionChangeRows,
+} from "./summary-rows";
 import { useBorrowExecution } from "./use-borrow-execution";
+
+const action = (label: string, onClick: () => void): NonNullable<PageCta> => ({
+  disabled: false,
+  isLoading: false,
+  label,
+  onClick,
+});
 
 export const BorrowCompletePage = () => {
   useTrackPage("borrowComplete");
@@ -41,7 +46,8 @@ export const BorrowCompletePage = () => {
   const executionFlow = useBorrowTransactionFlowExecution();
   const settled = useAtomValue(executionFlow.settledPositionAtom);
   const execution = useBorrowExecution();
-  const done = useAtomSet(executionFlow.leaveAtom);
+  const finish = useAtomSet(executionFlow.finishAtom);
+  const viewPosition = useAtomSet(executionFlow.viewPositionAtom);
   const result = execution.completionResult;
   const { summary } = flow.intake;
   const completion = projectBorrowCompletion({
@@ -51,143 +57,124 @@ export const BorrowCompletePage = () => {
   });
   const { collateralFee, collateralSupplied, origination } = completion.details;
   const { headline, position } = completion;
-  const { collateralUsd, debtUsd, healthFactor, ltv } = position.change;
-  const hasPositionFigures = !!(
-    collateralUsd ||
-    debtUsd ||
-    healthFactor ||
-    ltv
-  );
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
-  // A closed position redirects to the list, so the CTA names where it lands.
-  const ctaLabel = (() => {
-    if (!isPositionFlow) return t("dashboard.borrow.success_page.done");
-    if (settled && !settled.positionOpen) {
-      return t("dashboard.borrow.success_page.back_to_positions");
-    }
-    return t("dashboard.borrow.review_page.back_to_position");
-  })();
-  const [singleTransaction] = result?.transactions ?? [];
 
   if (!result) return null;
+
+  // Complete leads back to the position only once the Borrow API reports it
+  // open; while the refresh is unsettled the action may have closed it.
+  const positionOpen = settled?.positionOpen === true;
+  const positionClosed = settled?.positionOpen === false;
+  const done = action(
+    isPositionFlow && positionClosed
+      ? t("dashboard.borrow.success_page.back_to_positions")
+      : t("dashboard.borrow.success_page.done"),
+    () => finish(undefined)
+  );
+  const originationRows = getBorrowFlowOriginationRows({
+    locale,
+    origination,
+    t,
+  });
+  // Debt actions are about the loan; the others about the collateral.
+  const headlineIsLoan =
+    summary.action === "borrow" ||
+    summary.action === "borrowAndSupply" ||
+    summary.action === "repay";
+  const amountLabel = headlineIsLoan
+    ? t(getBorrowTransactionFlowAmountLabelKey(summary.action))
+    : t("dashboard.borrow.review_page.collateral_amount");
 
   return (
     <AnimationPage>
       <PageContainer>
         <Stack hostHook="borrow-complete-page" gap={20}>
-          <Stack align="center" gap={8}>
-            <Icon name="CheckCircleIcon" size="lg" tone="success" />
-            <Text weight="semibold">
-              {t(`dashboard.borrow.success_page.titles.${summary.action}`)}
-            </Text>
-            <Text variant="title" as="h2" numeric>
-              {headline.amount === null
-                ? headline.symbol
-                : `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`}
-            </Text>
-            <Text tone="muted">
-              {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
-            </Text>
-          </Stack>
-
-          {collateralSupplied || collateralFee || origination ? (
-            <DetailList>
-              {collateralSupplied ? (
-                <DetailRow
-                  label={t("dashboard.borrow.success_page.collateral_supplied")}
-                  value={`${formatTokenAmount(collateralSupplied.amount, locale, "down")} ${collateralSupplied.symbol}`}
-                />
-              ) : null}
-              {collateralFee ? (
-                <DetailRow
-                  label={t("dashboard.borrow.review_page.collateral_fee")}
-                  value={`${formatTokenAmount(collateralFee.amount, locale, "up")} ${collateralFee.symbol}`}
-                />
-              ) : null}
-              <BorrowFlowOriginationRows origination={origination} />
-            </DetailList>
-          ) : null}
-
-          {hasPositionFigures ? (
-            <Stack gap={8}>
-              <Text variant="overline" tone="muted">
-                {t(`dashboard.borrow.success_page.position.${position.source}`)}
-              </Text>
-              <DetailList>
-                <BorrowFlowPositionChangeRows change={position.change} />
-              </DetailList>
-            </Stack>
-          ) : null}
-
-          {result.transactions.length === 1 && singleTransaction ? (
-            <Stack align="center">
-              <ExternalLink
-                href={singleTransaction.explorerUrl}
-                newTabLabel={t("shared.opens_in_new_tab")}
-              >
-                {t("dashboard.borrow.success_page.view_on_explorer")}
-              </ExternalLink>
-            </Stack>
-          ) : null}
-
-          {result.transactions.length > 1 ? (
-            <Card padding={16}>
-              <Stack gap={12}>
-                <Text variant="overline" tone="muted">
-                  {t("dashboard.borrow.success_page.transactions")}
-                </Text>
-                {result.transactions.map((transaction) => {
-                  const type = t(
-                    `dashboard.borrow.execution_page.tx_type.${transaction.type}`
-                  );
-                  const viewLabel = t(
+          <CompleteSummary
+            title={t(`dashboard.borrow.success_page.titles.${summary.action}`, {
+              symbol: headline.symbol,
+            })}
+            detail={`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
+            rows={[
+              ...(headline.amount === null
+                ? []
+                : [
+                    {
+                      label: amountLabel,
+                      testId: "borrow-complete-amount",
+                      value: `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`,
+                      ...(headline.usd
+                        ? { caption: formatUsd(headline.usd, locale) }
+                        : {}),
+                    },
+                  ]),
+              ...(collateralSupplied
+                ? [
+                    {
+                      label: t(
+                        "dashboard.borrow.success_page.collateral_supplied"
+                      ),
+                      value: `${formatTokenAmount(collateralSupplied.amount, locale, "down")} ${collateralSupplied.symbol}`,
+                    },
+                  ]
+                : []),
+              ...(collateralFee
+                ? [
+                    {
+                      label: t("dashboard.borrow.review_page.collateral_fee"),
+                      value: `${formatTokenAmount(collateralFee.amount, locale, "up")} ${collateralFee.symbol}`,
+                    },
+                  ]
+                : []),
+              ...(originationRows
+                ? [originationRows.fee, originationRows.principal]
+                : []),
+            ]}
+            sections={[
+              {
+                heading: t(
+                  `dashboard.borrow.success_page.position.${position.source}`
+                ),
+                rows: getBorrowFlowPositionChangeRows({
+                  change: position.change,
+                  locale,
+                  t,
+                }),
+              },
+            ]}
+            transactions={{
+              heading: t("dashboard.borrow.success_page.transactions"),
+              items: result.transactions.map((transaction) => {
+                const type = t(
+                  `dashboard.borrow.execution_page.tx_type.${transaction.type}`
+                );
+                return {
+                  id: transaction.id,
+                  label: type,
+                  href: transaction.explorerUrl,
+                  viewLabel: t(
                     "dashboard.borrow.success_page.view_transaction",
                     { type }
-                  );
-
-                  return (
-                    <Stack
-                      key={transaction.id}
-                      direction="row"
-                      align="center"
-                      justify="between"
-                      gap={12}
-                    >
-                      <Stack direction="row" align="center" gap={8}>
-                        <Icon name="CheckCircleIcon" size="sm" tone="success" />
-                        <Text>{type}</Text>
-                      </Stack>
-                      <Text variant="caption" numeric>
-                        <ExternalLink
-                          href={transaction.explorerUrl}
-                          newTabLabel={t("shared.opens_in_new_tab")}
-                        >
-                          {transaction.hash ? (
-                            <>
-                              <VisuallyHidden>{`${viewLabel}, `}</VisuallyHidden>
-                              {formatTransactionHash(transaction.hash)}
-                            </>
-                          ) : (
-                            viewLabel
-                          )}
-                        </ExternalLink>
-                      </Text>
-                    </Stack>
-                  );
-                })}
-              </Stack>
-            </Card>
-          ) : null}
-
-          <PageCtaButton
-            cta={{
-              disabled: false,
-              isLoading: false,
-              label: ctaLabel,
-              onClick: () => done(undefined),
+                  ),
+                  ...(transaction.hash
+                    ? { hash: formatTransactionHash(transaction.hash) }
+                    : {}),
+                };
+              }),
+              newTabLabel: t("shared.opens_in_new_tab"),
             }}
           />
         </Stack>
+
+        <PageCtaButton
+          cta={
+            positionOpen
+              ? action(t("complete.view_position"), () =>
+                  viewPosition(undefined)
+                )
+              : done
+          }
+          secondary={positionOpen ? { ...done, variant: "secondary" } : null}
+        />
       </PageContainer>
     </AnimationPage>
   );

@@ -85,6 +85,30 @@ export const getFeesInUSD = ({
     : fee;
 };
 
+/** A token amount's USD value, such as "$2.42"; null when its price is unknown. */
+export const formatTokenAmountInUSD = ({
+  amount,
+  locale,
+  prices,
+  token,
+}: {
+  amount: BigNumber;
+  locale: string;
+  prices: Prices | null;
+  token: Token;
+}): string | null => {
+  if (!prices) return null;
+  const inUSD = getTokenPriceInUSD({
+    amount,
+    baseToken: null,
+    pricePerShare: null,
+    prices,
+    token,
+  });
+
+  return inUSD.isGreaterThan(0) ? formatUsd(inUSD, locale) : null;
+};
+
 export const formatNetworkName = (network: string) =>
   network
     .split("-")

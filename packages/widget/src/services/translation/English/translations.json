@@ -37,6 +37,8 @@
     "something_went_wrong": "Something went wrong",
     "not_enough_gas_token": "Not enough gas token",
     "retry": "Try again",
+    "load_failed_description": "Check your connection and try again.",
+    "start_earning": "Start earning",
     "unsupported_network": "Unsupported network",
     "points": "Points",
     "continue": "Continue",
@@ -354,7 +356,11 @@
       "transactions_in_progress_other": "{{count}} in progress",
       "view_transaction": "View {{type}} transaction"
     },
-    "no_previous_activity": "No previous activity",
+    "empty_title": "No activity yet",
+    "empty_description": "Your deposits, withdrawals and claims will show here.",
+    "filter_empty_title": "No activity of this type",
+    "load_failed_title": "Couldn't load your activity",
+    "loading": "Loading activity",
     "item": {
       "deposited": "Deposited {{token}}",
       "deposited_without_token": "Deposited · unknown asset",
@@ -854,8 +860,8 @@
         "titles": {
           "borrow": "Borrow complete",
           "borrowAndSupply": "Borrow complete",
-          "disableCollateral": "Collateral disabled",
-          "enableCollateral": "Collateral enabled",
+          "disableCollateral": "{{symbol}} disabled as collateral",
+          "enableCollateral": "{{symbol}} enabled as collateral",
           "repay": "Repayment complete",
           "supply": "Supply complete",
           "withdraw": "Withdrawal complete"
@@ -864,7 +870,6 @@
         "unavailable_description": "Return to Borrow to start a new action.",
         "transactions": "Transactions",
         "view_transaction": "View {{type}} transaction",
-        "view_on_explorer": "View on explorer",
         "collateral_supplied": "Collateral supplied",
         "position": {
           "estimated": "Estimated position",
@@ -893,7 +898,6 @@
         "supplied": "Supplied",
         "unsupported_network": "Borrow positions are not available on this network.",
         "collateral_list": "Collateral value",
-        "configure_action": "Manage",
         "select_withdraw_token": "Select collateral to withdraw",
         "outstanding_debt": "{{amount}} {{symbol}} outstanding",
         "withdrawable": "{{amount}} {{symbol}} withdrawable",
@@ -952,10 +956,11 @@
     },
     "overview": {
       "summary": {
-        "total_staked": "Total staked",
+        "total_value": "Total value",
         "total_supplied": "Total supplied",
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
+        "claimable_rewards": "Claimable rewards",
         "available_balance": "Available",
         "net_worth": "Net worth",
         "excludes_confidential": "Totals exclude hidden confidential positions. Reveal their balances to include them."
@@ -989,7 +994,6 @@
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
     "terms_of_use": "By clicking confirm you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-    "and_earn": "& earn {{interestRate}}",
     "fee_info": "About {{fee}}",
     "gas_warning": "This action is unlikely to succeed due to insufficient funds to cover gas fees",
     "additional_info": "Additional info",
@@ -999,8 +1003,13 @@
     "deposit_fee_explanation": "A flat fee deducted at deposit, reducing the principal.",
     "management_fee_explanation": "A flat annual fee deducted from vault deposits by minting new shares, diluting participants. Calculated based on time since the last harvest and applied during harvest.",
     "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold.",
-    "receive_token": "Receive token",
-    "staking_fee": "Staking fee"
+    "staking_fee": "Staking fee",
+    "signatures": "Wallet signatures",
+    "unlock_period": "Unlock period",
+    "lockup_period": "Lock-up period",
+    "destination": "{{yieldName}} via {{providerName}}",
+    "you_receive": "You receive",
+    "confirm_anyway": "Confirm anyway"
   },
   "leave_confirmation": {
     "title": "Leave this transaction?",
@@ -1119,7 +1128,6 @@
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "deposit_submitted": "Deposit of {{amount}} {{tokenNetwork}} submitted",
-    "receive_token": "Receive token: {{symbol}}",
     "withdrawal_submitted": "Withdrawal of {{amount}} {{tokenNetwork}} submitted",
     "next_batch_in": "Joins the next batch in {{duration}}",
     "next_batch_imminent": "Joins the next batch, due any moment",
@@ -1196,7 +1204,12 @@
       "verify_checkpoint_proofs": "verified checkpoint proofs",
       "queue_withdrawals": "queued withdrawals",
       "complete_queued_withdrawals": "completed queued withdrawals"
-    }
+    },
+    "view_position": "View position",
+    "you_received": "You received",
+    "you_will_receive": "You will receive",
+    "unlock_reminder": "{{amount}} {{symbol}} unlocks around {{date}}. Come back then to withdraw it from your position.",
+    "transactions": "Transactions"
   },
   "help_modals": {
     "close": "Close",
@@ -1221,12 +1234,12 @@
     },
     "under_maintenance": {
       "title": "Under maintenance",
-      "description": "Yield.xyz is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
-      "description2": "We appreciate your patience and encourage you to check back shortly!"
+      "description": "Yield.xyz is down for routine maintenance and should be back in about 5–10 minutes."
     },
     "network_not_supported": {
       "title": "Network not supported",
-      "description": "The selected network isn't enabled for this widget. Switch to a supported network to continue."
+      "description": "The selected network isn't enabled for this widget. Switch to a supported network to continue.",
+      "switch_network": "Switch network"
     },
     "no_enabled_yields": {
       "title": "No yields enabled",
@@ -1243,10 +1256,14 @@
     "via_other": "via {{providerName}} + {{count}} more",
     "connect_wallet": "Connect wallet",
     "connect_wallet_manage": "Connect wallet to manage your positions",
-    "no_current_positions": "No active positions",
+    "empty_title": "No positions yet",
+    "empty_description": "Start earning and your positions will show here.",
+    "load_failed_title": "Couldn't load your positions",
+    "loading": "Loading positions",
     "claim_rewards": "Claim rewards",
     "action_required": "Action required",
     "in_progress": "In progress",
+    "small_balances": "Small balances ({{count}})",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
     "import_button": "Import",
@@ -1532,7 +1549,9 @@
     "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {
-    "solution": "Potential solution:"
+    "solution": "Potential solution:",
+    "generic_description": "We couldn't complete that request. Try again in a moment.",
+    "dismiss": "Got it"
   },
   "chain_modal_disclaimer": "Powered by Yield.xyz",
   "tos_modal": {

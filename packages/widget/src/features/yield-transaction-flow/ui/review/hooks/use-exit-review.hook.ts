@@ -2,7 +2,10 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import { exactDecimal } from "../../../../../domain/finance/exact";
-import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import {
+  formatTokenAmountInUSD,
+  getGasFeeInUSD,
+} from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
@@ -12,6 +15,12 @@ import {
   useYieldFlowReview,
 } from "../../../react/yield-flow-route";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
+import type { ReviewFact } from "../pages/review-overview";
+import {
+  formatReviewDestination,
+  getSignaturesFact,
+  getUnlockPeriodFact,
+} from "./review-facts";
 
 export const useExitReview = () => {
   const exitFlow = useYieldFlowIntake("Exit");
@@ -36,6 +45,12 @@ export const useExitReview = () => {
   const { locale } = useWidgetPresentation();
 
   const formattedAmount = formatTokenAmount(amount, locale, "down");
+  const amountFiat = formatTokenAmountInUSD({
+    amount,
+    locale,
+    prices,
+    token: interactedToken,
+  });
 
   const title = getExitActionTitle(t, integrationData);
 
@@ -47,14 +62,28 @@ export const useExitReview = () => {
   });
 
   const metaInfo: MetaInfoProps = { showMetaInfo: false };
-  const facts = exitFlow.receiveToken
-    ? [
-        {
-          label: t("review.receive_token"),
-          value: exitFlow.receiveToken.symbol,
-        },
-      ]
-    : [];
+  const facts = [
+    // The exited amount is paid out in the chosen receive token.
+    exitFlow.receiveToken
+      ? {
+          label: t("review.you_receive"),
+          testId: "review-receive",
+          value: `${formattedAmount} ${exitFlow.receiveToken.symbol}`,
+        }
+      : null,
+    getUnlockPeriodFact(integrationData, t),
+    getSignaturesFact({
+      loading: review.transactionsToSignLoading,
+      t,
+      transactions: review.transactionsToSign,
+    }),
+  ].filter((fact): fact is ReviewFact => fact !== null);
+  const destination = formatReviewDestination({
+    providerName:
+      exitFlow.providersDetails[0]?.name ?? integrationData.provider?.name,
+    t,
+    yieldName: integrationData.metadata.name,
+  });
 
   const unstakeIsLoading = review.confirmLoading;
 
@@ -71,6 +100,8 @@ export const useExitReview = () => {
     integrationData,
     title,
     amount: formattedAmount,
+    amountFiat,
+    destination,
     fee,
     facts,
     token: interactedToken,

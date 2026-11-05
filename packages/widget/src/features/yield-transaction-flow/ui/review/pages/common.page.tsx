@@ -23,7 +23,9 @@ type ReviewPageProps = {
   readonly title: string;
   /** The formatted amount with its symbol, such as "1.5 ETH". */
   readonly amount: string;
-  /** What follows the amount, such as the reward rate it earns. */
+  /** The amount's fiat value, such as "$2.42"; null when its price is unknown. */
+  readonly amountFiat?: string | null;
+  /** Where the amount goes, such as the yield and its provider. */
   readonly destination?: string | undefined;
   readonly facts?: ReadonlyArray<ReviewFact> | undefined;
   /** Null when no gas estimate settled. */
@@ -43,7 +45,9 @@ type ReviewPageProps = {
 
 type PositionActionReview = {
   readonly amount: string;
+  readonly amountFiat: string | null;
   readonly cta: PageCta;
+  readonly destination: string;
   readonly facts: ReadonlyArray<ReviewFact>;
   readonly fee: string | null;
   readonly gasCheckLoading: boolean;
@@ -56,9 +60,11 @@ type PositionActionReview = {
 /** Review props for acting on a held position, where no entry fees apply. */
 export const getPositionActionReviewProps = (review: PositionActionReview) => ({
   amount: `${review.amount} ${review.token.symbol}`,
+  amountFiat: review.amountFiat,
   commissionFee: null,
   cta: review.cta,
   depositFee: null,
+  destination: review.destination,
   facts: review.facts,
   fee: review.fee,
   feeConfigLoading: false,
@@ -78,6 +84,7 @@ export const getPositionActionReviewProps = (review: PositionActionReview) => ({
 export const ReviewPage = ({
   title,
   amount,
+  amountFiat,
   destination,
   facts,
   fee,
@@ -145,6 +152,14 @@ export const ReviewPage = ({
     })),
   ];
 
+  // The gas check expects the action to fail: the user may still go ahead,
+  // but only on purpose, with the warning beside the button.
+  const gasWarned = isGasCheckError && cta !== null;
+  const confirmCta: PageCta =
+    gasWarned && cta
+      ? { ...cta, label: t("review.confirm_anyway"), variant: "secondary" }
+      : cta;
+
   return (
     <AnimationPage>
       <PageContainer>
@@ -152,6 +167,7 @@ export const ReviewPage = ({
           <ReviewOverview
             title={title}
             amount={amount}
+            amountFiat={amountFiat}
             destination={destination}
             facts={facts}
             metadata={metadata}
@@ -171,7 +187,7 @@ export const ReviewPage = ({
             <KycGateCard {...kyc} />
           )}
 
-          {isGasCheckError && (
+          {isGasCheckError && !gasWarned && (
             <Notice tone="warning">{t("review.gas_warning")}</Notice>
           )}
 
@@ -203,7 +219,16 @@ export const ReviewPage = ({
           </Text>
         </Stack>
 
-        <PageCtaButton cta={cta} />
+        <PageCtaButton
+          cta={confirmCta}
+          {...(gasWarned
+            ? {
+                notice: (
+                  <Notice tone="warning">{t("review.gas_warning")}</Notice>
+                ),
+              }
+            : {})}
+        />
       </PageContainer>
     </AnimationPage>
   );

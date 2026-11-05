@@ -7,16 +7,17 @@ export const controlHeight = stylex.defineVars({
   lg: "48px",
 });
 
-/** Icon sizes. */
+/** Icon sizes; `xl` is for an icon that illustrates, as in a `Spot`. */
 export const iconSize = stylex.defineConsts({
   sm: "16px",
   md: "20px",
   lg: "24px",
+  xl: "32px",
 });
 
 /** A `Steps` marker: the circle that shows a step's status. */
 export const stepMarkerSize = stylex.defineConsts({
-  md: "28px",
+  md: "24px",
 });
 
 /**
@@ -122,10 +123,24 @@ export const visuallyHiddenBox = stylex.defineConsts({
   margin: "-1px",
 });
 
-/** Illustration sizes: `md` beside a message, `lg` heading a dialog. */
-export const illustrationSize = stylex.defineConsts({
-  md: "240px",
-  lg: "320px",
+/**
+ * A `Spot`'s disc: `md` heads a message in a page section, `lg` a dialog or a
+ * notice that fills the Widget, inside a `halo` ring.
+ */
+export const spotSize = stylex.defineConsts({
+  md: "48px",
+  lg: "64px",
+  halo: "96px",
+});
+
+/**
+ * The least height of the Widget's frame, per frame width, so the frame
+ * keeps its height between pages and states: a short page, such as an empty
+ * list or an error, centers in it instead of shrinking the Widget.
+ */
+export const frameMinHeight = stylex.defineConsts({
+  narrow: "640px",
+  wide: "720px",
 });
 
 /** Stand-in heights for blocks taller than a control, such as an amount panel. */

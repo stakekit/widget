@@ -45,20 +45,22 @@ const renderStakeReview = ({
       | "feeConfigLoading"
       | "gasCheckLoading"
       | "isGasCheckWarning"
+      | "cta"
     >
   >;
   readonly hideGasFee?: boolean;
 }) => {
   hookState.current = {
     amount: "1",
+    amountFiat: null,
     commissionFee: null,
     cta: null,
     depositFee: null,
-    estimatedRewardAmounts: null,
+    destination: "Test yield via Test provider",
+    facts: [],
     fee: "0.0021 ETH ($4.20)",
     feeConfigLoading: false,
     gasCheckLoading: false,
-    interestRate: "",
     isGasCheckWarning: false,
     kycGate: { state: "pass" },
     kycProviderName: null,
@@ -158,5 +160,48 @@ describe("Yield review fees", () => {
         app.getByText("This action is unlikely to succeed", { exact: false })
       )
       .toBeInTheDocument();
+  });
+
+  it("turns Confirm into a secondary Confirm anyway under the gas warning", async () => {
+    const onClick = vi.fn();
+    const app = await renderStakeReview({
+      fees: {
+        cta: { disabled: false, isLoading: false, label: "Confirm", onClick },
+        isGasCheckWarning: true,
+      },
+    });
+
+    const button = app.getByRole("button", { name: "Confirm anyway" });
+    await expect.element(button).toBeEnabled();
+    await expect
+      .element(button)
+      .toHaveAttribute("data-rk", "footer-button-secondary");
+    await expect
+      .element(
+        app.getByText("This action is unlikely to succeed", { exact: false })
+      )
+      .toBeInTheDocument();
+    expect(
+      app.getByRole("button", { name: "Confirm", exact: true }).query()
+    ).toBeNull();
+    await button.click();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("keeps a full-strength Confirm without a gas warning", async () => {
+    const app = await renderStakeReview({
+      fees: {
+        cta: {
+          disabled: false,
+          isLoading: false,
+          label: "Confirm",
+          onClick: vi.fn(),
+        },
+      },
+    });
+
+    await expect
+      .element(app.getByRole("button", { name: "Confirm", exact: true }))
+      .toHaveAttribute("data-rk", "footer-button-primary");
   });
 });

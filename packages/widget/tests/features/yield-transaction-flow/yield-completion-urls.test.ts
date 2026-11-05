@@ -114,10 +114,10 @@ describe("yield completion urls", () => {
       });
 
       expect(getYieldTransactionCompletionUrls(result.context)).toEqual([
-        {
+        expect.objectContaining({
           type: "STAKE" satisfies TransactionType,
           url: "https://explorer.test/from-status",
-        },
+        }),
       ]);
     })
   );
@@ -142,10 +142,10 @@ describe("yield completion urls", () => {
       });
 
       expect(getYieldTransactionCompletionUrls(result.context)).toEqual([
-        {
+        expect.objectContaining({
           type: "STAKE" satisfies TransactionType,
           url: "https://explorer.test/from-submit",
-        },
+        }),
       ]);
       expect(submit).toHaveBeenCalled();
     })

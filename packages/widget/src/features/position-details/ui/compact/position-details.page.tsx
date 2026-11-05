@@ -14,7 +14,6 @@ import {
   Box,
   Button,
   DetailList,
-  Spinner,
   Stack,
   Text,
   TokenAvatar,
@@ -26,6 +25,7 @@ import { RewardRateBreakdown } from "../../../yield-summary/views";
 import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsExitActions } from "../components/position-details-exit-actions";
 import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
+import { PositionDetailsSkeleton } from "../components/position-details-skeleton";
 import { PositionDetailsValidatorModal } from "../components/position-details-validator-modal";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
@@ -76,11 +76,7 @@ const PositionDetails = () => {
   return (
     <AnimationPage>
       <PageContainer>
-        {isLoading ? (
-          <Stack grow align="center" justify="center">
-            <Spinner />
-          </Stack>
-        ) : null}
+        {isLoading ? <PositionDetailsSkeleton /> : null}
         {!isLoading && integrationDataValue && positionBalancesByTypeValue ? (
           <Stack grow gap={4}>
             <PositionHeading integrationData={integrationDataValue} />

@@ -2,7 +2,8 @@ import { StateMessage, type StateMessageProps } from "./state-message";
 
 /**
  * What shows where a list or page has nothing yet, such as no positions or
- * no search results: an icon, a title, a body and an action.
+ * no search results: a neutral spot, a title, a body and the primary action
+ * that fills the space, such as "Start earning" or "Connect wallet".
  */
 export const EmptyState = ({
   icon = "SearchIcon",

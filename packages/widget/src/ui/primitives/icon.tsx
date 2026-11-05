@@ -7,7 +7,7 @@ import { type TextTone, textToneStyles } from "./text-tone";
 type ArrowDirection = "down" | "up" | "left" | "right";
 
 type CommonProps = {
-  /** 16, 20 or 24px. */
+  /** 16, 20, 24 or, for an icon that illustrates, 32px. */
   readonly size?: keyof typeof sizeStyles;
   /** Meaning through color. Unset draws in the surrounding text color. */
   readonly tone?: TextTone;
@@ -63,6 +63,7 @@ const sizeStyles = stylex.create({
   sm: { height: iconSize.sm, width: iconSize.sm },
   md: { height: iconSize.md, width: iconSize.md },
   lg: { height: iconSize.lg, width: iconSize.lg },
+  xl: { height: iconSize.xl, width: iconSize.xl },
 });
 
 const directionStyles = stylex.create({

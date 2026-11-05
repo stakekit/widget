@@ -67,7 +67,7 @@ type FlowStepsProps = {
 const stepStatus = {
   pending: "idle",
   active: "active",
-  signing: "active",
+  signing: "signing",
   broadcasting: "active",
   done: "done",
   failed: "failed",
@@ -118,6 +118,7 @@ export const FlowSteps = ({
           statusLabels={{
             idle: stateLabels.pending,
             active: stateLabels.active,
+            signing: stateLabels.signing,
             done: stateLabels.done,
             failed: stateLabels.failed,
           }}

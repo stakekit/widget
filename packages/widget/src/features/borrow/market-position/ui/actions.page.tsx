@@ -1,6 +1,9 @@
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
-import { Button, Card, Stack, Text } from "../../../../ui/index";
+import { formatTokenAmount } from "../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { ActionCard, Stack, Text } from "../../../../ui/index";
 import {
   useWidgetNavigate,
   useWidgetRouteMatch,
@@ -13,8 +16,36 @@ import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { useBorrowPositionContext } from "./context";
 import { borrowPositionActionHostHooks } from "./host-hooks";
 
+/**
+ * What an action card is about: the debt a repay settles, or the collateral
+ * a withdraw can take when there is one kind; else the action's name.
+ */
+const getActionTitle = (
+  action: BorrowPositionAction,
+  locale: string,
+  t: TFunction
+) => {
+  const context = action.pendingContext;
+  if (context.type === "repay") {
+    return t("dashboard.borrow.position_details.outstanding_debt", {
+      amount: formatTokenAmount(context.debtBalance.balance, locale, "up"),
+      symbol: context.debtBalance.tokenSymbol,
+    });
+  }
+  const [onlyToken, ...otherTokens] =
+    context.type === "withdraw" ? context.tokens : [];
+  if (onlyToken !== undefined && otherTokens.length === 0) {
+    return t("dashboard.borrow.position_details.withdrawable", {
+      amount: formatTokenAmount(onlyToken.availableAmount, locale, "down"),
+      symbol: onlyToken.supplyBalance.tokenSymbol,
+    });
+  }
+  return action.label;
+};
+
 export const BorrowPositionActionsPage = () => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const navigation = useWidgetNavigate();
   const marketId = useWidgetRouteMatch(widgetRoutes.borrowPosition)?.marketId;
   const {
@@ -50,28 +81,24 @@ export const BorrowPositionActionsPage = () => {
             {t("dashboard.borrow.position_details.no_actions")}
           </Text>
         ) : (
-          actions.map((action) => (
-            <Card key={action.id} padding={16}>
-              <Stack direction="row" align="center" justify="between" gap={12}>
-                <Stack gap={4} grow>
-                  <Text weight="semibold">{action.label}</Text>
-                  <Text variant="caption" tone="muted">
-                    {t(
-                      `dashboard.borrow.position_details.action_descriptions.${action.type}`
-                    )}
-                  </Text>
-                </Stack>
-                <Button
-                  size="sm"
-                  testId={`borrow-position-action__${action.type}`}
-                  hostHook={borrowPositionActionHostHooks[action.type]}
-                  onClick={() => onActionSelect(action)}
-                >
-                  {t("dashboard.borrow.position_details.configure_action")}
-                </Button>
-              </Stack>
-            </Card>
-          ))
+          <Stack gap={8}>
+            {actions.map((action) => (
+              <ActionCard
+                key={action.id}
+                title={getActionTitle(action, locale, t)}
+                description={t(
+                  `dashboard.borrow.position_details.action_descriptions.${action.type}`
+                )}
+                action={{
+                  // The button names the verb, so sibling cards read apart.
+                  label: action.label,
+                  onClick: () => onActionSelect(action),
+                  testId: `borrow-position-action__${action.type}`,
+                  hostHook: borrowPositionActionHostHooks[action.type],
+                }}
+              />
+            ))}
+          </Stack>
         )}
       </Stack>
     </>

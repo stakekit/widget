@@ -127,7 +127,11 @@ describe("Deep links flow", () => {
       .element(app.getByText("Successfully claimed rewards", { exact: false }))
       .toBeInTheDocument();
 
-    expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
+    await expect
+      .element(
+        app.getByRole("link", { name: /^View Claim rewards transaction/u })
+      )
+      .toBeInTheDocument();
 
     await app.unmount();
   });
@@ -203,7 +207,9 @@ describe("Deep links flow", () => {
       .toBeInTheDocument();
 
     await expect
-      .element(app.getByText("View Claim rewards transaction"))
+      .element(
+        app.getByRole("link", { name: /^View Claim rewards transaction/u })
+      )
       .toBeInTheDocument();
 
     await app.unmount();

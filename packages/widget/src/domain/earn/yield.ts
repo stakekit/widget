@@ -1,5 +1,11 @@
 import type BigNumber from "bignumber.js";
-import { Array as EArray, Record as ERecord, pipe, Schema } from "effect";
+import {
+  Duration,
+  Array as EArray,
+  Record as ERecord,
+  pipe,
+  Schema,
+} from "effect";
 import type { TFunction } from "i18next";
 import { sumExact } from "../finance/exact";
 import { type ProviderOption, YieldId } from "../identity/identifiers";
@@ -300,6 +306,17 @@ export const getYieldFeePercent = (
 export const getYieldLockupPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.lockupPeriod?.seconds);
 
+const secondsToDuration = (seconds: number | undefined) =>
+  seconds !== undefined && seconds > 0 ? Duration.seconds(seconds) : null;
+
+/** The yield's exact cooldown, to the second; null without one. */
+export const getYieldCooldownDuration = (yieldDto: EarnYieldWithProvider) =>
+  secondsToDuration(yieldDto.mechanics.cooldownPeriod?.seconds);
+
+/** The yield's exact lockup, to the second; null without one. */
+export const getYieldLockupDuration = (yieldDto: EarnYieldWithProvider) =>
+  secondsToDuration(yieldDto.mechanics.lockupPeriod?.seconds);
+
 const knownApiYieldTypeValues = new Set<string>(knownApiYieldTypes);
 
 const isKnownApiYieldType = (type: string): type is KnownApiYieldType =>
@@ -325,6 +342,26 @@ export const getYieldOutputToken = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.outputToken && !equalTokens(yieldDto.outputToken, yieldDto.token)
     ? yieldDto.outputToken
     : null;
+
+/**
+ * What depositing `amount` into the yield returns in its output token, at
+ * its price per share when known. Null for a yield without its own token.
+ */
+export const getYieldOutputAmount = (
+  yieldDto: EarnYieldWithProvider,
+  amount: BigNumber
+) => {
+  const token = getYieldOutputToken(yieldDto);
+  if (!token) return null;
+  const pricePerShare = yieldDto.state?.pricePerShareState?.price;
+
+  return {
+    amount: pricePerShare?.isGreaterThan(0)
+      ? amount.dividedBy(pricePerShare)
+      : amount,
+    token,
+  };
+};
 
 const hasPositivePricePerShare = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.state?.pricePerShareState?.price.isGreaterThan(0) ?? false;

@@ -3,7 +3,6 @@ import {
   Entrance,
   Notice,
   Skeleton,
-  Spinner,
   Stack,
   StandIn,
 } from "../../../../../ui/index";
@@ -29,24 +28,24 @@ const loadingCta = {
   onClick: () => undefined,
 } satisfies PageCta;
 
-const EarnPageSkeleton = () => {
-  const { hidesEarnLoadingSpinner } = useWidgetConfig("hostProfile");
-
-  return (
-    <PageContainer>
-      <Stack gap={8}>
-        {!hidesEarnLoadingSpinner && <Spinner />}
-        <Skeleton shape="rect" height="panel" />
-        <Skeleton shape="rect" height="panel" />
-        <Skeleton shape="line" />
-      </Stack>
-
+/** Stands in for the form while it settles: its cards, notes and CTA. */
+const EarnPageSkeleton = () => (
+  <PageContainer>
+    <Stack gap={8}>
       <Skeleton shape="rect" height="section" />
+      <Skeleton shape="rect" height="section" />
+      <Skeleton shape="rect" height="panel" />
+    </Stack>
 
-      <EarnPageCtaButton cta={loadingCta} />
-    </PageContainer>
-  );
-};
+    <Stack gap={8}>
+      <Skeleton shape="line" />
+      <Skeleton shape="line" width="threeQuarters" />
+      <Skeleton shape="line" width="half" />
+    </Stack>
+
+    <EarnPageCtaButton cta={loadingCta} />
+  </PageContainer>
+);
 
 const EarnPage = () => {
   useTrackPage("earn");

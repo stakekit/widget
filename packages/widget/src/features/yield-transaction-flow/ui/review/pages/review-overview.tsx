@@ -2,22 +2,20 @@ import type { ComponentProps } from "react";
 import type { YieldMetadata } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
-import { type HostHook, ReviewSummary } from "../../../../../ui/index";
+import { ReviewSummary } from "../../../../../ui/index";
 
 type ReviewSummaryProps = ComponentProps<typeof ReviewSummary>;
 
-export type ReviewFact = Readonly<{
-  label: string;
-  value: string;
-  testId?: string;
-  hostHook?: HostHook;
-}>;
+/** One fact of a review, such as what the action returns. */
+export type ReviewFact = NonNullable<ReviewSummaryProps["facts"]>[number];
 
 type Props = {
   readonly title: string;
   /** The formatted amount with its symbol, such as "1.5 ETH". */
   readonly amount: string;
-  /** What follows the amount, such as the reward rate it earns. */
+  /** The amount's fiat value, such as "$2.42". */
+  readonly amountFiat?: string | null | undefined;
+  /** Where the amount goes, such as the yield and its provider. */
   readonly destination?: string | undefined;
   readonly token: Token | null;
   readonly metadata: Pick<
@@ -32,6 +30,7 @@ type Props = {
 export const ReviewOverview = ({
   title,
   amount,
+  amountFiat,
   destination,
   token,
   metadata,
@@ -45,16 +44,12 @@ export const ReviewOverview = ({
       title={title}
       as="h1"
       amount={amount}
+      {...(amountFiat ? { amountFiat } : {})}
       {...(destination ? { destination } : {})}
       {...(token && metadata
         ? { token: resolveTokenLogo(token, { metadata }) }
         : {})}
-      facts={facts.map((fact) => ({
-        label: fact.label,
-        value: fact.value,
-        ...(fact.testId === undefined ? {} : { testId: fact.testId }),
-        ...(fact.hostHook === undefined ? {} : { hostHook: fact.hostHook }),
-      }))}
+      facts={facts}
       {...(fees === undefined ? {} : { fees })}
     />
   );

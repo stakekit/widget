@@ -37,6 +37,8 @@
     "something_went_wrong": "Une erreur s'est produite",
     "not_enough_gas_token": "Gas insuffisant",
     "retry": "Réessayer",
+    "load_failed_description": "Vérifiez votre connexion et réessayez.",
+    "start_earning": "Commencer à gagner",
     "unsupported_network": "Réseau non supporté",
     "points": "Points",
     "continue": "Continuer",
@@ -354,7 +356,11 @@
       "transactions_in_progress_other": "{{count}} en cours",
       "view_transaction": "Voir la transaction {{type}}"
     },
-    "no_previous_activity": "Aucune activité précédente",
+    "empty_title": "Aucune activité pour l'instant",
+    "empty_description": "Vos dépôts, retraits et réclamations s'afficheront ici.",
+    "filter_empty_title": "Aucune activité de ce type",
+    "load_failed_title": "Impossible de charger votre activité",
+    "loading": "Chargement de l'activité",
     "item": {
       "deposited": "Dépôt de {{token}}",
       "deposited_without_token": "Dépôt · actif inconnu",
@@ -612,7 +618,6 @@
     "wallet_fee": "Frais de {{wallet}}",
     "claim": "Réclamer",
     "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
-    "and_earn": "& gagnez {{interestRate}}",
     "fee_info": "À propos : {{fee}}",
     "gas_warning": "Cette action risque d'échouer : les fonds sont insuffisants pour couvrir les frais de gas",
     "additional_info": "Infos supplémentaires",
@@ -622,8 +627,13 @@
     "deposit_fee_explanation": "Une commission fixe déduite lors du dépôt, réduisant le capital investi.",
     "management_fee_explanation": "Une commission annuelle fixe déduite des dépôts du vault en émettant de nouvelles parts, ce qui dilue les participants. Calculée en fonction du temps écoulé depuis la dernière récolte et appliquée lors de la récolte.",
     "performance_fee_explanation": "Une commission déduite des gains lorsqu'un vault récolte une stratégie. Elle n'est appliquée qu'après avoir dépassé un seuil variable.",
-    "receive_token": "Jeton reçu",
-    "staking_fee": "Frais de staking"
+    "staking_fee": "Frais de staking",
+    "signatures": "Signatures du portefeuille",
+    "unlock_period": "Période de déblocage",
+    "lockup_period": "Période de blocage",
+    "destination": "{{yieldName}} via {{providerName}}",
+    "you_receive": "Vous recevez",
+    "confirm_anyway": "Confirmer quand même"
   },
   "leave_confirmation": {
     "title": "Quitter cette transaction ?",
@@ -742,7 +752,6 @@
   "complete": {
     "successfully_staked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
     "deposit_submitted": "Dépôt de {{amount}} {{tokenNetwork}} soumis",
-    "receive_token": "Jeton reçu : {{symbol}}",
     "withdrawal_submitted": "Retrait de {{amount}} {{tokenNetwork}} soumis",
     "next_batch_in": "Rejoint le prochain lot dans {{duration}}",
     "next_batch_imminent": "Rejoint le prochain lot, attendu d'un instant à l'autre",
@@ -819,7 +828,12 @@
       "verify_checkpoint_proofs": "preuves de checkpoint vérifiées",
       "queue_withdrawals": "retraits mis en file",
       "complete_queued_withdrawals": "retraits en file complétés"
-    }
+    },
+    "view_position": "Voir la position",
+    "you_received": "Vous avez reçu",
+    "you_will_receive": "Vous recevrez",
+    "unlock_reminder": "{{amount}} {{symbol}} sera débloqué vers le {{date}}. Revenez alors pour le retirer de votre position.",
+    "transactions": "Transactions"
   },
   "help_modals": {
     "close": "Fermer",
@@ -844,12 +858,12 @@
     },
     "under_maintenance": {
       "title": "En maintenance",
-      "description": "Yield.xyz est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
-      "description2": "Nous apprécions votre patience et vous encourageons à revenir bientôt !"
+      "description": "Yield.xyz est en maintenance de routine et devrait être de retour dans environ 5 à 10 minutes."
     },
     "network_not_supported": {
       "title": "Réseau non pris en charge",
-      "description": "Le réseau sélectionné n'est pas activé pour ce widget. Passez à un réseau pris en charge pour continuer."
+      "description": "Le réseau sélectionné n'est pas activé pour ce widget. Passez à un réseau pris en charge pour continuer.",
+      "switch_network": "Changer de réseau"
     },
     "no_enabled_yields": {
       "title": "Aucun rendement activé",
@@ -866,10 +880,14 @@
     "via_other": "via {{providerName}} + {{count}} autres",
     "connect_wallet": "Connecter un portefeuille",
     "connect_wallet_manage": "Connectez un portefeuille pour gérer vos positions",
-    "no_current_positions": "Aucune position",
+    "empty_title": "Aucune position pour l'instant",
+    "empty_description": "Commencez à gagner et vos positions s'afficheront ici.",
+    "load_failed_title": "Impossible de charger vos positions",
+    "loading": "Chargement des positions",
     "claim_rewards": "Réclamer les récompenses",
     "action_required": "Action requise",
     "in_progress": "En cours",
+    "small_balances": "Petits soldes ({{count}})",
     "dont_see_position": "Vous ne voyez pas une position ?",
     "import_validator": "Importez un validateur à qui vous avez délégué des fonds pour voir votre position",
     "import_button": "Importer",
@@ -1155,7 +1173,9 @@
     "up_to_rate_type": "JUSQU'À {{rateType}}"
   },
   "error_modal": {
-    "solution": "Solution potentielle :"
+    "solution": "Solution potentielle :",
+    "generic_description": "Nous n'avons pas pu traiter cette demande. Réessayez dans un instant.",
+    "dismiss": "Compris"
   },
   "chain_modal_disclaimer": "Alimenté par Yield.xyz",
   "dashboard": {
@@ -1408,8 +1428,8 @@
         "titles": {
           "borrow": "Emprunt terminé",
           "borrowAndSupply": "Emprunt terminé",
-          "disableCollateral": "Garantie désactivée",
-          "enableCollateral": "Garantie activée",
+          "disableCollateral": "{{symbol}} désactivé comme garantie",
+          "enableCollateral": "{{symbol}} activé comme garantie",
           "repay": "Remboursement terminé",
           "supply": "Apport terminé",
           "withdraw": "Retrait terminé"
@@ -1418,7 +1438,6 @@
         "unavailable_description": "Revenez à Emprunter pour lancer une nouvelle action.",
         "transactions": "Transactions",
         "view_transaction": "Voir la transaction : {{type}}",
-        "view_on_explorer": "Voir dans l'explorateur",
         "collateral_supplied": "Garantie fournie",
         "position": {
           "estimated": "Position estimée",
@@ -1447,7 +1466,6 @@
         "supplied": "Fourni",
         "unsupported_network": "Les positions d'emprunt ne sont pas disponibles sur ce réseau.",
         "collateral_list": "Valeur de la garantie",
-        "configure_action": "Gérer",
         "select_withdraw_token": "Sélectionner la garantie à retirer",
         "outstanding_debt": "{{amount}} {{symbol}} dus",
         "withdrawable": "{{amount}} {{symbol}} retirable",
@@ -1506,10 +1524,11 @@
     },
     "overview": {
       "summary": {
-        "total_staked": "Total staké",
+        "total_value": "Valeur totale",
         "total_supplied": "Total fourni",
         "total_rewards": "Total des récompenses",
         "average_apy": "APY moyen",
+        "claimable_rewards": "Récompenses à réclamer",
         "available_balance": "Disponible",
         "net_worth": "Valeur nette",
         "excludes_confidential": "Les totaux excluent les positions confidentielles masquées. Affichez leurs soldes pour les inclure."

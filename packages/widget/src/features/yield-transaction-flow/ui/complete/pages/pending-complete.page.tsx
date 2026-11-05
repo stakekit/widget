@@ -31,11 +31,6 @@ export const PendingCompletePage = () => {
     <CompletePage
       amount={amount ? formatTokenAmount(amount, locale, "down") : ""}
       integrationId={integrationData.id}
-      metadata={{
-        logoURI: integrationData.metadata.logoURI,
-        name: integrationData.metadata.name,
-        provider: integrationData.provider,
-      }}
       network={token.symbol}
       pendingActionLabelContext={getPendingActionLabelContext(
         manageFlow.pendingActionType,
@@ -44,7 +39,6 @@ export const PendingCompletePage = () => {
       )}
       pendingActionType={manageFlow.pendingActionType}
       providersDetails={manageFlow.providersDetails}
-      token={token}
       yieldType={getExtendedYieldType(integrationData)}
     />
   );

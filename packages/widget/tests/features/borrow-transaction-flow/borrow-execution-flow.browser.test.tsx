@@ -155,6 +155,32 @@ const withdrawSession = new BorrowFlowSession({
   },
   walletScope,
 });
+const enableCollateralSession = new BorrowFlowSession({
+  intake: {
+    command: Schema.decodeSync(ActionCommand)({
+      action: "enableCollateral",
+      address,
+      args: {
+        marketId: command.args.marketId,
+        tokenAddress: "0x0000000000000000000000000000000000000003",
+      },
+      integrationId: "morpho-blue",
+    }),
+    entry: borrowEntryFlowEntry,
+    riskVerdict: { _tag: "Allow" },
+    summary: {
+      action: "enableCollateral",
+      collateralTokenSymbol: "WETH",
+      existingCollateralUsd: "2",
+      marketLabel: "WETH",
+      network: "base",
+      providerName: "Aave V3",
+      riskStatus: "unavailable",
+      warnings: [],
+    },
+  },
+  walletScope,
+});
 const session = new BorrowFlowSession({
   intake: {
     ...reviewState,
@@ -649,7 +675,7 @@ describe("borrow execution flow component", () => {
     })
   );
 
-  it.live("labels a repayment amount on Review", () =>
+  it.live("heads Review with the repaid amount and its USD value", () =>
     Effect.gen(function* () {
       const repaySession = new BorrowFlowSession({
         ...session,
@@ -687,8 +713,17 @@ describe("borrow execution flow component", () => {
         session: repaySession,
       });
 
+      // The repaid amount heads Review, with the debt it clears in USD.
       yield* Effect.promise(() =>
-        expect.element(app.getByText("Repay amount")).toBeInTheDocument()
+        expect
+          .element(app.getByRole("heading", { name: "Repay USDC" }))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("25 USDC")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("$25.00")).toBeInTheDocument()
       );
       yield* Effect.promise(() =>
         expect.element(app.getByText("Borrow amount")).not.toBeInTheDocument()
@@ -1525,6 +1560,38 @@ describe("borrow execution flow component", () => {
         expect.element(app.getByText("Withdrawal complete")).toBeInTheDocument()
       );
       expect(app.container.textContent).not.toContain("Borrow complete");
+    })
+  );
+
+  it.live("names the asset a collateral toggle completed for", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              action: "enableCollateral",
+              status: "SUCCESS",
+              transactions: [
+                transaction({ status: "CONFIRMED", type: "ENABLE_COLLATERAL" }),
+              ],
+            }),
+          ],
+        }),
+        {
+          action: decodedAction({
+            action: "enableCollateral",
+            transactions: [transaction({ type: "ENABLE_COLLATERAL" })],
+          }),
+          completeElement: <BorrowCompletePage />,
+          session: enableCollateralSession,
+        }
+      );
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("WETH enabled as collateral"))
+          .toBeInTheDocument()
+      );
     })
   );
 

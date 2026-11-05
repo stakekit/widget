@@ -346,11 +346,15 @@ describe("Borrow position details", () => {
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
     expect(app.container.textContent).toContain("Ethereum");
     expect(app.container.textContent).toContain("$400.00");
+    // Each action card's button names its own verb.
     await expect
       .element(app.getByTestId("borrow-position-action__repay"))
-      .toBeInTheDocument();
+      .toHaveTextContent("Repay");
     await expect
       .element(app.getByTestId("borrow-position-action__withdraw"))
+      .toHaveTextContent("Withdraw");
+    await expect
+      .element(app.getByText("USDC outstanding", { exact: false }))
       .toBeInTheDocument();
     await expect
       .element(app.getByTestId("borrow-position-action__disableCollateral"))
@@ -744,10 +748,18 @@ describe("Borrow position details", () => {
     // The refetch is background work: the details pane keeps the position it
     // already has instead of falling back to its skeleton.
     await expect.element(app.getByText("Net worth")).toBeInTheDocument();
+    // Until the refresh settles the position may be closed, so Complete
+    // offers no way back to it.
+    await expect
+      .element(app.getByRole("button", { name: "View position" }))
+      .not.toBeInTheDocument();
     releasePositionRefresh();
     await expect
       .element(app.getByRole("button", { name: "Back to positions" }))
       .toBeVisible();
+    await expect
+      .element(app.getByRole("button", { name: "View position" }))
+      .not.toBeInTheDocument();
 
     await expect
       .element(app.getByText("Withdrawal complete"))

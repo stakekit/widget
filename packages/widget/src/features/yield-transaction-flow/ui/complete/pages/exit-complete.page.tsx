@@ -4,6 +4,7 @@ import { useWidgetPresentation } from "../../../../../shared/react/widget-presen
 import { useTrackPage } from "../../../../tracking/index";
 import { getYieldFlowExitCompletion } from "../../../model/yield-transaction-flow";
 import { useYieldFlowIntake } from "../../../react/yield-flow-route";
+import { useExitSummary } from "../hooks/use-exit-summary.hook";
 import { CompletePage } from "./common.page.tsx";
 
 export const ExitCompletePage = () => {
@@ -15,6 +16,15 @@ export const ExitCompletePage = () => {
 
   useTrackPage("unstakeComplete");
 
+  // A cooldown holds the funds until they unlock; the user then withdraws
+  // them from the position. A batched exit says when its batch runs instead.
+  const { note, rows } = useExitSummary({
+    amount,
+    batched: completion.batched,
+    receiveSymbol: completion.receiveToken?.symbol ?? null,
+    symbol: completion.token.symbol,
+  });
+
   return (
     <CompletePage
       amount={amount}
@@ -24,15 +34,10 @@ export const ExitCompletePage = () => {
           : null
       }
       integrationId={integrationData.id}
-      metadata={{
-        logoURI: integrationData.metadata.logoURI,
-        name: integrationData.metadata.name,
-        provider: integrationData.provider,
-      }}
       network={completion.token.symbol}
+      note={note}
       providersDetails={exitFlow.providersDetails}
-      receiveToken={completion.receiveToken}
-      token={completion.token}
+      rows={rows}
       yieldType={getExtendedYieldType(integrationData)}
     />
   );

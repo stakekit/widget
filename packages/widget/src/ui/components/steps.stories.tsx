@@ -11,6 +11,7 @@ const meta = {
     statusLabels: {
       idle: "waiting",
       active: "in progress",
+      signing: "waiting for signature",
       failed: "failed",
       done: "done",
     },
@@ -35,7 +36,11 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Each step reads its status; the active step is the current one. */
+/**
+ * Each step reads its status; the active step is the current one. A waiting
+ * step's ring is drawn in its state line's muted tone, which the contrast
+ * test holds to 3:1 on every surface.
+ */
 export const InProgress: Story = {
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole("list", {
@@ -48,11 +53,64 @@ export const InProgress: Story = {
     await expect(submit).toHaveTextContent("Submitting, in progress");
     await expect(confirm).toHaveTextContent("Confirming, waiting");
     await expect(confirm).not.toHaveAttribute("aria-current");
+
+    // A step's marker comes just before its text, after any connector.
+    const [marker, text] = Array.from(confirm?.children ?? []).slice(-2);
+    const stateLine = text?.children[1];
+    if (marker === undefined || stateLine === undefined) {
+      throw new Error("Expected a marker and a state line.");
+    }
+    await expect(getComputedStyle(marker).borderTopColor).toBe(
+      getComputedStyle(stateLine).color
+    );
   },
 };
 
 export const InProgressDark: Story = {
   ...InProgress,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * A step waiting for the wallet's signature is the current one, and its
+ * marker reads apart from a step under way: the accent tint, not a spinner.
+ */
+export const Signing: Story = {
+  args: {
+    steps: [
+      { id: "approve", label: "Approve", status: "done" },
+      { id: "stake", label: "Stake", status: "signing" },
+      { id: "confirm", label: "Confirming", status: "active" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const [approve, stake, confirm] =
+      within(canvasElement).getAllByRole("listitem");
+    await expect(stake).toHaveAttribute("aria-current", "step");
+    await expect(stake).toHaveTextContent("Stake, waiting for signature");
+
+    // A step's marker comes just before its text, after any connector.
+    const marker = (item: HTMLElement | undefined) => {
+      const element = Array.from(item?.children ?? []).at(-2);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error("Expected a marker.");
+      }
+      return getComputedStyle(element);
+    };
+    const signing = marker(stake);
+    await expect(signing.backgroundColor).not.toBe(
+      marker(confirm).backgroundColor
+    );
+    // Done reads in the success tone, an outline on no fill of its own.
+    const done = marker(approve);
+    await expect(done.borderTopColor).not.toBe(signing.borderTopColor);
+    // An outline check: no fill (alpha 0).
+    await expect(done.backgroundColor).toMatch(/, 0\)$/);
+  },
+};
+
+export const SigningDark: Story = {
+  ...Signing,
   globals: { colorScheme: "dark" },
 };
 
@@ -156,7 +214,7 @@ const box = (element: Element | undefined) => {
 };
 
 /**
- * Markers are 28px circles; each connector runs from its marker to the next
+ * Markers are 24px circles; each connector runs from its marker to the next
  * one; steps sit 20px apart; nothing leaves the list at a narrow width.
  */
 export const Geometry: Story = {
@@ -172,8 +230,8 @@ export const Geometry: Story = {
     const [connector, marker, text] = Array.from(first?.children ?? []);
     const nextMarker = second?.children[0];
 
-    await expect(box(marker).width).toBe(28);
-    await expect(box(marker).height).toBe(28);
+    await expect(box(marker).width).toBe(24);
+    await expect(box(marker).height).toBe(24);
     await expect(box(connector).top).toBe(box(marker).bottom);
     await expect(box(connector).bottom).toBe(box(nextMarker).top);
     await expect(box(second).top - box(text).bottom).toBe(20);

@@ -5,6 +5,7 @@ import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { Stack } from "../../../../ui/index";
 import type { usePositionDetails } from "../../react/use-position-details";
 import { AmountBlock } from "./amount-block";
 import { StaticActionBlock } from "./static-action-block";
@@ -37,8 +38,9 @@ export const PositionDetailsPendingActions = ({
 
   if (!integrationData || !pendingActions?.length) return null;
 
+  // Sibling action cards sit 8px apart, as one group.
   return (
-    <>
+    <Stack gap={8}>
       {pendingActions.map((val) => {
         const key = `${val.pendingAction.type}-${val.pendingAction.passthrough}`;
 
@@ -103,6 +105,6 @@ export const PositionDetailsPendingActions = ({
           />
         );
       })}
-    </>
+    </Stack>
   );
 };
