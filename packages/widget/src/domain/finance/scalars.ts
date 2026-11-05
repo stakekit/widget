@@ -94,10 +94,7 @@ export const TolerantOptionalUtcDateTimeFromString = (
     Schema.decodeTo(Schema.UndefinedOr(Schema.DateTimeUtc), {
       decode: SchemaGetter.transformEffect((input) => {
         if (input === undefined) {
-          // Effect.void widens the success type to void, which is incompatible
-          // with the schema's precise DateTime.Utc | undefined output.
-          // @effect-diagnostics-next-line effectSucceedWithVoid:off
-          return Effect.succeed(undefined);
+          return Effect.undefined;
         }
         return decodeOptionalUtcDateTime(input, options);
       }),
