@@ -47,8 +47,8 @@ export class ExternalProvider {
     txMeta: YieldTransactionMeta
   ): HostOutcome<TransactionHash> {
     return Effect.suspend(() => {
-      const sendTransaction =
-        this.variantProvider.current.provider.sendTransaction;
+      const { provider } = this.variantProvider.current;
+      const sendTransaction = provider.sendTransaction?.bind(provider);
 
       if (!sendTransaction) {
         return Effect.fail(

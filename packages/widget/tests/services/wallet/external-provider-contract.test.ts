@@ -258,6 +258,24 @@ describe("generic external provider callback contract", () => {
       })
   );
 
+  it.effect("calls the host's sendTransaction on the host provider", () =>
+    Effect.gen(function* () {
+      class HostWallet implements SKWallet {
+        readonly hash = "host-transaction";
+        signMessage = async () => "signed-message";
+        switchChain = async () => undefined;
+        async sendTransaction(this: HostWallet) {
+          return this.hash;
+        }
+      }
+      const provider = new ExternalProvider(makeProviderRef(new HostWallet()));
+
+      expect(
+        yield* provider.sendTransaction(transaction, transactionMeta)
+      ).toBe("host-transaction");
+    })
+  );
+
   it.effect("keeps the host error message when its txHash is undefined", () =>
     Effect.gen(function* () {
       const provider = new ExternalProvider(
