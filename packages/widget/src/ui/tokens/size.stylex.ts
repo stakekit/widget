@@ -43,16 +43,19 @@ export const chartHeight = stylex.defineConsts({
 });
 
 /**
- * Avatar sizes: `sm` sits in a row of text, `lg` heads the account dialog and
- * `xl` a position's or a finished transaction's page. `control` is not a step
- * of the scale but a role: the avatar that leads a control, a token trigger
- * or a condensed picker row, sized to that control's height.
+ * Avatar sizes: `sm` sits in a row of text, `lg` heads an asset's or an
+ * action's details and `xl` a position's or a finished transaction's page.
+ * `control` and `card` are not steps of the scale but roles: the avatar that
+ * leads a control, a token trigger or a condensed picker row, sized to that
+ * control's height, and the avatar that leads a card's heading, such as an
+ * account's, as tall as a heading over a caption.
  */
 export const avatarSize = stylex.defineConsts({
   xs: "16px",
   sm: "24px",
   control: "28px",
   md: "32px",
+  card: "40px",
   lg: "48px",
   xl: "80px",
 });
@@ -66,6 +69,7 @@ export const avatarBadgeSize = stylex.defineConsts({
   sm: "10px",
   control: "12px",
   md: "14px",
+  card: "16px",
   lg: "20px",
   xl: "32px",
 });

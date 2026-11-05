@@ -39,8 +39,12 @@ type ModalProps = {
    * the body scrolls, ruled off from it once it overflows.
    */
   readonly footer?: ReactNode;
-  /** The element to focus on opening; unset, the first focusable one. */
-  readonly initialFocus?: RefObject<HTMLElement | null>;
+  /**
+   * The element to focus on opening; unset, the first focusable one.
+   * `dialog` focuses the dialog itself, named by its title, so no control
+   * shows a focus ring as it opens: Tab then reaches its first control.
+   */
+  readonly initialFocus?: RefObject<HTMLElement | null> | "dialog";
   /** Renders as the popup's `data-testid`. */
   readonly testId?: string;
   /** Renders as the title's `data-testid`. */
@@ -154,6 +158,7 @@ export const Modal = ({
 }: ModalProps) => {
   const container = usePortalContainer();
   const opener = useRef<HTMLElement | null>(null);
+  const popup = useRef<HTMLDivElement | null>(null);
   const [resuming, setResuming] = useState(false);
   const titleId = useId();
   const [bodyOverflows, setBodyOverflows] = useState(false);
@@ -190,12 +195,14 @@ export const Modal = ({
                   ? active
                   : null;
             }
+            if (initialFocus === "dialog") return popup.current ?? true;
             return initialFocus?.current ?? true;
           }}
           finalFocus={() => {
             if (suspended) return false;
             return opener.current?.isConnected ? opener.current : true;
           }}
+          ref={popup}
           data-testid={testId}
           {...stylex.props(styles.popup, size === "page" && styles.pagePopup)}
         >

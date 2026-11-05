@@ -11,7 +11,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const variants = ["primary", "secondary", "ghost", "danger"] as const;
+const variants = [
+  "primary",
+  "secondary",
+  "ghost",
+  "danger",
+  "dangerOutline",
+] as const;
 const sizes = ["sm", "md", "lg", "cta"] as const;
 
 export const Primary: Story = { args: { variant: "primary" } };
@@ -19,6 +25,67 @@ export const Secondary: Story = { args: { variant: "secondary" } };
 export const Ghost: Story = { args: { variant: "ghost" } };
 export const Danger: Story = {
   args: { variant: "danger", children: "Unstake" },
+};
+
+/**
+ * `dangerOutline` draws a secondary button's label and edge in the danger
+ * color, for a destructive action beside a secondary one.
+ */
+export const DangerOutline: Story = {
+  args: { variant: "dangerOutline", children: "Disconnect" },
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole("button", {
+      name: "Disconnect",
+    });
+    const style = getComputedStyle(button);
+    await expect(style.borderTopColor).toBe(style.color);
+  },
+};
+
+export const DangerOutlineDark: Story = {
+  ...DangerOutline,
+  globals: { colorScheme: "dark" },
+};
+
+const sharedRow = (width: number, testId: string) => (
+  <div
+    data-testid={testId}
+    style={{ display: "flex", flexWrap: "wrap", gap: 8, width }}
+  >
+    <Button share>View on explorer</Button>
+    <Button share variant="dangerOutline">
+      Disconnect
+    </Button>
+  </div>
+);
+
+/**
+ * `share` splits a wrapping row equally between actions whose labels fit
+ * side by side; otherwise each takes its own full-width line.
+ */
+export const SharedRow: Story = {
+  render: () => (
+    <div style={{ display: "grid", gap: 24 }}>
+      {sharedRow(360, "wide")}
+      {sharedRow(200, "narrow")}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const boxes = (testId: string) =>
+      within(canvas.getByTestId(testId))
+        .getAllByRole("button")
+        .map((button) => button.getBoundingClientRect());
+
+    const [wideFirst, wideSecond] = boxes("wide");
+    await expect(wideFirst?.top).toBe(wideSecond?.top);
+    await expect(wideFirst?.width).toBe(wideSecond?.width);
+
+    const [narrowFirst, narrowSecond] = boxes("narrow");
+    await expect(narrowSecond?.top).toBeGreaterThan(narrowFirst?.top ?? 0);
+    await expect(narrowFirst?.width).toBe(200);
+    await expect(narrowSecond?.width).toBe(200);
+  },
 };
 
 /** Every variant at every size. */

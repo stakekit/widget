@@ -20,8 +20,13 @@ import { focusRingStyles } from "./focus-ring";
 export type ButtonVariant = keyof typeof buttonVariantStyles;
 export type ButtonSize = keyof typeof buttonSizeStyles;
 
-/** The visual props `Button` and `ButtonAnchor` share. */
+/** The visual props `Button` and a button-look `ExternalLink` share. */
 export type ButtonLookProps = {
+  /**
+   * `dangerOutline` is a secondary button drawn in the danger color, label
+   * and edge, for a destructive action beside a secondary one, such as
+   * disconnecting.
+   */
   readonly variant?: ButtonVariant;
   /** `cta` fills the width at the call-to-action height the Layout asks for. */
   readonly size?: ButtonSize;
@@ -29,27 +34,43 @@ export type ButtonLookProps = {
   readonly iconStart?: FixedIconName;
   /** An icon after the label. */
   readonly iconEnd?: FixedIconName;
+  /**
+   * Shares a wrapping row (a `Stack` with `wrap` and `gap={8}`) with one
+   * sibling action: each takes half when both labels fit in half, else each
+   * takes its own full-width line.
+   */
+  readonly share?: boolean;
 };
 
 /** The class names of a button's look, for a `button` or an `a`. */
-export const buttonLook = (variant: ButtonVariant, size: ButtonSize) =>
+export const buttonLook = (
+  variant: ButtonVariant,
+  size: ButtonSize,
+  share: boolean
+) =>
   stylex.props(
     buttonStyles.root,
     focusRingStyles.visible,
     buttonVariantStyles[variant],
-    buttonSizeStyles[size]
+    buttonSizeStyles[size],
+    share && buttonStyles.share
   );
 
-/** The label between the optional start and end icons. */
+/**
+ * The label between the optional start and end icons. `iconEndLabel` names
+ * the end icon, such as a new-tab marker; unset, the icons are decorative.
+ */
 export const ButtonContent = ({
   size,
   iconStart,
   iconEnd,
+  iconEndLabel,
   children,
 }: {
   readonly size: ButtonSize;
   readonly iconStart: FixedIconName | undefined;
   readonly iconEnd: FixedIconName | undefined;
+  readonly iconEndLabel?: string;
   readonly children: ReactNode;
 }) => {
   const iconSize = size === "sm" || size === "md" ? "sm" : "md";
@@ -58,7 +79,13 @@ export const ButtonContent = ({
     <>
       {iconStart && <Icon name={iconStart} size={iconSize} />}
       {children}
-      {iconEnd && <Icon name={iconEnd} size={iconSize} />}
+      {iconEnd && (
+        <Icon
+          name={iconEnd}
+          size={iconSize}
+          {...(iconEndLabel === undefined ? {} : { label: iconEndLabel })}
+        />
+      )}
     </>
   );
 };
@@ -90,6 +117,13 @@ const buttonStyles = stylex.create({
     transitionTimingFunction: motion.easing,
     userSelect: "none",
     whiteSpace: "nowrap",
+  },
+  // Half of the row past an 8px gap, floored at the label's width: a label
+  // wider than half breaks the line, and each then grows to fill its own.
+  share: {
+    flexBasis: `calc(50% - ${space[8]} / 2)`,
+    flexGrow: 1,
+    minWidth: "max-content",
   },
 });
 
@@ -126,6 +160,15 @@ const buttonVariantStyles = stylex.create({
       ":hover:not(:disabled)": color.danger,
     },
     backgroundColor: { default: color.dangerSoft, ":disabled": color.surface },
+    color: { default: color.danger, ":disabled": color.textMuted },
+  },
+  // The danger color on a secondary button's surface; hover tints it softly.
+  dangerOutline: {
+    borderColor: { default: color.danger, ":disabled": color.border },
+    backgroundColor: {
+      default: color.surface,
+      ":hover:not(:disabled)": color.dangerSoft,
+    },
     color: { default: color.danger, ":disabled": color.textMuted },
   },
 });

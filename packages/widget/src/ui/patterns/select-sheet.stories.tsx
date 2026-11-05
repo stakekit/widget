@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
-import { outlineWithin, shareLine, viewportBox } from "../storybook/geometry";
+import {
+  isWithin,
+  outlineWithin,
+  shareLine,
+  viewportBox,
+} from "../storybook/geometry";
 import { networkLogo, tokenLogo } from "../storybook/images";
 import { SelectSheet } from "./select-sheet";
 import { TokenTrigger } from "./token-trigger";
@@ -168,6 +173,40 @@ export const SearchDark: Story = {
 export const Sheet: Story = {
   ...Search,
   globals: { viewport: { value: "mobile1", isRotated: false } },
+};
+
+/**
+ * Under the dialog's height cap, the list scrolls and gives way; the search
+ * field over it keeps a control's height, its icon inside it.
+ */
+export const SearchUnderHeightCap: Story = {
+  play: async ({ canvasElement }) => {
+    const sheet = await openSheet(canvasElement);
+    // The listbox's parent scrolls it.
+    const scroller = within(sheet).getByRole("listbox", {
+      name: "Tokens",
+    }).parentElement;
+    if (!scroller) throw new Error("The listbox has no scroller.");
+    await waitFor(() =>
+      expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight)
+    );
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search tokens",
+    });
+    const box = search.parentElement;
+    const icon = box?.querySelector("svg");
+    if (!box || !icon) throw new Error("The search field has no box or icon.");
+
+    await expect(box.getBoundingClientRect().height).toBe(40);
+    await expect(isWithin(icon.getBoundingClientRect(), viewportBox(box))).toBe(
+      true
+    );
+  },
+};
+
+export const SearchUnderHeightCapDark: Story = {
+  ...SearchUnderHeightCap,
+  globals: { colorScheme: "dark" },
 };
 
 /**

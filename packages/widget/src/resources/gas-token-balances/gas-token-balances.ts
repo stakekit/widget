@@ -2,6 +2,7 @@ import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { GasBalancesCommand } from "../../domain/finance/models";
+import type { Token } from "../../domain/token/token";
 import { isWalletNetwork } from "../../domain/wallet/network";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type {
@@ -18,6 +19,29 @@ export class GasTokenBalancesKey extends Data.TaggedClass(
 )<{
   readonly command: GasBalancesCommand;
 }> {}
+
+/**
+ * The key for a Wallet Scope's gas token balance: `token` on its network,
+ * or, unset, the native token of the scope's own network.
+ */
+export const walletScopeGasTokenBalancesKey = (
+  scope: Pick<WalletScopeKey, "additionalAddresses" | "address" | "network">,
+  token?: Pick<Token, "address" | "network">
+) =>
+  new GasTokenBalancesKey({
+    command: {
+      addresses: [
+        {
+          address: scope.address,
+          ...(scope.additionalAddresses
+            ? { additionalAddresses: scope.additionalAddresses }
+            : {}),
+          network: token?.network ?? scope.network,
+          ...(token?.address ? { tokenAddress: token.address } : {}),
+        },
+      ],
+    },
+  });
 
 class GasTokenBalancesError extends Data.TaggedError("GasTokenBalancesError")<{
   readonly cause: ApiRequestError | ResponseDecodeError;

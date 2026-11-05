@@ -38,9 +38,10 @@ type TokenTriggerProps = Omit<
    */
   readonly account?: string;
   /**
-   * `md`, the default, is the touch-sized pill beside an amount. `sm` and
-   * `tabs` are a wallet header's network or account pill: `sm` as tall as a
-   * small control, `tabs` as tall as a pill `Tabs` list it sits beside.
+   * `md`, the default, is the touch-sized pill beside an amount, raised off
+   * its panel. `sm` and `tabs` are a wallet header's network or account pill,
+   * filled like a pill `Tabs` list to stand off the frame: `sm` as tall as a
+   * small control, `tabs` as tall as the list it sits beside.
    */
   readonly size?: "sm" | "tabs" | "md";
 };
@@ -61,6 +62,8 @@ export const TokenTrigger = ({
   ...rest
 }: TokenTriggerProps) => {
   const avatarSize = size === "md" ? "control" : "sm";
+  // The smaller sizes are filled flat rather than raised.
+  const flat = size !== "md";
   const content = (
     <>
       {account === undefined ? (
@@ -85,7 +88,12 @@ export const TokenTrigger = ({
       <span
         data-testid={testId}
         data-rk={hostHook}
-        {...stylex.props(styles.root, sizeStyles[size], styles.readOnly)}
+        {...stylex.props(
+          styles.root,
+          sizeStyles[size],
+          styles.readOnly,
+          flat && styles.flat
+        )}
       >
         {content}
       </span>
@@ -102,6 +110,7 @@ export const TokenTrigger = ({
         styles.root,
         sizeStyles[size],
         styles.button,
+        flat && styles.flat,
         focusRingStyles.visible
       )}
     >
@@ -150,6 +159,16 @@ const styles = stylex.create({
     transitionDuration: motion.fast,
     transitionProperty: "background-color, transform",
     transitionTimingFunction: motion.easing,
+  },
+  // Filled like a pill tabs list rather than raised: a raised pill is white
+  // on a white frame in light. Only a button, which can be enabled, tints on
+  // hover.
+  flat: {
+    backgroundColor: {
+      default: color.surface,
+      ":enabled:hover": color.surfaceHover,
+    },
+    boxShadow: "none",
   },
 });
 

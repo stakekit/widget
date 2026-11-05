@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { Text } from "../primitives/text";
+import { Button } from "./button";
 import { ExternalLink } from "./external-link";
 
 const meta = {
@@ -59,3 +60,36 @@ export const WithClickHandler: Story = {
 };
 
 export const Dark: Story = { globals: { colorScheme: "dark" } };
+
+/**
+ * With `button`, the link has a button's look and matches a button's height
+ * beside it; it still opens a new tab and says so.
+ */
+export const ButtonLook: Story = {
+  render: (args) => (
+    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <ExternalLink {...args} button={{ variant: "secondary" }} />
+      <Button variant="dangerOutline">Disconnect</Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = canvas.getByRole("link", {
+      name: "View on explorer opens in a new tab",
+    });
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    const button = canvas.getByRole("button", { name: "Disconnect" });
+    await expect(link.getBoundingClientRect().height).toBe(
+      button.getBoundingClientRect().height
+    );
+
+    await userEvent.tab();
+    await expect(link).toHaveFocus();
+  },
+};
+
+export const ButtonLookDark: Story = {
+  ...ButtonLook,
+  globals: { colorScheme: "dark" },
+};

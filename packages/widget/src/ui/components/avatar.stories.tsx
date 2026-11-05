@@ -14,7 +14,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const sizes = ["xs", "sm", "control", "md", "lg", "xl"] as const;
+const sizes = ["xs", "sm", "control", "md", "card", "lg", "xl"] as const;
 
 export const Image: Story = { args: { src: tokenLogo } };
 

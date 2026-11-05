@@ -13,7 +13,7 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 
-/** An avatar size: `sm` sits in a row of text, `xl` heads an account dialog. */
+/** An avatar size: `sm` sits in a row of text, `card` leads a card's heading. */
 type AvatarSize = keyof typeof sizeStyles;
 
 type AvatarProps = {
@@ -222,6 +222,7 @@ const sizeStyles = stylex.create({
   sm: { height: avatarSize.sm, width: avatarSize.sm },
   control: { height: avatarSize.control, width: avatarSize.control },
   md: { height: avatarSize.md, width: avatarSize.md },
+  card: { height: avatarSize.card, width: avatarSize.card },
   lg: { height: avatarSize.lg, width: avatarSize.lg },
   xl: { height: avatarSize.xl, width: avatarSize.xl },
 });
@@ -231,6 +232,7 @@ const fallbackTextStyles = stylex.create({
   sm: { fontSize: fontSize.overline, lineHeight: lineHeight.overline },
   control: { fontSize: fontSize.label, lineHeight: lineHeight.label },
   md: { fontSize: fontSize.label, lineHeight: lineHeight.label },
+  card: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
   lg: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
   xl: { fontSize: fontSize.title, lineHeight: lineHeight.title },
 });
@@ -241,6 +243,7 @@ const emojiStyles = stylex.create({
   sm: { fontSize: fontSize.heading, lineHeight: lineHeight.heading },
   control: { fontSize: fontSize.title, lineHeight: lineHeight.title },
   md: { fontSize: fontSize.title, lineHeight: lineHeight.title },
+  card: { fontSize: fontSize.display, lineHeight: lineHeight.display },
   lg: { fontSize: fontSize.display, lineHeight: lineHeight.display },
   xl: { fontSize: fontSize.display, lineHeight: lineHeight.display },
 });
@@ -250,6 +253,7 @@ const badgeSizeStyles = stylex.create({
   sm: { height: avatarBadgeSize.sm, width: avatarBadgeSize.sm },
   control: { height: avatarBadgeSize.control, width: avatarBadgeSize.control },
   md: { height: avatarBadgeSize.md, width: avatarBadgeSize.md },
+  card: { height: avatarBadgeSize.card, width: avatarBadgeSize.card },
   lg: { height: avatarBadgeSize.lg, width: avatarBadgeSize.lg },
   xl: { height: avatarBadgeSize.xl, width: avatarBadgeSize.xl },
 });

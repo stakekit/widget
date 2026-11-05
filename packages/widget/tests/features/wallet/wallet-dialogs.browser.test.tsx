@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { HttpResponse, http } from "msw";
 import { avalanche, mainnet } from "viem/chains";
 import { page, userEvent } from "vitest/browser";
 import { SKApp } from "../../../src/App";
@@ -8,6 +9,7 @@ import {
   ton,
 } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import { setup } from "../../app/journeys/external-provider/setup";
+import { legacyApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { mockWalletListFactory } from "../../utils/mock-connector";
 import { describe, expect, it, vi } from "../../utils/test-extend";
@@ -264,65 +266,160 @@ it("copies the full account address and clears copied feedback", async ({
       },
     });
     await app.getByRole("button", { name: "0xB6…B2F7", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "0xB6…B2F7", exact: true });
-    const copy = dialog.getByRole("button", {
-      name: "Copy Address",
-      exact: true,
-    });
+    const dialog = page.getByRole("dialog", { name: "Account", exact: true });
+    const copy = dialog.getByTestId("wallet-account-copy");
+    await expect.element(copy).toHaveAccessibleName("Copy Address");
 
     await copy.click();
 
     await expect.poll(() => writeText).toHaveBeenCalledWith(address);
-    await expect
-      .element(dialog.getByRole("button", { name: "Copied!", exact: true }))
-      .toBeVisible();
-    await expect.element(copy).toBeVisible();
+    // Shown beside the address, as well as announced; then cleared.
+    const copied = dialog.getByText("Copied!", { exact: true }).first();
+    await expect.element(copied).toBeVisible();
+    expect(copied.element().getBoundingClientRect().width).toBeGreaterThan(1);
+    await expect.element(copy).toHaveAccessibleName("Copy Address");
+    await expect.element(copied).not.toBeInTheDocument();
   } finally {
     writeText.mockRestore();
   }
 });
 
-it("lays out the account actions as one centered row on a narrow viewport", async ({
+const accountAddress = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
+
+/** Renders a connected mock wallet holding 1.5 ETH on Ethereum. */
+const renderAccountDialog = async (
+  api: typeof worker,
+  language: "en" | "fr" = "en"
+) => {
+  setup(api);
+  api.use(
+    http.post(legacyApiRoute("/v1/tokens/balances"), () =>
+      HttpResponse.json([
+        {
+          token: {
+            name: "Ethereum",
+            symbol: "ETH",
+            decimals: 18,
+            network: "ethereum",
+            coinGeckoId: "ethereum",
+          },
+          amount: "1.5",
+          availableYields: [],
+        },
+      ])
+    )
+  );
+  const app = await renderApp({
+    walletListFactory: mockWalletListFactory({ accounts: [accountAddress] }),
+    skProps: { apiKey: import.meta.env.VITE_API_KEY, language },
+  });
+  const trigger = app.getByRole("button", { name: "0xB6…B2F7", exact: true });
+  await expect.element(trigger).toBeVisible();
+  return { app, trigger };
+};
+
+it("titles the account dialog and shows the account, its network and balance", async ({
   worker,
 }) => {
-  setup(worker);
-  await page.viewport(360, 720);
+  const { trigger } = await renderAccountDialog(worker);
+  // Opened from the keyboard, where a focused control would show its ring.
+  trigger.element().focus();
+  await userEvent.keyboard("[Enter]");
+  const dialog = page.getByRole("dialog", { name: "Account", exact: true });
+  await expect.element(dialog).toBeVisible();
+  await expect
+    .element(dialog.getByRole("heading", { name: "Account", exact: true }))
+    .toBeVisible();
+
+  // Focus starts on the dialog, so the close button shows no focus ring.
+  const close = dialog.getByRole("button", { name: "Close", exact: true });
+  await expect.element(dialog).toHaveFocus();
+  expect(getComputedStyle(close.element()).outlineStyle).toBe("none");
+
+  await expect
+    .element(dialog.getByText("0xB6…B2F7", { exact: true }))
+    .toBeVisible();
+  await expect
+    .element(dialog.getByText("Mock Connector", { exact: true }))
+    .toBeVisible();
+  await expect
+    .element(dialog.getByText("Connected to Ethereum", { exact: true }))
+    .toBeVisible();
+  await expect
+    .element(dialog.getByText("1.5 ETH", { exact: true }))
+    .toBeVisible();
+
+  const explorer = dialog.getByRole("link", { name: /^View on explorer/ });
+  await expect
+    .element(explorer)
+    .toHaveAttribute("href", `https://etherscan.io/address/${accountAddress}`);
+  await expect.element(explorer).toHaveAttribute("target", "_blank");
+});
+
+it("lays out the explorer and disconnect actions side by side at equal width", async ({
+  worker,
+}) => {
+  await page.viewport(480, 720);
   try {
-    const app = await renderApp({
-      walletListFactory: mockWalletListFactory({
-        accounts: ["0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7"],
-      }),
-      skProps: { apiKey: import.meta.env.VITE_API_KEY },
-    });
-    await app.getByRole("button", { name: "0xB6…B2F7", exact: true }).click();
+    const { trigger } = await renderAccountDialog(worker);
+    await trigger.click();
     const dialog = page.getByTestId("wallet-account-dialog");
-    const copy = dialog.getByRole("button", {
-      name: "Copy Address",
-      exact: true,
-    });
+    const explorer = dialog.getByRole("link", { name: /^View on explorer/ });
     const disconnect = dialog.getByTestId("wallet-account-disconnect");
-    await expect.element(copy).toBeVisible();
+    await expect.element(explorer).toBeVisible();
     await expect.element(disconnect).toBeVisible();
 
-    const dialogBox = dialog.element().getBoundingClientRect();
-    const copyBox = copy.element().getBoundingClientRect();
+    const explorerBox = explorer.element().getBoundingClientRect();
     const disconnectBox = disconnect.element().getBoundingClientRect();
-    // One row: both actions share a line, copy first.
-    expect(disconnectBox.top).toBe(copyBox.top);
-    expect(copyBox.right).toBeLessThanOrEqual(disconnectBox.left);
-    // Centered in the dialog, and both inside it.
-    const leftSpace = copyBox.left - dialogBox.left;
-    const rightSpace = dialogBox.right - disconnectBox.right;
-    expect(Math.abs(leftSpace - rightSpace)).toBeLessThanOrEqual(1);
-    expect(leftSpace).toBeGreaterThan(0);
-    // Neither label wraps or overflows its button.
-    for (const button of [copy.element(), disconnect.element()]) {
-      expect(textLineCount(button)).toBe(1);
-      expect(button.scrollWidth).toBeLessThanOrEqual(button.clientWidth);
+    expect(disconnectBox.top).toBe(explorerBox.top);
+    expect(explorerBox.right).toBeLessThanOrEqual(disconnectBox.left);
+    expect(Math.abs(explorerBox.width - disconnectBox.width)).toBeLessThan(1);
+    for (const action of [explorer.element(), disconnect.element()]) {
+      expect(textLineCount(action)).toBe(1);
+      expect(action.scrollWidth).toBeLessThanOrEqual(action.clientWidth);
     }
   } finally {
     await page.viewport(1280, 720);
   }
+});
+
+it("stacks the actions when their labels don't fit side by side", async ({
+  worker,
+}) => {
+  await page.viewport(360, 720);
+  try {
+    const { trigger } = await renderAccountDialog(worker, "fr");
+    await trigger.click();
+    const dialog = page.getByTestId("wallet-account-dialog");
+    const explorer = dialog.getByRole("link", {
+      name: /^Voir dans l'explorateur/,
+    });
+    const disconnect = dialog.getByTestId("wallet-account-disconnect");
+    await expect.element(explorer).toBeVisible();
+
+    const explorerBox = explorer.element().getBoundingClientRect();
+    const disconnectBox = disconnect.element().getBoundingClientRect();
+    expect(disconnectBox.top).toBeGreaterThanOrEqual(explorerBox.bottom);
+    expect(disconnectBox.width).toBe(explorerBox.width);
+    for (const action of [explorer.element(), disconnect.element()]) {
+      expect(textLineCount(action)).toBe(1);
+      expect(action.scrollWidth).toBeLessThanOrEqual(action.clientWidth);
+    }
+  } finally {
+    await page.viewport(1280, 720);
+  }
+});
+
+it("disconnects the wallet from the account dialog", async ({ worker }) => {
+  const { app, trigger } = await renderAccountDialog(worker);
+  await trigger.click();
+  const dialog = page.getByTestId("wallet-account-dialog");
+  await dialog.getByTestId("wallet-account-disconnect").click();
+  await expect.element(dialog).not.toBeInTheDocument();
+  await expect.element(trigger).not.toBeInTheDocument();
+  await expect
+    .element(app.getByRole("button", { name: "0xB6…B2F7", exact: true }))
+    .not.toBeInTheDocument();
 });
 
 /** How many lines the text inside an element runs over. */

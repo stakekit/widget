@@ -15,8 +15,8 @@ import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { checkGasAmount } from "../../../domain/finance/gas";
 import type { Token } from "../../../domain/token/token";
 import {
-  GasTokenBalancesKey,
   gasTokenBalancesResourceAtom,
+  walletScopeGasTokenBalancesKey,
 } from "../../../resources/gas-token-balances/index";
 import {
   getTokensPricesRequest,
@@ -525,21 +525,10 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
       : null,
   });
   const gasWarningInput = getYieldTransactionFlowGasWarningInput(intake);
-  const { additionalAddresses, address } = gasWarningInput.walletScope;
-  const gasBalancesKey = new GasTokenBalancesKey({
-    command: {
-      addresses: [
-        {
-          address,
-          ...(additionalAddresses ? { additionalAddresses } : {}),
-          network: gasWarningInput.gasFeeToken.network,
-          ...(gasWarningInput.gasFeeToken.address
-            ? { tokenAddress: gasWarningInput.gasFeeToken.address }
-            : {}),
-        },
-      ],
-    },
-  });
+  const gasBalancesKey = walletScopeGasTokenBalancesKey(
+    gasWarningInput.walletScope,
+    gasWarningInput.gasFeeToken
+  );
 
   const preparation = getYieldFlowConfidentialPreparation(intake);
   // A deposit of the underlying token also pays for its approve and wrap;

@@ -52,9 +52,24 @@ export const Size: Story = {
   },
 };
 
+/** The first fill under the element: the frame it sits on. */
+const frameFill = (element: Element) => {
+  for (
+    let ancestor = element.parentElement;
+    ancestor !== null;
+    ancestor = ancestor.parentElement
+  ) {
+    const fill = getComputedStyle(ancestor).backgroundColor;
+    // Skip fully transparent fills (alpha 0).
+    if (!/, 0\)$/.test(fill) && fill !== "transparent") return fill;
+  }
+  return undefined;
+};
+
 /**
  * A wallet header's pills: `sm` as tall as a small control, `tabs` as tall
- * as the pill tabs list beside it, both with a small logo and body text.
+ * as the pill tabs list beside it, both with a small logo and body text. They
+ * are filled like the tabs list, so they stand off the frame unraised.
  */
 export const HeaderSizes: Story = {
   globals: { tabsIndicator: "pill" },
@@ -95,8 +110,19 @@ export const HeaderSizes: Story = {
       await expect(
         getComputedStyle(within(trigger).getByText("ETH")).fontSize
       ).toBe("14px");
+      const fill = getComputedStyle(trigger).backgroundColor;
+      await expect(fill).not.toBe(frameFill(trigger));
+      await expect(fill).toBe(
+        getComputedStyle(canvas.getByRole("tablist", { name: "Sections" }))
+          .backgroundColor
+      );
     }
   },
+};
+
+export const HeaderSizesDark: Story = {
+  ...HeaderSizes,
+  globals: { ...HeaderSizes.globals, colorScheme: "dark" },
 };
 
 export const Dark: Story = {

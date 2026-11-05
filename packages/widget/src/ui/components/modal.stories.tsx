@@ -96,6 +96,26 @@ export const KeyboardOpenClose: Story = {
   },
 };
 
+/**
+ * `initialFocus="dialog"` focuses the dialog itself as it opens from the
+ * keyboard, so the close button shows no focus ring; Tab then reaches it.
+ */
+export const InitialFocusOnDialog: Story = {
+  args: { initialFocus: "dialog" },
+  play: async () => {
+    await userEvent.tab();
+    await userEvent.keyboard("{Enter}");
+
+    const popup = await dialog();
+    await waitFor(() => expect(popup).toHaveFocus());
+    const close = within(popup).getByRole("button", { name: "Close" });
+    await expect(getComputedStyle(close).outlineStyle).toBe("none");
+
+    await userEvent.tab();
+    await expect(close).toHaveFocus();
+  },
+};
+
 /** The close button closes it and returns focus to the trigger. */
 export const CloseButton: Story = {
   play: async ({ canvasElement }) => {

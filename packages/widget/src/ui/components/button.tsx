@@ -38,6 +38,7 @@ export const Button = ({
   size = "md",
   iconStart,
   iconEnd,
+  share = false,
   loading = false,
   disabled = false,
   type = "button",
@@ -53,7 +54,7 @@ export const Button = ({
     type={type}
     disabled={disabled || loading}
     aria-busy={loading || undefined}
-    {...buttonLook(variant, size)}
+    {...buttonLook(variant, size, share)}
   >
     {loading && <span aria-hidden="true" {...stylex.props(styles.spinner)} />}
     <ButtonContent size={size} iconStart={iconStart} iconEnd={iconEnd}>

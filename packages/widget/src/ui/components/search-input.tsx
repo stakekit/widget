@@ -130,7 +130,8 @@ export const SearchInput = ({
   );
 };
 const styles = stylex.create({
-  // The ring marks the whole box while its input has focus.
+  // The ring marks the whole box while its input has focus. It keeps its
+  // height in a capped column, such as a modal body over a scrolling list.
   box: {
     borderColor: color.borderStrong,
     borderRadius: radius.control,
@@ -142,6 +143,7 @@ const styles = stylex.create({
     backgroundColor: color.surface,
     boxSizing: "border-box",
     display: "flex",
+    flexShrink: 0,
     outlineColor: color.focusRing,
     outlineOffset: focusRing.offset,
     outlineStyle: {
