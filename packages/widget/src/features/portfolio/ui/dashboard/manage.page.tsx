@@ -6,7 +6,7 @@ import { Summary } from "./summary";
 export const ManagePage = () => {
   return (
     <AnimationPage>
-      <Stack gap={32}>
+      <Stack gap={16}>
         <Summary />
         <PositionsPage />
       </Stack>

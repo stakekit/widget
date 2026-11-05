@@ -11,12 +11,14 @@ import {
   decodeExtraProps,
   defaultPlaygroundConfig,
   fixedVariantColorScheme,
+  fixedVariantWallet,
   hostVariants,
   languages,
   layouts,
   legacyThemes,
   mountedBorrowEnabled,
   mountedColorScheme,
+  mountedWallet,
   type PlaygroundConfig,
   walletModes,
   writePlaygroundConfig,
@@ -212,6 +214,7 @@ export const PlaygroundPanel = ({
   const [error, setError] = useState<string>();
   const [linkCopied, setLinkCopied] = useState(false);
   const variantColorScheme = fixedVariantColorScheme(draft.variant);
+  const variantWallet = fixedVariantWallet(draft.variant);
 
   const update = <Key extends keyof PlaygroundConfig>(
     key: Key,
@@ -279,12 +282,17 @@ export const PlaygroundPanel = ({
       <section className="pg-section">
         <h3>Harness</h3>
         <Choice
+          disabled={variantWallet !== undefined}
+          hint={
+            variantWallet &&
+            `${draft.variant} uses its institutional wallet list`
+          }
           label="Wallet"
           onChange={(value) => update("wallet", value)}
           options={walletModes}
-          value={draft.wallet}
+          value={mountedWallet(draft)}
         />
-        {draft.wallet === "scripted" && (
+        {mountedWallet(draft) === "scripted" && (
           <TextField
             label="Scripted account"
             onChange={(value) => update("scriptedAddress", value)}

@@ -37,6 +37,12 @@ type TokenTriggerProps = Omit<
    * text.
    */
   readonly account?: string;
+  /**
+   * `md`, the default, is the touch-sized pill beside an amount. `sm` and
+   * `tabs` are a wallet header's network or account pill: `sm` as tall as a
+   * small control, `tabs` as tall as a pill `Tabs` list it sits beside.
+   */
+  readonly size?: "sm" | "tabs" | "md";
 };
 
 /**
@@ -51,18 +57,26 @@ export const TokenTrigger = ({
   testId,
   hostHook,
   account,
+  size = "md",
   ...rest
 }: TokenTriggerProps) => {
+  const avatarSize = size === "md" ? "control" : "sm";
   const content = (
     <>
       {account === undefined ? (
-        <TokenAvatar {...token} size="control" decorative />
+        <TokenAvatar {...token} size={avatarSize} decorative />
       ) : (
-        <TokenAvatar account={account} size="control" />
+        <TokenAvatar account={account} size={avatarSize} />
       )}
-      <Text variant="heading" as="span" weight="semibold" truncate>
-        {token.name}
-      </Text>
+      {size === "md" ? (
+        <Text variant="heading" as="span" weight="semibold" truncate>
+          {token.name}
+        </Text>
+      ) : (
+        <Text as="span" weight="semibold" truncate>
+          {token.name}
+        </Text>
+      )}
     </>
   );
 
@@ -71,7 +85,7 @@ export const TokenTrigger = ({
       <span
         data-testid={testId}
         data-rk={hostHook}
-        {...stylex.props(styles.root, styles.readOnly)}
+        {...stylex.props(styles.root, sizeStyles[size], styles.readOnly)}
       >
         {content}
       </span>
@@ -84,7 +98,12 @@ export const TokenTrigger = ({
       type="button"
       data-testid={testId}
       data-rk={hostHook}
-      {...stylex.props(styles.root, styles.button, focusRingStyles.visible)}
+      {...stylex.props(
+        styles.root,
+        sizeStyles[size],
+        styles.button,
+        focusRingStyles.visible
+      )}
     >
       {content}
       <Icon name="CaretDownIcon" size="sm" tone="muted" />
@@ -99,7 +118,7 @@ const styles = stylex.create({
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
-    gap: space[8],
+    gap: space[6],
     paddingBlock: 0,
     alignItems: "center",
     backgroundColor: color.surfaceRaised,
@@ -110,8 +129,7 @@ const styles = stylex.create({
     flexShrink: 0,
     fontFamily: font.sans,
     paddingInlineEnd: space[12],
-    paddingInlineStart: space[6],
-    height: tokenTriggerHeight.md,
+    paddingInlineStart: space[4],
     maxWidth: "100%",
     minWidth: 0,
   },
@@ -132,5 +150,15 @@ const styles = stylex.create({
     transitionDuration: motion.fast,
     transitionProperty: "background-color, transform",
     transitionTimingFunction: motion.easing,
+  },
+});
+
+const sizeStyles = stylex.create({
+  sm: { height: tokenTriggerHeight.sm },
+  tabs: { height: tokenTriggerHeight.tabs },
+  md: {
+    gap: space[8],
+    paddingInlineStart: space[6],
+    height: tokenTriggerHeight.md,
   },
 });

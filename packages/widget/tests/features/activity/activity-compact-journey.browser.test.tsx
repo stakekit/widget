@@ -49,7 +49,7 @@ const rowsOf = (container: HTMLElement) =>
   );
 
 describe("Activity in the compact Widget", () => {
-  it("lists two-line rows and opens a receipt under a single back button", async ({
+  it("lists two-line rows and opens a receipt under a single back button, without tabs", async ({
     worker,
   }) => {
     await page.viewport(400, 900);
@@ -98,6 +98,14 @@ describe("Activity in the compact Widget", () => {
     expect(hash.getBoundingClientRect().height).toBeLessThan(
       Number.parseFloat(getComputedStyle(hash).lineHeight) * 1.5
     );
+    expect(app.container.querySelector('[role="tablist"]')).toBeNull();
+
+    await app.getByRole("button", { name: /back/i }).click();
+    await expect.poll(() => rowsOf(app.container).length).toBe(2);
+    await expect.element(app.getByRole("tablist")).toBeVisible();
+    await expect
+      .element(app.getByRole("tab", { name: "Activity", selected: true }))
+      .toBeVisible();
 
     await app.unmount();
   });

@@ -86,6 +86,22 @@ export const mountedColorScheme = (config: PlaygroundConfig) =>
 export const mountedBorrowEnabled = (config: PlaygroundConfig) =>
   config.borrowEnabled && config.layout === "dashboard";
 
+/**
+ * Host variants that force the institutional wallet list (Finery); the widget
+ * rejects a host wallet with it, so the wallet setting does not apply to them.
+ */
+const builtinWalletVariants: Partial<
+  Record<PlaygroundConfig["variant"], "builtin">
+> = { finery: "builtin" };
+
+/** The wallet mode the variant is fixed to, if any. */
+export const fixedVariantWallet = (variant: PlaygroundConfig["variant"]) =>
+  builtinWalletVariants[variant];
+
+/** The wallet mode a config mounts the widget with. */
+export const mountedWallet = (config: PlaygroundConfig) =>
+  fixedVariantWallet(config.variant) ?? config.wallet;
+
 const searchParam = "playground";
 
 const decodeConfigChanges = Schema.decodeUnknownOption(

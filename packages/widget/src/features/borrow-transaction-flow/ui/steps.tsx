@@ -1,6 +1,13 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { IconButton, Notice, Spinner, Stack, Text } from "../../../ui/index";
+import {
+  Button,
+  IconButton,
+  Notice,
+  Spinner,
+  Stack,
+  Text,
+} from "../../../ui/index";
 import { useExecutionLeaveConfirmation } from "../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../leave-confirmation/views";
 import { useTrackPage } from "../../tracking/index";
@@ -12,6 +19,7 @@ import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
+  PageCtaSlot,
 } from "../../widget-shell/views";
 import { getBorrowTransactionFlowDestination } from "../model/borrow-transaction-flow";
 import {
@@ -63,7 +71,7 @@ export const BorrowStepsPage = () => {
             </Text>
           ) : null}
 
-          {execution.steps.length > 0 || failed ? (
+          {execution.steps.length > 0 ? (
             <TransactionSteps
               steps={execution.steps.map((step, index) => ({
                 explorerUrl: step.explorerUrl,
@@ -78,15 +86,6 @@ export const BorrowStepsPage = () => {
                 }),
                 ...getTransactionStepState(t, step.done, step.progress.phases),
               }))}
-              {...(failed
-                ? {
-                    retry: {
-                      hostHook: "borrow-steps-retry",
-                      label: t("shared.retry"),
-                      onClick: execution.retry,
-                    },
-                  }
-                : {})}
             />
           ) : null}
 
@@ -116,15 +115,29 @@ export const BorrowStepsPage = () => {
             </Notice>
           )}
 
-          <PageCtaButton
-            cta={{
-              disabled: false,
-              isLoading: false,
-              label: t("shared.cancel"),
-              onClick: leave,
-              variant: "secondary",
-            }}
-          />
+          <PageCtaSlot>
+            <Stack gap={12}>
+              {failed && (
+                <Button
+                  hostHook="borrow-steps-retry"
+                  onClick={execution.retry}
+                  size="cta"
+                  variant="primary"
+                >
+                  {t("shared.retry")}
+                </Button>
+              )}
+              <PageCtaButton
+                cta={{
+                  disabled: false,
+                  isLoading: false,
+                  label: t("shared.cancel"),
+                  onClick: leave,
+                  variant: "secondary",
+                }}
+              />
+            </Stack>
+          </PageCtaSlot>
 
           <LeaveConfirmationDialog {...leaveConfirmation.dialog} />
         </Stack>

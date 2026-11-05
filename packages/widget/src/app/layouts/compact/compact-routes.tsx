@@ -38,21 +38,22 @@ export const createCompactRoutes = () => {
           path={widgetRoutes.positions.pattern}
           element={<AnimatedPositionsPage />}
         />
-        <Route path={widgetRoutes.activity.pattern}>
-          <Route index element={<AnimatedActivityPage />} />
-          <Route
-            element={
-              <WalletScopeRouteGuard
-                fallbackPath={widgetRoutes.activity.build()}
-              />
-            }
-          >
-            {createActivityActionRoutes({
-              receiptPlacement: "page",
-              selectsDefaultAction: false,
-            })}
-          </Route>
-        </Route>
+        <Route
+          path={widgetRoutes.activity.pattern}
+          element={<AnimatedActivityPage />}
+        />
+      </Route>
+
+      {/* Activity action details + continuation flow, outside the tabs */}
+      <Route
+        element={
+          <WalletScopeRouteGuard fallbackPath={widgetRoutes.activity.build()} />
+        }
+      >
+        {createActivityActionRoutes({
+          receiptPlacement: "page",
+          selectsDefaultAction: false,
+        })}
       </Route>
 
       <Route element={<WalletScopeRouteGuard fallbackPath={earnPath} />}>

@@ -6,7 +6,8 @@ import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
-import { WidgetConfigurationUnavailable } from "./app/composition/widget-configuration-unavailable";
+import { StandaloneWidgetUnavailable } from "./app/composition/standalone-widget-unavailable";
+import { WidgetErrorBoundary } from "./app/composition/widget-error-boundary";
 import { CompactRoutes } from "./app/layouts/compact/compact-routes";
 import { DashboardRoutes } from "./app/layouts/dashboard/dashboard-routes";
 import { LayoutAppContainer } from "./app/layouts/layout-app-container";
@@ -85,7 +86,7 @@ export const SKAppRegistryContent = ({ children }: PropsWithChildren) => {
   return (
     <>
       {rejectedConfig ? (
-        <WidgetConfigurationUnavailable presentation={rejectedConfig} />
+        <StandaloneWidgetUnavailable presentation={rejectedConfig} />
       ) : (
         <SKAppRouter />
       )}
@@ -101,13 +102,15 @@ const SKAppProductionContent = ({
   const [isLedgerDappBrowser] = useState(isLedgerDappBrowserProvider);
 
   return (
-    <SKAtomRegistryProvider
-      hostConfiguration={hostConfiguration}
-      isLedgerLive={isLedgerDappBrowser}
-      routes={applicationRoutes}
-    >
-      <SKAppRegistryContent>{children}</SKAppRegistryContent>
-    </SKAtomRegistryProvider>
+    <WidgetErrorBoundary hostConfiguration={hostConfiguration}>
+      <SKAtomRegistryProvider
+        hostConfiguration={hostConfiguration}
+        isLedgerLive={isLedgerDappBrowser}
+        routes={applicationRoutes}
+      >
+        <SKAppRegistryContent>{children}</SKAppRegistryContent>
+      </SKAtomRegistryProvider>
+    </WidgetErrorBoundary>
   );
 };
 

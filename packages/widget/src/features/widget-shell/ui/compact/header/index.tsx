@@ -86,8 +86,8 @@ export const CompactFrame = ({
         )}
         {showsWallet && (
           <Stack direction="row" align="center" justify="center" gap={8}>
-            {!hideChainSelector && <ChainModal />}
-            <AccountModal />
+            {!hideChainSelector && <ChainModal triggerSize="sm" />}
+            <AccountModal triggerSize="sm" />
           </Stack>
         )}
       </Stack>

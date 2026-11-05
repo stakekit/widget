@@ -437,11 +437,26 @@ describe("Borrow with an external provider", () => {
     await expect
       .element(app.getByText("Withdrawal failed"))
       .not.toBeInTheDocument();
-    await expect
-      .element(app.getByRole("button", { name: "Cancel" }))
-      .toBeEnabled();
+    const cancel = app.getByRole("button", { name: "Cancel" });
+    await expect.element(cancel).toBeEnabled();
 
-    await app.getByRole("button", { name: "Try Again" }).click();
+    // Try Again leads the page's footer, full width above Cancel, under the
+    // steps rather than inside the failed one.
+    const retry = app.getByRole("button", { name: "Try Again" });
+    await expect.element(retry).toBeVisible();
+    const retryElement = retry.element();
+    expect(retryElement.getAttribute("data-rk")).toBe("borrow-steps-retry");
+    expect(retryElement.closest("li")).toBeNull();
+    const steps = app.getByRole("list", { name: "Transaction progress" });
+    const stepsBox = steps.element().getBoundingClientRect();
+    const retryBox = retryElement.getBoundingClientRect();
+    const cancelBox = cancel.element().getBoundingClientRect();
+    expect(retryBox.top).toBeGreaterThanOrEqual(stepsBox.bottom);
+    expect(retryBox.bottom).toBeLessThanOrEqual(cancelBox.top);
+    expect(retryBox.left).toBe(cancelBox.left);
+    expect(retryBox.width).toBe(cancelBox.width);
+
+    await retry.click();
     await expect.poll(() => completePageShown(app)).toBe(true);
     expect(sendBorrowTransaction).toHaveBeenCalledTimes(2);
 

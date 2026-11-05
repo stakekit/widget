@@ -1,7 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import type { HostHook } from "../host-hook";
 import { Icon } from "../primitives/icon";
-import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { borderWidth } from "../tokens/border.stylex";
@@ -9,7 +7,6 @@ import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { stepMarkerSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
-import { Button } from "./button";
 import { ExternalLink } from "./external-link";
 import { Spinner } from "./spinner";
 
@@ -31,8 +28,6 @@ type Step = {
   readonly description?: string;
   /** A link under the step, such as its transaction on a block explorer. */
   readonly link?: StepLink;
-  /** A button under the step, such as retrying the step that failed. */
-  readonly action?: StepAction;
 };
 
 type StepLink = {
@@ -45,14 +40,6 @@ type StepLink = {
    * leads, such as "View transaction" before a shortened hash.
    */
   readonly context?: string;
-};
-
-type StepAction = {
-  readonly label: string;
-  readonly onClick: () => void;
-  /** Shows the button busy, such as while the retry runs. */
-  readonly loading?: boolean;
-  readonly hostHook?: HostHook;
 };
 
 type StepsProps = {
@@ -108,36 +95,19 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
               {step.description}
             </Text>
           )}
-          {(step.link !== undefined || step.action !== undefined) && (
+          {step.link !== undefined && (
             <span {...stylex.props(styles.extras)}>
-              <Stack direction="row" align="center" gap={12} wrap>
-                {step.link !== undefined && (
-                  <Text variant="caption" numeric>
-                    <ExternalLink
-                      href={step.link.href}
-                      newTabLabel={step.link.newTabLabel}
-                    >
-                      {step.link.context !== undefined && (
-                        <VisuallyHidden>{`${step.link.context}, `}</VisuallyHidden>
-                      )}
-                      {step.link.label}
-                    </ExternalLink>
-                  </Text>
-                )}
-                {step.action !== undefined && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={step.action.onClick}
-                    loading={step.action.loading ?? false}
-                    {...(step.action.hostHook === undefined
-                      ? {}
-                      : { hostHook: step.action.hostHook })}
-                  >
-                    {step.action.label}
-                  </Button>
-                )}
-              </Stack>
+              <Text variant="caption" numeric>
+                <ExternalLink
+                  href={step.link.href}
+                  newTabLabel={step.link.newTabLabel}
+                >
+                  {step.link.context !== undefined && (
+                    <VisuallyHidden>{`${step.link.context}, `}</VisuallyHidden>
+                  )}
+                  {step.link.label}
+                </ExternalLink>
+              </Text>
             </span>
           )}
         </span>

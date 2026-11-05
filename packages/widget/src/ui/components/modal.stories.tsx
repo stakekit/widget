@@ -178,8 +178,104 @@ export const Page: Story = {
     await waitFor(() => expect(popup).toBeVisible());
     const frame = within(popup).getByTitle("Verification");
     await expect(frame.getBoundingClientRect().height).toBeGreaterThan(200);
+    // A page dialog is not held to a list dialog's cap.
+    await expect(popup.getBoundingClientRect().height).toBeCloseTo(
+      window.innerHeight - 48,
+      0
+    );
     await userEvent.click(within(popup).getByTestId("modal-close"));
     await waitFor(() => expect(popup).not.toBeInTheDocument());
+  },
+};
+
+// Choices, as in a network picker: the keyboard scrolls the body by them.
+const thirtyRows = Array.from({ length: 30 }, (_, index) => (
+  <Button key={index}>Network {index + 1}</Button>
+));
+
+/**
+ * A long list is capped at 560px, or 80% of a shorter viewport; the body
+ * scrolls under the title, which stays in view.
+ */
+export const LongList: Story = {
+  args: {
+    open: true,
+    description: undefined,
+    bodyTestId: "modal-body",
+    titleTestId: "modal-title",
+    children: thirtyRows,
+  },
+  render: ({ trigger: _trigger, ...args }) => <Modal {...args} />,
+  play: async () => {
+    const popup = await dialog();
+    await waitFor(() => expect(popup).toBeVisible());
+    const cap = Math.min(560, window.innerHeight * 0.8);
+    await expect(popup.getBoundingClientRect().height).toBeLessThanOrEqual(
+      cap + 0.5
+    );
+    await expect(popup.getBoundingClientRect().height).toBeGreaterThan(cap - 1);
+    const body = within(popup).getByTestId("modal-body");
+    await expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
+    const title = within(popup).getByTestId("modal-title");
+    const titleTop =
+      title.getBoundingClientRect().top - popup.getBoundingClientRect().top;
+    const lastRow = within(popup).getByText("Network 30");
+    await expect(lastRow.getBoundingClientRect().top).toBeGreaterThan(
+      popup.getBoundingClientRect().bottom
+    );
+    body.scrollTop = body.scrollHeight;
+    // The body scrolls the last row into the dialog; the title stays put.
+    await waitFor(() =>
+      expect(lastRow.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        popup.getBoundingClientRect().bottom
+      )
+    );
+    await expect(
+      title.getBoundingClientRect().top - popup.getBoundingClientRect().top
+    ).toBeCloseTo(titleTop, 0);
+    // Its rows take focus, so the body adds no Tab stop of its own.
+    await expect(body).not.toHaveAttribute("tabindex");
+  },
+};
+
+/**
+ * A long text with nothing to focus in it: the body takes focus itself, as a
+ * region named by the title, so the keyboard can scroll it.
+ */
+export const LongText: Story = {
+  args: {
+    open: true,
+    description: undefined,
+    bodyTestId: "modal-body",
+    children: Array.from({ length: 30 }, (_, index) => (
+      <Text key={index}>Paragraph {index + 1} of the terms.</Text>
+    )),
+  },
+  render: ({ trigger: _trigger, ...args }) => <Modal {...args} />,
+  play: async () => {
+    const popup = await dialog();
+    const body = within(popup).getByTestId("modal-body");
+    await waitFor(() =>
+      expect(
+        within(popup).getByRole("region", { name: "What is Yield.xyz?" })
+      ).toBe(body)
+    );
+    await expect(body).toHaveAttribute("tabindex", "0");
+  },
+};
+
+/** As a sheet, a long list is capped at 75% of the viewport's height. */
+export const LongListSheet: Story = {
+  ...LongList,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async () => {
+    const popup = await dialog();
+    await waitFor(() => expect(popup).toBeVisible());
+    await expect(popup.getBoundingClientRect().height).toBeLessThanOrEqual(
+      window.innerHeight * 0.75 + 0.5
+    );
+    const body = within(popup).getByTestId("modal-body");
+    await expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
   },
 };
 

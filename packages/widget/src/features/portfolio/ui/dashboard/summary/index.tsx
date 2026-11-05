@@ -8,6 +8,7 @@ import {
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
+  Box,
   Card,
   Metric,
   MetricGroup,
@@ -116,47 +117,51 @@ export const Summary = () => {
 
   return (
     <Stack gap={8}>
-      <Card padding={16}>
-        <MetricGroup columns={{ base: 1, sm: 3 }}>
-          <SummaryMetric
-            kind="usd"
-            label={t(
-              hasBorrowPositions
-                ? "dashboard.overview.summary.total_supplied"
-                : "dashboard.overview.summary.total_staked"
-            )}
-            value={totalPositionsValue}
-            isLoading={
-              summary.allPositions._tag === "Loading" ||
-              borrowPositionsAreLoading
-            }
-          />
+      {/* A short band of figures: less padding above and below than beside. */}
+      <Card padding={0}>
+        <Box paddingBlock={12} paddingInline={16}>
+          <MetricGroup columns={{ base: 1, sm: 3 }}>
+            <SummaryMetric
+              kind="usd"
+              label={t(
+                hasBorrowPositions
+                  ? "dashboard.overview.summary.total_supplied"
+                  : "dashboard.overview.summary.total_staked"
+              )}
+              value={totalPositionsValue}
+              isLoading={
+                summary.allPositions._tag === "Loading" ||
+                borrowPositionsAreLoading
+              }
+            />
 
-          <SummaryMetric
-            kind="percent"
-            label={t("dashboard.overview.summary.average_apy")}
-            value={averageApyValue}
-            isLoading={
-              summary.averageApy._tag === "Loading" || borrowPositionsAreLoading
-            }
-          />
+            <SummaryMetric
+              kind="percent"
+              label={t("dashboard.overview.summary.average_apy")}
+              value={averageApyValue}
+              isLoading={
+                summary.averageApy._tag === "Loading" ||
+                borrowPositionsAreLoading
+              }
+            />
 
-          <SummaryMetric
-            kind="usd"
-            label={t(
-              hasBorrowPositions
-                ? "dashboard.overview.summary.net_worth"
-                : "dashboard.overview.summary.available_balance"
-            )}
-            value={availableOrNetWorthValue}
-            isLoading={
-              hasBorrowPositions
-                ? summary.allPositions._tag === "Loading" ||
-                  borrowPositionsAreLoading
-                : summary.availableBalance._tag === "Loading"
-            }
-          />
-        </MetricGroup>
+            <SummaryMetric
+              kind="usd"
+              label={t(
+                hasBorrowPositions
+                  ? "dashboard.overview.summary.net_worth"
+                  : "dashboard.overview.summary.available_balance"
+              )}
+              value={availableOrNetWorthValue}
+              isLoading={
+                hasBorrowPositions
+                  ? summary.allPositions._tag === "Loading" ||
+                    borrowPositionsAreLoading
+                  : summary.availableBalance._tag === "Loading"
+              }
+            />
+          </MetricGroup>
+        </Box>
       </Card>
       {allPositions?.excludesHidden ? (
         <Text variant="caption" tone="muted">

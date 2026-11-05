@@ -15,7 +15,7 @@ export type TransactionStep = Omit<FlowStep, "explorerUrl" | "hash"> & {
   readonly hash: TransactionHash | null;
 };
 
-type TransactionStepsProps = Pick<FlowStepsProps, "retry" | "summary"> & {
+type TransactionStepsProps = Pick<FlowStepsProps, "summary"> & {
   readonly steps: ReadonlyArray<TransactionStep>;
 };
 

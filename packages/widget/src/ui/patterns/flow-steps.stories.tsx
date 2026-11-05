@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { FlowSteps } from "./flow-steps";
 
 const stateLabels = {
@@ -131,10 +131,9 @@ export const DoneWithHash: Story = {
   },
 };
 
-/** Failed, the step says what went wrong, and its retry button retries. */
+/** Failed, the step says so and what went wrong; retrying is the page's. */
 export const Failed: Story = {
   args: {
-    retry: { label: "Try again", onClick: fn() },
     steps: [
       { id: "approve", label: "Approve", state: "done" },
       {
@@ -145,74 +144,18 @@ export const Failed: Story = {
       },
     ],
   },
-  play: async ({ args, canvasElement }) => {
-    const [approve, stake] = stepItems(canvasElement);
+  play: async ({ canvasElement }) => {
+    const [, stake] = stepItems(canvasElement);
     await expect(stake).toHaveTextContent(
-      "Stake, FailedThe transaction was rejected.Try again"
+      "Stake, FailedThe transaction was rejected."
     );
-    await expect(
-      within(approve ?? canvasElement).queryByRole("button")
-    ).toBeNull();
-    await userEvent.click(
-      within(stake ?? canvasElement).getByRole("button", { name: "Try again" })
-    );
-    await expect(args.retry?.onClick).toHaveBeenCalledOnce();
+    await expect(within(canvasElement).queryByRole("button")).toBeNull();
   },
 };
 
 export const FailedDark: Story = {
   ...Failed,
   globals: { colorScheme: "dark" },
-};
-
-/** With no step showing the failure, the retry button sits under the list. */
-export const RetryWithoutFailedStep: Story = {
-  args: {
-    retry: { label: "Try again", onClick: fn() },
-    steps: [{ id: "stake", label: "Stake", state: "pending" }],
-  },
-  play: async ({ args, canvasElement }) => {
-    const [stake] = stepItems(canvasElement);
-    await expect(
-      within(stake ?? canvasElement).queryByRole("button")
-    ).toBeNull();
-    await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Try again" })
-    );
-    await expect(args.retry?.onClick).toHaveBeenCalledOnce();
-  },
-};
-
-/** Failed before any step was listed, the flow shows only its retry button. */
-export const RetryWithoutSteps: Story = {
-  args: {
-    retry: { label: "Try again", onClick: fn() },
-    steps: [],
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(
-      canvas.queryByRole("list", { name: "Transaction progress" })
-    ).toBeNull();
-    await expect(
-      canvas.getByRole("button", { name: "Try again" })
-    ).toBeVisible();
-  },
-};
-
-/** While the retry runs, its button is busy. */
-export const Retrying: Story = {
-  args: {
-    ...Failed.args,
-    retry: { label: "Try again", onClick: fn(), loading: true },
-  },
-  play: async ({ canvasElement }) => {
-    const retry = within(canvasElement).getByRole("button", {
-      name: "Try again",
-    });
-    await expect(retry).toBeDisabled();
-    await expect(retry).toHaveAttribute("aria-busy", "true");
-  },
 };
 
 /** The action the steps run heads them, with how far the flow got. */

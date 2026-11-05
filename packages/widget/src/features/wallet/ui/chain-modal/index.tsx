@@ -187,7 +187,15 @@ const ScopedWalletChainPicker = ({
   );
 };
 
-export const ChainModal = () => {
+/**
+ * The wallet header's network pill and the network dialog it opens.
+ * `triggerSize` sizes the pill to its header's row.
+ */
+export const ChainModal = ({
+  triggerSize,
+}: {
+  readonly triggerSize: "sm" | "tabs";
+}) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const wallet = useSKWallet();
@@ -217,6 +225,7 @@ export const ChainModal = () => {
     <>
       <TokenTrigger
         hostHook="chain-modal-container"
+        size={triggerSize}
         token={{
           name: wallet.chain.name,
           ...(currentChainIconUrl === undefined

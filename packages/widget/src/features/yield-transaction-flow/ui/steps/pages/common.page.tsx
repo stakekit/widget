@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
-import { Notice, Stack, Text } from "../../../../../ui/index";
+import { Button, Notice, Stack, Text } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
   getTransactionStepState,
@@ -13,6 +13,7 @@ import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
+  PageCtaSlot,
 } from "../../../../widget-shell/views";
 import {
   formatTransactionTypeLabel,
@@ -109,22 +110,24 @@ export const StepsPage = () => {
             </Notice>
           )}
 
-          <TransactionSteps
-            {...(summary ? { summary } : {})}
-            {...(retry
-              ? {
-                  retry: {
-                    hostHook: "footer-button-primary",
-                    label: t("shared.retry"),
-                    onClick: retry,
-                  },
-                }
-              : {})}
-            steps={steps}
-          />
+          <TransactionSteps {...(summary ? { summary } : {})} steps={steps} />
         </Stack>
 
-        <PageCtaButton cta={cta} />
+        <PageCtaSlot>
+          <Stack gap={12}>
+            {retry && (
+              <Button
+                hostHook="footer-button-primary"
+                onClick={retry}
+                size="cta"
+                variant="primary"
+              >
+                {t("shared.retry")}
+              </Button>
+            )}
+            <PageCtaButton cta={cta} />
+          </Stack>
+        </PageCtaSlot>
 
         <LeaveConfirmationDialog {...leaveConfirmationDialog} />
       </PageContainer>

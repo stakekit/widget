@@ -35,6 +35,7 @@ import {
 } from "./appearance-decoder";
 import { exhaustiveLiterals } from "./exhaustive-literals";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
+import { variantHostProfiles } from "./host-profile";
 import {
   mapLegacyTheme,
   resolveWidgetAppearance,
@@ -333,6 +334,7 @@ export type InvalidHostConfigurationIssue =
   | "borrow-requires-category-grouping"
   | "borrow-requires-dashboard"
   | "host-configuration-decode-failed"
+  | "institutional-wallets-with-external-provider"
   | "zerion-chain-modal-missing";
 
 export class InvalidHostConfiguration extends Data.TaggedError(
@@ -702,6 +704,16 @@ const semanticIssues = (
   if (hostConfiguration.variant === "zerion" && !hostConfiguration.chainModal) {
     issues.push("zerion-chain-modal-missing");
   }
+  // Institutional wallets replace the widget's wallet list, while an external
+  // provider means the host owns the wallet and no list is shown.
+  if (
+    hostConfiguration.externalProviders !== undefined &&
+    (hostConfiguration.institutionalWallets === true ||
+      variantHostProfiles[hostConfiguration.variant ?? "default"]
+        .forcesInstitutionalWallets)
+  ) {
+    issues.push("institutional-wallets-with-external-provider");
+  }
 
   return issues;
 };
@@ -710,6 +722,7 @@ const semanticIssuePath: Record<SemanticHostConfigurationIssue, string> = {
   "borrow-provider-capability-missing": "externalProviders.provider",
   "borrow-requires-category-grouping": "yieldGrouping",
   "borrow-requires-dashboard": "layout",
+  "institutional-wallets-with-external-provider": "externalProviders",
   "zerion-chain-modal-missing": "chainModal",
 };
 

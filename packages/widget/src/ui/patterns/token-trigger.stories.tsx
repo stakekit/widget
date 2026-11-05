@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
+import { Tabs } from "../components/tabs";
 import { Stack } from "../primitives/stack";
 import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
 import { TokenTrigger } from "./token-trigger";
@@ -48,6 +49,53 @@ export const Size: Story = {
     await expect(Number(getComputedStyle(symbol).fontWeight)).toBe(600);
     const symbolBox = symbol.getBoundingClientRect();
     await expect(symbolBox.height).toBeLessThan(box.height / 1.5);
+  },
+};
+
+/**
+ * A wallet header's pills: `sm` as tall as a small control, `tabs` as tall
+ * as the pill tabs list beside it, both with a small logo and body text.
+ */
+export const HeaderSizes: Story = {
+  globals: { tabsIndicator: "pill" },
+  render: (args) => (
+    <Stack gap={16} align="start">
+      <TokenTrigger {...args} size="sm" testId="sm" />
+      <Stack direction="row" align="center" gap={8}>
+        <Tabs
+          label="Sections"
+          tabs={[
+            { value: "earn", label: "Earn" },
+            { value: "manage", label: "Manage" },
+          ]}
+          value="earn"
+          onValueChange={fn()}
+        />
+        <TokenTrigger {...args} size="tabs" testId="tabs" />
+      </Stack>
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByTestId("sm").getBoundingClientRect().height).toBe(
+      32
+    );
+    await expect(
+      canvas.getByTestId("tabs").getBoundingClientRect().height
+    ).toBe(
+      canvas.getByRole("tablist", { name: "Sections" }).getBoundingClientRect()
+        .height
+    );
+    for (const trigger of [
+      canvas.getByTestId("sm"),
+      canvas.getByTestId("tabs"),
+    ]) {
+      const logo = trigger.firstElementChild?.getBoundingClientRect();
+      await expect(logo?.height).toBe(24);
+      await expect(
+        getComputedStyle(within(trigger).getByText("ETH")).fontSize
+      ).toBe("14px");
+    }
   },
 };
 

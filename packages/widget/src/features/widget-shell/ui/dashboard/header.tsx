@@ -31,8 +31,8 @@ export const Header = () => {
 
   return (
     <Stack hostHook="header" direction="row" align="center" gap={8}>
-      {!hideChainSelector && <ChainModal />}
-      <AccountModal />
+      {!hideChainSelector && <ChainModal triggerSize="tabs" />}
+      <AccountModal triggerSize="tabs" />
       {showDisconnect && (
         <IconButton
           icon="XIcon"

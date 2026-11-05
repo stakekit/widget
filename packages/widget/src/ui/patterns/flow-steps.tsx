@@ -1,7 +1,5 @@
 import { TokenAvatar } from "../components/avatar";
-import { Button } from "../components/button";
 import { Steps } from "../components/steps";
-import type { HostHook } from "../host-hook";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import type { TokenLogo } from "./token";
@@ -64,16 +62,6 @@ type FlowStepsProps = {
     readonly label: string;
     readonly newTabLabel: string;
   };
-  /**
-   * The retry button, shown once a step failed: under that step, or under
-   * the list when no step shows the failure.
-   */
-  readonly retry?: {
-    readonly label: string;
-    readonly onClick: () => void;
-    readonly loading?: boolean;
-    readonly hostHook?: HostHook;
-  };
 };
 
 const stepStatus = {
@@ -87,9 +75,8 @@ const stepStatus = {
 
 /**
  * A flow's transactions as a `Steps` timeline under a summary of the action
- * they run: how many are done, each transaction's state under its label, its
- * explorer link once it has one, and a retry button once a transaction
- * failed.
+ * they run: how many are done, each transaction's state under its label, and
+ * its explorer link once it has one.
  */
 export const FlowSteps = ({
   steps,
@@ -98,9 +85,7 @@ export const FlowSteps = ({
   summary,
   progressLabel,
   explorerLink,
-  retry,
 }: FlowStepsProps) => {
-  const failedId = steps.find((step) => step.state === "failed")?.id;
   const confirmed = steps.filter((step) => step.state === "done").length;
 
   return (
@@ -155,24 +140,8 @@ export const FlowSteps = ({
                       : { context: explorerLink.label, label: step.hash }),
                   },
                 }),
-            ...(retry !== undefined && step.id === failedId
-              ? { action: retry }
-              : {}),
           }))}
         />
-      )}
-      {retry !== undefined && failedId === undefined && (
-        <Button
-          variant="primary"
-          size="cta"
-          onClick={retry.onClick}
-          loading={retry.loading ?? false}
-          {...(retry.hostHook === undefined
-            ? {}
-            : { hostHook: retry.hostHook })}
-        >
-          {retry.label}
-        </Button>
       )}
     </Stack>
   );

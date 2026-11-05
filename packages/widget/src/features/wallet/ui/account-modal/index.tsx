@@ -24,7 +24,15 @@ import {
 } from "../../state/account-presentation";
 import { logoutAtom, switchAccountAtom } from "../../state/workflows";
 
-export const AccountModal = () => {
+/**
+ * The wallet header's account pill and the account dialog it opens.
+ * `triggerSize` sizes the pill to its header's row.
+ */
+export const AccountModal = ({
+  triggerSize,
+}: {
+  readonly triggerSize: "sm" | "tabs";
+}) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const wallet = useSKWallet();
@@ -50,6 +58,7 @@ export const AccountModal = () => {
     <>
       <TokenTrigger
         hostHook="account-modal-container"
+        size={triggerSize}
         token={{ name: displayAddress }}
         account={wallet.address}
         onClick={() => {

@@ -707,7 +707,10 @@ type SettingsPropsBase = {
   yieldProviderOrder?: SKYieldProviderOrder;
   /** Lists yields flat or grouped by category. Defaults to `"category"` in the dashboard Layout, else `"flat"`. */
   yieldGrouping?: "flat" | "category";
-  /** Offers institutional wallets instead of the regular wallet list. Read at mount. */
+  /**
+   * Offers institutional wallets instead of the regular wallet list. Read at
+   * mount. The Finery variant forces it; either rejects `externalProviders`.
+   */
   institutionalWallets?: boolean;
   /** Hides the chain selector in the header. */
   hideChainSelector?: boolean;

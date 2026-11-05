@@ -9,7 +9,11 @@ import { EvmChainIds } from "../src/index.package";
 import { readConnectionSettings } from "./connection-settings";
 import { installDevConsole, logWalletEntry } from "./dev-console";
 import { PlaygroundApp } from "./playground-app";
-import { mountedColorScheme, readPlaygroundConfig } from "./playground-config";
+import {
+  mountedColorScheme,
+  mountedWallet,
+  readPlaygroundConfig,
+} from "./playground-config";
 import { connectInjectedWallet } from "./wallet/injected-wallet-backend";
 import {
   makePlaygroundWallet,
@@ -25,7 +29,7 @@ const connection = readConnectionSettings();
 const scriptedWalletDelayMs = 800;
 
 const startHostWallet = async (): Promise<PlaygroundWallet | undefined> => {
-  switch (config.wallet) {
+  switch (mountedWallet(config)) {
     case "builtin":
       return undefined;
     case "scripted":

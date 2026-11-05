@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentProps } from "react";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { Steps } from "./steps";
 
 const meta = {
@@ -102,7 +102,7 @@ export const WithLink: Story = {
   },
 };
 
-const hashAndActionSteps: ComponentProps<typeof Steps>["steps"] = [
+const hashSteps: ComponentProps<typeof Steps>["steps"] = [
   {
     id: "approve",
     label: "Approve",
@@ -120,19 +120,18 @@ const hashAndActionSteps: ComponentProps<typeof Steps>["steps"] = [
     label: "Stake",
     status: "failed",
     description: "The transaction was rejected.",
-    action: { label: "Try again", onClick: fn() },
   },
 ];
 
 /**
- * A step's own state line replaces its status's label; a shortened hash link
- * reads what it opens first, and the step's button acts.
+ * A step's own state line replaces its status's label, and a shortened hash
+ * link reads what it opens first.
  */
-export const WithStateHashAndAction: Story = {
+export const WithStateAndHash: Story = {
   args: {
-    steps: hashAndActionSteps,
+    steps: hashSteps,
   },
-  play: async ({ args, canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const [approve, stake] = within(canvasElement).getAllByRole("listitem");
     await expect(approve).toHaveTextContent("Approve, Confirmed");
     await expect(
@@ -143,15 +142,11 @@ export const WithStateHashAndAction: Story = {
     await expect(stake).toHaveTextContent(
       "Stake, failedThe transaction was rejected."
     );
-    await userEvent.click(
-      within(stake ?? canvasElement).getByRole("button", { name: "Try again" })
-    );
-    await expect(args.steps[1]?.action?.onClick).toHaveBeenCalledOnce();
   },
 };
 
-export const WithStateHashAndActionDark: Story = {
-  ...WithStateHashAndAction,
+export const WithStateAndHashDark: Story = {
+  ...WithStateAndHash,
   globals: { colorScheme: "dark" },
 };
 
@@ -165,7 +160,7 @@ const box = (element: Element | undefined) => {
  * one; steps sit 20px apart; nothing leaves the list at a narrow width.
  */
 export const Geometry: Story = {
-  args: { steps: hashAndActionSteps },
+  args: { steps: hashSteps },
   render: (args) => (
     <div style={{ width: 200 }}>
       <Steps {...args} />

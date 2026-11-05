@@ -1,10 +1,10 @@
 import { Dialog } from "@base-ui/react/dialog";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactElement, ReactNode, RefObject } from "react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
-import { borderWidth } from "../tokens/border.stylex";
+import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -73,25 +73,65 @@ type ModalProps = {
 
 const enteringOrLeaving = ":is([data-starting-style], [data-ending-style])";
 
+/** What the keyboard can reach: its own focus moves the scroll with it. */
+const focusableSelector = [
+  "a[href]",
+  "button:not(:disabled)",
+  "input:not(:disabled)",
+  "select:not(:disabled)",
+  "textarea:not(:disabled)",
+  "iframe",
+  "[contenteditable]:not([contenteditable='false'])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(", ");
+
+type BodyScroll = {
+  /** The content overflows the body, so it scrolls. */
+  readonly overflows: boolean;
+  /**
+   * It scrolls with nothing in it to focus, so the body itself takes focus
+   * for the keyboard to scroll it.
+   */
+  readonly needsFocus: boolean;
+};
+
 /**
- * A ref callback reporting whether an element's content overflows it. The
- * element changes size whenever its overflow can change: a modal body grows
- * with its content up to the dialog's height cap.
+ * A ref callback reporting how an element scrolls. It measures again as the
+ * element resizes, as a modal body grows with its content up to the dialog's
+ * height cap, and as its content changes, which a capped body does not
+ * resize for.
  */
-const observeOverflow =
-  (onChange: (overflows: boolean) => void) => (element: HTMLElement | null) => {
+const observeScroll =
+  (onChange: (scroll: BodyScroll) => void) => (element: HTMLElement | null) => {
     if (element === null) return;
-    const observer = new ResizeObserver(() => {
-      onChange(element.scrollHeight > element.clientHeight);
+    const measure = () => {
+      const overflows = element.scrollHeight > element.clientHeight;
+      onChange({
+        overflows,
+        needsFocus:
+          overflows && element.querySelector(focusableSelector) === null,
+      });
+    };
+    const resizes = new ResizeObserver(measure);
+    resizes.observe(element);
+    const mutations = new MutationObserver(measure);
+    mutations.observe(element, {
+      attributeFilter: ["disabled", "href", "tabindex", "contenteditable"],
+      characterData: true,
+      childList: true,
+      subtree: true,
     });
-    observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      resizes.disconnect();
+      mutations.disconnect();
+    };
   };
 
 /**
  * A dialog: a bottom sheet below a 520px viewport and a centered dialog from
- * there up. It traps focus, closes on Escape and returns focus to its opener,
- * also after being `suspended` in between.
+ * there up. Its height is capped, so a long list scrolls in its body under
+ * the title. It traps focus, closes on Escape and returns focus to its
+ * opener, also after being `suspended` in between.
  */
 export const Modal = ({
   open,
@@ -115,9 +155,16 @@ export const Modal = ({
   const container = usePortalContainer();
   const opener = useRef<HTMLElement | null>(null);
   const [resuming, setResuming] = useState(false);
+  const titleId = useId();
   const [bodyOverflows, setBodyOverflows] = useState(false);
-  // Created once, so re-renders keep the body's observer connected.
-  const [observeBody] = useState(() => observeOverflow(setBodyOverflows));
+  const [bodyNeedsFocus, setBodyNeedsFocus] = useState(false);
+  // Created once, so re-renders keep the body's observers connected.
+  const [observeBody] = useState(() =>
+    observeScroll(({ overflows, needsFocus }) => {
+      setBodyOverflows(overflows);
+      setBodyNeedsFocus(needsFocus);
+    })
+  );
   // A modal shown again after being suspended keeps its original opener.
   if (open === true && suspended && !resuming) setResuming(true);
   if (open !== true && resuming) setResuming(false);
@@ -163,6 +210,7 @@ export const Modal = ({
             )}
             <div {...stylex.props(styles.title)}>
               <Dialog.Title
+                id={titleId}
                 data-testid={titleTestId}
                 render={<Text variant="title" as="h2" />}
               >
@@ -185,10 +233,16 @@ export const Modal = ({
           <div
             ref={observeBody}
             data-testid={bodyTestId}
+            // A body that scrolls with nothing to focus in it takes focus
+            // itself, named by the title, so the keyboard can scroll it.
+            {...(bodyNeedsFocus
+              ? { tabIndex: 0, role: "region", "aria-labelledby": titleId }
+              : {})}
             {...stylex.props(
               styles.body,
               footer !== undefined && styles.bodyOverFooter,
-              size === "page" && styles.pageBody
+              size === "page" && styles.pageBody,
+              styles.bodyFocusRing
             )}
           >
             {description !== undefined && (
@@ -270,12 +324,14 @@ const styles = stylex.create({
     flexGrow: 1,
     minWidth: 0,
   },
-  // Fills the dialog's height so an embedded page has room; a sheet below 520px.
+  // Fills the viewport but a scrim's margin, so an embedded page has room,
+  // past the cap of a list's dialog; a sheet below 520px.
   pagePopup: {
     height: {
-      default: overlaySize.sheetMaxHeight,
-      [viewport.dialog]: overlaySize.dialogMaxHeight,
+      default: overlaySize.pageSheetHeight,
+      [viewport.dialog]: overlaySize.pageDialogHeight,
     },
+    maxHeight: "none",
     width: {
       default: "100%",
       [viewport.dialog]: `min(${containerWidth.split}, calc(100vw - 2 * ${overlaySize.dialogInset}))`,
@@ -290,6 +346,14 @@ const styles = stylex.create({
     flexGrow: 1,
     minHeight: 0,
     overflowY: "auto",
+  },
+  // The focus ring of a body that takes focus, drawn inside it: the body
+  // spans the dialog's width, so a ring outside it would pass its edges.
+  bodyFocusRing: {
+    outlineColor: color.focusRing,
+    outlineOffset: `calc(-1 * ${focusRing.width})`,
+    outlineStyle: { default: "none", ":focus-visible": "solid" },
+    outlineWidth: focusRing.width,
   },
   // The footer's own top padding parts it from the body, so that space stays
   // put while the body scrolls under it.

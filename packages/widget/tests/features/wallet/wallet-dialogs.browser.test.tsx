@@ -483,3 +483,43 @@ it.for(["account", "chain"] as const)(
     await expect.element(trigger).toHaveFocus();
   }
 );
+
+it.for([
+  ["Compact", false],
+  ["Dashboard", true],
+] as const)(
+  "sizes the %s Layout's header wallet pills to their row",
+  async ([, dashboardVariant], { worker }) => {
+    setup(worker);
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        dashboardVariant,
+        externalProviders: {
+          type: "generic",
+          currentAddress: "0x1111111111111111111111111111111111111111",
+          supportedChainIds: [mainnet.id, avalanche.id],
+          provider: {
+            switchChain: async () => {},
+            signMessage: async () => "signature",
+            sendTransaction: async () => "hash",
+          },
+        },
+      },
+    });
+    const pills = [
+      app.getByRole("button", { name: "Ethereum", exact: true }),
+      app.getByRole("button", { name: "0x11…1111", exact: true }),
+    ];
+    for (const pill of pills) await expect.element(pill).toBeVisible();
+    // Beside the Dashboard's tabs, as tall as their list; otherwise as tall
+    // as a small control.
+    const height = dashboardVariant
+      ? app.getByRole("tablist").first().element().getBoundingClientRect()
+          .height
+      : 32;
+    for (const pill of pills) {
+      expect(pill.element().getBoundingClientRect().height).toBe(height);
+    }
+  }
+);

@@ -70,8 +70,16 @@ export const avatarBadgeSize = stylex.defineConsts({
   xl: "32px",
 });
 
-/** A token trigger's height: a touch-sized pill around a `control` avatar. */
+/**
+ * A token trigger's height: `md` a touch-sized pill around a `control`
+ * avatar; `sm` a wallet header's pill around an `sm` avatar, as tall as a
+ * small control. `tabs` is a role, not a step: as tall as a pill `Tabs` list,
+ * whose 4px padding holds a tab's 6px padding around its 18px label line,
+ * over the list's 1px rule.
+ */
 export const tokenTriggerHeight = stylex.defineConsts({
+  sm: "32px",
+  tabs: "39px",
   md: "44px",
 });
 

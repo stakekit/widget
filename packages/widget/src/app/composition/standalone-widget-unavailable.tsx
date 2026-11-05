@@ -8,12 +8,13 @@ import { LayoutAppContainer } from "../layouts/layout-app-container";
 import { ThemeStyles } from "./providers/theme-wrapper";
 
 /**
- * Rendered instead of the widget when the initial Host Configuration was
- * rejected. The Application Runtime never started, so the presentation is
- * decoded from the rejected configuration and the copy comes from a
- * standalone i18n instance in the browser's language.
+ * The widget-unavailable notice without the Application Runtime: rendered
+ * instead of the widget when the initial Host Configuration was rejected, or
+ * when rendering failed outside the route error boundary. The presentation is
+ * decoded from the Host Configuration and the copy comes from a standalone
+ * i18n instance in the browser's language.
  */
-export const WidgetConfigurationUnavailable = ({
+export const StandaloneWidgetUnavailable = ({
   presentation,
 }: {
   readonly presentation: RejectedConfigurationPresentation;

@@ -1224,7 +1224,7 @@ describe("borrow execution flow component", () => {
       const app = yield* renderExecution(makeBorrowApi({}), {
         stepsElement: (
           <>
-            <AccountModal />
+            <AccountModal triggerSize="sm" />
             <BorrowStepsPage />
           </>
         ),

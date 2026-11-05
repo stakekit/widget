@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";
+import type { PageCta } from "../../../src/features/widget-shell/views";
 import type { YieldStepRow } from "../../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
 import { StepsPage } from "../../../src/features/yield-transaction-flow/ui/steps/pages/common.page";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
@@ -8,6 +9,7 @@ import { render } from "../../utils/test-utils.dom";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 
 type StepsMock = {
+  cta?: PageCta;
   numbered: boolean;
   retry?: () => void;
   summary?: { title: string; detail?: string; token: { name: string } };
@@ -23,7 +25,7 @@ vi.mock(
   () => ({
     useSteps: () => ({
       cancelled: false,
-      cta: null,
+      cta: steps.current.cta ?? null,
       customSignErrorMessage: undefined,
       leaveConfirmationDialog: {
         onLeave: () => {},
@@ -157,9 +159,16 @@ describe("Yield Steps page progress", () => {
     app.unmount();
   });
 
-  it("retries from the failed step", async () => {
+  it("retries from the footer, above Cancel, keeping the failure on its step", async () => {
     const retry = vi.fn();
     const app = await renderSteps({
+      cta: {
+        disabled: false,
+        isLoading: false,
+        label: "Cancel",
+        onClick: () => {},
+        variant: "secondary",
+      },
       numbered: true,
       retry,
       txStates: [{ ...row("STAKE"), phases: { ...idle, sign: "failed" } }],
@@ -167,9 +176,18 @@ describe("Yield Steps page progress", () => {
 
     const [stake] = app.container.querySelectorAll("li");
     expect(stake?.textContent).toContain("Failed");
-    const button = stake?.querySelector("button");
+    expect(stake?.textContent).toContain("Something went wrong");
+    expect(stake?.querySelector("button")).toBeNull();
+
+    // In document order: the steps, then Try Again, then Cancel.
+    const order = [...app.container.querySelectorAll("ol, button")].map(
+      (element) => (element.tagName === "OL" ? "steps" : element.textContent)
+    );
+    expect(order.slice(-3)).toEqual(["steps", "Try Again", "Cancel"]);
+    const button = app.container.querySelector<HTMLButtonElement>(
+      '[data-rk="footer-button-primary"]'
+    );
     expect(button?.textContent).toBe("Try Again");
-    expect(button?.dataset.rk).toBe("footer-button-primary");
     button?.click();
     expect(retry).toHaveBeenCalledOnce();
     app.unmount();

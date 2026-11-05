@@ -279,6 +279,32 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
+  it.each([
+    { institutionalWallets: true, variant: "default" },
+    { variant: "finery" },
+  ] as const)(
+    "rejects an external provider with institutional wallets (%o)",
+    (settings) => {
+      const result = decodeHostConfiguration({
+        apiKey: "api-key",
+        externalProviders: {
+          currentAddress: "0xWallet",
+          provider: {},
+          type: "generic",
+        },
+        ...settings,
+      } as unknown as SKHostConfiguration);
+
+      expect(Result.isFailure(result)).toBe(true);
+      if (Result.isFailure(result)) {
+        expect(result.failure.issues).toEqual([
+          "institutional-wallets-with-external-provider",
+        ]);
+        expect(result.failure.issuePaths).toEqual(["externalProviders"]);
+      }
+    }
+  );
+
   it("returns tagged warnings for recovered Host Configuration values", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",
