@@ -143,10 +143,6 @@ catalog:
   "@stylexjs/eslint-plugin": 0.19.1
   oxfmt: 0.75.0
   oxlint: 1.90.0
-  # The type checker behind plain `oxlint --type-aware`, which the editor's oxc
-  # extension runs. Lint scripts run the same rules on tsrs through effect-tsgo.
-  # oxlint 1.90 needs >=7.0.2005.
-  oxlint-tsgolint: 7.0.2005
   storybook: 10.6.5
   "@base-ui/react": 1.9.0
 
@@ -162,6 +158,9 @@ overrides:
   "@reown/appkit": 1.8.24
   # chain-registry's own range would drift onto the new schema (see the chain-registry catalog note).
   "chain-registry>@chain-registry/types": 0.50.410
+  # oxlint's optional peer; pnpm would install it. The type-aware rules run on
+  # the tsrs that @effect/tsgo bundles (`effect-tsgo --tsrs-lint`).
+  oxlint-tsgolint: "-"
 
 packageExtensions:
   "@fractalwagmi/solana-wallet-adapter@0.1.1":

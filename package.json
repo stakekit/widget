@@ -25,7 +25,6 @@
     "@effect/tsgo": "catalog:",
     "husky": "catalog:",
     "oxfmt": "catalog:",
-    "oxlint": "catalog:",
-    "oxlint-tsgolint": "catalog:"
+    "oxlint": "catalog:"
   }
 }

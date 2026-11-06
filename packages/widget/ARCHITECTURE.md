@@ -309,7 +309,7 @@ and Effect Atom registry.
   With type information it rejects floating and misused promises,
   non-exhaustive switches and unsafe type assertions in `src`. `lint` runs it
   on the Effect-patched tsrs, which type-checks `tsconfig.json` in the same
-  pass; the editor runs it on oxlint-tsgolint.
+  pass.
 - The widget's oxlint plugins (`scripts/oxlint/`, one rule per policy, each
   carrying its own file scope, tested in `tests/scripts/oxlint/`) reject
   manual memoization (`useMemo`, `useCallback`, `memo`; React Compiler
