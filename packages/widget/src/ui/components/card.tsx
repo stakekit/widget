@@ -8,7 +8,7 @@ import {
   type Responsive,
   type Space,
 } from "../primitives/layout";
-import { borderWidth } from "../tokens/border.stylex";
+import { borderWidth, insetEdge } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { presentationMarker } from "../tokens/presentation.stylex";
@@ -34,6 +34,11 @@ type CommonProps = {
   readonly children?: ReactNode;
   /** Takes the remaining space in a parent row or column. */
   readonly grow?: boolean;
+  /**
+   * Edges the card in the accent while focus is inside it, for a card that
+   * frames a field drawn without an edge of its own, such as an amount.
+   */
+  readonly focusEdge?: boolean;
   /** Renders as the card's `data-testid`. */
   readonly testId?: string;
 };
@@ -73,6 +78,7 @@ export const Card = (props: CardProps) => {
     tone = "neutral",
     selected,
     grow = false,
+    focusEdge = false,
     children,
   } = props;
   const interactive = props.onClick !== undefined || props.href !== undefined;
@@ -89,7 +95,8 @@ export const Card = (props: CardProps) => {
     tone !== "neutral" && interactive && toneHoverStyles[tone],
     tone !== "neutral" && variant === "outline" && toneBorderStyles[tone],
     selected && interactiveStyles.selected,
-    grow && flexItemStyles.grow
+    grow && flexItemStyles.grow,
+    focusEdge && focusEdgeStyles.root
   );
   const labelling = {
     "aria-label": props["aria-label"],
@@ -243,5 +250,16 @@ const toneHoverStyles = stylex.create({
       default: color.infoSoft,
       ":hover:not(:disabled)": `color-mix(in srgb, ${color.infoSoft}, ${color.surfaceHover})`,
     },
+  },
+});
+
+const focusEdgeStyles = stylex.create({
+  // An outline over the card's own edge, so its variant and tone edges stay
+  // as they are while nothing inside is focused.
+  root: {
+    outlineColor: color.accent,
+    outlineOffset: insetEdge.offset,
+    outlineStyle: { default: "none", ":focus-within": "solid" },
+    outlineWidth: borderWidth.thin,
   },
 });

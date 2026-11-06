@@ -168,7 +168,7 @@ describe("activity and completion workflows", () => {
           integrationId={YieldId.make("test-yield")}
           network="ethereum"
           providersDetails={null}
-          receivedToken={null}
+          markToken={null}
           yieldType={null}
         />
       )

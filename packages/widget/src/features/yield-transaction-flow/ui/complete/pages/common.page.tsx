@@ -40,10 +40,11 @@ type Props = {
   /** The amount's token symbol, after the amount in the title. */
   network: string;
   /**
-   * The token the action returned, whose logo leads the summary; without
-   * one, the provider's logo does.
+   * The asset the action was about, as the user knows it, whose logo leads
+   * the summary: what an entry deposited, what an exit pays out, what a
+   * pending action moved. Without one, the provider's logo does.
    */
-  receivedToken: Token | null;
+  markToken: Token | null;
   pendingActionType?: YieldPendingActionType;
   pendingActionLabelContext?: PendingActionLabelContext | undefined;
   /** The request was queued into this vault's next batch, not settled. */
@@ -70,7 +71,7 @@ type CompletePageProps = Omit<Props, "completion">;
 export const CompletePageComponent = ({
   amount,
   network,
-  receivedToken,
+  markToken,
   pendingActionType,
   pendingActionLabelContext,
   batched = null,
@@ -149,8 +150,8 @@ export const CompletePageComponent = ({
   const providerNames = (providersDetails ?? [])
     .flatMap((provider) => (provider.name ? [provider.name] : []))
     .join(", ");
-  const receivedLogo = receivedToken
-    ? resolveTokenLogo(receivedToken, { badge: "none" })
+  const markLogo = markToken
+    ? resolveTokenLogo(markToken, { badge: "none" })
     : null;
   const providerLogo = providersDetails?.find(
     (provider) => provider.logo
@@ -181,8 +182,8 @@ export const CompletePageComponent = ({
         <CompleteSummary
           as="h1"
           mark={{
-            name: receivedLogo?.name ?? network,
-            tokenSrc: receivedLogo?.src,
+            name: markLogo?.name ?? network,
+            tokenSrc: markLogo?.src,
             providerSrc: providerLogo,
           }}
           title={t(successKey, {

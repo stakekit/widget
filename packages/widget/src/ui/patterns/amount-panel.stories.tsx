@@ -89,6 +89,38 @@ export const Elevated: Story = {
   globals: { surfaceStyle: "elevated" },
 };
 
+/**
+ * Focusing the amount, by click or keyboard, edges the whole panel in the
+ * accent; leaving it restores the panel's own edge.
+ */
+export const FocusEdge: Story = {
+  args: { testIds: { root: "panel" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const amount = canvas.getByRole("textbox", { name: "Stake" });
+    const panel = canvas.getByTestId("panel");
+    const rest = getComputedStyle(panel);
+    const restBorder = rest.borderTopColor;
+    await expect(rest.outlineStyle).toBe("none");
+
+    await userEvent.click(amount);
+    const focused = getComputedStyle(panel);
+    await expect(focused.outlineStyle).toBe("solid");
+    await expect(focused.outlineColor).not.toMatch(/, 0\)$/);
+    // The panel's own edge is untouched.
+    await expect(focused.borderTopColor).toBe(restBorder);
+
+    await userEvent.tab({ shift: true });
+    await expect(amount).not.toHaveFocus();
+    await expect(getComputedStyle(panel).outlineStyle).toBe("none");
+  },
+};
+
+export const FocusEdgeDark: Story = {
+  ...FocusEdge,
+  globals: { colorScheme: "dark" },
+};
+
 /** The "Max" chip fills in the most the user can use. */
 export const MaxChip: Story = {
   play: async ({ args, canvasElement }) => {

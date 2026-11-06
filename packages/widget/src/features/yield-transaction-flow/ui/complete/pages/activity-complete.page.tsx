@@ -1,4 +1,3 @@
-import { getYieldOutputToken } from "../../../../../domain/earn/yield";
 import { useTrackPage } from "../../../../tracking/index";
 import {
   useActivityComplete,
@@ -34,19 +33,15 @@ const ActivityCompleteContent = ({
     receiveSymbol: view.receiveToken?.symbol ?? null,
     symbol: network,
   });
-  // An exit's payout token, else what the action returned: an entry's
-  // output token, or the token an exit or a pending action moved.
-  const receivedToken =
-    view.receiveToken ??
-    (selectedAction.intent === "enter"
-      ? getYieldOutputToken(view.selectedYield)
-      : view.inputToken);
+  // An exit's payout token, else the token the action moved: what an entry
+  // deposited, or what an exit or a pending action moved.
+  const markToken = view.receiveToken ?? view.inputToken;
 
   return (
     <CompletePage
       yieldType={yieldType}
       providersDetails={providerDetails}
-      receivedToken={receivedToken}
+      markToken={markToken}
       network={network}
       amount={amount}
       pendingActionType={selectedAction.type}

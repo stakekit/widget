@@ -1,7 +1,6 @@
 import { Input } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import {
@@ -279,22 +278,14 @@ const styles = stylex.create({
     animationName: shake,
     animationTimingFunction: motion.easing,
   },
-  // Keyboard focus underlines the amount in the focus ring's color, as a
-  // ring would box a bare amount in its card like a form field.
+  // Draws no focus mark of its own: the panel framing it edges in the accent
+  // while it is focused, and the caret marks the place.
   input: {
     margin: 0,
     padding: 0,
-    backgroundPosition: "bottom",
     borderRadius: 0,
     borderStyle: "none",
     backgroundColor: "transparent",
-    // Painted as a background line so the input's size holds.
-    backgroundImage: {
-      default: null,
-      ":focus-visible": `linear-gradient(${color.focusRing}, ${color.focusRing})`,
-    },
-    backgroundRepeat: "no-repeat",
-    backgroundSize: `100% ${focusRing.width}`,
     color: {
       default: color.text,
       // An invalid amount keeps its color: the field's error carries the tone.

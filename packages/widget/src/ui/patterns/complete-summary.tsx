@@ -22,14 +22,14 @@ const scaleIn = stylex.keyframes({
 });
 
 /**
- * The art over a completed action's title: the received token's logo, else
- * the provider's, with a success check badge; without either, or when both
- * fail to load, a plain check.
+ * The art over a completed action's title: the logo of the token the action
+ * was about, else the provider's, with a success check badge; without
+ * either, or when both fail to load, a plain check.
  */
 type CompleteMark = {
-  /** The received token's symbol or name: the initial while a logo loads. */
+  /** The token's symbol or name: the initial while a logo loads. */
   readonly name: string;
-  /** The received token's logo URL. */
+  /** The token's logo URL, such as the asset a deposit put in. */
   readonly tokenSrc?: string | undefined;
   /** The provider's logo URL, shown when the token's is missing or fails. */
   readonly providerSrc?: string | undefined;

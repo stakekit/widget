@@ -113,6 +113,7 @@ export const AmountPanel = ({
 }: AmountPanelProps) => (
   <Card
     padding={16}
+    focusEdge
     {...(testIds?.root === undefined ? {} : { testId: testIds.root })}
   >
     <Stack gap={8}>

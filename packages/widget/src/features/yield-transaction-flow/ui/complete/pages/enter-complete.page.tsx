@@ -43,7 +43,7 @@ export const EnterCompletePage = () => {
       integrationId={selectedStake.id}
       network={selectedToken.symbol}
       providersDetails={yieldSummary.providers}
-      receivedToken={received?.token ?? null}
+      markToken={selectedToken}
       rows={
         received
           ? [

@@ -26,7 +26,7 @@ export const ExitCompletePage = () => {
     symbol: completion.token.symbol,
   });
   // A payout in another token shows that token, when the yield lists it.
-  const receivedToken = completion.receiveToken
+  const markToken = completion.receiveToken
     ? (findYieldToken(integrationData, completion.receiveToken.address) ?? null)
     : completion.token;
 
@@ -42,7 +42,7 @@ export const ExitCompletePage = () => {
       network={completion.token.symbol}
       note={note}
       providersDetails={exitFlow.providersDetails}
-      receivedToken={receivedToken}
+      markToken={markToken}
       rows={rows}
       yieldType={getExtendedYieldType(integrationData)}
     />
