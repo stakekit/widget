@@ -34,6 +34,18 @@ const waitFor = (testId: string) =>
     expect.poll(() => element(testId), { timeout: 5_000 }).not.toBeNull()
   );
 
+/**
+ * Waits until a wallet row renders as `tagName`. An injected wallet's row is a
+ * busy `DIV` while its extension is being detected, then an `A` (install) or a
+ * `BUTTON` (connect).
+ */
+const waitForRowTag = (testId: string, tagName: "A" | "BUTTON") =>
+  Effect.promise(() =>
+    expect
+      .poll(() => element(testId)?.tagName, { timeout: 5_000 })
+      .toBe(tagName)
+  );
+
 const renderPicker = Effect.fn("renderPicker")(function* (
   options: Omit<Parameters<typeof makeWalletConnectPicker>[0], "api">
 ) {
@@ -383,8 +395,7 @@ describe("wallet connection picker", () => {
           { id: "extension", injected: { installUrl: "https://example.com" } }
         ),
       });
-      yield* waitFor("connect-wallet-evm-extension");
-      expect(element("connect-wallet-evm-extension")?.tagName).toBe("A");
+      yield* waitForRowTag("connect-wallet-evm-extension", "A");
 
       yield* picker.install("extension");
       yield* click(() => document.querySelector('button[aria-label="Close"]'));
@@ -392,11 +403,7 @@ describe("wallet connection picker", () => {
         expect.poll(() => element("wallet-connect-dialog")).toBeNull()
       );
       yield* click(() => button("Open wallets"));
-      yield* Effect.promise(() =>
-        expect
-          .poll(() => element("connect-wallet-evm-extension")?.tagName)
-          .toBe("BUTTON")
-      );
+      yield* waitForRowTag("connect-wallet-evm-extension", "BUTTON");
       yield* click(() => element("connect-wallet-evm-extension"));
 
       expect(yield* awaitCalls(picker.calls, 1)).toEqual([
@@ -418,10 +425,9 @@ describe("wallet connection picker", () => {
             { id: "metamask" }
           ),
         });
-        yield* waitFor("connect-wallet-evm-fireblocks");
+        yield* waitForRowTag("connect-wallet-evm-fireblocks", "A");
 
         const install = element("connect-wallet-evm-fireblocks");
-        expect(install?.tagName).toBe("A");
         expect(install?.textContent).toContain("Install");
         expect(install?.getAttribute("href")).toBe(
           "https://example.com/fireblocks"
