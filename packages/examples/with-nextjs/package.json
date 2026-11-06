@@ -5,7 +5,7 @@
     "dev": "next dev",
     "start": "next start",
     "build": "next build",
-    "lint": "tsc && oxlint -c ../../../.oxlintrc.json ."
+    "lint": "tsc && effect-tsgo --tsrs-lint oxlint -c ../../../.oxlintrc.json ."
   },
   "dependencies": {
     "@stakekit/widget": "workspace:*",

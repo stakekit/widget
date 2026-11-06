@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "tsc && oxlint -c ../../../.oxlintrc.json ."
+    "lint": "tsc && effect-tsgo --tsrs-lint oxlint -c ../../../.oxlintrc.json ."
   },
   "dependencies": {
     "@stakekit/widget": "workspace:*"

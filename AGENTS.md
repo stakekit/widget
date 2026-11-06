@@ -29,9 +29,13 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   mounted as a host against the real API, configured from its panel and the
   page link, with a scripted host wallet on `window.skDev`. See the README's
   Development section. API mocking belongs to tests only.
-- `pnpm --filter @stakekit/widget lint` — widget oxlint (type-aware, with
-  StyleX's rules on `src/ui` and the widget's rule plugins in
-  `scripts/oxlint/`) and type checks; `lint:fix` applies oxlint's fixes.
+- `pnpm --filter @stakekit/widget lint` — one pass of oxlint and type checking
+  on the Effect-patched tsrs (`effect-tsgo --tsrs-lint oxlint --type-check`):
+  the type-aware rules, StyleX's rules on `src/ui`, the widget's rule plugins in
+  `scripts/oxlint/`, and every TypeScript and Effect diagnostic of
+  `tsconfig.json`, oxlint-ignored files included. `lint:fix` applies oxlint's
+  fixes. Keep every TypeScript file in a package tsconfig: a file outside one is
+  linted but not type-checked.
 - `pnpm format` — formats the repository with oxfmt (`.oxfmtrc.json`), imports
   sorted; `pnpm lint:format` checks it.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.

@@ -306,8 +306,10 @@ and Effect Atom registry.
 - oxlint (the shared rules in the root `.oxlintrc.json`, the widget's in
   `packages/widget/.oxlintrc.json`) constrains barrels and keeps React out of
   domain, Resource, and service logic and out of Feature `model/` and `state/`.
-  With type information (oxlint-tsgolint) it rejects floating and misused
-  promises, non-exhaustive switches and unsafe type assertions in `src`.
+  With type information it rejects floating and misused promises,
+  non-exhaustive switches and unsafe type assertions in `src`. `lint` runs it
+  on the Effect-patched tsrs, which type-checks `tsconfig.json` in the same
+  pass; the editor runs it on oxlint-tsgolint.
 - The widget's oxlint plugins (`scripts/oxlint/`, one rule per policy, each
   carrying its own file scope, tested in `tests/scripts/oxlint/`) reject
   manual memoization (`useMemo`, `useCallback`, `memo`; React Compiler
@@ -336,9 +338,9 @@ and Effect Atom registry.
 - Every Design System part and variant has a story that runs as a Chromium
   test, with accessibility violations failing it; a contrast test checks every
   text/surface Color Role pair in every scheme and Appearance Preset.
-- The Effect language service (`tsc`, configured in `tsconfig.json`) fails on
-  every Effect diagnostic. In `src` it also enforces the default-off rules:
-  deterministic service keys, Schema class constructors, typed `Effect.try`
+- The Effect language service (configured in `tsconfig.json`, run by `lint`)
+  fails on every Effect diagnostic. In `src` it also enforces the default-off
+  rules: deterministic service keys, Schema class constructors, typed `Effect.try`
   failures, Effect APIs over global JSON, timers, dates, randomness and
   promises, and Effect code over `async` functions. `.tsx` files and the
   wallet internals may declare `async` functions (React event handlers and the

@@ -13,7 +13,7 @@
         "ignoreEffectSuggestionsInTscExitCode": false,
         "ignoreEffectWarningsInTscExitCode": false,
         "ignoreEffectErrorsInTscExitCode": false,
-        // Rules on by default already fail `tsc`. The default-off rules are
+        // Rules on by default already fail `lint`. The default-off rules are
         // enforced in `src` (overrides below); tests, scripts, the playground
         // and Vite config keep the defaults. These stay off everywhere:
         "diagnosticSeverity": {
@@ -130,7 +130,8 @@
     "tests",
     "vite/**/*.ts",
     ".storybook/*.ts",
-    ".storybook/*.tsx"
+    ".storybook/*.tsx",
+    "knip.ts"
   ],
   // tests/package-types import the built package; check:package-types compiles
   // them against the packed tarball, so source checks must not depend on dist.

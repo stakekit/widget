@@ -42,7 +42,9 @@ catalog:
   "@effect/openapi-generator": 4.1.2
   "@effect/platform-browser": 4.1.2
   "@effect/platform-node": 4.1.2
-  "@effect/tsgo": 0.67.3
+  # Bundles the Effect-patched tsrs that runs type-aware lint and type checking
+  # in one pass (tsrs 0.22, the first with whole-program --type-check).
+  "@effect/tsgo": 0.67.4
   "@effect/vitest": 4.1.2
   "@ledgerhq/wallet-api-client": ^1.17.0
   "@ledgerhq/wallet-api-core": ^2.2.0
@@ -141,7 +143,9 @@ catalog:
   "@stylexjs/eslint-plugin": 0.19.1
   oxfmt: 0.75.0
   oxlint: 1.90.0
-  # The type checker behind oxlint --type-aware; oxlint 1.90 needs >=7.0.2005.
+  # The type checker behind plain `oxlint --type-aware`, which the editor's oxc
+  # extension runs. Lint scripts run the same rules on tsrs through effect-tsgo.
+  # oxlint 1.90 needs >=7.0.2005.
   oxlint-tsgolint: 7.0.2005
   storybook: 10.6.5
   "@base-ui/react": 1.9.0
