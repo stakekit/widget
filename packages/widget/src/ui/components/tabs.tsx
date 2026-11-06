@@ -140,6 +140,14 @@ const styles = stylex.create({
         presentationMarker
       )]: space[4],
     },
+    // The underline's rule runs only as wide as the tabs, not the bar.
+    alignSelf: {
+      default: "flex-start",
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="pill"]',
+        presentationMarker
+      )]: "stretch",
+    },
     backgroundColor: {
       default: "transparent",
       [stylex.when.ancestor(
@@ -159,7 +167,8 @@ const styles = stylex.create({
     borderBottomStyle: "solid",
     borderBottomWidth: borderWidth.thin,
   },
-  // An accent underline under the selected tab, or a raised pill behind it.
+  // An accent underline under the selected tab, drawn over the list's rule so
+  // their bottom edges meet, or a raised pill behind the selected tab.
   indicator: {
     borderRadius: {
       default: 0,
@@ -187,7 +196,7 @@ const styles = stylex.create({
     transitionProperty: "left, top, width, height",
     transitionTimingFunction: motion.easing,
     bottom: {
-      default: 0,
+      default: `calc(-1 * ${borderWidth.thin})`,
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker

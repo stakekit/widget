@@ -46,17 +46,40 @@ type Story = StoryObj<typeof meta>;
 const tabList = (canvasElement: HTMLElement) =>
   within(canvasElement).getByRole("tablist", { name: "Sections" });
 
-/** The underline indicator: an accent bar under the selected tab, no pill. */
+/**
+ * The underline indicator: an accent bar under the selected tab, no pill. It
+ * covers the list's rule, bottom edge on its bottom edge, and the rule runs as
+ * wide as the tabs, not the bar.
+ */
 export const Underline: Story = {
   globals: { tabsIndicator: "underline" },
   play: async ({ canvasElement }) => {
     const list = tabList(canvasElement);
     const indicator = list.firstElementChild;
+    const tabs = within(list).getAllByRole("tab");
+    const first = tabs.at(0);
+    const last = tabs.at(-1);
 
     await expect(getComputedStyle(list).paddingTop).toBe("0px");
     await expect(indicator).not.toBeNull();
-    if (indicator) {
+    await expect(first).toBeDefined();
+    await expect(last).toBeDefined();
+    if (indicator && first && last) {
       await expect(getComputedStyle(indicator).boxShadow).toBe("none");
+      const listBox = list.getBoundingClientRect();
+      const indicatorBox = indicator.getBoundingClientRect();
+      const rule = Number.parseFloat(getComputedStyle(list).borderBottomWidth);
+      await expect(rule).toBeGreaterThan(0);
+      await expect(indicatorBox.bottom).toBeCloseTo(listBox.bottom, 1);
+      await expect(indicatorBox.height).toBeGreaterThanOrEqual(rule);
+      await expect(listBox.left).toBeCloseTo(
+        first.getBoundingClientRect().left,
+        1
+      );
+      await expect(listBox.right).toBeCloseTo(
+        last.getBoundingClientRect().right,
+        1
+      );
     }
   },
 };
