@@ -63,6 +63,15 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm test:smoke` — builds the example hosts against `dist` and loads them in
   Chromium with the API mocked by the widget's MSW fixtures.
 
+mise caches `lint:widget`, `lint:examples`, `check-hygiene`, `test:unit`,
+`test:dom`, `test:browser`, `test:storybook`, `build:widget`, and `build`
+(`tools/mise/cached-tasks.toml`), so `pnpm lint`, `pnpm test`, and `pnpm check`
+skip work whose inputs (the widget or example files, env files, lockfile, and
+root configs) are unchanged, and restore results stored on any branch or
+worktree. `mise run --force <task>` reruns one; `--task-cache off` ignores
+stored results. A new input, such as a widget file outside the listed
+directories, belongs in the input groups in `mise.toml`.
+
 Install dependencies only when manifests, the lockfile, or the task require it.
 Use the normal pnpm store rather than creating a project-local store.
 

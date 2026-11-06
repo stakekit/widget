@@ -17,6 +17,9 @@ permissions:
 
 env:
   HUSKY: "0"
+  # Runners start empty and nothing persists the task artifact cache, so
+  # storing results would only cost time.
+  MISE_TASK_CACHE: "off"
 
 # One job per check, so checks run in parallel and a failure names its check.
 jobs:
