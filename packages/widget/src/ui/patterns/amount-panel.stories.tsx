@@ -134,9 +134,10 @@ export const MaxChip: Story = {
 };
 
 /**
- * An error replaces the limits, marks the amount invalid and describes it.
- * Only the error line reads in the danger tone: the amount and the balance
- * it exceeds stay as they were.
+ * An error shows under the amount, marks it invalid and describes it, while
+ * the limits stay in view at the end of the same line. Only the error reads
+ * in the danger tone: the amount, the limits it meets and the balance it
+ * exceeds stay as they were.
  */
 export const Invalid: Story = {
   args: {
@@ -150,14 +151,36 @@ export const Invalid: Story = {
     const amount = canvas.getByRole("textbox", { name: "Stake" });
     const colorOf = (element: Element) => getComputedStyle(element).color;
     await expect(amount).toHaveAttribute("aria-invalid", "true");
-    await expect(amount).toHaveAccessibleDescription("Insufficient balance");
-    await expect(canvas.queryByText("Min 0.01 ETH")).toBeNull();
+    await expect(amount).toHaveAccessibleDescription(
+      expect.stringContaining("Insufficient balance")
+    );
 
     const error = canvas.getByText("Insufficient balance");
+    const limits = canvas.getByText("Min 0.01 ETH");
     await expect(colorOf(amount)).not.toBe(colorOf(error));
+    await expect(colorOf(limits)).toBe(
+      colorOf(canvas.getByText("12.5 ETH available"))
+    );
     await expect(colorOf(canvas.getByText("12.5 ETH available"))).toBe(
       colorOf(canvas.getByText("$48,000.00"))
     );
+  },
+};
+
+/**
+ * An amount that misses its limits turns them to the danger tone and is
+ * marked invalid; no separate message repeats them.
+ */
+export const LimitsMissed: Story = {
+  args: { value: "0.001", limitsMissed: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const amount = canvas.getByRole("textbox", { name: "Stake" });
+    await expect(amount).toHaveAttribute("aria-invalid", "true");
+    await expect(amount).toHaveAccessibleDescription("Min 0.01 ETH");
+    await expect(
+      getComputedStyle(canvas.getByText("Min 0.01 ETH")).color
+    ).not.toBe(getComputedStyle(canvas.getByText("12.5 ETH available")).color);
   },
 };
 

@@ -4,6 +4,7 @@ import { type ColorRoles, color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
+import { tokenTrigger } from "../tokens/token-trigger.stylex";
 import { figureWeight, fontWeight } from "../tokens/typography.stylex";
 import { applyHostColors } from "./appearance";
 import {
@@ -93,26 +94,46 @@ const portoElevation = stylex.createTheme(elevation, {
   shell: `0 0 0 1px ${color.border}`,
 });
 
+// Utila's corners and main button, as on `main`: 12px cards, a 14px frame,
+// and a 40px call to action.
 const utilaRadius = stylex.createTheme(radius, {
   badge: "4px",
   control: "8px",
   controlInner: "6px",
-  card: "8px",
+  card: "12px",
   overlay: "8px",
-  shell: "12px",
+  shell: "14px",
   pillControl: "8px",
 });
 
 const utilaControlHeight = stylex.createTheme(controlHeight, {
   sm: "28px",
   md: "36px",
-  lg: "44px",
+  lg: "40px",
 });
 
 const utilaElevation = stylex.createTheme(elevation, {
   raised: `0 0 0 1px ${color.border}, 0 1px 2px rgb(9 9 11 / 0.05)`,
   overlay: `0 0 0 1px ${color.border}, 0 12px 32px rgb(9 9 11 / 0.12)`,
   shell: `0 0 0 1px ${color.border}, 0 4px 16px rgb(9 9 11 / 0.05)`,
+});
+
+// The token trigger's look, set on the theme root with the preset's other
+// themes: a variable referencing another resolves where it is declared, so
+// the raised look picks up the scheme's and preset's fill and elevation only
+// when declared beside them. Utila's trigger sits flat in its outlined cards,
+// whose edge is the only one: it takes its card's fill, tints on hover, and
+// rounds more than Utila's other controls.
+const raisedTokenTrigger = stylex.createTheme(tokenTrigger, {
+  fill: color.surfaceRaised,
+  shadow: elevation.raised,
+  radius: radius.pillControl,
+});
+
+const utilaTokenTrigger = stylex.createTheme(tokenTrigger, {
+  fill: "transparent",
+  shadow: "none",
+  radius: "12px",
 });
 
 // Regular-weight amounts and rates over semibold headings, as Utila's own UI.
@@ -122,16 +143,27 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
   {
     default: {
       palettes: { light: basePalette, dark: basePalette },
-      theme: null,
+      theme: raisedTokenTrigger,
     },
     finery: {
       palettes: presetPalettes.finery,
-      theme: [fineryRadius, fineryFontWeight, fineryFigureWeight],
+      theme: [
+        fineryRadius,
+        fineryFontWeight,
+        fineryFigureWeight,
+        raisedTokenTrigger,
+      ],
     },
     porto: {
       fixedColorScheme: "dark",
       palette: presetPalettes.porto.dark,
-      theme: [portoRadius, portoFontWeight, portoFigureWeight, portoElevation],
+      theme: [
+        portoRadius,
+        portoFontWeight,
+        portoFigureWeight,
+        portoElevation,
+        raisedTokenTrigger,
+      ],
     },
     utila: {
       fixedColorScheme: "light",
@@ -140,6 +172,7 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         utilaRadius,
         utilaControlHeight,
         utilaElevation,
+        utilaTokenTrigger,
         utilaFigureWeight,
       ],
     },

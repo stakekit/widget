@@ -263,8 +263,12 @@ box and are no size container, so the content flows as if unwrapped.
   trigger) stay flat on `surface` and soft badges fill from `surfaceRaised`:
   one level of elevation. Under `outlined`, filled cards and rows (pressable
   ones too) keep their fill and edge
-  in `border`. A `SegmentedControl` marks its choice as the tabs do: a raised
-  segment under `pill`, an accent underline under `underline`.
+  in `border`. Beside an amount, the token trigger takes its fill, lift and
+  corners from the `tokenTrigger` variables, which a preset can theme: Utila
+  sets it flat in its card, on the card's fill with a hover tint, and rounds
+  it more than its other controls. A `SegmentedControl` marks its choice as
+  the tabs do: a raised segment under `pill`, an accent underline under
+  `underline`.
 
 ## Composing the Design System in Features
 

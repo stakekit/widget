@@ -6,7 +6,7 @@ export const EarnDetailsMetrics = ({
 }: {
   cards: EarnDetailsMetricCard[];
 }) => (
-  <MetricGroup>
+  <MetricGroup framed>
     {cards.map((card) => (
       <Metric
         key={card.label}

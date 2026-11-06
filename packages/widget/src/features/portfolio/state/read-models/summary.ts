@@ -157,7 +157,7 @@ type ManageSummary = {
   /** In whole percents, such as 4.2. */
   readonly averageApy: SummaryValue;
   readonly claimableRewards: SummaryValue;
-  /** With borrow positions: their debt, and the total value less it. */
+  /** With borrow positions that owe debt: it, and the total value less it. */
   readonly borrow: {
     readonly debt: SummaryValue;
     readonly netWorth: SummaryValue;
@@ -243,15 +243,19 @@ export const deriveManageSummary = ({
       : readySummaryValue(exactZero()),
     (earn, collateral) => earn.plus(collateral)
   );
-  const hasBorrowPositions =
-    borrow?.positions._tag === "Ready" && borrow.positions.value.length > 0;
   const debt = borrow
     ? toSummaryValue(borrow.totals, (totals) => totals.totalBorrowedUsd)
     : unavailableSummaryValue;
+  // Debt and net worth show once borrow positions owe something: without
+  // debt, net worth would only repeat the total value.
+  const owesDebt =
+    borrow?.positions._tag === "Ready" &&
+    borrow.positions.value.length > 0 &&
+    !(debt._tag === "Ready" && debt.value.isZero());
 
   return {
     averageApy: toSummaryValue(averageApy, (value) => value),
-    borrow: hasBorrowPositions
+    borrow: owesDebt
       ? {
           debt,
           netWorth: combineSummaryValues(totalValue, debt, (value, owed) =>

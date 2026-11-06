@@ -12,7 +12,7 @@ import {
 
 const standard: HostProfile = {
   appearancePreset: "default",
-  earnPresentation: { condensed: false, zerion: false },
+  earnPresentation: { condensed: false, yieldTitle: "above", zerion: false },
   forcesInstitutionalWallets: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
@@ -24,7 +24,11 @@ const standard: HostProfile = {
   walletCatalogue: "default",
 };
 
-const compact = { condensed: true, zerion: false } as const;
+const compact = {
+  condensed: true,
+  yieldTitle: "above",
+  zerion: false,
+} as const;
 
 const finery: HostProfile = {
   ...standard,
@@ -48,9 +52,9 @@ const porto: HostProfile = {
 const utila: HostProfile = {
   ...standard,
   appearancePreset: "utila",
-  earnPresentation: compact,
+  earnPresentation: { ...compact, yieldTitle: "hidden" },
   presentation: {
-    callToActionSize: "md",
+    callToActionSize: "lg",
     gutter: "md",
     surfaceStyle: "outlined",
     tabsIndicator: "tint",
@@ -62,7 +66,7 @@ const utila: HostProfile = {
 
 const zerion: HostProfile = {
   ...standard,
-  earnPresentation: { condensed: false, zerion: true },
+  earnPresentation: { condensed: false, yieldTitle: "inside", zerion: true },
   hidesHeaderWalletControl: true,
   hostTokenIconMapping: true,
   hostTracking: true,
@@ -83,7 +87,10 @@ const resolutionTable: ReadonlyArray<
   [
     "zerion",
     true,
-    { ...zerion, earnPresentation: { condensed: true, zerion: true } },
+    {
+      ...zerion,
+      earnPresentation: { condensed: true, yieldTitle: "inside", zerion: true },
+    },
   ],
 ];
 

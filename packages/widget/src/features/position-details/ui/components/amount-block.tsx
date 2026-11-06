@@ -138,13 +138,14 @@ export const AmountBlock = ({
         },
       }
     : {};
-  const limitProps = (() => {
-    if (limitError && limits) return { error: limits };
-    if (exitProps?.exitAmountGreaterThanAvailable) {
-      return { error: t("shared.insufficient_balance") };
-    }
-    return limits ? { limits } : {};
-  })();
+  // The limits stay beside the token, red when missed; a balance error
+  // shows under the amount beside them.
+  const limitProps = {
+    ...(limits ? { limits, limitsMissed: limitError } : {}),
+    ...(exitProps?.exitAmountGreaterThanAvailable
+      ? { error: t("shared.insufficient_balance") }
+      : {}),
+  };
 
   return (
     <AmountPanel

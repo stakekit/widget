@@ -6,7 +6,7 @@ export const MetricCards = ({
 }: {
   readonly cards: ReadonlyArray<BorrowPositionMetricCard>;
 }) => (
-  <MetricGroup columns={2}>
+  <MetricGroup columns={2} framed>
     {cards.map((card) => (
       <Metric
         key={card.id}

@@ -7,12 +7,12 @@ import { Icon } from "../primitives/icon";
 import { Text } from "../primitives/text";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
-import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { tokenTriggerHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
+import { tokenTrigger } from "../tokens/token-trigger.stylex";
 import { font } from "../tokens/typography.stylex";
 import type { TokenLogo } from "./token";
 
@@ -121,10 +121,11 @@ export const TokenTrigger = ({
   );
 };
 
-// Raised off the card it sits in, except under the `elevated` surface style:
-// there the card itself is raised, so the trigger fills with `surface` and
-// edges in `border` instead (a dark raised card can share its fill), keeping
-// elevation to one level.
+// Raised off the card it sits in (`tokenTrigger`, which a preset can set
+// flat in its card), except under the `elevated` surface style: there the
+// card itself is raised, so the trigger fills with `surface` and edges in
+// `border` instead (a dark raised card can share its fill), keeping
+// elevation to one level. Every enabled trigger tints on hover.
 const styles = stylex.create({
   root: {
     margin: 0,
@@ -135,21 +136,21 @@ const styles = stylex.create({
         presentationMarker
       )]: color.border,
     },
-    borderRadius: radius.pillControl,
+    borderRadius: tokenTrigger.radius,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     gap: space[6],
     paddingBlock: 0,
     alignItems: "center",
     backgroundColor: {
-      default: color.surfaceRaised,
+      default: tokenTrigger.fill,
       [stylex.when.ancestor(
         '[data-sk-surface-style="elevated"]',
         presentationMarker
       )]: color.surface,
     },
     boxShadow: {
-      default: elevation.raised,
+      default: tokenTrigger.shadow,
       [stylex.when.ancestor(
         '[data-sk-surface-style="elevated"]',
         presentationMarker
@@ -170,7 +171,7 @@ const styles = stylex.create({
     appearance: "none",
     // The hover rule's `:not(:disabled)` outranks the ancestor condition.
     backgroundColor: {
-      default: color.surfaceRaised,
+      default: tokenTrigger.fill,
       ":hover:not(:disabled)": color.surfaceHover,
       [stylex.when.ancestor(
         '[data-sk-surface-style="elevated"]',
@@ -191,7 +192,8 @@ const styles = stylex.create({
   // Filled like a pill tabs list rather than raised: a raised pill is white
   // on a white frame in light. Under the `outlined` surface style it is
   // outlined instead, white with a thin edge, like its cards. Only a button,
-  // which can be enabled, tints on hover.
+  // which can be enabled, tints on hover. It rounds as the other pill
+  // controls do, not as the trigger beside an amount.
   flat: {
     borderColor: {
       default: "transparent",
@@ -200,6 +202,7 @@ const styles = stylex.create({
         presentationMarker
       )]: color.border,
     },
+    borderRadius: radius.pillControl,
     backgroundColor: {
       default: color.surface,
       ":enabled:hover": color.surfaceHover,

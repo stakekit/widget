@@ -9,6 +9,11 @@ export type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
 type EarnPresentation = Readonly<{
   condensed: boolean;
   zerion: boolean;
+  /**
+   * The "Earn" title of the yield card: above it, as the amount's title is;
+   * inside it (Zerion); or left out (Utila, whose own UI has none).
+   */
+  yieldTitle: "above" | "inside" | "hidden";
 }>;
 
 /**
@@ -49,7 +54,7 @@ export type HostProfile = Readonly<{
 
 const standardProfile: HostProfile = {
   appearancePreset: "default",
-  earnPresentation: { condensed: false, zerion: false },
+  earnPresentation: { condensed: false, yieldTitle: "above", zerion: false },
   forcesInstitutionalWallets: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
@@ -74,7 +79,7 @@ export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
     porto: {
       ...standardProfile,
       appearancePreset: "porto",
-      earnPresentation: { condensed: true, zerion: false },
+      earnPresentation: { condensed: true, yieldTitle: "above", zerion: false },
       presentation: {
         callToActionSize: "md",
         surfaceStyle: "outlined",
@@ -85,9 +90,13 @@ export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
     utila: {
       ...standardProfile,
       appearancePreset: "utila",
-      earnPresentation: { condensed: true, zerion: false },
+      earnPresentation: {
+        condensed: true,
+        yieldTitle: "hidden",
+        zerion: false,
+      },
       presentation: {
-        callToActionSize: "md",
+        callToActionSize: "lg",
         gutter: "md",
         surfaceStyle: "outlined",
         tabsIndicator: "tint",
@@ -98,7 +107,11 @@ export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
     },
     zerion: {
       ...standardProfile,
-      earnPresentation: { condensed: false, zerion: true },
+      earnPresentation: {
+        condensed: false,
+        yieldTitle: "inside",
+        zerion: true,
+      },
       hidesHeaderWalletControl: true,
       hostTokenIconMapping: true,
       hostTracking: true,

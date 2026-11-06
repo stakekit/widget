@@ -13,6 +13,7 @@ import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
+import { lineHeight } from "../tokens/typography.stylex";
 
 type AmountPanelProps = {
   /** Names the amount, such as "Stake". */
@@ -38,7 +39,11 @@ type AmountPanelProps = {
    * trigger is one.
    */
   readonly token: ReactNode;
-  /** The amount's formatted fiat value, such as "$1,204.50". */
+  /**
+   * The amount's formatted fiat value, such as "$1,204.50", or a zero value
+   * for an empty amount. Its line stays even when empty, such as without a
+   * price, so typing an amount never moves the panel.
+   */
   readonly fiatValue: string;
   /**
    * The fiat value is still loading, such as while prices load: a
@@ -74,11 +79,16 @@ type AmountPanelProps = {
       readonly disabled?: boolean;
     };
   };
-  /** The formatted limits, such as "Min 0.01 ETH", under the amount. */
-  readonly limits?: string;
   /**
-   * Why the amount cannot be used, such as "Insufficient balance". It
-   * replaces `limits`, marks the amount invalid and describes it.
+   * The formatted limits, such as "Min 0.01 ETH", at the end of the line
+   * under the token, where they stay in view beside any error.
+   */
+  readonly limits?: string;
+  /** The amount misses its limits: they turn to the danger tone. */
+  readonly limitsMissed?: boolean;
+  /**
+   * Why the amount cannot be used, such as "Insufficient balance", under the
+   * amount: it marks the amount invalid and describes it.
    */
   readonly error?: string;
   /**
@@ -123,6 +133,7 @@ export const AmountPanel = ({
   fiatValueLoading = false,
   balance,
   limits,
+  limitsMissed = false,
   error,
   max,
   invalid = false,
@@ -143,7 +154,13 @@ export const AmountPanel = ({
         <Field
           {...(labelPlacement === "inside" ? { label } : {})}
           disabled={disabled}
-          {...(limits === undefined ? {} : { description: limits })}
+          {...(limits === undefined
+            ? {}
+            : {
+                description: limits,
+                descriptionAtEnd: true,
+                descriptionInvalid: limitsMissed,
+              })}
           {...(error === undefined ? {} : { error })}
         >
           <Stack direction="row" align="center" gap={12}>
@@ -153,7 +170,7 @@ export const AmountPanel = ({
               value={value}
               onValueChange={onValueChange}
               separators={separators}
-              invalid={invalid || error !== undefined}
+              invalid={invalid || limitsMissed || error !== undefined}
               disabled={disabled}
               shrink={shrink}
               focusRequest={focusRequest}
@@ -166,7 +183,10 @@ export const AmountPanel = ({
           </Stack>
         </Field>
         <Stack direction="row" align="center" justify="between" gap={8} wrap>
-          <Stack as="span" aria-busy={fiatValueLoading || undefined}>
+          <span
+            aria-busy={fiatValueLoading || undefined}
+            {...stylex.props(styles.fiatLine)}
+          >
             {fiatValueLoading ? (
               <span {...stylex.props(styles.pendingFiat)}>
                 <Skeleton shape="line" role="caption" />
@@ -176,7 +196,7 @@ export const AmountPanel = ({
                 {fiatValue}
               </Text>
             )}
-          </Stack>
+          </span>
           {(balance !== undefined || max !== undefined) && (
             <Stack direction="row" align="center" gap={8}>
               {balance !== undefined && (
@@ -255,6 +275,7 @@ const BalanceAmount = ({
 };
 
 const styles = stylex.create({
+  fiatLine: { display: "flex", minHeight: lineHeight.caption },
   pendingFiat: { display: "block", width: space[64] },
   // A placeholder title about as wide as a short yield type name.
   pendingTitle: {

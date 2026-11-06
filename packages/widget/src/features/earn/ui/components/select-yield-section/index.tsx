@@ -36,10 +36,9 @@ export const SelectYieldSection = ({
   const { view: yieldSelection } = useEarnYieldSelection();
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const { earnPresentation } = useWidgetConfig("hostProfile");
-  // The yield's title shows above its card, as the amount's does, on every
-  // host; Zerion names it inside the card instead.
-  const titlePlacement = earnPresentation.zerion ? "inside" : "above";
+  const {
+    earnPresentation: { yieldTitle },
+  } = useWidgetConfig("hostProfile");
 
   if (entry.appLoading || yieldSelection.isLoading) {
     return <Skeleton shape="rect" height="panel" />;
@@ -70,8 +69,8 @@ export const SelectYieldSection = ({
 
   const title = (
     <Text
-      variant={titlePlacement === "inside" ? "label" : "body"}
-      tone={titlePlacement === "inside" ? "muted" : "default"}
+      variant={yieldTitle === "inside" ? "label" : "body"}
+      tone={yieldTitle === "inside" ? "muted" : "default"}
       weight="medium"
     >
       {t("details.earn")}
@@ -81,11 +80,11 @@ export const SelectYieldSection = ({
   return (
     <Stack gap={12}>
       <Stack gap={8}>
-        {titlePlacement === "above" && title}
+        {yieldTitle === "above" && title}
         <Card padding={16}>
           {/* The amount card's row gap, so both cards space alike. */}
           <Stack gap={6}>
-            {titlePlacement === "inside" && title}
+            {yieldTitle === "inside" && title}
             <Stack direction="row" align="center" justify="between" gap={8}>
               <Box testId="estimated-reward__percent">
                 <Text variant="display" as="p" numeric>

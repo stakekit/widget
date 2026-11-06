@@ -9,6 +9,7 @@ import {
 } from "../primitives/layout";
 import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";
+import { Card } from "./card";
 
 const InMetricGroup = createContext(false);
 
@@ -64,31 +65,38 @@ export const Metric = ({
 
 /**
  * Metrics side by side: as many columns as fit (`metrics`), or a fixed count.
- * Screen readers read each metric as a term and its description.
+ * Screen readers read each metric as a term and its description. `framed`
+ * sets them in one filled card, the block a details pane leads with.
  */
 export const MetricGroup = ({
   columns = "metrics",
   gap = 16,
+  framed = false,
   children,
 }: {
   readonly columns?: Responsive<1 | 2 | 3 | 4 | "metrics">;
   readonly gap?: Responsive<Space>;
+  readonly framed?: boolean;
   readonly children: ReactNode;
-}) => (
-  <InMetricGroup value>
-    <dl
-      {...stylex.props(
-        styles.group,
-        layoutStyles.columns,
-        layoutStyles.gap,
-        columnsStyles(columns),
-        gapStyles(gap)
-      )}
-    >
-      {children}
-    </dl>
-  </InMetricGroup>
-);
+}) => {
+  const group = (
+    <InMetricGroup value>
+      <dl
+        {...stylex.props(
+          styles.group,
+          layoutStyles.columns,
+          layoutStyles.gap,
+          columnsStyles(columns),
+          gapStyles(gap)
+        )}
+      >
+        {children}
+      </dl>
+    </InMetricGroup>
+  );
+
+  return framed ? <Card padding={16}>{group}</Card> : group;
+};
 
 const styles = stylex.create({
   root: {

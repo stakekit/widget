@@ -578,6 +578,24 @@ describe("Manage summary", () => {
     });
   });
 
+  it("leaves out debt and net worth while borrow positions owe nothing", () => {
+    const summary = deriveManageSummary({
+      ...earn,
+      borrow: {
+        ...borrow,
+        totals: ready({
+          totalBorrowedUsd: new BigNumber(0),
+          totalSuppliedUsd: new BigNumber(30_720),
+        }),
+      },
+    });
+
+    expect(summary).toMatchObject({
+      borrow: null,
+      totalValue: readyFigure(1_260_720),
+    });
+  });
+
   it("marks Earn figures partial instead of totalling the borrow positions alone", () => {
     const summary = deriveManageSummary({
       averageApy: failed,

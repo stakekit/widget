@@ -193,11 +193,14 @@ export const IconAvatar = ({
 );
 
 const styles = stylex.create({
+  // The fill and the circle frame the fallback's initial. A loaded logo
+  // draws its own shape, so it shows whole on no fill: clipped to the
+  // circle, a logo reaching its corners, such as Polygon's, loses them.
   root: {
     borderRadius: radius.pill,
-    overflow: "hidden",
+    overflow: { default: "hidden", ":has(> img)": "visible" },
     alignItems: "center",
-    backgroundColor: color.surface,
+    backgroundColor: { default: color.surface, ":has(> img)": "transparent" },
     boxSizing: "border-box",
     color: color.textMuted,
     display: "inline-flex",
@@ -209,8 +212,9 @@ const styles = stylex.create({
   },
   // An icon sits on the canvas color, so it reads on a row's surface.
   icon: { backgroundColor: color.background, color: color.text },
-  // A provider's logo is a square tile; `badge` matches its small size.
-  square: { borderRadius: radius.badge },
+  // A provider's logo is a square tile; `badge` matches its small size. The
+  // tile keeps its softened corners with a logo too.
+  square: { borderRadius: radius.badge, overflow: "hidden" },
   // `contain` fits a logo drawn with its own padding whole, never cropped.
   image: {
     display: "block",

@@ -69,14 +69,18 @@ export const SelectTokenSection = ({
       ? null
       : `${t("shared.max")} ${formatTokenAmount(stakeMaxAmount, locale, "down")} ${symbol}`;
   const limits = min && max ? `${min} / ${max}` : (min ?? max);
-  const getError = () => {
-    if (stakeAmountLessThanMin && limits) return limits;
-    if (stakeAmountGreaterThanAvailableAmount) {
-      return t("shared.insufficient_balance");
-    }
-    return undefined;
+  // The limits stay beside the token and turn red when missed; an empty
+  // amount misses nothing yet, and "Enter an amount" says so on submit.
+  const limitsMissed = stakeAmountLessThanMin && amountValue !== "";
+  const error = stakeAmountGreaterThanAvailableAmount
+    ? t("shared.insufficient_balance")
+    : undefined;
+  // An empty amount is worth nothing; an amount without a price has no
+  // value to show.
+  const getFiatValue = () => {
+    if (amountValue === "") return formatUsd(0, locale);
+    return priceUsd ? formatUsd(priceUsd, locale) : "";
   };
-  const error = getError();
   // A hidden balance has no known maximum yet.
   const canFillMax = !isStakeTokenSameAsGasToken && !view.hiddenTokenBalance;
   const fillMax = () => setMaxAmount(undefined);
@@ -122,17 +126,15 @@ export const SelectTokenSection = ({
       onValueChange={setAmount}
       separators={amountSeparators(locale)}
       token={<SelectToken canSelect={canSelectToken} />}
-      fiatValue={
-        priceUsd && amountValue !== "" ? formatUsd(priceUsd, locale) : ""
-      }
+      fiatValue={getFiatValue()}
       {...(balance === undefined ? {} : { balance })}
-      {...(limits ? { limits } : {})}
+      {...(limits ? { limits, limitsMissed } : {})}
       {...(error === undefined ? {} : { error })}
       invalid={
         (submitted && stakeAmountIsZero) ||
         stakeAmountGreaterThanAvailableAmount ||
         stakeAmountGreaterThanMax ||
-        stakeAmountLessThanMin
+        limitsMissed
       }
       {...(canFillMax
         ? { max: { label: t("shared.max"), onClick: fillMax } }

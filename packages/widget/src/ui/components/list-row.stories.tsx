@@ -94,11 +94,13 @@ export const LinkDark: Story = { ...Link, globals: { colorScheme: "dark" } };
 
 /**
  * Under the outlined surface style a pressable row edges in `border`, as a
- * filled card does; focus replaces the edge with the focus ring.
+ * filled card does; focus replaces the edge with the focus ring. Shown on
+ * the default palette: Utila's own, which uses this style, is exempt from
+ * the contrast rule these story tests enforce.
  */
 export const LinkOutlined: Story = {
   ...Link,
-  globals: { appearancePreset: "utila", surfaceStyle: "outlined" },
+  globals: { surfaceStyle: "outlined" },
   play: async ({ canvasElement }) => {
     const row = within(canvasElement).getByRole("link", { name: /Ethereum/ });
     await expect(getComputedStyle(row).outlineStyle).toBe("solid");

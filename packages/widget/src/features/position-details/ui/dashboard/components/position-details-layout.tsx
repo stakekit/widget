@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {
   Box,
-  Card,
   DetailList,
   DetailRow,
   Metric,
@@ -74,28 +73,26 @@ export const PositionMetricCards = ({
 }: {
   readonly cards: ReadonlyArray<MetricCard>;
 }) => (
-  <Card padding={16}>
-    <MetricGroup columns={2}>
-      {cards.map((card) => (
-        <Metric
-          key={card.id}
-          label={card.label}
-          value={<MetricValue card={card} />}
-          testId={`position-metric-${card.id}`}
-          {...(card.subValue ? { caption: card.subValue } : {})}
-          {...(card.subValueLoading
-            ? {
-                caption: (
-                  <Stack as="span" aria-busy="true">
-                    <Skeleton shape="line" role="caption" width="half" />
-                  </Stack>
-                ),
-              }
-            : {})}
-        />
-      ))}
-    </MetricGroup>
-  </Card>
+  <MetricGroup columns={2} framed>
+    {cards.map((card) => (
+      <Metric
+        key={card.id}
+        label={card.label}
+        value={<MetricValue card={card} />}
+        testId={`position-metric-${card.id}`}
+        {...(card.subValue ? { caption: card.subValue } : {})}
+        {...(card.subValueLoading
+          ? {
+              caption: (
+                <Stack as="span" aria-busy="true">
+                  <Skeleton shape="line" role="caption" width="half" />
+                </Stack>
+              ),
+            }
+          : {})}
+      />
+    ))}
+  </MetricGroup>
 );
 
 /** The position's balance types, each with its amount and context. */

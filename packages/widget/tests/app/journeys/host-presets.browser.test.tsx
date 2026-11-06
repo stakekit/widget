@@ -53,6 +53,13 @@ const renderEarnCallToAction = async (props: HostProps) => {
   const style = getComputedStyle(await earnCallToAction(app));
   const trigger = app.getByTestId("select-token").element();
   const card = getComputedStyle(filledAncestor(trigger));
+  await expect
+    .element(app.getByTestId("estimated-reward__percent"))
+    .toBeInTheDocument();
+  // The yield card's section: its title, above or inside the card.
+  const yieldSection = filledAncestor(
+    app.getByTestId("estimated-reward__percent").element()
+  ).parentElement;
   const read = {
     background: style.backgroundColor,
     card: {
@@ -66,7 +73,12 @@ const renderEarnCallToAction = async (props: HostProps) => {
       .querySelector("[data-sk-root]")
       ?.getAttribute("data-sk-tabs-indicator"),
     text: style.color,
+    triggerRadius: getComputedStyle(trigger).borderTopLeftRadius,
     triggerShadow: getComputedStyle(trigger).boxShadow,
+    yieldTitled: Array.from(yieldSection?.querySelectorAll("*") ?? []).some(
+      (element) =>
+        element.childElementCount === 0 && element.textContent === "Earn"
+    ),
   };
 
   await app.unmount();
@@ -177,6 +189,7 @@ describe("Appearance Preset identities", () => {
     expect(standard.card.shadow).toBe("none");
     expect(standard.triggerShadow).not.toBe("none");
     expect(standard.card.radius).toBe("16px");
+    expect(standard.yieldTitled).toBe(true);
   });
 
   it("keeps Porto flat, edged and tight-cornered, with pill tabs", async () => {
@@ -191,7 +204,7 @@ describe("Appearance Preset identities", () => {
     expect(porto.tabsIndicator).toBe("pill");
   });
 
-  it("edges Utila's cards at 8px corners, with compact controls", async () => {
+  it("edges Utila's cards at 12px corners, with a flat token trigger, no Earn title and a 40px call to action", async () => {
     const utila = await renderEarnCallToAction({
       layout: "dashboard",
       variant: "utila",
@@ -200,8 +213,13 @@ describe("Appearance Preset identities", () => {
     expect(utila.card.shadow).toBe("none");
     // The amount card reads as an input, in Utila's `#C9CFFF` edge.
     expect(utila.card.border).toBe("rgb(201, 207, 255)");
-    expect(utila.card.radius).toBe("8px");
-    expect(utila.height).toBe("36px");
+    expect(utila.card.radius).toBe("12px");
+    // The card's edge is the only one: the trigger in it is not ringed.
+    expect(utila.triggerShadow).toBe("none");
+    expect(utila.triggerRadius).toBe("12px");
+    // As in Utila's own UI, the yield card goes untitled.
+    expect(utila.yieldTitled).toBe(false);
+    expect(utila.height).toBe("40px");
     expect(utila.tabsIndicator).toBe("tint");
   });
 });
@@ -211,7 +229,7 @@ describe("Earn call-to-action height", () => {
     ["the Compact Layout", { layout: "compact" }, "48px"],
     ["the Dashboard Layout", { layout: "dashboard" }, "40px"],
     ["Porto in the Compact Layout", { variant: "porto" }, "40px"],
-    ["Utila in the Compact Layout", { variant: "utila" }, "36px"],
+    ["Utila in the Compact Layout", { variant: "utila" }, "40px"],
     ["Finery in the Compact Layout", { variant: "finery" }, "48px"],
   ] satisfies ReadonlyArray<readonly [string, HostProps, string]>)(
     "follows %s",

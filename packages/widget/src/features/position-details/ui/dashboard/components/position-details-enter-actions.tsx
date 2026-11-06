@@ -101,13 +101,16 @@ const PositionDetailsEnterTokenSection = ({
 
   if (isLoading) return <Skeleton shape="rect" height="lg" />;
 
-  const limitProps = (() => {
-    if (stakeAmountLessThanMin && minMaxLabel) return { error: minMaxLabel };
-    if (stakeAmountGreaterThanAvailableAmount) {
-      return { error: t("shared.insufficient_balance") };
-    }
-    return minMaxLabel ? { limits: minMaxLabel } : {};
-  })();
+  // The limits stay beside the token, red when missed; a balance error
+  // shows under the amount beside them.
+  const limitProps = {
+    ...(minMaxLabel
+      ? { limits: minMaxLabel, limitsMissed: stakeAmountLessThanMin }
+      : {}),
+    ...(stakeAmountGreaterThanAvailableAmount
+      ? { error: t("shared.insufficient_balance") }
+      : {}),
+  };
 
   return (
     <AmountPanel

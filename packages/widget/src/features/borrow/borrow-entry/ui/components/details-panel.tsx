@@ -131,7 +131,7 @@ export const BorrowMarketDetails = ({
         badges={[{ label: t(`dashboard.borrow.market_type.${market.type}`) }]}
       />
 
-      <MetricGroup columns={2}>
+      <MetricGroup columns={2} framed>
         {model.metricCards.map((card) => (
           <Metric
             key={card.id}
