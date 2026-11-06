@@ -12,6 +12,7 @@ import {
   Stack,
   Text,
 } from "../../../../../ui/index";
+import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { YieldRiskRatingSummary } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
@@ -35,6 +36,10 @@ export const SelectYieldSection = ({
   const { view: yieldSelection } = useEarnYieldSelection();
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const { earnPresentation } = useWidgetConfig("hostProfile");
+  // The yield's title shows above its card, as the amount's does, on every
+  // host; Zerion names it inside the card instead.
+  const titlePlacement = earnPresentation.zerion ? "inside" : "above";
 
   if (entry.appLoading || yieldSelection.isLoading) {
     return <Skeleton shape="rect" height="panel" />;
@@ -63,27 +68,38 @@ export const SelectYieldSection = ({
     );
   };
 
+  const title = (
+    <Text
+      variant={titlePlacement === "inside" ? "label" : "body"}
+      tone={titlePlacement === "inside" ? "muted" : "default"}
+      weight="medium"
+    >
+      {t("details.earn")}
+    </Text>
+  );
+
   return (
     <Stack gap={12}>
-      <Card padding={16}>
-        <Stack gap={4}>
-          <Text variant="label" tone="muted">
-            {t("details.earn")}
-          </Text>
+      <Stack gap={8}>
+        {titlePlacement === "above" && title}
+        <Card padding={16}>
+          {/* The amount card's row gap, so both cards space alike. */}
+          <Stack gap={6}>
+            {titlePlacement === "inside" && title}
+            <Stack direction="row" align="center" justify="between" gap={8}>
+              <Box testId="estimated-reward__percent">
+                <Text variant="display" as="p" numeric>
+                  {getPercentText()}
+                </Text>
+              </Box>
 
-          <Stack direction="row" align="center" justify="between" gap={8}>
-            <Box testId="estimated-reward__percent">
-              <Text variant="display" as="p" numeric>
-                {getPercentText()}
-              </Text>
-            </Box>
+              <SelectYield />
+            </Stack>
 
-            <SelectYield />
+            <SelectYieldRewardDetails alwaysShowStrategy={alwaysShowStrategy} />
           </Stack>
-
-          <SelectYieldRewardDetails alwaysShowStrategy={alwaysShowStrategy} />
-        </Stack>
-      </Card>
+        </Card>
+      </Stack>
 
       {showRiskSummary && entry.selectedStake && (
         <YieldRiskRatingSummary yieldDto={entry.selectedStake} />

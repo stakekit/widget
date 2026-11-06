@@ -53,7 +53,7 @@ const utila: HostProfile = {
     callToActionSize: "md",
     gutter: "md",
     surfaceStyle: "outlined",
-    tabsIndicator: "underline",
+    tabsIndicator: "tint",
   },
   requiresTermsAcknowledgement: true,
   showsPendingApprovalsNotice: true,

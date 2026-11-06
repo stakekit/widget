@@ -189,12 +189,24 @@ const styles = stylex.create({
     transitionTimingFunction: motion.easing,
   },
   // Filled like a pill tabs list rather than raised: a raised pill is white
-  // on a white frame in light. Only a button, which can be enabled, tints on
-  // hover.
+  // on a white frame in light. Under the `outlined` surface style it is
+  // outlined instead, white with a thin edge, like its cards. Only a button,
+  // which can be enabled, tints on hover.
   flat: {
+    borderColor: {
+      default: "transparent",
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: color.border,
+    },
     backgroundColor: {
       default: color.surface,
       ":enabled:hover": color.surfaceHover,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: color.surfaceRaised,
     },
     boxShadow: "none",
   },

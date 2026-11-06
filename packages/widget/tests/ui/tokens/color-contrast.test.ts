@@ -214,11 +214,18 @@ describe("Color Role contrast", () => {
 // on a dim display, not a legibility bar. Finery's Host Profile presents
 // elevated surfaces, which lift its cards off the canvas as `surfaceRaised`
 // with the `raised` elevation, so its `surface` does not bound a card.
+// Utila's presents outlined surfaces, which edge every filled card in
+// `border`, so that edge, not the fill, sets a card off the canvas there.
 const surfaceSeparation = 1.15;
 const elevatedPresets: ReadonlyArray<string> = ["finery"];
+const outlinedPresets: ReadonlyArray<string> = ["utila"];
 
 const filledSurfaceThemes = themes.filter(
-  ({ preset }) => !elevatedPresets.includes(preset)
+  ({ preset }) =>
+    !elevatedPresets.includes(preset) && !outlinedPresets.includes(preset)
+);
+const outlinedSurfaceThemes = themes.filter(({ preset }) =>
+  outlinedPresets.includes(preset)
 );
 
 describe("filled surface separation", () => {
@@ -229,6 +236,17 @@ describe("filled surface separation", () => {
 
       expect(
         contrast(parseColor(roles.surface), parseColor(roles.background))
+      ).toBeGreaterThanOrEqual(surfaceSeparation);
+    }
+  );
+
+  it.each(outlinedSurfaceThemes)(
+    "$colorScheme $preset, $accent: a card's border stands off background",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+
+      expect(
+        contrast(parseColor(roles.border), parseColor(roles.background))
       ).toBeGreaterThanOrEqual(surfaceSeparation);
     }
   );

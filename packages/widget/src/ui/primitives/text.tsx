@@ -5,6 +5,7 @@ import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import {
+  figureWeight,
   font,
   fontSize,
   fontWeight,
@@ -112,7 +113,7 @@ const roleStyles = stylex.create({
   display: {
     fontSize: fontSize.display,
     fontVariantNumeric: "tabular-nums",
-    fontWeight: fontWeight.semibold,
+    fontWeight: figureWeight.display,
     lineHeight: lineHeight.display,
   },
   title: {

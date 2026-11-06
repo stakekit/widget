@@ -5,8 +5,8 @@ import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import {
   displayShrinkSize,
+  figureWeight,
   font,
-  fontWeight,
   lineHeight,
 } from "../tokens/typography.stylex";
 import {
@@ -294,7 +294,7 @@ const styles = stylex.create({
     flexGrow: 1,
     fontFamily: font.sans,
     fontVariantNumeric: "tabular-nums",
-    fontWeight: fontWeight.semibold,
+    fontWeight: figureWeight.display,
     lineHeight: lineHeight.display,
     outlineStyle: "none",
     minWidth: 0,
@@ -304,7 +304,7 @@ const styles = stylex.create({
   measure: {
     fontFamily: font.sans,
     fontVariantNumeric: "tabular-nums",
-    fontWeight: fontWeight.semibold,
+    fontWeight: figureWeight.display,
     pointerEvents: "none",
     position: "absolute",
     visibility: "hidden",

@@ -188,14 +188,19 @@ const portoTheme = stylex.createTheme(color, {
   ...portoColors,
 });
 
-// Utila: light only and crisp: the default accent on cool greys, with a
-// visible `border` that edges its cards and raised parts.
+// Utila: light only and crisp, on Utila's own palette: the default accent on
+// its `#F5F5F6` grey and `#E4E4E7` lines, `#C9CFFF` around inputs, and text a
+// shade under its `#373737`, dark enough that a neutral badge's edge shows
+// on hovered rows. Secondary text is the lightest grey that stays legible on
+// its cards; Utila's own `#999999` is not.
 const utilaColors = {
   background: "#FFFFFF",
-  surface: "#EDEEF2",
-  surfaceHover: "#E4E6EB",
-  border: "#D9DCE3",
+  surface: "#F5F5F6",
+  surfaceHover: "#EDEDEF",
+  border: "#E4E4E7",
   borderStrong: "#C9CFFF",
+  text: "#2E2E2E",
+  textMuted: "#6B6B6B",
   accentSoft: "#F4F5FF",
   infoSoft: "#F4F5FF",
   warningSoft: "#FFE9BD",

@@ -24,8 +24,11 @@ type CallToActionSize = "md" | "lg";
 /** The gap between a page's sections and its edge: 16 (`md`) or 20 (`lg`). */
 type GutterSize = "md" | "lg";
 
-/** How the selected tab is marked: a line under it or a filled pill. */
-export type TabsIndicator = "underline" | "pill";
+/**
+ * How the selected tab is marked: a line under it, a raised pill in a track,
+ * or a flat tint behind it with no track.
+ */
+export type TabsIndicator = "underline" | "pill" | "tint";
 
 /**
  * How surfaces sit on the canvas: as fills, lifted off it with a shadow, or

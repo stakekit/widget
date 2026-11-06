@@ -4,7 +4,6 @@ import {
   DashboardHeader,
   ShellFrame,
 } from "../../../features/widget-shell/composition";
-import { Box, Stack } from "../../../ui/index";
 import { DashboardTabs } from "./dashboard-tabs";
 
 /**
@@ -21,12 +20,10 @@ export const DashboardShell = ({
 }) => (
   <ShellFrame
     header={
-      <Stack direction="row" align="center" justify="between" gap={16} wrap>
-        <Box grow>
-          <DashboardTabs pendingYieldCategory={pendingYieldCategory} />
-        </Box>
-        <DashboardHeader />
-      </Stack>
+      <DashboardTabs
+        pendingYieldCategory={pendingYieldCategory}
+        trailing={<DashboardHeader />}
+      />
     }
   >
     {children}

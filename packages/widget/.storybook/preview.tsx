@@ -9,7 +9,11 @@ import {
 } from "../src/ui/composition";
 
 const colorSchemes: ReadonlyArray<ColorScheme> = ["light", "dark"];
-const tabsIndicators: ReadonlyArray<TabsIndicator> = ["underline", "pill"];
+const tabsIndicators: ReadonlyArray<TabsIndicator> = [
+  "underline",
+  "pill",
+  "tint",
+];
 const surfaceStyles: ReadonlyArray<SurfaceStyle> = [
   "filled",
   "elevated",

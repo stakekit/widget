@@ -36,7 +36,11 @@ const accentHoverSeparation = 1.2;
 const onAccentContrast = 4.5;
 const accentHoverWeights = [88, 84, 80, 76, 72, 68, 64, 60];
 const fallbackAccentHoverWeight = 80;
-const accentTextWeight = 55;
+// The accent's text moves toward the text role, nearest the accent first,
+// until it reads on the darkest surface, the hover one; an accent the
+// derivation cannot measure takes the first weight.
+const accentTextWeights = [55, 50, 45, 40, 35, 30, 25];
+const accentTextContrast = 4.5;
 const focusRingWeight = 70;
 // WCAG 2.2 1.4.11: a focus ring's contrast on the surface around it.
 const focusRingContrast = 3;
@@ -96,7 +100,16 @@ const deriveColorRoles = (
   const accentRoles = (accent: string): Partial<ColorRoles> => {
     const accentSoft = host.accentSoft ?? tint("accent");
     const accentText =
-      host.accentText ?? mix(accent, accentTextWeight, role("text"));
+      host.accentText ??
+      accentTextWeights
+        .map((weight) => mixOpaqueColors(accent, weight, role("text")))
+        .find(
+          (candidate): candidate is string =>
+            candidate !== undefined &&
+            (contrastRatio(candidate, role("surfaceHover")) ??
+              accentTextContrast) >= accentTextContrast
+        ) ??
+      mix(accent, accentTextWeights[0] ?? 55, role("text"));
     const onAccent =
       host.onAccent ??
       mostContrasting(

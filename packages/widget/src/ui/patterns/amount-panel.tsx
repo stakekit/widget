@@ -15,8 +15,19 @@ import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 
 type AmountPanelProps = {
-  /** Names the amount, shown above it, such as "Stake". */
+  /** Names the amount, such as "Stake". */
   readonly label: string;
+  /**
+   * Where the label shows: inside the panel over the amount, or above the
+   * panel as the section's title. Either way it names the amount.
+   */
+  readonly labelPlacement?: "inside" | "above";
+  /**
+   * The title above the panel is still resolving, such as while a yield
+   * loads: a placeholder holds its place so a fallback name never flashes.
+   * The label still names the amount to assistive technology.
+   */
+  readonly labelPending?: boolean;
   /** The amount as a decimal string, or `""` for none. */
   readonly value: string;
   readonly onValueChange: (value: string) => void;
@@ -102,6 +113,8 @@ type AmountPanelProps = {
  */
 export const AmountPanel = ({
   label,
+  labelPlacement = "inside",
+  labelPending = false,
   value,
   onValueChange,
   separators,
@@ -118,76 +131,102 @@ export const AmountPanel = ({
   shrink = true,
   testIds,
   focusRequest = 0,
-}: AmountPanelProps) => (
-  <Card
-    padding={16}
-    focusEdge
-    {...(testIds?.root === undefined ? {} : { testId: testIds.root })}
-  >
-    <Stack gap={8}>
-      <Field
-        label={label}
-        disabled={disabled}
-        {...(limits === undefined ? {} : { description: limits })}
-        {...(error === undefined ? {} : { error })}
-      >
-        <Stack direction="row" align="center" gap={12}>
-          <AmountInput
-            value={value}
-            onValueChange={onValueChange}
-            separators={separators}
-            invalid={invalid || error !== undefined}
-            disabled={disabled}
-            shrink={shrink}
-            focusRequest={focusRequest}
-            {...(onBlur === undefined ? {} : { onBlur })}
-            {...(testIds?.input === undefined ? {} : { testId: testIds.input })}
-          />
-          {token}
-        </Stack>
-      </Field>
-      <Stack direction="row" align="center" justify="between" gap={8} wrap>
-        <Stack as="span" aria-busy={fiatValueLoading || undefined}>
-          {fiatValueLoading ? (
-            <span {...stylex.props(styles.pendingFiat)}>
-              <Skeleton shape="line" role="caption" />
-            </span>
-          ) : (
-            <Text variant="caption" tone="muted" numeric>
-              {fiatValue}
-            </Text>
-          )}
-        </Stack>
-        {(balance !== undefined || max !== undefined) && (
-          <Stack direction="row" align="center" gap={8}>
-            {balance !== undefined && (
+}: AmountPanelProps) => {
+  const panel = (
+    <Card
+      variant="field"
+      padding={16}
+      focusEdge
+      {...(testIds?.root === undefined ? {} : { testId: testIds.root })}
+    >
+      <Stack gap={8}>
+        <Field
+          {...(labelPlacement === "inside" ? { label } : {})}
+          disabled={disabled}
+          {...(limits === undefined ? {} : { description: limits })}
+          {...(error === undefined ? {} : { error })}
+        >
+          <Stack direction="row" align="center" gap={12}>
+            <AmountInput
+              // Titled above, the amount names itself with the title's text.
+              {...(labelPlacement === "above" ? { label } : {})}
+              value={value}
+              onValueChange={onValueChange}
+              separators={separators}
+              invalid={invalid || error !== undefined}
+              disabled={disabled}
+              shrink={shrink}
+              focusRequest={focusRequest}
+              {...(onBlur === undefined ? {} : { onBlur })}
+              {...(testIds?.input === undefined
+                ? {}
+                : { testId: testIds.input })}
+            />
+            {token}
+          </Stack>
+        </Field>
+        <Stack direction="row" align="center" justify="between" gap={8} wrap>
+          <Stack as="span" aria-busy={fiatValueLoading || undefined}>
+            {fiatValueLoading ? (
+              <span {...stylex.props(styles.pendingFiat)}>
+                <Skeleton shape="line" role="caption" />
+              </span>
+            ) : (
               <Text variant="caption" tone="muted" numeric>
-                <BalanceAmount balance={balance} disabled={disabled} />
+                {fiatValue}
               </Text>
             )}
-            {balance?.action !== undefined && (
-              <Chip
-                onClick={balance.action.onClick}
-                disabled={disabled || (balance.action.disabled ?? false)}
-              >
-                {balance.action.label}
-              </Chip>
-            )}
-            {max !== undefined && (
-              <Chip
-                onClick={max.onClick}
-                {...(testIds?.max === undefined ? {} : { testId: testIds.max })}
-                disabled={disabled || (max.disabled ?? false)}
-              >
-                {max.label}
-              </Chip>
-            )}
           </Stack>
-        )}
+          {(balance !== undefined || max !== undefined) && (
+            <Stack direction="row" align="center" gap={8}>
+              {balance !== undefined && (
+                <Text variant="caption" tone="muted" numeric>
+                  <BalanceAmount balance={balance} disabled={disabled} />
+                </Text>
+              )}
+              {balance?.action !== undefined && (
+                <Chip
+                  onClick={balance.action.onClick}
+                  disabled={disabled || (balance.action.disabled ?? false)}
+                >
+                  {balance.action.label}
+                </Chip>
+              )}
+              {max !== undefined && (
+                <Chip
+                  onClick={max.onClick}
+                  {...(testIds?.max === undefined
+                    ? {}
+                    : { testId: testIds.max })}
+                  disabled={disabled || (max.disabled ?? false)}
+                >
+                  {max.label}
+                </Chip>
+              )}
+            </Stack>
+          )}
+        </Stack>
       </Stack>
+    </Card>
+  );
+
+  if (labelPlacement === "inside") return panel;
+
+  // The title shows above the panel; the amount names itself with the same
+  // text, so the title reads once, as the section's heading.
+  return (
+    <Stack gap={8}>
+      <span {...stylex.props(labelPending && styles.pendingTitle)}>
+        {labelPending ? (
+          <Skeleton shape="line" />
+        ) : (
+          <Text weight="medium">{label}</Text>
+        )}
+      </span>
+      {panel}
     </Stack>
-  </Card>
-);
+  );
+};
 
 /** The balance's figure: filling it in, toggling its precision, or as is. */
 const BalanceAmount = ({
@@ -217,6 +256,11 @@ const BalanceAmount = ({
 
 const styles = stylex.create({
   pendingFiat: { display: "block", width: space[64] },
+  // A placeholder title about as wide as a short yield type name.
+  pendingTitle: {
+    display: "block",
+    width: `calc(${space[64]} + ${space[32]})`,
+  },
   // Reads as the balance text it is, as `ExpandableAmount` does.
   fill: {
     margin: 0,

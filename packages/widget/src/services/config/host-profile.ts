@@ -20,7 +20,7 @@ type PresentationOverrides = Readonly<{
   callToActionSize?: "md" | "lg";
   gutter?: "md" | "lg";
   surfaceStyle?: "filled" | "elevated" | "outlined";
-  tabsIndicator?: "underline" | "pill";
+  tabsIndicator?: "underline" | "pill" | "tint";
 }>;
 
 /**
@@ -90,7 +90,7 @@ export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
         callToActionSize: "md",
         gutter: "md",
         surfaceStyle: "outlined",
-        tabsIndicator: "underline",
+        tabsIndicator: "tint",
       },
       requiresTermsAcknowledgement: true,
       showsPendingApprovalsNotice: true,

@@ -57,6 +57,8 @@ export const BorrowAmountField = ({
   return (
     <AmountPanel
       shrink={!disableResizingInputFontSize}
+      // The amount's title above its card, as on Earn.
+      labelPlacement="above"
       label={label}
       value={toAmountValue(amount)}
       onValueChange={(value) => onAmountChange(fromAmountValue(value))}

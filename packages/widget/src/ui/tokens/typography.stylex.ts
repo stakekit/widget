@@ -14,6 +14,15 @@ export const fontWeight = stylex.defineVars({
 });
 
 /**
+ * The weight of the big figures a page leads with, the `display` role and
+ * the amount being entered. An Appearance Preset may set it apart from the
+ * scale, such as a regular-weight amount over semibold headings.
+ */
+export const figureWeight = stylex.defineVars({
+  display: "600",
+});
+
+/**
  * Type role sizes, in px so the host page's root font size does not scale
  * them. Each role pairs with the line height of the same key.
  */

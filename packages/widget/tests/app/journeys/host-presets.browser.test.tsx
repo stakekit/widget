@@ -183,7 +183,8 @@ describe("Appearance Preset identities", () => {
     const porto = await renderEarnCallToAction({ variant: "porto" });
 
     expect(porto.card.shadow).toBe("none");
-    expect(porto.card.border).toBe("rgb(52, 52, 56)");
+    // The amount card reads as an input, in Porto's strong edge.
+    expect(porto.card.border).toBe("rgb(74, 74, 80)");
     expect(porto.card.radius).toBe("6px");
     // Raised parts are outlined, not shadowed.
     expect(porto.triggerShadow).toBe("rgb(74, 74, 80) 0px 0px 0px 1px");
@@ -197,10 +198,11 @@ describe("Appearance Preset identities", () => {
     });
 
     expect(utila.card.shadow).toBe("none");
-    expect(utila.card.border).toBe("rgb(217, 220, 227)");
+    // The amount card reads as an input, in Utila's `#C9CFFF` edge.
+    expect(utila.card.border).toBe("rgb(201, 207, 255)");
     expect(utila.card.radius).toBe("8px");
     expect(utila.height).toBe("36px");
-    expect(utila.tabsIndicator).toBe("underline");
+    expect(utila.tabsIndicator).toBe("tint");
   });
 });
 

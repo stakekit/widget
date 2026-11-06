@@ -108,6 +108,11 @@ export const SelectTokenSection = ({
   return (
     <AmountPanel
       shrink={!disableResizingInputFontSize}
+      // The amount's title above its card; Zerion names it inside.
+      labelPlacement={earnPresentation.zerion ? "inside" : "above"}
+      // The yield type names the amount; while a yield resolves, such as
+      // across a category switch, a placeholder holds the title.
+      labelPending={view.selectedStake === null}
       label={
         view.selectedStake
           ? getYieldTypeLabels(view.selectedStake, t).title

@@ -4,7 +4,7 @@ import { type ColorRoles, color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
-import { fontWeight } from "../tokens/typography.stylex";
+import { figureWeight, fontWeight } from "../tokens/typography.stylex";
 import { applyHostColors } from "./appearance";
 import {
   type ColorScheme,
@@ -65,6 +65,9 @@ const fineryFontWeight = stylex.createTheme(fontWeight, {
   semibold: "500",
 });
 
+// Big figures follow each preset's lighter semibold.
+const fineryFigureWeight = stylex.createTheme(figureWeight, { display: "500" });
+
 const portoRadius = stylex.createTheme(radius, {
   badge: "4px",
   control: "4px",
@@ -80,6 +83,8 @@ const portoFontWeight = stylex.createTheme(fontWeight, {
   medium: "400",
   semibold: "500",
 });
+
+const portoFigureWeight = stylex.createTheme(figureWeight, { display: "500" });
 
 // Applied after the dark scheme's elevation, which it replaces.
 const portoElevation = stylex.createTheme(elevation, {
@@ -110,6 +115,9 @@ const utilaElevation = stylex.createTheme(elevation, {
   shell: `0 0 0 1px ${color.border}, 0 4px 16px rgb(9 9 11 / 0.05)`,
 });
 
+// Regular-weight amounts and rates over semibold headings, as Utila's own UI.
+const utilaFigureWeight = stylex.createTheme(figureWeight, { display: "400" });
+
 const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
   {
     default: {
@@ -118,17 +126,22 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
     },
     finery: {
       palettes: presetPalettes.finery,
-      theme: [fineryRadius, fineryFontWeight],
+      theme: [fineryRadius, fineryFontWeight, fineryFigureWeight],
     },
     porto: {
       fixedColorScheme: "dark",
       palette: presetPalettes.porto.dark,
-      theme: [portoRadius, portoFontWeight, portoElevation],
+      theme: [portoRadius, portoFontWeight, portoFigureWeight, portoElevation],
     },
     utila: {
       fixedColorScheme: "light",
       palette: presetPalettes.utila.light,
-      theme: [utilaRadius, utilaControlHeight, utilaElevation],
+      theme: [
+        utilaRadius,
+        utilaControlHeight,
+        utilaElevation,
+        utilaFigureWeight,
+      ],
     },
   };
 

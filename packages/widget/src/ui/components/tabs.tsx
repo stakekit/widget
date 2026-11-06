@@ -7,7 +7,7 @@ import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
-import { presentationMarker } from "../tokens/presentation.stylex";
+import { gutter, presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -44,6 +44,12 @@ type TabsProps<T extends string> = {
   readonly label: string;
   /** The selected tab's content, in a panel the selected tab controls. */
   readonly children?: ReactNode;
+  /**
+   * Controls at the end of the tabs' row, such as a wallet's network and
+   * account. Under the `outlined` surface style with an underline, the rule
+   * runs under the whole row and the selected tab's underline sits on it.
+   */
+  readonly trailing?: ReactNode;
 };
 
 /**
@@ -57,16 +63,13 @@ export const Tabs = <const T extends string>({
   onValueChange,
   label,
   children,
-}: TabsProps<T>) => (
-  <BaseTabs.Root
-    value={value}
-    onValueChange={(next) => {
-      const tab = tabs.find((option) => option.value === next);
-      if (tab) onValueChange(tab.value);
-    }}
-    {...stylex.props(styles.root)}
-  >
-    <BaseTabs.List aria-label={label} {...stylex.props(styles.list)}>
+  trailing,
+}: TabsProps<T>) => {
+  const list = (
+    <BaseTabs.List
+      aria-label={label}
+      {...stylex.props(styles.list, trailing !== undefined && styles.listInBar)}
+    >
       {/* First, so the tabs paint over the pill. */}
       <BaseTabs.Indicator {...stylex.props(styles.indicator)} />
       {tabs.map((tab) => (
@@ -98,16 +101,36 @@ export const Tabs = <const T extends string>({
         </Fragment>
       ))}
     </BaseTabs.List>
-    {children !== undefined && (
-      <BaseTabs.Panel
-        value={value}
-        {...stylex.props(styles.panel, focusRingStyles.visible)}
-      >
-        {children}
-      </BaseTabs.Panel>
-    )}
-  </BaseTabs.Root>
-);
+  );
+
+  return (
+    <BaseTabs.Root
+      value={value}
+      onValueChange={(next) => {
+        const tab = tabs.find((option) => option.value === next);
+        if (tab) onValueChange(tab.value);
+      }}
+      {...stylex.props(styles.root)}
+    >
+      {trailing === undefined ? (
+        list
+      ) : (
+        <div {...stylex.props(styles.bar)}>
+          {list}
+          <div {...stylex.props(styles.trailing)}>{trailing}</div>
+        </div>
+      )}
+      {children !== undefined && (
+        <BaseTabs.Panel
+          value={value}
+          {...stylex.props(styles.panel, focusRingStyles.visible)}
+        >
+          {children}
+        </BaseTabs.Panel>
+      )}
+    </BaseTabs.Root>
+  );
+};
 
 // Each pill value sits under the ancestor condition inline: StyleX compiles
 // `stylex.when` only where a style map uses it.
@@ -139,6 +162,10 @@ const styles = stylex.create({
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
       )]: space[4],
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: space[4],
     },
     // The underline's rule runs only as wide as the tabs, not the bar.
     alignSelf: {
@@ -157,23 +184,110 @@ const styles = stylex.create({
     },
     display: "flex",
     position: "relative",
+    // Only the underline draws a rule under the list.
     borderBottomColor: {
       default: color.border,
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
       )]: "transparent",
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: "transparent",
     },
     borderBottomStyle: "solid",
     borderBottomWidth: borderWidth.thin,
   },
+  // The tabs' row with controls at its end. With the underline under the
+  // `outlined` surface style, the row draws the rule across its full width
+  // and the list drops its own so its tabs sit on the row's rule. With the
+  // tint, the rule runs edge to edge of the frame, under the row.
+  bar: {
+    gap: space[16],
+    marginInline: {
+      default: 0,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: `calc(-1 * ${gutter.size})`,
+    },
+    paddingInline: {
+      default: 0,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: gutter.size,
+    },
+    alignItems: "stretch",
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    borderBottomColor: color.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: {
+      default: 0,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"][data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: borderWidth.thin,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: borderWidth.thin,
+    },
+    // As tight as the host's own header: 12px above the tabs, 8px to the rule,
+    // pulling up into the frame's gutter above.
+    marginTop: {
+      default: 0,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: `calc(${space[12]} - ${gutter.size})`,
+    },
+    minWidth: 0,
+    paddingBottom: {
+      default: 0,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: space[8],
+    },
+  },
+  listInBar: {
+    alignItems: {
+      default: "flex-end",
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: "center",
+    },
+    alignSelf: "stretch",
+    borderBottomWidth: {
+      default: borderWidth.thin,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"][data-sk-tabs-indicator="underline"]',
+        presentationMarker
+      )]: 0,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: 0,
+    },
+  },
+  trailing: { alignSelf: "center", display: "flex", minWidth: 0 },
   // An accent underline under the selected tab, drawn over the list's rule so
-  // their bottom edges meet, or a raised pill behind the selected tab.
+  // their bottom edges meet; a raised pill behind the selected tab, in a
+  // track; or, with the tint, a flat `surface` fill behind it, no track.
   indicator: {
     borderRadius: {
       default: 0,
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
+        presentationMarker
+      )]: radius.pillControl,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
         presentationMarker
       )]: radius.pillControl,
     },
@@ -183,6 +297,10 @@ const styles = stylex.create({
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
       )]: color.surfaceRaised,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: color.surface,
     },
     boxShadow: {
       default: "none",
@@ -201,11 +319,19 @@ const styles = stylex.create({
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
       )]: "auto",
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: "auto",
     },
     height: {
       default: borderWidth.thick,
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
+        presentationMarker
+      )]: "var(--active-tab-height)",
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
         presentationMarker
       )]: "var(--active-tab-height)",
     },
@@ -214,6 +340,10 @@ const styles = stylex.create({
       default: "auto",
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
+        presentationMarker
+      )]: "var(--active-tab-top)",
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
         presentationMarker
       )]: "var(--active-tab-top)",
     },
@@ -225,6 +355,10 @@ const styles = stylex.create({
       default: radius.badge,
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
+        presentationMarker
+      )]: radius.pillControl,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
         presentationMarker
       )]: radius.pillControl,
     },
@@ -242,6 +376,10 @@ const styles = stylex.create({
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
       )]: space[12],
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: space[16],
     },
     backgroundColor: "transparent",
     color: {
@@ -252,9 +390,27 @@ const styles = stylex.create({
     cursor: { default: "pointer", ":is([data-disabled])": "not-allowed" },
     flexShrink: 0,
     fontFamily: font.sans,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
-    lineHeight: lineHeight.label,
+    fontSize: {
+      default: fontSize.label,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: fontSize.body,
+    },
+    fontWeight: {
+      default: fontWeight.medium,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: fontWeight.semibold,
+    },
+    lineHeight: {
+      default: lineHeight.label,
+      [stylex.when.ancestor(
+        '[data-sk-tabs-indicator="tint"]',
+        presentationMarker
+      )]: lineHeight.body,
+    },
     opacity: { default: 1, ":is([data-disabled])": opacity.disabled },
     position: "relative",
     transitionDuration: motion.fast,

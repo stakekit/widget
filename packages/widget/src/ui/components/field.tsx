@@ -11,8 +11,12 @@ import {
 } from "../tokens/typography.stylex";
 
 type FieldProps = {
-  /** The visible label; it names the control. */
-  readonly label: string;
+  /**
+   * The label; it names the control. Without one, the control names itself,
+   * such as where a visible title outside the field already reads as its
+   * name.
+   */
+  readonly label?: string;
   /** Help under the control; it describes the control. */
   readonly description?: string;
   /** Shown in place of the description and marks the control invalid. */
@@ -51,7 +55,9 @@ export const Field = ({
     disabled={disabled}
     {...stylex.props(styles.root)}
   >
-    <BaseField.Label {...stylex.props(styles.label)}>{label}</BaseField.Label>
+    {label !== undefined && (
+      <BaseField.Label {...stylex.props(styles.label)}>{label}</BaseField.Label>
+    )}
     <FieldStateContext value={{ disabled, invalid: error !== undefined }}>
       {children}
     </FieldStateContext>

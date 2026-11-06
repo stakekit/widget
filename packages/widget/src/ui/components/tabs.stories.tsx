@@ -88,6 +88,97 @@ export const UnderlineDark: Story = {
   globals: { tabsIndicator: "underline", colorScheme: "dark" },
 };
 
+const WithTrailing = () => {
+  const [value, setValue] = useState<Section>("earn");
+  return (
+    <div data-testid="frame">
+      <Tabs
+        tabs={sections}
+        value={value}
+        onValueChange={setValue}
+        label="Sections"
+        trailing={<Text as="span">Controls</Text>}
+      />
+    </div>
+  );
+};
+
+/**
+ * Under the `outlined` surface style with an underline, the rule runs under
+ * the whole row, controls included, and the selected tab's underline sits on
+ * it; the list draws no rule of its own.
+ */
+export const UnderlineFullRowRule: Story = {
+  globals: { tabsIndicator: "underline", surfaceStyle: "outlined" },
+  render: () => <WithTrailing />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const list = tabList(canvasElement);
+    const bar = list.parentElement;
+    const indicator = list.firstElementChild;
+    if (!(bar instanceof HTMLElement) || !(indicator instanceof HTMLElement)) {
+      throw new Error("Expected the tabs' row and indicator");
+    }
+
+    await expect(getComputedStyle(list).borderBottomWidth).toBe("0px");
+    await expect(getComputedStyle(bar).borderBottomWidth).toBe("1px");
+    // The row's rule spans the row, beyond the last tab, to the controls.
+    const controls = canvas.getByText("Controls").getBoundingClientRect();
+    const row = bar.getBoundingClientRect();
+    await expect(row.right).toBeGreaterThanOrEqual(controls.right);
+    await expect(row.width).toBeGreaterThan(list.getBoundingClientRect().width);
+    // The underline's bottom edge meets the row's rule's bottom edge.
+    await expect(indicator.getBoundingClientRect().bottom).toBeCloseTo(
+      row.bottom,
+      0
+    );
+  },
+};
+
+/** Elsewhere, controls beside the tabs leave the rule as wide as the tabs. */
+export const UnderlineTabWidthRuleWithTrailing: Story = {
+  globals: { tabsIndicator: "underline" },
+  render: () => <WithTrailing />,
+  play: async ({ canvasElement }) => {
+    const list = tabList(canvasElement);
+    const bar = list.parentElement;
+    if (!(bar instanceof HTMLElement)) throw new Error("Expected the row");
+    await expect(getComputedStyle(list).borderBottomWidth).toBe("1px");
+    await expect(getComputedStyle(bar).borderBottomWidth).toBe("0px");
+  },
+};
+
+/**
+ * The tint indicator: the selected tab filled with `surface`, no track, no
+ * shadow; beside controls, the row's rule runs under the whole row.
+ */
+export const Tint: Story = {
+  globals: { tabsIndicator: "tint" },
+  render: () => <WithTrailing />,
+  play: async ({ canvasElement }) => {
+    const list = tabList(canvasElement);
+    const bar = list.parentElement;
+    const indicator = list.firstElementChild;
+    const selected = within(list).getByRole("tab", { selected: true });
+    if (!(bar instanceof HTMLElement) || !(indicator instanceof HTMLElement)) {
+      throw new Error("Expected the tabs' row and indicator");
+    }
+
+    const listStyle = getComputedStyle(list);
+    await expect(listStyle.backgroundColor).toMatch(/, 0\)$|^transparent$/);
+    await expect(listStyle.borderBottomWidth).toBe("0px");
+    await expect(getComputedStyle(bar).borderBottomWidth).toBe("1px");
+    const fill = getComputedStyle(indicator);
+    await expect(fill.backgroundColor).not.toMatch(/, 0\)$/);
+    await expect(fill.boxShadow).toBe("none");
+    // The fill sits behind the selected tab, top to bottom.
+    const tabBox = selected.getBoundingClientRect();
+    const fillBox = indicator.getBoundingClientRect();
+    await expect(fillBox.top).toBeCloseTo(tabBox.top, 0);
+    await expect(fillBox.height).toBeCloseTo(tabBox.height, 0);
+  },
+};
+
 /** The pill indicator: a raised pill behind the selected tab, in a track. */
 export const Pill: Story = {
   globals: { tabsIndicator: "pill" },

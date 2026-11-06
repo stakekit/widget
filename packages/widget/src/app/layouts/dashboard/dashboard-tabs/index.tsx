@@ -1,4 +1,5 @@
 import { Option } from "effect";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import type { YieldCategory } from "../../../../domain/earn/contract";
@@ -44,9 +45,12 @@ type DashboardTab = DashboardRouteTab | YieldCategory;
 
 export const DashboardTabs = ({
   pendingYieldCategory,
+  trailing,
 }: {
   /** A pressed yield category not yet applied to the Earn selection. */
   readonly pendingYieldCategory: YieldCategory | null;
+  /** Controls at the end of the tabs' row, such as the wallet header. */
+  readonly trailing?: ReactNode;
 }) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
@@ -108,6 +112,7 @@ export const DashboardTabs = ({
         value={selectedTab}
         label={t("shared.widget_sections")}
         onValueChange={onTabChange}
+        trailing={trailing}
       />
     </Box>
   );

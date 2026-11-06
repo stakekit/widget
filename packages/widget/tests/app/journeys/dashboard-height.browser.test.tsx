@@ -107,7 +107,10 @@ describe("Dashboard Layout height", () => {
       .poll(() => app.container.querySelector('[data-rk="header"]'))
       .not.toBeNull();
     const controls = app.container.querySelector('[data-rk="header"]');
-    const tabs = app.container.querySelector('[data-rk="tabs-section"]');
+    // The tab list itself: the tabs' section now also holds the controls.
+    const tabs = app.container.querySelector(
+      '[data-rk="tabs-section"] [role="tablist"]'
+    );
     if (!controls || !tabs) throw new Error("No tabs or wallet controls");
     const controlsBox = controls.getBoundingClientRect();
     const tabsBox = tabs.getBoundingClientRect();

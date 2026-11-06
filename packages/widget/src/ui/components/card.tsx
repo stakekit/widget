@@ -20,8 +20,10 @@ import { toneBorderStyles, toneSoftStyles } from "./tone-styles";
 type CommonProps = {
   /**
    * `filled` sits on the canvas, `outline` draws an edge, `raised` lifts off
-   * it. Under the `elevated` surface style, `filled` lifts off it as `raised`;
-   * under `outlined`, it keeps its fill and edges in the `border` role.
+   * it, `field` frames an input. Under the `elevated` surface style, `filled`
+   * and `field` lift off it as `raised`; under `outlined`, `filled` keeps its
+   * fill and edges in the `border` role, and `field` takes the canvas's fill
+   * inside a `borderStrong` edge.
    */
   readonly variant?: keyof typeof variantStyles;
   readonly padding?: Responsive<Space>;
@@ -185,6 +187,36 @@ const variantStyles = stylex.create({
     borderColor: color.borderStrong,
     backgroundColor: "transparent",
   },
+  // A card framing an input, such as an amount: filled like `filled`, but
+  // under the `outlined` surface style it reads as an input, the canvas's
+  // fill inside a `borderStrong` edge.
+  field: {
+    borderColor: {
+      default: "transparent",
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: color.borderStrong,
+    },
+    backgroundColor: {
+      default: color.surface,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surfaceRaised,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: color.background,
+    },
+    boxShadow: {
+      default: null,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: elevation.raised,
+    },
+  },
   raised: {
     backgroundColor: color.surfaceRaised,
     boxShadow: elevation.raised,
@@ -202,6 +234,12 @@ const hoverStyles = stylex.create({
         '[data-sk-surface-style="elevated"]',
         presentationMarker
       )]: color.surfaceRaised,
+    },
+  },
+  field: {
+    backgroundColor: {
+      default: color.surface,
+      ":hover:not(:disabled)": color.surfaceHover,
     },
   },
   outline: {
