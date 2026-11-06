@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
-import { formatUsd } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { Stack } from "../../../../ui/index";
+import { getPricedFiat } from "../../model/priced-fiat";
 import type { usePositionDetails } from "../../react/use-position-details";
 import { AmountBlock } from "./amount-block";
 import { StaticActionBlock } from "./static-action-block";
@@ -97,9 +97,11 @@ export const PositionDetailsPendingActions = ({
             }
             label={label}
             onMaxClick={null}
-            formattedAmount={
-              val.amountUsd ? formatUsd(val.amountUsd, locale) : ""
-            }
+            {...getPricedFiat({
+              amountUsd: val.amountUsd,
+              locale,
+              status: val.amountUsdStatus,
+            })}
             balance={null}
             exitAmountError={exitAmountError}
           />

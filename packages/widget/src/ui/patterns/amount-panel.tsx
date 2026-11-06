@@ -6,11 +6,13 @@ import { Card } from "../components/card";
 import { Chip } from "../components/chip";
 import { ExpandableAmount } from "../components/expandable-amount";
 import { Field } from "../components/field";
+import { Skeleton } from "../components/skeleton";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
+import { space } from "../tokens/space.stylex";
 
 type AmountPanelProps = {
   /** Names the amount, shown above it, such as "Stake". */
@@ -27,6 +29,11 @@ type AmountPanelProps = {
   readonly token: ReactNode;
   /** The amount's formatted fiat value, such as "$1,204.50". */
   readonly fiatValue: string;
+  /**
+   * The fiat value is still loading, such as while prices load: a
+   * placeholder holds its place while the rest of the panel shows.
+   */
+  readonly fiatValueLoading?: boolean;
   /** The balance the amount draws on, at the foot beside the "Max" chip. */
   readonly balance?: {
     /** The formatted balance, such as "12.5 ETH available". */
@@ -100,6 +107,7 @@ export const AmountPanel = ({
   separators,
   token,
   fiatValue,
+  fiatValueLoading = false,
   balance,
   limits,
   error,
@@ -139,9 +147,17 @@ export const AmountPanel = ({
         </Stack>
       </Field>
       <Stack direction="row" align="center" justify="between" gap={8} wrap>
-        <Text variant="caption" tone="muted" numeric>
-          {fiatValue}
-        </Text>
+        <Stack as="span" aria-busy={fiatValueLoading || undefined}>
+          {fiatValueLoading ? (
+            <span {...stylex.props(styles.pendingFiat)}>
+              <Skeleton shape="line" role="caption" />
+            </span>
+          ) : (
+            <Text variant="caption" tone="muted" numeric>
+              {fiatValue}
+            </Text>
+          )}
+        </Stack>
         {(balance !== undefined || max !== undefined) && (
           <Stack direction="row" align="center" gap={8}>
             {balance !== undefined && (
@@ -200,6 +216,7 @@ const BalanceAmount = ({
 };
 
 const styles = stylex.create({
+  pendingFiat: { display: "block", width: space[64] },
   // Reads as the balance text it is, as `ExpandableAmount` does.
   fill: {
     margin: 0,

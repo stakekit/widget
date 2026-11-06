@@ -21,6 +21,7 @@ export const Metric = ({
   value,
   caption,
   valueTone = "default",
+  testId,
 }: {
   readonly label: string;
   /** The formatted figure, or an `ExpandableAmount`. */
@@ -32,6 +33,8 @@ export const Metric = ({
    * and `danger` mark a risk figure, such as a health factor near liquidation.
    */
   readonly valueTone?: "default" | "success" | "warning" | "danger";
+  /** Rendered as `data-testid`, for tests and hosts that locate the metric. */
+  readonly testId?: string;
 }) => {
   const grouped = use(InMetricGroup);
   const [Term, Description] = grouped
@@ -39,7 +42,7 @@ export const Metric = ({
     : (["div", "div"] as const);
 
   return (
-    <div {...stylex.props(styles.root)}>
+    <div data-testid={testId} {...stylex.props(styles.root)}>
       <Term {...stylex.props(styles.part)}>
         <Text variant="label" tone="muted">
           {label}

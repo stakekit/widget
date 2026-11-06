@@ -6,6 +6,7 @@ import {
   DetailRow,
   Metric,
   MetricGroup,
+  Skeleton,
   Stack,
   Text,
 } from "../../../../../ui/index";
@@ -80,7 +81,17 @@ export const PositionMetricCards = ({
           key={card.id}
           label={card.label}
           value={<MetricValue card={card} />}
+          testId={`position-metric-${card.id}`}
           {...(card.subValue ? { caption: card.subValue } : {})}
+          {...(card.subValueLoading
+            ? {
+                caption: (
+                  <Stack as="span" aria-busy="true">
+                    <Skeleton shape="line" role="caption" width="half" />
+                  </Stack>
+                ),
+              }
+            : {})}
         />
       ))}
     </MetricGroup>

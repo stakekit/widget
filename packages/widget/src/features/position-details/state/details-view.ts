@@ -33,7 +33,6 @@ import {
 import type { PositionDetailsWorkflowKey } from "./workflow";
 import {
   dispatchPositionDetailsWorkflowAtom,
-  positionDetailsPricesAtom,
   positionDetailsWorkflowViewAtom,
 } from "./workflow-view";
 
@@ -175,7 +174,6 @@ export const positionDetailsViewAtom = Atom.family(
         integrationData: integration,
         isLoading:
           AsyncResult.isInitial(workflow.positionBalancesResult) ||
-          AsyncResult.isInitial(get(positionDetailsPricesAtom(key))) ||
           AsyncResult.isInitial(workflow.yieldOpportunity) ||
           exitResources.isValidatorsLoading,
         isLoadingMoreValidators: exitResources.isLoadingMoreValidators,

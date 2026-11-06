@@ -831,8 +831,9 @@ describe("getPositionOverviewModel", () => {
   it("calls out claiming rewards as the row does, and keeps the claim CTA separate", () => {
     const pendingActions: PositionOverviewPendingAction[] = [
       {
-        amount: null,
+        amount: new BigNumber("0.25"),
         amountUsd: new BigNumber(862),
+        amountUsdStatus: "Ready",
         pendingAction: {
           intent: "manage",
           passthrough: "claim",
@@ -874,6 +875,41 @@ describe("getPositionOverviewModel", () => {
     });
   });
 
+  it.each([
+    ["holds a placeholder while prices load", "Loading", undefined, true],
+    ["reads as unavailable when prices failed", "Failed", "—", false],
+  ] as const)(
+    "values a claim amount by prices: %s",
+    (_, amountUsdStatus, subValue, subValueLoading) => {
+      const model = getPositionOverviewModel({
+        locale: "en",
+        now: null,
+        integrationData: makeYield(),
+        pendingActions: [
+          {
+            amount: new BigNumber("0.25"),
+            amountUsd: null,
+            amountUsdStatus,
+            pendingAction: {
+              intent: "manage",
+              passthrough: "claim",
+              type: "CLAIM_REWARDS",
+            },
+            yieldBalance: makeBalance({ type: "claimable" }),
+          },
+        ],
+        personalizedRewardRate: null,
+        positionBalancesByType: new Map(),
+        providersDetails: [{ name: "Rocket Pool", status: "active" }],
+        t: t as TFunction,
+      });
+      const rewards = model.metricCards.find((card) => card.id === "rewards");
+
+      expect(rewards?.subValue).toBe(subValue);
+      expect(rewards?.subValueLoading ?? false).toBe(subValueLoading);
+    }
+  );
+
   it.each(["entering", "exiting", "withdrawable"] as const)(
     "reads a cancel of the %s request as in progress, as the row does",
     (balanceType) => {
@@ -885,6 +921,7 @@ describe("getPositionOverviewModel", () => {
           {
             amount: null,
             amountUsd: null,
+            amountUsdStatus: "Ready",
             pendingAction: {
               intent: "manage",
               passthrough: "cancel",
@@ -912,6 +949,7 @@ describe("getPositionOverviewModel", () => {
         {
           amount: null,
           amountUsd: null,
+          amountUsdStatus: "Ready",
           pendingAction: {
             intent: "manage",
             passthrough: "cancel",
@@ -922,6 +960,7 @@ describe("getPositionOverviewModel", () => {
         {
           amount: null,
           amountUsd: null,
+          amountUsdStatus: "Ready",
           pendingAction: {
             intent: "manage",
             passthrough: "withdraw",
@@ -951,6 +990,7 @@ describe("getPositionOverviewModel", () => {
         {
           amount: null,
           amountUsd: null,
+          amountUsdStatus: "Ready",
           pendingAction: {
             intent: "manage",
             passthrough: "unwrap",
@@ -975,6 +1015,7 @@ describe("getPositionOverviewModel", () => {
     const merge = (passthrough: string) => ({
       amount: null,
       amountUsd: null,
+      amountUsdStatus: "Ready" as const,
       pendingAction: {
         intent: "manage" as const,
         passthrough,
@@ -1056,6 +1097,7 @@ describe("getPositionOverviewModel", () => {
         {
           amount: null,
           amountUsd: null,
+          amountUsdStatus: "Ready",
           pendingAction: {
             intent: "manage",
             passthrough: "merge",
@@ -1534,6 +1576,7 @@ describe("getPositionHeaderModel", () => {
       {
         amount: null,
         amountUsd: null,
+        amountUsdStatus: "Ready",
         pendingAction: {
           intent: "manage",
           passthrough: "claim",

@@ -39,11 +39,13 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { config } from "../../../shared/config/widget-defaults";
+import { toPresentable } from "../../../shared/effect/async-result";
 import {
   getYieldAmountConstraints,
   getYieldEntryPriceToken,
 } from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
+import type { PricesStatus } from "../model/priced-fiat";
 import {
   type PendingActionAmountChange,
   type PositionDetailsWorkflowAction,
@@ -362,6 +364,8 @@ type PricedEarnBalance =
 type PositionDetailsPendingActionView = {
   readonly amount: BigNumber | null;
   readonly amountUsd: BigNumber | null;
+  /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
+  readonly amountUsdStatus: PricesStatus;
   readonly pendingAction: PendingAction;
   readonly validation: PendingActionAmountValidation;
   readonly yieldBalance: PricedEarnBalance;
@@ -398,10 +402,9 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
     Atom.make((get): PositionDetailsPendingActionView[] | null => {
       const view = get(positionDetailsWorkflowViewAtom(key));
       const baseToken = view.integrationData?.token ?? null;
-      const prices = get(positionDetailsPricesAtom(key)).pipe(
-        AsyncResult.value,
-        Option.getOrNull
-      );
+      const pricesResult = get(positionDetailsPricesAtom(key));
+      const amountUsdStatus = toPresentable(pricesResult)._tag;
+      const prices = pricesResult.pipe(AsyncResult.value, Option.getOrNull);
       return view.positionBalancesByType
         ? [...view.positionBalancesByType.values()].flatMap((balances) =>
             balances.flatMap((balance) =>
@@ -433,6 +436,7 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 return {
                   amount,
                   amountUsd,
+                  amountUsdStatus,
                   pendingAction,
                   validation: projection?.validation ?? null,
                   yieldBalance: balance,

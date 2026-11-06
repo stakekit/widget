@@ -138,7 +138,7 @@ export const PositionDetailsExitActions = () => {
         label={t(
           `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
         )}
-        formattedAmount={getFormattedAmount()}
+        fiatValue={getFormattedAmount()}
         balance={exitBalance}
         ctaPlacement="footer"
         {...(confidentialExit ? {} : { tokenAccessory: receiveTokenAccessory })}

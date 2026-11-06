@@ -39,6 +39,7 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
+import { toPresentable } from "../../../shared/effect/async-result";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
 import { walletScopeAtom } from "../../wallet/index";
@@ -281,6 +282,7 @@ const positionDetailsEnterFacadeAtom = Atom.family(
         },
         ownerCurrent,
         prices,
+        pricesStatus: toPresentable(pricesResult)._tag,
         priceToken,
         readiness,
         revealedTokenBalance: balance.revealedTokenBalance,
@@ -341,6 +343,9 @@ const positionDetailsEnterFacadeAtom = Atom.family(
                 token: input.priceToken,
               })
             : null,
+        // Prices only value the typed amount; while they load, its fiat
+        // holds a placeholder and the rest of the form shows.
+        priceUsdStatus: input.pricesStatus,
         providers: entry.providers,
         revealedTokenBalance: input.revealedTokenBalance,
         revealTokenBalanceStatus: get(tokenBalance.revealStatusAtom),

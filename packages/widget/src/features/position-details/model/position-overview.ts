@@ -70,11 +70,14 @@ import {
   formatRewardTokenLabel,
 } from "../../yield-summary/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
+import { getPricedFiat, type PricesStatus } from "./priced-fiat";
 
 type PositionOverviewMetricCard = {
   id: string;
   label: string;
   subValue?: string | undefined;
+  /** The sub-value is still loading, such as while prices load. */
+  subValueLoading?: boolean | undefined;
   /** Several lines when a card lists one amount per token. */
   value: string | ReadonlyArray<string>;
 };
@@ -120,6 +123,8 @@ export type PositionOverviewModel = {
 type PositionOverviewPendingAction = {
   amount: BigNumber | null;
   amountUsd: BigNumber | null;
+  /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
+  amountUsdStatus: PricesStatus;
   pendingAction: PendingAction;
   yieldBalance: EarnBalance;
 };
@@ -441,13 +446,20 @@ const getRewardsMetric = ({
   if (!claimAction) return null;
 
   promotedFactIds.add("rewards");
+  // Only a claim amount is valued by prices; without one there is no figure.
+  const fiat = claimAction.amount
+    ? getPricedFiat({
+        amountUsd: claimAction.amountUsd,
+        locale,
+        status: claimAction.amountUsdStatus,
+      })
+    : null;
 
   return {
     id: "rewards",
     label: t("dashboard.position_details.rewards"),
-    subValue: claimAction.amountUsd
-      ? formatUsd(claimAction.amountUsd, locale)
-      : undefined,
+    ...(fiat?.fiatValue ? { subValue: fiat.fiatValue } : {}),
+    ...(fiat?.fiatValueLoading ? { subValueLoading: true } : {}),
     value: t("position_details.pending_action.claim_rewards"),
   };
 };

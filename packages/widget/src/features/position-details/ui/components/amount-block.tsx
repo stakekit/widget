@@ -34,7 +34,10 @@ type AmountBlockProps = {
   exitAmountError?: boolean | undefined;
   onMaxClick: (() => void) | null;
   label: string;
-  formattedAmount: string;
+  /** The amount's formatted fiat value, such as "$1,204.50". */
+  fiatValue: string;
+  /** The fiat value is still loading, such as while prices load. */
+  fiatValueLoading?: boolean;
   balance: { amount: BigNumber; token: Token } | null;
 } & (
   | {
@@ -68,7 +71,8 @@ export const AmountBlock = ({
   disabled,
   onClick,
   label,
-  formattedAmount,
+  fiatValue,
+  fiatValueLoading = false,
   onMaxClick,
   balance,
   exitAmountError,
@@ -152,7 +156,8 @@ export const AmountBlock = ({
       disabled={!canChangeAmount}
       invalid={exitAmountError ?? false}
       token={accessory}
-      fiatValue={formattedAmount}
+      fiatValue={fiatValue}
+      fiatValueLoading={fiatValueLoading}
       {...balanceProps}
       {...limitProps}
       {...(canChangeAmount && onMaxClick

@@ -10,7 +10,6 @@ import {
 import {
   formatNumber,
   formatTokenAmount,
-  formatUsd,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { AmountPanel, Skeleton } from "../../../../../ui/index";
@@ -23,6 +22,7 @@ import {
   useConfidentialTokenBalance,
 } from "../../../../yield-entry/views";
 import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
+import { getPricedFiat } from "../../../model/priced-fiat";
 import { PositionDetailsEnterKey } from "../../../state/enter-entry";
 import { usePositionDetailsEnter } from "../hooks/use-position-details-enter";
 import { PositionDetailsEnterTokenSelect } from "./position-details-enter-token-select";
@@ -131,7 +131,12 @@ const PositionDetailsEnterTokenSection = ({
           />
         ) : null
       }
-      fiatValue={stake.priceUsd ? formatUsd(stake.priceUsd, locale) : ""}
+      {...getPricedFiat({
+        amountUsd: stake.priceUsd,
+        locale,
+        status: stake.priceUsdStatus,
+      })}
+      testIds={{ root: "position-details-enter-amount" }}
       {...(balance ? { balance } : {})}
       {...limitProps}
       {...(stake.canUseMax

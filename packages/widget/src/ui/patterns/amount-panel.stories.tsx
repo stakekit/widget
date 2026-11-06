@@ -197,6 +197,19 @@ export const Disabled: Story = {
   },
 };
 
+/** While prices load, a placeholder holds the fiat value's place. */
+export const FiatLoading: Story = {
+  args: { value: "1", fiatValueLoading: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByText("$0.00")).toBeNull();
+    await expect(
+      canvasElement.querySelector('[aria-busy="true"]')
+    ).not.toBeNull();
+    await expect(canvas.getByRole("textbox", { name: "Stake" })).toBeEnabled();
+  },
+};
+
 /** Without a balance or a "Max" chip, only the fiat value sits at the foot. */
 export const Minimal: Story = {
   render: () => <StatefulPanel {...minimalArgs} />,
