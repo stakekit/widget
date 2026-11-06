@@ -53,8 +53,9 @@ type TimeSeriesChartProps = {
 };
 
 // Room above the top value tick and beside the edge time ticks, so their
-// labels sit inside the drawing.
-const plotMargin = { top: 8, right: 0, bottom: 0, left: 0 } as const;
+// labels sit inside the drawing: a glyph's side bearing can reach a pixel
+// past a start- or end-anchored label's tick on some platforms' fonts.
+const plotMargin = { top: 8, right: 2, bottom: 0, left: 2 } as const;
 
 /** The value axis runs a fifth past the data either way, and from 0 up. */
 const valueDomain = (values: ReadonlyArray<number>) => {
