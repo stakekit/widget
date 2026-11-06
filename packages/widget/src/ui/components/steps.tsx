@@ -91,11 +91,17 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
         )}
         <span {...stylex.props(styles.marker, markerStyles[step.status])}>
           {step.status === "signing" && (
-            <span
-              aria-hidden="true"
-              data-step-part="halo"
-              {...stylex.props(styles.halo)}
-            />
+            <>
+              <span
+                aria-hidden="true"
+                data-step-part="halo"
+                {...stylex.props(styles.halo)}
+              />
+              <span
+                aria-hidden="true"
+                {...stylex.props(styles.halo, styles.haloEcho)}
+              />
+            </>
           )}
           {step.status === "active" && (
             <span
@@ -104,7 +110,12 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
               {...stylex.props(styles.arc)}
             />
           )}
-          <span {...stylex.props(styles.glyph)}>
+          <span
+            {...stylex.props(
+              styles.glyph,
+              step.status === "done" && styles.glyphDone
+            )}
+          >
             <StepMarker status={step.status} />
           </span>
         </span>
@@ -169,15 +180,22 @@ const connectorFill = ({ status, stage }: Step) => {
   return stage === "confirming" ? fillStyles.confirming : fillStyles.submitting;
 };
 
-// A signature's halo breathes out from the marker and fades; held still, it
-// rests as a soft ring around it.
+// A signature's halo: accent ripples breathe out from the marker and fade;
+// held still, one rests as a soft ring around it.
 const haloPulse = stylex.keyframes({
-  from: { opacity: 0.9, transform: "scale(1)" },
-  to: { opacity: 0, transform: "scale(1.8)" },
+  from: { opacity: 0.45, transform: "scale(1)" },
+  to: { opacity: 0, transform: "scale(2.2)" },
 });
 
 const arcSpin = stylex.keyframes({
   to: { transform: "rotate(360deg)" },
+});
+
+// A step that just finished pops its check in.
+const donePop = stylex.keyframes({
+  "0%": { opacity: 0, transform: "scale(0.6)" },
+  "60%": { opacity: 1, transform: "scale(1.12)" },
+  "100%": { opacity: 1, transform: "scale(1)" },
 });
 
 const styles = stylex.create({
@@ -231,27 +249,39 @@ const styles = stylex.create({
   },
   // Painted over the halo and the arc.
   glyph: { display: "flex", position: "relative" },
+  // A step that just finished pops its check in; the marker keeps its size.
+  glyphDone: {
+    animationDuration: motion.slow,
+    animationName: donePop,
+    animationTimingFunction: motion.easing,
+  },
   halo: {
     inset: 0,
+    borderColor: color.accent,
     borderRadius: radius.pill,
+    borderStyle: "solid",
+    borderWidth: borderWidth.medium,
     animationDuration: motion.halo,
     animationIterationCount: "infinite",
     animationName: haloPulse,
     animationTimingFunction: motion.easing,
-    backgroundColor: color.accentSoft,
-    opacity: 0.6,
+    backgroundColor: color.accent,
+    boxSizing: "border-box",
+    opacity: 0.2,
     pointerEvents: "none",
     position: "absolute",
-    transform: "scale(1.4)",
+    transform: "scale(1.5)",
   },
-  // The marker's ring: a quarter of it in the accent, turning on the rest,
-  // which is drawn as a waiting step's ring so it holds 3:1 on every surface.
+  // A second ripple half a breath behind, so one is always on its way out.
+  haloEcho: { animationDelay: motion.haloEcho },
+  // The marker's ring: a thick accent quarter turning on a light track. The
+  // accent arc carries the meaning, so it is what holds 3:1 on every surface.
   arc: {
     inset: 0,
-    borderColor: color.textMuted,
+    borderColor: color.border,
     borderRadius: radius.pill,
     borderStyle: "solid",
-    borderWidth: borderWidth.medium,
+    borderWidth: borderWidth.thick,
     animationDuration: motion.spin,
     animationIterationCount: "infinite",
     animationName: arcSpin,
@@ -290,8 +320,9 @@ const fillStyles = stylex.create({
 const markerStyles = stylex.create({
   idle: { borderColor: color.textMuted, backgroundColor: color.surface },
   active: { borderWidth: 0, color: color.accentText },
+  // The accent ring holds the marker against its halo.
   signing: {
-    borderWidth: 0,
+    borderColor: color.accent,
     backgroundColor: color.accentSoft,
     color: color.accentText,
   },

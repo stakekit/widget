@@ -13,6 +13,8 @@ export const motion = stylex.defineVars({
   pulse: { default: "1600ms", [REDUCED_MOTION]: "0ms" },
   // One breath of a signature's halo, slower than a skeleton's; 0ms holds it still.
   halo: { default: "2400ms", [REDUCED_MOTION]: "0ms" },
+  // Starts a second halo half a breath in, so the ripples alternate.
+  haloEcho: { default: "-1200ms", [REDUCED_MOTION]: "0ms" },
   easing: "cubic-bezier(0.2, 0, 0, 1)",
   // Constant speed, for motion that loops, such as a spinner.
   linear: "linear",

@@ -96,8 +96,8 @@ const pairs: ReadonlyArray<Pair> = [
   // A focus ring is drawn outside its control, over whichever surface holds it.
   ...nonText("focusRing", surfaces),
   // A waiting step's ring is its only mark, drawn in `textMuted` over
-  // whichever surface holds the timeline; a step under way turns its accent
-  // arc on the same ring.
+  // whichever surface holds the timeline. A step under way is marked by its
+  // accent arc, held by the accent pairs below; its track is decorative.
   ...nonText("textMuted", surfaces),
   // `borderStrong` is not checked: it is a decorative boundary. Outlined
   // cards are read without their outline, and inputs are identified by their

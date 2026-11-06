@@ -193,15 +193,15 @@ export const Progressing: Story = {
       marker instanceof HTMLElement ? marker.offsetWidth : -1
     );
     await expect(approve?.querySelector("[data-step-part='arc']")).toBeNull();
-    // The ring reads as a waiting step's (held to 3:1 by the contrast test);
-    // its turning quarter is the accent, apart from it.
+    // A thick accent quarter turns on a lighter track than a waiting ring.
     const waitingMarker = Array.from(confirm?.children ?? []).at(-2);
     const waitingRing =
       waitingMarker instanceof HTMLElement
         ? getComputedStyle(waitingMarker).borderTopColor
         : "";
-    await expect(turning.borderBottomColor).toBe(waitingRing);
+    await expect(turning.borderBottomColor).not.toBe(waitingRing);
     await expect(turning.borderTopColor).not.toBe(turning.borderBottomColor);
+    await expect(turning.borderTopWidth).toBe("2px");
 
     const filled = (item: HTMLElement | undefined) => {
       const fill = stepPart(item, "connector-fill");
