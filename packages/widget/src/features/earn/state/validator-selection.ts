@@ -1,5 +1,6 @@
 import { Effect, Match } from "effect";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type {
   EarnValidator,

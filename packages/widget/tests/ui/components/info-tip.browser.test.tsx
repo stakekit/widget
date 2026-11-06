@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import { ThemeRoot } from "../../../src/ui/composition";
 import { InfoTip } from "../../../src/ui/index";
 import { render } from "../../utils/test-utils";

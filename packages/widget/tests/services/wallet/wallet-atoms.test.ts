@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Cause, Effect, Exit, Schema } from "effect";
 import type { Connector, createConfig } from "wagmi";
+
 import { AdditionalAddresses } from "../../../src/domain/wallet/address";
 import { EnabledWalletNetworksResponse } from "../../../src/domain/wallet/models";
 import { InitParams } from "../../../src/services/wallet/init-params";

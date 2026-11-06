@@ -16,6 +16,7 @@ import {
 } from "effect";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import { UserRejectedRequestError } from "viem";
+
 import { config } from "../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../wallet-errors";
 import {

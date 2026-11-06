@@ -14,6 +14,7 @@ import {
   watchConnection,
   watchConnectors,
 } from "wagmi/actions";
+
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { WalletModal } from "../../wallet-modal";
 import type { WalletCoreState } from "../../wallet-state";
@@ -105,12 +106,10 @@ const observeCore = Effect.fn("observeCore")(function* (
       (onChange) => watchConnectors(controller.wagmiConfig, { onChange })
     )
   ).pipe(
-    Stream.map(
-      ([connection, connectors]): WalletCoreState => ({
-        connection,
-        connectors,
-      })
-    )
+    Stream.map(([connection, connectors]): WalletCoreState => ({
+      connection,
+      connectors,
+    }))
   );
   const queue = yield* coreStates.pipe(
     Stream.toQueue({ capacity: 16, strategy: "sliding" })

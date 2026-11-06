@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
+
 import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
 import { useLeaveConfirmation } from "../../leave-confirmation/index";
 import { useWidgetNavigate } from "../../navigation/index";

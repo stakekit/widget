@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import { EarnLegacyTokenOptionsResponse } from "../../domain/earn/models";
 import {
   type GasBalancesCommand,

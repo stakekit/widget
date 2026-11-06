@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { type Token, tokenString } from "../../../../../domain/token/token";
 import {
   formatTokenAmount,

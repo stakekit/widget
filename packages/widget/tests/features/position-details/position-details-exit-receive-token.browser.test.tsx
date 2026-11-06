@@ -3,6 +3,7 @@ import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import type { ExitReceiveToken } from "../../../src/domain/action/rules";
 import { TokenAddress } from "../../../src/domain/identity/identifiers";
 import type { Token } from "../../../src/domain/token/token";

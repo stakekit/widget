@@ -1,5 +1,6 @@
 import type { ICruiseResult } from "dependency-cruiser";
 import { describe, expect, it } from "vitest";
+
 import {
   checkOwnedModuleCycles,
   type ModuleCyclePolicy,

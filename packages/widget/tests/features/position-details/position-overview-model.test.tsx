@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import { Cause, DateTime, Option, Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+
 import {
   ConfidentialHandle,
   EarnBalance,
@@ -9,7 +10,6 @@ import {
 } from "../../../src/domain/earn/models";
 import { YieldRewardsSummary } from "../../../src/domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../src/domain/portfolio/positions";
-
 import {
   getPositionOverviewModel,
   getPositionProviderName,

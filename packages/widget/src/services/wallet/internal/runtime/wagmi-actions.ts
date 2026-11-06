@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { Config } from "wagmi";
+
 import type {
   WalletConnectInput,
   WalletDisconnectInput,

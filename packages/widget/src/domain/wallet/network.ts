@@ -1,4 +1,5 @@
 import { Record as ERecord, Schema } from "effect";
+
 import type { Network } from "../network/network";
 import { EvmChainIds, MiscChainIds, SubstrateChainIds } from "./chain-ids.ts";
 
@@ -162,7 +163,9 @@ const walletNetworkCatalog = {
 export type WalletNetwork = keyof typeof walletNetworkCatalog;
 
 type WalletNetworkForProtocol<Family extends WalletProtocolFamily> = {
-  [Key in WalletNetwork]: (typeof walletNetworkCatalog)[Key]["protocolFamily"] extends Family
+  [
+    Key in WalletNetwork
+  ]: (typeof walletNetworkCatalog)[Key]["protocolFamily"] extends Family
     ? Key
     : never;
 }[WalletNetwork];

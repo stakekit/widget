@@ -1,4 +1,5 @@
 import { Array as EArray } from "effect";
+
 import type { YieldAction } from "../../../domain/action/models";
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import type { Integration } from "../../../domain/borrow/catalog/integration";

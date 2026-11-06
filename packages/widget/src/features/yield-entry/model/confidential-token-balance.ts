@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { HashMap, Option } from "effect";
+
 import {
   ConfidentialTokenBalanceKey,
   getConfidentialAssetToken,

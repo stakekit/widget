@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+
 import { AmountInput } from "./amount-input";
 import type { AmountSeparators } from "./amount-input-text";
 

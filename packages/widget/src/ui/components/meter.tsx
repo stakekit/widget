@@ -1,5 +1,6 @@
 import { Meter as BaseMeter } from "@base-ui/react/meter";
 import * as stylex from "@stylexjs/stylex";
+
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";

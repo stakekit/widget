@@ -1,4 +1,5 @@
 import type { chains } from "chain-registry";
+
 import type { WalletCosmosNetwork } from "../../../../../domain/wallet/network";
 import type { Chain } from "../../../wallet-descriptors";
 

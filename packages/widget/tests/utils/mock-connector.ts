@@ -4,6 +4,7 @@ import { ChainNotConfiguredError, custom } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import type { MockParameters } from "wagmi/connectors";
 import { mock as mockConnector } from "wagmi/connectors";
+
 import type { WalletList } from "../../src/services/wallet/wallet-descriptors";
 
 interface MyWalletOptions {

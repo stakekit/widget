@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+
 import { getYieldTypeLabels } from "../../../../domain/earn/yield";
 import type { PageCta } from "../../../widget-shell/views";
 import { PageCtaButton } from "../../../widget-shell/views";

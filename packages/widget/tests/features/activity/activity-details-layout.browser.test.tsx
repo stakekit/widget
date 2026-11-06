@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+
 import "../../../src/ui/theme/reset.css";
 import type { ActionTransaction } from "../../../src/domain/action/models";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";

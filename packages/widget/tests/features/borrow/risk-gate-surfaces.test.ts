@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
+
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../src/domain/borrow/ids";
@@ -9,6 +10,7 @@ import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borr
 import type { RiskGateVerdict } from "../../../src/domain/borrow/risk/risk-gate";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { getBorrowReviewRiskBlock } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import type { BorrowActionPreparation } from "../../../src/features/borrow/action-preparation/index";
 import {
   BorrowEntryKey,
@@ -19,7 +21,6 @@ import {
   resolveBorrowWithdrawFormView,
 } from "../../../src/features/borrow/market-position/model/action-form";
 import { getBorrowPositionActionDescriptors } from "../../../src/features/borrow/market-position/model/details";
-import { getBorrowReviewRiskBlock } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

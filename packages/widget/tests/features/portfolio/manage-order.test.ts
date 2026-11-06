@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { EarnPosition } from "../../../src/domain/earn/models";
 import { toPositionsData } from "../../../src/domain/portfolio/positions";
 import {

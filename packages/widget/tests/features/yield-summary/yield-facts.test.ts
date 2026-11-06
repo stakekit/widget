@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import {
   getYieldContracts,

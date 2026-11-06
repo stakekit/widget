@@ -1,5 +1,6 @@
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
   isMountRevealSettled,
   makeMountRevealGate,

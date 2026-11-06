@@ -7,6 +7,7 @@ import {
 import { Effect, Result, Stream } from "effect";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
+
 import type { InitParams } from "../../../../../services/wallet/init-params";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type {

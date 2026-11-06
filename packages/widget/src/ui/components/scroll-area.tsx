@@ -1,6 +1,7 @@
 import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";

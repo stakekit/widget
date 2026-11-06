@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, PubSub, Stream } from "effect";
+
 import type { WalletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 
 export type WidgetDomainEvent =

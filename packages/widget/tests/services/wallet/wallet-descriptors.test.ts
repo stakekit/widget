@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { mock } from "wagmi/connectors";
+
 import type { CreateWalletDescriptor } from "../../../src/services/wallet/wallet-descriptors";
 import { connectorsForWallets } from "../../../src/services/wallet/wallet-descriptors";
 

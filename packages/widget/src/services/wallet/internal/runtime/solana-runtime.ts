@@ -1,4 +1,11 @@
 import {
+  createDefaultAddressSelector,
+  createDefaultAuthorizationResultCache,
+  createDefaultWalletNotFoundHandler,
+  SolanaMobileWalletAdapter,
+  SolanaMobileWalletAdapterWalletName,
+} from "@solana-mobile/wallet-adapter-mobile";
+import {
   type Adapter,
   isWalletAdapterCompatibleStandardWallet,
   type WalletAdapter,
@@ -12,16 +19,10 @@ import {
 } from "@solana/wallet-adapter-wallets";
 import { StandardWalletAdapter } from "@solana/wallet-standard-wallet-adapter-base";
 import { type Cluster, Connection, clusterApiUrl } from "@solana/web3.js";
-import {
-  createDefaultAddressSelector,
-  createDefaultAuthorizationResultCache,
-  createDefaultWalletNotFoundHandler,
-  SolanaMobileWalletAdapter,
-  SolanaMobileWalletAdapterWalletName,
-} from "@solana-mobile/wallet-adapter-mobile";
 import { getWallets, type Wallets } from "@wallet-standard/app";
 import type { Wallet as StandardWallet } from "@wallet-standard/base";
 import { Effect, Schema, type Scope } from "effect";
+
 import { config } from "../../../../shared/config/widget-defaults";
 import type { WalletConnectProtocol } from "../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "./effect-runner";

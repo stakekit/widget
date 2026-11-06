@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+
 import { exactDecimal } from "../../../../domain/finance/exact";
 import { EmptyState, SplitView, Stack } from "../../../../ui/index";
 import {

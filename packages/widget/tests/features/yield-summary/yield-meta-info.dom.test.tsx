@@ -2,6 +2,7 @@ import type * as AtomReact from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import { useYieldMetaInfo } from "../../../src/features/yield-summary/react/use-yield-meta-info";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";

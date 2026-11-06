@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { PropsWithChildren } from "react";
 import { I18nextProvider } from "react-i18next";
+
 import { widgetTranslationAtom } from "../state/widget-translation";
 
 /**

@@ -1,4 +1,5 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
+
 import type { BorrowPositionAction } from "../model/details";
 import {
   borrowCollateralToggleFormAtom,

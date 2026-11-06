@@ -11,8 +11,10 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+
 import ts from "typescript";
 import { parse, stringify } from "yaml";
+
 import { repositoryRoot, widgetRoot } from "../paths";
 import {
   assertGeneratedSchemasSafe,

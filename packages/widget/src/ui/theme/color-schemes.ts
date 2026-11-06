@@ -1,5 +1,6 @@
 import type { CompiledStyles, StyleXArray } from "@stylexjs/stylex";
 import * as stylex from "@stylexjs/stylex";
+
 import {
   type ColorRoles,
   color,

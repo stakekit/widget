@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useId } from "react";
+
 import type { Chain } from "../../../services/wallet/wallet-descriptors";
 import { useTrackEvent } from "../../tracking/index";
 import { walletChainSelectionScopeAtom } from "../state/account-presentation";

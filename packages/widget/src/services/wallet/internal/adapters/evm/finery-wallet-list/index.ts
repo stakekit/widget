@@ -1,5 +1,6 @@
 import { createStore } from "mipd";
 import { injected } from "wagmi";
+
 import { evmChainGroup } from "../../../../../../services/wallet/evm-chain-group";
 import type { Chain, WalletList } from "../../../../wallet-descriptors";
 import safeWalletIcon from "../icons/safe-wallet.svg";

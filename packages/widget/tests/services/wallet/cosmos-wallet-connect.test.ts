@@ -4,6 +4,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Effect, Fiber, Option, Queue, Schema, Stream } from "effect";
 import { type Mock, vi } from "vitest";
+
 import type { CosmosChainsMap } from "../../../src/services/wallet/internal/adapters/cosmos/chains";
 import { createCosmosConnector } from "../../../src/services/wallet/internal/adapters/cosmos/cosmos-connector";
 import type { CosmosConnector } from "../../../src/services/wallet/internal/adapters/cosmos/cosmos-connector-meta";

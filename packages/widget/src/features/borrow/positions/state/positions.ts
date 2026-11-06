@@ -1,6 +1,7 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { MarketId } from "../../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";

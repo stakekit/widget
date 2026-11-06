@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Fiber, Stream } from "effect";
+
 import { makeCurrentValueStream } from "../../../src/shared/effect/current-value-stream";
 
 describe("current value stream", () => {

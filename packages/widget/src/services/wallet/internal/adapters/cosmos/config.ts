@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import {

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Avatar, Disclosure, Divider, Stack, Text } from "../../../../ui/index";
 
 /** Who the position is held through, with its facts behind a disclosure. */

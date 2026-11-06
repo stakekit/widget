@@ -1,6 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import * as HttpClientError from "effect/http/HttpClientError";
 import type * as HttpClientResponse from "effect/http/HttpClientResponse";
+
 import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import { RichError } from "../errors/rich-error";
 import type { RichErrorService } from "../errors/rich-error-service";

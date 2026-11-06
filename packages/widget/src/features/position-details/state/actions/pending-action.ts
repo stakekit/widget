@@ -1,6 +1,7 @@
 import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { PendingAction } from "../../../../domain/action/models";
 import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential";
@@ -301,15 +302,14 @@ const runPositionPendingActionAtom = Atom.family(
             },
           })
           .pipe(
-            Effect.map(
-              (outcome): PositionPendingActionOutcome =>
-                outcome._tag === "Started"
-                  ? { _tag: "Started", attemptId: decision.attemptId }
-                  : {
-                      _tag: "Rejected",
-                      attemptId: decision.attemptId,
-                      reason: outcome._tag,
-                    }
+            Effect.map((outcome): PositionPendingActionOutcome =>
+              outcome._tag === "Started"
+                ? { _tag: "Started", attemptId: decision.attemptId }
+                : {
+                    _tag: "Rejected",
+                    attemptId: decision.attemptId,
+                    reason: outcome._tag,
+                  }
             )
           );
         const bestEffortTracking = Effect.exit(tracking).pipe(

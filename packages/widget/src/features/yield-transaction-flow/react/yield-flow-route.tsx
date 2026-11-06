@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { Outlet, useLocation } from "react-router";
+
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import { useWidgetRouteState } from "../../navigation/index";
 import { WidgetNavigate } from "../../navigation/views";

@@ -1,5 +1,6 @@
 import { Effect, Option, Stream } from "effect";
 import type { Connector } from "wagmi";
+
 import { EvmChainIds } from "../../../domain/wallet/chain-ids";
 import { evmChainGroup } from "../../../services/wallet/evm-chain-group";
 import { isConnectorWithFilteredChains } from "../../../services/wallet/wallet-connectors";

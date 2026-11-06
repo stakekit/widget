@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getYieldCategory } from "../../../../../domain/earn/yield";
 import { formatNetworkName } from "../../../../../shared/lib/formatters";

@@ -19,6 +19,7 @@ import {
 } from "@solana/web3.js";
 import base58 from "bs58";
 import { Effect, Predicate, Schema } from "effect";
+
 import {
   CaipChainId,
   caipAddresses,

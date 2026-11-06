@@ -11,6 +11,7 @@ import {
   SubscriptionRef,
 } from "effect";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
+
 import { WalletAddress } from "../../domain/identity/identifiers";
 import { config } from "../../shared/config/widget-defaults";
 

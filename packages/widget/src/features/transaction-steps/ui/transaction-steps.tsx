@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { TransactionHash } from "../../../domain/identity/identifiers";
 import type { TransactionPhaseProgress } from "../../../services/transaction-workflow/transaction-workflow-model";
 import { formatTransactionHash } from "../../../shared/lib/general";

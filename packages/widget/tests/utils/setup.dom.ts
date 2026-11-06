@@ -1,4 +1,5 @@
 import { MotionGlobalConfig } from "motion/react";
+
 import { failOnReactErrors } from "./fail-on-react-errors";
 
 MotionGlobalConfig.skipAnimations = true;

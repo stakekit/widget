@@ -1,5 +1,6 @@
 import { Data } from "effect";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,

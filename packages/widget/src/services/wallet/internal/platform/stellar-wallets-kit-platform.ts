@@ -9,6 +9,7 @@ import {
   Schema,
   type Scope,
 } from "effect";
+
 import { getProtocolChainIdentity } from "../../../../domain/wallet/network";
 import type { WalletAvailability } from "../../wallet-descriptors";
 import {
@@ -332,11 +333,10 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
             Effect.onInterrupt(() => Fiber.interrupt(fiber))
           )
         ),
-        Effect.flatMap(
-          (exit): Effect.Effect<A, E | WalletIntegrationError> =>
-            Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)
-              ? Effect.fail(cancelled())
-              : exit
+        Effect.flatMap((exit): Effect.Effect<A, E | WalletIntegrationError> =>
+          Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)
+            ? Effect.fail(cancelled())
+            : exit
         )
       );
     });

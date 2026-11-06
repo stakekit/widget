@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import type { AmountPanelNote } from "../../../ui/index";
 import type { MaxGasReserveNote, NetworkFeeNote } from "../model/network-fee";

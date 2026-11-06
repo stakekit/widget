@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Outlet } from "react-router";
+
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { Skeleton, Stack } from "../../../../ui/index";
 import { WidgetNavigate } from "../../../navigation/views";

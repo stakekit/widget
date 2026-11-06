@@ -19,6 +19,7 @@ import {
   sendRawTransaction,
   waitForTransactionReceipt,
 } from "viem/actions";
+
 import type { Erc20Approval } from "../../domain/action/direct-transaction";
 import type { EvmChainIds } from "../../domain/wallet/chain-ids";
 import { WalletService } from "../wallet/wallet-service";
@@ -151,9 +152,8 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
                 timeout: Duration.toMillis(receiptTimeout),
               })
             ).pipe(
-              Effect.map(
-                ({ status }): EvmTransactionOutcome =>
-                  status === "success" ? "Confirmed" : "Reverted"
+              Effect.map(({ status }): EvmTransactionOutcome =>
+                status === "success" ? "Confirmed" : "Reverted"
               ),
               // Past the timeout, a hash the node no longer knows was dropped.
               Effect.catchIf(

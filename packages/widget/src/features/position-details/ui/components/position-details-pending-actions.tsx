@@ -1,5 +1,6 @@
 import { toLowerCase } from "effect/String";
 import { useTranslation } from "react-i18next";
+
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";

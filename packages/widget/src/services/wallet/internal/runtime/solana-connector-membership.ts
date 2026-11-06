@@ -1,5 +1,6 @@
 import { Effect, Ref, type Scope, Semaphore, Stream } from "effect";
 import type { Config, Connector, CreateConnectorFn } from "wagmi";
+
 import { WalletIntegrationError } from "../../wallet-errors";
 import {
   isSolanaConnector,

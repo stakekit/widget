@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cdp } from "vitest/browser";
+
 import { ThemeRoot } from "../../../src/ui/composition";
 import { Modal } from "../../../src/ui/index";
 import { render } from "../../utils/test-utils";

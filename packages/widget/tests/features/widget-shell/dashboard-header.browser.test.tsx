@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+
 import { render } from "../../utils/test-utils";
 
 const wallet = vi.hoisted(() => ({ isConnected: true }));

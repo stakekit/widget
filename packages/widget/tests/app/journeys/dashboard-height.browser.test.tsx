@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { page } from "vitest/browser";
+
 import { yieldApiActionDtoFixture } from "../../fixtures";
 import { yieldApiRoute } from "../../mocks/api-routes";
 import { mockWalletListFactory } from "../../utils/mock-connector";

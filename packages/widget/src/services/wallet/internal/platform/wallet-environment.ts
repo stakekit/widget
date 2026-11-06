@@ -1,4 +1,5 @@
 import { Context, Effect, Layer } from "effect";
+
 import { isMobileWalletEnvironment } from "../../browser-environment";
 
 type WalletEnvironmentService = {

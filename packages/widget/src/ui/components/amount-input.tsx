@@ -1,6 +1,7 @@
 import { Input } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import {

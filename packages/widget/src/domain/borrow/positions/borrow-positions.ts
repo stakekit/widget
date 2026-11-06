@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Schema } from "effect";
+
 import { sumExact } from "../../finance/exact";
 import type { Integration } from "../catalog/integration";
 import type { Market } from "../catalog/market";

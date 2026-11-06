@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import {
   WidgetNavigation,
   type WidgetNavigationError,

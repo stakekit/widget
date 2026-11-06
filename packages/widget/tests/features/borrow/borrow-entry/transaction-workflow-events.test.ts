@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
+
 import { appRuntime } from "../../../../src/app/runtime/app-runtime";
 import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";

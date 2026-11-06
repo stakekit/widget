@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+
 import { createActivityActionRoutes } from "../../../src/features/activity/composition";
 import {
   widgetRoutes,

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { IconButton, Stack } from "../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { AccountModal, ChainModal } from "../../../wallet/views";

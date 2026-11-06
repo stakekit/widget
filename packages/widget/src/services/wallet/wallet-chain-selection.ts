@@ -7,6 +7,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 import {
   sameWalletCommandIdentity,

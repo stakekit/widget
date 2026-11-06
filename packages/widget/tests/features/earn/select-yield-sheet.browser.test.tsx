@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import { SelectYield } from "../../../src/features/earn/ui/components/select-yield-section/select-yield";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";

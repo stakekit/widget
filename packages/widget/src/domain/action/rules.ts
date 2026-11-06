@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Option, Result, Schema } from "effect";
+
 import type { EarnYieldWithProvider } from "../earn/models";
 import type { TokenAddress, ValidatorAddress } from "../identity/identifiers";
 import { NATIVE_TOKEN_ADDRESS, type Token } from "../token/token";

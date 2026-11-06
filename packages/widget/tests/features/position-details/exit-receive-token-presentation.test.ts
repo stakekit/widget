@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { TokenAddress } from "../../../src/domain/identity/identifiers";
 import type { Token } from "../../../src/domain/token/token";
 import {

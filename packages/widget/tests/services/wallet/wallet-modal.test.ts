@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Deferred, Effect, Exit, Fiber, Option } from "effect";
+
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 
 describe("WalletModal", () => {

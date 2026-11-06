@@ -8,7 +8,9 @@
  */
 import { readdirSync } from "node:fs";
 import { join, sep } from "node:path";
+
 import { cruise, format } from "dependency-cruiser";
+
 import { widgetRoot } from "../paths";
 import architectureConfiguration, {
   architecturePolicy,

@@ -7,6 +7,7 @@ import {
   type Scope,
   Stream,
 } from "effect";
+
 import {
   type HeadlessSolanaRuntime,
   makeDefaultHeadlessSolanaRuntime,

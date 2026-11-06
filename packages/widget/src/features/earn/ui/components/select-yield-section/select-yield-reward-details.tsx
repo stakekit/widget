@@ -1,4 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
+
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../domain/earn/reward-rate";
 import {

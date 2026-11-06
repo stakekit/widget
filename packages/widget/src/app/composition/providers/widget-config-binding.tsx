@@ -1,5 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { type PropsWithChildren, useLayoutEffect } from "react";
+
 import { updateWidgetConfigAtom } from "../../../features/widget-configuration/index";
 import type { SKHostConfiguration } from "../../../public-api/react-types";
 

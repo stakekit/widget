@@ -1,6 +1,7 @@
 import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
 import {
@@ -127,11 +128,10 @@ const submitPositionDetailsExitAtom = Atom.family(
             },
           })
           .pipe(
-            Effect.map(
-              (outcome): PositionDetailsExitOutcome =>
-                outcome._tag === "Started"
-                  ? { _tag: "Started" }
-                  : { _tag: "Rejected", reason: outcome._tag }
+            Effect.map((outcome): PositionDetailsExitOutcome =>
+              outcome._tag === "Started"
+                ? { _tag: "Started" }
+                : { _tag: "Rejected", reason: outcome._tag }
             )
           );
       })

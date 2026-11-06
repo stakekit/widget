@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
+
 import { EarnYieldPage } from "../../../src/domain/earn/models";
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 

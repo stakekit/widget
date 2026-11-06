@@ -1,6 +1,7 @@
 import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { applicationBaseRuntime } from "../../../app/runtime/application-base-runtime";
 import { applicationRuntimeInitAtom } from "../../../app/runtime/application-runtime-init";
 import type { SKHostConfiguration } from "../../../public-api/react-types";
@@ -24,8 +25,8 @@ const widgetConfigResultAtom = applicationBaseRuntime
   )
   .pipe(Atom.keepAlive, Atom.withLabel("widgetConfigResultAtom"));
 
-export const widgetConfigAtom = Atom.make(
-  (get): WidgetConfig => AsyncResult.getOrThrow(get(widgetConfigResultAtom))
+export const widgetConfigAtom = Atom.make((get): WidgetConfig =>
+  AsyncResult.getOrThrow(get(widgetConfigResultAtom))
 ).pipe(Atom.withLabel("widgetConfigAtom"));
 
 /**

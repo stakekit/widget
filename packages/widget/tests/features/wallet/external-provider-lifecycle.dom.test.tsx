@@ -16,6 +16,7 @@ import {
   type UseConnectionReturnType,
   useAccount,
 } from "wagmi";
+
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { WagmiConfigProvider } from "../../../src/features/wallet/composition";

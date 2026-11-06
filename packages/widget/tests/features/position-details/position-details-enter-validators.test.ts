@@ -2,6 +2,7 @@ import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { EarnBalance, type EarnYield } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";

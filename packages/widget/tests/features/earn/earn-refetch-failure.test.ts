@@ -3,6 +3,7 @@ import { Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";

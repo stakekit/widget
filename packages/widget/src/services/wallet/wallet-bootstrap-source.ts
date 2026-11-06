@@ -1,4 +1,5 @@
 import { Context, type Effect, Schema } from "effect";
+
 import type { EarnYield } from "../../domain/earn/models";
 import type { YieldId } from "../../domain/identity/identifiers";
 import type { EnabledWalletNetworks } from "../../domain/wallet/models";

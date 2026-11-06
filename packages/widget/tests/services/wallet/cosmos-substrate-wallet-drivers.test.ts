@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import type { CosmosChainWallet } from "../../../src/services/wallet/internal/adapters/cosmos/cosmos-connector-meta";
 import { makeCosmosWalletDriver } from "../../../src/services/wallet/internal/adapters/cosmos/driver";
 import { makeSubstrateWalletDriver } from "../../../src/services/wallet/internal/adapters/substrate/driver";

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
+
 import {
   KycStatus,
   RewardRateHistoryResponse,

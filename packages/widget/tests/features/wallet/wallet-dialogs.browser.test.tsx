@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche, mainnet, sepolia } from "viem/chains";
 import { page, userEvent } from "vitest/browser";
+
 import { SKApp } from "../../../src/App";
 import type { SupportedSKChainIds } from "../../../src/domain/wallet/chain-ids";
 import type { SKAppProps } from "../../../src/public-api/react-types";

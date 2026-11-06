@@ -9,6 +9,7 @@ import {
 } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { YieldAction } from "../../domain/action/models";
 import { isActivityActionOwnedByScope } from "../../domain/activity/action-capabilities";
@@ -317,16 +318,14 @@ const yieldSourcePage = (key: ActivityHistoryKey, offset: number) =>
   YieldResourceSource.use((source) =>
     source.listActivity(activityRequest(key, { limit: PAGE_SIZE, offset }))
   ).pipe(
-    Effect.map(
-      (page): ActivityHistorySourcePage => ({
-        entries: (page.items ?? []).map((action) => ({
-          _tag: "yield" as const,
-          action,
-        })),
-        nextOffset: getNextPageOffset(page),
-        total: page.total,
-      })
-    )
+    Effect.map((page): ActivityHistorySourcePage => ({
+      entries: (page.items ?? []).map((action) => ({
+        _tag: "yield" as const,
+        action,
+      })),
+      nextOffset: getNextPageOffset(page),
+      total: page.total,
+    }))
   );
 
 // Borrow is optional: when it is unconfigured or failing, Activity stays Yield-only.
@@ -339,17 +338,15 @@ const fetchBorrowCursor = (
 
   return fetchSourcePage(cursor, (offset) =>
     listBorrowActions(network, key, { limit: PAGE_SIZE, offset }).pipe(
-      Effect.map(
-        (page): ActivityHistorySourcePage => ({
-          entries: (page.items ?? []).map((action) => ({
-            _tag: "borrow" as const,
-            action,
-            network,
-          })),
-          nextOffset: getNextPageOffset(page),
-          total: page.total,
-        })
-      )
+      Effect.map((page): ActivityHistorySourcePage => ({
+        entries: (page.items ?? []).map((action) => ({
+          _tag: "borrow" as const,
+          action,
+          network,
+        })),
+        nextOffset: getNextPageOffset(page),
+        total: page.total,
+      }))
     )
   ).pipe(
     Effect.orElseSucceed(() => ({ ...cursor, nextOffset: Option.none() }))

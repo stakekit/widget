@@ -1,4 +1,5 @@
 import { Schema, Struct } from "effect";
+
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantArray } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";

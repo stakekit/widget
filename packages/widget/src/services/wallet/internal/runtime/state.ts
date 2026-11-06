@@ -7,6 +7,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import { WalletAddress } from "../../../../domain/identity/identifiers";
 import { sameWalletScopeOwner } from "../../../../domain/wallet/wallet-scope";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
@@ -67,13 +68,11 @@ const makeContextStream = ({
     projection: core,
     readStoredPublicKeys,
   }).pipe(
-    Stream.map(
-      ({ routing, state }): WalletStateContext => ({
-        core,
-        routing,
-        state,
-      })
-    )
+    Stream.map(({ routing, state }): WalletStateContext => ({
+      core,
+      routing,
+      state,
+    }))
   );
 
 const makeTransitionContext = ({

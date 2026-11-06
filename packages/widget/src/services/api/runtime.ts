@@ -1,4 +1,5 @@
 import { Effect, Layer } from "effect";
+
 import { WidgetConfigService } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
 import {

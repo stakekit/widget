@@ -6,6 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router";
+
 import {
   type WidgetNavigationTarget,
   widgetTargetPath,

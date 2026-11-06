@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { createContext, useContext, useState } from "react";
 import { Outlet } from "react-router";
+
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,

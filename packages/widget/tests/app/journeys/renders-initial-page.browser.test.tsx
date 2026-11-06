@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
+
 import { YieldCategory } from "../../../src/public-api/types";
 import { legacyYieldFixture, yieldApiYieldDtoFixture } from "../../fixtures";
 import {

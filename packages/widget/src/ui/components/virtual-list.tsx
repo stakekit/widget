@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { scrollStyles } from "../primitives/scroll";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
@@ -158,19 +159,15 @@ const toRows = <T,>(
     groupStarts.push(groupStart);
     groupStart += group.items.length;
   }
-  return props.groups.flatMap(
-    (group, groupIndex): ReadonlyArray<Row<T>> => [
-      { kind: "header", key: `group:${group.key}`, group },
-      ...group.items.map(
-        (item, offset): Row<T> => ({
-          kind: "item",
-          key: getKey(item),
-          item,
-          index: (groupStarts[groupIndex] ?? 0) + offset,
-        })
-      ),
-    ]
-  );
+  return props.groups.flatMap((group, groupIndex): ReadonlyArray<Row<T>> => [
+    { kind: "header", key: `group:${group.key}`, group },
+    ...group.items.map((item, offset): Row<T> => ({
+      kind: "item",
+      key: getKey(item),
+      item,
+      index: (groupStarts[groupIndex] ?? 0) + offset,
+    })),
+  ]);
 };
 
 /** The last header at or above `row`, the one that sticks while it scrolls. */

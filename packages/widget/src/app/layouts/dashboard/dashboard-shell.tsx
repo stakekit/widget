@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import type { YieldCategory } from "../../../domain/earn/contract";
 import {
   DashboardHeader,

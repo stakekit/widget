@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+
 import { classifyRiskBand } from "../../../domain/borrow/risk/risk-band";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {

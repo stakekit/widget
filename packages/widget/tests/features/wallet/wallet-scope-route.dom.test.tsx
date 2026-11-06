@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import type { Chain } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { useWalletScopeRoute } from "../../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../../src/features/wallet/react/wallet-scope-route";

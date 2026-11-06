@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Network } from "../../../domain/network/network";
 import type { Token } from "../../../domain/token/token";
 import { isWalletNetwork } from "../../../domain/wallet/network";

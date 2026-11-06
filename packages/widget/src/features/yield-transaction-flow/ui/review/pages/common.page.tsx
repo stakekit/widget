@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { Token } from "../../../../../domain/token/token";
 import { Notice, Stack, Text } from "../../../../../ui/index";
 import { TransactionTerms } from "../../../../transaction-steps/views";

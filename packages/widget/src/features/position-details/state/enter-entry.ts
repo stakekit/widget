@@ -1,5 +1,6 @@
 import { Data } from "effect";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { BalanceDataKey } from "../../../domain/portfolio/positions";
@@ -49,9 +50,8 @@ const makeDefaultIntent = (): PositionDetailsEnterIntent => ({
 
 export const positionDetailsEnterAtom = Atom.family(
   (_entry: PositionDetailsEnterKey) => {
-    const intentAtom = Atom.make<PositionDetailsEnterIntent>(
-      makeDefaultIntent()
-    );
+    const intentAtom =
+      Atom.make<PositionDetailsEnterIntent>(makeDefaultIntent());
 
     return Atom.writable<
       PositionDetailsEnterIntent,

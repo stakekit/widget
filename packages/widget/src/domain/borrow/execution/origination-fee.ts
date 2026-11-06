@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import { exactDecimal } from "../../finance/exact";
 import type { Market } from "../catalog/market";
 

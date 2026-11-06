@@ -1,5 +1,6 @@
 import { RegistryProvider } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
+
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
 import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
 import type { VariantProps } from "../../src/public-api/react-types";

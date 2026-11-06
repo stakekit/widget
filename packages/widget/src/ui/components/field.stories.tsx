@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, within } from "storybook/test";
+
 import { AmountInput } from "./amount-input";
 import { Field } from "./field";
 import { SearchInput } from "./search-input";

@@ -1,5 +1,6 @@
 import type { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
 import { Effect, Option, Schema } from "effect";
+
 import {
   WalletIntegrationError,
   WalletNotAvailableError,

@@ -15,6 +15,7 @@ import {
 } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
+
 import type { YieldAction } from "../../../src/domain/action/models";
 import { EarnValidator } from "../../../src/domain/earn/models";
 import {

@@ -1,4 +1,5 @@
 import { Effect, Record } from "effect";
+
 import type { Network } from "../../../../../domain/network/network";
 import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";

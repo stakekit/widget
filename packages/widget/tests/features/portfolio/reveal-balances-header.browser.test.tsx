@@ -1,5 +1,6 @@
 import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { RevealBalancesHeader } from "../../../src/features/portfolio/ui/components/reveal-balances-header";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { render } from "../../utils/test-utils";

@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import type {
   PendingActionLabelContext,
   YieldPendingActionType,

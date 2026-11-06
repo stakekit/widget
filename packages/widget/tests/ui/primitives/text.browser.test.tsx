@@ -1,4 +1,5 @@
 import { describe, expect, it, onTestFinished } from "vitest";
+
 import { Text } from "../../../src/ui/index";
 import { render } from "../../utils/test-utils";
 

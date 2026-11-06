@@ -10,6 +10,7 @@ import {
   Struct,
   SubscriptionRef,
 } from "effect";
+
 import type { YieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {

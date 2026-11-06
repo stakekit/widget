@@ -8,6 +8,7 @@ import {
 import { Connection } from "@solana/web3.js";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import { getSolanaConnectors } from "../../../src/services/wallet/internal/adapters/solana/solana-connector";
 import type { WalletDescriptor } from "../../../src/services/wallet/wallet-descriptors";
 import { WalletNotAvailableError } from "../../../src/services/wallet/wallet-errors";

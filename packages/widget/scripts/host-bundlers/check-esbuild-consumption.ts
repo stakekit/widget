@@ -16,7 +16,9 @@
 
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+
 import { build, type Message } from "esbuild";
+
 import { widgetRoot } from "../paths";
 import { countStyleXRules } from "../styles/stylex-rules";
 

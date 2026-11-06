@@ -1,4 +1,5 @@
 import { Array as EArray, Effect, Record } from "effect";
+
 import type { Network } from "../../../../../domain/network/network";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";

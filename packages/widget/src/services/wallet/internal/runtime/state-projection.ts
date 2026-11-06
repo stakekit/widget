@@ -1,6 +1,7 @@
 import { Effect, Schema, Stream } from "effect";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
+
 import {
   WalletAddress,
   type WalletAddress as WalletAddressType,

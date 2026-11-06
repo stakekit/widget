@@ -1,4 +1,5 @@
 import { Context, Effect, Layer } from "effect";
+
 import { WalletIntegrationError } from "./wallet-errors";
 
 export class WalletClipboard extends Context.Service<

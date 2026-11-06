@@ -3,6 +3,7 @@ import type { toBase64 } from "@cosmjs/encoding";
 import type { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import type { Effect, Stream } from "effect";
 import type { Connector } from "wagmi";
+
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { WalletIntegrationError } from "../../../wallet-errors";
 

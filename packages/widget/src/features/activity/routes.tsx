@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { Route } from "react-router";
+
 import {
   type WidgetPath,
   widgetRoutes,

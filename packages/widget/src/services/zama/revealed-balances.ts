@@ -7,6 +7,7 @@ import {
   type Stream,
   SubscriptionRef,
 } from "effect";
+
 import type {
   ConfidentialTokenBalanceKey,
   RevealedBalances as Values,

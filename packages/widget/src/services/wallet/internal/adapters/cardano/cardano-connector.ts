@@ -2,6 +2,7 @@ import { BrowserWallet } from "@meshsdk/wallet";
 import { Effect, Stream } from "effect";
 import type { Chain } from "viem";
 import { createConnector } from "wagmi";
+
 import type {
   WalletDetailsParams,
   WalletList,

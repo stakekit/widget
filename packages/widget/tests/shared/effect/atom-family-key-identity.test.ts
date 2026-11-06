@@ -2,6 +2,7 @@ import { Equal, Schema } from "effect";
 import type { Chain } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
+
 import {
   WalletAddress,
   YieldId,

@@ -1,5 +1,6 @@
 import { Context, Layer } from "effect";
 import type { Chain } from "wagmi/chains";
+
 import type { WalletList } from "./wallet-descriptors";
 
 export type WalletListFactory = (chains: Chain[]) => WalletList;

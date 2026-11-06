@@ -3,6 +3,7 @@ import { Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { EarnPosition, type EarnYield } from "../../../src/domain/earn/models";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";

@@ -1,4 +1,5 @@
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
+
 import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type {
   EarnValidator,

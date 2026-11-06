@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import {
   HealthStatus,

@@ -5,6 +5,7 @@
  */
 import "./playground.css";
 import ReactDOM from "react-dom/client";
+
 import { EvmChainIds } from "../src/index.package";
 import { readConnectionSettings } from "./connection-settings";
 import { installDevConsole, logWalletEntry } from "./dev-console";

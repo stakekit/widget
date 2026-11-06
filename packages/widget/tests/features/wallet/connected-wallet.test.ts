@@ -5,6 +5,7 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { type Connector, createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { mock } from "wagmi/connectors";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { connectedWalletAtom } from "../../../src/features/wallet/state/connected-wallet";
 import { currentWalletStateResultAtom } from "../../../src/features/wallet/state/root-atom";

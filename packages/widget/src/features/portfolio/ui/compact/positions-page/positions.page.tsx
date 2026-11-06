@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { Box, Stack, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";

@@ -1,4 +1,5 @@
 import { Effect, Layer, Stream, SubscriptionRef } from "effect";
+
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type { WalletState } from "../../../src/services/wallet/wallet-state";
 

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { Stack, Text } from "../../../../../ui/index";
 

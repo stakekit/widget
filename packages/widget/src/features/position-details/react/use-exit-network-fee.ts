@@ -1,4 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
+
 import { positionDetailsExitNetworkFeeAtom } from "../state/details-view";
 import { useExitOrPendingAction } from "./use-exit-or-pending-action";
 

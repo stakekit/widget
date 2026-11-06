@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { Integration } from "../../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { TokenAddress } from "../../../../src/domain/borrow/ids";

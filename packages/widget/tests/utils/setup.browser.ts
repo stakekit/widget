@@ -1,6 +1,7 @@
 import { MotionGlobalConfig } from "motion/react";
 import { beforeEach, vi } from "vitest";
 import { cdp } from "vitest/browser";
+
 import { failOnReactErrors } from "./fail-on-react-errors";
 
 MotionGlobalConfig.skipAnimations = true;

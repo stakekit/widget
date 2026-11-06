@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { toLowerCase } from "effect/String";
 import { Trans, useTranslation } from "react-i18next";
+
 import type { PendingAction } from "../../../../domain/action/models";
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";

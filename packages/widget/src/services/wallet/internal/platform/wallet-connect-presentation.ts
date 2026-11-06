@@ -14,6 +14,7 @@ import {
   SubscriptionRef,
 } from "effect";
 import { UserRejectedRequestError } from "viem";
+
 import { getProtocolChainIdentity } from "../../../../domain/wallet/network";
 import { config } from "../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../wallet-errors";

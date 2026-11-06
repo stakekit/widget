@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+
 import type { Token } from "../../../../../domain/token/token";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { ReviewSummary } from "../../../../../ui/index";

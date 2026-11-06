@@ -1,4 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
+
 import { walletChainIcon } from "../../../../services/wallet/wallet-chain-icons";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import { Avatar } from "../../../../ui/index";

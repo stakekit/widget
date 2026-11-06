@@ -7,6 +7,7 @@ import {
   Schema,
 } from "effect";
 import type { TFunction } from "i18next";
+
 import { type ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type HostTokenKey, tokenString } from "../token/token";

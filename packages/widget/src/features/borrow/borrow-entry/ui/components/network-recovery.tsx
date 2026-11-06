@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { Chain } from "../../../../../services/wallet/wallet-descriptors";
 import { Notice, Stack } from "../../../../../ui/index";
 import {

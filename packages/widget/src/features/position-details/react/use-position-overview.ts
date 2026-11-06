@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { currentYieldRewardsSummaryAtom } from "../../yield-summary/index";

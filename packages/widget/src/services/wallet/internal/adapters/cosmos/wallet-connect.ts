@@ -1,5 +1,6 @@
 import type { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Effect, Option, Schema } from "effect";
+
 import { WalletIntegrationError } from "../../../wallet-errors";
 import {
   type CaipChainId,

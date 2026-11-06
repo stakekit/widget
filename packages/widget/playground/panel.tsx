@@ -1,5 +1,6 @@
 import { Option } from "effect";
 import { useState, useSyncExternalStore } from "react";
+
 import { YieldCategory, YieldProviderId } from "../src/index.package";
 import {
   type ConnectionSettings,

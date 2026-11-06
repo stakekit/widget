@@ -1,4 +1,5 @@
 import { Match, Predicate } from "effect";
+
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type { YieldAction } from "../../../domain/action/models";
 import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
@@ -161,13 +162,10 @@ const toTransactionWorkflowDomain = (
         yieldId,
       })
     ),
-    Match.tag(
-      "Borrow",
-      ({ action }): TransactionWorkflowDomainContext => ({
-        _tag: "Borrow",
-        action,
-      })
-    ),
+    Match.tag("Borrow", ({ action }): TransactionWorkflowDomainContext => ({
+      _tag: "Borrow",
+      action,
+    })),
     Match.exhaustive
   );
 

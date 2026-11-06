@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { SelectValidator } from "../../../yield-entry/views";
 import { usePositionDetails } from "../../react/use-position-details";
 

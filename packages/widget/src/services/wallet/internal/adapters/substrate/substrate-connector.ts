@@ -8,6 +8,7 @@ import { u8aToHex } from "@polkadot/util";
 import { Array as EArray, Effect, Option, Stream } from "effect";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
+
 import type {
   WalletAvailability,
   WalletDetailsParams,

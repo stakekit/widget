@@ -2,6 +2,7 @@ import { Schema, Struct } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
+
 import type { EarnYield } from "../../../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../../../src/domain/earn/reward-rate";
 import { exactDecimal } from "../../../../src/domain/finance/exact";

@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { Store } from "mipd";
 import { type CreateConnectorFn, ProviderNotFoundError } from "wagmi";
+
 import type { WalletAvailability } from "../../../wallet-descriptors";
 import { WalletNotAvailableError } from "../../../wallet-errors";
 import { wagmiConnectResult } from "../wagmi-connect-result";

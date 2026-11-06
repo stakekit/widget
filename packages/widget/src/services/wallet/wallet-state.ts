@@ -1,6 +1,7 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type { Connector } from "wagmi";
 import type { getConnection } from "wagmi/actions";
+
 import type { WalletAddress } from "../../domain/identity/identifiers";
 import type { AdditionalAddresses } from "../../domain/wallet/address";
 import type { WalletNetwork } from "../../domain/wallet/network";

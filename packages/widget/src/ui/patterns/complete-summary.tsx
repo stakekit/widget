@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useId, useState } from "react";
+
 import { TokenAvatar } from "../components/avatar";
 import { Card } from "../components/card";
 import { DetailList, DetailRow } from "../components/detail-list";

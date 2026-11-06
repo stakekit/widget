@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { AnimatedNumber } from "./animated-number";

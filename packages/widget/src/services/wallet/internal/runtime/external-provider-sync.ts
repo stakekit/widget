@@ -1,4 +1,5 @@
 import { Effect, Ref, Result, type Scope, Stream } from "effect";
+
 import {
   diffWidgetWalletConfig,
   selectWidgetBootstrapSnapshot,

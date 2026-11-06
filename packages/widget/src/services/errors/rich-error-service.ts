@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, SubscriptionRef } from "effect";
+
 import type { RichError } from "./rich-error";
 
 type PresentableApiRequest = {

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Button, Card, Modal, Spot, Stack, Text } from "../../../../ui/index";
 import { richErrorInterpolationValues } from "../../model/rich-error-interpolation-values";
 import { useRichErrors } from "../../react/use-rich-errors";

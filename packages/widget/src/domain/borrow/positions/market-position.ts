@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Result } from "effect";
+
 import { exactZero, sumExact } from "../../finance/exact";
 import type { Integration } from "../catalog/integration";
 import type { Market } from "../catalog/market";

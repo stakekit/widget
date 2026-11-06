@@ -5,6 +5,7 @@ import {
   type RenderResult,
   render,
 } from "vitest-browser-react";
+
 import { type SKApp, SKAppRegistryContent } from "../../src/App";
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
 import { WidgetErrorBoundary } from "../../src/app/composition/widget-error-boundary";

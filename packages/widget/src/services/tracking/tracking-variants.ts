@@ -1,4 +1,5 @@
 import mixpanel from "mixpanel-browser";
+
 import type { SKTrackingConfig } from "../../public-api/types";
 
 export const initMixpanel = (token: string) => mixpanel.init(token);

@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
+
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldRewardsSummary } from "../../../domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../domain/portfolio/positions";

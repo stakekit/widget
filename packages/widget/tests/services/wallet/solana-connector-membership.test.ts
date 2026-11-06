@@ -9,6 +9,7 @@ import { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import { createConfig, createConnector, http } from "wagmi";
 import { connect, disconnect, watchConnectors } from "wagmi/actions";
+
 import { solana } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import type { SolanaRuntime } from "../../../src/services/wallet/internal/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../../src/services/wallet/internal/runtime/solana-connector-membership";

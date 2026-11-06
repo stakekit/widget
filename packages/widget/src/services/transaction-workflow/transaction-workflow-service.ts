@@ -9,6 +9,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import { walletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 import { WidgetDomainEvents } from "../events/widget-domain-events";
 import { makeHeldHashRegistration } from "./internal/held-hash-registration";

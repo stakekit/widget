@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+
 import { ExactDecimal, NonNegativeExactDecimal } from "../../finance/scalars";
 
 export const RiskRatio = ExactDecimal.check(

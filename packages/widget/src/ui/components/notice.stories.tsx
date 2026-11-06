@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, within } from "storybook/test";
+
 import { Stack } from "../primitives/stack";
 import { iconLeadsInline } from "../storybook/geometry";
 import { Button } from "./button";

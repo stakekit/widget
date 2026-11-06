@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import {
   formatTokenAmount,

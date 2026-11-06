@@ -5,6 +5,7 @@
  */
 import { access } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+
 import ts from "typescript";
 
 const readablePath = async (candidates: ReadonlyArray<string>) => {

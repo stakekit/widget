@@ -1,5 +1,6 @@
 import { test as base, describe, expect, vi } from "@effect/vitest";
 import { NetworkReadyState } from "msw/experimental";
+
 import { network } from "../mocks/network";
 import { makeFixtureMethods } from "./effect-test";
 

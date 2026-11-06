@@ -1,5 +1,6 @@
 import type { Connection } from "@solana/web3.js";
 import { Effect, Record } from "effect";
+
 import type { Network } from "../../../../domain/network/network";
 import { config } from "../../../../shared/config/widget-defaults";
 import type { HostProfile } from "../../../config/host-profile";

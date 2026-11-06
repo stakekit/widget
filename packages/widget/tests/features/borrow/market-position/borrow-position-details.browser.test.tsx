@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { page, userEvent } from "vitest/browser";
+
 import type { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { borrowApiRoute } from "../../../mocks/api-routes";
 import { mockWalletListFactory } from "../../../utils/mock-connector";

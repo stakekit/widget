@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import {

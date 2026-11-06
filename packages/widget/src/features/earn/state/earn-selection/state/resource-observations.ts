@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type * as Atom from "effect/reactivity/Atom";
+
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { isYieldValidatorSelectionRequired } from "../../../../../domain/earn/yield";
 import { tokenString } from "../../../../../domain/token/token";

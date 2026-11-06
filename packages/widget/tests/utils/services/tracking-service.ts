@@ -1,4 +1,5 @@
 import { Effect, Layer, Ref } from "effect";
+
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import type {
   AnyTrackEventProperties,

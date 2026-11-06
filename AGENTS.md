@@ -9,16 +9,16 @@ source of truth for behavior.
 
 ## Read before changing code
 
-| Work | Read |
-| --- | --- |
-| Ownership, dependency direction, and Module interfaces | `packages/widget/ARCHITECTURE.md` |
-| Project vocabulary | `GLOSSARY.md` |
-| UI: screens, components, styling, theming, and the Design System | `docs/design-system.md` |
-| A decision that constrains the change | The relevant current file in `docs/adr/` |
-| Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
-| Local issues, domain docs, and triage | `docs/agents/` |
-| Backend API behavior | The backend source, if available: resolve its path with `mise exec -- printenv YIELD_BACKEND_DIR` (set in the gitignored `mise.local.toml`). Otherwise the OpenAPI specs `gen:api` fetches |
-| Publishing | `docs/releases.md` |
+| Work                                                             | Read                                                                                                                                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ownership, dependency direction, and Module interfaces           | `packages/widget/ARCHITECTURE.md`                                                                                                                                                          |
+| Project vocabulary                                               | `GLOSSARY.md`                                                                                                                                                                              |
+| UI: screens, components, styling, theming, and the Design System | `docs/design-system.md`                                                                                                                                                                    |
+| A decision that constrains the change                            | The relevant current file in `docs/adr/`                                                                                                                                                   |
+| Effect APIs                                                      | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests   |
+| Local issues, domain docs, and triage                            | `docs/agents/`                                                                                                                                                                             |
+| Backend API behavior                                             | The backend source, if available: resolve its path with `mise exec -- printenv YIELD_BACKEND_DIR` (set in the gitignored `mise.local.toml`). Otherwise the OpenAPI specs `gen:api` fetches |
+| Publishing                                                       | `docs/releases.md`                                                                                                                                                                         |
 
 ## Commands
 

@@ -1,4 +1,5 @@
 import { useRevalidator } from "react-router";
+
 import { WidgetTranslationProvider } from "../../../features/preferences/composition";
 import { WidgetUnavailable } from "../../../features/widget-shell/composition";
 import { ThemeWrapper } from "../../composition/providers/theme-wrapper";

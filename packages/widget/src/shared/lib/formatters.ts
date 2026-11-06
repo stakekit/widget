@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { EarnYieldWithProvider } from "../../domain/earn/models";
 import { getTokenPriceInUSD } from "../../domain/finance/price";
 import { Prices } from "../../domain/health/models";

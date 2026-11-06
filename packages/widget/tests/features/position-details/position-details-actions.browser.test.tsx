@@ -1,4 +1,5 @@
 import { userEvent } from "vitest/browser";
+
 import { shouldRegisterDashboardEarnFooterButton } from "../../../src/app/layouts/dashboard/dashboard-routes";
 import { setup } from "../../app/journeys/trust-incentive-apy/setup";
 import { describe, expect, it } from "../../utils/test-extend";

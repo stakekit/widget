@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Match } from "effect";
+
 import { exactZero } from "../finance/exact";
 import type {
   EarnValidator,

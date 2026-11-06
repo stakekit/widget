@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { getPendingActionReturn } from "../../../domain/earn/denomination";
 import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";

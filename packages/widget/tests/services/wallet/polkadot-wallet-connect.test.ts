@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { convertAddress } from "@luno-kit/core/utils";
 import { Effect, Fiber, FiberSet, Queue } from "effect";
 import { vi } from "vitest";
+
 import { substrateChainsMap } from "../../../src/services/wallet/internal/adapters/substrate/chains";
 import { getSubstrateConnectors } from "../../../src/services/wallet/internal/adapters/substrate/substrate-connector";
 import type { ExtraProps } from "../../../src/services/wallet/internal/adapters/substrate/substrate-connector-meta";

@@ -15,6 +15,7 @@ import {
 import { base } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Action as BorrowAction } from "../../../src/domain/borrow/execution/action";

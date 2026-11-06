@@ -1,5 +1,6 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import type { ActionTransaction } from "../../../src/domain/action/models";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";

@@ -1,4 +1,5 @@
 import { Effect, Predicate, Schema, SchemaTransformation } from "effect";
+
 import { WalletIntegrationError } from "../../../wallet-errors";
 import {
   CaipChainId,

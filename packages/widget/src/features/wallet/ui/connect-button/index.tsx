@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Button, EmptyState } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import { useWidgetConfig } from "../../../widget-configuration/index";

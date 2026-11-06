@@ -6,6 +6,7 @@ import { type Address, type Chain, UserRejectedRequestError } from "viem";
 import { vi } from "vitest";
 import type { CreateConnectorFn } from "wagmi";
 import { mock } from "wagmi/connectors";
+
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletConnectorSourceRuntime } from "../../src/app/runtime/wallet-connector-source-runtime";
 import { WagmiConfigProvider } from "../../src/features/wallet/composition";

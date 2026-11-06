@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
 import {

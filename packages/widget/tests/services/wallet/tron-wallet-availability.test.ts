@@ -4,6 +4,7 @@ import { WalletReadyState } from "@tronweb3/tronwallet-abstract-adapter";
 import { Effect } from "effect";
 import { afterEach, vi } from "vitest";
 import type { Connector } from "wagmi";
+
 import { getTronConnectors } from "../../../src/services/wallet/internal/adapters/tron/tron-connector";
 import type { WalletDescriptor } from "../../../src/services/wallet/wallet-descriptors";
 import { WalletNotAvailableError } from "../../../src/services/wallet/wallet-errors";

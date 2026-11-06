@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+
 import { type FixedIconName, glyphs, glyphViewBox } from "../icons/glyphs";
 import { iconSize } from "../tokens/size.stylex";
 import { type TextTone, textToneStyles } from "./text-tone";

@@ -2,6 +2,7 @@ import { Effect, Schedule } from "effect";
 import { TestClock } from "effect/testing";
 import { act } from "react";
 import { avalanche } from "viem/chains";
+
 import { SubstrateChainIds } from "../../../src/domain/wallet/chain-ids";
 import { substrateChainsMap } from "../../../src/services/wallet/internal/adapters/substrate/chains";
 import { server } from "../../mocks/server";

@@ -1,6 +1,7 @@
 import { Duration, Array as EArray, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
 import {
   type Presentable,

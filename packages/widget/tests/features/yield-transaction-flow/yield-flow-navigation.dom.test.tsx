@@ -13,6 +13,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router";
+
 import { ApplicationRouteContentProvider } from "../../../src/app/composition/application-route-content";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { applicationBaseRuntime } from "../../../src/app/runtime/application-base-runtime";

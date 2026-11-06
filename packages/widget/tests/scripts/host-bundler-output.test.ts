@@ -2,8 +2,10 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+
 import { build } from "esbuild";
 import { describe, expect, it } from "vitest";
+
 import { hideNodeBuiltinImports } from "../../vite/host-bundler-output";
 
 // The shapes Zama's tfhe loader takes after Vite builds it: minified string

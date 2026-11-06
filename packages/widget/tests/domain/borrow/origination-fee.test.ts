@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
+
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { resolveBorrowOrigination } from "../../../src/domain/borrow/execution/origination-fee";
 import { exactDecimal } from "../../../src/domain/finance/exact";

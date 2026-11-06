@@ -8,6 +8,7 @@ import {
   SchemaGetter,
   SchemaIssue,
 } from "effect";
+
 import { YieldCategory } from "../../domain/earn/contract";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/earn/yield";
 import type { YieldProviderOrder } from "../../domain/earn/yield-provider-order";
@@ -269,12 +270,14 @@ type TokenIconMapper = Extract<
  * host's later value.
  */
 export type MountFixedHostSettings = {
-  readonly [Key in
-    | "apiKey"
-    | "baseUrl"
-    | "borrowApiUrl"
-    | "borrowEnabled"
-    | "yieldsApiUrl"]: SKHostConfiguration[Key];
+  readonly [
+    Key in
+      | "apiKey"
+      | "baseUrl"
+      | "borrowApiUrl"
+      | "borrowEnabled"
+      | "yieldsApiUrl"
+  ]: SKHostConfiguration[Key];
 };
 
 // Borrow follows `borrowEnabled`, which may be fixed at mount while the
@@ -518,15 +521,14 @@ const decodeThemeAndAppearance = (
     ),
     droppedLegacyThemeKeys: legacy?.droppedKeys ?? [],
     warnings: [
-      ...theme.warnings.map(
-        (issue): HostConfigurationWarning => ({ _tag: "Theme", issue })
-      ),
-      ...appearance.warnings.map(
-        (warning): HostConfigurationWarning => ({
-          _tag: "Appearance",
-          ...warning,
-        })
-      ),
+      ...theme.warnings.map((issue): HostConfigurationWarning => ({
+        _tag: "Theme",
+        issue,
+      })),
+      ...appearance.warnings.map((warning): HostConfigurationWarning => ({
+        _tag: "Appearance",
+        ...warning,
+      })),
     ],
   };
 };

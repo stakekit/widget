@@ -11,6 +11,7 @@ import * as Atom from "effect/reactivity/Atom";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../../src/domain/earn/models";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";

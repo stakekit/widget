@@ -8,6 +8,7 @@ import { LedgerAdapter } from "@tronweb3/tronwallet-adapter-ledger";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
 import { Effect, Schema, Stream } from "effect";
 import { createConnector } from "wagmi";
+
 import type {
   Chain,
   WalletChainGroup,

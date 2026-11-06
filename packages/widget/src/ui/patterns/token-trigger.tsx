@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes, Ref } from "react";
+
 import { TokenAvatar } from "../components/avatar";
 import { focusRingStyles } from "../components/focus-ring";
 import { hitAreaStyles } from "../components/hit-area";

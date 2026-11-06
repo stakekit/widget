@@ -7,6 +7,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import {
   sameWalletScopeOwner,
   type WalletScopeOwner,

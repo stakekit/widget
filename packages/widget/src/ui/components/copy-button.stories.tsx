@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+
 import { CopyButton } from "./copy-button";
 
 const address = "0x1234567890abcdef1234567890abcdef12345678";

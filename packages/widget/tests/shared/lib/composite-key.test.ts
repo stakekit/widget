@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { compositeKey } from "../../../src/shared/lib/composite-key";
 
 describe("compositeKey", () => {

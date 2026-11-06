@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import type { YieldAction } from "../../../src/domain/action/models";
 import { ActivityActionsPage } from "../../../src/domain/activity/models";

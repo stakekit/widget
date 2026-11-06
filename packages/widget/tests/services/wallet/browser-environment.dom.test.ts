@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+
 import { isLedgerDappBrowserProvider } from "../../../src/services/wallet/browser-environment";
 
 const originalHref = window.location.href;

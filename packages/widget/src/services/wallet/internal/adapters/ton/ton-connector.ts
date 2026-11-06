@@ -7,6 +7,7 @@ import {
 import { Clock, Duration, Effect, Option, Schema, Stream } from "effect";
 import type { Chain } from "viem";
 import { createConnector } from "wagmi";
+
 import type {
   WalletDetailsParams,
   WalletList,

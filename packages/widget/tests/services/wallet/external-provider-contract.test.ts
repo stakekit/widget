@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import type { RefObject } from "react";
+
 import {
   ActionId as BorrowActionId,
   IntegrationId as BorrowIntegrationId,
@@ -420,12 +421,10 @@ describe("generic external provider callback contract", () => {
           }),
           switchChain: async () => undefined,
           sendTransaction: async () => "yield-hash",
-          sendBorrowTransaction: vi.fn(
-            async (): Promise<SKBorrowTxResult> => ({
-              type: "success",
-              txHash: "borrow-hash",
-            })
-          ),
+          sendBorrowTransaction: vi.fn(async (): Promise<SKBorrowTxResult> => ({
+            type: "success",
+            txHash: "borrow-hash",
+          })),
         };
         const ref = makeBorrowProviderRef(wallet);
         const provider = new ExternalProvider(ref);

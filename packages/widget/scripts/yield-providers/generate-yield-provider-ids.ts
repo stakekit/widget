@@ -10,7 +10,9 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+
 import ts from "typescript";
+
 import { repositoryRoot, widgetRoot } from "../paths";
 
 const outputPath = path.join(widgetRoot, "src/generated/yield-provider-ids.ts");

@@ -1,5 +1,6 @@
 import { Effect, Result, Schema } from "effect";
 import type { Connector } from "wagmi";
+
 import type { WalletSignature } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import { isEvmWalletNetwork } from "../../../../../domain/wallet/network";
@@ -136,9 +137,10 @@ const decodeExternalProviderTransaction = ({
         Schema.fromJsonString(substratePayloadCodec),
         tx
       ).pipe(
-        Result.map(
-          (decodedTx): BittensorTx => ({ type: "bittensor", tx: decodedTx })
-        )
+        Result.map((decodedTx): BittensorTx => ({
+          type: "bittensor",
+          tx: decodedTx,
+        }))
       );
     }
 

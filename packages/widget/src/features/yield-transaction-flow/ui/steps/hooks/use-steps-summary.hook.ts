@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+
 import { getActionInputToken } from "../../../../../domain/action/rules";
 import { getConfidentialActionKind } from "../../../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";

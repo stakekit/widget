@@ -1,6 +1,7 @@
 import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   type ApplicationLocation,
   ApplicationRouter,
@@ -29,9 +30,9 @@ export const applicationRouterLocationAtom = applicationBaseRuntime
     Atom.map((result) =>
       result.pipe(
         AsyncResult.value,
-        Option.getOrElse(
-          (): ApplicationLocation => ({ pathname: widgetRoutes.earn.build() })
-        )
+        Option.getOrElse((): ApplicationLocation => ({
+          pathname: widgetRoutes.earn.build(),
+        }))
       )
     ),
     Atom.withLabel("applicationRouterLocationAtom")
