@@ -17,7 +17,8 @@ export const useSteps = () => {
   const facade = useYieldFlowExecution();
   const returnFlowToReview = useAtomSet(facade.backAtom);
   const leaveConfirmation = useExecutionLeaveConfirmation(
-    destination.completePath
+    destination.completePath,
+    { resumable: steps.resumable }
   );
 
   const trackEvent = useTrackEvent();
@@ -47,12 +48,11 @@ export const useSteps = () => {
       : null;
 
   return {
-    cancelled: steps.cancelled,
+    error: steps.error,
     numbered: steps.numbered,
     retry,
     txStates: steps.txStates,
     cta: resolveCta(),
-    customSignErrorMessage: steps.customSignErrorMessage,
     leaveConfirmationDialog: leaveConfirmation.dialog,
     summary,
     details,

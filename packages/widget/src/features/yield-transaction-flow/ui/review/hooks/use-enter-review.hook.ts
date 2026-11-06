@@ -16,7 +16,7 @@ import {
   formatRewardRatePercent,
   formatTokenAmount,
   formatUsd,
-  unavailableFigure,
+  withFigureUnit,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { HostHook } from "../../../../../ui/index";
@@ -94,7 +94,10 @@ export const useEnterReview = () => {
       label: t(`review.estimated_${period}_rewards`),
       testId: `estimated-reward__${period}`,
       hostHook: rewardHostHooks[period],
-      value: `${reward ? formatTokenAmount(reward, locale, "nearest") : unavailableFigure} ${rewardsTokenSymbol}`,
+      value: withFigureUnit(
+        reward ? formatTokenAmount(reward, locale, "nearest") : null,
+        rewardsTokenSymbol
+      ),
       ...(caption ? { caption } : {}),
     };
   };
@@ -170,11 +173,6 @@ export const useEnterReview = () => {
   const managementFee = localizeFee(stakeReview.managementFee, "management");
   const performanceFee = localizeFee(stakeReview.performanceFee, "performance");
 
-  const metadata = {
-    logoURI: selectedStake.metadata.logoURI,
-    name: selectedStake.metadata.name,
-    provider: selectedStake.provider,
-  };
   const kycProviderName = getKycProviderName(selectedStake);
   const onKycStatusRefresh = () => refreshKyc(undefined);
 
@@ -210,7 +208,6 @@ export const useEnterReview = () => {
     facts,
     fee,
     yieldType,
-    metadata,
     metaInfo,
     isGasCheckWarning: review.isGasCheckWarning,
     gasCheckLoading: review.gasCheckLoading,

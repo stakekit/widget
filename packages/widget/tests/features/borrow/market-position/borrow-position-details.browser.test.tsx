@@ -328,8 +328,15 @@ describe("Borrow position details", () => {
 
     await userEvent.click(app.getByText("Manage"));
 
-    await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
+    await expect.element(app.getByText("Total value")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Debt", { exact: true }))
+      .toBeInTheDocument();
     await expect.element(app.getByText("Net worth")).toBeInTheDocument();
+    // A safe position adds nothing to the Manage tab's count.
+    await expect
+      .element(app.getByRole("tab", { name: "Manage", exact: true }))
+      .toBeInTheDocument();
     await expect.element(app.getByText("WETH/USDC")).toBeInTheDocument();
     await expect
       .element(app.getByText("Aave V3", { exact: false }))
@@ -439,7 +446,7 @@ describe("Borrow position details", () => {
     breadcrumbBack!.click();
 
     await expect.element(app.getByText("My positions")).toBeInTheDocument();
-    await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
+    await expect.element(app.getByText("Total value")).toBeInTheDocument();
 
     await app.unmount();
   });
@@ -498,7 +505,17 @@ describe("Borrow position details", () => {
       },
     });
 
-    await userEvent.click(app.getByText("Manage"));
+    // The Manage tab counts the position, and its row names the risk.
+    const manageTab = app.getByRole("tab", { name: "Manage 1" });
+    await expect.element(manageTab).toBeInTheDocument();
+    await userEvent.click(manageTab);
+    await expect
+      .element(
+        app
+          .getByRole("link", { name: /WETH\/USDC/ })
+          .getByText("High liquidation risk")
+      )
+      .toBeInTheDocument();
     await userEvent.click(app.getByText("WETH/USDC"));
 
     const alert = app.getByTestId("borrow-position-risk-alert");

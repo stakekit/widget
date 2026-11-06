@@ -1,14 +1,9 @@
 import * as Atom from "effect/reactivity/Atom";
 import {
   currentGroupedPositionsAtom,
-  currentPortfolioBorrowPositionsAtom,
   positionsTableDataAtom,
 } from "./read-models/positions";
-import {
-  allPositionsSummaryAtom,
-  availableBalanceSummaryAtom,
-  averageApySummaryAtom,
-} from "./read-models/summary";
+import { manageSummaryAtom } from "./read-models/summary";
 
 /**
  * Keeps Manage tab list/summary resources subscribed while mounted so navigating
@@ -17,8 +12,5 @@ import {
 export const manageTabResourcesPrefetchAtom = Atom.make((get) => {
   get(positionsTableDataAtom);
   get(currentGroupedPositionsAtom);
-  get(currentPortfolioBorrowPositionsAtom);
-  get(allPositionsSummaryAtom);
-  get(availableBalanceSummaryAtom);
-  get(averageApySummaryAtom);
+  get(manageSummaryAtom);
 }).pipe(Atom.withLabel("manageTabResourcesPrefetchAtom"));

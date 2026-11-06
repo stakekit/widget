@@ -134,43 +134,6 @@ const tokenAmountRoundingModes = {
 const tokenAmountDecimals = 4;
 const tokenAmountFloor = exactDecimal(1).shiftedBy(-tokenAmountDecimals);
 
-/**
- * Token amounts with at most four decimals at every magnitude, trailing zeros
- * dropped; a non-zero amount below 0.0001 reads `<0.0001` (`>−0.0001` when
- * negative), never 0, whichever way it rounds. Display only; state keeps the
- * exact amount.
- */
-export const formatTokenAmount = (
-  number: NumericValue,
-  locale: string,
-  rounding: TokenAmountRounding
-) => {
-  const value = exactDecimal(number);
-
-  if (value.isZero()) return formatExact(value, locale);
-  if (value.abs().lt(tokenAmountFloor)) {
-    return formatNumber(value, locale, tokenAmountDecimals);
-  }
-
-  return formatExact(
-    value.decimalPlaces(
-      tokenAmountDecimals,
-      tokenAmountRoundingModes[rounding]
-    ),
-    locale
-  );
-};
-
-/** A token amount, rounded down, followed by its token's symbol. */
-export const formatTokenAmountWithSymbol = (
-  tokenAmount: Readonly<{
-    readonly amount: NumericValue;
-    readonly token: Readonly<{ readonly symbol: string }>;
-  }>,
-  locale: string
-) =>
-  `${formatTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
-
 const isMissingNumericInput = (
   value: OptionalNumericValue
 ): value is null | undefined | "" => value == null || value === "";
@@ -252,23 +215,34 @@ export const formatCompactNumber = (
   );
 };
 
-const shortTokenAmountFloor = exactDecimal(1000);
+/** From here amounts and USD values read in compact notation ("1.2M"). */
+const compactFloor = exactDecimal(1_000_000);
 
 /**
- * A token amount for a narrow place, such as a list row: in full below
- * 1,000, as `formatTokenAmount` shows it, and in compact notation ("1.23K")
- * from 1,000, as `formatUsd` shows USD values. Display only.
+ * Token amounts with at most four decimals, trailing zeros dropped, grouped in
+ * full below 1,000,000 ("1,762.3456") and in compact notation from 1,000,000
+ * ("1.2M"); a non-zero amount below 0.0001 reads `<0.0001` (`>−0.0001` when
+ * negative), never 0, whichever way it rounds. Display only; state keeps the
+ * exact amount.
  */
-export const formatShortTokenAmount = (
+export const formatTokenAmount = (
   number: NumericValue,
   locale: string,
   rounding: TokenAmountRounding
 ) => {
   const value = exactDecimal(number);
 
-  if (value.abs().lt(shortTokenAmountFloor)) {
-    return formatTokenAmount(value, locale, rounding);
+  if (value.isZero()) return formatExact(value, locale);
+  if (value.abs().lt(tokenAmountFloor)) {
+    return formatNumber(value, locale, tokenAmountDecimals);
   }
+
+  const rounded = value.decimalPlaces(
+    tokenAmountDecimals,
+    tokenAmountRoundingModes[rounding]
+  );
+
+  if (rounded.abs().lt(compactFloor)) return formatExact(rounded, locale);
 
   return withMinusSign(
     getIntlFormatter(`compact-token-amount-${rounding}`, locale).format(
@@ -277,21 +251,34 @@ export const formatShortTokenAmount = (
   );
 };
 
-/** A short token amount, rounded down, followed by its token's symbol. */
-export const formatShortTokenAmountWithSymbol = (
+/** A token amount, rounded down, followed by its token's symbol. */
+export const formatTokenAmountWithSymbol = (
   tokenAmount: Readonly<{
     readonly amount: NumericValue;
     readonly token: Readonly<{ readonly symbol: string }>;
   }>,
   locale: string
 ) =>
-  `${formatShortTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
+  `${formatTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
+
+/**
+ * A figure followed by its unit, such as "1.5 ETH". An unknown figure reads
+ * as the placeholder alone, "—" rather than "— ETH".
+ */
+export const withFigureUnit = (
+  figure: string | null | undefined,
+  unit: string
+) =>
+  !figure || figure === unavailableFigure
+    ? unavailableFigure
+    : `${figure} ${unit}`;
 
 const minimumUsd = exactDecimal("0.01");
 
 /**
- * USD values with two decimals below 1,000 and in compact notation ("$1.25K")
- * from 1,000; a non-zero value below a cent reads `<$0.01`.
+ * USD values exact to the cent below 1,000,000 ("$1,710.42") and in compact
+ * notation from 1,000,000 ("$1.23M"); a non-zero value below a cent reads
+ * `<$0.01`.
  */
 export const formatUsd = (value: OptionalNumericValue, locale: string) => {
   const amount = toFiniteDecimal(value);
@@ -309,9 +296,11 @@ export const formatUsd = (value: OptionalNumericValue, locale: string) => {
       : `<${usd.format(minimumUsd.toNumber())}`;
   }
 
+  const cents = amount.decimalPlaces(2, BigNumber.ROUND_HALF_UP);
+
   return withMinusSign(
-    absoluteAmount.lt(1000)
-      ? usd.format(amount.decimalPlaces(2, BigNumber.ROUND_HALF_UP).toNumber())
+    cents.abs().lt(compactFloor)
+      ? usd.format(cents.toNumber())
       : getIntlFormatter("compact-usd", locale).format(amount.toNumber())
   );
 };
@@ -432,20 +421,26 @@ export const formatHealthFactor = (
 
 /**
  * A figure as it moves with an action: `before → after`, or just `after` when
- * the two match or `before` is unknown. An unavailable `after` formats to
- * null.
+ * `before` is unknown or, unless `showWhenEqual`, the two match. An
+ * unavailable `after` formats to null.
  */
 export const formatFigureChange = <Value>(
   format: (value: Value, locale: string) => string,
   figure: { readonly after: Value; readonly before: Value | null } | null,
-  locale: string
+  locale: string,
+  {
+    showWhenEqual = false,
+  }: {
+    /** Keeps `before → after` when both round alike. */
+    readonly showWhenEqual?: boolean;
+  } = {}
 ): string | null => {
   const after = figure ? format(figure.after, locale) : unavailableFigure;
   if (!figure || after === unavailableFigure) return null;
   const before =
     figure.before === null ? unavailableFigure : format(figure.before, locale);
 
-  return before !== unavailableFigure && before !== after
+  return before !== unavailableFigure && (showWhenEqual || before !== after)
     ? `${before} → ${after}`
     : after;
 };

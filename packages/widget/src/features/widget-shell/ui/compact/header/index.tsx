@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, IconButton, Stack } from "../../../../../ui/index";
+import { Box, Grid, IconButton, Stack } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
   isMountAnimationFinished,
@@ -55,14 +55,23 @@ export const CompactFrame = ({
     if (!revealsOnMount) dispatch({ type: "layout" });
   }, [revealsOnMount, dispatch]);
 
-  const showsButtons = showBack || showDisconnect;
   const showsWalletRow = !hidesHeaderWalletControl;
   const showsWallet =
     showsWalletRow && walletConfigReady && (isConnected || isConnecting);
+  const disconnect = showDisconnect && (
+    <IconButton
+      icon="XIcon"
+      label={t("wallet_modal.disconnect")}
+      onClick={onXPress}
+    />
+  );
+  // The disconnect button ends the wallet controls' row when there is one,
+  // so it takes no row of its own.
+  const showsButtonRow = showBack || (showDisconnect && !showsWalletRow);
   const header =
-    showsButtons || showsWalletRow ? (
+    showsButtonRow || showsWalletRow ? (
       <Stack hostHook="header" gap={8}>
-        {showsButtons && (
+        {showsButtonRow && (
           <Stack
             direction="row"
             align="center"
@@ -75,24 +84,26 @@ export const CompactFrame = ({
                 onClick={onLeftIconPress}
               />
             )}
-            {showDisconnect && (
-              <IconButton
-                icon="XIcon"
-                label={t("wallet_modal.disconnect")}
-                onClick={onXPress}
-              />
-            )}
+            {!showsWalletRow && disconnect}
           </Stack>
         )}
         {showsWalletRow && (
-          <Box minHeight="controlSm">
-            {showsWallet && (
-              <Stack direction="row" align="center" justify="center" gap={8}>
-                {!hideChainSelector && <ChainModal triggerSize="sm" />}
-                <AccountModal triggerSize="sm" />
-              </Stack>
-            )}
-          </Box>
+          // The controls stay centred in the frame whether or not the
+          // disconnect button ends the row.
+          <Grid columns="flanked" align="center" gap={8}>
+            <Box />
+            <Box minHeight="controlSm">
+              {showsWallet && (
+                <Stack direction="row" align="center" gap={8}>
+                  {!hideChainSelector && <ChainModal triggerSize="sm" />}
+                  <AccountModal triggerSize="sm" />
+                </Stack>
+              )}
+            </Box>
+            <Stack direction="row" justify="end">
+              {disconnect}
+            </Stack>
+          </Grid>
         )}
       </Stack>
     ) : undefined;

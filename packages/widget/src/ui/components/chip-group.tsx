@@ -79,7 +79,7 @@ const styles = stylex.create({
       default: color.borderStrong,
       ":is([data-pressed])": color.accent,
     },
-    borderRadius: radius.pill,
+    borderRadius: radius.pillControl,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     gap: space[6],

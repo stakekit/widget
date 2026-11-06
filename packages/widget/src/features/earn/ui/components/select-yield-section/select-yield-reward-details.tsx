@@ -60,10 +60,20 @@ export const SelectYieldRewardDetails = ({
     : null;
 
   const earnYearly = estimatedRewards
-    ? `${formatEntryFigure({ amount: estimatedRewards.yearly, amountEntered, locale })} ${rewardsTokenSymbol}`
+    ? formatEntryFigure({
+        amount: estimatedRewards.yearly,
+        amountEntered,
+        locale,
+        unit: rewardsTokenSymbol,
+      })
     : "";
   const earnMonthly = estimatedRewards
-    ? `${formatEntryFigure({ amount: estimatedRewards.monthly, amountEntered, locale })} ${rewardsTokenSymbol}`
+    ? formatEntryFigure({
+        amount: estimatedRewards.monthly,
+        amountEntered,
+        locale,
+        unit: rewardsTokenSymbol,
+      })
     : "";
   const strategyDetails = selectedStake
     ? (() => {
@@ -104,11 +114,14 @@ export const SelectYieldRewardDetails = ({
             : stakeAmount;
 
         return {
-          outputAmount: formatEntryFigure({
-            amount: outputAmount,
-            amountEntered,
-            locale,
-          }),
+          outputAmount: outputToken
+            ? formatEntryFigure({
+                amount: outputAmount,
+                amountEntered,
+                locale,
+                unit: outputToken.symbol,
+              })
+            : null,
           outputToken,
           providers: strategyProviders,
           yieldType: getYieldTypeLabels(yieldDto, t).title,
@@ -181,7 +194,7 @@ const YieldStrategyDetails = ({
   providers,
   yieldType,
 }: {
-  outputAmount: string;
+  outputAmount: string | null;
   outputToken: Token | null;
   providers: StrategyProvider[];
   yieldType: string;
@@ -201,7 +214,7 @@ const YieldStrategyDetails = ({
       {outputToken ? (
         <Text tone="muted">
           {t("details.rewards.receive_output")}{" "}
-          <Text.Strong>{outputAmount}</Text.Strong> {outputToken.symbol}
+          <Text.Strong>{outputAmount}</Text.Strong>
         </Text>
       ) : (
         <Text tone="muted">{t("details.yield_strategy")}</Text>

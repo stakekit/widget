@@ -4,6 +4,7 @@ import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import { Button, Notice, Stack, Text } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
+  describeTransactionFailure,
   getTransactionStepState,
   type TransactionStep,
   TransactionSteps,
@@ -48,12 +49,11 @@ export const StepsPage = () => {
   const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
   const {
-    cancelled,
+    error,
     numbered,
     retry,
     txStates,
     cta,
-    customSignErrorMessage,
     leaveConfirmationDialog,
     summary,
     details,
@@ -62,6 +62,13 @@ export const StepsPage = () => {
   } = useSteps();
 
   const { t } = useTranslation();
+  // One surface for what failed: its step, with the wallet's or API's own
+  // words after the plain message.
+  const failure = describeTransactionFailure(t, error);
+  const failureDetail = failure?.detail
+    ? ` ${t("steps.failure.detail", { detail: failure.detail })}`
+    : "";
+  const failureMessage = failure ? `${failure.message}${failureDetail}` : null;
 
   const steps = txStates.map((row, index): TransactionStep => {
     const type = formatTransactionTypeLabel(row.type, t, {
@@ -85,7 +92,7 @@ export const StepsPage = () => {
             row,
             row.type === "ENCRYPT" ? "encrypt" : "decrypt"
           )
-        : getTransactionStepState(t, row.done, row.phases)),
+        : getTransactionStepState(row.done, row.phases, failureMessage)),
     };
   });
 
@@ -96,16 +103,6 @@ export const StepsPage = () => {
           <Text variant="title" as="h1">
             {t("steps.title")}
           </Text>
-
-          {customSignErrorMessage && (
-            <Notice tone="danger">{customSignErrorMessage}</Notice>
-          )}
-
-          {cancelled && (
-            <Text as="p" tone="muted">
-              {t("steps.cancelled")}
-            </Text>
-          )}
 
           {showsPendingApprovalsNotice && (
             <Notice tone="warning" title={t("steps.pending_approvals")}>

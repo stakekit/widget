@@ -5,6 +5,7 @@ import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { MountAnimatedPage } from "../../../../widget-shell/views";
 import { usePositions } from "../../../react/use-positions";
+import { ManageSummary } from "../../components/manage-summary";
 import {
   PositionsConnectWallet,
   PositionsEmpty,
@@ -13,7 +14,6 @@ import {
 } from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
-import { PositionsSummary } from "./components/positions-summary";
 
 const PositionsPage = () => {
   useTrackPage("positions");
@@ -42,17 +42,18 @@ const PositionsPage = () => {
 
   return (
     <Stack grow>
+      {/* Every state with a wallet sums up its positions, as Dashboard does. */}
+      {isConnected && (
+        <Box paddingBlock={8}>
+          <ManageSummary />
+        </Box>
+      )}
+
       {renderContent()}
 
       {showPositions && (
         <Stack grow>
           <ZerionChainModal />
-
-          {positions.length > 0 && (
-            <Box paddingBlock={8}>
-              <PositionsSummary />
-            </Box>
-          )}
 
           <RevealBalancesHeader />
 

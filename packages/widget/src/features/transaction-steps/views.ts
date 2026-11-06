@@ -1,5 +1,6 @@
 // A flow's transactions on its Steps page, worded the same in every flow.
 
+export { describeTransactionFailure } from "./ui/transaction-failure";
 export type {
   TransactionStep,
   TransactionStepsDetail,

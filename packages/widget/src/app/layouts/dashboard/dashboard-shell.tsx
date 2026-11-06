@@ -9,8 +9,8 @@ import { DashboardTabs } from "./dashboard-tabs";
 
 /**
  * The Dashboard Layout's frame: the tabs with the wallet controls at the end
- * of their row from the `split` container size up, under them narrower, over
- * the page.
+ * of their row, over the page. Where both do not fit, the controls wrap under
+ * the tabs.
  */
 export const DashboardShell = ({
   children,
@@ -21,12 +21,7 @@ export const DashboardShell = ({
 }) => (
   <ShellFrame
     header={
-      <Stack
-        direction={{ base: "column", split: "row" }}
-        align={{ base: "stretch", split: "center" }}
-        justify="between"
-        gap={16}
-      >
+      <Stack direction="row" align="center" justify="between" gap={16} wrap>
         <Box grow>
           <DashboardTabs pendingYieldCategory={pendingYieldCategory} />
         </Box>

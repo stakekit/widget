@@ -135,7 +135,7 @@ const styles = stylex.create({
         presentationMarker
       )]: color.border,
     },
-    borderRadius: radius.pill,
+    borderRadius: radius.pillControl,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     gap: space[6],

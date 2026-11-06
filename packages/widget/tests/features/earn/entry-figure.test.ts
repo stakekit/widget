@@ -36,4 +36,31 @@ describe("formatEntryFigure", () => {
       formatEntryFigure({ amount: null, amountEntered: true, locale: "en" })
     ).toBe(unavailableFigure);
   });
+
+  it("appends the unit only to a computed figure", () => {
+    expect(
+      formatEntryFigure({
+        amount: new BigNumber("1.5"),
+        amountEntered: true,
+        locale: "en",
+        unit: "stETH",
+      })
+    ).toBe("1.5 stETH");
+    expect(
+      formatEntryFigure({
+        amount: new BigNumber("1.5"),
+        amountEntered: false,
+        locale: "en",
+        unit: "stETH",
+      })
+    ).toBe(unavailableFigure);
+    expect(
+      formatEntryFigure({
+        amount: null,
+        amountEntered: true,
+        locale: "en",
+        unit: "stETH",
+      })
+    ).toBe(unavailableFigure);
+  });
 });

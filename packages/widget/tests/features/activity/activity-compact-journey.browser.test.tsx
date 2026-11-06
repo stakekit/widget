@@ -90,7 +90,7 @@ describe("Activity in the compact Widget", () => {
     expect(
       app.container.querySelectorAll('button[aria-label*="Back" i]')
     ).toHaveLength(1);
-    await expect.element(app.getByText("$3K")).toBeVisible();
+    await expect.element(app.getByText("$3,000.00")).toBeVisible();
     await expect
       .element(app.getByRole("button", { name: "View on explorer" }))
       .toBeVisible();

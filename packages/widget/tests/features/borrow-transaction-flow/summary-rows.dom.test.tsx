@@ -59,6 +59,27 @@ describe("Borrow flow summary rows", () => {
     ]);
   });
 
+  it("reads the health factor before and after even when both round alike", () => {
+    const rows = getBorrowFlowPositionChangeRows({
+      change: {
+        collateralUsd: null,
+        debtUsd: null,
+        healthFactor: { after: "2.3723", before: "2.3701" },
+        ltv: null,
+        maxLtv: null,
+      },
+      locale: "en",
+      t,
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        label: "Health factor",
+        value: "2.37 → 2.37",
+      }),
+    ]);
+  });
+
   it("reads the LTV, its meter and the health factor in one band", () => {
     const rows = getBorrowFlowPositionChangeRows({
       change: {

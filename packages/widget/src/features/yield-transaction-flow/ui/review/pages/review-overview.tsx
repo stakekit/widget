@@ -1,5 +1,4 @@
 import type { ComponentProps } from "react";
-import type { YieldMetadata } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { ReviewSummary } from "../../../../../ui/index";
@@ -17,11 +16,8 @@ type Props = {
   readonly amountFiat?: string | null | undefined;
   /** Where the amount goes, such as the yield and its provider. */
   readonly destination?: string | undefined;
+  /** The token the amount is in: its logo heads the amount. */
   readonly token: Token | null;
-  readonly metadata: Pick<
-    YieldMetadata,
-    "logoURI" | "name" | "provider"
-  > | null;
   readonly facts?: ReadonlyArray<ReviewFact> | undefined;
   readonly fees?: ReviewSummaryProps["fees"];
 };
@@ -33,7 +29,6 @@ export const ReviewOverview = ({
   amountFiat,
   destination,
   token,
-  metadata,
   facts = [],
   fees,
 }: Props) => {
@@ -46,9 +41,7 @@ export const ReviewOverview = ({
       amount={amount}
       {...(amountFiat ? { amountFiat } : {})}
       {...(destination ? { destination } : {})}
-      {...(token && metadata
-        ? { token: resolveTokenLogo(token, { metadata }) }
-        : {})}
+      {...(token ? { token: resolveTokenLogo(token) } : {})}
       facts={facts}
       {...(fees === undefined ? {} : { fees })}
     />

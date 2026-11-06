@@ -79,13 +79,42 @@ describe("Dashboard Layout height", () => {
 
     const form = cta.element().getBoundingClientRect();
     const pane = details.element().getBoundingClientRect();
+    const area = pageAreaOf(app.container).getBoundingClientRect();
     // One column: the details start below the form, as wide as it.
     expect(pane.top).toBeGreaterThanOrEqual(form.bottom);
     expect(pane.left).toBe(form.left);
-    expect(pane.width).toBeGreaterThanOrEqual(form.width);
+    expect(pane.width).toBe(form.width);
+    // The column keeps a readable width, centred in the page.
+    expect(form.width).toBeLessThanOrEqual(520);
+    expect(
+      Math.abs(form.left + form.width / 2 - (area.left + area.width / 2))
+    ).toBeLessThan(1);
     // Nothing overflows the stacked pane: it keeps its content's height.
     const region = details.element();
     expect(region.scrollHeight).toBeLessThanOrEqual(region.clientHeight + 1);
+
+    await app.unmount();
+  });
+
+  it("keeps the wallet controls on the tabs' row at a 900px width", async () => {
+    await page.viewport(900, 1000);
+    const app = await renderApp({
+      skProps: { apiKey: import.meta.env.VITE_API_KEY, layout: "dashboard" },
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
+    });
+
+    await expect
+      .poll(() => app.container.querySelector('[data-rk="header"]'))
+      .not.toBeNull();
+    const controls = app.container.querySelector('[data-rk="header"]');
+    const tabs = app.container.querySelector('[data-rk="tabs-section"]');
+    if (!controls || !tabs) throw new Error("No tabs or wallet controls");
+    const controlsBox = controls.getBoundingClientRect();
+    const tabsBox = tabs.getBoundingClientRect();
+
+    expect(controlsBox.top).toBeLessThan(tabsBox.bottom);
+    expect(controlsBox.bottom).toBeGreaterThan(tabsBox.top);
+    expect(controlsBox.left).toBeGreaterThanOrEqual(tabsBox.right);
 
     await app.unmount();
   });

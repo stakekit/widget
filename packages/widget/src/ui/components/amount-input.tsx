@@ -1,9 +1,9 @@
 import { Input } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
-import { radius } from "../tokens/radius.stylex";
 import {
   displayShrinkSize,
   font,
@@ -20,7 +20,6 @@ import {
   toAmountText,
   toDecimalString,
 } from "./amount-input-text";
-import { focusRingStyles } from "./focus-ring";
 
 const shake = stylex.keyframes({
   "0%": { transform: "rotate(0deg)" },
@@ -242,11 +241,7 @@ export const AmountInput = ({
           setDraft(null);
           onBlur?.();
         }}
-        {...stylex.props(
-          styles.input,
-          focusRingStyles.visible,
-          stepStyles[shownStep]
-        )}
+        {...stylex.props(styles.input, stepStyles[shownStep])}
       />
       {shrink && (
         <>
@@ -284,12 +279,22 @@ const styles = stylex.create({
     animationName: shake,
     animationTimingFunction: motion.easing,
   },
+  // Keyboard focus underlines the amount in the focus ring's color, as a
+  // ring would box a bare amount in its card like a form field.
   input: {
     margin: 0,
     padding: 0,
-    borderRadius: radius.badge,
+    backgroundPosition: "bottom",
+    borderRadius: 0,
     borderStyle: "none",
     backgroundColor: "transparent",
+    // Painted as a background line so the input's size holds.
+    backgroundImage: {
+      default: null,
+      ":focus-visible": `linear-gradient(${color.focusRing}, ${color.focusRing})`,
+    },
+    backgroundRepeat: "no-repeat",
+    backgroundSize: `100% ${focusRing.width}`,
     color: {
       default: color.text,
       // An invalid amount keeps its color: the field's error carries the tone.
@@ -300,6 +305,7 @@ const styles = stylex.create({
     fontVariantNumeric: "tabular-nums",
     fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.display,
+    outlineStyle: "none",
     minWidth: 0,
     "::placeholder": { color: color.textMuted },
   },

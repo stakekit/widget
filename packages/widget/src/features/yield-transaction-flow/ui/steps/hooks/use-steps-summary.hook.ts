@@ -129,7 +129,8 @@ const getStepsSubject = (
 
 /**
  * The summary heading the Steps: the action with its amount and token, the
- * token's logo, and the provider running it.
+ * logo of that token (the one sent, not the yield's), and the provider
+ * running it.
  */
 export const useStepsSummary = () => {
   const { t } = useTranslation();
@@ -150,13 +151,7 @@ export const useStepsSummary = () => {
           : `${formatTokenAmount(amount, locale, "down")} ${token.symbol}`,
     }),
     ...(providerName ? { detail: t("complete.via", { providerName }) } : {}),
-    token: resolveTokenLogo(token, {
-      metadata: {
-        logoURI: yieldDto.metadata.logoURI,
-        name: yieldDto.metadata.name,
-        provider: yieldDto.provider,
-      },
-    }),
+    token: resolveTokenLogo(token),
   };
 };
 

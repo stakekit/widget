@@ -322,6 +322,8 @@ describe("transaction workflow model", () => {
           error: new TransactionConfirmationError({
             ...common,
             network: "ethereum",
+            outcome: "Unconfirmed",
+            reason: null,
           }),
         } as const,
         action: "confirm",
@@ -469,6 +471,8 @@ describe("transaction workflow model", () => {
           error: new TransactionConfirmationError({
             ...common,
             network: "ethereum",
+            outcome: "Unconfirmed",
+            reason: null,
           }),
         },
         phases("done", "done", "failed"),

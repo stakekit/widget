@@ -9,6 +9,7 @@ export const LeaveConfirmationDialog = (props: LeaveConfirmationDialogProps) =>
 const OpenLeaveConfirmationDialog = ({
   onLeave,
   onStay,
+  resumable,
 }: LeaveConfirmationDialogProps) => {
   const { t } = useTranslation();
 
@@ -17,7 +18,11 @@ const OpenLeaveConfirmationDialog = ({
       open
       testId="leave-confirmation"
       title={t("leave_confirmation.title")}
-      description={t("leave_confirmation.description")}
+      description={
+        resumable
+          ? t("leave_confirmation.description_resumable")
+          : t("leave_confirmation.description")
+      }
       cancelLabel={t("leave_confirmation.stay")}
       confirmLabel={t("leave_confirmation.leave")}
       tone="danger"

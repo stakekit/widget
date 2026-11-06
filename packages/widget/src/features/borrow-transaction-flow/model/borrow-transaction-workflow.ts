@@ -4,7 +4,6 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
-  getTransactionSignCustomMessage,
   getTransactionStepProgress,
   getTransactionWorkflowTransactionReference,
   type TransactionStepProgress,
@@ -76,16 +75,6 @@ const isWalletCancellation = (error: TransactionWorkflowError | null) =>
   error?._tag === "TransactionSignError" &&
   error.reason._tag === "WalletRequestCancelled";
 
-// A wallet cancellation is not a failure; the flow shows it as a notice.
-const getExecutionErrorMessage = (error: TransactionWorkflowError | null) => {
-  if (!error || isWalletCancellation(error)) return null;
-  const customMessage =
-    error._tag === "TransactionSignError"
-      ? getTransactionSignCustomMessage(error)
-      : null;
-  return customMessage ?? error.message;
-};
-
 export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   const currentBatch = getCurrentTransactionWorkflowBatch(state.context);
   const current = getCurrentTransactionWorkflowTransaction(state.context);
@@ -123,7 +112,6 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
     currentStep: currentBatch?.currentStep ?? action.currentStep,
     currentTransaction,
     error: status.error,
-    errorMessage: getExecutionErrorMessage(status.error),
     isDone: completed,
     isRunning: status.isRunning,
     phase: status.phase,
@@ -159,7 +147,6 @@ export const emptyBorrowExecutionView = {
   currentStep: 0,
   currentTransaction: null,
   error: null,
-  errorMessage: null,
   isDone: false,
   isRunning: false,
   phase: "disabled" as const,

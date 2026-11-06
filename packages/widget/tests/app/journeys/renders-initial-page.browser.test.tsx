@@ -561,7 +561,8 @@ describe("Renders initial page", () => {
 
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
     await expect.element(app.getByText("Market stats")).toBeInTheDocument();
-    await expect.element(app.getByText("LTV ratio")).not.toBeInTheDocument();
+    // Without amounts the LTV row stays, as a placeholder.
+    await expect.element(app.getByText("LTV ratio")).toBeInTheDocument();
     await expect
       .poll(() => tokenBalanceRequestSignals.length)
       .toBeGreaterThanOrEqual(1);

@@ -48,7 +48,7 @@ const styles = stylex.create({
     // Its tint nearly matches the card it sits on: a 1px edge of the label
     // mixed into `surface` bounds it (`softControlTint`).
     borderColor: `color-mix(in srgb, currentColor ${softControlTint.edge}, ${color.surface})`,
-    borderRadius: radius.pill,
+    borderRadius: radius.pillControl,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     paddingBlock: space[2],

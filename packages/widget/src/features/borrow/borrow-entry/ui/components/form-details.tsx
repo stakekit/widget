@@ -79,6 +79,7 @@ export const BorrowFormDetails = ({
               value={row.value}
               tone={row.tone ?? "default"}
               {...(row.meter === undefined ? {} : { meter: row.meter })}
+              {...(row.caption === undefined ? {} : { caption: row.caption })}
             />
           ))}
         </DetailList>

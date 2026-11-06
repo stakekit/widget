@@ -375,6 +375,13 @@ it("copies the full account address and clears copied feedback", async ({
     const dialog = page.getByRole("dialog", { name: "Account", exact: true });
     const copy = dialog.getByTestId("wallet-account-copy");
     await expect.element(copy).toHaveAccessibleName("Copy address");
+    // The host signs for the user: no wallet the user picked to name.
+    await expect
+      .element(dialog.getByText("Connected to Ethereum", { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(dialog.getByText("External Provider", { exact: true }))
+      .not.toBeInTheDocument();
 
     await copy.click();
 

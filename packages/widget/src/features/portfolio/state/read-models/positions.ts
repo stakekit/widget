@@ -3,7 +3,10 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import { classifyRiskBand } from "../../../../domain/borrow/risk/risk-band";
+import {
+  classifyRiskBand,
+  type RiskBand,
+} from "../../../../domain/borrow/risk/risk-band";
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import type { EarnBalance } from "../../../../domain/earn/models";
 import { getYieldCategory } from "../../../../domain/earn/yield";
@@ -153,27 +156,45 @@ type BorrowManageFigures = {
   readonly risk: Pick<MarketPosition["risk"], "current">;
 };
 
-/** A position in the caution or danger risk band. */
-const isAtRisk = ({ risk: { current } }: BorrowManageFigures) => {
-  if (current.status !== "available") return false;
-  const band = classifyRiskBand({
-    healthFactor: current.healthFactor,
-    ltv: current.ltv,
-    maxLtv: current.maxLtv,
-  });
+/** A borrow position's risk band now; null without debt or risk figures. */
+export const getBorrowPositionRiskBand = ({
+  risk: { current },
+}: Pick<BorrowManageFigures, "risk">): RiskBand | null =>
+  current.status === "available"
+    ? classifyRiskBand({
+        healthFactor: current.healthFactor,
+        ltv: current.ltv,
+        maxLtv: current.maxLtv,
+      })
+    : null;
+
+/** A borrow position in the caution or danger band: it asks for action. */
+export const isBorrowPositionAtRisk = (
+  position: Pick<BorrowManageFigures, "risk">
+) => {
+  const band = getBorrowPositionRiskBand(position);
   return band === "caution" || band === "danger";
 };
 
+const borrowRiskRank = {
+  danger: 0,
+  caution: 1,
+  safe: 2,
+} as const satisfies Record<RiskBand, number>;
+
 /**
- * Borrow positions in Manage order: those at risk, in the caution or danger
- * band, first, then by supplied USD value, largest first.
+ * Borrow positions in Manage order: danger first, then caution, then by
+ * supplied USD value, largest first.
  */
 export const toBorrowManageOrder = <P extends BorrowManageFigures>(
   positions: ReadonlyArray<P>
 ): P[] =>
   sortByManageOrder(
     positions,
-    (position) => (isAtRisk(position) ? 0 : 1),
+    (position) => {
+      const band = getBorrowPositionRiskBand(position);
+      return band === null ? borrowRiskRank.safe : borrowRiskRank[band];
+    },
     (position) => position.metrics.totalSuppliedUsd
   );
 

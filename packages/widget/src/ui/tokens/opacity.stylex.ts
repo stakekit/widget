@@ -1,10 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
 
 /**
- * `disabled` fades a control that cannot be used, such as a button or a
- * switch, to its look at 40%: it keeps its variant and state, so a disabled
- * primary button still reads as the primary action and a disabled switch as
- * on or off, yet it clearly stands apart from one that can be used.
+ * `disabled` fades a control that cannot be used, such as a secondary button
+ * or a switch, to its look at 40%: it keeps its variant and state, so a
+ * disabled switch still reads as on or off, yet it clearly stands apart from
+ * one that can be used. A disabled primary or soft button takes a neutral
+ * fill instead, so its label stays readable.
  * `halo` fades a `Spot`'s ring to half its disc's tint.
  */
 export const opacity = stylex.defineConsts({

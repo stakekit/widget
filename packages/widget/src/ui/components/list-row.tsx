@@ -13,6 +13,7 @@ import { Text } from "../primitives/text";
 import { borderWidth, focusRing, insetEdge } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { container } from "../tokens/container.stylex";
+import { elevation } from "../tokens/elevation.stylex";
 import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { selectionControlSize } from "../tokens/size.stylex";
@@ -400,6 +401,8 @@ export const ListRow = ({
     ringsSelection && interactiveStyles.selected,
     checksSelection && styles.flatSelected,
     interactiveStyles.inset,
+    // After `inset`, whose offset it replaces while unfocused.
+    !flat && !ringsSelection && styles.interactiveEdge,
   ];
   const row = (() => {
     if (option !== undefined) {
@@ -566,13 +569,29 @@ const styles = stylex.create({
     paddingBlock: space[12],
     paddingInline: space[12],
     alignItems: "center",
-    backgroundColor: color.surface,
+    // Under the `elevated` surface style a filled row lifts off the canvas as
+    // a filled card does.
+    backgroundColor: {
+      default: color.surface,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surfaceRaised,
+    },
+    boxShadow: {
+      default: null,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: elevation.raised,
+    },
     boxSizing: "border-box",
     color: color.text,
     display: "flex",
     // Under the `outlined` surface style a filled row edges in `border`, as a
     // filled card does: an outline just inside its edge, so its height holds.
-    // The focus ring, applied after, replaces it while focused.
+    // A pressable row redraws it in `interactiveEdge`, as its focus ring
+    // shares the outline.
     outlineColor: color.border,
     outlineOffset: insetEdge.offset,
     outlineStyle: {
@@ -585,12 +604,39 @@ const styles = stylex.create({
     outlineWidth: borderWidth.thin,
     minWidth: 0,
   },
+  // The hover rule's `:not(:disabled)` outranks the ancestor condition, as on
+  // a pressable card.
   interactive: {
     backgroundColor: {
       default: color.surface,
       ":hover:not(:disabled)": color.surfaceHover,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: color.surfaceRaised,
     },
     display: "flex",
+  },
+  // A filled pressable row's `outlined` edge, which the focus ring replaces
+  // while focused.
+  interactiveEdge: {
+    outlineColor: { default: color.border, ":focus-visible": color.focusRing },
+    outlineOffset: {
+      default: insetEdge.offset,
+      ":focus-visible": focusRing.insetOffset,
+    },
+    outlineStyle: {
+      default: "none",
+      ":focus-visible": "solid",
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="outlined"]',
+        presentationMarker
+      )]: "solid",
+    },
+    outlineWidth: {
+      default: borderWidth.thin,
+      ":focus-visible": focusRing.width,
+    },
   },
   main: {
     gap: space[12],

@@ -364,12 +364,16 @@
     "item": {
       "deposited": "Dépôt de {{token}}",
       "deposited_without_token": "Dépôt · actif inconnu",
+      "deposit": "Dépôt de {{token}}",
+      "deposit_without_token": "Dépôt · actif inconnu",
       "deposit_submitted": "Dépôt de {{token}} soumis",
       "deposit_submitted_without_token": "Dépôt soumis",
       "deposit_canceled": "Dépôt de {{token}} annulé",
       "deposit_canceled_without_token": "Dépôt annulé",
       "withdrew": "Retrait de {{token}}",
       "withdrew_without_token": "Retrait · actif inconnu",
+      "withdraw": "Retrait de {{token}}",
+      "withdraw_without_token": "Retrait · actif inconnu",
       "private_withdrawal_requested": "Retrait privé de {{token}} demandé",
       "private_withdrawal_requested_without_token": "Retrait privé demandé",
       "private_withdrawal_canceled": "Retrait privé de {{token}} annulé",
@@ -394,6 +398,22 @@
         "enableCollateral_without_token": "Garantie activée",
         "disableCollateral": "{{token}} désactivé comme garantie",
         "disableCollateral_without_token": "Garantie désactivée"
+      },
+      "borrow_in_progress": {
+        "supply": "Fourniture de {{token}}",
+        "supply_without_token": "Fourniture · actif inconnu",
+        "borrow": "Emprunt de {{token}}",
+        "borrow_without_token": "Emprunt · actif inconnu",
+        "supplyAndBorrow": "Fourniture et emprunt de {{token}}",
+        "supplyAndBorrow_without_token": "Fourniture et emprunt · actif inconnu",
+        "repay": "Remboursement de {{token}}",
+        "repay_without_token": "Remboursement · actif inconnu",
+        "withdraw": "Retrait de {{token}}",
+        "withdraw_without_token": "Retrait · actif inconnu",
+        "enableCollateral": "Activation de {{token}} comme garantie",
+        "enableCollateral_without_token": "Activation de la garantie",
+        "disableCollateral": "Désactivation de {{token}} comme garantie",
+        "disableCollateral_without_token": "Désactivation de la garantie"
       }
     },
     "time": {
@@ -410,6 +430,7 @@
       "created": "Créée",
       "expired": "Expirée",
       "failed": "Échec",
+      "in_progress": "En cours",
       "processing": "En cours",
       "stale": "Obsolète"
     },
@@ -521,6 +542,9 @@
       "description_with_fee_configuration": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
       "description_confidential": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Votre solde reste chiffré on-chain",
+      "description_without_receipt": "Déposez du {{stakeToken}} pour générer du rendement",
+      "description_without_receipt_with_fee_configuration": "Votre dépôt de {{stakeToken}} accumule du rendement et représente votre part dans le vault.",
+      "description_without_receipt_confidential": "Déposez du {{stakeToken}} pour générer du rendement. Votre solde reste chiffré on-chain",
       "earn_after_batch": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot",
       "earn_after_batch_imminent": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, attendu d'un instant à l'autre",
       "earn_after_batch_timed": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, dans {{duration}}",
@@ -539,6 +563,9 @@
       "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
       "description_with_fee_configuration": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}",
+      "description_without_receipt": "Fournissez du {{stakeToken}} pour percevoir des intérêts. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
+      "description_without_receipt_with_fee_configuration": "Votre {{stakeToken}} fourni accumule du rendement et représente votre part dans le vault.",
+      "description_compound_without_receipt": "Fournissez du {{stakeToken}} pour percevoir des intérêts",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
       "earn_interest_auto": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et se cumulent automatiquement",
@@ -562,6 +589,7 @@
     },
     "restake": {
       "description": "En déposant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
+      "description_without_receipt": "Déposez du {{stakeToken}} pour percevoir des récompenses de restaking",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir staké",
       "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
@@ -569,7 +597,8 @@
       "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
       "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles",
       "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles",
-      "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
+      "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs",
+      "withdrawn_not_available_without_receipt": "Les retraits ne sont pas disponibles pour le moment"
     },
     "extra_tezos": "Vous pouvez utiliser ou envoyer des XTZ stakés normalement",
     "reward_type_varialbe": " Le taux de récompense de staking de {{symbol}} varie selon les trades et les frais de transaction que le protocole gagne, ce qui ne peut être estimé précisément",
@@ -637,7 +666,8 @@
   },
   "leave_confirmation": {
     "title": "Quitter cette transaction ?",
-    "description": "Votre transaction est en cours. Si vous quittez maintenant, les étapes restantes ne seront pas effectuées et vous devrez recommencer.",
+    "description": "Votre transaction est en cours. Si vous quittez maintenant, les étapes restantes ne seront pas effectuées.",
+    "description_resumable": "Votre transaction est en cours. Si vous quittez maintenant, vous pourrez terminer les étapes restantes plus tard depuis Activité.",
     "stay": "Rester",
     "leave": "Quitter"
   },
@@ -661,7 +691,6 @@
     "skipped": "Ignorée",
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
-    "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
     "decrypt": "Déchiffrement du montant retiré",
     "decrypt_desc": "Zama publie le montant débloqué. Prend généralement 10 à 30 secondes.",
     "decrypt_error": "Le déchiffrement a échoué. Réessayez.",
@@ -669,7 +698,23 @@
     "encrypt_desc": "Prend généralement 10 à 30 secondes. Gardez cette page ouverte.",
     "encrypt_error": "Le chiffrement a échoué. Réessayez.",
     "prepare_rejected": "Cette demande ne peut pas aboutir. Revenez en arrière pour la modifier.",
-    "approve_error": "Une erreur s'est produite",
+    "failure": {
+      "rejected": "La transaction a été refusée dans votre portefeuille. Réessayez.",
+      "wallet_failed": "Votre portefeuille n'a pas pu traiter la demande. Réessayez.",
+      "network_changed": "Votre portefeuille a changé de réseau. Revenez au réseau d'origine et réessayez.",
+      "account_changed": "Votre portefeuille a changé de compte. Revenez au compte d'origine et réessayez.",
+      "disconnected": "Votre portefeuille s'est déconnecté. Reconnectez-le et réessayez.",
+      "estimate_failed": "Les frais de réseau n'ont pas pu être estimés. Réessayez.",
+      "unsignable": "Cette transaction ne peut pas être signée. Revenez en arrière et réessayez.",
+      "prepare_failed": "Cette transaction n'a pas pu être préparée. Réessayez.",
+      "not_sent": "La transaction n'a pas pu être envoyée. Réessayez.",
+      "failed": "La transaction a échoué. Réessayez.",
+      "failed_on_chain": "La transaction a échoué sur la blockchain : {{reason}}.",
+      "unconfirmed": "Nous n'avons pas pu confirmer la transaction. Réessayez pour vérifier son statut.",
+      "dropped": "La transaction a été abandonnée par le réseau. Réessayez pour l'envoyer.",
+      "advance_failed": "L'étape suivante n'a pas pu être préparée. Réessayez.",
+      "detail": "Détails : {{detail}}"
+    },
     "progress_label": "Progression de la transaction",
     "progress_count": "{{confirmed}} sur {{total}} confirmées",
     "summary": "{{action}} {{amount}}",
@@ -1328,6 +1373,7 @@
         "pooled_collaterals_other": "Groupé · {{count}} garanties",
         "health_factor": "Facteur de santé",
         "ltv_note": "La liquidation peut survenir si le LTV dépasse le seuil du marché sélectionné.",
+        "projection_unavailable": "Impossible de calculer le LTV et le facteur de santé à partir des données de cette position.",
         "validation": {
           "available_liquidity": "Le montant dépasse la liquidité disponible.",
           "minimum_loan": "La dette résultante est inférieure au minimum du marché.",
@@ -1383,6 +1429,10 @@
         "collateral_fee": "Frais de garantie",
         "origination_fee": "Frais d'ouverture",
         "debt_principal": "Principal de la dette",
+        "gas_fee": "Frais de gaz",
+        "gas_fee_in_wallet": "Estimés dans votre portefeuille",
+        "gas_fee_info_label": "À propos des frais de gaz",
+        "gas_fee_info": "Les transactions sont créées lorsque vous confirmez : votre portefeuille estime donc les frais de gaz de chacune avant que vous ne la signiez.",
         "confirmation_error_description": "Nous n'avons pas pu préparer cette transaction. Veuillez réessayer.",
         "warning_title": "Avertissement avant confirmation",
         "warnings": {
@@ -1430,7 +1480,8 @@
           "supply": "L'apport a échoué",
           "withdraw": "Le retrait a échoué"
         },
-        "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
+        "partial_supplied": "Vos {{amount}} ont été apportés en garantie, mais l'emprunt n'a pas abouti. Relancez l'emprunt ou retirez la garantie depuis votre position.",
+        "partial_supplied_without_amount": "Votre garantie a été apportée, mais l'emprunt n'a pas abouti. Relancez l'emprunt ou retirez la garantie depuis votre position.",
         "batch_progress": "Étape {{current}} sur {{total}}",
         "preparing_next_step": "Préparation de l'étape suivante",
         "tx_type": {
@@ -1543,11 +1594,11 @@
     "overview": {
       "summary": {
         "total_value": "Valeur totale",
-        "total_supplied": "Total fourni",
+        "debt": "Dette",
         "total_rewards": "Total des récompenses",
         "average_apy": "APY moyen",
         "claimable_rewards": "Récompenses à réclamer",
-        "available_balance": "Disponible",
+        "partial": "Partiel",
         "net_worth": "Valeur nette",
         "excludes_confidential": "Les totaux excluent les positions confidentielles masquées. Affichez leurs soldes pour les inclure."
       }

@@ -13,7 +13,6 @@ describe("Yield Exit Review Receive Token", () => {
         <ReviewOverview
           facts={[{ label: "Receive token", value: "USDC" }]}
           amount="1 sUSDS"
-          metadata={null}
           title="Withdraw"
           token={null}
         />

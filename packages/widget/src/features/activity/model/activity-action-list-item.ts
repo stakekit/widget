@@ -42,6 +42,8 @@ export type ActivityStatusLabel =
   | "created"
   | "expired"
   | "failed"
+  /** Waiting for its next transaction; a yield action continues from Activity. */
+  | "in_progress"
   | "processing"
   | "stale";
 
@@ -49,11 +51,15 @@ type BorrowActivityActionType = BorrowActivityItem["actionData"]["action"];
 
 export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
+  /** A deposit still under way: it reads as what it does, not what it did. */
+  | { readonly _tag: "deposit"; readonly tokenSymbol: string | null }
   /** Confidential deposits only settle when a later batch runs. */
   | { readonly _tag: "deposit_submitted"; readonly tokenSymbol: string | null }
   /** A confidential deposit its batch cancelled. */
   | { readonly _tag: "deposit_canceled"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
+  /** A withdrawal still under way. */
+  | { readonly _tag: "withdraw"; readonly tokenSymbol: string | null }
   /** A confidential private exit only joins the next redemption batch. */
   | {
       readonly _tag: "private_withdrawal_requested";
@@ -78,6 +84,8 @@ export type ActivityActionTitle =
   | {
       readonly _tag: "borrow";
       readonly action: BorrowActivityActionType;
+      /** Still under way: it reads as what it does, not what it did. */
+      readonly inProgress: boolean;
       readonly tokenSymbol: string | null;
     };
 
@@ -184,7 +192,7 @@ const BORROW_ACTIVITY_DIRECTION: Record<
   withdraw: "withdraw",
 };
 
-// Borrow rows cannot be continued from Activity, so waiting reads as processing.
+// Borrow rows cannot be continued from Activity; waiting still reads as under way.
 const BORROW_ACTIVITY_STATUS_LABEL: Record<
   BorrowActivityItem["actionData"]["status"],
   ActivityStatusLabel
@@ -195,7 +203,7 @@ const BORROW_ACTIVITY_STATUS_LABEL: Record<
   PROCESSING: "processing",
   STALE: "stale",
   SUCCESS: "completed",
-  WAITING_FOR_NEXT: "processing",
+  WAITING_FOR_NEXT: "in_progress",
 };
 
 /** How a confidential deposit's or private exit's batch resolved, if it is one. */
@@ -214,7 +222,7 @@ const SETTLEMENT_STATUS_LABEL: Record<
   Settled: "completed",
 };
 
-/** Waiting actions show no badge: the user may have continued elsewhere. */
+/** A waiting action is in progress until its continuation window closes. */
 const projectActivityStatusLabel = (
   action: YieldActivityItem["actionData"],
   settlement: ConfidentialSettlement | null,
@@ -230,7 +238,7 @@ const projectActivityStatusLabel = (
       return presentationTime &&
         !isContinuableYieldAction(action, presentationTime.now)
         ? "expired"
-        : null;
+        : "in_progress";
     case ActionStatus.CANCELED:
       return "canceled";
     case ActionStatus.CREATED:
@@ -377,10 +385,13 @@ const resolveTitle = ({
   readonly settlement: ConfidentialSettlement | null;
   readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
+  const waiting = action.actionData.status === ActionStatus.WAITING_FOR_NEXT;
   switch (direction) {
     case "deposit":
       if (confidentialKind !== "deposit" || settlement?._tag === "Settled") {
-        return { _tag: "deposited", tokenSymbol };
+        return waiting
+          ? { _tag: "deposit", tokenSymbol }
+          : { _tag: "deposited", tokenSymbol };
       }
       return settlement?._tag === "Cancelled"
         ? { _tag: "deposit_canceled", tokenSymbol }
@@ -397,7 +408,9 @@ const resolveTitle = ({
       if (confidentialKind === "instantExitPayout") {
         return { _tag: "instant_withdrawal_finalized", tokenSymbol };
       }
-      return { _tag: "withdrew", tokenSymbol };
+      return waiting
+        ? { _tag: "withdraw", tokenSymbol }
+        : { _tag: "withdrew", tokenSymbol };
     case "rewards":
       return { _tag: "rewards" };
     default:
@@ -442,18 +455,28 @@ const projectBorrowActivityListItem = ({
   // Borrow actions carry no USD value.
   const amountFiat = null;
 
+  const statusLabel = BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status];
+
   return {
     amount,
     amountSign,
     direction,
     isPositive: direction === "deposit",
-    statusLabel: BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status],
+    statusLabel,
     time: projectActivityListTime(
       borrowAction.createdAt,
       locale,
       presentationTime
     ),
-    title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
+    title: {
+      _tag: "borrow",
+      action: borrowAction.action,
+      inProgress:
+        statusLabel === "created" ||
+        statusLabel === "processing" ||
+        statusLabel === "in_progress",
+      tokenSymbol,
+    },
     amountTokenSymbol: tokenSymbol,
     amountFiat,
     amountText: resolveAmountText({

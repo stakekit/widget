@@ -364,12 +364,16 @@
     "item": {
       "deposited": "Deposited {{token}}",
       "deposited_without_token": "Deposited · unknown asset",
+      "deposit": "Deposit {{token}}",
+      "deposit_without_token": "Deposit · unknown asset",
       "deposit_submitted": "{{token}} deposit submitted",
       "deposit_submitted_without_token": "Deposit submitted",
       "deposit_canceled": "{{token}} deposit canceled",
       "deposit_canceled_without_token": "Deposit canceled",
       "withdrew": "Withdrew {{token}}",
       "withdrew_without_token": "Withdrew · unknown asset",
+      "withdraw": "Withdraw {{token}}",
+      "withdraw_without_token": "Withdraw · unknown asset",
       "private_withdrawal_requested": "{{token}} private withdrawal requested",
       "private_withdrawal_requested_without_token": "Private withdrawal requested",
       "private_withdrawal_canceled": "{{token}} private withdrawal canceled",
@@ -394,6 +398,22 @@
         "enableCollateral_without_token": "Enabled collateral",
         "disableCollateral": "Disabled {{token}} as collateral",
         "disableCollateral_without_token": "Disabled collateral"
+      },
+      "borrow_in_progress": {
+        "supply": "Supply {{token}}",
+        "supply_without_token": "Supply · unknown asset",
+        "borrow": "Borrow {{token}}",
+        "borrow_without_token": "Borrow · unknown asset",
+        "supplyAndBorrow": "Supply and borrow {{token}}",
+        "supplyAndBorrow_without_token": "Supply and borrow · unknown asset",
+        "repay": "Repay {{token}}",
+        "repay_without_token": "Repay · unknown asset",
+        "withdraw": "Withdraw {{token}}",
+        "withdraw_without_token": "Withdraw · unknown asset",
+        "enableCollateral": "Enable {{token}} as collateral",
+        "enableCollateral_without_token": "Enable collateral",
+        "disableCollateral": "Disable {{token}} as collateral",
+        "disableCollateral_without_token": "Disable collateral"
       }
     },
     "time": {
@@ -410,6 +430,7 @@
       "created": "Created",
       "expired": "Expired",
       "failed": "Failed",
+      "in_progress": "In progress",
       "processing": "Processing",
       "stale": "Stale"
     },
@@ -521,6 +542,9 @@
       "description_with_fee_configuration": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. This token accumulates yield and represents your share in the vault.",
       "description_ethena_usde": "When you deposit {{stakeToken}} you'll receive {{depositToken}}.",
       "description_confidential": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. Your balance stays encrypted on-chain",
+      "description_without_receipt": "Deposit {{stakeToken}} to earn yield",
+      "description_without_receipt_with_fee_configuration": "Your {{stakeToken}} deposit accumulates yield and represents your share in the vault.",
+      "description_without_receipt_confidential": "Deposit {{stakeToken}} to earn yield. Your balance stays encrypted on-chain",
       "earn_after_batch": "You'll start earning once the batcher settles your deposit in the next batch",
       "earn_after_batch_imminent": "You'll start earning once the batcher settles your deposit in the next batch, due any moment",
       "earn_after_batch_timed": "You'll start earning once the batcher settles your deposit in the next batch, in {{duration}}",
@@ -539,6 +563,9 @@
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
       "description_with_fee_configuration": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. This token accumulates yield and represents your share in the vault.",
       "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}",
+      "description_without_receipt": "Supply {{stakeToken}} to earn interest. You can borrow against the supplied assets on {{providerName}}",
+      "description_without_receipt_with_fee_configuration": "Your supplied {{stakeToken}} accumulates yield and represents your share in the vault.",
+      "description_compound_without_receipt": "Supply {{stakeToken}} to earn interest",
       "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
       "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
@@ -562,6 +589,7 @@
     },
     "restake": {
       "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
+      "description_without_receipt": "Deposit {{stakeToken}} to earn restaking rewards",
       "earn_after_warmup_one": "You'll start earning {{count}} day after you stake",
       "earn_after_warmup_other": "You'll start earning {{count}} days after you stake",
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
@@ -569,7 +597,8 @@
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
       "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
       "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available",
-      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
+      "withdrawn_not_available_without_receipt": "Withdrawals aren't available at the moment"
     },
     "extra_tezos": "You can use or send staked XTZ as normal",
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can't be accurately estimated",
@@ -745,6 +774,7 @@
         "pooled_collaterals_other": "Pooled · {{count}} collaterals",
         "health_factor": "Health factor",
         "ltv_note": "Liquidation can occur if LTV crosses the selected market threshold.",
+        "projection_unavailable": "We couldn't compute the LTV and health factor from this position's data.",
         "validation": {
           "available_liquidity": "Amount exceeds available liquidity.",
           "minimum_loan": "Resulting debt is below the market minimum.",
@@ -800,6 +830,10 @@
         "collateral_fee": "Collateral fee",
         "origination_fee": "Origination fee",
         "debt_principal": "Debt principal",
+        "gas_fee": "Gas fee",
+        "gas_fee_in_wallet": "Estimated in your wallet",
+        "gas_fee_info_label": "About the gas fee",
+        "gas_fee_info": "The transactions are built when you confirm, so your wallet estimates the gas fee of each before you sign it.",
         "confirmation_error_description": "We couldn't prepare this transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {
@@ -847,7 +881,8 @@
           "supply": "Supply failed",
           "withdraw": "Withdrawal failed"
         },
-        "cancelled": "You cancelled this request in your wallet.",
+        "partial_supplied": "Your {{amount}} was supplied as collateral, but the borrow didn't go through. Try the borrow again, or withdraw the collateral from your position.",
+        "partial_supplied_without_amount": "Your collateral was supplied, but the borrow didn't go through. Try the borrow again, or withdraw the collateral from your position.",
         "batch_progress": "Step {{current}} of {{total}}",
         "preparing_next_step": "Preparing the next step",
         "tx_type": {
@@ -960,11 +995,11 @@
     "overview": {
       "summary": {
         "total_value": "Total value",
-        "total_supplied": "Total supplied",
+        "debt": "Debt",
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
         "claimable_rewards": "Claimable rewards",
-        "available_balance": "Available",
+        "partial": "Partial",
         "net_worth": "Net worth",
         "excludes_confidential": "Totals exclude hidden confidential positions. Reveal their balances to include them."
       }
@@ -1016,7 +1051,8 @@
   },
   "leave_confirmation": {
     "title": "Leave this transaction?",
-    "description": "Your transaction is in progress. If you leave now, its remaining steps won't be completed and you'll need to start again.",
+    "description": "Your transaction is in progress. If you leave now, its remaining steps won't be completed.",
+    "description_resumable": "Your transaction is in progress. If you leave now, you can finish the remaining steps later from Activity.",
     "stay": "Stay",
     "leave": "Leave"
   },
@@ -1040,7 +1076,6 @@
     "skipped": "Skipped",
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
-    "cancelled": "You cancelled this request in your wallet.",
     "decrypt": "Decrypting the withdrawal amount",
     "decrypt_desc": "Zama publishes the unwrapped amount. Usually takes 10–30 seconds.",
     "decrypt_error": "Decryption failed. Retry to try again.",
@@ -1048,7 +1083,23 @@
     "encrypt_desc": "Usually takes 10–30 seconds. Keep this page open.",
     "encrypt_error": "Encryption failed. Retry to try again.",
     "prepare_rejected": "This request can't be completed. Go back and change it.",
-    "approve_error": "Something went wrong",
+    "failure": {
+      "rejected": "The transaction was rejected in your wallet. Try again.",
+      "wallet_failed": "Your wallet couldn't complete the request. Try again.",
+      "network_changed": "Your wallet switched networks. Switch back and try again.",
+      "account_changed": "Your wallet switched accounts. Switch back and try again.",
+      "disconnected": "Your wallet disconnected. Reconnect it and try again.",
+      "estimate_failed": "The network fee couldn't be estimated. Try again.",
+      "unsignable": "This transaction can't be signed. Go back and try again.",
+      "prepare_failed": "This transaction couldn't be prepared. Try again.",
+      "not_sent": "The transaction couldn't be sent. Try again.",
+      "failed": "The transaction failed. Try again.",
+      "failed_on_chain": "The transaction failed on chain: {{reason}}.",
+      "unconfirmed": "We couldn't confirm the transaction. Try again to check its status.",
+      "dropped": "The transaction was dropped by the network. Try again to send it.",
+      "advance_failed": "The next step couldn't be prepared. Try again.",
+      "detail": "Details: {{detail}}"
+    },
     "progress_label": "Transaction progress",
     "progress_count": "{{confirmed}} of {{total}} confirmed",
     "summary": "{{action}} {{amount}}",

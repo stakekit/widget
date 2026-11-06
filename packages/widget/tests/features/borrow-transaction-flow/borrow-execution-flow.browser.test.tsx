@@ -755,7 +755,31 @@ describe("borrow execution flow component", () => {
       expect(text).not.toContain("Requested action");
       expect(text).not.toContain(command.args.marketId);
       expect(text).not.toContain("Confirming will open");
-      expect(text).not.toContain("Shown in wallet");
+    })
+  );
+
+  it.live("leaves the gas fee to the wallet and links the terms", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+      });
+
+      // The action is built on Confirm, so the wallet quotes its gas.
+      const gas = app.getByTestId("borrow-review-gas-fee");
+      yield* Effect.promise(() =>
+        expect.element(gas.getByText("Gas fee")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(gas.getByText("Estimated in your wallet"))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("link", { name: /Terms of Use/ }))
+          .toHaveAttribute("href", "https://docs.yield.xyz/docs/terms-of-use")
+      );
     })
   );
 
@@ -1376,12 +1400,25 @@ describe("borrow execution flow component", () => {
         yield* Effect.promise(() =>
           expect
             .element(
-              app.getByText("Borrow transaction could not be submitted.")
+              app.getByText("The transaction couldn't be sent. Try again.")
             )
             .toBeInTheDocument()
         );
+        expect(app.container.textContent).not.toContain(
+          "Borrow transaction could not be submitted."
+        );
         yield* Effect.promise(() =>
           userEvent.click(app.getByRole("button", { name: "Cancel" }))
+        );
+        // Borrow actions are not continued from Activity.
+        yield* Effect.promise(() =>
+          expect
+            .element(
+              app.getByText(
+                "Your transaction is in progress. If you leave now, its remaining steps won't be completed."
+              )
+            )
+            .toBeInTheDocument()
         );
         // A sent transaction is guarded even after its submission failed.
         yield* Effect.promise(() =>
@@ -1693,6 +1730,55 @@ describe("borrow execution flow component", () => {
         "Borrow transaction failed"
       );
     })
+  );
+
+  it.live(
+    "says the collateral went in when the borrow after it failed, never the raw status",
+    () =>
+      Effect.gen(function* () {
+        const supply = transaction({ id: "tx-supply", type: "SUPPLY" });
+        const borrowTx = transaction({ id: "tx-borrow", type: "BORROW" });
+        const app = yield* renderExecution(
+          makeBorrowApi({
+            getActions: [
+              action({
+                status: "WAITING_FOR_NEXT",
+                transactions: [{ ...supply, status: "CONFIRMED" }, borrowTx],
+              }),
+              action({
+                status: "FAILED",
+                transactions: [
+                  { ...supply, status: "CONFIRMED" },
+                  { ...borrowTx, status: "FAILED" },
+                ],
+              }),
+            ],
+          }),
+          {
+            action: decodedAction({
+              action: "supplyAndBorrow",
+              transactions: [supply, borrowTx],
+            }),
+            stepsElement: <BorrowStepsPage />,
+          }
+        );
+
+        yield* Effect.promise(() =>
+          expect
+            .element(
+              app.getByText(
+                "Your 0.5 cbBTC was supplied as collateral, but the borrow didn't go through. Try the borrow again, or withdraw the collateral from your position."
+              )
+            )
+            .toBeInTheDocument()
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByText("The transaction failed. Try again."))
+            .toBeInTheDocument()
+        );
+        expect(app.container.textContent).not.toContain("FAILED status");
+      })
   );
 
   it.live("renders retryable failure and routes after retry succeeds", () =>

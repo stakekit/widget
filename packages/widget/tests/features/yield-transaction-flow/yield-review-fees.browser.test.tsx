@@ -66,11 +66,6 @@ const renderStakeReview = ({
     kycProviderName: null,
     kycStatusIsChecking: false,
     managementFee: null,
-    metadata: {
-      logoURI: stake.metadata.logoURI,
-      name: stake.metadata.name,
-      provider: undefined,
-    },
     metaInfo: { showMetaInfo: false },
     onKycStatusRefresh: vi.fn(),
     performanceFee: null,
@@ -203,5 +198,18 @@ describe("Yield review fees", () => {
     await expect
       .element(app.getByRole("button", { name: "Confirm", exact: true }))
       .toHaveAttribute("data-rk", "footer-button-primary");
+  });
+});
+
+describe("Yield review header", () => {
+  it("heads the amount with the token being sent, not the yield's", async () => {
+    const app = await renderStakeReview({});
+    const avatar = app.getByRole("img", { name: stake.token.name });
+
+    await expect.element(avatar).toBeVisible();
+    expect(stake.token.name).not.toBe(stake.metadata.name);
+    expect(
+      app.getByRole("img", { name: stake.metadata.name }).query()
+    ).toBeNull();
   });
 });

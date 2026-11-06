@@ -34,6 +34,44 @@ export const Metrics: Story = {
 /** The split view's aside and main pane. */
 export const Split: Story = { args: { columns: "split", children: cells(2) } };
 
+/**
+ * A centre cell at its content's width between two equal flanks: the centre
+ * stays centred in the grid however wide one flank's content is.
+ */
+export const Flanked: Story = {
+  args: {
+    columns: "flanked",
+    align: "center",
+    children: [
+      <span key="start" />,
+      <Card key="centre" padding={12}>
+        <Text>Centre</Text>
+      </Card>,
+      <Card key="end" padding={12}>
+        <Text>A wide end cell</Text>
+      </Card>,
+    ],
+  },
+  render: (args) => (
+    <ContainerFrame width={480}>
+      <Grid {...args} />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const centre = canvas.getByText("Centre").getBoundingClientRect();
+    const grid = canvas
+      .getByText("Centre")
+      .closest('[style*="container-type"]')
+      ?.getBoundingClientRect();
+
+    await expect(grid?.width).toBe(480);
+    await expect(
+      Math.abs(centre.left + centre.width / 2 - ((grid?.left ?? 0) + 240))
+    ).toBeLessThanOrEqual(1);
+  },
+};
+
 /** One column below the `md` container size, two from it up. */
 export const Responsive: Story = {
   args: {

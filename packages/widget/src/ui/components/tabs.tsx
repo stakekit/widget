@@ -131,7 +131,7 @@ const styles = stylex.create({
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
-      )]: radius.pill,
+      )]: radius.pillControl,
     },
     gap: {
       default: space[16],
@@ -166,7 +166,7 @@ const styles = stylex.create({
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
-      )]: radius.pill,
+      )]: radius.pillControl,
     },
     backgroundColor: {
       default: color.accent,
@@ -217,7 +217,7 @@ const styles = stylex.create({
       [stylex.when.ancestor(
         '[data-sk-tabs-indicator="pill"]',
         presentationMarker
-      )]: radius.pill,
+      )]: radius.pillControl,
     },
     borderStyle: "none",
     paddingBlock: {

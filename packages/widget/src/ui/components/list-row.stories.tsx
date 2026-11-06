@@ -92,6 +92,37 @@ export const Link: Story = {
 
 export const LinkDark: Story = { ...Link, globals: { colorScheme: "dark" } };
 
+/**
+ * Under the outlined surface style a pressable row edges in `border`, as a
+ * filled card does; focus replaces the edge with the focus ring.
+ */
+export const LinkOutlined: Story = {
+  ...Link,
+  globals: { appearancePreset: "utila", surfaceStyle: "outlined" },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByRole("link", { name: /Ethereum/ });
+    await expect(getComputedStyle(row).outlineStyle).toBe("solid");
+    await expect(getComputedStyle(row).outlineWidth).toBe("1px");
+    await userEvent.tab();
+    await expect(row).toHaveFocus();
+    await expect(getComputedStyle(row).outlineWidth).toBe("2px");
+  },
+};
+
+/**
+ * Under the elevated surface style a pressable row lifts off the canvas as a
+ * filled card does: `surfaceRaised` with the `raised` elevation.
+ */
+export const LinkElevated: Story = {
+  ...Link,
+  globals: { appearancePreset: "finery", surfaceStyle: "elevated" },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByRole("link", { name: /Ethereum/ });
+    await expect(getComputedStyle(row).boxShadow).not.toBe("none");
+    await expect(getComputedStyle(row).outlineStyle).toBe("none");
+  },
+};
+
 /** A figure, such as a reward rate, before the value column. */
 export const WithFigure: Story = {
   args: { figure: { text: "4.2%", tone: "success" } },

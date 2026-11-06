@@ -1,6 +1,5 @@
 import type { ComponentProps } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { Token } from "../../../../../domain/token/token";
 import { ExternalLink, Notice, Stack, Text } from "../../../../../ui/index";
 import { useTrackEvent } from "../../../../tracking/index";
@@ -31,7 +30,6 @@ type ReviewPageProps = {
   /** Null when no gas estimate settled. */
   readonly fee: string | null;
   readonly token: Token | null;
-  readonly metadata: ComponentProps<typeof ReviewOverview>["metadata"];
   readonly isGasCheckError: boolean;
   readonly loading?: boolean;
   readonly depositFee: FeesBps | null;
@@ -51,7 +49,6 @@ type PositionActionReview = {
   readonly facts: ReadonlyArray<ReviewFact>;
   readonly fee: string | null;
   readonly gasCheckLoading: boolean;
-  readonly integrationData: EarnYieldWithProvider;
   readonly isGasCheckWarning: boolean;
   readonly title: string;
   readonly token: Token;
@@ -71,11 +68,6 @@ export const getPositionActionReviewProps = (review: PositionActionReview) => ({
   isGasCheckError: review.isGasCheckWarning,
   loading: review.gasCheckLoading,
   managementFee: null,
-  metadata: {
-    logoURI: review.integrationData.metadata.logoURI,
-    name: review.integrationData.metadata.name,
-    provider: review.integrationData.provider,
-  },
   performanceFee: null,
   title: review.title,
   token: review.token,
@@ -89,7 +81,6 @@ export const ReviewPage = ({
   facts,
   fee,
   token,
-  metadata,
   isGasCheckError,
   loading = false,
   depositFee,
@@ -170,7 +161,6 @@ export const ReviewPage = ({
             amountFiat={amountFiat}
             destination={destination}
             facts={facts}
-            metadata={metadata}
             token={token}
             {...(showFees
               ? {

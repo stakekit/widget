@@ -6,10 +6,11 @@ export const useActivityActionTitle = (title: ActivityActionTitle) => {
   const { t } = useTranslation();
 
   if (title._tag === "borrow") {
-    const { action, tokenSymbol } = title;
+    const { action, inProgress, tokenSymbol } = title;
+    const group = inProgress ? "borrow_in_progress" : "borrow";
     return tokenSymbol
-      ? t(`activity.item.borrow.${action}`, { token: tokenSymbol })
-      : t(`activity.item.borrow.${action}_without_token`);
+      ? t(`activity.item.${group}.${action}`, { token: tokenSymbol })
+      : t(`activity.item.${group}.${action}_without_token`);
   }
 
   return Match.value(title).pipe(
@@ -17,6 +18,16 @@ export const useActivityActionTitle = (title: ActivityActionTitle) => {
       tokenSymbol
         ? t("activity.item.deposited", { token: tokenSymbol })
         : t("activity.item.deposited_without_token")
+    ),
+    Match.when({ _tag: "deposit" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.deposit", { token: tokenSymbol })
+        : t("activity.item.deposit_without_token")
+    ),
+    Match.when({ _tag: "withdraw" }, ({ tokenSymbol }) =>
+      tokenSymbol
+        ? t("activity.item.withdraw", { token: tokenSymbol })
+        : t("activity.item.withdraw_without_token")
     ),
     Match.when({ _tag: "deposit_submitted" }, ({ tokenSymbol }) =>
       tokenSymbol

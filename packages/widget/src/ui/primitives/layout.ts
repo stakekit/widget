@@ -13,6 +13,9 @@ import { layoutVars as v } from "./layout.stylex";
 
 const METRICS = `repeat(auto-fit, minmax(min(${gridTrack.metricMin}, 100%), 1fr))`;
 const SPLIT = `minmax(0, ${gridTrack.splitAside}) minmax(0, 1fr)`;
+// A centre cell at its content's width between two equal flanks, so the
+// centre stays centred whatever each flank holds.
+const FLANKED = "minmax(0, 1fr) auto minmax(0, 1fr)";
 
 const directionBase = stylex.create({
   row: {
@@ -408,6 +411,12 @@ const columnsBase = stylex.create({
     [v.columnsMd]: SPLIT,
     [v.columnsSplit]: SPLIT,
   },
+  flanked: {
+    [v.columns]: FLANKED,
+    [v.columnsSm]: FLANKED,
+    [v.columnsMd]: FLANKED,
+    [v.columnsSplit]: FLANKED,
+  },
 });
 const columnsSm = stylex.create({
   1: {
@@ -440,6 +449,11 @@ const columnsSm = stylex.create({
     [v.columnsMd]: SPLIT,
     [v.columnsSplit]: SPLIT,
   },
+  flanked: {
+    [v.columnsSm]: FLANKED,
+    [v.columnsMd]: FLANKED,
+    [v.columnsSplit]: FLANKED,
+  },
 });
 const columnsMd = stylex.create({
   1: { [v.columnsMd]: "minmax(0, 1fr)", [v.columnsSplit]: "minmax(0, 1fr)" },
@@ -457,6 +471,7 @@ const columnsMd = stylex.create({
   },
   metrics: { [v.columnsMd]: METRICS, [v.columnsSplit]: METRICS },
   split: { [v.columnsMd]: SPLIT, [v.columnsSplit]: SPLIT },
+  flanked: { [v.columnsMd]: FLANKED, [v.columnsSplit]: FLANKED },
 });
 const columnsSplit = stylex.create({
   1: { [v.columnsSplit]: "minmax(0, 1fr)" },
@@ -465,6 +480,7 @@ const columnsSplit = stylex.create({
   4: { [v.columnsSplit]: "repeat(4, minmax(0, 1fr))" },
   metrics: { [v.columnsSplit]: METRICS },
   split: { [v.columnsSplit]: SPLIT },
+  flanked: { [v.columnsSplit]: FLANKED },
 });
 
 const paddingBlockBase = stylex.create({
@@ -959,7 +975,7 @@ export type Align = keyof typeof alignBase;
 /** A main-axis distribution. */
 export type Justify = keyof typeof justifyBase;
 
-/** A column count, or the named `metrics` and `split` tracks. */
+/** A column count, or the named `metrics`, `split` and `flanked` tracks. */
 export type Columns = keyof typeof columnsBase;
 
 /** The container sizes a responsive value can name, smallest first. */

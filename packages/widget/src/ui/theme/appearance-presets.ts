@@ -47,10 +47,11 @@ type PresetDefinition = Readonly<{ theme: PresetTheme }> &
 const basePalette: PresetPalette = { colors: {}, theme: null };
 
 // Each preset's identity beyond its colors. Finery is airy: softer, larger
-// radii and lighter headings. Porto is tight and flat: small radii, a lighter
-// weight scale, and every raised part edged in a line instead of a shadow.
-// Utila is crisp and compact: 8px radii, shorter controls, and raised parts
-// edged in its border over a faint shadow.
+// radii and lighter headings. Porto is tight and flat: small radii, pill
+// controls cornered as its controls, a lighter weight scale, and every raised
+// part edged in a line instead of a shadow. Utila is crisp and compact: 8px
+// radii on cards, controls, pill controls and overlays, shorter controls, and
+// raised parts edged in its border over a faint shadow.
 const fineryRadius = stylex.createTheme(radius, {
   badge: "8px",
   control: "14px",
@@ -71,6 +72,7 @@ const portoRadius = stylex.createTheme(radius, {
   card: "6px",
   overlay: "8px",
   shell: "8px",
+  pillControl: "4px",
 });
 
 const portoFontWeight = stylex.createTheme(fontWeight, {
@@ -91,8 +93,9 @@ const utilaRadius = stylex.createTheme(radius, {
   control: "8px",
   controlInner: "6px",
   card: "8px",
-  overlay: "12px",
+  overlay: "8px",
   shell: "12px",
+  pillControl: "8px",
 });
 
 const utilaControlHeight = stylex.createTheme(controlHeight, {

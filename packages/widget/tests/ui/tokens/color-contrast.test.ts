@@ -271,6 +271,30 @@ describe("accent hover", () => {
   );
 });
 
+// A disabled primary or soft button is a `textMuted` label on a
+// `surfaceHover` fill at full opacity: the label often says why it is
+// disabled, so it keeps text contrast, and the fill stands off the canvas
+// the button sits on. Finery's canvas is near its surfaces, as its cards are
+// lifted by elevation, so the fill's bar is lower than a card's.
+const disabledFillSeparation = 1.1;
+
+describe("disabled button", () => {
+  it.each(themes)(
+    "$colorScheme $preset, $accent: the label reads on the disabled fill",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const fill = parseColor(roles.surfaceHover);
+
+      expect(
+        contrast(parseColor(roles.textMuted), fill)
+      ).toBeGreaterThanOrEqual(textContrast);
+      expect(
+        contrast(fill, parseColor(roles.background))
+      ).toBeGreaterThanOrEqual(disabledFillSeparation);
+    }
+  );
+});
+
 // A pressed filled button mixes its fill by the `pressTint` weights: the
 // primary's hover takes `shade` of `ink`; a soft fill takes `toneFill` of its
 // label color. The label keeps text contrast on the pressed fill.

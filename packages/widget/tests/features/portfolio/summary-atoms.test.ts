@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Option, Schema } from "effect";
+import { Cause, Effect, Layer, Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
@@ -12,11 +12,7 @@ import {
 } from "../../../src/domain/earn/models";
 import { getYieldCategory } from "../../../src/domain/earn/yield";
 import type { exactDecimal } from "../../../src/domain/finance/exact";
-import { TokenBalancesResponse } from "../../../src/domain/finance/models";
-import { Prices } from "../../../src/domain/health/models";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { toPositionsData } from "../../../src/domain/portfolio/positions";
-import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   currentGroupedPositionsAtom,
   positionsTableDataAtom,
@@ -24,32 +20,27 @@ import {
 } from "../../../src/features/portfolio/state/read-models/positions";
 import {
   allPositionsSummaryAtom,
-  availableBalanceSummaryAtom,
   averageApySummaryAtom,
+  deriveManageSummary,
   getClaimableRewardsUsd,
   getPositionsAverageApy,
   getPositionsTotal,
   hasHiddenPositions,
-  summaryViewAtom,
+  manageSummaryAtom,
 } from "../../../src/features/portfolio/state/read-models/summary";
-import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../../src/features/yield-summary/state/multi-yields";
-import {
-  TokenPricesKey,
-  tokenPricesResourceAtom,
-} from "../../../src/resources/token-prices/token-prices";
 import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
 } from "../../../src/resources/yield-directory/index";
 import {
   ApiRequestError,
-  LegacyResourceSource,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
+import type { Presentable } from "../../../src/shared/effect/async-result";
 import {
   confidentialYieldFixture,
   yieldApiProviderFixture,
@@ -398,101 +389,19 @@ describe("summary atom derivations", () => {
         refetchedApy.pipe(AsyncResult.value, Option.getOrThrow).toFixed()
       ).toBe("5");
 
-      const { allPositions, averageApy } = registry.get(summaryViewAtom);
-      if (allPositions._tag !== "Ready" || averageApy._tag !== "Ready") {
-        throw new Error("expected the summary to keep its values");
-      }
-      expect(allPositions.value.allPositionsSum.toFixed()).toBe("5");
-      expect(Option.isSome(allPositions.refreshFailure)).toBe(true);
-      expect(averageApy.value.toFixed()).toBe("5");
-      expect(Option.isSome(averageApy.refreshFailure)).toBe(true);
+      const summary = registry.get(manageSummaryAtom);
+      expect(summary.totalValue).toEqual({
+        _tag: "Ready",
+        value: new BigNumber(5),
+      });
+      expect(summary.averageApy).toEqual({
+        _tag: "Ready",
+        value: new BigNumber(5),
+      });
+      expect(summary.isPartial).toBe(false);
     } finally {
       unmountApy();
       unmountTotal();
-      registry.dispose();
-    }
-  });
-
-  it("keeps the last available balance total when a prices refetch fails", () => {
-    const eth = yieldApiYieldFixture().token;
-    const usdc = {
-      ...eth,
-      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      name: "USD Coin",
-      symbol: "USDC",
-    };
-    const walletScope = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)(
-        "0x9999999999999999999999999999999999999999"
-      ),
-      network: "ethereum",
-    });
-    const tokenBalances = Schema.decodeSync(TokenBalancesResponse)([
-      { amount: "2", availableYields: [], token: eth },
-      { amount: "10", availableYields: [], token: usdc },
-    ]);
-    let offline = false;
-    const registry = AtomRegistry.make({
-      initialValues: [
-        applicationRuntimeInitInitialValue(),
-        Atom.initialValue(walletScopeAtom, walletScope),
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(LegacyResourceSource, {
-            getPrices: () =>
-              offline
-                ? Effect.fail(
-                    new ApiRequestError({
-                      cause: new Error("offline"),
-                      failure: { _tag: "Unreachable" },
-                      operation: "prices",
-                    })
-                  )
-                : Effect.succeed(
-                    new Prices(
-                      new Map([
-                        [
-                          `ethereum-${eth.address?.toLowerCase() ?? ""}`,
-                          { price: new BigNumber(2000), price24H: undefined },
-                        ],
-                        [
-                          `ethereum-${usdc.address}`,
-                          { price: new BigNumber(1), price24H: undefined },
-                        ],
-                      ])
-                    )
-                  ),
-            scanTokenBalances: () => Effect.succeed(tokenBalances),
-          } as never)
-        ),
-      ],
-    });
-    const unmount = registry.mount(availableBalanceSummaryAtom);
-
-    try {
-      expect(
-        AsyncResult.getOrThrow(
-          registry.get(availableBalanceSummaryAtom)
-        )?.toFixed()
-      ).toBe("4010");
-
-      offline = true;
-      registry.refresh(
-        tokenPricesResourceAtom.local(
-          new TokenPricesKey({
-            currency: "USD",
-            tokenList: tokenBalances.map((balance) => balance.token),
-          })
-        )
-      );
-      const refetched = registry.get(availableBalanceSummaryAtom);
-
-      expect(AsyncResult.isFailure(refetched)).toBe(true);
-      expect(
-        refetched.pipe(AsyncResult.value, Option.getOrThrow)?.toFixed()
-      ).toBe("4010");
-    } finally {
-      unmount();
       registry.dispose();
     }
   });
@@ -610,5 +519,112 @@ describe("summary atom derivations", () => {
 
     unmount();
     registry.dispose();
+  });
+});
+
+describe("Manage summary", () => {
+  const ready = <A>(value: A): Presentable<A, unknown> => ({
+    _tag: "Ready",
+    refreshFailure: Option.none(),
+    refreshing: false,
+    value,
+  });
+  const failed: Presentable<never, unknown> = {
+    _tag: "Failed",
+    cause: Cause.fail(new Error("unavailable")),
+  };
+  const loading: Presentable<never, unknown> = { _tag: "Loading" };
+  const earn = {
+    averageApy: ready(new BigNumber("3.97")),
+    claimableRewards: ready(new BigNumber("5.09")),
+    earnPositions: ready([]),
+    earnValue: ready({
+      allPositionsSum: new BigNumber(1_230_000),
+      excludesHidden: false,
+    }),
+  };
+  const borrow = {
+    positions: ready([{}, {}]),
+    totals: ready({
+      totalBorrowedUsd: new BigNumber(18_250),
+      totalSuppliedUsd: new BigNumber(30_720),
+    }),
+  };
+  const readyFigure = (value: BigNumber.Value) => ({
+    _tag: "Ready",
+    value: new BigNumber(value),
+  });
+  const unavailable = { _tag: "Unavailable" };
+
+  it("shows the same figures without borrow positions in every Layout", () => {
+    expect(deriveManageSummary({ ...earn, borrow: null })).toEqual({
+      averageApy: readyFigure("3.97"),
+      borrow: null,
+      claimableRewards: readyFigure("5.09"),
+      excludesHidden: false,
+      isPartial: false,
+      totalValue: readyFigure(1_230_000),
+    });
+  });
+
+  it("adds borrow collateral to the total and shows debt and net worth, keeping the Earn APY", () => {
+    expect(deriveManageSummary({ ...earn, borrow })).toEqual({
+      averageApy: readyFigure("3.97"),
+      borrow: { debt: readyFigure(18_250), netWorth: readyFigure(1_242_470) },
+      claimableRewards: readyFigure("5.09"),
+      excludesHidden: false,
+      isPartial: false,
+      totalValue: readyFigure(1_260_720),
+    });
+  });
+
+  it("marks Earn figures partial instead of totalling the borrow positions alone", () => {
+    const summary = deriveManageSummary({
+      averageApy: failed,
+      borrow,
+      claimableRewards: failed,
+      earnPositions: failed,
+      earnValue: failed,
+    });
+
+    expect(summary).toMatchObject({
+      averageApy: unavailable,
+      borrow: { debt: readyFigure(18_250), netWorth: unavailable },
+      claimableRewards: unavailable,
+      isPartial: true,
+      totalValue: unavailable,
+    });
+  });
+
+  it("marks the total partial when borrow positions fail", () => {
+    const summary = deriveManageSummary({
+      ...earn,
+      borrow: { positions: failed, totals: failed },
+    });
+
+    expect(summary).toMatchObject({
+      averageApy: readyFigure("3.97"),
+      borrow: null,
+      isPartial: true,
+      totalValue: unavailable,
+    });
+  });
+
+  it("is not partial when every source failed, and loads while one loads", () => {
+    expect(
+      deriveManageSummary({
+        averageApy: failed,
+        borrow: null,
+        claimableRewards: failed,
+        earnPositions: failed,
+        earnValue: failed,
+      }).isPartial
+    ).toBe(false);
+    expect(
+      deriveManageSummary({
+        ...earn,
+        borrow: { positions: loading, totals: loading },
+      }).totalValue
+    ).toEqual({ _tag: "Loading" });
   });
 });

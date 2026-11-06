@@ -14,8 +14,6 @@ import type {
 } from "../../../services/transaction-workflow/transaction-workflow-model";
 import {
   flattenTransactionWorkflowTransactions,
-  getCurrentTransactionWorkflowTransaction,
-  getTransactionSignCustomMessage,
   getTransactionStepProgress,
   getTransactionWorkflowTransactionReference,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
@@ -167,9 +165,6 @@ export const getYieldTransactionStepsView = (
   }
 ) => {
   const { finalize, preparation } = machineState.context;
-  const currentTransaction = getCurrentTransactionWorkflowTransaction(
-    machineState.context
-  );
   const preparationRows: ReadonlyArray<YieldStepRow> = preparation
     ? [
         toPreparationRow(machineState, {
@@ -227,17 +222,19 @@ export const getYieldTransactionStepsView = (
         ...transactionRows.slice(finalize.position),
       ]
     : transactionRows;
-  const signError = currentTransaction?.meta.signError ?? null;
-  const customSignErrorMessage = signError
-    ? getTransactionSignCustomMessage(signError)
-    : null;
   return {
-    cancelled:
-      machineState._tag === "SignFailed" &&
-      machineState.error.reason._tag === "WalletRequestCancelled",
-    customSignErrorMessage,
+    /** What failed, while the workflow waits on Retry. */
+    error: "error" in machineState ? machineState.error : null,
     /** Headers count the steps only when the list is known upfront. */
     numbered: preparation === null,
+    /**
+     * An API transaction confirmed, so the action waits for its next one
+     * and Activity offers Continue. A preparation, a direct transaction or
+     * a skipped approval leaves the API action untouched.
+     */
+    resumable: flattenTransactionWorkflowTransactions(
+      machineState.context
+    ).some(({ meta, source }) => source._tag === "Yield" && meta.done),
     retryable:
       (machineState._tag === "PrepareFailed" && machineState.error.retryable) ||
       machineState._tag === "SignFailed" ||

@@ -17,7 +17,8 @@ type GridProps = LayoutElementProps & {
   /**
    * One to four equal columns, or a named template: `metrics` fits as many
    * metric columns as the width allows, `split` is the split view's aside and
-   * main pane.
+   * main pane, `flanked` is a centre cell at its content's width between two
+   * equal flanks, so the centre stays centred whatever the flanks hold.
    */
   readonly columns?: Responsive<Columns>;
   readonly gap?: Responsive<Space>;

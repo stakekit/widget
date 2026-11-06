@@ -110,7 +110,7 @@ describe("Activity details on the compact page", () => {
       .element(app.getByRole("heading", { name: "Deposited ETH" }))
       .toBeVisible();
     await expect.element(app.getByText("+1 ETH")).toBeVisible();
-    await expect.element(app.getByText("$2.4K")).toBeVisible();
+    await expect.element(app.getByText("$2,400.00")).toBeVisible();
     for (const [label, value] of [
       ["Status", "Completed"],
       ["Network", "Ethereum"],

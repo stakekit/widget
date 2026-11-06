@@ -217,7 +217,7 @@ describe("getPositionOverviewModel", () => {
       model.metricCards.find((card) => card.id === "balance")
     ).toMatchObject({
       label: "Balance",
-      subValue: "$42.26K",
+      subValue: "$42,262.00",
       value: "12.25 ETH",
     });
     expect(
@@ -1158,7 +1158,7 @@ describe("getPositionOverviewModel", () => {
       {
         id: "active-ETH-0",
         label: "Active",
-        subValue: "$41.4K",
+        subValue: "$41,400.00",
         value: "12 ETH",
       },
       {

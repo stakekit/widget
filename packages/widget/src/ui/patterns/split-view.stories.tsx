@@ -45,18 +45,26 @@ const panes = (canvasElement: HTMLElement) => {
 
 /**
  * Narrower than the `split` container size, as at a 900px Dashboard, the
- * panes stack in one column: the secondary under the primary, both as wide
- * as the view, and no control swaps them.
+ * panes stack in one column centred in the view and no wider than the `md`
+ * container size: the secondary under the primary, both as wide, and no
+ * control swaps them.
  */
 export const Stacked: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const { primary, secondary } = panes(canvasElement);
+    // The story's 900px container frame.
+    const frame = canvas
+      .getByTestId("primary-pane")
+      .closest('[style*="container-type"]')
+      ?.getBoundingClientRect();
 
     await expect(secondary.top).toBeGreaterThanOrEqual(primary.bottom);
     await expect(secondary.left).toBe(primary.left);
-    await expect(primary.width).toBe(900);
-    await expect(secondary.width).toBe(900);
+    await expect(primary.width).toBe(520);
+    await expect(secondary.width).toBe(520);
+    await expect(frame?.width).toBe(900);
+    await expect(primary.left - (frame?.left ?? 0)).toBe(190);
     await expect(
       canvas.getByText("Reward rate and provider details.")
     ).toBeVisible();

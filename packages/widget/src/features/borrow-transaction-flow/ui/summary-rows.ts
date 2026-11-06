@@ -105,10 +105,13 @@ export const getBorrowFlowPositionChangeRows = ({
   );
   const debt = formatFigureChange(formatUsd, change.debtUsd, locale);
   const ltv = formatFigureChange(formatLtv, change.ltv, locale);
+  // Whenever the position had one, even when both round alike, so a position
+  // the action barely moves still reads as measured rather than unchanged.
   const healthFactor = formatFigureChange(
     formatHealthFactor,
     change.healthFactor,
-    locale
+    locale,
+    { showWhenEqual: true }
   );
   const maxLtv = change.maxLtv ? exactDecimal(change.maxLtv) : null;
   const ltvAfter = change.ltv ? exactDecimal(change.ltv.after) : null;

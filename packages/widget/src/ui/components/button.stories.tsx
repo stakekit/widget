@@ -192,8 +192,9 @@ export const Disabled: Story = {
 };
 
 /**
- * A disabled button keeps its variant's look, faded: a disabled primary still
- * reads as the primary action, not as a card or a secondary button.
+ * A disabled primary or soft button takes a neutral fill under a muted label
+ * that stays readable, at full opacity; a disabled secondary keeps its look,
+ * faded.
  */
 export const DisabledLook: Story = {
   render: (args) => (
@@ -204,19 +205,30 @@ export const DisabledLook: Story = {
       <Button {...args} variant="primary" disabled>
         Disabled
       </Button>
+      <Button {...args} variant="soft" disabled>
+        Disabled soft
+      </Button>
+      <Button {...args} variant="secondary" disabled>
+        Disabled secondary
+      </Button>
     </div>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const enabled = getComputedStyle(
-      canvas.getByRole("button", { name: "Enabled" })
-    );
-    const disabled = getComputedStyle(
-      canvas.getByRole("button", { name: "Disabled" })
-    );
+    const look = (name: string) =>
+      getComputedStyle(canvas.getByRole("button", { name }));
+    const enabled = look("Enabled");
 
-    await expect(disabled.backgroundColor).toBe(enabled.backgroundColor);
-    await expect(Number(disabled.opacity)).toBeLessThan(0.5);
+    for (const name of ["Disabled", "Disabled soft"]) {
+      const disabled = look(name);
+      await expect(disabled.backgroundColor).not.toBe(enabled.backgroundColor);
+      await expect(disabled.color).not.toBe(enabled.color);
+      await expect(Number(disabled.opacity)).toBe(1);
+    }
+    await expect(look("Disabled").backgroundColor).toBe(
+      look("Disabled soft").backgroundColor
+    );
+    await expect(Number(look("Disabled secondary").opacity)).toBeLessThan(0.5);
     await expect(Number(enabled.opacity)).toBe(1);
   },
 };

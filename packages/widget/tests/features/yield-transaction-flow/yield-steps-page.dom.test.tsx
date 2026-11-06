@@ -1,16 +1,27 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
-import { TransactionHash } from "../../../src/domain/identity/identifiers";
+import {
+  TransactionHash,
+  TransactionWorkflowId,
+} from "../../../src/domain/identity/identifiers";
 import type { PageCta } from "../../../src/features/widget-shell/views";
 import type { YieldStepRow } from "../../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
 import { StepsPage } from "../../../src/features/yield-transaction-flow/ui/steps/pages/common.page";
+import {
+  makeTransactionSignError,
+  TransactionConfirmationError,
+  type TransactionWorkflowError,
+} from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
+import { ExternalProviderError } from "../../../src/services/wallet/external-provider";
+import { WalletSigningError } from "../../../src/services/wallet/wallet-errors";
 import { render } from "../../utils/test-utils.dom";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";
 
 type StepsMock = {
   cta?: PageCta;
   details?: ReadonlyArray<{ label: string; value: string; caption?: string }>;
+  error?: TransactionWorkflowError;
   numbered: boolean;
   retry?: () => void;
   summary?: { title: string; detail?: string; token: { name: string } };
@@ -26,13 +37,13 @@ vi.mock(
   "../../../src/features/yield-transaction-flow/ui/steps/hooks/use-steps.hook",
   () => ({
     useSteps: () => ({
-      cancelled: false,
       cta: steps.current.cta ?? null,
-      customSignErrorMessage: undefined,
+      error: steps.current.error ?? null,
       leaveConfirmationDialog: {
         onLeave: () => {},
         onStay: () => {},
         open: false,
+        resumable: false,
       },
       numbered: steps.current.numbered,
       retry: steps.current.retry,
@@ -173,6 +184,13 @@ describe("Yield Steps page progress", () => {
         onClick: () => {},
         variant: "secondary",
       },
+      error: makeTransactionSignError({
+        batchId: "batch",
+        network: "ethereum",
+        reason: { _tag: "WalletRequestCancelled", operation: "transaction" },
+        transactionId: null,
+        workflowId: TransactionWorkflowId.make("w"),
+      }),
       numbered: true,
       retry,
       txStates: [{ ...row("STAKE"), phases: { ...idle, sign: "failed" } }],
@@ -180,7 +198,9 @@ describe("Yield Steps page progress", () => {
 
     const [stake] = app.container.querySelectorAll("li");
     expect(stake?.textContent).toContain("Failed");
-    expect(stake?.textContent).toContain("Something went wrong");
+    expect(stake?.textContent).toContain(
+      "The transaction was rejected in your wallet. Try again."
+    );
     expect(stake?.querySelector("button")).toBeNull();
 
     // In document order: the steps, then Try again, then Cancel.
@@ -194,6 +214,70 @@ describe("Yield Steps page progress", () => {
     expect(button?.textContent).toBe("Try again");
     button?.click();
     expect(retry).toHaveBeenCalledOnce();
+    app.unmount();
+  });
+
+  it("says a wallet failure plainly, keeping the wallet's words as a detail", async () => {
+    const app = await renderSteps({
+      error: makeTransactionSignError({
+        batchId: "batch",
+        network: "ethereum",
+        reason: {
+          _tag: "WalletOperationFailed",
+          cause: new WalletSigningError({
+            cause: new ExternalProviderError({
+              customMessage: "Playground: scripted wallet failure",
+              message: "Playground: scripted wallet failure",
+            }),
+            operation: "transaction",
+          }),
+          operation: "transaction",
+        },
+        transactionId: null,
+        workflowId: TransactionWorkflowId.make("w"),
+      }),
+      numbered: true,
+      txStates: [{ ...row("STAKE"), phases: { ...idle, sign: "failed" } }],
+    });
+
+    const [stake] = app.container.querySelectorAll("li");
+    expect(stake?.textContent).toContain(
+      "Your wallet couldn't complete the request. Try again. Details: Playground: scripted wallet failure"
+    );
+    expect(app.container.querySelector('[role="alert"]')).toBeNull();
+    app.unmount();
+  });
+
+  it("links a transaction that failed on chain, naming why", async () => {
+    const app = await renderSteps({
+      error: new TransactionConfirmationError({
+        batchId: "batch",
+        message: "Transaction ended with FAILED status.",
+        network: "ethereum",
+        outcome: "Failed",
+        reason: "execution reverted: insufficient allowance",
+        transactionId: null,
+        workflowId: TransactionWorkflowId.make("w"),
+      }),
+      numbered: true,
+      txStates: [
+        {
+          ...row("STAKE"),
+          explorerUrl: "https://etherscan.io/tx/0x1",
+          hash,
+          phases: { broadcast: "done", confirm: "failed", sign: "done" },
+        },
+      ],
+    });
+
+    const [stake] = app.container.querySelectorAll("li");
+    expect(stake?.textContent).toContain(
+      "The transaction failed on chain: insufficient allowance."
+    );
+    expect(stake?.textContent).not.toContain("FAILED status");
+    expect(stake?.querySelector("a")?.getAttribute("href")).toBe(
+      "https://etherscan.io/tx/0x1"
+    );
     app.unmount();
   });
 

@@ -180,9 +180,9 @@ export const makeYieldFlowExecutionPage = (
             yieldId,
           })
         : {
-            cancelled: false,
-            customSignErrorMessage: null,
+            error: null,
             numbered: true,
+            resumable: false,
             retryable: false,
             txStates: [],
             yieldId,

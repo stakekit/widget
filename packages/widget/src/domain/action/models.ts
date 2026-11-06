@@ -83,7 +83,11 @@ export type ActionTransaction = typeof ActionTransaction.Type;
 // Status polling and submission only read these fields; validating the rest
 // would let unrelated additions fail an in-flight transaction.
 export const ActionTransactionReceipt = Schema.Struct({
-  ...Struct.pick(YieldApi.TransactionDto.fields, ["status", "explorerUrl"]),
+  ...Struct.pick(YieldApi.TransactionDto.fields, [
+    "status",
+    "explorerUrl",
+    "error",
+  ]),
   hash: TolerantNullOr(TransactionHash, {
     operation: "yield-transaction-receipt",
     field: "hash",

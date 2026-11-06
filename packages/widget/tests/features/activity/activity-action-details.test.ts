@@ -71,7 +71,7 @@ describe("Activity action details projection", () => {
     });
 
     expect(view).toMatchObject({
-      amount: "\u22121,000,000,000,000,000.1234",
+      amount: "\u22121000T",
       canContinue: false,
       statusLabel: "failed",
       transactions: [

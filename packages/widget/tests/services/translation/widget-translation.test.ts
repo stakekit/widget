@@ -131,7 +131,10 @@ describe("WidgetTranslation", () => {
           expect(translation.i18n.t("details.rewards.receive_output")).toBe(
             "CUSTOM"
           );
-          expect(translation.i18n.t("details.earn")).toBe("Stake");
+          // Utila renames only the Earn tab; the form keeps "Earn" so a
+          // lending yield never reads as staking.
+          expect(translation.i18n.t("details.tabs.earn")).toBe("Stake");
+          expect(translation.i18n.t("details.earn")).toBe("Earn");
 
           yield* Deferred.await(loaded);
           yield* expectEventually(
@@ -145,7 +148,7 @@ describe("WidgetTranslation", () => {
             () => translation.i18n.t("details.rewards.receive_output"),
             "You'll receive"
           );
-          expect(translation.i18n.t("details.earn")).toBe("Earn");
+          expect(translation.i18n.t("details.tabs.earn")).toBe("Earn");
           expect(translation.i18n.t("errors.shared")).toBe("REMOTE");
           expect(translation.i18n.t("errors.stale")).toBe("API");
         })
@@ -285,7 +288,7 @@ describe("WidgetTranslation", () => {
               makeSettings({ language: "en", variant: "utila" })
             );
             yield* expectEventually(
-              () => translation.i18n.t("details.earn"),
+              () => translation.i18n.t("details.tabs.earn"),
               "Stake"
             );
             expect(translation.i18n.t("errors.shared")).toBe("NEW");
@@ -488,7 +491,10 @@ describe("WidgetTranslation resource ownership", () => {
 
     expect(resources).toMatchObject({
       en: {
-        translation: { details: { earn: "Stake" }, errors: { shared: "HOST" } },
+        translation: {
+          details: { tabs: { earn: "Stake" } },
+          errors: { shared: "HOST" },
+        },
       },
     });
   });

@@ -398,7 +398,7 @@ describe("Borrow with an external provider", () => {
 
     await app.getByRole("button", { name: "Try again" }).click();
     await expect
-      .element(app.getByText("Borrow transaction could not be submitted."))
+      .element(app.getByText("The transaction couldn't be sent. Try again."))
       .toBeInTheDocument();
     expect(api.submitted.has(withdrawTransaction.id)).toBe(false);
     await expect
@@ -432,7 +432,9 @@ describe("Borrow with an external provider", () => {
     await confirmWithdraw(app);
 
     await expect
-      .element(app.getByText("You cancelled this request in your wallet."))
+      .element(
+        app.getByText("The transaction was rejected in your wallet. Try again.")
+      )
       .toBeInTheDocument();
     await expect
       .element(app.getByText("Withdrawal failed"))

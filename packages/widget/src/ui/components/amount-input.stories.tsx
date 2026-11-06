@@ -72,6 +72,25 @@ const amountInput = (canvasElement: HTMLElement) =>
 
 export const Empty: Story = {};
 
+/**
+ * Keyboard focus underlines the amount in the focus ring's color rather than
+ * boxing it: the amount stays bare in its card, and focus still shows.
+ */
+export const FocusLook: Story = {
+  play: async ({ canvasElement }) => {
+    const input = amountInput(canvasElement);
+
+    await userEvent.tab();
+    await expect(input).toHaveFocus();
+    const focused = getComputedStyle(input);
+    await expect(focused.outlineStyle).toBe("none");
+    await expect(focused.backgroundImage).toMatch(/linear-gradient/);
+
+    await userEvent.tab();
+    await expect(getComputedStyle(input).backgroundImage).toBe("none");
+  },
+};
+
 /** Unfocused, the amount is grouped in the language's separators. */
 export const Grouped: Story = {
   args: { initial: "1234567.89" },

@@ -143,6 +143,15 @@ describe("Borrow Manage order", () => {
       ]).map((position) => position.id)
     ).toEqual(["near-liquidation", "near-ltv", "large", "small"]);
   });
+
+  it("puts danger ahead of caution, whatever their value", () => {
+    expect(
+      toBorrowManageOrder([
+        borrowPosition({ id: "caution", ltv: "0.75", suppliedUsd: "900" }),
+        borrowPosition({ id: "danger", ltv: "0.9", suppliedUsd: "5" }),
+      ]).map((position) => position.id)
+    ).toEqual(["danger", "caution"]);
+  });
 });
 
 describe("positions worth less than a cent", () => {

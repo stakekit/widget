@@ -12,7 +12,6 @@ export const EnterReviewPage = () => {
     amountFiat,
     destination,
     facts,
-    metadata,
     token,
     metaInfo,
     gasCheckLoading,
@@ -37,7 +36,6 @@ export const EnterReviewPage = () => {
       performanceFee={performanceFee}
       feeConfigLoading={feeConfigLoading}
       title={yieldType}
-      metadata={metadata}
       token={token}
       amount={`${amount} ${token.symbol}`}
       amountFiat={amountFiat}

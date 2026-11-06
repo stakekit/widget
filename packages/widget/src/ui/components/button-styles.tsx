@@ -133,19 +133,26 @@ const buttonStyles = stylex.create({
   },
 });
 
-// A disabled button keeps its variant's look at the disabled opacity, so a
-// disabled primary still reads as the primary action. A filled button's fill
-// also changes while pressed (`pressTint`), on top of the press scale, which
+// A disabled secondary, ghost or danger button keeps its variant's look at
+// the disabled opacity. A disabled primary or soft button instead takes a
+// neutral fill under a `textMuted` label, as its accent faded to 40% leaves
+// the label unreadable on many accents, and the label often carries the
+// reason it is disabled ("Enter an amount"). A filled button's fill also
+// changes while pressed (`pressTint`), on top of the press scale, which
 // reduced motion removes; its hover leaves off while pressed, as the two
 // share a specificity and StyleX does not order them.
+const disabledFill = ":disabled:not([aria-busy])";
+
 const buttonVariantStyles = stylex.create({
   primary: {
     backgroundColor: {
       default: color.accent,
+      [disabledFill]: color.surfaceHover,
       ":active:not(:disabled)": `color-mix(in srgb, ${color.accentHover}, ${pressTint.ink} ${pressTint.shade})`,
       ":hover:not(:disabled, :active)": color.accentHover,
     },
-    color: color.onAccent,
+    color: { default: color.onAccent, [disabledFill]: color.textMuted },
+    opacity: 1,
   },
   secondary: {
     borderColor: color.borderStrong,
@@ -170,10 +177,12 @@ const buttonVariantStyles = stylex.create({
     borderColor: `color-mix(in srgb, currentColor ${softControlTint.edge}, ${color.surface})`,
     backgroundColor: {
       default: color.accentSoft,
+      [disabledFill]: color.surfaceHover,
       ":active:not(:disabled)": `color-mix(in srgb, currentColor ${pressTint.toneFill}, ${color.accentSoft})`,
       ":hover:not(:disabled, :active)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,
     },
-    color: color.accentText,
+    color: { default: color.accentText, [disabledFill]: color.textMuted },
+    opacity: 1,
   },
   // Status colors stay text on their soft tint; hover outlines the button,
   // and a press fills the tint toward the text.

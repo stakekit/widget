@@ -4,6 +4,7 @@ import { useLocation } from "react-router";
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import { useEarnYieldSelection } from "../../../../features/earn/index";
 import { useWidgetNavigate } from "../../../../features/navigation/index";
+import { usePortfolioPendingActionsCount } from "../../../../features/portfolio/index";
 import { useTrackEvent } from "../../../../features/tracking/index";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import {
@@ -50,6 +51,7 @@ export const DashboardTabs = ({
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const navigation = useWidgetNavigate();
+  const pendingActionsCount = usePortfolioPendingActionsCount();
   const { view: yieldSelection } = useEarnYieldSelection();
   const availableYieldCategories = yieldSelection.availableCategories;
   const selectedYieldCategory =
@@ -79,6 +81,7 @@ export const DashboardTabs = ({
       value: "manage",
       label: tabLabel("manage"),
       separated: showGroupDivider,
+      count: pendingActionsCount,
     },
     { value: "activity", label: tabLabel("activity") },
   ];

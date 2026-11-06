@@ -43,6 +43,10 @@ export const activityStatusLook: Record<
     callout: { tone: "danger", icon: "XIcon" },
     factTone: "danger",
   },
+  in_progress: {
+    callout: { tone: "info", icon: "HistoryIcon" },
+    factTone: "default",
+  },
   processing: {
     callout: { tone: "info", icon: "HistoryIcon" },
     factTone: "default",

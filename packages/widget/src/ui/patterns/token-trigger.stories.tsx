@@ -27,6 +27,18 @@ export const Default: Story = {
 };
 
 /**
+ * A preset with tight corners rounds the pill as its controls: Porto's 4px,
+ * Utila's 8px; the default stays fully rounded.
+ */
+export const PresetCorners: Story = {
+  globals: { appearancePreset: "porto" },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", { name: "ETH" });
+    await expect(getComputedStyle(trigger).borderRadius).toBe("4px");
+  },
+};
+
+/**
  * A touch-sized pill: about 44px tall, the logo large enough to recognise and
  * the symbol at heading size, all on one line.
  */

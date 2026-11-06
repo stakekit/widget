@@ -12,12 +12,13 @@ import {
   formatPercentAxis,
   formatRewardRatePercent,
   formatRoundedPercent,
-  formatShortTokenAmount,
-  formatShortTokenAmountWithSymbol,
   formatTokenAmount,
+  formatTokenAmountWithSymbol,
   formatUsd,
   formatUsdAxis,
   getRoundedPercentParts,
+  unavailableFigure,
+  withFigureUnit,
 } from "../../../src/shared/lib/number-format";
 
 // French separators: U+202F groups digits, U+00A0 precedes `%` and `$`.
@@ -123,41 +124,38 @@ describe("formatTokenAmount", () => {
     expect(formatTokenAmount("-0.5", "fr", "down")).toBe(`${minus}0,5`);
   });
 
-  it("formats huge values that cannot pass through JavaScript number", () => {
-    expect(formatTokenAmount("9007199254740993.123456789", "en", "down")).toBe(
-      "9,007,199,254,740,993.1234"
+  it("groups amounts in full below 1,000,000", () => {
+    expect(formatTokenAmount("1762.34567", "en", "down")).toBe("1,762.3456");
+    expect(formatTokenAmount("999999.99991", "en", "down")).toBe(
+      "999,999.9999"
     );
   });
-});
 
-describe("formatShortTokenAmount", () => {
   it.each([
-    ["an amount below 1,000 in full", "999.98765", "999.9876"],
-    ["a small amount in full", "0.0001044", "0.0001"],
-    ["thousands compactly", "1234.5678", "1.23K"],
-    ["millions compactly", "12345678.9", "12.34M"],
-    ["billions compactly", "9876543210.12", "9.87B"],
-  ])("shows %s, rounded down", (_label, value, expected) => {
-    expect(formatShortTokenAmount(value, "en", "down")).toBe(expected);
-  });
-
-  it("rounds a compact debt up", () => {
-    expect(formatShortTokenAmount("1234.5678", "en", "up")).toBe("1.24K");
-  });
+    ["millions", "1200000", "down", "1.2M"],
+    ["millions rounded down", "12345678.9", "down", "12.34M"],
+    ["millions rounded up", "12345678.9", "up", "12.35M"],
+    ["across the 1,000,000 boundary", "999999.99999", "up", "1M"],
+    ["billions", "9876543210.12", "down", "9.87B"],
+    ["a negative amount", "-211000000", "down", `${minus}211M`],
+  ] as const)(
+    "shows %s compactly from 1,000,000",
+    (_label, value, rounding, expected) => {
+      expect(formatTokenAmount(value, "en", rounding)).toBe(expected);
+    }
+  );
 
   it("uses the language's compact notation", () => {
-    expect(formatShortTokenAmount("1234.5678", "fr", "down")).toBe(
-      `1,23${nbsp}k`
-    );
+    expect(formatTokenAmount("1234567.8", "fr", "down")).toBe(`1,23${nbsp}M`);
   });
 
   it("follows the amount with its token's symbol", () => {
     expect(
-      formatShortTokenAmountWithSymbol(
-        { amount: "12345678.9", token: { symbol: "USDC" } },
+      formatTokenAmountWithSymbol(
+        { amount: "211000000", token: { symbol: "USDC" } },
         "en"
       )
-    ).toBe("12.34M USDC");
+    ).toBe("211M USDC");
   });
 });
 
@@ -172,10 +170,14 @@ describe("formatUsd", () => {
     [0.5, "$0.50"],
     [2.54, "$2.54"],
     [999.99, "$999.99"],
-    [1000, "$1K"],
-    [1250, "$1.25K"],
+    [1000, "$1,000.00"],
+    [1500, "$1,500.00"],
+    [1710.4249, "$1,710.42"],
+    [999_999.99, "$999,999.99"],
+    [999_999.996, "$1M"],
+    [1_230_000, "$1.23M"],
     [4_100_000, "$4.1M"],
-    [-1250, `${minus}$1.25K`],
+    [-1250, `${minus}$1,250.00`],
     [exactDecimal("9007199254740993.123456789"), "$9007.2T"],
   ])("formats %s as %s in English", (value, expected) => {
     expect(formatUsd(value, "en")).toBe(expected);
@@ -187,8 +189,9 @@ describe("formatUsd", () => {
     [0.004, `<0,01${nbsp}$`],
     [-0.004, `>${minus}0,01${nbsp}$`],
     [2.54, `2,54${nbsp}$`],
-    [1250, `1,25${nbsp}k${nbsp}$`],
-    [-1250, `${minus}1,25${nbsp}k${nbsp}$`],
+    [1250, `1${nnbsp}250,00${nbsp}$`],
+    [1_250_000, `1,25${nbsp}M${nbsp}$`],
+    [-1250, `${minus}1${nnbsp}250,00${nbsp}$`],
   ])("formats %s as %s in French", (value, expected) => {
     expect(formatUsd(value, "fr")).toBe(expected);
   });
@@ -330,6 +333,19 @@ describe("formatHealthFactor", () => {
   );
 });
 
+describe("withFigureUnit", () => {
+  it("follows a figure with its unit", () => {
+    expect(withFigureUnit("1.5", "ETH")).toBe("1.5 ETH");
+    expect(withFigureUnit("1.5 → 1", "USDC")).toBe("1.5 → 1 USDC");
+  });
+
+  it("reads an unknown figure as the placeholder alone, without the unit", () => {
+    expect(withFigureUnit(null, "ETH")).toBe(unavailableFigure);
+    expect(withFigureUnit(undefined, "ETH")).toBe(unavailableFigure);
+    expect(withFigureUnit(unavailableFigure, "ETH")).toBe(unavailableFigure);
+  });
+});
+
 describe("formatFigureChange", () => {
   it("joins a changed figure with an arrow", () => {
     expect(
@@ -343,6 +359,19 @@ describe("formatFigureChange", () => {
     ).toBe("42%");
     expect(
       formatFigureChange(formatPercent, { before: null, after: 0.42 }, "en")
+    ).toBe("42%");
+  });
+
+  it("keeps an unchanged figure's arrow when asked to", () => {
+    expect(
+      formatFigureChange(formatPercent, { before: 0.42, after: 0.42 }, "en", {
+        showWhenEqual: true,
+      })
+    ).toBe("42% → 42%");
+    expect(
+      formatFigureChange(formatPercent, { before: null, after: 0.42 }, "en", {
+        showWhenEqual: true,
+      })
     ).toBe("42%");
   });
 

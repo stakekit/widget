@@ -545,38 +545,56 @@ describe("confidential transaction workflow", () => {
     }).pipe(Effect.scoped)
   );
 
-  it.effect("signs a reverted wrap again on Retry", () =>
-    Effect.gen(function* () {
-      const signed: Array<string> = [];
-      let receipts = 0;
-      const ledger = makeDirectTransactionLedger();
-      const workflow = yield* startWorkflow(
-        capabilities({
-          evmRpc: {
-            awaitOutcome: () =>
-              Effect.succeed(++receipts === 1 ? "Reverted" : "Confirmed"),
-            broadcast: () => Effect.void,
-            prepare: () => Effect.succeed("unsigned-wrap"),
+  it.effect.each([
+    ["Reverted", "Failed"],
+    ["Dropped", "Dropped"],
+  ] as const)(
+    "signs a %s wrap again on Retry, reporting it %s",
+    ([receiptOutcome, outcome]) =>
+      Effect.gen(function* () {
+        const signed: Array<string> = [];
+        let receipts = 0;
+        const ledger = makeDirectTransactionLedger();
+        const workflow = yield* startWorkflow(
+          capabilities({
+            evmRpc: {
+              awaitOutcome: () =>
+                Effect.succeed(
+                  ++receipts === 1 ? receiptOutcome : ("Confirmed" as const)
+                ),
+              broadcast: () => Effect.void,
+              prepare: () => Effect.succeed("unsigned-wrap"),
+            },
+            signTransaction: (input) =>
+              Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
+                Effect.as(signedPayload)
+              ),
+          }),
+          makeInput({ conversion: [wrap], ledger })
+        );
+
+        const failed = yield* awaitState(
+          workflow,
+          (state) => state._tag === "ConfirmationFailed"
+        );
+        const afterRevert = yield* Ref.get(ledger);
+        yield* workflow.dispatch({ _tag: "Retry" });
+        yield* awaitState(workflow, (state) => state._tag === "Completed");
+
+        expect(failed).toMatchObject({
+          error: {
+            _tag: "TransactionConfirmationError",
+            outcome,
+            reason: null,
           },
-          signTransaction: (input) =>
-            Effect.sync(() => signed.push(input.txMeta.txId)).pipe(
-              Effect.as(signedPayload)
-            ),
-        }),
-        makeInput({ conversion: [wrap], ledger })
-      );
-
-      yield* awaitState(
-        workflow,
-        (state) => state._tag === "ConfirmationFailed"
-      );
-      const afterRevert = yield* Ref.get(ledger);
-      yield* workflow.dispatch({ _tag: "Retry" });
-      yield* awaitState(workflow, (state) => state._tag === "Completed");
-
-      expect(afterRevert.size).toBe(0);
-      expect(signed).toEqual(["conversion-wrap", "conversion-wrap", "deposit"]);
-    }).pipe(Effect.scoped)
+        });
+        expect(afterRevert.size).toBe(0);
+        expect(signed).toEqual([
+          "conversion-wrap",
+          "conversion-wrap",
+          "deposit",
+        ]);
+      }).pipe(Effect.scoped)
   );
 
   it.effect(
@@ -608,10 +626,13 @@ describe("confidential transaction workflow", () => {
           makeInput({ conversion: [wrap] })
         );
 
-        yield* awaitState(
+        const failed = yield* awaitState(
           workflow,
           (state) => state._tag === "ConfirmationFailed"
         );
+        expect(failed).toMatchObject({
+          error: { outcome: "Unconfirmed", reason: null },
+        });
         yield* workflow.dispatch({ _tag: "Retry" });
         yield* workflow.dispatch({ _tag: "Retry" });
         yield* awaitState(workflow, (state) => state._tag === "Completed");

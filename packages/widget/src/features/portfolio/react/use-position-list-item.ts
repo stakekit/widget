@@ -3,7 +3,7 @@ import { exactZero } from "../../../domain/finance/exact";
 import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
 import {
   formatRewardRatePercent,
-  formatShortTokenAmountWithSymbol,
+  formatTokenAmountWithSymbol,
   formatUsd,
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
@@ -50,11 +50,11 @@ export const usePositionListItem = (item: PositionItem) => {
   const inactiveValidator = toInactiveValidatorStatus(providersDetails);
 
   const total = toPositionTotalDisplay(item.total);
-  // A row is narrow: from 1,000 the amount shows compactly, as its USD value
-  // does; Position Details shows it in full.
+  // A row is narrow: from 1,000,000 the amount shows compactly, as its USD
+  // value does; Position Details shows it in full.
   const getTotalFormatted = () => {
     if (total.amount) {
-      return formatShortTokenAmountWithSymbol(total.amount, locale);
+      return formatTokenAmountWithSymbol(total.amount, locale);
     }
     return total.amountUsd ? formatUsd(total.amountUsd, locale) : null;
   };

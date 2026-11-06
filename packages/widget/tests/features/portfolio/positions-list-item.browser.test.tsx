@@ -371,9 +371,9 @@ describe("Earn position list item", () => {
         </WidgetPresentationProvider>
       );
 
-      // French puts U+00A0 before `$` and compacts thousands.
+      // French groups thousands with U+202F and puts U+00A0 before `$`.
       await expect
-        .element(app.getByText("≈ 1,23\u00a0k\u00a0$"))
+        .element(app.getByText("≈ 1\u202f234,50\u00a0$"))
         .toBeInTheDocument();
     });
 

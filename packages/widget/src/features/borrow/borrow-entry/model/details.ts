@@ -37,6 +37,8 @@ type BorrowDetailsRow = {
   readonly value: string;
   /** The value as a thin gauge under the row: the projected LTV. */
   readonly meter?: LtvMeter;
+  /** Context under the row, such as why its value is unavailable. */
+  readonly caption?: string;
 };
 
 type BorrowMetricCard = {
@@ -158,9 +160,12 @@ export const getBorrowDetailsModel = ({
     },
   ];
 
+  // The figures exist but can't be projected, such as when the account's
+  // totals disagree with its collateral: say so rather than drop the rows.
+  const projectionUnavailable = projection?.riskStatus === "unavailable";
   const getLtvValue = (): string | null => {
     if (
-      projection?.riskStatus === "unavailable" ||
+      (projection !== undefined && projection.riskStatus !== "available") ||
       displayedCollateralUsd.isZero()
     ) {
       return null;
@@ -195,23 +200,29 @@ export const getBorrowDetailsModel = ({
   };
   const loanValue = getLoanValue();
 
+  // LTV and health factor always show: "—" until they can be projected.
   const formRows: BorrowDetailsRow[] = [
-    ...(ltvValue === null
-      ? []
-      : [
-          {
-            id: "ltv",
-            label: t("dashboard.borrow.form.ltv_ratio"),
-            tone: riskTone,
-            value: ltvValue,
-            meter: toLtvMeter({
-              locale,
-              ltv: displayedProjectedLtv,
-              maxLtv,
-              t,
-            }),
-          },
-        ]),
+    ltvValue === null
+      ? {
+          id: "ltv",
+          label: t("dashboard.borrow.form.ltv_ratio"),
+          value: unavailableFigure,
+          ...(projectionUnavailable
+            ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+            : {}),
+        }
+      : {
+          id: "ltv",
+          label: t("dashboard.borrow.form.ltv_ratio"),
+          tone: riskTone,
+          value: ltvValue,
+          meter: toLtvMeter({
+            locale,
+            ltv: displayedProjectedLtv,
+            maxLtv,
+            t,
+          }),
+        },
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
@@ -237,16 +248,13 @@ export const getBorrowDetailsModel = ({
       label: t("dashboard.borrow.form.borrow_rate"),
       value: formatPercent(market.borrowRate, locale),
     },
-    ...(healthFactor === null
-      ? []
-      : [
-          {
-            id: "health-factor",
-            label: t("dashboard.borrow.form.health_factor"),
-            tone: riskTone,
-            value: formatHealthFactor(healthFactor, locale),
-          },
-        ]),
+    {
+      id: "health-factor",
+      label: t("dashboard.borrow.form.health_factor"),
+      ...(healthFactor === null
+        ? { value: unavailableFigure }
+        : { tone: riskTone, value: formatHealthFactor(healthFactor, locale) }),
+    },
   ];
 
   const marketRows: BorrowDetailsRow[] = [

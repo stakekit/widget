@@ -174,7 +174,10 @@ explicit `as`, so headings form a real outline.
 ### Other scales
 
 - **Radius roles**: `badge` 6, `control` 12 (inner segments 8), `card` 16,
-  `overlay` 20, `shell` 20, `pill` fully rounded.
+  `overlay` 20, `shell` 20, `pill` fully rounded for round marks (avatars,
+  spinners, dots, switches), and `pillControl`, fully rounded by default, for
+  pill-shaped controls (chips, pill tabs, token and wallet triggers), which a
+  preset with tight corners rounds as its controls.
 - **Spacing**: a 4px grid of 0, 2, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64, plus
   the named insets `gutter` and `section`.
 - **Control heights**: `sm` 32, `md` 40, `lg` 48.
@@ -183,9 +186,12 @@ explicit `as`, so headings form a real outline.
   Selection is a ring plus a tint, never a shadow; hover is `surfaceHover`
   alone, never the selection.
 - **Disabled**: a control that cannot be used keeps its variant and state at
-  the `disabled` opacity (40%), so a disabled primary button still reads as
-  the primary action and a disabled switch as on or off; a busy button keeps
-  its full look.
+  the `disabled` opacity (40%), so a disabled switch still reads as on or off.
+  A disabled primary or soft button instead takes the `surfaceHover` fill
+  under a `textMuted` label at full opacity: its label often says why it is
+  disabled ("Enter an amount"), and an accent faded to 40% leaves it
+  unreadable in dark and on many host accents. A busy button keeps its full
+  look.
 - **Motion**: 120, 200 and 320 ms with one standard easing; 0 under
   `prefers-reduced-motion`; press feedback scales to 0.98, and a filled
   button's fill also changes while pressed (`pressTint`: the primary deepens
@@ -233,9 +239,10 @@ box and are no size container, so the content flows as if unwrapped.
 - Presets differ beyond color but keep their accents. Finery is elevated and
   airy: teal-tinted neutrals, white cards on one level of soft shadow, softer
   radii (card 20, control 14) and lighter headings. Porto is dark, high
-  contrast and flat: a near-black canvas, tight radii (card 6, control 4),
-  raised parts outlined instead of shadowed, outlined surfaces and pill tabs.
-  Utila is light, crisp and compact: 8px radii, outlined surfaces, shorter
+  contrast and flat: a near-black canvas, tight radii (card 6, control and
+  pill controls 4), raised parts outlined instead of shadowed, outlined
+  surfaces and pill tabs. Utila is light, crisp and compact: 8px radii (cards,
+  controls, pill controls and overlays), outlined surfaces, shorter
   controls (28/36/44), the `md` gutter and underline tabs. Radius, weight,
   control height and elevation are preset themes in
   `ui/theme/appearance-presets.ts`; the surface style, tabs indicator and
@@ -251,10 +258,11 @@ box and are no size container, so the content flows as if unwrapped.
   `presentationMarker`, and a component reads one with
   `stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)`
   in its own style map. Components never take them as props.
-- Under `elevated`, filled cards lift off the canvas as `surfaceRaised` with
-  the `raised` elevation, so parts inside them (the token trigger) stay flat on
-  `surface` and soft badges fill from `surfaceRaised`: one level of
-  elevation. Under `outlined`, filled cards and rows keep their fill and edge
+- Under `elevated`, filled cards and rows lift off the canvas as
+  `surfaceRaised` with the `raised` elevation, so parts inside them (the token
+  trigger) stay flat on `surface` and soft badges fill from `surfaceRaised`:
+  one level of elevation. Under `outlined`, filled cards and rows (pressable
+  ones too) keep their fill and edge
   in `border`. A `SegmentedControl` marks its choice as the tabs do: a raised
   segment under `pill`, an accent underline under `underline`.
 
@@ -303,11 +311,12 @@ Numbers reach the Design System already formatted, by the one formatter in
 `src/shared/lib/number-format.ts`, which keeps values exact (ADR 0006) and
 only shapes their display:
 
-- token amounts: at most four decimals at every magnitude, trailing zeros
-  dropped; a non-zero amount below 0.0001 reads `<0.0001`, never 0. Narrow
-  places use the compact form from 1,000 ("1.23K").
-- USD: two decimals below 1,000, compact from 1,000 ("$1.25K"); below a cent
-  `<$0.01`.
+- token amounts: at most four decimals, trailing zeros dropped, grouped in
+  full below 1,000,000 ("1,762.3456") and compact from 1,000,000 ("1.2M"); a
+  non-zero amount below 0.0001 reads `<0.0001`, never 0.
+- USD: exact to the cent below 1,000,000 ("$1,710.42"), compact from
+  1,000,000 ("$1.23M"); below a cent `<$0.01`. Every surface (lists, inputs,
+  review, receipts, market stats) uses the same rule.
 - percents: reward rates and commissions rounded to two places; a non-zero
   rate that rounds to zero reads `<0.01%`.
 - a chart's value axis uses one decimal count, and for USD one compact unit,
@@ -325,7 +334,9 @@ is what is validated and submitted: display never rounds it, so Max never
 submits more than the balance. When the amount does not fit the input even at
 the smallest `display` step, the unfocused input shows only the fraction
 digits that fit, rounded down but never past the first non-zero digit, so a
-non-zero amount never reads 0; focusing shows every digit again.
+non-zero amount never reads 0; focusing shows every digit again. Keyboard
+focus underlines the amount in `focusRing` rather than ringing it, so the
+amount stays bare in its card.
 
 Hosts and tests locate elements by `data-rk`. A part that takes `hostHook`
 renders it as `data-rk`; the values are the `HostHook` union in

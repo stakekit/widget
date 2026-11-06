@@ -1,8 +1,8 @@
 import { Stack } from "../../../../ui/index";
 import { useSKWallet } from "../../../wallet/index";
 import { AnimationPage } from "../../../widget-shell/views";
+import { ManageSummary } from "../components/manage-summary";
 import { PositionsPage } from "./positions/positions.page.tsx";
-import { Summary } from "./summary";
 
 export const ManagePage = () => {
   // Without a wallet there is nothing to sum up; the list asks to connect.
@@ -11,7 +11,7 @@ export const ManagePage = () => {
   return (
     <AnimationPage>
       <Stack gap={16} grow>
-        {showsSummary && <Summary />}
+        {showsSummary && <ManageSummary />}
         <PositionsPage />
       </Stack>
     </AnimationPage>

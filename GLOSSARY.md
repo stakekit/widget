@@ -311,7 +311,9 @@ one integration and network.
 **Market Risk Position**: A Risk Position owned by one isolated market.
 
 **Risk Unavailable**: A typed absence of consistent inputs for a risk
-projection. It is not a warning, blocker, or substitute metric.
+projection. It is not a warning, blocker, or substitute metric: the Borrow
+form keeps its LTV and health factor rows, reading "—" with a caption saying
+the projection couldn't be computed.
 
 **Borrow Constraint Warning**: A known liquidity, balance, debt-minimum, or
 capacity violation attached to a constructible Action Command for review. It
@@ -327,7 +329,9 @@ caution (health factor below 1.5, or LTV within 90% of max LTV) or danger
 (health factor below 1.1, or LTV past max LTV). One band, the worse of the two
 figures, tones the LTV, its meter and the health factor alike: safe reads
 plain, caution as a warning, danger as danger; caution and danger raise an
-alert with Repay. It informs only; the Risk Gate decides.
+alert with Repay, and a status on the position's Manage row ("Close to
+liquidation", "High liquidation risk") that sorts it first and counts it in
+the Manage tab. It informs only; the Risk Gate decides.
 
 **Action Rejection Reason**: The API's own message when it refuses to create an
 action. Review shows it in place of generic failure copy.

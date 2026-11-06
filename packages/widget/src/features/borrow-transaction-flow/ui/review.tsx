@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
@@ -12,13 +12,15 @@ import {
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
+  ExternalLink,
   IconButton,
   Notice,
   ReviewSummary,
   Stack,
   Text,
 } from "../../../ui/index";
-import { useTrackPage } from "../../tracking/index";
+import { useTrackEvent, useTrackPage } from "../../tracking/index";
+import { useWidgetConfig } from "../../widget-configuration/index";
 import {
   AnimationPage,
   PageContainer,
@@ -48,6 +50,8 @@ export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
 
   const { t } = useTranslation();
+  const trackEvent = useTrackEvent();
+  const hideGasFee = useWidgetConfig("hideGasFee");
   const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
   const review = useBorrowTransactionFlowReview();
@@ -125,7 +129,19 @@ export const BorrowReviewPage = () => {
     }),
     ...(origination ? [origination.principal] : []),
   ];
+  // Borrow builds its transactions on Confirm and lets the wallet estimate
+  // their gas at signing, so Review has no figure to quote.
+  const gasFeeRow = {
+    info: {
+      label: t("dashboard.borrow.review_page.gas_fee_info_label"),
+      text: t("dashboard.borrow.review_page.gas_fee_info"),
+    },
+    label: t("dashboard.borrow.review_page.gas_fee"),
+    testId: "borrow-review-gas-fee",
+    value: t("dashboard.borrow.review_page.gas_fee_in_wallet"),
+  };
   const feeRows = [
+    ...(hideGasFee ? [] : [gasFeeRow]),
     ...(collateralFee
       ? [
           {
@@ -206,6 +222,23 @@ export const BorrowReviewPage = () => {
             {t(
               `dashboard.borrow.review_page.risk_disclosures.${summary.action}`
             )}
+          </Text>
+
+          <Text as="p" variant="caption" tone="muted">
+            <Trans
+              i18nKey="review.terms_of_use"
+              components={{
+                underline0: (
+                  <ExternalLink
+                    href="https://docs.yield.xyz/docs/terms-of-use"
+                    newTabLabel={t("shared.opens_in_new_tab")}
+                    onClick={() => trackEvent("termsClicked")}
+                  >
+                    {null}
+                  </ExternalLink>
+                ),
+              }}
+            />
           </Text>
         </Stack>
 

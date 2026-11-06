@@ -10,6 +10,7 @@ import { EvmRpc } from "../../evm-rpc/evm-rpc";
 import {
   type DirectTransactionLedger,
   TransactionConfirmationError,
+  type TransactionConfirmationOutcome,
   type TransactionWorkflowContext,
   type TransactionWorkflowInput,
 } from "../transaction-workflow-model";
@@ -58,15 +59,27 @@ export const makeConfirmCurrent = Effect.gen(function* () {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
-    const fail = (message: string, cause?: unknown) =>
+    const makeError = (
+      outcome: TransactionConfirmationOutcome,
+      message: string,
+      { cause, reason = null }: { cause?: unknown; reason?: string | null }
+    ) =>
       new TransactionConfirmationError({
         batchId: batch.id,
         cause,
         message,
         network: source.transaction.network,
+        outcome,
+        reason,
         transactionId: source.transaction.id,
         workflowId,
       });
+    /** Its outcome could not be learned: retrying checks again. */
+    const fail = (message: string, cause?: unknown) =>
+      makeError("Unconfirmed", message, { cause });
+    /** The chain or the API says it failed, with why when the API says. */
+    const failed = (message: string, reason: string | null) =>
+      makeError("Failed", message, { reason });
 
     if (current._tag === "Direct") {
       const direct = current.transaction.source.transaction;
@@ -103,11 +116,9 @@ export const makeConfirmCurrent = Effect.gen(function* () {
             }),
           })
         );
-        return yield* fail(
-          outcome === "Reverted"
-            ? "The transaction reverted."
-            : "The transaction was dropped."
-        );
+        return yield* outcome === "Reverted"
+          ? failed("The transaction reverted.", null)
+          : makeError("Dropped", "The transaction was dropped.", {});
       }
 
       yield* recordDirectTransaction(ledger, direct, {
@@ -152,7 +163,10 @@ export const makeConfirmCurrent = Effect.gen(function* () {
               > => {
                 if (isTransactionError(status.status)) {
                   return Effect.fail(
-                    fail(`Transaction ended with ${status.status} status.`)
+                    failed(
+                      `Transaction ended with ${status.status} status.`,
+                      status.error ?? null
+                    )
                   );
                 }
 
@@ -196,7 +210,10 @@ export const makeConfirmCurrent = Effect.gen(function* () {
 
               if (isUnsuccessfulBorrowActionStatus(action.status)) {
                 return Effect.fail(
-                  fail(`Borrow action ended with ${action.status} status.`)
+                  failed(
+                    `Borrow action ended with ${action.status} status.`,
+                    null
+                  )
                 );
               }
 
@@ -220,14 +237,14 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                 );
               }
 
-              if (
-                updated.status === "FAILED" ||
-                updated.status === "NOT_FOUND"
-              ) {
+              if (updated.status === "FAILED") {
                 return Effect.fail(
-                  fail(
-                    `Borrow transaction ended with ${updated.status} status.`
-                  )
+                  failed("Borrow transaction ended with FAILED status.", null)
+                );
+              }
+              if (updated.status === "NOT_FOUND") {
+                return Effect.fail(
+                  fail("Borrow transaction ended with NOT_FOUND status.")
                 );
               }
 

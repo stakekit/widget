@@ -24,6 +24,7 @@ import {
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
+import { useConnectedWallet } from "../../react/use-connected-wallet";
 import { useSKWallet } from "../../react/use-wallet";
 import { getOtherAccounts } from "../../state/account-identities";
 import {
@@ -51,6 +52,8 @@ export const AccountModal = ({
   const switchAccount = useAtomSet(switchAccountAtom);
   const copyAddress = useAtomSet(copyWalletAddressAtom);
   const copied = useAtomValue(walletAddressCopiedAtom);
+  // Null for the host's External Provider, which names no wallet.
+  const connectedWallet = useConnectedWallet();
   const leaveConfirmation = useLeaveConfirmation();
 
   // A connecting wallet keeps its scope owner while a network switch settles.
@@ -147,9 +150,11 @@ export const AccountModal = ({
                     </Text>
                   )}
                 </Stack>
-                <Text variant="caption" tone="muted" truncate>
-                  {wallet.connector.name}
-                </Text>
+                {connectedWallet && (
+                  <Text variant="caption" tone="muted" truncate>
+                    {connectedWallet.name}
+                  </Text>
+                )}
               </Stack>
               <IconButton
                 testId="wallet-account-copy"

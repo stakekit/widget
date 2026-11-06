@@ -327,7 +327,7 @@ describe("Activity action list item projection", () => {
   it.each([
     ["SUCCESS", "completed"],
     ["FAILED", "failed"],
-    ["WAITING_FOR_NEXT", null],
+    ["WAITING_FOR_NEXT", "in_progress"],
   ] as const)("projects the %s status label", (status, statusLabel) => {
     const yieldData = yieldApiYieldFixture();
     const projection = projectActivityActionListItem({
@@ -340,6 +340,57 @@ describe("Activity action list item projection", () => {
     });
 
     expect(projection.statusLabel).toBe(statusLabel);
+  });
+
+  it.each([
+    ["STAKE", "deposit", "deposited"],
+    ["UNSTAKE", "withdraw", "withdrew"],
+  ] as const)(
+    "titles a waiting %s by what it does, a finished one by what it did",
+    (type, waitingTag, doneTag) => {
+      const yieldData = yieldApiYieldFixture();
+      const project = (status: "SUCCESS" | "WAITING_FOR_NEXT") =>
+        projectActivityActionListItem({
+          action: makeItem(
+            yieldApiActionFixture({ status, type, yieldId: yieldData.id }),
+            yieldData
+          ),
+          locale: "en-US",
+          presentationTime: null,
+        });
+
+      expect(project("WAITING_FOR_NEXT").title).toEqual({
+        _tag: waitingTag,
+        tokenSymbol: yieldData.token.symbol,
+      });
+      expect(project("SUCCESS").title).toEqual({
+        _tag: doneTag,
+        tokenSymbol: yieldData.token.symbol,
+      });
+    }
+  );
+
+  it("calls out a waiting action until its continuation window closes", () => {
+    const yieldData = yieldApiYieldFixture();
+    const project = (now: string) =>
+      projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            createdAt: DateTime.makeUnsafe("2026-08-20T10:00:00.000Z"),
+            status: "WAITING_FOR_NEXT",
+            yieldId: yieldData.id,
+          }),
+          yieldData
+        ),
+        locale: "en-US",
+        presentationTime: {
+          now: DateTime.makeUnsafe(now),
+          timeZone: DateTime.zoneMakeNamedUnsafe("UTC"),
+        },
+      }).statusLabel;
+
+    expect(project("2026-08-20T10:12:00.000Z")).toBe("in_progress");
+    expect(project("2026-08-27T10:00:00.000Z")).toBe("expired");
   });
 
   it.each(["WITHDRAW_REQUEST", "INSTANT_WITHDRAW"] as const)(
@@ -672,13 +723,14 @@ describe("Activity action list item projection", () => {
   });
 
   it.each([
-    ["borrow", "FAILED", "neutral", "failed"],
-    ["repay", "PROCESSING", "neutral", "processing"],
-    ["withdraw", "SUCCESS", "withdraw", "completed"],
-    ["disableCollateral", "CANCELED", "neutral", "canceled"],
+    ["borrow", "FAILED", "neutral", "failed", false],
+    ["repay", "PROCESSING", "neutral", "processing", true],
+    ["supply", "WAITING_FOR_NEXT", "deposit", "in_progress", true],
+    ["withdraw", "SUCCESS", "withdraw", "completed", false],
+    ["disableCollateral", "CANCELED", "neutral", "canceled", false],
   ] as const)(
     "projects a Borrow %s action as %s",
-    (action, status, direction, statusLabel) => {
+    (action, status, direction, statusLabel, inProgress) => {
       const projection = projectActivityActionListItem({
         action: makeBorrowItem({ action, status }),
         locale: "en-US",
@@ -689,7 +741,7 @@ describe("Activity action list item projection", () => {
         amount: null,
         direction,
         statusLabel,
-        title: { _tag: "borrow", action },
+        title: { _tag: "borrow", action, inProgress },
       });
     }
   );

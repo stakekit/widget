@@ -47,11 +47,6 @@ const renderStakeReview = ({
     kycProviderName: "Superstate",
     kycStatusIsChecking: isChecking,
     managementFee: null,
-    metadata: {
-      logoURI: stake.metadata.logoURI,
-      name: stake.metadata.name,
-      provider: undefined,
-    },
     metaInfo: { showMetaInfo: false },
     onKycStatusRefresh: vi.fn(),
     performanceFee: null,

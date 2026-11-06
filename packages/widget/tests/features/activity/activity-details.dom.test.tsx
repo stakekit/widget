@@ -112,9 +112,7 @@ describe("Activity details receipt", () => {
       'button[aria-label="View Stake transaction"]'
     );
 
-    expect(app.container.textContent).toContain(
-      "\u22121,000,000,000,000,000.1234"
-    );
+    expect(app.container.textContent).toContain("\u22121000T ETH");
     expect(app.container.textContent).toContain("1 failed");
     expect(app.container.textContent).not.toContain("Continue");
     expect(rows.map((row) => row.textContent)).toEqual([
@@ -153,6 +151,23 @@ describe("Activity details receipt", () => {
       "This action cannot continue because its yield details are unavailable."
     );
     expect(app.container.textContent).not.toContain("Continue");
+  });
+
+  it("states that a waiting action is in progress, by what it does", async () => {
+    route.current = {
+      continuationReady: false,
+      item: makeItem({ status: "WAITING_FOR_NEXT" }),
+      receiptPlacement: "page",
+    };
+
+    const app = await renderDetails();
+    const text = app.container.textContent;
+
+    expect(app.container.querySelector("h2")?.textContent).toMatch(
+      /^Withdraw /
+    );
+    expect(text).toContain("StatusIn progress");
+    expect(text).not.toContain("Withdrew");
   });
 
   it("renders a Borrow receipt without continuation", async () => {

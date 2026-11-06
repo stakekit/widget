@@ -362,9 +362,27 @@ export class TransactionSubmissionError extends Data.TaggedError(
   "TransactionSubmissionError"
 )<WorkflowErrorFields & { readonly broadcasted: boolean }> {}
 
+/**
+ * The transaction did not confirm. `Failed`: the chain or the API says it
+ * failed. `Dropped`: the network dropped it unspent, so retrying signs it
+ * again. `Unconfirmed`: its outcome could not be learned, such as when
+ * polling ran out or the status could not be read.
+ */
+export type TransactionConfirmationOutcome =
+  | "Dropped"
+  | "Failed"
+  | "Unconfirmed";
+
 export class TransactionConfirmationError extends Data.TaggedError(
   "TransactionConfirmationError"
-)<WorkflowErrorFields & { readonly network: Network }> {}
+)<
+  WorkflowErrorFields & {
+    readonly network: Network;
+    readonly outcome: TransactionConfirmationOutcome;
+    /** Why it failed as the API reports it, such as a revert reason. */
+    readonly reason: string | null;
+  }
+> {}
 
 export class TransactionAdvanceError extends Data.TaggedError(
   "TransactionAdvanceError"

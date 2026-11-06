@@ -35,19 +35,22 @@ type TransactionStepsProps = Pick<FlowStepsProps, "summary" | "details"> & {
 
 /**
  * Where a transaction's sign, broadcast and confirm phases put its step, with
- * what went wrong once one failed.
+ * `failure`, what went wrong, once one failed.
  */
 export const getTransactionStepState = (
-  t: TFunction,
   done: boolean,
-  phases: TransactionPhaseProgress
+  phases: TransactionPhaseProgress,
+  failure: string | null
 ): Pick<TransactionStep, "state" | "message"> => {
   if (done) return { state: "done" };
-  if (phases.sign === "failed") {
-    return { message: t("steps.approve_error"), state: "failed" };
-  }
-  if (phases.broadcast === "failed" || phases.confirm === "failed") {
-    return { message: t("shared.something_went_wrong"), state: "failed" };
+  if (
+    phases.sign === "failed" ||
+    phases.broadcast === "failed" ||
+    phases.confirm === "failed"
+  ) {
+    return failure === null
+      ? { state: "failed" }
+      : { message: failure, state: "failed" };
   }
   if (phases.sign === "active") return { state: "signing" };
   if (phases.broadcast === "active") return { state: "broadcasting" };
@@ -83,11 +86,11 @@ const getSignaturePrompt = (
 
 /**
  * A flow's transactions as its Steps page shows them: how many are
- * confirmed, each state by name, and each done transaction's short hash
- * linking to its block explorer. A step not yet done shows no link, so a
- * transaction still being sent or confirmed reads as unfinished. While a
- * step waits for its signature, a card asks to approve it in the wallet,
- * named and shown once known.
+ * confirmed, each state by name, and each done or failed transaction's short
+ * hash linking to its block explorer. A step still being sent or confirmed
+ * shows no link, so it reads as unfinished. While a step waits for its
+ * signature, a card asks to approve it in the wallet, named and shown once
+ * known.
  */
 export const TransactionSteps = ({
   steps,
@@ -120,7 +123,8 @@ export const TransactionSteps = ({
         newTabLabel: t("shared.opens_in_new_tab"),
       }}
       steps={steps.map(({ explorerUrl, hash, type: _type, ...step }) =>
-        step.state === "done" && explorerUrl !== null
+        (step.state === "done" || step.state === "failed") &&
+        explorerUrl !== null
           ? {
               ...step,
               explorerUrl,

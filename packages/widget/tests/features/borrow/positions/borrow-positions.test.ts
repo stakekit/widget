@@ -13,6 +13,7 @@ import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "../../../../src/features/borrow/market-position/model/details";
+import { unavailableFigure } from "../../../../src/shared/lib/number-format";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -323,38 +324,52 @@ describe("borrow position items", () => {
     );
   });
 
-  it("omits unavailable entry risk facts without placeholder values", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
-    const model = getBorrowDetailsModel({
-      collateralToken: null,
-      borrowAmount: new BigNumber(1),
-      collateralAmount: new BigNumber(1),
-      integration: Schema.decodeSync(Integration)(integrationDto),
-      locale: "en",
-      market,
-      projection: {
-        borrowMaxAmount: new BigNumber(10),
-        borrowUsd: new BigNumber(1),
-        collateralMaxAmount: new BigNumber(10),
-        collateralUsd: new BigNumber(1),
-        existingCollateralUsd: new BigNumber(0),
-        existingDebtUsd: new BigNumber(0),
-        maxLtv: null,
-        projectedCollateralUsd: new BigNumber(1),
-        projectedDebtUsd: new BigNumber(1),
-        projectedHealthFactor: null,
-        projectedLtv: new BigNumber(1),
-        riskStatus: "unavailable",
-      },
-      t,
-    });
+  it.each([
+    { riskStatus: "unavailable" as const, explains: true },
+    { riskStatus: "pending" as const, explains: false },
+  ])(
+    "keeps the LTV and health factor rows as placeholders while risk is $riskStatus",
+    ({ explains, riskStatus }) => {
+      const market = Schema.decodeSync(Market)(marketDto);
+      const model = getBorrowDetailsModel({
+        collateralToken: null,
+        borrowAmount: new BigNumber(1),
+        collateralAmount: new BigNumber(1),
+        integration: Schema.decodeSync(Integration)(integrationDto),
+        locale: "en",
+        market,
+        projection: {
+          borrowMaxAmount: new BigNumber(10),
+          borrowUsd: new BigNumber(1),
+          collateralMaxAmount: new BigNumber(10),
+          collateralUsd: new BigNumber(1),
+          existingCollateralUsd: new BigNumber(0),
+          existingDebtUsd: new BigNumber(0),
+          maxLtv: null,
+          projectedCollateralUsd: new BigNumber(1),
+          projectedDebtUsd: new BigNumber(1),
+          projectedHealthFactor: null,
+          projectedLtv: new BigNumber(1),
+          riskStatus,
+        },
+        t,
+      });
+      const row = (id: string) =>
+        model.formRows.find((candidate) => candidate.id === id);
 
-    expect(model.formRows.map((row) => row.id)).not.toContain("ltv");
-    expect(model.formRows.map((row) => row.id)).not.toContain("health-factor");
-    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).not.toBe(
-      "-"
-    );
-  });
+      expect(row("ltv")).toEqual({
+        id: "ltv",
+        label: t("dashboard.borrow.form.ltv_ratio"),
+        value: unavailableFigure,
+        ...(explains
+          ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+          : {}),
+      });
+      expect(row("health-factor")?.value).toBe(unavailableFigure);
+      expect(row("health-factor")?.tone).toBeUndefined();
+      expect(row("max-ltv")?.value).not.toBe(unavailableFigure);
+    }
+  );
 
   it.each([
     {
@@ -781,9 +796,7 @@ describe("borrow position items", () => {
         { collateral: [usdcMarketId], id: daiMarketId, netWorthUsd: "0.02" },
       ]);
       expect(positions.totals).toEqual({
-        netApy: new BigNumber("0.018"),
-        netApyWeightUsd: new BigNumber("0.02"),
-        netWorthUsd: new BigNumber("0.02"),
+        totalBorrowedUsd: new BigNumber("0.02"),
         totalSuppliedUsd: new BigNumber("0.04"),
       });
     });
