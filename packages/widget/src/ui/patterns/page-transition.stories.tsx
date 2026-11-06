@@ -85,9 +85,19 @@ export const Rise: Story = {
   },
 };
 
+/**
+ * The first page rises in too. The accessibility check runs once play ends,
+ * so play waits for the page to settle: mid-fade, the heading's colour is
+ * still blending into the canvas.
+ */
 export const RiseDark: Story = {
   args: { variant: "rise" },
   globals: { colorScheme: "dark" },
+  play: async ({ canvasElement }) => {
+    await settled(
+      await within(canvasElement).findByRole("heading", { name: "Earn" })
+    );
+  },
 };
 
 /** With `waitForExit`, the next page enters only after the last one left. */
