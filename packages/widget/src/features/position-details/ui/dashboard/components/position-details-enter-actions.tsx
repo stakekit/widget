@@ -17,6 +17,7 @@ import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useWalletScopeRoute } from "../../../../wallet/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
+import { useNetworkFeeNotes } from "../../../../yield-entry/index";
 import {
   TronResourceSelection,
   useConfidentialTokenBalance,
@@ -98,28 +99,36 @@ const PositionDetailsEnterTokenSection = ({
     onHide: stake.onHideTokenBalance,
     symbol: stake.selectedToken?.symbol ?? "",
   });
+  const notes = useNetworkFeeNotes({
+    fee: stake.networkFee,
+    maxGasReserve: stake.maxGasReserveNote,
+  });
 
   if (isLoading) return <Skeleton shape="rect" height="lg" />;
 
-  // The limits stay beside the token, red when missed; a balance error
-  // shows under the amount beside them.
+  // The limits stay the muted helper beside the token; a missed minimum or
+  // the balance says so under the amount.
+  const belowMinimumError =
+    stakeAmountLessThanMin && stake.stakeMinAmount !== null
+      ? t("details.amount_error.below_minimum", {
+          amount: formatTokenAmount(stake.stakeMinAmount, locale, "up"),
+          symbol: stake.symbol,
+        })
+      : null;
+  const error = stakeAmountGreaterThanAvailableAmount
+    ? t("shared.insufficient_balance")
+    : belowMinimumError;
   const limitProps = {
-    ...(minMaxLabel
-      ? { limits: minMaxLabel, limitsMissed: stakeAmountLessThanMin }
-      : {}),
-    ...(stakeAmountGreaterThanAvailableAmount
-      ? { error: t("shared.insufficient_balance") }
-      : {}),
+    ...(minMaxLabel ? { limits: minMaxLabel } : {}),
+    ...(error === null ? {} : { error }),
   };
 
+  // The card names what it holds; the action's button and the call to
+  // action name the verb.
   return (
     <AmountPanel
       shrink={!disableResizingInputFontSize}
-      label={
-        stake.selectedStake
-          ? getYieldTypeLabels(stake.selectedStake, t).cta
-          : t("shared.balance")
-      }
+      label={t("shared.amount")}
       value={toAmountValue(stake.stakeAmount)}
       onValueChange={(next) => stake.onStakeAmountChange(fromAmountValue(next))}
       separators={amountSeparators(locale)}
@@ -143,8 +152,15 @@ const PositionDetailsEnterTokenSection = ({
       {...(balance ? { balance } : {})}
       {...limitProps}
       {...(stake.canUseMax
-        ? { max: { label: t("shared.max"), onClick: stake.onMaxClick } }
+        ? {
+            max: {
+              label: t("shared.max"),
+              onClick: stake.onMaxClick,
+              disabled: stake.maxFillsNothing,
+            },
+          }
         : {})}
+      notes={notes}
     />
   );
 };
@@ -177,8 +193,10 @@ const PositionDetailsEnterExtraArgs = ({
 );
 
 const PositionDetailsEnterPrimaryAction = ({
+  ctaVariant,
   stake,
 }: {
+  readonly ctaVariant: "primary" | "secondary";
   readonly stake: PositionDetailsEnterState;
 }) => {
   const { t } = useTranslation();
@@ -195,6 +213,7 @@ const PositionDetailsEnterPrimaryAction = ({
       ? getYieldTypeLabels(stake.selectedStake, t).cta
       : "",
     onClick: stake.onPrimaryAction,
+    variant: ctaVariant,
   });
   const cta = Match.value(stake.cta).pipe(
     Match.tag("Hidden", () => null),
@@ -203,6 +222,7 @@ const PositionDetailsEnterPrimaryAction = ({
       isLoading: loading,
       label: t("init.ledger_add_account"),
       onClick: stake.onPrimaryAction,
+      variant: ctaVariant,
     })),
     Match.tag("ConnectWallet", yieldAction),
     Match.tag("Submit", yieldAction),
@@ -213,9 +233,11 @@ const PositionDetailsEnterPrimaryAction = ({
 };
 
 const PositionDetailsEnterActionsContent = ({
+  ctaVariant,
   stakeKey,
 }: {
-  stakeKey: PositionDetailsEnterKey;
+  readonly ctaVariant: "primary" | "secondary";
+  readonly stakeKey: PositionDetailsEnterKey;
 }) => {
   const stake = usePositionDetailsEnter(stakeKey);
 
@@ -225,13 +247,24 @@ const PositionDetailsEnterActionsContent = ({
       <PositionDetailsEnterFooter stake={stake} />
       <EnterKycGateSection stake={stake} />
       <PositionDetailsEnterExtraArgs stake={stake} />
-      <PositionDetailsEnterPrimaryAction stake={stake} />
+      <PositionDetailsEnterPrimaryAction
+        ctaVariant={ctaVariant}
+        stake={stake}
+      />
     </>
   );
 };
 
 /** Entering further needs the position the route names; without one, nothing. */
-export const PositionDetailsEnterActions = () => {
+export const PositionDetailsEnterActions = ({
+  ctaVariant,
+}: {
+  /**
+   * `secondary` when another action leads the page, such as a withdrawal
+   * that is ready, so entering steps down beside it.
+   */
+  readonly ctaVariant: "primary" | "secondary";
+}) => {
   const walletScope = useWalletScopeRoute();
   const match = useWidgetRouteMatch(widgetRoutes.positionDetails);
 
@@ -239,6 +272,7 @@ export const PositionDetailsEnterActions = () => {
 
   return (
     <PositionDetailsEnterActionsContent
+      ctaVariant={ctaVariant}
       stakeKey={
         new PositionDetailsEnterKey({
           balanceId: match.balanceId,

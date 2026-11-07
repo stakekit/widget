@@ -17,24 +17,19 @@ const badgeTones = {
 } as const;
 
 /**
- * A yield's or position's header. A position's page passes `compact` and its
- * status, which leads the badges. Compact, the title is the yield's own name:
- * the line under it already names the provider.
+ * A yield's or position's header. A position's page passes `compact`: the
+ * title is the yield's own name, as the line under it already names the
+ * provider.
  */
 export const YieldDetailsHeader = ({
   density = "default",
   headerBadges,
   providerName,
-  status,
   yieldDto,
 }: {
   readonly density?: "default" | "compact";
   readonly headerBadges: ReadonlyArray<YieldDetailsHeaderBadge>;
   readonly providerName: string;
-  readonly status?: {
-    readonly label: string;
-    readonly tone: "info" | "neutral" | "warning";
-  } | null;
   readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
@@ -61,17 +56,20 @@ export const YieldDetailsHeader = ({
         label: t("positions.via", { providerName, count: 1 }),
         ...(providerLogo ? { src: providerLogo } : {}),
       }}
-      details={[
-        formatNetworkName(yieldDto.network),
-        formatDisplayTokenSymbol(yieldDto),
-      ]}
-      badges={[
-        ...(status ? [status] : []),
-        ...headerBadges.map((badge) => ({
-          label: badge.label,
-          tone: badgeTones[badge.tone],
-        })),
-      ]}
+      // A position's page reads "via Provider · Network"; its summary card
+      // names the token with the amount.
+      details={
+        density === "compact"
+          ? [formatNetworkName(yieldDto.network)]
+          : [
+              formatNetworkName(yieldDto.network),
+              formatDisplayTokenSymbol(yieldDto),
+            ]
+      }
+      badges={headerBadges.map((badge) => ({
+        label: badge.label,
+        tone: badgeTones[badge.tone],
+      }))}
     />
   );
 };

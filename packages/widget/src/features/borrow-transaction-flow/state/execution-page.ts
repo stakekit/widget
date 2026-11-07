@@ -33,7 +33,7 @@ import {
   emptyBorrowExecutionView,
   projectBorrowExecution,
 } from "../model/borrow-transaction-workflow";
-import { leaveBorrowFlow } from "./borrow-flow-session";
+import { leaveBorrowFlow, restartBorrowFlow } from "./borrow-flow-session";
 
 /**
  * Starts the workflow for `actionId`, in the caller's Scope, if that action is
@@ -156,6 +156,9 @@ export const makeBorrowFlowExecutionPage = (
   session: BorrowFlowSession,
   actionId: ActionId
 ) => {
+  const positionPath = widgetRoutes.borrowPosition.build("Dashboard", {
+    marketId: getBorrowFlowPositionMarketId(session),
+  });
   const workflowAtom = walletRuntime
     .atom(startBorrowFlowExecution(session, actionId))
     .pipe(Atom.withLabel("borrowFlowExecutionWorkflow"));
@@ -179,31 +182,26 @@ export const makeBorrowFlowExecutionPage = (
       .pipe(Atom.withLabel("dispatchBorrowFlowWorkflow")),
     /** Back from Steps: returns where the flow began. */
     leaveAtom: walletRuntime
-      .fn(() => leaveBorrowFlow(session), { initialValue: undefined })
+      .fn(() => leaveBorrowFlow("Steps"), { initialValue: undefined })
       .pipe(Atom.withLabel("leaveBorrowFlowExecution")),
     /**
-     * Done on Complete: a position's flow ends on the positions list, where
-     * the position itself is a View position away; a new one where it began.
+     * Done on Complete: a position's flow ends on its page, which returns
+     * to the positions list once the position is closed; a new one where it
+     * began.
      */
     finishAtom: walletRuntime
       .fn(
         () =>
           session.intake.entry._tag === "MarketPosition"
-            ? replaceBorrowFlowPage(widgetRoutes.positions.build())
-            : leaveBorrowFlow(session),
+            ? replaceBorrowFlowPage(positionPath)
+            : restartBorrowFlow(session),
         { initialValue: undefined }
       )
       .pipe(Atom.withLabel("finishBorrowFlowExecution")),
     viewPositionAtom: walletRuntime
-      .fn(
-        () =>
-          replaceBorrowFlowPage(
-            widgetRoutes.borrowPosition.build("Dashboard", {
-              marketId: getBorrowFlowPositionMarketId(session),
-            })
-          ),
-        { initialValue: undefined }
-      )
+      .fn(() => replaceBorrowFlowPage(positionPath), {
+        initialValue: undefined,
+      })
       .pipe(Atom.withLabel("viewBorrowFlowPosition")),
     settledPositionAtom: makeBorrowFlowSettledPositionAtom(session),
     stateAtom,

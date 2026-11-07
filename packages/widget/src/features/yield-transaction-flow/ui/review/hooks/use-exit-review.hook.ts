@@ -10,6 +10,7 @@ import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import { getExitActionTitle } from "../../../model/action-title";
+import { getYieldFlowAttribution } from "../../../model/yield-transaction-flow";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
@@ -18,8 +19,11 @@ import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
 import {
   formatReviewDestination,
+  getNetworkFeeWarning,
+  getReviewUsdValue,
   getSignaturesFact,
   getUnlockPeriodFact,
+  localizeReviewFee,
 } from "./review-facts";
 
 export const useExitReview = () => {
@@ -78,11 +82,29 @@ export const useExitReview = () => {
       transactions: review.transactionsToSign,
     }),
   ].filter((fact): fact is ReviewFact => fact !== null);
+  const attribution = getYieldFlowAttribution(exitFlow);
   const destination = formatReviewDestination({
-    providerName:
-      exitFlow.providersDetails[0]?.name ?? integrationData.provider?.name,
+    providerName: attribution?.name,
     t,
     yieldName: integrationData.metadata.name,
+  });
+  const feeWarning = getNetworkFeeWarning({
+    feeUsd: getReviewUsdValue({
+      amount: stakeExitTxGas,
+      prices,
+      token: integrationData.mechanics.gasFeeToken,
+    }),
+    subject: "amount",
+    t,
+    valueUsd: getReviewUsdValue({ amount, prices, token: interactedToken }),
+  });
+  const withdrawalFee = localizeReviewFee({
+    fee: review.withdrawalFee,
+    locale,
+    prices,
+    t,
+    token: interactedToken,
+    type: "withdrawal",
   });
 
   const unstakeIsLoading = review.confirmLoading;
@@ -101,10 +123,13 @@ export const useExitReview = () => {
     title,
     amount: formattedAmount,
     amountFiat,
+    attribution,
     destination,
     fee,
+    feeWarning,
     facts,
     token: interactedToken,
+    withdrawalFee,
     metaInfo,
     onContinueUnstakeSignMessage: () => {},
     onCloseUnstakeSignMessage: () => {},

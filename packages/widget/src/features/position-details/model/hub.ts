@@ -1,54 +1,58 @@
-import {
-  isOptionalPendingAction,
-  type YieldPendingActionType,
-} from "../../../domain/action/pending-action";
+import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import type { EarnBalance } from "../../../domain/earn/models";
+import { getPendingActionUrgency } from "../../../domain/portfolio/position-callout";
 
 /**
- * A tab of the position's actions: exiting it, entering it further, or one
- * type of pending action, such as claiming rewards.
+ * An action of a position's page that takes an amount: exiting it, or
+ * entering it further. Its form opens under its button.
  */
-export type PositionDetailsActionMode =
-  | "enter"
-  | "exit"
-  | YieldPendingActionType;
+export type PositionDetailsAmountAction = "enter" | "exit";
 
 export type PositionDetailsActionCapabilities = {
   readonly canEnter: boolean;
   readonly canExit: boolean;
 };
 
-/** The tabs in order: exit, enter, then each pending action type once. */
-export const resolvePositionDetailsActionModes = ({
+/**
+ * The amount actions in order, the exit first so the page opens on it, and
+ * entering further only in a Layout that offers it.
+ */
+export const resolvePositionDetailsAmountActions = ({
   canEnter,
   canExit,
-  pendingActionTypes,
+  offersEnter,
 }: PositionDetailsActionCapabilities & {
-  readonly pendingActionTypes: ReadonlyArray<YieldPendingActionType>;
-}): ReadonlyArray<PositionDetailsActionMode> => [
+  readonly offersEnter: boolean;
+}): ReadonlyArray<PositionDetailsAmountAction> => [
   ...(canExit ? (["exit"] as const) : []),
-  ...(canEnter ? (["enter"] as const) : []),
-  ...new Set(pendingActionTypes),
+  ...(canEnter && offersEnter ? (["enter"] as const) : []),
 ];
 
 /**
- * The user's tab while it is still offered; else the first pending action
- * the position asks for, such as claiming rewards, else the first tab.
+ * The pending action a position's page leads with: the first one the
+ * position requires, such as a withdrawal that is ready, else its first
+ * claim of rewards. Optional actions and an Instant Exit under way never
+ * lead. The leading action's card is the page's primary action.
  */
-export const resolveSelectedPositionDetailsActionMode = ({
-  modes,
-  selectedMode,
-}: {
-  readonly modes: ReadonlyArray<PositionDetailsActionMode>;
-  readonly selectedMode: PositionDetailsActionMode | null;
-}): PositionDetailsActionMode | null => {
-  if (selectedMode !== null && modes.includes(selectedMode)) {
-    return selectedMode;
-  }
-  const required = modes.find(
-    (mode) =>
-      mode !== "enter" && mode !== "exit" && !isOptionalPendingAction(mode)
+export const getLeadingPendingAction = <
+  A extends {
+    readonly pendingAction: { readonly type: YieldPendingActionType };
+    readonly yieldBalance: Pick<EarnBalance, "isEncrypted" | "type">;
+  },
+>(
+  actions: ReadonlyArray<A>
+): A | null => {
+  const urgencyOf = (action: A) =>
+    getPendingActionUrgency({
+      balance: action.yieldBalance,
+      type: action.pendingAction.type,
+    });
+
+  return (
+    actions.find((action) => urgencyOf(action) === "required") ??
+    actions.find((action) => urgencyOf(action) === "claim") ??
+    null
   );
-  return required ?? modes[0] ?? null;
 };
 
 const positionDetailsEnterHasContent = (val: {

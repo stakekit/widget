@@ -20,55 +20,63 @@ const listItems = {
   completed: {
     amount: "1,234,567.891",
     amountSign: "+",
-    iconType: "in",
+    direction: "deposit",
     providersDetails: [{ name: "The Ape Foundation Liquid Staking" }],
     statusLabel: "completed",
     statusText: "Completed",
-    timestamp: "Aug 5, 2026",
+    timestamp: "2:14 PM",
     title: "Deposited Wrapped Staked Ether",
+    token: { name: "Wrapped Staked Ether", symbol: "wstETH" },
     amountTokenSymbol: "wstETH",
     amountFiat: "$3,086,419,727.50",
     amountText: "+1,234,567.891 wstETH",
+    voided: false,
   },
   failed: {
     amount: "1",
     amountSign: "\u2212",
-    iconType: "out",
+    direction: "withdraw",
     providersDetails: [{ name: "Lido" }],
     statusLabel: "failed",
     statusText: "Failed",
-    timestamp: "21m ago",
+    timestamp: "Ended 21m ago",
     title: "Withdrew POL",
+    token: { name: "Polygon", symbol: "POL" },
     amountTokenSymbol: "POL",
     amountFiat: null,
     amountText: "\u22121 POL",
+    voided: true,
   },
   processing: {
     amount: "0.001",
     amountSign: "+",
-    iconType: "in",
+    direction: "deposit",
     providersDetails: [{ name: "StakeKit" }],
     statusLabel: "processing",
     statusText: "Processing",
     timestamp: "just now",
     title: "Deposited POL",
+    token: { name: "Polygon", symbol: "POL" },
     amountTokenSymbol: "POL",
     amountFiat: null,
     amountText: "+0.001 POL",
+    voided: false,
   },
   // A Yield the API no longer lists: no token, no provider.
   unknownToken: {
     amount: "0.1",
     amountSign: "+",
-    iconType: "in",
+    direction: "deposit",
     providersDetails: [],
     statusLabel: "completed",
     statusText: "Completed",
-    timestamp: "Nov 10, 2023",
-    title: "Deposited · unknown asset",
+    timestamp: "9:03 AM",
+    title: "Deposited",
+    token: null,
     amountTokenSymbol: null,
     amountFiat: "$0.14",
     amountText: "+$0.14",
+    voided: false,
   },
 } as const;
 
@@ -140,6 +148,8 @@ describe("activity rows", () => {
       for (const row of rows) {
         expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth);
         for (const text of row.querySelectorAll<HTMLElement>("span")) {
+          // An avatar's initials are its artwork, not a line of text.
+          if (text.closest('[aria-hidden="true"]')) continue;
           if (text.childElementCount === 0 && text.textContent) {
             expect(isOneLine(text), text.textContent).toBe(true);
           }
@@ -154,21 +164,22 @@ describe("activity rows", () => {
     const app = await renderRows(400);
     const [completed, failed, processing, unknownToken] = rowsOf(app.container);
 
+    // Each row leads with its token's initials, its logo standing in for
+    // them; a row without a token leads with what the action did.
     expect(completed?.textContent).toBe(
-      "Deposited Wrapped Staked Ether" +
+      "WDeposited Wrapped Staked Ether" +
         "via The Ape Foundation Liquid Staking" +
-        "+1,234,567.891 wstETHAug 5, 2026"
+        "+1,234,567.891 wstETH2:14 PM"
     );
+    // One status says it failed; the amount it never moved is struck.
     expect(failed?.textContent).toBe(
-      "Withdrew POLvia Lido·Failed\u22121 POL21m ago"
+      "PWithdrew POLvia Lido·Failed\u22121 POLEnded 21m ago"
     );
     expect(processing?.textContent).toBe(
-      "Deposited POLvia StakeKit·Processing+0.001 POLjust now"
+      "PDeposited POLvia StakeKit·Processing+0.001 POLjust now"
     );
     // A bare "+0.1" would not say of what, so the row shows its USD value.
-    expect(unknownToken?.textContent).toBe(
-      "Deposited · unknown asset+$0.14Nov 10, 2023"
-    );
+    expect(unknownToken?.textContent).toBe("Deposited+$0.149:03 AM");
     const top = (text: string) =>
       findExactText(app.container, text)?.getBoundingClientRect().top;
     // Each line's start and end share a baseline row.
@@ -176,7 +187,13 @@ describe("activity rows", () => {
       top("Withdrew POL") ?? Number.NaN,
       0
     );
-    expect(top("21m ago")).toBeCloseTo(top("via Lido") ?? Number.NaN, 0);
+    expect(top("Ended 21m ago")).toBeCloseTo(top("via Lido") ?? Number.NaN, 0);
+    const struck = (text: string) => {
+      const element = findExactText(app.container, text);
+      return element ? getComputedStyle(element).textDecorationLine : null;
+    };
+    expect(struck("\u22121 POL")).toContain("line-through");
+    expect(struck("+0.001 POL")).not.toContain("line-through");
   });
 
   it("marks the selected feed item", async () => {

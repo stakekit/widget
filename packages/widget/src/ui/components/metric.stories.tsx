@@ -16,6 +16,15 @@ export const Value: Story = {};
 
 export const WithCaption: Story = { args: { caption: "$4,012,330.12" } };
 
+/** A compact summary's lead figure: its value a step above a metric's. */
+export const Lead: Story = {
+  args: { label: "Total value", value: "$5.99", size: "lead" },
+  play: async ({ canvasElement }) => {
+    const lead = within(canvasElement).getByText("$5.99");
+    await expect(Number.parseFloat(getComputedStyle(lead).fontSize)).toBe(20);
+  },
+};
+
 /** Green is for positive rates and claimable amounts only. */
 export const PositiveRate: Story = {
   args: { label: "Reward rate", value: "4.21%", valueTone: "success" },

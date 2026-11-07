@@ -1,8 +1,10 @@
 import { describe, expect, it } from "@effect/vitest";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
+import { exactDecimal } from "../../../src/domain/finance/exact";
 import { getYieldFlowTransactionsToSign } from "../../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
 import {
   getLockupPeriodFact,
+  getNetworkFeeWarning,
   getSignaturesFact,
   getUnlockPeriodFact,
 } from "../../../src/features/yield-transaction-flow/ui/review/hooks/review-facts";
@@ -123,5 +125,51 @@ describe("getYieldFlowTransactionsToSign", () => {
         ),
       })
     ).toBeNull();
+  });
+});
+
+describe("getNetworkFeeWarning", () => {
+  const warn = (
+    feeUsd: string | null,
+    valueUsd: string | null,
+    subject: "amount" | "rewards" = "rewards"
+  ) =>
+    getNetworkFeeWarning({
+      feeUsd: feeUsd === null ? null : exactDecimal(feeUsd),
+      subject,
+      t,
+      valueUsd: valueUsd === null ? null : exactDecimal(valueUsd),
+    });
+
+  it("warns when the fee is higher than the rewards to claim", () => {
+    expect(warn("0.52", "0.12")).toEqual({
+      message: "The network fee is higher than the rewards you'd claim.",
+      title: "High network fee",
+    });
+  });
+
+  it("warns from half of the value", () => {
+    expect(warn("0.5", "1")).toEqual({
+      message: "The network fee is more than half the rewards you'd claim.",
+      title: "High network fee",
+    });
+    expect(warn("2", "3", "amount")?.message).toBe(
+      "The network fee is more than half the amount of this transaction."
+    );
+    expect(warn("3", "3", "amount")?.message).toBe(
+      "The network fee is higher than the amount of this transaction."
+    );
+  });
+
+  it("stays quiet below half of the value", () => {
+    expect(warn("0.49", "1")).toBeNull();
+  });
+
+  it.each([
+    ["the fee", null, "1"],
+    ["the value", "0.5", null],
+    ["a zero value", "0.5", "0"],
+  ])("stays quiet without the USD of %s", (_, feeUsd, valueUsd) => {
+    expect(warn(feeUsd, valueUsd)).toBeNull();
   });
 });

@@ -318,9 +318,7 @@ describe("Borrow flow Review page", () => {
         suspendOnWaiting: true,
       });
 
-      expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
+      expect(yield* navigation.commands).toEqual([{ _tag: "Back", steps: 1 }]);
     })
   );
 });
@@ -397,7 +395,7 @@ describe("Borrow flow Execution page", () => {
     })
   );
 
-  it.effect("leaves for where the flow began", () =>
+  it.effect("leaves for where the flow began, past its Review", () =>
     Effect.gen(function* () {
       const { handle, navigation, registry } = yield* makeHarness();
       const page = makeBorrowFlowExecutionPage(handle, action.id);
@@ -408,9 +406,7 @@ describe("Borrow flow Execution page", () => {
         suspendOnWaiting: true,
       });
 
-      expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
+      expect(yield* navigation.commands).toEqual([{ _tag: "Back", steps: 2 }]);
     })
   );
 
@@ -431,7 +427,7 @@ describe("Borrow flow Execution page", () => {
     })
   );
 
-  it.effect("finishes a position's action on the positions list", () =>
+  it.effect("finishes a position's action on the position's page", () =>
     Effect.gen(function* () {
       const { handle, navigation, registry } = yield* makeHarness({
         sessionIntake: {
@@ -448,7 +444,12 @@ describe("Borrow flow Execution page", () => {
       });
 
       expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", to: widgetRoutes.positions.build() },
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: positionMarketId,
+          }),
+        },
       ]);
     })
   );

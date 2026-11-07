@@ -16,7 +16,11 @@ import { container } from "../tokens/container.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { selectionControlSize } from "../tokens/size.stylex";
+import {
+  iconSize,
+  selectionControlSize,
+  visuallyHiddenBox,
+} from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { CopyButton } from "./copy-button";
 import { interactiveStyles } from "./interactive-styles";
@@ -36,7 +40,9 @@ type ListRowDensity = "comfortable" | "condensed";
  * did, such as positions or activity: each row a filled surface, a selection
  * ring for `selected`. `flat` is for pickers, every `SelectSheet` among them:
  * no surface of its own, a tint on hover, and the accent tint with a
- * trailing check for `selected`.
+ * trailing check for `selected`. A flat row given `selected` or `option`
+ * keeps the check's slot while unchosen too, so the values of a choice's
+ * rows line up.
  */
 type ListRowVariant = "card" | "flat";
 
@@ -85,7 +91,10 @@ type CommonProps = {
   readonly badges?: ReactNode;
   /**
    * A state after the subtitle on the second line, as colored text with an
-   * optional icon rather than a chip, such as "⚠ Action required".
+   * optional icon rather than a chip, such as "⚠ Action required". The
+   * subtitle keeps its room: the state's text truncates first, and below the
+   * `sm` container size a state with an icon shows the icon alone, its text
+   * still read.
    */
   readonly status?: ListRowStatus;
   /** Unset, the row takes its `ListGroup`'s density, else `comfortable`. */
@@ -98,6 +107,11 @@ type CommonProps = {
    */
   readonly value?: string;
   /**
+   * The value did not happen, such as a failed transfer's amount: it reads
+   * muted and struck through.
+   */
+  readonly valueStruck?: boolean;
+  /**
    * A figure before the value column, such as a reward rate. `success` is
    * for positive rates and claimable amounts only; `muted` is for a rate of
    * zero or none, such as "—". With `from` it shows only from that container
@@ -108,6 +122,12 @@ type CommonProps = {
     readonly tone?: "default" | "success" | "muted";
     readonly from?: "sm";
   };
+  /**
+   * An element at the row's end, after the value column or in its place,
+   * centered on the row, such as an "Install" `Badge`. It never shrinks: the
+   * title truncates first.
+   */
+  readonly trailing?: ReactNode;
   /** Context under the value, such as its fiat equivalent. */
   readonly subvalue?: string;
   /**
@@ -160,8 +180,8 @@ type ListRowProps = CommonProps &
          * handles the press, such as a router navigating in place.
          */
         readonly link: ListRowLink;
-        readonly onClick?: never;
         readonly selected?: never;
+        readonly onClick?: never;
         readonly check?: never;
         readonly disabled?: never;
         readonly option?: never;
@@ -215,8 +235,8 @@ type ListRowOption = {
  * truncates. With `onClick` the row is a button; `selected` reads as
  * pressed. With `link` it is a link. With `option` it is an option of a
  * listbox. With `check` a check box shows the selection, for a choice of
- * several. Rings draw inside the row's edge, so a scrolling list never clips
- * them.
+ * several. Rings draw inside the row's edge, so a scrolling list never
+ * clips them.
  */
 export const ListRow = ({
   leading,
@@ -227,8 +247,10 @@ export const ListRow = ({
   density,
   variant,
   value,
+  valueStruck = false,
   figure,
   subvalue,
+  trailing,
   details,
   testId,
   busy = false,
@@ -257,14 +279,27 @@ export const ListRow = ({
       {checked && <Icon name="CheckIcon" size="sm" />}
     </span>
   );
-  const checksSelection = checked && !showsCheckBox && flat;
-  const checkMark = checksSelection && <Icon name="CheckIcon" tone="accent" />;
+  // A flat row that takes part in a choice keeps the check's slot whether
+  // it is chosen or not, so the values of a picker's rows line up.
+  const reservesCheck =
+    flat && !showsCheckBox && (option !== undefined || selected !== undefined);
+  const checksSelection = checked && reservesCheck;
+  const checkMark = reservesCheck && (
+    <span aria-hidden="true" {...stylex.props(styles.checkSlot)}>
+      {checksSelection && <Icon name="CheckIcon" tone="accent" />}
+    </span>
+  );
+  const valueText = value !== undefined && (
+    <Text weight="medium" tone={valueStruck ? "muted" : "default"} numeric>
+      {value}
+    </Text>
+  );
   const values = (value !== undefined || subvalue !== undefined) && (
     <Stack as="span" gap={2} align="end">
-      {value !== undefined && (
-        <Text weight="medium" numeric>
-          {value}
-        </Text>
+      {valueStruck ? (
+        <span {...stylex.props(styles.struck)}>{valueText}</span>
+      ) : (
+        valueText
       )}
       {subvalue !== undefined && (
         <Text variant="caption" tone="muted" numeric>
@@ -273,7 +308,9 @@ export const ListRow = ({
       )}
     </Stack>
   );
-  const trailing = (figure !== undefined || values) && (
+  const trailingColumn = (figure !== undefined ||
+    values ||
+    trailing !== undefined) && (
     <span {...stylex.props(styles.trailing)}>
       {figure !== undefined && (
         <span
@@ -288,6 +325,7 @@ export const ListRow = ({
         </span>
       )}
       {values}
+      {trailing}
     </span>
   );
   const secondLine = (subtitle !== undefined || status !== undefined) && (
@@ -307,9 +345,16 @@ export const ListRow = ({
       {status !== undefined && (
         <span {...stylex.props(styles.status, toneTextStyles[status.tone])}>
           {status.icon !== undefined && <Icon name={status.icon} size="sm" />}
-          <Text variant="caption" weight="medium">
-            {status.text}
-          </Text>
+          <span
+            {...stylex.props(
+              styles.statusText,
+              status.icon !== undefined && styles.statusTextFromSm
+            )}
+          >
+            <Text variant="caption" weight="medium" truncate>
+              {status.text}
+            </Text>
+          </span>
         </span>
       )}
     </span>
@@ -336,7 +381,7 @@ export const ListRow = ({
         )}
         {secondLine}
       </span>
-      {trailing}
+      {trailingColumn}
       {checkMark}
       {busy && <Spinner size="sm" tone="muted" />}
     </>
@@ -398,10 +443,9 @@ export const ListRow = ({
     interactiveStyles.root,
     styles.interactive,
     flat && styles.flatInteractive,
-    ringsSelection && interactiveStyles.selected,
     checksSelection && styles.flatSelected,
     interactiveStyles.inset,
-    // After `inset`, whose offset it replaces while unfocused.
+    ringsSelection && interactiveStyles.insetSelected,
     !flat && !ringsSelection && styles.interactiveEdge,
   ];
   const row = (() => {
@@ -526,7 +570,9 @@ const pressedCopyValue = (
 
 /**
  * Rows read as one list, under an optional overline heading. `density` is
- * its rows'; condensed rows sit closer together.
+ * its rows'; condensed rows sit closer together, and, being flat, reach past
+ * the content edge by their own inline padding, so their content lines up
+ * with the heading and a dialog's title while their tint reaches past them.
  */
 export const ListGroup = ({
   label,
@@ -538,6 +584,7 @@ export const ListGroup = ({
   readonly children: ReactNode;
 }) => {
   const labelId = useId();
+  const condensed = density === "condensed";
 
   return (
     <InListGroup value={{ density }}>
@@ -547,19 +594,24 @@ export const ListGroup = ({
             {label}
           </Text>
         )}
-        <Stack
-          as="ul"
-          gap={density === "condensed" ? 2 : 8}
-          aria-labelledby={label === undefined ? undefined : labelId}
-        >
-          {children}
-        </Stack>
+        <div {...stylex.props(condensed && styles.flatGroup)}>
+          <Stack
+            as="ul"
+            gap={condensed ? 2 : 8}
+            aria-labelledby={label === undefined ? undefined : labelId}
+          >
+            {children}
+          </Stack>
+        </div>
       </Stack>
     </InListGroup>
   );
 };
 
 const styles = stylex.create({
+  // Past the content edge by a row's inline padding, as a select sheet's
+  // list reaches.
+  flatGroup: { marginInline: `calc(-1 * ${space[12]})` },
   root: {
     margin: 0,
     borderColor: "transparent",
@@ -590,8 +642,8 @@ const styles = stylex.create({
     display: "flex",
     // Under the `outlined` surface style a filled row edges in `border`, as a
     // filled card does: an outline just inside its edge, so its height holds.
-    // A pressable row redraws it in `interactiveEdge`, as its focus ring
-    // shares the outline.
+    // A pressable row draws it in `interactiveEdge` instead, as its focus
+    // ring takes the outline.
     outlineColor: color.border,
     outlineOffset: insetEdge.offset,
     outlineStyle: {
@@ -617,25 +669,22 @@ const styles = stylex.create({
     },
     display: "flex",
   },
-  // A filled pressable row's `outlined` edge, which the focus ring replaces
-  // while focused.
+  // A filled pressable row's `outlined` edge, drawn as an inset shadow: the
+  // outline is its focus ring's, which an edge on the same outline would
+  // outrank under the surface style's condition. Under `elevated` it keeps
+  // the row's lift.
   interactiveEdge: {
-    outlineColor: { default: color.border, ":focus-visible": color.focusRing },
-    outlineOffset: {
-      default: insetEdge.offset,
-      ":focus-visible": focusRing.insetOffset,
-    },
-    outlineStyle: {
-      default: "none",
-      ":focus-visible": "solid",
+    boxShadow: {
+      default: null,
+      [stylex.when.ancestor(
+        '[data-sk-surface-style="elevated"]',
+        presentationMarker
+      )]: elevation.raised,
       [stylex.when.ancestor(
         '[data-sk-surface-style="outlined"]',
         presentationMarker
-      )]: "solid",
-    },
-    outlineWidth: {
-      default: borderWidth.thin,
-      ":focus-visible": focusRing.width,
+        // ast-grep-ignore: no-raw-design-value -- composed only of the thin border width and the `border` role, drawn inset so it never meets the focus outline.
+      )]: `inset 0 0 0 ${borderWidth.thin} ${color.border}`,
     },
   },
   main: {
@@ -707,9 +756,13 @@ const styles = stylex.create({
     justifySelf: { default: "end", [container.sm]: "start" },
     whiteSpace: "nowrap",
   },
+  // Sized as if empty across, the second line asks the grid for no width of
+  // its own: it spans what the title and badges leave, and a long status
+  // truncates there rather than widening its columns over the title.
   secondLine: {
     gap: space[4],
     alignItems: "center",
+    contain: "inline-size",
     display: "flex",
     gridColumnEnd: "second",
     gridColumnStart: "second",
@@ -718,12 +771,26 @@ const styles = stylex.create({
     minWidth: 0,
   },
   separator: { display: "flex", flexShrink: 0 },
+  // The state gives way before the subtitle: its shrink weight dwarfs the
+  // subtitle's, so its text truncates first, down to its icon.
   status: {
     gap: space[2],
     alignItems: "center",
     display: "inline-flex",
-    flexShrink: 0,
+    flexShrink: 1000,
     whiteSpace: "nowrap",
+    minWidth: 0,
+  },
+  statusText: { display: "flex", minWidth: 0 },
+  // Below `sm` a state with an icon shows the icon alone; its text stays for
+  // assistive technology, as `VisuallyHidden` keeps it.
+  statusTextFromSm: {
+    margin: { default: visuallyHiddenBox.margin, [container.sm]: 0 },
+    overflow: "hidden",
+    clipPath: { default: "inset(50%)", [container.sm]: "none" },
+    position: { default: "absolute", [container.sm]: "static" },
+    height: { default: visuallyHiddenBox.size, [container.sm]: "auto" },
+    width: { default: visuallyHiddenBox.size, [container.sm]: "auto" },
   },
   // Values and figures never wrap or shrink: the title truncates first.
   trailing: {
@@ -735,6 +802,14 @@ const styles = stylex.create({
   },
   figure: { display: "flex", flexShrink: 0 },
   figureFromSm: { display: { default: "none", [container.sm]: "flex" } },
+  // As wide as the check, whether it shows or not.
+  checkSlot: {
+    display: "flex",
+    flexShrink: 0,
+    justifyContent: "center",
+    width: iconSize.md,
+  },
+  struck: { textDecorationLine: "line-through" },
   check: {
     borderColor: color.textMuted,
     borderRadius: radius.pill,
@@ -769,8 +844,8 @@ const styles = stylex.create({
     backgroundColor: color.surfaceHover,
     outlineColor: color.focusRing,
     outlineOffset: focusRing.insetOffset,
-    outlineStyle: "solid",
-    outlineWidth: focusRing.width,
+    outlineStyle: focusRing.insetStyle,
+    outlineWidth: focusRing.insetWidth,
   },
   optionDisabled: {
     backgroundColor: color.surface,

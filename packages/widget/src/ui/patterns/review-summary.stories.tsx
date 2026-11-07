@@ -238,3 +238,24 @@ export const LongAmountNarrow: Story = {
     await expect(amount.scrollWidth).toBeLessThanOrEqual(amount.clientWidth);
   },
 };
+
+/**
+ * The chosen validator's logo leads where the amount goes; the token mark
+ * keeps its size beside the amount.
+ */
+export const WithProvider: Story = {
+  args: {
+    title: "Claim rewards",
+    amount: "0.12 POL",
+    destination: "POL Native Staking via Figment",
+    provider: { name: "Figment", src: networkLogo },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const destination = canvas.getByText("POL Native Staking via Figment");
+    await expect(destination.previousElementSibling).not.toBeNull();
+    const amount = canvas.getByText("0.12 POL");
+    const mark = amount.parentElement?.previousElementSibling;
+    await expect(mark?.getBoundingClientRect().width).toBe(40);
+  },
+};

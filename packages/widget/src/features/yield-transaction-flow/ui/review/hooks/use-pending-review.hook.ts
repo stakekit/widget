@@ -9,13 +9,19 @@ import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import { getManageActionTitle } from "../../../model/action-title";
+import { getYieldFlowAttribution } from "../../../model/yield-transaction-flow";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
 } from "../../../react/yield-flow-route";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
-import { formatReviewDestination, getSignaturesFact } from "./review-facts";
+import {
+  formatReviewDestination,
+  getNetworkFeeWarning,
+  getReviewUsdValue,
+  getSignaturesFact,
+} from "./review-facts";
 
 export const usePendingActionReview = () => {
   const manageFlow = useYieldFlowIntake("Manage");
@@ -87,9 +93,9 @@ export const usePendingActionReview = () => {
       transactions: review.transactionsToSign,
     }),
   ].filter((fact): fact is ReviewFact => fact !== null);
+  const attribution = getYieldFlowAttribution(manageFlow);
   const destination = formatReviewDestination({
-    providerName:
-      manageFlow.providersDetails[0]?.name ?? integrationData.provider?.name,
+    providerName: attribution?.name,
     t,
     yieldName: integrationData.metadata.name,
   });
@@ -106,15 +112,31 @@ export const usePendingActionReview = () => {
         prices,
         token: interactedToken,
       });
+  // Claiming rewards the network fee eats is worth a warning.
+  const feeWarning = getNetworkFeeWarning({
+    feeUsd: getReviewUsdValue({
+      amount: pendingTxGas,
+      prices,
+      token: integrationData.mechanics.gasFeeToken,
+    }),
+    subject:
+      manageFlow.pendingActionType === "CLAIM_REWARDS" ? "rewards" : "amount",
+    t,
+    valueUsd: manageFlow.balanceHidden
+      ? null
+      : getReviewUsdValue({ amount, prices, token: interactedToken }),
+  });
 
   return {
     integrationData,
     title,
     amount: formattedAmount,
     amountFiat,
+    attribution,
     destination,
     facts,
     fee,
+    feeWarning,
     token: interactedToken,
     metaInfo,
     isGasCheckWarning: review.isGasCheckWarning,

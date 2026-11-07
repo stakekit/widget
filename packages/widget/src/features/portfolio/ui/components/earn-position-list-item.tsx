@@ -45,15 +45,18 @@ type RowStatus = NonNullable<ComponentProps<typeof ListRow>["status"]>;
  * tab's count wears; work already under way is info.
  */
 const calloutLook = {
+  readyToWithdraw: { tone: "warning", icon: "ArrowDownIcon" },
+  readyToUnlock: { tone: "warning", icon: "LockIcon" },
+  lockedBalance: { tone: "warning", icon: "LockIcon" },
   actionRequired: { tone: "warning", icon: "WarningIcon" },
   validatorsJailed: { tone: "warning", icon: "WarningIcon" },
   validatorsInactive: { tone: "warning", icon: "WarningIcon" },
-  claimRewards: { tone: "warning", icon: "GiftIcon" },
+  rewardsToClaim: { tone: "warning", icon: "GiftIcon" },
   inProgress: { tone: "info", icon: "HistoryIcon" },
 } as const satisfies Record<PositionCallout, Omit<RowStatus, "text">>;
 
 /** The one status a row shows, the most pressing first. */
-const useStatus = (
+const usePositionRowStatus = (
   item: PositionItem,
   inactiveValidator: InactiveValidatorStatus | null
 ): RowStatus | null => {
@@ -121,7 +124,7 @@ const EarnPositionRow = ({
       provider: integrationData.provider,
     },
   });
-  const status = useStatus(item, details.inactiveValidator);
+  const status = usePositionRowStatus(item, details.inactiveValidator);
   const values = useValueProps({ details, showsMissingAmountPlaceholder });
   const provider = details.providersDetails?.[0];
   const rewardRate = showsRewardRate ? details.rewardRateAverage : null;

@@ -62,6 +62,7 @@ const SelectTokenSheet = ({
         value: view.search,
         onValueChange: setSearch,
         label: t("shared.search"),
+        placeholder: t("shared.search_tokens"),
         clearLabel: t("shared.clear_search"),
       }}
       empty={{ title: t("select_token.no_results") }}

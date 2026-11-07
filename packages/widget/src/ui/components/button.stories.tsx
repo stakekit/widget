@@ -91,7 +91,10 @@ export const SharedRow: Story = {
   },
 };
 
-/** Every variant at every size. */
+/**
+ * Every variant at every size. Corners follow the size, so a small button
+ * keeps the larger ones' curve rather than reading as a pill.
+ */
 export const VariantsAndSizes: Story = {
   render: (args) => (
     <div style={{ display: "grid", gap: 12 }}>
@@ -109,6 +112,19 @@ export const VariantsAndSizes: Story = {
       ))}
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const corner = (size: (typeof sizes)[number]) =>
+      Number.parseFloat(
+        getComputedStyle(
+          canvas.getByRole("button", { name: `primary ${size}` })
+        ).borderTopLeftRadius
+      );
+
+    await expect(corner("sm")).toBeLessThan(corner("md"));
+    await expect(corner("md")).toBeLessThan(corner("lg"));
+    await expect(corner("cta")).toBe(corner("lg"));
+  },
 };
 
 export const VariantsAndSizesDark: Story = {
@@ -149,7 +165,10 @@ export const CallToAction: Story = {
   },
 };
 
-/** Tab reaches the button; Enter and Space activate it. */
+/**
+ * Tab reaches the button; Enter and Space activate it. Its focus ring sits
+ * outside its edge past a gap, never where a selection ring would.
+ */
 export const KeyboardActivation: Story = {
   args: { variant: "primary" },
   play: async ({ args, canvasElement }) => {
@@ -157,6 +176,9 @@ export const KeyboardActivation: Story = {
 
     await userEvent.tab();
     await expect(button).toHaveFocus();
+    const ring = getComputedStyle(button);
+    await expect(ring.outlineStyle).toBe("solid");
+    await expect(Number.parseFloat(ring.outlineOffset)).toBeGreaterThan(0);
 
     await userEvent.keyboard("{Enter}");
     await expect(args.onClick).toHaveBeenCalledTimes(1);

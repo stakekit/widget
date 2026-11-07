@@ -92,7 +92,10 @@ const fineryDarkAccent = "rgb(22, 199, 176)";
 const portoAccent = "rgb(171, 149, 255)";
 const legacyAccent = "rgb(255, 85, 0)";
 const hostAccent = "rgb(14, 124, 102)";
-const darkText = "rgb(24, 24, 27)";
+// Finery's own dark `onAccent`; a host accent too light for white takes the
+// light scheme's `text` instead.
+const fineryOnAccent = "rgb(24, 24, 27)";
+const darkText = "rgb(22, 23, 29)";
 const whiteText = "rgb(255, 255, 255)";
 
 describe("Host Profile Appearance Presets", () => {
@@ -110,7 +113,7 @@ describe("Host Profile Appearance Presets", () => {
 
     // Finery's teal takes dark text, which white fails on.
     expect(preset.background).toBe(fineryLightAccent);
-    expect(preset.text).toBe(darkText);
+    expect(preset.text).toBe(fineryOnAccent);
     // A light host accent takes dark text (5.5:1; white is 3.2:1), a dark
     // one white.
     expect(legacy.background).toBe(legacyAccent);

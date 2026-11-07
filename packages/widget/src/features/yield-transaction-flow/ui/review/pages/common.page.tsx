@@ -1,8 +1,8 @@
 import type { ComponentProps } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import type { Token } from "../../../../../domain/token/token";
-import { ExternalLink, Notice, Stack, Text } from "../../../../../ui/index";
-import { useTrackEvent } from "../../../../tracking/index";
+import { Notice, Stack, Text } from "../../../../../ui/index";
+import { TransactionTerms } from "../../../../transaction-steps/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   AnimationPage,
@@ -11,8 +11,15 @@ import {
   PageCtaButton,
 } from "../../../../widget-shell/views";
 import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
+import type { YieldFlowAttribution } from "../../../model/yield-transaction-flow";
 import type { FeesBps } from "../types";
 import { type ReviewFact, ReviewOverview } from "./review-overview";
+
+/** Says the network fee takes much of what the action is worth. */
+type FeeWarning = Readonly<{
+  readonly message: string;
+  readonly title: string;
+}>;
 
 export type MetaInfoProps =
   | { showMetaInfo: true; metaInfoProps: ComponentProps<typeof MetaInfo> }
@@ -26,6 +33,10 @@ type ReviewPageProps = {
   readonly amountFiat?: string | null;
   /** Where the amount goes, such as the yield and its provider. */
   readonly destination?: string | undefined;
+  /** Who runs the action: its logo leads the destination. */
+  readonly attribution?: YieldFlowAttribution | null;
+  /** Shown once fees settle, when the network fee eats much of the value. */
+  readonly feeWarning?: FeeWarning | null;
   readonly facts?: ReadonlyArray<ReviewFact> | undefined;
   /** Null when no gas estimate settled. */
   readonly fee: string | null;
@@ -33,6 +44,8 @@ type ReviewPageProps = {
   readonly isGasCheckError: boolean;
   readonly loading?: boolean;
   readonly depositFee: FeesBps | null;
+  /** The exit's withdrawal fee; null on other reviews or without one. */
+  readonly withdrawalFee?: FeesBps | null;
   readonly managementFee: FeesBps | null;
   readonly performanceFee: FeesBps | null;
   readonly commissionFee: string | null;
@@ -44,26 +57,33 @@ type ReviewPageProps = {
 type PositionActionReview = {
   readonly amount: string;
   readonly amountFiat: string | null;
+  readonly attribution: YieldFlowAttribution | null;
   readonly cta: PageCta;
   readonly destination: string;
   readonly facts: ReadonlyArray<ReviewFact>;
   readonly fee: string | null;
+  readonly feeWarning: FeeWarning | null;
   readonly gasCheckLoading: boolean;
   readonly isGasCheckWarning: boolean;
   readonly title: string;
   readonly token: Token;
 };
 
-/** Review props for acting on a held position, where no entry fees apply. */
+/**
+ * Review props for acting on a held position, where no entry fees apply; an
+ * exit passes its withdrawal fee beside them.
+ */
 export const getPositionActionReviewProps = (review: PositionActionReview) => ({
   amount: `${review.amount} ${review.token.symbol}`,
   amountFiat: review.amountFiat,
+  attribution: review.attribution,
   commissionFee: null,
   cta: review.cta,
   depositFee: null,
   destination: review.destination,
   facts: review.facts,
   fee: review.fee,
+  feeWarning: review.feeWarning,
   feeConfigLoading: false,
   isGasCheckError: review.isGasCheckWarning,
   loading: review.gasCheckLoading,
@@ -78,12 +98,15 @@ export const ReviewPage = ({
   amount,
   amountFiat,
   destination,
+  attribution = null,
+  feeWarning = null,
   facts,
   fee,
   token,
   isGasCheckError,
   loading = false,
   depositFee,
+  withdrawalFee = null,
   managementFee,
   performanceFee,
   feeConfigLoading = false,
@@ -92,14 +115,13 @@ export const ReviewPage = ({
   cta,
   ...rest
 }: ReviewPageProps) => {
-  const trackEvent = useTrackEvent();
   const { t } = useTranslation();
   const hideGasFee = useWidgetConfig("hideGasFee");
 
   const isLoading = loading || feeConfigLoading;
   const configFees = isLoading
     ? []
-    : [depositFee, managementFee, performanceFee].filter(
+    : [depositFee, withdrawalFee, managementFee, performanceFee].filter(
         (configFee) => configFee !== null
       );
   // Hiding the gas estimate can leave no fee to show once fees have loaded.
@@ -160,6 +182,7 @@ export const ReviewPage = ({
             amount={amount}
             amountFiat={amountFiat}
             destination={destination}
+            attribution={attribution}
             facts={facts}
             token={token}
             {...(showFees
@@ -172,6 +195,13 @@ export const ReviewPage = ({
                 }
               : {})}
           />
+
+          {/* A hidden gas estimate is the host's to explain. */}
+          {feeWarning && !isLoading && !hideGasFee && (
+            <Notice tone="warning" title={feeWarning.title}>
+              {feeWarning.message}
+            </Notice>
+          )}
 
           {kyc && (kyc.gate.state !== "pass" || kyc.isChecking) && (
             <KycGateCard {...kyc} />
@@ -191,22 +221,7 @@ export const ReviewPage = ({
             </Stack>
           )}
 
-          <Text as="p" variant="caption" tone="muted">
-            <Trans
-              i18nKey="review.terms_of_use"
-              components={{
-                underline0: (
-                  <ExternalLink
-                    href="https://docs.yield.xyz/docs/terms-of-use"
-                    newTabLabel={t("shared.opens_in_new_tab")}
-                    onClick={() => trackEvent("termsClicked")}
-                  >
-                    {null}
-                  </ExternalLink>
-                ),
-              }}
-            />
-          </Text>
+          <TransactionTerms action={confirmCta?.label ?? t("shared.confirm")} />
         </Stack>
 
         <PageCtaButton

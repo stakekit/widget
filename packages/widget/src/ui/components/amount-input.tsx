@@ -8,6 +8,7 @@ import {
   figureWeight,
   font,
   lineHeight,
+  tracking,
 } from "../tokens/typography.stylex";
 import {
   type AmountSeparators,
@@ -39,7 +40,10 @@ type Fit = { readonly step: Step; readonly droppedDigits: number };
 /** What the user is typing, in the separators it was typed in. */
 type Draft = { readonly text: string; readonly separators: AmountSeparators };
 
-/** The text an amount is edited as: grouped, and empty for none or zero. */
+/**
+ * The text an amount shows and is edited as: grouped, and empty for none or
+ * zero, so both read as the muted `0` placeholder.
+ */
 const editText = (value: string, separators: AmountSeparators) =>
   value === "" || value === "0" ? "" : toAmountText(value, separators, true);
 
@@ -52,7 +56,7 @@ const inputText = (
   value: string,
   separators: AmountSeparators
 ) => {
-  if (draft === null) return toAmountText(value, separators, true);
+  if (draft === null) return editText(value, separators);
   if (
     draft.separators.decimal === separators.decimal &&
     draft.separators.group === separators.group
@@ -160,16 +164,20 @@ export const AmountInput = ({
         (candidate) => textWidth * scale(candidate) <= width
       );
       const lastScale = scale("step3");
-      setFit(
-        step
-          ? { step, droppedDigits: 0 }
-          : {
-              step: "step3",
-              droppedDigits: Math.ceil(
-                (textWidth * lastScale - width) /
-                  (digit.offsetWidth * lastScale)
-              ),
-            }
+      const next: Fit = step
+        ? { step, droppedDigits: 0 }
+        : {
+            step: "step3",
+            droppedDigits: Math.ceil(
+              (textWidth * lastScale - width) / (digit.offsetWidth * lastScale)
+            ),
+          };
+      // Most keystrokes keep the step; keeping the fit skips a render.
+      setFit((current) =>
+        current.step === next.step &&
+        current.droppedDigits === next.droppedDigits
+          ? current
+          : next
       );
     });
     observer.observe(input);
@@ -292,9 +300,10 @@ const styles = stylex.create({
       ":disabled": color.textMuted,
     },
     flexGrow: 1,
-    fontFamily: font.sans,
+    fontFamily: font.figure,
     fontVariantNumeric: "tabular-nums",
     fontWeight: figureWeight.display,
+    letterSpacing: tracking.display,
     lineHeight: lineHeight.display,
     outlineStyle: "none",
     minWidth: 0,
@@ -302,9 +311,10 @@ const styles = stylex.create({
   },
   // An off-screen copy of the text at the first step, measured to pick one.
   measure: {
-    fontFamily: font.sans,
+    fontFamily: font.figure,
     fontVariantNumeric: "tabular-nums",
     fontWeight: figureWeight.display,
+    letterSpacing: tracking.display,
     pointerEvents: "none",
     position: "absolute",
     visibility: "hidden",

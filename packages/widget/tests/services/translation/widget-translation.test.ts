@@ -65,10 +65,10 @@ const expectEventually = <T>(read: () => T, expected: T) =>
 describe("WidgetTranslation", () => {
   it("describes vault withdrawal timing with valid pluralized copy", () => {
     expect(translationEN.details.vault.withdrawn_time_one).toBe(
-      "After withdrawing, your assets will be available in {{count}} day"
+      "After withdrawing, your assets will be available in {{count}} day."
     );
     expect(translationEN.details.vault.withdrawn_time_other).toBe(
-      "After withdrawing, your assets will be available in {{count}} days"
+      "After withdrawing, your assets will be available in {{count}} days."
     );
   });
 

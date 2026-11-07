@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { ScrollArea } from "../components/scroll-area";
+import { scrollAreaVars } from "../components/scroll-area.stylex";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { container } from "../tokens/container.stylex";
@@ -31,7 +32,9 @@ type SplitViewProps = {
  * their full height. Without both panes, it shows the one it has. It grows
  * into the rest of its column, such as a frame's minimum height. Split, the
  * secondary pane never sets the split view's height: it scrolls within the
- * primary pane's height, or its minimum when that is taller.
+ * primary pane's height, or its minimum when that is taller. Each pane is a
+ * size container, so what it holds lays out by the pane's width; whether
+ * the view splits reads the frame's.
  */
 export const SplitView = ({
   primary,
@@ -39,7 +42,7 @@ export const SplitView = ({
   secondaryLabel,
 }: SplitViewProps) => {
   const secondaryPane = (
-    <div {...stylex.props(styles.fill)}>
+    <div {...stylex.props(styles.fill, styles.container)}>
       <ScrollArea label={secondaryLabel}>{secondary}</ScrollArea>
     </div>
   );
@@ -47,7 +50,12 @@ export const SplitView = ({
   if (!primary || !secondary) {
     return (
       <div {...stylex.props(styles.root)}>
-        <div {...stylex.props(styles.pane, !primary && styles.bounded)}>
+        <div
+          {...stylex.props(
+            styles.pane,
+            primary ? styles.container : styles.bounded
+          )}
+        >
           {primary || secondaryPane}
         </div>
       </div>
@@ -56,7 +64,9 @@ export const SplitView = ({
 
   return (
     <div {...stylex.props(styles.root)}>
-      <div {...stylex.props(styles.pane, styles.primary)}>{primary}</div>
+      <div {...stylex.props(styles.pane, styles.container, styles.primary)}>
+        {primary}
+      </div>
       <span aria-hidden="true" {...stylex.props(styles.rule)} />
       <div {...stylex.props(styles.pane, styles.bounded)}>{secondaryPane}</div>
     </div>
@@ -77,6 +87,12 @@ const styles = stylex.create({
     minWidth: 0,
     width: "100%",
   },
+  // A pane's own queries still read the frame; those of what it holds read
+  // the pane. The secondary pane's container is its scrolling fill, whose
+  // own position reads the frame too.
+  container: {
+    containerType: "inline-size",
+  },
   pane: {
     display: "flex",
     flexBasis: { default: "auto", [container.split]: 0 },
@@ -91,7 +107,13 @@ const styles = stylex.create({
     position: "relative",
     minHeight: { default: 0, [container.split]: splitPaneMinHeight.secondary },
   },
+  // Stacked, the secondary pane never scrolls, so its scrolling region keeps
+  // no gutter and its content is as wide as the primary pane's.
   fill: {
+    [scrollAreaVars.restingGutter]: {
+      default: space[0],
+      [container.split]: space[8],
+    },
     inset: { default: "auto", [container.split]: 0 },
     display: "flex",
     flexDirection: "column",

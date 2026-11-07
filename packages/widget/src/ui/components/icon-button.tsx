@@ -5,10 +5,11 @@ import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
-import { radius } from "../tokens/radius.stylex";
+import { controlRadius, radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { focusRingStyles } from "./focus-ring";
+import { hitAreaStyles } from "./hit-area";
 
 type IconButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -28,7 +29,9 @@ type IconButtonProps = Omit<
 /**
  * A button that shows only an icon, such as back, close or info. It must be
  * named with `label`. It forwards its ref and props, so it can open a
- * `Tooltip`, `Popover` or `Menu`.
+ * `Tooltip`, `Popover` or `Menu`. Its corners follow its size, and under a
+ * coarse pointer its hit area reaches a touch target's size whatever its
+ * drawn size.
  */
 export const IconButton = ({
   icon,
@@ -47,6 +50,7 @@ export const IconButton = ({
     {...(testId === undefined ? {} : { "data-testid": testId })}
     {...stylex.props(
       styles.root,
+      hitAreaStyles.coarse,
       focusRingStyles.visible,
       variantStyles[variant],
       sizeStyles[size]
@@ -61,7 +65,6 @@ const styles = stylex.create({
     margin: 0,
     padding: 0,
     borderColor: "transparent",
-    borderRadius: radius.control,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     alignItems: "center",
@@ -101,6 +104,14 @@ const variantStyles = stylex.create({
 
 const sizeStyles = stylex.create({
   xs: { padding: space[4], borderRadius: radius.badge, borderWidth: 0 },
-  sm: { height: controlHeight.sm, width: controlHeight.sm },
-  md: { height: controlHeight.md, width: controlHeight.md },
+  sm: {
+    borderRadius: controlRadius.sm,
+    height: controlHeight.sm,
+    width: controlHeight.sm,
+  },
+  md: {
+    borderRadius: controlRadius.md,
+    height: controlHeight.md,
+    width: controlHeight.md,
+  },
 });

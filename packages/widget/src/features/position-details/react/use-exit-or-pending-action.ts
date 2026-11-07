@@ -10,15 +10,20 @@ import {
 } from "../state/workflow-view";
 import { useExitOrPendingActionParams } from "./use-exit-or-pending-action-params";
 
-export const useExitOrPendingAction = () => {
+/** The route's position workflow, without subscribing to its state. */
+export const usePositionDetailsWorkflowKey = () => {
   const { plain, pendingActionType } = useExitOrPendingActionParams();
   const walletScope = useWalletScopeRoute();
-  const workflowKey = new PositionDetailsWorkflowKey({
+  return new PositionDetailsWorkflowKey({
     balanceId: plain.balanceId ?? null,
     integrationId: plain.integrationId ?? null,
     pendingActionType: pendingActionType ?? null,
     scope: walletScope,
   });
+};
+
+export const useExitOrPendingAction = () => {
+  const workflowKey = usePositionDetailsWorkflowKey();
   const state = useAtomValue(positionDetailsWorkflowViewAtom(workflowKey));
   const dispatchWorkflow = useAtomSet(
     dispatchPositionDetailsWorkflowAtom(workflowKey)

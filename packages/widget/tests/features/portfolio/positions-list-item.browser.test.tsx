@@ -51,14 +51,6 @@ vi.mock("../../../src/features/portfolio/react/use-position-list-item", () => ({
     hookState.detailsByYield.get(item.integrationId) ?? hookState.details,
 }));
 
-vi.mock(
-  "../../../src/features/portfolio/ui/dashboard/positions/hooks/use-position-list-item",
-  () => ({
-    usePositionListItem: (item: { integrationId: string }) =>
-      hookState.detailsByYield.get(item.integrationId) ?? hookState.details,
-  })
-);
-
 const integrationData = yieldApiYieldFixture();
 
 const createDetails = (overrides: Partial<RowDetails> = {}): RowDetails => ({
@@ -78,7 +70,7 @@ const createItem = (
   overrides: Partial<
     Pick<
       PositionItem,
-      | "actionRequired"
+      | "requiredAction"
       | "hasPendingClaimRewards"
       | "hasPendingRequest"
       | "integrationId"
@@ -89,7 +81,7 @@ const createItem = (
   balancesWithAmount: [],
   allBalances: [],
   balanceId: "default",
-  actionRequired: false,
+  requiredAction: null,
   hasPendingRequest: false,
   pointsRewardTokenBalances: [],
   hasPendingClaimRewards: false,
@@ -147,7 +139,7 @@ const lineCount = (element: Element) => {
 const manageRows = [
   {
     name: "Ether.fi Liquid Restaking Vault Extra Long Name",
-    item: { actionRequired: true },
+    item: { requiredAction: "other" as const },
     value: "0.00107 ETH",
     fiat: exactDecimal("2.59"),
   },
@@ -236,8 +228,20 @@ describe.each(presentations)("A $name Manage list", ({ row }) => {
   });
 
   it.each([
-    { expected: "Action required", item: { actionRequired: true } },
-    { expected: "Claim rewards", item: { hasPendingClaimRewards: true } },
+    { expected: "Action required", item: { requiredAction: "other" as const } },
+    { expected: "Rewards to claim", item: { hasPendingClaimRewards: true } },
+    {
+      expected: "Ready to withdraw",
+      item: { requiredAction: "withdraw" as const },
+    },
+    {
+      expected: "Ready to unlock",
+      item: { requiredAction: "unlock" as const },
+    },
+    {
+      expected: "Locked balance",
+      item: { requiredAction: "locked" as const },
+    },
     { expected: "In progress", item: { hasPendingRequest: true } },
   ])(
     "shows $expected on the provider line, under the title",
@@ -271,8 +275,11 @@ describe.each(presentations)("A $name Manage list", ({ row }) => {
 
   it("draws every status the Manage tab counts in one tone, apart from In progress", async () => {
     const statusRows = [
-      { expected: "Action required", item: { actionRequired: true } },
-      { expected: "Claim rewards", item: { hasPendingClaimRewards: true } },
+      {
+        expected: "Action required",
+        item: { requiredAction: "other" as const },
+      },
+      { expected: "Rewards to claim", item: { hasPendingClaimRewards: true } },
       { expected: "Jailed", inactiveValidator: "jailed" as const, item: {} },
       { expected: "Inactive", inactiveValidator: "other" as const, item: {} },
       { expected: "In progress", item: { hasPendingRequest: true } },
@@ -306,7 +313,7 @@ describe.each(presentations)("A $name Manage list", ({ row }) => {
       getComputedStyle(app.getByText(text, { exact: true }).element()).color;
     const attention = colorOf("Action required");
 
-    for (const counted of ["Claim rewards", "Jailed", "Inactive"]) {
+    for (const counted of ["Rewards to claim", "Jailed", "Inactive"]) {
       expect(colorOf(counted), counted).toBe(attention);
     }
     expect(colorOf("In progress")).not.toBe(attention);
@@ -381,7 +388,7 @@ describe("Earn position list item", () => {
       {
         expected: "Action required",
         inactiveValidator: "jailed",
-        item: { actionRequired: true, hasPendingClaimRewards: true },
+        item: { requiredAction: "other", hasPendingClaimRewards: true },
       },
       {
         expected: "Jailed",
@@ -394,7 +401,7 @@ describe("Earn position list item", () => {
         item: { hasPendingClaimRewards: true },
       },
       {
-        expected: "Claim rewards",
+        expected: "Rewards to claim",
         inactiveValidator: null,
         item: { hasPendingClaimRewards: true, hasPendingRequest: true },
       },
@@ -414,7 +421,7 @@ describe("Earn position list item", () => {
           "Action required",
           "Jailed",
           "Inactive",
-          "Claim rewards",
+          "Rewards to claim",
           "In progress",
         ].filter((label) => label !== expected)) {
           await expect.element(app.getByText(other)).not.toBeInTheDocument();
@@ -473,7 +480,7 @@ describe("Earn position list item", () => {
         .element(app.getByText(integrationData.metadata.name))
         .toBeInTheDocument();
       await expect
-        .element(app.getByText("Claim rewards"))
+        .element(app.getByText("Rewards to claim"))
         .not.toBeInTheDocument();
     });
   });

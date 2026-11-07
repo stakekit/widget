@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { Text } from "../primitives/text";
+import { ContainerFrame } from "../storybook/container-frame";
 import { outlineUnclipped } from "../storybook/geometry";
 import { type TabOption, Tabs } from "./tabs";
 
@@ -46,39 +47,48 @@ type Story = StoryObj<typeof meta>;
 const tabList = (canvasElement: HTMLElement) =>
   within(canvasElement).getByRole("tablist", { name: "Sections" });
 
+/** The box around the tab list that draws an underline's rule. */
+const railOf = (list: HTMLElement) => {
+  const rail = list.parentElement;
+  if (!(rail instanceof HTMLElement)) throw new Error("Expected the rail");
+  return rail;
+};
+
+/** The tabs' row with controls at its end. */
+const barOf = (list: HTMLElement) => {
+  const bar = railOf(list).parentElement;
+  if (!(bar instanceof HTMLElement)) throw new Error("Expected the row");
+  return bar;
+};
+
 /**
  * The underline indicator: an accent bar under the selected tab, no pill. It
- * covers the list's rule, bottom edge on its bottom edge, and the rule runs as
- * wide as the tabs, not the bar.
+ * covers the rule, bottom edge on its bottom edge, and the rule runs the
+ * full width of the row, past the last tab.
  */
 export const Underline: Story = {
   globals: { tabsIndicator: "underline" },
   play: async ({ canvasElement }) => {
     const list = tabList(canvasElement);
+    const rail = railOf(list);
     const indicator = list.firstElementChild;
-    const tabs = within(list).getAllByRole("tab");
-    const first = tabs.at(0);
-    const last = tabs.at(-1);
+    const last = within(list).getAllByRole("tab").at(-1);
 
     await expect(getComputedStyle(list).paddingTop).toBe("0px");
     await expect(indicator).not.toBeNull();
-    await expect(first).toBeDefined();
     await expect(last).toBeDefined();
-    if (indicator && first && last) {
+    if (indicator && last) {
       await expect(getComputedStyle(indicator).boxShadow).toBe("none");
-      const listBox = list.getBoundingClientRect();
-      const indicatorBox = indicator.getBoundingClientRect();
-      const rule = Number.parseFloat(getComputedStyle(list).borderBottomWidth);
-      await expect(rule).toBeGreaterThan(0);
-      await expect(indicatorBox.bottom).toBeCloseTo(listBox.bottom, 1);
-      await expect(indicatorBox.height).toBeGreaterThanOrEqual(rule);
-      await expect(listBox.left).toBeCloseTo(
-        first.getBoundingClientRect().left,
+      await expect(getComputedStyle(rail).backgroundImage).toMatch(
+        /linear-gradient/
+      );
+      const railBox = rail.getBoundingClientRect();
+      await expect(indicator.getBoundingClientRect().bottom).toBeCloseTo(
+        railBox.bottom,
         1
       );
-      await expect(listBox.right).toBeCloseTo(
-        last.getBoundingClientRect().right,
-        1
+      await expect(railBox.width).toBeGreaterThan(
+        last.getBoundingClientRect().right - railBox.left
       );
     }
   },
@@ -106,7 +116,7 @@ const WithTrailing = () => {
 /**
  * Under the `outlined` surface style with an underline, the rule runs under
  * the whole row, controls included, and the selected tab's underline sits on
- * it; the list draws no rule of its own.
+ * it; the tabs draw no rule of their own.
  */
 export const UnderlineFullRowRule: Story = {
   globals: { tabsIndicator: "underline", surfaceStyle: "outlined" },
@@ -114,14 +124,16 @@ export const UnderlineFullRowRule: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const list = tabList(canvasElement);
-    const bar = list.parentElement;
+    const bar = barOf(list);
     const indicator = list.firstElementChild;
-    if (!(bar instanceof HTMLElement) || !(indicator instanceof HTMLElement)) {
-      throw new Error("Expected the tabs' row and indicator");
+    if (!(indicator instanceof HTMLElement)) {
+      throw new Error("Expected the indicator");
     }
 
-    await expect(getComputedStyle(list).borderBottomWidth).toBe("0px");
-    await expect(getComputedStyle(bar).borderBottomWidth).toBe("1px");
+    await expect(getComputedStyle(railOf(list)).backgroundImage).toBe("none");
+    await expect(getComputedStyle(bar).backgroundImage).toMatch(
+      /linear-gradient/
+    );
     // The row's rule spans the row, beyond the last tab, to the controls.
     const controls = canvas.getByText("Controls").getBoundingClientRect();
     const row = bar.getBoundingClientRect();
@@ -135,16 +147,21 @@ export const UnderlineFullRowRule: Story = {
   },
 };
 
-/** Elsewhere, controls beside the tabs leave the rule as wide as the tabs. */
-export const UnderlineTabWidthRuleWithTrailing: Story = {
+/** Elsewhere, beside controls, the rule runs from the first tab up to them. */
+export const UnderlineRuleToControls: Story = {
   globals: { tabsIndicator: "underline" },
   render: () => <WithTrailing />,
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
     const list = tabList(canvasElement);
-    const bar = list.parentElement;
-    if (!(bar instanceof HTMLElement)) throw new Error("Expected the row");
-    await expect(getComputedStyle(list).borderBottomWidth).toBe("1px");
-    await expect(getComputedStyle(bar).borderBottomWidth).toBe("0px");
+    const rail = railOf(list).getBoundingClientRect();
+    const controls = canvas.getByText("Controls").getBoundingClientRect();
+    await expect(getComputedStyle(barOf(list)).backgroundImage).toBe("none");
+    await expect(rail.width).toBeGreaterThan(
+      list.getBoundingClientRect().width
+    );
+    // Up to the controls, past the gap between them.
+    await expect(controls.left - rail.right).toBeLessThanOrEqual(16.5);
   },
 };
 
@@ -157,16 +174,16 @@ export const Tint: Story = {
   render: () => <WithTrailing />,
   play: async ({ canvasElement }) => {
     const list = tabList(canvasElement);
-    const bar = list.parentElement;
+    const bar = barOf(list);
     const indicator = list.firstElementChild;
     const selected = within(list).getByRole("tab", { selected: true });
-    if (!(bar instanceof HTMLElement) || !(indicator instanceof HTMLElement)) {
-      throw new Error("Expected the tabs' row and indicator");
+    if (!(indicator instanceof HTMLElement)) {
+      throw new Error("Expected the indicator");
     }
 
     const listStyle = getComputedStyle(list);
     await expect(listStyle.backgroundColor).toMatch(/, 0\)$|^transparent$/);
-    await expect(listStyle.borderBottomWidth).toBe("0px");
+    await expect(getComputedStyle(railOf(list)).backgroundImage).toBe("none");
     await expect(getComputedStyle(bar).borderBottomWidth).toBe("1px");
     const fill = getComputedStyle(indicator);
     await expect(fill.backgroundColor).not.toMatch(/, 0\)$/);
@@ -179,7 +196,10 @@ export const Tint: Story = {
   },
 };
 
-/** The pill indicator: a raised pill behind the selected tab, in a track. */
+/**
+ * The pill indicator: a raised pill behind the selected tab, in a track as
+ * tall as a wallet header's `tabs` pill.
+ */
 export const Pill: Story = {
   globals: { tabsIndicator: "pill" },
   play: async ({ canvasElement }) => {
@@ -187,8 +207,9 @@ export const Pill: Story = {
     const indicator = list.firstElementChild;
 
     await expect(getComputedStyle(list).paddingTop).toBe("4px");
-    // A pill list draws no underline: its bottom border is fully transparent.
-    await expect(getComputedStyle(list).borderBottomColor).toMatch(/, 0\)$/);
+    await expect(list.getBoundingClientRect().height).toBe(40);
+    // A pill list draws no underline.
+    await expect(getComputedStyle(railOf(list)).backgroundImage).toBe("none");
     await expect(indicator).not.toBeNull();
     if (indicator) {
       await expect(getComputedStyle(indicator).boxShadow).not.toBe("none");
@@ -309,20 +330,124 @@ export const CountAndGroups: Story = {
 };
 
 /**
- * In a narrow bar that scrolls its tabs across, each tab draws its focus ring
- * inside its edge, where the bar would cut off one drawn outside, at either
- * end of the bar.
+ * With a `countLabel`, the count reads as what it means: the tab shows the
+ * number and is named by the label.
+ */
+export const CountLabel: Story = {
+  render: (args) => (
+    <Tabs
+      tabs={[
+        { value: "earn", label: "Earn" },
+        {
+          value: "positions",
+          label: "Manage",
+          count: 4,
+          countLabel: "4 actions to take",
+        },
+      ]}
+      value="earn"
+      onValueChange={args.onValueChange}
+      label="Sections"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const tab = within(canvasElement).getByRole("tab", {
+      name: "Manage 4 actions to take",
+    });
+    await expect(tab).toBeVisible();
+    await expect(within(tab).getByText("4")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
+  },
+};
+
+/** Each tab is at least 40px tall, whichever the indicator. */
+export const Height: Story = {
+  play: async ({ canvasElement }) => {
+    for (const tab of within(tabList(canvasElement)).getAllByRole("tab")) {
+      await expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+        40
+      );
+    }
+  },
+};
+
+const many: ReadonlyArray<TabOption<string>> = [
+  { value: "defi", label: "DeFi" },
+  { value: "stake", label: "Stake" },
+  { value: "rwa", label: "RWA" },
+  { value: "borrow", label: "Borrow" },
+  { value: "manage", label: "Manage", count: 4, separated: true },
+  { value: "activity", label: "Activity" },
+];
+
+/** Tabs too many for the row, as on a phone, the last one selected. */
+const NarrowTabs = ({ selected }: { readonly selected: string }) => {
+  const [value, setValue] = useState(selected);
+  return (
+    <ContainerFrame width={240}>
+      <Tabs
+        tabs={many}
+        value={value}
+        onValueChange={setValue}
+        label="Sections"
+      />
+    </ContainerFrame>
+  );
+};
+
+/**
+ * Tabs that do not fit scroll across rather than being cut off: the end
+ * that hides tabs fades out, and the selected tab scrolls into view clear
+ * of the fade. The rule stays the row's full width as the tabs scroll.
+ */
+export const ScrollsAcross: Story = {
+  render: () => <NarrowTabs selected="activity" />,
+  play: async ({ canvasElement }) => {
+    const list = tabList(canvasElement);
+    const activity = within(list).getByRole("tab", { name: "Activity" });
+
+    await expect(list.scrollWidth).toBeGreaterThan(list.clientWidth);
+    await expect(list.scrollLeft).toBeGreaterThan(0);
+    const row = list.getBoundingClientRect();
+    const tab = activity.getBoundingClientRect();
+    await expect(tab.left).toBeGreaterThanOrEqual(row.left);
+    await expect(tab.right).toBeLessThanOrEqual(row.right + 0.5);
+    // Scrolled to its end, only the start hides tabs, and fades.
+    await waitFor(() =>
+      expect(getComputedStyle(list).maskImage).toMatch(/to right/)
+    );
+    await expect(getComputedStyle(list).maskImage).not.toMatch(/calc/);
+
+    list.scrollLeft = 0;
+    await waitFor(() =>
+      expect(getComputedStyle(list).maskImage).toMatch(/to left/)
+    );
+    await expect(railOf(list).getBoundingClientRect().width).toBe(240);
+  },
+};
+
+export const ScrollsAcrossPill: Story = {
+  ...ScrollsAcross,
+  globals: { tabsIndicator: "pill" },
+};
+
+/**
+ * In a narrow row that scrolls its tabs across, each tab draws its focus
+ * ring inside its edge, where the row would cut off one drawn outside, at
+ * either end of the row.
  */
 export const RingInsideScrollingBar: Story = {
   render: (args) => (
-    <div style={{ width: 140, overflowX: "auto" }}>
+    <ContainerFrame width={140}>
       <Tabs
         tabs={grouped}
         value="earn"
         onValueChange={args.onValueChange}
         label="Sections"
       />
-    </div>
+    </ContainerFrame>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

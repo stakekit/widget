@@ -15,13 +15,16 @@ const InMetricGroup = createContext(false);
 
 /**
  * A labelled figure: the label above a neutral value, with an optional
- * caption. Inside a `MetricGroup` it is a term and its description.
+ * caption. Inside a `MetricGroup` it is a term and its description. `lead`
+ * heads a compact summary, such as a portfolio's total value beside its
+ * smaller metrics: its value takes the `title` role, in tabular figures.
  */
 export const Metric = ({
   label,
   value,
   caption,
   valueTone = "default",
+  size = "default",
   testId,
 }: {
   readonly label: string;
@@ -34,6 +37,8 @@ export const Metric = ({
    * and `danger` mark a risk figure, such as a health factor near liquidation.
    */
   readonly valueTone?: "default" | "success" | "warning" | "danger";
+  /** `lead` heads a compact summary: the value in the `title` role. */
+  readonly size?: "default" | "lead";
   /** Rendered as `data-testid`, for tests and hosts that locate the metric. */
   readonly testId?: string;
 }) => {
@@ -50,7 +55,12 @@ export const Metric = ({
         </Text>
       </Term>
       <Description {...stylex.props(styles.part, styles.value)}>
-        <Text variant="metric" tone={valueTone}>
+        <Text
+          variant={size === "lead" ? "title" : "metric"}
+          as="span"
+          numeric
+          tone={valueTone}
+        >
           {value}
         </Text>
         {caption !== undefined && (

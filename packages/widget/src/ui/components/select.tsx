@@ -1,6 +1,7 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import * as stylex from "@stylexjs/stylex";
 import { Icon } from "../primitives/icon";
+import { scrollStyles } from "../primitives/scroll";
 import { usePortalContainer } from "../theme/portal-container";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
@@ -80,7 +81,10 @@ export const Select = <const T extends string>({
           <BaseSelect.Popup
             {...stylex.props(popupStyles.surface, styles.popup)}
           >
-            <BaseSelect.List aria-label={label} {...stylex.props(styles.list)}>
+            <BaseSelect.List
+              aria-label={label}
+              {...stylex.props(styles.list, scrollStyles.stableGutter)}
+            >
               {options.map((option) => (
                 <BaseSelect.Item
                   key={option.value}

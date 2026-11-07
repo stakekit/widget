@@ -17,13 +17,13 @@ type AnimatedNumberProps = {
   readonly prefix?: string;
   /** Static text after the digits, such as "%". */
   readonly suffix?: string;
-  /** Counts up from this value on mount; unset, the value shows at once. */
-  readonly initial?: number;
 };
 
 /**
  * A number that counts to each new value, in tabular figures inside the
- * surrounding text. Only the digits change while it counts; the prefix and
+ * surrounding text. It shows its value at once when it mounts, so a screen
+ * the user returns to never replays a count; only a change of value while it
+ * shows counts. Only the digits change while it counts; the prefix and
  * suffix stay put and move only as the digits' width does. Under reduced
  * motion it shows the new value at once. Assistive technology reads only the
  * final value.
@@ -33,10 +33,9 @@ export const AnimatedNumber = ({
   format,
   prefix = "",
   suffix = "",
-  initial,
 }: AnimatedNumberProps) => {
   const reduceMotion = useReducedMotion();
-  const current = useMotionValue(reduceMotion ? value : (initial ?? value));
+  const current = useMotionValue(value);
   const shown = useTransform(current, format);
 
   useEffect(() => {

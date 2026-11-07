@@ -12,11 +12,11 @@
  */
 
 /**
- * The generated account avatar's palette: a background color and an emoji
- * per entry, picked by a hash of the account address. Artwork keeps its own
+ * The generated avatars' palette: an account avatar's background, and the
+ * stops of the gradient a fallback's initials sit on. Artwork keeps its own
  * colors, so it is exempt from the Color Role rules and never themed.
  */
-const colors = [
+export const avatarColors = [
   "#FC5C54",
   "#FFD95A",
   "#E95D72",
@@ -42,50 +42,57 @@ const colors = [
   "#FFB35A",
 ] as const;
 const avatars = [
-  { color: colors[0], emoji: "\u{1F336}" },
-  { color: colors[1], emoji: "\u{1F911}" },
-  { color: colors[2], emoji: "\u{1F419}" },
-  { color: colors[3], emoji: "\u{1FAD0}" },
-  { color: colors[4], emoji: "\u{1F433}" },
-  { color: colors[0], emoji: "\u{1F936}" },
-  { color: colors[5], emoji: "\u{1F332}" },
-  { color: colors[6], emoji: "\u{1F31E}" },
-  { color: colors[7], emoji: "\u{1F412}" },
-  { color: colors[8], emoji: "\u{1F435}" },
-  { color: colors[9], emoji: "\u{1F98A}" },
-  { color: colors[10], emoji: "\u{1F43C}" },
-  { color: colors[11], emoji: "\u{1F984}" },
-  { color: colors[12], emoji: "\u{1F437}" },
-  { color: colors[13], emoji: "\u{1F427}" },
-  { color: colors[8], emoji: "\u{1F9A9}" },
-  { color: colors[14], emoji: "\u{1F47D}" },
-  { color: colors[0], emoji: "\u{1F388}" },
-  { color: colors[8], emoji: "\u{1F349}" },
-  { color: colors[1], emoji: "\u{1F389}" },
-  { color: colors[15], emoji: "\u{1F432}" },
-  { color: colors[16], emoji: "\u{1F30E}" },
-  { color: colors[17], emoji: "\u{1F34A}" },
-  { color: colors[18], emoji: "\u{1F42D}" },
-  { color: colors[19], emoji: "\u{1F363}" },
-  { color: colors[1], emoji: "\u{1F425}" },
-  { color: colors[20], emoji: "\u{1F47E}" },
-  { color: colors[15], emoji: "\u{1F966}" },
-  { color: colors[0], emoji: "\u{1F479}" },
-  { color: colors[17], emoji: "\u{1F640}" },
-  { color: colors[4], emoji: "\u26F1" },
-  { color: colors[21], emoji: "\u26F5\uFE0F" },
-  { color: colors[17], emoji: "\u{1F973}" },
-  { color: colors[8], emoji: "\u{1F92F}" },
-  { color: colors[22], emoji: "\u{1F920}" },
+  { color: avatarColors[0], emoji: "\u{1F336}" },
+  { color: avatarColors[1], emoji: "\u{1F911}" },
+  { color: avatarColors[2], emoji: "\u{1F419}" },
+  { color: avatarColors[3], emoji: "\u{1FAD0}" },
+  { color: avatarColors[4], emoji: "\u{1F433}" },
+  { color: avatarColors[0], emoji: "\u{1F936}" },
+  { color: avatarColors[5], emoji: "\u{1F332}" },
+  { color: avatarColors[6], emoji: "\u{1F31E}" },
+  { color: avatarColors[7], emoji: "\u{1F412}" },
+  { color: avatarColors[8], emoji: "\u{1F435}" },
+  { color: avatarColors[9], emoji: "\u{1F98A}" },
+  { color: avatarColors[10], emoji: "\u{1F43C}" },
+  { color: avatarColors[11], emoji: "\u{1F984}" },
+  { color: avatarColors[12], emoji: "\u{1F437}" },
+  { color: avatarColors[13], emoji: "\u{1F427}" },
+  { color: avatarColors[8], emoji: "\u{1F9A9}" },
+  { color: avatarColors[14], emoji: "\u{1F47D}" },
+  { color: avatarColors[0], emoji: "\u{1F388}" },
+  { color: avatarColors[8], emoji: "\u{1F349}" },
+  { color: avatarColors[1], emoji: "\u{1F389}" },
+  { color: avatarColors[15], emoji: "\u{1F432}" },
+  { color: avatarColors[16], emoji: "\u{1F30E}" },
+  { color: avatarColors[17], emoji: "\u{1F34A}" },
+  { color: avatarColors[18], emoji: "\u{1F42D}" },
+  { color: avatarColors[19], emoji: "\u{1F363}" },
+  { color: avatarColors[1], emoji: "\u{1F425}" },
+  { color: avatarColors[20], emoji: "\u{1F47E}" },
+  { color: avatarColors[15], emoji: "\u{1F966}" },
+  { color: avatarColors[0], emoji: "\u{1F479}" },
+  { color: avatarColors[17], emoji: "\u{1F640}" },
+  { color: avatarColors[4], emoji: "\u26F1" },
+  { color: avatarColors[21], emoji: "\u26F5\uFE0F" },
+  { color: avatarColors[17], emoji: "\u{1F973}" },
+  { color: avatarColors[8], emoji: "\u{1F92F}" },
+  { color: avatarColors[22], emoji: "\u{1F920}" },
 ] as const;
 
-/** The palette entry an account address always gets. */
-export const accountAvatar = (address: string) => {
+/** The index into a list of `length` entries that a text always gets. */
+export const hashIndex = (text: string, length: number) => {
   let hash = 0;
-  for (const character of address.toLowerCase()) {
+  for (const character of text) {
     hash = (hash << 5) - hash + character.charCodeAt(0);
     hash |= 0;
   }
 
-  return avatars[Math.abs(hash % avatars.length)] ?? avatars[0];
+  return Math.abs(hash % length);
 };
+
+/**
+ * The account avatar an address always gets: a background color and an
+ * emoji from the palette.
+ */
+export const accountAvatar = (address: string) =>
+  avatars[hashIndex(address.toLowerCase(), avatars.length)] ?? avatars[0];

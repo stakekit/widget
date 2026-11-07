@@ -17,3 +17,17 @@ export const radius = stylex.defineVars({
   pill: "9999px",
   pillControl: "9999px",
 });
+
+/**
+ * A button's corners by its control height: `lg` is the preset's `control`
+ * radius, `md` five sixths of it and `sm` two thirds (8, 10 and 12 by
+ * default), so a small button keeps the same curve rather than reading as a
+ * pill. The theme root derives them from `radius.control` beside the preset's
+ * and host's radius, so they follow both; these defaults are the default
+ * preset's.
+ */
+export const controlRadius = stylex.defineVars({
+  sm: "8px",
+  md: "10px",
+  lg: "12px",
+});

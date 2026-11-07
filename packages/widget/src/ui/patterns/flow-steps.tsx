@@ -9,8 +9,8 @@ import type { TokenLogo } from "./token";
 
 /**
  * Where a transaction of a flow stands: waiting its turn, the current one,
- * waiting for the wallet's signature, being sent to the network, done, or
- * failed.
+ * waiting for the wallet's signature, being sent to the network, done,
+ * failed, or cancelled by the user in the wallet.
  */
 type FlowStepState =
   | "pending"
@@ -18,7 +18,8 @@ type FlowStepState =
   | "signing"
   | "broadcasting"
   | "done"
-  | "failed";
+  | "failed"
+  | "cancelled";
 
 /** One transaction of a flow. */
 type FlowStep = {
@@ -32,8 +33,8 @@ type FlowStep = {
   /** The transaction on a block explorer, once it has one. */
   readonly explorerUrl?: string;
   /**
-   * The transaction's hash as its explorer link shows it, such as
-   * shortened. Unset, the link shows the explorer link's label.
+   * The transaction's hash as the step shows it, such as shortened: shown
+   * before the explorer link once the transaction is sent.
    */
   readonly hash?: string;
 };
@@ -51,6 +52,11 @@ type FlowStepsProps = {
     /** Under the title, such as "via Lido". */
     readonly detail?: string;
     readonly token?: TokenLogo;
+    /**
+     * Who runs the action, such as the chosen validator (`square`): its logo
+     * leads the detail line.
+     */
+    readonly provider?: TokenLogo;
   };
   /**
    * How far the flow got, such as "1 of 2 confirmed": shown once the flow
@@ -104,6 +110,7 @@ const stepStatus = {
   broadcasting: "active",
   done: "done",
   failed: "failed",
+  cancelled: "cancelled",
 } as const satisfies Record<FlowStepState, string>;
 
 // Being sent fills a third of the way to the next step; confirming, two.
@@ -115,8 +122,9 @@ const stepStage = {
 /**
  * A flow's transactions as a `Steps` timeline under a summary of the action
  * they run: how many are done, each transaction's state under its label, and
- * its explorer link once it has one. Under the steps, a card asks to check
- * the wallet while it is given, and another lists the flow's details.
+ * its hash and explorer link once it is sent. The summary's avatar sits in
+ * the timeline's marker column. Under the steps, a card asks to check the
+ * wallet while it is given, and another lists the flow's details.
  */
 export const FlowSteps = ({
   steps,
@@ -142,9 +150,14 @@ export const FlowSteps = ({
               {summary.title}
             </Text>
             {summary.detail !== undefined && (
-              <Text variant="caption" tone="muted">
-                {summary.detail}
-              </Text>
+              <Stack direction="row" align="center" gap={4}>
+                {summary.provider !== undefined && (
+                  <TokenAvatar {...summary.provider} size="xs" decorative />
+                )}
+                <Text variant="caption" tone="muted">
+                  {summary.detail}
+                </Text>
+              </Stack>
             )}
           </Stack>
         </Stack>
@@ -163,6 +176,7 @@ export const FlowSteps = ({
             signing: stateLabels.signing,
             done: stateLabels.done,
             failed: stateLabels.failed,
+            cancelled: stateLabels.cancelled,
           }}
           steps={steps.map((step) => ({
             id: step.id,
@@ -175,15 +189,14 @@ export const FlowSteps = ({
             ...(step.message === undefined
               ? {}
               : { description: step.message }),
+            ...(step.hash === undefined ? {} : { reference: step.hash }),
             ...(step.explorerUrl === undefined || explorerLink === undefined
               ? {}
               : {
                   link: {
                     href: step.explorerUrl,
+                    label: explorerLink.label,
                     newTabLabel: explorerLink.newTabLabel,
-                    ...(step.hash === undefined
-                      ? { label: explorerLink.label }
-                      : { context: explorerLink.label, label: step.hash }),
                   },
                 }),
           }))}

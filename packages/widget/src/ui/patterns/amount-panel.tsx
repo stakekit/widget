@@ -6,6 +6,7 @@ import { Card } from "../components/card";
 import { Chip } from "../components/chip";
 import { ExpandableAmount } from "../components/expandable-amount";
 import { Field } from "../components/field";
+import { hitAreaStyles } from "../components/hit-area";
 import { Skeleton } from "../components/skeleton";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
@@ -14,6 +15,16 @@ import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";
 import { lineHeight } from "../tokens/typography.stylex";
+
+/**
+ * A muted line under the panel. `text` is null while what it says loads:
+ * a placeholder holds the line's place so the layout below stays still.
+ */
+export type AmountPanelNote = Readonly<{
+  /** Stable across the line's states, so it keeps its place. */
+  readonly id: string;
+  readonly text: string | null;
+}>;
 
 type AmountPanelProps = {
   /** Names the amount, such as "Stake". */
@@ -81,19 +92,25 @@ type AmountPanelProps = {
   };
   /**
    * The formatted limits, such as "Min 0.01 ETH", at the end of the line
-   * under the token, where they stay in view beside any error.
+   * under the amount: the helper, which stays in view and in its own tone
+   * beside any error. A missed limit is said by `error`.
    */
   readonly limits?: string;
-  /** The amount misses its limits: they turn to the danger tone. */
-  readonly limitsMissed?: boolean;
   /**
-   * Why the amount cannot be used, such as "Insufficient balance", under the
-   * amount: it marks the amount invalid and describes it.
+   * Why the amount cannot be used, such as "Insufficient balance" or "Enter
+   * at least 0.01 ETH", at the start of the line under the amount: it marks
+   * the amount invalid, describes it, and edges the panel in the danger tone.
    */
   readonly error?: string;
   /**
+   * Why no amount can be used yet, said before one is typed, such as "You
+   * need at least 1 ETH to stake", in the error's place in the warning tone.
+   * It describes the amount without marking it invalid; an error wins.
+   */
+  readonly warning?: string;
+  /**
    * Marks the amount invalid without an `error` to show, such as an empty
-   * amount after a submit.
+   * amount after a submit; the panel edges in the danger tone.
    */
   readonly invalid?: boolean;
   /** The "Max" chip, which fills in the most the user can use. */
@@ -102,6 +119,11 @@ type AmountPanelProps = {
     readonly onClick: () => void;
     readonly disabled?: boolean;
   };
+  /**
+   * Muted lines under the panel about what using the amount costs, such as
+   * "Network fee ≈ 0.0003 ETH ($0.52)" or what Max keeps aside for it.
+   */
+  readonly notes?: ReadonlyArray<AmountPanelNote>;
   readonly disabled?: boolean;
   readonly onBlur?: () => void;
   /** Steps the amount's type down as it fills the input. On by default. */
@@ -118,8 +140,12 @@ type AmountPanelProps = {
 
 /**
  * Where a user enters an amount of a token: the labelled amount beside the
- * token, its limits or error under it, and its fiat value, the balance and a
- * "Max" chip at the foot.
+ * token; under it, one line with what is wrong at its start (an error, or a
+ * warning before any amount is typed) and the limits as its helper at its
+ * end; and at the foot its fiat value, the balance and a "Max" chip. Under
+ * the panel, muted notes say what using the amount costs. While the amount
+ * is invalid the panel edges in the danger tone; focus still edges it in the
+ * accent.
  */
 export const AmountPanel = ({
   label,
@@ -133,9 +159,10 @@ export const AmountPanel = ({
   fiatValueLoading = false,
   balance,
   limits,
-  limitsMissed = false,
   error,
+  warning,
   max,
+  notes = [],
   invalid = false,
   disabled = false,
   onBlur,
@@ -143,11 +170,13 @@ export const AmountPanel = ({
   testIds,
   focusRequest = 0,
 }: AmountPanelProps) => {
+  const amountInvalid = invalid || error !== undefined;
   const panel = (
     <Card
       variant="field"
       padding={16}
       focusEdge
+      invalid={amountInvalid}
       {...(testIds?.root === undefined ? {} : { testId: testIds.root })}
     >
       <Stack gap={8}>
@@ -156,12 +185,9 @@ export const AmountPanel = ({
           disabled={disabled}
           {...(limits === undefined
             ? {}
-            : {
-                description: limits,
-                descriptionAtEnd: true,
-                descriptionInvalid: limitsMissed,
-              })}
+            : { description: limits, descriptionAtEnd: true })}
           {...(error === undefined ? {} : { error })}
+          {...(warning === undefined ? {} : { warning })}
         >
           <Stack direction="row" align="center" gap={12}>
             <AmountInput
@@ -170,7 +196,7 @@ export const AmountPanel = ({
               value={value}
               onValueChange={onValueChange}
               separators={separators}
-              invalid={invalid || limitsMissed || error !== undefined}
+              invalid={amountInvalid}
               disabled={disabled}
               shrink={shrink}
               focusRequest={focusRequest}
@@ -189,7 +215,7 @@ export const AmountPanel = ({
           >
             {fiatValueLoading ? (
               <span {...stylex.props(styles.pendingFiat)}>
-                <Skeleton shape="line" role="caption" />
+                <Skeleton shape="line" variant="caption" />
               </span>
             ) : (
               <Text variant="caption" tone="muted" numeric>
@@ -230,20 +256,40 @@ export const AmountPanel = ({
     </Card>
   );
 
-  if (labelPlacement === "inside") return panel;
+  const notesBlock =
+    notes.length > 0 ? (
+      <Stack gap={4}>
+        {notes.map((note) =>
+          note.text === null ? (
+            <span key={note.id} {...stylex.props(styles.pendingNote)}>
+              <Skeleton shape="line" variant="caption" />
+            </span>
+          ) : (
+            <Text key={note.id} variant="caption" tone="muted" numeric>
+              {note.text}
+            </Text>
+          )
+        )}
+      </Stack>
+    ) : null;
+
+  if (labelPlacement === "inside" && notesBlock === null) return panel;
 
   // The title shows above the panel; the amount names itself with the same
   // text, so the title reads once, as the section's heading.
   return (
     <Stack gap={8}>
-      <span {...stylex.props(labelPending && styles.pendingTitle)}>
-        {labelPending ? (
-          <Skeleton shape="line" />
-        ) : (
-          <Text weight="medium">{label}</Text>
-        )}
-      </span>
+      {labelPlacement === "above" && (
+        <span {...stylex.props(labelPending && styles.pendingTitle)}>
+          {labelPending ? (
+            <Skeleton shape="line" />
+          ) : (
+            <Text weight="medium">{label}</Text>
+          )}
+        </span>
+      )}
       {panel}
+      {notesBlock}
     </Stack>
   );
 };
@@ -264,7 +310,7 @@ const BalanceAmount = ({
         aria-label={`${balance.short}, ${balance.fill.label}`}
         onClick={balance.fill.onClick}
         disabled={disabled}
-        {...stylex.props(styles.fill)}
+        {...stylex.props(styles.fill, hitAreaStyles.coarse)}
       >
         {balance.short}
       </button>
@@ -277,6 +323,11 @@ const BalanceAmount = ({
 const styles = stylex.create({
   fiatLine: { display: "flex", minHeight: lineHeight.caption },
   pendingFiat: { display: "block", width: space[64] },
+  // A placeholder note about as wide as a short fee line.
+  pendingNote: {
+    display: "block",
+    width: `calc(${space[64]} * 2 + ${space[32]})`,
+  },
   // A placeholder title about as wide as a short yield type name.
   pendingTitle: {
     display: "block",

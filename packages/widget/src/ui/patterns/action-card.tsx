@@ -7,7 +7,7 @@ import { Text } from "../primitives/text";
 
 type ActionCardProps = {
   /**
-   * What the action is about, such as "1.335 POL available to claim" or
+   * What the action is about, such as "Claim rewards 1.335 POL" or
    * "84.95 USDC outstanding"; `Text.Strong` marks its figure.
    */
   readonly title: ReactNode;
@@ -22,6 +22,13 @@ type ActionCardProps = {
     readonly testId?: string;
     readonly hostHook?: HostHook;
   };
+  /**
+   * The screen's call to action, such as a withdrawal that is ready on a
+   * position's page: the card tints in the accent and its button fills. One
+   * per screen; the screen's own call to action then steps down to
+   * secondary.
+   */
+  readonly primary?: boolean;
   /** Renders as the card's `data-testid`. */
   readonly testId?: string;
 };
@@ -30,15 +37,21 @@ type ActionCardProps = {
  * One action a position offers, as a summary beside the button that runs
  * it, such as a position's Claim or Withdraw or a borrow position's Repay: a
  * filled card, the text wrapping beside a small soft button that keeps its
- * row at every width. Sibling action cards stack 8px apart.
+ * row at every width, or with `primary` an accent-tinted card whose button
+ * fills. Sibling action cards stack 8px apart.
  */
 export const ActionCard = ({
   title,
   description,
   action,
+  primary = false,
   testId,
 }: ActionCardProps) => (
-  <Card padding={16} {...(testId === undefined ? {} : { testId })}>
+  <Card
+    padding={16}
+    tone={primary ? "accent" : "neutral"}
+    {...(testId === undefined ? {} : { testId })}
+  >
     <Stack direction="row" align="center" justify="between" gap={12}>
       <Stack gap={4} grow>
         <Text breakAnywhere>{title}</Text>
@@ -50,7 +63,7 @@ export const ActionCard = ({
       </Stack>
       <Button
         size="sm"
-        variant="soft"
+        variant={primary ? "primary" : "soft"}
         onClick={action.onClick}
         loading={action.loading ?? false}
         disabled={action.disabled ?? false}

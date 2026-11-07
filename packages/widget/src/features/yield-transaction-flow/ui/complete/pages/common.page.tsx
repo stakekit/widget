@@ -16,7 +16,12 @@ import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Token } from "../../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { formatTransactionHash } from "../../../../../shared/lib/general";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { CompleteSummary } from "../../../../../ui/index";
 import {
   AnimationPage,
@@ -53,10 +58,11 @@ type Props = {
   rows?: ReadonlyArray<CompleteRow>;
   /** What is left to do, such as withdrawing once an exit unlocks. */
   note?: string | null;
-  providersDetails: ReadonlyArray<{
-    logo?: string | undefined;
-    name?: string;
-  }> | null;
+  /**
+   * What a deposit is projected to earn in a year, such as "+0.05 ETH" with
+   * its fiat value: shown with the position it went into.
+   */
+  yearlyEarnings?: Readonly<{ value: string; caption?: string }> | null;
   yieldType: ExtendedYieldType | null;
   integrationId: YieldId;
 };
@@ -78,19 +84,22 @@ export const CompletePageComponent = ({
   rows = [],
   note = null,
   yieldType,
-  providersDetails,
+  yearlyEarnings = null,
   integrationId,
   completion,
 }: Props) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const presentationTime = useAtomValue(presentationClockAtom);
   const resolveTokenLogo = useTokenLogoResolver();
 
   const {
+    attribution,
     cta,
     onViewTransactionClick,
     unstakeMatch,
     pendingActionMatch,
+    positionTotal,
     urls,
     viewPositionCta,
   } = completion;
@@ -147,15 +156,35 @@ export const CompletePageComponent = ({
   };
   const shownNote = getNextBatchNote() ?? note;
 
-  const providerNames = (providersDetails ?? [])
-    .flatMap((provider) => (provider.name ? [provider.name] : []))
-    .join(", ");
   const markLogo = markToken
     ? resolveTokenLogo(markToken, { badge: "none" })
     : null;
-  const providerLogo = providersDetails?.find(
-    (provider) => provider.logo
-  )?.logo;
+  // The position the flow left, once the portfolio holds it, and what a
+  // deposit should earn there.
+  const positionUsd = positionTotal?.amountUsd.isGreaterThan(0)
+    ? formatUsd(positionTotal.amountUsd, locale)
+    : null;
+  const position =
+    positionTotal || yearlyEarnings
+      ? {
+          heading: t("complete.position.heading"),
+          ...(positionTotal
+            ? {
+                value: `${formatTokenAmount(positionTotal.amount, locale, "down")} ${positionTotal.token.symbol}`,
+              }
+            : {}),
+          ...(positionUsd ? { caption: positionUsd } : {}),
+          ...(yearlyEarnings
+            ? {
+                earnings: {
+                  label: t("complete.position.yearly_earnings"),
+                  testId: "complete-yearly-earnings",
+                  ...yearlyEarnings,
+                },
+              }
+            : {}),
+        }
+      : null;
 
   const transactions = urls.map((transaction, index) => {
     const type = capitalize(
@@ -184,7 +213,7 @@ export const CompletePageComponent = ({
           mark={{
             name: markLogo?.name ?? network,
             tokenSrc: markLogo?.src,
-            providerSrc: providerLogo,
+            providerSrc: attribution?.logo,
           }}
           title={t(successKey, {
             action,
@@ -192,9 +221,17 @@ export const CompletePageComponent = ({
             tokenNetwork: network,
             ...pendingAction,
           })}
-          {...(providerNames
-            ? { detail: t("complete.via", { providerName: providerNames }) }
+          {...(attribution
+            ? {
+                detail: t("complete.via", { providerName: attribution.name }),
+                provider: {
+                  name: attribution.name,
+                  shape: attribution.shape,
+                  ...(attribution.logo ? { src: attribution.logo } : {}),
+                },
+              }
             : {})}
+          {...(position ? { position } : {})}
           rows={rows}
           {...(shownNote ? { note: shownNote } : {})}
           transactions={{

@@ -153,12 +153,20 @@ describe("select yield sheet", () => {
     const sheet = page.getByTestId("select-modal__container");
     expect(row("staking-a").element().textContent).not.toContain("APY");
     expect(row("staking-b").element().textContent).not.toContain("APY");
-    // One APY heads the staking group, one sits on the APY lending row.
+
+    // The lending group mixes rate types, so each row keeps its own label:
+    // its type alone, with no period it averages over.
+    expect(leafWithText("lending-a", "APY")).toBeTruthy();
+    expect(leafWithText("lending-b", "APR")).toBeTruthy();
+    const header = sheet.getByText("APY", { exact: true }).elements()[0];
     expect(sheet.getByText("APY", { exact: true }).elements()).toHaveLength(2);
 
-    // The lending group mixes rate types, so each row keeps its own.
-    expect(row("lending-a").element().textContent).toContain("APY");
-    expect(row("lending-b").element().textContent).toContain("APR");
+    // The header's rate type and the rates share one right edge, on the
+    // chosen row and the others alike.
+    const right = (element: Element | undefined) =>
+      Math.round(element?.getBoundingClientRect().right ?? Number.NaN);
+    expect(right(leafWithText("staking-a", "—"))).toBe(right(header));
+    expect(right(leafWithText("staking-b", "1.86%"))).toBe(right(header));
 
     // A missing rate beside a long name stays on one line.
     expect(lineCount(leafWithText("staking-a", "—"))).toBe(1);

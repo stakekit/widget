@@ -136,3 +136,17 @@ export const iconLeadsInline = (text: Element, icon: Element) => {
     Math.abs((iconBox.top + iconBox.bottom) / 2 - firstLineMiddle) <= 1
   );
 };
+
+/**
+ * How deep, in pixels, a scroller's edge fades run at its top and bottom,
+ * read from its computed mask; 0 where an edge does not fade.
+ */
+export const fadeDepths = (element: Element) => {
+  const mask = getComputedStyle(element).maskImage;
+  const top = /rgb\(0, 0, 0\) ([\d.]+)px/.exec(mask)?.[1];
+  const bottom = /calc\(100% - ([\d.]+)px\)/.exec(mask)?.[1];
+  return {
+    top: Number.parseFloat(top ?? "0"),
+    bottom: Number.parseFloat(bottom ?? "0"),
+  };
+};

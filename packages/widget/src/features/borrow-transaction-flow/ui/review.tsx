@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
@@ -12,14 +12,14 @@ import {
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
-  ExternalLink,
   IconButton,
   Notice,
   ReviewSummary,
   Stack,
   Text,
 } from "../../../ui/index";
-import { useTrackEvent, useTrackPage } from "../../tracking/index";
+import { useTrackPage } from "../../tracking/index";
+import { TransactionTerms } from "../../transaction-steps/views";
 import { useWidgetConfig } from "../../widget-configuration/index";
 import {
   AnimationPage,
@@ -50,7 +50,6 @@ export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
 
   const { t } = useTranslation();
-  const trackEvent = useTrackEvent();
   const hideGasFee = useWidgetConfig("hideGasFee");
   const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
@@ -224,22 +223,9 @@ export const BorrowReviewPage = () => {
             )}
           </Text>
 
-          <Text as="p" variant="caption" tone="muted">
-            <Trans
-              i18nKey="review.terms_of_use"
-              components={{
-                underline0: (
-                  <ExternalLink
-                    href="https://docs.yield.xyz/docs/terms-of-use"
-                    newTabLabel={t("shared.opens_in_new_tab")}
-                    onClick={() => trackEvent("termsClicked")}
-                  >
-                    {null}
-                  </ExternalLink>
-                ),
-              }}
-            />
-          </Text>
+          <TransactionTerms
+            action={t("dashboard.borrow.review_page.confirm")}
+          />
         </Stack>
 
         <PageCtaButton

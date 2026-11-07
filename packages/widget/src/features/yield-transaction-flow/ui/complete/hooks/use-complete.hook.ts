@@ -4,6 +4,7 @@ import { isMobile } from "../../../../../shared/lib/general";
 import { useTrackEvent } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
+import { getYieldFlowAttribution } from "../../../model/yield-transaction-flow";
 import { getYieldTransactionCompletionUrls } from "../../../model/yield-transaction-workflow";
 import {
   useYieldFlowExecution,
@@ -16,6 +17,7 @@ export const useComplete = () => {
   const finish = useAtomSet(execution.finishAtom);
   const viewPosition = useAtomSet(execution.viewPositionAtom);
   const positionBalanceId = useAtomValue(execution.positionBalanceIdAtom);
+  const positionTotal = useAtomValue(execution.positionTotalAtom);
   const workflowView = useAtomValue(execution.workflow.viewAtom);
 
   // Ledger Live desktop leaves for its Earn dashboard; elsewhere the flow finishes in the widget.
@@ -74,11 +76,14 @@ export const useComplete = () => {
       : null;
 
   return {
+    /** Who ran the action, as Review and Steps named them. */
+    attribution: getYieldFlowAttribution(session.intake),
     urls,
     unstakeMatch: unstake,
     pendingActionMatch: pendingAction,
     onViewTransactionClick,
     cta: resolveCta(),
+    positionTotal,
     viewPositionCta,
   };
 };

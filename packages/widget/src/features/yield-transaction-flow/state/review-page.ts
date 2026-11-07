@@ -54,7 +54,10 @@ import {
 } from "../model/yield-transaction-flow";
 import { getYieldFlowTransactionsToSign } from "../model/yield-transaction-workflow";
 import { getYieldFlowReviewPricesKey } from "./review-prices";
-import { makeYieldFlowStakeReviewViewAtom } from "./yield-summary";
+import {
+  getYieldFlowWithdrawalFee,
+  makeYieldFlowStakeReviewViewAtom,
+} from "./yield-summary";
 
 class YieldFlowPreviewError extends Data.TaggedError("YieldFlowPreviewError")<{
   readonly cause: unknown;
@@ -606,6 +609,8 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     intake._tag === "Enter"
       ? makeYieldFlowStakeReviewViewAtom(intake, baseViewAtom)
       : null;
+  const withdrawalFee =
+    intake._tag === "Exit" ? getYieldFlowWithdrawalFee(intake) : null;
 
   return {
     activityReviewViewAtom: Atom.make((get) => {
@@ -656,6 +661,7 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     reviewViewAtom: Atom.make((get) => ({
       ...get(baseViewAtom),
       stake: stakeViewAtom ? get(stakeViewAtom) : null,
+      withdrawalFee,
     })).pipe(Atom.withLabel("yieldFlowReviewView")),
   } as const;
 };

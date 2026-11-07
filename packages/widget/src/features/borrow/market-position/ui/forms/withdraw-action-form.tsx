@@ -138,7 +138,6 @@ export const WithdrawActionForm = ({
           ),
           symbol: selectedToken.supplyBalance.tokenSymbol,
         })}
-        label={t("dashboard.borrow.position_details.actions.withdraw")}
         onAmountChange={(amount) => dispatch({ amount, type: "amount/set" })}
         onMaxClick={() =>
           dispatch({

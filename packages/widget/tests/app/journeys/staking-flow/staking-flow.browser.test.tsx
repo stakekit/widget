@@ -150,7 +150,9 @@ describe("Staking flow", () => {
 
     await userEvent.click(confirmButton);
 
-    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })

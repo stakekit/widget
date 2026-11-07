@@ -1,12 +1,20 @@
 import * as stylex from "@stylexjs/stylex";
 import { type AnimationDefinition, motion } from "motion/react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Logo } from "../artwork/logo";
 import { useReducedMotion } from "../components/use-reduced-motion";
 import type { HostHook } from "../host-hook";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
+import { container } from "../tokens/container.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motionEasing, motionSeconds } from "../tokens/motion-timing";
 import { gutter } from "../tokens/presentation.stylex";
@@ -31,8 +39,11 @@ type WidgetFrameProps = {
   /**
    * `narrow` caps the frame at the `sm` container size and centers it;
    * `wide` fills the width it is given up to a split-view frame's width and
-   * centers it; `full` fills the width it is given. `narrow` and `wide` keep
-   * a least height, so short pages and states don't shrink the Widget.
+   * centers it, and below the `split` container size holds its header and
+   * page in one centred column no wider than the `md` container size, the
+   * stacked split view's; `full` fills the width it is given. `narrow` and
+   * `wide` keep a least height, so short pages and states don't shrink the
+   * Widget.
    */
   readonly width?: keyof typeof widthStyles;
   /**
@@ -59,9 +70,11 @@ type WidgetFrameProps = {
 
 /**
  * The Widget's shell: a rounded canvas that holds the header and the page at
- * the gutter inset, and the "Powered by" footer. It is a size container, so
- * what it holds lays out by the frame's width, not the page's. It can ease
- * its height between pages and grow open on mount.
+ * the gutter inset, and the "Powered by" footer. As wide as the viewport,
+ * such as on a phone, it drops its corners and edge and meets the screen's.
+ * It is a size container, so what it holds lays out by the frame's width,
+ * not the page's. It can ease its height between pages and grow open on
+ * mount.
  */
 export const WidgetFrame = ({
   header,
@@ -77,6 +90,8 @@ export const WidgetFrame = ({
   const animated =
     !reduceMotion && (pageKey !== undefined || reveal !== undefined);
   const content = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const fillsViewport = useFillsViewportWidth(frame);
   const [contentHeight, setContentHeight] = useState<number>();
   // The height the frame eases to during a page change.
   const [pageHeight, setPageHeight] = useState<number>();
@@ -180,6 +195,7 @@ export const WidgetFrame = ({
 
   return (
     <motion.div
+      ref={frame}
       initial={opening ? { height: 0 } : false}
       animate={target}
       transition={transition}
@@ -190,9 +206,11 @@ export const WidgetFrame = ({
       {...stylex.props(
         styles.root,
         widthStyles[width],
+        fillsViewport && styles.edgeToEdge,
         pinnedHeight !== undefined && styles.pinned(`${pinnedHeight}px`)
       )}
       data-rk={hostHook}
+      data-sk-frame=""
     >
       <div
         ref={content}
@@ -203,9 +221,13 @@ export const WidgetFrame = ({
         )}
       >
         {header !== undefined && (
-          <div {...stylex.props(styles.header)}>{header}</div>
+          <div {...stylex.props(styles.header, columnStyles[width])}>
+            {header}
+          </div>
         )}
-        <div {...stylex.props(styles.page)}>{children}</div>
+        <div {...stylex.props(styles.page, columnStyles[width])}>
+          {children}
+        </div>
         {/* Not a `footer`: the host page owns its contentinfo landmark. */}
         <div {...stylex.props(styles.footer)}>
           <Stack direction="row" align="center" justify="center" gap={4}>
@@ -218,6 +240,35 @@ export const WidgetFrame = ({
       </div>
     </motion.div>
   );
+};
+
+/**
+ * Whether the element is as wide as the viewport, kept current as either
+ * resizes. Read before paint, so a full-width frame never shows its corners.
+ */
+const useFillsViewportWidth = (ref: RefObject<HTMLElement | null>) => {
+  const [fills, setFills] = useState(false);
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const viewport = element.ownerDocument.documentElement;
+    const view = element.ownerDocument.defaultView;
+    const update = () =>
+      setFills(
+        element.getBoundingClientRect().width >= viewport.clientWidth - 0.5
+      );
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    view?.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      view?.removeEventListener("resize", update);
+    };
+  }, [ref]);
+
+  return fills;
 };
 
 const settleMs = motionSeconds.pageSettle * 1000;
@@ -268,6 +319,9 @@ const styles = stylex.create({
   // Wins over the height `motion` writes inline, which is `auto` until the
   // easing starts.
   pinned: (height: string) => ({ maxHeight: height, minHeight: height }),
+  // As wide as the viewport, the frame meets the screen's edges: no corners,
+  // no shadow or edge around it.
+  edgeToEdge: { borderRadius: 0, boxShadow: "none" },
   content: {
     display: "flex",
     flexDirection: "column",
@@ -300,6 +354,23 @@ const widthStyles = stylex.create({
   narrow: { maxWidth: containerWidth.sm, width: "100%" },
   wide: { maxWidth: frameMaxWidth.wide, width: "100%" },
   full: { width: "100%" },
+});
+
+// The header and the page share one column: below the `split` container
+// size a `wide` frame centres it at the stacked split view's width, so the
+// tabs and wallet controls line up with the page under them.
+const columnStyles = stylex.create({
+  narrow: {},
+  wide: {
+    marginInline: "auto",
+    boxSizing: "border-box",
+    maxWidth: {
+      default: `calc(${containerWidth.md} + 2 * ${gutter.size})`,
+      [container.split]: "none",
+    },
+    width: "100%",
+  },
+  full: {},
 });
 
 // On the content, not the frame, so the frame can still grow open from no

@@ -48,21 +48,22 @@ export const Dark: Story = {
   globals: { colorScheme: "dark" },
 };
 
-/** The provider's logo is a soft square tile; the token's stays round. */
+const avatarRadius = (wrapper: Element | null | undefined) => {
+  const root = wrapper?.firstElementChild;
+  if (!(root instanceof HTMLElement)) throw new Error("Expected an avatar");
+  return getComputedStyle(root).borderRadius;
+};
+
+/** The provider's logo is round, as the token's is. */
 export const ProviderLogo: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const avatarRoot = (wrapper: Element | null | undefined) => {
-      const root = wrapper?.firstElementChild;
-      if (!(root instanceof HTMLElement)) throw new Error("Expected an avatar");
-      return getComputedStyle(root).borderRadius;
-    };
     const heading = canvas.getByRole("heading", { name: "Lido Staked ETH" });
-    const token = avatarRoot(heading.parentElement?.previousElementSibling);
-    const provider = avatarRoot(
+    const token = avatarRadius(heading.parentElement?.previousElementSibling);
+    const provider = avatarRadius(
       canvas.getByText("via Lido").previousElementSibling
     );
-    await expect(provider).not.toBe(token);
+    await expect(provider).toBe(token);
   },
 };
 

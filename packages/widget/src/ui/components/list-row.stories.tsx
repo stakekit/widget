@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
+import { Box } from "../primitives/box";
 import { ContainerFrame, narrowAndWide } from "../storybook/container-frame";
 import {
   isOneLine,
@@ -94,8 +95,8 @@ export const LinkDark: Story = { ...Link, globals: { colorScheme: "dark" } };
 
 /**
  * Under the outlined surface style a pressable row edges in `border`, as a
- * filled card does; focus replaces the edge with the focus ring. Shown on
- * the default palette: Utila's own, which uses this style, is exempt from
+ * filled card does; focus replaces the edge with the inset focus ring. Shown
+ * on the default palette: Utila's own, which uses this style, is exempt from
  * the contrast rule these story tests enforce.
  */
 export const LinkOutlined: Story = {
@@ -103,11 +104,14 @@ export const LinkOutlined: Story = {
   globals: { surfaceStyle: "outlined" },
   play: async ({ canvasElement }) => {
     const row = within(canvasElement).getByRole("link", { name: /Ethereum/ });
-    await expect(getComputedStyle(row).outlineStyle).toBe("solid");
-    await expect(getComputedStyle(row).outlineWidth).toBe("1px");
+    await expect(getComputedStyle(row).boxShadow).toMatch(
+      /0px 0px 0px 1px inset$/
+    );
+    await expect(getComputedStyle(row).outlineStyle).toBe("none");
     await userEvent.tab();
     await expect(row).toHaveFocus();
-    await expect(getComputedStyle(row).outlineWidth).toBe("2px");
+    await expect(getComputedStyle(row).outlineStyle).toBe("double");
+    await expect(getComputedStyle(row).outlineWidth).toBe("6px");
   },
 };
 
@@ -525,6 +529,50 @@ export const WithStatusDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/**
+ * The subtitle keeps its room over the status: below `sm` a status with an
+ * icon shows the icon alone, its text still read, and from `sm` its text
+ * truncates before the subtitle does.
+ */
+export const StatusGivesWay: Story = {
+  args: {
+    ...rowContent,
+    subtitle: "via Compound Finance",
+    status: {
+      text: "Rewards to claim and ready to withdraw",
+      tone: "warning",
+      icon: "WarningIcon",
+    },
+  },
+  render: (args) => (
+    <>
+      <ContainerFrame width={360}>
+        <ListRow {...args} />
+      </ContainerFrame>
+      <ContainerFrame width={420}>
+        <ListRow {...args} />
+      </ContainerFrame>
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [narrowSubtitle, wideSubtitle] = narrowAndWide(
+      canvas.getAllByText("via Compound Finance")
+    );
+    const [narrowStatus, wideStatus] = narrowAndWide(
+      canvas.getAllByText("Rewards to claim and ready to withdraw")
+    );
+
+    await expect(isTruncated(narrowSubtitle)).toBe(false);
+    await expect(
+      narrowStatus.getBoundingClientRect().width
+    ).toBeLessThanOrEqual(1);
+    await expect(isTruncated(wideSubtitle)).toBe(false);
+    await expect(isTruncated(wideStatus)).toBe(true);
+    await expect(shareLine(wideSubtitle, wideStatus)).toBe(true);
+  },
+};
+
 /** Every status tone, for review in both schemes. */
 export const StatusTones: Story = {
   render: () => (
@@ -640,6 +688,11 @@ export const Flat: Story = {
 
     await expect(outlineBox(chosen)).toBeUndefined();
     await expect(chosen.querySelectorAll("svg")).toHaveLength(1);
+    // The unchosen rows keep the check's slot, so every value lines up.
+    const [chosenValue, ...otherValues] = canvas
+      .getAllByText("1.25 ETH")
+      .map((value) => Math.round(value.getBoundingClientRect().right));
+    for (const right of otherValues) await expect(right).toBe(chosenValue);
     await expect(getComputedStyle(other).backgroundColor).toMatch(
       /^rgba\(\d+, \d+, \d+, 0\)$/
     );
@@ -652,6 +705,116 @@ export const Flat: Story = {
 export const FlatDark: Story = {
   ...Flat,
   globals: { colorScheme: "dark" },
+};
+
+/**
+ * A condensed group's flat rows reach past the content edge by their own
+ * padding, so their avatars line up with the group's heading, and a dialog's
+ * title above it, while their tint reaches past.
+ */
+export const CondensedGroupLinesUp: Story = {
+  render: () => (
+    <ContainerFrame width={400}>
+      <Box paddingInline={20}>
+        <ListGroup density="condensed" label="Networks">
+          {networks.map((network, index) => (
+            <ListRow
+              key={network.name}
+              leading={
+                <TokenAvatar
+                  src={tokenLogo}
+                  name={network.name}
+                  size="control"
+                />
+              }
+              title={network.name}
+              onClick={onPickNetwork}
+              selected={index === 0}
+            />
+          ))}
+        </ListGroup>
+      </Box>
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const heading = canvas.getByText("Networks");
+    const row = canvas.getByRole("button", { name: /Arbitrum One/ });
+    // The row's first part is its leading avatar.
+    const avatar = row.firstElementChild;
+    if (avatar === null) throw new Error("The row has no avatar.");
+    await expect(
+      Math.round(
+        avatar.getBoundingClientRect().left -
+          heading.getBoundingClientRect().left
+      )
+    ).toBe(0);
+    await expect(row.getBoundingClientRect().left).toBeLessThan(
+      heading.getBoundingClientRect().left
+    );
+  },
+};
+
+/**
+ * A value that did not happen, such as a failed transfer's amount, reads
+ * muted and struck through; its subvalue stays as it is.
+ */
+export const ValueStruck: Story = {
+  args: {
+    ...rowContent,
+    valueStruck: true,
+    status: { text: "Failed", tone: "danger", icon: "XIcon" },
+  },
+  play: async ({ canvasElement }) => {
+    // The line is drawn by the value's wrapper, through the text in it.
+    const value = within(canvasElement).getByText(rowContent.value);
+    const struck = value.parentElement;
+    if (struck === null) throw new Error("The value has no wrapper.");
+    await expect(getComputedStyle(struck).textDecorationLine).toBe(
+      "line-through"
+    );
+    const subvalue = within(canvasElement).getByText(rowContent.subvalue);
+    await expect(subvalue.parentElement).not.toBe(struck);
+    await expect(getComputedStyle(subvalue).textDecorationLine).toBe("none");
+  },
+};
+
+export const ValueStruckDark: Story = {
+  ...ValueStruck,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * `trailing` ends the row with an element of its own, such as a wallet's
+ * Install badge, centered on the row in place of a value.
+ */
+export const Trailing: Story = {
+  args: {
+    leading: <TokenAvatar src={tokenLogo} name="Wallet" size="control" />,
+    title: "Wallet",
+    subtitle: "Browser extension",
+    density: "condensed",
+    onClick: fn(),
+    trailing: <Badge tone="accent">Install</Badge>,
+  },
+  render: (args) => (
+    <ContainerFrame width={400}>
+      <ListRow {...args} />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = canvas.getByRole("button", { name: /Wallet/ });
+    const badge = canvas.getByText("Install");
+    const rowBox = row.getBoundingClientRect();
+    const badgeBox = badge.getBoundingClientRect();
+    await expect(
+      Math.abs(
+        (badgeBox.top + badgeBox.bottom) / 2 - (rowBox.top + rowBox.bottom) / 2
+      )
+    ).toBeLessThanOrEqual(1);
+    await expect(rowBox.right - badgeBox.right).toBeLessThanOrEqual(16);
+  },
 };
 
 /** The selection ring and the focus ring draw inside the row's edge. */

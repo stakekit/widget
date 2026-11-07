@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, screen, userEvent, waitFor, within } from "storybook/test";
+import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { isWithin } from "../storybook/geometry";
+import { PopupFrame } from "../storybook/popup-frame";
+import { ExternalLink } from "./external-link";
 import { InfoTip } from "./info-tip";
 
 const explanation = "The yearly reward rate, before fees.";
@@ -83,5 +87,87 @@ export const KeyboardFocus: Story = {
 
     await userEvent.keyboard("{Enter}");
     await screen.findByText(explanation);
+  },
+};
+
+const scale =
+  "Credora grades how likely a deposit is to lose 1% or more within a year, from A+, the lowest risk, to D, the highest.";
+
+/**
+ * An explanation in a few paragraphs that ends in a link to its source, such
+ * as a risk rating's. Tab moves from the button into the explanation, to the
+ * link, and the explanation stays open while focus is in it.
+ */
+export const WithLink: Story = {
+  args: {
+    label: "Risk rating details",
+    children: (
+      <Stack gap={8}>
+        <Text as="p">{scale}</Text>
+        <Text as="p" weight="medium">
+          A is one of its lowest-risk grades.
+        </Text>
+        <Text as="p" variant="caption" tone="muted">
+          A rating is an independent opinion, not a guarantee against loss.
+        </Text>
+        <Text as="p" variant="caption">
+          <ExternalLink
+            href="https://example.com/methodology"
+            newTabLabel="opens in a new tab"
+          >
+            How Credora rates
+          </ExternalLink>
+        </Text>
+      </Stack>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole("button", {
+      name: "Risk rating details",
+    });
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    const link = await screen.findByRole("link", { name: /How Credora rates/ });
+    await waitFor(() => expect(link).toBeVisible());
+
+    await userEvent.tab();
+    await expect(link).toHaveFocus();
+    await expect(screen.getByText(scale)).toBeVisible();
+  },
+};
+
+/**
+ * It stays inside the Widget's frame: by an info button at the frame's top
+ * right corner, the explanation flips under the button and shifts left
+ * rather than passing the frame's edges, though the page has room beyond
+ * them.
+ */
+export const StaysInFrame: Story = {
+  args: {
+    label: "About the reward rate",
+    children:
+      "The yearly rate a position earns in rewards, before fees. It can change over time.",
+  },
+  render: (args) => (
+    <PopupFrame>
+      <Text>Reward rate</Text>
+      <InfoTip {...args} />
+    </PopupFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    await userEvent.tab();
+    const explanation = await screen.findByRole("dialog", {
+      name: "About the reward rate",
+    });
+    await waitFor(() => expect(explanation).toBeVisible());
+    const frame = within(canvasElement).getByTestId("frame");
+    await waitFor(() =>
+      expect(
+        isWithin(
+          explanation.getBoundingClientRect(),
+          frame.getBoundingClientRect()
+        )
+      ).toBe(true)
+    );
   },
 };

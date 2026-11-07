@@ -22,7 +22,7 @@ describe("Position amount over the available balance", () => {
 
     const app = await renderApp({ walletListFactory: customConnectors });
 
-    await userEvent.click(app.getByRole("textbox", { name: "Withdraw" }));
+    await userEvent.click(app.getByRole("textbox", { name: "Amount" }));
     await userEvent.keyboard(moreThanHeld);
 
     await expect
@@ -54,8 +54,10 @@ describe("Position amount over the available balance", () => {
       },
     });
 
-    await userEvent.click(app.getByRole("tab", { name: "Deposit" }));
-    await userEvent.click(app.getByRole("textbox", { name: "Deposit" }));
+    await userEvent.click(
+      app.getByRole("tab", { name: "Deposit", exact: true })
+    );
+    await userEvent.click(app.getByRole("textbox", { name: "Amount" }));
     await userEvent.keyboard(moreThanHeld);
 
     await expect

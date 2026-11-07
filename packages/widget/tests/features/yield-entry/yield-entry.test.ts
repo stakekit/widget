@@ -387,9 +387,9 @@ describe("Yield Entry", () => {
         disabled: true,
         loading: false,
       },
-      name: "amount exceeds the available balance",
+      name: "balance falls short of the entry",
       override: {
-        amountExceedsBalance: true,
+        balanceShort: true,
         blocker: "InsufficientBalance" as const,
       },
     },
@@ -432,7 +432,7 @@ describe("Yield Entry", () => {
   ])("resolves the $name CTA branch", ({ expected, override }) => {
     expect(
       getYieldEntryCta({
-        amountExceedsBalance: false,
+        balanceShort: false,
         blocker: null,
         connected: true,
         externalProviders: false,

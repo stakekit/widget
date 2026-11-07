@@ -20,6 +20,21 @@ export const Selected: Story = { args: { selected: true } };
 
 export const Disabled: Story = { args: { disabled: true } };
 
+/**
+ * As tall as a small control, its label centred, so it is an easy target
+ * beside an amount. A coarse pointer reaches it from a little around it
+ * too; a fine pointer's target is the drawn pill.
+ */
+export const Size: Story = {
+  play: async ({ canvasElement }) => {
+    const chip = within(canvasElement).getByRole("button", { name: "Max" });
+    await expect(chip.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+      32
+    );
+    await expect(getComputedStyle(chip, "::before").content).toBe("none");
+  },
+};
+
 export const States: Story = {
   render: (args) => (
     <Stack direction="row" gap={8}>

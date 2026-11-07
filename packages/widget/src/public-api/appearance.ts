@@ -27,9 +27,10 @@ export type SKColorRole =
 
 /**
  * How the Widget looks. Every value is a CSS value. Setting `accent` alone
- * also adjusts `accentHover`, `accentSoft`, `accentText`, `focusRing`, `info`
- * and `infoSoft`; setting `success`, `warning` or `danger` adjusts its soft
- * tint. A role set explicitly is used as given. Changes apply live.
+ * also adjusts `accentHover`, `accentSoft`, `accentText` and `focusRing`;
+ * setting `success`, `warning`, `danger` or `info` adjusts its soft tint.
+ * `info` is its own hue, so an accent leaves it as it is. A role set
+ * explicitly is used as given. Changes apply live.
  */
 export interface SKAppearance {
   /** Defaults to `"light"`. `"system"` follows the operating-system preference. */

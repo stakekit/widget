@@ -13,7 +13,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Ghost: Story = {};
 
-/** Every variant at every size. */
+/** Every variant at every size. Corners follow the size, as a button's do. */
 export const VariantsAndSizes: Story = {
   render: (args) => (
     <div style={{ display: "grid", gap: 12 }}>
@@ -32,6 +32,18 @@ export const VariantsAndSizes: Story = {
       ))}
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [sm, md] = ["sm", "md"].map((size) =>
+      Number.parseFloat(
+        getComputedStyle(
+          canvas.getByRole("button", { name: `Close secondary ${size}` })
+        ).borderTopLeftRadius
+      )
+    );
+
+    await expect(sm).toBeLessThan(md ?? Number.NaN);
+  },
 };
 
 export const VariantsAndSizesDark: Story = {

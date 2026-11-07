@@ -2,14 +2,17 @@ import BigNumber from "bignumber.js";
 import { describe, expect, it } from "vitest";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import {
+  formatAmountAxis,
   formatCompactNumber,
   formatExactPercent,
   formatFigureChange,
   formatHealthFactor,
   formatLtv,
   formatNumber,
+  formatPairedTokenAmounts,
   formatPercent,
   formatPercentAxis,
+  formatRatio,
   formatRewardRatePercent,
   formatRoundedPercent,
   formatTokenAmount,
@@ -17,6 +20,7 @@ import {
   formatUsd,
   formatUsdAxis,
   getRoundedPercentParts,
+  getValueAxisTicks,
   unavailableFigure,
   withFigureUnit,
 } from "../../../src/shared/lib/number-format";
@@ -159,6 +163,35 @@ describe("formatTokenAmount", () => {
   });
 });
 
+describe("formatPairedTokenAmounts", () => {
+  it("writes a pair of amounts at one decimal count", () => {
+    expect(
+      formatPairedTokenAmounts([0.0834, 0.006_95], "en", "nearest")
+    ).toEqual(["0.0834", "0.0070"]);
+    expect(formatPairedTokenAmounts([1.5, 0.125], "en", "down")).toEqual([
+      "1.500",
+      "0.125",
+    ]);
+    expect(formatPairedTokenAmounts([12, 1], "en", "down")).toEqual([
+      "12",
+      "1",
+    ]);
+    expect(formatPairedTokenAmounts([1.5, 0.125], "fr", "down")).toEqual([
+      "1,500",
+      "0,125",
+    ]);
+  });
+
+  it("keeps each amount's own dust, compact and unknown readings", () => {
+    expect(
+      formatPairedTokenAmounts([0.0834, 0.000_04, null], "en", "nearest")
+    ).toEqual(["0.0834", "<0.0001", unavailableFigure]);
+    expect(
+      formatPairedTokenAmounts([1_200_000, 100_000], "en", "down")
+    ).toEqual(["1.2M", "100,000"]);
+  });
+});
+
 describe("formatUsd", () => {
   it.each([
     [null, "—"],
@@ -200,13 +233,34 @@ describe("formatUsd", () => {
 describe("formatCompactNumber", () => {
   it.each([
     ["en", 999, "999"],
-    ["en", 1234, "1K"],
-    ["en", 4_100_000, "4M"],
-    ["fr", 1234, `1${nbsp}k`],
-    ["fr", 4_100_000, `4${nbsp}M`],
+    ["en", 1234, "1,234"],
+    ["en", 883.2912, "883.29"],
+    ["en", 0.004, "<0.01"],
+    ["en", 0, "0"],
+    ["en", 999_999.996, "1M"],
+    ["en", 4_100_000, "4.1M"],
+    ["en", 76_123_456, "76.12M"],
+    ["fr", 1234, `1${nnbsp}234`],
+    ["fr", 883.2912, "883,29"],
+    ["fr", 4_100_000, `4,1${nbsp}M`],
     ["fr", null, "—"],
   ] as const)("formats %s %s as %s", (locale, value, expected) => {
     expect(formatCompactNumber(value, locale)).toBe(expected);
+  });
+});
+
+describe("formatRatio", () => {
+  it.each([
+    ["en", "1.06274537", "1.06275"],
+    ["en", "1.5", "1.500"],
+    ["en", "2", "2.000"],
+    ["en", "0.000123456789", "0.000123457"],
+    ["en", "12345.678", "12,345.7"],
+    ["en", "0", "0"],
+    ["en", null, "—"],
+    ["fr", "1.06274537", "1,06275"],
+  ] as const)("formats %s ratio %s as %s", (locale, value, expected) => {
+    expect(formatRatio(value, locale)).toBe(expected);
   });
 });
 
@@ -236,10 +290,13 @@ describe("formatPercent", () => {
     expect(formatPercent(value, "fr")).toBe(expected);
   });
 
-  it("rounds reward-style percentages to two places", () => {
+  it("shows reward-style percentages at exactly two places", () => {
     expect(formatRoundedPercent(0.123456, "en")).toBe("12.35%");
     expect(formatRoundedPercent(0.123456, "fr")).toBe(`12,35${nbsp}%`);
-    expect(formatRoundedPercent(12.5, "en")).toBe("1,250%");
+    expect(formatRoundedPercent(0.016, "en")).toBe("1.60%");
+    expect(formatRoundedPercent(0.0272, "en")).toBe("2.72%");
+    expect(formatRoundedPercent(0.05, "fr")).toBe(`5,00${nbsp}%`);
+    expect(formatRoundedPercent(12.5, "en")).toBe("1,250.00%");
   });
 
   it("never reads an existing rate as 0%", () => {
@@ -259,24 +316,24 @@ describe("formatPercent", () => {
 });
 
 describe("getRoundedPercentParts", () => {
-  it("keeps the affixes apart and every step to the target's places", () => {
-    const parts = getRoundedPercentParts(0.062, "en");
+  it("keeps the affixes apart and every step to two places", () => {
+    const parts = getRoundedPercentParts("en");
     expect(parts).toMatchObject({ prefix: "", suffix: "%" });
     expect([0, 0.048, 0.0573, 0.062].map(parts.format)).toEqual([
-      "0.0",
-      "4.8",
-      "5.7",
-      "6.2",
+      "0.00",
+      "4.80",
+      "5.73",
+      "6.20",
     ]);
   });
 
   it("reads the last step exactly as formatRoundedPercent", () => {
-    const parts = getRoundedPercentParts(0.123456, "fr");
+    const parts = getRoundedPercentParts("fr");
     expect(`${parts.prefix}${parts.format(0.123456)}${parts.suffix}`).toBe(
       formatRoundedPercent(0.123456, "fr")
     );
     expect(parts.format(0.05)).toBe("5,00");
-    expect(getRoundedPercentParts(0.05, "en").format(0.0123)).toBe("1");
+    expect(getRoundedPercentParts("en").format(0.0123)).toBe("1.23");
   });
 });
 
@@ -288,7 +345,8 @@ describe("formatRewardRatePercent", () => {
   });
 
   it("formats the reward rate in each language", () => {
-    expect(formatRewardRatePercent(0.05, "en")).toBe("5%");
+    expect(formatRewardRatePercent(0.05, "en")).toBe("5.00%");
+    expect(formatRewardRatePercent(0.016, "en")).toBe("1.60%");
     expect(formatRewardRatePercent(exactDecimal("0.0525"), "fr")).toBe(
       `5,25${nbsp}%`
     );
@@ -382,12 +440,52 @@ describe("formatFigureChange", () => {
   });
 });
 
+describe("getValueAxisTicks", () => {
+  it.each([
+    ["a reward-rate range", [5.6, 6.48, 7.4], [5.5, 6, 6.5, 7, 7.5]],
+    ["a TVL range", [593.57, 1190, 1790], [500, 1000, 1500, 2000]],
+    ["a range from zero", [0, 3.2, 9.6], [0, 2.5, 5, 7.5, 10]],
+    ["a narrow range", [1.581, 1.63, 2.09], [1.4, 1.6, 1.8, 2, 2.2]],
+    ["billions", [1.25e9, 2.35e9], [1e9, 1.5e9, 2e9, 2.5e9]],
+    ["negative values", [-0.04, 0.03], [-0.04, -0.02, 0, 0.02, 0.04]],
+  ])("steps %s by 1, 2, 2.5 or 5 × 10ⁿ", (_label, values, expected) => {
+    expect(getValueAxisTicks(values)).toEqual(expected);
+  });
+
+  it("gives an axis four or five ticks", () => {
+    for (const values of [
+      [0, 1],
+      [0.3, 0.9],
+      [12, 13],
+      [999, 1001],
+      [4.2, 87.3],
+    ]) {
+      const ticks = getValueAxisTicks(values);
+      expect(ticks.length).toBeGreaterThanOrEqual(4);
+      expect(ticks.length).toBeLessThanOrEqual(5);
+      expect(ticks[0]).toBeLessThanOrEqual(Math.min(...values));
+      expect(ticks.at(-1)).toBeGreaterThanOrEqual(Math.max(...values));
+    }
+  });
+
+  it("spans a flat series without going below zero", () => {
+    expect(getValueAxisTicks([4, 4])).toEqual([3.8, 3.9, 4, 4.1, 4.2]);
+    expect(getValueAxisTicks([0, 0])).toEqual([0, 0.25, 0.5, 0.75, 1]);
+  });
+
+  it("has no ticks without values", () => {
+    expect(getValueAxisTicks([])).toEqual([]);
+  });
+});
+
 describe("formatPercentAxis", () => {
-  it("gives every tick the decimals that place it near its tick", () => {
-    expect(formatPercentAxis([0.056, 0.064_75, 0.0735], "en")).toEqual([
-      "5.6%",
+  it("writes every tick with the axis's one decimal count", () => {
+    expect(formatPercentAxis([0.055, 0.06, 0.065, 0.07, 0.075], "en")).toEqual([
+      "5.5%",
+      "6.0%",
       "6.5%",
-      "7.4%",
+      "7.0%",
+      "7.5%",
     ]);
     expect(formatPercentAxis([0, 0.05, 0.1], "en")).toEqual([
       "0%",
@@ -401,11 +499,21 @@ describe("formatPercentAxis", () => {
     ]);
   });
 
+  it("reads zero as 0%", () => {
+    expect(formatPercentAxis([0, 0.025, 0.05, 0.075, 0.1], "en")).toEqual([
+      "0%",
+      "2.5%",
+      "5.0%",
+      "7.5%",
+      "10.0%",
+    ]);
+  });
+
   it("uses the language separators and affixes", () => {
-    expect(formatPercentAxis([0.056, 0.064_75, 0.0735], "fr")).toEqual([
-      `5,6${nbsp}%`,
+    expect(formatPercentAxis([0.055, 0.06, 0.065], "fr")).toEqual([
+      `5,5${nbsp}%`,
+      `6,0${nbsp}%`,
       `6,5${nbsp}%`,
-      `7,4${nbsp}%`,
     ]);
     expect(formatPercentAxis([-0.05, 0, 0.05], "en")).toEqual([
       `${minus}5%`,
@@ -413,42 +521,87 @@ describe("formatPercentAxis", () => {
       "5%",
     ]);
   });
-
-  it("keeps labels near ticks the chart pads off whole numbers", () => {
-    expect(formatPercentAxis([0.061_405, 0.068_45, 0.075_495], "en")).toEqual([
-      "6.1%",
-      "6.8%",
-      "7.5%",
-    ]);
-  });
 });
 
 describe("formatUsdAxis", () => {
-  it("shows every tick in the largest tick's compact unit", () => {
-    expect(formatUsdAxis([593.57, 1190, 1790], "en")).toEqual([
-      "$0.6K",
-      "$1.2K",
-      "$1.8K",
+  it("compacts ticks from 1K in the largest tick's unit", () => {
+    expect(formatUsdAxis([500, 1000, 1500, 2000], "en")).toEqual([
+      "$500",
+      "$1.0K",
+      "$1.5K",
+      "$2.0K",
     ]);
-    expect(
-      formatUsdAxis([1_250_000_000, 1_800_000_000, 2_350_000_000], "en")
-    ).toEqual(["$1.3B", "$1.8B", "$2.4B"]);
+    expect(formatUsdAxis([1e9, 1.5e9, 2e9, 2.5e9], "en")).toEqual([
+      "$1.0B",
+      "$1.5B",
+      "$2.0B",
+      "$2.5B",
+    ]);
+    expect(formatUsdAxis([0, 500_000, 1_000_000, 1_500_000], "en")).toEqual([
+      "$0",
+      "$0.5M",
+      "$1.0M",
+      "$1.5M",
+    ]);
   });
 
-  it("shows small values as plain USD with one decimal count", () => {
-    expect(formatUsdAxis([0, 25.5, 51], "en")).toEqual(["$0", "$26", "$51"]);
+  it("shows ticks under 1K as plain USD, zero as $0", () => {
+    expect(formatUsdAxis([0, 25, 50, 75], "en")).toEqual([
+      "$0",
+      "$25",
+      "$50",
+      "$75",
+    ]);
     expect(formatUsdAxis([0.1, 0.15, 0.2], "en")).toEqual([
       "$0.10",
       "$0.15",
       "$0.20",
     ]);
+    expect(formatUsdAxis([0, 0.2, 0.4, 0.6], "en")).toEqual([
+      "$0",
+      "$0.20",
+      "$0.40",
+      "$0.60",
+    ]);
   });
 
   it("uses the language's currency and compact affixes", () => {
-    expect(formatUsdAxis([593.57, 1190, 1790], "fr")).toEqual([
-      `0,6${nbsp}k${nbsp}$`,
-      `1,2${nbsp}k${nbsp}$`,
-      `1,8${nbsp}k${nbsp}$`,
+    expect(formatUsdAxis([500, 1000, 1500], "fr")).toEqual([
+      `500${nbsp}$`,
+      `1,0${nbsp}k${nbsp}$`,
+      `1,5${nbsp}k${nbsp}$`,
+    ]);
+  });
+});
+
+describe("formatAmountAxis", () => {
+  it("labels token-unit ticks like USD ticks, without the currency", () => {
+    expect(formatAmountAxis([500, 1000, 1500, 2000], "en")).toEqual([
+      "500",
+      "1.0K",
+      "1.5K",
+      "2.0K",
+    ]);
+    expect(formatAmountAxis([0, 250, 500, 750, 1000], "en")).toEqual([
+      "0",
+      "250",
+      "500",
+      "750",
+      "1K",
+    ]);
+    expect(formatAmountAxis([0.5, 1, 1.5, 2], "en")).toEqual([
+      "0.5",
+      "1.0",
+      "1.5",
+      "2.0",
+    ]);
+  });
+
+  it("uses the language's compact affixes", () => {
+    expect(formatAmountAxis([500, 1000, 1500], "fr")).toEqual([
+      "500",
+      `1,0${nbsp}k`,
+      `1,5${nbsp}k`,
     ]);
   });
 });

@@ -38,7 +38,6 @@ export const PendingCompletePage = () => {
         { confidential: isConfidentialYield(integrationData) }
       )}
       pendingActionType={manageFlow.pendingActionType}
-      providersDetails={manageFlow.providersDetails}
       markToken={token}
       yieldType={getExtendedYieldType(integrationData)}
     />

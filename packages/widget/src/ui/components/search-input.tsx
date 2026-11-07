@@ -17,6 +17,10 @@ type SearchInputProps = {
   readonly onValueChange: (value: string) => void;
   /** Names the input, unless a `Field` label does. */
   readonly label?: string;
+  /**
+   * Says what the field searches, such as "Search tokens", so an empty field
+   * never reads blank; unset, the `label`.
+   */
   readonly placeholder?: string;
   /** Names the button that clears the query. */
   readonly clearLabel: string;
@@ -60,7 +64,7 @@ export const SearchInput = ({
   value,
   onValueChange,
   label,
-  placeholder,
+  placeholder = label,
   clearLabel,
   disabled: disabledProp = false,
   inputRef: inputRefProp,

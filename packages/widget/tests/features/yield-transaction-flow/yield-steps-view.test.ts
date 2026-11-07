@@ -251,6 +251,43 @@ describe("Yield Steps view", () => {
     ]);
   });
 
+  it("links a transaction once it is broadcast, and no longer offers to cancel", () => {
+    const prepared = prepare(initializeTransactionWorkflow(makeInput([])));
+    const hash = TransactionHash.make("0xabc");
+    const broadcast = {
+      ...prepared,
+      batches: prepared.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) => ({
+          ...transaction,
+          meta: {
+            ...transaction.meta,
+            broadcasted: true as const,
+            signedTx: hash,
+            url: "https://etherscan.io/tx/0xabc",
+          },
+        })),
+      })),
+    };
+
+    const signing = view({ _tag: "Signing", context: prepared });
+    const confirming = view({ _tag: "Confirming", context: broadcast });
+
+    expect(signing.sent).toBe(false);
+    expect(confirming.sent).toBe(true);
+    expect(
+      confirming.txStates.map(({ explorerUrl, hash, id, phases }) => [
+        id,
+        phases.confirm,
+        explorerUrl,
+        hash,
+      ])
+    ).toEqual([
+      ["prepare-encrypt", "done", null, null],
+      ["deposit-tx", "active", "https://etherscan.io/tx/0xabc", hash],
+    ]);
+  });
+
   it("shows a preparation the API rejected as final", () => {
     const { context } = initializeTransactionWorkflow(makeInput([]));
 

@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { DateTime, Schema } from "effect";
+import { Cause, DateTime, Option, Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import {
@@ -7,13 +7,12 @@ import {
   EarnBalance,
   type EarnYieldWithProvider,
 } from "../../../src/domain/earn/models";
-import { TokenAddress } from "../../../src/domain/identity/identifiers";
-import { RewardsSummary } from "../../../src/domain/portfolio/models";
+import { YieldRewardsSummary } from "../../../src/domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../src/domain/portfolio/positions";
 
 import {
-  getPositionHeaderModel,
   getPositionOverviewModel,
+  getPositionProviderName,
 } from "../../../src/features/position-details/model/position-overview";
 import {
   confidentialFixture,
@@ -24,12 +23,36 @@ import {
   yieldRewardRateFixture,
 } from "../../fixtures";
 
-type PositionOverviewPendingAction = Parameters<
-  typeof getPositionOverviewModel
->[0]["pendingActions"][number];
-
 const makeBalance = (overrides?: Parameters<typeof yieldBalanceFixture>[0]) =>
   Schema.decodeSync(EarnBalance)(yieldBalanceFixture(overrides));
+
+/** A tracked summary as the page presents it: the latest attempt succeeded. */
+const makeRewardsSummary = ({
+  last7D = "0",
+  token = { decimals: 18, network: "ethereum", symbol: "ETH" },
+  total = "0",
+}: {
+  last7D?: string;
+  token?: { decimals: number; network: string; symbol: string };
+  total?: string;
+}) => {
+  const window = (amount: string) => ({ amount, amountRaw: "0" });
+  return {
+    _tag: "Ready",
+    refreshFailure: Option.none(),
+    refreshing: false,
+    value: Option.some(
+      Schema.decodeUnknownSync(YieldRewardsSummary)({
+        token,
+        last24H: window("0"),
+        last7D: window(last7D),
+        last30D: window(last7D),
+        lastYear: window(total),
+        total: window(total),
+      })
+    ),
+  } as const;
+};
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
@@ -42,12 +65,9 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.earn_details.instant": "Instant",
     "dashboard.earn_details.min_stake": "Min stake",
     "dashboard.earn_details.native": "Native",
-    "dashboard.earn_details.network": "Network",
     "dashboard.earn_details.no_minimum": "No minimum",
     "dashboard.earn_details.price_per_share": "Price per share",
-    "dashboard.earn_details.provider": "Provider",
     "dashboard.earn_details.reward_claiming": "Reward claiming",
-    "dashboard.earn_details.reward_rate_period": `${options?.rewardType ?? "APY"} (7D)`,
     "dashboard.earn_details.reward_schedule": "Reward schedule",
     "dashboard.earn_details.reward_token": "Reward token",
     "dashboard.earn_details.yield_bearing_reward_token": `${options?.symbol ?? ""} (yield-bearing)`,
@@ -64,7 +84,6 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.position_details.shares": "Shares",
     "shared.confidential.hidden": "Hidden",
     "dashboard.position_details.rewards": "Rewards",
-    "dashboard.position_details.rewards_total": "Total earned",
     "dashboard.position_details.status": "Status",
     "dashboard.position_details.withdrawal_unavailable":
       "Withdrawal unavailable",
@@ -72,10 +91,12 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "details.validators_inactive": "Inactive",
     "details.validators_jailed": "Jailed",
     "positions.action_required": "Action required",
-    "positions.claim_rewards": "Claim rewards",
+    "positions.rewards_to_claim": "Claim rewards",
+    "positions.ready_to_withdraw": "Ready to withdraw",
     "positions.in_progress": "In progress",
     "position_details.pending_action.merge": "Merge stake accounts",
     "position_details.balance_type.active": "Active",
+    "position_details.balance_type.active_yearn_or_deposit": "Deposited",
     "position_details.balance_type.claimable": "Claimable",
     "position_details.balance_type.entering": "Entering",
     "position_details.balance_type.exiting": "Exiting",
@@ -92,6 +113,14 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "position_details.pending_action.claim_rewards": "Claim rewards",
     "position_details.pending_action.withdraw": "Withdraw",
     "position_details.personalized_apy": "Personalized APY",
+    "position_details.estimated_earnings": "Est. yearly earnings",
+    "position_details.earnings_per_year": `+${options?.amount ?? ""} / yr`,
+    "position_details.earned": "Earned (7d)",
+    "position_details.earned_total": `${options?.amount ?? ""} total`,
+    "position_details.earned_info_label": "About earned",
+    "position_details.earned_info": "Tracked since first indexed",
+    "details.validators_website": "Website",
+    "shared.fees": "Fees",
     "shared.points": "Points",
     "yield_types.staking.title": "Staking",
   };
@@ -173,71 +202,105 @@ const makePositionBalances = (): PositionBalancesByType => {
 
 type OverviewInput = Parameters<typeof getPositionOverviewModel>[0];
 
-/** The header status of the position an overview test builds. */
-const headerOf = ({
-  cancellingHandles,
-  canUnstake,
-  integrationData,
-  pendingActions,
-  positionBalancesByType,
-  providersDetails,
-}: OverviewInput & { readonly canUnstake: boolean }) =>
-  getPositionHeaderModel({
-    ...(cancellingHandles === undefined ? {} : { cancellingHandles }),
-    canUnstake,
-    integrationData,
-    pendingActions,
-    positionBalancesByType,
-    providersDetails,
-    t: t as TFunction,
-  }).status;
-
 describe("getPositionOverviewModel", () => {
-  it("promotes current balance, claimable rewards and APY", () => {
+  it("sums the position up: its USD value, token amount, rate and yearly earnings", () => {
     const model = getPositionOverviewModel({
       locale: "en",
       now: null,
       integrationData: makeYield(),
-      pendingActions: [],
       personalizedRewardRate: yieldRewardRateFixture({ total: 0.025 }),
       positionBalancesByType: makePositionBalances(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
       t: t as TFunction,
+      validators: null,
     });
 
-    // The status heads the page, so the reward token fills the grid's cell.
-    expect(model.metricCards.map((card) => card.id)).toEqual([
-      "balance",
-      "rewards",
-      "apy",
-      "reward-token",
-    ]);
-    // The Balance is the position total Manage shows, in its primary token.
-    expect(
-      model.metricCards.find((card) => card.id === "balance")
-    ).toMatchObject({
-      label: "Balance",
-      subValue: "$42,262.00",
-      value: "12.25 ETH",
+    // The hero is the position total Manage shows, in its primary token.
+    expect(model.summary).toEqual({
+      value: "$42,262.00",
+      subvalue: "12.25 ETH",
+      metrics: [
+        { id: "rate", label: "Personalized APY", value: "2.50%" },
+        {
+          id: "earnings",
+          label: "Est. yearly earnings",
+          tone: "success",
+          value: "+$1,056.55 / yr",
+        },
+      ],
     });
-    expect(
-      model.metricCards.find((card) => card.id === "rewards")
-    ).toMatchObject({
-      label: "Rewards",
-      subValue: "$862.00",
-      value: "0.25 ETH",
+    // The summary's rate is left out of the yield's facts.
+    expect(model.omittedYieldFacts).toEqual(["reward-rate"]);
+  });
+
+  it("reads a validator position's rate as its validators' average", () => {
+    const model = getPositionOverviewModel({
+      locale: "en",
+      now: null,
+      integrationData: makeYield(),
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      t: t as TFunction,
+      validators: [
+        { rewardRate: new BigNumber("0.03") },
+        { rewardRate: new BigNumber("0.05") },
+      ],
     });
-    expect(model.metricCards.find((card) => card.id === "apy")).toMatchObject({
-      label: "Personalized APY",
-      value: "2.5%",
+
+    expect(model.summary.metrics[0]?.value).toBe("4.00%");
+    // The yield's facts list the provider's website beside the validators'.
+    expect(model.omittedYieldFacts).toEqual(["reward-rate"]);
+  });
+
+  it("estimates no earnings and leaves the rate to the yield's facts without one", () => {
+    const model = getPositionOverviewModel({
+      locale: "en",
+      now: null,
+      integrationData: makeYield({
+        rewardRate: yieldRewardRateFixture({ total: 0 }),
+      }),
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      t: t as TFunction,
+      validators: null,
     });
-    expect(model.metricCards.some((card) => card.id === "cost-basis")).toBe(
-      false
-    );
-    expect(model.metricCards.some((card) => card.id === "net-worth")).toBe(
-      false
-    );
-    expect(model.chartSections).toEqual([]);
+
+    expect(model.summary.metrics).toEqual([]);
+    expect(model.omittedYieldFacts).toEqual([]);
+  });
+
+  it("reads a fully hidden position as hidden, not as zero", () => {
+    const { cShare, cUsdc } = confidentialFixture;
+    const model = getPositionOverviewModel({
+      locale: "en",
+      now: null,
+      integrationData: makeYield(),
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "active",
+          [
+            {
+              ...makeBalance({
+                amount: "0",
+                amountRaw: "0",
+                isEncrypted: true,
+                shareAmount: "0",
+                shareAmountRaw: `0x${"ab".repeat(32)}`,
+                shareToken: cShare,
+                token: cUsdc,
+                type: "active",
+              }),
+              tokenPriceInUsd: new BigNumber(1),
+            },
+          ],
+        ],
+      ]),
+      t: t as TFunction,
+      validators: null,
+    });
+
+    expect(model.summary.value).toBe("Hidden");
+    expect(model.summary.subvalue).toBeUndefined();
   });
 
   it("counts every balance in the primary Value Token at its USD price", () => {
@@ -257,7 +320,6 @@ describe("getPositionOverviewModel", () => {
       locale: "en",
       now: null,
       integrationData: makeYield(),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -269,15 +331,13 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     });
 
-    expect(
-      model.metricCards.find((card) => card.id === "balance")
-    ).toMatchObject({
-      subValue: "$16.00",
-      value: "8 CAKE",
+    expect(model.summary).toMatchObject({
+      subvalue: "8 CAKE",
+      value: "$16.00",
     });
   });
 
@@ -293,7 +353,6 @@ describe("getPositionOverviewModel", () => {
       locale: "en",
       now: null,
       integrationData: makeYield(),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -325,15 +384,13 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     });
 
-    expect(
-      model.metricCards.find((card) => card.id === "balance")
-    ).toMatchObject({
-      subValue: "$5.00",
-      value: ["5 USDC", "1,000 FOO"],
+    expect(model.summary).toMatchObject({
+      subvalue: "5 USDC · 1,000 FOO",
+      value: "$5.00",
     });
   });
 
@@ -357,7 +414,6 @@ describe("getPositionOverviewModel", () => {
       locale: "en",
       now: null,
       integrationData: makeYield(),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -395,8 +451,8 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     });
 
     expect(
@@ -438,7 +494,6 @@ describe("getPositionOverviewModel", () => {
         },
       }),
       now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         ["active", [balance({ amount: "1", amountUsd: "1", token })]],
@@ -459,8 +514,8 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     });
 
     expect(
@@ -501,7 +556,6 @@ describe("getPositionOverviewModel", () => {
         provider: yieldApiProviderFixture({ name: "Zama" }),
       } as EarnYieldWithProvider,
       now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -514,8 +568,8 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     });
 
     expect(model.breakdownRows.map(({ subValue }) => subValue)).toEqual([
@@ -545,7 +599,6 @@ describe("getPositionOverviewModel", () => {
         provider: yieldApiProviderFixture({ name: "Zama" }),
       } as EarnYieldWithProvider,
       now: DateTime.makeUnsafe("2026-10-19T15:00:00Z"),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -582,8 +635,8 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     };
     const model = getPositionOverviewModel(input);
 
@@ -592,452 +645,9 @@ describe("getPositionOverviewModel", () => {
       "$1.00 · Cancelling…",
       "$2.00 · 2 days remaining",
     ]);
-    // The header reads the cancel as the position's state.
-    expect(headerOf({ ...input, canUnstake: true })).toEqual({
-      label: "Cancelling…",
-      tone: "neutral",
-    });
   });
 
-  it("shows no static redemption or warmup for a confidential vault", () => {
-    const model = getPositionOverviewModel({
-      locale: "en",
-      integrationData: {
-        ...confidentialYieldFixture(),
-        provider: yieldApiProviderFixture({ name: "Zama" }),
-      } as EarnYieldWithProvider,
-      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: makePositionBalances(),
-      providersDetails: [],
-      t: t as TFunction,
-    });
-
-    expect(
-      model.detailRows.filter((row) => ["cooldown", "warmup"].includes(row.id))
-    ).toEqual([]);
-    expect(
-      model.metricCards.some((card) => card.id === "unstaking-period")
-    ).toBe(false);
-  });
-
-  it("shows a confidential withdrawal in the confidential asset with its Shares beside it", () => {
-    const { cShare, cUsdc } = confidentialFixture;
-    const model = getPositionOverviewModel({
-      locale: "en",
-      integrationData: {
-        ...confidentialYieldFixture(),
-        provider: yieldApiProviderFixture({ name: "Zama" }),
-      } as EarnYieldWithProvider,
-      now: null,
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map([
-        [
-          "exiting",
-          [
-            {
-              ...makeBalance({
-                amount: "0.1",
-                amountUsd: "0.1",
-                shareAmount: "0.097168",
-                shareToken: cShare,
-                token: cUsdc,
-                type: "exiting",
-              }),
-              tokenPriceInUsd: new BigNumber(1),
-            },
-          ],
-        ],
-      ]),
-      providersDetails: [],
-      t: t as TFunction,
-    });
-
-    expect(model.breakdownRows.map(({ value }) => value)).toEqual([
-      `0.1 ${cUsdc.symbol}`,
-    ]);
-    expect(model.breakdownRows[0]?.subValue).toContain(
-      `0.0971 ${cShare.symbol}`
-    );
-  });
-
-  it("describes redemption and warmup of a batched vault by its batches", () => {
-    const dailyPath = (cutoffTime: string) => ({
-      cadence: "daily_cutoff",
-      cutoffTime,
-      kind: "standard",
-      status: "open",
-    });
-    const integrationData = makeYield();
-
-    const model = getPositionOverviewModel({
-      locale: "en",
-      integrationData: {
-        ...integrationData,
-        investmentSchedule: {
-          redemption: { paths: [dailyPath("11:00")] },
-          subscription: { paths: [dailyPath("15:00")] },
-          timezone: "UTC",
-        },
-        mechanics: {
-          ...integrationData.mechanics,
-          cooldownPeriod: { seconds: 86_400 },
-          warmupPeriod: { seconds: 86_400 },
-        },
-      },
-      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: makePositionBalances(),
-      providersDetails: [],
-      t: t as TFunction,
-    });
-    const facts = new Map(
-      [...model.metricCards, ...model.detailRows].map((fact) => [
-        fact.id,
-        fact.value,
-      ])
-    );
-
-    // The redemption fact is a metric card or a detail row, by layout.
-    expect(facts.get("unstaking-period") ?? facts.get("cooldown")).toBeOneOf([
-      "Next batch in 23 hours",
-      "Daily batch · 11:00 UTC",
-    ]);
-    expect(facts.get("warmup")).toBe("Daily batch · 15:00 UTC");
-    expect([...facts.values()]).not.toContain("1 days");
-  });
-
-  it("sums repeated claimable tokens and shows every reward token", () => {
-    const token = yieldApiYieldFixture().token;
-    const kmno = {
-      ...token,
-      address: "0x0000000000000000000000000000000000000004",
-      symbol: "KMNO",
-    };
-    const usdcA = {
-      ...token,
-      address: "0x0000000000000000000000000000000000000005",
-      symbol: "USDC",
-    };
-    const usdcB = {
-      ...token,
-      address: "0x0000000000000000000000000000000000000006",
-      symbol: "USDC",
-    };
-    const claimable = (
-      overrides: Parameters<typeof yieldBalanceFixture>[0]
-    ) => ({
-      ...makeBalance({ type: "claimable", ...overrides }),
-      tokenPriceInUsd: new BigNumber(0),
-    });
-
-    const model = getPositionOverviewModel({
-      locale: "en",
-      now: null,
-      integrationData: makeYield(),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map([
-        [
-          "claimable",
-          [
-            claimable({ amount: "1.5", amountUsd: "3", token: kmno }),
-            claimable({ amount: "2", amountUsd: "2", token: usdcA }),
-            claimable({ amount: "2.5", amountUsd: "5", token: kmno }),
-            claimable({ amount: "7", amountUsd: "7", token: usdcB }),
-            claimable({
-              amount: "99",
-              amountUsd: "0",
-              token: { ...token, isPoints: true, symbol: "PTS" },
-            }),
-          ],
-        ],
-      ]),
-      providersDetails: [],
-      t: t as TFunction,
-    });
-
-    expect(
-      model.metricCards.find((card) => card.id === "rewards")
-    ).toMatchObject({
-      subValue: "$17.00",
-      value: ["4 KMNO", "2 USDC", "7 USDC"],
-    });
-  });
-
-  it("keeps claimable balances out of the header status when no action is pending", () => {
-    const activeToken = yieldApiYieldFixture().token;
-    const activeBalance = makeBalance({
-      amount: "0.000205427561919412",
-      amountUsd: "0.332550",
-      token: activeToken,
-      type: "active",
-    });
-    const pointsBalance = makeBalance({
-      amount: "1214.8591",
-      amountUsd: "0",
-      token: {
-        ...activeToken,
-        isPoints: true,
-        symbol: "KelpDAO Miles",
-      },
-      type: "claimable",
-    });
-    const tokenClaimableBalance = makeBalance({
-      amount: "0.25",
-      amountUsd: "862",
-      token: activeToken,
-      type: "claimable",
-    });
-
-    const status = headerOf({
-      canUnstake: false,
-      locale: "en",
-      now: null,
-      integrationData: makeYield({
-        status: { enter: false, exit: false },
-      }),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map([
-        [
-          "active",
-          [{ ...activeBalance, tokenPriceInUsd: new BigNumber("0.332550") }],
-        ],
-        [
-          "claimable",
-          [
-            {
-              ...tokenClaimableBalance,
-              tokenPriceInUsd: new BigNumber(862),
-            },
-            { ...pointsBalance, tokenPriceInUsd: new BigNumber(0) },
-          ],
-        ],
-      ]),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(status).toEqual({
-      label: "Withdrawal unavailable",
-      tone: "neutral",
-    });
-  });
-
-  it("calls out claiming rewards as the row does, and keeps the claim CTA separate", () => {
-    const pendingActions: PositionOverviewPendingAction[] = [
-      {
-        amount: new BigNumber("0.25"),
-        amountUsd: new BigNumber(862),
-        amountUsdStatus: "Ready",
-        pendingAction: {
-          intent: "manage",
-          passthrough: "claim",
-          type: "CLAIM_REWARDS",
-        },
-        yieldBalance: makeBalance({ type: "claimable" }),
-      },
-    ];
-
-    const model = getPositionOverviewModel({
-      locale: "en",
-      now: null,
-      integrationData: makeYield(),
-      pendingActions,
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      t: t as TFunction,
-    });
-
-    // Claiming rewards asks something of the user: the header reads it as
-    // the positions list's row does, in the warning tone.
-    expect(
-      headerOf({
-        canUnstake: true,
-        integrationData: makeYield(),
-        locale: "en",
-        pendingActions,
-        positionBalancesByType: new Map(),
-        providersDetails: [{ name: "Rocket Pool", status: "active" }],
-        t: t as TFunction,
-      })
-    ).toEqual({ label: "Claim rewards", tone: "warning" });
-    expect(
-      model.metricCards.find((card) => card.id === "rewards")
-    ).toMatchObject({
-      subValue: "$862.00",
-      value: "Claim rewards",
-    });
-  });
-
-  it.each([
-    ["holds a placeholder while prices load", "Loading", undefined, true],
-    ["reads as unavailable when prices failed", "Failed", "—", false],
-  ] as const)(
-    "values a claim amount by prices: %s",
-    (_, amountUsdStatus, subValue, subValueLoading) => {
-      const model = getPositionOverviewModel({
-        locale: "en",
-        now: null,
-        integrationData: makeYield(),
-        pendingActions: [
-          {
-            amount: new BigNumber("0.25"),
-            amountUsd: null,
-            amountUsdStatus,
-            pendingAction: {
-              intent: "manage",
-              passthrough: "claim",
-              type: "CLAIM_REWARDS",
-            },
-            yieldBalance: makeBalance({ type: "claimable" }),
-          },
-        ],
-        personalizedRewardRate: null,
-        positionBalancesByType: new Map(),
-        providersDetails: [{ name: "Rocket Pool", status: "active" }],
-        t: t as TFunction,
-      });
-      const rewards = model.metricCards.find((card) => card.id === "rewards");
-
-      expect(rewards?.subValue).toBe(subValue);
-      expect(rewards?.subValueLoading ?? false).toBe(subValueLoading);
-    }
-  );
-
-  it.each(["entering", "exiting", "withdrawable"] as const)(
-    "reads a cancel of the %s request as in progress, as the row does",
-    (balanceType) => {
-      const status = headerOf({
-        canUnstake: true,
-        locale: "en",
-        integrationData: makeYield(),
-        pendingActions: [
-          {
-            amount: null,
-            amountUsd: null,
-            amountUsdStatus: "Ready",
-            pendingAction: {
-              intent: "manage",
-              passthrough: "cancel",
-              type: "CANCEL_PENDING",
-            },
-            yieldBalance: makeBalance({ type: balanceType }),
-          },
-        ],
-        personalizedRewardRate: null,
-        positionBalancesByType: new Map(),
-        providersDetails: [{ name: "Rocket Pool", status: "active" }],
-        t: t as TFunction,
-      });
-
-      expect(status).toEqual({ label: "In progress", tone: "info" });
-    }
-  );
-
-  it("lets a required action outrank an earlier optional cancellation", () => {
-    const status = headerOf({
-      canUnstake: true,
-      locale: "en",
-      integrationData: makeYield(),
-      pendingActions: [
-        {
-          amount: null,
-          amountUsd: null,
-          amountUsdStatus: "Ready",
-          pendingAction: {
-            intent: "manage",
-            passthrough: "cancel",
-            type: "CANCEL_PENDING",
-          },
-          yieldBalance: makeBalance({ type: "entering" }),
-        },
-        {
-          amount: null,
-          amountUsd: null,
-          amountUsdStatus: "Ready",
-          pendingAction: {
-            intent: "manage",
-            passthrough: "withdraw",
-            type: "WITHDRAW",
-          },
-          yieldBalance: makeBalance({ type: "withdrawable" }),
-        },
-      ],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(status).toEqual({ label: "Action required", tone: "warning" });
-  });
-
-  it("names a confidential vault's unfinished instant withdrawal as in progress, not as required", () => {
-    const status = headerOf({
-      canUnstake: true,
-      locale: "en",
-      integrationData: {
-        ...confidentialYieldFixture(),
-        provider: yieldApiProviderFixture({ name: "Zama" }),
-      } as EarnYieldWithProvider,
-      pendingActions: [
-        {
-          amount: null,
-          amountUsd: null,
-          amountUsdStatus: "Ready",
-          pendingAction: {
-            intent: "manage",
-            passthrough: "unwrap",
-            type: "WITHDRAW",
-          },
-          yieldBalance: makeBalance({
-            isEncrypted: true,
-            type: "withdrawable",
-          }),
-        },
-      ],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map(),
-      providersDetails: [],
-      t: t as TFunction,
-    });
-
-    expect(status).toEqual({ label: "In progress", tone: "info" });
-  });
-
-  it("summarises several optional actions by their count rather than picking one", () => {
-    const merge = (passthrough: string) => ({
-      amount: null,
-      amountUsd: null,
-      amountUsdStatus: "Ready" as const,
-      pendingAction: {
-        intent: "manage" as const,
-        passthrough,
-        type: "MERGE" as const,
-      },
-      yieldBalance: makeBalance({ type: "active" }),
-    });
-    const status = headerOf({
-      canUnstake: true,
-      locale: "en",
-      integrationData: makeYield(),
-      pendingActions: [merge("merge-a"), merge("merge-b")],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(status).toEqual({ label: "2 actions available", tone: "neutral" });
-  });
-
-  it("times redemption by the user's own pending withdrawal, not the vault's next batch", () => {
+  it("times the user's own pending withdrawal on its row, not by the vault's next batch", () => {
     const token = yieldApiYieldFixture().token;
     const balance = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
       ...makeBalance({ amountUsd: "1", token, ...overrides }),
@@ -1062,7 +672,6 @@ describe("getPositionOverviewModel", () => {
         },
       }),
       now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         ["active", [balance({ amount: "1" })]],
@@ -1079,121 +688,25 @@ describe("getPositionOverviewModel", () => {
           ],
         ],
       ]),
-      providersDetails: [],
       t: t as TFunction,
+      validators: null,
     });
 
     expect(
-      model.metricCards.find((card) => card.id === "unstaking-period")
-    ).toMatchObject({ label: "Redemption time", value: "3 hours remaining" });
+      model.breakdownRows.find((row) => row.id.startsWith("exiting"))?.subValue
+    ).toContain("3 hours remaining");
   });
 
-  it("keeps a stake account merge optional in the header status", () => {
-    const status = headerOf({
-      canUnstake: true,
-      locale: "en",
-      integrationData: makeYield(),
-      pendingActions: [
-        {
-          amount: null,
-          amountUsd: null,
-          amountUsdStatus: "Ready",
-          pendingAction: {
-            intent: "manage",
-            passthrough: "merge",
-            type: "MERGE",
-          },
-          yieldBalance: makeBalance({ type: "active" }),
-        },
-      ],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(status).toEqual({ label: "Merge stake accounts", tone: "neutral" });
-  });
-
-  it("fills an odd card count with a fallback fact and removes it from the details list", () => {
-    const token = yieldApiYieldFixture().token;
-    const positionBalancesByType: PositionBalancesByType = new Map([
-      [
-        "active",
-        [
-          {
-            ...makeBalance({
-              amount: "12",
-              amountUsd: "41400",
-              token,
-              type: "active",
-            }),
-            tokenPriceInUsd: new BigNumber(41400),
-          },
-        ],
-      ],
-      // Rewards make three cards, so a fallback fact fills the fourth.
-      [
-        "claimable",
-        [
-          {
-            ...makeBalance({
-              amount: "0.1",
-              amountUsd: "345",
-              token,
-              type: "claimable",
-            }),
-            tokenPriceInUsd: new BigNumber(3450),
-          },
-        ],
-      ],
-    ]);
-
-    const model = getPositionOverviewModel({
-      locale: "en",
-      now: null,
-      integrationData: makeYield({
-        mechanics: {
-          ...makeYield().mechanics,
-          cooldownPeriod: { seconds: 7 * 24 * 60 * 60 },
-        },
-      } as Partial<EarnYieldWithProvider>),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType,
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(model.metricCards.map((card) => card.id)).toEqual([
-      "balance",
-      "rewards",
-      "apy",
-      "unstaking-period",
-    ]);
-    expect(
-      model.metricCards.find((card) => card.id === "unstaking-period")
-    ).toMatchObject({
-      label: "Redemption time",
-      value: "7 days",
-    });
-    expect(model.detailRows.map((row) => row.id)).not.toContain("cooldown");
-  });
-
-  it("renders balance breakdown rows, points metadata, mechanics, and copyable addresses", () => {
+  it("renders balance breakdown rows and points metadata, leaving the rewards earned to the summary", () => {
     const model = getPositionOverviewModel({
       locale: "en",
       now: null,
       integrationData: makeYield(),
-      pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      rewardsSummary: Schema.decodeSync(RewardsSummary)({
-        rewards: { total: "1.5" },
-        token: yieldApiYieldFixture().token,
-      }),
+      rewardsSummary: makeRewardsSummary({ last7D: "0.0123", total: "1.5" }),
       t: t as TFunction,
+      validators: null,
     });
 
     expect(model.breakdownRows).toEqual([
@@ -1201,124 +714,49 @@ describe("getPositionOverviewModel", () => {
         id: "active-ETH-0",
         label: "Active",
         subValue: "$41,400.00",
+        tone: "default",
         value: "12 ETH",
       },
       {
         id: "claimable-ETH-1",
         label: "Claimable",
         subValue: "$862.00",
+        tone: "success",
         value: "0.25 ETH",
       },
       {
         id: "locked-PTS-2",
         label: "Locked",
         subValue: "Points",
+        tone: "default",
         value: "42 PTS",
       },
     ]);
-    expect(model.detailRows.map((row) => row.id)).toContain("network");
-    expect(model.detailRows.map((row) => row.id)).toContain("reward-claiming");
-    expect(model.addressRows).toEqual([
-      {
-        address: "0x0000000000000000000000000000000000000002",
-        label: "Vault",
-      },
-      {
-        address: "0x0000000000000000000000000000000000000001",
-        label: "Asset (ETH)",
-      },
-    ]);
+    // The summary's Earned caption carries the total; Details does not
+    // repeat it.
+    expect(model.detailRows.map((row) => row.id)).not.toContain(
+      "rewards-total"
+    );
   });
-
-  it("does not mark auto-claiming position reward tokens as yield-bearing without price per share", () => {
+  it("names a deposit's balances as a deposit does", () => {
+    const integrationData = makeYield();
     const model = getPositionOverviewModel({
       locale: "en",
       now: null,
-      integrationData: makeYield(),
-      pendingActions: [],
+      integrationData: {
+        ...integrationData,
+        mechanics: { ...integrationData.mechanics, type: "vault" },
+      },
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
       t: t as TFunction,
+      validators: null,
     });
 
-    // An odd card count promotes the reward token from the details to a card.
-    expect(
-      model.metricCards.find((card) => card.id === "reward-token")
-    ).toMatchObject({ label: "Reward token", value: "rETH" });
+    expect(model.breakdownRows[0]?.label).toBe("Deposited");
   });
 
-  it("marks position output tokens with price per share as yield-bearing", () => {
-    const baseYield = yieldApiYieldFixture();
-    const model = getPositionOverviewModel({
-      locale: "en",
-      now: null,
-      integrationData: makeYield({
-        mechanics: {
-          ...makeYield().mechanics,
-          rewardClaiming: "manual",
-        },
-        outputToken: {
-          ...baseYield.token,
-          address: Schema.decodeSync(TokenAddress)(
-            "0x0000000000000000000000000000000000000002"
-          ),
-          symbol: "mUSDC",
-        },
-        state: {
-          pricePerShareState: {
-            price: new BigNumber("1.06274537"),
-            shareToken: baseYield.token,
-          },
-        },
-        token: {
-          ...baseYield.token,
-          address: Schema.decodeSync(TokenAddress)(
-            "0x0000000000000000000000000000000000000001"
-          ),
-          symbol: "USDC",
-        },
-      }),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: makePositionBalances(),
-      providersDetails: [{ name: "Midas", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(
-      model.metricCards.find((card) => card.id === "reward-token")
-    ).toMatchObject({ label: "Reward token", value: "mUSDC (yield-bearing)" });
-  });
-
-  it("includes price per share in details when yield state provides it", () => {
-    const model = getPositionOverviewModel({
-      locale: "en",
-      now: null,
-      integrationData: makeYield({
-        state: {
-          pricePerShareState: {
-            price: new BigNumber("1.06274537"),
-            shareToken: yieldApiYieldFixture().token,
-          },
-        },
-      }),
-      pendingActions: [],
-      personalizedRewardRate: null,
-      positionBalancesByType: new Map(),
-      providersDetails: [{ name: "Midas", status: "active" }],
-      t: t as TFunction,
-    });
-
-    expect(
-      model.detailRows.find((row) => row.id === "price-per-share")
-    ).toEqual({
-      id: "price-per-share",
-      label: "Price per share",
-      value: "1.06274537",
-    });
-  });
-  describe("Shares metric", () => {
+  describe("Shares detail", () => {
     const usdc = {
       ...yieldApiYieldFixture().token,
       address: "0x00000000000000000000000000000000000000c1",
@@ -1339,14 +777,13 @@ describe("getPositionOverviewModel", () => {
         locale: "en",
         now: null,
         integrationData: makeYield(),
-        pendingActions: [],
         personalizedRewardRate: null,
         positionBalancesByType,
-        providersDetails: [],
         t: t as TFunction,
+        validators: null,
       });
 
-    it("shows a vault's Shares with their USD value as a base card", () => {
+    it("lists a vault's Shares with their USD value under Details", () => {
       const model = overview(
         new Map([
           [
@@ -1365,20 +802,11 @@ describe("getPositionOverviewModel", () => {
         ])
       );
 
-      expect(
-        model.metricCards.find((card) => card.id === "shares")
-      ).toMatchObject({
+      expect(model.detailRows.find((row) => row.id === "shares")).toEqual({
+        id: "shares",
         label: "Shares",
-        subValue: "$110.00",
-        value: "100 steakUSDC",
+        value: "100 steakUSDC ($110.00)",
       });
-      // Balance, Shares and APY leave a cell the reward token fills.
-      expect(model.metricCards.map((card) => card.id)).toEqual([
-        "balance",
-        "shares",
-        "apy",
-        "reward-token",
-      ]);
     });
 
     it("leaves Value Token balances out of the Shares", () => {
@@ -1410,10 +838,9 @@ describe("getPositionOverviewModel", () => {
           ],
         ])
       );
-      const shares = model.metricCards.find((card) => card.id === "shares");
-
-      expect(shares?.value).toBe("100 steakUSDC");
-      expect(shares?.subValue).toBe("$110.00");
+      expect(model.detailRows.find((row) => row.id === "shares")?.value).toBe(
+        "100 steakUSDC ($110.00)"
+      );
     });
 
     it("shows no USD value when a balance carrying Shares is unpriced", () => {
@@ -1434,10 +861,9 @@ describe("getPositionOverviewModel", () => {
           ],
         ])
       );
-      const shares = model.metricCards.find((card) => card.id === "shares");
-
-      expect(shares?.value).toBe("100 steakUSDC");
-      expect(shares?.subValue).toBeUndefined();
+      expect(model.detailRows.find((row) => row.id === "shares")?.value).toBe(
+        "100 steakUSDC"
+      );
     });
 
     it("hides Shares while they are encrypted", () => {
@@ -1462,9 +888,9 @@ describe("getPositionOverviewModel", () => {
         ])
       );
 
-      expect(
-        model.metricCards.find((card) => card.id === "shares")
-      ).toMatchObject({ value: "Hidden" });
+      expect(model.detailRows.find((row) => row.id === "shares")).toMatchObject(
+        { value: "Hidden" }
+      );
     });
 
     it("is not hidden by an encrypted balance of the Value Token itself", () => {
@@ -1503,7 +929,7 @@ describe("getPositionOverviewModel", () => {
       );
 
       expect(
-        model.metricCards.find((card) => card.id === "shares")?.value
+        model.detailRows.find((row) => row.id === "shares")?.value
       ).not.toBe("Hidden");
     });
 
@@ -1536,64 +962,135 @@ describe("getPositionOverviewModel", () => {
           ],
         ])
       );
-      const card = (id: string) =>
-        model.metricCards.find((metric) => metric.id === id);
-
-      expect(card("shares")?.value).toBe("100 steakUSDC");
-      expect(card("balance")?.value).toBe("112 USDC");
-      // Balance, Shares, Rewards and APY fill the grid; no filler is needed.
-      expect(model.metricCards.map((metric) => metric.id)).toEqual([
-        "balance",
-        "shares",
-        "rewards",
-        "apy",
-      ]);
+      expect(model.detailRows.find((row) => row.id === "shares")?.value).toBe(
+        "100 steakUSDC ($110.00)"
+      );
+      expect(model.summary.subvalue).toBe("112 USDC");
     });
 
     it("has no Shares when every balance holds its Value Token", () => {
       const model = overview(makePositionBalances());
 
-      expect(model.metricCards.some((card) => card.id === "shares")).toBe(
-        false
-      );
+      expect(model.detailRows.some((row) => row.id === "shares")).toBe(false);
     });
   });
 });
 
-describe("getPositionHeaderModel", () => {
-  const header = (pendingActions: PositionOverviewPendingAction[]) =>
-    getPositionHeaderModel({
-      canUnstake: true,
+describe("the position's Earned figure", () => {
+  const overview = (
+    rewardsSummary: Parameters<
+      typeof getPositionOverviewModel
+    >[0]["rewardsSummary"]
+  ) =>
+    getPositionOverviewModel({
+      locale: "en",
       integrationData: makeYield(),
-      pendingActions,
-      positionBalancesByType: new Map(),
-      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      rewardsSummary,
       t: t as TFunction,
+      validators: null,
     });
+  const earnedOf = (model: ReturnType<typeof overview>) =>
+    model.summary.metrics.find((metric) => metric.id === "earned");
 
-  it("names a required action as the status, in the warning tone", () => {
-    const model = header([
-      {
-        amount: null,
-        amountUsd: null,
-        amountUsdStatus: "Ready",
-        pendingAction: {
-          intent: "manage",
-          passthrough: "claim",
-          type: "CLAIM_REWARDS",
-        },
-        yieldBalance: makeBalance({ type: "claimable" }),
-      },
-    ]);
+  it("shows a gain over 7 days in success, valued at the position's price, with the total", () => {
+    const model = overview(
+      makeRewardsSummary({ last7D: "0.0123", total: "1.5" })
+    );
 
-    expect(model.status).toEqual({ label: "Claim rewards", tone: "warning" });
-    expect(model.providerName).toBe("Rocket Pool");
+    // 12 ETH are worth $41,400: $3,450 an ETH.
+    expect(earnedOf(model)).toEqual({
+      id: "earned",
+      label: "Earned (7d)",
+      caption: "+$42.44 · 1.5 ETH total",
+      info: { label: "About earned", text: "Tracked since first indexed" },
+      tone: "success",
+      value: "+0.0123 ETH",
+    });
+    expect(model.detailRows).toEqual([]);
   });
 
-  it("reads a position with nothing to do as active, in the neutral tone", () => {
-    expect(header([]).status).toEqual({
-      label: "Active",
-      tone: "neutral",
+  it("shows a loss signed and in danger", () => {
+    const earned = earnedOf(
+      overview(makeRewardsSummary({ last7D: "-0.5", total: "1" }))
+    );
+
+    expect(earned).toMatchObject({
+      caption: "\u2212$1,725.00 · 1 ETH total",
+      tone: "danger",
+      value: "\u22120.5 ETH",
     });
+  });
+
+  it("leaves the USD value out when the position does not price the token", () => {
+    const earned = earnedOf(
+      overview(
+        makeRewardsSummary({
+          last7D: "2",
+          token: { decimals: 10, network: "polkadot", symbol: "DOT" },
+          total: "5",
+        })
+      )
+    );
+
+    expect(earned).toMatchObject({
+      caption: "5 DOT total",
+      value: "+2 DOT",
+    });
+  });
+
+  it("shows a quiet week neutrally when earnings are tracked", () => {
+    expect(
+      earnedOf(overview(makeRewardsSummary({ last7D: "0", total: "1.5" })))
+    ).toMatchObject({
+      caption: "1.5 ETH total",
+      tone: "default",
+      value: "0 ETH",
+    });
+  });
+
+  it("hides when untracked, failed or loading, or when every window is zero", () => {
+    const failure = Cause.fail("unavailable");
+    for (const model of [
+      overview(undefined),
+      overview({ _tag: "Loading" }),
+      overview({ _tag: "Failed", cause: failure }),
+      overview({ ...makeRewardsSummary({}), value: Option.none() }),
+      overview(makeRewardsSummary({})),
+    ]) {
+      expect(earnedOf(model)).toBeUndefined();
+    }
+  });
+
+  it("hides an earlier figure once the latest attempt failed", () => {
+    const earlier = makeRewardsSummary({ last7D: "0.0123", total: "1.5" });
+
+    expect(earnedOf(overview(earlier))).toBeDefined();
+    expect(
+      earnedOf(
+        overview({
+          ...earlier,
+          refreshFailure: Option.some(Cause.fail("unavailable")),
+        })
+      )
+    ).toBeUndefined();
+  });
+});
+
+describe("getPositionProviderName", () => {
+  it("names the validator, else the yield's provider", () => {
+    expect(
+      getPositionProviderName({
+        integrationData: makeYield(),
+        providersDetails: [{ name: "Figment" }],
+      })
+    ).toBe("Figment");
+    expect(
+      getPositionProviderName({
+        integrationData: makeYield(),
+        providersDetails: [],
+      })
+    ).toBe("Rocket Pool");
   });
 });

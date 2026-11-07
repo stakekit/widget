@@ -14,6 +14,10 @@ vi.mock(
     useYieldFlowSession: () => ({
       intake: {
         _tag: "Enter",
+        // The validator the user chose, not the yield's provider.
+        providersDetails: [
+          { logo: "https://example.com/figment.png", name: "Figment" },
+        ],
         request: { arguments: { amount: "0.5" } },
         selectedStake: stake,
         selectedToken: stake.token,
@@ -36,6 +40,17 @@ describe("Yield Steps summary", () => {
       name: stake.token.name,
       src: stake.token.logoURI,
       networkSrc: expect.any(String),
+    });
+  });
+
+  it("names the chosen validator with its logo, as Review does", async () => {
+    const { result } = await renderHook(() => useStepsSummary(), { wrapper });
+
+    expect(result.current?.detail).toBe("via Figment");
+    expect(result.current?.provider).toEqual({
+      name: "Figment",
+      shape: "square",
+      src: "https://example.com/figment.png",
     });
   });
 });

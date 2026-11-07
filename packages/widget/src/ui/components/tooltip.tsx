@@ -15,6 +15,7 @@ import {
   fontWeight,
   lineHeight,
 } from "../tokens/typography.stylex";
+import { usePopupBoundary } from "./popup-boundary";
 
 type TooltipProps = {
   /** The hint. Only repeat what the element already says: touch never opens it. */
@@ -27,17 +28,23 @@ type TooltipProps = {
   readonly side?: "top" | "right" | "bottom" | "left";
 };
 
-/** A short hint shown on hover and keyboard focus; Escape hides it. */
+/**
+ * A short hint shown on hover and keyboard focus; Escape hides it. It stays
+ * inside the Widget, or the dialog it shows in, flipping or shifting rather
+ * than passing their edge.
+ */
 export const Tooltip = ({ label, children, side = "top" }: TooltipProps) => {
   const container = usePortalContainer();
+  const { anchorRef, collisionBoundary } = usePopupBoundary();
 
   return (
     <BaseTooltip.Root>
-      <BaseTooltip.Trigger render={children} />
+      <BaseTooltip.Trigger ref={anchorRef} render={children} />
       <BaseTooltip.Portal container={container}>
         <BaseTooltip.Positioner
           side={side}
           sideOffset={8}
+          collisionBoundary={collisionBoundary}
           {...stylex.props(styles.positioner)}
         >
           <BaseTooltip.Popup {...stylex.props(styles.popup)}>
@@ -69,6 +76,8 @@ const styles = stylex.create({
     transitionDuration: motion.fast,
     transitionProperty: "opacity",
     transitionTimingFunction: motion.easing,
-    maxWidth: overlaySize.tooltipMaxWidth,
+    // As wide as the room inside its boundary allows, so a long hint wraps
+    // rather than shifting past the Widget's edge.
+    maxWidth: `min(var(--available-width), ${overlaySize.tooltipMaxWidth})`,
   },
 });

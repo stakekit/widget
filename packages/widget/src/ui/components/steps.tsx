@@ -6,15 +6,21 @@ import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { stepMarkerSize } from "../tokens/size.stylex";
+import { avatarSize, stepMarkerSize } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { ExternalLink } from "./external-link";
 
 /**
  * Where a step stands: waiting its turn, under way, waiting for the wallet's
- * signature, failed, or done.
+ * signature, failed, cancelled by the user, or done.
  */
-type StepStatus = "idle" | "active" | "signing" | "failed" | "done";
+type StepStatus =
+  | "idle"
+  | "active"
+  | "signing"
+  | "failed"
+  | "cancelled"
+  | "done";
 
 /** One step of a `Steps` timeline. */
 type Step = {
@@ -35,6 +41,11 @@ type Step = {
   readonly stage?: StepStage;
   /** Shown under the state, such as how long it takes or what went wrong. */
   readonly description?: string;
+  /**
+   * What the step left behind, such as a sent transaction's shortened hash:
+   * shown before its link, in tabular figures.
+   */
+  readonly reference?: string;
   /** A link under the step, such as its transaction on a block explorer. */
   readonly link?: StepLink;
 };
@@ -43,14 +54,10 @@ type StepStage = "submitting" | "confirming";
 
 type StepLink = {
   readonly href: string;
+  /** Says where it leads, such as "View on explorer". */
   readonly label: string;
   /** Names the new-tab icon, such as "opens in a new tab". */
   readonly newTabLabel: string;
-  /**
-   * Read before the label only, for a label that does not say where it
-   * leads, such as "View transaction" before a shortened hash.
-   */
-  readonly context?: string;
 };
 
 type StepsProps = {
@@ -67,7 +74,9 @@ type StepsProps = {
  * says what it is doing, which assistive technology reads after the label;
  * the active or signing step is the current one. A signing step's marker
  * pulses a halo, an active step's turns an arc around it while its connector
- * fills by its stage; under reduced motion both hold still.
+ * fills by its stage; under reduced motion both hold still. Markers sit
+ * centred in a column as wide as an `md` avatar, so a heading's avatar over
+ * the timeline lines up with them.
  */
 export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
   <ol aria-label={label} {...stylex.props(styles.list)}>
@@ -126,10 +135,7 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
           >
             {step.label}
           </Text>
-          <Text
-            variant="caption"
-            tone={step.status === "failed" ? "danger" : "muted"}
-          >
+          <Text variant="caption" tone={stateTone[step.status]}>
             <VisuallyHidden>, </VisuallyHidden>
             {step.state ?? statusLabels[step.status]}
           </Text>
@@ -138,19 +144,23 @@ export const Steps = ({ steps, label, statusLabels }: StepsProps) => (
               {step.description}
             </Text>
           )}
-          {step.link !== undefined && (
+          {(step.reference !== undefined || step.link !== undefined) && (
             <span {...stylex.props(styles.extras)}>
-              <Text variant="caption" numeric>
-                <ExternalLink
-                  href={step.link.href}
-                  newTabLabel={step.link.newTabLabel}
-                >
-                  {step.link.context !== undefined && (
-                    <VisuallyHidden>{`${step.link.context}, `}</VisuallyHidden>
-                  )}
-                  {step.link.label}
-                </ExternalLink>
-              </Text>
+              {step.reference !== undefined && (
+                <Text variant="caption" tone="muted" numeric>
+                  {step.reference}
+                </Text>
+              )}
+              {step.link !== undefined && (
+                <Text variant="caption">
+                  <ExternalLink
+                    href={step.link.href}
+                    newTabLabel={step.link.newTabLabel}
+                  >
+                    {step.link.label}
+                  </ExternalLink>
+                </Text>
+              )}
             </span>
           )}
         </span>
@@ -167,11 +177,24 @@ const StepMarker = ({ status }: { readonly status: StepStatus }) => {
       return <Icon name="WalletIcon" size="sm" />;
     case "failed":
       return <Icon name="XIcon" size="sm" />;
+    // Stopped by the user: a dash, as nothing went wrong.
+    case "cancelled":
+      return <Icon name="MinusIcon" size="sm" />;
     case "active":
     case "idle":
       return null;
   }
 };
+
+/** The state line's tone: only a failure reads as an error. */
+const stateTone = {
+  idle: "muted",
+  active: "muted",
+  signing: "muted",
+  failed: "danger",
+  cancelled: "muted",
+  done: "muted",
+} as const satisfies Record<StepStatus, "muted" | "danger">;
 
 /** How much of a step's connector is filled: all once it is done. */
 const connectorFill = ({ status, stage }: Step) => {
@@ -212,13 +235,14 @@ const styles = stylex.create({
     position: "relative",
     paddingBottom: { default: space[20], ":last-child": 0 },
   },
-  // Runs from each marker down to the next one, through the step's lines.
+  // Runs from each marker down to the next one, through the step's lines,
+  // down the middle of the marker column.
   connector: {
     overflow: "hidden",
     backgroundColor: color.border,
     position: "absolute",
     bottom: 0,
-    left: `calc(${stepMarkerSize.md} / 2 - ${borderWidth.medium} / 2)`,
+    left: `calc(${avatarSize.md} / 2 - ${borderWidth.medium} / 2)`,
     top: stepMarkerSize.md,
     width: borderWidth.medium,
   },
@@ -234,10 +258,12 @@ const styles = stylex.create({
     height: "100%",
     width: "100%",
   },
+  // Centred in a column as wide as an `md` avatar.
   marker: {
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.medium,
+    marginInline: `calc((${avatarSize.md} - ${stepMarkerSize.md}) / 2)`,
     alignItems: "center",
     boxSizing: "border-box",
     display: "flex",
@@ -299,7 +325,14 @@ const styles = stylex.create({
     minWidth: 0,
     paddingTop: space[2],
   },
-  extras: { paddingTop: space[6] },
+  // A sent transaction's hash beside its explorer link.
+  extras: {
+    alignItems: "baseline",
+    columnGap: space[8],
+    display: "flex",
+    flexWrap: "wrap",
+    paddingTop: space[6],
+  },
 });
 
 const fillStyles = stylex.create({
@@ -314,9 +347,10 @@ const fillStyles = stylex.create({
 // Every marker is a 24px disc: waiting is a ring on the surface, in
 // `textMuted` so the ring alone reaches 3:1 (WCAG 1.4.11), the step under
 // way an accent arc turning on its ring, a signature a wallet on the accent
-// tint, and done and failed an outline check and cross in their status
-// tones. The arc and the halo fill the marker, which draws no border of its
-// own under them.
+// tint, done and failed an outline check and cross in their status tones,
+// and a step the user cancelled a muted dash on the waiting ring, since
+// nothing went wrong. The arc and the halo fill the marker, which draws no
+// border of its own under them.
 const markerStyles = stylex.create({
   idle: { borderColor: color.textMuted, backgroundColor: color.surface },
   active: { borderWidth: 0, color: color.accentText },
@@ -327,5 +361,10 @@ const markerStyles = stylex.create({
     color: color.accentText,
   },
   failed: { borderColor: color.danger, color: color.danger },
+  cancelled: {
+    borderColor: color.textMuted,
+    backgroundColor: color.surface,
+    color: color.textMuted,
+  },
   done: { borderColor: color.success, color: color.success },
 });

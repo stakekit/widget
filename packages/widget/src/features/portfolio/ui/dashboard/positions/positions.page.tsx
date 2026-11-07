@@ -1,3 +1,4 @@
+import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { Stack, Text, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
@@ -5,7 +6,10 @@ import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { usePositions } from "../../../react/use-positions";
-import type { PositionsListRow } from "../../../state/read-models/positions";
+import {
+  currentGroupedPositionsAtom,
+  type PositionsListRow,
+} from "../../../state/read-models/positions";
 import {
   PositionsConnectWallet,
   PositionsEmpty,
@@ -16,7 +20,6 @@ import {
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
-import { useGroupedPositions } from "./hooks/use-grouped-positions";
 import { getUnifiedManagePositionsState } from "./model";
 
 const positionsListRowKey = (row: PositionsListRow) => {
@@ -45,7 +48,7 @@ export const PositionsPage = () => {
     isConnecting,
   });
 
-  const listData = useGroupedPositions();
+  const listData = useAtomValue(currentGroupedPositionsAtom);
 
   const { t } = useTranslation();
   const renderContent = () => {

@@ -14,8 +14,11 @@ import { layoutVars as v } from "./layout.stylex";
 const METRICS = `repeat(auto-fit, minmax(min(${gridTrack.metricMin}, 100%), 1fr))`;
 const SPLIT = `minmax(0, ${gridTrack.splitAside}) minmax(0, 1fr)`;
 // A centre cell at its content's width between two equal flanks, so the
-// centre stays centred whatever each flank holds.
-const FLANKED = "minmax(0, 1fr) auto minmax(0, 1fr)";
+// centre stays centred whatever each flank holds. Where the row is too
+// narrow for that, each flank keeps its content's width and the centre
+// gives up space first, so it never covers a flank's control.
+const FLANKED =
+  "minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr)";
 
 const directionBase = stylex.create({
   row: {

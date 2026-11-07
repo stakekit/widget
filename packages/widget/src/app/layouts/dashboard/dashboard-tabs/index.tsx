@@ -86,6 +86,9 @@ export const DashboardTabs = ({
       label: tabLabel("manage"),
       separated: showGroupDivider,
       count: pendingActionsCount,
+      countLabel: t("positions.attention_count", {
+        count: pendingActionsCount,
+      }),
     },
     { value: "activity", label: tabLabel("activity") },
   ];

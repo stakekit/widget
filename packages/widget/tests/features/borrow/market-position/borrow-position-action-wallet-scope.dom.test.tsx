@@ -301,7 +301,7 @@ describe("Borrow position action wallet ownership", () => {
       app.container.querySelector<HTMLInputElement>(
         '[data-testid="number-input"]'
       )?.value
-    ).toBe("0");
+    ).toBe("");
     expect(app.container.textContent).toContain("0.2 WETH withdrawable");
   });
 
@@ -331,6 +331,6 @@ describe("Borrow position action wallet ownership", () => {
       app.container.querySelector<HTMLInputElement>(
         '[data-testid="number-input"]'
       )?.value
-    ).toBe("0");
+    ).toBe("");
   });
 });

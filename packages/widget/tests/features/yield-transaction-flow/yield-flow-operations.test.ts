@@ -995,19 +995,26 @@ describe("leaveYieldFlowExecution", () => {
       return yield* kit.navigation.commands;
     });
 
-  it.effect("replaces Steps with Review when going back", () =>
+  it.effect("goes back to Review's own history entry", () =>
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(enterStart(), walletScope), "Review")
-      ).toEqual([{ _tag: "Replace", to: "/review" }]);
+      ).toEqual([{ _tag: "Back" }]);
     })
   );
 
-  it.effect("leaves a finished flow for Earn", () =>
+  // Back through Review and Steps, then the finish page in place of the page
+  // the flow started from, so Back from there never lands on Review again.
+  const leftFor = (to: string) => [
+    { _tag: "Back", steps: 2 },
+    { _tag: "Replace", to },
+  ];
+
+  it.effect("leaves a finished flow for Earn, out of its history", () =>
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(enterStart(), walletScope), "Exit")
-      ).toEqual([{ _tag: "Push", to: "/" }]);
+      ).toEqual(leftFor("/"));
     })
   );
 
@@ -1035,11 +1042,11 @@ describe("leaveYieldFlowExecution", () => {
         },
       }),
     ],
-  ] as const)("leaves a finished %s flow for Positions", ([, start]) =>
+  ] as const)("leaves a finished %s flow for the position", ([, start]) =>
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(start(), walletScope), "Exit")
-      ).toEqual([{ _tag: "Push", to: "/positions" }]);
+      ).toEqual(leftFor("/positions/integration/default"));
     })
   );
 
@@ -1050,7 +1057,7 @@ describe("leaveYieldFlowExecution", () => {
           makeYieldActionContinuationSession(makeContinuationIntake()),
           "Exit"
         )
-      ).toEqual([{ _tag: "Push", to: "/activity" }]);
+      ).toEqual(leftFor("/activity"));
     })
   );
 
@@ -1082,9 +1089,7 @@ describe("leaveYieldFlowExecution", () => {
       yield* Fiber.join(interrupt);
 
       expect(interruptedWhileBackPending).toBeUndefined();
-      expect(yield* kit.navigation.commands).toEqual([
-        { _tag: "Replace", to: "/review" },
-      ]);
+      expect(yield* kit.navigation.commands).toEqual([{ _tag: "Back" }]);
     })
   );
 });

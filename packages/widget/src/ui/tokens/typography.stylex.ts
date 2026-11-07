@@ -1,9 +1,27 @@
 import * as stylex from "@stylexjs/stylex";
 
-/** The system stacks; a host may replace them. */
+const systemSans =
+  'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+/**
+ * The system stacks; no webfont is loaded, and an Appearance Preset sets its
+ * own system stack. `figure` sets amounts, rates and balances (the `display`
+ * and `metric` roles, and tabular text): the sans stack unless a preset sets
+ * figures apart, such as Porto's monospace numerals. A host's `sans`
+ * replaces `figure` too, so the host's font wins over a preset's.
+ */
 export const font = stylex.defineVars({
-  sans: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  sans: systemSans,
   mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+  figure: systemSans,
+});
+
+/**
+ * Letter spacing: the large `display` figures draw tighter than their
+ * glyphs' default, as large type does.
+ */
+export const tracking = stylex.defineConsts({
+  display: "-0.02em",
 });
 
 /** A host may lighten or strengthen the scale. */
@@ -20,6 +38,16 @@ export const fontWeight = stylex.defineVars({
  */
 export const figureWeight = stylex.defineVars({
   display: "600",
+});
+
+/**
+ * The `heading` role's weight: a step of the scale under the title's
+ * `semibold`, `medium`, so the two read apart. The theme root sets it from
+ * the scale beside the preset's and host's weights, so they reach it; an
+ * Appearance Preset may keep its headings at `semibold`, as Utila does.
+ */
+export const roleWeight = stylex.defineVars({
+  heading: "500",
 });
 
 /**

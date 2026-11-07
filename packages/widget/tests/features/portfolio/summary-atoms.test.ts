@@ -339,8 +339,10 @@ describe("summary atom derivations", () => {
               offline
                 ? Effect.fail(
                     new ApiRequestError({
-                      cause: new Error("offline"),
-                      failure: { _tag: "Unreachable" },
+                      cause: new Error("rejected"),
+                      // Fails at once: a transient failure is asked again
+                      // with backoff first.
+                      failure: { _tag: "ErrorStatus", status: 400, body: null },
                       operation: "yields",
                     })
                   )

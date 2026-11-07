@@ -34,7 +34,8 @@ export const usePortfolioPendingActionsCount = () => {
     currentPortfolioBorrowPositionsAtom
   ).positions;
   const earnCount = positions.filter(
-    (position) => position.hasPendingClaimRewards || position.actionRequired
+    (position) =>
+      position.hasPendingClaimRewards || position.requiredAction !== null
   ).length;
   const borrowCount =
     borrowPositions._tag === "Ready"

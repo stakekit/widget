@@ -17,6 +17,7 @@ import { useTokenLogo } from "../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import {
   AmountPanel,
+  type AmountPanelNote,
   Button,
   Stack,
   Text,
@@ -39,6 +40,8 @@ type AmountBlockProps = {
   /** The fiat value is still loading, such as while prices load. */
   fiatValueLoading?: boolean;
   balance: { amount: BigNumber; token: Token } | null;
+  /** Muted lines under the amount, such as its estimated network fee. */
+  notes?: ReadonlyArray<AmountPanelNote>;
 } & (
   | {
       variant: "exit";
@@ -53,7 +56,11 @@ type AmountBlockProps = {
       /** Overrides the default position-token chip when CTA is in the footer. */
       tokenAccessory?: ReactNode;
     }
-  | { variant: "action" }
+  | {
+      variant: "action";
+      /** The page leads with this action: its button fills. */
+      primary: boolean;
+    }
 );
 
 /** The position's token beside the amount, when there is none to choose. */
@@ -75,6 +82,7 @@ export const AmountBlock = ({
   fiatValueLoading = false,
   onMaxClick,
   balance,
+  notes = [],
   exitAmountError,
   ...rest
 }: AmountBlockProps) => {
@@ -102,8 +110,24 @@ export const AmountBlock = ({
           "down"
         )} ${exitProps.exitToken.symbol}`;
   const limits = min && max ? `${min} / ${max}` : (min ?? max);
-  const limitError =
-    exitProps?.exitIsGreaterOrLessIntegrationLimitError ?? false;
+  // A missed limit says which one under the amount; the limits beside the
+  // token stay the muted helper.
+  const limitError = (() => {
+    if (!exitProps?.exitIsGreaterOrLessIntegrationLimitError) return null;
+    const { exitMaxAmount, exitMinAmount, exitToken } = exitProps;
+    if (exitMaxAmount && value.isGreaterThan(exitMaxAmount)) {
+      return t("position_details.amount_above_maximum", {
+        amount: formatTokenAmount(exitMaxAmount, locale, "down"),
+        symbol: exitToken.symbol,
+      });
+    }
+    return exitMinAmount
+      ? t("details.amount_error.below_minimum", {
+          amount: formatTokenAmount(exitMinAmount, locale, "up"),
+          symbol: exitToken.symbol,
+        })
+      : null;
+  })();
 
   const showCardCta =
     rest.variant === "action" || rest.ctaPlacement !== "footer";
@@ -116,7 +140,9 @@ export const AmountBlock = ({
       onClick={onClick}
       disabled={disabled ?? false}
       size="sm"
-      variant={rest.variant === "exit" ? "primary" : "secondary"}
+      variant={
+        rest.variant === "exit" || rest.primary ? "primary" : "secondary"
+      }
     >
       {label}
     </Button>
@@ -138,19 +164,20 @@ export const AmountBlock = ({
         },
       }
     : {};
-  // The limits stay beside the token, red when missed; a balance error
-  // shows under the amount beside them.
+  const error = exitProps?.exitAmountGreaterThanAvailable
+    ? t("shared.insufficient_balance")
+    : limitError;
   const limitProps = {
-    ...(limits ? { limits, limitsMissed: limitError } : {}),
-    ...(exitProps?.exitAmountGreaterThanAvailable
-      ? { error: t("shared.insufficient_balance") }
-      : {}),
+    ...(limits ? { limits } : {}),
+    ...(error === null ? {} : { error }),
   };
 
+  // The card names what it holds, the amount; its button or the page's
+  // call to action names the verb.
   return (
     <AmountPanel
       shrink={!disableResizingInputFontSize}
-      label={label}
+      label={t("shared.amount")}
       value={toAmountValue(value)}
       onValueChange={(next) => onAmountChange(fromAmountValue(next))}
       separators={amountSeparators(locale)}
@@ -162,8 +189,15 @@ export const AmountBlock = ({
       {...balanceProps}
       {...limitProps}
       {...(canChangeAmount && onMaxClick
-        ? { max: { label: t("shared.max"), onClick: onMaxClick } }
+        ? {
+            max: {
+              label: t("shared.max"),
+              onClick: onMaxClick,
+              disabled: balance?.amount.isZero() ?? false,
+            },
+          }
         : {})}
+      notes={notes}
     />
   );
 };

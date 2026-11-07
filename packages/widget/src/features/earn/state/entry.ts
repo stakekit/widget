@@ -1,9 +1,8 @@
-import { Option } from "effect";
+import { Effect, Equal, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
-import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
 import {
   getExtendedYieldType,
   getYieldRewardTokens,
@@ -19,6 +18,7 @@ import {
 } from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
+  getNetworkFeeEstimate,
   getYieldEntryPriceToken,
   makeYieldEntry,
 } from "../../yield-entry/index";
@@ -141,6 +141,8 @@ export const earnEntryViewAtom = Atom.make((get) => {
     /** The user entered an amount, or the yield forces the balance. */
     amountEntered: input.amountEntered,
     appLoading: entry.appLoading,
+    /** Why the balance cannot fund any entry, known before typing. */
+    balanceWarning: entry.balanceWarning,
     buttonDisabled:
       entry.connected &&
       (entry.isFetching ||
@@ -148,6 +150,11 @@ export const earnEntryViewAtom = Atom.make((get) => {
         !entry.preparation ||
         entry.kyc.isBlocking),
     canSubmit: entry.canSubmit,
+    // A hidden balance has no known maximum yet; a gas token one waits for
+    // the gas Max must leave.
+    canFillMax: !input.hiddenTokenBalance && entry.maxAmount !== null,
+    /** Max has nothing to fill, such as a balance the gas would use up. */
+    maxFillsNothing: entry.maxAmount?.isZero() ?? false,
     connected: entry.connected,
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,
@@ -166,14 +173,15 @@ export const earnEntryViewAtom = Atom.make((get) => {
         : null,
     isFetching: entry.isFetching,
     isLedgerLiveAccountPlaceholder: entry.isLedgerAccountPlaceholder,
-    isStakeTokenSameAsGasToken:
-      selectedYield && selectedToken
-        ? stakeTokenSameAsGasToken({
-            stakeToken: selectedToken,
-            yieldDto: selectedYield,
-          })
-        : false,
     kyc: entry.kyc,
+    maxGasReserveNote: entry.maxGasReserveNote,
+    networkFee: getNetworkFeeEstimate({
+      connected: entry.connected,
+      hidden: entry.gasFeeHidden,
+      pending: entry.networkFeePending,
+      prices,
+      simulation: entry.networkFeeSimulation,
+    }),
     pointsRewardTokens: selectedYield
       ? getYieldRewardTokens(selectedYield).filter((token) => token.isPoints)
       : null,
@@ -200,6 +208,17 @@ export const earnEntryViewAtom = Atom.make((get) => {
   } as const;
 }).pipe(Atom.withLabel("earnEntryViewAtom"));
 
+/**
+ * What the Dashboard details pane describes of the Earn form: its yield,
+ * validators and providers. Typing an amount leaves it equal, so the pane and
+ * its charts do not render again per keystroke.
+ */
+export const earnDetailsViewAtom = Atom.make((get) => {
+  const { appLoading, providers, selectedStake, selectedValidators } =
+    get(earnEntryViewAtom);
+  return { appLoading, providers, selectedStake, selectedValidators } as const;
+}).pipe(Atom.withEquality(Equal.equals), Atom.withLabel("earnDetailsViewAtom"));
+
 /** Takes the amount input's decimal string, `""` once cleared. */
 export const setEarnAmountAtom = Atom.fnSync((amount: string, context) =>
   context.set(setEarnSelectionAmountAtom, amount)
@@ -208,7 +227,10 @@ export const setEarnAmountAtom = Atom.fnSync((amount: string, context) =>
 export const earnProviderOptionsViewAtom = Atom.make((get) => ({
   ...get(earnSelectionProviderOptionsViewAtom),
   appLoading: get(earnAppLoadingAtom).isLoading,
-})).pipe(Atom.withLabel("earnProviderOptionsViewAtom"));
+})).pipe(
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnProviderOptionsViewAtom")
+);
 
 export const selectEarnProviderOptionAtom = Atom.fnSync(
   (providerOption: ProviderOption, context) =>
@@ -222,11 +244,9 @@ export const selectEarnTronResourceAtom = Atom.fnSync(
 
 export const setEarnMaxAmountAtom = appRuntime
   .fn((_input: undefined, context) => {
-    const constraints = context(earnYieldEntry.viewAtom).constraints;
-    context.set(
-      setEarnSelectionMaxAmountAtom,
-      constraints.allowedMaximum.toString(10)
-    );
+    const { maxAmount } = context(earnYieldEntry.viewAtom);
+    if (maxAmount === null) return Effect.void;
+    context.set(setEarnSelectionMaxAmountAtom, maxAmount.toString(10));
     return TrackingService.use((tracking) =>
       tracking.trackEvent("earnPageMaxClicked")
     );

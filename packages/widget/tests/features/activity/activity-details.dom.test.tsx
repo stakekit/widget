@@ -117,7 +117,7 @@ describe("Activity details receipt", () => {
     expect(app.container.textContent).not.toContain("Continue");
     expect(rows.map((row) => row.textContent)).toEqual([
       "1. ApprovalConfirmed",
-      "2. StakeFailed0x1234…1234Execution reverted",
+      "2. StakeFailed0x1234…1234The contract rejected this transactionDetails",
     ]);
     expect(rows[0]?.tagName).not.toBe("BUTTON");
     expect(
@@ -129,7 +129,16 @@ describe("Activity details receipt", () => {
             document.getElementById(id)?.getAttribute("aria-label") ??
             document.getElementById(id)?.textContent
         )
-    ).toEqual(["Failed", "Execution reverted"]);
+    ).toEqual(["Failed", "The contract rejected this transaction"]);
+
+    // The raw error the network reported stays one press away.
+    const errorDetails = app.container.querySelector<HTMLButtonElement>(
+      '[data-testid="activity-details-error-details"]'
+    );
+    expect(errorDetails?.getAttribute("aria-expanded")).toBe("false");
+    await act(async () => errorDetails?.click());
+    expect(errorDetails?.getAttribute("aria-expanded")).toBe("true");
+    expect(rows[1]?.textContent).toContain("Execution reverted");
 
     await act(async () => explorer?.click());
     expect(open).toHaveBeenCalledWith("https://explorer.test/failed", "_blank");

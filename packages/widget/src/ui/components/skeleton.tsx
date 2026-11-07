@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { TypeRole } from "../primitives/type-role";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { callToAction } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import {
   avatarSize,
@@ -26,9 +27,12 @@ type SkeletonProps =
       readonly width?: SkeletonWidth;
     }
   | {
-      /** A line of text in a type role: it takes the role's line height. */
+      /**
+       * A line of text in a type role, named as `Text` names it: it takes the
+       * role's line height.
+       */
       readonly shape: "line";
-      readonly role?: TypeRole;
+      readonly variant?: TypeRole;
       readonly width?: SkeletonWidth;
     }
   | {
@@ -53,7 +57,7 @@ export const Skeleton = (props: SkeletonProps) => (
       ],
       props.shape === "line" && [
         styles.line,
-        lineStyles[props.role ?? "body"],
+        lineStyles[props.variant ?? "body"],
         widthStyles[props.width ?? "full"],
       ],
       props.shape === "circle" && [
@@ -94,6 +98,8 @@ const rectHeightStyles = stylex.create({
   lg: { height: controlHeight.lg },
   // The parent's height, such as a chart's plot.
   fill: { height: "100%" },
+  // A page's call-to-action, at the call-to-action height it stands in for.
+  cta: { height: callToAction.height },
   // A block taller than a control, such as an amount panel or a section.
   panel: { height: skeletonHeight.panel },
   section: { height: skeletonHeight.section },

@@ -241,6 +241,13 @@ export const getYieldTransactionStepsView = (
       machineState._tag === "SubmissionFailed" ||
       machineState._tag === "ConfirmationFailed" ||
       machineState._tag === "AdvanceFailed",
+    /**
+     * A transaction went to the network: being sent, or sent with its hash.
+     * What is sent cannot be called back, so Steps no longer offers Cancel.
+     */
+    sent: transactionRows.some(
+      ({ hash, phases }) => hash !== null || phases.broadcast === "active"
+    ),
     txStates: [...preparationRows, ...actionRows, ...plannedRows],
     yieldId,
   } as const;

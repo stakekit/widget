@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { Card } from "../components/card";
+import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { ContainerFrame } from "../storybook/container-frame";
 import { SplitView } from "./split-view";
@@ -96,5 +97,42 @@ export const SecondaryOnly: Story = {
       canvas.getByText("Reward rate and provider details.")
     ).toBeVisible();
     await expect(canvas.queryByText("Choose an amount to stake.")).toBeNull();
+  },
+};
+
+/**
+ * Each pane is a size container: inside one, a layout reads the pane's
+ * width, so a row that waits for the `split` size stays a column in a pane
+ * narrower than it, though the frame is wider.
+ */
+export const PanesAreSizeContainers: Story = {
+  args: {
+    secondary: (
+      <Stack direction={{ base: "column", split: "row" }} gap={8}>
+        <div data-testid="first-item">
+          <Text>Reward rate</Text>
+        </div>
+        <div data-testid="second-item">
+          <Text>Provider</Text>
+        </div>
+      </Stack>
+    ),
+  },
+  render: (args) => (
+    <ContainerFrame width={1000}>
+      <SplitView {...args} />
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const first = canvas.getByTestId("first-item").getBoundingClientRect();
+    const second = canvas.getByTestId("second-item").getBoundingClientRect();
+    const primary = canvas.getByTestId("primary-pane").getBoundingClientRect();
+
+    // Split, as the frame is past the `split` size.
+    await expect(primary.right).toBeLessThan(first.left);
+    // The pane is narrower than the `split` size, so its items stack.
+    await expect(second.top).toBeGreaterThanOrEqual(first.bottom);
+    await expect(second.left).toBe(first.left);
   },
 };

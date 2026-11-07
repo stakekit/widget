@@ -4,6 +4,7 @@ import { color, softControlTint } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
 import { radius } from "../tokens/radius.stylex";
+import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import {
   font,
@@ -11,10 +12,12 @@ import {
   fontWeight,
   lineHeight,
 } from "../tokens/typography.stylex";
+import { hitAreaStyles } from "./hit-area";
 
 /**
  * A small pill button for a quick action beside a field, such as "Max". With
- * `selected` it toggles and reads as pressed.
+ * `selected` it toggles and reads as pressed. It is as tall as a small
+ * control, and a coarse pointer can tap it from a little around it.
  */
 export const Chip = ({
   onClick,
@@ -36,7 +39,11 @@ export const Chip = ({
     disabled={disabled}
     aria-pressed={selected}
     data-testid={testId}
-    {...stylex.props(styles.root, selected && styles.selected)}
+    {...stylex.props(
+      styles.root,
+      hitAreaStyles.coarse,
+      selected && styles.selected
+    )}
   >
     {children}
   </button>
@@ -53,12 +60,16 @@ const styles = stylex.create({
     borderWidth: borderWidth.thin,
     paddingBlock: space[2],
     paddingInline: space[12],
+    alignItems: "center",
     backgroundColor: color.accentSoft,
+    boxSizing: "border-box",
     color: color.accentText,
     cursor: { default: "pointer", ":disabled": "not-allowed" },
+    display: "inline-flex",
     fontFamily: font.sans,
     fontSize: fontSize.label,
     fontWeight: fontWeight.semibold,
+    justifyContent: "center",
     lineHeight: lineHeight.label,
     opacity: { default: 1, ":disabled": opacity.disabled },
     outlineColor: color.focusRing,
@@ -75,6 +86,7 @@ const styles = stylex.create({
     transitionTimingFunction: motion.easing,
     userSelect: "none",
     whiteSpace: "nowrap",
+    minHeight: controlHeight.sm,
   },
   // The ring marks the chosen chip besides its pressed state.
   selected: { borderColor: color.accent },

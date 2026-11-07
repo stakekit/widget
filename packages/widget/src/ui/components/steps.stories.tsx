@@ -13,6 +13,7 @@ const meta = {
       active: "in progress",
       signing: "waiting for signature",
       failed: "failed",
+      cancelled: "cancelled in wallet",
       done: "done",
     },
     steps: [
@@ -281,10 +282,10 @@ const hashSteps: ComponentProps<typeof Steps>["steps"] = [
     label: "Approve",
     status: "done",
     state: "Confirmed",
+    reference: "0x1234…abcd",
     link: {
       href: "https://etherscan.io/tx/0x1",
-      label: "0x1234…abcd",
-      context: "View transaction",
+      label: "View on explorer",
       newTabLabel: "opens in a new tab",
     },
   },
@@ -297,8 +298,8 @@ const hashSteps: ComponentProps<typeof Steps>["steps"] = [
 ];
 
 /**
- * A step's own state line replaces its status's label, and a shortened hash
- * link reads what it opens first.
+ * A step's own state line replaces its status's label, and a sent
+ * transaction's shortened hash shows beside its explorer link.
  */
 export const WithStateAndHash: Story = {
   args: {
@@ -307,14 +308,37 @@ export const WithStateAndHash: Story = {
   play: async ({ canvasElement }) => {
     const [approve, stake] = within(canvasElement).getAllByRole("listitem");
     await expect(approve).toHaveTextContent("Approve, Confirmed");
+    await expect(approve).toHaveTextContent("0x1234…abcd");
     await expect(
       within(approve ?? canvasElement).getByRole("link", {
-        name: "View transaction, 0x1234…abcd opens in a new tab",
+        name: "View on explorer opens in a new tab",
       })
     ).toHaveAttribute("href", "https://etherscan.io/tx/0x1");
     await expect(stake).toHaveTextContent(
       "Stake, failedThe transaction was rejected."
     );
+  },
+};
+
+/**
+ * A request the user declined in the wallet reads as neutral, not failed: a
+ * muted dash on the waiting ring and a muted state line.
+ */
+export const Cancelled: Story = {
+  args: {
+    steps: [
+      { id: "stake", label: "Stake", status: "cancelled" },
+      { id: "fail", label: "Wrap", status: "failed" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const [stake, wrap] = within(canvasElement).getAllByRole("listitem");
+    await expect(stake).toHaveTextContent("Stake, cancelled in wallet");
+    const stateColor = (item: HTMLElement | undefined) => {
+      const line = Array.from(item?.children ?? []).at(-1)?.children[1];
+      return line ? getComputedStyle(line).color : "";
+    };
+    await expect(stateColor(stake)).not.toBe(stateColor(wrap));
   },
 };
 

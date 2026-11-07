@@ -2,13 +2,11 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getYieldOutputToken,
+  getYieldRiskDisplay,
   getYieldTypeLabels,
 } from "../../../../../domain/earn/yield";
-import {
-  capitalizeFirstLetters,
-  getRewardTypeFormatted,
-} from "../../../../../shared/lib/formatters";
-import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
+import { capitalizeFirstLetters } from "../../../../../shared/lib/formatters";
+import { unavailableFigure } from "../../../../../shared/lib/number-format";
 import {
   useTokenLogo,
   useTokenLogoResolver,
@@ -16,6 +14,10 @@ import {
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
 import { useTrackEvent } from "../../../../tracking/index";
+import {
+  getRiskRatingTone,
+  getYieldFigures,
+} from "../../../../yield-summary/index";
 import { useEarnYieldSelection } from "../../../react/use-earn-facades";
 
 /** The chosen yield beside its reward rate, and the sheet to choose another. */
@@ -27,6 +29,10 @@ export const SelectYield = () => {
   return <SelectYieldSheet selected={view.selected} />;
 };
 
+/**
+ * The yields to choose from; each row shows its rate, TVL and risk rating.
+ * Each run of yields of one type is a group, so the ranking holds.
+ */
 const SelectYieldSheet = ({
   selected,
 }: {
@@ -51,7 +57,6 @@ const SelectYieldSheet = ({
     name: displayToken.symbol,
   };
 
-  // Yields of one type sit together; each run of them is a titled group.
   const groups = view.filtered.reduce<
     Array<{
       key: string;
@@ -60,9 +65,9 @@ const SelectYieldSheet = ({
     }>
   >((acc, item, index) => {
     const label = getYieldTypeLabels(item, t).title;
-    const last = acc.at(-1);
-    if (last?.label === label) {
-      last.items.push({ item, index });
+    const group = acc.at(-1);
+    if (group?.label === label) {
+      group.items.push({ item, index });
     } else {
       acc.push({ key: `${label}-${index}`, label, items: [{ item, index }] });
     }
@@ -83,36 +88,55 @@ const SelectYieldSheet = ({
         value: view.search,
         onValueChange: setSearch,
         label: t("shared.search"),
+        placeholder: t("shared.search_yields"),
         clearLabel: t("shared.clear_search"),
       }}
       empty={{ title: t("details.opportunities_no_results") }}
       groups={groups.map((group) => {
-        const rateTypes = new Set(
-          group.items.map(({ item }) =>
-            getRewardTypeFormatted(item.rewardRate.rateType)
-          )
+        const figures = group.items.map(({ item }) =>
+          getYieldFigures({ yieldDto: item, locale, t })
         );
-        // A rate type every row shares heads the group, above the rates.
-        const [sharedRateType] = rateTypes.size === 1 ? [...rateTypes] : [];
+        const rateLabels = new Set(
+          figures.flatMap((figure) => (figure.rate ? [figure.rate.label] : []))
+        );
+        // A rate label every row shares heads the group, above the rates.
+        const [sharedRateLabel] = rateLabels.size === 1 ? [...rateLabels] : [];
 
         return {
           key: group.key,
           label: group.label,
-          ...(sharedRateType ? { caption: sharedRateType } : {}),
-          options: group.items.map(({ item, index }) => {
-            const rateType = getRewardTypeFormatted(item.rewardRate.rateType);
+          ...(sharedRateLabel ? { caption: sharedRateLabel } : {}),
+          options: group.items.map(({ item, index }, position) => {
+            const { rate, tvl } = figures[position] ?? {
+              rate: null,
+              tvl: null,
+            };
+            const risk = getYieldRiskDisplay(item);
+            const via = item.provider?.name
+              ? t("details.opportunity_item_subtitle_no_network", {
+                  provider: item.provider.name,
+                })
+              : capitalizeFirstLetters(item.token.network);
 
             return {
               id: item.id,
               testId: `select-opportunity__item_${item.id}-${index}`,
               title: item.metadata.name,
-              subtitle: item.provider?.name
-                ? t("details.opportunity_item_subtitle_no_network", {
-                    provider: item.provider.name,
-                  })
-                : capitalizeFirstLetters(item.token.network),
-              value: formatRewardRatePercent(item.rewardRate.total, locale),
-              ...(rateType && !sharedRateType ? { subvalue: rateType } : {}),
+              subtitle: tvl
+                ? `${via} · ${t("details.opportunity_item_tvl", { amount: tvl.usd })}`
+                : via,
+              value: rate?.value ?? unavailableFigure,
+              ...(rate && !sharedRateLabel ? { subvalue: rate.label } : {}),
+              ...(risk
+                ? {
+                    badges: [
+                      {
+                        label: t("details.risk.badge", { rating: risk.rating }),
+                        tone: getRiskRatingTone(risk),
+                      },
+                    ],
+                  }
+                : {}),
               logo: resolveLogo(item.token, {
                 badge: "provider",
                 metadata: {

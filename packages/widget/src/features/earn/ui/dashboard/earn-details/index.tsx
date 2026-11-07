@@ -1,29 +1,22 @@
+import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
-import { exactDecimal } from "../../../../../domain/finance/exact";
-import { formatAddress } from "../../../../../shared/lib/general";
-import {
-  formatPercent,
-  formatPercentAxis,
-  formatUsd,
-  formatUsdAxis,
-} from "../../../../../shared/lib/number-format";
+import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import { Card, EmptyState, Skeleton, Stack } from "../../../../../ui/index";
 import {
-  DetailList,
-  DetailRow,
-  Disclosure,
-  EmptyState,
-  Skeleton,
-  Stack,
-  Text,
-} from "../../../../../ui/index";
-import { YieldDetailsHeader } from "../../../../yield-summary/views";
+  YieldDetailsHeader,
+  YieldFactsSection,
+} from "../../../../yield-summary/views";
 import { useYieldFlowIntake } from "../../../../yield-transaction-flow/index";
 import {
-  useEarnEntry,
+  getRewardRateHistoryChart,
+  getTvlHistoryChart,
+} from "../../../model/history-chart";
+import {
+  useEarnDetails,
   useEarnFlowYield,
   useEarnRewardRateHistoryChart,
   useEarnTvlHistoryChart,
@@ -31,7 +24,6 @@ import {
 } from "../../../react/use-earn-facades";
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
 import { HistoryChartSection } from "./components/history-chart-section";
-import { IntegrationDocsLink } from "./components/integration-docs-link";
 import {
   ProviderSelectionCard,
   ProviderSummary,
@@ -43,7 +35,7 @@ import {
 
 /** Details of the Earn form's live selection; its selection controls edit it. */
 export const EarnDetails = () => {
-  const { view: entry } = useEarnEntry();
+  const { view: entry } = useEarnDetails();
   const { view: yieldSelection } = useEarnYieldSelection();
 
   return (
@@ -95,6 +87,7 @@ const EarnDetailsPanel = ({
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
+  const now = useAtomValue(presentationClockAtom)?.now ?? null;
   const presentsRewardRateHistory = yieldDto
     ? canPresentRewardRateHistory(yieldDto)
     : false;
@@ -104,31 +97,19 @@ const EarnDetailsPanel = ({
   );
   const tvlChart = useEarnTvlHistoryChart(yieldDto?.id ?? null);
 
-  if (isLoading) {
-    return (
-      <Stack gap={16} aria-busy>
-        <Skeleton shape="rect" height="lg" />
-        <Skeleton shape="rect" height="lg" />
-        <Skeleton shape="rect" height="lg" />
-        <Skeleton shape="line" width="threeQuarters" />
-        <Skeleton shape="line" width="half" />
-      </Stack>
-    );
-  }
+  if (isLoading) return <EarnDetailsSkeleton />;
 
   if (!yieldDto) {
     return <EmptyState title={t("dashboard.earn_details.empty")} />;
   }
 
   const {
-    addressRows,
-    detailRows,
+    figures,
     headerBadges,
     isStakeCategory,
     metricCards,
+    omittedYieldFacts,
     providerName,
-    rewardRateFormatted,
-    tvlChartValue,
   } = getEarnDetailsModel({
     locale,
     selectedValidators,
@@ -150,65 +131,84 @@ const EarnDetailsPanel = ({
 
       {presentsRewardRateHistory && rewardRateChart.view.canRender && (
         <HistoryChartSection
-          formatValue={(value) =>
-            formatPercent(exactDecimal(value).div(100), locale)
-          }
-          formatValueAxis={(ticks) =>
-            formatPercentAxis(
-              ticks.map((tick) => exactDecimal(tick).div(100)),
-              locale
-            )
-          }
+          chart={getRewardRateHistoryChart({
+            locale,
+            now,
+            period: rewardRateChart.view.period,
+            points: rewardRateChart.view.points,
+            rate: figures.rate,
+            t,
+          })}
           onPeriodChange={rewardRateChart.selectPeriod}
-          title={t("dashboard.earn_details.reward_rate")}
-          value={rewardRateFormatted}
           view={rewardRateChart.view}
         />
       )}
 
       {!isStakeCategory && tvlChart.view.canRender && (
         <HistoryChartSection
-          formatValue={(value) => formatUsd(value, locale)}
-          formatValueAxis={(ticks) => formatUsdAxis(ticks, locale)}
+          chart={getTvlHistoryChart({
+            locale,
+            now,
+            period: tvlChart.view.period,
+            points: tvlChart.view.points,
+            symbol: yieldDto.token.symbol,
+            t,
+            tvl: figures.tvl,
+          })}
           onPeriodChange={tvlChart.selectPeriod}
-          title={t("dashboard.earn_details.tvl")}
-          value={tvlChartValue}
           view={tvlChart.view}
         />
       )}
 
-      <Disclosure title={t("dashboard.earn_details.about")} defaultOpen>
-        <Stack gap={4}>
-          <Text tone="muted">{yieldDto.metadata.description}</Text>
-
-          {yieldDto.metadata.documentation ? (
-            <IntegrationDocsLink
-              documentation={yieldDto.metadata.documentation}
-            />
-          ) : null}
-        </Stack>
-      </Disclosure>
-
-      <Disclosure title={t("dashboard.earn_details.details")} defaultOpen>
-        <DetailList>
-          {detailRows.map((row) => (
-            <DetailRow key={row.id} label={row.label} value={row.value} />
-          ))}
-
-          {addressRows.map((row) => (
-            <DetailRow
-              key={`${row.label}-${row.address}`}
-              label={row.label}
-              value={formatAddress(row.address)}
-              copyable={{
-                value: row.address,
-                label: t("wallet_modal.copy_address"),
-                copiedLabel: t("wallet_modal.copied"),
-              }}
-            />
-          ))}
-        </DetailList>
-      </Disclosure>
+      <YieldFactsSection
+        omit={omittedYieldFacts}
+        selectedValidators={selectedValidators}
+        yieldDto={yieldDto}
+      />
     </Stack>
   );
 };
+
+const metricPlaceholders = ["first", "second", "third"] as const;
+
+/**
+ * The details pane while its yield loads, in the shapes it loads into: the
+ * yield's header, the metric card and a history chart, so nothing moves when
+ * it arrives.
+ */
+const EarnDetailsSkeleton = () => (
+  <Stack gap={16} aria-busy>
+    <Stack direction="row" align="center" gap={12}>
+      <Skeleton shape="circle" size="lg" />
+      <Stack gap={4} grow>
+        <Skeleton shape="line" variant="heading" width="threeQuarters" />
+        <Skeleton shape="line" variant="caption" width="half" />
+      </Stack>
+    </Stack>
+
+    <Card padding={16}>
+      <Stack direction="row" gap={16}>
+        {metricPlaceholders.map((key) => (
+          <Stack key={key} gap={4} grow>
+            <Skeleton shape="line" variant="caption" width="half" />
+            <Skeleton shape="line" variant="heading" width="threeQuarters" />
+          </Stack>
+        ))}
+      </Stack>
+    </Card>
+
+    <Stack gap={12}>
+      <Stack direction="row" align="center" justify="between" gap={8}>
+        <Skeleton shape="line" width="quarter" />
+        <Skeleton shape="rect" height="sm" width="quarter" />
+      </Stack>
+      <Skeleton shape="rect" height="section" />
+    </Stack>
+
+    <Stack gap={8}>
+      <Skeleton shape="line" width="quarter" />
+      <Skeleton shape="line" width="threeQuarters" />
+      <Skeleton shape="line" width="half" />
+    </Stack>
+  </Stack>
+);

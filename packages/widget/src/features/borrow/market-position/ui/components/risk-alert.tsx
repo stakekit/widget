@@ -17,7 +17,7 @@ export const BorrowPositionRiskAlertNotice = ({
 }: {
   readonly actions: ReadonlyArray<BorrowPositionAction>;
   readonly alert: BorrowPositionRiskAlert;
-  /** Takes the user to repaying: the page selects Repay and its amount. */
+  /** Takes the user to repaying: the page chooses Repay and its amount. */
   readonly onRepay: (repay: BorrowPositionAction) => void;
 }) => {
   const { t } = useTranslation();

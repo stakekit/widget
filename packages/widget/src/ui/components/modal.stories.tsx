@@ -54,10 +54,37 @@ export const WithFooter: Story = {
   },
 };
 
-/** A bottom sheet below a 520px viewport. */
+/**
+ * A bottom sheet below a 520px viewport, with a grab handle over its header:
+ * dragged down far enough, or flicked, it closes; a shorter drag settles
+ * back.
+ */
 export const Sheet: Story = {
   ...WithFooter,
   globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Learn more" })
+    );
+    const sheet = await screen.findByRole("dialog");
+    const handle = sheet.firstElementChild;
+    if (handle === null) throw new Error("The sheet has no handle.");
+    await expect(handle).toHaveAttribute("aria-hidden", "true");
+    await expect(getComputedStyle(handle).display).toBe("flex");
+  },
+};
+
+/** A centered dialog has no grab handle and does not drag. */
+export const NoHandleOnDialog: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Learn more" })
+    );
+    const dialog = await screen.findByRole("dialog");
+    const handle = dialog.firstElementChild;
+    if (handle === null) throw new Error("The dialog has no first part.");
+    await expect(getComputedStyle(handle).display).toBe("none");
+  },
 };
 
 /**
@@ -275,7 +302,9 @@ export const LongList: Story = {
 
 /**
  * A long text with nothing to focus in it: the body takes focus itself, as a
- * region named by the title, so the keyboard can scroll it.
+ * region named by the title, so the keyboard can scroll it. It keeps its
+ * scrollbar's gutter whether or not it overflows, so content that grows
+ * never shifts when the scrollbar appears.
  */
 export const LongText: Story = {
   args: {
@@ -296,6 +325,7 @@ export const LongText: Story = {
       ).toBe(body)
     );
     await expect(body).toHaveAttribute("tabindex", "0");
+    await expect(getComputedStyle(body).scrollbarGutter).toBe("stable");
   },
 };
 

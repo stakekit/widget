@@ -12,6 +12,7 @@ export const ExitReviewPage = () => {
     <>
       <ReviewPage
         {...getPositionActionReviewProps(review)}
+        withdrawalFee={review.withdrawalFee}
         kyc={{
           gate: review.kycGate,
           isChecking: review.kycStatusIsChecking,

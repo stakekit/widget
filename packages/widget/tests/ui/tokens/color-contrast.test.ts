@@ -6,6 +6,7 @@ import {
   presetColorScheme,
   resolveColorRoles,
 } from "../../../src/ui/composition";
+import { focusRing, selectionRing } from "../../../src/ui/tokens/border.stylex";
 import {
   badgeTint,
   pressTint,
@@ -93,8 +94,10 @@ const pairs: ReadonlyArray<Pair> = [
   ...text("warning", [...surfaces, "warningSoft"]),
   ...text("danger", [...surfaces, "dangerSoft"]),
   ...text("info", [...surfaces, "infoSoft"]),
-  // A focus ring is drawn outside its control, over whichever surface holds it.
-  ...nonText("focusRing", surfaces),
+  // A focus ring is drawn outside its control, over whichever surface holds
+  // it; inside a full-width row, over the row's fill, a selected row's tint
+  // among them.
+  ...nonText("focusRing", [...surfaces, "accentSoft"]),
   // A waiting step's ring is its only mark, drawn in `textMuted` over
   // whichever surface holds the timeline. A step under way is marked by its
   // accent arc, held by the accent pairs below; its track is decorative.
@@ -467,4 +470,159 @@ describe("soft control contrast", () => {
       ).toBeGreaterThanOrEqual(textContrast);
     }
   );
+});
+
+// WCAG relative luminance does not tell hues apart, so `info` is held to its
+// own hue, apart from the accent's, wherever the accent is one the schemes
+// and presets ship: an informational notice or a pending position never
+// reads as a selected control or an accent card.
+const infoHueSeparation = 25;
+
+// The sRGB hue angle, in degrees, of an opaque color.
+const hue = ([red, green, blue]: Rgb) => {
+  const max = Math.max(red, green, blue);
+  const delta = max - Math.min(red, green, blue);
+  if (delta === 0) return 0;
+  const sector = (() => {
+    if (max === red) return ((green - blue) / delta + 6) % 6;
+    if (max === green) return (blue - red) / delta + 2;
+    return (red - green) / delta + 4;
+  })();
+  return sector * 60;
+};
+
+const hueDistance = (first: Rgb, second: Rgb) => {
+  const distance = Math.abs(hue(first) - hue(second));
+  return Math.min(distance, 360 - distance);
+};
+
+const shippedAccentThemes = themes.filter(
+  (theme) => theme.accent === "default accent"
+);
+const hostAccentThemes = themes.filter(
+  (theme) => theme.accent !== "default accent"
+);
+
+// A host info dark enough for text on light tints, and one light enough for
+// dark ones.
+const hostInfo = { light: "#0B5C8E", dark: "#8CCBF7" } as const;
+
+describe("info", () => {
+  it.each(shippedAccentThemes)(
+    "$colorScheme $preset: info's hue stands apart from the accent's",
+    ({ colorScheme, preset }) => {
+      const roles = resolveColorRoles(colorScheme, preset);
+
+      expect(
+        hueDistance(parseColor(roles.info), parseColor(roles.accent))
+      ).toBeGreaterThanOrEqual(infoHueSeparation);
+      expect(
+        hueDistance(parseColor(roles.infoSoft), parseColor(roles.accentSoft))
+      ).toBeGreaterThanOrEqual(infoHueSeparation);
+    }
+  );
+
+  it.each(hostAccentThemes)(
+    "$colorScheme $preset, $accent: a host accent leaves info as shipped",
+    ({ colorScheme, preset, hostColors }) => {
+      const shipped = resolveColorRoles(colorScheme, preset);
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+
+      expect(roles.info).toBe(shipped.info);
+      expect(roles.infoSoft).toBe(shipped.infoSoft);
+    }
+  );
+
+  it.each(shippedAccentThemes)(
+    "$colorScheme $preset: a host's info derives its soft tint",
+    ({ colorScheme, preset }) => {
+      const shipped = resolveColorRoles(colorScheme, preset);
+      const info = hostInfo[colorScheme];
+      const roles = resolveColorRoles(colorScheme, preset, { info });
+
+      expect(roles.infoSoft).not.toBe(shipped.infoSoft);
+      expect(
+        contrast(parseHex(info), parseColor(roles.infoSoft))
+      ).toBeGreaterThanOrEqual(textContrast);
+    }
+  );
+
+  // A pressable info card moves its tint toward the hover surface, under the
+  // same text.
+  it.each(themes)(
+    "$colorScheme $preset, $accent: info reads on its hovered tint",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const hovered = mix(
+        parseColor(roles.infoSoft),
+        50,
+        parseColor(roles.surfaceHover)
+      );
+
+      expect(contrast(parseColor(roles.info), hovered)).toBeGreaterThanOrEqual(
+        textContrast
+      );
+    }
+  );
+});
+
+// Hover is a pointer's only cue on a filled row or card, so `surfaceHover`
+// stands this far off the fill it replaces: `surface`, or `surfaceRaised`
+// where the Host Profile lifts cards off the canvas.
+const hoverSeparation = 1.12;
+
+describe("hover surface", () => {
+  it.each(themes)(
+    "$colorScheme $preset, $accent: hover stands off the fill it replaces",
+    ({ colorScheme, preset, hostColors }) => {
+      const roles = resolveColorRoles(colorScheme, preset, hostColors);
+      const fill = elevatedPresets.includes(preset)
+        ? roles.surfaceRaised
+        : roles.surface;
+
+      expect(
+        contrast(parseColor(roles.surfaceHover), parseColor(fill))
+      ).toBeGreaterThanOrEqual(hoverSeparation);
+    }
+  );
+});
+
+// Focus and selection can share a color (the default light accent is its
+// focus ring), so they differ by shape, measured from the control's edge:
+// focus is a ring outside the edge past a gap where the canvas shows, and
+// selection a ring inside the edge over a tint. Where a clipping or
+// scrolling container keeps focus inside the edge, it is two lines with a
+// gap between, where selection is one. A focused selected surface draws the
+// same two lines from the selection ring outward, so it keeps its selection
+// ring beside the focus ring.
+describe("focus ring apart from the selection ring", () => {
+  it("draws focus outside the edge past a gap, and selection inside it", () => {
+    const gap = Number.parseFloat(focusRing.offset);
+    const ring = Number.parseFloat(focusRing.width);
+
+    expect(gap).toBeGreaterThanOrEqual(ring);
+    expect(Number.parseFloat(focusRing.extent)).toBe(gap + ring);
+    expect(
+      Number.parseFloat(selectionRing.offset) +
+        Number.parseFloat(selectionRing.width)
+    ).toBeLessThanOrEqual(0);
+  });
+
+  it("draws focus inside the edge as two lines and a gap", () => {
+    const inset = Number.parseFloat(focusRing.insetWidth);
+
+    expect(focusRing.insetStyle).toBe("double");
+    expect(inset).toBe(3 * Number.parseFloat(focusRing.width));
+    expect(Number.parseFloat(focusRing.insetOffset)).toBe(-inset);
+  });
+
+  it("keeps a focused selection's ring inside the edge, with the focus ring outside it", () => {
+    expect(
+      Number.parseFloat(selectionRing.offset) +
+        Number.parseFloat(focusRing.insetWidth)
+    ).toBe(Number.parseFloat(focusRing.extent));
+    expect(Number.parseFloat(selectionRing.width)).toBe(
+      Number.parseFloat(focusRing.width)
+    );
+  });
 });

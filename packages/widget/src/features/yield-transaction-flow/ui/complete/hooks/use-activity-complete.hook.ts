@@ -50,7 +50,6 @@ export const useActivityCompleteView = <
   return {
     amount: formatTokenAmount(selectedAction.amount ?? 0, locale, "down"),
     network: inputToken?.symbol ?? "",
-    providerDetails: yieldSummary.providers,
     selectedAction,
     yieldType: yieldSummary.yieldType,
   };

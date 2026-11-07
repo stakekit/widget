@@ -2,8 +2,16 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
-import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
+import {
+  brokenImage,
+  darkLogo,
+  networkLogo,
+  providerLogo,
+  tokenLogo,
+  walletLogo,
+} from "../storybook/images";
 import { Avatar, IconAvatar, TokenAvatar } from "./avatar";
+import { Card } from "./card";
 
 const meta = {
   title: "Components/Avatar",
@@ -27,12 +35,15 @@ const sizes = [
 
 export const Image: Story = { args: { src: tokenLogo } };
 
-/** Without an image, or when it fails, the label's initial shows. */
+/**
+ * Without an image, or once it fails, the label's initials show on the
+ * gradient its name always gets.
+ */
 export const Fallback: Story = {
   args: { src: brokenImage },
   play: async ({ canvasElement }) => {
     const avatar = within(canvasElement).getByRole("img", { name: "Lido" });
-    await expect(avatar).toHaveTextContent("L");
+    await waitFor(() => expect(avatar).toHaveTextContent(/^L$/u));
   },
 };
 
@@ -40,8 +51,42 @@ export const FallbackDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
-export const FallbackText: Story = {
-  args: { label: "Ethereum", fallback: "ETH" },
+/**
+ * A whole name stands in as one or two initials, never clipped: the first
+ * letters of its first two words, past an address's `0x`, and one letter on
+ * the smallest avatar.
+ */
+export const FallbackInitials: Story = {
+  render: () => (
+    <Stack gap={8}>
+      {sizes.map((size) => (
+        <Stack key={size} direction="row" align="center" gap={8}>
+          <Avatar size={size} label="Lido" />
+          <Avatar size={size} label="Morpho Blue" />
+          <Avatar size={size} fallback="Dinari dShares" />
+          <Avatar size={size} fallback="Ethena USDe" shape="square" />
+          <Avatar size={size} fallback="0x9f8d3e2b7c1a4f6e5d0c" />
+        </Stack>
+      ))}
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getAllByRole("img", { name: "Morpho Blue" })[1]
+    ).toHaveTextContent(/^MB$/u);
+    await expect(
+      canvas.getAllByRole("img", { name: "Morpho Blue" })[0]
+    ).toHaveTextContent(/^M$/u);
+    await expect(canvasElement).toHaveTextContent(/DD/u);
+    await expect(canvasElement).toHaveTextContent(/EU/u);
+    await expect(canvasElement).toHaveTextContent(/9$/u);
+  },
+};
+
+export const FallbackInitialsDark: Story = {
+  ...FallbackInitials,
+  globals: { colorScheme: "dark" },
 };
 
 export const Sizes: Story = {
@@ -54,9 +99,70 @@ export const Sizes: Story = {
   ),
 };
 
+const logos = [
+  { label: "Ether", src: tokenLogo, shape: "round" },
+  { label: "Polygon", src: networkLogo, shape: "round" },
+  { label: "Lido", src: providerLogo, shape: "round" },
+  { label: "Dark mark", src: darkLogo, shape: "round" },
+  { label: "MetaMask", src: walletLogo, shape: "square" },
+] as const;
+
 /**
- * A token's logo with its network badge. The logo is fitted whole, never
- * cropped, and the badge sits inside the avatar's footprint at its bottom end.
+ * A loaded logo shows at its full bounds, on no fill and under no ring: a
+ * round one is not clipped, so a logo reaching its corners keeps them, and a
+ * wallet's or a validator's only has its corners rounded. On the canvas and
+ * on a card.
+ */
+export const Logos: Story = {
+  render: () => {
+    const row = (
+      <Stack direction="row" align="center" gap={8}>
+        {logos.map((logo) => (
+          <Avatar key={logo.label} {...logo} size="lg" />
+        ))}
+      </Stack>
+    );
+
+    return (
+      <Stack gap={12} align="start">
+        {row}
+        <Card padding={12}>{row}</Card>
+      </Stack>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const [round] = within(canvasElement).getAllByRole("img", {
+      name: "Ether",
+    });
+    const [square] = within(canvasElement).getAllByRole("img", {
+      name: "MetaMask",
+    });
+    if (round === undefined || square === undefined) {
+      throw new Error("Expected the logos");
+    }
+    for (const avatar of [round, square]) {
+      await waitFor(() => expect(avatar.querySelector("img")).not.toBeNull());
+      await expect(getComputedStyle(avatar).outlineStyle).toBe("none");
+      // No fill: the computed color's alpha is 0.
+      await expect(getComputedStyle(avatar).backgroundColor).toMatch(/, 0\)$/);
+    }
+    await expect(getComputedStyle(round).overflow).toBe("visible");
+    await expect(getComputedStyle(square).overflow).toBe("hidden");
+    await expect(
+      Number.parseFloat(getComputedStyle(square).borderTopLeftRadius)
+    ).toBeLessThan(square.getBoundingClientRect().width / 2);
+  },
+};
+
+export const LogosDark: Story = {
+  ...Logos,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * A token's logo with its network badge. The logo is fitted whole and never
+ * cut; the badge sits over its bottom end, inside the avatar's footprint,
+ * set off the logo by its own ring in the surface color.
  */
 export const Token: Story = {
   render: () => (
@@ -79,21 +185,28 @@ export const Token: Story = {
     for (const avatar of avatars) {
       const footprint = avatar.parentElement;
       const badge = footprint?.lastElementChild;
-      await expect(badge).not.toBe(avatar);
+      if (!(badge instanceof HTMLElement) || badge === avatar) {
+        throw new Error("Expected the network's badge");
+      }
 
       const box = avatar.getBoundingClientRect();
-      const badgeBox = badge?.getBoundingClientRect();
+      const badgeBox = badge.getBoundingClientRect();
       await expect(footprint?.getBoundingClientRect()).toMatchObject({
         width: box.width,
         height: box.height,
       });
-      await expect(badgeBox?.left).toBeGreaterThanOrEqual(box.left);
-      await expect(badgeBox?.top).toBeGreaterThanOrEqual(box.top);
-      await expect(badgeBox?.right).toBeLessThanOrEqual(box.right);
-      await expect(badgeBox?.bottom).toBeLessThanOrEqual(box.bottom);
+      await expect(badgeBox.left).toBeGreaterThanOrEqual(box.left);
+      await expect(badgeBox.top).toBeGreaterThanOrEqual(box.top);
+      await expect(badgeBox.right).toBeLessThanOrEqual(box.right);
+      await expect(badgeBox.bottom).toBeLessThanOrEqual(box.bottom);
       // About two fifths of the avatar: readable, yet the logo stays in view.
-      await expect(badgeBox?.width).toBeGreaterThanOrEqual(box.width * 0.35);
-      await expect(badgeBox?.width).toBeLessThanOrEqual(box.width * 0.45);
+      await expect(badgeBox.width).toBeGreaterThanOrEqual(box.width * 0.35);
+      await expect(badgeBox.width).toBeLessThanOrEqual(box.width * 0.45);
+      // The token's logo is not cut; the badge carries its own ring.
+      await expect(getComputedStyle(avatar).maskImage).toBe("none");
+      await expect(
+        Number.parseFloat(getComputedStyle(badge).borderTopWidth)
+      ).toBeGreaterThan(0);
 
       const logo = await waitFor(() => {
         const image = avatar.querySelector("img");
@@ -105,18 +218,117 @@ export const Token: Story = {
   },
 };
 
-/** An icon in an avatar's circle, decorative beside the text that names it. */
+export const TokenDark: Story = {
+  ...Token,
+  globals: { colorScheme: "dark" },
+};
+
+/** A network logo that fails leaves no badge, not an empty disc. */
+export const TokenNetworkFails: Story = {
+  render: () => (
+    <TokenAvatar src={tokenLogo} name="ETH" networkSrc={brokenImage} />
+  ),
+  play: async ({ canvasElement }) => {
+    const avatar = within(canvasElement).getByRole("img", { name: "ETH" });
+    await waitFor(() =>
+      expect(avatar.parentElement?.childElementCount).toBe(1)
+    );
+    await waitFor(() => expect(avatar.querySelector("img")).not.toBeNull());
+  },
+};
+
+/** On a card, the badge's ring matches the card's surface. */
+export const TokenOnCard: Story = {
+  render: () => (
+    <Card padding={12}>
+      <Stack direction="row" align="center" gap={8}>
+        <TokenAvatar src={tokenLogo} name="ETH" networkSrc={networkLogo} />
+        <TokenAvatar
+          src={darkLogo}
+          name="Dark"
+          networkSrc={networkLogo}
+          size="lg"
+        />
+        <TokenAvatar name="Morpho Blue" networkSrc={networkLogo} size="lg" />
+      </Stack>
+    </Card>
+  ),
+};
+
+export const TokenOnCardDark: Story = {
+  ...TokenOnCard,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * `badgeIcon` draws an icon as the badge in place of the network's, such as
+ * an activity's direction, on a raised disc in the text color.
+ */
+export const TokenBadgeIcon: Story = {
+  render: () => (
+    <Stack gap={8}>
+      {(["md", "lg", "xl"] as const).map((size) => (
+        <Stack key={size} direction="row" align="center" gap={8}>
+          <TokenAvatar
+            size={size}
+            src={tokenLogo}
+            name="ETH"
+            networkSrc={networkLogo}
+            badgeIcon="ArrowUpIcon"
+          />
+          <TokenAvatar
+            size={size}
+            src={tokenLogo}
+            name="ETH"
+            badgeIcon="ArrowDownIcon"
+          />
+          <TokenAvatar
+            size={size}
+            src={tokenLogo}
+            name="ETH"
+            badgeIcon="GiftIcon"
+          />
+          <TokenAvatar
+            size={size}
+            src={tokenLogo}
+            name="ETH"
+            badgeIcon="MinusIcon"
+          />
+        </Stack>
+      ))}
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    const [avatar] = within(canvasElement).getAllByRole("img", {
+      name: "ETH",
+    });
+    const token = avatar?.parentElement;
+    if (token === null || token === undefined) {
+      throw new Error("Expected the avatar's wrapper");
+    }
+    // The icon gives the network's badge no room: one image, the token's.
+    await waitFor(() => expect(token.querySelectorAll("img")).toHaveLength(1));
+    await expect(token.querySelector("svg")).not.toBeNull();
+  },
+};
+
+export const TokenBadgeIconDark: Story = {
+  ...TokenBadgeIcon,
+  globals: { colorScheme: "dark" },
+};
+
+/** An icon in an avatar's disc, decorative beside the text that names it. */
 export const IconInAvatar: Story = {
   render: () => (
     <Stack direction="row" align="center" gap={8}>
       <IconAvatar>
-        <Icon name="ArrowIcon" direction="up" />
+        <Icon name="ArrowUpIcon" />
       </IconAvatar>
       <IconAvatar>
         <Icon name="GiftIcon" />
       </IconAvatar>
       <IconAvatar size="lg">
-        <Icon name="MinusIcon" size="lg" />
+        <Icon name="WalletIcon" size="lg" />
       </IconAvatar>
     </Stack>
   ),
@@ -133,15 +345,9 @@ export const IconInAvatarDark: Story = {
 export const TokenFallback: Story = {
   render: () => <TokenAvatar src={brokenImage} name="USDC" />,
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByRole("img", { name: "USDC" })
-    ).toHaveTextContent("U");
+    const avatar = within(canvasElement).getByRole("img", { name: "USDC" });
+    await waitFor(() => expect(avatar).toHaveTextContent(/^U$/u));
   },
-};
-
-export const TokenDark: Story = {
-  ...Token,
-  globals: { colorScheme: "dark" },
 };
 
 /**
@@ -193,7 +399,7 @@ export const TokenDecorative: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole("img")).toBeNull();
-    await expect(canvasElement).toHaveTextContent("UUSDC");
+    await waitFor(() => expect(canvasElement).toHaveTextContent("UUSDC"));
   },
 };
 

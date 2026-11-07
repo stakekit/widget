@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { TransactionWorkflowId } from "../../../src/domain/identity/identifiers";
-import { describeTransactionFailure } from "../../../src/features/transaction-steps/views";
+import {
+  describeTransactionFailure,
+  getTransactionStepState,
+} from "../../../src/features/transaction-steps/views";
 import {
   makeTransactionSignError,
   TransactionAdvanceError,
@@ -63,10 +66,11 @@ describe("Transaction failure copy", () => {
         operation: "transaction",
       }),
     ],
-  ])("asks to try again after %s", (_, error) => {
+  ])("reads %s as cancelled, not failed", (_, error) => {
     expect(describeTransactionFailure(t, error)).toEqual({
+      cancelled: true,
       detail: null,
-      message: "The transaction was rejected in your wallet. Try again.",
+      message: "Nothing was sent. Try again when you're ready.",
     });
   });
 
@@ -84,6 +88,7 @@ describe("Transaction failure copy", () => {
     });
 
     expect(describeTransactionFailure(t, error)).toEqual({
+      cancelled: false,
       detail: "Playground: scripted wallet failure",
       message: "Your wallet couldn't complete the request. Try again.",
     });
@@ -105,7 +110,7 @@ describe("Transaction failure copy", () => {
         t,
         signError({ _tag: "WalletUnavailable", detail })
       )
-    ).toEqual({ detail: null, message });
+    ).toEqual({ cancelled: false, detail: null, message });
   });
 
   it("names an on-chain failure with its short reason", () => {
@@ -118,6 +123,7 @@ describe("Transaction failure copy", () => {
         )
       )
     ).toEqual({
+      cancelled: false,
       detail: null,
       message: "The transaction failed on chain: insufficient allowance.",
     });
@@ -132,6 +138,7 @@ describe("Transaction failure copy", () => {
         confirmationError("Failed", `execution reverted: ${reason}`)
       )
     ).toEqual({
+      cancelled: false,
       detail: reason,
       message: "The transaction failed. Try again.",
     });
@@ -157,8 +164,66 @@ describe("Transaction failure copy", () => {
     ],
   ])("never shows the internal message: %#", (error, message) => {
     expect(describeTransactionFailure(t, error)).toEqual({
+      cancelled: false,
       detail: null,
       message,
+    });
+  });
+});
+
+describe("Transaction step state", () => {
+  type Phase = "idle" | "active" | "done" | "failed";
+  const phases = (
+    sign: Phase,
+    broadcast: Phase = "idle",
+    confirm: Phase = "idle"
+  ) => ({ broadcast, confirm, sign });
+  const state = (
+    input: Partial<Parameters<typeof getTransactionStepState>[1]>
+  ) =>
+    getTransactionStepState(t, {
+      done: false,
+      failure: null,
+      phases: phases("idle"),
+      slow: false,
+      ...input,
+    });
+
+  it("shows a request declined in the wallet as cancelled, not failed", () => {
+    expect(
+      state({
+        failure: { cancelled: true, message: "Nothing was sent." },
+        phases: phases("failed"),
+      })
+    ).toEqual({ message: "Nothing was sent.", state: "cancelled" });
+  });
+
+  it("keeps the failed state for a real failure", () => {
+    expect(
+      state({
+        failure: { cancelled: false, message: "The transaction failed." },
+        phases: phases("done", "done", "failed"),
+      })
+    ).toEqual({ message: "The transaction failed.", state: "failed" });
+  });
+
+  it.each([
+    ["being sent", phases("done", "active"), "broadcasting"],
+    ["confirming", phases("done", "done", "active"), "active"],
+  ] as const)(
+    "says a step %s for long takes longer than usual",
+    (_, progress, expected) => {
+      expect(state({ phases: progress })).toEqual({ state: expected });
+      expect(state({ phases: progress, slow: true })).toEqual({
+        message: "Taking longer than usual. It's still on its way.",
+        state: expected,
+      });
+    }
+  );
+
+  it("never calls a signature the user has yet to give slow", () => {
+    expect(state({ phases: phases("active"), slow: true })).toEqual({
+      state: "signing",
     });
   });
 });

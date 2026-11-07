@@ -27,9 +27,11 @@ const markMotion = async () => {
   );
   const mark = screen.getByTestId("complete-mark").element();
   const check = mark.querySelector("svg")?.parentElement;
+  const beat = screen.getByTestId("complete-mark-beat").element();
   const durations = {
     entrance: getComputedStyle(mark).animationDuration,
     draw: check ? getComputedStyle(check).animationDuration : "",
+    beat: getComputedStyle(beat).animationDuration,
   };
 
   await screen.unmount();
@@ -41,7 +43,7 @@ describe("CompleteSummary under reduced motion", () => {
     await emulateReducedMotion("");
   });
 
-  it("shows its mark and check at once", async () => {
+  it("shows its mark and check at once, without the success beat", async () => {
     const animated = await markMotion();
     await emulateReducedMotion("reduce");
     const reduced = await markMotion();
@@ -49,6 +51,7 @@ describe("CompleteSummary under reduced motion", () => {
     expect(animated.entrance).not.toBe("0s");
     expect(animated.draw).not.toBe("0s");
     expect(animated.draw).not.toBe("");
-    expect(reduced).toEqual({ entrance: "0s", draw: "0s" });
+    expect(animated.beat).not.toBe("0s");
+    expect(reduced).toEqual({ entrance: "0s", draw: "0s", beat: "0s" });
   });
 });

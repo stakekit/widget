@@ -1,4 +1,4 @@
-import { DateTime, Duration } from "effect";
+import { DateTime } from "effect";
 import {
   ActionStatus,
   type ActionType,
@@ -16,8 +16,8 @@ import { getExitAmountToken } from "../../../domain/earn/denomination";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
+import { borrowTokenToAppToken } from "../../../shared/lib/borrow-token";
 import {
-  type ActivityRelativeTime,
   formatDateTime,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
@@ -31,6 +31,7 @@ import type {
   BorrowActivityItem,
   YieldActivityItem,
 } from "./activity-action";
+import { getActivityDayKey } from "./activity-days";
 
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
@@ -94,10 +95,15 @@ export type ActivityPresentationTime = {
   readonly timeZone: DateTime.TimeZone;
 };
 
-/** How long ago an action was created within a week, its date after that. */
+/**
+ * When a row's action happened, under the header of the day it was created:
+ * how long ago within a day, its time of day after that, with its date too
+ * when that falls on another day.
+ */
 type ActivityListTime =
-  | ActivityRelativeTime
-  | { readonly unit: "date"; readonly label: string };
+  | { readonly unit: "now" }
+  | { readonly unit: "minutes" | "hours"; readonly value: number }
+  | { readonly unit: "clock"; readonly label: string };
 
 type ActivityActionListItemProjection = {
   readonly amount: string | null;
@@ -106,9 +112,19 @@ type ActivityActionListItemProjection = {
   readonly direction: ActivityDirection;
   readonly isPositive: boolean;
   readonly statusLabel: ActivityStatusLabel | null;
-  /** When the action was created; the receipt gives its full date and time. */
+  /**
+   * It ended without taking effect (failed or canceled): its amount never
+   * moved, and its time is when it ended.
+   */
+  readonly voided: boolean;
+  /**
+   * When the action was created, or when it ended if voided; the receipt
+   * gives its full dates and times.
+   */
   readonly time: ActivityListTime | null;
   readonly title: ActivityActionTitle;
+  /** The token the action names, whose logo leads its row and receipt. */
+  readonly token: Token | null;
   /** The symbol of the token the amount is in. */
   readonly amountTokenSymbol: string | null;
   /** The amount in USD, which a row shows when its token is unknown. */
@@ -117,33 +133,77 @@ type ActivityActionListItemProjection = {
   readonly amountText: string | null;
 };
 
-const RELATIVE_TIME_WINDOW = Duration.days(7);
-
-const projectActivityListTime = (
-  createdAt: DateTime.Utc,
-  locale: string,
-  presentationTime: ActivityPresentationTime | null
-): ActivityListTime | null => {
+const projectActivityListTime = ({
+  at,
+  createdAt,
+  locale,
+  presentationTime,
+}: {
+  readonly at: DateTime.Utc;
+  readonly createdAt: DateTime.Utc;
+  readonly locale: string;
+  readonly presentationTime: ActivityPresentationTime | null;
+}): ActivityListTime | null => {
   if (!presentationTime) return null;
-  if (
-    Duration.isLessThan(
-      DateTime.distance(createdAt, presentationTime.now),
-      RELATIVE_TIME_WINDOW
-    )
-  ) {
-    return getActivityRelativeTime(createdAt, presentationTime.now);
+  const { now, timeZone } = presentationTime;
+  const relative = getActivityRelativeTime(at, now);
+  switch (relative.unit) {
+    case "now":
+      return relative;
+    case "minutes":
+    case "hours":
+      return { unit: relative.unit, value: relative.value };
+    case "days": {
+      const onCreationDay =
+        getActivityDayKey(at, timeZone) ===
+        getActivityDayKey(createdAt, timeZone);
+      return {
+        unit: "clock",
+        label: formatDateTime(at, {
+          locale,
+          timeZone,
+          hour: "numeric",
+          minute: "2-digit",
+          ...(onCreationDay ? {} : { day: "numeric", month: "short" }),
+        }),
+      };
+    }
   }
+};
 
-  return {
-    unit: "date",
-    label: formatDateTime(createdAt, {
-      locale,
-      timeZone: presentationTime.timeZone,
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }),
-  };
+/**
+ * Whether an outcome took no effect, so its amount never moved. An expired
+ * action is not: it stopped waiting for its next transaction after earlier
+ * ones confirmed.
+ */
+const VOIDED_STATUS: Record<ActivityStatusLabel, boolean> = {
+  awaiting_settlement: false,
+  canceled: true,
+  completed: false,
+  created: false,
+  expired: false,
+  failed: true,
+  in_progress: false,
+  processing: false,
+  stale: false,
+};
+
+/**
+ * When a voided Yield action ended: its batch's cancellation, its completion,
+ * else when its last transaction was sent, else its creation. Transactions
+ * are created with the action, so only a send dates its end.
+ */
+const resolveYieldEndedAt = (
+  action: YieldActivityItem["actionData"],
+  settlement: ConfidentialSettlement | null
+): DateTime.Utc => {
+  if (settlement?._tag === "Cancelled") return settlement.at;
+  if (action.completedAt) return action.completedAt;
+  return action.transactions.reduce(
+    (latest, { broadcastedAt }) =>
+      broadcastedAt ? DateTime.max(latest, broadcastedAt) : latest,
+    action.createdAt
+  );
 };
 
 const getActivityDirection = (type: ActionType): ActivityDirection => {
@@ -274,7 +334,7 @@ const getReadableRawTokenSymbol = (
  * token; an exit's amount is in the Exit Unit and its title names the Exit
  * Receive Token; any other action pays the Value Token.
  */
-export const resolveActivityActionTokens = (
+const resolveActivityActionTokens = (
   yieldData: EarnYieldWithProvider,
   action: YieldActivityItem["actionData"]
 ): Readonly<{ readonly amountToken: Token; readonly titleToken: Token }> => {
@@ -300,7 +360,12 @@ export const resolveActivityActionTokens = (
   }
 };
 
-const resolveTokenSymbols = ({
+/**
+ * The symbols a row shows and the token its logo shows. A yield the API no
+ * longer lists leaves only the raw token its arguments name: a symbol, with
+ * no logo.
+ */
+const resolveListTokens = ({
   action,
   direction,
 }: {
@@ -308,6 +373,7 @@ const resolveTokenSymbols = ({
   readonly direction: ActivityDirection;
 }): Readonly<{
   readonly amountTokenSymbol: string | null;
+  readonly titleToken: Token | null;
   readonly titleTokenSymbol: string | null;
 }> => {
   const yieldData = action.yieldData;
@@ -320,7 +386,11 @@ const resolveTokenSymbols = ({
         : (inputToken ?? outputToken);
     const symbol = getReadableRawTokenSymbol(preferredToken);
 
-    return { amountTokenSymbol: symbol, titleTokenSymbol: symbol };
+    return {
+      amountTokenSymbol: symbol,
+      titleToken: null,
+      titleTokenSymbol: symbol,
+    };
   }
 
   const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
@@ -332,6 +402,7 @@ const resolveTokenSymbols = ({
   return {
     amountTokenSymbol:
       getReadableRawTokenSymbol(amountToken.symbol) ?? yieldTokenSymbol,
+    titleToken,
     titleTokenSymbol:
       getReadableRawTokenSymbol(titleToken.symbol) ?? yieldTokenSymbol,
   };
@@ -456,6 +527,7 @@ const projectBorrowActivityListItem = ({
   const amountFiat = null;
 
   const statusLabel = BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status];
+  const voided = VOIDED_STATUS[statusLabel];
 
   return {
     amount,
@@ -463,11 +535,14 @@ const projectBorrowActivityListItem = ({
     direction,
     isPositive: direction === "deposit",
     statusLabel,
-    time: projectActivityListTime(
-      borrowAction.createdAt,
+    voided,
+    // A Borrow action records only when it was created.
+    time: projectActivityListTime({
+      at: borrowAction.createdAt,
+      createdAt: borrowAction.createdAt,
       locale,
-      presentationTime
-    ),
+      presentationTime,
+    }),
     title: {
       _tag: "borrow",
       action: borrowAction.action,
@@ -477,6 +552,9 @@ const projectBorrowActivityListItem = ({
         statusLabel === "in_progress",
       tokenSymbol,
     },
+    token: action.token
+      ? borrowTokenToAppToken({ network: action.network, token: action.token })
+      : null,
     amountTokenSymbol: tokenSymbol,
     amountFiat,
     amountText: resolveAmountText({
@@ -506,10 +584,12 @@ export const projectActivityActionListItem = ({
     ? getConfidentialActionKind(action.yieldData, action.actionData)
     : null;
   const settlement = getActivitySettlement(action);
-  const { amountTokenSymbol, titleTokenSymbol } = resolveTokenSymbols({
-    action,
-    direction,
-  });
+  const { amountTokenSymbol, titleToken, titleTokenSymbol } = resolveListTokens(
+    {
+      action,
+      direction,
+    }
+  );
   const amount =
     action.actionData.amount == null
       ? null
@@ -522,21 +602,29 @@ export const projectActivityActionListItem = ({
     direction,
   });
 
+  const statusLabel = projectActivityStatusLabel(
+    action.actionData,
+    settlement,
+    presentationTime
+  );
+  const voided = statusLabel !== null && VOIDED_STATUS[statusLabel];
+  const { createdAt } = action.actionData;
+
   return {
     amount,
     amountSign,
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
-    statusLabel: projectActivityStatusLabel(
-      action.actionData,
-      settlement,
-      presentationTime
-    ),
-    time: projectActivityListTime(
-      action.actionData.createdAt,
+    statusLabel,
+    voided,
+    time: projectActivityListTime({
+      at: voided
+        ? resolveYieldEndedAt(action.actionData, settlement)
+        : createdAt,
+      createdAt,
       locale,
-      presentationTime
-    ),
+      presentationTime,
+    }),
     title: resolveTitle({
       action,
       confidentialKind,
@@ -544,6 +632,7 @@ export const projectActivityActionListItem = ({
       settlement,
       tokenSymbol: titleTokenSymbol,
     }),
+    token: titleToken,
     amountTokenSymbol,
     amountFiat,
     amountText: resolveAmountText({

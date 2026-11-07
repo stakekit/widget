@@ -20,6 +20,7 @@ export type DetailRowMeter = {
 // A meter takes the row's tone; an untoned row's meter is accent.
 const meterTone = {
   default: "accent",
+  success: "success",
   warning: "warning",
   danger: "danger",
 } as const;
@@ -61,8 +62,11 @@ export const DetailRow = ({
   readonly copyable?: Copyable;
   /** Context under the value, such as its fiat equivalent. */
   readonly caption?: string;
-  /** The value's text tone, such as `danger` for a value at risk. */
-  readonly tone?: "default" | "warning" | "danger";
+  /**
+   * The value's text tone, such as `danger` for a value at risk or
+   * `success` for an amount the user can claim.
+   */
+  readonly tone?: "default" | "success" | "warning" | "danger";
   readonly meter?: DetailRowMeter;
   /** Renders as the row's `data-testid`. */
   readonly testId?: string;

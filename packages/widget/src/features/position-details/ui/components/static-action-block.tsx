@@ -11,6 +11,7 @@ import type {
 } from "../../../../domain/earn/models";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
+import { isPayoutPendingAction } from "../../../../domain/portfolio/position-callout";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
@@ -26,6 +27,8 @@ type StaticActionBlockProps = {
     typeof usePositionDetails
   >["onPendingActionClick"];
   integration: EarnYieldWithProvider;
+  /** The page leads with this action: see `getLeadingPendingAction`. */
+  primary: boolean;
 };
 
 export const StaticActionBlock = ({
@@ -33,6 +36,7 @@ export const StaticActionBlock = ({
   yieldBalance,
   onPendingActionClick,
   integration,
+  primary,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -43,12 +47,19 @@ export const StaticActionBlock = ({
     { confidential: isConfidentialYield(integration) }
   );
   const cancelReturn = getPendingActionReturn(pendingAction.type, yieldBalance);
+  // An amount paid out to the user is a gain, in the success tone.
+  const figure = isPayoutPendingAction(pendingAction.type) ? (
+    <Text as="strong" weight="semibold" tone="success" />
+  ) : (
+    <Text.Strong />
+  );
 
   return (
     <ActionCard
+      primary={primary}
       title={
         <Trans
-          i18nKey="position_details.available_to"
+          i18nKey="position_details.action_title"
           context={labelContext}
           values={{
             amount: yieldBalance.isEncrypted
@@ -66,7 +77,7 @@ export const StaticActionBlock = ({
               defaultValue: humanizePendingActionType(pendingAction.type),
             }),
           }}
-          components={{ bold: <Text.Strong /> }}
+          components={{ bold: figure }}
         />
       }
       {...(cancelReturn

@@ -1,28 +1,37 @@
 import { useTranslation } from "react-i18next";
 import {
-  formatRewardRatePercent,
+  formatUsd,
   getRoundedPercentParts,
+  unavailableFigure,
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   AnimatedNumber,
   Box,
   Card,
-  Skeleton,
   Stack,
   Text,
 } from "../../../../../ui/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
+import {
+  getEstimatedRewardsUsd,
+  getYieldFigures,
+} from "../../../../yield-summary/index";
 import { YieldRiskRatingSummary } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
   useEarnYieldSelection,
 } from "../../../react/use-earn-facades";
+import { EarnCardSkeleton } from "../earn-form-skeleton";
 import { SelectYield } from "./select-yield";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";
 import { getYieldPercent } from "./yield-percent";
 
-/** The Earn form's yield: its reward rate, the yield selection and its rewards. */
+/**
+ * The Earn form's yield: its reward rate under the amount, in the title's
+ * size with what the amount would earn a year in USD, the yield selection
+ * and its rewards.
+ */
 export const SelectYieldSection = ({
   alwaysShowStrategy,
   showRiskSummary,
@@ -41,7 +50,7 @@ export const SelectYieldSection = ({
   } = useWidgetConfig("hostProfile");
 
   if (entry.appLoading || yieldSelection.isLoading) {
-    return <Skeleton shape="rect" height="panel" />;
+    return <EarnCardSkeleton />;
   }
 
   if (yieldSelection.all.length === 0) {
@@ -52,20 +61,38 @@ export const SelectYieldSection = ({
     );
   }
 
-  const percent = getYieldPercent(entry.estimatedRewards);
+  // The rate and its type both come from the yield's one figures model, so
+  // the form reads as the yield's list row, picker row and details do.
+  const rate = entry.selectedStake
+    ? getYieldFigures({
+        yieldDto: entry.selectedStake,
+        selectedValidators: entry.selectedValidators,
+        locale,
+        t,
+      }).rate
+    : null;
   const getPercentText = () => {
-    if (percent === null) return null;
-    if (percent._tag === "Static") {
-      return formatRewardRatePercent(percent.rate, locale);
-    }
+    if (!entry.selectedStake) return null;
+    if (!rate) return unavailableFigure;
+    const percent = getYieldPercent({
+      rate,
+      rateType: entry.selectedStake.rewardRate.rateType,
+    });
+    if (percent._tag === "Static") return percent.text;
     return (
       <AnimatedNumber
         value={percent.ratio}
-        {...getRoundedPercentParts(percent.ratio, locale)}
-        initial={0}
+        {...getRoundedPercentParts(locale)}
       />
     );
   };
+  const rateLabel = rate?.label ?? null;
+  const rewardsUsd = entry.amountEntered
+    ? getEstimatedRewardsUsd({
+        amountUsd: entry.priceUsd,
+        estimatedRewards: entry.estimatedRewards,
+      })
+    : null;
 
   const title = (
     <Text
@@ -86,11 +113,34 @@ export const SelectYieldSection = ({
           <Stack gap={6}>
             {yieldTitle === "inside" && title}
             <Stack direction="row" align="center" justify="between" gap={8}>
-              <Box testId="estimated-reward__percent">
-                <Text variant="display" as="p" numeric>
-                  {getPercentText()}
-                </Text>
-              </Box>
+              <Stack gap={2}>
+                <Stack direction="row" align="baseline" gap={6} wrap>
+                  <Box testId="estimated-reward__percent">
+                    <Text variant="title" as="p" numeric>
+                      {getPercentText()}
+                    </Text>
+                  </Box>
+                  {rateLabel && (
+                    <Text variant="caption" tone="muted">
+                      {rateLabel}
+                    </Text>
+                  )}
+                </Stack>
+                {/* Held until known, so typing never grows the card. */}
+                <Box testId="estimated-reward__usd-yearly">
+                  <Text
+                    variant="caption"
+                    tone={rewardsUsd ? "success" : "muted"}
+                    numeric
+                  >
+                    {rewardsUsd
+                      ? t("details.rewards.usd_per_year", {
+                          amount: formatUsd(rewardsUsd.yearly, locale),
+                        })
+                      : t("details.rewards.usd_per_year_unknown")}
+                  </Text>
+                </Box>
+              </Stack>
 
               <SelectYield />
             </Stack>

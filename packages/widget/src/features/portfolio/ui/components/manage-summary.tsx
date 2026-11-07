@@ -1,12 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { Box, Card, MetricGroup, Stack, Text } from "../../../../ui/index";
+import { Card, Stack, Text } from "../../../../ui/index";
 import { useSummary } from "../../react/use-summary";
 import { SummaryMetric } from "./summary-metric";
 
 /**
  * Manage's summary over its positions, the same figures in every Layout and
- * state: total value, average APY and claimable rewards, and with borrow
- * positions their debt and the net worth left.
+ * state, in one compact row: the total value leads, then average APY and
+ * claimable rewards, and with borrow positions their debt and the net worth
+ * left.
  */
 export const ManageSummary = () => {
   const { t } = useTranslation();
@@ -14,16 +15,19 @@ export const ManageSummary = () => {
 
   return (
     <Stack gap={8}>
-      {/* A short band of figures: less padding above and below than beside. */}
-      <Card padding={0} testId="positions__summary">
-        <Box paddingBlock={12} paddingInline={16}>
-          <MetricGroup>
-            <SummaryMetric
-              kind="usd"
-              label={t("dashboard.overview.summary.total_value")}
-              figure={summary.totalValue}
-              isPartial={summary.isPartial}
-            />
+      <Card padding={12} testId="positions__summary">
+        {/* One row: the total leads, its smaller metrics beside it, each as
+            wide as its label; a row too narrow for both wraps the metrics
+            under the total. */}
+        <Stack direction="row" wrap align="center" justify="between" gap={16}>
+          <SummaryMetric
+            kind="usd"
+            size="lead"
+            label={t("dashboard.overview.summary.total_value")}
+            figure={summary.totalValue}
+            isPartial={summary.isPartial}
+          />
+          <Stack direction="row" wrap gap={24}>
             <SummaryMetric
               kind="percent"
               label={t("dashboard.overview.summary.average_apy")}
@@ -52,8 +56,8 @@ export const ManageSummary = () => {
                 />
               </>
             ) : null}
-          </MetricGroup>
-        </Box>
+          </Stack>
+        </Stack>
       </Card>
       {summary.excludesHidden ? (
         <Text variant="caption" tone="muted">

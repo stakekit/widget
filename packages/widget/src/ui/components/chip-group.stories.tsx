@@ -75,6 +75,18 @@ export const WithCountsDark: Story = {
 };
 
 /**
+ * A coarse pointer reaches each chip from a little around it too; a fine
+ * pointer's target is the drawn chip.
+ */
+export const HitArea: Story = {
+  play: async ({ canvasElement }) => {
+    const chip = within(canvasElement).getByRole("button", { name: "Stake" });
+    await expect(getComputedStyle(chip).position).toBe("relative");
+    await expect(getComputedStyle(chip, "::before").content).toBe("none");
+  },
+};
+
+/**
  * Arrows move between chips, skipping a disabled one; Enter and Space toggle
  * the focused chip. An on chip is pressed, and several can be on.
  */

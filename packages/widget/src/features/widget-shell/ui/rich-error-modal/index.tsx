@@ -7,12 +7,14 @@ import { useRichErrors } from "../../react/use-rich-errors";
 /**
  * The rich error dialog, for a failure no page section shows on its own: the
  * error's Error Copy (title, details and a potential solution), or, for an
- * error without copy, "Something went wrong" and what to do next. It always
- * ends with a way to close it.
+ * error without copy, "Something went wrong" and what to do next. Its body
+ * lines up with its title at the dialog's start edge. It ends with "Try
+ * again" when the failed work can run again, and always with a way to close
+ * it.
  */
 export const RichErrorModal = () => {
   const { i18n, t } = useTranslation();
-  const { error, resetError } = useRichErrors();
+  const { error, resetError, retry } = useRichErrors();
   const { message, details } = error ?? {};
   const knownMessage =
     message &&
@@ -36,36 +38,39 @@ export const RichErrorModal = () => {
       }
       closeLabel={t("shared.close")}
       footer={
-        <Button variant="secondary" size="cta" onClick={resetError}>
-          {t("error_modal.dismiss")}
-        </Button>
+        <Stack gap={8}>
+          {retry !== null && (
+            <Button variant="primary" size="cta" onClick={retry}>
+              {t("shared.retry")}
+            </Button>
+          )}
+          <Button variant="secondary" size="cta" onClick={resetError}>
+            {t("error_modal.dismiss")}
+          </Button>
+        </Stack>
       }
     >
-      <Stack align="center" gap={16}>
-        <Spot icon="WarningIcon" tone="danger" size="lg" />
-        {knownMessage ? (
-          <>
-            <Text as="p" tone="muted" align="center">
-              {t(
+      <Stack gap={16}>
+        <Spot icon="WarningIcon" tone="danger" size="md" />
+        <Text as="p" tone="muted">
+          {knownMessage
+            ? t(
                 `errors.${knownMessage}.details`,
                 richErrorInterpolationValues(details)
-              )}
-            </Text>
-            <Stack gap={8} align="stretch">
-              <Text variant="heading" as="h3" align="center">
+              )
+            : t("error_modal.generic_description")}
+        </Text>
+        {knownMessage && (
+          <Card>
+            <Stack gap={4}>
+              <Text variant="heading" as="h3">
                 {t("error_modal.solution")}
               </Text>
-              <Card>
-                <Text as="p" align="center">
-                  {t(`errors.${knownMessage}.solution`)}
-                </Text>
-              </Card>
+              <Text as="p" tone="muted">
+                {t(`errors.${knownMessage}.solution`)}
+              </Text>
             </Stack>
-          </>
-        ) : (
-          <Text as="p" tone="muted" align="center">
-            {t("error_modal.generic_description")}
-          </Text>
+          </Card>
         )}
       </Stack>
     </Modal>

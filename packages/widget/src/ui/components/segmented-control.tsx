@@ -17,6 +17,7 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 import { focusRingStyles } from "./focus-ring";
+import { hitAreaStyles } from "./hit-area";
 
 /** One choice in a `SegmentedControl` or `ChipGroup`. */
 export type ToggleOption<T extends string = string> = {
@@ -37,7 +38,8 @@ type SegmentedControlProps<T extends string> = {
 /**
  * One choice out of a few, side by side, such as a chart period. Arrow keys
  * move between segments and Enter or Space chooses one; the chosen segment is
- * pressed. One segment is always chosen.
+ * pressed. One segment is always chosen. Under a coarse pointer each
+ * segment's hit area grows to a finger's without changing how it looks.
  */
 export const SegmentedControl = <const T extends string>({
   options,
@@ -63,6 +65,7 @@ export const SegmentedControl = <const T extends string>({
         disabled={option.disabled}
         {...stylex.props(
           styles.segment,
+          hitAreaStyles.coarse,
           option.value === value && styles.chosen,
           focusRingStyles.visible
         )}

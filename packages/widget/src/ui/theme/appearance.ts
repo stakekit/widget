@@ -76,9 +76,10 @@ const deriveAccentHover = (
 
 /**
  * Derives the roles a host did not set from the ones it did: the accent's
- * hover, tint, text, focus ring and the informational roles, and each status
- * role's tint. A role is derived only when its base is host-supplied, so the
- * scheme's tuned defaults stay otherwise. `base` is the resolved scheme and
+ * hover, tint, text and focus ring, and each status role's tint, `info`'s
+ * among them. A role is derived only when its base is host-supplied, so the
+ * scheme's tuned defaults stay otherwise: `info` is a hue of its own, so a
+ * host accent leaves it as shipped. `base` is the resolved scheme and
  * preset, which supplies any role the derivation mixes with. A host accent
  * replaces a preset's, so the preset's `onAccent`, tuned to its own accent,
  * gives way to whichever of the scheme's `onAccent` and the light scheme's
@@ -138,11 +139,9 @@ const deriveColorRoles = (
       focusRing: lightFocusRingReads
         ? accent
         : mix(accent, focusRingWeight, role("text")),
-      info: accentText,
-      infoSoft: accentSoft,
     };
   };
-  const statusTint = (status: "success" | "warning" | "danger") =>
+  const statusTint = (status: "success" | "warning" | "danger" | "info") =>
     host[status] === undefined ? {} : { [`${status}Soft`]: tint(status) };
 
   return {
@@ -150,6 +149,7 @@ const deriveColorRoles = (
     ...statusTint("success"),
     ...statusTint("warning"),
     ...statusTint("danger"),
+    ...statusTint("info"),
     ...host,
   };
 };
@@ -188,7 +188,8 @@ const groupProperties = <Key extends string>(
  * them inline, over the scheme and preset themes. When a preset fixes a
  * scheme other than the one requested, the requested scheme's colors apply
  * under the presented scheme's, so a host's colors (and a legacy theme's,
- * mapped to the scheme it was inferred as) survive the preset.
+ * mapped to the scheme it was inferred as) survive the preset. A host's
+ * `sans` font sets figures too, over a preset's figure font.
  */
 export const appearanceProperties = (
   schemes: Readonly<{ requested: ColorScheme; presented: ColorScheme }>,
@@ -205,6 +206,11 @@ export const appearanceProperties = (
     ),
     ...groupProperties(radius, appearance.radius),
     ...groupProperties(controlHeight, appearance.controlHeight),
-    ...groupProperties(font, appearance.font),
+    ...groupProperties(font, {
+      ...(appearance.font?.sans === undefined
+        ? {}
+        : { figure: appearance.font.sans }),
+      ...appearance.font,
+    }),
     ...groupProperties(fontWeight, appearance.fontWeight),
   ]);

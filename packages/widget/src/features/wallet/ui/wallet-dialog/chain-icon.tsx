@@ -14,8 +14,8 @@ export const useWalletChainIconUrl = (chain: Chain | undefined) =>
 
 /**
  * A chain's icon, decorative beside the chain's name: `control` in a compact
- * picker row, `sm` in a line of text. The name's initial shows while it
- * loads, when it fails or without one.
+ * picker row, `sm` in a line of text. The name's initials show when its
+ * icon fails or without one.
  */
 export const WalletChainIcon = ({
   chain,
@@ -26,7 +26,7 @@ export const WalletChainIcon = ({
 }) => (
   <Avatar
     src={useWalletChainIconUrl(chain)}
-    fallback={Array.from(chain.name.trim())[0]?.toUpperCase() ?? ""}
+    fallback={chain.name}
     size={size}
   />
 );

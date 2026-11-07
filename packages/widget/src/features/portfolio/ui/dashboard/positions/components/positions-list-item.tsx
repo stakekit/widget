@@ -5,9 +5,9 @@ import { useTokenLogo } from "../../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../../shared/react/widget-presentation";
 import { Box, ListRow, TokenAvatar } from "../../../../../../ui/index";
 import { useWidgetLinkProps } from "../../../../../navigation/index";
+import { usePositionListItem } from "../../../../react/use-position-list-item";
 import type { UnifiedPositionItem } from "../../../../state/read-models/positions";
 import { EarnPositionListItem } from "../../../components/earn-position-list-item";
-import { usePositionListItem } from "../hooks/use-position-list-item";
 import { getBorrowMarketPositionListItemModel } from "../model";
 
 const BorrowMarketPositionListItem = ({

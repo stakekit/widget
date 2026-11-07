@@ -19,10 +19,10 @@ const isIconName = (key: string): key is IconName => Object.hasOwn(glyphs, key);
 
 const names = Object.keys(glyphs).filter(isIconName);
 
-/** Every icon the Widget renders. */
+/** Every icon the Widget renders, on one grid and one 1.5px stroke. */
 export const AllIcons: Story = {
   render: () => (
-    <Grid columns="metrics" gap={12}>
+    <Grid columns={3} gap={12}>
       {names.map((name) => (
         <Stack key={name} direction="row" align="center" gap={8}>
           {name === "ArrowIcon" ? (
@@ -42,12 +42,39 @@ export const AllIconsDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+const sizes = ["sm", "md", "lg", "xl"] as const;
+
+/** Every icon at every size: the line stays 1.5px whatever the size. */
+export const EverySize: Story = {
+  render: () => (
+    <Grid columns={2} gap={12}>
+      {names.map((name) => (
+        <Stack key={name} direction="row" align="center" gap={12}>
+          {sizes.map((size) =>
+            name === "ArrowIcon" ? (
+              <Icon key={size} name={name} direction="down" size={size} />
+            ) : (
+              <Icon key={size} name={name} size={size} />
+            )
+          )}
+          <Text variant="caption">{name}</Text>
+        </Stack>
+      ))}
+    </Grid>
+  ),
+};
+
+export const EverySizeDark: Story = {
+  ...EverySize,
+  globals: { colorScheme: "dark" },
+};
+
 export const Sizes: Story = {
   render: () => (
     <Stack direction="row" align="center" gap={12}>
-      <Icon name="SearchIcon" size="sm" />
-      <Icon name="SearchIcon" size="md" />
-      <Icon name="SearchIcon" size="lg" />
+      {sizes.map((size) => (
+        <Icon key={size} name="SearchIcon" size={size} />
+      ))}
     </Stack>
   ),
 };

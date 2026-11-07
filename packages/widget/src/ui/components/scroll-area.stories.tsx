@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
-import { outlineUnclipped } from "../storybook/geometry";
+import { fadeDepths, outlineUnclipped } from "../storybook/geometry";
 import { Button } from "./button";
+import { Disclosure } from "./disclosure";
 import { ScrollArea } from "./scroll-area";
 
 const rows = Array.from({ length: 40 }, (_, index) => `Validator ${index + 1}`);
@@ -56,8 +57,39 @@ export const Keyboard: Story = {
 };
 
 /**
- * While it overflows, the area keeps a gutter for its scrollbar, so content
- * reaching the end edge, such as right-aligned figures, never sits under it.
+ * An edge that cuts content off fades it out, so the area reads as
+ * scrolling: at rest only the bottom, part way down both edges, at the end
+ * only the top. Keyboard focus on the area lifts the fades, so its ring shows
+ * whole.
+ */
+export const FadesCutOffEdges: Story = {
+  play: async ({ canvasElement }) => {
+    const region = within(canvasElement).getByRole("region", {
+      name: "Validators",
+    });
+    await waitFor(() =>
+      expect(fadeDepths(region)).toEqual({ top: 0, bottom: 24 })
+    );
+
+    region.scrollTop = 120;
+    await waitFor(() =>
+      expect(fadeDepths(region)).toEqual({ top: 24, bottom: 24 })
+    );
+
+    region.scrollTop = region.scrollHeight;
+    await waitFor(() =>
+      expect(fadeDepths(region)).toEqual({ top: 24, bottom: 0 })
+    );
+
+    await userEvent.tab();
+    await expect(region).toHaveFocus();
+    await expect(getComputedStyle(region).maskImage).toBe("none");
+  },
+};
+
+/**
+ * The area keeps a gutter for its scrollbar, so content reaching the end
+ * edge, such as right-aligned figures, never sits under it.
  */
 export const ReservesScrollbarGutter: Story = {
   args: {
@@ -89,21 +121,52 @@ export const ReservesScrollbarGutter: Story = {
   },
 };
 
-/** Without overflow there is no scrollbar, so the content keeps the width. */
-export const NoGutterWithoutOverflow: Story = {
+/**
+ * The gutter stays without overflow too, so content that grows past the
+ * edge, such as a disclosure opening, neither narrows nor moves when the
+ * scrollbar comes in, and does not widen when it goes.
+ */
+export const StableGutterAsContentGrows: Story = {
   args: {
     children: (
       <div data-testid="content">
-        <Text as="p">Validator 1</Text>
+        <Disclosure title="Active validators">
+          <Stack gap={8}>
+            {rows.map((row) => (
+              <Text key={row} as="p">
+                {row}
+              </Text>
+            ))}
+          </Stack>
+        </Disclosure>
       </div>
     ),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const region = canvas.getByRole("region", { name: "Validators" });
-    await expect(
-      canvas.getByTestId("content").getBoundingClientRect().width
-    ).toBe(region.getBoundingClientRect().width);
+    const content = canvas.getByTestId("content");
+    const trigger = canvas.getByRole("button", { name: "Active validators" });
+    const box = () => {
+      const { left, width } = content.getBoundingClientRect();
+      return { left, width };
+    };
+    const closed = box();
+    await expect(closed.width).toBeLessThan(
+      region.getBoundingClientRect().width
+    );
+
+    await userEvent.click(trigger);
+    await waitFor(() =>
+      expect(region.scrollHeight).toBeGreaterThan(region.clientHeight)
+    );
+    await expect(box()).toEqual(closed);
+
+    await userEvent.click(trigger);
+    await waitFor(() =>
+      expect(region.scrollHeight).toBeLessThanOrEqual(region.clientHeight)
+    );
+    await expect(box()).toEqual(closed);
   },
 };
 

@@ -48,7 +48,7 @@ vi.mock(
     const actual = await importOriginal<object>();
     return {
       ...actual,
-      useEarnEntry: () => ({ view: { providers: [] } }),
+      useEarnDetails: () => ({ view: { providers: [] } }),
       useEarnProviderOptions: () => ({
         select: hookState.selectProvider,
         view: {

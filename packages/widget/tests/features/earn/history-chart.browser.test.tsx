@@ -1,5 +1,5 @@
 import { type DateTime, Schema } from "effect";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
@@ -7,16 +7,9 @@ import { render } from "vitest-browser-react";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { UtcDateTimeFromString } from "../../../src/domain/finance/scalars";
 import type { HistoryPoint } from "../../../src/domain/portfolio/models";
+import { getRewardRateHistoryChart } from "../../../src/features/earn/model/history-chart";
 import { HistoryChartSection } from "../../../src/features/earn/ui/dashboard/earn-details/components/history-chart-section";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
-import {
-  formatPercent,
-  formatPercentAxis,
-} from "../../../src/shared/lib/number-format";
-import {
-  useWidgetPresentation,
-  WidgetPresentationProvider,
-} from "../../../src/shared/react/widget-presentation";
 
 const i18nInstance = createWidgetI18nInstance();
 
@@ -24,7 +17,7 @@ const parseDate = (iso: string): DateTime.Utc =>
   Schema.decodeSync(UtcDateTimeFromString)(iso);
 
 const samplePoints: ReadonlyArray<HistoryPoint> = [
-  { timestamp: parseDate("2026-06-01T00:00:00.000Z"), value: 6.5 },
+  { timestamp: parseDate("2026-06-02T00:00:00.000Z"), value: 6.5 },
   { timestamp: parseDate("2026-06-15T00:00:00.000Z"), value: 6.85 },
   { timestamp: parseDate("2026-07-01T00:00:00.000Z"), value: 7.19 },
 ];
@@ -40,18 +33,6 @@ const view = (
   ...overrides,
 });
 
-const Presentation = ({
-  children,
-  locale,
-}: {
-  readonly children: ReactNode;
-  readonly locale: string;
-}) => (
-  <WidgetPresentationProvider value={{ ...useWidgetPresentation(), locale }}>
-    {children}
-  </WidgetPresentationProvider>
-);
-
 const renderSection = ({
   locale = "en",
   onPeriodChange = vi.fn(),
@@ -65,25 +46,24 @@ const renderSection = ({
 } = {}) =>
   render(
     <I18nextProvider i18n={i18nInstance}>
-      <Presentation locale={locale}>
-        <div style={{ width: 400 }}>
-          <HistoryChartSection
-            formatValue={(value) =>
-              formatPercent(exactDecimal(value).div(100), locale)
-            }
-            formatValueAxis={(ticks) =>
-              formatPercentAxis(
-                ticks.map((tick) => exactDecimal(tick).div(100)),
-                locale
-              )
-            }
-            onPeriodChange={onPeriodChange}
-            title="Reward rate"
-            value="7.19%"
-            view={view({ points })}
-          />
-        </div>
-      </Presentation>
+      <div style={{ width: 400 }}>
+        <HistoryChartSection
+          chart={getRewardRateHistoryChart({
+            locale,
+            now: parseDate("2026-07-01T12:00:00.000Z"),
+            period: "30d",
+            points,
+            rate: {
+              label: "APY",
+              value: "7.10%",
+              ratio: exactDecimal("0.071"),
+            },
+            t: i18nInstance.getFixedT(locale),
+          })}
+          onPeriodChange={onPeriodChange}
+          view={view({ points })}
+        />
+      </div>
     </I18nextProvider>
   );
 
@@ -92,19 +72,27 @@ describe("HistoryChartSection", () => {
     const screen = await renderSection({ points: [] });
 
     await expect
-      .element(screen.getByRole("figure", { name: "Reward rate history" }))
+      .element(screen.getByRole("figure", { name: "APY history" }))
       .toHaveTextContent("No chart data");
   });
 
-  it("labels the value axis in one precision", async () => {
+  it("labels the value axis in round ticks of one precision", async () => {
     const screen = await renderSection();
-    const chart = screen.getByRole("img", { name: "Reward rate history" });
+    const chart = screen.getByRole("img", { name: "APY history" });
 
-    for (const tick of ["6.1%", "6.8%", "7.5%"]) {
+    for (const tick of ["6.4%", "6.6%", "6.8%", "7.0%", "7.2%"]) {
       await expect
         .element(chart.getByText(tick, { exact: true }))
         .toBeVisible();
     }
+  });
+
+  it("titles the chart with the latest rate", async () => {
+    const screen = await renderSection();
+
+    await expect
+      .element(screen.getByText("APY 7.19%", { exact: true }))
+      .toBeVisible();
   });
 
   it("shows the hovered point's value and its UTC date", async () => {
@@ -112,7 +100,7 @@ describe("HistoryChartSection", () => {
 
     try {
       const screen = await renderSection();
-      const chart = screen.getByRole("img", { name: "Reward rate history" });
+      const chart = screen.getByRole("img", { name: "APY history" });
       const surface = chart.element().querySelector("svg.recharts-surface");
       expect(surface).toBeTruthy();
       if (!surface) return;
@@ -129,9 +117,9 @@ describe("HistoryChartSection", () => {
     }
   });
 
-  it("formats dates in the presentation locale", async () => {
+  it("formats dates in the chart's locale", async () => {
     const screen = await renderSection({ locale: "fr" });
-    const chart = screen.getByRole("img", { name: "Reward rate history" });
+    const chart = screen.getByRole("img", { name: /APY/ });
     const surface = chart.element().querySelector("svg.recharts-surface");
     if (!surface) throw new Error("chart surface missing");
 

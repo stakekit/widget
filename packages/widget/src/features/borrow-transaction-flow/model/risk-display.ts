@@ -28,13 +28,6 @@ export const riskBandMeterTone = {
   danger: "danger",
 } as const satisfies Record<RiskBand, "accent" | "warning" | "danger">;
 
-/** A risk status badge's tone in its band. */
-export const riskBandBadgeTone = {
-  safe: "neutral",
-  caution: "warning",
-  danger: "danger",
-} as const satisfies Record<RiskBand, "neutral" | "warning" | "danger">;
-
 /** A loan to value as a 0–100% gauge, with max LTV marked when known. */
 export type LtvMeter = {
   readonly value: number;

@@ -1,3 +1,4 @@
+import { Option, Record } from "effect";
 import type { TFunction } from "i18next";
 import {
   isOptionalPendingAction,
@@ -6,14 +7,56 @@ import {
 import { isUnfinishedInstantExit } from "../earn/confidential";
 import type { EarnBalance } from "../earn/models";
 
+/**
+ * What a position needs of the user, named when it is known: a finished
+ * unstake or withdrawal to collect, a locked balance to unlock, or a locked
+ * balance with nothing to unlock yet. Any other required pending action is
+ * `other`.
+ */
+type RequiredPositionAction = "withdraw" | "unlock" | "locked" | "other";
+
 /** What a position asks of the user. */
 export type PositionAttention = {
   /** A locked balance, or a pending action the position needs. */
-  readonly actionRequired: boolean;
+  readonly requiredAction: RequiredPositionAction | null;
   /** Work already under way: a cancel request or an Instant Exit to finish. */
   readonly hasPendingRequest: boolean;
   readonly hasPendingClaimRewards: boolean;
 };
+
+type PendingActionOfBalance = {
+  readonly type: YieldPendingActionType;
+  readonly balance: Pick<EarnBalance, "isEncrypted" | "type">;
+};
+
+/**
+ * How much a pending action asks of the user: `required`, such as a
+ * withdrawal that is ready or an unlock; `claim`, rewards to claim; or
+ * nothing, for an optional action or an Instant Exit already under way.
+ */
+export type PendingActionUrgency = "required" | "claim";
+
+export const getPendingActionUrgency = ({
+  balance,
+  type,
+}: PendingActionOfBalance): PendingActionUrgency | null => {
+  if (type === "CLAIM_REWARDS") return "claim";
+  if (isOptionalPendingAction(type) || isUnfinishedInstantExit(balance, type)) {
+    return null;
+  }
+  return "required";
+};
+
+/**
+ * A pending action that pays the user out: rewards to claim, or a finished
+ * unstake or withdrawal to collect. Its amount is a gain, so it reads in the
+ * success tone.
+ */
+export const isPayoutPendingAction = (type: YieldPendingActionType) =>
+  type === "CLAIM_REWARDS" ||
+  type === "CLAIM_UNSTAKED" ||
+  type === "WITHDRAW" ||
+  type === "WITHDRAW_ALL";
 
 /**
  * Reads attention from the types of a position's balances with an amount
@@ -24,35 +67,45 @@ export const getPositionAttention = ({
   pendingActions,
 }: {
   readonly balanceTypes: ReadonlyArray<EarnBalance["type"]>;
-  readonly pendingActions: ReadonlyArray<{
-    readonly type: YieldPendingActionType;
-    readonly balance: Pick<EarnBalance, "isEncrypted" | "type">;
-  }>;
+  readonly pendingActions: ReadonlyArray<PendingActionOfBalance>;
 }): PositionAttention => {
   // An Instant Exit already began; finalizing it is in progress.
   const hasUnfinishedInstantExit = pendingActions.some(({ balance, type }) =>
     isUnfinishedInstantExit(balance, type)
   );
-  // Claims have their own callout; optional actions require nothing.
-  const hasRequiredPendingAction = pendingActions.some(
-    ({ balance, type }) =>
-      type !== "CLAIM_REWARDS" &&
-      !isOptionalPendingAction(type) &&
-      !isUnfinishedInstantExit(balance, type)
-  );
-  const actionRequired =
-    balanceTypes.includes("locked") || hasRequiredPendingAction;
+  const requiredTypes = pendingActions
+    .filter((action) => getPendingActionUrgency(action) === "required")
+    .map(({ type }) => type);
+  const requiredAction = getRequiredPositionAction({
+    hasLockedBalance: balanceTypes.includes("locked"),
+    requiredTypes,
+  });
 
   return {
-    actionRequired,
+    requiredAction,
     hasPendingRequest:
-      !actionRequired &&
+      requiredAction === null &&
       (pendingActions.some(({ type }) => type === "CANCEL_PENDING") ||
         hasUnfinishedInstantExit),
     hasPendingClaimRewards: pendingActions.some(
       ({ type }) => type === "CLAIM_REWARDS"
     ),
   };
+};
+
+/** The most pressing action a position needs, named when it is known. */
+const getRequiredPositionAction = ({
+  hasLockedBalance,
+  requiredTypes,
+}: {
+  readonly hasLockedBalance: boolean;
+  readonly requiredTypes: ReadonlyArray<YieldPendingActionType>;
+}): RequiredPositionAction | null => {
+  if (requiredTypes.some(isPayoutPendingAction)) return "withdraw";
+  if (requiredTypes.includes("UNLOCK_LOCKED")) return "unlock";
+  if (hasLockedBalance) return "locked";
+  if (requiredTypes.length > 0) return "other";
+  return null;
 };
 
 /**
@@ -73,46 +126,70 @@ export const toInactiveValidatorStatus = (
   return status === "jailed" ? "jailed" : "other";
 };
 
-/**
- * The one status a position calls out, the most pressing first, wherever it
- * shows: its row in the positions list and its page's header read the same.
- */
-export type PositionCallout =
-  | "actionRequired"
-  | "validatorsJailed"
-  | "validatorsInactive"
-  | "claimRewards"
-  | "inProgress";
-
-export const getPositionCallout = ({
-  attention,
-  inactiveValidator,
-}: {
+type PositionCalloutInput = {
   readonly attention: PositionAttention;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-}): PositionCallout | null => {
-  if (attention.actionRequired) return "actionRequired";
-  if (inactiveValidator === "jailed") return "validatorsJailed";
-  if (inactiveValidator) return "validatorsInactive";
-  if (attention.hasPendingClaimRewards) return "claimRewards";
-  if (attention.hasPendingRequest) return "inProgress";
-  return null;
 };
+
+/**
+ * Every status a position can call out, the most pressing first, with when it
+ * applies and how it reads, wherever it shows: its row in the positions list
+ * and its page's header read the same. A required action is named when it is
+ * known; only an unknown one reads as Action required.
+ */
+const positionCallouts = {
+  readyToWithdraw: {
+    applies: ({ attention }) => attention.requiredAction === "withdraw",
+    label: "positions.ready_to_withdraw",
+  },
+  readyToUnlock: {
+    applies: ({ attention }) => attention.requiredAction === "unlock",
+    label: "positions.ready_to_unlock",
+  },
+  lockedBalance: {
+    applies: ({ attention }) => attention.requiredAction === "locked",
+    label: "positions.locked_balance",
+  },
+  actionRequired: {
+    applies: ({ attention }) => attention.requiredAction === "other",
+    label: "positions.action_required",
+  },
+  validatorsJailed: {
+    applies: ({ inactiveValidator }) => inactiveValidator === "jailed",
+    label: "details.validators_jailed",
+  },
+  validatorsInactive: {
+    applies: ({ inactiveValidator }) => inactiveValidator === "other",
+    label: "details.validators_inactive",
+  },
+  rewardsToClaim: {
+    applies: ({ attention }) => attention.hasPendingClaimRewards,
+    label: "positions.rewards_to_claim",
+  },
+  inProgress: {
+    applies: ({ attention }) => attention.hasPendingRequest,
+    label: "positions.in_progress",
+  },
+} as const satisfies Record<
+  string,
+  {
+    readonly applies: (input: PositionCalloutInput) => boolean;
+    readonly label: string;
+  }
+>;
+
+/** The one status a position calls out, the most pressing first. */
+export type PositionCallout = keyof typeof positionCallouts;
+
+export const getPositionCallout = (
+  input: PositionCalloutInput
+): PositionCallout | null =>
+  Option.match(
+    Record.findFirst(positionCallouts, ({ applies }) => applies(input)),
+    { onNone: () => null, onSome: ([callout]) => callout }
+  );
 
 export const formatPositionCallout = (
   callout: PositionCallout,
   t: TFunction
-): string => {
-  switch (callout) {
-    case "actionRequired":
-      return t("positions.action_required");
-    case "validatorsJailed":
-      return t("details.validators_jailed");
-    case "validatorsInactive":
-      return t("details.validators_inactive");
-    case "claimRewards":
-      return t("positions.claim_rewards");
-    case "inProgress":
-      return t("positions.in_progress");
-  }
-};
+): string => t(positionCallouts[callout].label);

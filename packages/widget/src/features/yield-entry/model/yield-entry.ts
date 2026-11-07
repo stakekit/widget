@@ -12,6 +12,7 @@ import {
   getMinStakeAmount,
   getMinUnstakeAmount,
   isForceMaxAmount,
+  stakeTokenSameAsGasToken,
 } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import {
@@ -194,7 +195,7 @@ export type YieldEntryCtaBlocker =
   | "VerifyIdentity";
 
 export const getYieldEntryCta = ({
-  amountExceedsBalance,
+  balanceShort,
   blocker,
   connected,
   externalProviders,
@@ -205,7 +206,11 @@ export const getYieldEntryCta = ({
   preparationAvailable,
   readiness,
 }: {
-  readonly amountExceedsBalance: boolean;
+  /**
+   * The balance cannot fund the entry: the amount exceeds it, or it falls
+   * short of any entry the yield takes.
+   */
+  readonly balanceShort: boolean;
   readonly blocker: YieldEntryCtaBlocker | null;
   readonly connected: boolean;
   readonly externalProviders: boolean;
@@ -222,7 +227,7 @@ export const getYieldEntryCta = ({
       readiness._tag !== "Ready" ||
       !preparationAvailable ||
       kycBlocking ||
-      amountExceedsBalance;
+      balanceShort;
     const loading = readiness._tag === "Refreshing" || kycLoading;
     const settled = disabled && !loading && readiness._tag !== "Loading";
     return {
@@ -372,6 +377,7 @@ const getYieldEntryValidation = ({
 const getYieldEntryCtaBlocker = ({
   amount,
   amountValidation,
+  balanceWarning,
   forceMax,
   kycBlocking,
   maximum,
@@ -379,12 +385,14 @@ const getYieldEntryCtaBlocker = ({
 }: {
   readonly amount: BigNumber;
   readonly amountValidation: ReturnType<typeof getYieldAmountValidation>;
+  readonly balanceWarning: YieldEntryBalanceWarning | null;
   readonly forceMax: boolean;
   readonly kycBlocking: boolean;
   readonly maximum: BigNumber | null;
   readonly minimum: BigNumber;
 }): YieldEntryCtaBlocker | null => {
   if (kycBlocking) return "VerifyIdentity";
+  if (balanceWarning) return "InsufficientBalance";
   // A force-max yield takes the whole balance, so a zero amount means none.
   if (amount.isZero()) return forceMax ? "InsufficientBalance" : "EnterAmount";
   if (amountValidation.amountGreaterThanAvailable) return "InsufficientBalance";
@@ -393,10 +401,104 @@ const getYieldEntryCtaBlocker = ({
   return null;
 };
 
+/**
+ * Why the balance alone cannot fund an entry, known before any amount is
+ * typed: there is none, or less than the yield's minimum. Only a known
+ * balance of a connected wallet has one.
+ */
+export type YieldEntryBalanceWarning =
+  | Readonly<{ readonly _tag: "NoBalance" }>
+  | Readonly<{ readonly _tag: "BelowMinimum"; readonly minimum: BigNumber }>;
+
+const getYieldEntryBalanceWarning = ({
+  availableAmount,
+  connected,
+  forceMax,
+  minimum,
+}: {
+  readonly availableAmount: BigNumber | null;
+  readonly connected: boolean;
+  readonly forceMax: boolean;
+  readonly minimum: BigNumber;
+}): YieldEntryBalanceWarning | null => {
+  if (!connected || availableAmount === null) return null;
+  if (availableAmount.isZero()) return { _tag: "NoBalance" };
+  if (!forceMax && availableAmount.isLessThan(minimum)) {
+    return { _tag: "BelowMinimum", minimum };
+  }
+  return null;
+};
+
+/** The amount the entry stands for: typed, or its minimum until one is. */
+const resolveYieldEntryAmount = (
+  input: YieldEntryProjectionInput,
+  minimum: BigNumber
+) =>
+  input.amountInitialization === "DefaultToMinimum" &&
+  input.entry.amount.isZero() &&
+  minimum.isGreaterThan(0)
+    ? minimum
+    : input.entry.amount;
+
+/**
+ * The enters to simulate, built as submission would build them: `fee`, the
+ * entry's own amount once the limits allow it, for the fee it costs, and
+ * `reserve`, the most Max can draw on when the stake token pays the gas, for
+ * what Max must leave of it. Keyed by the balance alone, the reserve holds
+ * still while an amount is typed. Only a connected wallet has either.
+ */
+export const getYieldEntrySimulations = (input: YieldEntryProjectionInput) => {
+  const { token, yield: selectedYield } = input.entry;
+  if (!input.connected || !token || !selectedYield) {
+    return { fee: null, reserve: null } as const;
+  }
+
+  const constraints = getYieldAmountConstraints({
+    type: "enter",
+    availableAmount: input.availableAmount,
+    selectedYieldHasActivePosition: input.selectedYieldHasActivePosition,
+    yield: selectedYield,
+  });
+  const amount = truncateToTokenDecimals(
+    resolveYieldEntryAmount(input, constraints.allowedMinimum),
+    token.decimals
+  );
+  const commandFor = (simulated: BigNumber, useMaxAmount: boolean) =>
+    makeYieldEntryActionCommand({
+      entry: { ...input.entry, amount: simulated, useMaxAmount },
+      wallet: input.wallet,
+    })?.command ?? null;
+  // The API refuses an amount outside the limits, so only one inside them
+  // is worth asking about; the most Max can draw on is the balance or the
+  // yield's maximum, whichever is less.
+  const usable = (candidate: BigNumber) =>
+    candidate.isGreaterThan(0) &&
+    candidate.isGreaterThanOrEqualTo(constraints.allowedMinimum) &&
+    (input.availableAmount === null ||
+      candidate.isLessThanOrEqualTo(constraints.allowedMaximum));
+  const maxDraw = constraints.allowedMaximum;
+  const paysGas =
+    !constraints.forceMax &&
+    input.availableAmount !== null &&
+    stakeTokenSameAsGasToken({ stakeToken: token, yieldDto: selectedYield });
+
+  return {
+    fee: usable(amount) ? commandFor(amount, input.entry.useMaxAmount) : null,
+    reserve: paysGas && usable(maxDraw) ? commandFor(maxDraw, false) : null,
+  } as const;
+};
+
 export const projectYieldEntry = ({
+  gasReserve = exactZero(),
   input,
   submitted,
 }: {
+  /**
+   * What Max keeps aside of the balance for the gas (see
+   * `getMaxGasReserve`); null while unknown, which leaves Max nothing to
+   * fill. Typing an amount is validated against the balance alone.
+   */
+  readonly gasReserve?: BigNumber | null;
   readonly input: YieldEntryProjectionInput;
   readonly submitted: boolean;
 }) => {
@@ -406,12 +508,16 @@ export const projectYieldEntry = ({
     selectedYieldHasActivePosition: input.selectedYieldHasActivePosition,
     yield: input.entry.yield,
   });
-  const amount =
-    input.amountInitialization === "DefaultToMinimum" &&
-    input.entry.amount.isZero() &&
-    constraints.allowedMinimum.isGreaterThan(0)
-      ? constraints.allowedMinimum
-      : input.entry.amount;
+  // A force-max yield takes the whole balance; nothing is kept aside.
+  const maxAmount =
+    gasReserve === null
+      ? null
+      : getMaxAmount({
+          availableAmount: input.availableAmount ?? exactZero(),
+          gasEstimateTotal: constraints.forceMax ? exactZero() : gasReserve,
+          integrationMaxLimit: constraints.maximum,
+        });
+  const amount = resolveYieldEntryAmount(input, constraints.allowedMinimum);
   const entry = { ...input.entry, amount };
   const executableAmount = input.entry.token
     ? truncateToTokenDecimals(amount, input.entry.token.decimals)
@@ -434,15 +540,24 @@ export const projectYieldEntry = ({
     entry: { ...entry, amount: executableAmount },
     wallet: input.wallet,
   });
+  const balanceWarning = getYieldEntryBalanceWarning({
+    availableAmount: input.availableAmount,
+    connected: input.connected,
+    forceMax: constraints.forceMax,
+    minimum: constraints.allowedMinimum,
+  });
 
   return {
+    balanceWarning,
     constraints,
     cta: getYieldEntryCta({
-      amountExceedsBalance:
-        validation.errors.stakeAmountGreaterThanAvailableAmount,
+      balanceShort:
+        validation.errors.stakeAmountGreaterThanAvailableAmount ||
+        balanceWarning !== null,
       blocker: getYieldEntryCtaBlocker({
         amount: executableAmount,
         amountValidation,
+        balanceWarning,
         forceMax: constraints.forceMax,
         kycBlocking: input.isKycBlocking,
         maximum: constraints.maximum,
@@ -463,6 +578,8 @@ export const projectYieldEntry = ({
       validators: input.entry.validators,
       yield: input.entry.yield,
     }),
+    /** What Max fills in; null while the gas it must leave is unknown. */
+    maxAmount,
     preparation,
     amount,
     validation,

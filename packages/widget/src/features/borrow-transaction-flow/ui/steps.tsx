@@ -21,6 +21,7 @@ import {
 import { useExecutionLeaveConfirmation } from "../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../leave-confirmation/views";
 import { useTrackPage } from "../../tracking/index";
+import { useSlowTransactionStep } from "../../transaction-steps/index";
 import {
   describeTransactionFailure,
   getTransactionStepState,
@@ -80,16 +81,31 @@ export const BorrowStepsPage = () => {
         amount: `${formatTokenAmount(projected.collateral.amount, locale, "down")} ${projected.collateral.symbol}`,
       })
     : t("dashboard.borrow.execution_page.partial_supplied_without_amount");
-  // The Notice names what already happened, else what failed. A rejection in
-  // the wallet changed nothing, so its step alone says it.
-  const failureNotice = execution.cancelled ? null : (failure?.message ?? null);
+  // The Notice names what already happened, else what failed. A request
+  // declined in the wallet changed nothing, so its step alone says it.
+  const failureNotice = failure?.cancelled ? null : (failure?.message ?? null);
   const notice = collateralSupplied ? partialOutcome : failureNotice;
   // The failed step says what failed, or keeps the wallet's or API's own
   // words when the Notice already says it.
   const noticeRepeatsFailure = notice !== null && notice === failure?.message;
-  const stepFailure = noticeRepeatsFailure
-    ? (failure?.detail ?? null)
-    : (failure?.message ?? null);
+  const stepFailure = failure
+    ? {
+        cancelled: failure.cancelled,
+        message: noticeRepeatsFailure ? failure.detail : failure.message,
+      }
+    : null;
+  const slowStepId = useSlowTransactionStep(
+    execution.steps.map(({ done, id, progress }) => ({
+      done,
+      id,
+      phases: progress.phases,
+    }))
+  );
+  // What is sent cannot be called back: the footer offers Leave, not Cancel.
+  const sent = execution.steps.some(
+    ({ hash, progress }) =>
+      hash !== null || progress.phases.broadcast === "active"
+  );
   const details: ReadonlyArray<TransactionStepsDetail> = [
     ...(headline.amount === null
       ? []
@@ -155,11 +171,12 @@ export const BorrowStepsPage = () => {
                     type,
                   }),
                   type,
-                  ...getTransactionStepState(
-                    step.done,
-                    step.progress.phases,
-                    stepFailure
-                  ),
+                  ...getTransactionStepState(t, {
+                    done: step.done,
+                    failure: stepFailure,
+                    phases: step.progress.phases,
+                    slow: step.id === slowStepId,
+                  }),
                 };
               })}
             />
@@ -201,10 +218,24 @@ export const BorrowStepsPage = () => {
                 cta={{
                   disabled: false,
                   isLoading: false,
-                  label: t("shared.cancel"),
+                  label: sent ? t("steps.leave") : t("shared.cancel"),
                   onClick: leave,
                   variant: "secondary",
                 }}
+                {...(sent
+                  ? {
+                      notice: (
+                        <Text
+                          as="p"
+                          variant="caption"
+                          tone="muted"
+                          align="center"
+                        >
+                          {t("steps.sent_note")}
+                        </Text>
+                      ),
+                    }
+                  : {})}
               />
             </Stack>
           </PageCtaSlot>

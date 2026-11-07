@@ -130,6 +130,46 @@ const singleGroup = (
 
 describe("wallet connection picker", () => {
   it.effect(
+    "opens onto every ecosystem's wallets, with chips that narrow the list to one",
+    () =>
+      Effect.gen(function* () {
+        yield* openPicker({
+          extensions: ["extension"],
+          groups: singleGroup(
+            { id: "metamask" },
+            { id: "extension", injected: {} },
+            { id: "talisman", family: substrate }
+          ),
+        });
+        yield* waitFor("connect-wallet-evm-extension");
+
+        // No ecosystem to choose first: what the user has leads, named by
+        // its ecosystem, then each ecosystem's other wallets.
+        yield* Effect.promise(() =>
+          expect.poll(walletGroups).toEqual([
+            { name: "Installed", wallets: ["connect-wallet-evm-extension"] },
+            { name: "EVM", wallets: ["connect-wallet-evm-metamask"] },
+            {
+              name: "substrate",
+              wallets: ["connect-wallet-substrate-talisman"],
+            },
+          ])
+        );
+        expect(element("connect-wallet-evm-extension")?.textContent).toContain(
+          "EVM"
+        );
+        expect(button("All")?.getAttribute("aria-pressed")).toBe("true");
+
+        yield* click(() => button("substrate"));
+        expect(walletRows()).toEqual(["connect-wallet-substrate-talisman"]);
+        expect(button("substrate")?.getAttribute("aria-pressed")).toBe("true");
+
+        yield* click(() => button("All"));
+        expect(walletRows()).toHaveLength(3);
+      })
+  );
+
+  it.effect(
     "keeps a pending wallet's ecosystem while AppKit is presented over the picker",
     () =>
       Effect.gen(function* () {
@@ -139,13 +179,12 @@ describe("wallet connection picker", () => {
             { id: "talisman", family: substrate }
           ),
         });
-        yield* waitFor("connect-ecosystem-substrate");
-        yield* click(() => element("connect-ecosystem-substrate"));
+        yield* waitFor("connect-wallet-substrate-talisman");
+        yield* click(() => button("substrate"));
         yield* click(() => element("connect-wallet-substrate-talisman"));
         expect(yield* picker.calls).toEqual([
           { walletId: "talisman", chainId: undefined },
         ]);
-        expect(element("connect-ecosystem-back")).not.toBeNull();
         expect(
           document.querySelector('button[aria-label="Close"]')
         ).not.toBeNull();
@@ -158,10 +197,10 @@ describe("wallet connection picker", () => {
         yield* picker.declinePending;
         yield* click(() => button("Close AppKit"));
         yield* waitFor("connect-wallet-substrate-talisman");
-        expect(element("connect-ecosystem-substrate")).toBeNull();
+        expect(button("substrate")?.getAttribute("aria-pressed")).toBe("true");
         expect(element("connect-wallet-evm-metamask")).toBeNull();
-        yield* click(() => element("connect-ecosystem-back"));
-        yield* waitFor("connect-ecosystem-evm");
+        yield* click(() => button("All"));
+        yield* waitFor("connect-wallet-evm-metamask");
       })
   );
 
@@ -353,11 +392,9 @@ describe("wallet connection picker", () => {
             { id: "talisman", family: substrate }
           ),
         });
-
-        yield* waitFor("connect-ecosystem-evm");
-        expect(element("connect-ecosystem-substrate")).not.toBeNull();
-        yield* click(() => element("connect-ecosystem-evm"));
+        // Every ecosystem's remote wallets list at once, no ecosystem chosen.
         yield* waitFor("connect-wallet-evm-metamask");
+        expect(element("connect-wallet-substrate-talisman")).not.toBeNull();
         expect(element("connect-wallet-evm-slow-extension")).toBeNull();
       })
   );
@@ -467,9 +504,10 @@ describe("wallet connection picker", () => {
         ),
       });
 
-      // A single remaining ecosystem opens straight onto its wallets.
+      // A single remaining ecosystem lists its wallets with no filter.
       yield* waitFor("connect-wallet-evm-metamask");
-      expect(element("connect-ecosystem-substrate")).toBeNull();
+      expect(button("substrate")).toBeUndefined();
+      expect(button("All")).toBeUndefined();
     })
   );
 
@@ -495,16 +533,6 @@ describe("wallet connection picker", () => {
         );
         expect(yield* picker.calls).toEqual([]);
       })
-  );
-
-  it.effect("shows the provider disclaimer", () =>
-    Effect.gen(function* () {
-      yield* openPicker({ groups: singleGroup({ id: "metamask" }) });
-
-      expect(element("wallet-connect-dialog")?.textContent).toContain(
-        "Powered by Yield.xyz"
-      );
-    })
   );
 
   it.effect.each([

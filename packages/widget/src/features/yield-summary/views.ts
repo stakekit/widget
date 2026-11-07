@@ -7,7 +7,7 @@ export { isMorphoProvider } from "./ui/components/reward-token-details";
 export { getRewardTokenSymbols } from "./ui/components/reward-token-details/get-reward-token-symbols";
 export { YieldDetailsHeader } from "./ui/components/yield-details-header";
 export {
-  RiskRatingBadge,
-  YieldRiskRatingActions,
-  YieldRiskRatingSummary,
-} from "./ui/components/yield-risk";
+  YieldFactsSection,
+  YieldFactValue,
+} from "./ui/components/yield-facts";
+export { YieldRiskRatingSummary } from "./ui/components/yield-risk";

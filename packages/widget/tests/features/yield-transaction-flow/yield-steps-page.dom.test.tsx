@@ -104,16 +104,16 @@ describe("Yield Steps page headers", () => {
   it("counts the steps when numbered", async () => {
     const labels = await stepLabels(true);
 
-    expect(labels[0]).toContain("Transaction 1 / 2 - ");
-    expect(labels[1]).toContain("Transaction 2 / 2 - Deposit");
+    expect(labels[0]).toContain("Step 1 of 2 · ");
+    expect(labels[1]).toContain("Step 2 of 2 · Deposit");
   });
 
   it("omits the count when unnumbered", async () => {
     const labels = await stepLabels(false);
 
-    expect(labels[0]).toMatch(/^Transaction - /);
-    expect(labels[1]).toContain("Transaction - Deposit");
-    expect(labels.join(" ")).not.toContain(" / ");
+    expect(labels[0]).toMatch(/^Encrypt amount/);
+    expect(labels[1]).toMatch(/^Deposit/);
+    expect(labels.join(" ")).not.toContain("Step ");
   });
 });
 
@@ -150,11 +150,12 @@ describe("Yield Steps page progress", () => {
     expect(stake?.textContent).toContain("Waiting for signature");
     const link = approve?.querySelector("a");
     expect(link?.getAttribute("href")).toBe("https://etherscan.io/tx/0x1");
-    expect(link?.textContent).toContain("View transaction, 0x1234\u2026cdef");
+    expect(link?.textContent).toContain("View on explorer");
+    expect(approve?.textContent).toContain("0x1234\u2026cdef");
     app.unmount();
   });
 
-  it("links a sent transaction only once it is confirmed", async () => {
+  it("links a transaction as soon as it is broadcast", async () => {
     const app = await renderSteps({
       numbered: true,
       txStates: [
@@ -169,8 +170,10 @@ describe("Yield Steps page progress", () => {
 
     const [stake] = app.container.querySelectorAll("li");
     expect(stake?.textContent).toContain("In progress");
-    expect(stake?.querySelector("a")).toBeNull();
-    expect(stake?.textContent).not.toContain("0x1234\u2026cdef");
+    expect(stake?.querySelector("a")?.getAttribute("href")).toBe(
+      "https://etherscan.io/tx/0x1"
+    );
+    expect(stake?.textContent).toContain("0x1234\u2026cdef");
     app.unmount();
   });
 
@@ -197,9 +200,10 @@ describe("Yield Steps page progress", () => {
     });
 
     const [stake] = app.container.querySelectorAll("li");
-    expect(stake?.textContent).toContain("Failed");
+    expect(stake?.textContent).toContain("Cancelled in wallet");
+    expect(stake?.textContent).not.toContain("Failed");
     expect(stake?.textContent).toContain(
-      "The transaction was rejected in your wallet. Try again."
+      "Nothing was sent. Try again when you're ready."
     );
     expect(stake?.querySelector("button")).toBeNull();
 

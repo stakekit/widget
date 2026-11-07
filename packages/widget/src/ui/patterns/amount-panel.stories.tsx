@@ -134,9 +134,59 @@ export const MaxChip: Story = {
 };
 
 /**
- * An error shows under the amount, marks it invalid and describes it, while
- * the limits stay in view at the end of the same line. Only the error reads
- * in the danger tone: the amount, the limits it meets and the balance it
+ * Muted notes under the panel say what using the amount costs, such as the
+ * estimated network fee and what Max keeps aside for it.
+ */
+export const Notes: Story = {
+  args: {
+    value: "12.4997",
+    notes: [
+      { id: "network-fee", text: "Network fee ≈ 0.0003 ETH ($0.52)" },
+      { id: "max-gas-reserve", text: "Max leaves 0.0003 ETH for network fees" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Network fee ≈ 0.0003 ETH ($0.52)")
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("Max leaves 0.0003 ETH for network fees")
+    ).toBeVisible();
+  },
+};
+
+export const NotesDark: Story = {
+  ...Notes,
+  globals: { colorScheme: "dark" },
+};
+
+/**
+ * A note still loading holds its line with a placeholder, so the layout
+ * below stays still while a new fee estimate loads.
+ */
+export const PendingNote: Story = {
+  args: {
+    value: "12.4997",
+    notes: [
+      { id: "network-fee", text: null },
+      { id: "max-gas-reserve", text: "Max leaves 0.0003 ETH for network fees" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByText(/Network fee/)).toBeNull();
+    await expect(
+      canvas.getByText("Max leaves 0.0003 ETH for network fees")
+    ).toBeVisible();
+  },
+};
+
+/**
+ * An error shows at the start of the line under the amount, marks it invalid
+ * and describes it, and edges the panel in the danger tone, while the limits
+ * stay in view at the end of the same line as its helper. Only the error and
+ * the edge read in the danger tone: the amount, the limits and the balance it
  * exceeds stay as they were.
  */
 export const Invalid: Story = {
@@ -145,6 +195,7 @@ export const Invalid: Story = {
     fiatValue: "$48,000.00",
     error: "Insufficient balance",
     balance: { short: "12.5 ETH available" },
+    testIds: { root: "panel" },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -164,23 +215,80 @@ export const Invalid: Story = {
     await expect(colorOf(canvas.getByText("12.5 ETH available"))).toBe(
       colorOf(canvas.getByText("$48,000.00"))
     );
+    // The error sits before the limits on their line.
+    await expect(error.getBoundingClientRect().left).toBeLessThan(
+      limits.getBoundingClientRect().left
+    );
+    await expect(
+      getComputedStyle(canvas.getByTestId("panel")).borderTopColor
+    ).toBe(colorOf(error));
   },
 };
 
 /**
- * An amount that misses its limits turns them to the danger tone and is
- * marked invalid; no separate message repeats them.
+ * A missed minimum is said by the error, at the line's start; the limits
+ * stay the muted helper at its end.
  */
-export const LimitsMissed: Story = {
-  args: { value: "0.001", limitsMissed: true },
+export const BelowMinimum: Story = {
+  args: { value: "0.001", error: "Enter at least 0.01 ETH" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const amount = canvas.getByRole("textbox", { name: "Stake" });
     await expect(amount).toHaveAttribute("aria-invalid", "true");
-    await expect(amount).toHaveAccessibleDescription("Min 0.01 ETH");
+    await expect(amount).toHaveAccessibleDescription(
+      expect.stringContaining("Enter at least 0.01 ETH")
+    );
+    await expect(getComputedStyle(canvas.getByText("Min 0.01 ETH")).color).toBe(
+      getComputedStyle(canvas.getByText("12.5 ETH available")).color
+    );
+  },
+};
+
+/**
+ * Before any amount is typed, a balance that cannot fund one is flagged in
+ * the error's place in the warning tone, without marking the empty amount
+ * invalid or edging the panel; Max, which would fill too little, is off.
+ */
+export const BalanceWarning: Story = {
+  args: {
+    balance: { short: "0.7689 MATIC available" },
+    limits: "Min 1 MATIC",
+    warning: "You need at least 1 MATIC to stake",
+    max: { label: "Max", onClick: fn(), disabled: true },
+    testIds: { root: "panel" },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const amount = canvas.getByRole("textbox", { name: "Stake" });
+    await expect(amount).not.toHaveAttribute("aria-invalid");
+    await expect(amount).toHaveAccessibleDescription(
+      expect.stringContaining("You need at least 1 MATIC to stake")
+    );
+    const warning = canvas.getByText("You need at least 1 MATIC to stake");
+    await expect(getComputedStyle(warning).color).not.toBe(
+      getComputedStyle(canvas.getByText("Min 1 MATIC")).color
+    );
     await expect(
-      getComputedStyle(canvas.getByText("Min 0.01 ETH")).color
-    ).not.toBe(getComputedStyle(canvas.getByText("12.5 ETH available")).color);
+      getComputedStyle(canvas.getByTestId("panel")).borderTopColor
+    ).not.toBe(getComputedStyle(warning).color);
+    await expect(canvas.getByRole("button", { name: "Max" })).toBeDisabled();
+  },
+};
+
+export const BalanceWarningDark: Story = {
+  ...BalanceWarning,
+  globals: { colorScheme: "dark" },
+};
+
+/** A zero amount, like an empty one, shows the muted `0` placeholder. */
+export const ZeroAmount: Story = {
+  args: { value: "0" },
+  play: async ({ canvasElement }) => {
+    const amount = within(canvasElement).getByRole("textbox", {
+      name: "Stake",
+    });
+    await expect(amount).toHaveValue("");
+    await expect(amount).toHaveAttribute("placeholder", "0");
   },
 };
 

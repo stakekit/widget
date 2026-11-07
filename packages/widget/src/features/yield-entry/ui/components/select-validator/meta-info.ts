@@ -7,6 +7,7 @@ import type { Token } from "../../../../../domain/token/token";
 import { getRewardTypeFormatted } from "../../../../../shared/lib/formatters";
 import { formatAddress } from "../../../../../shared/lib/general";
 import {
+  formatCompactNumber,
   formatNumber,
   formatRewardRatePercent,
   formatRoundedPercent,
@@ -92,10 +93,11 @@ export const getValidatorMetaInfo = (
       stakedBalance && stakedBalanceToken
         ? {
             title: t("details.validators_staked_balance"),
+            // Compact from 1,000,000, as on the chosen validator's card.
             val: formatBigNumber(
               stakedBalance,
               (value) =>
-                `${formatNumber(value, locale, 0)} ${stakedBalanceToken.symbol}`
+                `${formatCompactNumber(value, locale)} ${stakedBalanceToken.symbol}`
             ),
           }
         : null,

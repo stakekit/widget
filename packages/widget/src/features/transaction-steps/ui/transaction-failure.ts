@@ -9,9 +9,12 @@ import {
 /**
  * What went wrong with a flow's transaction, in plain words with what to do
  * next. `detail` is the wallet's or the API's own words, shown muted under
- * it, when they add something the message does not say.
+ * it, when they add something the message does not say. `cancelled` says the
+ * user declined in the wallet: nothing failed and nothing was sent, so it
+ * reads as neutral, not as an error.
  */
 export type TransactionFailure = Readonly<{
+  readonly cancelled: boolean;
   readonly detail: string | null;
   readonly message: string;
 }>;
@@ -23,8 +26,15 @@ const SHORT_REASON_LENGTH = 80;
 const REVERT_PREFIX = /^execution reverted:?\s*/i;
 
 const plain = (message: string): TransactionFailure => ({
+  cancelled: false,
   detail: null,
   message,
+});
+
+const declined = (t: TFunction): TransactionFailure => ({
+  cancelled: true,
+  detail: null,
+  message: t("steps.failure.rejected"),
 });
 
 const describeSignFailure = (
@@ -39,12 +49,13 @@ const describeSignFailure = (
     UnsupportedBorrowSigningFormat: () => plain(t("steps.failure.unsignable")),
     WalletOperationFailed: ({ cause }) =>
       cause._tag === "WalletRequestCancelledError"
-        ? plain(t("steps.failure.rejected"))
+        ? declined(t)
         : {
+            cancelled: false,
             detail: getTransactionSignCustomMessage(error),
             message: t("steps.failure.wallet_failed"),
           },
-    WalletRequestCancelled: () => plain(t("steps.failure.rejected")),
+    WalletRequestCancelled: () => declined(t),
     WalletUnavailable: ({ detail }) =>
       plain(
         Match.value(detail).pipe(
@@ -71,13 +82,14 @@ const describeOnChainFailure = (
 ): TransactionFailure => {
   const stripped = reason?.replace(REVERT_PREFIX, "").trim();
   const short = stripped?.replace(/\.$/, "");
-  if (!short) return { detail: null, message: t("steps.failure.failed") };
+  if (!short) return plain(t("steps.failure.failed"));
   return short.length <= SHORT_REASON_LENGTH
-    ? {
-        detail: null,
-        message: t("steps.failure.failed_on_chain", { reason: short }),
-      }
-    : { detail: stripped ?? null, message: t("steps.failure.failed") };
+    ? plain(t("steps.failure.failed_on_chain", { reason: short }))
+    : {
+        cancelled: false,
+        detail: stripped ?? null,
+        message: t("steps.failure.failed"),
+      };
 };
 
 /**

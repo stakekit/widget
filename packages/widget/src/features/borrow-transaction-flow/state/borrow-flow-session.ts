@@ -66,11 +66,28 @@ export const startBorrowTransactionFlowAtom = walletRuntime
   )
   .pipe(Atom.withLabel("startBorrowTransactionFlowAtom"));
 
+/** How many history entries past the page it started from each page sits. */
+const borrowFlowDepth = { Review: 1, Steps: 2 } as const;
+
 /**
- * Leaves the flow for the page it started from. A started router navigation
- * cannot be cancelled, so a page that ends meanwhile waits for it.
+ * Leaves the flow for the page it started from, back through the history
+ * the flow pushed, so Back from there does not return to the flow. A started
+ * router navigation cannot be cancelled, so a page that ends meanwhile waits
+ * for it.
  */
-export const leaveBorrowFlow = (session: BorrowFlowSession) =>
+export const leaveBorrowFlow = (from: keyof typeof borrowFlowDepth) =>
+  WidgetNavigation.use((navigation) =>
+    Effect.uninterruptible(
+      navigation.execute({ _tag: "Back", steps: borrowFlowDepth[from] })
+    )
+  );
+
+/**
+ * Opens the page the flow started from afresh in its place, as Done on
+ * Complete does for a new action. A started router navigation cannot be
+ * cancelled, so a page that ends meanwhile waits for it.
+ */
+export const restartBorrowFlow = (session: BorrowFlowSession) =>
   WidgetNavigation.use((navigation) =>
     Effect.uninterruptible(
       navigation.execute({

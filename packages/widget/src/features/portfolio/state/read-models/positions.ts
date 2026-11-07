@@ -12,7 +12,10 @@ import type { EarnBalance } from "../../../../domain/earn/models";
 import { getYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
-import { getPositionAttention } from "../../../../domain/portfolio/position-callout";
+import {
+  getPositionAttention,
+  type PositionAttention,
+} from "../../../../domain/portfolio/position-callout";
 import {
   type BalanceDataKey,
   getPositionValueTotal,
@@ -35,28 +38,25 @@ import { toPresentable } from "../../../../shared/effect/async-result";
 import { walletScopeAtom } from "../../../wallet/index";
 import { yieldBalancesScanAtom } from "./yield-balances";
 
-export type PositionItem = {
+/**
+ * One balance group of an Earn position, with what it asks of the user
+ * (`PositionAttention`).
+ */
+export type PositionItem = PositionAttention & {
   readonly integrationId: YieldId;
   readonly balancesWithAmount: EarnBalance[];
   readonly allBalances: EarnBalance[];
   readonly balanceId: BalanceDataKey;
-  readonly actionRequired: boolean;
-  /**
-   * Only optional cancellations are pending, or an Instant Exit is still to
-   * finalize: the request is in progress.
-   */
-  readonly hasPendingRequest: boolean;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
-  readonly hasPendingClaimRewards: boolean;
   /**
    * Every balance with an amount: one sum in the primary Value Token when all
    * are priced, else one per Value Token.
    */
   readonly total: ReadonlyArray<PositionTokenSum>;
 } & (
-  | { readonly type: "validators"; readonly validators: PositionValidators }
-  | { readonly type: "default" }
-);
+    | { readonly type: "validators"; readonly validators: PositionValidators }
+    | { readonly type: "default" }
+  );
 
 export type UnifiedPositionItem =
   | { readonly kind: "borrow"; readonly position: MarketPosition }
@@ -117,7 +117,7 @@ export const toPositionItems = (
 
 /** A position that asks something of the user: an action or a claim. */
 const needsAction = (item: PositionItem) =>
-  item.actionRequired || item.hasPendingClaimRewards;
+  item.requiredAction !== null || item.hasPendingClaimRewards;
 
 /**
  * Sorts by rank, lowest first, then by USD value, largest first. The sort is

@@ -10,20 +10,22 @@ import { elevation } from "../tokens/elevation.stylex";
 /** The color schemes the theme root applies. Light is the tokens' default. */
 export type ColorScheme = "light" | "dark";
 
-// `surface` stands 1.21:1 off the canvas, so a filled card's edge reads.
+// The neutrals lean slightly toward the accent's blue, as in light.
+// `surface` stands 1.16:1 off the canvas, so a filled card's edge reads, and
+// `surfaceHover` 1.13:1 off `surface`, so hover reads as a change.
 // `surfaceRaised` sits just above `surface`: in dark a shadow does not show,
 // so the `raised` elevation outlines it instead (see `darkElevation`).
 const darkColorRoles: ColorRoles = {
-  background: "#111113",
-  surface: "#232328",
-  surfaceHover: "#2B2B31",
-  surfaceRaised: "#28282D",
-  border: "#303036",
-  borderStrong: "#3F3F47",
-  text: "#F4F4F5",
-  textMuted: "#A1A1AA",
-  textSubtle: "#71717A",
-  // 3.01:1 on `surfaceHover`, so a selected control's accent cue reads; the
+  background: "#0F1014",
+  surface: "#1E1F27",
+  surfaceHover: "#272932",
+  surfaceRaised: "#23242D",
+  border: "#2D2F39",
+  borderStrong: "#3C3F4B",
+  text: "#F3F4F7",
+  textMuted: "#A1A3B3",
+  textSubtle: "#6E7182",
+  // 3.10:1 on `surfaceHover`, so a selected control's accent cue reads; the
   // greys above are as light as that allows. Hover deepens it (1.25:1 off the
   // accent) under the white text, which a lighter hover would drop below
   // 4.5:1.
@@ -38,8 +40,8 @@ const darkColorRoles: ColorRoles = {
   warningSoft: "#2E2614",
   danger: "#F87171",
   dangerSoft: "#2E1B1D",
-  info: "#9AA6FF",
-  infoSoft: "#1E2238",
+  info: "#7DD3FC",
+  infoSoft: "#0F2A3A",
   focusRing: "#8C9BFF",
   scrim: "rgb(0 0 0 / 0.64)",
 };
@@ -47,12 +49,13 @@ const darkColorRoles: ColorRoles = {
 const darkColors = stylex.createTheme(color, darkColorRoles);
 
 // In dark, a shadow does not show on the canvas: the shell is outlined in
-// the border role instead, and a raised surface (a selected tab or segment,
-// the token trigger, an elevated card) adds a `borderStrong` outline to its
-// shadow, so it reads against the surface it sits on.
+// the border role instead, a raised surface (a selected tab or segment, the
+// token trigger, an elevated card) adds a `borderStrong` outline to its
+// shadow, so it reads against the surface it sits on, and an overlay, such as
+// a dialog over the scrim, is edged in `border` over its shadow.
 const darkElevation = stylex.createTheme(elevation, {
   raised: `0 0 0 1px ${color.borderStrong}, 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.32)`,
-  overlay: "0 12px 32px rgb(0 0 0 / 0.48)",
+  overlay: `0 0 0 1px ${color.border}, 0 12px 32px rgb(0 0 0 / 0.48)`,
   shell: `0 0 0 1px ${color.border}`,
 });
 
@@ -99,9 +102,11 @@ export type PresetPalette = Readonly<{
 // text, 1.26:1 off the accent (6.37:1). Its accent text and focus ring are a
 // deeper teal in light.
 // Its dark surfaces sit closer to the canvas than its translucent greys, with
-// white text, so text derived from a host accent keeps its contrast on them.
-// Its danger is lighter than the dark scheme's, which reads 4.11:1 on its
-// hover surface.
+// white text, so text derived from a host accent keeps its contrast on them;
+// its dark hover stands 1.13:1 off them. Its danger is lighter than the dark
+// scheme's, which reads 4.11:1 on its hover surface. Its `info` is a blue
+// set apart from the teal, deeper in light. Its light text stays the neutral
+// near-black rather than the default's blue-leaning one.
 const fineryLightColors = {
   background: "#FCFDFD",
   surface: "#EEF5F3",
@@ -109,6 +114,7 @@ const fineryLightColors = {
   surfaceRaised: "#FFFFFF",
   border: "#DCE7E4",
   borderStrong: "#C8D8D4",
+  text: "#18181B",
   textMuted: "#566664",
   textSubtle: "#879593",
   accent: "#119A88",
@@ -116,8 +122,8 @@ const fineryLightColors = {
   onAccent: "#18181B",
   accentSoft: "#EBF9F7",
   accentText: "#0B7468",
-  info: "#0B7468",
-  infoSoft: "#EBF9F7",
+  info: "#1360A0",
+  infoSoft: "#E6F0FA",
   focusRing: "#0B7468",
 };
 
@@ -136,7 +142,7 @@ const fineryLightTheme = [fineryLightColorTheme, fineryLightElevation];
 const fineryDarkColors = {
   background: "#243034",
   surface: "#2B373B",
-  surfaceHover: "#303C40",
+  surfaceHover: "#333F44",
   surfaceRaised: "#2B373B",
   text: "#FFFFFF",
   border: "#3A464A",
@@ -148,8 +154,8 @@ const fineryDarkColors = {
   onAccent: "#122024",
   accentSoft: "#233C3E",
   accentText: "#5EE3D0",
-  info: "#5EE3D0",
-  infoSoft: "#233C3E",
+  info: "#8CCBF7",
+  infoSoft: "#1E344C",
   focusRing: "#16C7B0",
   danger: "#FC9090",
 };
@@ -162,7 +168,8 @@ const fineryDarkTheme = stylex.createTheme(color, {
 // Porto: dark only and high contrast: a near-black canvas, white text, and
 // flat surfaces edged in `border` rather than shadowed (`portoElevation`).
 // Its lavender accent is too light for white text (2.48:1), so `onAccent` is
-// dark; its soft tint and accent text are lavender too.
+// dark; its soft tint and accent text are lavender too, and its `info` the
+// dark scheme's sky blue, apart from the lavender.
 const portoColors = {
   background: "#0F0F10",
   surface: "#1F1F21",
@@ -178,8 +185,8 @@ const portoColors = {
   onAccent: "#171717",
   accentSoft: "#2D2649",
   accentText: "#AB95FF",
-  info: "#AB95FF",
-  infoSoft: "#2D2649",
+  info: "#7DD3FC",
+  infoSoft: "#0F2A3A",
   focusRing: "#AB95FF",
 };
 
@@ -191,8 +198,11 @@ const portoTheme = stylex.createTheme(color, {
 // Utila: light only, on Utila's own palette exactly as it ships on `main`:
 // the default accent on its `#F5F5F6` grey and `#E4E4E7` lines, `#C9CFFF`
 // around inputs, `#373737` text, `#999999` secondary text and `#5C70FF` on
-// its light accent chips. Its secondary text and accent chips read below
-// WCAG AA; the contrast test exempts Utila by the product's choice.
+// its light accent chips, with informational text in the accent's text
+// color. Its secondary text and accent chips read below WCAG AA; the
+// contrast test exempts Utila by the product's choice. It also sets the roles
+// the light defaults have since moved away from (`textSubtle`, `info`), so it
+// still ships as on `main`.
 const utilaColors = {
   background: "#FFFFFF",
   surface: "#F5F5F6",
@@ -201,8 +211,10 @@ const utilaColors = {
   borderStrong: "#C9CFFF",
   text: "#373737",
   textMuted: "#999999",
+  textSubtle: "#8E8E99",
   accentSoft: "#F4F5FF",
   accentText: "#5C70FF",
+  info: "#3448E6",
   infoSoft: "#F4F5FF",
   warningSoft: "#FFE9BD",
 };

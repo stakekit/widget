@@ -66,10 +66,10 @@ const pagesAfterChange = async () => {
   return { present, opacity };
 };
 
-/** The figure painted two frames after mounting to count from 0 to 100. */
+/** The figure painted two frames after mounting with a value of 100. */
 const numberAfterMount = async () => {
   const screen = await render(
-    <AnimatedNumber value={100} initial={0} format={formatPercent} />
+    <AnimatedNumber value={100} format={formatPercent} />
   );
   await nextFrame();
   const painted = screen.container.querySelector("[aria-hidden='true']");
@@ -187,12 +187,12 @@ describe("Motion parts under reduced motion", () => {
     expect(reduced).toBe("100.00%");
   });
 
-  it("AnimatedNumber shows its value on mount without counting up", async () => {
+  it("AnimatedNumber shows its value on mount, with or without motion", async () => {
     const animated = await numberAfterMount();
     await emulateReducedMotion("reduce");
     const reduced = await numberAfterMount();
 
-    expect(animated).not.toBe("100.00%");
+    expect(animated).toBe("100.00%");
     expect(reduced).toBe("100.00%");
   });
 

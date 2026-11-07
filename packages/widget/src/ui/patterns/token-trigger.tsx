@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes, Ref } from "react";
 import { TokenAvatar } from "../components/avatar";
 import { focusRingStyles } from "../components/focus-ring";
+import { hitAreaStyles } from "../components/hit-area";
 import type { HostHook } from "../host-hook";
 import { Icon } from "../primitives/icon";
 import { Text } from "../primitives/text";
@@ -112,6 +113,8 @@ export const TokenTrigger = ({
         sizeStyles[size],
         styles.button,
         flat && styles.flat,
+        // A header pill is shorter than a finger; the amount's pill is not.
+        flat && hitAreaStyles.coarse,
         focusRingStyles.visible
       )}
     >
@@ -212,6 +215,8 @@ const styles = stylex.create({
       )]: color.surfaceRaised,
     },
     boxShadow: "none",
+    // A header pill gives way, its name truncating, so one row holds them.
+    flexShrink: 1,
   },
 });
 

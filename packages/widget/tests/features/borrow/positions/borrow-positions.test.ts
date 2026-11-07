@@ -257,17 +257,19 @@ describe("borrow position items", () => {
 
     expect(model.title).toBe("WETH/USDC");
     expect(model.providerName).toBe("Aave V3");
-    expect(model.metricCards.map((card) => card.id)).toEqual([
-      "net-worth",
+    expect(model.summary.metrics.map((metric) => metric.id)).toEqual([
       "debt",
-      "ltv",
       "health-factor",
     ]);
-    expect(model.breakdownRows.map((row) => row.id)).toEqual([
-      `supply-${marketDto.collateralTokens[0].token.address.toLowerCase()}`,
-      `debt-${marketDto.loanToken.address.toLowerCase()}`,
+    // The summary's gauge marks the liquidation threshold, so the details
+    // leave it out, as they leave the header's provider and network.
+    expect(model.detailRows.map((row) => row.id)).toEqual([
+      "borrowed",
+      "borrow-apy",
+      "market-type",
+      "max-ltv",
+      "liquidation-penalty",
     ]);
-    expect(model.detailRows.map((row) => row.id)).toContain("borrow-apy");
     expect(model.currentLtv).toEqual(new BigNumber("0.4"));
     expect(model.healthFactor).toEqual(new BigNumber("2.125"));
     expect(model.liquidationThreshold).toEqual(new BigNumber("0.85"));
@@ -622,13 +624,22 @@ describe("borrow position items", () => {
     });
     expect(model.providerName).toBe("Morpho Blue");
     expect(model.healthFactor).toEqual(new BigNumber("4.3708"));
-    expect(model.totalCollateralUsd).toBe("$2.54");
-    expect(model.metricCards.find((card) => card.id === "debt")?.value).toBe(
-      "$0.50"
-    );
+    // The summary's caption carries the collateral value.
+    const captionT = ((key: string, options?: { collateral?: string }) =>
+      options?.collateral ?? key) as TFunction;
+    expect(
+      getBorrowPositionDetailsModel({
+        locale: "en",
+        position: usdcPosition,
+        t: captionT,
+      }).summary.subvalue
+    ).toBe("$2.54");
+    expect(
+      model.summary.metrics.find((metric) => metric.id === "debt")?.value
+    ).toBe("$0.50");
+    expect(model.networkName).toBe("Ethereum");
     expect(model.detailRows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "network", value: "Ethereum" }),
         expect.objectContaining({ id: "borrow-apy", value: "3.85%" }),
       ])
     );
@@ -745,9 +756,7 @@ describe("borrow position items", () => {
         t,
       });
       expect(model.title).toBe("USDC/GHO");
-      expect(
-        model.metricCards.find((card) => card.id === "net-worth")?.value
-      ).toBe("$0.03");
+      expect(model.summary.value).toBe("$0.03");
     });
 
     it("shares pool collateral across debts without double-counting account totals", () => {

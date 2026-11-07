@@ -23,7 +23,7 @@ const ActivityCompleteContent = ({
 }: {
   readonly view: NonNullable<ReturnType<typeof useActivityComplete>>;
 }) => {
-  const { amount, yieldType, network, providerDetails, selectedAction } =
+  const { amount, yieldType, network, selectedAction } =
     useActivityCompleteView(view);
   useContinuationCompleteTracking(selectedAction.intent);
   // Only an exit unlocks later or pays out in another token.
@@ -40,7 +40,6 @@ const ActivityCompleteContent = ({
   return (
     <CompletePage
       yieldType={yieldType}
-      providersDetails={providerDetails}
       markToken={markToken}
       network={network}
       amount={amount}

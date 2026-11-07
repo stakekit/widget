@@ -1,4 +1,4 @@
-import { Data, Duration, Effect, Option, Result } from "effect";
+import { Data, Duration, Effect, Option, Result, Schedule } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type {
@@ -12,6 +12,7 @@ import type {
   ResponseDecodeError,
 } from "../../services/api/resource-sources";
 import { YieldResourceSource } from "../../services/api/resource-sources";
+import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {
   API_MAX_PAGE_SIZE,
@@ -70,6 +71,32 @@ const directoryPolicy = withApiResourcePolicy({
   staleTime: Duration.minutes(5),
 });
 
+/**
+ * A failure the API may not repeat: it was unreachable, was rate limited or
+ * failed on its side. An answer it gave for the request itself, such as a
+ * 400, or a body that could not be read, would fail again.
+ */
+const isTransientFailure = (error: ApiRequestError | ResponseDecodeError) => {
+  if (error._tag !== "ApiRequestError") return false;
+  const { failure } = error;
+  if (failure._tag === "Unreachable") return true;
+  return (
+    failure._tag === "ErrorStatus" &&
+    (failure.status === 429 || failure.status >= 500)
+  );
+};
+
+/**
+ * Past the transport's immediate retries, the directory asks again twice,
+ * 1 s and then 2 s later, so a brief outage settles before the page shows
+ * its failure.
+ */
+const transientBackoff = {
+  schedule: Schedule.exponential(Duration.seconds(1)),
+  times: 2,
+  while: isTransientFailure,
+} as const;
+
 const yieldDirectoryCanonicalAtom = Atom.family((key: YieldDirectoryKey) =>
   appRuntime
     .atom(() =>
@@ -114,9 +141,16 @@ const yieldDirectoryCanonicalAtom = Atom.family((key: YieldDirectoryKey) =>
             (yieldId) => !returnedIds.has(yieldId)
           ),
         } satisfies YieldDirectoryResult;
-      }).pipe(Effect.mapError((cause) => new YieldDirectoryError({ cause })))
+      }).pipe(
+        Effect.retry(transientBackoff),
+        Effect.mapError((cause) => new YieldDirectoryError({ cause }))
+      )
     )
-    .pipe(directoryPolicy, Atom.withLabel("yieldDirectoryResourceAtom"))
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
+      directoryPolicy,
+      Atom.withLabel("yieldDirectoryResourceAtom")
+    )
 );
 
 export const yieldDirectoryResourceAtom = makePresentableResourceFamily(

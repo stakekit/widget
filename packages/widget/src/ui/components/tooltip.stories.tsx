@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, screen, userEvent, waitFor, within } from "storybook/test";
+import { isWithin } from "../storybook/geometry";
+import { PopupFrame } from "../storybook/popup-frame";
 import { Button } from "./button";
 import { Tooltip } from "./tooltip";
 
@@ -78,5 +80,32 @@ export const Sides: Story = {
     );
     const hint = await screen.findByText("On the bottom");
     await waitFor(() => expect(hint).toBeVisible());
+  },
+};
+
+/**
+ * It stays inside the Widget's frame: asked for the right side by a trigger
+ * at the frame's right edge, the hint flips to the left rather than passing
+ * the edge, though the page has room beyond it.
+ */
+export const StaysInFrame: Story = {
+  args: { side: "right", label: "Copy the full address" },
+  render: (args) => (
+    <PopupFrame>
+      <Tooltip {...args} />
+    </PopupFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    await userEvent.hover(
+      within(canvasElement).getByRole("button", { name: "Copy" })
+    );
+    const hint = await screen.findByText("Copy the full address");
+    await waitFor(() => expect(hint).toBeVisible());
+    const frame = within(canvasElement).getByTestId("frame");
+    await waitFor(() =>
+      expect(
+        isWithin(hint.getBoundingClientRect(), frame.getBoundingClientRect())
+      ).toBe(true)
+    );
   },
 };

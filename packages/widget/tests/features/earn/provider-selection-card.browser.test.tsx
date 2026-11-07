@@ -35,6 +35,7 @@ vi.mock(
     const actual = await importOriginal<object>();
     return {
       ...actual,
+      useEarnDetails: () => ({ view: hookState.entryView }),
       useEarnEntry: () => ({ view: hookState.entryView }),
     };
   }

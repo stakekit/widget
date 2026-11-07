@@ -16,6 +16,7 @@ import { condensedRowHeight, ListRow } from "../components/list-row";
 import { Modal } from "../components/modal";
 import { SearchInput } from "../components/search-input";
 import { Spinner } from "../components/spinner";
+import { useCoarsePointer } from "../components/use-media-query";
 import { VirtualList } from "../components/virtual-list";
 import { Box } from "../primitives/box";
 import { Stack } from "../primitives/stack";
@@ -79,7 +80,7 @@ type OptionsOrGroups =
        * Titled runs of options, such as "Your tokens" and "All tokens". A
        * group with `logo`, such as a market's token, heads its run with the
        * avatar and its label in normal case; `caption`, such as
-       * "from 0.02%", aligns to the header's end.
+       * "from 0.02%", ends over its options' values.
        */
       readonly groups: ReadonlyArray<{
         readonly key: string;
@@ -145,11 +146,16 @@ type SelectSheetProps = OptionsOrGroups &
     /**
      * The search field over the options. Filtering is the caller's: it passes
      * the options that match `value`. Closing the sheet clears the query.
+     * With a search field the sheet holds its height, so it never moves as
+     * the matches change; with a fine pointer the field takes focus as the
+     * sheet opens, and with a touch it waits for a tap, so no on-screen
+     * keyboard covers the options.
      */
     readonly search?: {
       readonly value: string;
       readonly onValueChange: (value: string) => void;
       readonly label: string;
+      /** Says what the field searches, such as "Search tokens"; unset, `label`. */
       readonly placeholder?: string;
       readonly clearLabel: string;
     };
@@ -216,7 +222,10 @@ const nextEnabled = (
  * validator: a `Modal` with a search field over a virtualized list of rows.
  * With a search field, focus stays in it while the arrow keys move through
  * the options and Enter chooses one; Escape clears the query, then closes.
- * It opens on the current choice, scrolled into view. Choosing an option
+ * With a search field it holds its height, so the field and the list's top
+ * stay put as the matches change, and a search with no match shows its
+ * empty state where the options were. It opens on the current choice,
+ * scrolled into view. Choosing an option
  * closes the sheet, unless it takes `multiple` choices or `closesOnSelect` is
  * off. Its rows are `flat`, as every picker's: their content lines up with
  * the title while their tint reaches past it.
@@ -251,6 +260,7 @@ export const SelectSheet = ({
   const baseId = useId();
   const listId = `${baseId}-list`;
   const searchRef = useRef<HTMLInputElement>(null);
+  const coarsePointer = useCoarsePointer();
   const [ownOpen, setOwnOpen] = useState(false);
   const shown = open ?? ownOpen;
   // Unset until the keys or the query move it, the active option is the
@@ -373,11 +383,14 @@ export const SelectSheet = ({
     );
   };
 
+  // A sheet that holds its height lets the list fill what the search field
+  // leaves; otherwise the list caps itself and the sheet fits it.
+  const fixedHeight = search !== undefined;
   const listProps = {
     label: listLabel,
     getKey: (option: SelectSheetOption) => option.id,
     renderItem: renderOption,
-    maxHeight: "lg",
+    ...(fixedHeight ? {} : ({ maxHeight: "lg" } as const)),
     ...(layout.estimateSize === undefined
       ? {}
       : { estimateSize: layout.estimateSize }),
@@ -401,10 +414,15 @@ export const SelectSheet = ({
     </Stack>
   );
 
+  // A state in place of the options sits where they would, centered in the
+  // space a sheet that holds its height keeps for them.
+  const inListArea = (state: ReactNode) => (
+    <div {...stylex.props(styles.state)}>{state}</div>
+  );
   const body = (): ReactNode => {
-    if (loading && flat.length === 0) return spinner;
+    if (loading && flat.length === 0) return inListArea(spinner);
     if (error !== undefined) {
-      return (
+      return inListArea(
         <ErrorState
           title={error.title}
           {...(error.body === undefined ? {} : { body: error.body })}
@@ -413,12 +431,14 @@ export const SelectSheet = ({
       );
     }
     if (flat.length === 0) {
-      return empty === undefined ? null : (
-        <EmptyState
-          title={empty.title}
-          {...(empty.body === undefined ? {} : { body: empty.body })}
-        />
-      );
+      return empty === undefined
+        ? null
+        : inListArea(
+            <EmptyState
+              title={empty.title}
+              {...(empty.body === undefined ? {} : { body: empty.body })}
+            />
+          );
     }
     const list =
       optionsOrGroups.groups === undefined ? (
@@ -427,6 +447,9 @@ export const SelectSheet = ({
         <VirtualList
           {...listProps}
           stickyHeaders
+          // A single choice's rows keep a check's slot after their values;
+          // a group's caption ends where the values do.
+          {...(multiple === undefined ? { headerInsetEnd: "checkSlot" } : {})}
           groups={optionsOrGroups.groups.map((group) => ({
             key: group.key,
             label: group.label,
@@ -445,6 +468,9 @@ export const SelectSheet = ({
     return <div {...stylex.props(styles.list, styles.flatList)}>{list}</div>;
   };
   const replacing = loading && flat.length > 0 && error === undefined;
+  // A touch keyboard would cover the options, so a coarse pointer focuses
+  // the dialog rather than the search field.
+  const searchFocus = coarsePointer ? "dialog" : searchRef;
 
   return (
     <Modal
@@ -454,12 +480,14 @@ export const SelectSheet = ({
       title={title}
       closeLabel={closeLabel}
       size={layout.dialogSize}
+      fixedHeight={fixedHeight}
+      contentScrolls
       {...(testIds?.container === undefined
         ? {}
         : { testId: testIds.container })}
       {...(testIds?.title === undefined ? {} : { titleTestId: testIds.title })}
       {...(trigger === undefined ? {} : { trigger })}
-      {...(search === undefined ? {} : { initialFocus: searchRef })}
+      {...(search === undefined ? {} : { initialFocus: searchFocus })}
       {...(footer === undefined
         ? {}
         : {
@@ -528,6 +556,13 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     flexGrow: 1,
+    minHeight: 0,
+  },
+  state: {
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1,
+    justifyContent: "center",
     minHeight: 0,
   },
   // Past the body's inline padding by a row's own, so the rows' content lines

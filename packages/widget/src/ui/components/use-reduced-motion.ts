@@ -1,12 +1,4 @@
-import { useSyncExternalStore } from "react";
-
-const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
-
-const subscribe = (onChange: () => void) => {
-  const query = window.matchMedia(reducedMotionQuery);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-};
+import { useMediaQuery } from "./use-media-query";
 
 /**
  * Whether the user asks for reduced motion, kept current as the preference
@@ -14,8 +6,4 @@ const subscribe = (onChange: () => void) => {
  * preference once; CSS transitions read it through the motion tokens.
  */
 export const useReducedMotion = () =>
-  useSyncExternalStore(
-    subscribe,
-    () => window.matchMedia(reducedMotionQuery).matches,
-    () => false
-  );
+  useMediaQuery("(prefers-reduced-motion: reduce)");

@@ -14,6 +14,7 @@ import {
   type Responsive,
   type Space,
 } from "./layout";
+import { scrollStyles } from "./scroll";
 
 type BoxProps = LayoutElementProps & {
   readonly padding?: Responsive<Space>;
@@ -71,7 +72,8 @@ export const Box = ({
         minHeight && minHeightStyles[minHeight],
         grow && flexItemStyles.grow,
         position && positionStyles[position],
-        overflow && overflowStyles[overflow]
+        overflow && overflowStyles[overflow],
+        overflow === "auto" && scrollStyles.stableGutter
       ),
     },
     children

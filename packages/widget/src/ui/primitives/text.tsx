@@ -10,6 +10,8 @@ import {
   fontSize,
   fontWeight,
   lineHeight,
+  roleWeight,
+  tracking,
 } from "../tokens/typography.stylex";
 import { Icon } from "./icon";
 import { InlineIcon } from "./inline-icon";
@@ -93,7 +95,8 @@ const styles = stylex.create({
     margin: 0,
     fontFamily: font.sans,
   },
-  numeric: { fontVariantNumeric: "tabular-nums" },
+  // Figures take the figure font, which a preset may set apart.
+  numeric: { fontFamily: font.figure, fontVariantNumeric: "tabular-nums" },
   truncate: {
     overflow: "hidden",
     display: "block",
@@ -109,11 +112,14 @@ const alignStyles = stylex.create({
   end: { textAlign: "end" },
 });
 
+// A title is a step heavier than a heading, so the two read apart.
 const roleStyles = stylex.create({
   display: {
+    fontFamily: font.figure,
     fontSize: fontSize.display,
     fontVariantNumeric: "tabular-nums",
     fontWeight: figureWeight.display,
+    letterSpacing: tracking.display,
     lineHeight: lineHeight.display,
   },
   title: {
@@ -123,10 +129,11 @@ const roleStyles = stylex.create({
   },
   heading: {
     fontSize: fontSize.heading,
-    fontWeight: fontWeight.semibold,
+    fontWeight: roleWeight.heading,
     lineHeight: lineHeight.heading,
   },
   metric: {
+    fontFamily: font.figure,
     fontSize: fontSize.metric,
     fontVariantNumeric: "tabular-nums",
     fontWeight: fontWeight.semibold,

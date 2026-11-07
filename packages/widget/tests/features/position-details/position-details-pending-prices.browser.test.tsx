@@ -37,7 +37,7 @@ describe("Position details while prices are pending", () => {
     await userEvent.click(app.getByText("Trust USDA Earn").first());
 
     await expect
-      .element(app.getByRole("textbox", { name: "Withdraw" }))
+      .element(app.getByRole("textbox", { name: "Amount" }))
       .toBeInTheDocument();
     expect(
       app.container.querySelector('[data-testid="position-details-skeleton"]')
@@ -45,14 +45,14 @@ describe("Position details while prices are pending", () => {
     // The balance is valued by the API's amountUsd, not by prices.
     await expect
       .element(
-        app
-          .getByTestId("position-metric-balance")
-          .getByText("$1M", { exact: true })
+        app.getByTestId("position-summary").getByText("$1M", { exact: true })
       )
       .toBeInTheDocument();
 
-    await userEvent.click(app.getByRole("tab", { name: "Deposit" }));
-    await userEvent.click(app.getByRole("textbox", { name: "Deposit" }));
+    await userEvent.click(
+      app.getByRole("tab", { name: "Deposit", exact: true })
+    );
+    await userEvent.click(app.getByRole("textbox", { name: "Amount" }));
     await userEvent.keyboard("10");
 
     // The typed amount's fiat needs prices: a placeholder holds its place.

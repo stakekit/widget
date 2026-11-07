@@ -16,6 +16,7 @@ const stateLabels = {
   broadcasting: "Broadcasting",
   done: "Confirmed",
   failed: "Failed",
+  cancelled: "Cancelled in wallet",
 } as const;
 
 /**

@@ -93,7 +93,7 @@ describe("Deep links flow", () => {
 
     await expect
       .element(
-        app.getByText("By clicking confirm you agree to", { exact: false })
+        app.getByText("By selecting Confirm, you agree to", { exact: false })
       )
       .toBeInTheDocument();
 
@@ -106,7 +106,9 @@ describe("Deep links flow", () => {
 
     await confirmButton.click();
 
-    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
@@ -175,7 +177,7 @@ describe("Deep links flow", () => {
 
     await expect
       .element(
-        app.getByText("By clicking confirm you agree to", { exact: false })
+        app.getByText("By selecting Confirm, you agree to", { exact: false })
       )
       .toBeInTheDocument();
 
@@ -185,7 +187,9 @@ describe("Deep links flow", () => {
 
     await app.getByRole("button", { name: "Confirm" }).click();
 
-    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })

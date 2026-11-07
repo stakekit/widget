@@ -7,6 +7,14 @@ export const controlHeight = stylex.defineVars({
   lg: "48px",
 });
 
+/**
+ * The least hit area of a control under a coarse pointer (`pointer.coarse`),
+ * whatever its drawn size: a touch target's 44px.
+ */
+export const hitArea = stylex.defineConsts({
+  coarse: "44px",
+});
+
 /** Icon sizes; `xl` is for an icon that illustrates, as in a `Spot`. */
 export const iconSize = stylex.defineConsts({
   sm: "16px",
@@ -81,13 +89,12 @@ export const avatarBadgeSize = stylex.defineConsts({
 /**
  * A token trigger's height: `md` a touch-sized pill around a `control`
  * avatar; `sm` a wallet header's pill around an `sm` avatar, as tall as a
- * small control. `tabs` is a role, not a step: as tall as a pill `Tabs` list,
- * whose 4px padding holds a tab's 6px padding around its 18px label line,
- * over the list's 1px rule.
+ * small control. `tabs` is a role, not a step: as tall as a `Tabs` list, on
+ * the 4px grid, so the tabs and the pills beside them share one row height.
  */
 export const tokenTriggerHeight = stylex.defineConsts({
   sm: "32px",
-  tabs: "39px",
+  tabs: "40px",
   md: "44px",
 });
 

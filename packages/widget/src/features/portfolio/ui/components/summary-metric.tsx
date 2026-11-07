@@ -18,6 +18,7 @@ export const SummaryMetric = ({
   figure,
   isPartial,
   kind,
+  size = "default",
 }: {
   readonly label: string;
   readonly figure: SummaryValue;
@@ -25,6 +26,8 @@ export const SummaryMetric = ({
   readonly isPartial: boolean;
   /** A USD amount, or a percent given in whole percents, such as 4.2. */
   readonly kind: "usd" | "percent";
+  /** `lead` for the summary's lead figure. */
+  readonly size?: "default" | "lead";
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -33,6 +36,7 @@ export const SummaryMetric = ({
     return (
       <Metric
         label={label}
+        size={size}
         value={<Skeleton shape="rect" height="sm" width="half" />}
       />
     );
@@ -41,6 +45,7 @@ export const SummaryMetric = ({
     return (
       <Metric
         label={label}
+        size={size}
         value={unavailableFigure}
         {...(isPartial
           ? { caption: t("dashboard.overview.summary.partial") }
@@ -51,7 +56,9 @@ export const SummaryMetric = ({
 
   const { value } = figure;
   if (kind === "usd") {
-    return <Metric label={label} value={formatUsd(value, locale)} />;
+    return (
+      <Metric label={label} size={size} value={formatUsd(value, locale)} />
+    );
   }
 
   return (

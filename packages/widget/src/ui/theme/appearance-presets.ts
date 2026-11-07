@@ -2,10 +2,15 @@ import type { CompiledStyles, StyleXArray } from "@stylexjs/stylex";
 import * as stylex from "@stylexjs/stylex";
 import { type ColorRoles, color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
-import { radius } from "../tokens/radius.stylex";
+import { controlRadius, radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { tokenTrigger } from "../tokens/token-trigger.stylex";
-import { figureWeight, fontWeight } from "../tokens/typography.stylex";
+import {
+  figureWeight,
+  font,
+  fontWeight,
+  roleWeight,
+} from "../tokens/typography.stylex";
 import { applyHostColors } from "./appearance";
 import {
   type ColorScheme,
@@ -32,9 +37,9 @@ type PresetTheme = StyleXArray<CompiledStyles | null>;
 /**
  * A preset's values: a palette per color scheme it supports (in
  * `color-schemes.ts`, beside the schemes' roles its dark palettes build on)
- * and the themes it applies in any scheme, over the radius, weight, control
- * height and elevation variables. A preset with one palette fixes the color
- * scheme to it, whatever the host requests.
+ * and the themes it applies in any scheme, over the radius, font, weight,
+ * control height and elevation variables. A preset with one palette fixes the
+ * color scheme to it, whatever the host requests.
  */
 type PresetDefinition = Readonly<{ theme: PresetTheme }> &
   (
@@ -48,11 +53,13 @@ type PresetDefinition = Readonly<{ theme: PresetTheme }> &
 const basePalette: PresetPalette = { colors: {}, theme: null };
 
 // Each preset's identity beyond its colors. Finery is airy: softer, larger
-// radii and lighter headings. Porto is tight and flat: small radii, pill
-// controls cornered as its controls, a lighter weight scale, and every raised
-// part edged in a line instead of a shadow. Utila is crisp and compact: 8px
-// radii on cards, controls, pill controls and overlays, shorter controls, and
-// raised parts edged in its border over a faint shadow.
+// radii, lighter headings and a humanist sans. Porto is tight and flat: small
+// radii, pill controls cornered as its controls, a lighter weight scale, a
+// geometric sans over monospace figures, and every raised part edged in a
+// line instead of a shadow. Utila is crisp and compact: 8px radii on cards,
+// controls, pill controls and overlays, shorter controls, and raised parts
+// edged in its border over a faint shadow. The fonts are system stacks; a
+// host's `font` replaces them (see `appearanceProperties`).
 const fineryRadius = stylex.createTheme(radius, {
   badge: "8px",
   control: "14px",
@@ -68,6 +75,14 @@ const fineryFontWeight = stylex.createTheme(fontWeight, {
 
 // Big figures follow each preset's lighter semibold.
 const fineryFigureWeight = stylex.createTheme(figureWeight, { display: "500" });
+
+const finerySans =
+  'Seravek, "Gill Sans Nova", Ubuntu, Calibri, "DejaVu Sans", source-sans-pro, sans-serif';
+
+const fineryFont = stylex.createTheme(font, {
+  sans: finerySans,
+  figure: finerySans,
+});
 
 const portoRadius = stylex.createTheme(radius, {
   badge: "4px",
@@ -86,6 +101,11 @@ const portoFontWeight = stylex.createTheme(fontWeight, {
 });
 
 const portoFigureWeight = stylex.createTheme(figureWeight, { display: "500" });
+
+const portoFont = stylex.createTheme(font, {
+  sans: 'Avenir, Montserrat, Corbel, "URW Gothic", source-sans-pro, sans-serif',
+  figure: font.mono,
+});
 
 // Applied after the dark scheme's elevation, which it replaces.
 const portoElevation = stylex.createTheme(elevation, {
@@ -139,11 +159,32 @@ const utilaTokenTrigger = stylex.createTheme(tokenTrigger, {
 // Regular-weight amounts and rates over semibold headings, as Utila's own UI.
 const utilaFigureWeight = stylex.createTheme(figureWeight, { display: "400" });
 
+// The heading role's weight, from the preset's or host's scale: set on the
+// theme root beside it, as a variable referencing another resolves where it
+// is declared. Headings sit a step under titles; Utila keeps them semibold,
+// as it ships.
+const mediumHeading = stylex.createTheme(roleWeight, {
+  heading: fontWeight.medium,
+});
+
+const semiboldHeading = stylex.createTheme(roleWeight, {
+  heading: fontWeight.semibold,
+});
+
+// A button's corners by its size, from the preset's or host's `control`
+// radius: set on the theme root beside them, as a variable referencing
+// another resolves where it is declared.
+const sizedControlRadius = stylex.createTheme(controlRadius, {
+  sm: `calc(${radius.control} * 2 / 3)`,
+  md: `calc(${radius.control} * 5 / 6)`,
+  lg: radius.control,
+});
+
 const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
   {
     default: {
       palettes: { light: basePalette, dark: basePalette },
-      theme: raisedTokenTrigger,
+      theme: [raisedTokenTrigger, sizedControlRadius, mediumHeading],
     },
     finery: {
       palettes: presetPalettes.finery,
@@ -151,7 +192,10 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         fineryRadius,
         fineryFontWeight,
         fineryFigureWeight,
+        fineryFont,
         raisedTokenTrigger,
+        sizedControlRadius,
+        mediumHeading,
       ],
     },
     porto: {
@@ -161,8 +205,11 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         portoRadius,
         portoFontWeight,
         portoFigureWeight,
+        portoFont,
         portoElevation,
         raisedTokenTrigger,
+        sizedControlRadius,
+        mediumHeading,
       ],
     },
     utila: {
@@ -174,6 +221,8 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         utilaElevation,
         utilaTokenTrigger,
         utilaFigureWeight,
+        sizedControlRadius,
+        semiboldHeading,
       ],
     },
   };

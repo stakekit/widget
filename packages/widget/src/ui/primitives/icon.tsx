@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { type FixedIconName, glyphs } from "../icons/glyphs";
+import { type FixedIconName, glyphs, glyphViewBox } from "../icons/glyphs";
 import { iconSize } from "../tokens/size.stylex";
 import { type TextTone, textToneStyles } from "./text-tone";
 
@@ -24,6 +24,17 @@ type IconProps = CommonProps &
       }
   );
 
+/**
+ * The stroke width, in units of the glyphs' 24-unit grid, that draws a 1.5px
+ * line at each size, so every icon keeps one stroke whatever its size.
+ */
+const strokeWidths = {
+  sm: 2.25,
+  md: 1.8,
+  lg: 1.5,
+  xl: 1.125,
+} as const satisfies Record<keyof typeof sizeStyles, number>;
+
 /** One named icon from the Design System's set. */
 export const Icon = ({
   name,
@@ -31,29 +42,29 @@ export const Icon = ({
   size = "md",
   tone,
   label,
-}: IconProps) => {
-  const glyph = glyphs[name];
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={glyph.viewBox}
-      fill="none"
-      focusable="false"
-      {...(label === undefined
-        ? ({ "aria-hidden": true } as const)
-        : ({ role: "img", "aria-label": label } as const))}
-      {...stylex.props(
-        styles.root,
-        sizeStyles[size],
-        tone && textToneStyles[tone],
-        direction && directionStyles[direction]
-      )}
-    >
-      {glyph.body}
-    </svg>
-  );
-};
+}: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox={glyphViewBox}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidths[size]}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    focusable="false"
+    {...(label === undefined
+      ? ({ "aria-hidden": true } as const)
+      : ({ role: "img", "aria-label": label } as const))}
+    {...stylex.props(
+      styles.root,
+      sizeStyles[size],
+      tone && textToneStyles[tone],
+      direction && directionStyles[direction]
+    )}
+  >
+    {glyphs[name]}
+  </svg>
+);
 
 const styles = stylex.create({
   root: { display: "block", flexShrink: 0 },

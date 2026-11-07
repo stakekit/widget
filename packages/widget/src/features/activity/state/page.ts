@@ -1,4 +1,4 @@
-import { Duration, Array as EArray, Option } from "effect";
+import { Duration, Array as EArray, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
@@ -14,7 +14,12 @@ import {
 import { widgetConfigAtom } from "../../widget-configuration/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import { getActivitySettlement } from "../model/activity-action-list-item";
-import type { ActivityFilter, ActivityFilterOption } from "../model/filters";
+import {
+  type ActivityFilter,
+  type ActivityFilterOption,
+  getActivityFeedFilter,
+  isUncategorizedActivityAction,
+} from "../model/filters";
 import {
   ActivityActionsKey,
   ActivityFilterOptionsKey,
@@ -107,6 +112,76 @@ const getVisibleFilterOptions = (
 ): Array<ActivityFilterOption> =>
   options._tag === "Ready" ? [...options.value] : [];
 
+type ActivityActionsValue = Extract<
+  ActivityActionsResult,
+  { readonly _tag: "Success" }
+>["value"];
+
+/**
+ * The actions a filter shows from its feed, whether the feed holds them all,
+ * and how many there are. Other picks the uncategorized actions out of the
+ * All feed: it has them all once it found as many as its count, or once the
+ * feed has no more pages.
+ */
+const selectFilterActions = ({
+  feed: { done, items: batches },
+  filterOptions,
+  selectedFilter,
+}: {
+  readonly feed: ActivityActionsValue;
+  readonly filterOptions: ReadonlyArray<ActivityFilterOption>;
+  readonly selectedFilter: ActivityFilter;
+}): {
+  readonly actions: Array<ActivityActionItem>;
+  readonly complete: boolean;
+  readonly total: number;
+} => {
+  const feedActions = EArray.flatMap(batches, (batch) => batch.actions);
+
+  if (selectedFilter !== "other") {
+    return {
+      actions: feedActions,
+      complete: done,
+      total: done
+        ? feedActions.length
+        : (batches.at(-1)?.total ?? feedActions.length),
+    };
+  }
+
+  const actions = feedActions.filter(isUncategorizedActivityAction);
+  const otherCount =
+    filterOptions.find((option) => option.filter === "other")?.count ?? 0;
+  const complete = done || actions.length >= otherCount;
+
+  return {
+    actions,
+    complete,
+    total: complete ? actions.length : otherCount,
+  };
+};
+
+/**
+ * Whether the Other filter needs the All feed's next page: it has not found
+ * all its actions yet, and no page is loading or failed to load.
+ */
+export const needsNextOtherPage = ({
+  actionsResult,
+  filterOptionsResult,
+  selectedFilter,
+}: {
+  readonly actionsResult: ActivityActionsResult;
+  readonly filterOptionsResult: ActivityFilterOptionsResult;
+  readonly selectedFilter: ActivityFilter;
+}): boolean =>
+  selectedFilter === "other" &&
+  AsyncResult.isSuccess(actionsResult) &&
+  !actionsResult.waiting &&
+  !selectFilterActions({
+    feed: actionsResult.value,
+    filterOptions: getVisibleFilterOptions(toPresentable(filterOptionsResult)),
+    selectedFilter,
+  }).complete;
+
 const projectPagination = ({
   hasActions,
   hasNextPage,
@@ -152,19 +227,27 @@ export const projectActivityPageView = ({
   if (history._tag === "Loading") return { status: "loading" };
   if (history._tag === "Failed") return { status: "failed" };
 
-  const { done, items: batches } = history.value;
-  const actions = EArray.flatMap(batches, (batch) => batch.actions);
+  const filterOptionsView = toPresentable(filterOptionsResult);
+  const filterOptions = getVisibleFilterOptions(filterOptionsView);
+  const { actions, complete, total } = selectFilterActions({
+    feed: history.value,
+    filterOptions,
+    selectedFilter,
+  });
+  const refreshFailed = Option.isSome(history.refreshFailure);
+  // Other loads the All feed's pages on its own until it has all its actions.
+  const refreshing =
+    history.refreshing ||
+    (selectedFilter === "other" && !complete && !refreshFailed);
 
-  if (actions.length === 0 && history.refreshing) {
+  if (actions.length === 0 && refreshing) {
     return { status: "loading" };
   }
 
-  if (actions.length === 0 && Option.isSome(history.refreshFailure)) {
+  if (actions.length === 0 && refreshFailed) {
     return { status: "failed" };
   }
 
-  const filterOptionsView = toPresentable(filterOptionsResult);
-  const filterOptions = getVisibleFilterOptions(filterOptionsView);
   const hasReadyContent =
     actions.length > 0 || filterOptions.length > 0 || selectedFilter !== "all";
 
@@ -182,14 +265,14 @@ export const projectActivityPageView = ({
     filterOptions,
     pagination: projectPagination({
       hasActions: actions.length > 0,
-      hasNextPage: !done,
-      refreshFailed: Option.isSome(history.refreshFailure),
-      refreshing: history.refreshing,
+      hasNextPage: !complete,
+      refreshFailed,
+      refreshing,
     }),
     selectedFilter,
     showingCount: actions.length,
     status: "ready",
-    total: done ? actions.length : (batches.at(-1)?.total ?? actions.length),
+    total,
   };
 };
 
@@ -199,6 +282,60 @@ export const projectActivityPageView = ({
 // reloads the feed from its first page, so polling stops once the user has
 // loaded older pages rather than discarding them every minute.
 const settlementRefreshInterval = Duration.minutes(1);
+
+/**
+ * Refreshes a feed a minute after it settles on a request still awaiting its
+ * settlement. Without an idle lifetime it ends the moment the page stops
+ * reading its feed, and each refresh restarts the wait.
+ */
+const settlementRefreshAtom = Atom.family((key: ActivityActionsKey) =>
+  Atom.make((get) => {
+    const actions = activityActionsPullAtom(key);
+    const actionsResult = get(actions);
+    const awaitingSettlement =
+      !actionsResult.waiting &&
+      Option.exists(
+        AsyncResult.value(actionsResult),
+        ({ items }) =>
+          items.length === 1 &&
+          items.some((batch) =>
+            batch.actions.some(
+              (item) =>
+                item._tag === "yield" &&
+                getActivitySettlement(item)?._tag === "Awaiting"
+            )
+          )
+      );
+    return awaitingSettlement
+      ? Effect.sleep(settlementRefreshInterval).pipe(
+          Effect.andThen(Effect.sync(() => get.refresh(actions)))
+        )
+      : Effect.void;
+  }).pipe(Atom.withLabel("activitySettlementRefreshAtom"))
+);
+
+// Other finds its actions in the All feed, which the API cannot filter for
+// them, so it loads the feed's next page until it has found them all. The
+// load waits a turn: an atom cannot write while it is being read.
+const otherPagesLoaderAtom = Atom.make((get) => {
+  const resources = resolveActivityPageResources(get);
+  return needsNextOtherPage({
+    actionsResult: get(resources.actions),
+    filterOptionsResult: resources.filterOptionsResult,
+    selectedFilter: resources.selectedFilter,
+  })
+    ? Effect.yieldNow.pipe(
+        Effect.andThen(
+          Effect.sync(() =>
+            get.set(
+              loadMoreActivityActionsAtom(resources.actionsKey),
+              undefined
+            )
+          )
+        )
+      )
+    : Effect.void;
+}).pipe(Atom.withLabel("activityOtherPagesLoaderAtom"));
 
 export const activityPageViewAtom = Atom.make((context) => {
   const walletStatus = resolveActivityPageWalletStatus({
@@ -211,31 +348,12 @@ export const activityPageViewAtom = Atom.make((context) => {
   }
 
   const resources = resolveActivityPageResources(context);
-  const actionsResult = context(resources.actions);
-  const awaitingSettlement =
-    !actionsResult.waiting &&
-    Option.exists(
-      AsyncResult.value(actionsResult),
-      ({ items }) =>
-        items.length === 1 &&
-        items.some((batch) =>
-          batch.actions.some(
-            (item) =>
-              item._tag === "yield" &&
-              getActivitySettlement(item)?._tag === "Awaiting"
-          )
-        )
-    );
-  if (awaitingSettlement) {
-    const handle = setTimeout(
-      () => context.refresh(resources.actions),
-      Duration.toMillis(settlementRefreshInterval)
-    );
-    context.addFinalizer(() => clearTimeout(handle));
-  }
+  // Reading the upkeep keeps it running while the page shows this feed.
+  context(settlementRefreshAtom(resources.actionsKey));
+  context(otherPagesLoaderAtom);
 
   return projectActivityPageView({
-    actionsResult,
+    actionsResult: context(resources.actions),
     filterOptionsResult: resources.filterOptionsResult,
     selectedFilter: resources.selectedFilter,
     walletStatus,
@@ -255,7 +373,7 @@ function resolveActivityPageResources(context: Atom.FnContext) {
   });
   const actionsKey = new ActivityActionsKey({
     borrowEnabled,
-    filter: selectedFilter,
+    filter: getActivityFeedFilter(selectedFilter),
     scope,
   });
   const actions = activityActionsPullAtom(actionsKey);
@@ -265,7 +383,11 @@ function resolveActivityPageResources(context: Atom.FnContext) {
   )) {
     context(
       activityActionsPullAtom(
-        new ActivityActionsKey({ borrowEnabled, filter: option.filter, scope })
+        new ActivityActionsKey({
+          borrowEnabled,
+          filter: getActivityFeedFilter(option.filter),
+          scope,
+        })
       )
     );
   }

@@ -156,9 +156,11 @@ describe("activity and completion workflows", () => {
         <CompletePageComponent
           amount="1"
           completion={{
+            attribution: null,
             cta: null,
             onViewTransactionClick,
             pendingActionMatch: false,
+            positionTotal: null,
             unstakeMatch: false,
             urls: [
               { hash: null, type: "STAKE", url: "https://explorer.test/tx" },
@@ -167,7 +169,6 @@ describe("activity and completion workflows", () => {
           }}
           integrationId={YieldId.make("test-yield")}
           network="ethereum"
-          providersDetails={null}
           markToken={null}
           yieldType={null}
         />

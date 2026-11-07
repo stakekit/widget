@@ -33,6 +33,7 @@ import {
 } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   leaveBorrowFlow,
+  restartBorrowFlow,
   startBorrowTransactionFlow,
 } from "../../../src/features/borrow-transaction-flow/state/borrow-flow-session";
 import { startBorrowFlowExecution } from "../../../src/features/borrow-transaction-flow/state/execution-page";
@@ -913,33 +914,21 @@ describe("startBorrowFlowExecution", () => {
 });
 
 describe("leaveBorrowFlow", () => {
-  const leave = (intake: BorrowTransactionFlowIntake) =>
+  const leave = (from: "Review" | "Steps") =>
     Effect.gen(function* () {
       const kit = yield* makeKit();
-      yield* leaveBorrowFlow(
-        new BorrowFlowSession({ intake, walletScope })
-      ).pipe(Effect.provide(kit.layer));
+      yield* leaveBorrowFlow(from).pipe(Effect.provide(kit.layer));
       return yield* kit.navigation.commands;
     });
 
-  it.effect("replaces the flow with Borrow for a Borrow Entry flow", () =>
-    Effect.gen(function* () {
-      expect(yield* leave(borrowEntryIntake)).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
-    })
-  );
-
-  it.effect(
-    "replaces the flow with its position for a Market Position flow",
-    () =>
+  it.effect.each([
+    ["Review", 1],
+    ["Steps", 2],
+  ] as const)(
+    "goes back from %s to the page the flow started from",
+    ([from, steps]) =>
       Effect.gen(function* () {
-        expect(yield* leave(marketPositionIntake)).toEqual([
-          {
-            _tag: "Replace",
-            to: widgetRoutes.borrowPosition.build("Dashboard", { marketId }),
-          },
-        ]);
+        expect(yield* leave(from)).toEqual([{ _tag: "Back", steps }]);
       })
   );
 
@@ -954,7 +943,7 @@ describe("leaveBorrowFlow", () => {
           ),
       });
 
-      const leaving = yield* leaveBorrowFlow(openSession()).pipe(
+      const leaving = yield* leaveBorrowFlow("Steps").pipe(
         Effect.provide(kit.layer),
         Effect.forkChild({ startImmediately: true })
       );
@@ -969,8 +958,40 @@ describe("leaveBorrowFlow", () => {
 
       expect(interruptedWhileLeaving).toBeUndefined();
       expect(yield* kit.navigation.commands).toEqual([
+        { _tag: "Back", steps: 2 },
+      ]);
+    })
+  );
+});
+
+describe("restartBorrowFlow", () => {
+  const restart = (intake: BorrowTransactionFlowIntake) =>
+    Effect.gen(function* () {
+      const kit = yield* makeKit();
+      yield* restartBorrowFlow(
+        new BorrowFlowSession({ intake, walletScope })
+      ).pipe(Effect.provide(kit.layer));
+      return yield* kit.navigation.commands;
+    });
+
+  it.effect("replaces the flow with Borrow for a Borrow Entry flow", () =>
+    Effect.gen(function* () {
+      expect(yield* restart(borrowEntryIntake)).toEqual([
         { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
       ]);
     })
+  );
+
+  it.effect(
+    "replaces the flow with its position for a Market Position flow",
+    () =>
+      Effect.gen(function* () {
+        expect(yield* restart(marketPositionIntake)).toEqual([
+          {
+            _tag: "Replace",
+            to: widgetRoutes.borrowPosition.build("Dashboard", { marketId }),
+          },
+        ]);
+      })
   );
 });

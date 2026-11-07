@@ -73,7 +73,9 @@ describe("Staking flow Leave Confirmation", () => {
     await expect
       .element(app.getByTestId("leave-confirmation"))
       .not.toBeInTheDocument();
-    await expect.element(app.getByText("Follow steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
     expect(cancelled()).toBe(0);
 
     await userEvent.click(app.getByRole("button", { name: "Cancel" }));
@@ -130,7 +132,7 @@ describe("Staking flow Leave Confirmation", () => {
         ([{ method }]) => method === "eth_sendTransaction"
       ).length;
     const dialog = app.getByTestId("leave-confirmation");
-    const steps = app.getByText("Follow steps");
+    const steps = app.getByText("Confirm in wallet");
 
     await expect
       .element(app.getByText(formatAddress(account)))

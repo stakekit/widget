@@ -73,6 +73,21 @@ const amountInput = (canvasElement: HTMLElement) =>
 export const Empty: Story = {};
 
 /**
+ * A zero amount reads as no amount: the muted `0` placeholder, focused or
+ * not, so a form that holds zero, such as an exit's, starts empty.
+ */
+export const Zero: Story = {
+  args: { initial: "0" },
+  play: async ({ canvasElement }) => {
+    const input = amountInput(canvasElement);
+    await expect(input).toHaveValue("");
+    await expect(input).toHaveAttribute("placeholder", "0");
+    await userEvent.click(input);
+    await expect(input).toHaveValue("");
+  },
+};
+
+/**
  * The amount draws no focus mark of its own, on click or keyboard focus: the
  * panel that frames it edges in the accent instead.
  */

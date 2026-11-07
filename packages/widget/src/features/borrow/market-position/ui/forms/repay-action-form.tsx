@@ -58,7 +58,6 @@ export const RepayActionForm = ({
         })}
         disabled={view.repayAll}
         focusRequest={focusRequest}
-        label={t("dashboard.borrow.position_details.actions.repay")}
         onAmountChange={(amount) => dispatch({ amount, type: "amount/set" })}
         tokenSymbol={debtBalance.tokenSymbol}
         usdValue={view.repayUsd}

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, Disclosure, Stack, Switch, Text } from "../../../../../ui/index";
+import { Card, Stack, Switch, Text } from "../../../../../ui/index";
 import {
   type BorrowPositionAction,
   findBorrowCollateralToggleAction,
@@ -96,12 +96,10 @@ export const CollateralList = ({
   actions,
   items,
   onActionSelect,
-  totalCollateralUsd,
 }: {
   readonly actions: BorrowPositionAction[];
   readonly items: ReadonlyArray<CollateralItem>;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
-  readonly totalCollateralUsd: string;
 }) => {
   const { t } = useTranslation();
 
@@ -110,34 +108,27 @@ export const CollateralList = ({
   }
 
   return (
-    <Disclosure
-      title={t("dashboard.borrow.position_details.collateral_list")}
-      badges={
-        <Text tone="muted" numeric>
-          {totalCollateralUsd}
-        </Text>
-      }
-      defaultOpen
-    >
-      <Stack gap={8}>
-        {items.map((item) => {
-          const toggleAction = findBorrowCollateralToggleAction({
-            actions,
-            item,
-          });
+    <Stack gap={8}>
+      <Text variant="label" tone="muted">
+        {t("dashboard.borrow.position_details.collateral_list")}
+      </Text>
+      {items.map((item) => {
+        const toggleAction = findBorrowCollateralToggleAction({
+          actions,
+          item,
+        });
 
-          return toggleAction ? (
-            <ToggleableCollateralRow
-              key={item.id}
-              action={toggleAction}
-              item={item}
-              onActionSelect={onActionSelect}
-            />
-          ) : (
-            <CollateralRowLayout key={item.id} item={item} />
-          );
-        })}
-      </Stack>
-    </Disclosure>
+        return toggleAction ? (
+          <ToggleableCollateralRow
+            key={item.id}
+            action={toggleAction}
+            item={item}
+            onActionSelect={onActionSelect}
+          />
+        ) : (
+          <CollateralRowLayout key={item.id} item={item} />
+        );
+      })}
+    </Stack>
   );
 };

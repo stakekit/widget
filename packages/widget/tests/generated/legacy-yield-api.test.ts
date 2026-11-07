@@ -18,9 +18,6 @@ describe("generated Legacy API", () => {
     expect(Schema.isSchema(LegacySchema.TokenDto)).toBe(true);
     expect(Schema.isSchema(LegacySchema.TransactionDto)).toBe(true);
     expect(Schema.isSchema(LegacySchema.TronResourceType)).toBe(true);
-    expect(Schema.isSchema(LegacySchema.YieldRewardsSummaryResponseDto)).toBe(
-      true
-    );
     expect("make" in LegacySchema).toBe(false);
   });
 
@@ -32,7 +29,6 @@ describe("generated Legacy API", () => {
       "TokenControllerGetTokenBalances",
       "TokenControllerGetTokenPrices",
       "TokenControllerGetTokens",
-      "YieldControllerGetSingleYieldRewardsSummary",
       "httpClient",
     ]);
     expect(Effect.isEffect(client.TokenControllerGetTokens(undefined))).toBe(
@@ -76,6 +72,7 @@ describe("generated Yield API", () => {
         allocatorVaultContractAddress:
           "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
         merklRewardsClaiming: false,
+        rewardRate: { total: 0.03, rateType: "APY", components: [] },
       })
     ).toEqual({
       id: "66f299cd-aaaa-4bbb-8ccc-d1f26e3a02db",
@@ -86,6 +83,7 @@ describe("generated Yield API", () => {
       allocatorVaultContractAddress:
         "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
       merklRewardsClaiming: false,
+      rewardRate: { total: 0.03, rateType: "APY", components: [] },
     });
 
     expect(

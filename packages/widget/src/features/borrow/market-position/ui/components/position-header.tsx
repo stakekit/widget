@@ -2,19 +2,17 @@ import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../domain/borrow/positions/market-position";
 import { useTokenLogo } from "../../../../../shared/react/token-logo";
 import { AssetHeader } from "../../../../../ui/index";
-import { riskBandBadgeTone } from "../../../../borrow-transaction-flow/index";
-import type { BorrowPositionContext } from "../context";
+import type { BorrowPositionDetailsModel } from "../../model/details";
 
 /**
  * The head of a market position's page: a 40px logo, the pair, who provides
- * it and the market, and its risk band as the status. Without debt nothing is
- * at risk, so no status shows.
+ * it and its network. The risk shows in the summary under it, so no status.
  */
 export const BorrowPositionHeader = ({
   model,
   position,
 }: {
-  readonly model: NonNullable<BorrowPositionContext["model"]>;
+  readonly model: BorrowPositionDetailsModel;
   readonly position: MarketPosition;
 }) => {
   const { t } = useTranslation();
@@ -34,19 +32,7 @@ export const BorrowPositionHeader = ({
         }),
         ...(providerLogo ? { src: providerLogo } : {}),
       }}
-      details={[model.marketLabel]}
-      badges={
-        model.riskBand === null
-          ? []
-          : [
-              {
-                label: t(
-                  `dashboard.borrow.position_details.risk_status.${model.riskBand}`
-                ),
-                tone: riskBandBadgeTone[model.riskBand],
-              },
-            ]
-      }
+      details={[model.networkName]}
     />
   );
 };

@@ -1,19 +1,17 @@
-import { useTranslation } from "react-i18next";
-import {
-  Entrance,
-  Notice,
-  Skeleton,
-  Stack,
-  StandIn,
-} from "../../../../../ui/index";
+import { Entrance, Stack, StandIn } from "../../../../../ui/index";
 import { useMountAnimation } from "../../../../mount-animation/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
-import { PageContainer, type PageCta } from "../../../../widget-shell/views";
+import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
+import {
+  AmountPanelSkeleton,
+  EarnCardSkeleton,
+} from "../../components/earn-form-skeleton";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
-import { EarnPageCta, EarnPageCtaButton } from "../../components/earn-page-cta";
+import { EarnLoadFailed } from "../../components/earn-load-failed";
+import { EarnPageCta, earnLoadingCta } from "../../components/earn-page-cta";
 import { ExtraArgsSelection } from "../../components/extra-args-selection";
 import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
@@ -21,36 +19,24 @@ import { SelectYieldSection } from "../../components/select-yield-section";
 import { SelectProvider } from "./components/select-provider";
 import { SelectValidatorSection } from "./components/select-validator-section";
 
-const loadingCta = {
-  disabled: true,
-  isLoading: true,
-  label: "",
-  onClick: () => undefined,
-} satisfies PageCta;
-
-/** Stands in for the form while it settles: its cards, notes and CTA. */
+/**
+ * Stands in for the form while it settles, shaped like it: the amount, the
+ * Earn card, and the CTA's neutral stand-in.
+ */
 const EarnPageSkeleton = () => (
   <PageContainer>
-    <Stack gap={8}>
-      <Skeleton shape="rect" height="section" />
-      <Skeleton shape="rect" height="section" />
-      <Skeleton shape="rect" height="panel" />
+    <Stack gap={12}>
+      <AmountPanelSkeleton />
+      <EarnCardSkeleton />
     </Stack>
 
-    <Stack gap={8}>
-      <Skeleton shape="line" />
-      <Skeleton shape="line" width="threeQuarters" />
-      <Skeleton shape="line" width="half" />
-    </Stack>
-
-    <EarnPageCtaButton cta={loadingCta} />
+    <PageCtaButton cta={earnLoadingCta} />
   </PageContainer>
 );
 
 const EarnPage = () => {
   useTrackPage("earn");
 
-  const { t } = useTranslation();
   const { view: status } = useEarnPageStatus();
 
   return (
@@ -63,29 +49,31 @@ const EarnPage = () => {
       }}
     >
       <PageContainer>
-        <Stack gap={12}>
-          <ZerionChainModal />
+        {status.isError ? (
+          <EarnLoadFailed />
+        ) : (
+          <>
+            <Stack gap={12}>
+              <ZerionChainModal />
 
-          <SelectTokenSection />
+              <SelectTokenSection />
 
-          <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
+              <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
 
-          <EarnKycGate />
+              <EarnKycGate />
 
-          <SelectProvider />
+              <SelectProvider />
 
-          <SelectValidatorSection />
+              <SelectValidatorSection />
 
-          <ExtraArgsSelection showDivider />
-        </Stack>
+              <ExtraArgsSelection showDivider />
+            </Stack>
 
-        {status.isError && (
-          <Notice tone="danger">{t("shared.something_went_wrong")}</Notice>
+            <Footer />
+
+            <EarnPageCta />
+          </>
         )}
-
-        <Footer />
-
-        <EarnPageCta />
       </PageContainer>
     </StandIn>
   );

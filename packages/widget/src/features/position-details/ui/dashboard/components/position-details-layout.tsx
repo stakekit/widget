@@ -1,15 +1,5 @@
 import type { ReactNode } from "react";
-import {
-  Box,
-  DetailList,
-  DetailRow,
-  Metric,
-  MetricGroup,
-  Skeleton,
-  Stack,
-  Text,
-} from "../../../../../ui/index";
-import type { PositionOverviewModel } from "../../../model/position-overview";
+import { Box, Stack, Text } from "../../../../../ui/index";
 
 /** One side of the position details split view: its actions or its facts. */
 export const PositionDetailsPane = ({
@@ -18,16 +8,11 @@ export const PositionDetailsPane = ({
 }: {
   readonly children: ReactNode;
   readonly kind: "actions" | "info";
-}) =>
-  kind === "actions" ? (
-    <Box grow>
-      <Stack gap={16}>{children}</Stack>
-    </Box>
-  ) : (
-    <Box grow>
-      <Stack gap={32}>{children}</Stack>
-    </Box>
-  );
+}) => (
+  <Box grow>
+    <Stack gap={kind === "actions" ? 16 : 24}>{children}</Stack>
+  </Box>
+);
 
 /** The back button, then the trail from the positions list to this position. */
 export const PositionDetailsBreadcrumb = ({
@@ -48,67 +33,4 @@ export const PositionDetailsBreadcrumb = ({
       </Text>
     ) : null}
   </Stack>
-);
-
-type MetricCard = PositionOverviewModel["metricCards"][number];
-
-/** A card's value: one line, or one line per token. */
-const MetricValue = ({ card }: { readonly card: MetricCard }) => {
-  if (typeof card.value === "string") return card.value;
-
-  return (
-    <Stack as="span">
-      {card.value.map((line) => (
-        <Text key={line} variant="metric">
-          {line}
-        </Text>
-      ))}
-    </Stack>
-  );
-};
-
-/** The position's headline figures, two to a row, each label above its value. */
-export const PositionMetricCards = ({
-  cards,
-}: {
-  readonly cards: ReadonlyArray<MetricCard>;
-}) => (
-  <MetricGroup columns={2} framed>
-    {cards.map((card) => (
-      <Metric
-        key={card.id}
-        label={card.label}
-        value={<MetricValue card={card} />}
-        testId={`position-metric-${card.id}`}
-        {...(card.subValue ? { caption: card.subValue } : {})}
-        {...(card.subValueLoading
-          ? {
-              caption: (
-                <Stack as="span" aria-busy="true">
-                  <Skeleton shape="line" role="caption" width="half" />
-                </Stack>
-              ),
-            }
-          : {})}
-      />
-    ))}
-  </MetricGroup>
-);
-
-/** The position's balance types, each with its amount and context. */
-export const PositionBreakdownRows = ({
-  rows,
-}: {
-  readonly rows: PositionOverviewModel["breakdownRows"];
-}) => (
-  <DetailList>
-    {rows.map((row) => (
-      <DetailRow
-        key={row.id}
-        label={row.label}
-        value={row.value}
-        {...(row.subValue ? { caption: row.subValue } : {})}
-      />
-    ))}
-  </DetailList>
 );

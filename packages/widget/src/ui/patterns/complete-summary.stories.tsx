@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
-import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
+import {
+  brokenImage,
+  networkLogo,
+  providerLogo,
+  tokenLogo,
+} from "../storybook/images";
 import { CompleteSummary } from "./complete-summary";
 
 const meta = {
@@ -109,6 +114,30 @@ export const ProviderMarkFallback: Story = {
 };
 
 /**
+ * Who ran the action leads the "via" line with its logo, as on Review and
+ * Steps: a chosen validator's square, while the token's logo stays the mark.
+ */
+export const ValidatorAttribution: Story = {
+  args: {
+    detail: "via Figment",
+    mark: { name: "eETH", tokenSrc: tokenLogo, providerSrc: providerLogo },
+    provider: { name: "Figment", shape: "square", src: providerLogo },
+  },
+  play: async ({ canvasElement }) => {
+    await expectMarkImage(canvasElement, tokenLogo);
+    const line = within(canvasElement).getByText("via Figment").parentElement;
+    await waitFor(() =>
+      expect(line?.querySelector("img")?.getAttribute("src")).toBe(providerLogo)
+    );
+  },
+};
+
+export const ValidatorAttributionDark: Story = {
+  ...ValidatorAttribution,
+  globals: { colorScheme: "dark" },
+};
+
+/**
  * Without a logo that loads, the plain check shows: no image, and no
  * loading initial in place of one. It draws in as the mark settles.
  */
@@ -118,13 +147,73 @@ export const CheckMarkFallback: Story = {
   },
   play: async ({ canvasElement }) => {
     const mark = markOf(canvasElement);
-    await waitFor(() => expect(mark).toHaveTextContent(/^$/u));
+    // The plain check is a 32px icon; a badge's check is far smaller.
+    await waitFor(() =>
+      expect(mark.querySelector("svg")?.getBoundingClientRect().width).toBe(32)
+    );
+    await expect(mark).toHaveTextContent(/^$/u);
     await expect(mark.querySelector("img")).toBeNull();
     const check = mark.querySelector("svg");
-    await expect(check).not.toBeNull();
     await expect(check?.parentElement?.getAnimations()).toHaveLength(1);
     await expect((await settledMarkBox(mark)).width).toBe(56);
   },
+};
+
+/**
+ * Once the check has drawn, a success ring beats out from the mark once and
+ * fades; reduced motion skips it (see
+ * `complete-summary-reduced-motion.browser.test.tsx`).
+ */
+export const SuccessBeat: Story = {
+  play: async ({ canvasElement }) => {
+    const beat = within(canvasElement).getByTestId("complete-mark-beat");
+    const [animation] = beat.getAnimations();
+    await expect(animation).toBeDefined();
+    await expect(getComputedStyle(beat).animationIterationCount).toBe("1");
+    await animation?.finished;
+    await expect(getComputedStyle(beat).opacity).toBe("0");
+  },
+};
+
+/**
+ * The position the action left leads the details: what it holds with its
+ * fiat value, and a year's projected earnings in the success tone. The hero
+ * is centred; the card reads from the start.
+ */
+export const WithPosition: Story = {
+  args: {
+    title: "Successfully staked 1.5 ETH",
+    detail: "via Figment",
+    rows: [],
+    position: {
+      heading: "Your position",
+      value: "3.2 ETH",
+      caption: "$10,240.00",
+      earnings: {
+        label: "Projected yearly earnings",
+        value: "+0.05 ETH",
+        caption: "$160.00",
+        testId: "yearly-earnings",
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const card = canvas.getByTestId("complete-position");
+    await expect(card).toHaveTextContent("Your position3.2 ETH$10,240.00");
+    const earnings = within(card).getByTestId("yearly-earnings");
+    await expect(earnings).toHaveTextContent("+0.05 ETH");
+    const heading = canvas.getByRole("heading", { level: 2 });
+    await expect(getComputedStyle(heading).textAlign).toBe("center");
+    await expect(
+      getComputedStyle(within(card).getByText("Your position")).textAlign
+    ).not.toBe("center");
+  },
+};
+
+export const WithPositionDark: Story = {
+  ...WithPosition,
+  globals: { colorScheme: "dark" },
 };
 
 /**

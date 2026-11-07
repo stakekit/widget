@@ -28,6 +28,24 @@ export const WithIcon: Story = {
   args: { tone: "success", icon: "PreferredIcon", children: "Preferred" },
 };
 
+/**
+ * `collapse="belowSm"`: below the `sm` container size only the icon shows,
+ * so a name beside it keeps its room; the label still names the badge.
+ */
+export const CollapseBelowSm: Story = {
+  args: {
+    tone: "accent",
+    icon: "PreferredIcon",
+    children: "Preferred",
+    collapse: "belowSm",
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText("Preferred")
+    ).toBeInTheDocument();
+  },
+};
+
 /** Every tone, soft and outlined. */
 export const TonesAndVariants: Story = {
   render: () => (

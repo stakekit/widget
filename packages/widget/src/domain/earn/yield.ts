@@ -7,7 +7,6 @@ import {
   Schema,
 } from "effect";
 import type { TFunction } from "i18next";
-import { sumExact } from "../finance/exact";
 import { type ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
@@ -288,20 +287,9 @@ export const getYieldWarmupPeriod = (yieldDto: EarnYieldWithProvider) =>
 export const getYieldTvlUsd = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.statistics?.tvlUsd ?? null;
 
-/**
- * The yield's total fee as a decimal ratio (0.02 = 2%), summed exactly from
- * the API's percentages; null when it charges none.
- */
-export const getYieldFeePercent = (
-  yieldDto: EarnYieldWithProvider
-): BigNumber | null => {
-  const fees = Object.values(yieldDto.mechanics.fee ?? {}).filter(
-    (fee) => fee != null
-  );
-  const total = sumExact(fees);
-
-  return total.isGreaterThan(0) ? total.dividedBy(100) : null;
-};
+/** The yield's TVL in its token's units, the units of its TVL history. */
+export const getYieldTvl = (yieldDto: EarnYieldWithProvider) =>
+  yieldDto.statistics?.tvl ?? null;
 
 export const getYieldLockupPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.lockupPeriod?.seconds);

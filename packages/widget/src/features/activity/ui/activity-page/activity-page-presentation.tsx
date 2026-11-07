@@ -1,6 +1,9 @@
+import { useAtomValue } from "@effect/atom-react";
 import { Match } from "effect";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
+import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import {
   EmptyState,
   ListSkeleton,
@@ -15,6 +18,10 @@ import {
   type ActivitySelectionTarget,
   isActivitySelectionTarget,
 } from "../../model/activity-action";
+import {
+  type ActivityDayLabel,
+  groupActivityActionsByDay,
+} from "../../model/activity-days";
 import type { ActivityFilter } from "../../model/filters";
 import type {
   ActivityPagePagination,
@@ -105,6 +112,71 @@ const resolveInfiniteScroll = (
     Match.exhaustive
   );
 
+/**
+ * The feed under a sticky header per day. It starts at its top for each
+ * filter: a filter's list is a new list, not a scrolled one.
+ */
+const ActivityList = ({
+  onActionSelect,
+  onLoadMore,
+  selectedAction,
+  view,
+}: {
+  readonly onActionSelect: (item: ActivityActionItem) => void;
+  readonly onLoadMore: () => void;
+  readonly selectedAction: ActivitySelectionTarget | null;
+  readonly view: ActivityPageReadyView;
+}) => {
+  const { t, i18n } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
+  const infiniteScroll = resolveInfiniteScroll(view.pagination);
+  const dayLabel = (day: ActivityDayLabel) =>
+    Match.value(day).pipe(
+      Match.when({ _tag: "today" }, () => t("activity.groups.today")),
+      Match.when({ _tag: "yesterday" }, () => t("activity.groups.yesterday")),
+      Match.when({ _tag: "date" }, ({ label }) => label),
+      Match.exhaustive
+    );
+  const list = {
+    label: t("activity.list_label"),
+    getKey: (item: ActivityActionItem) => `${item._tag}:${item.actionData.id}`,
+    hasMore: infiniteScroll.hasMore,
+    loadingMore: infiniteScroll.loadingMore,
+    loadingMoreLabel: t("activity.loading_more"),
+    onEndReached: onLoadMore,
+    estimateSize: 72,
+    maxHeight: "lg",
+    grow: true,
+    renderItem: (item: ActivityActionItem): ReactNode => (
+      <ActionListItem
+        action={item}
+        isSelected={isActivitySelectionTarget(item, selectedAction)}
+        onActionSelect={onActionSelect}
+      />
+    ),
+  } as const;
+
+  // Days need the presentation zone; until it is known the feed is one run.
+  return presentationTime ? (
+    <VirtualList
+      key={view.selectedFilter}
+      {...list}
+      groups={groupActivityActionsByDay({
+        actions: view.actions,
+        locale: i18n.language,
+        presentationTime,
+      }).map(({ day, items, key }) => ({
+        items,
+        key,
+        label: dayLabel(day),
+      }))}
+      stickyHeaders
+    />
+  ) : (
+    <VirtualList key={view.selectedFilter} {...list} items={view.actions} />
+  );
+};
+
 const ReadyActivityPage = ({
   onActionSelect,
   onFilterSelect,
@@ -119,7 +191,9 @@ const ReadyActivityPage = ({
   readonly view: ActivityPageReadyView;
 }) => {
   const { t } = useTranslation();
-  const infiniteScroll = resolveInfiniteScroll(view.pagination);
+  // Once every action is on screen the count says nothing the list does not.
+  const showsCount =
+    view.pagination.status !== "complete" && view.showingCount < view.total;
 
   return (
     <Stack grow gap={12}>
@@ -131,33 +205,22 @@ const ReadyActivityPage = ({
 
       {view.actions.length > 0 ? (
         <Stack grow gap={8}>
-          <Stack direction="row" justify="end">
-            <Text variant="caption" tone="muted">
-              {t("activity.showing_count", {
-                showing: view.showingCount,
-                total: view.total,
-              })}
-            </Text>
-          </Stack>
+          {showsCount ? (
+            <Stack direction="row" justify="end">
+              <Text variant="caption" tone="muted">
+                {t("activity.showing_count", {
+                  showing: view.showingCount,
+                  total: view.total,
+                })}
+              </Text>
+            </Stack>
+          ) : null}
 
-          <VirtualList
-            label={t("activity.list_label")}
-            items={view.actions}
-            getKey={(item) => `${item._tag}:${item.actionData.id}`}
-            hasMore={infiniteScroll.hasMore}
-            loadingMore={infiniteScroll.loadingMore}
-            loadingMoreLabel={t("activity.loading_more")}
-            onEndReached={onLoadMore}
-            estimateSize={72}
-            maxHeight="lg"
-            grow
-            renderItem={(item) => (
-              <ActionListItem
-                action={item}
-                isSelected={isActivitySelectionTarget(item, selectedAction)}
-                onActionSelect={onActionSelect}
-              />
-            )}
+          <ActivityList
+            onActionSelect={onActionSelect}
+            onLoadMore={onLoadMore}
+            selectedAction={selectedAction}
+            view={view}
           />
 
           {view.pagination.status === "load-more-failed" && (

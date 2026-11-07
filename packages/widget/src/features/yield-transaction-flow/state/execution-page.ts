@@ -8,6 +8,7 @@ import {
 } from "../../../domain/action/rules";
 import { getConfidentialActionBatchSide } from "../../../domain/earn/confidential";
 import { exactZero } from "../../../domain/finance/exact";
+import { getPositionValueTotal } from "../../../domain/portfolio/positions";
 import { equalTokens } from "../../../domain/token/token";
 import { pricesAtom } from "../../../resources/token-prices/index";
 import {
@@ -42,6 +43,7 @@ import {
 } from "../model/yield-transaction-flow";
 import { getYieldTransactionStepsView } from "../model/yield-transaction-workflow";
 import { getYieldFlowReviewPricesKey } from "./review-prices";
+import { makeYieldFlowEnterCompleteViewAtom } from "./yield-summary";
 
 // A started router navigation cannot be cancelled, so a page that ends
 // meanwhile waits for it instead of abandoning it mid-flight.
@@ -84,14 +86,33 @@ export const startYieldFlowExecution = Effect.fn("startYieldFlowExecution")(
   }
 );
 
-/** Leaves Execution: back to Review, or out of the finished flow. */
+/**
+ * How many history entries past the page it started from Execution sits:
+ * Start pushed Review, Review pushed Steps, and Complete replaces Steps.
+ */
+const executionDepth = 2;
+
+/**
+ * Leaves Execution: back to Review, or out of the flow. Review pushed Steps,
+ * so going back returns to its history entry rather than adding another
+ * Review that Back would land on again. Leaving the flow goes back through
+ * the history it pushed and puts its finish page in place of the page it
+ * started from, so Back from there never returns to Review or Steps. Both
+ * navigations run together, so an interrupted leave still lands there.
+ */
 export const leaveYieldFlowExecution = (
   { destination }: YieldFlowSession,
   to: "Exit" | "Review"
 ) =>
   to === "Review"
-    ? navigate({ _tag: "Replace", to: destination.reviewPath })
-    : navigate({ _tag: "Push", to: destination.finishPath });
+    ? navigate({ _tag: "Back" })
+    : Effect.uninterruptible(
+        navigate({ _tag: "Back", steps: executionDepth }).pipe(
+          Effect.andThen(
+            navigate({ _tag: "Replace", to: destination.finishPath })
+          )
+        )
+      );
 
 /** One handoff's Execution in a Session. */
 export class YieldFlowExecutionKey extends Data.Class<{
@@ -141,6 +162,15 @@ export const makeYieldFlowExecutionPage = (
       ? getYieldFlowPositionBalanceId(session, [...position.balanceData.keys()])
       : null;
   }).pipe(Atom.withLabel("yieldFlowPositionBalanceId"));
+  // One figure in one token, as Manage shows the position; none otherwise.
+  const positionTotalAtom = Atom.make((get) => {
+    const balanceId = get(positionBalanceIdAtom);
+    const balances = balanceId
+      ? get(positionAtom)?.balanceData.get(balanceId)?.balances
+      : undefined;
+    const sums = balances ? getPositionValueTotal(balances) : [];
+    return sums.length === 1 ? (sums[0] ?? null) : null;
+  }).pipe(Atom.withLabel("yieldFlowPositionTotal"));
   const exit = getYieldFlowExit(session);
   const exitUnlockDateAtom = Atom.make((get) => {
     const presentationTime = get(presentationClockAtom);
@@ -184,6 +214,7 @@ export const makeYieldFlowExecutionPage = (
             numbered: true,
             resumable: false,
             retryable: false,
+            sent: false,
             txStates: [],
             yieldId,
           },
@@ -213,6 +244,7 @@ export const makeYieldFlowExecutionPage = (
       () => null
     ),
   })).pipe(Atom.withLabel("yieldFlowExecutionPricing"));
+  const enterIntake = getYieldTransactionFlowIntakeVariant(intake, "Enter");
 
   return {
     activityCompleteViewAtom: Atom.make((get) => {
@@ -255,6 +287,10 @@ export const makeYieldFlowExecutionPage = (
         selectedYield: activity.selectedYield,
       } as const;
     }).pipe(Atom.withLabel("yieldFlowActivityCompleteView")),
+    /** Complete's view of a deposit; null for other flows. */
+    enterCompleteViewAtom: enterIntake
+      ? makeYieldFlowEnterCompleteViewAtom(enterIntake, pricingViewAtom)
+      : null,
     backAtom: walletRuntime
       .fn(() => leaveYieldFlowExecution(session, "Review"), {
         initialValue: undefined,
@@ -269,6 +305,8 @@ export const makeYieldFlowExecutionPage = (
     exitUnlockDateAtom,
     /** The position the finished flow leads to; null until it exists. */
     positionBalanceIdAtom,
+    /** What the position the flow leads to holds; null until it is known. */
+    positionTotalAtom,
     viewPositionAtom: walletRuntime
       .fn(
         (_input: undefined, get) => {

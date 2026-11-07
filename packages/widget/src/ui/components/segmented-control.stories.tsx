@@ -78,6 +78,18 @@ export const Pill: Story = {
 };
 
 /**
+ * A coarse pointer reaches each segment from a little around it too; a fine
+ * pointer's target is the drawn segment.
+ */
+export const HitArea: Story = {
+  play: async ({ canvasElement }) => {
+    const segment = within(canvasElement).getByRole("button", { name: "1W" });
+    await expect(getComputedStyle(segment).position).toBe("relative");
+    await expect(getComputedStyle(segment, "::before").content).toBe("none");
+  },
+};
+
+/**
  * The group is one tab stop. Arrows move between segments, skipping a
  * disabled one; Enter and Space choose. The chosen segment is pressed, and
  * choosing it again keeps it.

@@ -9,9 +9,11 @@ const richErrorState = vi.hoisted(
   (): {
     error: RichError | null;
     resetError: ReturnType<typeof vi.fn>;
+    retry: (() => void) | null;
   } => ({
     error: null,
     resetError: vi.fn(),
+    retry: null,
   })
 );
 
@@ -31,7 +33,36 @@ const renderModal = () =>
 describe("RichErrorModal", () => {
   afterEach(() => {
     richErrorState.error = null;
+    richErrorState.retry = null;
     richErrorState.resetError.mockClear();
+  });
+
+  it("offers Try again before the dismiss action when the work can run again", async () => {
+    const retry = vi.fn();
+    richErrorState.error = { message: "ApiUnreachableError" };
+    richErrorState.retry = retry;
+    await renderModal();
+
+    const labels = [...document.querySelectorAll("button")].map(
+      (button) => button.textContent
+    );
+    expect(labels.indexOf("Try again")).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf("Try again")).toBeLessThan(labels.indexOf("Got it"));
+
+    await act(async () =>
+      [...document.querySelectorAll("button")]
+        .find((button) => button.textContent === "Try again")
+        ?.click()
+    );
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("offers no Try again when the work cannot run again", async () => {
+    richErrorState.error = { message: "ApiUnreachableError" };
+    await renderModal();
+
+    expect(document.body.textContent).toContain("Got it");
+    expect(document.body.textContent).not.toContain("Try again");
   });
 
   it("renders English Error Copy details instead of the API reason", async () => {
@@ -51,7 +82,7 @@ describe("RichErrorModal", () => {
     expect(document.body.textContent).toContain(
       "There is not enough SOL to fund the account rent required by Kamino Lending"
     );
-    expect(document.body.textContent).toContain("Potential solution:");
+    expect(document.body.textContent).toContain("How to fix it");
     expect(document.body.textContent).toContain(
       "Add SOL to the account and try again"
     );

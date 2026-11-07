@@ -10,12 +10,10 @@ import type {
   WalletAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
-import type { HistoryPeriod } from "../../../domain/portfolio/models";
-import { isValidYieldIdForRewardsSummary } from "../../../domain/portfolio/rewards";
-import {
-  RewardSummariesKey,
-  rewardSummariesResourceAtom,
-} from "../../../resources/reward-summaries/index";
+import type {
+  HistoryPeriod,
+  YieldRewardsSummary,
+} from "../../../domain/portfolio/models";
 import {
   YieldHistoryResourceKey,
   YieldKycStatusKey,
@@ -23,6 +21,10 @@ import {
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
 } from "../../../resources/yield-insights/index";
+import {
+  YieldRewardsSummaryKey,
+  yieldRewardsSummaryResourceAtom,
+} from "../../../resources/yield-rewards-summary/index";
 import { toPresentable } from "../../../shared/effect/async-result";
 import {
   selectCurrentWalletAtom,
@@ -199,43 +201,29 @@ export const yieldTvlHistoryAtom = Atom.family((key: YieldHistoryKey) =>
   )
 );
 
-export class CurrentRewardsSummaryKey extends Data.Class<{
-  readonly yieldIds: ReadonlyArray<YieldId>;
-}> {
-  constructor({ yieldIds }: { readonly yieldIds: ReadonlyArray<YieldId> }) {
-    super({ yieldIds: [...new Set(yieldIds)].sort() });
-  }
-}
+const currentRewardsAddressAtom = selectCurrentWalletAtom((walletState) =>
+  walletState.status === "connected" ? walletState.address : null
+).pipe(Atom.withLabel("currentRewardsAddressAtom"));
 
-const currentRewardsAddressesAtom = selectCurrentWalletAtom((walletState) =>
-  walletState.status === "connected"
-    ? {
-        address: walletState.address,
-        ...(walletState.additionalAddresses
-          ? { additionalAddresses: walletState.additionalAddresses }
-          : {}),
-      }
-    : null
-).pipe(Atom.withLabel("currentRewardsAddressesAtom"));
-
-/** The wallet's reward summaries for the Yields, as the UI presents them. */
-export const currentRewardsSummaryAtom = Atom.family(
-  (key: CurrentRewardsSummaryKey) =>
+/**
+ * The connected wallet's earnings in the Yield, as the UI presents them;
+ * none without a Yield or wallet, or when the API does not track the Yield.
+ * A secondary figure: it reads the Resource locally, so a failure stays a
+ * typed `Failed` the page leaves out and never raises the error dialog.
+ */
+export const currentYieldRewardsSummaryAtom = Atom.family(
+  (yieldId: YieldId | null) =>
     Atom.make((get) => {
-      const filteredIds = key.yieldIds.filter(isValidYieldIdForRewardsSummary);
-      const addresses = get(currentRewardsAddressesAtom);
+      const address = get(currentRewardsAddressAtom);
 
       return toPresentable(
-        addresses && filteredIds.length > 0
+        address && yieldId
           ? get(
-              rewardSummariesResourceAtom.foreground(
-                new RewardSummariesKey({
-                  addresses,
-                  yieldIds: filteredIds,
-                })
+              yieldRewardsSummaryResourceAtom.local(
+                new YieldRewardsSummaryKey({ address, yieldId })
               )
             )
-          : AsyncResult.success(null)
+          : AsyncResult.success(Option.none<YieldRewardsSummary>())
       );
-    })
+    }).pipe(Atom.withLabel("currentYieldRewardsSummaryAtom"))
 );

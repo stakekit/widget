@@ -17,6 +17,7 @@ import {
   confidentialFixture,
   confidentialYieldFixture,
   yieldApiActionFixture,
+  yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
 
@@ -110,16 +111,18 @@ describe("Activity action list item projection", () => {
         _tag: "deposited",
         tokenSymbol: yieldData.token.symbol,
       },
+      token: { symbol: yieldData.token.symbol },
       amountTokenSymbol: yieldData.token.symbol,
+      voided: true,
     });
   });
 
   it.each([
-    ["2026-07-21T10:00:01.000Z", { unit: "days", value: 6 }],
-    ["2026-07-21T10:00:00.000Z", { unit: "date", label: "Jul 21, 2026" }],
-    ["2025-12-31T23:30:00.000Z", { unit: "date", label: "Jan 1, 2026" }],
+    ["2026-07-27T10:00:01.000Z", { unit: "hours", value: 23 }],
+    ["2026-07-27T10:00:00.000Z", { unit: "clock", label: "12:00 PM" }],
+    ["2025-12-31T23:30:00.000Z", { unit: "clock", label: "12:30 AM" }],
   ] as const)(
-    "shows how long ago within a week, then the date in the presentation zone (%s)",
+    "shows how long ago within a day, then the time of day in the presentation zone (%s)",
     (createdAt, time) => {
       const projection = projectActivityActionListItem({
         action: makeItem(
@@ -139,6 +142,72 @@ describe("Activity action list item projection", () => {
       expect(projection.time).toEqual(time);
     }
   );
+
+  it.each([
+    // Sent an hour after it was created: it ended then.
+    [
+      "an hour after it was created",
+      { broadcastedAt: "2026-07-20T09:00:00.000Z", completedAt: null },
+      { unit: "clock", label: "11:00 AM" },
+    ],
+    // Completed on the next day: the time names its day, which its row's
+    // header does not.
+    [
+      "on the next day",
+      { broadcastedAt: null, completedAt: "2026-07-21T08:30:00.000Z" },
+      { unit: "clock", label: "Jul 21, 10:30 AM" },
+    ],
+    [
+      "with no later time recorded",
+      { broadcastedAt: null, completedAt: null },
+      { unit: "clock", label: "10:00 AM" },
+    ],
+  ] as const)(
+    "dates a failed action by when it ended, %s",
+    (_case, { broadcastedAt, completedAt }, time) => {
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            completedAt: completedAt ? DateTime.makeUnsafe(completedAt) : null,
+            createdAt: DateTime.makeUnsafe("2026-07-20T08:00:00.000Z"),
+            status: "FAILED",
+            transactions: [
+              yieldApiTransactionFixture({
+                broadcastedAt: broadcastedAt
+                  ? DateTime.makeUnsafe(broadcastedAt)
+                  : null,
+                status: "FAILED",
+              }),
+            ],
+            type: "STAKE",
+          }),
+          null
+        ),
+        locale: "en-US",
+        presentationTime: {
+          now: DateTime.makeUnsafe("2026-07-28T10:00:00.000Z"),
+          timeZone: DateTime.zoneMakeNamedUnsafe("Europe/Paris"),
+        },
+      });
+
+      expect(projection).toMatchObject({ time, voided: true });
+    }
+  );
+
+  it.each([
+    ["SUCCESS", false],
+    ["FAILED", true],
+    ["CANCELED", true],
+    ["PROCESSING", false],
+  ] as const)("voids a %s action's amount: %s", (status, voided) => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(yieldApiActionFixture({ status, type: "STAKE" }), null),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection.voided).toBe(voided);
+  });
 
   it("values an action whose token is unknown in USD instead", () => {
     const projection = projectActivityActionListItem({
@@ -279,6 +348,7 @@ describe("Activity action list item projection", () => {
         actionLabel: "Vote",
         tokenSymbol: null,
       },
+      token: null,
       amountTokenSymbol: null,
     });
   });
@@ -676,7 +746,9 @@ describe("Activity action list item projection", () => {
       statusLabel: "completed",
       time: { unit: "hours", value: 2 },
       title: { _tag: "borrow", action: "supply", tokenSymbol: "USDC" },
+      token: { network: "ethereum", symbol: "USDC" },
       amountTokenSymbol: "USDC",
+      voided: false,
     });
   });
 

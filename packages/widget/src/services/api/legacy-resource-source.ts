@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Effect } from "effect";
 import { EarnLegacyTokenOptionsResponse } from "../../domain/earn/models";
 import {
   type GasBalancesCommand,
@@ -7,18 +7,8 @@ import {
   TokenBalancesResponse,
 } from "../../domain/finance/models";
 import { PriceRequest, PriceResponse } from "../../domain/health/models";
-import type { YieldId } from "../../domain/identity/identifiers";
-import {
-  type RewardsAddresses,
-  RewardsSummaryRecord,
-} from "../../domain/portfolio/models";
 import type * as LegacyApi from "../../generated/api/legacy";
-import {
-  decodeApiResponse,
-  encodeApiRequest,
-  withApiRequestError,
-  withResponseDecodeError,
-} from "./api-operation";
+import { decodeApiResponse, encodeApiRequest } from "./api-operation";
 import type { EarnTokenCatalogRequest } from "./resource-sources";
 
 export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
@@ -32,31 +22,6 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
     return yield* legacyApi
       .TokenControllerGetTokenPrices({ payload })
       .pipe(decodeApiResponse("token-prices", PriceResponse));
-  });
-
-  const getRewardsSummaries = Effect.fn(
-    "LegacyResourceSource.getRewardsSummaries"
-  )(function* (request: {
-    readonly addresses: RewardsAddresses;
-    readonly yieldIds: ReadonlyArray<YieldId>;
-  }) {
-    const responses = yield* Effect.forEach(
-      request.yieldIds,
-      (yieldId) =>
-        legacyApi
-          .YieldControllerGetSingleYieldRewardsSummary(yieldId, {
-            payload: { addresses: request.addresses },
-          })
-          .pipe(
-            withApiRequestError("yield-rewards-summary"),
-            Effect.map((response) => [yieldId, response] as const)
-          ),
-      { concurrency: 5 }
-    );
-
-    return yield* Schema.decodeEffect(RewardsSummaryRecord)(
-      Object.fromEntries(responses)
-    ).pipe(withResponseDecodeError("yield-rewards-summary"));
   });
 
   const getGasTokenBalances = Effect.fn(
@@ -95,7 +60,6 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   return {
     getGasTokenBalances,
     getPrices,
-    getRewardsSummaries,
     getTokenOptions,
     scanTokenBalances,
   } as const;

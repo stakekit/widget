@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Array as EArray, Option } from "effect";
+import { Array as EArray, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
@@ -9,7 +9,6 @@ import type {
   EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
-import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
 import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
@@ -44,6 +43,7 @@ import { getPullResultItems } from "../../../shared/effect/pagination";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
 import { walletScopeAtom } from "../../wallet/index";
 import {
+  getNetworkFeeEstimate,
   getYieldEntryPriceToken,
   isHiddenTokenBalance,
   makeConfidentialTokenBalance,
@@ -307,13 +307,6 @@ const positionDetailsEnterFacadeAtom = Atom.family(
       const selectedToken = input.selectedToken;
       const availableAmount = input.availableAmount;
       const symbol = input.symbol;
-      const isStakeTokenSameAsGasToken =
-        selectedYield && selectedToken
-          ? stakeTokenSameAsGasToken({
-              stakeToken: selectedToken,
-              yieldDto: selectedYield,
-            })
-          : false;
       // Both yield-labelled actions wait for the selected yield, because their
       // label is derived from it.
       const cta =
@@ -323,14 +316,25 @@ const positionDetailsEnterFacadeAtom = Atom.family(
 
       return {
         appLoading: entry.appLoading,
-        // A hidden balance is unknown, so Max would clamp to zero.
-        canUseMax: !isStakeTokenSameAsGasToken && !input.hiddenTokenBalance,
+        // A hidden balance is unknown, so Max would clamp to zero; a gas token
+        // one waits for the gas Max must leave.
+        canUseMax: !input.hiddenTokenBalance && entry.maxAmount !== null,
+        /** Max has nothing to fill, such as a balance the gas would use up. */
+        maxFillsNothing: entry.maxAmount?.isZero() ?? false,
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
         hiddenTokenBalance: input.hiddenTokenBalance,
         isFetching: input.isFetching,
         kyc: entry.kyc,
+        maxGasReserveNote: entry.maxGasReserveNote,
+        networkFee: getNetworkFeeEstimate({
+          connected: entry.connected,
+          hidden: entry.gasFeeHidden,
+          pending: entry.networkFeePending,
+          prices: input.prices,
+          simulation: entry.networkFeeSimulation,
+        }),
         ownerCurrent: input.ownerCurrent,
         preparation: entry.preparation,
         priceUsd:
@@ -397,10 +401,11 @@ const positionDetailsEnterFacadeAtom = Atom.family(
     );
     const setMaxAmountAtom = appRuntime.fn((_input: undefined, context) => {
       const view = context(viewAtom);
-      const maximum = context(yieldEntry.viewAtom).constraints.allowedMaximum;
+      const { maxAmount } = context(yieldEntry.viewAtom);
+      if (maxAmount === null) return Effect.void;
       context.set(intentAtom, {
         type: "stakeAmount/max",
-        amount: maximum.toString(10),
+        amount: maxAmount.toString(10),
       });
       return TrackingService.use((tracking) =>
         tracking.trackEvent("positionDetailsPageMaxClicked", {

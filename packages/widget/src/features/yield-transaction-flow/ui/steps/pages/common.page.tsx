@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import { Button, Notice, Stack, Text } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
+import { useSlowTransactionStep } from "../../../../transaction-steps/index";
 import {
   describeTransactionFailure,
   getTransactionStepState,
@@ -54,6 +55,7 @@ export const StepsPage = () => {
     retry,
     txStates,
     cta,
+    ctaNote,
     leaveConfirmationDialog,
     summary,
     details,
@@ -62,13 +64,19 @@ export const StepsPage = () => {
   } = useSteps();
 
   const { t } = useTranslation();
+  const slowStepId = useSlowTransactionStep(txStates);
   // One surface for what failed: its step, with the wallet's or API's own
   // words after the plain message.
   const failure = describeTransactionFailure(t, error);
   const failureDetail = failure?.detail
     ? ` ${t("steps.failure.detail", { detail: failure.detail })}`
     : "";
-  const failureMessage = failure ? `${failure.message}${failureDetail}` : null;
+  const stepFailure = failure
+    ? {
+        cancelled: failure.cancelled,
+        message: `${failure.message}${failureDetail}`,
+      }
+    : null;
 
   const steps = txStates.map((row, index): TransactionStep => {
     const type = formatTransactionTypeLabel(row.type, t, {
@@ -92,7 +100,12 @@ export const StepsPage = () => {
             row,
             row.type === "ENCRYPT" ? "encrypt" : "decrypt"
           )
-        : getTransactionStepState(row.done, row.phases, failureMessage)),
+        : getTransactionStepState(t, {
+            done: row.done,
+            failure: stepFailure,
+            phases: row.phases,
+            slow: row.id === slowStepId,
+          })),
     };
   });
 
@@ -130,7 +143,23 @@ export const StepsPage = () => {
                 {t("shared.retry")}
               </Button>
             )}
-            <PageCtaButton cta={cta} />
+            <PageCtaButton
+              cta={cta}
+              {...(ctaNote
+                ? {
+                    notice: (
+                      <Text
+                        as="p"
+                        variant="caption"
+                        tone="muted"
+                        align="center"
+                      >
+                        {ctaNote}
+                      </Text>
+                    ),
+                  }
+                : {})}
+            />
           </Stack>
         </PageCtaSlot>
 

@@ -1,66 +1,54 @@
 import { describe, expect, it } from "vitest";
 import {
+  getLeadingPendingAction,
   positionDetailsExitHasContent,
   positionDetailsHubHasContent,
   resolvePositionDetailsActionCapabilities,
-  resolvePositionDetailsActionModes,
-  resolveSelectedPositionDetailsActionMode,
+  resolvePositionDetailsAmountActions,
 } from "../../../src/features/position-details/model/hub";
 import { yieldApiYieldFixture } from "../../fixtures";
 
 describe("position details hub model", () => {
-  it("orders the tabs exit, enter, then each pending action type once", () => {
+  it("orders the amount actions exit first, then entering where offered", () => {
     expect(
-      resolvePositionDetailsActionModes({
+      resolvePositionDetailsAmountActions({
         canEnter: true,
         canExit: true,
-        pendingActionTypes: ["CLAIM_REWARDS", "WITHDRAW", "CLAIM_REWARDS"],
+        offersEnter: true,
       })
-    ).toEqual(["exit", "enter", "CLAIM_REWARDS", "WITHDRAW"]);
+    ).toEqual(["exit", "enter"]);
+    // The compact Layout has no enter flow.
     expect(
-      resolvePositionDetailsActionModes({
+      resolvePositionDetailsAmountActions({
+        canEnter: true,
+        canExit: true,
+        offersEnter: false,
+      })
+    ).toEqual(["exit"]);
+    expect(
+      resolvePositionDetailsAmountActions({
         canEnter: false,
         canExit: false,
-        pendingActionTypes: [],
+        offersEnter: true,
       })
     ).toEqual([]);
   });
 
-  it("opens on the first action the position asks for, else the first tab", () => {
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        modes: ["exit", "enter", "MERGE", "CLAIM_REWARDS"],
-        selectedMode: null,
-      })
-    ).toBe("CLAIM_REWARDS");
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        modes: ["exit", "enter", "MERGE"],
-        selectedMode: null,
-      })
-    ).toBe("exit");
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        modes: [],
-        selectedMode: null,
-      })
-    ).toBe(null);
-  });
+  it("leads with a required action, else a claim, never an optional one", () => {
+    const action = (
+      type: "CLAIM_REWARDS" | "MERGE" | "WITHDRAW",
+      balanceType: "claimable" | "active" | "withdrawable"
+    ) => ({
+      pendingAction: { type },
+      yieldBalance: { isEncrypted: false, type: balanceType },
+    });
+    const claim = action("CLAIM_REWARDS", "claimable");
+    const withdraw = action("WITHDRAW", "withdrawable");
+    const merge = action("MERGE", "active");
 
-  it("keeps an explicit tab selection while that action stays offered", () => {
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        modes: ["exit", "enter", "CLAIM_REWARDS"],
-        selectedMode: "enter",
-      })
-    ).toBe("enter");
-    // Once claimed, the Claim tab is gone and the default takes over.
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        modes: ["exit", "enter"],
-        selectedMode: "CLAIM_REWARDS",
-      })
-    ).toBe("exit");
+    expect(getLeadingPendingAction([claim, withdraw])).toBe(withdraw);
+    expect(getLeadingPendingAction([merge, claim])).toBe(claim);
+    expect(getLeadingPendingAction([merge])).toBe(null);
   });
 
   it("treats exit support as exit capability, not pending actions", () => {
@@ -110,9 +98,9 @@ describe("position details hub model", () => {
 
     expect(capabilities).toEqual({ canEnter: true, canExit: false });
     expect(
-      resolvePositionDetailsActionModes({
+      resolvePositionDetailsAmountActions({
         ...capabilities,
-        pendingActionTypes: [],
+        offersEnter: true,
       })
     ).toEqual(["enter"]);
   });

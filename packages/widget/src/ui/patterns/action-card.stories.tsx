@@ -15,7 +15,7 @@ const meta = {
   args: {
     title: (
       <>
-        <Text.Strong>1.335 POL</Text.Strong> available to claim
+        Claim rewards <Text.Strong>1.335 POL</Text.Strong>
       </>
     ),
     action: { label: "Claim", onClick: onClaim },
@@ -27,7 +27,7 @@ const meta = {
         <ActionCard
           title={
             <>
-              <Text.Strong>1 POL</Text.Strong> available to withdraw
+              Withdraw <Text.Strong>1 POL</Text.Strong>
             </>
           }
           description="Unstaked on Nov 3."
@@ -77,7 +77,7 @@ export const Default: Story = {
         contentInset(card)
       );
     }
-    const title = canvas.getByText("available to claim", { exact: false });
+    const title = canvas.getByText("Claim rewards", { exact: false });
     await expect(box(claim).top).toBeLessThan(box(title).bottom);
   },
 };
@@ -119,6 +119,57 @@ export const SetOffTheCardDark: Story = {
 };
 
 /**
+ * The screen's call to action: the leading card tints in the accent and its
+ * button fills, while a sibling card keeps its soft button. The figure the
+ * card offers can read in the success tone, as claimable amounts do.
+ */
+export const Primary: Story = {
+  args: {
+    primary: true,
+    title: (
+      <>
+        <Text as="strong" weight="semibold" tone="success">
+          1 POL
+        </Text>{" "}
+        ready to withdraw
+      </>
+    ),
+    action: { label: "Withdraw", onClick: onWithdraw },
+  },
+  render: (args) => (
+    <ContainerFrame width={400}>
+      <Stack gap={8}>
+        <ActionCard {...args} />
+        <ActionCard
+          title={
+            <>
+              Claim rewards <Text.Strong>1.335 POL</Text.Strong>
+            </>
+          }
+          action={{ label: "Claim", onClick: onClaim }}
+        />
+      </Stack>
+    </ContainerFrame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const withdraw = canvas.getByRole("button", { name: "Withdraw" });
+    const claim = canvas.getByRole("button", { name: "Claim" });
+    const fill = (element: Element) =>
+      getComputedStyle(element).backgroundColor;
+
+    await expect(fill(withdraw)).not.toBe(fill(claim));
+    await userEvent.click(withdraw);
+    await expect(onWithdraw).toHaveBeenCalled();
+  },
+};
+
+export const PrimaryDark: Story = {
+  ...Primary,
+  globals: { colorScheme: "dark" },
+};
+
+/**
  * At a narrow width the text wraps and the button keeps its row, so sibling
  * cards keep one shape.
  */
@@ -126,8 +177,8 @@ export const Narrow: Story = {
   args: {
     title: (
       <>
-        <Text.Strong>1,234.5678 POL</Text.Strong> available to claim rewards
-        from your validator
+        Claim rewards from your validator{" "}
+        <Text.Strong>1,234.5678 POL</Text.Strong>
       </>
     ),
   },
@@ -140,7 +191,7 @@ export const Narrow: Story = {
     const canvas = within(canvasElement);
     const button = canvas.getByRole("button", { name: "Claim" });
     const card = button.parentElement?.parentElement;
-    const title = canvas.getByText("available to claim", { exact: false });
+    const title = canvas.getByText("Claim rewards", { exact: false });
 
     await expect(box(title).right).toBeLessThanOrEqual(box(button).left);
     await expect(box(card).right - box(button).right).toBe(contentInset(card));

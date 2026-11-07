@@ -22,12 +22,14 @@ import {
   RewardRateBreakdown,
 } from "../../../../yield-summary/views";
 import { useEarnEntry } from "../../../react/use-earn-facades";
-import { formatEntryFigure } from "./entry-figure";
+import { formatEntryFigure, formatEstimatedRewards } from "./entry-figure";
 
 type StrategyProvider = {
   key: string;
   logo: string | undefined;
   name: string;
+  /** Validators' marks are rounded squares; a provider's is round. */
+  shape: "round" | "square";
 };
 
 export const SelectYieldRewardDetails = ({
@@ -43,6 +45,7 @@ export const SelectYieldRewardDetails = ({
   const { view } = useEarnEntry();
   const {
     amountEntered,
+    priceUsd,
     rewardToken,
     estimatedRewards,
     rewardsTokenSymbol,
@@ -59,22 +62,13 @@ export const SelectYieldRewardDetails = ({
       })
     : null;
 
-  const earnYearly = estimatedRewards
-    ? formatEntryFigure({
-        amount: estimatedRewards.yearly,
-        amountEntered,
-        locale,
-        unit: rewardsTokenSymbol,
-      })
-    : "";
-  const earnMonthly = estimatedRewards
-    ? formatEntryFigure({
-        amount: estimatedRewards.monthly,
-        amountEntered,
-        locale,
-        unit: rewardsTokenSymbol,
-      })
-    : "";
+  const estimatedRewardFigures = formatEstimatedRewards({
+    amountEntered,
+    amountUsd: priceUsd,
+    estimatedRewards,
+    locale,
+    unit: rewardsTokenSymbol,
+  });
   const strategyDetails = selectedStake
     ? (() => {
         const yieldDto = selectedStake;
@@ -90,6 +84,7 @@ export const SelectYieldRewardDetails = ({
                 key: validator.key,
                 logo: providerDetails?.logo ?? validator.logoURI,
                 name: providerDetails?.name ?? name,
+                shape: "square",
               };
             })
           : [
@@ -105,6 +100,7 @@ export const SelectYieldRewardDetails = ({
                   yieldDto.provider?.name ??
                   yieldDto.providerId ??
                   yieldDto.metadata.name,
+                shape: "round" as const,
               },
             ];
         const pricePerShare = yieldDto.state?.pricePerShareState?.price;
@@ -112,16 +108,20 @@ export const SelectYieldRewardDetails = ({
           pricePerShare && !pricePerShare.isZero()
             ? stakeAmount.dividedBy(pricePerShare)
             : stakeAmount;
+        // Before an amount is entered, the token alone says what it gives.
+        const getOutputFigure = () => {
+          if (!outputToken) return null;
+          if (!amountEntered) return outputToken.symbol;
+          return formatEntryFigure({
+            amount: outputAmount,
+            amountEntered,
+            locale,
+            unit: outputToken.symbol,
+          });
+        };
 
         return {
-          outputAmount: outputToken
-            ? formatEntryFigure({
-                amount: outputAmount,
-                amountEntered,
-                locale,
-                unit: outputToken.symbol,
-              })
-            : null,
+          outputAmount: getOutputFigure(),
           outputToken,
           providers: strategyProviders,
           yieldType: getYieldTypeLabels(yieldDto, t).title,
@@ -171,10 +171,7 @@ export const SelectYieldRewardDetails = ({
         </Stack>
       ) : null}
 
-      <EstimatedRewardAmounts
-        earnMonthly={earnMonthly}
-        earnYearly={earnYearly}
-      />
+      <EstimatedRewardAmounts figures={estimatedRewardFigures} />
 
       {rewardRateDetails ? (
         <RewardRateBreakdown
@@ -196,7 +193,7 @@ const YieldStrategyDetails = ({
 }: {
   outputAmount: string | null;
   outputToken: Token | null;
-  providers: StrategyProvider[];
+  providers: ReadonlyArray<StrategyProvider>;
   yieldType: string;
 }) => {
   const { t } = useTranslation();
@@ -229,7 +226,7 @@ const YieldStrategyDetails = ({
             src={provider.logo}
             fallback={provider.name}
             size="xs"
-            shape="square"
+            shape={provider.shape}
           />
         ))}
 

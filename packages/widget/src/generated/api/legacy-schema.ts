@@ -293,20 +293,6 @@ export const AvalancheCAdditionalAddressesDto = Schema.Struct({
   cAddressBech: Schema.String,
   pAddressBech: Schema.String,
 }).annotate({ identifier: "AvalancheCAdditionalAddressesDto" });
-export type YieldRewardsSummaryDto = {
-  readonly total: string;
-  readonly last24H: string;
-  readonly last7D: string;
-  readonly last30D: string;
-  readonly lastYear: string;
-};
-export const YieldRewardsSummaryDto = Schema.Struct({
-  total: Schema.String,
-  last24H: Schema.String,
-  last7D: Schema.String,
-  last30D: Schema.String,
-  lastYear: Schema.String,
-}).annotate({ identifier: "YieldRewardsSummaryDto" });
 export type TransactionStatus =
   | "NOT_FOUND"
   | "CREATED"
@@ -575,29 +561,6 @@ export const AddressWithTokenDto = Schema.Struct({
   }),
   tokenAddress: Schema.optionalKey(Schema.String),
 }).annotate({ identifier: "AddressWithTokenDto" });
-export type AddressesDto = {
-  readonly address: string;
-  readonly additionalAddresses?:
-    | CosmosAdditionalAddressesDto
-    | BinanceAdditionalAddressesDto
-    | SolanaAdditionalAddressesDto
-    | TezosAdditionalAddressesDto
-    | AvalancheCAdditionalAddressesDto;
-};
-export const AddressesDto = Schema.Struct({
-  address: Schema.String.annotate({
-    examples: ["0x120FA5738751b275aed7F7b46B98beB38679e093"],
-  }),
-  additionalAddresses: Schema.optionalKey(
-    Schema.Union([
-      CosmosAdditionalAddressesDto,
-      BinanceAdditionalAddressesDto,
-      SolanaAdditionalAddressesDto,
-      TezosAdditionalAddressesDto,
-      AvalancheCAdditionalAddressesDto,
-    ])
-  ),
-}).annotate({ identifier: "AddressesDto" });
 export type TokenBalanceScanResponseDto = {
   readonly token: TokenDto;
   readonly availableYields: ReadonlyArray<string>;
@@ -634,19 +597,11 @@ export const BalanceResponseDto = Schema.Struct({
   amount: Schema.String,
   availableYields: Schema.Array(Schema.String),
 }).annotate({ identifier: "BalanceResponseDto" });
-export type YieldRewardsSummaryResponseDto = {
-  readonly rewards: YieldRewardsSummaryDto;
-  readonly token: TokenDto;
-};
-export const YieldRewardsSummaryResponseDto = Schema.Struct({
-  rewards: YieldRewardsSummaryDto,
-  token: TokenDto,
-}).annotate({ identifier: "YieldRewardsSummaryResponseDto" });
 export type TransactionDto = {
   readonly id: string;
   readonly network: Networks;
   readonly status: TransactionStatus;
-  readonly type: TransactionType;
+  readonly type: TransactionType | null;
   readonly hash: string | null;
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
@@ -673,7 +628,7 @@ export const TransactionDto = Schema.Struct({
   id: Schema.String,
   network: Networks,
   status: TransactionStatus,
-  type: TransactionType,
+  type: Schema.Union([TransactionType, Schema.Null]),
   hash: Schema.Union([Schema.String, Schema.Null]),
   createdAt: Schema.String.annotate({ format: "date-time" }),
   broadcastedAt: Schema.Union([Schema.String, Schema.Null]).annotate({
@@ -706,12 +661,6 @@ export type BalancesRequestDto = {
 export const BalancesRequestDto = Schema.Struct({
   addresses: Schema.Array(AddressWithTokenDto),
 }).annotate({ identifier: "BalancesRequestDto" });
-export type YieldRewardsSummaryRequestDto = {
-  readonly addresses: AddressesDto;
-};
-export const YieldRewardsSummaryRequestDto = Schema.Struct({
-  addresses: AddressesDto,
-}).annotate({ identifier: "YieldRewardsSummaryRequestDto" });
 // schemas
 export type NetworkAddressesTokenV2ControllerGetTokenBalancesParams = {
   readonly "X-API-KEY"?: string;
@@ -899,39 +848,3 @@ export type TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances503 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances503 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummaryParams = {
-  readonly "X-API-KEY"?: string;
-};
-export const YieldControllerGetSingleYieldRewardsSummaryParams = Schema.Struct({
-  "X-API-KEY": Schema.optionalKey(Schema.String),
-});
-export type YieldControllerGetSingleYieldRewardsSummaryRequestJson =
-  YieldRewardsSummaryRequestDto;
-export const YieldControllerGetSingleYieldRewardsSummaryRequestJson =
-  YieldRewardsSummaryRequestDto;
-export type YieldControllerGetSingleYieldRewardsSummary201 =
-  YieldRewardsSummaryResponseDto;
-export const YieldControllerGetSingleYieldRewardsSummary201 =
-  YieldRewardsSummaryResponseDto;
-export type YieldControllerGetSingleYieldRewardsSummary400 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary400 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary401 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary401 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary404 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary404 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary408 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary408 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary409 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary409 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary410 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary410 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary412 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary412 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary500 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary500 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary502 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary502 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary503 = StakeKitErrorDto;
-export const YieldControllerGetSingleYieldRewardsSummary503 = StakeKitErrorDto;

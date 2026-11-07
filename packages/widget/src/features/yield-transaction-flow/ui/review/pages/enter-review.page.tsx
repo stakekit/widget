@@ -7,9 +7,11 @@ export const EnterReviewPage = () => {
 
   const {
     fee,
+    feeWarning,
     yieldType,
     amount,
     amountFiat,
+    attribution,
     destination,
     facts,
     token,
@@ -31,6 +33,7 @@ export const EnterReviewPage = () => {
   return (
     <ReviewPage
       fee={fee}
+      feeWarning={feeWarning}
       depositFee={depositFee}
       managementFee={managementFee}
       performanceFee={performanceFee}
@@ -39,6 +42,7 @@ export const EnterReviewPage = () => {
       token={token}
       amount={`${amount} ${token.symbol}`}
       amountFiat={amountFiat}
+      attribution={attribution}
       destination={destination}
       facts={facts}
       isGasCheckError={isGasCheckWarning}

@@ -10,6 +10,7 @@ const stateLabels = {
   broadcasting: "Broadcasting",
   done: "Confirmed",
   failed: "Failed",
+  cancelled: "Cancelled in wallet",
 } as const;
 
 const meta = {
@@ -110,25 +111,82 @@ export const Done: Story = {
   },
 };
 
-/** With its hash, a done step's link shows the hash and reads what it opens. */
-export const DoneWithHash: Story = {
+/**
+ * Once sent, a step shows its hash beside the explorer link while it still
+ * confirms, so it can be followed before it is done.
+ */
+export const SentWithHash: Story = {
   args: {
     steps: [
       {
         id: "stake",
         label: "Stake",
-        state: "done",
+        state: "active",
         explorerUrl: "https://etherscan.io/tx/0x1",
         hash: "0x1234…abcd",
+        message: "Taking longer than usual. It's still on its way.",
       },
     ],
   },
   play: async ({ canvasElement }) => {
+    const [stake] = stepItems(canvasElement);
+    await expect(stake).toHaveTextContent("0x1234…abcd");
+    await expect(stake).toHaveTextContent("Taking longer than usual");
     const link = within(canvasElement).getByRole("link", {
-      name: "View transaction, 0x1234…abcd opens in a new tab",
+      name: "View transaction opens in a new tab",
     });
     await expect(link).toHaveAttribute("href", "https://etherscan.io/tx/0x1");
-    await expect(link).toHaveTextContent("0x1234…abcd");
+  },
+};
+
+/** Declined in the wallet, the step reads as cancelled, not failed. */
+export const Cancelled: Story = {
+  args: {
+    steps: [
+      {
+        id: "stake",
+        label: "Stake",
+        state: "cancelled",
+        message: "Nothing was sent. Try again when you're ready.",
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const [stake] = stepItems(canvasElement);
+    await expect(stake).toHaveTextContent(
+      "Stake, Cancelled in walletNothing was sent."
+    );
+  },
+};
+
+/**
+ * The summary's avatar sits in the timeline's marker column: its centre
+ * lines up with the markers', and its provider's logo leads the detail.
+ */
+export const AlignedSummary: Story = {
+  args: {
+    summary: {
+      title: "Claim 0.12 POL",
+      detail: "via Figment",
+      provider: { name: "Figment", src: tokenLogo },
+      token: { name: "POL" },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole("list", { name: "Transaction progress" });
+    // The last step has no connector, so its marker comes first.
+    const marker = within(list).getAllByRole("listitem").at(-1)?.children[0];
+    // The summary's avatar sits just before its title and detail.
+    const avatar =
+      canvas.getByText("Claim 0.12 POL").parentElement?.previousElementSibling;
+    const centre = (element: Element | null | undefined) => {
+      if (!element) throw new Error("Expected a marker and an avatar.");
+      const box = element.getBoundingClientRect();
+      return box.left + box.width / 2;
+    };
+    await expect(centre(marker)).toBeCloseTo(centre(avatar), 0);
+    await expect(canvas.getByText("via Figment")).toBeVisible();
   },
 };
 

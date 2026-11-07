@@ -5,6 +5,7 @@ import { Box } from "../primitives/box";
 import { Stack } from "../primitives/stack";
 import { ContainerFrame } from "../storybook/container-frame";
 import {
+  fadeDepths,
   isOneLine,
   isTruncated,
   outlineUnclipped,
@@ -90,6 +91,34 @@ export const ActiveItem: Story = {
   },
 };
 
+/**
+ * An edge that cuts rows off fades them out: at rest only the bottom, part
+ * way down both edges, at the end only the top. Keyboard focus on the list
+ * lifts the fades, so its ring shows whole.
+ */
+export const FadesCutOffEdges: Story = {
+  play: async ({ canvasElement }) => {
+    const scroller = region(canvasElement);
+    await waitFor(() =>
+      expect(fadeDepths(scroller)).toEqual({ top: 0, bottom: 24 })
+    );
+
+    scroller.scrollTop = 600;
+    await waitFor(() =>
+      expect(fadeDepths(scroller)).toEqual({ top: 24, bottom: 24 })
+    );
+
+    scroller.scrollTop = scroller.scrollHeight;
+    await waitFor(() =>
+      expect(fadeDepths(scroller)).toEqual({ top: 24, bottom: 0 })
+    );
+
+    await userEvent.tab();
+    await expect(scroller).toHaveFocus();
+    await expect(getComputedStyle(scroller).maskImage).toBe("none");
+  },
+};
+
 /** Items in titled groups; the titles scroll with their items. */
 export const Groups: Story = {
   render: () => (
@@ -147,6 +176,8 @@ export const StickyHeaders: Story = {
         scroller.getBoundingClientRect().top + 48
       );
     });
+    // The sticky title marks the top edge, so it does not fade.
+    await expect(fadeDepths(scroller).top).toBe(0);
   },
 };
 

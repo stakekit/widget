@@ -11,6 +11,7 @@ import { Card } from "../components/card";
 import { Disclosure } from "../components/disclosure";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { FullBleed } from "../storybook/container-frame";
 import { PageHeader } from "./page-header";
 import { WidgetFrame } from "./widget-frame";
 
@@ -83,6 +84,44 @@ export const Widths: Story = {
     await expect(frameWidth("narrow")).toBe(400);
     await expect(frameWidth("full")).toBe(900);
   },
+};
+
+/**
+ * As wide as the viewport, as on a phone, the frame drops its corners and
+ * shadow and meets the screen's edges; a frame narrower than the viewport
+ * keeps them.
+ */
+export const EdgeToEdge: Story = {
+  args: { width: "full" },
+  render: (args) => (
+    <Stack gap={24}>
+      <FullBleed>
+        <div data-testid="edge-to-edge">
+          <WidgetFrame {...args} />
+        </div>
+      </FullBleed>
+      <div data-testid="inset">
+        <WidgetFrame {...args} width="narrow" />
+      </div>
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const frameStyle = (testId: string) => {
+      const frame = canvas.getByTestId(testId).firstElementChild;
+      if (frame === null) throw new Error(`Expected the ${testId} frame`);
+      return getComputedStyle(frame);
+    };
+    await expect(frameStyle("edge-to-edge").borderTopLeftRadius).toBe("0px");
+    await expect(frameStyle("edge-to-edge").boxShadow).toBe("none");
+    await expect(frameStyle("inset").borderTopLeftRadius).toBe("20px");
+    await expect(frameStyle("inset").boxShadow).not.toBe("none");
+  },
+};
+
+export const EdgeToEdgeDark: Story = {
+  ...EdgeToEdge,
+  globals: { colorScheme: "dark" },
 };
 
 /** Without a header, the page starts at the gutter. */

@@ -21,14 +21,18 @@ type FieldProps = {
   readonly description?: string;
   /**
    * Sets the description at the end of the line under the control, kept
-   * beside any error instead of giving way to it, such as an amount's
-   * limits, which stay in view while a balance error shows.
+   * beside any error or warning instead of giving way to it, such as an
+   * amount's limits, which stay in view as the helper while an error shows.
    */
   readonly descriptionAtEnd?: boolean;
-  /** The description itself says what is wrong, such as a missed minimum. */
-  readonly descriptionInvalid?: boolean;
   /** Shown under the control and marks it invalid. */
   readonly error?: string;
+  /**
+   * Shown in the error's place in the warning tone while there is no error,
+   * such as a balance too small for any amount before one is typed. It
+   * describes the control without marking it invalid.
+   */
+  readonly warning?: string;
   readonly disabled?: boolean;
   /** One input, such as a `SearchInput` or `AmountInput`. */
   readonly children: ReactNode;
@@ -48,35 +52,41 @@ const FieldStateContext = createContext<FieldState>({
 export const useFieldState = () => use(FieldStateContext);
 
 /**
- * A labelled input: the label above it names it, the description or error
- * under it describes it, and an error marks it invalid.
+ * A labelled input: the label above it names it, the description, warning
+ * or error under it describes it, and an error marks it invalid.
  */
 export const Field = ({
   label,
   description,
   descriptionAtEnd = false,
-  descriptionInvalid = false,
   error,
+  warning,
   disabled = false,
   children,
 }: FieldProps) => {
-  const invalid = error !== undefined || descriptionInvalid;
+  const invalid = error !== undefined;
   const descriptionPart = description !== undefined && (
     <BaseField.Description
-      {...stylex.props(
-        styles.help,
-        descriptionInvalid && styles.error,
-        descriptionAtEnd && styles.end
-      )}
+      {...stylex.props(styles.help, descriptionAtEnd && styles.end)}
     >
       {description}
     </BaseField.Description>
   );
-  const errorPart = error !== undefined && (
-    <BaseField.Error match {...stylex.props(styles.help, styles.error)}>
-      {error}
-    </BaseField.Error>
-  );
+  const messagePart = (() => {
+    if (error !== undefined) {
+      return (
+        <BaseField.Error match {...stylex.props(styles.help, styles.error)}>
+          {error}
+        </BaseField.Error>
+      );
+    }
+    if (warning === undefined) return false;
+    return (
+      <BaseField.Description {...stylex.props(styles.help, styles.warning)}>
+        {warning}
+      </BaseField.Description>
+    );
+  })();
 
   return (
     <BaseField.Root
@@ -93,13 +103,13 @@ export const Field = ({
         {children}
       </FieldStateContext>
       {descriptionAtEnd
-        ? (errorPart || descriptionPart) && (
+        ? (messagePart || descriptionPart) && (
             <div {...stylex.props(styles.helpRow)}>
-              {errorPart}
+              {messagePart}
               {descriptionPart}
             </div>
           )
-        : errorPart || descriptionPart}
+        : messagePart || descriptionPart}
     </BaseField.Root>
   );
 };
@@ -125,6 +135,7 @@ const styles = stylex.create({
     lineHeight: lineHeight.caption,
   },
   error: { color: color.danger },
+  warning: { color: color.warning },
   helpRow: {
     gap: space[8],
     display: "flex",

@@ -1,13 +1,11 @@
 import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import { type ReactNode, useId } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
-import type { Token } from "../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import { capitalizeFirstLetters } from "../../../../shared/lib/formatters";
 import { formatTransactionHash } from "../../../../shared/lib/general";
-import { useTokenLogo } from "../../../../shared/react/token-logo";
 import {
   Badge,
   Box,
@@ -16,16 +14,16 @@ import {
   CopyButton,
   DetailList,
   DetailRow,
+  Disclosure,
   Divider,
-  ExternalLink,
   Icon,
   IconButton,
   Notice,
   Stack,
   Text,
-  TokenAvatar,
 } from "../../../../ui/index";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
+import { TransactionTerms } from "../../../transaction-steps/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import {
   formatTransactionTypeLabel,
@@ -37,8 +35,8 @@ import {
   projectActivityActionDetails,
 } from "../../model/activity-action-details";
 import { useActivityActionRoute } from "../../react/activity-action-route";
-import { ActivityIcon } from "../activity-page/components/activity-icon";
 import { useActivityActionTitle } from "../activity-page/hooks/use-activity-action-title";
+import { ActivityAvatar } from "../components/activity-avatar";
 import {
   activityStatusLook,
   toActivityStatusCallout,
@@ -52,7 +50,6 @@ const reviewPageByIntent = {
 
 const ContinuationControls = () => {
   const { t } = useTranslation();
-  const trackEvent = useTrackEvent();
   const review = useYieldActionContinuationReview();
 
   return (
@@ -66,23 +63,7 @@ const ContinuationControls = () => {
           onClick: review.confirm,
         }}
       />
-      <Text variant="caption" tone="muted" as="p">
-        <Trans
-          i18nKey="activity.review.terms_of_use"
-          values={{ action: t("activity.review.continue") }}
-          components={{
-            underline0: (
-              <ExternalLink
-                href="https://docs.yield.xyz/docs/terms-of-use"
-                newTabLabel={t("shared.opens_in_new_tab")}
-                onClick={() => trackEvent("termsClicked")}
-              >
-                {null}
-              </ExternalLink>
-            ),
-          }}
-        />
-      </Text>
+      <TransactionTerms action={t("activity.review.continue")} />
     </Stack>
   );
 };
@@ -157,8 +138,9 @@ const statusLabelKey = {
 
 /**
  * One transaction on one line: its status, its type over when it was sent,
- * then its short hash with copy and explorer buttons. An error follows on
- * its own line.
+ * then its short hash with copy and explorer buttons. Why it failed follows
+ * in words on its own line, with the raw error the network or the wallet
+ * reported under a disclosure.
  */
 const TransactionRow = ({
   onOpen,
@@ -188,12 +170,12 @@ const TransactionRow = ({
   const statusLabel = t(statusLabelKey[transaction.status]);
   const sentAt =
     transaction.status === "confirmed" ? transaction.broadcastedAt : null;
-  const { error, explorerUrl, hash } = transaction;
+  const { error, errorReason, explorerUrl, hash } = transaction;
   // A sent time leaves the status to the icon; otherwise the line says it.
   const describedBy = [
     sentAt === null ? null : statusId,
     detailsId,
-    error === null ? null : errorId,
+    errorReason === null ? null : errorId,
   ]
     .filter((part) => part !== null)
     .join(" ");
@@ -244,10 +226,26 @@ const TransactionRow = ({
             />
           ) : null}
         </Stack>
-        {error === null ? null : (
-          <Text id={errorId} variant="caption" tone="danger">
-            {error}
-          </Text>
+        {errorReason === null ? null : (
+          <Stack gap={2}>
+            <Text
+              id={errorId}
+              variant="caption"
+              tone={errorReason === "cancelled_in_wallet" ? "muted" : "danger"}
+            >
+              {t(`activity.errors.${errorReason}`)}
+            </Text>
+            {error === null ? null : (
+              <Disclosure
+                title={t("activity.details.error_details")}
+                testId="activity-details-error-details"
+              >
+                <Text variant="caption" tone="muted" breakAnywhere>
+                  {error}
+                </Text>
+              </Disclosure>
+            )}
+          </Stack>
         )}
       </Stack>
     </Stack>
@@ -278,10 +276,6 @@ const BorrowReceiptRows = ({
     value ? <DetailRow key={label} label={label} value={value} /> : null
   );
 };
-
-const TitleTokenAvatar = ({ token }: { readonly token: Token }) => (
-  <TokenAvatar {...useTokenLogo(token)} size="lg" />
-);
 
 /**
  * An action's receipt: what happened and its amount, its facts, and the
@@ -321,11 +315,11 @@ const Receipt = ({
     <Stack gap={20}>
       <Stack gap={16}>
         <Stack direction="row" align="center" gap={12}>
-          {view.titleToken ? (
-            <TitleTokenAvatar token={view.titleToken} />
-          ) : (
-            <ActivityIcon type="neutral" />
-          )}
+          <ActivityAvatar
+            direction={view.direction}
+            size="lg"
+            token={view.titleToken}
+          />
           <Stack gap={4} align="start" grow>
             <Text variant="title" as="h2">
               {title}

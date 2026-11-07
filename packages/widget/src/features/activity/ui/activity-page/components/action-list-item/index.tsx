@@ -1,15 +1,18 @@
 import { useTranslation } from "react-i18next";
 import { Box, ListRow } from "../../../../../../ui/index";
 import type { ActivityActionItem } from "../../../../model/activity-action";
+import { ActivityAvatar } from "../../../components/activity-avatar";
 import { toActivityStatusCallout } from "../../../components/activity-status";
 import { useActionListItem } from "../../hooks/use-action-list-item";
-import { ActivityIcon } from "../activity-icon";
 
 /**
- * An action on two lines: what happened beside its amount, then who ran it
- * and its status unless it completed, beside when: how long ago within a
- * week, its date after that. Its full date and time are the receipt's. An
- * amount whose token is unknown shows in USD, never as a bare number.
+ * An action on two lines, under the header of its day: its token badged with
+ * what it did, what happened beside its amount, then who ran it and its
+ * status unless it completed, beside when: how long ago within a day, its
+ * time of day after that. An action that failed or was canceled strikes its
+ * amount, which never moved, and says when it ended. Its full date and time
+ * are the receipt's. An amount whose token is unknown shows in USD, never as
+ * a bare number.
  */
 export const ActionListItem = ({
   action,
@@ -27,12 +30,14 @@ export const ActionListItem = ({
 
   const {
     providersDetails,
-    iconType,
+    direction,
+    token,
     title,
     amountText,
     timestamp,
     statusText,
     statusLabel,
+    voided,
   } = listItemView;
 
   const firstProvider = providersDetails?.[0];
@@ -48,11 +53,13 @@ export const ActionListItem = ({
   return (
     <Box paddingBlock={4} width="full">
       <ListRow
-        leading={<ActivityIcon type={iconType} />}
+        leading={<ActivityAvatar direction={direction} token={token} />}
         title={title}
         {...(viaLabel === undefined ? {} : { subtitle: viaLabel })}
         {...(status === null ? {} : { status })}
-        {...(amountText === null ? {} : { value: amountText })}
+        {...(amountText === null
+          ? {}
+          : { value: amountText, valueStruck: voided })}
         {...(timestamp === "" ? {} : { subvalue: timestamp })}
         onClick={() => onActionSelect(action)}
         selected={isSelected}

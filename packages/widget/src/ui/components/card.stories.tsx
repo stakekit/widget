@@ -43,6 +43,19 @@ export const Outlined: Story = {
   args: { variant: "filled" },
   globals: { surfaceStyle: "outlined" },
 };
+/** A field card whose content cannot be used: a `danger` edge. */
+export const Invalid: Story = {
+  args: { variant: "field", invalid: true, testId: "card" },
+  play: async ({ canvasElement }) => {
+    const card = within(canvasElement).getByTestId("card");
+    await expect(getComputedStyle(card).borderTopStyle).toBe("solid");
+  },
+};
+/** The danger edge in each surface style. */
+export const InvalidOutlined: Story = {
+  ...Invalid,
+  globals: { surfaceStyle: "outlined" },
+};
 
 /** Every variant in every tone. */
 export const VariantsAndTones: Story = {

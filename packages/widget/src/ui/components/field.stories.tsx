@@ -7,9 +7,11 @@ import { SearchInput } from "./search-input";
 
 const AmountField = ({
   error,
+  warning,
   disabled = false,
 }: {
   readonly error?: string;
+  readonly warning?: string;
   readonly disabled?: boolean;
 }) => {
   const [value, setValue] = useState("1.5");
@@ -19,6 +21,7 @@ const AmountField = ({
         label="Amount to stake"
         description="Up to 12.4 ETH"
         {...(error === undefined ? {} : { error })}
+        {...(warning === undefined ? {} : { warning })}
         disabled={disabled}
       >
         {/* Invalid and disabled are set on the Field only: it passes them on. */}
@@ -62,6 +65,28 @@ export const WithError: Story = {
     await expect(input).toHaveAttribute("aria-invalid", "true");
     await expect(input).toHaveAccessibleDescription("More than your balance");
   },
+};
+
+/**
+ * A warning takes the error's place in the warning tone and describes the
+ * input without marking it invalid; an error, when there is one, wins.
+ */
+export const WithWarning: Story = {
+  args: { warning: "You need at least 1 ETH to stake" },
+  play: async ({ canvasElement }) => {
+    const input = within(canvasElement).getByRole("textbox", {
+      name: "Amount to stake",
+    });
+    await expect(input).not.toHaveAttribute("aria-invalid");
+    await expect(input).toHaveAccessibleDescription(
+      expect.stringContaining("You need at least 1 ETH to stake")
+    );
+  },
+};
+
+export const WithWarningDark: Story = {
+  ...WithWarning,
+  globals: { colorScheme: "dark" },
 };
 
 /** A disabled field disables its input. */

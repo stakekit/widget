@@ -328,10 +328,12 @@ Colors are set by Color Role (`SKColorRole`): `background`, `surface`,
 `textMuted`, `textSubtle`, `accent`, `accentHover`, `onAccent`, `accentSoft`,
 `accentText`, `success`, `successSoft`, `warning`, `warningSoft`, `danger`,
 `dangerSoft`, `info`, `infoSoft`, `focusRing` and `scrim`. Setting `accent`
-alone also adjusts `accentHover`, `accentSoft`, `accentText`, `focusRing`,
-`info` and `infoSoft`; setting `success`, `warning` or `danger` adjusts its
-soft tint. A role you set explicitly is used as given. An invalid value is
-dropped with a warning; the rest of the configuration still applies.
+alone also adjusts `accentHover`, `accentSoft`, `accentText` and
+`focusRing`; setting `success`, `warning`, `danger` or `info` adjusts its soft
+tint. `info` is its own hue, so setting `accent` leaves it as it is. A role
+you set explicitly is used as given. Setting `font.sans` sets the font of
+figures too. An invalid value is dropped with a warning; the rest of the
+configuration still applies.
 
 ### Legacy `theme`
 

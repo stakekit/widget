@@ -41,6 +41,11 @@ type CommonProps = {
    * frames a field drawn without an edge of its own, such as an amount.
    */
   readonly focusEdge?: boolean;
+  /**
+   * Edges the card in `danger`, such as a field card whose amount cannot be
+   * used; a focus edge still shows over it.
+   */
+  readonly invalid?: boolean;
   /** Renders as the card's `data-testid`. */
   readonly testId?: string;
 };
@@ -81,6 +86,7 @@ export const Card = (props: CardProps) => {
     selected,
     grow = false,
     focusEdge = false,
+    invalid = false,
     children,
   } = props;
   const interactive = props.onClick !== undefined || props.href !== undefined;
@@ -98,6 +104,7 @@ export const Card = (props: CardProps) => {
     tone !== "neutral" && variant === "outline" && toneBorderStyles[tone],
     selected && interactiveStyles.selected,
     grow && flexItemStyles.grow,
+    invalid && invalidStyles.root,
     focusEdge && focusEdgeStyles.root
   );
   const labelling = {
@@ -289,6 +296,12 @@ const toneHoverStyles = stylex.create({
       ":hover:not(:disabled)": `color-mix(in srgb, ${color.infoSoft}, ${color.surfaceHover})`,
     },
   },
+});
+
+// After the variant and tone edges, so it wins over them; the focus edge is
+// an outline, so it still draws over it.
+const invalidStyles = stylex.create({
+  root: { borderColor: color.danger },
 });
 
 const focusEdgeStyles = stylex.create({

@@ -8,11 +8,9 @@ import {
 } from "../../../../../domain/earn/yield";
 import {
   formatTokenAmountInUSD,
-  getFeesInUSD,
   getGasFeeInUSD,
 } from "../../../../../shared/lib/formatters";
 import {
-  formatExactPercent,
   formatRewardRatePercent,
   formatTokenAmount,
   formatUsd,
@@ -23,6 +21,7 @@ import type { HostHook } from "../../../../../ui/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import type { PageCta } from "../../../../widget-shell/views";
 import { formatRewardRateLabel } from "../../../../yield-summary/index";
+import { getYieldFlowAttribution } from "../../../model/yield-transaction-flow";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
@@ -32,8 +31,11 @@ import type { ReviewFact } from "../pages/review-overview";
 import {
   formatReviewDestination,
   getLockupPeriodFact,
+  getNetworkFeeWarning,
+  getReviewUsdValue,
   getSignaturesFact,
   getUnlockPeriodFact,
+  localizeReviewFee,
 } from "./review-facts";
 
 const rewardHostHooks = {
@@ -137,11 +139,9 @@ export const useEnterReview = () => {
     }),
   ].filter((fact): fact is ReviewFact => fact !== null);
 
-  const providerNames = enterFlow.providersDetails
-    .flatMap((provider) => (provider.name ? [provider.name] : []))
-    .join(", ");
+  const attribution = getYieldFlowAttribution(enterFlow);
   const destination = formatReviewDestination({
-    providerName: providerNames || selectedStake.provider?.name,
+    providerName: attribution?.name,
     t,
     yieldName: selectedStake.metadata.name,
   });
@@ -152,23 +152,34 @@ export const useEnterReview = () => {
     prices: stakeReview.prices,
     yieldDto: selectedStake,
   });
+  const feeWarning = getNetworkFeeWarning({
+    feeUsd: getReviewUsdValue({
+      amount: stakeReview.gasAmount,
+      prices: stakeReview.prices,
+      token: selectedStake.mechanics.gasFeeToken,
+    }),
+    subject: "amount",
+    t,
+    valueUsd: previewedUsd?.isGreaterThan(0)
+      ? previewedUsd
+      : getReviewUsdValue({
+          amount: stakeAmount,
+          prices: stakeReview.prices,
+          token: selectedToken,
+        }),
+  });
   const localizeFee = (
-    value: typeof stakeReview.depositFee,
+    fee: typeof stakeReview.depositFee,
     type: "deposit" | "management" | "performance"
   ) =>
-    value
-      ? {
-          inPercentage: formatExactPercent(value.ratio, locale),
-          inUSD: getFeesInUSD({
-            amount: value.amount,
-            locale,
-            prices: stakeReview.prices,
-            token: selectedToken,
-          }),
-          explanation: t(`review.${type}_fee_explanation`),
-          label: t(`review.${type}_fee`),
-        }
-      : null;
+    localizeReviewFee({
+      fee,
+      locale,
+      prices: stakeReview.prices,
+      t,
+      token: selectedToken,
+      type,
+    });
   const depositFee = localizeFee(stakeReview.depositFee, "deposit");
   const managementFee = localizeFee(stakeReview.managementFee, "management");
   const performanceFee = localizeFee(stakeReview.performanceFee, "performance");
@@ -204,9 +215,11 @@ export const useEnterReview = () => {
     token: selectedToken,
     amount,
     amountFiat,
+    attribution,
     destination,
     facts,
     fee,
+    feeWarning,
     yieldType,
     metaInfo,
     isGasCheckWarning: review.isGasCheckWarning,

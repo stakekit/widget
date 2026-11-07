@@ -331,9 +331,16 @@ describe("Borrow with an external provider", () => {
     await expect
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeEnabled();
+    // Sent to the network, the transaction can no longer be cancelled.
     await expect
-      .element(app.getByRole("button", { name: "Cancel" }))
+      .element(app.getByRole("button", { name: "Leave" }))
       .toBeEnabled();
+    await expect
+      .element(
+        app.getByText("Sent transactions can't be cancelled.", { exact: false })
+      )
+      .toBeInTheDocument();
+    expect(app.getByRole("button", { name: "Cancel" }).query()).toBeNull();
 
     broadcast.resolve(broadcastSuccess);
     await expect.poll(() => completePageShown(app)).toBe(true);
@@ -405,9 +412,13 @@ describe("Borrow with an external provider", () => {
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeEnabled();
 
-    await app.getByRole("button", { name: "Cancel" }).click();
-    // The host broadcast the transaction, so leaving asks first.
+    // The host broadcast the transaction: the footer offers Leave, not
+    // Cancel, and leaving asks first.
     await app.getByRole("button", { name: "Leave" }).click();
+    await app
+      .getByTestId("leave-confirmation")
+      .getByRole("button", { name: "Leave" })
+      .click();
     await expect.poll(() => stepsPageShown(app)).toBe(false);
     await expect
       .poll(() => api.submitted.get(withdrawTransaction.id))
@@ -432,9 +443,7 @@ describe("Borrow with an external provider", () => {
     await confirmWithdraw(app);
 
     await expect
-      .element(
-        app.getByText("The transaction was rejected in your wallet. Try again.")
-      )
+      .element(app.getByText("Nothing was sent. Try again when you're ready."))
       .toBeInTheDocument();
     await expect
       .element(app.getByText("Withdrawal failed"))

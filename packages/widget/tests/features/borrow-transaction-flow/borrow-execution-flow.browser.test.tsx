@@ -417,9 +417,9 @@ const renderExecution = (
       current: ReturnType<typeof useNavigate> | null;
     } = { current: null };
     const navigationService = makeWidgetNavigation({
-      back: () =>
+      back: (options) =>
         Effect.sync(() => {
-          navigation.current?.(-1);
+          navigation.current?.(-(options?.steps ?? 1));
         }),
       push: (to) =>
         Effect.sync(() => {
@@ -483,10 +483,14 @@ const renderExecution = (
       workflow.layer,
       flowWallet.layer
     );
-    // Start hands its Session to the flow route through navigation state.
+    // Start hands its Session to the flow route through navigation state,
+    // pushing Review over the page it started from.
     const flowState = { borrowFlowSession: options.session ?? session };
     const initialEntries = (
-      options.initialEntries ?? [options.initialPath ?? "/borrow/review"]
+      options.initialEntries ?? [
+        "/borrow",
+        options.initialPath ?? "/borrow/review",
+      ]
     ).map((pathname) =>
       pathname === "/borrow"
         ? pathname
@@ -1407,8 +1411,11 @@ describe("borrow execution flow component", () => {
         expect(app.container.textContent).not.toContain(
           "Borrow transaction could not be submitted."
         );
+        // Sent, the transaction can no longer be cancelled: the footer
+        // offers Leave.
+        expect(app.getByRole("button", { name: "Cancel" }).query()).toBeNull();
         yield* Effect.promise(() =>
-          userEvent.click(app.getByRole("button", { name: "Cancel" }))
+          userEvent.click(app.getByRole("button", { name: "Leave" }))
         );
         // Borrow actions are not continued from Activity.
         yield* Effect.promise(() =>
@@ -1422,7 +1429,11 @@ describe("borrow execution flow component", () => {
         );
         // A sent transaction is guarded even after its submission failed.
         yield* Effect.promise(() =>
-          userEvent.click(app.getByRole("button", { name: "Leave" }))
+          userEvent.click(
+            app
+              .getByTestId("leave-confirmation")
+              .getByRole("button", { name: "Leave" })
+          )
         );
         yield* Effect.promise(() =>
           expect.element(app.getByText("Borrow home")).toBeInTheDocument()
@@ -1457,7 +1468,7 @@ describe("borrow execution flow component", () => {
       yield* Effect.promise(() =>
         expect
           .poll(() => app.container.textContent)
-          .toContain("Transaction - Disable collateral")
+          .toContain("Disable collateral")
       );
       expect(app.container.textContent).not.toContain("DISABLE_COLLATERAL");
     })
@@ -1482,12 +1493,12 @@ describe("borrow execution flow component", () => {
       yield* Effect.promise(() =>
         expect
           .poll(() => app.container.textContent)
-          .toContain("Transaction 1 / 2 - Token approval")
+          .toContain("Step 1 of 2 · Token approval")
       );
       yield* Effect.promise(() =>
         expect
           .poll(() => app.container.textContent)
-          .toContain("Transaction 2 / 2 - Supply")
+          .toContain("Step 2 of 2 · Supply")
       );
       // The signing step of the first transaction is active.
       yield* Effect.promise(() =>
@@ -1632,7 +1643,7 @@ describe("borrow execution flow component", () => {
             .toBeInTheDocument()
         );
       }
-      expect(app.container.textContent).not.toContain("View transaction");
+      expect(app.container.textContent).not.toContain("View on explorer");
     })
   );
 

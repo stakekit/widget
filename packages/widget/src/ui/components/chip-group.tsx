@@ -14,6 +14,7 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 import { focusRingStyles } from "./focus-ring";
+import { hitAreaStyles } from "./hit-area";
 import type { ToggleOption } from "./segmented-control";
 
 /** One chip: a choice, and how many items it matches, formatted. */
@@ -35,6 +36,8 @@ type ChipGroupProps<T extends string> = {
  * Filters as chips: any number of them can be on, such as the Activity
  * filters. Arrow keys move between chips and Enter or Space toggles one; an
  * on chip is pressed. A chip's `count` follows its label in tabular figures.
+ * Under a coarse pointer a chip's hit area grows to a finger's without
+ * changing how it looks.
  */
 export const ChipGroup = <const T extends string>({
   options,
@@ -56,7 +59,11 @@ export const ChipGroup = <const T extends string>({
         key={option.value}
         value={option.value}
         disabled={option.disabled}
-        {...stylex.props(styles.chip, focusRingStyles.visible)}
+        {...stylex.props(
+          styles.chip,
+          hitAreaStyles.coarse,
+          focusRingStyles.visible
+        )}
       >
         {option.label}
         {option.count !== undefined && (

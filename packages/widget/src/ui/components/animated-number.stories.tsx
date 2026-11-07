@@ -8,31 +8,35 @@ import { Button } from "./button";
 
 const formatFigure = (value: number) => value.toFixed(2);
 
-/** A reward rate that changes when another yield is chosen. */
-const RewardRate = ({
-  rates,
-  initial,
-}: {
-  readonly rates: ReadonlyArray<number>;
-  readonly initial?: number;
-}) => {
+/**
+ * A reward rate that changes when another yield is chosen, on a screen the
+ * user can leave and return to.
+ */
+const RewardRate = ({ rates }: { readonly rates: ReadonlyArray<number> }) => {
   const [index, setIndex] = useState(0);
+  const [shown, setShown] = useState(true);
   return (
     <Stack gap={12} align="start">
-      <Text variant="display" as="p">
-        <AnimatedNumber
-          value={rates[index] ?? 0}
-          format={formatFigure}
-          suffix="%"
-          {...(initial === undefined ? {} : { initial })}
-        />
-      </Text>
-      <Button
-        variant="secondary"
-        onClick={() => setIndex((current) => (current + 1) % rates.length)}
-      >
-        Next yield
-      </Button>
+      {shown && (
+        <Text variant="display" as="p">
+          <AnimatedNumber
+            value={rates[index] ?? 0}
+            format={formatFigure}
+            suffix="%"
+          />
+        </Text>
+      )}
+      <Stack direction="row" gap={8}>
+        <Button
+          variant="secondary"
+          onClick={() => setIndex((current) => (current + 1) % rates.length)}
+        >
+          Next yield
+        </Button>
+        <Button variant="secondary" onClick={() => setShown(!shown)}>
+          {shown ? "Leave" : "Return"}
+        </Button>
+      </Stack>
     </Stack>
   );
 };
@@ -81,13 +85,24 @@ export const Default: Story = {
 
 export const Dark: Story = { globals: { colorScheme: "dark" } };
 
-/** With `initial`, it counts up from that value on mount. */
-export const CountUp: Story = {
-  args: { initial: 0 },
+/**
+ * Returning to the screen shows the value at once: a remount never replays
+ * the count, on any frame.
+ */
+export const NoCountOnReturn: Story = {
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Next yield" }));
     await waitFor(() =>
-      expect(figure(canvasElement)).toHaveTextContent("4.21%")
+      expect(figure(canvasElement)).toHaveTextContent("12.50%")
     );
+    await userEvent.click(canvas.getByRole("button", { name: "Leave" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Return" }));
+
+    for (let frame = 0; frame < 10; frame++) {
+      await expect(figure(canvasElement)).toHaveTextContent("12.50%");
+      await nextFrame();
+    }
   },
 };
 

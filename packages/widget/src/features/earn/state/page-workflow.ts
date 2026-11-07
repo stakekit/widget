@@ -1,3 +1,4 @@
+import { Equal } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { tokenString } from "../../../domain/token/token";
 import { fromAmountValue } from "../../../shared/lib/amount-value";
@@ -21,7 +22,11 @@ export const earnPageInputAtom = Atom.make(
 
 export const earnPageSelectionAtom = Atom.make(
   (context) => context.get(earnSelectionViewAtom).selection
-).pipe(Atom.withLabel("earnPageSelectionAtom"));
+).pipe(
+  // Each amount typed rebuilds an equal selection; its readers keep the last.
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnPageSelectionAtom")
+);
 
 export const earnPageQuoteAtom = Atom.make((context) => {
   const view = context.get(earnSelectionViewAtom);

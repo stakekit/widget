@@ -84,6 +84,7 @@ export const ExitReceiveTokenAccessory = ({
         value: search,
         onValueChange: setSearch,
         label: t("shared.search"),
+        placeholder: t("shared.search_tokens"),
         clearLabel: t("shared.clear_search"),
       }}
       options={filteredOptions.map((option) => ({

@@ -63,6 +63,11 @@ type ReviewSummaryProps = {
   readonly amountFiat?: string;
   /** Where the amount goes, such as "Lido Staked ETH via Lido". */
   readonly destination?: string;
+  /**
+   * Who runs the action, such as the chosen validator (`square`): its logo
+   * leads the destination line.
+   */
+  readonly provider?: TokenLogo;
   /** The token's logo, at the start of the amount. */
   readonly token?: TokenLogo;
   /**
@@ -94,6 +99,7 @@ export const ReviewSummary = ({
   amount,
   amountFiat,
   destination,
+  provider,
   token,
   facts = [],
   fees,
@@ -122,9 +128,14 @@ export const ReviewSummary = ({
           </div>
         </Stack>
         {destination !== undefined && (
-          <Text as="p" tone="muted">
-            {destination}
-          </Text>
+          <Stack direction="row" align="center" gap={6}>
+            {provider !== undefined && (
+              <TokenAvatar {...provider} size="sm" decorative />
+            )}
+            <Text as="p" tone="muted">
+              {destination}
+            </Text>
+          </Stack>
         )}
       </Stack>
       {facts.length > 0 && <ReviewRows rows={facts} />}

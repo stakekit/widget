@@ -4,13 +4,19 @@ import {
   type Range,
   useVirtualizer,
 } from "@tanstack/react-virtual";
-import { type ReactNode, useEffect, useEffectEvent, useRef } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
+import { scrollStyles } from "../primitives/scroll";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
-import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
-import { scrollAreaMaxHeight } from "../tokens/size.stylex";
+import { iconSize, scrollAreaMaxHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { focusRingStyles } from "./focus-ring";
 import { Spinner } from "./spinner";
@@ -88,7 +94,35 @@ type VirtualListProps<T> = ItemsOrGroups<T> & {
   readonly loadingMore?: boolean;
   /** Names the spinner while more items load. */
   readonly loadingMoreLabel?: string;
+  /**
+   * What the rows keep past the end of their figures: `checkSlot` for a
+   * picker's flat rows, which reserve their check's slot, so a group's
+   * caption ends that much further in, over the figures.
+   */
+  readonly headerInsetEnd?: keyof typeof headerInsetEndStyles;
 };
+
+/** How far, in pixels, the rows run past the top and bottom edges. */
+type ScrollEdges = { readonly start: number; readonly end: number };
+
+/**
+ * The distances are clamped well past a fade's depth, so scrolling through
+ * the middle of a long list leaves them unchanged.
+ */
+const fadeReach = 64;
+
+const scrollEdges = (element: HTMLElement): ScrollEdges => ({
+  start: Math.round(Math.min(fadeReach, Math.max(0, element.scrollTop))),
+  end: Math.round(
+    Math.min(
+      fadeReach,
+      Math.max(
+        0,
+        element.scrollHeight - element.clientHeight - element.scrollTop
+      )
+    )
+  ),
+});
 
 /** A group's header row: all of the group but its items. */
 type GroupHeading = Omit<VirtualListGroup<never>, "items">;
@@ -181,7 +215,9 @@ const GroupHeader = ({ group }: { readonly group: GroupHeading }) => (
  * narrows; the list reads its own width, never the window's. The region is a
  * size container, so its rows' container sizes follow the list's width, such
  * as in a split view's narrow column. Items may come in titled groups, and
- * more load when the last row scrolls into view.
+ * more load when the last row scrolls into view. An edge that cuts rows off
+ * fades them out, deeper the more lies past it; a sticky group title marks
+ * the top edge instead.
  */
 export const VirtualList = <T,>({
   label,
@@ -198,6 +234,7 @@ export const VirtualList = <T,>({
   hasMore = false,
   loadingMore = false,
   loadingMoreLabel,
+  headerInsetEnd,
   ...itemsOrGroups
 }: VirtualListProps<T>) => {
   // TanStack Virtual is not compiler-safe.
@@ -280,6 +317,31 @@ export const VirtualList = <T,>({
   }, [activeIndex]);
 
   const totalSize = virtualizer.getTotalSize();
+
+  const [edges, setEdges] = useState<ScrollEdges>({ start: 0, end: 0 });
+  const updateEdges = (element: HTMLElement) => {
+    const next = scrollEdges(element);
+    setEdges((current) =>
+      current.start === next.start && current.end === next.end ? current : next
+    );
+  };
+  const measureEdges = useEffectEvent(() => {
+    if (scrollRef.current !== null) updateEdges(scrollRef.current);
+  });
+  // Measured after each render, as rows load and settle their heights, and
+  // as the region resizes; scrolling measures in `onScroll`. The observer is
+  // created once: one created anew while the rows' own observer settles
+  // their heights would miss its first notification.
+  useEffect(() => {
+    measureEdges();
+  });
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (element === null) return;
+    const resizes = new ResizeObserver(() => measureEdges());
+    resizes.observe(element);
+    return () => resizes.disconnect();
+  }, []);
   const listProps = {
     id: listId,
     ...stylex.props(styles.list, dynamicStyles.height(totalSize)),
@@ -302,7 +364,10 @@ export const VirtualList = <T,>({
           isSticky
             ? styles.stickyRow
             : [styles.row, dynamicStyles.offset(virtualRow.start)],
-          row.kind === "header" && styles.header
+          row.kind === "header" && styles.header,
+          row.kind === "header" &&
+            headerInsetEnd !== undefined &&
+            headerInsetEndStyles[headerInsetEnd]
         )}
       >
         {row.kind === "header" ? (
@@ -325,9 +390,14 @@ export const VirtualList = <T,>({
   );
   const rootProps = {
     ref: scrollRef,
+    onScroll: (event: { readonly currentTarget: HTMLElement }) =>
+      updateEdges(event.currentTarget),
     ...stylex.props(
       styles.root,
+      scrollStyles.stableGutter,
       focusRingStyles.visible,
+      focusRingStyles.inset,
+      dynamicStyles.fade(sticky ? 0 : edges.start, edges.end),
       maxHeight && maxHeightStyles[maxHeight],
       maxHeight && grow && styles.grow,
       maxHeight && grow && growBasisStyles[maxHeight](totalSize)
@@ -372,10 +442,11 @@ export const VirtualList = <T,>({
 const styles = stylex.create({
   root: {
     overscrollBehavior: "contain",
-    // Scrolling a control into view, as Tab does, leaves room for its ring.
-    scrollPaddingBlock: focusRing.extent,
+    // Scrolling a control into view, as Tab does, brings it clear of a fade.
+    scrollPaddingBlock: space[24],
     containerType: "inline-size",
     flexGrow: 1,
+    maskRepeat: "no-repeat",
     scrollbarWidth: "thin",
     height: "100%",
     minHeight: 0,
@@ -407,6 +478,8 @@ const styles = stylex.create({
     // As a `ListRow`'s, so a title lines up with its rows' avatars.
     paddingInline: space[12],
     backgroundColor: color.background,
+    // Its padding falls inside the row's width, so it ends where items do.
+    boxSizing: "border-box",
   },
   headerLeading: { display: "flex", flexShrink: 0 },
   headerLabel: { flexGrow: 1, minWidth: 0 },
@@ -424,6 +497,14 @@ const maxHeightStyles = stylex.create({
   lg: { height: "auto", maxHeight: scrollAreaMaxHeight.lg },
 });
 
+// The header's own padding plus the space a flat `ListRow` reserves for its
+// check after its values: the row's gap and the check's width.
+const headerInsetEndStyles = stylex.create({
+  checkSlot: {
+    paddingInlineEnd: `calc(${space[12]} + ${space[12]} + ${iconSize.md})`,
+  },
+});
+
 // Grown, the list asks for its rows' height up to its cap.
 const growBasisStyles = stylex.create({
   sm: (total: number) => ({
@@ -437,8 +518,17 @@ const growBasisStyles = stylex.create({
   }),
 });
 
-// Virtualizer sizes are runtime values.
+// Virtualizer sizes and scroll distances are runtime values.
 const dynamicStyles = stylex.create({
+  // Each edge fades over up to `space[24]`, by how far the rows run past it.
+  // While the region itself has keyboard focus the fades lift, so its ring,
+  // drawn inside the edge the mask would cut, shows whole.
+  fade: (start: number, end: number) => ({
+    maskImage: {
+      default: `linear-gradient(to bottom, transparent, black min(${space[24]}, ${start}px), black calc(100% - min(${space[24]}, ${end}px)), transparent)`,
+      ":focus-visible": "none",
+    },
+  }),
   height: (total: number) => ({ height: `${total}px` }),
   offset: (start: number) => ({ transform: `translateY(${start}px)` }),
 });

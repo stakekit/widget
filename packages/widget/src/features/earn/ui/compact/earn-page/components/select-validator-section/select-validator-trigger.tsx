@@ -20,25 +20,35 @@ import {
   TokenAvatar,
 } from "../../../../../../../ui/index";
 
-const formatCommission = (commission: number | undefined, locale: string) =>
-  typeof commission === "number"
-    ? formatRoundedPercent(commission, locale)
-    : null;
-
-const formatValidatorTvl = (
+/**
+ * A validator's labelled facts on one line, such as "0% commission · 76M POL
+ * staked"; a fact the API does not give is left out.
+ */
+const useValidatorMeta = (
   validator: EarnValidator,
-  selectedStake: EarnYieldWithProvider,
-  locale: string
+  selectedStake: EarnYieldWithProvider
 ) => {
-  const tvl = validator.tvl;
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+  const commission =
+    typeof validator.commission === "number"
+      ? t("details.validator_meta.commission", {
+          value: formatRoundedPercent(validator.commission, locale),
+        })
+      : null;
+  const stakedFigure = validator.tvl
+    ? formatCompactNumber(validator.tvl, locale)
+    : unavailableFigure;
+  const staked =
+    stakedFigure === unavailableFigure
+      ? null
+      : t("details.validator_meta.staked", {
+          amount: `${stakedFigure} ${selectedStake.token.symbol}`,
+        });
 
-  if (!tvl) return null;
-
-  const formatted = formatCompactNumber(tvl, locale);
-
-  return formatted === unavailableFigure
-    ? null
-    : `${formatted} ${selectedStake.token.symbol}`;
+  return [commission, staked]
+    .filter((part): part is string => part !== null)
+    .join(" · ");
 };
 
 /** The chosen validators of the Compact Layout, with the controls to change them. */
@@ -73,13 +83,18 @@ export const SelectValidatorTrigger = ({
                     name={name}
                     {...(sv.logoURI ? { src: sv.logoURI } : {})}
                     size="xs"
+                    shape="square"
                     decorative
                   />
                   <Text weight="semibold" truncate>
                     {name}
                   </Text>
                   {sv.preferred ? (
-                    <Badge tone="accent" icon="PreferredIcon">
+                    <Badge
+                      tone="accent"
+                      icon="PreferredIcon"
+                      collapse="belowSm"
+                    >
                       {t("details.validators_preferred")}
                     </Badge>
                   ) : null}
@@ -87,7 +102,7 @@ export const SelectValidatorTrigger = ({
                     <IconButton
                       icon="XIcon"
                       size="xs"
-                      label={`Remove ${name}`}
+                      label={t("details.validators_remove", { name })}
                       onClick={() => onRemoveValidator(sv)}
                     />
                   ) : null}
@@ -112,7 +127,7 @@ export const SelectValidatorTrigger = ({
 
   if (!selectedValidatorsArr.length) {
     return (
-      <Card variant="outline" padding={12}>
+      <Card padding={16}>
         <Stack direction="row" align="center" justify="between" gap={12}>
           <Text tone="muted">{t("details.validator_search_title_one")}</Text>
           <ChangeButton onClick={onOpen} />
@@ -150,6 +165,11 @@ const ChangeButton = ({ onClick }: { readonly onClick: () => void }) => {
   );
 };
 
+/**
+ * The chosen validator, filled like the amount and Earn cards above it: its
+ * mark and name, which keeps its room over the badges, and its labelled
+ * facts under them. Only a status worth noticing (jailed, inactive) shows.
+ */
 const SelectedValidatorCard = ({
   onOpen,
   selectedStake,
@@ -160,12 +180,8 @@ const SelectedValidatorCard = ({
   readonly validator: EarnValidator;
 }) => {
   const { t } = useTranslation();
-  const { locale } = useWidgetPresentation();
   const name = validator.name ?? validator.address;
-  const metaParts = [
-    formatCommission(validator.commission, locale),
-    formatValidatorTvl(validator, selectedStake, locale),
-  ].filter((part): part is string => !!part);
+  const meta = useValidatorMeta(validator, selectedStake);
   const getStatusBadge = () => {
     if (validator.status === "jailed") {
       return <Badge tone="warning">{t("details.validators_jailed")}</Badge>;
@@ -173,18 +189,17 @@ const SelectedValidatorCard = ({
     if (validator.status && validator.status !== "active") {
       return <Badge tone="warning">{t("details.validators_inactive")}</Badge>;
     }
-    return (
-      <Badge tone="neutral">{t("position_details.balance_type.active")}</Badge>
-    );
+    return null;
   };
 
   return (
-    <Card variant="outline" padding={12}>
+    <Card padding={16}>
       <Stack direction="row" align="center" justify="between" gap={12}>
         <Stack direction="row" align="center" gap={12} grow>
           <TokenAvatar
             name={name}
             {...(validator.logoURI ? { src: validator.logoURI } : {})}
+            shape="square"
             decorative
           />
 
@@ -194,20 +209,18 @@ const SelectedValidatorCard = ({
                 {name}
               </Text>
               {validator.preferred && (
-                <Badge tone="accent" icon="PreferredIcon">
+                <Badge tone="accent" icon="PreferredIcon" collapse="belowSm">
                   {t("details.validators_preferred")}
                 </Badge>
               )}
-            </Stack>
-
-            <Stack direction="row" align="center" gap={6} wrap>
-              {metaParts.length > 0 && (
-                <Text variant="caption" tone="muted" numeric>
-                  {metaParts.join(" · ")}
-                </Text>
-              )}
               {getStatusBadge()}
             </Stack>
+
+            {meta && (
+              <Text variant="caption" tone="muted" numeric>
+                {meta}
+              </Text>
+            )}
           </Stack>
         </Stack>
 

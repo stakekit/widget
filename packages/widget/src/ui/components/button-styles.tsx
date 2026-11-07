@@ -7,7 +7,7 @@ import { color, pressTint, softControlTint } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
 import { callToAction } from "../tokens/presentation.stylex";
-import { radius } from "../tokens/radius.stylex";
+import { controlRadius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -17,6 +17,7 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 import { focusRingStyles } from "./focus-ring";
+import { hitAreaStyles } from "./hit-area";
 
 export type ButtonVariant = keyof typeof buttonVariantStyles;
 export type ButtonSize = keyof typeof buttonSizeStyles;
@@ -45,7 +46,11 @@ export type ButtonLookProps = {
   readonly share?: boolean;
 };
 
-/** The class names of a button's look, for a `button` or an `a`. */
+/**
+ * The class names of a button's look, for a `button` or an `a`. Its corners
+ * follow its size, and under a coarse pointer its hit area reaches a touch
+ * target's size whatever its drawn height.
+ */
 export const buttonLook = (
   variant: ButtonVariant,
   size: ButtonSize,
@@ -53,6 +58,7 @@ export const buttonLook = (
 ) =>
   stylex.props(
     buttonStyles.root,
+    hitAreaStyles.coarse,
     focusRingStyles.visible,
     buttonVariantStyles[variant],
     buttonSizeStyles[size],
@@ -97,7 +103,6 @@ const buttonStyles = stylex.create({
   root: {
     margin: 0,
     borderColor: "transparent",
-    borderRadius: radius.control,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     gap: space[8],
@@ -210,24 +215,28 @@ const buttonVariantStyles = stylex.create({
 
 const buttonSizeStyles = stylex.create({
   sm: {
+    borderRadius: controlRadius.sm,
     paddingInline: space[12],
     fontSize: fontSize.label,
     lineHeight: lineHeight.label,
     height: controlHeight.sm,
   },
   md: {
+    borderRadius: controlRadius.md,
     paddingInline: space[16],
     fontSize: fontSize.body,
     lineHeight: lineHeight.body,
     height: controlHeight.md,
   },
   lg: {
+    borderRadius: controlRadius.lg,
     paddingInline: space[20],
     fontSize: fontSize.heading,
     lineHeight: lineHeight.heading,
     height: controlHeight.lg,
   },
   cta: {
+    borderRadius: controlRadius.lg,
     paddingInline: space[24],
     fontSize: fontSize.heading,
     lineHeight: lineHeight.heading,

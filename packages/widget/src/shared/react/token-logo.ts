@@ -137,9 +137,3 @@ const zerionTokenIcon = (token: Token) => {
 
 const skETHIconUrlsSuffix = ["/tokens/eth.svg", "/tokens/steth2.svg"];
 const zerionETHIcon = `${config.zerion.iconsByAddress}eth.png`;
-
-/** A network's logo URL, with the host's network icon mapping. */
-export const useNetworkLogo = (network: Token["network"]): string => {
-  const { mapNetworkIconUrl } = useWidgetPresentation();
-  return mapNetworkIconUrl(network) || networkLogoUrl(network);
-};

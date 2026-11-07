@@ -2,12 +2,13 @@ import BigNumber from "bignumber.js";
 import { exactDecimal } from "../../domain/finance/exact";
 
 /**
- * The only display formatter for numbers. Every function takes the Widget
- * language explicitly. Truncation and rounding happen in exact decimal
- * arithmetic; the locale only supplies separators and affixes, and Intl only
- * renders currency and compact notation after the exact work is done.
- * Negative figures read with the minus sign (U+2212), and a figure that is
- * unknown or unavailable reads as `unavailableFigure`.
+ * The only display formatter for numbers, and for the value ticks of a
+ * chart's axes. Every function takes the Widget language explicitly. Truncation and
+ * rounding happen in exact decimal arithmetic; the locale only supplies
+ * separators and affixes, and Intl only renders currency and compact
+ * notation after the exact work is done. Negative figures read with the minus
+ * sign (U+2212), and a figure that is unknown or unavailable reads as
+ * `unavailableFigure`.
  */
 
 type NumericValue = string | BigNumber | number;
@@ -162,10 +163,6 @@ const intlFormatOptions = {
     notation: "compact",
     style: "currency",
   },
-  compact: {
-    notation: "compact",
-    maximumFractionDigits: 0,
-  },
   "compact-health-factor": {
     notation: "compact",
     maximumFractionDigits: 2,
@@ -203,6 +200,19 @@ const getIntlFormatter = (
   return formatter;
 };
 
+/** From here amounts and USD values read in compact notation ("1.2M"). */
+const compactFloor = exactDecimal(1_000_000);
+
+const marketFigureDecimals = 2;
+const marketFigureFloor = exactDecimal(1).shiftedBy(-marketFigureDecimals);
+
+/**
+ * Counts and market sizes, such as users, a TVL in token units or a
+ * validator's stake: at most two decimals, trailing zeros dropped, grouped in
+ * full below 1,000,000 ("883.29", "1,234") and compact from 1,000,000
+ * ("76.12M"), rounded to nearest; a non-zero figure below 0.01 reads `<0.01`.
+ * A card and a sheet showing the same figure both use this.
+ */
 export const formatCompactNumber = (
   value: OptionalNumericValue,
   locale: string
@@ -210,13 +220,24 @@ export const formatCompactNumber = (
   const amount = toFiniteDecimal(value);
   if (!amount) return unavailableFigure;
 
+  if (amount.isZero()) return formatExact(amount, locale);
+  if (amount.abs().lt(marketFigureFloor)) {
+    return formatNumber(amount, locale, marketFigureDecimals);
+  }
+
+  const rounded = amount.decimalPlaces(
+    marketFigureDecimals,
+    BigNumber.ROUND_HALF_UP
+  );
+
+  if (rounded.abs().lt(compactFloor)) return formatExact(rounded, locale);
+
   return withMinusSign(
-    getIntlFormatter("compact", locale).format(amount.toNumber())
+    getIntlFormatter("compact-token-amount-nearest", locale).format(
+      amount.toNumber()
+    )
   );
 };
-
-/** From here amounts and USD values read in compact notation ("1.2M"). */
-const compactFloor = exactDecimal(1_000_000);
 
 /**
  * Token amounts with at most four decimals, trailing zeros dropped, grouped in
@@ -260,6 +281,44 @@ export const formatTokenAmountWithSymbol = (
   locale: string
 ) =>
   `${formatTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
+
+/**
+ * Token amounts shown as a pair, such as yearly and monthly rewards, by the
+ * `formatTokenAmount` rule but at one decimal count, the most either needs
+ * ("0.0834" and "0.0070"), so the pair reads alike. An amount below 0.0001,
+ * from 1,000,000 or unknown (`null`) keeps its own reading.
+ */
+export const formatPairedTokenAmounts = (
+  values: ReadonlyArray<NumericValue | null>,
+  locale: string,
+  rounding: TokenAmountRounding
+): ReadonlyArray<string> => {
+  const amounts = values.map((value) =>
+    value === null ? null : exactDecimal(value)
+  );
+  const roundedInFull = (amount: BigNumber) => {
+    if (amount.isZero() || amount.abs().lt(tokenAmountFloor)) return null;
+    const rounded = amount.decimalPlaces(
+      tokenAmountDecimals,
+      tokenAmountRoundingModes[rounding]
+    );
+    return rounded.abs().lt(compactFloor) ? rounded : null;
+  };
+  const decimals = Math.max(
+    0,
+    ...amounts.map((amount) =>
+      amount === null ? 0 : (roundedInFull(amount)?.decimalPlaces() ?? 0)
+    )
+  );
+
+  return amounts.map((amount) => {
+    if (amount === null) return unavailableFigure;
+    const rounded = roundedInFull(amount);
+    return rounded
+      ? formatExact(rounded, locale, decimals)
+      : formatTokenAmount(amount, locale, rounding);
+  });
+};
 
 /**
  * A figure followed by its unit, such as "1.5 ETH". An unknown figure reads
@@ -322,44 +381,54 @@ export const formatPercent = (value: OptionalNumericValue, locale: string) => {
   return withPercentAffixes(formatNumber(amount.times(100), locale, 2), locale);
 };
 
+/** Reward rates and commissions always read with this many decimals. */
+const percentDecimals = 2;
+
 /** The percent of a decimal ratio, rounded half-up to two places. */
 const roundedPercent = (value: NumericValue) =>
-  exactDecimal(value).times(100).decimalPlaces(2);
+  exactDecimal(value).times(100).decimalPlaces(percentDecimals);
 
 /**
- * Formats a decimal ratio as a percent rounded half-up to two places, used for
- * reward rates and commissions. A non-zero ratio that rounds to zero reads
- * `<0.01%` (`>−0.01%` when negative), so no rate that exists reads as 0%.
+ * Formats a decimal ratio as a percent rounded half-up to two places and
+ * always shown with both ("1.60%"), used for reward rates, commissions and
+ * fees, so rates side by side line up. Zero reads `0%`; a non-zero ratio that
+ * rounds to zero reads `<0.01%` (`>−0.01%` when negative), so no rate that
+ * exists reads as 0%.
  */
 export const formatRoundedPercent = (value: NumericValue, locale: string) => {
   const exact = exactDecimal(value);
   const rounded = roundedPercent(exact);
 
-  if (!exact.isZero() && rounded.isZero()) {
+  if (exact.isZero()) {
+    return withPercentAffixes(formatExact(exact, locale), locale);
+  }
+
+  if (rounded.isZero()) {
     return exact.isNegative()
       ? `>${withPercentAffixes(formatExact(exactDecimal("-0.01"), locale), locale)}`
       : `<${withPercentAffixes(formatExact(exactDecimal("0.01"), locale), locale)}`;
   }
 
-  return withPercentAffixes(formatNumber(rounded, locale), locale);
+  return withPercentAffixes(
+    formatExact(rounded, locale, percentDecimals),
+    locale
+  );
 };
 
 /**
- * `formatRoundedPercent` of `target` split as `AnimatedNumber`'s props for a
- * figure that counts to it: the percent affixes stay apart, and `format`
- * keeps every step to the target's decimal places, so the digits change count
- * only when the integer part does and the last step reads exactly as the
- * target.
+ * `formatRoundedPercent` split as `AnimatedNumber`'s props for a rate that
+ * counts to its value: the percent affixes stay apart, and `format` keeps
+ * every step to two places, so the digits change count only when the integer
+ * part does and the last step reads exactly as the rate.
  */
-export const getRoundedPercentParts = (target: number, locale: string) => {
+export const getRoundedPercentParts = (locale: string) => {
   const { percentPrefix, percentSuffix } = getLocaleNumberSymbols(locale);
-  const decimals = roundedPercent(target).decimalPlaces() ?? 0;
 
   return {
     prefix: percentPrefix,
     suffix: percentSuffix,
     format: (value: number) =>
-      formatExact(roundedPercent(value), locale, decimals),
+      formatExact(roundedPercent(value), locale, percentDecimals),
   };
 };
 
@@ -445,28 +514,80 @@ export const formatFigureChange = <Value>(
     : after;
 };
 
-/**
- * The fewest decimals, up to two, whose last place is at most a fifth of the
- * spacing between axis ticks, so a rounded label stays close to where its
- * tick sits; every tick of an axis then shows that many.
- */
-const axisDecimals = (ticks: ReadonlyArray<BigNumber>) => {
-  const spacing = BigNumber.min(
-    ...ticks
-      .slice(1)
-      .map((tick, index) => tick.minus(ticks[index] ?? tick).abs())
-  );
+/** The round steps an axis takes between ticks, per power of ten. */
+const niceStepMantissas = ["1", "2", "2.5", "5"].map((mantissa) =>
+  exactDecimal(mantissa)
+);
+const maximumAxisIntervals = 4;
+/** A flat series is spanned this fraction of its value either way. */
+const flatSeriesSpan = exactDecimal("0.05");
 
-  return (
-    [0, 1].find((decimals) =>
-      exactDecimal(1).shiftedBy(-decimals).lte(spacing.div(5))
-    ) ?? 2
-  );
+const axisExtent = (low: BigNumber, high: BigNumber) => {
+  if (!low.eq(high)) return [low, high] as const;
+  if (low.isZero()) return [low, exactDecimal(1)] as const;
+  const span = low.abs().times(flatSeriesSpan);
+  return [low.minus(span), high.plus(span)] as const;
 };
 
 /**
- * Value-axis labels for decimal ratios, such as "5.6% / 6.5% / 7.4%": one
- * decimal count for the whole axis, rounded half-up.
+ * Value-axis ticks that span `values` in a round step, 1, 2, 2.5 or 5 × 10ⁿ:
+ * the finest step that needs at most four intervals, so an axis takes four or
+ * five ticks. Ticks are exact multiples of the step, so each reads in few
+ * digits, and an axis over values that are never negative never goes below
+ * zero. A flat series is spanned 5% either way (0 to 1 at zero).
+ */
+export const getValueAxisTicks = (
+  values: ReadonlyArray<number>
+): ReadonlyArray<number> => {
+  if (values.length === 0) return [];
+
+  const [low, high] = axisExtent(
+    exactDecimal(Math.min(...values)),
+    exactDecimal(Math.max(...values))
+  );
+  const intervalsOf = (step: BigNumber) => ({
+    first: low.div(step).integerValue(BigNumber.ROUND_FLOOR),
+    last: high.div(step).integerValue(BigNumber.ROUND_CEIL),
+  });
+  // Float logarithms can land a decade low; the steps of three decades from
+  // there still hold the finest one that fits.
+  const magnitude = exactDecimal(10).pow(
+    Math.floor(Math.log10(high.minus(low).div(maximumAxisIntervals).toNumber()))
+  );
+  const steps = [1, 10, 100].flatMap((decade) =>
+    niceStepMantissas.map((mantissa) => mantissa.times(magnitude).times(decade))
+  );
+  const step =
+    steps.find((candidate) => {
+      const { first, last } = intervalsOf(candidate);
+      return last.minus(first).lte(maximumAxisIntervals);
+    }) ?? magnitude.times(1000);
+  const { first, last } = intervalsOf(step);
+
+  return Array.from({ length: last.minus(first).toNumber() + 1 }, (_, index) =>
+    first.plus(index).times(step).toNumber()
+  );
+};
+
+/** Axis labels never show more decimals than this. */
+const maximumAxisDecimals = 4;
+
+/**
+ * The fewest decimals that write every tick exactly, up to four; every tick
+ * of an axis then shows that many. Round ticks from `getValueAxisTicks` need
+ * few.
+ */
+const axisDecimals = (ticks: ReadonlyArray<BigNumber>) =>
+  Math.max(
+    0,
+    ...ticks.map(
+      (tick) => tick.decimalPlaces(maximumAxisDecimals).decimalPlaces() ?? 0
+    )
+  );
+
+/**
+ * Value-axis labels for decimal ratios, such as "5.5% / 6.0% / 6.5%": one
+ * decimal count for the whole axis; zero reads `0%`.
  */
 export const formatPercentAxis = (
   ratios: ReadonlyArray<NumericValue>,
@@ -476,49 +597,140 @@ export const formatPercentAxis = (
   const decimals = axisDecimals(percents);
 
   return percents.map((percent) =>
-    withPercentAffixes(formatExact(percent, locale, decimals), locale)
+    withPercentAffixes(
+      formatExact(percent, locale, percent.isZero() ? 0 : decimals),
+      locale
+    )
   );
 };
 
-const usdAxisUnits = [1e12, 1e9, 1e6, 1e3].map((unit) => exactDecimal(unit));
+/** From here an axis tick reads compact; below it, in full ("$600"). */
+const compactAxisFloor = exactDecimal(1000);
+const compactAxisUnits = [1e12, 1e9, 1e6, 1e3].map((unit) =>
+  exactDecimal(unit)
+);
+
+type AxisAffixes = { readonly prefix: string; readonly suffix: string };
 
 /**
- * Value-axis labels for USD values, such as "$0.6K / $1.2K / $1.8K": every
- * tick in the compact unit of the largest, with one decimal count for the
- * whole axis, rounded half-up.
+ * The language's currency and compact affixes around a sample figure; each
+ * tick's own digits go where the sample's are.
+ */
+const affixesAround = (parts: ReadonlyArray<Intl.NumberFormatPart>) => {
+  const firstNumeric = parts.findIndex((part) => numericPartTypes[part.type]);
+  const lastNumeric = parts.findLastIndex(
+    (part) => numericPartTypes[part.type]
+  );
+  const join = (from: number, to?: number) =>
+    parts
+      .slice(from, to)
+      .map((part) => part.value)
+      .join("");
+
+  return { prefix: join(0, firstNumeric), suffix: join(lastNumeric + 1) };
+};
+
+/**
+ * Value-axis labels for amounts: ticks from 1,000 in the compact unit of the
+ * largest tick, the rest in full, with one decimal count for each and zero
+ * as a bare 0. USD in full shows whole dollars or cents.
+ */
+const formatAmountTicks = (
+  values: ReadonlyArray<NumericValue>,
+  locale: string,
+  currency: "usd" | null
+): ReadonlyArray<string> => {
+  const amounts = values.map((value) => exactDecimal(value));
+  const largest = BigNumber.max(0, ...amounts.map((amount) => amount.abs()));
+  const unit = compactAxisUnits.find((candidate) => largest.gte(candidate));
+  const plainAffixes: AxisAffixes =
+    currency === "usd"
+      ? affixesAround(getIntlFormatter("usd", locale).formatToParts(1))
+      : { prefix: "", suffix: "" };
+  const compactAffixes: AxisAffixes = unit
+    ? affixesAround(
+        getIntlFormatter(
+          currency === "usd" ? "compact-usd" : "compact-token-amount-nearest",
+          locale
+        ).formatToParts(unit.toNumber())
+      )
+    : plainAffixes;
+  const isCompact = (amount: BigNumber) =>
+    unit !== undefined && amount.abs().gte(compactAxisFloor);
+  const compactDecimals = axisDecimals(
+    amounts.filter(isCompact).map((amount) => amount.div(unit ?? 1))
+  );
+  const plainExactDecimals = axisDecimals(
+    amounts.filter((amount) => !isCompact(amount))
+  );
+  const plainDecimals =
+    currency === "usd" && plainExactDecimals > 0
+      ? Math.max(2, plainExactDecimals)
+      : plainExactDecimals;
+
+  return amounts.map((amount) => {
+    const sign = amount.isNegative() ? "\u2212" : "";
+    if (amount.isZero()) {
+      return `${plainAffixes.prefix}${formatExact(amount, locale, 0)}${plainAffixes.suffix}`;
+    }
+    if (isCompact(amount)) {
+      const digits = formatExact(
+        amount.abs().div(unit ?? 1),
+        locale,
+        compactDecimals
+      );
+      return `${sign}${compactAffixes.prefix}${digits}${compactAffixes.suffix}`;
+    }
+    const digits = formatExact(amount.abs(), locale, plainDecimals);
+    return `${sign}${plainAffixes.prefix}${digits}${plainAffixes.suffix}`;
+  });
+};
+
+/**
+ * Value-axis labels for USD values, such as "$500 / $1.0K / $1.5K": ticks
+ * from 1,000 in the largest tick's compact unit, ticks under 1,000 in full,
+ * zero as `$0`, one decimal count for the compact ticks.
  */
 export const formatUsdAxis = (
   values: ReadonlyArray<NumericValue>,
   locale: string
-): ReadonlyArray<string> => {
-  const amounts = values.map((value) => exactDecimal(value));
-  const largest = BigNumber.max(0, ...amounts.map((amount) => amount.abs()));
-  const unit = usdAxisUnits.find((candidate) => largest.gte(candidate));
-  // The language's currency and compact affixes around a sample of the unit;
-  // each tick's own digits go where the sample's are.
-  const sampleParts = unit
-    ? getIntlFormatter("compact-usd", locale).formatToParts(unit.toNumber())
-    : getIntlFormatter("usd", locale).formatToParts(1);
-  const firstNumeric = sampleParts.findIndex(
-    (part) => numericPartTypes[part.type]
-  );
-  const lastNumeric = sampleParts.findLastIndex(
-    (part) => numericPartTypes[part.type]
-  );
-  const prefix = sampleParts
-    .slice(0, firstNumeric)
-    .map((part) => part.value)
-    .join("");
-  const suffix = sampleParts
-    .slice(lastNumeric + 1)
-    .map((part) => part.value)
-    .join("");
-  const scaled = amounts.map((amount) => (unit ? amount.div(unit) : amount));
-  const decimals = axisDecimals(scaled);
+): ReadonlyArray<string> => formatAmountTicks(values, locale, "usd");
 
-  return scaled.map(
-    (amount) =>
-      `${amount.isNegative() ? "\u2212" : ""}${prefix}${formatExact(amount.abs(), locale, decimals)}${suffix}`
+/**
+ * Value-axis labels for token amounts, such as "500 / 1.0K / 1.5K": the
+ * `formatUsdAxis` rule without the currency.
+ */
+export const formatAmountAxis = (
+  values: ReadonlyArray<NumericValue>,
+  locale: string
+): ReadonlyArray<string> => formatAmountTicks(values, locale, null);
+
+const ratioSignificantDigits = { fewest: 4, most: 6 } as const;
+
+/**
+ * Ratios such as a price per share or an exchange rate, to six significant
+ * digits and never fewer than four ("1.06275", "1.500", "0.000123457"),
+ * rounded half-up; the integer part is never rounded ("12,345.7").
+ */
+export const formatRatio = (value: OptionalNumericValue, locale: string) => {
+  const amount = toFiniteDecimal(value);
+  if (!amount) return unavailableFigure;
+  if (amount.isZero()) return formatExact(amount, locale);
+
+  const exponent = amount.abs().e ?? 0;
+  const decimalsFor = (digits: number) => Math.max(0, digits - 1 - exponent);
+  const rounded = amount.decimalPlaces(
+    decimalsFor(ratioSignificantDigits.most),
+    BigNumber.ROUND_HALF_UP
+  );
+
+  return formatExact(
+    rounded,
+    locale,
+    Math.max(
+      decimalsFor(ratioSignificantDigits.fewest),
+      rounded.decimalPlaces() ?? 0
+    )
   );
 };
 

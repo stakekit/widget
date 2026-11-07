@@ -161,6 +161,21 @@ export const ActionCommand = Schema.Struct({
 });
 export type ActionCommand = typeof ActionCommand.Type;
 
+/**
+ * What the API estimates an enter or exit costs without creating it: the
+ * gas in the yield's gas token, null when the network did not price it,
+ * and, for some native enters (Solana), the balance to keep aside in place
+ * of the gas.
+ */
+export const ActionSimulation = Schema.Struct({
+  entryReserveEstimate: Schema.optionalKey(ExactDecimal),
+  gas: Schema.Struct({
+    amount: Schema.NullOr(ExactDecimal),
+    token: Token,
+  }),
+});
+export type ActionSimulation = typeof ActionSimulation.Type;
+
 export const ManageActionCommand = Schema.Struct({
   ...YieldApi.CreateManageActionDto.fields,
   address: WalletAddress,

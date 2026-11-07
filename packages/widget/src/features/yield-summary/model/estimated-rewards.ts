@@ -52,3 +52,24 @@ export const getYieldEstimatedRewards = ({
       : null,
   } as const;
 };
+
+/**
+ * What an amount would earn in USD a year and a month: its USD value at an
+ * average reward rate. Null without a priced amount or a positive rate, so
+ * no estimate reads as $0. The earn card estimates an entered amount; a
+ * position's page, the position's value.
+ */
+export const getEstimatedRewardsUsd = ({
+  amountUsd,
+  estimatedRewards,
+}: {
+  readonly amountUsd: BigNumber | null;
+  readonly estimatedRewards: {
+    readonly rewardRateAverage: BigNumber;
+  } | null;
+}) => {
+  if (!amountUsd?.isGreaterThan(0) || !estimatedRewards) return null;
+  if (!estimatedRewards.rewardRateAverage.isGreaterThan(0)) return null;
+  const yearly = amountUsd.times(estimatedRewards.rewardRateAverage);
+  return { monthly: yearly.dividedBy(12), yearly } as const;
+};

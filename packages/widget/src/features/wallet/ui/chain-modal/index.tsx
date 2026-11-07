@@ -121,7 +121,7 @@ const ChainDialog = ({
         value: query,
         onValueChange: setQuery,
         label: t("chain_modal.search"),
-        placeholder: t("shared.search"),
+        placeholder: t("chain_modal.search"),
         clearLabel: t("shared.clear_search"),
       }}
       empty={{ title: t("chain_modal.no_results") }}

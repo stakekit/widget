@@ -3,6 +3,8 @@
     "amount": "Amount",
     "clear_search": "Clear search",
     "search": "Search",
+    "search_tokens": "Search tokens",
+    "search_yields": "Search yields",
     "insufficient_balance": "Insufficient balance",
     "confidential": {
       "decrypt": "Decrypt",
@@ -294,9 +296,9 @@
     "confirm_error": "Error switching chain",
     "wrong_network": "Wrong network detected, switch or disconnect to continue.",
     "chain_error": "Couldn't switch networks. Try again.",
-    "select_ecosystem": "Choose ecosystem",
     "connect_wallet": "Connect wallet",
-    "change_ecosystem": "Choose another ecosystem",
+    "ecosystems": "Ecosystems",
+    "all_ecosystems": "All",
     "connection_error": "Couldn't connect to the wallet. Try again.",
     "wallet_not_available": "This wallet is no longer available. Enable or install its extension and try again.",
     "disconnect": "Disconnect",
@@ -326,6 +328,7 @@
       "completed": "Completed",
       "continuation_unavailable": "This action cannot continue because its yield details are unavailable.",
       "created": "Created",
+      "error_details": "Details",
       "health_factor": "Health factor",
       "ltv": "LTV",
       "market": "Market",
@@ -339,12 +342,23 @@
       "validators_other": "Validators",
       "view_on_explorer": "View on explorer"
     },
+    "errors": {
+      "contract_rejected": "The contract rejected this transaction",
+      "insufficient_funds": "Not enough funds to pay the network fee",
+      "network": "The transaction failed on the network",
+      "nonce": "The transaction was replaced or out of order",
+      "out_of_gas": "The transaction ran out of gas",
+      "cancelled_in_wallet": "Cancelled in wallet"
+    },
+    "groups": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
     "review": {
       "transactions": "Transactions",
       "retry": "Retry",
       "continue": "Continue",
       "unknown_error": "Unknown error",
-      "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
       "in_progress": "In progress",
       "confirmed": "Confirmed",
       "not_submitted": "Not submitted",
@@ -363,17 +377,17 @@
     "loading": "Loading activity",
     "item": {
       "deposited": "Deposited {{token}}",
-      "deposited_without_token": "Deposited · unknown asset",
+      "deposited_without_token": "Deposited",
       "deposit": "Deposit {{token}}",
-      "deposit_without_token": "Deposit · unknown asset",
+      "deposit_without_token": "Deposit",
       "deposit_submitted": "{{token}} deposit submitted",
       "deposit_submitted_without_token": "Deposit submitted",
       "deposit_canceled": "{{token}} deposit canceled",
       "deposit_canceled_without_token": "Deposit canceled",
       "withdrew": "Withdrew {{token}}",
-      "withdrew_without_token": "Withdrew · unknown asset",
+      "withdrew_without_token": "Withdrew",
       "withdraw": "Withdraw {{token}}",
-      "withdraw_without_token": "Withdraw · unknown asset",
+      "withdraw_without_token": "Withdraw",
       "private_withdrawal_requested": "{{token}} private withdrawal requested",
       "private_withdrawal_requested_without_token": "Private withdrawal requested",
       "private_withdrawal_canceled": "{{token}} private withdrawal canceled",
@@ -385,15 +399,15 @@
       "generic_without_token": "{{action}}",
       "borrow": {
         "supply": "Supplied {{token}}",
-        "supply_without_token": "Supplied · unknown asset",
+        "supply_without_token": "Supplied",
         "borrow": "Borrowed {{token}}",
-        "borrow_without_token": "Borrowed · unknown asset",
+        "borrow_without_token": "Borrowed",
         "supplyAndBorrow": "Supplied and borrowed {{token}}",
-        "supplyAndBorrow_without_token": "Supplied and borrowed · unknown asset",
+        "supplyAndBorrow_without_token": "Supplied and borrowed",
         "repay": "Repaid {{token}}",
-        "repay_without_token": "Repaid · unknown asset",
+        "repay_without_token": "Repaid",
         "withdraw": "Withdrew {{token}}",
-        "withdraw_without_token": "Withdrew · unknown asset",
+        "withdraw_without_token": "Withdrew",
         "enableCollateral": "Enabled {{token}} as collateral",
         "enableCollateral_without_token": "Enabled collateral",
         "disableCollateral": "Disabled {{token}} as collateral",
@@ -401,15 +415,15 @@
       },
       "borrow_in_progress": {
         "supply": "Supply {{token}}",
-        "supply_without_token": "Supply · unknown asset",
+        "supply_without_token": "Supply",
         "borrow": "Borrow {{token}}",
-        "borrow_without_token": "Borrow · unknown asset",
+        "borrow_without_token": "Borrow",
         "supplyAndBorrow": "Supply and borrow {{token}}",
-        "supplyAndBorrow_without_token": "Supply and borrow · unknown asset",
+        "supplyAndBorrow_without_token": "Supply and borrow",
         "repay": "Repay {{token}}",
-        "repay_without_token": "Repay · unknown asset",
+        "repay_without_token": "Repay",
         "withdraw": "Withdraw {{token}}",
-        "withdraw_without_token": "Withdraw · unknown asset",
+        "withdraw_without_token": "Withdraw",
         "enableCollateral": "Enable {{token}} as collateral",
         "enableCollateral_without_token": "Enable collateral",
         "disableCollateral": "Disable {{token}} as collateral",
@@ -420,7 +434,7 @@
       "now": "just now",
       "minutes_ago": "{{count}}m ago",
       "hours_ago": "{{count}}h ago",
-      "days_ago": "{{count}}d ago"
+      "ended": "Ended {{time}}"
     },
     "failed": "Failed",
     "status": {
@@ -441,7 +455,8 @@
       "stake": "Stake",
       "defi": "DeFi",
       "rwa": "RWA",
-      "borrow": "Borrow"
+      "borrow": "Borrow",
+      "other": "Other"
     }
   },
   "details": {
@@ -452,12 +467,26 @@
     "yield_strategy": "Yield strategy",
     "via": "via {{providerName}}",
     "additional_info": "Additional info",
+    "amount_error": {
+      "above_maximum": "Enter at most {{amount}} {{symbol}}",
+      "balance_below_minimum": "You need at least {{amount}} {{symbol}} to stake",
+      "balance_below_minimum_deposit": "You need at least {{amount}} {{symbol}} to deposit",
+      "below_minimum": "Enter at least {{amount}} {{symbol}}",
+      "no_balance": "You have no {{symbol}} to stake",
+      "no_balance_deposit": "You have no {{symbol}} to deposit"
+    },
     "cta_blocker": {
       "above_maximum": "Above maximum",
       "below_minimum": "Below minimum",
       "enter_amount": "Enter an amount",
       "insufficient_token": "Insufficient {{symbol}}",
       "verify_identity": "Verify identity first"
+    },
+    "network_fee": {
+      "estimate": "Network fee ≈ {{fee}}",
+      "estimate_unknown": "Network fee —",
+      "max_reserve": "Max leaves {{amount}} {{symbol}} for network fees",
+      "max_reserve_unstated": "Max leaves some {{symbol}} for network fees"
     },
     "kyc_gate": {
       "check_status": "Check status",
@@ -498,7 +527,9 @@
       "receive": "You'll receive <symbols1></symbols1> via",
       "receive_output": "You'll receive",
       "yearly": "Estimated yearly earnings",
-      "monthly": "Estimated monthly earnings"
+      "monthly": "Estimated monthly earnings",
+      "usd_per_year": "+{{amount}} / yr",
+      "usd_per_year_unknown": "— / yr"
     },
     "tron_resources": {
       "label": "Resource",
@@ -507,8 +538,20 @@
     "risk": {
       "title": "Risk rating",
       "rated_by": "Rated by {{source}}",
-      "tooltip": "Risk ratings are provided by third-party risk assessment providers.",
+      "scale": {
+        "credora": "Credora grades how likely a deposit is to lose 1% or more within a year, from A+, the lowest risk, to D, the highest.",
+        "staking_rewards": "Staking Rewards grades a provider's operations, reliability and security, from AAA, the strongest, to D, the riskiest.",
+        "other": "{{source}} grades risk with letters: A is the lowest risk, and each later letter means more."
+      },
+      "grade": {
+        "positive": "{{rating}} is one of its lowest-risk grades.",
+        "warning": "{{rating}} is a middle grade: moderate risk.",
+        "danger": "{{rating}} is a low grade: high risk."
+      },
+      "not_a_guarantee": "A rating is an independent opinion, not a guarantee against loss.",
+      "methodology": "How {{source}} rates",
       "info_aria_label": "Risk rating details",
+      "badge": "Risk {{rating}}",
       "sources": {
         "credora": "Credora",
         "staking_rewards": "Staking Rewards"
@@ -517,62 +560,63 @@
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
     "no_opportunities": "No yield opportunities for this token",
+    "load_failed_title": "Couldn't load yields",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
     "selected_validators_summary_other": "{{providerName}} and others",
     "campaign_susd_description": "After staking sUSD, the position is locked until April 20, 2026.",
     "campaign_susd_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
-    "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>",
-    "campaign_susd": "Learn more about sUSD staking program <link0>here</link0>",
-    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>",
-    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>",
-    "lockup_period_one": "Minimum lock up time is {{count}} day",
-    "lockup_period_other": "Minimum lock up time is {{count}} days",
+    "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>.",
+    "campaign_susd": "Learn more about the sUSD staking program <link0>here</link0>.",
+    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>.",
+    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>.",
+    "lockup_period_one": "Minimum lock-up time is {{count}} day.",
+    "lockup_period_other": "Minimum lock-up time is {{count}} days.",
     "native_staking": {
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
-      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
-      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
-      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
-      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available"
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets.",
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically.",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound if you claim and restake quickly.",
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately.",
+      "unstake_time_one": "When unstaking, it takes {{count}} day for your tokens to be available.",
+      "unstake_time_other": "When unstaking, it takes {{count}} days for your tokens to be available."
     },
     "vault": {
-      "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
+      "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
       "description_with_fee_configuration": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. This token accumulates yield and represents your share in the vault.",
       "description_ethena_usde": "When you deposit {{stakeToken}} you'll receive {{depositToken}}.",
-      "description_confidential": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. Your balance stays encrypted on-chain",
-      "description_without_receipt": "Deposit {{stakeToken}} to earn yield",
+      "description_confidential": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. Your balance stays encrypted on-chain.",
+      "description_without_receipt": "Deposit {{stakeToken}} to earn yield.",
       "description_without_receipt_with_fee_configuration": "Your {{stakeToken}} deposit accumulates yield and represents your share in the vault.",
-      "description_without_receipt_confidential": "Deposit {{stakeToken}} to earn yield. Your balance stays encrypted on-chain",
-      "earn_after_batch": "You'll start earning once the batcher settles your deposit in the next batch",
-      "earn_after_batch_imminent": "You'll start earning once the batcher settles your deposit in the next batch, due any moment",
-      "earn_after_batch_timed": "You'll start earning once the batcher settles your deposit in the next batch, in {{duration}}",
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
-      "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically",
-      "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
-      "withdrawn_time_immediately": "After withdrawing, your assets will be available immediately",
-      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day",
-      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days",
-      "withdrawn_time_confidential": "Withdraw privately when the next batch settles, or instantly with a public amount",
-      "withdrawn_time_confidential_imminent": "Withdraw privately when the next batch settles, due any moment, or instantly with a public amount",
-      "withdrawn_time_confidential_timed": "Withdraw privately when the next batch settles in {{duration}}, or instantly with a public amount"
+      "description_without_receipt_confidential": "Deposit {{stakeToken}} to earn yield. Your balance stays encrypted on-chain.",
+      "earn_after_batch": "You'll start earning once the batcher settles your deposit in the next batch.",
+      "earn_after_batch_imminent": "You'll start earning once the batcher settles your deposit in the next batch, due any moment.",
+      "earn_after_batch_timed": "You'll start earning once the batcher settles your deposit in the next batch, in {{duration}}.",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets.",
+      "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically.",
+      "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually.",
+      "withdrawn_time_immediately": "After withdrawing, your assets will be available immediately.",
+      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day.",
+      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days.",
+      "withdrawn_time_confidential": "Withdraw privately when the next batch settles, or instantly with a public amount.",
+      "withdrawn_time_confidential_imminent": "Withdraw privately when the next batch settles, due any moment, or instantly with a public amount.",
+      "withdrawn_time_confidential_timed": "Withdraw privately when the next batch settles in {{duration}}, or instantly with a public amount."
     },
     "lend": {
-      "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
+      "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}.",
       "description_with_fee_configuration": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. This token accumulates yield and represents your share in the vault.",
-      "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}",
-      "description_without_receipt": "Supply {{stakeToken}} to earn interest. You can borrow against the supplied assets on {{providerName}}",
+      "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}.",
+      "description_without_receipt": "Supply {{stakeToken}} to earn interest. You can borrow against the supplied assets on {{providerName}}.",
       "description_without_receipt_with_fee_configuration": "Your supplied {{stakeToken}} accumulates yield and represents your share in the vault.",
-      "description_compound_without_receipt": "Supply {{stakeToken}} to earn interest",
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
-      "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
-      "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
-      "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
-      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day",
-      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days"
+      "description_compound_without_receipt": "Supply {{stakeToken}} to earn interest.",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets.",
+      "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically.",
+      "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually.",
+      "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately.",
+      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day.",
+      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days."
     },
     "liquid_stake": {
       "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
@@ -588,23 +632,24 @@
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
     "restake": {
-      "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
-      "description_without_receipt": "Deposit {{stakeToken}} to earn restaking rewards",
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you stake",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you stake",
-      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
-      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
-      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
-      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available",
-      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
-      "withdrawn_not_available_without_receipt": "Withdrawals aren't available at the moment"
+      "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time.",
+      "description_without_receipt": "Deposit {{stakeToken}} to earn restaking rewards.",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you stake.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you stake.",
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically.",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually.",
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately.",
+      "unstake_time_one": "When unstaking, it takes {{count}} day for your tokens to be available.",
+      "unstake_time_other": "When unstaking, it takes {{count}} days for your tokens to be available.",
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position, you can sell {{rewardTokens}} any time on DEXs.",
+      "withdrawn_not_available_without_receipt": "Withdrawals aren't available at the moment."
     },
-    "extra_tezos": "You can use or send staked XTZ as normal",
+    "extra_tezos": "You can use or send staked XTZ as normal.",
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can't be accurately estimated",
     "opportunity_search_title": "Select a yield",
     "opportunities_no_results": "No yields found",
     "opportunity_item_subtitle_no_network": "via {{provider}}",
+    "opportunity_item_tvl": "TVL {{amount}}",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
     "provider_search_title": "Select provider",
@@ -623,6 +668,11 @@
     "validators_no_results": "No validators found",
     "validators_loading": "Loading validators",
     "validators_staked_balance": "Validator stake",
+    "validators_remove": "Remove {{name}}",
+    "validator_meta": {
+      "commission": "{{value}} commission",
+      "staked": "{{amount}} staked"
+    },
     "validators_voting_power": "Voting power",
     "validators_address": "Address",
     "validators_comission": "Commission",
@@ -686,16 +736,14 @@
       "native": "Native",
       "pooled": "Pooled",
       "auto_compound": "Auto-compound",
-      "reward_rate_period": "{{rewardType}} (7D)",
       "reward_rate": "Reward rate",
       "about": "About",
       "read_docs": "Read the integration docs",
       "chart_history": "{{chart}} history",
       "chart_period": "{{chart}} period",
       "no_chart_data": "No chart data",
-      "details": "Details",
-      "network": "Network",
-      "provider": "Provider",
+      "chart_data_to": "Data to {{date}}",
+      "tvl_in_token": "≈ {{amount}}",
       "reward_token": "Reward token",
       "yield_bearing_reward_token": "{{symbol}} (yield-bearing)",
       "price_per_share": "Price per share",
@@ -710,7 +758,8 @@
       "withdrawal": "Withdrawal",
       "reward_claiming": "Reward claiming",
       "average_position": "Avg position",
-      "users": "Users",
+      "fee_per_year": "{{fee}} / yr",
+      "fee_of_earnings": "{{fee}} of earnings",
       "vault": "Vault",
       "asset": "Asset ({{symbol}})",
       "none": "None",
@@ -922,13 +971,11 @@
         "back_to_positions": "Back to positions"
       },
       "position_details": {
-        "actions_title": "Actions",
         "borrowed": "Borrowed",
-        "collateral": "Collateral",
         "debt": "Debt",
-        "details": "Borrow details",
         "empty": "No open position in this market.",
         "health_factor": "Health factor",
+        "net_worth_caption": "Net worth · {{collateral}} collateral",
         "liquidation_penalty": "Liquidation penalty",
         "liquidation_threshold": "Liquidation threshold",
         "ltv": "LTV",
@@ -936,11 +983,10 @@
         "low_risk": "Lower risk",
         "liquidation_at": "Liquidation {{value}}",
         "net_apy": "Net APY",
-        "net_worth": "Net worth",
         "no_actions": "No actions available",
         "supplied": "Supplied",
         "unsupported_network": "Borrow positions are not available on this network.",
-        "collateral_list": "Collateral value",
+        "collateral_list": "Collateral",
         "select_withdraw_token": "Select collateral to withdraw",
         "outstanding_debt": "{{amount}} {{symbol}} outstanding",
         "withdrawable": "{{amount}} {{symbol}} withdrawable",
@@ -961,11 +1007,6 @@
           "withdraw_balance": "Amount exceeds withdrawable balance.",
           "withdraw_ltv": "Withdrawal would exceed the market LTV limit."
         },
-        "risk_status": {
-          "safe": "Low risk",
-          "caution": "Caution",
-          "danger": "High risk"
-        },
         "actions": {
           "disableCollateral": "Disable collateral",
           "enableCollateral": "Enable collateral",
@@ -975,22 +1016,10 @@
       }
     },
     "position_details": {
-      "actions_available_one": "{{count}} action available",
-      "actions_available_other": "{{count}} actions available",
-      "active": "Active",
-      "balance": "Balance",
       "shares": "Shares",
       "breadcrumb_root": "Positions",
-      "breakdown": "Balance breakdown",
-      "details": "Staking details",
       "empty": "Position details unavailable",
-      "no_actions": "No actions available",
-      "rewards": "Rewards",
-      "rewards_total": "Total earned",
-      "withdrawal_unavailable": "Withdrawal unavailable"
-    },
-    "position_details_info": {
-      "balances": "Balances"
+      "no_actions": "No actions available"
     },
     "overview": {
       "summary": {
@@ -1014,14 +1043,6 @@
     },
     "activity_details": {
       "your_position": "Your position"
-    },
-    "enabled_rewards_summary_yield_names": {
-      "polkadot_dot_validator_staking": "DOT native staking",
-      "avalanche_avax_liquid_staking": "AVAX liquid staking",
-      "cronos_cro_native_staking": "CRO native staking",
-      "ethereum_matic_native_staking": "POL native staking",
-      "bsc_bnb_native_staking": "BNB native staking",
-      "tron_trx_native_staking": "TRX native staking"
     }
   },
   "review": {
@@ -1031,23 +1052,32 @@
     "gas_fee_unavailable": "Unavailable",
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
-    "terms_of_use": "By clicking confirm you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
+    "terms_of_use": "By selecting {{action}}, you agree to the <underline0>Terms of Use</underline0> and understand the <underline1>Risk Disclosures</underline1>.",
     "fee_info": "About {{fee}}",
     "gas_warning": "This action is unlikely to succeed due to insufficient funds to cover gas fees",
     "additional_info": "Additional info",
     "deposit_fee": "Deposit fee",
     "management_fee": "Management fee",
     "performance_fee": "Performance fee",
+    "withdrawal_fee": "Withdrawal fee",
     "deposit_fee_explanation": "A flat fee deducted at deposit, reducing the principal.",
     "management_fee_explanation": "A flat annual fee deducted from vault deposits by minting new shares, diluting participants. Calculated based on time since the last harvest and applied during harvest.",
     "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold.",
+    "withdrawal_fee_explanation": "A fee deducted from the amount you withdraw, reducing what you receive.",
     "staking_fee": "Staking fee",
     "signatures": "Wallet signatures",
     "unlock_period": "Unlock period",
     "lockup_period": "Lock-up period",
     "destination": "{{yieldName}} via {{providerName}}",
     "you_receive": "You receive",
-    "confirm_anyway": "Confirm anyway"
+    "confirm_anyway": "Confirm anyway",
+    "fee_warning": {
+      "title": "High network fee",
+      "rewards_exceeds": "The network fee is higher than the rewards you'd claim.",
+      "rewards_half": "The network fee is more than half the rewards you'd claim.",
+      "amount_exceeds": "The network fee is higher than the amount of this transaction.",
+      "amount_half": "The network fee is more than half the amount of this transaction."
+    }
   },
   "leave_confirmation": {
     "title": "Leave this transaction?",
@@ -1057,7 +1087,7 @@
     "leave": "Leave"
   },
   "steps": {
-    "title": "Follow steps",
+    "title": "Confirm in wallet",
     "sign_transaction": "Sign transaction",
     "sign_transaction_desc": "Go back to connected wallet to approve transaction",
     "transaction_status": "Transaction status",
@@ -1071,8 +1101,8 @@
     "pending": "Pending",
     "completed": "Completed",
     "failed": "Failed",
-    "tx_of_one": "Transaction - {{type}}",
-    "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
+    "tx_of_one": "{{type}}",
+    "tx_of_other": "Step {{current}} of {{count}} · {{type}}",
     "skipped": "Skipped",
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
@@ -1084,7 +1114,7 @@
     "encrypt_error": "Encryption failed. Retry to try again.",
     "prepare_rejected": "This request can't be completed. Go back and change it.",
     "failure": {
-      "rejected": "The transaction was rejected in your wallet. Try again.",
+      "rejected": "Nothing was sent. Try again when you're ready.",
       "wallet_failed": "Your wallet couldn't complete the request. Try again.",
       "network_changed": "Your wallet switched networks. Switch back and try again.",
       "account_changed": "Your wallet switched accounts. Switch back and try again.",
@@ -1103,6 +1133,9 @@
     "progress_label": "Transaction progress",
     "progress_count": "{{confirmed}} of {{total}} confirmed",
     "summary": "{{action}} {{amount}}",
+    "slow": "Taking longer than usual. It's still on its way.",
+    "leave": "Leave",
+    "sent_note": "Sent transactions can't be cancelled. They keep going if you leave.",
     "check_wallet": {
       "title": "Check your wallet",
       "description": "Approve the {{type}} transaction in {{wallet}}",
@@ -1121,9 +1154,10 @@
       "signing": "Waiting for signature",
       "broadcasting": "Broadcasting",
       "done": "Confirmed",
-      "failed": "Failed"
+      "failed": "Failed",
+      "cancelled": "Cancelled in wallet"
     },
-    "view_transaction": "View transaction",
+    "view_transaction": "View on explorer",
     "tx_type": {
       "DECRYPT": "Decrypt amount",
       "ENCRYPT": "Encrypt amount",
@@ -1203,6 +1237,10 @@
     "via": "via {{providerName}}",
     "continue": "Done",
     "continue_ledger": "Go to Earn dashboard",
+    "position": {
+      "heading": "Your position",
+      "yearly_earnings": "Projected yearly earnings"
+    },
     "stake": {
       "staking": "staked",
       "staking_ethena_usde": "deposited",
@@ -1326,8 +1364,13 @@
     "empty_description": "Start earning and your positions will show here.",
     "load_failed_title": "Couldn't load your positions",
     "loading": "Loading positions",
-    "claim_rewards": "Claim rewards",
+    "rewards_to_claim": "Rewards to claim",
+    "ready_to_withdraw": "Ready to withdraw",
+    "ready_to_unlock": "Ready to unlock",
+    "locked_balance": "Locked balance",
     "action_required": "Action required",
+    "attention_count_one": "{{count}} action to take",
+    "attention_count_other": "{{count}} actions to take",
     "in_progress": "In progress",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
@@ -1400,17 +1443,26 @@
   },
   "position_details": {
     "via": "{{stakeType}} via {{providerName}}",
+    "your_position": "Your position",
+    "details": "Details",
+    "estimated_earnings": "Est. yearly earnings",
+    "earnings_per_year": "+{{amount}} / yr",
+    "earned": "Earned (7d)",
+    "earned_total": "{{amount}} total",
+    "earned_info_label": "About earned",
+    "earned_info": "Tracked since your wallet was first indexed · updated hourly",
     "rewards": "Rewards",
-    "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
-    "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Pending deposit",
-    "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Pending withdrawal",
-    "available_to_instant_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Instant withdrawal in progress",
+    "action_title": "{{pendingAction}} <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_deposit": "Pending deposit <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_withdrawal": "Pending withdrawal <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_instant_withdrawal": "Instant withdrawal in progress <bold>{{amount}} {{symbol}}</bold>",
     "cancel_returns": "Cancelling returns everything you have in this batch as {{symbol}}, right away",
     "cancelling": "Cancelling…",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
     "available": "{{amount}} {{symbol}} available",
+    "amount_above_maximum": "Enter at most {{amount}} {{symbol}}",
     "underlying_amount": "≈ {{amount}} {{symbol}}",
     "personalized_apy": "Personalized APY",
     "receive_token": {
@@ -1566,10 +1618,6 @@
       "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
     },
     "actions_label": "Position actions",
-    "pending_action_tab": {
-      "withdraw": "Withdraw unlocked",
-      "other": "{{label}} (pending)"
-    },
     "copy_address": "Copy {{label}}",
     "copied": "Copied"
   },
@@ -1618,11 +1666,10 @@
     "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {
-    "solution": "Potential solution:",
+    "solution": "How to fix it",
     "generic_description": "We couldn't complete that request. Try again in a moment.",
     "dismiss": "Got it"
   },
-  "chain_modal_disclaimer": "Powered by Yield.xyz",
   "tos_modal": {
     "title": "Terms of use",
     "accept_button": "I accept",

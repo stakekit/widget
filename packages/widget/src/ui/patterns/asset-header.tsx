@@ -71,7 +71,6 @@ export const AssetHeader = ({
                 size="xs"
                 name={provider.name}
                 decorative
-                shape="square"
                 {...(provider.src === undefined ? {} : { src: provider.src })}
               />
               <Text variant="caption" weight="medium">

@@ -1,5 +1,13 @@
 import type BigNumber from "bignumber.js";
-import { DateTime, Equal, Match, Option, Ref, Schema } from "effect";
+import {
+  DateTime,
+  Array as EArray,
+  Equal,
+  Match,
+  Option,
+  Ref,
+  Schema,
+} from "effect";
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type {
   ActionCommand,
@@ -30,7 +38,10 @@ import type {
   EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
-import { getYieldCooldownDuration } from "../../../domain/earn/yield";
+import {
+  getYieldCooldownDuration,
+  isBittensorStaking,
+} from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type {
   ProviderOption,
@@ -333,6 +344,8 @@ export const makeYieldFlowSession = (
           ...yieldFlowRoutes.Earn.at(),
           finishPath: widgetRoutes.earn.build(),
         };
+      // A position's flows finish on its page, which returns to the
+      // positions list once the position is gone.
       case "PositionExit":
       case "PositionManage":
         return {
@@ -340,7 +353,10 @@ export const makeYieldFlowSession = (
             balanceId: command.mount.balanceId,
             integrationId: command.mount.integrationId,
           }),
-          finishPath: widgetRoutes.positions.build(),
+          finishPath: widgetRoutes.positionDetails.build({
+            balanceId: command.mount.balanceId,
+            integrationId: command.mount.integrationId,
+          }),
         };
       // Only the Dashboard Layout mounts a position's stake flow.
       case "PositionStake":
@@ -349,7 +365,10 @@ export const makeYieldFlowSession = (
             balanceId: command.mount.balanceId,
             integrationId: command.mount.integrationId,
           }),
-          finishPath: widgetRoutes.positions.build(),
+          finishPath: widgetRoutes.positionDetails.build({
+            balanceId: command.mount.balanceId,
+            integrationId: command.mount.integrationId,
+          }),
         };
     }
   })();
@@ -444,6 +463,72 @@ export const getYieldTransactionFlowKycYield = (
       return null;
   }
 };
+
+/** The yield a flow's intake acts on. */
+const getYieldFlowIntakeYield = (
+  intake: YieldTransactionFlowIntake
+): EarnYieldWithProvider => {
+  switch (intake._tag) {
+    case "Enter":
+      return intake.selectedStake;
+    case "Exit":
+    case "Manage":
+      return intake.integration;
+    case "YieldActionContinuation":
+      return intake.selectedYield;
+  }
+};
+
+/**
+ * Who runs a flow's action, by name and logo: a validator's logo is a
+ * rounded square, a provider's round.
+ */
+export type YieldFlowAttribution = Readonly<{
+  readonly logo: string | undefined;
+  readonly name: string;
+  readonly shape: "round" | "square";
+}>;
+
+/**
+ * Who runs a flow's action, as Review, Steps and Complete all name it: the
+ * validators the user chose, else the yield's provider. Its logo is the
+ * first chosen validator's that has one, else the provider's. Null when the
+ * yield names no provider and no validator was chosen.
+ */
+export const getYieldFlowAttribution = (
+  intake: YieldTransactionFlowIntake
+): YieldFlowAttribution | null => {
+  const chosen = intake.providersDetails.filter(({ name }) => name);
+  if (chosen.length > 0) {
+    return {
+      logo: chosen.find(({ logo }) => logo)?.logo,
+      name: chosen.map(({ name }) => name).join(", "),
+      shape: "square",
+    };
+  }
+  const provider = getYieldFlowIntakeYield(intake).provider;
+  return provider?.name
+    ? {
+        logo: provider.logoURI ?? undefined,
+        name: provider.name,
+        shape: "round",
+      }
+    : null;
+};
+
+/**
+ * The symbol a deposit's rewards are paid in: a Bittensor subnet's own
+ * token, else the deposited token.
+ */
+export const getYieldFlowRewardsTokenSymbol = (
+  intake: EnterYieldTransactionFlowIntake
+) =>
+  isBittensorStaking(intake.selectedStake.id)
+    ? EArray.head([...intake.selectedValidators.values()]).pipe(
+        Option.map((validator) => validator.subnet?.tokenSymbol ?? ""),
+        Option.getOrElse(() => intake.selectedToken.symbol)
+      )
+    : intake.selectedToken.symbol;
 
 type YieldTransactionFlowGasWarningInput = {
   readonly gasFeeToken: Token;

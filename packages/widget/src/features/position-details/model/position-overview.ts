@@ -1,41 +1,22 @@
 import type BigNumber from "bignumber.js";
-import { DateTime } from "effect";
+import { type DateTime, Option } from "effect";
 import type { TFunction } from "i18next";
-import type { PendingAction } from "../../../domain/action/models";
-import {
-  getPendingActionLabelContext,
-  isOptionalPendingAction,
-} from "../../../domain/action/pending-action";
-import {
-  isCancellingBalance,
-  isConfidentialYield,
-} from "../../../domain/earn/confidential";
+import { isCancellingBalance } from "../../../domain/earn/confidential";
 import {
   getPositionShares,
   type TokenAmount,
 } from "../../../domain/earn/denomination";
 import type {
   ConfidentialHandle,
-  EarnBalance,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
 import {
   getExtendedYieldType,
-  getYieldCooldownPeriod,
-  getYieldLockupPeriod,
-  getYieldRiskDisplay,
-  getYieldTypeLabels,
-  getYieldWarmupPeriod,
+  isDepositYieldType,
 } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
-import type { RewardsSummary } from "../../../domain/portfolio/models";
-import {
-  formatPositionCallout,
-  getPositionAttention,
-  getPositionCallout,
-  toInactiveValidatorStatus,
-} from "../../../domain/portfolio/position-callout";
+import type { YieldRewardsSummary } from "../../../domain/portfolio/models";
 import {
   getPositionValueTotal,
   getTokenSumsUsd,
@@ -43,110 +24,91 @@ import {
   type PositionBalanceRow,
   type PositionBalancesByType,
   sortBalancesByPriority,
-  sumBalancesByToken,
   type YieldBalanceType,
 } from "../../../domain/portfolio/positions";
-import {
-  formatNetworkName,
-  humanizeEnumValue,
-} from "../../../shared/lib/formatters";
+import type { Presentable } from "../../../shared/effect/async-result";
 import {
   formatRoundedPercent,
-  formatTokenAmount,
   formatTokenAmountWithSymbol,
   formatUsd,
 } from "../../../shared/lib/number-format";
 import {
-  formatCooldownDays,
-  formatDailyBatch,
-  formatMinStake,
-  formatMinStakeLabel,
-  formatNextBatchLabel,
-  formatNextBatchTiming,
-  formatOptionalDays,
-  formatPricePerShare,
-  formatRewardClaiming,
   formatRewardRateLabel,
-  formatRewardTokenLabel,
+  getEstimatedRewardsUsd,
+  type YieldFactId,
 } from "../../yield-summary/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
-import { getPricedFiat, type PricesStatus } from "./priced-fiat";
+import { getPositionEarned, type PositionEarned } from "./position-earned";
 
-type PositionOverviewMetricCard = {
-  id: string;
+type PositionSummaryMetric = {
+  id: "rate" | "earnings" | "earned";
   label: string;
-  subValue?: string | undefined;
-  /** The sub-value is still loading, such as while prices load. */
-  subValueLoading?: boolean | undefined;
-  /** Several lines when a card lists one amount per token. */
-  value: string | ReadonlyArray<string>;
+  /** A short line under the value, such as the Earned total. */
+  caption?: string;
+  /** What an info button beside the label explains. */
+  info?: { label: string; text: string };
+  tone?: "success" | "danger" | "default";
+  value: string;
+};
+
+/** What the position's summary card shows: its value and side figures. */
+type PositionOverviewSummary = {
+  /** The hero: the USD value when priced, else the token amount. */
+  value: string;
+  /** The token amount under a USD hero. */
+  subvalue?: string;
+  metrics: PositionSummaryMetric[];
 };
 
 type PositionOverviewBreakdownRow = {
   id: string;
   label: string;
   subValue?: string;
+  /** An amount the user can collect now reads as a gain. */
+  tone: "default" | "success";
   value: string;
 };
-
-export type PositionOverviewDetailValue =
-  | string
-  | Readonly<{
-      readonly _tag: "Risk";
-      readonly risk: NonNullable<ReturnType<typeof getYieldRiskDisplay>>;
-    }>;
 
 type PositionOverviewDetailRow = {
   id: string;
   label: string;
-  value: PositionOverviewDetailValue;
-};
-
-type PositionOverviewAddressRow = {
-  address: string;
-  label: string;
-};
-
-type PositionOverviewChartSection = {
-  id: string;
-  title: string;
+  value: string;
 };
 
 export type PositionOverviewModel = {
-  addressRows: PositionOverviewAddressRow[];
   breakdownRows: PositionOverviewBreakdownRow[];
-  chartSections: PositionOverviewChartSection[];
   detailRows: PositionOverviewDetailRow[];
-  metricCards: PositionOverviewMetricCard[];
-};
-
-type PositionOverviewPendingAction = {
-  amount: BigNumber | null;
-  amountUsd: BigNumber | null;
-  /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
-  amountUsdStatus: PricesStatus;
-  pendingAction: PendingAction;
-  yieldBalance: EarnBalance;
+  /** The yield's facts the page already shows, left out of its facts section. */
+  omittedYieldFacts: YieldFactId[];
+  summary: PositionOverviewSummary;
 };
 
 type ProviderDetail = {
   address?: string | undefined;
   name?: string | undefined;
-  rewardRate?: BigNumber | null | undefined;
-  status?: string | null | undefined;
 };
 
+/** The validators the position is staked with, by their reward rates. */
+type PositionValidators = ReadonlyArray<{
+  readonly rewardRate?: BigNumber | null | undefined;
+}>;
+
+/**
+ * A position's page below its header: the summary card's figures, and what
+ * its Details disclosure lists of the position itself. The yield's facts
+ * section after it leaves out the summary's reward rate, which the page
+ * already shows.
+ */
 export const getPositionOverviewModel = ({
   cancellingHandles = new Set(),
   integrationData,
   locale,
   now = null,
-  pendingActions,
   personalizedRewardRate,
   positionBalancesByType,
-  providersDetails,
   rewardsSummary,
   t,
+  validators,
 }: {
   /** Handles of pending balances whose cancel is in flight. */
   cancellingHandles?: ReadonlySet<ConfidentialHandle>;
@@ -154,71 +116,51 @@ export const getPositionOverviewModel = ({
   locale: string;
   /** Presentation time; batch timing is omitted without it. */
   now?: DateTime.Utc | null;
-  pendingActions: PositionOverviewPendingAction[];
   personalizedRewardRate?: YieldRewardRate | null | undefined;
   positionBalancesByType: PositionBalancesByType;
-  providersDetails: ProviderDetail[];
-  rewardsSummary?: RewardsSummary | undefined;
+  /**
+   * The wallet's tracked earnings as the page can present them; none when
+   * untracked.
+   */
+  rewardsSummary?:
+    | Presentable<Option.Option<YieldRewardsSummary>, unknown>
+    | undefined;
   t: TFunction;
+  /**
+   * The validators of a position staked with them, whose average rate it
+   * earns, as the positions list's row reads it; null for a position held
+   * with the yield's provider.
+   */
+  validators: PositionValidators | null;
 }): PositionOverviewModel => {
-  const promotedFactIds = new Set<string>();
   const balanceRows = groupPositionBalanceRows(
     getBalancesByPriority(positionBalancesByType),
     (balance) => isCancellingBalance(balance, cancellingHandles)
   );
-  const providerName = getPositionProviderName({
-    integrationData,
-    providersDetails,
-  });
-  const balanceMetric = getBalanceMetric({
+  // Shown only from a current success: while loading, and whenever the
+  // latest attempt failed, even after an earlier success, the figure hides
+  // rather than read a stale amount as current.
+  const earned = getPositionEarned({
     locale,
     positionBalancesByType,
-    promotedFactIds,
+    rewardsSummary:
+      rewardsSummary?._tag === "Ready" &&
+      Option.isNone(rewardsSummary.refreshFailure)
+        ? Option.getOrUndefined(rewardsSummary.value)
+        : undefined,
     t,
   });
-  const sharesMetric = getSharesMetric({
-    locale,
-    positionBalancesByType,
-    t,
-  });
-  const rewardsMetric = getRewardsMetric({
-    locale,
-    pendingActions,
-    positionBalancesByType,
-    promotedFactIds,
-    rewardsSummary,
-    t,
-  });
-  const apyMetric = getApyMetric({
+  const summary = getPositionSummary({
+    earned,
     integrationData,
     locale,
     personalizedRewardRate,
-    promotedFactIds,
+    positionBalancesByType,
     t,
+    validators,
   });
-  // The status heads the page beside the position's name, not a card.
-  const baseCards = [
-    balanceMetric,
-    sharesMetric,
-    rewardsMetric,
-    apyMetric,
-  ].filter((card): card is PositionOverviewMetricCard => !!card);
-
-  // Keep the 2-column grid balanced: when there is an odd number of cards,
-  // surface the next most useful fact so the layout never leaves an empty cell.
-  const fillerMetric =
-    baseCards.length % 2 === 1
-      ? getFillerMetric({
-          balanceRows,
-          integrationData,
-          now,
-          promotedFactIds,
-          t,
-        })
-      : null;
 
   return {
-    addressRows: getAddressRows(integrationData, t),
     breakdownRows: getBreakdownRows({
       balanceRows,
       integrationData,
@@ -226,149 +168,135 @@ export const getPositionOverviewModel = ({
       now,
       t,
     }),
-    chartSections: [],
     detailRows: getDetailRows({
-      integrationData,
       locale,
-      promotedFactIds,
-      providerName,
+      positionBalancesByType,
       t,
     }),
-    metricCards: fillerMetric ? [...baseCards, fillerMetric] : baseCards,
-  };
-};
-
-const getFillerMetric = ({
-  balanceRows,
-  integrationData,
-  now,
-  promotedFactIds,
-  t,
-}: {
-  balanceRows: ReadonlyArray<PositionBalanceRow>;
-  integrationData: EarnYieldWithProvider;
-  now: DateTime.Utc | null;
-  promotedFactIds: Set<string>;
-  t: TFunction;
-}): PositionOverviewMetricCard | null => {
-  // A dated pending withdrawal settles on its own date, whatever the vault's
-  // next batch; batched vaults otherwise redeem with that batch. One being
-  // cancelled will not settle at all.
-  const ownWithdrawal = balanceRows.reduce<PositionBalanceRow | null>(
-    (earliest, row) =>
-      row.type === "exiting" &&
-      !row.cancelling &&
-      row.date &&
-      (!earliest?.date || DateTime.isLessThan(row.date, earliest.date))
-        ? row
-        : earliest,
-    null
-  );
-  const ownWithdrawalTiming = ownWithdrawal
-    ? formatPendingBalanceTiming({
-        integrationData,
-        now,
-        row: ownWithdrawal,
-        t,
-      })
-    : null;
-  const nextBatch = formatNextBatchTiming({
-    now,
-    side: "redemption",
-    t,
-    yieldDto: integrationData,
-  });
-  const cooldownDays = getYieldCooldownPeriod(integrationData)?.days ?? 0;
-  const getRedemptionValue = () => {
-    if (ownWithdrawalTiming) return ownWithdrawalTiming;
-    if (nextBatch) return formatNextBatchLabel(nextBatch, t);
-    return cooldownDays > 0 && !isConfidentialYield(integrationData)
-      ? t("dashboard.earn_details.cooldown_days", { count: cooldownDays })
-      : null;
-  };
-  const redemptionValue = getRedemptionValue();
-
-  if (redemptionValue) {
-    promotedFactIds.add("cooldown");
-
-    return {
-      id: "unstaking-period",
-      label: t("dashboard.earn_details.cooldown"),
-      value: redemptionValue,
-    };
-  }
-
-  const rewardToken = formatRewardTokenLabel(integrationData, t);
-
-  if (rewardToken) {
-    promotedFactIds.add("reward-token");
-
-    return {
-      id: "reward-token",
-      label: t("dashboard.earn_details.reward_token"),
-      value: rewardToken,
-    };
-  }
-
-  return null;
-};
-
-const getPositionProviderName = ({
-  integrationData,
-  providersDetails,
-}: {
-  integrationData: EarnYieldWithProvider;
-  providersDetails: ProviderDetail[];
-}) => {
-  const [provider] = providersDetails;
-
-  return (
-    provider?.name ??
-    provider?.address ??
-    integrationData.provider?.name ??
-    integrationData.providerId
-  );
-};
-
-const getBalanceMetric = ({
-  locale,
-  positionBalancesByType,
-  promotedFactIds,
-  t,
-}: {
-  locale: string;
-  positionBalancesByType: PositionBalancesByType;
-  promotedFactIds: Set<string>;
-  t: TFunction;
-}): PositionOverviewMetricCard | null => {
-  // The same total Manage shows, in the primary Value Token when priced.
-  const sums = getPositionValueTotal(
-    getBalancesByPriority(positionBalancesByType)
-  );
-  const totalUsd = getTokenSumsUsd(sums);
-  // Hidden balances count zero, so a fully hidden position shows no Balance.
-  if (
-    !sums.some((sum) => sum.amount.isGreaterThan(0)) &&
-    !totalUsd.isGreaterThan(0)
-  ) {
-    return null;
-  }
-
-  promotedFactIds.add("balance");
-
-  return {
-    id: "balance",
-    label: t("dashboard.position_details.balance"),
-    subValue: formatUsdSubValue(totalUsd, locale),
-    value: formatTokenSums(sums, locale),
+    omittedYieldFacts: [
+      ...(summary.metrics.some((metric) => metric.id === "rate")
+        ? (["reward-rate"] as const)
+        : []),
+    ],
+    summary,
   };
 };
 
 /**
- * The position's Shares, one line per share token, valued by the balances
+ * The summary card: the position's total, in USD when priced with its token
+ * amount under it, then its reward rate, what it would earn a year at that
+ * rate, and what it has earned over the last 7 days when tracked.
+ */
+const getPositionSummary = ({
+  earned,
+  integrationData,
+  locale,
+  personalizedRewardRate,
+  positionBalancesByType,
+  t,
+  validators,
+}: {
+  earned: PositionEarned | null;
+  integrationData: EarnYieldWithProvider;
+  locale: string;
+  personalizedRewardRate?: YieldRewardRate | null | undefined;
+  positionBalancesByType: PositionBalancesByType;
+  t: TFunction;
+  validators: PositionValidators | null;
+}): PositionOverviewSummary => {
+  const balances = getBalancesByPriority(positionBalancesByType);
+  // The same total Manage shows, in the primary Value Token when priced.
+  const sums = getPositionValueTotal(balances).filter((sum) =>
+    sum.amount.isGreaterThan(0)
+  );
+  const totalUsd = getTokenSumsUsd(sums);
+  const tokenLine = sums
+    .map((sum) => formatTokenAmountWithSymbol(sum, locale))
+    .join(" · ");
+  // Hidden balances count zero, so a fully hidden position reads as hidden.
+  const hidden =
+    sums.length === 0 && balances.some((balance) => balance.isEncrypted);
+  const getHero = (): Pick<PositionOverviewSummary, "subvalue" | "value"> => {
+    if (hidden) return { value: t("shared.confidential.hidden") };
+    if (totalUsd.isGreaterThan(0)) {
+      return {
+        value: formatUsd(totalUsd, locale),
+        ...(tokenLine ? { subvalue: tokenLine } : {}),
+      };
+    }
+    return { value: tokenLine || formatUsd(totalUsd, locale) };
+  };
+
+  const validatorRate =
+    validators && validators.length > 0
+      ? validators
+          .reduce(
+            (total, validator) =>
+              total.plus(exactDecimal(validator.rewardRate ?? 0)),
+            exactDecimal(0)
+          )
+          .dividedBy(validators.length)
+      : null;
+  const rate =
+    personalizedRewardRate?.total === undefined
+      ? (validatorRate ?? exactDecimal(integrationData.rewardRate.total))
+      : exactDecimal(personalizedRewardRate.total);
+  const hasRate = rate.isFinite() && !rate.isZero();
+  const earnings = hasRate
+    ? getEstimatedRewardsUsd({
+        amountUsd: totalUsd,
+        estimatedRewards: { rewardRateAverage: rate },
+      })
+    : null;
+  const metrics: PositionSummaryMetric[] = [
+    ...(hasRate
+      ? [
+          {
+            id: "rate" as const,
+            label: personalizedRewardRate
+              ? t("position_details.personalized_apy")
+              : formatRewardRateLabel(integrationData, t),
+            value: formatRoundedPercent(rate, locale),
+          },
+        ]
+      : []),
+    ...(earnings
+      ? [
+          {
+            id: "earnings" as const,
+            label: t("position_details.estimated_earnings"),
+            tone: "success" as const,
+            value: t("position_details.earnings_per_year", {
+              amount: formatUsd(earnings.yearly, locale),
+            }),
+          },
+        ]
+      : []),
+    ...(earned
+      ? [
+          {
+            id: "earned" as const,
+            label: t("position_details.earned"),
+            caption: earned.caption,
+            info: {
+              label: t("position_details.earned_info_label"),
+              text: t("position_details.earned_info"),
+            },
+            tone: earned.tone,
+            value: earned.value,
+          },
+        ]
+      : []),
+  ];
+
+  return { ...getHero(), metrics };
+};
+
+/**
+ * The position's Shares, one per share token, valued by the balances
  * carrying them when all are priced.
  */
-const getSharesMetric = ({
+const formatShares = ({
   locale,
   positionBalancesByType,
   t,
@@ -376,167 +304,19 @@ const getSharesMetric = ({
   locale: string;
   positionBalancesByType: PositionBalancesByType;
   t: TFunction;
-}): PositionOverviewMetricCard | null => {
+}) => {
   const shares = getPositionShares(
     getBalancesByPriority(positionBalancesByType)
   );
   if (!shares) return null;
-  const label = t("dashboard.position_details.shares");
-  if (shares._tag === "Hidden") {
-    return { id: "shares", label, value: t("shared.confidential.hidden") };
-  }
+  if (shares._tag === "Hidden") return t("shared.confidential.hidden");
 
-  return {
-    id: "shares",
-    label,
-    ...(shares.amountUsd
-      ? { subValue: formatUsdSubValue(shares.amountUsd, locale) }
-      : {}),
-    value: formatTokenSums(shares.groups, locale),
-  };
-};
+  const amounts = shares.groups
+    .map((group: TokenAmount) => formatTokenAmountWithSymbol(group, locale))
+    .join(" · ");
+  const usd = formatUsdSubValue(shares.amountUsd, locale);
 
-const getRewardsMetric = ({
-  locale,
-  pendingActions,
-  positionBalancesByType,
-  promotedFactIds,
-  rewardsSummary,
-  t,
-}: {
-  locale: string;
-  pendingActions: PositionOverviewPendingAction[];
-  positionBalancesByType: PositionBalancesByType;
-  promotedFactIds: Set<string>;
-  rewardsSummary?: RewardsSummary | undefined;
-  t: TFunction;
-}): PositionOverviewMetricCard | null => {
-  const claimableSums = getPositiveTokenSums(
-    positionBalancesByType.get("claimable") ?? []
-  );
-
-  if (claimableSums.length > 0) {
-    promotedFactIds.add("rewards");
-
-    return {
-      id: "rewards",
-      label: t("dashboard.position_details.rewards"),
-      subValue: formatUsdSubValue(getTokenSumsUsd(claimableSums), locale),
-      value: formatTokenSums(claimableSums, locale),
-    };
-  }
-
-  if (rewardsSummary?.rewards.total.isGreaterThan(0)) {
-    promotedFactIds.add("rewards");
-
-    return {
-      id: "rewards",
-      label: t("dashboard.position_details.rewards"),
-      subValue: t("dashboard.position_details.rewards_total"),
-      value: `${formatTokenAmount(rewardsSummary.rewards.total, locale, "down")} ${
-        rewardsSummary.token.symbol
-      }`,
-    };
-  }
-
-  const claimAction = pendingActions.find(
-    (action) => action.pendingAction.type === "CLAIM_REWARDS"
-  );
-
-  if (!claimAction) return null;
-
-  promotedFactIds.add("rewards");
-  // Only a claim amount is valued by prices; without one there is no figure.
-  const fiat = claimAction.amount
-    ? getPricedFiat({
-        amountUsd: claimAction.amountUsd,
-        locale,
-        status: claimAction.amountUsdStatus,
-      })
-    : null;
-
-  return {
-    id: "rewards",
-    label: t("dashboard.position_details.rewards"),
-    ...(fiat?.fiatValue ? { subValue: fiat.fiatValue } : {}),
-    ...(fiat?.fiatValueLoading ? { subValueLoading: true } : {}),
-    value: t("position_details.pending_action.claim_rewards"),
-  };
-};
-
-const getApyMetric = ({
-  integrationData,
-  locale,
-  personalizedRewardRate,
-  promotedFactIds,
-  t,
-}: {
-  integrationData: EarnYieldWithProvider;
-  locale: string;
-  personalizedRewardRate?: YieldRewardRate | null | undefined;
-  promotedFactIds: Set<string>;
-  t: TFunction;
-}): PositionOverviewMetricCard | null => {
-  const rewardRate =
-    personalizedRewardRate?.total ?? integrationData.rewardRate.total;
-  const amount = exactDecimal(rewardRate);
-
-  if (!amount.isFinite() || amount.isZero()) return null;
-
-  promotedFactIds.add("apy");
-
-  return {
-    id: "apy",
-    label: personalizedRewardRate
-      ? t("position_details.personalized_apy")
-      : formatRewardRateLabel(integrationData, t),
-    value: formatRoundedPercent(amount, locale),
-  };
-};
-
-/**
- * A position's state when the positions list calls nothing out: the optional
- * actions it offers, a cancel in flight, the balance in motion, else whether
- * it is active.
- */
-const getPositionState = ({
-  canUnstake,
-  cancelling,
-  pendingActions,
-  positionBalancesByType,
-  t,
-}: {
-  canUnstake: boolean;
-  cancelling: boolean;
-  pendingActions: PositionOverviewPendingAction[];
-  positionBalancesByType: PositionBalancesByType;
-  t: TFunction;
-}): string => {
-  const optionalActions = pendingActions.filter((action) =>
-    isOptionalPendingAction(action.pendingAction.type)
-  );
-  const [onlyOptionalAction, ...otherOptionalActions] = optionalActions;
-  // Several optional requests are counted; none is singled out over another.
-  if (otherOptionalActions.length > 0) {
-    return t("dashboard.position_details.actions_available", {
-      count: optionalActions.length,
-    });
-  }
-  if (onlyOptionalAction)
-    return formatPendingActionLabel(onlyOptionalAction, t);
-  if (cancelling) return t("position_details.cancelling");
-
-  const statusBalance = getBalancesByPriority(positionBalancesByType).find(
-    (balance) =>
-      balance.type === "withdrawable" ||
-      balance.type === "exiting" ||
-      balance.type === "entering"
-  );
-  if (statusBalance) return formatBalanceTypeLabel(statusBalance.type, t);
-
-  return canUnstake
-    ? t("dashboard.position_details.active")
-    : t("dashboard.position_details.withdrawal_unavailable");
+  return usd ? `${amounts} (${usd})` : amounts;
 };
 
 const getBreakdownRows = ({
@@ -551,8 +331,10 @@ const getBreakdownRows = ({
   locale: string;
   now: DateTime.Utc | null;
   t: TFunction;
-}): PositionOverviewBreakdownRow[] =>
-  balanceRows.map((row, index) => {
+}): PositionOverviewBreakdownRow[] => {
+  const deposit = isDepositYieldType(getExtendedYieldType(integrationData));
+
+  return balanceRows.map((row, index) => {
     const amountSubValue = row.token.isPoints
       ? t("shared.points")
       : formatUsdSubValue(row.amountUsd, locale);
@@ -569,195 +351,61 @@ const getBreakdownRows = ({
     const subValue = [shares, amountSubValue, batchTiming]
       .filter((part) => !!part)
       .join(" · ");
+    const collectable =
+      !row.isEncrypted &&
+      (row.type === "claimable" || row.type === "withdrawable");
     return {
       id: `${row.type}-${row.token.symbol}-${index}`,
-      label: formatBalanceTypeLabel(row.type, t),
+      label: formatBalanceTypeLabel(row.type, deposit, t),
       ...(subValue ? { subValue } : {}),
+      tone: collectable ? "success" : "default",
       value: row.isEncrypted
         ? t("shared.confidential.hidden")
         : formatTokenAmountWithSymbol(row, locale),
     };
   });
-
-const getDetailRows = ({
-  integrationData,
-  locale,
-  promotedFactIds,
-  providerName,
-  t,
-}: {
-  integrationData: EarnYieldWithProvider;
-  locale: string;
-  promotedFactIds: Set<string>;
-  providerName: string;
-  t: TFunction;
-}): PositionOverviewDetailRow[] => {
-  const risk = getYieldRiskDisplay(integrationData);
-  const minStake = formatMinStake(integrationData, t, locale);
-  const pricePerShare = formatPricePerShare(integrationData, locale);
-  const confidential = isConfidentialYield(integrationData);
-  const cooldown = confidential
-    ? null
-    : (formatDailyBatch({ side: "redemption", t, yieldDto: integrationData }) ??
-      formatCooldownDays(
-        getYieldCooldownPeriod(integrationData)?.days ?? 0,
-        t
-      ));
-  const warmup = confidential
-    ? null
-    : (formatDailyBatch({
-        side: "subscription",
-        t,
-        yieldDto: integrationData,
-      }) ?? formatOptionalDays(getYieldWarmupPeriod(integrationData)?.days, t));
-  const lockup = formatOptionalDays(
-    getYieldLockupPeriod(integrationData)?.days,
-    t
-  );
-
-  const rows: Array<PositionOverviewDetailRow | null> = [
-    {
-      id: "network",
-      label: t("dashboard.earn_details.network"),
-      value: formatNetworkName(integrationData.network),
-    },
-    {
-      id: "provider",
-      label: t("dashboard.earn_details.provider"),
-      value: providerName,
-    },
-    promotedFactIds.has("reward-token")
-      ? null
-      : {
-          id: "reward-token",
-          label: t("dashboard.earn_details.reward_token"),
-          value: formatRewardTokenLabel(integrationData, t),
-        },
-    pricePerShare
-      ? {
-          id: "price-per-share",
-          label: t("dashboard.earn_details.price_per_share"),
-          value: pricePerShare,
-        }
-      : null,
-    {
-      id: "type",
-      label: t("dashboard.earn_details.type"),
-      value: getYieldTypeLabels(integrationData, t).title,
-    },
-    {
-      id: "reward-schedule",
-      label: t("dashboard.earn_details.reward_schedule"),
-      value: humanizeEnumValue(integrationData.mechanics.rewardSchedule),
-    },
-    {
-      id: "reward-claiming",
-      label: t("dashboard.earn_details.reward_claiming"),
-      value: formatRewardClaiming(integrationData, t),
-    },
-    promotedFactIds.has("apy")
-      ? null
-      : {
-          id: "apy",
-          label: formatRewardRateLabel(integrationData, t),
-          value: formatRoundedPercent(integrationData.rewardRate.total, locale),
-        },
-    minStake
-      ? {
-          id: "min-stake",
-          label: formatMinStakeLabel(integrationData, t),
-          value: minStake.value,
-        }
-      : null,
-    promotedFactIds.has("cooldown") || !cooldown
-      ? null
-      : {
-          id: "cooldown",
-          label: t("dashboard.earn_details.cooldown"),
-          value: cooldown,
-        },
-    warmup
-      ? {
-          id: "warmup",
-          label: t("dashboard.earn_details.warmup"),
-          value: warmup,
-        }
-      : null,
-    lockup
-      ? {
-          id: "lockup",
-          label: t("dashboard.earn_details.lockup"),
-          value: lockup,
-        }
-      : null,
-    risk
-      ? {
-          id: "risk",
-          label: t("dashboard.earn_details.risk"),
-          value: { _tag: "Risk", risk },
-        }
-      : null,
-  ];
-
-  return rows.filter((row): row is PositionOverviewDetailRow => !!row);
 };
 
-const getAddressRows = (
-  integrationData: EarnYieldWithProvider,
-  t: TFunction
-): PositionOverviewAddressRow[] => {
-  const rows: Array<PositionOverviewAddressRow | null> = [
-    integrationData.outputToken?.address
-      ? {
-          label: t("dashboard.earn_details.vault"),
-          address: integrationData.outputToken.address,
-        }
-      : null,
-    integrationData.token.address
-      ? {
-          label: t("dashboard.earn_details.asset", {
-            symbol: integrationData.token.symbol,
-          }),
-          address: integrationData.token.address,
-        }
-      : null,
-  ];
+/**
+ * What the Details disclosure lists of the position itself: its Shares. What
+ * it has earned is the summary's, so it is not repeated here. The yield's
+ * facts follow it in their own section.
+ */
+const getDetailRows = ({
+  locale,
+  positionBalancesByType,
+  t,
+}: {
+  locale: string;
+  positionBalancesByType: PositionBalancesByType;
+  t: TFunction;
+}): PositionOverviewDetailRow[] => {
+  const shares = formatShares({ locale, positionBalancesByType, t });
 
-  return rows.filter((row): row is PositionOverviewAddressRow => row !== null);
+  return shares
+    ? [
+        {
+          id: "shares",
+          label: t("dashboard.position_details.shares"),
+          value: shares,
+        },
+      ]
+    : [];
 };
 
 const getBalancesByPriority = (
   positionBalancesByType: PositionBalancesByType
 ) => sortBalancesByPriority([...positionBalancesByType.values()].flat());
 
-const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
-  t(`position_details.balance_type.${type}`);
-
-const getPositiveTokenSums = (balances: ReadonlyArray<EarnBalance>) =>
-  sumBalancesByToken(
-    balances.filter((balance) => !balance.token.isPoints)
-  ).filter((sum) => sum.amount.isGreaterThan(0));
-
-const formatTokenSums = (sums: ReadonlyArray<TokenAmount>, locale: string) => {
-  const lines = sums.map((sum) => formatTokenAmountWithSymbol(sum, locale));
-
-  return lines.length === 1 ? (lines[0] ?? "") : lines;
-};
-
-// Pending action types come from the API and can outpace our translation map
-// (e.g. RWA-specific actions). Fall back to a humanized version of the type so
-// the card never renders a raw translation key.
-const formatPendingActionLabel = (
-  { pendingAction, yieldBalance }: PositionOverviewPendingAction,
+const formatBalanceTypeLabel = (
+  type: YieldBalanceType,
+  deposit: boolean,
   t: TFunction
 ) =>
-  t(`position_details.pending_action.${pendingAction.type.toLowerCase()}`, {
-    context: getPendingActionLabelContext(
-      pendingAction.type,
-      yieldBalance.type
-    ),
-    defaultValue: humanizeEnumValue(pendingAction.type),
-  });
+  t(
+    `position_details.balance_type.${type}`,
+    deposit ? { context: "yearn_or_deposit" } : {}
+  );
 
 const formatUsdSubValue = (
   value: string | number | BigNumber | null | undefined,
@@ -802,81 +450,22 @@ export const getPositionHeaderBadges = (
 };
 
 /**
- * What heads a position's page beside its name: who provides it and the
- * position's status. A status the positions list calls out reads as its row
- * does, in the same tone; otherwise the status is the position's state, such
- * as Active or Unstaking, in the neutral tone.
+ * Who provides the position, as its header names it: its validator, else
+ * the yield's provider.
  */
-export const getPositionHeaderModel = ({
-  cancellingHandles = new Set(),
-  canUnstake,
+export const getPositionProviderName = ({
   integrationData,
-  pendingActions,
-  positionBalancesByType,
   providersDetails,
-  t,
 }: {
-  cancellingHandles?: ReadonlySet<ConfidentialHandle>;
-  canUnstake: boolean;
   integrationData: EarnYieldWithProvider;
-  pendingActions: PositionOverviewPendingAction[];
-  positionBalancesByType: PositionBalancesByType;
-  providersDetails: ProviderDetail[];
-  t: TFunction;
-}): {
-  readonly providerName: string;
-  readonly status: {
-    readonly label: string;
-    readonly tone: "info" | "neutral" | "warning";
-  };
-} => {
-  const balances = getBalancesByPriority(positionBalancesByType);
-  const callout = getPositionCallout({
-    attention: getPositionAttention({
-      balanceTypes: balances
-        .filter((balance) => hasPositionAmount(balance))
-        .map((balance) => balance.type),
-      pendingActions: pendingActions.map(({ pendingAction, yieldBalance }) => ({
-        type: pendingAction.type,
-        balance: yieldBalance,
-      })),
-    }),
-    inactiveValidator: toInactiveValidatorStatus(providersDetails),
-  });
-  const providerName = getPositionProviderName({
-    integrationData,
-    providersDetails,
-  });
+  providersDetails: ReadonlyArray<ProviderDetail>;
+}) => {
+  const [provider] = providersDetails;
 
-  if (callout !== null) {
-    return {
-      providerName,
-      status: {
-        label: formatPositionCallout(callout, t),
-        tone: callout === "inProgress" ? "info" : "warning",
-      },
-    };
-  }
-
-  return {
-    providerName,
-    status: {
-      label: getPositionState({
-        canUnstake,
-        cancelling: groupPositionBalanceRows(balances, (balance) =>
-          isCancellingBalance(balance, cancellingHandles)
-        ).some((row) => row.cancelling),
-        pendingActions,
-        positionBalancesByType,
-        t,
-      }),
-      tone: "neutral",
-    },
-  };
-};
-
-/** A balance with an amount, or one whose amount is hidden. */
-const hasPositionAmount = (balance: EarnBalance) => {
-  const amount = exactDecimal(balance.amount);
-  return balance.isEncrypted === true || (!amount.isZero() && !amount.isNaN());
+  return (
+    provider?.name ??
+    provider?.address ??
+    integrationData.provider?.name ??
+    integrationData.providerId
+  );
 };

@@ -7,17 +7,20 @@ import {
   Avatar,
   Badge,
   Box,
+  ChipGroup,
   ListGroup,
   ListRow,
   Modal,
   Notice,
   Spinner,
-  Text,
+  Stack,
   VisuallyHidden,
 } from "../../../../ui/index";
-import type {
-  ConnectPickerGroup,
-  ConnectPickerWallet,
+import {
+  type ConnectPickerRow,
+  type ConnectPickerSection,
+  type ConnectPickerWallet,
+  connectPickerSections,
 } from "../../model/connect-picker";
 import { walletIconUrlAtom } from "../../state/wallet-icon";
 import {
@@ -37,6 +40,9 @@ const groupNameKeys: Readonly<
   Primary: "wallet_modal.groups.primary",
 };
 
+/** The ecosystem filter's chip that lists every ecosystem's wallets. */
+const allEcosystems = "all";
+
 export const WalletModalsProvider = ({ children }: PropsWithChildren) => (
   <>
     {children}
@@ -44,30 +50,29 @@ export const WalletModalsProvider = ({ children }: PropsWithChildren) => (
   </>
 );
 
+/**
+ * The wallet picker. It opens onto the wallets, those the user has first;
+ * with wallets of several ecosystems, a row of chips narrows the list to
+ * one ecosystem.
+ */
 const ConnectModal = () => {
   const { t } = useTranslation();
   const isOpen = useAtomValue(walletConnectModalOpenAtom);
   const presentationOpen = useAtomValue(walletConnectPresentationOpenAtom);
   const setOpen = useAtomSet(setWalletConnectModalOpenAtom);
-  const [selectedChainGroupId, setSelectedChainGroupId] = useState<
-    string | undefined
-  >();
+  const [ecosystemId, setEcosystemId] = useState<string | undefined>();
   const connect = useAtomSet(connectWalletAtom);
   const attempt = useAtomValue(walletConnectionAttemptAtom);
 
   const ecosystems = useAtomValue(connectPickerAtom);
-  const activeEcosystem = ecosystems.find(
-    ({ chainGroup }) =>
-      chainGroup.id === selectedChainGroupId || ecosystems.length === 1
-  );
-  const canChooseAnotherEcosystem = !!activeEcosystem && ecosystems.length > 1;
+  const sections = connectPickerSections(ecosystems, ecosystemId);
+  const filter =
+    ecosystems.find(({ chainGroup }) => chainGroup.id === ecosystemId)
+      ?.chainGroup.id ?? allEcosystems;
 
   const setModalOpen = (nextIsOpen: boolean) => {
     setOpen(nextIsOpen);
-
-    if (!nextIsOpen) {
-      setSelectedChainGroupId(undefined);
-    }
+    if (!nextIsOpen) setEcosystemId(undefined);
   };
 
   return (
@@ -77,125 +82,108 @@ const ConnectModal = () => {
       onOpenChange={setModalOpen}
       testId="wallet-connect-dialog"
       bodyTestId="wallet-connect-list"
-      title={t(
-        activeEcosystem
-          ? "wallet_modal.connect_wallet"
-          : "wallet_modal.select_ecosystem"
-      )}
+      title={t("wallet_modal.connect_wallet")}
       titleStatus={attempt._tag === "Pending" && <Spinner size="sm" />}
       closeLabel={t("wallet_modal.close")}
-      {...(canChooseAnotherEcosystem
-        ? {
-            back: {
-              label: t("wallet_modal.change_ecosystem"),
-              testId: "connect-ecosystem-back",
-              onBack: () => {
-                setOpen(true);
-                setSelectedChainGroupId(undefined);
-              },
-            },
-          }
-        : {})}
-      footer={
-        <Text variant="caption" tone="muted" align="center">
-          {t("chain_modal_disclaimer")}
-        </Text>
-      }
     >
-      {attempt._tag === "Failed" && (
-        <Box role="alert">
-          <Notice tone="danger">{t("wallet_modal.connection_error")}</Notice>
-        </Box>
-      )}
-      {attempt._tag === "WalletNotAvailable" && (
-        <Box role="alert">
-          <Notice tone="danger">
-            {t("wallet_modal.wallet_not_available")}
-          </Notice>
-        </Box>
-      )}
-      {activeEcosystem ? (
-        <WalletGroups groups={activeEcosystem.groups} onConnect={connect} />
-      ) : (
-        <ListGroup density="condensed">
-          {ecosystems.map(({ chainGroup }) => (
-            <ListRow
-              key={chainGroup.id}
-              testId={`connect-ecosystem-${chainGroup.id}`}
-              leading={
-                <OptionIcon
-                  iconUrl={chainGroup.iconUrl}
-                  title={chainGroup.title}
-                />
-              }
-              title={chainGroup.title}
-              onClick={() => {
-                setSelectedChainGroupId(chainGroup.id);
-                setOpen(true);
-              }}
-            />
-          ))}
-        </ListGroup>
-      )}
+      <Stack gap={16}>
+        {ecosystems.length > 1 && (
+          <ChipGroup
+            label={t("wallet_modal.ecosystems")}
+            options={[
+              { value: allEcosystems, label: t("wallet_modal.all_ecosystems") },
+              ...ecosystems.map(({ chainGroup }) => ({
+                value: chainGroup.id,
+                label: chainGroup.title,
+              })),
+            ]}
+            value={[filter]}
+            onValueChange={(next) => {
+              const chosen = next.find((value) => value !== filter) ?? filter;
+              setEcosystemId(chosen === allEcosystems ? undefined : chosen);
+            }}
+          />
+        )}
+        {attempt._tag === "Failed" && (
+          <Box role="alert">
+            <Notice tone="danger">{t("wallet_modal.connection_error")}</Notice>
+          </Box>
+        )}
+        {attempt._tag === "WalletNotAvailable" && (
+          <Box role="alert">
+            <Notice tone="danger">
+              {t("wallet_modal.wallet_not_available")}
+            </Notice>
+          </Box>
+        )}
+        <WalletSections sections={sections} onConnect={connect} />
+      </Stack>
     </Modal>
   );
 };
 
-const WalletGroups = ({
-  groups,
+const WalletSections = ({
+  sections,
   onConnect,
 }: {
-  readonly groups: ReadonlyArray<ConnectPickerGroup>;
+  readonly sections: ReadonlyArray<ConnectPickerSection>;
   readonly onConnect: (connector: ConnectorWithWalletDetails) => void;
 }) => {
   const { t } = useTranslation();
-  const groupTitle = ({ label }: ConnectPickerGroup) => {
+  const sectionTitle = ({ label }: ConnectPickerSection) => {
     if (label._tag === "Installed") return t("wallet_modal.groups.installed");
+    if (label._tag === "Ecosystem") return label.title;
     const key = groupNameKeys[label.name];
     return key ? t(key) : label.name;
   };
+  const options = (rows: ReadonlyArray<ConnectPickerRow>) =>
+    rows.map((row) => (
+      <WalletOption key={row.wallet.id} row={row} onConnect={onConnect} />
+    ));
 
-  if (groups.length === 1) {
+  if (sections.length === 1) {
     return (
       <ListGroup density="condensed">
-        {groups[0]?.wallets.map((wallet) => (
-          <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
-        ))}
+        {options(sections[0]?.rows ?? [])}
       </ListGroup>
     );
   }
 
-  return groups.map((walletGroup) => (
-    <ListGroup
-      key={walletGroup.id}
-      label={groupTitle(walletGroup)}
-      density="condensed"
-    >
-      {walletGroup.wallets.map((wallet) => (
-        <WalletOption key={wallet.id} wallet={wallet} onConnect={onConnect} />
+  return (
+    <Stack gap={16}>
+      {sections.map((section) => (
+        <ListGroup
+          key={section.id}
+          label={sectionTitle(section)}
+          density="condensed"
+        >
+          {options(section.rows)}
+        </ListGroup>
       ))}
-    </ListGroup>
-  ));
+    </Stack>
+  );
 };
 
 const WalletOption = ({
-  wallet,
+  row: { ecosystem, wallet },
   onConnect,
 }: {
-  readonly wallet: ConnectPickerWallet;
+  readonly row: ConnectPickerRow;
   readonly onConnect: (connector: ConnectorWithWalletDetails) => void;
 }) => {
   const { t } = useTranslation();
-  const testId = `connect-wallet-${wallet.id}`;
-  const leading = <OptionIcon iconUrl={wallet.iconUrl} title={wallet.title} />;
+  const common = {
+    testId: `connect-wallet-${wallet.id}`,
+    leading: <OptionIcon iconUrl={wallet.iconUrl} title={wallet.title} />,
+    title: wallet.title,
+    ...(ecosystem === undefined ? {} : { subtitle: ecosystem }),
+  };
 
   if (wallet.action._tag === "Install") {
     return (
       <ListRow
-        testId={testId}
-        leading={leading}
-        title={wallet.title}
-        badges={<Badge tone="accent">{t("wallet_modal.install")}</Badge>}
+        {...common}
+        trailing={<Badge tone="accent">{t("wallet_modal.install")}</Badge>}
         link={{ href: wallet.action.url, newTab: true }}
       />
     );
@@ -204,9 +192,7 @@ const WalletOption = ({
   if (wallet.action._tag === "Checking") {
     return (
       <ListRow
-        testId={testId}
-        leading={leading}
-        title={wallet.title}
+        {...common}
         badges={<VisuallyHidden>{t("wallet_modal.checking")}</VisuallyHidden>}
         busy
       />
@@ -214,14 +200,7 @@ const WalletOption = ({
   }
 
   const { connector } = wallet;
-  return (
-    <ListRow
-      testId={testId}
-      leading={leading}
-      title={wallet.title}
-      onClick={() => onConnect(connector)}
-    />
-  );
+  return <ListRow {...common} onClick={() => onConnect(connector)} />;
 };
 
 const OptionIcon = ({
@@ -233,7 +212,7 @@ const OptionIcon = ({
 }) => (
   <Avatar
     src={useAtomValue(walletIconUrlAtom(iconUrl))}
-    fallback={Array.from(title.trim())[0]?.toUpperCase() ?? ""}
+    fallback={title}
     shape="square"
     size="control"
   />

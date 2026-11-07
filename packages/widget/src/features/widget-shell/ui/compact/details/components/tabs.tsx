@@ -41,6 +41,9 @@ export const DetailsTabs = ({
       value: "positions",
       label: t("details.tabs.positions"),
       count: pendingActionsCount,
+      countLabel: t("positions.attention_count", {
+        count: pendingActionsCount,
+      }),
     },
     { value: "activity", label: t("details.tabs.activity") },
   ];

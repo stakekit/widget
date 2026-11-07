@@ -85,7 +85,7 @@ const TokenSheet = ({
               value: query,
               onValueChange: setQuery,
               label: "Search tokens",
-              placeholder: "Search",
+              placeholder: "Search tokens",
               clearLabel: "Clear search",
             },
           }
@@ -169,6 +169,43 @@ export const Search: Story = {
 export const SearchDark: Story = {
   ...Search,
   globals: { colorScheme: "dark" },
+};
+
+/**
+ * The sheet holds its height while searching: as the matches narrow, run
+ * out and come back, the search field and the sheet's top stay put, and a
+ * search with no match shows its empty state where the options were.
+ */
+export const StaysPutWhileSearching: Story = {
+  play: async ({ canvasElement }) => {
+    const sheet = await openSheet(canvasElement);
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search tokens",
+    });
+    const place = () => ({
+      field: search.getBoundingClientRect().top,
+      top: sheet.getBoundingClientRect().top,
+      height: sheet.getBoundingClientRect().height,
+    });
+    await waitFor(() => expect(search).toHaveFocus());
+    // Measured once the sheet has finished entering.
+    await waitFor(() => expect(sheet.getAnimations()).toHaveLength(0));
+    const start = place();
+
+    for (const query of ["usd", "zzzq", "ust"]) {
+      await userEvent.clear(search);
+      await userEvent.type(search, query);
+      await waitFor(() => expect(place()).toEqual(start));
+    }
+    await userEvent.clear(search);
+    await userEvent.type(search, "zzzq");
+    const empty = await within(sheet).findByRole("heading", {
+      name: "No tokens found",
+    });
+    await expect(empty.getBoundingClientRect().top).toBeGreaterThan(
+      search.getBoundingClientRect().bottom
+    );
+  },
 };
 
 /** In a bottom sheet below a 520px viewport. */
@@ -981,6 +1018,14 @@ export const GroupHeaderWithLogo: Story = {
     await expect(caption.getBoundingClientRect().left).toBeGreaterThan(
       label.getBoundingClientRect().right
     );
+    // The caption ends where the rows' values do, clear of their check slot.
+    const value = within(sheet).getByText("0.02%");
+    await expect(
+      Math.abs(
+        caption.getBoundingClientRect().right -
+          value.getBoundingClientRect().right
+      )
+    ).toBeLessThanOrEqual(1);
   },
 };
 

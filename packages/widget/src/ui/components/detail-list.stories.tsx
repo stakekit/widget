@@ -13,6 +13,7 @@ const meta = {
     children: (
       <>
         <DetailRow label="Reward rate" value="4.21%" />
+        <DetailRow label="Claimable" value="1.3372 POL" tone="success" />
         <DetailRow
           label="Staked"
           value={<ExpandableAmount short="1.23K ETH" full="1,234.5678 ETH" />}

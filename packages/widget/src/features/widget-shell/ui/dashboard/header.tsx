@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Box, IconButton, Stack } from "../../../../ui/index";
+import { IconButton, Stack } from "../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { AccountModal, ChainModal } from "../../../wallet/views";
 import { useHeader } from "../../react/use-header";
@@ -7,8 +7,8 @@ import { useHeader } from "../../react/use-header";
 /**
  * The Dashboard Layout's wallet controls: the chain and account buttons and
  * the disconnect button, in one row that sits at the end of the tabs' row.
- * While no wallet is connected the row keeps its height, so the page under
- * it does not move when the controls appear.
+ * While no wallet is connected it renders nothing, so where the controls
+ * would wrap under the tabs no empty band is left.
  */
 export const Header = () => {
   const { t } = useTranslation();
@@ -25,9 +25,7 @@ export const Header = () => {
 
   if (hideAccountAndChainSelector) return null;
 
-  if (!walletConfigReady || (!isConnected && !isConnecting)) {
-    return <Box minHeight="tabs" />;
-  }
+  if (!walletConfigReady || (!isConnected && !isConnecting)) return null;
 
   return (
     <Stack hostHook="header" direction="row" align="center" gap={8}>

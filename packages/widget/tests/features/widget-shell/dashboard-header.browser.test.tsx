@@ -45,7 +45,7 @@ it("puts the dashboard disconnect button beside the wallet controls", async () =
   expect(header?.contains(disconnect.element())).toBe(true);
 });
 
-it("keeps the wallet row's height while no wallet is connected", async () => {
+it("leaves no band while no wallet is connected", async () => {
   wallet.isConnected = false;
   const app = await render(
     <div data-rk="stakekit" data-testid="frame">
@@ -56,6 +56,5 @@ it("keeps the wallet row's height while no wallet is connected", async () => {
   const frame = app.getByTestId("frame").element();
 
   expect(app.container.querySelector('[data-rk="header"]')).toBeNull();
-  // As tall as the pill tabs the connected controls match.
-  expect(frame.getBoundingClientRect().height).toBe(39);
+  expect(frame.getBoundingClientRect().height).toBe(0);
 });

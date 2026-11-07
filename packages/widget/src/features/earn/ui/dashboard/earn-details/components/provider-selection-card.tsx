@@ -25,7 +25,7 @@ import {
   formatProviderWebsiteHref,
 } from "../../../../../yield-summary/index";
 import {
-  useEarnEntry,
+  useEarnDetails,
   useEarnFlowProviderOption,
 } from "../../../../react/use-earn-facades";
 import type { EarnProviderOption } from "../../../../state/earn-selection/types";
@@ -47,7 +47,7 @@ type ProviderCardItem = {
 };
 
 export const ProviderSelectionCard = () => {
-  const { view: entry } = useEarnEntry();
+  const { view: entry } = useEarnDetails();
   const providersDetails = entry.providers;
 
   return (
@@ -237,18 +237,21 @@ const ProviderCard = ({
         <Stack direction="row" align="center" gap={12}>
           <Avatar
             src={item.logo}
-            fallback={item.name.charAt(0).toUpperCase()}
-            shape="square"
+            fallback={item.name}
+            shape={item.validator ? "square" : "round"}
           />
 
           <Stack gap={2} grow>
-            <Stack direction="row" align="center" gap={6} wrap>
+            {/* The name keeps priority: below `sm` the badge shrinks to its icon. */}
+            <Stack direction="row" align="center" gap={6}>
               <Text weight="semibold" truncate>
                 {item.name}
               </Text>
 
               {item.preferred ? (
-                <Badge tone="accent">{t("details.validators_preferred")}</Badge>
+                <Badge tone="accent" icon="PreferredIcon" collapse="belowSm">
+                  {t("details.validators_preferred")}
+                </Badge>
               ) : null}
             </Stack>
 

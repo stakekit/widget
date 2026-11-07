@@ -2,37 +2,29 @@ import { useTranslation } from "react-i18next";
 import { YieldDetailsHeader } from "../../../yield-summary/views";
 import {
   getPositionHeaderBadges,
-  getPositionHeaderModel,
+  getPositionProviderName,
 } from "../../model/position-overview";
 import { usePositionDetails } from "../../react/use-position-details";
 
 /**
- * The head of a position's page in both Layouts: a 40px logo, the name, who
- * provides it and the position's status, in place of a large logo block.
+ * The head of a position's page in both Layouts: a 40px logo, the name and
+ * who provides it on which network. The positions list row carries the
+ * position's status; the page does not repeat it.
  */
 export const PositionHeader = () => {
   const { t } = useTranslation();
-  const positionDetails = usePositionDetails();
-  const { integrationData, positionBalancesByType } = positionDetails;
+  const { integrationData, providersDetails } = usePositionDetails();
 
-  if (!integrationData || !positionBalancesByType) return null;
-
-  const header = getPositionHeaderModel({
-    cancellingHandles: positionDetails.cancellingHandles,
-    canUnstake: positionDetails.canUnstake,
-    integrationData,
-    pendingActions: positionDetails.pendingActions ?? [],
-    positionBalancesByType,
-    providersDetails: positionDetails.providersDetails ?? [],
-    t,
-  });
+  if (!integrationData) return null;
 
   return (
     <YieldDetailsHeader
       density="compact"
       headerBadges={getPositionHeaderBadges(integrationData, t)}
-      providerName={header.providerName}
-      status={header.status}
+      providerName={getPositionProviderName({
+        integrationData,
+        providersDetails: providersDetails ?? [],
+      })}
       yieldDto={integrationData}
     />
   );

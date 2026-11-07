@@ -64,7 +64,9 @@ const toTokenOption = (item: {
 
 export const earnTokenCatalogAtom = Atom.family((key: EarnTokenCatalogKey) =>
   Atom.make((get) =>
-    get(earnTokenCatalogResourceAtom.foreground(key)).pipe(
+    // The Earn page shows this failure itself, with a retry, so it raises no
+    // global error sheet.
+    get(earnTokenCatalogResourceAtom.local(key)).pipe(
       AsyncResult.map((items) => items.map(toTokenOption)),
       mapAsyncResultError(toCatalogError("earn-token-catalog"))
     )
@@ -121,7 +123,9 @@ export const availableYieldCategoriesAtom = Atom.family(
 );
 
 export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
-  const source = enrichedYieldDirectoryResourceAtom.foreground(
+  // The Earn page shows this failure itself, with a retry, so it raises no
+  // global error sheet.
+  const source = enrichedYieldDirectoryResourceAtom.local(
     new YieldDirectoryKey({
       network: key.network,
       token: key.token,
@@ -138,9 +142,9 @@ export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
 });
 
 export const positionsDataAtom = Atom.family((key: PositionsDataKey) => {
-  const source = key.scope
-    ? yieldPositionsResourceAtom.foreground(key.scope)
-    : null;
+  // The Earn page shows this failure itself, with a retry, so it raises no
+  // global error sheet.
+  const source = key.scope ? yieldPositionsResourceAtom.local(key.scope) : null;
 
   return Atom.make((get) =>
     source

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { iconLeadsInline } from "../storybook/geometry";
 import { Text } from "./text";
 
@@ -16,26 +16,93 @@ const column = { display: "grid", gap: 12 } as const;
 
 export const Body: Story = {};
 
-/** Every type role. Heading roles name their element. */
+const roles = () => (
+  <div style={column}>
+    <Text variant="display" as="p">
+      1,234.56
+    </Text>
+    <Text variant="title" as="h1">
+      Title
+    </Text>
+    <Text variant="heading" as="h2">
+      Heading
+    </Text>
+    <Text variant="metric">4.21%</Text>
+    <Text variant="body">Body</Text>
+    <Text variant="label">Label</Text>
+    <Text variant="caption">Caption</Text>
+    <Text variant="overline">Overline</Text>
+  </div>
+);
+
+/**
+ * Every type role. Heading roles name their element. A title is a step
+ * heavier than a heading, and the `display` figures draw a little tighter.
+ */
 export const Roles: Story = {
-  render: () => (
-    <div style={column}>
-      <Text variant="display" as="p">
-        1,234.56
-      </Text>
-      <Text variant="title" as="h1">
-        Title
-      </Text>
-      <Text variant="heading" as="h2">
-        Heading
-      </Text>
-      <Text variant="metric">4.21%</Text>
-      <Text variant="body">Body</Text>
-      <Text variant="label">Label</Text>
-      <Text variant="caption">Caption</Text>
-      <Text variant="overline">Overline</Text>
-    </div>
-  ),
+  render: roles,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [title, heading] = ["Title", "Heading"].map((name) =>
+      Number(getComputedStyle(canvas.getByRole("heading", { name })).fontWeight)
+    );
+
+    await expect(title).toBeGreaterThan(heading ?? Number.NaN);
+    await expect(
+      Number.parseFloat(
+        getComputedStyle(canvas.getByText("1,234.56")).letterSpacing
+      )
+    ).toBeLessThan(0);
+  },
+};
+
+/** Finery sets every role in its humanist system sans. */
+export const RolesFinery: Story = {
+  render: roles,
+  globals: { appearancePreset: "finery" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    for (const text of ["1,234.56", "Title", "Body"]) {
+      await expect(getComputedStyle(canvas.getByText(text)).fontFamily).toMatch(
+        /^Seravek/
+      );
+    }
+  },
+};
+
+/**
+ * Porto sets its text in a geometric system sans and its figures (`display`,
+ * `metric` and tabular text) in monospace numerals.
+ */
+export const RolesPorto: Story = {
+  render: roles,
+  globals: { appearancePreset: "porto" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const family = (text: string) =>
+      getComputedStyle(canvas.getByText(text)).fontFamily;
+
+    await expect(family("1,234.56")).toMatch(/monospace$/);
+    await expect(family("4.21%")).toMatch(/monospace$/);
+    await expect(family("Body")).toMatch(/^Avenir/);
+  },
+};
+
+/** Utila keeps its headings as heavy as its titles, as it ships. */
+export const RolesUtila: Story = {
+  render: roles,
+  globals: { appearancePreset: "utila" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [title, heading] = ["Title", "Heading"].map(
+      (name) =>
+        getComputedStyle(canvas.getByRole("heading", { name })).fontWeight
+    );
+
+    await expect(heading).toBe("600");
+    await expect(heading).toBe(title);
+  },
 };
 
 const informationTones = [

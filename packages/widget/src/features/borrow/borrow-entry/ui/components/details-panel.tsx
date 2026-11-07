@@ -1,3 +1,4 @@
+import { useAtomSet } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
@@ -17,6 +18,7 @@ import {
   DetailRow,
   Disclosure,
   EmptyState,
+  ErrorState,
   Metric,
   MetricGroup,
   Stack,
@@ -28,6 +30,7 @@ import type {
 } from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";
 import { toBorrowEntryToken } from "../../model/market-groups";
+import { retryBorrowCatalogAtom } from "../../state/borrow-entry";
 import { BorrowDetailsSkeleton } from "./skeletons";
 
 /** The entry form's details pane: the live selection, with catalog states. */
@@ -51,12 +54,7 @@ export const BorrowEntryDetailsPanel = ({
   }
 
   if (marketsView._tag === "Failed" || integrationsView._tag === "Failed") {
-    return (
-      <EmptyState
-        title={t("dashboard.borrow.error_title")}
-        body={t("dashboard.borrow.error_description")}
-      />
-    );
+    return <BorrowCatalogFailed />;
   }
 
   if (!selectedMarket) {
@@ -76,6 +74,21 @@ export const BorrowEntryDetailsPanel = ({
       integration={selectedIntegration}
       market={selectedMarket}
       projection={projection}
+    />
+  );
+};
+
+/** The markets or integrations failed to load: say so, and offer to retry. */
+const BorrowCatalogFailed = () => {
+  const { t } = useTranslation();
+  const retry = useAtomSet(retryBorrowCatalogAtom);
+
+  return (
+    <ErrorState
+      fill
+      title={t("dashboard.borrow.error_title")}
+      body={t("dashboard.borrow.error_description")}
+      action={{ label: t("shared.retry"), onClick: () => retry(undefined) }}
     />
   );
 };

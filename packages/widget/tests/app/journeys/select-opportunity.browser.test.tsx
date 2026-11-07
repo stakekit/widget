@@ -199,13 +199,6 @@ describe("Select opportunity", () => {
       await expect.poll(() => item.elements()[0]).toBeTruthy();
       await userEvent.click(EArray.getUnsafe(item.elements(), 0));
     };
-    const clickText = async (text: string) => {
-      const item = app.getByText(text).first();
-
-      await expect.element(item).toBeInTheDocument();
-      await expect.poll(() => item.elements()[0]).toBeTruthy();
-      (item.elements()[0] as HTMLElement).click();
-    };
 
     await app.getByTestId("select-token").click();
 
@@ -285,25 +278,21 @@ describe("Select opportunity", () => {
 
     await app.getByText("Connect wallet").click();
 
-    await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
-
-    await clickText("EVM");
-
+    // The picker opens onto the wallets; a chip narrows them to EVM.
     await expect
       .element(
         app.getByRole("heading", { name: "Connect wallet", exact: true })
       )
       .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("button", { name: "All", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
+
+    await app.getByRole("button", { name: "EVM", exact: true }).click();
 
     await expect
-      .element(app.getByTestId("connect-ecosystem-back"))
-      .toBeInTheDocument();
-
-    await app.getByTestId("connect-ecosystem-back").click();
-
-    await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
-
-    await clickText("EVM");
+      .element(app.getByRole("button", { name: "EVM", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
 
     await userEvent.keyboard("[Escape]");
 

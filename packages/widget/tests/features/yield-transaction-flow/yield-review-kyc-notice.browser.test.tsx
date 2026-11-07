@@ -34,6 +34,8 @@ const renderStakeReview = ({
   hookState.current = {
     amount: "1",
     amountFiat: null,
+    attribution: null,
+    feeWarning: null,
     commissionFee: null,
     cta: null,
     depositFee: null,

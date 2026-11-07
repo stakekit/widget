@@ -41,7 +41,6 @@ export const ExitCompletePage = () => {
       integrationId={integrationData.id}
       network={completion.token.symbol}
       note={note}
-      providersDetails={exitFlow.providersDetails}
       markToken={markToken}
       rows={rows}
       yieldType={getExtendedYieldType(integrationData)}

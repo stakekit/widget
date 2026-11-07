@@ -103,6 +103,20 @@ export const PointerSelection: Story = {
 };
 
 /**
+ * The list keeps its scrollbar's gutter whether or not it overflows, so its
+ * options neither narrow nor shift when a long list scrolls.
+ */
+export const StableGutter: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("combobox", { name: "Network" })
+    );
+    const list = await screen.findByRole("listbox", { name: "Network" });
+    await expect(getComputedStyle(list).scrollbarGutter).toBe("stable");
+  },
+};
+
+/**
  * The keyboard opens the list, arrows move through it and Enter chooses;
  * Escape closes it without choosing. Focus returns to the trigger.
  */

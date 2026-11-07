@@ -374,18 +374,21 @@ type PositionDetailsPendingActionView = {
 export const positionDetailsPricesAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
     Atom.make((get) => {
-      const view = get(positionDetailsWorkflowViewAtom(key));
-      const baseToken = view.integrationData?.token ?? null;
+      const { integrationData, positionBalances } = get(
+        positionDetailsWorkflowViewAtom(key)
+      );
       return get(
         pricesAtom.foreground(
           new PricesKey({
             request:
-              view.positionBalances && baseToken
+              positionBalances && integrationData
                 ? {
                     currency: config.currency,
                     tokenList: [
-                      baseToken,
-                      ...view.positionBalances.balances.map(
+                      integrationData.token,
+                      // Values the exit's estimated network fee.
+                      integrationData.mechanics.gasFeeToken,
+                      ...positionBalances.balances.map(
                         (balance) => balance.token
                       ),
                     ],

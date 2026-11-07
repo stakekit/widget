@@ -1,13 +1,19 @@
 import { useAtomValue } from "@effect/atom-react";
+import { useTranslation } from "react-i18next";
 import { exactZero } from "../../../domain/finance/exact";
 import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
 import {
   formatRewardRatePercent,
   formatTokenAmountWithSymbol,
   formatUsd,
+  withFigureUnit,
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
-import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
+import {
+  formatRewardRateLabel,
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../yield-summary/index";
 import {
   positionYieldAtom,
   toPositionTotalDisplay,
@@ -15,6 +21,7 @@ import {
 import type { PositionItem } from "../state/read-models/positions";
 
 export const usePositionListItem = (item: PositionItem) => {
+  const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const positionYield = useAtomValue(positionYieldAtom(item.integrationId));
   const integrationData =
@@ -29,8 +36,9 @@ export const usePositionListItem = (item: PositionItem) => {
     )
   ).providers;
 
-  // The rate as shown, and whether it is a gain: only a positive rate reads
-  // in the success tone, not zero or an unknown rate.
+  // The rate as shown with its type ("4.52% APY"), and whether it is a gain:
+  // only a positive rate reads in the success tone, not zero or an unknown
+  // rate, the same rule as the yield picker's.
   const getRewardRateAverage = () => {
     if (!providersDetails || !integrationData) return null;
     const average = providersDetails
@@ -41,7 +49,10 @@ export const usePositionListItem = (item: PositionItem) => {
       .dividedBy(providersDetails.length);
 
     return {
-      text: formatRewardRatePercent(average, locale),
+      text: withFigureUnit(
+        formatRewardRatePercent(average, locale),
+        formatRewardRateLabel(integrationData, t)
+      ),
       isPositive: average.isGreaterThan(0),
     };
   };

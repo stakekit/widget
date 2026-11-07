@@ -6,21 +6,24 @@ import * as stylex from "@stylexjs/stylex";
  * resolution, and the contrast test through it, reads the values the theme
  * applies.
  *
- * `info` and `infoSoft` derive from the accent: the accent's text and soft
- * tint, so informational text keeps the accent's contrast.
+ * The neutrals lean slightly toward the accent's blue, so greys and accent
+ * read as one palette. `info` is a sky blue of its own, apart from the
+ * accent, so an informational notice never reads as a selected control.
  */
 export const lightColorRoles = {
   background: "#FFFFFF",
   // `surface` stands 1.16:1 off the canvas, so a filled card's edge reads
-  // without a border of its own.
-  surface: "#EEEEF1",
-  surfaceHover: "#E6E6EA",
+  // without a border of its own. `surfaceHover` stands 1.13:1 off `surface`,
+  // so hover reads as a change, while the accent keeps 3.65:1 and muted text
+  // 4.99:1 on it.
+  surface: "#EDEEF3",
+  surfaceHover: "#DFE1E9",
   surfaceRaised: "#FFFFFF",
-  border: "#DFDFE4",
-  borderStrong: "#D4D4D8",
-  text: "#18181B",
-  textMuted: "#5F5F6B",
-  textSubtle: "#8E8E99",
+  border: "#DDDFE7",
+  borderStrong: "#D0D3DE",
+  text: "#16171D",
+  textMuted: "#5A5D6E",
+  textSubtle: "#8A8D9E",
   accent: "#4A60FF",
   accentHover: "#3B50F0",
   onAccent: "#FFFFFF",
@@ -32,8 +35,8 @@ export const lightColorRoles = {
   warningSoft: "#FEF3E2",
   danger: "#B42318",
   dangerSoft: "#FDECEC",
-  info: "#3448E6",
-  infoSoft: "#EEF0FF",
+  info: "#0369A1",
+  infoSoft: "#E0F2FE",
   focusRing: "#4A60FF",
   scrim: "rgb(9 9 11 / 0.48)",
 };

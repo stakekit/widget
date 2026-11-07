@@ -1,11 +1,10 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { getYieldTypeLabels } from "../../../../domain/earn/yield";
-import { Button } from "../../../../ui/index";
 import type { PageCta } from "../../../widget-shell/views";
-import { PageCtaSlot } from "../../../widget-shell/views";
+import { PageCtaButton } from "../../../widget-shell/views";
 import type { YieldEntryCtaBlocker } from "../../../yield-entry/index";
-import { useEarnEntry } from "../../react/use-earn-facades";
+import { useEarnEntry, useEarnPageStatus } from "../../react/use-earn-facades";
 
 /** A disabled CTA says what to do next in place of the action. */
 const blockerLabel = (
@@ -27,26 +26,20 @@ const blockerLabel = (
   }
 };
 
-/** The Earn page's call-to-action, in both Layouts and the loading skeleton. */
-export const EarnPageCtaButton = ({ cta }: { readonly cta: PageCta }) => {
-  if (!cta || cta.hide) return null;
+/** Holds the CTA's place while the page loads what it needs: no action yet. */
+export const earnLoadingCta = {
+  disabled: true,
+  isLoading: false,
+  label: "",
+  onClick: () => undefined,
+  standIn: true,
+} satisfies PageCta;
 
-  return (
-    <PageCtaSlot>
-      <Button
-        hostHook="footer-button-primary"
-        disabled={cta.disabled}
-        loading={cta.isLoading}
-        onClick={cta.onClick}
-        size="cta"
-        variant="primary"
-      >
-        {cta.label}
-      </Button>
-    </PageCtaSlot>
-  );
-};
-
+/**
+ * The Earn page's call-to-action, in both Layouts. While the page first
+ * loads, a neutral stand-in holds its place; when the page failed to load
+ * there is nothing to act on, so it is left out.
+ */
 export const EarnPageCta = ({
   enabled = true,
 }: {
@@ -54,19 +47,18 @@ export const EarnPageCta = ({
 }) => {
   const { t } = useTranslation();
   const { runPrimaryAction, view } = useEarnEntry();
+  const { view: status } = useEarnPageStatus();
   const cta: PageCta = (() => {
-    if (!enabled || view.cta._tag === "Hidden") return null;
+    if (!enabled || status.isError || view.cta._tag === "Hidden") return null;
+    if (view.appLoading) return earnLoadingCta;
     if (view.cta._tag === "Submit") {
+      if (!view.selectedStake) return earnLoadingCta;
       return {
         disabled: view.cta.disabled,
-        isLoading: view.cta.loading || !view.selectedStake,
-        label: (() => {
-          if (!view.selectedStake) return "";
-          if (view.cta.blocker) {
-            return blockerLabel(view.cta.blocker, view.symbol, t);
-          }
-          return getYieldTypeLabels(view.selectedStake, t).cta;
-        })(),
+        isLoading: view.cta.loading,
+        label: view.cta.blocker
+          ? blockerLabel(view.cta.blocker, view.symbol, t)
+          : getYieldTypeLabels(view.selectedStake, t).cta,
         onClick: () => runPrimaryAction(undefined),
       };
     }
@@ -82,5 +74,5 @@ export const EarnPageCta = ({
     };
   })();
 
-  return <EarnPageCtaButton cta={cta} />;
+  return <PageCtaButton cta={cta} />;
 };

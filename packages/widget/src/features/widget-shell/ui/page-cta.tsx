@@ -1,10 +1,16 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { Button, Stack } from "../../../ui/index";
+import { Button, Skeleton, Stack } from "../../../ui/index";
 
 export type PageCta = {
   disabled: boolean;
   hide?: boolean;
   isLoading: boolean;
+  /**
+   * The page is still loading what the action needs: a neutral stand-in the
+   * action's size takes its place, so the first load never flashes an
+   * accent spinner that turns grey once the action is known.
+   */
+  standIn?: boolean;
   label: string;
   onClick: () => void;
   variant?: "primary" | "secondary";
@@ -25,6 +31,8 @@ const PageCtaAction = ({
   readonly fallbackVariant: "primary" | "secondary";
 }) => {
   const variant = cta.variant ?? fallbackVariant;
+
+  if (cta.standIn === true) return <Skeleton shape="rect" height="cta" />;
 
   return (
     <Button

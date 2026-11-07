@@ -6,7 +6,6 @@ export type {
 export {
   type LtvMeter,
   type RiskValueTone,
-  riskBandBadgeTone,
   riskBandMeterTone,
   riskBandValueTone,
   toLtvMeter,

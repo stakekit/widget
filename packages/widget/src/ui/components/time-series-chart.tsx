@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceDot,
   Tooltip,
   XAxis,
   type XAxisTickContentProps,
@@ -16,33 +17,45 @@ import { elevation } from "../tokens/elevation.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { chartHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
-import { font, fontSize } from "../tokens/typography.stylex";
+import { font, fontSize, fontWeight } from "../tokens/typography.stylex";
 import { Skeleton } from "./skeleton";
 import { Spinner } from "./spinner";
 
 /** One sample: `time` in epoch milliseconds. */
 export type TimeSeriesPoint = { readonly time: number; readonly value: number };
 
+/** An axis's ticks and their labels, one each. */
+export type TimeSeriesAxis = {
+  /** Lowest or earliest first; the axis spans the first to the last. */
+  readonly ticks: ReadonlyArray<number>;
+  readonly labels: ReadonlyArray<string>;
+};
+
 type TimeSeriesChartProps = {
   /** Names the chart, such as "Reward rate history". */
   readonly label: string;
   readonly data: ReadonlyArray<TimeSeriesPoint>;
-  /** Formats a value for the value axis, such as "4.2%". */
-  readonly formatValue: (value: number) => string;
   /**
-   * Formats the value axis's ticks together, lowest first, so they can share
-   * one precision, such as "5.6% / 6.5% / 7.4%"; unset, each tick takes
-   * `formatValue`.
+   * The value axis, such as "1.5% / 1.6% / 1.7%": round ticks the Feature
+   * labels together, in one precision.
    */
-  readonly formatValueAxis?: (
-    ticks: ReadonlyArray<number>
-  ) => ReadonlyArray<string>;
-  /** Formats a time for the time axis, such as "Mar 4". */
-  readonly formatTime: (time: number) => string;
-  /** Formats the hovered value; unset, `formatValue`. */
-  readonly formatTooltipValue?: (value: number) => string;
-  /** Formats the hovered time; unset, `formatTime`. */
-  readonly formatTooltipTime?: (time: number) => string;
+  readonly valueAxis: TimeSeriesAxis;
+  /**
+   * The time axis: it spans the selected range even where the data starts
+   * late or stops early, such as "Aug 8 / Sep 22 / Nov 6".
+   */
+  readonly timeAxis: TimeSeriesAxis;
+  /** Formats the hovered value, such as "1.62%". */
+  readonly formatTooltipValue: (value: number) => string;
+  /** Formats the hovered time, such as "Sep 22, 2026". */
+  readonly formatTooltipTime: (time: number) => string;
+  /** Labels the latest point beside its dot, such as "883.29 ETH". */
+  readonly latestLabel?: string;
+  /**
+   * A note under the plot, such as "Data to Sep 16" when the data stops
+   * before the time axis ends.
+   */
+  readonly caption?: string;
   /**
    * Without points, a skeleton stands in for the chart; with points, the
    * chart dims under a spinner while new ones load.
@@ -57,32 +70,37 @@ type TimeSeriesChartProps = {
 // past a start- or end-anchored label's tick on some platforms' fonts.
 const plotMargin = { top: 8, right: 2, bottom: 0, left: 2 } as const;
 
-/** The value axis runs a fifth past the data either way, and from 0 up. */
-const valueDomain = (values: ReadonlyArray<number>) => {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const padding = Math.max((max - min) * 0.2, Math.abs(max) * 0.05, 0.05);
-  const low = min >= 0 ? Math.max(0, min - padding) : min - padding;
-  const high = max + padding;
-  return [low, (low + high) / 2, high] as const;
-};
+// The tooltip sits above and right of the cursor, clear of the line under
+// it, and flips below or left only where the plot ends.
+const tooltipOffset = { x: 12, y: 16 } as const;
+const tooltipAbove = { x: false, y: true } as const;
+
+/** The latest point's dot and the gap between it and its label. */
+const latestDotRadius = 4;
+const latestLabelGap = 8;
+/** A label within this fraction of the plot's top or bottom edge flips. */
+const latestLabelEdge = 0.2;
 
 /**
  * A line over a soft area for values sampled through time, such as a
- * reward-rate or TVL history, with a value axis, a time axis and a tooltip
+ * reward-rate or TVL history, with round value ticks, a time axis over the
+ * whole selected range, the latest point marked and labelled, and a tooltip
  * for the hovered point. Axis labels stay inside the chart at every container
  * width: the value axis takes the width its labels need and the edge time
  * labels align to the edges. The chart takes no focus, by Tab or by a press:
- * its surface has no tab index, so it never draws a focus ring.
+ * its surface has no tab index, so it never draws a focus ring. Its height
+ * never changes, with or without a caption, so switching ranges never moves
+ * what follows it.
  */
 export const TimeSeriesChart = ({
   label,
   data,
-  formatValue,
-  formatValueAxis,
-  formatTime,
-  formatTooltipValue = formatValue,
-  formatTooltipTime = formatTime,
+  valueAxis,
+  timeAxis,
+  formatTooltipValue,
+  formatTooltipTime,
+  latestLabel,
+  caption,
   loading = false,
   emptyLabel,
 }: TimeSeriesChartProps) => {
@@ -113,12 +131,13 @@ export const TimeSeriesChart = ({
     );
   }
 
-  const valueTicks = valueDomain(data.map((point) => point.value));
-  const valueTickLabels = formatValueAxis?.(valueTicks);
-  const first = data[0]?.time ?? 0;
-  const last = data.at(-1)?.time ?? first;
-  const timeTicks = [first, (first + last) / 2, last];
+  const valueLow = valueAxis.ticks[0] ?? "dataMin";
+  const valueHigh = valueAxis.ticks.at(-1) ?? "dataMax";
+  const first = timeAxis.ticks[0] ?? data[0]?.time ?? 0;
+  const last = timeAxis.ticks.at(-1) ?? data.at(-1)?.time ?? first;
+  const latest = data.at(-1);
   const tickClassName = stylex.props(styles.tick).className;
+  const latestLabelClassName = stylex.props(styles.latestLabel).className;
 
   const renderTimeTick = ({ x, y, payload }: XAxisTickContentProps) => {
     const time = Number(payload.value);
@@ -130,17 +149,26 @@ export const TimeSeriesChart = ({
         textAnchor={edgeAnchor(time, first, last)}
         className={tickClassName}
       >
-        {formatTime(time)}
+        {timeAxis.labels[timeAxis.ticks.indexOf(time)] ?? ""}
       </text>
     );
   };
+
+  const latestLabelBelow = latest
+    ? isLabelBelow({
+        latest: latest.value,
+        previous: data.at(-2)?.value ?? latest.value,
+        low: typeof valueLow === "number" ? valueLow : latest.value,
+        high: typeof valueHigh === "number" ? valueHigh : latest.value,
+      })
+    : false;
 
   return (
     <div
       role="img"
       aria-label={label}
       aria-busy={loading}
-      {...stylex.props(styles.frame)}
+      {...stylex.props(styles.frame, styles.stack)}
     >
       <div {...stylex.props(styles.plot, loading && styles.dimmed)}>
         <AreaChart
@@ -170,19 +198,19 @@ export const TimeSeriesChart = ({
             interval={0}
             tick={renderTimeTick}
             tickLine={false}
-            ticks={timeTicks}
+            ticks={[...timeAxis.ticks]}
             type="number"
           />
           <YAxis
             axisLine={false}
-            domain={[valueTicks[0], valueTicks[2]]}
+            domain={[valueLow, valueHigh]}
             orientation="right"
             tick={{ className: tickClassName }}
             tickFormatter={(value: number) =>
-              valueTickLabels?.[valueTicks.indexOf(value)] ?? formatValue(value)
+              valueAxis.labels[valueAxis.ticks.indexOf(value)] ?? ""
             }
             tickLine={false}
-            ticks={[...valueTicks]}
+            ticks={[...valueAxis.ticks]}
             type="number"
             width="auto"
           />
@@ -203,6 +231,8 @@ export const TimeSeriesChart = ({
             }}
             cursor={{ stroke: color.borderStrong, strokeDasharray: "3 3" }}
             isAnimationActive={false}
+            offset={tooltipOffset}
+            reverseDirection={tooltipAbove}
           />
           <Area
             activeDot={{ fill: color.accent, stroke: color.background }}
@@ -215,8 +245,55 @@ export const TimeSeriesChart = ({
             strokeWidth={2}
             type="monotone"
           />
+          {latest && (
+            <ReferenceDot
+              ifOverflow="visible"
+              x={latest.time}
+              y={latest.value}
+              shape={({ cx = 0, cy = 0 }) => (
+                <g>
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={latestDotRadius}
+                    fill={color.accent}
+                    stroke={color.background}
+                    strokeWidth={2}
+                  />
+                  {latestLabel !== undefined && (
+                    <text
+                      x={cx - latestLabelGap}
+                      y={
+                        latestLabelBelow
+                          ? cy + latestLabelGap
+                          : cy - latestLabelGap
+                      }
+                      dominantBaseline={
+                        latestLabelBelow ? "hanging" : "alphabetic"
+                      }
+                      textAnchor="end"
+                      paintOrder="stroke"
+                      stroke={color.background}
+                      strokeWidth={4}
+                      strokeLinejoin="round"
+                      className={latestLabelClassName}
+                    >
+                      {latestLabel}
+                    </text>
+                  )}
+                </g>
+              )}
+            />
+          )}
         </AreaChart>
       </div>
+      {caption !== undefined && (
+        <span {...stylex.props(styles.caption)}>
+          <Text variant="caption" tone="muted">
+            {caption}
+          </Text>
+        </span>
+      )}
       {loading && (
         <span {...stylex.props(styles.spinner)}>
           <Spinner size="sm" tone="muted" />
@@ -235,6 +312,29 @@ const edgeAnchor = (time: number, first: number, last: number) => {
   return "middle";
 };
 
+/**
+ * The latest point's label goes where the line is not: below the dot when
+ * the line falls into it, above when it rises, and away from the plot's top
+ * or bottom edge when the dot sits near one.
+ */
+const isLabelBelow = ({
+  latest,
+  previous,
+  low,
+  high,
+}: {
+  readonly latest: number;
+  readonly previous: number;
+  readonly low: number;
+  readonly high: number;
+}) => {
+  const height = high - low;
+  const position = height > 0 ? (latest - low) / height : 0.5;
+  if (position > 1 - latestLabelEdge) return true;
+  if (position < latestLabelEdge) return false;
+  return previous > latest;
+};
+
 const isPoint = (value: unknown): value is TimeSeriesPoint =>
   typeof value === "object" &&
   value !== null &&
@@ -249,6 +349,11 @@ const styles = stylex.create({
     height: chartHeight.md,
     width: "100%",
   },
+  stack: {
+    gap: space[4],
+    display: "flex",
+    flexDirection: "column",
+  },
   empty: {
     margin: 0,
     alignItems: "center",
@@ -256,11 +361,16 @@ const styles = stylex.create({
     justifyContent: "center",
   },
   plot: {
+    flexGrow: 1,
     opacity: 1,
-    height: "100%",
+    minHeight: 0,
     width: "100%",
   },
   dimmed: { opacity: 0.5 },
+  caption: {
+    display: "flex",
+    justifyContent: "flex-end",
+  },
   spinner: {
     insetInlineEnd: space[8],
     position: "absolute",
@@ -268,9 +378,16 @@ const styles = stylex.create({
   },
   tick: {
     fill: color.textMuted,
-    fontFamily: font.sans,
+    fontFamily: font.figure,
     fontSize: fontSize.caption,
     fontVariantNumeric: "tabular-nums",
+  },
+  latestLabel: {
+    fill: color.text,
+    fontFamily: font.figure,
+    fontSize: fontSize.caption,
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: fontWeight.medium,
   },
   tooltip: {
     borderColor: color.border,

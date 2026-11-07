@@ -179,15 +179,21 @@ export const BorrowCompletePage = () => {
           />
         </Stack>
 
+        {/* A position's flow ends on the position, so Done is its way back;
+            a new loan offers its position beside Done. */}
         <PageCtaButton
           cta={
-            positionOpen
+            positionOpen && !isPositionFlow
               ? action(t("complete.view_position"), () =>
                   viewPosition(undefined)
                 )
               : done
           }
-          secondary={positionOpen ? { ...done, variant: "secondary" } : null}
+          secondary={
+            positionOpen && !isPositionFlow
+              ? { ...done, variant: "secondary" }
+              : null
+          }
         />
       </PageContainer>
     </AnimationPage>

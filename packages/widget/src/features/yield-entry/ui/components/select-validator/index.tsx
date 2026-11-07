@@ -246,19 +246,12 @@ const useValidatorOptions = (selectedStake: EarnYieldWithProvider) => {
       ...(rateType ? { subvalue: rateType } : {}),
       logo: {
         name,
+        shape: "square" as const,
         ...(validator.logoURI ? { src: validator.logoURI } : {}),
       },
-      badges: [
-        ...(validator.preferred
-          ? [
-              {
-                label: t("details.validators_preferred"),
-                tone: "accent",
-              } as const,
-            ]
-          : []),
-        ...(statusBadge ? [statusBadge] : []),
-      ],
+      // Preferred validators sit under their own "Preferred" header, so
+      // only a status worth noticing marks a row.
+      badges: statusBadge ? [statusBadge] : [],
       details,
     };
   };

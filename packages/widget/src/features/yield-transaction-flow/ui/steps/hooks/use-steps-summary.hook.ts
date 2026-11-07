@@ -27,7 +27,10 @@ import {
   getManageActionTitle,
   getPendingActionTitle,
 } from "../../../model/action-title";
-import type { YieldTransactionFlowIntake } from "../../../model/yield-transaction-flow";
+import {
+  getYieldFlowAttribution,
+  type YieldTransactionFlowIntake,
+} from "../../../model/yield-transaction-flow";
 import {
   useYieldFlowExecution,
   useYieldFlowSession,
@@ -129,18 +132,19 @@ const getStepsSubject = (
 
 /**
  * The summary heading the Steps: the action with its amount and token, the
- * logo of that token (the one sent, not the yield's), and the provider
- * running it.
+ * logo of that token (the one sent, not the yield's), travelling in from
+ * Review, and who runs it with their logo, as Review named them.
  */
 export const useStepsSummary = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const resolveTokenLogo = useTokenLogoResolver();
-  const subject = getStepsSubject(t, useYieldFlowSession().intake);
+  const { intake } = useYieldFlowSession();
+  const subject = getStepsSubject(t, intake);
   if (!subject) return null;
 
-  const { action, amount, token, yieldDto } = subject;
-  const providerName = yieldDto.provider?.name;
+  const { action, amount, token } = subject;
+  const attribution = getYieldFlowAttribution(intake);
 
   return {
     title: t("steps.summary", {
@@ -150,7 +154,16 @@ export const useStepsSummary = () => {
           ? t("shared.confidential.hidden")
           : `${formatTokenAmount(amount, locale, "down")} ${token.symbol}`,
     }),
-    ...(providerName ? { detail: t("complete.via", { providerName }) } : {}),
+    ...(attribution
+      ? {
+          detail: t("complete.via", { providerName: attribution.name }),
+          provider: {
+            name: attribution.name,
+            shape: attribution.shape,
+            ...(attribution.logo ? { src: attribution.logo } : {}),
+          },
+        }
+      : {}),
     token: resolveTokenLogo(token),
   };
 };
@@ -197,7 +210,7 @@ export const useStepsDetails = (): ReadonlyArray<TransactionStepsDetail> => {
       label: t("steps.details.yield"),
       testId: "steps-details-yield",
       value: formatReviewDestination({
-        providerName: yieldDto.provider?.name,
+        providerName: getYieldFlowAttribution(intake)?.name,
         t,
         yieldName: yieldDto.metadata.name,
       }),
