@@ -771,15 +771,19 @@ const styles = stylex.create({
     minWidth: 0,
   },
   separator: { display: "flex", flexShrink: 0 },
-  // The state gives way before the subtitle: its shrink weight dwarfs the
-  // subtitle's, so its text truncates first, down to its icon.
+  // The state gives way before the subtitle: it starts from no width and
+  // takes only the room the subtitle leaves, so its text truncates first,
+  // down to its icon, and the subtitle keeps its text whole until the line
+  // cannot hold it.
   status: {
     gap: space[2],
     alignItems: "center",
     display: "inline-flex",
-    flexShrink: 1000,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
     whiteSpace: "nowrap",
-    minWidth: 0,
+    minWidth: iconSize.sm,
   },
   statusText: { display: "flex", minWidth: 0 },
   // Below `sm` a state with an icon shows the icon alone; its text stays for
