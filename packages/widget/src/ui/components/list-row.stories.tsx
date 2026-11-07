@@ -549,7 +549,7 @@ export const StatusGivesWay: Story = {
       <ContainerFrame width={360}>
         <ListRow {...args} />
       </ContainerFrame>
-      <ContainerFrame width={420}>
+      <ContainerFrame width={480}>
         <ListRow {...args} />
       </ContainerFrame>
     </>

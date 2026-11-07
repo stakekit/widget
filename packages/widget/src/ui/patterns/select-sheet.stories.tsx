@@ -1037,6 +1037,15 @@ export const GroupHeaderWithLogoDark: Story = {
 /** Whether two edges line up, within a pixel of rounding. */
 const alignsWith = (left: number, edge: number) => Math.abs(left - edge) <= 1;
 
+/** The nearest ancestor that scrolls vertically. */
+const scrollContainerOf = (element: HTMLElement): HTMLElement | null => {
+  const parent = element.parentElement;
+  if (!parent) return null;
+  return getComputedStyle(parent).overflowY === "auto"
+    ? parent
+    : scrollContainerOf(parent);
+};
+
 /** A computed color with no alpha: the element draws no fill. */
 const transparent = /^rgba\(\d+, \d+, \d+, 0\)$/;
 
@@ -1060,9 +1069,13 @@ export const RowsAlignWithTitle: Story = {
       alignsWith(leading?.left ?? 0, title.getBoundingClientRect().left)
     ).toBe(true);
     const padding = Number.parseFloat(getComputedStyle(option).paddingRight);
+    // The list reserves its scrollbar's width (none for overlay scrollbars),
+    // so the rows end that much short of the close button.
+    const scroller = scrollContainerOf(option);
+    const gutter = scroller ? scroller.offsetWidth - scroller.clientWidth : 0;
     await expect(
       alignsWith(
-        option.getBoundingClientRect().right - padding,
+        option.getBoundingClientRect().right - padding + gutter,
         close.getBoundingClientRect().right
       )
     ).toBe(true);

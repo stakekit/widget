@@ -13,6 +13,7 @@ import type { HostHook } from "../host-hook";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
+import { container } from "../tokens/container.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
@@ -64,9 +65,10 @@ type TabsProps<T extends string> = {
   readonly children?: ReactNode;
   /**
    * Controls at the end of the tabs' row, such as a wallet's network and
-   * account. Where both do not fit on one row, the controls wrap under the
-   * tabs. Under the `outlined` surface style with an underline, the rule
-   * runs under the whole row and the selected tab's underline sits on it.
+   * account. From the `md` container size they keep the row and the tabs
+   * scroll; narrower, the controls wrap under the tabs. Under the `outlined`
+   * surface style with an underline, the rule runs under the whole row and
+   * the selected tab's underline sits on it.
    */
   readonly trailing?: ReactNode;
 };
@@ -373,8 +375,9 @@ const styles = stylex.create({
     },
     flexGrow: 0,
   },
-  // The tabs' row with controls at its end, which wrap under the tabs when
-  // both do not fit. With the underline under the `outlined` surface style,
+  // The tabs' row with controls at its end. From `md` both keep one row and
+  // the tabs scroll across behind their fade; narrower, the controls wrap
+  // under the tabs. With the underline under the `outlined` surface style,
   // the row draws the rule across its full width, under the controls too.
   // With the tint, the rule runs edge to edge of the frame, under the row.
   bar: {
@@ -402,7 +405,7 @@ const styles = stylex.create({
       )]: footRule,
     },
     display: "flex",
-    flexWrap: "wrap",
+    flexWrap: { default: "wrap", [container.md]: "nowrap" },
     justifyContent: "space-between",
     borderBottomColor: color.border,
     borderBottomStyle: "solid",
@@ -435,6 +438,7 @@ const styles = stylex.create({
   trailing: {
     alignSelf: "center",
     display: { default: "flex", ":empty": "none" },
+    flexShrink: { default: 1, [container.md]: 0 },
     minWidth: 0,
   },
   // An accent underline under the selected tab, drawn over the rule so their
