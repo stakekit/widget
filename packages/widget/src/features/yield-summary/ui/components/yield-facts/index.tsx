@@ -1,5 +1,6 @@
 import type { DateTime } from "effect";
 import { useTranslation } from "react-i18next";
+
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import { formatAddress } from "../../../../../shared/lib/general";

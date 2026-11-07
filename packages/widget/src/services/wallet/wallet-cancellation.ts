@@ -13,7 +13,7 @@ const WalletFailure = Schema.Struct({
  */
 export const isWalletRejection = (cause: unknown): boolean => {
   const visited = new Set<unknown>();
-  for (let current = cause; !visited.has(current); ) {
+  for (let current = cause; !visited.has(current);) {
     visited.add(current);
     const decoded = Schema.decodeUnknownOption(WalletFailure)(current);
     if (Option.isNone(decoded)) return false;

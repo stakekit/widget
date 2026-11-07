@@ -1,6 +1,7 @@
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import {

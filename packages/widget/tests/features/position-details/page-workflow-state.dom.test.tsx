@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
+
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import {

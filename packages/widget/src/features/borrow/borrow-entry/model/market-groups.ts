@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import {
@@ -126,22 +127,20 @@ export const filterBorrowMarketGroups = ({
   }
 
   return [...marketsByGroupKey]
-    .map(
-      ([key, groupMarkets]): BorrowMarketGroup => ({
-        availableLiquidityUsd: sumExact(
-          groupMarkets.map(getMarketAvailableLiquidityUsd)
-        ),
-        bestRate: BigNumber.min(
-          ...groupMarkets.map((market) => market.borrowRate)
-        ),
-        key,
-        loanToken: groupMarkets[0].loanToken,
-        marketItems: [...groupMarkets].sort(
-          byAvailableLiquidityDesc(getMarketAvailableLiquidityUsd)
-        ),
-        network: groupMarkets[0].network,
-      })
-    )
+    .map(([key, groupMarkets]): BorrowMarketGroup => ({
+      availableLiquidityUsd: sumExact(
+        groupMarkets.map(getMarketAvailableLiquidityUsd)
+      ),
+      bestRate: BigNumber.min(
+        ...groupMarkets.map((market) => market.borrowRate)
+      ),
+      key,
+      loanToken: groupMarkets[0].loanToken,
+      marketItems: [...groupMarkets].sort(
+        byAvailableLiquidityDesc(getMarketAvailableLiquidityUsd)
+      ),
+      network: groupMarkets[0].network,
+    }))
     .sort(byAvailableLiquidityDesc((group) => group.availableLiquidityUsd));
 };
 

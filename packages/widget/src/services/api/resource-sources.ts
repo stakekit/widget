@@ -1,4 +1,5 @@
 import { Context, Data, type Effect, type Option, Schema } from "effect";
+
 import type {
   ActionCommand,
   ActionSimulation,
@@ -283,14 +284,14 @@ type YieldResourceSourceService = {
 export class BorrowResourceSource extends Context.Service<
   BorrowResourceSource,
   BorrowResourceSourceService
->()("stakekit/widget/services/api/BorrowResourceSource") {}
+>()("@stakekit/widget/services/api/resource-sources/BorrowResourceSource") {}
 
 export class LegacyResourceSource extends Context.Service<
   LegacyResourceSource,
   LegacyResourceSourceService
->()("stakekit/widget/services/api/LegacyResourceSource") {}
+>()("@stakekit/widget/services/api/resource-sources/LegacyResourceSource") {}
 
 export class YieldResourceSource extends Context.Service<
   YieldResourceSource,
   YieldResourceSourceService
->()("stakekit/widget/services/api/YieldResourceSource") {}
+>()("@stakekit/widget/services/api/resource-sources/YieldResourceSource") {}

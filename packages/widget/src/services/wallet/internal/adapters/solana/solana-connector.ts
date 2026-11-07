@@ -9,6 +9,7 @@ import {
 } from "@solana/web3.js";
 import { Effect, Stream } from "effect";
 import { createConnector } from "wagmi";
+
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import type { HostProfile } from "../../../../config/host-profile";
 import type {
@@ -96,7 +97,7 @@ const createSolanaConnector = ({
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
-        config.storage?.removeItem("solana.disconnected");
+        await config.storage?.removeItem("solana.disconnected");
 
         const walletId = solanaWallet.adapter.name;
         // Adapters keep a settled readyState; ask whether the provider is still there.
@@ -118,9 +119,9 @@ const createSolanaConnector = ({
 
         return wagmiConnectResult(args?.withCapabilities, [address], solana.id);
       },
-      disconnect: () => {
-        config.storage?.setItem("solana.disconnected", true);
-        return solanaWallet.adapter.disconnect();
+      disconnect: async () => {
+        await config.storage?.setItem("solana.disconnected", true);
+        await solanaWallet.adapter.disconnect();
       },
       getAccounts: async () => {
         const address = solanaWallet.adapter.publicKey?.toBase58();

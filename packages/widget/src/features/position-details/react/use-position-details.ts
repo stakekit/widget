@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
+
 import {
   hidePositionDetailsBalancesAtom,
   revealPositionDetailsBalancesAtom,

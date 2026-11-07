@@ -1,6 +1,7 @@
 import { MotionGlobalConfig } from "motion/react";
 import { delay, HttpResponse, http } from "msw";
 import { afterEach } from "vitest";
+
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 import { yieldApiRoute } from "../../mocks/api-routes";
 import { describe, expect, it } from "../../utils/test-extend";

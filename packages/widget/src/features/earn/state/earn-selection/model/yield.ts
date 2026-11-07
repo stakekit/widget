@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
+
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getMinStakeAmount } from "../../../../../domain/earn/stake";
 import {

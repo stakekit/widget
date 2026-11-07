@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../../src/domain/earn/models";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";

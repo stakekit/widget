@@ -1,4 +1,5 @@
 import { Context, type Effect, Option } from "effect";
+
 import type {
   ActionCommand,
   ActionTransactionReceipt,
@@ -99,12 +100,12 @@ type YieldOperationsService = {
 export class BorrowOperations extends Context.Service<
   BorrowOperations,
   BorrowOperationsService
->()("stakekit/widget/services/api/BorrowOperations") {}
+>()("@stakekit/widget/services/api/operations/BorrowOperations") {}
 
 export class YieldOperations extends Context.Service<
   YieldOperations,
   YieldOperationsService
->()("stakekit/widget/services/api/YieldOperations") {}
+>()("@stakekit/widget/services/api/operations/YieldOperations") {}
 
 const transientStatuses: ReadonlySet<number> = new Set([
   408, 429, 500, 502, 503, 504,

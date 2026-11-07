@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import type {
   EarnValidator,
   EarnYieldWithProvider,

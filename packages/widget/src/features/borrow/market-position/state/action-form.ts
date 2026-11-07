@@ -1,6 +1,7 @@
 import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
@@ -65,7 +66,9 @@ const makeFormKey = (
   scope: WalletScopeKey
 ) =>
   new BorrowPositionActionFormKey({
-    ...key,
+    actionId: key.actionId,
+    marketId: key.marketId,
+    network: key.network,
     owner: walletScopeOwnerKey(scope),
   });
 

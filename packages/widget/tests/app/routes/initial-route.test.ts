@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { resolveInitialRoutePath } from "../../../src/app/routes/model/initial-route";
 import type { WidgetLayout } from "../../../src/services/config/widget-config-model";
 

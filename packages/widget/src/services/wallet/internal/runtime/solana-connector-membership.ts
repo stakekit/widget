@@ -1,5 +1,6 @@
 import { Effect, Ref, type Scope, Semaphore, Stream } from "effect";
 import type { Config, Connector, CreateConnectorFn } from "wagmi";
+
 import { WalletIntegrationError } from "../../wallet-errors";
 import {
   isSolanaConnector,
@@ -75,9 +76,15 @@ export const installSolanaConnectorMembership = Effect.fn(
     if (cached) return cached;
 
     const factory = yield* createConnector(wallet);
-    const connector = yield* Effect.try(() =>
-      config._internal.connectors.setup(factory)
-    );
+    const connector = yield* Effect.try({
+      try: () => config._internal.connectors.setup(factory),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not set up Solana connector",
+          operation: "solana-connector-membership",
+        }),
+    });
     if (!isDescribedSolanaConnector(connector)) {
       return yield* new WalletIntegrationError({
         message: "Expected a Solana connector from membership factory",

@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { mainnet } from "viem/chains";
+
 import { Network } from "../../../../../../domain/network/network";
 import type { Chain } from "../../../../wallet-descriptors";
 import {

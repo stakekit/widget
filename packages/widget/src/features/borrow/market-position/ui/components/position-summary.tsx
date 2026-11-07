@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { PositionSummary } from "../../../../../ui/index";
 import type { BorrowPositionDetailsModel } from "../../model/details";
 import { LtvGauge } from "./ltv-gauge";

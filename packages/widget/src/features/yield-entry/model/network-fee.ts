@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { ActionSimulation } from "../../../domain/action/models";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";

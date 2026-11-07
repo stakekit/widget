@@ -1,6 +1,7 @@
 import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../app/runtime/app-runtime";
 import { isBorrowNetwork } from "../../domain/borrow/network";
 import { deriveBorrowPositions } from "../../domain/borrow/positions/borrow-positions";

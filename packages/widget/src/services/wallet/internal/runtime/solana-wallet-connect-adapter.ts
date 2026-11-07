@@ -19,6 +19,7 @@ import {
 } from "@solana/web3.js";
 import base58 from "bs58";
 import { Effect, Predicate, Schema } from "effect";
+
 import {
   CaipChainId,
   caipAddresses,
@@ -78,12 +79,12 @@ const deserialize = <T extends Transaction | VersionedTransaction>(
   const deserialized = isVersionedTransaction(original)
     ? VersionedTransaction.deserialize(bytes)
     : Transaction.from(bytes);
-  // biome-ignore lint/nursery/noUnsafeTypeAssertion: @solana/wallet-adapter-base declares signTransaction generic over T; the response has the request's concrete class, which TypeScript cannot relate to T
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- @solana/wallet-adapter-base declares signTransaction generic over T; the response has the request's concrete class, which TypeScript cannot relate to T
   return deserialized as T;
 };
 
 export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
-  // biome-ignore lint/nursery/noUnsafeTypeAssertion: @solana/wallet-adapter-base brands WalletName and exposes no constructor for it; adapters declare their name by assertion
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- @solana/wallet-adapter-base brands WalletName and exposes no constructor for it; adapters declare their name by assertion
   readonly name = "WalletConnect" as WalletName<"WalletConnect">;
   readonly url = "https://walletconnect.org";
   readonly icon =
@@ -200,7 +201,8 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
         this.unsubscribeEnded = protocol.subscribeEnded(session.topic, () => {
           this.release();
           this.emit("disconnect");
-          for (const listener of [...this.endedListeners]) listener();
+          // Snapshot: a listener may unsubscribe or subscribe while this runs.
+          for (const listener of Array.from(this.endedListeners)) listener();
         });
         this.emit("connect", account.publicKey);
       })
@@ -275,6 +277,7 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
       const response = await this.request(
         "solana_signTransaction",
         {
+          // oxlint-disable-next-line typescript/no-misused-spread -- WalletConnect's legacy Solana params carry the Transaction's own fields beside its serialized form; its prototype methods are not params
           ...(isVersionedTransaction(transaction) ? {} : transaction),
           transaction: serialize(transaction),
         },

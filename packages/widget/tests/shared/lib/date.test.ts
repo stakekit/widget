@@ -1,5 +1,6 @@
 import { DateTime, Duration } from "effect";
 import { describe, expect, it } from "vitest";
+
 import {
   formatDateTime,
   formatTimeAxis,

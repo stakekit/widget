@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -36,12 +37,12 @@ type ProviderDetailsItem = YieldSummaryProvider;
 
 type ProviderCardItem = {
   key: string;
-  commission: ProviderDetailsItem["commission"] | EarnValidator["commission"];
+  commission: ProviderDetailsItem["commission"];
   logo: string | undefined;
   name: string;
   preferred: boolean | undefined;
   stakedBalance: ProviderDetailsItem["stakedBalance"];
-  status: ProviderDetailsItem["status"] | EarnValidator["status"];
+  status: ProviderDetailsItem["status"];
   validator: EarnValidator | undefined;
   website: string | undefined;
 };

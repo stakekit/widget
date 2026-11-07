@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { Array as EArray, Option } from "effect";
 import type { ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
+
 import {
   getConfidentialCampaignUrl,
   isConfidentialYield,

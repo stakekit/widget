@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, waitFor, within } from "storybook/test";
+
 import { Card } from "../components/card";
 import { Text } from "../primitives/text";
 import { Entrance } from "./entrance";

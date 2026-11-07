@@ -1,4 +1,5 @@
 import { Context, Data, Effect, Layer } from "effect";
+
 import { ApplicationRouter } from "./application-router";
 import {
   type WidgetNavigationTarget,
@@ -39,10 +40,10 @@ export class WidgetNavigationError extends Data.TaggedError(
   readonly cause: unknown;
 }> {}
 
-const resetScroll = async (
+const resetScroll = (
   options: WidgetNavigationOptions,
   canResetScroll: () => boolean
-) => {
+): void => {
   if (options.scroll !== "preserve" && canResetScroll()) {
     globalThis.window?.scrollTo(0, 0);
   }
@@ -52,7 +53,7 @@ const runNavigation = (
   operation: () => Promise<void> | void
 ): Effect.Effect<void, WidgetNavigationError> =>
   Effect.tryPromise({
-    try: async () => operation(),
+    try: () => Promise.resolve(operation()),
     catch: (cause) => new WidgetNavigationError({ cause }),
   });
 
@@ -92,20 +93,20 @@ export const makeWidgetNavigation = (
 export class WidgetNavigation extends Context.Service<
   WidgetNavigation,
   WidgetNavigationService
->()("@stakekit/widget/services/navigation/WidgetNavigation") {
+>()("@stakekit/widget/services/navigation/widget-navigation/WidgetNavigation") {
   static readonly layer = (canResetScroll: () => boolean = () => true) =>
     Layer.effect(
       WidgetNavigation,
       ApplicationRouter.useSync(({ router }) => {
         const back: WidgetNavigation["Service"]["back"] = (options = {}) =>
-          runNavigation(async () => {
-            await resetScroll(options, canResetScroll);
-            await router.navigate(-(options.steps ?? 1));
+          runNavigation(() => {
+            resetScroll(options, canResetScroll);
+            return router.navigate(-(options.steps ?? 1));
           });
         const push: WidgetNavigation["Service"]["push"] = (to, options = {}) =>
-          runNavigation(async () => {
-            await resetScroll(options, canResetScroll);
-            await router.navigate(widgetTargetPath(to), {
+          runNavigation(() => {
+            resetScroll(options, canResetScroll);
+            return router.navigate(widgetTargetPath(to), {
               state: widgetTargetState(to),
             });
           });
@@ -113,9 +114,9 @@ export class WidgetNavigation extends Context.Service<
           to,
           options = {}
         ) =>
-          runNavigation(async () => {
-            await resetScroll(options, canResetScroll);
-            await router.navigate(widgetTargetPath(to), {
+          runNavigation(() => {
+            resetScroll(options, canResetScroll);
+            return router.navigate(widgetTargetPath(to), {
               replace: true,
               state: widgetTargetState(to),
             });

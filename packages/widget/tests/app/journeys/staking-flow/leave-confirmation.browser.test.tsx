@@ -2,6 +2,7 @@ import { MotionGlobalConfig } from "motion/react";
 import { avalanche } from "viem/chains";
 import { afterEach } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import { YieldCategory } from "../../../../src/public-api/types";
 import { formatAddress } from "../../../../src/shared/lib/general";
 import { describe, expect, it, vi } from "../../../utils/test-extend";

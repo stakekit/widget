@@ -1,5 +1,6 @@
 import { assets, chains as RegistryChains } from "chain-registry";
 import { Array as EArray, Option, Struct } from "effect";
+
 import {
   getProtocolChainIdentity,
   type WalletCosmosNetwork,

@@ -1,5 +1,6 @@
 import type { Connection } from "@solana/web3.js";
 import { Effect, Record } from "effect";
+
 import type { Network } from "../../../../domain/network/network";
 import { config } from "../../../../shared/config/widget-defaults";
 import type { HostProfile } from "../../../config/host-profile";
@@ -55,40 +56,42 @@ const queryFn = async ({
   );
 
   const connectors = buildConnectors
-    ? await Promise.all([
-        filteredMiscChainsMap.tron
-          ? import("./tron/tron-connector").then((module) =>
-              module.getTronConnectors({
-                walletConnectProtocol,
-                runWalletEffect,
-              })
-            )
-          : null,
-        filteredMiscChainsMap.solana && !config.env.isTestMode
-          ? import("./solana/solana-connector").then((module) =>
-              module.getSolanaConnectors({
-                wallets: solanaWallets,
-                connection: solanaConnection,
-                walletCatalogue,
-              })
-            )
-          : null,
-        filteredMiscChainsMap.cardano
-          ? import("./cardano/cardano-connector").then((module) =>
-              module.getCardanoConnectors()
-            )
-          : null,
-        filteredMiscChainsMap.ton
-          ? import("./ton/ton-connector").then((module) =>
-              module.getTonConnectors({
-                runWalletEffect,
-                tonConnectManifestUrl,
-                walletModal,
-              })
-            )
-          : null,
+    ? [
+        ...(await Promise.all([
+          filteredMiscChainsMap.tron
+            ? import("./tron/tron-connector").then((module) =>
+                module.getTronConnectors({
+                  walletConnectProtocol,
+                  runWalletEffect,
+                })
+              )
+            : null,
+          filteredMiscChainsMap.solana && !config.env.isTestMode
+            ? import("./solana/solana-connector").then((module) =>
+                module.getSolanaConnectors({
+                  wallets: solanaWallets,
+                  connection: solanaConnection,
+                  walletCatalogue,
+                })
+              )
+            : null,
+          filteredMiscChainsMap.cardano
+            ? import("./cardano/cardano-connector").then((module) =>
+                module.getCardanoConnectors()
+              )
+            : null,
+          filteredMiscChainsMap.ton
+            ? import("./ton/ton-connector").then((module) =>
+                module.getTonConnectors({
+                  runWalletEffect,
+                  tonConnectManifestUrl,
+                  walletModal,
+                })
+              )
+            : null,
+        ])),
         stellarConnector,
-      ])
+      ]
     : [null, null, null, null, null];
   return {
     miscChainsMap: filteredMiscChainsMap,

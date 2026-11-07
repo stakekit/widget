@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
+
 import { Text } from "../primitives/text";
 import { ExpandableAmount } from "./expandable-amount";
 

@@ -1,11 +1,12 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+
+import { createBorrowTransactionFlowRoutes } from "../../../src/features/borrow-transaction-flow/composition";
 import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
 } from "../../../src/features/borrow/composition";
-import { createBorrowTransactionFlowRoutes } from "../../../src/features/borrow-transaction-flow/composition";
 import { WalletScopeRouteGuard } from "../../../src/features/wallet/composition";
 import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 

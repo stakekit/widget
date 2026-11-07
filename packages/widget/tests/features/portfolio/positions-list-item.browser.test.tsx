@@ -3,6 +3,7 @@ import { act, type ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
 import type { InactiveValidatorStatus } from "../../../src/domain/portfolio/position-callout";

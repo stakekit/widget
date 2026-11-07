@@ -4,6 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { fillConfidentialPosition } from "../../../src/domain/earn/confidential";
 import {

@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
+
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import { capitalizeFirstLetters } from "../../../../shared/lib/formatters";

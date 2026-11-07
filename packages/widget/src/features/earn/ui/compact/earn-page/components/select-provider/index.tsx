@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+
 import {
   formatUsd,
   unavailableFigure,

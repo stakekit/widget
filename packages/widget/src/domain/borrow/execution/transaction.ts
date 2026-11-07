@@ -1,4 +1,5 @@
 import { Effect, Schema, SchemaTransformation, Struct } from "effect";
+
 import * as BorrowApi from "../../../generated/api/borrow";
 import { TolerantNullOr } from "../../decoding/response-schema";
 import { ExactBaseUnitAmount } from "../../finance/scalars";
@@ -18,7 +19,7 @@ export const Transaction = Schema.Struct({
     "signablePayload",
   ]),
   address: WalletAddress,
-  // ast-grep-ignore: no-financial-finite-from-string -- chain IDs stay safe integer numbers
+  // oxlint-disable-next-line widget/no-financial-finite-from-string -- chain IDs stay safe integer numbers
   chainId: Schema.FiniteFromString,
   id: TransactionId,
   network: BorrowNetwork,
@@ -98,10 +99,14 @@ const optionalBaseUnitAmount = <K extends string>(
   value: bigint | undefined
 ) => (value === undefined ? {} : { [key]: value.toString() });
 
+const encodeWalletPayloadJson = Schema.encodeEffect(
+  Schema.fromJsonString(Schema.Unknown)
+);
+
 export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
   Schema.decodeUnknownEffect(BorrowWalletEvmTransactionInput)(transaction).pipe(
-    Effect.map(({ signablePayload: payload }) =>
-      JSON.stringify({
+    Effect.flatMap(({ signablePayload: payload }) =>
+      encodeWalletPayloadJson({
         chainId: payload.chainId ?? transaction.chainId,
         data: payload.data,
         from: payload.from,

@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
   formatNumber,
   formatTokenAmount,

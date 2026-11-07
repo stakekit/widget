@@ -8,8 +8,7 @@
     "start": "pnpm dev",
     "build": "ng build --define \"SK_API_KEY='$VITE_API_KEY'\"",
     "preview": "serve --no-clipboard dist/browser",
-    "lint": "tsc && biome check .",
-    "format": "biome check --write ."
+    "lint": "tsc && effect-tsgo --tsrs-lint oxlint -c ../../../.oxlintrc.json ."
   },
   "dependencies": {
     "@angular/common": "catalog:",

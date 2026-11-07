@@ -1,6 +1,7 @@
 import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   ColorSchemePreference,
   type PreferredColorScheme,
@@ -22,7 +23,6 @@ const preferenceResultAtom = colorSchemePreferenceRuntime
   .pipe(Atom.keepAlive, Atom.withLabel("preferenceResultAtom"));
 
 /** The operating system's color scheme, live; light until it is known. */
-export const preferredColorSchemeAtom = Atom.make(
-  (get): PreferredColorScheme =>
-    AsyncResult.getOrElse(get(preferenceResultAtom), () => "light" as const)
+export const preferredColorSchemeAtom = Atom.make((get): PreferredColorScheme =>
+  AsyncResult.getOrElse(get(preferenceResultAtom), () => "light" as const)
 ).pipe(Atom.withLabel("preferredColorSchemeAtom"));

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Layer, Logger, References, Result } from "effect";
+
 import type { SKHostConfiguration } from "../../../src/public-api/react-types";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import {

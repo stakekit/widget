@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
+
 import { useStepsSummary } from "../../../src/features/yield-transaction-flow/ui/steps/hooks/use-steps-summary.hook";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiYieldFixture } from "../../fixtures";

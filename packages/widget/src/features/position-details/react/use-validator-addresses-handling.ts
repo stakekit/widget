@@ -1,4 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+
 import type { EarnValidator } from "../../../domain/earn/models";
 import { positionDetailsPendingActions } from "../state/actions/pending-action";
 import type { PositionDetailsWorkflowKey } from "../state/workflow";

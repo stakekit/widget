@@ -1,5 +1,6 @@
-import type { ComponentProps, PropsWithChildren } from "react";
+import type { ComponentProps } from "react";
 import { StrictMode } from "react";
+
 import { WidgetTranslationProvider } from "../../../features/preferences/composition";
 import { WagmiConfigProvider } from "../../../features/wallet/composition";
 import { MountAnimationEffects } from "./mount-animation";
@@ -9,7 +10,7 @@ import { WidgetPresentationAdapter } from "./widget-presentation";
 
 export const Providers = ({
   children,
-}: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => (
+}: ComponentProps<typeof WagmiConfigProvider>) => (
   <StrictMode>
     <WidgetTranslationProvider>
       <WidgetPresentationAdapter>

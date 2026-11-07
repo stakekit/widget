@@ -1,5 +1,6 @@
 import { MotionGlobalConfig } from "motion/react";
 import { afterEach } from "vitest";
+
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 

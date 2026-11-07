@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+
 import * as LegacyApi from "../../generated/api/legacy-schema";
 
 export const AdditionalAddresses = Schema.Union([

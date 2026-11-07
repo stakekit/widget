@@ -1,4 +1,5 @@
 import { useAtom } from "@effect/atom-react";
+
 import {
   isMountAnimationFinished,
   mountAnimationStateAtom,

@@ -7,6 +7,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import {
   sameWalletScopeOwner,
   type WalletScopeOwner,
@@ -127,8 +128,8 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     core: bootstrap.core,
     readStoredPublicKeys: persistence.readStoredPublicKeys,
   }).pipe(
-    Effect.mapError(
-      (cause) => new WalletBootstrapError({ cause, stage: "wallet-state" })
+    Effect.mapError((cause) =>
+      WalletBootstrapError.make({ cause, stage: "wallet-state" })
     )
   );
   const lifecycle = yield* makeWalletLifecyclePolicy;
@@ -136,12 +137,12 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
 
   yield* installExternalProviderSynchronization({ bootstrap, state });
   yield* state.contexts.pipe(
-    Stream.runForEach((context) => {
-      return lifecycle.transition({
+    Stream.runForEach((context) =>
+      lifecycle.transition({
         actions: context.routing.actions,
         state: context.state.connection,
-      });
-    }),
+      })
+    ),
     Effect.forkScoped({ startImmediately: true })
   );
 
@@ -412,7 +413,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
 });
 
 export class WalletService extends Context.Service<WalletService>()(
-  "stakekit/widget/WalletService",
+  "@stakekit/widget/services/wallet/wallet-service/WalletService",
   {
     make: makeWalletService(),
   }

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
+
 import { Avatar } from "../components/avatar";
 import { Button } from "../components/button";
 import {
@@ -823,12 +824,15 @@ const copyableValidators = [
   { id: "p2p", title: "P2P", value: "4.80%" },
 ];
 
+const writeText = fn(async (_text: string) => {});
+
 /** Replaces the clipboard, so nothing leaves the page. */
 const stubClipboard = () => {
   const clipboard = navigator.clipboard;
+  writeText.mockClear();
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
-    value: { writeText: fn(async (_text: string) => {}) },
+    value: { writeText },
   });
 
   return () => {
@@ -872,9 +876,7 @@ export const CopyDetail: Story = {
 
     await userEvent.click(within(sheet).getByTitle("Copy address"));
 
-    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      validatorAddress
-    );
+    await expect(writeText).toHaveBeenCalledWith(validatorAddress);
     await expect(args.onSelect).not.toHaveBeenCalled();
     await expect(sheet).toBeVisible();
   },
@@ -903,9 +905,7 @@ export const CopyDetailWithoutSearch: Story = {
       within(sheet).getByRole("button", { name: "Copy address" })
     );
 
-    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      validatorAddress
-    );
+    await expect(writeText).toHaveBeenCalledWith(validatorAddress);
     await expect(args.onSelect).not.toHaveBeenCalled();
     await expect(
       within(sheet).getByRole("button", { name: /^Figment/ })

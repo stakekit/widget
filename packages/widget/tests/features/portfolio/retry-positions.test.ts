@@ -1,6 +1,7 @@
 import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";

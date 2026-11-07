@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
 import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";

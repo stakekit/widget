@@ -1,4 +1,5 @@
 import { Duration, Effect, Schedule, Schema } from "effect";
+
 import type { EarnYield } from "../../../../domain/earn/models";
 import { hostTokenKey } from "../../../../domain/token/token";
 import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
@@ -130,17 +131,16 @@ export const bootstrapWallet = Effect.gen(function* () {
     : undefined;
   const enabledNetworks = yield* bootstrapSource.getEnabledWalletNetworks.pipe(
     Effect.retry(enabledNetworksRetrySchedule),
-    Effect.mapError(
-      (cause) => new WalletBootstrapError({ cause, stage: "enabled-networks" })
+    Effect.mapError((cause) =>
+      WalletBootstrapError.make({ cause, stage: "enabled-networks" })
     )
   );
   const queryParams = yield* resolveWalletInitParams(
     initParams,
     bootstrapSource.getOpportunity
   ).pipe(
-    Effect.mapError(
-      (cause) =>
-        new WalletBootstrapError({ cause, stage: "initial-parameters" })
+    Effect.mapError((cause) =>
+      WalletBootstrapError.make({ cause, stage: "initial-parameters" })
     )
   );
   const snapshot = Object.freeze({
@@ -165,8 +165,8 @@ export const bootstrapWallet = Effect.gen(function* () {
   const solanaRuntime = yield* solana
     .makeRuntime({ includeWalletAdapters: includeSolanaWalletAdapters })
     .pipe(
-      Effect.mapError(
-        (cause) => new WalletBootstrapError({ cause, stage: "solana" })
+      Effect.mapError((cause) =>
+        WalletBootstrapError.make({ cause, stage: "solana" })
       )
     );
   const solanaSnapshot = yield* solanaRuntime.current;
@@ -182,16 +182,15 @@ export const bootstrapWallet = Effect.gen(function* () {
       walletListFactory: connectorSource.walletListFactory,
     })
     .pipe(
-      Effect.mapError(
-        (cause) => new WalletBootstrapError({ cause, stage: "wagmi-config" })
+      Effect.mapError((cause) =>
+        WalletBootstrapError.make({ cause, stage: "wagmi-config" })
       )
     );
   const core = yield* wagmi
     .observeCore(controller)
     .pipe(
-      Effect.mapError(
-        (cause) =>
-          new WalletBootstrapError({ cause, stage: "wagmi-observation" })
+      Effect.mapError((cause) =>
+        WalletBootstrapError.make({ cause, stage: "wagmi-observation" })
       )
     );
   if (includeSolanaWalletAdapters && controller.solanaConnectorMode) {

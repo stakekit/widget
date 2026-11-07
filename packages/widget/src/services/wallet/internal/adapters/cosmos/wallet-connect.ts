@@ -1,5 +1,6 @@
 import type { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Effect, Option, Schema } from "effect";
+
 import { WalletIntegrationError } from "../../../wallet-errors";
 import {
   type CaipChainId,
@@ -291,7 +292,7 @@ const makeSession = ({
     isAuthorized: async () => (await restorable()) !== undefined,
     disconnect: async () => {
       const topics = [...owned.values()].map(({ topic }) => topic);
-      for (const chainId of [...owned.keys()]) release(chainId);
+      for (const chainId of owned.keys()) release(chainId);
       activeChainId = undefined;
       activation++;
       await storage?.removeItem(cosmosWalletConnectStorageKey);

@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Schema, SchemaTransformation, Struct } from "effect";
+
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantRecord } from "../decoding/response-schema";

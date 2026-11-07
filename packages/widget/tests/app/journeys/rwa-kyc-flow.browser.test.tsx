@@ -4,6 +4,7 @@ import { mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import { createConfig, createConnector, http as wagmiHttp } from "wagmi";
 import { connect, reconnect } from "wagmi/actions";
+
 import { KycGateCard } from "../../../src/features/yield-summary/ui/components/kyc-gate-card";
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import { formatAddress } from "../../../src/shared/lib/general";

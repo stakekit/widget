@@ -1,5 +1,6 @@
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+
 import { widgetBootstrapSnapshotAtom } from "../../../src/features/widget-configuration/index";
 import { widgetConfigFieldAtom } from "../../../src/features/widget-configuration/state/widget-config";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";

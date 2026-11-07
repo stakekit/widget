@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { RiskAssessment } from "./risk-model";
 
 /** The Borrow Constraint Warning the Risk Gate raises. */

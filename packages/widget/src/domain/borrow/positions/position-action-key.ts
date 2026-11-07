@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+
 import { TokenAddress } from "../../identity/identifiers";
 
 const TokenScopedPositionActionKey = Schema.TemplateLiteral([

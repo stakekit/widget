@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { makePlaygroundWallet } from "../../../playground/wallet/playground-wallet";
 import { makeScriptedWalletBackend } from "../../../playground/wallet/scripted-wallet-backend";
 import type { SKTx, SKTxMeta } from "../../../src/public-api/types";

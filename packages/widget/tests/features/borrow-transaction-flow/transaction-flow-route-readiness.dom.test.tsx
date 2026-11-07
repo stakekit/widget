@@ -3,6 +3,7 @@ import { Effect, Layer, Option, Schema, Stream, SubscriptionRef } from "effect";
 import { act, StrictMode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
@@ -262,7 +263,7 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     const state = workflows.at(-1);
     if (!state) throw new Error("Expected a running Execution workflow");
     return act(async () => {
-      // ast-grep-ignore: no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
+      // oxlint-disable-next-line effect/no-run-effect-in-test -- React act is a Promise-based boundary; keep Effect-driven React updates inside it.
       await Effect.runPromise(SubscriptionRef.update(state, next));
     });
   };

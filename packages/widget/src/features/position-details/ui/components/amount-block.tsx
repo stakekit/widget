@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { ValidatorInput as ValidatorDto } from "../../../../domain/earn/validator";
 import type { Token } from "../../../../domain/token/token";

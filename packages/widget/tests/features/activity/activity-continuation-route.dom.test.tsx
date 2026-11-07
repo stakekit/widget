@@ -10,6 +10,7 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { YieldActivityItem } from "../../../src/features/activity/model/activity-action";

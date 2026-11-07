@@ -1,4 +1,5 @@
 import { Array as EArray } from "effect";
+
 import type { YieldAction } from "../../../domain/action/models";
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import type { Integration } from "../../../domain/borrow/catalog/integration";
@@ -23,6 +24,7 @@ import type {
   ActivityHistoryEntry,
   BorrowActivityHistoryEntry,
 } from "../../../resources/activity-history/index";
+import { compositeKey } from "../../../shared/lib/composite-key";
 import type {
   ActivityActionItem,
   BorrowActivityItem,
@@ -43,7 +45,7 @@ export const validatorFactKey = ({
 }: {
   readonly address: ValidatorAddress;
   readonly yieldId: YieldId;
-}) => JSON.stringify([yieldId, address]);
+}) => compositeKey([yieldId, address]);
 
 const BORROW_DEBT_ACTIONS: Record<BorrowActivityAction["action"], boolean> = {
   borrow: true,

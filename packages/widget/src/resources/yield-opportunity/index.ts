@@ -1,7 +1,4 @@
-export {
-  YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "./provider";
+export { YieldOpportunityKey, yieldOpportunityAtom } from "./provider";
 export {
   enrichedYieldOpportunityResourceAtom,
   yieldOpportunityResourceAtom,

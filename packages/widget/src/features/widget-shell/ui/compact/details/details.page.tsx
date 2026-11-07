@@ -1,4 +1,5 @@
 import { Outlet } from "react-router";
+
 import { Stack } from "../../../../../ui/index";
 import { DetailsTabs } from "./components/tabs";
 

@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { describe, expect, it } from "vitest";
+
 import { isFundedBalance } from "../../../src/domain/finance/funded-balance";
 
 describe("isFundedBalance", () => {

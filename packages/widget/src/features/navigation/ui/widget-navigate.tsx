@@ -1,4 +1,5 @@
 import { Navigate } from "react-router";
+
 import {
   type WidgetNavigationTarget,
   widgetTargetPath,

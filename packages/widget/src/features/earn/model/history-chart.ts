@@ -1,5 +1,6 @@
 import { DateTime, Duration } from "effect";
 import type { TFunction } from "i18next";
+
 import { exactDecimal } from "../../../domain/finance/exact";
 import type {
   HistoryPeriod,

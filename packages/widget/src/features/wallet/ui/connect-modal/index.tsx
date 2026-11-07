@@ -2,6 +2,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { ConnectorWithWalletDetails } from "../../../../services/wallet/wallet-descriptors";
 import {
   Avatar,

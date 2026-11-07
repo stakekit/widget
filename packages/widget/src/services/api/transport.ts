@@ -1,5 +1,6 @@
 import { Context, Effect, flow, Layer } from "effect";
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
+
 import { version as widgetVersion } from "../../../package.json";
 import * as BorrowApi from "../../generated/api/borrow-client";
 import * as LegacyApi from "../../generated/api/legacy";
@@ -79,7 +80,7 @@ const makeApiTransport = Effect.gen(function* () {
 });
 
 export class ApiTransportService extends Context.Service<ApiTransportService>()(
-  "stakekit/widget/services/api/ApiTransportService",
+  "@stakekit/widget/services/api/transport/ApiTransportService",
   {
     make: makeApiTransport,
   }

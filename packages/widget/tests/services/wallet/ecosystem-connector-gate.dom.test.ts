@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Effect, Schema } from "effect";
 import { vi } from "vitest";
+
 import type { Network } from "../../../src/domain/network/network";
 import type { ExternalProviderSnapshot } from "../../../src/services/config/external-provider-snapshot";
 import type { CurrentRef } from "../../../src/services/wallet/external-provider";

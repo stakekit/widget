@@ -1,4 +1,5 @@
 import { Equal } from "effect";
+
 import type { WalletScopeOwnerKey } from "../../../../../domain/wallet/wallet-scope";
 import { sameWalletScopeOwner } from "../../../../../domain/wallet/wallet-scope";
 import type { InitParams } from "../../../../../services/wallet/init-params";

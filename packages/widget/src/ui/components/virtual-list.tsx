@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { scrollStyles } from "../primitives/scroll";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
@@ -158,19 +159,15 @@ const toRows = <T,>(
     groupStarts.push(groupStart);
     groupStart += group.items.length;
   }
-  return props.groups.flatMap(
-    (group, groupIndex): ReadonlyArray<Row<T>> => [
-      { kind: "header", key: `group:${group.key}`, group },
-      ...group.items.map(
-        (item, offset): Row<T> => ({
-          kind: "item",
-          key: getKey(item),
-          item,
-          index: (groupStarts[groupIndex] ?? 0) + offset,
-        })
-      ),
-    ]
-  );
+  return props.groups.flatMap((group, groupIndex): ReadonlyArray<Row<T>> => [
+    { kind: "header", key: `group:${group.key}`, group },
+    ...group.items.map((item, offset): Row<T> => ({
+      kind: "item",
+      key: getKey(item),
+      item,
+      index: (groupStarts[groupIndex] ?? 0) + offset,
+    })),
+  ]);
 };
 
 /** The last header at or above `row`, the one that sticks while it scrolls. */
@@ -255,7 +252,7 @@ export const VirtualList = <T,>({
     return [header, ...visible];
   };
 
-  // biome-ignore lint/nursery/useReactCompiler: this component opts out with "use no memo", which Biome's incompatible-library check does not read.
+  // oxlint-disable-next-line react/incompatible-library -- this component opts out with "use no memo", which the incompatible-library check does not read.
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
@@ -424,13 +421,12 @@ export const VirtualList = <T,>({
   }
   return (
     <section
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrolling region must take focus so keyboard users can scroll it (WCAG 2.1.1, axe scrollable-region-focusable), as ScrollArea's viewport does.
+      // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must take focus so keyboard users can scroll it (WCAG 2.1.1, axe scrollable-region-focusable), as ScrollArea's viewport does.
       tabIndex={0}
       aria-label={label}
       {...rootProps}
     >
       {/* The list takes the region's name. */}
-      {/* biome-ignore lint/a11y/useSemanticElements: group headers are presentation rows, which an ARIA list allows but a <ul>, holding only <li>, does not. */}
       <div role="list" {...listProps}>
         {listRows}
       </div>

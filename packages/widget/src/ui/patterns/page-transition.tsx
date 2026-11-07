@@ -5,6 +5,7 @@ import {
   type TargetAndTransition,
 } from "motion/react";
 import type { ReactNode } from "react";
+
 import { useReducedMotion } from "../components/use-reduced-motion";
 import {
   motionEasing,

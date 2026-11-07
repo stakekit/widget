@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
+
 import { setup } from "../../app/journeys/trust-incentive-apy/setup";
 import { legacyApiRoute } from "../../mocks/api-routes";
 import { describe, expect, it } from "../../utils/test-extend";

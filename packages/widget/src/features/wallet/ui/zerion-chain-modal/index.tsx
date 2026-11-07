@@ -14,7 +14,9 @@ export const ZerionChainModal = () => {
 
   const switchChain = connector?.switchChain;
 
-  const onSwitchChain = (chainId: number) => switchChain?.({ chainId });
+  const onSwitchChain = (chainId: number) => {
+    void switchChain?.({ chainId });
+  };
 
   if (!chainModal || !switchChain || !connector || !chain || !wallet?.network) {
     return null;

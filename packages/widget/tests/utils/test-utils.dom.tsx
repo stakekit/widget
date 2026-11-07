@@ -67,7 +67,7 @@ export const renderHook = async <Result, Props = undefined>(
 };
 
 afterEach(() => {
-  for (const entry of [...mountedRoots]) {
+  for (const entry of mountedRoots) {
     cleanupRoot(entry);
   }
 });

@@ -1,4 +1,5 @@
 import * as Atom from "effect/reactivity/Atom";
+
 import { selectAtom } from "../../../../shared/effect/select-atom";
 import { walletConnectionStateAtom } from "../../../wallet/index";
 import { widgetConfigAtom } from "../../../widget-configuration/index";

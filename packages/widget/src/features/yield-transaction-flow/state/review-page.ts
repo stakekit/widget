@@ -1,6 +1,7 @@
 import { Data, Effect, Option, Predicate, Ref, Result } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import {
   type DirectTransaction,
@@ -631,14 +632,12 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
               preview: get(previewAtom),
             });
             if (decision._tag === "Prepare") {
-              return yield* handOffYieldFlowSource(
+              const source = yield* planYieldFlowPreparation(
                 session,
-                yield* planYieldFlowPreparation(
-                  session,
-                  decision.preparation,
-                  decision.prepared
-                )
+                decision.preparation,
+                decision.prepared
               );
+              return yield* handOffYieldFlowSource(session, source);
             }
             if (decision._tag === "HandOff") {
               return yield* handOffYieldFlowSource(session, decision.source);

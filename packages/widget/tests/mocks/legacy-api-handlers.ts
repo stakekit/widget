@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+
 import { legacyYieldFixture } from "../fixtures";
 import type { TokenDto } from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";

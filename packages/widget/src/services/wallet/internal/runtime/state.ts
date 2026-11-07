@@ -7,6 +7,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import { WalletAddress } from "../../../../domain/identity/identifiers";
 import { sameWalletScopeOwner } from "../../../../domain/wallet/wallet-scope";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
@@ -67,13 +68,11 @@ const makeContextStream = ({
     projection: core,
     readStoredPublicKeys,
   }).pipe(
-    Stream.map(
-      ({ routing, state }): WalletStateContext => ({
-        core,
-        routing,
-        state,
-      })
-    )
+    Stream.map(({ routing, state }): WalletStateContext => ({
+      core,
+      routing,
+      state,
+    }))
   );
 
 const makeTransitionContext = ({
@@ -158,7 +157,7 @@ export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
       readStoredPublicKeys,
     }).pipe(Stream.runHead);
     if (Option.isNone(initialOption)) {
-      return yield* new WalletStateInitializationError({
+      return yield* WalletStateInitializationError.make({
         cause: new Error(
           "Wallet State stream completed before its first value"
         ),

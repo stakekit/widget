@@ -1,0 +1,61 @@
+# The workspace tasks mise caches (included from mise.toml).
+#
+# Each task declares what it reads (`sources`) and writes (`outputs`), which
+# turns on the artifact cache configured in mise.toml: mise skips a task whose
+# inputs are unchanged and restores a stored result when inputs come back, from
+# any branch or worktree of this repository. Editing this file invalidates
+# every task in it; editing mise.toml does not.
+#
+# `mise run --force <task>` reruns a task; `--task-cache off` skips stored
+# results for one run.
+
+["build:widget"]
+run = "pnpm --filter @stakekit/widget build"
+sources = ["@group:widget"]
+outputs = ["packages/widget/dist"]
+
+# The examples consume the built widget from packages/widget/dist. When
+# build:widget rebuilds or restores dist, they run again.
+[build]
+depends = ["build:widget"]
+run = "pnpm --filter './packages/examples/*' run build"
+sources = ["@group:examples"]
+outputs = []
+
+["lint:widget"]
+run = "pnpm --filter @stakekit/widget lint"
+sources = ["@group:widget"]
+outputs = []
+
+["lint:examples"]
+depends = ["build:widget"]
+run = "pnpm --filter './packages/examples/*' run lint"
+sources = ["@group:examples"]
+outputs = []
+
+["check-hygiene"]
+run = "pnpm --filter @stakekit/widget check-hygiene"
+sources = ["@group:widget"]
+outputs = []
+
+["test:unit"]
+run = "pnpm --filter @stakekit/widget test:unit"
+sources = ["@group:widget"]
+outputs = []
+
+["test:dom"]
+run = "pnpm --filter @stakekit/widget test:dom"
+sources = ["@group:widget"]
+outputs = []
+
+["test:browser"]
+run = "pnpm --filter @stakekit/widget test:browser"
+sources = ["@group:widget"]
+outputs = []
+
+# One Chromium suite at a time: a failed browser suite does not skip the stories.
+["test:storybook"]
+wait_for = ["test:browser"]
+run = "pnpm --filter @stakekit/widget test:storybook"
+sources = ["@group:widget"]
+outputs = []

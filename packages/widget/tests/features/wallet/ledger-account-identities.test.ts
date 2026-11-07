@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { getOtherAccounts } from "../../../src/features/wallet/state/account-identities";
 
 const first = { address: "cosmAaaa1234", id: "first" };

@@ -6,6 +6,7 @@ import {
   use,
   useId,
 } from "react";
+
 import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { Stack } from "../primitives/stack";
@@ -683,7 +684,7 @@ const styles = stylex.create({
       [stylex.when.ancestor(
         '[data-sk-surface-style="outlined"]',
         presentationMarker
-        // ast-grep-ignore: no-raw-design-value -- composed only of the thin border width and the `border` role, drawn inset so it never meets the focus outline.
+        // oxlint-disable-next-line design-system/no-raw-design-value -- composed only of the thin border width and the `border` role, drawn inset so it never meets the focus outline.
       )]: `inset 0 0 0 ${borderWidth.thin} ${color.border}`,
     },
   },

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { Button, Modal, Spot, Stack } from "../../../../../ui/index";
 
 /** Asks to sign a message proving address ownership before an exit. */

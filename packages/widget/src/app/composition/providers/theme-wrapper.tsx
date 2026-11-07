@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as Atom from "effect/reactivity/Atom";
 import type { ComponentProps, PropsWithChildren } from "react";
+
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import type { HostProfile } from "../../../services/config/host-profile";
 import type {
@@ -81,9 +82,8 @@ type ConformingAppearance = [
  */
 const resolvedColorSchemeAtom = Atom.family(
   (choice: WidgetAppearance["colorScheme"]) =>
-    Atom.make(
-      (get): ColorScheme =>
-        choice === "system" ? get(preferredColorSchemeAtom) : choice
+    Atom.make((get): ColorScheme =>
+      choice === "system" ? get(preferredColorSchemeAtom) : choice
     ).pipe(Atom.withLabel("resolvedColorSchemeAtom"))
 );
 

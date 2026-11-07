@@ -15,6 +15,7 @@ import { mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
+
 import { ApplicationRouteContentProvider } from "../../../src/app/composition/application-route-content";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { applicationBaseRuntime } from "../../../src/app/runtime/application-base-runtime";

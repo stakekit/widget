@@ -23,7 +23,7 @@ export const isMobile = () => {
     try {
       document.createEvent("TouchEvent");
       return true;
-    } catch (_e) {
+    } catch {
       return false;
     }
   };

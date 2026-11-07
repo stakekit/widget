@@ -1,4 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
+
 import type {
   TrackEventArgs,
   TrackEventKey,

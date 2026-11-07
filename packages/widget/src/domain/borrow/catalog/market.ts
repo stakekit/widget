@@ -1,4 +1,5 @@
 import { Schema, Struct } from "effect";
+
 import * as BorrowApi from "../../../generated/api/borrow";
 import {
   ExactBaseUnitAmount,
@@ -11,7 +12,7 @@ import { NonNegativeRiskValue, RiskRatio } from "../risk/risk-values";
 import { CollateralToken } from "./collateral-token";
 import { BorrowToken } from "./token";
 
-// ast-grep-ignore: no-financial-finite-from-string -- integer basis-point count, not a token amount
+// oxlint-disable-next-line widget/no-financial-finite-from-string -- integer basis-point count, not a token amount
 const OriginationFeeBps = Schema.FiniteFromString.check(
   Schema.isInt(),
   Schema.isGreaterThanOrEqualTo(0),
@@ -37,7 +38,7 @@ export const Market = Schema.Struct({
   minLoan: Schema.NullOr(NonNegativeRiskValue),
   network: BorrowNetwork,
   originationFeeBps: OriginationFeeBps,
-  // ast-grep-ignore: no-financial-finite-from-string -- integer basis-point count, not a token amount
+  // oxlint-disable-next-line widget/no-financial-finite-from-string -- integer basis-point count, not a token amount
   supplyCollateralFeeBps: Schema.FiniteFromString.check(
     Schema.isInt(),
     Schema.isGreaterThanOrEqualTo(0),

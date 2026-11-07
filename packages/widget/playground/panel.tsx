@@ -1,5 +1,6 @@
 import { Option } from "effect";
 import { useState, useSyncExternalStore } from "react";
+
 import { YieldCategory, YieldProviderId } from "../src/index.package";
 import {
   type ConnectionSettings,
@@ -411,7 +412,7 @@ export const PlaygroundPanel = ({
         <button className="pg-primary" onClick={apply} type="button">
           Apply and reload
         </button>
-        <button onClick={copyLink} type="button">
+        <button onClick={() => void copyLink()} type="button">
           {linkCopied ? "Copied ✓" : "Copy link"}
         </button>
         <button

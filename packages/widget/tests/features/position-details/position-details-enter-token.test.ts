@@ -5,6 +5,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { sepolia } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { ConfidentialTokenBalanceKey } from "../../../src/domain/earn/confidential";

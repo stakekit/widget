@@ -1,4 +1,5 @@
 import * as Atom from "effect/reactivity/Atom";
+
 import { exactDecimal } from "../../../domain/finance/exact";
 import { makeConfidentialTokenBalance } from "../../yield-entry/index";
 import { earnEntryAtom } from "./earn-selection/state/atoms";

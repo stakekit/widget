@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+
 import { MetaInfo } from "../../../../yield-summary/views";
 import { useEarnEntry } from "../../../react/use-earn-facades";
 

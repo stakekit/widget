@@ -7,6 +7,7 @@ import {
 import { Clock, Duration, Effect, Option, Schema, Stream } from "effect";
 import type { Chain } from "viem";
 import { createConnector } from "wagmi";
+
 import type {
   WalletDetailsParams,
   WalletList,
@@ -158,7 +159,7 @@ const createTonConnector = (
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
-        config.storage?.removeItem("ton.disconnected");
+        await config.storage?.removeItem("ton.disconnected");
 
         const wallet: Wallet =
           connectedWallet ??
@@ -188,7 +189,7 @@ const createTonConnector = (
         );
       },
       disconnect: async () => {
-        config.storage?.setItem("ton.disconnected", true);
+        await config.storage?.setItem("ton.disconnected", true);
         await tonconnectUI.disconnect();
         connectedWallet = null;
       },

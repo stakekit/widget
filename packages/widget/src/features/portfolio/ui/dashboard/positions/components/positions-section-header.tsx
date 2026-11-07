@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import type { YieldCategory } from "../../../../../../domain/earn/contract";
 import { Box, Stack, Text } from "../../../../../../ui/index";
 

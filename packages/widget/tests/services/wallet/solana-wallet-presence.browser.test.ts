@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import { getSolanaConnectors } from "../../../src/services/wallet/internal/adapters/solana/solana-connector";
 import {
   makeDefaultHeadlessSolanaRuntime,

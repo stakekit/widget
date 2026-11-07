@@ -1,6 +1,7 @@
 import { Cause, DateTime, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import {
   underMaintenanceAtom,

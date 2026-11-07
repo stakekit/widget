@@ -1,6 +1,7 @@
 import { Cause, Effect, Option } from "effect";
 import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../app/runtime/app-runtime";
 import type { BorrowFeatureDisabled } from "../domain/borrow/availability";
 import type {
@@ -105,7 +106,7 @@ export const makePresentableResource = <
     return get(local);
   });
   const foreground: Atom.WithoutSerializable<ResourceAtom> =
-    // biome-ignore lint/nursery/noUnsafeTypeAssertion: Atom.transform's return is a conditional type over the generic ResourceAtom that TypeScript cannot relate to Atom.WithoutSerializable<ResourceAtom>.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Atom.transform's return is a conditional type over the generic ResourceAtom that TypeScript cannot relate to Atom.WithoutSerializable<ResourceAtom>.
     transformed as unknown as Atom.WithoutSerializable<ResourceAtom>;
 
   return Object.assign(foreground, { foreground, local });

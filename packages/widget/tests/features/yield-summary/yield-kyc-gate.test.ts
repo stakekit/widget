@@ -1,6 +1,7 @@
 import { Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { walletConnectionStateAtom } from "../../../src/features/wallet/index";

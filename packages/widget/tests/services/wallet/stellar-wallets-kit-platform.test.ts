@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Clock, Effect, Exit, Fiber, FiberSet, Queue, Scope } from "effect";
 import type { Connector } from "wagmi";
+
 import { getStellarConnectors } from "../../../src/services/wallet/internal/adapters/stellar/stellar-connector";
 import {
   makeDirectStellarWalletClient,
@@ -373,9 +374,8 @@ describe("Stellar Wallets Kit platform", () => {
   it.live("cancels a pending connect when the client is disposed", () =>
     Effect.gen(function* () {
       const scope = yield* Scope.make();
-      const { modal, protocol, signClient } = yield* makeTestWalletConnect(
-        makeFakeSignClient()
-      );
+      const { modal, protocol, signClient } =
+        yield* makeTestWalletConnect(makeFakeSignClient());
       const client = yield* makeWalletConnectStellarWalletClient(protocol).pipe(
         Effect.provideService(Scope.Scope, scope)
       );

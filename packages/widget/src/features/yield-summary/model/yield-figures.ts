@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
+
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import {
   getEffectiveYieldRewardRateDetails,

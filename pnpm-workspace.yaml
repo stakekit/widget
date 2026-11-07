@@ -3,10 +3,9 @@ packages:
   - packages/examples/*
 
 allowBuilds:
-  "@ast-grep/cli": true
-  '@parcel/watcher': false
-  '@reown/appkit': false
-  '@stellar/stellar-sdk': false
+  "@parcel/watcher": false
+  "@reown/appkit": false
+  "@stellar/stellar-sdk": false
   blake-hash: false
   bufferutil: false
   chacha-native: false
@@ -22,15 +21,13 @@ allowBuilds:
   utf-8-validate: false
 
 catalog:
-  "@angular/build": 22.2.4
-  "@angular/cli": 22.2.4
-  "@angular/common": 22.2.3
-  "@angular/compiler": 22.2.3
-  "@angular/compiler-cli": 22.2.3
-  "@angular/core": 22.2.3
-  "@angular/platform-browser": 22.2.3
-  "@ast-grep/cli": 0.51.0
-  "@biomejs/biome": ^2.6.3
+  "@angular/build": 22.2.5
+  "@angular/cli": 22.2.5
+  "@angular/common": 22.2.4
+  "@angular/compiler": 22.2.4
+  "@angular/compiler-cli": 22.2.4
+  "@angular/core": 22.2.4
+  "@angular/platform-browser": 22.2.4
   "@commitlint/cli": ^21.2.4
   "@commitlint/config-conventional": ^21.2.4
   # @cosmos-kit/core 2.18 depends on @cosmjs 0.36 and cosmjs-types 0.10; newer lines duplicate its types.
@@ -40,18 +37,23 @@ catalog:
   "@cosmos-kit/keplr-extension": 2.17.1
   "@cosmos-kit/leap-extension": 2.17.1
   "@cosmos-kit/leap-metamask-cosmos-snap": 0.17.1
-  "@creit-tech/stellar-wallets-kit": jsr:2.7.1
-  "@effect/atom-react": 4.1.0
-  "@effect/openapi-generator": 4.1.0
-  "@effect/platform-browser": 4.1.0
-  "@effect/platform-node": 4.1.0
-  "@effect/tsgo": 0.63.0
-  "@effect/vitest": 4.1.0
+  "@creit-tech/stellar-wallets-kit": jsr:2.8.0
+  "@effect/atom-react": 4.1.2
+  "@effect/openapi-generator": 4.1.2
+  "@effect/platform-browser": 4.1.2
+  "@effect/platform-node": 4.1.2
+  # Bundles the Effect-patched tsrs that runs type-aware lint and type checking
+  # in one pass (tsrs 0.22, the first with whole-program --type-check).
+  "@effect/tsgo": 0.67.4
+  "@effect/vitest": 4.1.2
   "@ledgerhq/wallet-api-client": ^1.17.0
   "@ledgerhq/wallet-api-core": ^2.2.0
   "@luno-kit/core": ^0.0.13
   "@meshsdk/wallet": 1.9.1
   "@msw/playwright": ^0.7.0
+  # Imported by the Chromium tests' mocked network. Must equal the version msw depends on,
+  # so the interceptors patch the same fetch msw resolves frames for; upgrade them together.
+  "@mswjs/interceptors": 0.45.11
   "@polkadot/types": ^17.0.2
   "@polkadot/util": ^14.0.3
   "@radix-ui/react-dialog": ^1.3.1
@@ -66,19 +68,20 @@ catalog:
   "@solana/web3.js": ^1.99.0
   "@stylexjs/stylex": 0.19.1
   "@stylexjs/unplugin": 0.19.1
-  "@tanstack/react-virtual": ^3.14.23
+  "@tanstack/react-virtual": ^3.14.25
   "@ton/core": ^0.63.1
   "@tonconnect/ui": ^5.0.1
   "@tronweb3/tronwallet-abstract-adapter": ^1.3.0
   "@tronweb3/tronwallet-adapter-bitkeep": ^1.3.0
   "@tronweb3/tronwallet-adapter-ledger": ^1.1.15
   "@tronweb3/tronwallet-adapter-tronlink": ^1.3.0
+  # Matches the Node 24 runtime in mise.toml.
   "@types/node": ^24.19.2
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@types/react-is": ^19.3.0
   "@typescript/native": npm:typescript@7.0.2
-  "@vitejs/plugin-react": ^6.1.2
+  "@vitejs/plugin-react": ^6.2.1
   "@vitest/browser-playwright": 5.0.5
   "@vitest/ui": 5.0.5
   "@wallet-standard/app": ^1.1.1
@@ -87,7 +90,7 @@ catalog:
   # Must equal the exact version @reown/appkit depends on: createAppKit types its universalProvider option against it.
   "@walletconnect/universal-provider": 2.23.7
   "@zama-fhe/sdk": 3.7.1
-  autoprefixer: ^10.6.1
+  autoprefixer: ^10.6.2
   bignumber.js: ^11.1.5
   bs58: 6.0.0
   # @cosmos-kit/core 2.18 types its chains against the old registry schema. From 1.69.720 (and
@@ -95,52 +98,53 @@ catalog:
   chain-registry: 1.69.674
   # Held with @cosmjs for @cosmos-kit/core 2.18 (see the @cosmjs note).
   cosmjs-types: ^0.10.1
-  dependency-cruiser: ^18.7.0
-  effect: 4.1.0
+  dependency-cruiser: ^18.7.1
+  effect: 4.1.2
   esbuild: ^0.28.2
   husky: ^9.1.7
-  i18next: ^26.5.11
-  i18next-browser-languagedetector: ^8.2.3
+  i18next: ^26.7.1
+  i18next-browser-languagedetector: ^8.3.0
   jscpd: 5.4.2
   jsdom: ^30.1.3
-  knip: ^6.43.0
+  knip: ^6.44.1
   mipd: ^0.0.7
   mixpanel-browser: ^2.84.0
-  motion: 14.6.0
+  motion: 14.9.0
   msw: ^3.0.3
-  next: ^16.4.3
+  next: ^16.4.4
   # Must satisfy the @vitejs/plugin-react peer range.
-  oxc-transform-react: ^0.152.0
+  oxc-transform-react: ^0.156.0
   playwright: ^1.64.1
-  postcss: ^8.5.31
+  postcss: ^8.5.32
   react: ^19.3.1
   react-dom: ^19.3.1
-  react-i18next: ^17.1.9
+  react-i18next: ^17.1.11
   react-is: ^19.3.1
-  react-router: ^8.5.0
+  react-router: ^8.5.1
   recharts: ^3.10.1
-  rxjs: ~7.8.0
+  rxjs: ~7.8.2
   scheduler: ">=0.25.0 <0.29.0"
   serve: ^14.2.6
-  tslib: ^2.8.1
+  tslib: ^2.9.1
   tsx: ^4.23.15
   # @angular/compiler-cli and @angular/build 22 peer on typescript >=6.0 <6.1.
   typescript: ~6.0.3
-  unplugin-macros: ^0.23.3
-  viem: ^2.57.11
+  unplugin-macros: ^0.23.4
+  viem: ^2.57.14
   vite: ^8.3.5
   vite-plugin-node-polyfills: ^0.28.0
   vitest: 5.0.5
   vitest-browser-react: ^2.3.0
   wagmi: 3.7.9
   yaml: ^2.9.1
-  '@storybook/addon-a11y': 10.6.5
-  '@storybook/addon-vitest': 10.6.5
-  '@storybook/react-vite': 10.6.5
-  '@stylexjs/eslint-plugin': 0.19.1
+  "@storybook/addon-a11y": 10.6.5
+  "@storybook/addon-vitest": 10.6.5
+  "@storybook/react-vite": 10.6.5
+  "@stylexjs/eslint-plugin": 0.19.1
+  oxfmt: 0.75.0
   oxlint: 1.90.0
   storybook: 10.6.5
-  '@base-ui/react': 1.9.0
+  "@base-ui/react": 1.9.0
 
 minimumReleaseAge: 4320
 
@@ -152,20 +156,13 @@ minimumReleaseAgeExclude:
 
 overrides:
   "@reown/appkit": 1.8.24
-  # @angular/build pins vite 8.3.0 (GHSA-587h-7wmj-h5pm, fixed in 8.3.3).
-  "@angular/build>vite": ^8.3.5
   # chain-registry's own range would drift onto the new schema (see the chain-registry catalog note).
   "chain-registry>@chain-registry/types": 0.50.410
+  # oxlint's optional peer; pnpm would install it. The type-aware rules run on
+  # the tsrs that @effect/tsgo bundles (`effect-tsgo --tsrs-lint`).
+  oxlint-tsgolint: "-"
 
 packageExtensions:
   "@fractalwagmi/solana-wallet-adapter@0.1.1":
     peerDependencies:
       "@solana/web3.js": ^1.98.4
-
-peerDependencyRules:
-  allowedVersions:
-    "i18next>typescript": "7"
-    "react-i18next>typescript": "7"
-    # Only the MSW module-mock interceptor needs msw 2; the Playwright provider
-    # mocks modules through page routing.
-    "@vitest/mocker>msw": "3"

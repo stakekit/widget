@@ -1,5 +1,6 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
+
 import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
 import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
 import {

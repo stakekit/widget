@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import {
   type WidgetPath,
   widgetRoutes,
@@ -22,7 +23,7 @@ export const BorrowPositionBreadcrumb = ({
       {...(positionName ? { title: positionName } : {})}
       back={{
         label: t("shared.back"),
-        onClick: () => navigation.push(backPath),
+        onClick: () => void navigation.push(backPath),
         testId: "borrow-position-details-back",
       }}
     />

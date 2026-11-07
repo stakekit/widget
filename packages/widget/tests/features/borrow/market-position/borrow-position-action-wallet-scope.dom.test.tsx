@@ -7,6 +7,7 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import { Integration } from "../../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
@@ -241,14 +242,14 @@ const enterAmount = async (container: HTMLElement, value: string) => {
     '[data-testid="number-input"]'
   );
   if (!input) throw new Error("Expected amount input");
-  const setValue = Object.getOwnPropertyDescriptor(
+  const valueProperty = Object.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
     "value"
-  )?.set;
-  if (!setValue) throw new Error("Expected native input setter");
+  );
+  if (!valueProperty?.set) throw new Error("Expected native input setter");
 
   await act(async () => {
-    setValue.call(input, value);
+    valueProperty.set?.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 };

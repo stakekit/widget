@@ -1,6 +1,7 @@
 import { createClient } from "viem";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
+
 import type { Chain as WalletChain } from "./wallet-descriptors";
 
 export const omitEnsUniversalResolver = (chain: WalletChain): WalletChain => {

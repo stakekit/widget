@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
+
 import { Tabs } from "../components/tabs";
 import { Stack } from "../primitives/stack";
 import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
@@ -73,7 +74,7 @@ const frameFill = (element: Element) => {
   ) {
     const fill = getComputedStyle(ancestor).backgroundColor;
     // Skip fully transparent fills (alpha 0).
-    if (!/, 0\)$/.test(fill) && fill !== "transparent") return fill;
+    if (!fill.endsWith(", 0)") && fill !== "transparent") return fill;
   }
   return undefined;
 };

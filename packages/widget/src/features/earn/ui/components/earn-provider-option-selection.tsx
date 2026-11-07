@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { SelectSheet } from "../../../../ui/index";
 import { useEarnProviderOptions } from "../../react/use-earn-facades";
 import type { EarnProviderOption } from "../../state/earn-selection/types";

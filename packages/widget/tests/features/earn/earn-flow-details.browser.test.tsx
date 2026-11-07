@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
+
 import { SKApp } from "../../../src/App";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import { useEarnYieldSelection } from "../../../src/features/earn/index";

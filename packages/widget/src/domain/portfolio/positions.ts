@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
+
 import { getBalanceShares, type TokenAmount } from "../earn/denomination";
 import {
   type EarnBalance,

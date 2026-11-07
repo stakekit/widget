@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { getPricedFiat } from "../../../src/features/position-details/model/priced-fiat";
 import { toPresentable } from "../../../src/shared/effect/async-result";

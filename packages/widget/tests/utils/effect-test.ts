@@ -41,7 +41,8 @@ const fixtureContext = <Worker>(
     expect: _expect,
     bench: _bench,
   }: FixtureTestContext<Worker>) {
-    // biome-ignore lint/complexity/noArguments: Vitest fixture parsing requires explicit destructuring and rejects rest parameters.
+    // Vitest fixture parsing requires explicit destructuring and rejects rest
+    // parameters, so the context is read from `arguments`.
     return self(arguments[0] as FixtureTestContext<Worker>);
   };
 
@@ -60,7 +61,8 @@ const fixtureContextLast = <Worker>(self: CallableFunction) =>
       bench: _bench,
     }: FixtureTestContext<Worker>
   ) {
-    // biome-ignore lint/complexity/noArguments: Vitest fixture parsing requires explicit destructuring and rejects rest parameters.
+    // Vitest fixture parsing requires explicit destructuring and rejects rest
+    // parameters, so the context is read from `arguments`.
     return Reflect.apply(self, undefined, [testCase, arguments[1]]);
   };
 

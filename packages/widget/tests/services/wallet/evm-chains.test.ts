@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { EvmChainIds } from "../../../src/public-api/types";
 import { evmChainsMap } from "../../../src/services/wallet/internal/adapters/evm/chains";
 

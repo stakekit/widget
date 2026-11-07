@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
+
 import { ActionCommand } from "../../../domain/action/models";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type {
@@ -148,7 +149,7 @@ const makeYieldEntryActionCommand = ({
           ? { providerId: entry.selectedProviderOption }
           : {}),
         ...validatorArguments,
-        ...(wallet.additionalAddresses ?? {}),
+        ...wallet.additionalAddresses,
       },
     }),
     gasFeeToken: selectedYield.mechanics.gasFeeToken,
@@ -356,7 +357,7 @@ const getYieldEntryValidation = ({
         validateAmount &&
         Boolean(
           selectedYield &&
-            getYieldActionArg(selectedYield, "enter", "tronResource")?.required
+          getYieldActionArg(selectedYield, "enter", "tronResource")?.required
         ) &&
         !tronResource,
       ...additionalValidationErrors,

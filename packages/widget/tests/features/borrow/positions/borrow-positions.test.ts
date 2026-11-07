@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+
 import { Integration } from "../../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";

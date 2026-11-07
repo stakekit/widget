@@ -1,5 +1,6 @@
 import { Match } from "effect";
 import type { TFunction } from "i18next";
+
 import {
   getTransactionSignCustomMessage,
   type TransactionSignError,
@@ -40,8 +41,8 @@ const declined = (t: TFunction): TransactionFailure => ({
 const describeSignFailure = (
   t: TFunction,
   error: TransactionSignError
-): TransactionFailure => {
-  return Match.valueTags(error.reason, {
+): TransactionFailure =>
+  Match.valueTags(error.reason, {
     DecodeFailed: () => plain(t("steps.failure.unsignable")),
     EstimateFailed: () => plain(t("steps.failure.estimate_failed")),
     MissingBorrowMeta: () => plain(t("steps.failure.unsignable")),
@@ -73,7 +74,6 @@ const describeSignFailure = (
         )
       ),
   });
-};
 
 /** A failed transaction, named by its reason when the reason is short. */
 const describeOnChainFailure = (

@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import {
   getYieldOutputAmount,

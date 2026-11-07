@@ -1,4 +1,5 @@
 import { DateTime } from "effect";
+
 import type { HistoryPoint } from "../../../domain/portfolio/models";
 
 const minimumRenderablePoints = 2;

@@ -1,5 +1,6 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
+
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { GasBalancesCommand } from "../../domain/finance/models";
 import type { Token } from "../../domain/token/token";

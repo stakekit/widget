@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { type DateTime, Option } from "effect";
 import type { TFunction } from "i18next";
+
 import { isCancellingBalance } from "../../../domain/earn/confidential";
 import {
   getPositionShares,
@@ -173,11 +174,9 @@ export const getPositionOverviewModel = ({
       positionBalancesByType,
       t,
     }),
-    omittedYieldFacts: [
-      ...(summary.metrics.some((metric) => metric.id === "rate")
-        ? (["reward-rate"] as const)
-        : []),
-    ],
+    omittedYieldFacts: summary.metrics.some((metric) => metric.id === "rate")
+      ? ["reward-rate"]
+      : [],
     summary,
   };
 };

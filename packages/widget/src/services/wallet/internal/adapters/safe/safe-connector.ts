@@ -3,6 +3,7 @@ import SafeSDK, { TransactionStatus } from "@safe-global/safe-apps-sdk";
 import { Effect } from "effect";
 import { getAddress, withTimeout } from "viem";
 import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
+
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { isWalletIframe } from "../../../browser-environment";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
@@ -88,7 +89,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
       async getChainId() {
         const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
-        return Number(provider.chainId);
+        return provider.chainId;
       },
       async isAuthorized() {
         try {

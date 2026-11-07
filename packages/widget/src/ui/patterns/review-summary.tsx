@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+
 import { TokenAvatar } from "../components/avatar";
 import {
   DetailList,

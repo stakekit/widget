@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option, Result, Schema } from "effect";
+
 import type { EarnBalance, EarnYieldWithProvider } from "../earn/models";
 import type { ValidatorInput as ValidatorDto } from "../earn/validator";
 import { truncateToTokenDecimals } from "../finance/exact";
@@ -121,7 +122,7 @@ export const preparePendingActionCommand = ({
     command: {
       action: pendingAction.type,
       address,
-      arguments: { ...args, ...(additionalAddresses ?? {}) },
+      arguments: { ...args, ...additionalAddresses },
       passthrough: pendingAction.passthrough,
       yieldId: integration.id,
     },

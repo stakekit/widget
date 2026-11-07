@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import { equalTokens, type Token } from "../token/token";
 import type { TokenBalance } from "./models";
 

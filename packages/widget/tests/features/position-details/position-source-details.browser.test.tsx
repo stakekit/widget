@@ -1,5 +1,6 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
+
 import { PositionSourceDetails } from "../../../src/features/position-details/ui/components/position-source-details";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { render } from "../../utils/test-utils";

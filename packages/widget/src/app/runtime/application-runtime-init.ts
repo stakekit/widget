@@ -1,5 +1,6 @@
 import * as Atom from "effect/reactivity/Atom";
 import type { RouteObject } from "react-router";
+
 import type { SKHostConfiguration } from "../../public-api/react-types";
 
 export type ApplicationRuntimeInit = Readonly<{

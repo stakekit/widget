@@ -4,6 +4,7 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { mock } from "wagmi/connectors";
+
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import {

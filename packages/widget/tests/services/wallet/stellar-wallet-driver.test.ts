@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import { makeStellarWalletDriver } from "../../../src/services/wallet/internal/adapters/stellar/driver";
 
 const address = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";

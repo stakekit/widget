@@ -1,6 +1,7 @@
 import { Popover as BasePopover } from "@base-ui/react/popover";
 import * as stylex from "@stylexjs/stylex";
 import { type ReactNode, useId, useState } from "react";
+
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
 import { layer } from "../tokens/layer.stylex";

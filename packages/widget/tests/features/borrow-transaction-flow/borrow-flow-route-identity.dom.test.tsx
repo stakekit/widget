@@ -10,6 +10,7 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";

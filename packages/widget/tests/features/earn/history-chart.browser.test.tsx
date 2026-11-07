@@ -2,8 +2,9 @@ import { type DateTime, Schema } from "effect";
 import type { ComponentProps } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
-import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
+import { userEvent } from "vitest/browser";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { UtcDateTimeFromString } from "../../../src/domain/finance/scalars";
 import type { HistoryPoint } from "../../../src/domain/portfolio/models";

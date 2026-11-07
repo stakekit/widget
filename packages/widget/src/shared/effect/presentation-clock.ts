@@ -9,12 +9,10 @@ type PresentationTime = {
 
 const presentationClockResourceAtom = Atom.make(
   Stream.fromEffectSchedule(DateTime.now, Schedule.spaced("1 minute")).pipe(
-    Stream.map(
-      (now): PresentationTime => ({
-        now,
-        timeZone: DateTime.zoneMakeLocal(),
-      })
-    )
+    Stream.map((now): PresentationTime => ({
+      now,
+      timeZone: DateTime.zoneMakeLocal(),
+    }))
   )
 ).pipe(Atom.withLabel("presentationClockResourceAtom"));
 

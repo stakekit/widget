@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
+
 import type { SKTheme } from "../../src/public-api/theme";
 import { decodeTheme } from "../../src/services/config/theme-decoder";
 

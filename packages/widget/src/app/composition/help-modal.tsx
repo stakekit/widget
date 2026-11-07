@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { ComponentProps } from "react";
+
 import { HelpModal as PreferencesHelpModal } from "../../features/preferences/views";
 import { rejectedWidgetConfigAtom } from "../../features/widget-configuration/index";
 import { ThemeWrapper } from "./providers/theme-wrapper";

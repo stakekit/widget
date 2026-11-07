@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Logger, Schema } from "effect";
+
 import {
   EarnLegacyTokenOptionsResponse,
   EarnProvider,

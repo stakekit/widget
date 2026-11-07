@@ -27,6 +27,7 @@ import {
   parseAbi,
   parseEventLogs,
 } from "viem";
+
 import {
   type DirectTransaction,
   DirectTransactionId,
@@ -402,7 +403,6 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     return {
       on: () => {},
       removeListener: () => {},
-      // biome-ignore lint/nursery/noUnsafeTypeAssertion: viem types a client's `request` by its RPC schema, which its own `EIP1193Provider["request"]` overloads do not accept though both send the same EIP-1193 requests.
       request: client.request as EIP1193Provider["request"],
     };
   };
@@ -429,6 +429,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     const cached = sdks.get(key);
     if (cached) return cached;
 
+    const signerAddress = yield* toEvmAddress(owner, "signer");
     const sdk = new zama.core.ZamaSDK(
       zama.core.createConfig({
         chains: [chain],
@@ -442,12 +443,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
               : { offloadWorker: zama.encryptWorker }
           ),
         },
-        signer: makeSigner(
-          zama.core.BaseSigner,
-          owner,
-          yield* toEvmAddress(owner, "signer"),
-          chainId
-        ),
+        signer: makeSigner(zama.core.BaseSigner, owner, signerAddress, chainId),
         // The default IndexedDB would keep keys and cleartexts for 30 days.
         storage: zama.core.memoryStorage,
       })
@@ -459,7 +455,9 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const getPublicClient = Effect.fn("ZamaService.getPublicClient")(function* (
     chainId: ConfidentialChainId
   ) {
-    return publicClientFor(yield* getChain(yield* modules, chainId));
+    const zama = yield* modules;
+    const chain = yield* getChain(zama, chainId);
+    return publicClientFor(chain);
   });
 
   const encrypt = Effect.fn("ZamaService.encrypt")(function* ({
@@ -793,15 +791,17 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
     handle,
   }) =>
     publicDecrypt({ chainId, owner: command.address, requestId: handle }).pipe(
-      Effect.map(({ cleartext, decryptionProof }) => ({
-        ...command,
-        arguments: {
-          ...command.arguments,
-          decryptedAmount: cleartext.toString(),
-          decryptionProof,
-        },
-      })),
-      Effect.mapError(retryableFailure)
+      Effect.mapBoth({
+        onSuccess: ({ cleartext, decryptionProof }) => ({
+          ...command,
+          arguments: {
+            ...command.arguments,
+            decryptedAmount: cleartext.toString(),
+            decryptionProof,
+          },
+        }),
+        onFailure: retryableFailure,
+      })
     );
 
   const readUnwrapRequest: ZamaServiceApi["readUnwrapRequest"] = Effect.fn(
@@ -852,7 +852,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
 });
 
 export class ZamaService extends Context.Service<ZamaService, ZamaServiceApi>()(
-  "stakekit/widget/ZamaService"
+  "@stakekit/widget/services/zama/zama-service/ZamaService"
 ) {
   static readonly layer = Layer.effect(ZamaService, makeZamaService()).pipe(
     Layer.provide(FetchHttpClient.layer)

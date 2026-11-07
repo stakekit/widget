@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import {
   formatTokenAmount,
   formatUsd,

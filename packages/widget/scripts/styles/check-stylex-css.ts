@@ -15,6 +15,7 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+
 import { widgetRoot } from "../paths";
 import { countStyleXRules } from "./stylex-rules";
 

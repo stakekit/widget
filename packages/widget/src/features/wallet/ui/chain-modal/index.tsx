@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import {

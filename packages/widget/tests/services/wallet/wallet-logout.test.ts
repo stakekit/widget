@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Stream } from "effect";
 import type { Connector } from "wagmi";
 import { mainnet } from "wagmi/chains";
+
 import type { WalletNetwork } from "../../../src/domain/wallet/network";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";

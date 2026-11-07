@@ -14,6 +14,7 @@ import {
   watchConnection,
   watchConnectors,
 } from "wagmi/actions";
+
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { WalletModal } from "../../wallet-modal";
 import type { WalletCoreState } from "../../wallet-state";
@@ -85,7 +86,7 @@ const observeWagmiSnapshot = <A>(
             return unsubscribe;
           },
           catch: (cause) =>
-            new WagmiPlatformError({ cause, operation: "observe-core" }),
+            WagmiPlatformError.make({ cause, operation: "observe-core" }),
         }),
         (unsubscribe) => Effect.sync(unsubscribe)
       ),
@@ -105,19 +106,17 @@ const observeCore = Effect.fn("observeCore")(function* (
       (onChange) => watchConnectors(controller.wagmiConfig, { onChange })
     )
   ).pipe(
-    Stream.map(
-      ([connection, connectors]): WalletCoreState => ({
-        connection,
-        connectors,
-      })
-    )
+    Stream.map(([connection, connectors]): WalletCoreState => ({
+      connection,
+      connectors,
+    }))
   );
   const queue = yield* coreStates.pipe(
     Stream.toQueue({ capacity: 16, strategy: "sliding" })
   );
   const initial = yield* Queue.take(queue).pipe(
-    Effect.mapError(
-      (cause) => new WagmiPlatformError({ cause, operation: "observe-core" })
+    Effect.mapError((cause) =>
+      WagmiPlatformError.make({ cause, operation: "observe-core" })
     )
   );
   const state = yield* SubscriptionRef.make(initial);
@@ -135,7 +134,9 @@ const observeCore = Effect.fn("observeCore")(function* (
 export class WagmiPlatform extends Context.Service<
   WagmiPlatform,
   WagmiPlatformService
->()("stakekit/widget/wallet/platform/WagmiPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/wagmi-platform/WagmiPlatform"
+) {
   static readonly layer = Layer.effect(
     WagmiPlatform,
     Effect.gen(function* () {
@@ -158,9 +159,8 @@ export class WagmiPlatform extends Context.Service<
           walletConnectProtocolPlatform,
           walletModal
         ).pipe(
-          Effect.mapError(
-            (cause) =>
-              new WagmiPlatformError({ cause, operation: "build-config" })
+          Effect.mapError((cause) =>
+            WagmiPlatformError.make({ cause, operation: "build-config" })
           )
         );
         yield* Effect.acquireRelease(

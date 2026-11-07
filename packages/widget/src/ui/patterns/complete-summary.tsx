@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useId, useState } from "react";
+
 import { TokenAvatar } from "../components/avatar";
 import { Card } from "../components/card";
 import { DetailList, DetailRow } from "../components/detail-list";
@@ -367,7 +368,7 @@ const styles = stylex.create({
     borderRadius: radius.pill,
     borderStyle: "solid",
     borderWidth: borderWidth.medium,
-    // ast-grep-ignore: no-raw-design-value -- the sum of two motion tokens: the beat starts once the check has drawn.
+    // oxlint-disable-next-line design-system/no-raw-design-value -- the sum of two motion tokens: the beat starts once the check has drawn.
     animationDelay: `calc(${motion.base} + ${motion.slow})`,
     animationDuration: motion.slow,
     animationFillMode: "both",

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import { makeCardanoWalletDriver } from "../../../src/services/wallet/internal/adapters/cardano/driver";
 import { makeSolanaWalletDriver } from "../../../src/services/wallet/internal/adapters/solana/driver";
 import { makeTonWalletDriver } from "../../../src/services/wallet/internal/adapters/ton/driver";

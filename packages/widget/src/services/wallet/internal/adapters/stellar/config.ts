@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type { Network } from "../../../../../domain/network/network";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { StellarWalletsKitPlatformService } from "../../platform/stellar-wallets-kit-platform";

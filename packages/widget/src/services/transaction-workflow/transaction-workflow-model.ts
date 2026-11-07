@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Data, Match, Ref, type Schema } from "effect";
+
 import type { DirectTransaction } from "../../domain/action/direct-transaction";
 import type {
   ActionTransaction,
@@ -303,7 +304,7 @@ const transactionSignFailureMessage = (
       "Borrow action metadata is unavailable for signing.",
     UnsupportedBorrowSigningFormat: () =>
       "This borrow transaction requires an unsupported signing method.",
-    DecodeFailed: () => "Borrow transaction payload could not be decoded.",
+    DecodeFailed: () => "The transaction payload could not be decoded.",
     EstimateFailed: () => "The transaction could not be estimated.",
     WalletRequestCancelled: () => "The request was cancelled in the wallet.",
     WalletOperationFailed: ({ operation }) =>

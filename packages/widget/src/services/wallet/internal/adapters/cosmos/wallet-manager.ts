@@ -3,6 +3,7 @@ import { Logger, WalletManager } from "@cosmos-kit/core";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr-extension";
 import { wallets as leapWallets } from "@cosmos-kit/leap-extension";
 import { wallets as leapSnapWallets } from "@cosmos-kit/leap-metamask-cosmos-snap";
+
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import { config } from "../../../../../shared/config/widget-defaults";
 import type { Chain, WalletList } from "../../../wallet-descriptors";

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Exit, Schema } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
+
 import {
   decodeBorrowTransactionForWallet,
   Transaction,

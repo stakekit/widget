@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import type { RefObject } from "react";
+
 import {
   ActionId as BorrowActionId,
   IntegrationId as BorrowIntegrationId,
@@ -258,6 +259,24 @@ describe("generic external provider callback contract", () => {
       })
   );
 
+  it.effect("calls the host's sendTransaction on the host provider", () =>
+    Effect.gen(function* () {
+      class HostWallet implements SKWallet {
+        readonly hash = "host-transaction";
+        signMessage = async () => "signed-message";
+        switchChain = async () => undefined;
+        async sendTransaction(this: HostWallet) {
+          return this.hash;
+        }
+      }
+      const provider = new ExternalProvider(makeProviderRef(new HostWallet()));
+
+      expect(
+        yield* provider.sendTransaction(transaction, transactionMeta)
+      ).toBe("host-transaction");
+    })
+  );
+
   it.effect("keeps the host error message when its txHash is undefined", () =>
     Effect.gen(function* () {
       const provider = new ExternalProvider(
@@ -402,12 +421,10 @@ describe("generic external provider callback contract", () => {
           }),
           switchChain: async () => undefined,
           sendTransaction: async () => "yield-hash",
-          sendBorrowTransaction: vi.fn(
-            async (): Promise<SKBorrowTxResult> => ({
-              type: "success",
-              txHash: "borrow-hash",
-            })
-          ),
+          sendBorrowTransaction: vi.fn(async (): Promise<SKBorrowTxResult> => ({
+            type: "success",
+            txHash: "borrow-hash",
+          })),
         };
         const ref = makeBorrowProviderRef(wallet);
         const provider = new ExternalProvider(ref);

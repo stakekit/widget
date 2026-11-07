@@ -102,25 +102,25 @@ flowchart TB
 
 ## What each part does
 
-| Part | Responsibility |
-|---|---|
-| Wallet dialogs | Every wallet dialog is the Design System's `Modal`. It portals into the portal container, carries the theme root, restores focus to the opener, and hides itself (`suspended`) while AppKit or TonConnect's modal is on top or a Leave Confirmation asks. Bottom sheet below 520px, centred dialog above. `ui/wallet-dialog/chain-icon.tsx` holds the chain icon the dialogs share. |
-| `ui/connect-modal` | The picker: chain family list, then wallets grouped into "Installed" and catalogue groups. Shows Connect, Install (store link) or a non-interactive Checking row. Footer disclaimer. |
-| `ui/account-modal`, `ui/chain-modal` | Account actions and network switching; Ledger chains not yet added route to "add Ledger account". |
-| `model/connect-picker.ts` | Plain functions: the availability policy, grouping, first-paint placement, and `connectionChainId` (host `initialChain` when the wallet supports it). |
-| `state/wallet-modal.ts` | `connectPickerAtom` and `connectWalletAtom`: shallow adapters between the picker and `WalletService`. |
-| `state/account-presentation.ts` | Copied-address feedback, held in Atoms, and the Atoms that project `WalletChainSelection` for the chain dialogs. |
-| `WalletChainSelection` | Chain switching from the header network dialog or a surface's own picker. Runs one switch at a time and publishes the current wallet's pending or failed selection, which every surface reads. A selection ends with the dialog or Scope that started it. |
-| `WalletService` | The wallet runtime's single entry point: `connect`, `logout`, `signMessage`, `signTypedData`, `signTransaction`, `switchChain`, `switchAccount`, `addLedgerAccount`, the Wallet State stream, `connectors`, and the per-wallet `availability` cache with `detectAvailability`. |
-| `WalletModal` | Open state of the connect and chain dialogs, plus `presentationOpen` while AppKit or TonConnect's modal is visible. |
-| `wallet-descriptors.ts` | The owned wallet catalogue format. Each wallet declares `availability`: `Remote` or `Injected { detect, installUrl? }`. `connectorsForWallets` turns descriptors into wagmi connectors. |
-| `runtime/bootstrap` | Captures Wallet Topology once (networks, connector mode), builds the wagmi config with all family connectors, and runs wagmi reconnect. |
-| `runtime/state-projection` | Derives the authoritative Wallet State from wagmi and family state. |
-| `runtime/router` | Sends sign, switch and account requests to the connected family's driver. |
-| `WagmiPlatform`, `SolanaPlatform`, `StellarWalletsKitPlatform` | Library integrations owned behind Effect services. |
-| `WalletConnectProtocol` | One `SignClient` per page (shared by every widget mount) for every non-EVM family: propose (and resume a pending proposal, or adopt a session approved after the QR was closed), restore sessions, request with Schema-decoded responses, disconnect one topic, report remote session ends per topic. A session is returned only for the namespace the widget proposed it for. Loads the SDK only when a session was approved before or a wallet is chosen. |
-| `WalletConnectPresentation` | Shows a pairing link through AppKit (`manualWCControl`, its own inert provider). Cancels when the user closes it; opens wallet deep links. |
-| Family adapters | Turn each chain family into wagmi connectors. Extension wallets use their libraries; WalletConnect wallets use the shared protocol (EVM keeps wagmi's own). |
+| Part                                                           | Responsibility                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wallet dialogs                                                 | Every wallet dialog is the Design System's `Modal`. It portals into the portal container, carries the theme root, restores focus to the opener, and hides itself (`suspended`) while AppKit or TonConnect's modal is on top or a Leave Confirmation asks. Bottom sheet below 520px, centred dialog above. `ui/wallet-dialog/chain-icon.tsx` holds the chain icon the dialogs share.                                                                         |
+| `ui/connect-modal`                                             | The picker: chain family list, then wallets grouped into "Installed" and catalogue groups. Shows Connect, Install (store link) or a non-interactive Checking row. Footer disclaimer.                                                                                                                                                                                                                                                                        |
+| `ui/account-modal`, `ui/chain-modal`                           | Account actions and network switching; Ledger chains not yet added route to "add Ledger account".                                                                                                                                                                                                                                                                                                                                                           |
+| `model/connect-picker.ts`                                      | Plain functions: the availability policy, grouping, first-paint placement, and `connectionChainId` (host `initialChain` when the wallet supports it).                                                                                                                                                                                                                                                                                                       |
+| `state/wallet-modal.ts`                                        | `connectPickerAtom` and `connectWalletAtom`: shallow adapters between the picker and `WalletService`.                                                                                                                                                                                                                                                                                                                                                       |
+| `state/account-presentation.ts`                                | Copied-address feedback, held in Atoms, and the Atoms that project `WalletChainSelection` for the chain dialogs.                                                                                                                                                                                                                                                                                                                                            |
+| `WalletChainSelection`                                         | Chain switching from the header network dialog or a surface's own picker. Runs one switch at a time and publishes the current wallet's pending or failed selection, which every surface reads. A selection ends with the dialog or Scope that started it.                                                                                                                                                                                                   |
+| `WalletService`                                                | The wallet runtime's single entry point: `connect`, `logout`, `signMessage`, `signTypedData`, `signTransaction`, `switchChain`, `switchAccount`, `addLedgerAccount`, the Wallet State stream, `connectors`, and the per-wallet `availability` cache with `detectAvailability`.                                                                                                                                                                              |
+| `WalletModal`                                                  | Open state of the connect and chain dialogs, plus `presentationOpen` while AppKit or TonConnect's modal is visible.                                                                                                                                                                                                                                                                                                                                         |
+| `wallet-descriptors.ts`                                        | The owned wallet catalogue format. Each wallet declares `availability`: `Remote` or `Injected { detect, installUrl? }`. `connectorsForWallets` turns descriptors into wagmi connectors.                                                                                                                                                                                                                                                                     |
+| `runtime/bootstrap`                                            | Captures Wallet Topology once (networks, connector mode), builds the wagmi config with all family connectors, and runs wagmi reconnect.                                                                                                                                                                                                                                                                                                                     |
+| `runtime/state-projection`                                     | Derives the authoritative Wallet State from wagmi and family state.                                                                                                                                                                                                                                                                                                                                                                                         |
+| `runtime/router`                                               | Sends sign, switch and account requests to the connected family's driver.                                                                                                                                                                                                                                                                                                                                                                                   |
+| `WagmiPlatform`, `SolanaPlatform`, `StellarWalletsKitPlatform` | Library integrations owned behind Effect services.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `WalletConnectProtocol`                                        | One `SignClient` per page (shared by every widget mount) for every non-EVM family: propose (and resume a pending proposal, or adopt a session approved after the QR was closed), restore sessions, request with Schema-decoded responses, disconnect one topic, report remote session ends per topic. A session is returned only for the namespace the widget proposed it for. Loads the SDK only when a session was approved before or a wallet is chosen. |
+| `WalletConnectPresentation`                                    | Shows a pairing link through AppKit (`manualWCControl`, its own inert provider). Cancels when the user closes it; opens wallet deep links.                                                                                                                                                                                                                                                                                                                  |
+| Family adapters                                                | Turn each chain family into wagmi connectors. Extension wallets use their libraries; WalletConnect wallets use the shared protocol (EVM keeps wagmi's own).                                                                                                                                                                                                                                                                                                 |
 
 ## Main flows
 
@@ -185,6 +185,7 @@ sequenceDiagram
 ```
 
 ### After a page reload
+
 Wallet bootstrap runs wagmi reconnect. Each connector answers `isAuthorized`
 from its own state: extensions from the injected provider, WalletConnect
 families from `WalletConnectProtocol.sessions(namespace)` (a live, unexpired
@@ -196,34 +197,35 @@ in wagmi storage and fall back to a chain cosmos-kit restored; WalletConnect
 reuses any live Cosmos session holding a chain's account before proposing.
 
 ### Signing
+
 Transaction flows call `WalletService.signTransaction`, the router picks the
 connected family's driver, and the driver signs through its extension or
 through `WalletConnectProtocol.request` with the family's RPC method.
 
 ## Wallet availability policy
 
-| Wallet | Picker shows |
-|---|---|
-| Remote | Connect |
-| Injected, detected | Connect, in "Installed" (decided at first paint of each opening) |
-| Injected with store link, desktop, not detected | Install |
-| Injected with store link, desktop, still checking | Checking, same row and height |
-| Injected without store link, or on mobile, not detected | Hidden |
-| Chain family with nothing visible | Hidden |
+| Wallet                                                  | Picker shows                                                     |
+| ------------------------------------------------------- | ---------------------------------------------------------------- |
+| Remote                                                  | Connect                                                          |
+| Injected, detected                                      | Connect, in "Installed" (decided at first paint of each opening) |
+| Injected with store link, desktop, not detected         | Install                                                          |
+| Injected with store link, desktop, still checking       | Checking, same row and height                                    |
+| Injected without store link, or on mobile, not detected | Hidden                                                           |
+| Chain family with nothing visible                       | Hidden                                                           |
 
 Rows are never added, removed or reordered while the picker is open on
 desktop; a late result only changes the row's action.
 
 ## Persisted state
 
-| Key / prefix | Owner | Purpose |
-|---|---|---|
-| `wc@2:*:stakekit-walletconnect` | WalletConnectProtocol | Non-EVM WalletConnect sessions and pairings |
-| `wc@2:*:stakekit-appkit-presentation` | WalletConnectPresentation | AppKit's inert provider; never holds a session |
-| `wc@2:*:clientTwo` | wagmi `walletConnect` | EVM WalletConnect sessions |
-| `sk-widget@1//walletConnectSessions` | WalletConnectProtocol | Whether to load the SDK on the next page load |
-| `sk-widget@1//walletConnectSessionOwner/<topic>` | WalletConnectProtocol | Namespace the topic was proposed for (one key per topic, so tabs never overwrite each other); unowned sessions are never restored. Removed on disconnect, remote end or expiry |
-| `wagmi.*` | wagmi and family connectors | Recent connector, per-family connection and disconnect markers |
+| Key / prefix                                     | Owner                       | Purpose                                                                                                                                                                        |
+| ------------------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `wc@2:*:stakekit-walletconnect`                  | WalletConnectProtocol       | Non-EVM WalletConnect sessions and pairings                                                                                                                                    |
+| `wc@2:*:stakekit-appkit-presentation`            | WalletConnectPresentation   | AppKit's inert provider; never holds a session                                                                                                                                 |
+| `wc@2:*:clientTwo`                               | wagmi `walletConnect`       | EVM WalletConnect sessions                                                                                                                                                     |
+| `sk-widget@1//walletConnectSessions`             | WalletConnectProtocol       | Whether to load the SDK on the next page load                                                                                                                                  |
+| `sk-widget@1//walletConnectSessionOwner/<topic>` | WalletConnectProtocol       | Namespace the topic was proposed for (one key per topic, so tabs never overwrite each other); unowned sessions are never restored. Removed on disconnect, remote end or expiry |
+| `wagmi.*`                                        | wagmi and family connectors | Recent connector, per-family connection and disconnect markers                                                                                                                 |
 
 ## Tests
 

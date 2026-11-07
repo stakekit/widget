@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { PositionSummary } from "../../../../ui/index";
 import { usePositionDetails } from "../../react/use-position-details";
 import { usePositionOverview } from "../../react/use-position-overview";

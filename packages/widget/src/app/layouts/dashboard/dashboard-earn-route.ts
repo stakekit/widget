@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+
 import { YieldCategory } from "../../../domain/earn/contract";
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 

@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { TokenAddress } from "../../../../domain/borrow/ids";
 import {
   classifyRiskBand,
@@ -73,9 +74,8 @@ export type BorrowActionFormRisk = {
   readonly maxLtv: BigNumber | null;
 };
 
-const toProjectedRisk = (
-  risk: RepayProjection["risk"] | WithdrawProjection["risk"]
-): BorrowActionFormRisk =>
+// Repay and withdraw projections share one risk type.
+const toProjectedRisk = (risk: RepayProjection["risk"]): BorrowActionFormRisk =>
   risk.status === "available"
     ? {
         band: classifyRiskBand({

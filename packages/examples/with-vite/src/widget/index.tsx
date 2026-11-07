@@ -1,5 +1,6 @@
 import "@stakekit/widget/style.css";
 import { SKApp } from "@stakekit/widget";
+
 import { config } from "../config";
 
 export const Widget = () => {

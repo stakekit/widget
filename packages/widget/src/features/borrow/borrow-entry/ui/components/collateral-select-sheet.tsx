@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
 import { decodeTokenId, type TokenId } from "../../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";

@@ -14,6 +14,6 @@ export const wagmiConnectResult = (
       : accounts,
     chainId,
   };
-  // biome-ignore lint/nursery/noUnsafeTypeAssertion: wagmi's connect return type is conditional on the withCapabilities generic, which a runtime value cannot satisfy
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- wagmi's connect return type is conditional on the withCapabilities generic, which a runtime value cannot satisfy
   return result as never;
 };

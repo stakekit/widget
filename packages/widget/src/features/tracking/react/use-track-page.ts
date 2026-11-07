@@ -1,5 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useEffect, useEffectEvent } from "react";
+
 import type {
   TrackPageArgs,
   TrackPageKey,

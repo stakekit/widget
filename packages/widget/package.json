@@ -44,9 +44,8 @@
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
     "build": "pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm check:stylex-css && pnpm build:types && pnpm check:package-types && pnpm check:host-bundlers",
-    "lint": "biome check . && tsc && tsx scripts/generated-api/check-generated-schemas.ts && pnpm lint:stylex",
-    "lint:stylex": "oxlint -c .oxlintrc.json src/ui",
-    "format": "biome check --write . --unsafe",
+    "lint": "TSRS_FAST=1 effect-tsgo --tsrs-lint oxlint --type-check . && tsx scripts/generated-api/check-generated-schemas.ts",
+    "lint:fix": "effect-tsgo --tsrs-lint oxlint --fix .",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
     "gen:api": "tsx scripts/generated-api/generate-effect-openapi.ts",
@@ -114,6 +113,7 @@
     "@luno-kit/core": "catalog:",
     "@meshsdk/wallet": "catalog:",
     "@msw/playwright": "catalog:",
+    "@mswjs/interceptors": "catalog:",
     "@polkadot/types": "catalog:",
     "@polkadot/util": "catalog:",
     "@radix-ui/react-dialog": "catalog:",
@@ -187,10 +187,5 @@
     "vitest-browser-react": "catalog:",
     "wagmi": "catalog:",
     "yaml": "catalog:"
-  },
-  "msw": {
-    "workerDirectory": [
-      "tests/mocks/public"
-    ]
   }
 }

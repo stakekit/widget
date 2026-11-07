@@ -9,16 +9,16 @@ source of truth for behavior.
 
 ## Read before changing code
 
-| Work | Read |
-| --- | --- |
-| Ownership, dependency direction, and Module interfaces | `packages/widget/ARCHITECTURE.md` |
-| Project vocabulary | `GLOSSARY.md` |
-| UI: screens, components, styling, theming, and the Design System | `docs/design-system.md` |
-| A decision that constrains the change | The relevant current file in `docs/adr/` |
-| Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
-| Local issues, domain docs, and triage | `docs/agents/` |
-| Backend API behavior | The backend source, if available: resolve its path with `mise exec -- printenv YIELD_BACKEND_DIR` (set in the gitignored `mise.local.toml`). Otherwise the OpenAPI specs `gen:api` fetches |
-| Publishing | `docs/releases.md` |
+| Work                                                             | Read                                                                                                                                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ownership, dependency direction, and Module interfaces           | `packages/widget/ARCHITECTURE.md`                                                                                                                                                          |
+| Project vocabulary                                               | `GLOSSARY.md`                                                                                                                                                                              |
+| UI: screens, components, styling, theming, and the Design System | `docs/design-system.md`                                                                                                                                                                    |
+| A decision that constrains the change                            | The relevant current file in `docs/adr/`                                                                                                                                                   |
+| Effect APIs                                                      | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests   |
+| Local issues, domain docs, and triage                            | `docs/agents/`                                                                                                                                                                             |
+| Backend API behavior                                             | The backend source, if available: resolve its path with `mise exec -- printenv YIELD_BACKEND_DIR` (set in the gitignored `mise.local.toml`). Otherwise the OpenAPI specs `gen:api` fetches |
+| Publishing                                                       | `docs/releases.md`                                                                                                                                                                         |
 
 ## Commands
 
@@ -29,8 +29,15 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   mounted as a host against the real API, configured from its panel and the
   page link, with a scripted host wallet on `window.skDev`. See the README's
   Development section. API mocking belongs to tests only.
-- `pnpm --filter @stakekit/widget lint` — widget formatting, type checks, and
-  StyleX lint on `src/ui`.
+- `pnpm --filter @stakekit/widget lint` — one pass of oxlint and type checking
+  on the Effect-patched tsrs (`effect-tsgo --tsrs-lint oxlint --type-check`):
+  the type-aware rules, StyleX's rules on `src/ui`, the widget's rule plugins in
+  `scripts/oxlint/`, and every TypeScript and Effect diagnostic of
+  `tsconfig.json`, oxlint-ignored files included. `lint:fix` applies oxlint's
+  fixes. Keep every TypeScript file in a package tsconfig: a file outside one is
+  linted but not type-checked.
+- `pnpm format` — formats the repository with oxfmt (`.oxfmtrc.json`), imports
+  sorted; `pnpm lint:format` checks it.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
@@ -47,7 +54,7 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   public `YieldProviderId` constants from the backend's yield provider enum,
   read from `YIELD_PROVIDERS_ENUM_PATH` (set in `mise.local.toml`) or
   `--source <enum file>`. Commit the regenerated file.
-- `pnpm lint` — all workspaces plus the root ast-grep rules.
+- `pnpm lint` — formatting plus every workspace's oxlint and type checks.
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild
   hosts such as Angular can resolve the built `dist`; part of `build`.
@@ -56,11 +63,24 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm test:smoke` — builds the example hosts against `dist` and loads them in
   Chromium with the API mocked by the widget's MSW fixtures.
 
+mise caches `lint:widget`, `lint:examples`, `check-hygiene`, `test:unit`,
+`test:dom`, `test:browser`, `test:storybook`, `build:widget`, and `build`
+(`tools/mise/cached-tasks.toml`), so `pnpm lint`, `pnpm test`, and `pnpm check`
+skip work whose inputs (the widget or example files, env files, lockfile, and
+root configs) are unchanged, and restore results stored on any branch or
+worktree. `mise run --force <task>` reruns one; `--task-cache off` ignores
+stored results. A new input, such as a widget file outside the listed
+directories, belongs in the input groups in `mise.toml`.
+
 Install dependencies only when manifests, the lockfile, or the task require it.
 Use the normal pnpm store rather than creating a project-local store.
 
 Test project selection is filename-based: `*.browser.test.*` uses Chromium,
-`*.dom.test.*` uses jsdom, and other tests run in Node.
+`*.dom.test.*` uses jsdom, and other tests run in Node. Chromium test files run
+two at a time, each mocking the API in its own page through MSW's `fetch` and
+`XMLHttpRequest` interceptors (`tests/mocks/network.ts`, no service worker);
+Chromium resolves no host but the Vitest server, so images, fonts and scripts
+never reach the real network.
 
 ## Working rules
 

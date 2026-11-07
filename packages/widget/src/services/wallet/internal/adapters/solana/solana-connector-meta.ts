@@ -1,5 +1,6 @@
 import type { Adapter } from "@solana/wallet-adapter-base";
 import type { Connector } from "wagmi";
+
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { SolanaWalletDescriptor } from "../../runtime/solana-runtime";
 import type { DecodedSolanaTransaction } from "./transaction";

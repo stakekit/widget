@@ -2,6 +2,7 @@ import type { Account } from "@ledgerhq/wallet-api-client";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
+
 import { evmChainsMap } from "../../../src/services/wallet/internal/adapters/evm/chains";
 import {
   normalizeWalletState,

@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { Stack, Text, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";

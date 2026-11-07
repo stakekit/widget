@@ -37,7 +37,9 @@ export class ApplicationRouter extends Context.Service<
     readonly locations: Stream.Stream<ApplicationLocation>;
     readonly router: DataRouter;
   }
->()("@stakekit/widget/services/navigation/ApplicationRouter") {
+>()(
+  "@stakekit/widget/services/navigation/application-router/ApplicationRouter"
+) {
   static readonly layer = (
     routes: ReadonlyArray<RouteObject>,
     options?: Parameters<typeof createMemoryRouter>[1]

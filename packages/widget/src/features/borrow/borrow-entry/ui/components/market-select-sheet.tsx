@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
 import {
   getBorrowMarketPairLabel,

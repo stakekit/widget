@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { ErrorState } from "../../../../ui/index";
 import { useEarnPageStatus } from "../../react/use-earn-facades";
 

@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+
 import type { RiskBand } from "../../../../../domain/borrow/risk/risk-band";
 import {
   formatPercent,

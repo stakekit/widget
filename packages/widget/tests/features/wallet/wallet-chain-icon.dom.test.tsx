@@ -1,5 +1,6 @@
 import { mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
+
 import { WalletChainIcon } from "../../../src/features/wallet/ui/wallet-dialog/chain-icon";
 import { render } from "../../utils/test-utils.dom.tsx";
 

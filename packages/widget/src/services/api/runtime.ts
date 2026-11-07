@@ -1,4 +1,5 @@
 import { Effect, Layer } from "effect";
+
 import { WidgetConfigService } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
 import {
@@ -78,8 +79,8 @@ const walletBootstrapSourceLayer = Layer.effect(
       effect: Effect.Effect<A, E>
     ): Effect.Effect<A, WalletBootstrapSourceReadError> =>
       effect.pipe(
-        Effect.mapError(
-          (cause) => new WalletBootstrapSourceReadError({ cause })
+        Effect.mapError((cause) =>
+          WalletBootstrapSourceReadError.make({ cause })
         )
       );
 

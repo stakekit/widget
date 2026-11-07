@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type { YieldAction } from "../../../domain/action/models";
 import type {
@@ -178,37 +179,34 @@ export const getYieldTransactionStepsView = (
   const plannedRows = getPendingPlannedSteps(
     machineState.context,
     plannedStepTypes
-  ).map(
-    (type, index): YieldStepRow => ({
-      done: false,
-      explorerUrl: null,
-      hash: null,
-      id: `planned-${index}-${type}`,
-      phases: idle,
-      rejected: false,
-      type,
-    })
-  );
+  ).map((type, index): YieldStepRow => ({
+    done: false,
+    explorerUrl: null,
+    hash: null,
+    id: `planned-${index}-${type}`,
+    phases: idle,
+    rejected: false,
+    type,
+  }));
   const transactionRows = flattenTransactionWorkflowTransactions(
     machineState.context
-  ).flatMap(
-    (transaction): ReadonlyArray<YieldStepRow> =>
-      transaction.source._tag === "Borrow"
-        ? []
-        : [
-            {
-              ...getTransactionWorkflowTransactionReference(
-                machineState.context,
-                transaction
-              ),
-              done: transaction.meta.done,
-              id: transaction.source.transaction.id,
-              phases: getTransactionStepProgress(machineState, transaction)
-                .phases,
-              rejected: false,
-              type: transaction.source.transaction.type,
-            },
-          ]
+  ).flatMap((transaction): ReadonlyArray<YieldStepRow> =>
+    transaction.source._tag === "Borrow"
+      ? []
+      : [
+          {
+            ...getTransactionWorkflowTransactionReference(
+              machineState.context,
+              transaction
+            ),
+            done: transaction.meta.done,
+            id: transaction.source.transaction.id,
+            phases: getTransactionStepProgress(machineState, transaction)
+              .phases,
+            rejected: false,
+            type: transaction.source.transaction.type,
+          },
+        ]
   );
   // A finalize sits after the unwrap it decrypts, before what it prepared.
   const actionRows = finalize

@@ -1,4 +1,5 @@
 import type { Currency, Families } from "@ledgerhq/wallet-api-client";
+
 import type { WalletNetwork } from "../../../../../domain/wallet/network";
 
 export type SupportedLedgerLiveFamilies = Extract<

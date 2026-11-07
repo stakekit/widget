@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Box, Button, Stack, Text } from "../../../../ui/index";
 import { useRevealBalances } from "../../react/use-reveal-balances";
 

@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { SplitView, Stack, Text } from "../../../../ui/index";
 import {

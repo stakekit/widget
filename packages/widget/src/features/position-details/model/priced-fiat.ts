@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { Presentable } from "../../../shared/effect/async-result";
 import {
   formatUsd,

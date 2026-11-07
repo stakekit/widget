@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Layer, Logger, References, Result } from "effect";
+
 import type { SKAppearance } from "../../../src/public-api/appearance";
 import type { SKHostConfiguration } from "../../../src/public-api/react-types";
 import type { SKTheme } from "../../../src/public-api/theme";

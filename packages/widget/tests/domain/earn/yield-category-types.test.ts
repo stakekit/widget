@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
 import {
   getApiYieldTypesForYieldCategory,

@@ -1,4 +1,5 @@
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   currentGroupedPositionsAtom,
   positionsTableDataAtom,

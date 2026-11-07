@@ -1,4 +1,5 @@
 import { userEvent } from "vitest/browser";
+
 import { setup } from "../../app/journeys/trust-incentive-apy/setup";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";

@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+
 import { SKApp } from "../../../../src/App";
 import { useEarnYieldSelection } from "../../../../src/features/earn/index";
 import type { SKAppProps } from "../../../../src/public-api/react-types";

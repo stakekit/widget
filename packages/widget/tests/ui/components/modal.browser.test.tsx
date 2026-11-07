@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
+
 import { ThemeRoot } from "../../../src/ui/composition";
 import { Button, Modal, Text } from "../../../src/ui/index";
 import { render } from "../../utils/test-utils";

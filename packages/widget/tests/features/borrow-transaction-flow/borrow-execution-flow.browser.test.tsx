@@ -15,6 +15,7 @@ import {
 import { base } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Action as BorrowAction } from "../../../src/domain/borrow/execution/action";
@@ -384,10 +385,10 @@ const HistoryControls = () => {
   return (
     <>
       <div data-testid="history-path">{location.pathname}</div>
-      <button onClick={() => navigate(-1)} type="button">
+      <button onClick={() => void navigate(-1)} type="button">
         Back
       </button>
-      <button onClick={() => navigate(1)} type="button">
+      <button onClick={() => void navigate(1)} type="button">
         Forward
       </button>
     </>
@@ -419,17 +420,17 @@ const renderExecution = (
     const navigationService = makeWidgetNavigation({
       back: (options) =>
         Effect.sync(() => {
-          navigation.current?.(-(options?.steps ?? 1));
+          void navigation.current?.(-(options?.steps ?? 1));
         }),
       push: (to) =>
         Effect.sync(() => {
-          navigation.current?.(widgetTargetPath(to), {
+          void navigation.current?.(widgetTargetPath(to), {
             state: widgetTargetState(to),
           });
         }),
       replace: (to) =>
         Effect.sync(() => {
-          navigation.current?.(widgetTargetPath(to), {
+          void navigation.current?.(widgetTargetPath(to), {
             replace: true,
             state: widgetTargetState(to),
           });
@@ -686,7 +687,7 @@ describe("borrow execution flow component", () => {
   it.live("heads Review with the repaid amount and its USD value", () =>
     Effect.gen(function* () {
       const repaySession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           command: {
@@ -790,7 +791,7 @@ describe("borrow execution flow component", () => {
   it.live("titles a collateral toggle with its asset", () =>
     Effect.gen(function* () {
       const toggleSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -825,7 +826,7 @@ describe("borrow execution flow component", () => {
   it.live("shows current to projected risk on Review", () =>
     Effect.gen(function* () {
       const riskSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -856,7 +857,7 @@ describe("borrow execution flow component", () => {
   it.live("omits projected metrics when risk is unavailable", () =>
     Effect.gen(function* () {
       const unavailableSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -893,7 +894,7 @@ describe("borrow execution flow component", () => {
   it.live("shows known constraint warnings without blocking Confirm", () =>
     Effect.gen(function* () {
       const warnedSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -930,7 +931,7 @@ describe("borrow execution flow component", () => {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
         session: new BorrowFlowSession({
-          ...session,
+          walletScope: session.walletScope,
           intake: {
             ...session.intake,
             riskVerdict: { _tag: "Block", reason: "healthFactor" },
@@ -957,7 +958,7 @@ describe("borrow execution flow component", () => {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
         session: new BorrowFlowSession({
-          ...session,
+          walletScope: session.walletScope,
           intake: {
             ...session.intake,
             riskVerdict: { _tag: "Block", reason: "ltv" },
@@ -986,7 +987,7 @@ describe("borrow execution flow component", () => {
           autoStart: false,
           reviewElement: <BorrowReviewPage />,
           session: new BorrowFlowSession({
-            ...session,
+            walletScope: session.walletScope,
             intake: {
               ...session.intake,
               riskVerdict: { _tag: "Allow" },

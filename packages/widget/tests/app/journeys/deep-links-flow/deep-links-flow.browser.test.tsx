@@ -1,5 +1,6 @@
 import { Array as EArray } from "effect";
 import { numberToHex } from "viem";
+
 import { formatRoundedPercent } from "../../../../src/shared/lib/number-format";
 import { describe, expect, it } from "../../../utils/test-extend";
 import { renderApp } from "../../../utils/test-utils";

@@ -14,6 +14,7 @@ import {
   SubscriptionRef,
 } from "effect";
 import { UserRejectedRequestError } from "viem";
+
 import { getProtocolChainIdentity } from "../../../../domain/wallet/network";
 import { config } from "../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../wallet-errors";
@@ -404,7 +405,9 @@ export class WalletConnectPresentationPlatform extends Context.Service<
   Readonly<{
     make: Effect.Effect<WalletConnectPresentation, never, Scope.Scope>;
   }>
->()("stakekit/widget/wallet/platform/WalletConnectPresentationPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/wallet-connect-presentation/WalletConnectPresentationPlatform"
+) {
   static readonly layer = Layer.effect(
     WalletConnectPresentationPlatform,
     Effect.gen(function* () {

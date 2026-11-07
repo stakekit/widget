@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import { Box, Stack, Text } from "../../../../../ui/index";
 
 /** One side of the position details split view: its actions or its facts. */

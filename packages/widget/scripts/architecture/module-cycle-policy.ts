@@ -4,6 +4,7 @@
  * Used by `check-architecture.ts`.
  */
 import type { ICruiseResult } from "dependency-cruiser";
+
 import type {
   ModuleCollectionDeclaration,
   OwnedModuleDeclaration,

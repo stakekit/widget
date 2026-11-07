@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { EmbeddedPage, Modal } from "../../../../../ui/index";
 
 type KycVerificationModalProps = {

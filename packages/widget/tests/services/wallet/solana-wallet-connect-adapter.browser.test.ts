@@ -15,6 +15,7 @@ import {
 import base58 from "bs58";
 import { Effect, Fiber, FiberSet, Queue, Schema } from "effect";
 import { vi } from "vitest";
+
 import { getSolanaConnectors } from "../../../src/services/wallet/internal/adapters/solana/solana-connector";
 import { makeWalletConnectConnection } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
 import { WalletConnectSolanaAdapter } from "../../../src/services/wallet/internal/runtime/solana-wallet-connect-adapter";

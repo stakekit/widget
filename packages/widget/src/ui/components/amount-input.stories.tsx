@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+
 import { AmountInput } from "./amount-input";
 import type { AmountSeparators } from "./amount-input-text";
 
@@ -181,7 +182,7 @@ export const FitsFullPrecision: Story = {
     const input = amountInput(canvasElement);
 
     await waitFor(() => expect(input.scrollWidth).toBe(input.clientWidth));
-    const shown = String(input.value);
+    const shown = input.value;
     await expect(shown).toMatch(/^12,345\.5705\d*$/u);
     await expect("12,345.570555185041210512345".startsWith(shown)).toBe(true);
     await expect(shown).not.toBe("12,345.570555185041210512345");

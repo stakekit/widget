@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { ScrollArea } from "../components/scroll-area";
 import { scrollAreaVars } from "../components/scroll-area.stylex";
 import { borderWidth } from "../tokens/border.stylex";

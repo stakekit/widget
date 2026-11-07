@@ -1,5 +1,6 @@
 import { avalanche, mainnet, polygon, sepolia } from "viem/chains";
 import { describe, expect, it } from "vitest";
+
 import {
   type NetworkPickerGroup,
   networkPickerGroups,

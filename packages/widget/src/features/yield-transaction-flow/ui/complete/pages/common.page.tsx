@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import type {
   PendingActionLabelContext,
   YieldPendingActionType,
@@ -252,6 +253,6 @@ export const CompletePageComponent = ({
   );
 };
 
-export const CompletePage = (props: CompletePageProps) => {
-  return <CompletePageComponent {...props} completion={useComplete()} />;
-};
+export const CompletePage = (props: CompletePageProps) => (
+  <CompletePageComponent {...props} completion={useComplete()} />
+);

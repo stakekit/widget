@@ -2,6 +2,7 @@ import type BigNumber from "bignumber.js";
 import { Data, Option } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/reactivity/AsyncResult";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
+
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import {

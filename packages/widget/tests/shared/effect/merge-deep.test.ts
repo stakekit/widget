@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { mergeDeep } from "../../../src/shared/effect/merge-deep";
 
 describe("mergeDeep", () => {

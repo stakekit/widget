@@ -2,6 +2,7 @@ import { RegistryProvider } from "@effect/atom-react";
 import { Layer } from "effect";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
+
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { HelpModal } from "../../../src/features/preferences/views";
 import {

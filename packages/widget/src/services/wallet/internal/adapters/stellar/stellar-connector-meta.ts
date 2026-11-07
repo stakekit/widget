@@ -1,5 +1,6 @@
 import type { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 
 export const stellarConnectorType = "stellar-wallet" as const;

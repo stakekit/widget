@@ -10,14 +10,16 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+
 import ts from "typescript";
+
 import { repositoryRoot, widgetRoot } from "../paths";
 
 const outputPath = path.join(widgetRoot, "src/generated/yield-provider-ids.ts");
-const biomeBin = path.join(
+const oxfmtBin = path.join(
   repositoryRoot,
   "node_modules/.bin",
-  `biome${process.platform === "win32" ? ".CMD" : ""}`
+  `oxfmt${process.platform === "win32" ? ".CMD" : ""}`
 );
 
 type ProviderMember = { readonly name: string; readonly value: string };
@@ -102,14 +104,13 @@ const renderModule = (members: ReadonlyArray<ProviderMember>) =>
 
 const formatOutput = () =>
   new Promise<void>((resolve, reject) => {
-    const child = spawn(
-      biomeBin,
-      ["check", "--write", path.relative(widgetRoot, outputPath)],
-      { cwd: widgetRoot, stdio: "inherit" }
-    );
+    const child = spawn(oxfmtBin, [path.relative(widgetRoot, outputPath)], {
+      cwd: widgetRoot,
+      stdio: "inherit",
+    });
     child.on("error", reject);
     child.on("exit", (code) =>
-      code === 0 ? resolve() : reject(new Error(`biome exited with ${code}`))
+      code === 0 ? resolve() : reject(new Error(`oxfmt exited with ${code}`))
     );
   });
 

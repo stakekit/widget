@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
+
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";

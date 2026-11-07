@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { exactZero } from "../../../domain/finance/exact";
 import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
 import {

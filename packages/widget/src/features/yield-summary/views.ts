@@ -6,8 +6,5 @@ export { RewardRateBreakdown } from "./ui/components/reward-rate-breakdown";
 export { isMorphoProvider } from "./ui/components/reward-token-details";
 export { getRewardTokenSymbols } from "./ui/components/reward-token-details/get-reward-token-symbols";
 export { YieldDetailsHeader } from "./ui/components/yield-details-header";
-export {
-  YieldFactsSection,
-  YieldFactValue,
-} from "./ui/components/yield-facts";
+export { YieldFactsSection, YieldFactValue } from "./ui/components/yield-facts";
 export { YieldRiskRatingSummary } from "./ui/components/yield-risk";

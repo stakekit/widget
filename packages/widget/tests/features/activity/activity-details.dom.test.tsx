@@ -3,14 +3,15 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type {
   BorrowActivityItem,
   YieldActivityItem,
 } from "../../../src/features/activity/model/activity-action";
-import { ActivityDetailsPage } from "../../../src/features/activity/ui/activity-details/activity-details.page";
 import { ActivityDetailsFailure } from "../../../src/features/activity/ui/activity-details/activity-details-status";
+import { ActivityDetailsPage } from "../../../src/features/activity/ui/activity-details/activity-details.page";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import {
   yieldApiActionFixture,

@@ -1,5 +1,6 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
+
 import type { ActivityActionTitle } from "../../../model/activity-action-list-item";
 
 export const useActivityActionTitle = (title: ActivityActionTitle) => {

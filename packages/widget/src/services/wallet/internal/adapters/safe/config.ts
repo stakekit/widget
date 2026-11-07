@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import { WalletIntegrationError } from "../../../wallet-errors";
 
 export const getConfig = Effect.tryPromise({

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import type { ExitReceiveToken } from "../../../src/domain/action/rules";
 import { TokenAddress } from "../../../src/domain/identity/identifiers";
 import type { Token } from "../../../src/domain/token/token";
@@ -110,9 +111,15 @@ describe("Position Details Exit Receive Token selector", () => {
 
     await userEvent.click(app.getByText("USDC"));
 
+    // The chip also renders token and network icons, whose monogram fallback
+    // adds initials to its text content.
     await expect
-      .element(app.getByTestId("position-details-exit-receive-token"))
-      .toHaveTextContent("USDC");
+      .element(
+        app
+          .getByTestId("position-details-exit-receive-token")
+          .getByText("USDC", { exact: true })
+      )
+      .toBeInTheDocument();
     await expect
       .element(app.getByText("You will receive USDC when you withdraw."))
       .toBeInTheDocument();

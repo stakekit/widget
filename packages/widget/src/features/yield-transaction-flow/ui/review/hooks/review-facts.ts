@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { Duration } from "effect";
 import type { TFunction } from "i18next";
+
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getYieldCooldownDuration,

@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import type { RouteObject } from "react-router";
+
 import {
   type ApplicationRuntimeInit,
   applicationRuntimeInitAtom,
@@ -16,7 +17,7 @@ export const getTestWidgetConfig = (
   hostConfiguration: SKAppProps,
   options: { readonly isLedgerLive?: boolean } = {}
 ): WidgetConfig =>
-  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture factory for non-Effect UI tests
+  // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture factory for non-Effect UI tests
   Effect.runSync(
     WidgetConfigService.use((config) => config.current).pipe(
       Effect.provide(WidgetConfigService.layer(hostConfiguration, options))

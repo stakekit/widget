@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+
 import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../../../domain/borrow/catalog/market";

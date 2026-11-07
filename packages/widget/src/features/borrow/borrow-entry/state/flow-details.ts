@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { decodeTokenId } from "../../../../domain/borrow/ids";
 import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/index";

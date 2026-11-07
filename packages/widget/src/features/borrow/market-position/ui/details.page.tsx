@@ -2,6 +2,7 @@ import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { toPresentable } from "../../../../shared/effect/async-result";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";

@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { Outlet, useLocation } from "react-router";
+
 import type { MarketId } from "../../../domain/borrow/ids";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import { widgetRoutes } from "../../../services/navigation/widget-routes";

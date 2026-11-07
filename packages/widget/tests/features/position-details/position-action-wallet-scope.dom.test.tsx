@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
+
 import { EarnBalance } from "../../../src/domain/earn/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";

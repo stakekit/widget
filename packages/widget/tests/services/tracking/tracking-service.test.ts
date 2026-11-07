@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { vi } from "vitest";
+
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 

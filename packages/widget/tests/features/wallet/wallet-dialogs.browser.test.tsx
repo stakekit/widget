@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche, mainnet, sepolia } from "viem/chains";
 import { page, userEvent } from "vitest/browser";
+
 import { SKApp } from "../../../src/App";
 import type { SupportedSKChainIds } from "../../../src/domain/wallet/chain-ids";
 import type { SKAppProps } from "../../../src/public-api/react-types";
@@ -11,7 +12,7 @@ import {
 } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import { setup } from "../../app/journeys/external-provider/setup";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
-import { worker } from "../../mocks/worker";
+import { network } from "../../mocks/network";
 import { mockWalletListFactory } from "../../utils/mock-connector";
 import { describe, expect, it, vi } from "../../utils/test-extend";
 import { render, renderApp } from "../../utils/test-utils";
@@ -20,7 +21,7 @@ import { makeWalletConnectPicker } from "../../utils/wallet-connect-picker";
 const renderPicker = Effect.fn("renderPicker")(function* (
   options: Omit<Parameters<typeof makeWalletConnectPicker>[0], "api">
 ) {
-  const picker = yield* makeWalletConnectPicker({ ...options, api: worker });
+  const picker = yield* makeWalletConnectPicker({ ...options, api: network });
   yield* Effect.acquireRelease(
     Effect.promise(async () => render(picker.element)),
     (screen) =>
@@ -151,7 +152,7 @@ const openNetworkPicker = async ({
   dashboardVariant = false,
   networks,
 }: {
-  readonly api: typeof worker;
+  readonly api: typeof network;
   readonly supportedChainIds: ReadonlyArray<SupportedSKChainIds>;
   readonly switchChain?: (chainId: number) => Promise<void>;
   readonly dashboardVariant?: boolean;
@@ -401,7 +402,7 @@ const accountAddress = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
 /** Renders a connected mock wallet holding 1.5 ETH on Ethereum. */
 const renderAccountDialog = async (
-  api: typeof worker,
+  api: typeof network,
   language: "en" | "fr" = "en"
 ) => {
   setup(api);
