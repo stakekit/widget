@@ -226,6 +226,23 @@ export const currentBorrowEntryAtom = Atom.writable<
   }
 ).pipe(Atom.withLabel("currentBorrowEntryAtom"));
 
+/** Loads the entry's markets and integrations again after they failed. */
+export const retryBorrowCatalogAtom = Atom.fnSync(
+  (_input: undefined, context) => {
+    const key = context(currentBorrowEntryKeyAtom);
+    if (!key) return;
+    context.refresh(
+      borrowMarketsResourceAtom.local(
+        new BorrowMarketsKey({
+          network: key.network,
+          scope: context(widgetConfigAtom).borrowMarketsScope,
+        })
+      )
+    );
+    context.refresh(borrowIntegrationsResourceAtom.local);
+  }
+).pipe(Atom.withLabel("retryBorrowCatalogAtom"));
+
 /** True once borrow markets for the current scope have succeeded (or borrow N/A). */
 export const borrowLandingPrimaryReadyAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);

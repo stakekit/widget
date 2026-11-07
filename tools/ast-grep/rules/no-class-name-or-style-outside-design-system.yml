@@ -1,0 +1,33 @@
+id: no-class-name-or-style-outside-design-system
+language: Tsx
+severity: error
+message: 'Features and application composition pass no `className` or `style`. Choose a Design System prop (a tone, size, variant or spacing value); if none fits, extend the Design System instead of styling the screen.'
+note: See docs/design-system.md, "Extending instead of working around".
+files:
+  - packages/widget/src/features/**
+  - packages/widget/src/app/**
+  - packages/widget/src/App.tsx
+rule:
+  any:
+    - kind: jsx_attribute
+      has:
+        kind: property_identifier
+        regex: ^(?:className|style)$
+    # `{...{ className }}` and `{...{ style: value }}` on an element.
+    - kind: object
+      inside:
+        kind: spread_element
+        inside:
+          kind: jsx_expression
+          inside:
+            any:
+              - kind: jsx_opening_element
+              - kind: jsx_self_closing_element
+      has:
+        any:
+          - kind: shorthand_property_identifier
+            regex: ^(?:className|style)$
+          - kind: pair
+            has:
+              field: key
+              regex: ^["']?(?:className|style)["']?$

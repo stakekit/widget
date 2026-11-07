@@ -8,15 +8,15 @@ import {
   YieldFlowExecutionRoute,
   YieldFlowRoute,
 } from "../react/yield-flow-route";
+import { EnterCompletePage } from "./complete/pages/enter-complete.page.tsx";
+import { ExitCompletePage } from "./complete/pages/exit-complete.page.tsx";
 import { PendingCompletePage } from "./complete/pages/pending-complete.page.tsx";
-import { StakeCompletePage } from "./complete/pages/stake-complete.page.tsx";
-import { UnstakeCompletePage } from "./complete/pages/unstake-complete.page.tsx";
+import { EnterReviewPage } from "./review/pages/enter-review.page.tsx";
+import { ExitReviewPage } from "./review/pages/exit-review.page.tsx";
 import { PendingReviewPage } from "./review/pages/pending-review.page.tsx";
-import { StakeReviewPage } from "./review/pages/stake-review.page.tsx";
-import { UnstakeReviewPage } from "./review/pages/unstake-review.page.tsx";
+import { EnterStepsPage } from "./steps/pages/enter-steps.page.tsx";
+import { ExitStepsPage } from "./steps/pages/exit-steps.page.tsx";
 import { PendingStepsPage } from "./steps/pages/pending-steps.page.tsx";
-import { StakeStepsPage } from "./steps/pages/stake-steps.page.tsx";
-import { UnstakeStepsPage } from "./steps/pages/unstake-steps.page.tsx";
 
 type YieldFlowRouteMount = {
   readonly mount: Exclude<YieldFlowMountTag, "YieldActionContinuation">;
@@ -75,16 +75,16 @@ export const createYieldFlowRoutes = (route: YieldFlowRouteMount) =>
   Match.value(route.mount).pipe(
     Match.whenOr("Earn", "PositionStake", () =>
       createStandardYieldFlowRoutes(route, "Enter", {
-        CompletePage: StakeCompletePage,
-        ReviewPage: StakeReviewPage,
-        StepsPage: StakeStepsPage,
+        CompletePage: EnterCompletePage,
+        ReviewPage: EnterReviewPage,
+        StepsPage: EnterStepsPage,
       })
     ),
     Match.when("PositionExit", () =>
       createStandardYieldFlowRoutes(route, "Exit", {
-        CompletePage: UnstakeCompletePage,
-        ReviewPage: UnstakeReviewPage,
-        StepsPage: UnstakeStepsPage,
+        CompletePage: ExitCompletePage,
+        ReviewPage: ExitReviewPage,
+        StepsPage: ExitStepsPage,
       })
     ),
     Match.when("PositionManage", () =>

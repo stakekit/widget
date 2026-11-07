@@ -38,8 +38,8 @@ vi.mock("../../../src/features/yield-transaction-flow/views", () => ({
 type ElementProps = Readonly<{
   children?: ReactNode;
   fallbackPath?: string;
+  receiptPlacement?: string;
   selectsDefaultAction?: boolean;
-  showsBackButton?: boolean;
 }>;
 
 const nameOf = (element: ReactElement | null): string | null => {
@@ -48,7 +48,7 @@ const nameOf = (element: ReactElement | null): string | null => {
   const name = typeof type === "function" ? type.name : String(type);
   const props = element.props as ElementProps;
   if (props.selectsDefaultAction !== undefined) {
-    return `${name}(selectsDefaultAction=${props.selectsDefaultAction}, showsBackButton=${props.showsBackButton})`;
+    return `${name}(selectsDefaultAction=${props.selectsDefaultAction}, receiptPlacement=${props.receiptPlacement})`;
   }
   if (props.fallbackPath) return `${name}(${props.fallbackPath})`;
   return name;
@@ -120,16 +120,16 @@ const ActionScopeGuard = function ActionScopeGuard() {
 };
 
 const compactActionRoute =
-  "ActivityActionRoute(selectsDefaultAction=false, showsBackButton=true)";
+  "ActivityActionRoute(selectsDefaultAction=false, receiptPlacement=page)";
 const dashboardActionRoute =
-  "ActivityActionRoute(selectsDefaultAction=true, showsBackButton=false)";
+  "ActivityActionRoute(selectsDefaultAction=true, receiptPlacement=pane)";
 
 describe("Activity routes", () => {
   it("mounts details only under an action id without default selection", () => {
     const routes = createRoutesFromElements(
       createActivityActionRoutes({
+        receiptPlacement: "page",
         selectsDefaultAction: false,
-        showsBackButton: true,
       })
     );
 
@@ -143,8 +143,8 @@ describe("Activity routes", () => {
     const routes = createRoutesFromElements(
       createActivityActionRoutes({
         ActionScopeGuard,
+        receiptPlacement: "pane",
         selectsDefaultAction: true,
-        showsBackButton: false,
       })
     );
 

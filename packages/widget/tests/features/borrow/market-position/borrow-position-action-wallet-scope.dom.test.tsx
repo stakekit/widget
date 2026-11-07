@@ -186,7 +186,9 @@ const PositionOutlet = ({
       actions: [action],
       borrowPosition: null,
       model: null,
+      onSelectAction: () => undefined,
       position,
+      selection: { actionId: action.id, focusRequest: 0 },
     }}
   />
 );
@@ -259,7 +261,7 @@ describe("Borrow position action wallet ownership", () => {
     const action = getAction(position, "withdraw");
     const app = await render(renderAction({ action, owner, position }));
     const maxButton = app.container.querySelector<HTMLButtonElement>(
-      '[data-rk="stake-token-section-max-button"]'
+      '[data-testid="stake-token-section-max-button"]'
     );
     if (!maxButton) throw new Error("Expected Max button");
 
@@ -299,7 +301,7 @@ describe("Borrow position action wallet ownership", () => {
       app.container.querySelector<HTMLInputElement>(
         '[data-testid="number-input"]'
       )?.value
-    ).toBe("0");
+    ).toBe("");
     expect(app.container.textContent).toContain("0.2 WETH withdrawable");
   });
 
@@ -329,6 +331,6 @@ describe("Borrow position action wallet ownership", () => {
       app.container.querySelector<HTMLInputElement>(
         '[data-testid="number-input"]'
       )?.value
-    ).toBe("0");
+    ).toBe("");
   });
 });

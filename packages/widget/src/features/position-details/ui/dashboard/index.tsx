@@ -1,34 +1,57 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
+import { SplitView, Stack, Text } from "../../../../ui/index";
 import {
-  PositionDetailsBreadcrumb as PositionDetailsBreadcrumbLayout,
-  PositionDetailsPane,
-} from "../../../../shared/ui/components/position-details";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { useWidgetRoutePrefixMatch } from "../../../navigation/index";
+  useWidgetNavigate,
+  useWidgetRoutePrefixMatch,
+} from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import {
   AnimationPage,
   BackButton,
   BackButtonProvider,
-  SplitView,
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
 import { usePositionDetails } from "../../react/use-position-details";
-import { PositionDetailsInfo } from "./components/position-details-info";
+import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
+import { PositionHeader } from "../components/position-header";
+import { PositionSummaryCard } from "../components/position-summary-card";
+import { PositionYieldFacts } from "../components/position-yield-facts";
+import {
+  PositionDetailsBreadcrumb,
+  PositionDetailsPane,
+} from "./components/position-details-layout";
 
+/**
+ * The trail from the positions list. Off a flow, back returns to the list,
+ * however the page was reached; in a flow, it steps back through it to the
+ * position.
+ */
 const PositionBreadcrumb = ({
+  flowActive,
   positionName,
 }: {
-  positionName: string | null;
+  readonly flowActive: boolean;
+  readonly positionName: string | null;
 }) => {
   const { t } = useTranslation();
+  const navigation = useWidgetNavigate();
 
   return (
     <BackButtonProvider>
-      <PositionDetailsBreadcrumbLayout
-        backButton={<BackButton />}
+      <PositionDetailsBreadcrumb
+        backButton={
+          <BackButton
+            testId="position-details-back"
+            {...(flowActive
+              ? {}
+              : {
+                  onClick: () =>
+                    void navigation.push(widgetRoutes.positions.build()),
+                })}
+          />
+        }
         positionName={positionName}
         rootLabel={t("dashboard.position_details.breadcrumb_root")}
       />
@@ -36,18 +59,26 @@ const PositionBreadcrumb = ({
   );
 };
 
+/**
+ * A position's own page, laid out as the Earn tab is: its actions on the
+ * left, and on the right the position, its summary, its Details and the
+ * yield's facts. A flow started from an action runs its Review, Steps and
+ * Complete in the left column while the right keeps the position. The trail
+ * back to the positions list always leads the page.
+ */
 const PositionDetailsPageComponent = () => {
   const { t } = useTranslation();
   const positionDetails = usePositionDetails();
-  const stakeFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionStake);
-  const unstakeFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionUnstake);
+  const enterFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionStake);
+  const exitFlow = useWidgetRoutePrefixMatch(widgetRoutes.positionUnstake);
   const pendingActionFlow = useWidgetRoutePrefixMatch(
     widgetRoutes.positionPendingAction
   );
+  const flowActive =
+    enterFlow !== null || exitFlow !== null || pendingActionFlow !== null;
   const layout = resolvePositionDetailsPageLayout({
     ...positionDetails,
-    flowActive:
-      stakeFlow !== null || unstakeFlow !== null || pendingActionFlow !== null,
+    flowActive,
   });
 
   if (layout === "PositionLost") {
@@ -55,37 +86,49 @@ const PositionDetailsPageComponent = () => {
   }
 
   const shouldShowActions = layout === "Actions";
-  const positionName = positionDetails.integrationData?.metadata.name ?? null;
+  // Off a flow the header names the position, so the trail stops at its root.
+  const positionName = flowActive
+    ? (positionDetails.integrationData?.metadata.name ?? null)
+    : null;
+  const head = (
+    <>
+      <PositionBreadcrumb flowActive={flowActive} positionName={positionName} />
+      {flowActive ? null : <PositionHeader />}
+    </>
+  );
 
   return (
     <AnimationPage>
       <SplitView
-        primaryBarLabel={t("dashboard.split_view.actions")}
-        secondaryBarLabel={t("dashboard.split_view.details")}
+        secondaryLabel={t("dashboard.split_view.details")}
         primary={
           shouldShowActions ? (
             <PositionDetailsPane kind="actions">
-              <PositionBreadcrumb positionName={positionName} />
+              {head}
 
-              <Box
-                display="flex"
-                flex={1}
-                flexDirection="column"
-                gap="8"
-                justifyContent="space-between"
-              >
+              <Stack grow gap={32} justify="between">
                 <Outlet />
-              </Box>
+              </Stack>
             </PositionDetailsPane>
           ) : null
         }
         secondary={
           <PositionDetailsPane kind="info">
-            {shouldShowActions ? null : (
-              <PositionBreadcrumb positionName={positionName} />
-            )}
+            {shouldShowActions ? null : head}
 
-            <PositionDetailsInfo />
+            {layout === "InfoOnly" ? (
+              <Stack align="center">
+                <Text tone="muted">
+                  {t("dashboard.position_details.empty")}
+                </Text>
+              </Stack>
+            ) : (
+              <>
+                <PositionSummaryCard />
+                <PositionDetailsDisclosure />
+                <PositionYieldFacts />
+              </>
+            )}
           </PositionDetailsPane>
         }
       />

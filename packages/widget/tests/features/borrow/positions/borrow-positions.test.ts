@@ -13,6 +13,7 @@ import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "../../../../src/features/borrow/market-position/model/details";
+import { unavailableFigure } from "../../../../src/shared/lib/number-format";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -256,17 +257,19 @@ describe("borrow position items", () => {
 
     expect(model.title).toBe("WETH/USDC");
     expect(model.providerName).toBe("Aave V3");
-    expect(model.metricCards.map((card) => card.id)).toEqual([
-      "net-worth",
+    expect(model.summary.metrics.map((metric) => metric.id)).toEqual([
       "debt",
-      "ltv",
       "health-factor",
     ]);
-    expect(model.breakdownRows.map((row) => row.id)).toEqual([
-      `supply-${marketDto.collateralTokens[0].token.address.toLowerCase()}`,
-      `debt-${marketDto.loanToken.address.toLowerCase()}`,
+    // The summary's gauge marks the liquidation threshold, so the details
+    // leave it out, as they leave the header's provider and network.
+    expect(model.detailRows.map((row) => row.id)).toEqual([
+      "borrowed",
+      "borrow-apy",
+      "market-type",
+      "max-ltv",
+      "liquidation-penalty",
     ]);
-    expect(model.detailRows.map((row) => row.id)).toContain("borrow-apy");
     expect(model.currentLtv).toEqual(new BigNumber("0.4"));
     expect(model.healthFactor).toEqual(new BigNumber("2.125"));
     expect(model.liquidationThreshold).toEqual(new BigNumber("0.85"));
@@ -303,38 +306,72 @@ describe("borrow position items", () => {
     );
   });
 
-  it("omits unavailable entry risk facts without placeholder values", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
+  it("shows the max LTV a captured flow projected over the market's own", () => {
     const model = getBorrowDetailsModel({
       collateralToken: null,
-      borrowAmount: new BigNumber(1),
-      collateralAmount: new BigNumber(1),
-      integration: Schema.decodeSync(Integration)(integrationDto),
+      borrowAmount: new BigNumber(0),
+      collateralAmount: new BigNumber(0),
+      integration: null,
       locale: "en",
-      market,
-      projection: {
-        borrowMaxAmount: new BigNumber(10),
-        borrowUsd: new BigNumber(1),
-        collateralMaxAmount: new BigNumber(10),
-        collateralUsd: new BigNumber(1),
-        existingCollateralUsd: new BigNumber(0),
-        existingDebtUsd: new BigNumber(0),
-        maxLtv: null,
-        projectedCollateralUsd: new BigNumber(1),
-        projectedDebtUsd: new BigNumber(1),
-        projectedHealthFactor: null,
-        projectedLtv: new BigNumber(1),
-        riskStatus: "unavailable",
-      },
+      market: Schema.decodeSync(Market)(marketDto),
+      projectedMaxLtv: new BigNumber("0.8098"),
       t,
     });
 
-    expect(model.formRows.map((row) => row.id)).not.toContain("ltv");
-    expect(model.formRows.map((row) => row.id)).not.toContain("health-factor");
-    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).not.toBe(
-      "-"
+    expect(model.metricCards.find((card) => card.id === "max-ltv")?.value).toBe(
+      "80.98%"
+    );
+    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).toBe(
+      "80.98%"
     );
   });
+
+  it.each([
+    { riskStatus: "unavailable" as const, explains: true },
+    { riskStatus: "pending" as const, explains: false },
+  ])(
+    "keeps the LTV and health factor rows as placeholders while risk is $riskStatus",
+    ({ explains, riskStatus }) => {
+      const market = Schema.decodeSync(Market)(marketDto);
+      const model = getBorrowDetailsModel({
+        collateralToken: null,
+        borrowAmount: new BigNumber(1),
+        collateralAmount: new BigNumber(1),
+        integration: Schema.decodeSync(Integration)(integrationDto),
+        locale: "en",
+        market,
+        projection: {
+          borrowMaxAmount: new BigNumber(10),
+          borrowUsd: new BigNumber(1),
+          collateralMaxAmount: new BigNumber(10),
+          collateralUsd: new BigNumber(1),
+          existingCollateralUsd: new BigNumber(0),
+          existingDebtUsd: new BigNumber(0),
+          maxLtv: null,
+          projectedCollateralUsd: new BigNumber(1),
+          projectedDebtUsd: new BigNumber(1),
+          projectedHealthFactor: null,
+          projectedLtv: new BigNumber(1),
+          riskStatus,
+        },
+        t,
+      });
+      const row = (id: string) =>
+        model.formRows.find((candidate) => candidate.id === id);
+
+      expect(row("ltv")).toEqual({
+        id: "ltv",
+        label: t("dashboard.borrow.form.ltv_ratio"),
+        value: unavailableFigure,
+        ...(explains
+          ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+          : {}),
+      });
+      expect(row("health-factor")?.value).toBe(unavailableFigure);
+      expect(row("health-factor")?.tone).toBeUndefined();
+      expect(row("max-ltv")?.value).not.toBe(unavailableFigure);
+    }
+  );
 
   it.each([
     {
@@ -343,9 +380,14 @@ describe("borrow position items", () => {
       expected: { hf: ["2", "default"], ltv: ["40%", "default"] },
     },
     {
+      hf: "1.3",
+      ltv: "0.5",
+      expected: { hf: ["1.3", "warning"], ltv: ["50%", "warning"] },
+    },
+    {
       hf: "1.05",
       ltv: "0.7",
-      expected: { hf: ["1.05", "warning"], ltv: ["70%", "warning"] },
+      expected: { hf: ["1.05", "danger"], ltv: ["70%", "danger"] },
     },
     {
       hf: "0.9",
@@ -358,7 +400,7 @@ describe("borrow position items", () => {
       expected: { hf: ["<0.01", "danger"], ltv: [">100%", "danger"] },
     },
   ])(
-    "flags projected LTV $ltv and health factor $hf against a 75% max LTV",
+    "reads projected LTV $ltv and health factor $hf in one band against a 75% max LTV",
     ({ expected, hf, ltv }) => {
       const model = getBorrowDetailsModel({
         collateralToken: null,
@@ -392,6 +434,38 @@ describe("borrow position items", () => {
       expect(row("health-factor")).toEqual(expected.hf);
     }
   );
+
+  it("draws the projected LTV as a meter under its row, with max LTV marked", () => {
+    const model = getBorrowDetailsModel({
+      collateralToken: null,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(1),
+      integration: null,
+      locale: "en",
+      market: Schema.decodeSync(Market)(marketDto),
+      projection: {
+        borrowMaxAmount: new BigNumber(10),
+        borrowUsd: new BigNumber(1),
+        collateralMaxAmount: new BigNumber(10),
+        collateralUsd: new BigNumber(1),
+        existingCollateralUsd: new BigNumber(0),
+        existingDebtUsd: new BigNumber(0),
+        maxLtv: new BigNumber("0.75"),
+        projectedCollateralUsd: new BigNumber(1),
+        projectedDebtUsd: new BigNumber(1),
+        projectedHealthFactor: new BigNumber("1.3"),
+        projectedLtv: new BigNumber("0.5"),
+        riskStatus: "available",
+      },
+      t,
+    });
+
+    expect(model.formRows.find((row) => row.id === "ltv")?.meter).toEqual({
+      value: 50,
+      valueText: "50%",
+      marker: { value: 75, label: "dashboard.borrow.risk.max_ltv_marker" },
+    });
+  });
   it("keeps same-token collateral isolated by market and preserves API risk state", () => {
     const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
     const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";
@@ -550,13 +624,22 @@ describe("borrow position items", () => {
     });
     expect(model.providerName).toBe("Morpho Blue");
     expect(model.healthFactor).toEqual(new BigNumber("4.3708"));
-    expect(model.totalCollateralUsd).toBe("$2.54");
-    expect(model.metricCards.find((card) => card.id === "debt")?.value).toBe(
-      "$0.50"
-    );
+    // The summary's caption carries the collateral value.
+    const captionT = ((key: string, options?: { collateral?: string }) =>
+      options?.collateral ?? key) as TFunction;
+    expect(
+      getBorrowPositionDetailsModel({
+        locale: "en",
+        position: usdcPosition,
+        t: captionT,
+      }).summary.subvalue
+    ).toBe("$2.54");
+    expect(
+      model.summary.metrics.find((metric) => metric.id === "debt")?.value
+    ).toBe("$0.50");
+    expect(model.networkName).toBe("Ethereum");
     expect(model.detailRows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "network", value: "Ethereum" }),
         expect.objectContaining({ id: "borrow-apy", value: "3.85%" }),
       ])
     );
@@ -673,9 +756,7 @@ describe("borrow position items", () => {
         t,
       });
       expect(model.title).toBe("USDC/GHO");
-      expect(
-        model.metricCards.find((card) => card.id === "net-worth")?.value
-      ).toBe("$0.03");
+      expect(model.summary.value).toBe("$0.03");
     });
 
     it("shares pool collateral across debts without double-counting account totals", () => {
@@ -724,9 +805,7 @@ describe("borrow position items", () => {
         { collateral: [usdcMarketId], id: daiMarketId, netWorthUsd: "0.02" },
       ]);
       expect(positions.totals).toEqual({
-        netApy: new BigNumber("0.018"),
-        netApyWeightUsd: new BigNumber("0.02"),
-        netWorthUsd: new BigNumber("0.02"),
+        totalBorrowedUsd: new BigNumber("0.02"),
         totalSuppliedUsd: new BigNumber("0.04"),
       });
     });

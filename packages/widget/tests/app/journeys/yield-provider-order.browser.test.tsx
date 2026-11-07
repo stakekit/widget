@@ -107,8 +107,8 @@ describe("Yield Provider Order", () => {
     });
 
     await expect
-      .element(app.getByText("DeFi", { exact: true }))
-      .toHaveAttribute("data-state", "selected");
+      .element(app.getByRole("tab", { name: "DeFi", exact: true }))
+      .toHaveAttribute("aria-selected", "true");
     await expect(listedYieldIds(app)).resolves.toEqual([
       "ethereum-eth-morpho-vault",
       "ethereum-eth-upshift-vault",
@@ -118,7 +118,7 @@ describe("Yield Provider Order", () => {
       .element(
         app.getByTestId(/^select-opportunity__item_ethereum-eth-morpho-vault/)
       )
-      .toHaveAttribute("data-selected", "true");
+      .toHaveAttribute("aria-selected", "true");
 
     await app.unmount();
   });
@@ -144,7 +144,7 @@ describe("Yield Provider Order", () => {
       .element(
         app.getByTestId(/^select-opportunity__item_ethereum-eth-aave-lending/)
       )
-      .toHaveAttribute("data-selected", "true");
+      .toHaveAttribute("aria-selected", "true");
 
     await app.unmount();
   });

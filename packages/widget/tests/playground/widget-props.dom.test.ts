@@ -37,30 +37,45 @@ describe("Playground widget props", () => {
     expect(props).not.toHaveProperty("borrowApiUrl");
   });
 
-  it("mounts single-theme host variants with their own theme", () => {
-    expect(propsFor({ theme: "dark", variant: "utila" }).theme).toBe(
-      lightTheme
-    );
-    expect(propsFor({ theme: "light", variant: "porto" }).theme).toBe(
-      darkTheme
-    );
-  });
-
-  it("mounts the selected theme for variants that support both", () => {
-    expect(propsFor({ theme: "light", variant: "finery" }).theme).toBe(
-      lightTheme
-    );
-    expect(propsFor({ theme: "dark", variant: "default" }).theme).toBe(
-      darkTheme
-    );
-  });
-
-  it("mounts Borrow only with the dashboard variant", () => {
+  it("mounts single-scheme host variants with their own color scheme", () => {
     expect(
-      propsFor({ borrowEnabled: true, dashboardVariant: false }).borrowEnabled
+      propsFor({ colorScheme: "dark", variant: "utila" }).appearance
+    ).toEqual({ colorScheme: "light" });
+    expect(
+      propsFor({ colorScheme: "system", variant: "porto" }).appearance
+    ).toEqual({ colorScheme: "dark" });
+  });
+
+  it("mounts the selected color scheme for variants that support both", () => {
+    expect(
+      propsFor({ colorScheme: "system", variant: "finery" }).appearance
+    ).toEqual({ colorScheme: "system" });
+    expect(
+      propsFor({ colorScheme: "light", variant: "default" }).appearance
+    ).toEqual({ colorScheme: "light" });
+  });
+
+  it("mounts a legacy theme sample only when one is chosen", () => {
+    expect(propsFor({ legacyTheme: "none" })).not.toHaveProperty("theme");
+    expect(propsFor({ legacyTheme: "lightTheme" }).theme).toBe(lightTheme);
+    expect(propsFor({ legacyTheme: "darkTheme" }).theme).toBe(darkTheme);
+    expect(
+      propsFor({ legacyTheme: "customized" }).theme?.color
+        ?.primaryButtonBackground
+    ).toBe("#E8590C");
+  });
+
+  it("mounts Borrow only with the dashboard layout", () => {
+    expect(
+      propsFor({ borrowEnabled: true, layout: "compact" }).borrowEnabled
     ).toBe(false);
     expect(
-      propsFor({ borrowEnabled: true, dashboardVariant: true }).borrowEnabled
+      propsFor({ borrowEnabled: true, layout: "dashboard" }).borrowEnabled
     ).toBe(true);
+  });
+
+  it("passes the layout", () => {
+    expect(propsFor({ layout: "compact" }).layout).toBe("compact");
+    expect(propsFor({ layout: "dashboard" }).layout).toBe("dashboard");
   });
 });

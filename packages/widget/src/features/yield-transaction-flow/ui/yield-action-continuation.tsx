@@ -7,9 +7,9 @@ import {
   YieldFlowSessionRoute,
 } from "../react/yield-flow-route";
 import { ActivityCompletePage } from "./complete/pages/activity-complete.page";
+import { EnterStepsPage } from "./steps/pages/enter-steps.page";
+import { ExitStepsPage } from "./steps/pages/exit-steps.page";
 import { PendingStepsPage } from "./steps/pages/pending-steps.page";
-import { StakeStepsPage } from "./steps/pages/stake-steps.page";
-import { UnstakeStepsPage } from "./steps/pages/unstake-steps.page";
 
 type YieldActionContinuationInput = Omit<
   Parameters<typeof makeYieldActionContinuationSession>[0],
@@ -45,9 +45,9 @@ const ContinuationStepsPage = () => {
 
   switch (action.intent) {
     case "enter":
-      return <StakeStepsPage />;
+      return <EnterStepsPage />;
     case "exit":
-      return <UnstakeStepsPage />;
+      return <ExitStepsPage />;
     case "manage":
       return <PendingStepsPage />;
   }

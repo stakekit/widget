@@ -12,12 +12,14 @@ import {
   SubstrateChainIds,
   type SupportedSKChainIds,
 } from "../domain/wallet/contract.js";
+import type { SKAppearance } from "./appearance.js";
 import type { SKTheme } from "./theme.js";
 
 export type {
   SupportedSKChainIds,
   WalletPolicy as SKWalletPolicy,
 } from "../domain/wallet/contract.js";
+export type { SKAppearance, SKColorRole } from "./appearance.js";
 export type { SKTheme } from "./theme.js";
 export {
   DomainYieldCategory as YieldCategory,
@@ -487,6 +489,9 @@ export type SKBorrowExternalProviders = Readonly<
 /** Host integration preset: presentation, theme, wallet catalogue and tracking. */
 export type SKHostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
 
+/** The page arrangement the Widget presents. */
+export type SKLayout = "compact" | "dashboard";
+
 export type SKTranslationTree = Readonly<{
   [key: string]: string | SKTranslationTree;
 }>;
@@ -612,7 +617,15 @@ type SettingsPropsBase = {
   borrowMarketsScope?: SKBorrowMarketsScope;
   /** Yields API URL. Read at mount; remount the widget to change it. */
   yieldsApiUrl?: string;
-  /** Theme tokens, deep-merged over the light theme. */
+  /** Colors, color scheme, radius, control heights and fonts. Changes apply live. */
+  appearance?: SKAppearance;
+  /**
+   * Theme tokens, deep-merged over the light theme.
+   *
+   * @deprecated Use `appearance`. Customized values that have a Color Role
+   * or setting are carried over to `appearance`; the rest no longer apply to
+   * redesigned screens. Removed in the next major version.
+   */
   theme?: SKTheme;
   /** Analytics callbacks. */
   tracking?: SKTrackingConfig;
@@ -674,18 +687,33 @@ type SettingsPropsBase = {
   chainIconMapping?:
     | Partial<Record<SKNetwork, string>>
     | ((network: SKNetwork) => string);
-  /** Enables the dashboard route tree and category yield grouping by default. */
+  /**
+   * The Layout: `"compact"` shows one page at a time; `"dashboard"` enables
+   * the dashboard route tree and category yield grouping by default.
+   * Defaults to `"compact"`.
+   */
+  layout?: SKLayout;
+  /**
+   * Enables the dashboard Layout. Ignored when `layout` is set.
+   * @deprecated Use `layout: "dashboard"`.
+   */
   dashboardVariant?: boolean;
-  /** Order of yield categories. Omitted categories follow in the default order. */
+  /**
+   * Order of yield categories; the first is selected by default. Omitted
+   * categories follow in the default order: DeFi, Stake, RWA.
+   */
   yieldCategoryOrder?: YieldCategory[];
   /**
    * Lists these yield providers first within each category tab, and selects
    * the first one by default. Applies only with category yield grouping.
    */
   yieldProviderOrder?: SKYieldProviderOrder;
-  /** Lists yields flat or grouped by category. Defaults to `"category"` with `dashboardVariant`, else `"flat"`. */
+  /** Lists yields flat or grouped by category. Defaults to `"category"` in the dashboard Layout, else `"flat"`. */
   yieldGrouping?: "flat" | "category";
-  /** Offers institutional wallets instead of the regular wallet list. Read at mount. */
+  /**
+   * Offers institutional wallets instead of the regular wallet list. Read at
+   * mount. The Finery variant forces it; either rejects `externalProviders`.
+   */
   institutionalWallets?: boolean;
   /** Hides the chain selector in the header. */
   hideChainSelector?: boolean;

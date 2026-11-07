@@ -1,21 +1,20 @@
 import type BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { selectTokenButton } from "../../../../../shared/ui/primitives/button/styles.css";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../../../widget-configuration/index";
+import { useTranslation } from "react-i18next";
+import { TokenTrigger } from "../../../../../ui/index";
 import { BorrowAmountField } from "../../../amount-input/views";
 
 /**
- * Position action amount card; balances carry only a symbol, not a token, so
- * the accessory is a symbol chip unless the form supplies a token selector.
+ * Position action amount panel; balances carry only a symbol, not a token, so
+ * the accessory shows the symbol unless the form supplies a token selector.
+ * The field is labelled Amount: the pressed action button above names the
+ * verb.
  */
 export const AmountInputCard = ({
   amount,
   balanceLabel,
   disabled,
-  label,
+  focusRequest,
   onAmountChange,
   onMaxClick,
   tokenSelector,
@@ -26,7 +25,8 @@ export const AmountInputCard = ({
   readonly amount: BigNumber;
   readonly balanceLabel: string;
   readonly disabled?: boolean;
-  readonly label: string;
+  /** Each new value above zero focuses the amount. */
+  readonly focusRequest?: number;
   readonly onAmountChange: (amount: BigNumber) => void;
   readonly onMaxClick?: (() => void) | null;
   readonly tokenSelector?: ReactNode;
@@ -34,34 +34,20 @@ export const AmountInputCard = ({
   readonly usdValue?: BigNumber;
   readonly warning?: string | null;
 }) => {
-  const variant = useWidgetConfig("variant");
+  const { t } = useTranslation();
 
   return (
     <BorrowAmountField
       accessory={
-        tokenSelector ?? (
-          <Box
-            alignItems="center"
-            borderRadius="2xl"
-            className={combineRecipeWithVariant({
-              rec: selectTokenButton,
-              variant,
-            })}
-            display="flex"
-            px="2"
-            py="1"
-          >
-            <Text variant={{ weight: "bold" }}>{tokenSymbol}</Text>
-          </Box>
-        )
+        tokenSelector ?? <TokenTrigger readOnly token={{ name: tokenSymbol }} />
       }
       amount={amount}
-      balance={balanceLabel}
+      balance={{ short: balanceLabel }}
       disabled={disabled}
-      label={label}
+      {...(focusRequest === undefined ? {} : { focusRequest })}
+      label={t("shared.amount")}
       onAmountChange={onAmountChange}
       onMaxClick={onMaxClick}
-      tone="action"
       usdValue={usdValue}
       warning={warning}
     />

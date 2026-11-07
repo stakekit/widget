@@ -1,5 +1,13 @@
 import type BigNumber from "bignumber.js";
-import { Equal, Match, Option, Ref, Schema } from "effect";
+import {
+  DateTime,
+  Array as EArray,
+  Equal,
+  Match,
+  Option,
+  Ref,
+  Schema,
+} from "effect";
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type {
   ActionCommand,
@@ -8,7 +16,10 @@ import type {
 } from "../../../domain/action/models";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
-import { getActionInputToken } from "../../../domain/action/rules";
+import {
+  getActionInputToken,
+  getTransactionGasEstimate,
+} from "../../../domain/action/rules";
 import {
   getConfidentialActionKind,
   getConfidentialAssetToken,
@@ -21,11 +32,16 @@ import {
 import type { TokenAmount } from "../../../domain/earn/denomination";
 import type {
   ConfidentialHandle,
+  EarnBalance,
   EarnProvider,
   EarnValidator,
   EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
+import {
+  getYieldCooldownDuration,
+  isBittensorStaking,
+} from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type {
   ProviderOption,
@@ -328,6 +344,8 @@ export const makeYieldFlowSession = (
           ...yieldFlowRoutes.Earn.at(),
           finishPath: widgetRoutes.earn.build(),
         };
+      // A position's flows finish on its page, which returns to the
+      // positions list once the position is gone.
       case "PositionExit":
       case "PositionManage":
         return {
@@ -335,7 +353,10 @@ export const makeYieldFlowSession = (
             balanceId: command.mount.balanceId,
             integrationId: command.mount.integrationId,
           }),
-          finishPath: widgetRoutes.positions.build(),
+          finishPath: widgetRoutes.positionDetails.build({
+            balanceId: command.mount.balanceId,
+            integrationId: command.mount.integrationId,
+          }),
         };
       // Only the Dashboard Layout mounts a position's stake flow.
       case "PositionStake":
@@ -344,7 +365,10 @@ export const makeYieldFlowSession = (
             balanceId: command.mount.balanceId,
             integrationId: command.mount.integrationId,
           }),
-          finishPath: widgetRoutes.positions.build(),
+          finishPath: widgetRoutes.positionDetails.build({
+            balanceId: command.mount.balanceId,
+            integrationId: command.mount.integrationId,
+          }),
         };
     }
   })();
@@ -378,6 +402,28 @@ export const getYieldFlowRouteGroup = (pathname: string): WidgetPath | null =>
       )
     )
   );
+
+/**
+ * What the flow's transactions are estimated to cost in the gas token: the
+ * action's, plus the conversion before it. Null when any part is unknown, so
+ * no partial total shows.
+ */
+export const getYieldFlowGasAmount = (
+  action: YieldAction | null,
+  conversionGas: BigNumber | null
+) => {
+  if (!action || !conversionGas) return null;
+
+  const estimates = action.transactions.map(getTransactionGasEstimate);
+  if (estimates.some((estimate) => !estimate)) return null;
+
+  const total = estimates.reduce(
+    (sum, estimate) => sum.plus(estimate?.amount ?? 0),
+    conversionGas
+  );
+
+  return total.isZero() ? null : total;
+};
 
 type YieldTransactionFlowReviewPricingInput = {
   readonly token: Token;
@@ -417,6 +463,72 @@ export const getYieldTransactionFlowKycYield = (
       return null;
   }
 };
+
+/** The yield a flow's intake acts on. */
+const getYieldFlowIntakeYield = (
+  intake: YieldTransactionFlowIntake
+): EarnYieldWithProvider => {
+  switch (intake._tag) {
+    case "Enter":
+      return intake.selectedStake;
+    case "Exit":
+    case "Manage":
+      return intake.integration;
+    case "YieldActionContinuation":
+      return intake.selectedYield;
+  }
+};
+
+/**
+ * Who runs a flow's action, by name and logo: a validator's logo is a
+ * rounded square, a provider's round.
+ */
+export type YieldFlowAttribution = Readonly<{
+  readonly logo: string | undefined;
+  readonly name: string;
+  readonly shape: "round" | "square";
+}>;
+
+/**
+ * Who runs a flow's action, as Review, Steps and Complete all name it: the
+ * validators the user chose, else the yield's provider. Its logo is the
+ * first chosen validator's that has one, else the provider's. Null when the
+ * yield names no provider and no validator was chosen.
+ */
+export const getYieldFlowAttribution = (
+  intake: YieldTransactionFlowIntake
+): YieldFlowAttribution | null => {
+  const chosen = intake.providersDetails.filter(({ name }) => name);
+  if (chosen.length > 0) {
+    return {
+      logo: chosen.find(({ logo }) => logo)?.logo,
+      name: chosen.map(({ name }) => name).join(", "),
+      shape: "square",
+    };
+  }
+  const provider = getYieldFlowIntakeYield(intake).provider;
+  return provider?.name
+    ? {
+        logo: provider.logoURI ?? undefined,
+        name: provider.name,
+        shape: "round",
+      }
+    : null;
+};
+
+/**
+ * The symbol a deposit's rewards are paid in: a Bittensor subnet's own
+ * token, else the deposited token.
+ */
+export const getYieldFlowRewardsTokenSymbol = (
+  intake: EnterYieldTransactionFlowIntake
+) =>
+  isBittensorStaking(intake.selectedStake.id)
+    ? EArray.head([...intake.selectedValidators.values()]).pipe(
+        Option.map((validator) => validator.subnet?.tokenSymbol ?? ""),
+        Option.getOrElse(() => intake.selectedToken.symbol)
+      )
+    : intake.selectedToken.symbol;
 
 type YieldTransactionFlowGasWarningInput = {
   readonly gasFeeToken: Token;
@@ -542,6 +654,125 @@ export const getYieldFlowExitCompletion = (
   receiveToken: intake.receiveToken,
   token: intake.unstakeToken,
 });
+
+/**
+ * The exit a flow makes, from a position or continued from Activity: its
+ * yield, and whether it only joined the next redemption batch. Null for any
+ * other flow.
+ */
+export const getYieldFlowExit = ({
+  intake,
+}: YieldFlowSession): Readonly<{
+  readonly batched: boolean;
+  readonly yieldDto: EarnYieldWithProvider;
+}> | null => {
+  if (intake._tag === "Exit") {
+    return {
+      batched: getYieldFlowExitCompletion(intake).batched,
+      yieldDto: intake.integration,
+    };
+  }
+  if (
+    intake._tag === "YieldActionContinuation" &&
+    intake.action.intent === "exit"
+  ) {
+    return {
+      batched:
+        getConfidentialActionKind(intake.selectedYield, intake.action) ===
+        "privateExit",
+      yieldDto: intake.selectedYield,
+    };
+  }
+  return null;
+};
+
+/**
+ * When an exit's funds unlock: the latest date ahead the API gives the
+ * position's exiting balances, else now plus the yield's cooldown. Null for a
+ * batched exit, whose batch says when instead, or one without a cooldown.
+ */
+export const getYieldFlowExitUnlockDate = ({
+  balances,
+  batched,
+  now,
+  yieldDto,
+}: {
+  readonly balances: ReadonlyArray<Pick<EarnBalance, "date" | "type">>;
+  readonly batched: boolean;
+  readonly now: DateTime.Utc;
+  readonly yieldDto: EarnYieldWithProvider;
+}): DateTime.Utc | null => {
+  if (batched) return null;
+  const apiDate = balances.reduce<DateTime.Utc | null>(
+    (latest, { date, type }) =>
+      type === "exiting" &&
+      date &&
+      DateTime.isGreaterThan(date, now) &&
+      (!latest || DateTime.isGreaterThan(date, latest))
+        ? date
+        : latest,
+    null
+  );
+  if (apiDate) return apiDate;
+  const cooldown = getYieldCooldownDuration(yieldDto);
+  return cooldown ? DateTime.addDuration(now, cooldown) : null;
+};
+
+const getIntakeValidators = (
+  intake: YieldTransactionFlowIntake
+): ReadonlyArray<EarnValidator> => {
+  switch (intake._tag) {
+    case "Enter":
+      return [...intake.selectedValidators.values()];
+    case "YieldActionContinuation":
+      return intake.selectedValidators;
+    case "Exit":
+    case "Manage":
+      return [];
+  }
+};
+
+const getValidatorsBalanceId = (
+  validators: ReadonlyArray<EarnValidator>
+): BalanceDataKey => {
+  const [only, ...others] = validators;
+  if (!only) return "default";
+  return others.length > 0 ? "validators" : `validator::${only.key}`;
+};
+
+/**
+ * The position balance a finished flow leads to, among the balances the
+ * portfolio holds for its yield: a position page's own balance, or the one
+ * the flow's validators stake into. A flow without validators falls back to
+ * the yield's only balance; a flow with validators to the only balance one of
+ * them holds, never another validator's. Null without one.
+ */
+export const getYieldFlowPositionBalanceId = (
+  { intake, mount }: YieldFlowSession,
+  balanceIds: ReadonlyArray<BalanceDataKey>
+): BalanceDataKey | null => {
+  if (mount._tag !== "Earn" && mount._tag !== "YieldActionContinuation") {
+    return balanceIds.includes(mount.balanceId) ? mount.balanceId : null;
+  }
+  const validators = getIntakeValidators(intake);
+  const preferred = getValidatorsBalanceId(validators);
+  if (balanceIds.includes(preferred)) return preferred;
+  const validatorBalanceIds = new Set(
+    validators.map((validator): BalanceDataKey => `validator::${validator.key}`)
+  );
+  const candidates =
+    validators.length === 0
+      ? balanceIds
+      : balanceIds.filter((balanceId) => validatorBalanceIds.has(balanceId));
+  const [only, ...others] = candidates;
+  return only && others.length === 0 ? only : null;
+};
+
+/** The yield a flow acts on. */
+export const getYieldFlowYieldId = ({ intake }: YieldFlowSession): YieldId =>
+  intake._tag === "YieldActionContinuation"
+    ? intake.action.yieldId
+    : intake.request.yieldId;
 
 /**
  * How a confidential vault's Execution creates its action, once confirmed:

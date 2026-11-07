@@ -1,5 +1,6 @@
 import { MotionGlobalConfig } from "motion/react";
-import { vi } from "vitest";
+import { beforeEach, vi } from "vitest";
+import { cdp } from "vitest/browser";
 import { failOnReactErrors } from "./fail-on-react-errors";
 
 MotionGlobalConfig.skipAnimations = true;
@@ -41,3 +42,14 @@ const silenceConsoleNoise = (method: "error" | "log" | "warn") => {
 silenceConsoleNoise("error");
 silenceConsoleNoise("log");
 silenceConsoleNoise("warn");
+
+// The pointer stays wherever the last test left it, across test files too;
+// a Widget mounted under it renders hovered and then changes as hover is
+// re-evaluated. Each test starts with the pointer off the page.
+beforeEach(async () => {
+  await cdp().send("Input.dispatchMouseEvent", {
+    type: "mouseMoved",
+    x: -1,
+    y: -1,
+  });
+});

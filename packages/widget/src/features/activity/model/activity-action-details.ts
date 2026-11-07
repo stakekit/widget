@@ -7,8 +7,9 @@ import type { BorrowToken } from "../../../domain/borrow/catalog/token";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
 import type { ConfidentialSettlement } from "../../../domain/earn/confidential";
 import type { Token } from "../../../domain/token/token";
-import { borrowTokenToAppToken } from "../../../shared/lib/borrow-token";
 import { formatDateTime } from "../../../shared/lib/date";
+import { formatBorrowProviderName } from "../../../shared/lib/formatters";
+import { formatAddress } from "../../../shared/lib/general";
 import {
   formatFigureChange,
   formatHealthFactor,
@@ -22,14 +23,18 @@ import type {
 } from "./activity-action";
 import {
   type ActivityActionTitle,
+  type ActivityDirection,
   type ActivityPresentationTime,
   type ActivityStatusLabel,
   getActivitySettlement,
   projectActivityActionListItem,
-  resolveActivityActionTokens,
   resolveBorrowActivityAmount,
 } from "./activity-action-list-item";
 import { findBorrowMarketToken } from "./activity-enrichment";
+import {
+  type ActivityTransactionErrorReason,
+  getTransactionErrorReason,
+} from "./transaction-error";
 
 type BorrowActivityTransaction = BorrowActivityAction["transactions"][number];
 
@@ -42,7 +47,10 @@ type ActivityDetailsTransactionStatus =
 
 type ActivityDetailsTransactionFields = Readonly<{
   readonly broadcastedAt: string | null;
+  /** The raw error the network or the wallet reported. */
   readonly error: string | null;
+  /** Why it failed, in words: for a failed transaction or one with an error. */
+  readonly errorReason: ActivityTransactionErrorReason | null;
   readonly explorerUrl: string | null;
   readonly hash: string | null;
   readonly status: ActivityDetailsTransactionStatus;
@@ -78,6 +86,8 @@ type ActivityBorrowDetailsProjection = Readonly<{
 
 export type ActivityActionDetailsProjection = Readonly<{
   readonly amount: string | null;
+  /** The amount's USD value when the action was made. */
+  readonly amountFiat: string | null;
   readonly borrow: ActivityBorrowDetailsProjection | null;
   readonly canContinue: boolean;
   /** When a confidential batch cancelled the request. */
@@ -85,14 +95,22 @@ export type ActivityActionDetailsProjection = Readonly<{
   readonly completedAt: string | null;
   readonly continuationUnavailable: boolean;
   readonly createdAt: string;
+  /** What the action did, which badges the token heading the receipt. */
+  readonly direction: ActivityDirection;
   readonly network: string;
+  /** Who runs the yield or market. */
+  readonly providerName: string | null;
   readonly statusLabel: ActivityStatusLabel | null;
   readonly title: ActivityActionTitle;
-  /** The token beside the title, whose icon heads the receipt. */
+  /** The token beside the title, whose logo heads the receipt. */
   readonly titleToken: Token | null;
   readonly amountTokenSymbol: string | null;
+  /** The amount the receipt heads with, signed: see the list item's. */
+  readonly amountText: string | null;
   readonly transactions: ReadonlyArray<ActivityDetailsTransaction>;
   readonly transactionsSummary: ActivityDetailsTransactionsSummary;
+  /** The validators the action staked with, by name or short address. */
+  readonly validators: ReadonlyArray<string>;
 }>;
 
 const formatDate = (
@@ -209,8 +227,10 @@ const projectYieldActivityDetails = ({
     : null;
   const transactions = action.transactions
     .toSorted(compareTransactionSteps)
-    .map(
-      (transaction): ActivityDetailsTransaction => ({
+    .map((transaction): ActivityDetailsTransaction => {
+      const status = projectTransactionStatus(transaction.status);
+      const error = transaction.error ?? null;
+      return {
         _tag: "yield",
         broadcastedAt: transaction.broadcastedAt
           ? formatDate(
@@ -219,17 +239,22 @@ const projectYieldActivityDetails = ({
               presentationTime.timeZone
             )
           : null,
-        error: transaction.error ?? null,
+        error,
+        errorReason:
+          error !== null || status === "failed"
+            ? getTransactionErrorReason(error)
+            : null,
         explorerUrl: transaction.explorerUrl ?? null,
         hash: transaction.hash,
         id: transaction.id,
-        status: projectTransactionStatus(transaction.status),
+        status,
         type: transaction.type,
-      })
-    );
+      };
+    });
 
   return {
     amount,
+    amountFiat: listItem.amountFiat,
     borrow: null,
     canContinue,
     canceledAt:
@@ -249,15 +274,19 @@ const projectYieldActivityDetails = ({
       item.yieldData === null &&
       continuationWindowOpen,
     createdAt: formatDate(action.createdAt, locale, presentationTime.timeZone),
+    direction: listItem.direction,
     network: item.yieldData?.token.network ?? item.walletScope.network,
+    providerName: item.yieldData?.provider?.name ?? null,
     statusLabel,
     title: listItem.title,
-    titleToken: item.yieldData
-      ? resolveActivityActionTokens(item.yieldData, action).titleToken
-      : null,
+    titleToken: listItem.token,
     amountTokenSymbol: listItem.amountTokenSymbol,
+    amountText: listItem.amountText,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
+    validators: item.validatorsData.map(
+      (validator) => validator.name ?? formatAddress(validator.address)
+    ),
   };
 };
 
@@ -304,22 +333,30 @@ const projectBorrowActivityDetails = ({
   const exactAmount = resolveBorrowActivityAmount(item);
   // The API returns the current step's transactions in order, without hashes.
   const transactions = action.transactions.map(
-    (transaction): ActivityDetailsTransaction => ({
-      _tag: "borrow",
-      broadcastedAt: null,
-      error: null,
-      explorerUrl: null,
-      hash: null,
-      id: transaction.id,
-      status: projectTransactionStatus(transaction.status),
-      type: transaction.type,
-    })
+    (transaction): ActivityDetailsTransaction => {
+      const status = projectTransactionStatus(transaction.status);
+      return {
+        _tag: "borrow",
+        broadcastedAt: null,
+        // The Borrow API reports no transaction errors.
+        error: null,
+        errorReason:
+          status === "failed" ? getTransactionErrorReason(null) : null,
+        explorerUrl: null,
+        hash: null,
+        id: transaction.id,
+        status,
+        type: transaction.type,
+      };
+    }
   );
 
   return {
     amount: exactAmount
       ? `${listItem.amountSign}${formatTokenAmount(exactAmount, locale, "down")}`
       : null,
+    // Borrow actions carry no USD value.
+    amountFiat: null,
     borrow: {
       collateralFee: formatBorrowFee(
         metadata?.feeAmount,
@@ -355,15 +392,19 @@ const projectBorrowActivityDetails = ({
     completedAt: null,
     continuationUnavailable: false,
     createdAt: formatDate(action.createdAt, locale, presentationTime.timeZone),
+    direction: listItem.direction,
     network: item.network,
+    providerName: item.integration
+      ? formatBorrowProviderName(item.integration.name)
+      : null,
     statusLabel: listItem.statusLabel,
     title: listItem.title,
-    titleToken: item.token
-      ? borrowTokenToAppToken({ network: item.network, token: item.token })
-      : null,
+    titleToken: listItem.token,
     amountTokenSymbol: listItem.amountTokenSymbol,
+    amountText: listItem.amountText,
     transactions,
     transactionsSummary: summarizeTransactions(transactions),
+    validators: [],
   };
 };
 

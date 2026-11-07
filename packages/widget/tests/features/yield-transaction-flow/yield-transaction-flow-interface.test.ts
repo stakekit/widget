@@ -188,7 +188,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/default/stake/complete",
-    finishPath: "/positions",
+    finishPath: "/positions/yield/default",
     makeCommand: () => ({
       intake: makeEnterIntake(),
       mount: {
@@ -203,7 +203,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/default/unstake/complete",
-    finishPath: "/positions",
+    finishPath: "/positions/yield/default",
     makeCommand: () => ({
       intake: makeExitIntake(),
       mount: {
@@ -218,7 +218,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/default/pending-action/complete",
-    finishPath: "/positions",
+    finishPath: "/positions/yield/default",
     makeCommand: () => ({
       intake: makeManageIntake(),
       mount: {

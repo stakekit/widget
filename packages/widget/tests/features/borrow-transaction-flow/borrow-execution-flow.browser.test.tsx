@@ -155,6 +155,32 @@ const withdrawSession = new BorrowFlowSession({
   },
   walletScope,
 });
+const enableCollateralSession = new BorrowFlowSession({
+  intake: {
+    command: Schema.decodeSync(ActionCommand)({
+      action: "enableCollateral",
+      address,
+      args: {
+        marketId: command.args.marketId,
+        tokenAddress: "0x0000000000000000000000000000000000000003",
+      },
+      integrationId: "morpho-blue",
+    }),
+    entry: borrowEntryFlowEntry,
+    riskVerdict: { _tag: "Allow" },
+    summary: {
+      action: "enableCollateral",
+      collateralTokenSymbol: "WETH",
+      existingCollateralUsd: "2",
+      marketLabel: "WETH",
+      network: "base",
+      providerName: "Aave V3",
+      riskStatus: "unavailable",
+      warnings: [],
+    },
+  },
+  walletScope,
+});
 const session = new BorrowFlowSession({
   intake: {
     ...reviewState,
@@ -204,7 +230,7 @@ const connectedWalletState = {
   additionalAddresses: null,
   address,
   chain: base,
-  connector: { id: "test", uid: "test" } as Connector,
+  connector: { id: "test", name: "Test Wallet", uid: "test" } as Connector,
   connectorChains: [base],
   isLedgerLive: false,
   isLedgerLiveAccountPlaceholder: false,
@@ -382,6 +408,8 @@ const renderExecution = (
     readonly session?: BorrowFlowSession;
     readonly stepsElement?: ReactNode;
     readonly wallet?: WalletOperations;
+    /** The connector the flow's wallet state shows, such as the host's. */
+    readonly walletConnector?: Connector;
   } = {}
 ) =>
   Effect.gen(function* () {
@@ -389,9 +417,9 @@ const renderExecution = (
       current: ReturnType<typeof useNavigate> | null;
     } = { current: null };
     const navigationService = makeWidgetNavigation({
-      back: () =>
+      back: (options) =>
         Effect.sync(() => {
-          navigation.current?.(-1);
+          navigation.current?.(-(options?.steps ?? 1));
         }),
       push: (to) =>
         Effect.sync(() => {
@@ -420,7 +448,9 @@ const renderExecution = (
       addLedgerAccount: activeWallet.addLedgerAccount,
       enabledNetworks: activeWallet.enabledNetworks,
       initialState: {
-        connection: connectedWalletState,
+        connection: options.walletConnector
+          ? { ...connectedWalletState, connector: options.walletConnector }
+          : connectedWalletState,
         ledger: {
           accounts: [],
           currentAccountId: undefined,
@@ -453,10 +483,14 @@ const renderExecution = (
       workflow.layer,
       flowWallet.layer
     );
-    // Start hands its Session to the flow route through navigation state.
+    // Start hands its Session to the flow route through navigation state,
+    // pushing Review over the page it started from.
     const flowState = { borrowFlowSession: options.session ?? session };
     const initialEntries = (
-      options.initialEntries ?? [options.initialPath ?? "/borrow/review"]
+      options.initialEntries ?? [
+        "/borrow",
+        options.initialPath ?? "/borrow/review",
+      ]
     ).map((pathname) =>
       pathname === "/borrow"
         ? pathname
@@ -649,7 +683,7 @@ describe("borrow execution flow component", () => {
     })
   );
 
-  it.live("labels a repayment amount on Review", () =>
+  it.live("heads Review with the repaid amount and its USD value", () =>
     Effect.gen(function* () {
       const repaySession = new BorrowFlowSession({
         ...session,
@@ -687,8 +721,17 @@ describe("borrow execution flow component", () => {
         session: repaySession,
       });
 
+      // The repaid amount heads Review, with the debt it clears in USD.
       yield* Effect.promise(() =>
-        expect.element(app.getByText("Repay amount")).toBeInTheDocument()
+        expect
+          .element(app.getByRole("heading", { name: "Repay USDC" }))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("25 USDC")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("$25.00")).toBeInTheDocument()
       );
       yield* Effect.promise(() =>
         expect.element(app.getByText("Borrow amount")).not.toBeInTheDocument()
@@ -716,7 +759,31 @@ describe("borrow execution flow component", () => {
       expect(text).not.toContain("Requested action");
       expect(text).not.toContain(command.args.marketId);
       expect(text).not.toContain("Confirming will open");
-      expect(text).not.toContain("Shown in wallet");
+    })
+  );
+
+  it.live("leaves the gas fee to the wallet and links the terms", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+      });
+
+      // The action is built on Confirm, so the wallet quotes its gas.
+      const gas = app.getByTestId("borrow-review-gas-fee");
+      yield* Effect.promise(() =>
+        expect.element(gas.getByText("Gas fee")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(gas.getByText("Estimated in your wallet"))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("link", { name: /Terms of Use/ }))
+          .toHaveAttribute("href", "https://docs.yield.xyz/docs/terms-of-use")
+      );
     })
   );
 
@@ -1032,6 +1099,69 @@ describe("borrow execution flow component", () => {
       })
   );
 
+  it.live(
+    "asks to approve the signing transaction in the wallet, above what the borrow runs",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          stepsElement: <BorrowStepsPage />,
+          wallet: {
+            ...wallet,
+            signTransaction: () => Effect.never,
+          },
+        });
+
+        const prompt = app.getByTestId("flow-steps-signature-prompt");
+        yield* Effect.promise(() =>
+          expect
+            .element(prompt)
+            .toHaveTextContent(
+              "Check your walletApprove the Borrow transaction in Test Wallet"
+            )
+        );
+        const details = app.getByTestId("flow-steps-details");
+        expect(
+          details.getByTestId("steps-details-amount").element().textContent
+        ).toBe("Amount25 USDC$25.00");
+        expect(
+          details.getByTestId("steps-details-market").element().textContent
+        ).toBe("MarketcbBTC / USDCMorpho Blue · Base");
+        // No gas is estimated before a borrow's steps run.
+        expect(details.getByTestId("steps-details-gas").query()).toBeNull();
+      })
+  );
+
+  it.live(
+    "asks to approve in the user's wallet, unnamed, when the host's External Provider signs",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          stepsElement: <BorrowStepsPage />,
+          wallet: {
+            ...wallet,
+            signTransaction: () => Effect.never,
+          },
+          walletConnector: {
+            id: "externalProviderConnector",
+            name: "External Provider",
+            uid: "external",
+          } as Connector,
+        });
+
+        const prompt = app.getByTestId("flow-steps-signature-prompt");
+        yield* Effect.promise(() =>
+          expect
+            .element(prompt)
+            .toHaveTextContent(
+              "Check your walletApprove the Borrow transaction in your wallet"
+            )
+        );
+        // A wallet icon stands in for a logo.
+        expect(prompt.element().querySelector("img")).toBeNull();
+        expect(prompt.element().querySelector("svg")).not.toBeNull();
+      })
+  );
+
   it.live("asks before history navigation leaves a signing Steps", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(makeBorrowApi({}), {
@@ -1127,7 +1257,7 @@ describe("borrow execution flow component", () => {
         );
 
         yield* Effect.promise(() =>
-          userEvent.click(app.getByRole("button", { name: "Try Again" }))
+          userEvent.click(app.getByRole("button", { name: "Try again" }))
         );
         yield* Effect.promise(() => expect.poll(() => signAttempts).toBe(2));
         // Wait until Steps is guarded again before checking nothing reopened.
@@ -1202,7 +1332,7 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByRole("button", { name: "Try Again" }))
+          .element(app.getByRole("button", { name: "Try again" }))
           .toBeInTheDocument()
       );
       yield* Effect.promise(() =>
@@ -1224,7 +1354,7 @@ describe("borrow execution flow component", () => {
       const app = yield* renderExecution(makeBorrowApi({}), {
         stepsElement: (
           <>
-            <AccountModal />
+            <AccountModal triggerSize="sm" />
             <BorrowStepsPage />
           </>
         ),
@@ -1274,16 +1404,36 @@ describe("borrow execution flow component", () => {
         yield* Effect.promise(() =>
           expect
             .element(
-              app.getByText("Borrow transaction could not be submitted.")
+              app.getByText("The transaction couldn't be sent. Try again.")
             )
             .toBeInTheDocument()
         );
+        expect(app.container.textContent).not.toContain(
+          "Borrow transaction could not be submitted."
+        );
+        // Sent, the transaction can no longer be cancelled: the footer
+        // offers Leave.
+        expect(app.getByRole("button", { name: "Cancel" }).query()).toBeNull();
         yield* Effect.promise(() =>
-          userEvent.click(app.getByRole("button", { name: "Cancel" }))
+          userEvent.click(app.getByRole("button", { name: "Leave" }))
+        );
+        // Borrow actions are not continued from Activity.
+        yield* Effect.promise(() =>
+          expect
+            .element(
+              app.getByText(
+                "Your transaction is in progress. If you leave now, its remaining steps won't be completed."
+              )
+            )
+            .toBeInTheDocument()
         );
         // A sent transaction is guarded even after its submission failed.
         yield* Effect.promise(() =>
-          userEvent.click(app.getByRole("button", { name: "Leave" }))
+          userEvent.click(
+            app
+              .getByTestId("leave-confirmation")
+              .getByRole("button", { name: "Leave" })
+          )
         );
         yield* Effect.promise(() =>
           expect.element(app.getByText("Borrow home")).toBeInTheDocument()
@@ -1317,8 +1467,8 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Transaction - Disable collateral"))
-          .toBeInTheDocument()
+          .poll(() => app.container.textContent)
+          .toContain("Disable collateral")
       );
       expect(app.container.textContent).not.toContain("DISABLE_COLLATERAL");
     })
@@ -1342,26 +1492,23 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Transaction 1 / 2 - Token approval"))
-          .toBeInTheDocument()
+          .poll(() => app.container.textContent)
+          .toContain("Step 1 of 2 · Token approval")
       );
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Transaction 2 / 2 - Supply"))
-          .toBeInTheDocument()
+          .poll(() => app.container.textContent)
+          .toContain("Step 2 of 2 · Supply")
       );
       // The signing step of the first transaction is active.
       yield* Effect.promise(() =>
         expect
           .poll(() =>
-            Array.from(
-              app.container.querySelectorAll(
-                '[data-rk="tx-state-step-circle"]'
-              ),
-              (circle) => circle.getAttribute("data-state")
+            Array.from(app.container.querySelectorAll("ol > li"), (step) =>
+              step.getAttribute("aria-current")
             ).slice(0, 2)
           )
-          .toEqual(["success", "pending"])
+          .toEqual(["step", null])
       );
       expect(app.container.textContent).not.toContain("Transaction history");
     })
@@ -1489,12 +1636,14 @@ describe("borrow execution flow component", () => {
         yield* Effect.promise(() =>
           expect
             .element(
-              app.getByRole("button", { name: `View ${label} transaction` })
+              app.getByRole("link", {
+                name: new RegExp(`^View ${label} transaction`),
+              })
             )
             .toBeInTheDocument()
         );
       }
-      expect(app.container.textContent).not.toContain("View transaction");
+      expect(app.container.textContent).not.toContain("View on explorer");
     })
   );
 
@@ -1529,6 +1678,38 @@ describe("borrow execution flow component", () => {
     })
   );
 
+  it.live("names the asset a collateral toggle completed for", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              action: "enableCollateral",
+              status: "SUCCESS",
+              transactions: [
+                transaction({ status: "CONFIRMED", type: "ENABLE_COLLATERAL" }),
+              ],
+            }),
+          ],
+        }),
+        {
+          action: decodedAction({
+            action: "enableCollateral",
+            transactions: [transaction({ type: "ENABLE_COLLATERAL" })],
+          }),
+          completeElement: <BorrowCompletePage />,
+          session: enableCollateralSession,
+        }
+      );
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("WETH enabled as collateral"))
+          .toBeInTheDocument()
+      );
+    })
+  );
+
   it.live("titles an execution failure with the action that ran", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(
@@ -1560,6 +1741,55 @@ describe("borrow execution flow component", () => {
         "Borrow transaction failed"
       );
     })
+  );
+
+  it.live(
+    "says the collateral went in when the borrow after it failed, never the raw status",
+    () =>
+      Effect.gen(function* () {
+        const supply = transaction({ id: "tx-supply", type: "SUPPLY" });
+        const borrowTx = transaction({ id: "tx-borrow", type: "BORROW" });
+        const app = yield* renderExecution(
+          makeBorrowApi({
+            getActions: [
+              action({
+                status: "WAITING_FOR_NEXT",
+                transactions: [{ ...supply, status: "CONFIRMED" }, borrowTx],
+              }),
+              action({
+                status: "FAILED",
+                transactions: [
+                  { ...supply, status: "CONFIRMED" },
+                  { ...borrowTx, status: "FAILED" },
+                ],
+              }),
+            ],
+          }),
+          {
+            action: decodedAction({
+              action: "supplyAndBorrow",
+              transactions: [supply, borrowTx],
+            }),
+            stepsElement: <BorrowStepsPage />,
+          }
+        );
+
+        yield* Effect.promise(() =>
+          expect
+            .element(
+              app.getByText(
+                "Your 0.5 cbBTC was supplied as collateral, but the borrow didn't go through. Try the borrow again, or withdraw the collateral from your position."
+              )
+            )
+            .toBeInTheDocument()
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByText("The transaction failed. Try again."))
+            .toBeInTheDocument()
+        );
+        expect(app.container.textContent).not.toContain("FAILED status");
+      })
   );
 
   it.live("renders retryable failure and routes after retry succeeds", () =>

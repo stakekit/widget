@@ -123,7 +123,6 @@ const specs: SpecConfig[] = [
         "TokenController_getTokenBalances",
         "TokenController_getTokenPrices",
         "TokenController_getTokens",
-        "YieldController_getSingleYieldRewardsSummary",
       ],
       // Read by `domain/action` and `services/wallet` outside any kept
       // operation response.
@@ -162,6 +161,8 @@ const specs: SpecConfig[] = [
         "ActionsController_getAction",
         "ActionsController_getActions",
         "ActionsController_manageYield",
+        "ActionsController_simulateEnter",
+        "ActionsController_simulateExit",
         "HealthController_health",
         "KycController_getStatus",
         "NetworksController_getNetworks",
@@ -173,6 +174,7 @@ const specs: SpecConfig[] = [
         "YieldsController_getYield",
         "YieldsController_getYieldBalances",
         "YieldsController_getYieldRewardRateHistory",
+        "YieldsController_getYieldRewardsSummary",
         "YieldsController_getYields",
         "YieldsController_getYieldTvlHistory",
         "YieldsController_getYieldValidators",

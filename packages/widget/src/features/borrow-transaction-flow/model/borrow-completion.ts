@@ -1,9 +1,12 @@
+import type BigNumber from "bignumber.js";
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { ActionMetadata } from "../../../domain/borrow/execution/action";
 import type { MarketId } from "../../../domain/borrow/ids";
 import type { BorrowPositions } from "../../../domain/borrow/positions/borrow-positions";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
+import type { Token } from "../../../domain/token/token";
 import {
+  type BorrowTransactionFlowEntry,
   type BorrowTransactionFlowReview,
   type ProjectedBorrowTransactionFlowSummary as ProjectedSummary,
   projectBorrowTransactionFlowSummary,
@@ -134,7 +137,51 @@ const withoutStaticZeros = (
   maxLtv: position.maxLtv,
 });
 
-const getHeadline = (summary: Summary, projected: ProjectedSummary) => {
+/** A positive USD figure as an exact string; null for none. */
+const positiveUsd = (value: BigNumber) =>
+  value.isGreaterThan(0) ? value.toString(10) : null;
+
+/** What the headline amount is worth: the loan at its price, else the move. */
+const getHeadlineUsd = (summary: Summary): string | null => {
+  switch (summary.action) {
+    case "borrow":
+    case "borrowAndSupply":
+      return positiveUsd(
+        exactDecimal(summary.borrowAmount).multipliedBy(
+          summary.loanTokenPriceUsd
+        )
+      );
+    case "repay":
+      return positiveUsd(
+        exactDecimal(summary.existingDebtUsd).minus(summary.projectedDebtUsd)
+      );
+    case "supply":
+      return positiveUsd(
+        exactDecimal(summary.projectedCollateralUsd).minus(
+          summary.existingCollateralUsd
+        )
+      );
+    case "withdraw":
+      return positiveUsd(
+        exactDecimal(summary.existingCollateralUsd).minus(
+          summary.projectedCollateralUsd
+        )
+      );
+    case "disableCollateral":
+    case "enableCollateral":
+      return null;
+  }
+};
+
+/**
+ * The amount an action is about, its symbol, and its USD value: the loan
+ * for debt actions, else the collateral; a collateral toggle names only it.
+ */
+export const getBorrowFlowHeadline = (
+  summary: Summary,
+  projected: ProjectedSummary
+) => {
+  const usd = getHeadlineUsd(summary);
   switch (summary.action) {
     case "borrow":
     case "borrowAndSupply":
@@ -145,11 +192,12 @@ const getHeadline = (summary: Summary, projected: ProjectedSummary) => {
       return {
         amount: amount?.amount ?? null,
         symbol: amount?.symbol ?? "",
+        usd,
       };
     }
     case "disableCollateral":
     case "enableCollateral":
-      return { amount: null, symbol: summary.collateralTokenSymbol };
+      return { amount: null, symbol: summary.collateralTokenSymbol, usd };
   }
 };
 
@@ -159,6 +207,51 @@ const getCollateralFee = (projected: ProjectedSummary) => {
   if (!exactDecimal(collateral.feeAmount).isGreaterThan(0)) return null;
 
   return { amount: collateral.feeAmount, symbol: collateral.symbol };
+};
+
+/**
+ * The logos a completed action's summary leads with, from the market the
+ * flow started on: the token the action is about (the loan for debt actions,
+ * else the collateral) and the provider's. A flow started from a position
+ * keeps only the market's id, so it has neither.
+ */
+export const getBorrowCompletionLogos = (
+  summary: Summary,
+  entry: BorrowTransactionFlowEntry
+): { readonly token: Token | null; readonly providerSrc: string | null } => {
+  if (entry._tag === "MarketPosition")
+    return { providerSrc: null, token: null };
+  const { integration, market } = entry.details;
+  const borrowToken = (() => {
+    switch (summary.action) {
+      case "borrow":
+      case "borrowAndSupply":
+      case "repay":
+        return market.loanToken;
+      case "supply":
+      case "withdraw":
+      case "disableCollateral":
+      case "enableCollateral":
+        return market.collateralTokens.find(
+          (collateral) =>
+            collateral.token.symbol === summary.collateralTokenSymbol
+        )?.token;
+    }
+  })();
+
+  return {
+    providerSrc: integration?.metadata.logoURI || null,
+    token: borrowToken
+      ? {
+          decimals: borrowToken.decimals,
+          name: borrowToken.name,
+          network: market.network,
+          symbol: borrowToken.symbol,
+          ...(borrowToken.address ? { address: borrowToken.address } : {}),
+          ...(borrowToken.logoURI ? { logoURI: borrowToken.logoURI } : {}),
+        }
+      : null,
+  };
 };
 
 /**
@@ -189,7 +282,7 @@ export const projectBorrowCompletion = ({
           : null,
       origination: projected.origination,
     },
-    headline: getHeadline(summary, projected),
+    headline: getBorrowFlowHeadline(summary, projected),
     position: settled
       ? {
           change: withoutStaticZeros(settledPositionChange(projected, settled)),

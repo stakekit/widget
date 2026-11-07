@@ -375,7 +375,7 @@ const makeRegistry = ({
 };
 
 describe("Position Details exit command", () => {
-  it("keeps an untouched exit amount neutral until submission", async () => {
+  it("keeps an untouched exit amount neutral, disabled with its reason", async () => {
     const yieldDto = yieldApiYieldDtoFixture();
     const constrainedYield = yieldApiYieldFixture({
       ...skySavingsRateFields,
@@ -411,7 +411,8 @@ describe("Position Details exit command", () => {
     try {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
-        unstakeDisabled: false,
+        unstakeBlocker: "EnterAmount",
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
@@ -424,6 +425,7 @@ describe("Position Details exit command", () => {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
         unstakeAmountGreaterThanAvailable: false,
+        unstakeBlocker: "BelowMinimum",
         unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: true,
       });
@@ -436,7 +438,8 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
-        unstakeDisabled: false,
+        unstakeBlocker: "EnterAmount",
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
@@ -450,7 +453,7 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
-        unstakeDisabled: false,
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: true,
       });
     } finally {
@@ -501,6 +504,7 @@ describe("Position Details exit command", () => {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
         unstakeAmountGreaterThanAvailable: true,
+        unstakeBlocker: "InsufficientBalance",
         unstakeDisabled: true,
       });
 

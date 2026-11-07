@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from "react";
 import { SKApp, type SKAppProps } from "../src/index.package";
 import type { ConnectionSettings } from "./connection-settings";
 import { PlaygroundPanel } from "./panel";
-import type { PlaygroundConfig } from "./playground-config";
+import { mountedWallet, type PlaygroundConfig } from "./playground-config";
 import type { PlaygroundWallet } from "./wallet/playground-wallet";
 
 /** The widget on the playground host wallet; account and chain changes rerender, never remount. */
@@ -75,7 +75,7 @@ export const PlaygroundApp = ({
   return (
     <>
       <div className="pg-toolbar">
-        <span className="pg-badge">wallet: {config.wallet}</span>
+        <span className="pg-badge">wallet: {mountedWallet(config)}</span>
         <button
           className="pg-primary"
           onClick={() => setPanelOpen(!panelOpen)}

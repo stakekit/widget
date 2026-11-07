@@ -35,6 +35,7 @@ vi.mock(
     const actual = await importOriginal<object>();
     return {
       ...actual,
+      useEarnDetails: () => ({ view: hookState.entryView }),
       useEarnEntry: () => ({ view: hookState.entryView }),
     };
   }
@@ -213,7 +214,7 @@ describe("ProviderSelectionCard", () => {
       .element(app.getByTestId("select-modal__search-input"))
       .toHaveValue("missing validator");
     await expect
-      .element(app.getByText("No validators found"))
+      .element(app.getByText("No validators found").first())
       .toBeInTheDocument();
   });
 });

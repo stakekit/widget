@@ -163,7 +163,8 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     }
   );
   const navigation = makeWidgetNavigation({
-    back: () => Effect.promise(() => router.navigate(-1)),
+    back: (options) =>
+      Effect.promise(() => router.navigate(-(options?.steps ?? 1))),
     push: (to) =>
       Effect.promise(() =>
         router.navigate(widgetTargetPath(to), {

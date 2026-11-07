@@ -1,196 +1,104 @@
-import { motion } from "motion/react";
-import type { CSSProperties } from "react";
-import { useTranslation } from "react-i18next";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Spinner } from "../../../../../shared/ui/primitives/spinner";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Entrance, Stack, StandIn } from "../../../../../ui/index";
 import { useMountAnimation } from "../../../../mount-animation/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
-import {
-  PageContainer,
-  type PageCta,
-  PageCtaButton,
-} from "../../../../widget-shell/views";
+import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
+import {
+  AmountPanelSkeleton,
+  EarnCardSkeleton,
+} from "../../components/earn-form-skeleton";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
-import { EarnPageCta } from "../../components/earn-page-cta";
+import { EarnLoadFailed } from "../../components/earn-load-failed";
+import { EarnPageCta, earnLoadingCta } from "../../components/earn-page-cta";
 import { ExtraArgsSelection } from "../../components/extra-args-selection";
 import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
-import { SelectTokenTitle } from "../../components/select-token-section/title";
 import { SelectYieldSection } from "../../components/select-yield-section";
 import { SelectProvider } from "./components/select-provider";
 import { SelectValidatorSection } from "./components/select-validator-section";
 
-const hiddenLivePresentationStyle = {
-  inset: 0,
-  pointerEvents: "none",
-  position: "absolute",
-  visibility: "hidden",
-  width: "100%",
-} satisfies CSSProperties;
+/**
+ * Stands in for the form while it settles, shaped like it: the amount, the
+ * Earn card, and the CTA's neutral stand-in.
+ */
+const EarnPageSkeleton = () => (
+  <PageContainer>
+    <Stack gap={12}>
+      <AmountPanelSkeleton />
+      <EarnCardSkeleton />
+    </Stack>
 
-const loadingCta = {
-  disabled: true,
-  isLoading: true,
-  label: "",
-  onClick: () => undefined,
-} satisfies PageCta;
+    <PageCtaButton cta={earnLoadingCta} />
+  </PageContainer>
+);
 
-const EarnPageSkeleton = () => {
-  const { hidesEarnLoadingSpinner } = useWidgetConfig("hostProfile");
-
-  return (
-    <PageContainer aria-hidden="true" data-rk="earn-mount-skeleton" inert>
-      <Box>
-        {!hidesEarnLoadingSpinner && (
-          <Box display="flex" alignItems="center" my="1">
-            <Spinner />
-          </Box>
-        )}
-
-        <Box marginTop="2">
-          <ContentLoaderSquare heightPx={112.5} />
-        </Box>
-
-        <Box marginTop="2">
-          <ContentLoaderSquare heightPx={112.5} />
-        </Box>
-
-        <Box marginTop="2">
-          <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
-        </Box>
-      </Box>
-
-      <Box marginTop="4">
-        <ContentLoaderSquare heightPx={150} />
-      </Box>
-
-      <PageCtaButton cta={loadingCta} />
-    </PageContainer>
-  );
-};
-
-const EarnPageComponent = () => {
+const EarnPage = () => {
   useTrackPage("earn");
-
-  const { t } = useTranslation();
-
-  const { earnPresentation } = useWidgetConfig("hostProfile");
 
   const { view: status } = useEarnPageStatus();
 
   return (
-    <Box position="relative">
-      {status.presentationFrozen && <EarnPageSkeleton />}
+    <StandIn
+      show={status.presentationFrozen}
+      standIn={<EarnPageSkeleton />}
+      testIds={{
+        standIn: "earn-mount-skeleton",
+        content: "earn-live-presentation",
+      }}
+    >
+      <PageContainer>
+        {status.isError ? (
+          <EarnLoadFailed />
+        ) : (
+          <>
+            <Stack gap={12}>
+              <ZerionChainModal />
 
-      <Box
-        aria-hidden={status.presentationFrozen || undefined}
-        data-rk="earn-live-presentation"
-        inert={status.presentationFrozen || undefined}
-        style={
-          status.presentationFrozen ? hiddenLivePresentationStyle : undefined
-        }
-      >
-        <PageContainer>
-          <Box>
-            {!earnPresentation.zerion && <SelectTokenTitle />}
+              <SelectTokenSection />
 
-            <ZerionChainModal />
+              <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
 
-            <SelectTokenSection />
+              <EarnKycGate />
 
-            <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
+              <SelectProvider />
 
-            <EarnKycGate />
+              <SelectValidatorSection />
 
-            <SelectProvider />
+              <ExtraArgsSelection showDivider />
+            </Stack>
 
-            <SelectValidatorSection />
-
-            <ExtraArgsSelection showDivider />
-          </Box>
-
-          {status.isError && (
-            <Box
-              display="flex"
-              alignItems="center"
-              flexDirection="column"
-              gap="2"
-              justifyContent="center"
-              my="4"
-            >
-              <Text variant={{ type: "danger" }} textAlign="center">
-                {t("shared.something_went_wrong")}
-              </Text>
-            </Box>
-          )}
-
-          <Box marginTop="4">
             <Footer />
-          </Box>
 
-          <EarnPageCta />
-        </PageContainer>
-      </Box>
-    </Box>
+            <EarnPageCta />
+          </>
+        )}
+      </PageContainer>
+    </StandIn>
   );
 };
 
-const EarnPage = () => <EarnPageComponent />;
-
+/** The Compact Layout's Earn page, dropping in as the Widget mounts. */
 export const AnimatedEarnPage = () => {
   const { mountAnimationFinished, dispatch } = useMountAnimation();
   const disableInitLayoutAnimation = useWidgetConfig(
     "disableInitLayoutAnimation"
   );
-
-  const getAnimation = (): {
-    readonly transition: { readonly duration: number; readonly delay: number };
-    readonly initial: {
-      readonly opacity: number;
-      readonly translateY: string | number;
-    };
-  } => {
-    if (mountAnimationFinished) {
-      return {
-        transition: { duration: 0.3, delay: 0 },
-        initial: { opacity: 0, translateY: "-10px" },
-      };
-    }
-    if (disableInitLayoutAnimation) {
-      return {
-        transition: { duration: 0, delay: 0 },
-        initial: { opacity: 1, translateY: 0 },
-      };
-    }
-    return {
-      transition: { duration: 1, delay: 0.8 },
-      initial: { opacity: 0, translateY: "-40px" },
-    };
-  };
-  const animation = getAnimation();
-  const initial = animation.initial;
-  const animate = {
-    opacity: 1,
-    translateY: 0,
-    transition: animation.transition,
+  const getStage = () => {
+    if (mountAnimationFinished) return "later";
+    if (disableInitLayoutAnimation) return "still";
+    return "first";
   };
 
   return (
-    <motion.div
-      initial={initial}
-      animate={animate}
-      onAnimationComplete={(def: typeof animate) => {
-        if (def.translateY !== 0 || mountAnimationFinished) return;
-
-        dispatch({ type: "earnPage" });
+    <Entrance
+      stage={getStage()}
+      onEntered={() => {
+        if (!mountAnimationFinished) dispatch({ type: "earnPage" });
       }}
     >
       <EarnPage />
-    </motion.div>
+    </Entrance>
   );
 };

@@ -83,7 +83,11 @@ export type ActionTransaction = typeof ActionTransaction.Type;
 // Status polling and submission only read these fields; validating the rest
 // would let unrelated additions fail an in-flight transaction.
 export const ActionTransactionReceipt = Schema.Struct({
-  ...Struct.pick(YieldApi.TransactionDto.fields, ["status", "explorerUrl"]),
+  ...Struct.pick(YieldApi.TransactionDto.fields, [
+    "status",
+    "explorerUrl",
+    "error",
+  ]),
   hash: TolerantNullOr(TransactionHash, {
     operation: "yield-transaction-receipt",
     field: "hash",
@@ -156,6 +160,21 @@ export const ActionCommand = Schema.Struct({
   yieldId: YieldId,
 });
 export type ActionCommand = typeof ActionCommand.Type;
+
+/**
+ * What the API estimates an enter or exit costs without creating it: the
+ * gas in the yield's gas token, null when the network did not price it,
+ * and, for some native enters (Solana), the balance to keep aside in place
+ * of the gas.
+ */
+export const ActionSimulation = Schema.Struct({
+  entryReserveEstimate: Schema.optionalKey(ExactDecimal),
+  gas: Schema.Struct({
+    amount: Schema.NullOr(ExactDecimal),
+    token: Token,
+  }),
+});
+export type ActionSimulation = typeof ActionSimulation.Type;
 
 export const ManageActionCommand = Schema.Struct({
   ...YieldApi.CreateManageActionDto.fields,

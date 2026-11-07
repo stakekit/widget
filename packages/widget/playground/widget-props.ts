@@ -1,13 +1,43 @@
-import { darkTheme, lightTheme, type SKAppProps } from "../src/index.package";
+import {
+  darkTheme,
+  lightTheme,
+  type SKAppProps,
+  type SKTheme,
+} from "../src/index.package";
 import {
   type ConnectionSettings,
   connectionProps,
 } from "./connection-settings";
 import {
   mountedBorrowEnabled,
-  mountedTheme,
+  mountedColorScheme,
   type PlaygroundConfig,
 } from "./playground-config";
+
+/**
+ * A host's customized legacy theme: the accent, its label, the canvas and
+ * the button radius carry over to `appearance`; the bold weight and the
+ * tooltip no longer apply, which the development warning lists.
+ */
+const customizedLegacyTheme: SKTheme = {
+  color: {
+    primaryButtonBackground: "#E8590C",
+    primaryButtonColor: "#FFFFFF",
+    background: "#FFF8F0",
+    tooltipBackground: "#3B2F2F",
+  },
+  borderRadius: { baseContract: { primaryButton: "8px" } },
+  fontWeight: { bold: "800" },
+};
+
+const legacyThemeSamples: Readonly<
+  Record<PlaygroundConfig["legacyTheme"], SKTheme | undefined>
+> = {
+  none: undefined,
+  lightTheme,
+  darkTheme,
+  customized: customizedLegacyTheme,
+};
 
 /** Widget mount props for a playground config; the host wallet is added by the caller. */
 export const toWidgetProps = (
@@ -17,11 +47,13 @@ export const toWidgetProps = (
   const providerOrder = Object.entries(config.yieldProviderOrder).map(
     ([category, providerIds]) => [category, [...providerIds]] as const
   );
+  const legacyTheme = legacyThemeSamples[config.legacyTheme];
   const props: SKAppProps = {
     apiKey: connection.apiKey || import.meta.env.VITE_API_KEY,
     variant: config.variant,
-    theme: mountedTheme(config) === "dark" ? darkTheme : lightTheme,
-    dashboardVariant: config.dashboardVariant,
+    appearance: { colorScheme: mountedColorScheme(config) },
+    ...(legacyTheme && { theme: legacyTheme }),
+    layout: config.layout,
     borrowEnabled: mountedBorrowEnabled(config),
     hideGasFee: config.hideGasFee,
     onMountAnimationComplete: () =>

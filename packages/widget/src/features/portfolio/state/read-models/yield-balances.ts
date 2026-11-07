@@ -10,7 +10,9 @@ const yieldBalancesScanResourceAtom = Atom.readable((get) => {
   const scope = get(walletScopeAtom);
 
   return scope
-    ? get(yieldPositionsResourceAtom.foreground(scope))
+    ? // Manage shows its own error with a retry, so a failure raises no
+      // global error sheet.
+      get(yieldPositionsResourceAtom.local(scope))
     : AsyncResult.success({ errors: [], items: [] });
 }).pipe(Atom.withLabel("currentYieldBalancesScanResourceAtom"));
 

@@ -1,20 +1,27 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { toLowerCase } from "effect/String";
-import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
-import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { exactDecimal } from "../../../../../domain/finance/exact";
-import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import {
+  formatTokenAmountInUSD,
+  getGasFeeInUSD,
+} from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
-import type { RewardTokenDetails } from "../../../../yield-summary/views";
+import { getManageActionTitle } from "../../../model/action-title";
+import { getYieldFlowAttribution } from "../../../model/yield-transaction-flow";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
 } from "../../../react/yield-flow-route";
-import type { MetaInfoProps } from "../pages/common-page/common.page.tsx";
+import type { MetaInfoProps } from "../pages/common.page.tsx";
+import type { ReviewFact } from "../pages/review-overview";
+import {
+  formatReviewDestination,
+  getNetworkFeeWarning,
+  getReviewUsdValue,
+  getSignaturesFact,
+} from "./review-facts";
 
 export const usePendingActionReview = () => {
   const manageFlow = useYieldFlowIntake("Manage");
@@ -45,17 +52,11 @@ export const usePendingActionReview = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  const labelContext = getPendingActionLabelContext(
-    manageFlow.request.action,
-    manageFlow.balanceType,
-    { confidential: isConfidentialYield(integrationData) }
-  );
-  const title = t(
-    `position_details.pending_action_button.${toLowerCase(
-      manageFlow.request.action
-    )}` as const,
-    labelContext === undefined ? {} : { context: labelContext }
-  );
+  const title = getManageActionTitle(t, {
+    balanceType: manageFlow.balanceType,
+    type: manageFlow.request.action,
+    yieldDto: integrationData,
+  });
 
   const fee = getGasFeeInUSD({
     gas: pendingTxGas,
@@ -66,18 +67,6 @@ export const usePendingActionReview = () => {
 
   const onClick = () => confirmFlow(undefined);
 
-  const rewardTokenDetailsProps = integrationData.provider
-    ? ({
-        type: "pendingAction",
-        pendingAction: manageFlow.request.action,
-        rewardToken: {
-          logoUri: integrationData.provider.logoURI,
-          providerName: integrationData.provider.name,
-          rewardTokens: [integrationData.token],
-        },
-      } satisfies ComponentProps<typeof RewardTokenDetails>)
-    : null;
-
   const resolveCta = (): PageCta => ({
     label: t("shared.confirm"),
     onClick,
@@ -86,22 +75,68 @@ export const usePendingActionReview = () => {
   });
 
   const metaInfo: MetaInfoProps = { showMetaInfo: false };
-  const facts = returnToken
-    ? [{ label: t("review.receive_token"), value: returnToken.symbol }]
-    : [];
+  const facts = [
+    returnToken
+      ? {
+          label: t("review.you_receive"),
+          testId: "review-receive",
+          // A cancel returns its whole request, unless still encrypted.
+          value:
+            requestAmount || manageFlow.balanceHidden
+              ? returnToken.symbol
+              : `${formatTokenAmount(amount, locale, "down")} ${returnToken.symbol}`,
+        }
+      : null,
+    getSignaturesFact({
+      loading: review.transactionsToSignLoading,
+      t,
+      transactions: review.transactionsToSign,
+    }),
+  ].filter((fact): fact is ReviewFact => fact !== null);
+  const attribution = getYieldFlowAttribution(manageFlow);
+  const destination = formatReviewDestination({
+    providerName: attribution?.name,
+    t,
+    yieldName: integrationData.metadata.name,
+  });
 
   // An encrypted balance has no known amount until it is revealed.
   const formattedAmount = manageFlow.balanceHidden
     ? t("shared.confidential.hidden")
     : formatTokenAmount(amount, locale, "down");
+  const amountFiat = manageFlow.balanceHidden
+    ? null
+    : formatTokenAmountInUSD({
+        amount,
+        locale,
+        prices,
+        token: interactedToken,
+      });
+  // Claiming rewards the network fee eats is worth a warning.
+  const feeWarning = getNetworkFeeWarning({
+    feeUsd: getReviewUsdValue({
+      amount: pendingTxGas,
+      prices,
+      token: integrationData.mechanics.gasFeeToken,
+    }),
+    subject:
+      manageFlow.pendingActionType === "CLAIM_REWARDS" ? "rewards" : "amount",
+    t,
+    valueUsd: manageFlow.balanceHidden
+      ? null
+      : getReviewUsdValue({ amount, prices, token: interactedToken }),
+  });
 
   return {
     integrationData,
     title,
     amount: formattedAmount,
+    amountFiat,
+    attribution,
+    destination,
     facts,
     fee,
-    rewardTokenDetailsProps,
+    feeWarning,
     token: interactedToken,
     metaInfo,
     isGasCheckWarning: review.isGasCheckWarning,

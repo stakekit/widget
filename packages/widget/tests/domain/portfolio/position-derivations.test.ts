@@ -366,20 +366,20 @@ describe("position derivations", () => {
 
     const [row] = toPositionItems(toPositionsData([position]), false);
 
-    expect(row?.actionRequired).toBe(false);
+    expect(row?.requiredAction).toBeNull();
   });
 
   it.each([
-    ["only an optional cancellation", ["CANCEL_PENDING"], false, true],
+    ["only an optional cancellation", ["CANCEL_PENDING"], null, true],
     [
       "a required action next to a cancellation",
       ["CANCEL_PENDING", "WITHDRAW"],
-      true,
+      "withdraw",
       false,
     ],
   ] as const)(
     "flags %s as in progress rather than required",
-    (_, types, actionRequired, hasPendingRequest) => {
+    (_, types, requiredAction, hasPendingRequest) => {
       const yieldDto = yieldApiYieldFixture();
       const position = Schema.decodeSync(EarnPosition)({
         balances: [
@@ -402,10 +402,51 @@ describe("position derivations", () => {
 
       const [row] = toPositionItems(toPositionsData([position]), false);
 
-      expect(row?.actionRequired).toBe(actionRequired);
+      expect(row?.requiredAction).toBe(requiredAction);
       expect(row?.hasPendingRequest).toBe(hasPendingRequest);
     }
   );
+
+  it.each([
+    [
+      "a finished unstake to collect",
+      "exiting",
+      ["CLAIM_UNSTAKED"],
+      "withdraw",
+    ],
+    ["a locked balance to unlock", "locked", ["UNLOCK_LOCKED"], "unlock"],
+    [
+      "a locked balance with nothing to unlock",
+      "locked",
+      ["VOTE_LOCKED"],
+      "locked",
+    ],
+    ["a required action it cannot name", "active", ["VOTE"], "other"],
+  ] as const)("names %s", (_, balanceType, types, requiredAction) => {
+    const yieldDto = yieldApiYieldFixture();
+    const position = Schema.decodeSync(EarnPosition)({
+      balances: [
+        yieldBalanceFixture({
+          amount: "1",
+          amountRaw: "1000000000000000000",
+          amountUsd: "1",
+          pendingActions: types.map((type) => ({
+            intent: "manage",
+            passthrough: type,
+            type,
+          })),
+          token: yieldDto.token,
+          type: balanceType,
+        }),
+      ],
+      outputTokenBalance: null,
+      yieldId: yieldDto.id,
+    });
+
+    const [row] = toPositionItems(toPositionsData([position]), false);
+
+    expect(row?.requiredAction).toBe(requiredAction);
+  });
 
   it("flags an encrypted unwrap still to withdraw as in progress, since its instant withdrawal already began", () => {
     const yieldDto = yieldApiYieldFixture();
@@ -429,7 +470,7 @@ describe("position derivations", () => {
 
     const [row] = toPositionItems(toPositionsData([position]), false);
 
-    expect(row?.actionRequired).toBe(false);
+    expect(row?.requiredAction).toBeNull();
     expect(row?.hasPendingRequest).toBe(true);
   });
 

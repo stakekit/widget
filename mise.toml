@@ -58,9 +58,14 @@ run = "pnpm --filter @stakekit/widget test:dom"
 [tasks."test:browser"]
 run = "pnpm --filter @stakekit/widget test:browser"
 
+# One Chromium suite at a time: a failed browser suite does not skip the stories.
+[tasks."test:storybook"]
+wait_for = ["test:browser"]
+run = "pnpm --filter @stakekit/widget test:storybook"
+
 [tasks.test]
-description = "Widget unit, jsdom and Chromium tests"
-depends = ["test:unit", "test:dom", "test:browser"]
+description = "Widget unit, jsdom, Chromium and Storybook tests"
+depends = ["test:unit", "test:dom", "test:browser", "test:storybook"]
 
 [tasks."test:smoke"]
 run = "pnpm --filter @stakekit/widget test:smoke"

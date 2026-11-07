@@ -1,5 +1,4 @@
-import { Divider } from "../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../shared/ui/primitives/box";
+import { Divider } from "../../../../../ui/index";
 import { TronResourceSelection } from "../../../../yield-entry/views";
 import { useEarnEntry } from "../../../react/use-earn-facades";
 
@@ -19,11 +18,7 @@ export const ExtraArgsSelection = ({
       isError={validation.submitted && validation.errors.tronResource}
       onSelect={selectTronResource}
     >
-      {showDivider && (
-        <Box marginTop="3">
-          <Divider />
-        </Box>
-      )}
+      {showDivider && <Divider />}
     </TronResourceSelection>
   );
 };

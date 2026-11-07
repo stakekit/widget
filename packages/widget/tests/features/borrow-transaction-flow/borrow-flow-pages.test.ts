@@ -41,6 +41,7 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
 const walletScope = new WalletScopeKey({ address, network: "base" });
+const positionMarketId = Schema.decodeSync(MarketId)("market-position-1");
 const intake: BorrowTransactionFlowIntake = {
   riskVerdict: { _tag: "Allow" },
   command: {
@@ -103,6 +104,7 @@ type HarnessOptions = Readonly<{
     command: TransactionWorkflowCommand
   ) => Effect.Effect<void>;
   readonly executeAction?: BorrowOperations["Service"]["executeAction"];
+  readonly sessionIntake?: BorrowTransactionFlowIntake;
 }>;
 
 // Page operations run on the wallet runtime; the test replaces its layer with
@@ -110,6 +112,7 @@ type HarnessOptions = Readonly<{
 const makeHarness = Effect.fn("test.makeBorrowPageHarness")(function* ({
   dispatch = () => Effect.void,
   executeAction = () => Effect.succeed(action),
+  sessionIntake = intake,
 }: HarnessOptions = {}) {
   const navigation = yield* makeTestNavigation();
   const workflowClosed = yield* Deferred.make<void>();
@@ -147,7 +150,10 @@ const makeHarness = Effect.fn("test.makeBorrowPageHarness")(function* ({
     initialValues: [Atom.initialValue(walletRuntime.layer, layer as never)],
   });
   yield* Effect.addFinalizer(() => Effect.sync(() => registry.dispose()));
-  const handle = new BorrowFlowSession({ intake, walletScope });
+  const handle = new BorrowFlowSession({
+    intake: sessionIntake,
+    walletScope,
+  });
 
   return {
     awaitValue: <A>(
@@ -312,9 +318,7 @@ describe("Borrow flow Review page", () => {
         suspendOnWaiting: true,
       });
 
-      expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
+      expect(yield* navigation.commands).toEqual([{ _tag: "Back", steps: 1 }]);
     })
   );
 });
@@ -391,7 +395,7 @@ describe("Borrow flow Execution page", () => {
     })
   );
 
-  it.effect("leaves for where the flow began", () =>
+  it.effect("leaves for where the flow began, past its Review", () =>
     Effect.gen(function* () {
       const { handle, navigation, registry } = yield* makeHarness();
       const page = makeBorrowFlowExecutionPage(handle, action.id);
@@ -402,8 +406,99 @@ describe("Borrow flow Execution page", () => {
         suspendOnWaiting: true,
       });
 
+      expect(yield* navigation.commands).toEqual([{ _tag: "Back", steps: 2 }]);
+    })
+  );
+
+  it.effect("finishes a new borrow where it began", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness();
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.finishAtom);
+
+      registry.set(page.finishAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.finishAtom, {
+        suspendOnWaiting: true,
+      });
+
       expect(yield* navigation.commands).toEqual([
         { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
+      ]);
+    })
+  );
+
+  it.effect("finishes a position's action on the position's page", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness({
+        sessionIntake: {
+          ...intake,
+          entry: { _tag: "MarketPosition", marketId: positionMarketId },
+        },
+      });
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.finishAtom);
+
+      registry.set(page.finishAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.finishAtom, {
+        suspendOnWaiting: true,
+      });
+
+      expect(yield* navigation.commands).toEqual([
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: positionMarketId,
+          }),
+        },
+      ]);
+    })
+  );
+
+  it.effect("views the position page of the market the flow acted on", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness({
+        sessionIntake: {
+          ...intake,
+          entry: { _tag: "MarketPosition", marketId: positionMarketId },
+        },
+      });
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.viewPositionAtom);
+
+      registry.set(page.viewPositionAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.viewPositionAtom, {
+        suspendOnWaiting: true,
+      });
+
+      expect(yield* navigation.commands).toEqual([
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: positionMarketId,
+          }),
+        },
+      ]);
+    })
+  );
+
+  it.effect("views a new borrow's position in the market it opened", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness();
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.viewPositionAtom);
+
+      registry.set(page.viewPositionAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.viewPositionAtom, {
+        suspendOnWaiting: true,
+      });
+
+      expect(yield* navigation.commands).toEqual([
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: intake.command.args.marketId,
+          }),
+        },
       ]);
     })
   );

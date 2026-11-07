@@ -1,57 +1,54 @@
 import { describe, expect, it } from "vitest";
 import {
+  getLeadingPendingAction,
   positionDetailsExitHasContent,
   positionDetailsHubHasContent,
   resolvePositionDetailsActionCapabilities,
-  resolvePositionDetailsActionMode,
-  resolveSelectedPositionDetailsActionMode,
-  shouldShowPositionDetailsActionTabs,
+  resolvePositionDetailsAmountActions,
 } from "../../../src/features/position-details/model/hub";
 import { yieldApiYieldFixture } from "../../fixtures";
 
 describe("position details hub model", () => {
-  it("defaults to unstake when exit is supported, else stake", () => {
+  it("orders the amount actions exit first, then entering where offered", () => {
     expect(
-      resolvePositionDetailsActionMode({ canStake: true, canUnstake: true })
-    ).toBe("unstake");
+      resolvePositionDetailsAmountActions({
+        canEnter: true,
+        canExit: true,
+        offersEnter: true,
+      })
+    ).toEqual(["exit", "enter"]);
+    // The compact Layout has no enter flow.
     expect(
-      resolvePositionDetailsActionMode({ canStake: true, canUnstake: false })
-    ).toBe("stake");
+      resolvePositionDetailsAmountActions({
+        canEnter: true,
+        canExit: true,
+        offersEnter: false,
+      })
+    ).toEqual(["exit"]);
     expect(
-      resolvePositionDetailsActionMode({ canStake: false, canUnstake: true })
-    ).toBe("unstake");
-    expect(
-      resolvePositionDetailsActionMode({ canStake: false, canUnstake: false })
-    ).toBe(null);
+      resolvePositionDetailsAmountActions({
+        canEnter: false,
+        canExit: false,
+        offersEnter: true,
+      })
+    ).toEqual([]);
   });
 
-  it("keeps an explicit tab selection when that action stays supported", () => {
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        canStake: true,
-        canUnstake: true,
-        selectedMode: "stake",
-      })
-    ).toBe("stake");
-    expect(
-      resolveSelectedPositionDetailsActionMode({
-        canStake: true,
-        canUnstake: false,
-        selectedMode: "unstake",
-      })
-    ).toBe("stake");
-  });
+  it("leads with a required action, else a claim, never an optional one", () => {
+    const action = (
+      type: "CLAIM_REWARDS" | "MERGE" | "WITHDRAW",
+      balanceType: "claimable" | "active" | "withdrawable"
+    ) => ({
+      pendingAction: { type },
+      yieldBalance: { isEncrypted: false, type: balanceType },
+    });
+    const claim = action("CLAIM_REWARDS", "claimable");
+    const withdraw = action("WITHDRAW", "withdrawable");
+    const merge = action("MERGE", "active");
 
-  it("shows action tabs only when both stake and exit are supported", () => {
-    expect(
-      shouldShowPositionDetailsActionTabs({ canStake: true, canUnstake: true })
-    ).toBe(true);
-    expect(
-      shouldShowPositionDetailsActionTabs({ canStake: true, canUnstake: false })
-    ).toBe(false);
-    expect(
-      shouldShowPositionDetailsActionTabs({ canStake: false, canUnstake: true })
-    ).toBe(false);
+    expect(getLeadingPendingAction([claim, withdraw])).toBe(withdraw);
+    expect(getLeadingPendingAction([merge, claim])).toBe(claim);
+    expect(getLeadingPendingAction([merge])).toBe(null);
   });
 
   it("treats exit support as exit capability, not pending actions", () => {
@@ -84,7 +81,7 @@ describe("position details hub model", () => {
     ).toBe(true);
   });
 
-  it("drops the unstake capability when the position has no unstakeable balance", () => {
+  it("drops the exit capability when the position has no unstakeable balance", () => {
     const lockedOnly = {
       canChangeUnstakeAmount: true,
       canUnstake: true,
@@ -99,14 +96,13 @@ describe("position details hub model", () => {
 
     const capabilities = resolvePositionDetailsActionCapabilities(lockedOnly);
 
-    expect(capabilities).toEqual({ canStake: true, canUnstake: false });
-    expect(shouldShowPositionDetailsActionTabs(capabilities)).toBe(false);
+    expect(capabilities).toEqual({ canEnter: true, canExit: false });
     expect(
-      resolveSelectedPositionDetailsActionMode({
+      resolvePositionDetailsAmountActions({
         ...capabilities,
-        selectedMode: null,
+        offersEnter: true,
       })
-    ).toBe("stake");
+    ).toEqual(["enter"]);
   });
 
   it("treats the hub as actionable when exit is supported even without form readiness", () => {

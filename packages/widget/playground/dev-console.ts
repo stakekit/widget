@@ -2,7 +2,7 @@
  * The playground's console surface: `window.skDev`, plus the wallet request
  * log. QA drives the host wallet from here while the widget stays mounted.
  */
-import type { PlaygroundConfig } from "./playground-config";
+import { mountedWallet, type PlaygroundConfig } from "./playground-config";
 import {
   type PlaygroundWallet,
   type WalletLogEntry,
@@ -65,7 +65,7 @@ export const installDevConsole = ({
 
   Object.assign(window, { skDev: { config, wallet: walletConsole } });
   console.info(
-    `[playground] wallet: ${config.wallet}. window.skDev.config holds the playground config.${
+    `[playground] wallet: ${mountedWallet(config)}. window.skDev.config holds the playground config.${
       walletConsole ? `\n${walletHelp}` : ""
     }`
   );

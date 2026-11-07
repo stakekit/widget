@@ -60,34 +60,38 @@ describe("activity and completion workflows", () => {
     const app = await render(wrap(activityPage({ status: "connect-wallet" })));
 
     expect(
-      app.container.querySelector('[data-rk="activity-connect-wallet"]')
+      app.container.querySelector('[data-testid="activity-connect-wallet"]')
         ?.textContent
     ).toContain("Connect");
+    // The connect-wallet state offers the connect action itself (UX I1).
     expect(
-      app.container.querySelector('[data-rk="activity-connect-wallet"] button')
-    ).toBeNull();
+      app.container.querySelector(
+        '[data-testid="activity-connect-wallet"] button'
+      )?.textContent
+    ).toBe("Connect wallet");
 
     await app.rerender(wrap(activityPage({ status: "connecting" })));
     expect(
-      app.container.querySelectorAll('[data-rk="activity-page-skeleton"]')
+      app.container.querySelectorAll('[data-testid="activity-page-skeleton"]')
     ).toHaveLength(1);
 
     await app.rerender(wrap(activityPage({ status: "loading" })));
     expect(
-      app.container.querySelectorAll('[data-rk="activity-page-skeleton"]')
+      app.container.querySelectorAll('[data-testid="activity-page-skeleton"]')
     ).toHaveLength(1);
 
     await app.rerender(wrap(activityPage({ status: "failed" })));
     const pageRetry = app.container.querySelector<HTMLButtonElement>(
-      '[data-rk="activity-page-error"] button'
+      '[data-testid="activity-page-error"] button'
     );
     await act(async () => pageRetry?.click());
     expect(onRetry).toHaveBeenCalledOnce();
 
+    // No activity at all leads to Earn.
     await app.rerender(wrap(activityPage({ status: "empty" })));
-    expect(
-      app.container.querySelector('[data-rk="activity-empty"]')?.textContent
-    ).toContain("No previous activity");
+    const empty = app.container.querySelector('[data-testid="activity-empty"]');
+    expect(empty?.textContent).toContain("No activity yet");
+    expect(empty?.querySelector("button")?.textContent).toBe("Start earning");
 
     await app.rerender(
       wrap(
@@ -106,7 +110,7 @@ describe("activity and completion workflows", () => {
       )
     );
     expect(app.container.textContent).toContain("DeFi");
-    expect(app.container.textContent).toContain("No previous activity");
+    expect(app.container.textContent).toContain("No activity of this type");
 
     const yieldModel = yieldApiYieldFixture();
     const item: ActivityActionItem = {
@@ -139,44 +143,48 @@ describe("activity and completion workflows", () => {
     );
     expect(app.container.textContent).toContain("Showing 1 of 2");
     const loadMoreRetry = app.container.querySelector<HTMLButtonElement>(
-      '[data-rk="activity-load-more-error"] button'
+      '[data-testid="activity-load-more-error"] button'
     );
     await act(async () => loadMoreRetry?.click());
     expect(onLoadMore).toHaveBeenCalledOnce();
   });
 
-  it("renders completion transaction actions from explicit workflow input", async () => {
+  it("links each completed transaction to its explorer and records the visit", async () => {
     const onViewTransactionClick = vi.fn();
     const app = await render(
       wrap(
         <CompletePageComponent
           amount="1"
           completion={{
+            attribution: null,
             cta: null,
             onViewTransactionClick,
             pendingActionMatch: false,
+            positionTotal: null,
             unstakeMatch: false,
-            urls: [{ type: "STAKE", url: "https://explorer.test/tx" }],
+            urls: [
+              { hash: null, type: "STAKE", url: "https://explorer.test/tx" },
+            ],
+            viewPositionCta: null,
           }}
           integrationId={YieldId.make("test-yield")}
-          metadata={null}
           network="ethereum"
-          providersDetails={null}
-          token={null}
+          markToken={null}
           yieldType={null}
         />
       )
     );
-    const transactionButton = app.container.querySelector<HTMLButtonElement>(
-      'button:not([data-rk^="footer-button"])'
+    const explorerLink = app.container.querySelector<HTMLAnchorElement>(
+      'a[href="https://explorer.test/tx"]'
     );
 
-    expect(transactionButton?.textContent).toContain("View Stake transaction");
+    expect(explorerLink?.textContent).toContain("View Stake transaction");
+    expect(explorerLink?.target).toBe("_blank");
 
-    await act(async () => transactionButton?.click());
+    // Keep jsdom from navigating; the click still reaches the link's handler.
+    explorerLink?.addEventListener("click", (event) => event.preventDefault());
+    await act(async () => explorerLink?.click());
 
-    expect(onViewTransactionClick).toHaveBeenCalledWith(
-      "https://explorer.test/tx"
-    );
+    expect(onViewTransactionClick).toHaveBeenCalledOnce();
   });
 });

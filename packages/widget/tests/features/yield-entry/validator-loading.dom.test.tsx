@@ -13,18 +13,17 @@ import { yieldApiValidatorFixture } from "../../fixtures";
 import { TestAtomRuntimeProvider } from "../../utils/atom-runtime-provider";
 import { describe, expect, it } from "../../utils/test-extend.dom.ts";
 import { renderHook } from "../../utils/test-utils.dom.tsx";
-import { getTestWidgetConfig } from "../../utils/widget-config";
 
 const yieldApiUrl = "https://yield.example.com";
 
 const Wrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
-    settings={getTestWidgetConfig({
+    hostConfiguration={{
       apiKey: "test-key",
       baseUrl: "https://api.example.com",
       variant: "default",
       yieldsApiUrl: yieldApiUrl,
-    })}
+    }}
   >
     {children}
   </TestAtomRuntimeProvider>

@@ -1,21 +1,20 @@
-import { Trigger } from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
-import { useEffect, useEffectEvent } from "react";
+import { isValidElement, useEffect, useEffectEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
-import type { SelectModalProps } from "../../../../shared/ui/components/select-modal";
-import { SelectModal } from "../../../../shared/ui/components/select-modal";
-import { SKAnchor } from "../../../../shared/ui/primitives/anchor";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { HelpIcon } from "../../../../shared/ui/primitives/icons/help";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import {
+  Button,
+  type FixedIconName,
+  Icon,
+  Modal,
+  Spot,
+  Stack,
+  Text,
+} from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import type { useGeoBlock } from "../../react/use-geo-block";
 import { WidgetTranslationGate } from "../../react/widget-translation-gate";
-import { container, imageStyle } from "./style.css";
+import { TranslatedLink } from "../translated-link";
 
 type ModalType =
   | ({ type: "geoBlock"; onClose: () => void } & Exclude<
@@ -40,8 +39,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   ): {
     title: string;
     description: string | ReactNode;
-    image: string;
-    link?: string;
+    icon: FixedIconName;
     button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
@@ -59,10 +57,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofac_ofsi"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
@@ -72,10 +70,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofsi_crypto_ban"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("Crypto Ban")) {
@@ -85,10 +83,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.crypto_ban"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("OFAC")) {
@@ -98,10 +96,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofac"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("OFSI")) {
@@ -111,10 +109,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.ofsi"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("Pending Litigation")) {
@@ -127,10 +125,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
                   countryName,
                   nameOfRegion: modal.regionCodeName ?? "",
                 }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
         if (modal.tags.has("Staking Ban")) {
@@ -140,10 +138,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               <Trans
                 i18nKey="help_modals.geo_block.staking_ban"
                 values={{ countryName }}
-                components={{ link0: <SKAnchor /> }}
+                components={{ link0: <TranslatedLink /> }}
               />
             ),
-            image: images.fees,
+            icon: "GlobeIcon",
           };
         }
 
@@ -153,10 +151,10 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
             <Trans
               i18nKey="help_modals.geo_block.default"
               values={{ countryName }}
-              components={{ link0: <SKAnchor /> }}
+              components={{ link0: <TranslatedLink /> }}
             />
           ),
-          image: images.fees,
+          icon: "GlobeIcon",
         };
       }
 
@@ -169,7 +167,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
               window.open("https://twitter.com/yield_xyz", "_blank"),
           },
           description: "",
-          image: images.whatIsLiquidStaking,
+          icon: "HelpIcon",
         };
       }
 
@@ -180,13 +178,15 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
             <Trans
               i18nKey="help_modals.what_is_stakekit.description"
               components={{
-                br0: <br />,
-                link0: <SKAnchor href="https://yield.xyz/" />,
-                link1: <SKAnchor href="https://docs.yield.xyz/docs/faqs" />,
+                br0: <Text.Break />,
+                link0: <TranslatedLink href="https://yield.xyz/" />,
+                link1: (
+                  <TranslatedLink href="https://docs.yield.xyz/docs/faqs" />
+                ),
               }}
             />
           ),
-          image: images.poweredBy,
+          icon: "InfoIcon",
         };
       }
     }
@@ -196,7 +196,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   // same Application Runtime registry; tracking uses that tree's config.
   const trackEvent = useTrackEvent();
 
-  const { description, image, title, link, button } = getContent(modal);
+  const { description, icon, title, button } = getContent(modal);
 
   const isGeoBlock = modal.type === "geoBlock";
 
@@ -210,67 +210,51 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
     reportOpened();
   }, [isGeoBlock]);
 
-  const getSelectModalProps = (): SelectModalProps => {
-    if (modal.type === "geoBlock") {
-      return {
-        dialogTitle: title,
-        state: {
-          isOpen: true,
-          setOpen: modal.onClose,
-        },
-      };
-    }
-
-    return {
-      dialogTitle: title,
-      onOpen: () => trackEvent("helpModalOpened", { modal: title }),
-      trigger: (
-        <Trigger asChild={!!customTrigger}>
-          {customTrigger ?? (
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <HelpIcon />
-            </Box>
-          )}
-        </Trigger>
-      ),
-    };
-  };
-  const selectModalProps = getSelectModalProps();
+  // A geo-block notice is open while it is rendered; help content opens from
+  // its trigger: the host's element, or a help icon button.
+  const openProps =
+    modal.type === "geoBlock"
+      ? {
+          open: true,
+          onOpenChange: (open: boolean) => {
+            if (!open) modal.onClose();
+          },
+        }
+      : {
+          trigger: isValidElement(customTrigger) ? (
+            customTrigger
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={customTrigger === undefined ? title : undefined}
+            >
+              {customTrigger ?? <Icon name="HelpIcon" />}
+            </Button>
+          ),
+          onOpenChange: (open: boolean) => {
+            if (open) trackEvent("helpModalOpened", { modal: title });
+          },
+        };
 
   return (
-    <SelectModal {...selectModalProps}>
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        className={container}
-      >
-        <Box as="img" src={image} className={imageStyle} />
-
-        <Heading variant={{ level: "h4" }}>{title}</Heading>
-
-        <Box marginTop="2" lineHeight="short">
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-          >
-            {description}
-          </Text>
-        </Box>
-
-        {!!link && <SKAnchor>{link}</SKAnchor>}
-
-        {button && (
-          <Box marginTop="4" width="full">
-            <Button variant={{ color: "secondary" }} onClick={button.onClick}>
-              <Text variant={{ weight: "bold" }}>{button.title}</Text>
-            </Button>
-          </Box>
-        )}
-      </Box>
-    </SelectModal>
+    <Modal
+      {...openProps}
+      title={title}
+      description={description === "" ? undefined : description}
+      closeLabel={t("help_modals.close")}
+      footer={
+        button && (
+          <Button variant="secondary" size="cta" onClick={button.onClick}>
+            {button.title}
+          </Button>
+        )
+      }
+    >
+      <Stack align="center">
+        <Spot icon={icon} tone="accent" size="lg" />
+      </Stack>
+    </Modal>
   );
 };
 

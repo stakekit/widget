@@ -4,20 +4,16 @@ import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { toPresentable } from "../../../../shared/effect/async-result";
-import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { EmptyState, Notice, SplitView, Stack } from "../../../../ui/index";
 import {
+  useWidgetNavigate,
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,
 } from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
-import {
-  AnimationPage,
-  SplitView,
-  type SplitViewSide,
-} from "../../../widget-shell/views";
+import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowPosition } from "../../positions/index";
 import {
   type BorrowPositionAction,
@@ -29,13 +25,27 @@ import {
   startBorrowPositionActionReviewAtom,
 } from "../state/action-form";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
-import { BorrowPositionInfo } from "./components/position-info";
+import { BorrowPositionDetailsDisclosure } from "./components/position-details-disclosure";
+import { BorrowPositionHeader } from "./components/position-header";
+import { BorrowPositionSummary } from "./components/position-summary";
+import { BorrowPositionRiskAlertNotice } from "./components/risk-alert";
 import {
   BorrowPositionActionsSkeleton,
   BorrowPositionInfoSkeleton,
 } from "./components/skeletons";
-import type { BorrowPositionContext } from "./context";
+import type {
+  BorrowPositionActionSelection,
+  BorrowPositionContext,
+} from "./context";
 
+/**
+ * A market position's own page, laid out as the Earn tab is: on the left
+ * the trail back to the positions list, the header and the position's
+ * actions with the chosen one's form; on the right the position, its
+ * summary, a risk alert and the details with the collateral. A
+ * flow's Review, Steps or Complete runs in the left column while the right
+ * keeps the position.
+ */
 export const BorrowPositionDetailsPage = () => {
   useTrackPage("positionDetails");
 
@@ -44,14 +54,30 @@ export const BorrowPositionDetailsPage = () => {
   )?.marketId;
   const hasNestedRoute =
     useWidgetRouteMatch(widgetRoutes.borrowPosition) === null;
+  const actionMatch = useWidgetRouteMatch(widgetRoutes.borrowPositionAction);
+  const routeActionId = actionMatch?.actionId ?? null;
+  // The actions show on the position and on a link to one action; a flow's
+  // Review, Steps or Complete takes their place.
+  const showsActions = !hasNestedRoute || actionMatch !== null;
+  const navigation = useWidgetNavigate();
+  // The page owns the chosen action, so the risk alert's Repay can choose it
+  // without a route change that would remount the form. A link to an action
+  // chooses it whenever the link changes.
+  const [selection, setSelection] = useState<BorrowPositionActionSelection>({
+    actionId: routeActionId,
+    focusRequest: 0,
+  });
+  const [linkedActionId, setLinkedActionId] = useState(routeActionId);
+  if (routeActionId !== linkedActionId) {
+    setLinkedActionId(routeActionId);
+    if (routeActionId !== null) {
+      setSelection({ actionId: routeActionId, focusRequest: 0 });
+    }
+  }
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
   const borrowPosition = useBorrowPosition(marketId);
-  // Nested routes remount the split on the Actions side; returning to the
-  // position restores the side the user last chose, e.g. Details after a
-  // collateral toggle review.
-  const [baseSide, setBaseSide] = useState<SplitViewSide>("primary");
   // A failed or in-flight refetch keeps the last known position on screen.
   const presentablePosition = toPresentable(borrowPosition.positionResult);
   const position =
@@ -59,45 +85,34 @@ export const BorrowPositionDetailsPage = () => {
   const model = position
     ? getBorrowPositionDetailsModel({ locale, position, t })
     : null;
-  const actions = position
-    ? getBorrowPositionActions({
-        position,
-        t,
-      })
-    : [];
-  const isPositionLoading = presentablePosition._tag === "Loading";
-  const shouldShowLeftPane = hasNestedRoute || actions.length > 0 || !!position;
+  const actions = position ? getBorrowPositionActions({ position, t }) : [];
   const context: BorrowPositionContext = {
     actions,
-    borrowPosition,
-    model,
-    position,
+    onSelectAction: (actionId) => setSelection({ actionId, focusRequest: 0 }),
+    selection,
+  };
+
+  // Repay from the risk alert: chooses Repay and focuses its amount, keeping
+  // what was typed; from a flow, opens the position on Repay.
+  const startRepay = (repay: BorrowPositionAction) => {
+    if (showsActions) {
+      setSelection((current) => ({
+        actionId: repay.id,
+        focusRequest: current.focusRequest + 1,
+      }));
+      return;
+    }
+    if (marketId === undefined) return;
+    void navigation.push(
+      widgetRoutes.borrowPositionAction.build("Dashboard", {
+        actionId: repay.id,
+        marketId,
+      })
+    );
   };
 
   const startCollateralReview = (action: BorrowPositionAction) =>
     startPositionReview(makeBorrowPositionActionRouteKey(action));
-
-  if (isPositionLoading && !hasNestedRoute) {
-    return (
-      <AnimationPage>
-        <SplitView
-          primaryBarLabel={t("dashboard.split_view.actions")}
-          secondaryBarLabel={t("dashboard.split_view.details")}
-          primary={
-            <PositionDetailsPane kind="actions">
-              <BorrowPositionBreadcrumb positionName={null} />
-              <BorrowPositionActionsSkeleton />
-            </PositionDetailsPane>
-          }
-          secondary={
-            <PositionDetailsPane kind="info">
-              <BorrowPositionInfoSkeleton />
-            </PositionDetailsPane>
-          }
-        />
-      </AnimationPage>
-    );
-  }
 
   // A closed position (e.g. after a full repay) has nothing to manage; nested
   // flow routes still render so Complete can show the settled result.
@@ -105,55 +120,72 @@ export const BorrowPositionDetailsPage = () => {
     return <WidgetNavigate replace to={widgetRoutes.positions.build()} />;
   }
 
-  const rightContent = (() => {
-    if (isPositionLoading) {
-      return <BorrowPositionInfoSkeleton />;
-    }
+  const riskAlert = model?.riskAlert ? (
+    <BorrowPositionRiskAlertNotice
+      actions={actions}
+      alert={model.riskAlert}
+      onRepay={startRepay}
+    />
+  ) : null;
 
-    if (presentablePosition._tag === "Failed") {
-      return (
-        <Text variant={{ type: "danger", weight: "normal" }}>
-          {t("shared.something_went_wrong")}
-        </Text>
-      );
-    }
-
-    return (
-      <BorrowPositionInfo
+  const details =
+    position && model ? (
+      <BorrowPositionDetailsDisclosure
         actions={actions}
-        content={position && model ? "details" : "fallback"}
         model={model}
         onActionSelect={startCollateralReview}
         position={position}
       />
+    ) : (
+      <EmptyState title={t("dashboard.borrow.position_details.empty")} />
+    );
+
+  const info = (() => {
+    if (presentablePosition._tag === "Loading") {
+      return <BorrowPositionInfoSkeleton />;
+    }
+    if (presentablePosition._tag === "Failed") {
+      return <Notice tone="danger">{t("shared.something_went_wrong")}</Notice>;
+    }
+    if (!model) return details;
+    return (
+      <>
+        <BorrowPositionSummary model={model} />
+        {riskAlert}
+        {details}
+      </>
+    );
+  })();
+
+  // Off a flow the header names the position under the trail, then its
+  // actions; a flow's own page takes their place and the trail names it.
+  const actionsColumn = (() => {
+    if (!showsActions) return <Outlet context={context} />;
+    if (presentablePosition._tag === "Loading") {
+      return <BorrowPositionActionsSkeleton />;
+    }
+    if (!position || !model) return null;
+    return (
+      <>
+        <BorrowPositionHeader model={model} position={position} />
+        <Outlet context={context} />
+      </>
     );
   })();
 
   return (
     <AnimationPage>
       <SplitView
-        key={hasNestedRoute ? "nested" : "base"}
-        {...(hasNestedRoute
-          ? {}
-          : { activeSide: baseSide, onActiveSideChange: setBaseSide })}
-        primaryBarLabel={t("dashboard.split_view.actions")}
-        secondaryBarLabel={t("dashboard.split_view.details")}
+        secondaryLabel={t("dashboard.split_view.details")}
         primary={
-          shouldShowLeftPane ? (
-            <PositionDetailsPane kind="actions">
-              <Outlet context={context} />
-            </PositionDetailsPane>
-          ) : null
+          <Stack gap={16}>
+            <BorrowPositionBreadcrumb
+              positionName={showsActions ? null : (model?.title ?? null)}
+            />
+            {actionsColumn}
+          </Stack>
         }
-        secondary={
-          <PositionDetailsPane kind="info">
-            {shouldShowLeftPane ? null : (
-              <BorrowPositionBreadcrumb positionName={model?.title ?? null} />
-            )}
-
-            {rightContent}
-          </PositionDetailsPane>
-        }
+        secondary={<Stack gap={24}>{info}</Stack>}
       />
     </AnimationPage>
   );

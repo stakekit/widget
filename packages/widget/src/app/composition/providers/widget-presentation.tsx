@@ -8,33 +8,26 @@ import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
-} from "../../../shared/ui/widget-presentation";
+} from "../../../shared/react/widget-presentation";
 
 const isNetwork = Schema.is(Network);
 
 /**
- * Populates the shared UI kit's rendering environment from widget config, so
- * `shared/ui` components render host preferences without importing
- * Widget Configuration. Only host overrides are forwarded; the kit owns its defaults.
+ * Populates the Widget Presentation from Widget Configuration, so shared
+ * rendering helpers render host preferences without importing Widget
+ * Configuration. Only host overrides are forwarded; the helpers own their
+ * defaults.
  */
 export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
   const { i18n } = useTranslation();
   const chainIconMapping = useWidgetConfig("chainIconMapping");
-  const disableResizingInputFontSize = useWidgetConfig(
-    "disableResizingInputFontSize"
-  );
   const hideNetworkLogo = useWidgetConfig("hideNetworkLogo");
   const { hostTokenIconMapping } = useWidgetConfig("hostProfile");
-  const layout = useWidgetConfig("layout");
-  const portalContainer = useWidgetConfig("portalContainer");
   const tokenIconMapping = useWidgetConfig("tokenIconMapping");
-  const variant = useWidgetConfig("variant");
 
   const value: WidgetPresentation = {
-    disableInputAutoResize: !!disableResizingInputFontSize,
     hideNetworkLogo: !!hideNetworkLogo,
     hostTokenIconMapping,
-    layout: layout === "Dashboard" ? "dashboard" : "compact",
     locale: i18n.resolvedLanguage ?? i18n.language,
     mapNetworkIconUrl: (network: Token["network"]) => {
       if (!isWalletNetwork(network)) return undefined;
@@ -54,8 +47,6 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
         ? tokenIconMapping({ ...token, network: token.network })
         : undefined;
     },
-    portalContainer,
-    variant,
   };
 
   return (

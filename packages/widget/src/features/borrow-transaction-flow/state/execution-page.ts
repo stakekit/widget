@@ -12,6 +12,11 @@ import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
 } from "../../../resources/borrow-positions/index";
+import { WidgetNavigation } from "../../../services/navigation/widget-navigation";
+import {
+  type WidgetPath,
+  widgetRoutes,
+} from "../../../services/navigation/widget-routes";
 import {
   BorrowTransactionWorkflowInput,
   type TransactionWorkflowCommand,
@@ -21,13 +26,14 @@ import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
 } from "../../../services/transaction-workflow/transaction-workflow-service";
+import { afterCurrentRender } from "../../../shared/effect/after-render";
 import { settleBorrowPosition } from "../model/borrow-completion";
 import type { BorrowFlowSession } from "../model/borrow-transaction-flow";
 import {
   emptyBorrowExecutionView,
   projectBorrowExecution,
 } from "../model/borrow-transaction-workflow";
-import { leaveBorrowFlow } from "./borrow-flow-session";
+import { leaveBorrowFlow, restartBorrowFlow } from "./borrow-flow-session";
 
 /**
  * Starts the workflow for `actionId`, in the caller's Scope, if that action is
@@ -56,12 +62,26 @@ export const startBorrowFlowExecution = Effect.fn("startBorrowFlowExecution")(
       (started) => (started ? Ref.set(handoff, null) : Effect.void)
     );
     if (!action) return yield* Effect.interrupt;
+
+    // Steps first reads this Atom while React renders.
+    yield* afterCurrentRender;
     const workflows = yield* TransactionWorkflowService;
     return yield* workflows.make(
       new BorrowTransactionWorkflowInput({ action, walletScope })
     );
   }
 );
+
+/** The market position the flow acts on: its page's own, else the action's. */
+const getBorrowFlowPositionMarketId = ({
+  intake: { command, entry },
+}: BorrowFlowSession) =>
+  entry._tag === "MarketPosition" ? entry.marketId : command.args.marketId;
+
+const replaceBorrowFlowPage = (to: WidgetPath) =>
+  WidgetNavigation.use((navigation) =>
+    Effect.uninterruptible(navigation.execute({ _tag: "Replace", to }))
+  );
 
 /**
  * The Session market's position once the Borrow API reports it after the
@@ -82,7 +102,7 @@ export const makeBorrowFlowSettledPositionAtom = (
         new BorrowMarketsKey({ network, scope: "all" })
       )
     : null;
-  const { command, entry, summary } = session.intake;
+  const { command, summary } = session.intake;
   // Reads positions only once, so later results never retrigger the refresh.
   const refreshedAtom = Atom.make((get) => {
     get.refresh(positionsAtom);
@@ -105,10 +125,7 @@ export const makeBorrowFlowSettledPositionAtom = (
       action: summary.action,
       marketId: command.args.marketId,
       markets: markets.value,
-      positionMarketId:
-        entry._tag === "MarketPosition"
-          ? entry.marketId
-          : command.args.marketId,
+      positionMarketId: getBorrowFlowPositionMarketId(session),
       positions: positions.value,
     });
   }).pipe(Atom.withLabel("borrowFlowSettledPosition"));
@@ -139,6 +156,9 @@ export const makeBorrowFlowExecutionPage = (
   session: BorrowFlowSession,
   actionId: ActionId
 ) => {
+  const positionPath = widgetRoutes.borrowPosition.build("Dashboard", {
+    marketId: getBorrowFlowPositionMarketId(session),
+  });
   const workflowAtom = walletRuntime
     .atom(startBorrowFlowExecution(session, actionId))
     .pipe(Atom.withLabel("borrowFlowExecutionWorkflow"));
@@ -160,10 +180,29 @@ export const makeBorrowFlowExecutionPage = (
         { concurrent: false, initialValue: undefined }
       )
       .pipe(Atom.withLabel("dispatchBorrowFlowWorkflow")),
-    /** Back from Steps and Done on Complete: both return where the flow began. */
+    /** Back from Steps: returns where the flow began. */
     leaveAtom: walletRuntime
-      .fn(() => leaveBorrowFlow(session), { initialValue: undefined })
+      .fn(() => leaveBorrowFlow("Steps"), { initialValue: undefined })
       .pipe(Atom.withLabel("leaveBorrowFlowExecution")),
+    /**
+     * Done on Complete: a position's flow ends on its page, which returns
+     * to the positions list once the position is closed; a new one where it
+     * began.
+     */
+    finishAtom: walletRuntime
+      .fn(
+        () =>
+          session.intake.entry._tag === "MarketPosition"
+            ? replaceBorrowFlowPage(positionPath)
+            : restartBorrowFlow(session),
+        { initialValue: undefined }
+      )
+      .pipe(Atom.withLabel("finishBorrowFlowExecution")),
+    viewPositionAtom: walletRuntime
+      .fn(() => replaceBorrowFlowPage(positionPath), {
+        initialValue: undefined,
+      })
+      .pipe(Atom.withLabel("viewBorrowFlowPosition")),
     settledPositionAtom: makeBorrowFlowSettledPositionAtom(session),
     stateAtom,
     viewAtom: Atom.make((get) => {

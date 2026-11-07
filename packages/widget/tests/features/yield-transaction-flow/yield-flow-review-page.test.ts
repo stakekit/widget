@@ -296,6 +296,59 @@ describe("Yield flow Review page", () => {
   );
 
   it.effect(
+    "charges an exit the yield's withdrawal fee on its amount, and no other flow",
+    () =>
+      Effect.gen(function* () {
+        const integration = {
+          ...selectedStake,
+          mechanics: {
+            ...selectedStake.mechanics,
+            fee: {
+              deposit: new BigNumber("1"),
+              withdrawal: new BigNumber("0.5"),
+            },
+          },
+        };
+        const exit = yield* makeReviewHarness({
+          session: makeYieldFlowSession(
+            {
+              intake: {
+                ...makeExitIntake(integration),
+                request: {
+                  address,
+                  arguments: { amount: "4" },
+                  yieldId: integration.id,
+                },
+              },
+              mount: {
+                _tag: "PositionExit",
+                balanceId: "default",
+                integrationId,
+              },
+            },
+            walletScope
+          ),
+        });
+        const fee = exit.registry.get(exit.page.reviewViewAtom).withdrawalFee;
+        expect(fee?.amount.toString()).toBe("0.02");
+        expect(fee?.ratio.toString()).toBe("0.005");
+
+        const enter = yield* makeReviewHarness({
+          session: makeYieldFlowSession(
+            {
+              intake: { ...enterIntake, selectedStake: integration },
+              mount: { _tag: "Earn" },
+            },
+            walletScope
+          ),
+        });
+        expect(
+          enter.registry.get(enter.page.reviewViewAtom).withdrawalFee
+        ).toBeNull();
+      })
+  );
+
+  it.effect(
     "retries a retryable preview failure on Confirm, then hands off once",
     () =>
       Effect.gen(function* () {

@@ -5,6 +5,7 @@ import {
   EvmChainIds,
   type EvmTx,
   MiscChainIds,
+  type SKAppearance,
   type SKBorrowExternalProviders,
   type SKExternalProviders,
   type SKToken,
@@ -48,6 +49,7 @@ export type BundleTypeAssertions = [
     Equal<NonNullable<BundledSKWidgetProps["tracking"]>, SKTrackingConfig>
   >,
   Assert<Equal<NonNullable<ActionMeta["inputToken"]>, SKToken>>,
+  Assert<Equal<NonNullable<BundledSKWidgetProps["appearance"]>, SKAppearance>>,
   Assert<Equal<SKTx, EvmTx | SolanaTx | TonTx | TronTx | BittensorTx>>,
 ];
 

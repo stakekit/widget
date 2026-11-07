@@ -1,67 +1,99 @@
 import { useTranslation } from "react-i18next";
-import { equalTokens } from "../../../../../domain/token/token";
-import { SelectModal } from "../../../../../shared/ui/components/select-modal";
+import { type Token, tokenString } from "../../../../../domain/token/token";
 import {
-  SelectedToken,
-  SelectTokenTrigger,
-} from "../../../../../shared/ui/components/selected-token";
-import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+  formatTokenAmount,
+  formatUsd,
+} from "../../../../../shared/lib/number-format";
+import {
+  useTokenLogo,
+  useTokenLogoResolver,
+} from "../../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
 import { useTrackEvent } from "../../../../tracking/index";
 import {
   useEarnEntry,
   useEarnTokenSelection,
 } from "../../../react/use-earn-facades";
-import { SelectTokenListItem } from "./select-token-list-item";
+import type { EarnTokenSelectionItem } from "../../../state/token-selection";
 
+/** The entry token beside the amount, and the sheet to choose another. */
 export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
-  const { select, setSearch, view } = useEarnTokenSelection();
   const { view: entry } = useEarnEntry();
+
+  if (!entry.selectedToken) return null;
+
+  return <SelectTokenSheet canSelect={canSelect} token={entry.selectedToken} />;
+};
+
+const SelectTokenSheet = ({
+  canSelect,
+  token,
+}: {
+  readonly canSelect: boolean;
+  readonly token: Token;
+}) => {
+  const { select, setSearch, view } = useEarnTokenSelection();
   const trackEvent = useTrackEvent();
-
   const { t } = useTranslation();
-
-  const data = entry.selectedToken
-    ? { st: entry.selectedToken, tokenBalances: view.filtered }
-    : null;
-
-  if (!data) return null;
+  const { locale } = useWidgetPresentation();
+  const resolveLogo = useTokenLogoResolver();
+  const logo = { ...useTokenLogo(token), name: token.symbol };
 
   if (!canSelect) {
-    return <SelectedToken token={data.st} />;
+    return <TokenTrigger token={logo} readOnly testId="select-token" />;
   }
 
+  const items = new Map<string, EarnTokenSelectionItem>(
+    view.filtered.map((item) => [tokenString(item.token), item])
+  );
+
   return (
-    <SelectModal
+    <SelectSheet
       title={t("select_token.title")}
-      onSearch={setSearch}
-      searchValue={view.search}
-      onClose={() => setSearch("")}
-      onOpen={() => trackEvent("selectTokenModalOpened")}
-      trigger={<SelectTokenTrigger testId="select-token" token={data.st} />}
-    >
-      {data.tokenBalances.length === 0 && view.search.trim().length > 0 ? (
-        <Box display="flex" justifyContent="center" px="4" py="4">
-          <Text variant={{ type: "muted" }}>
-            {t("select_token.no_results")}
-          </Text>
-        </Box>
-      ) : (
-        <VirtualList
-          data={data.tokenBalances}
-          estimateSize={() => 60}
-          itemContent={(_index, item) => {
-            return (
-              <SelectTokenListItem
-                item={item}
-                isSelected={equalTokens(item.token, data.st)}
-                onTokenBalanceSelect={select}
-              />
-            );
-          }}
-        />
-      )}
-    </SelectModal>
+      closeLabel={t("shared.close")}
+      listLabel={t("select_token.title")}
+      trigger={<TokenTrigger token={logo} testId="select-token" />}
+      onOpenChange={(open) => {
+        if (open) trackEvent("selectTokenModalOpened");
+        else setSearch("");
+      }}
+      search={{
+        value: view.search,
+        onValueChange: setSearch,
+        label: t("shared.search"),
+        placeholder: t("shared.search_tokens"),
+        clearLabel: t("shared.clear_search"),
+      }}
+      empty={{ title: t("select_token.no_results") }}
+      options={view.filtered.map((item) => {
+        const yieldsCount = t("select_token.yields_count", {
+          count: item.availableYields.length,
+        });
+
+        return {
+          id: tokenString(item.token),
+          title: item.token.symbol,
+          subtitle: item.token.name,
+          logo: resolveLogo(item.token),
+          ...(item.fundedAmount
+            ? { value: formatTokenAmount(item.fundedAmount, locale, "down") }
+            : {}),
+          subvalue: item.fundedUsd
+            ? `${formatUsd(item.fundedUsd, locale)} · ${yieldsCount}`
+            : yieldsCount,
+        };
+      })}
+      selectedId={tokenString(token)}
+      onSelect={(id) => {
+        const item = items.get(id);
+        if (item) select(item);
+      }}
+      testIds={{
+        container: "select-modal__container",
+        title: "select-modal__title",
+        search: "select-modal__search-input",
+      }}
+    />
   );
 };

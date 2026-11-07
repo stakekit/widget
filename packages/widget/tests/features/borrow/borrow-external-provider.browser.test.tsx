@@ -295,7 +295,7 @@ const renderBorrowApp = (wallet: SKBorrowWallet) =>
 const confirmWithdraw = async (app: RenderResult) => {
   await userEvent.click(app.getByText("Manage"));
   await userEvent.click(app.getByText("WETH/USDC"));
-  await app.getByTestId("borrow-position-action__withdraw").click();
+  // The position's only action, Withdraw, opens inline without tabs.
   await userEvent.click(app.getByTestId("number-input"));
   await userEvent.keyboard("0.1");
   await app.getByRole("button", { name: "Review withdrawal" }).click();
@@ -331,9 +331,16 @@ describe("Borrow with an external provider", () => {
     await expect
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeEnabled();
+    // Sent to the network, the transaction can no longer be cancelled.
     await expect
-      .element(app.getByRole("button", { name: "Cancel" }))
+      .element(app.getByRole("button", { name: "Leave" }))
       .toBeEnabled();
+    await expect
+      .element(
+        app.getByText("Sent transactions can't be cancelled.", { exact: false })
+      )
+      .toBeInTheDocument();
+    expect(app.getByRole("button", { name: "Cancel" }).query()).toBeNull();
 
     broadcast.resolve(broadcastSuccess);
     await expect.poll(() => completePageShown(app)).toBe(true);
@@ -396,18 +403,22 @@ describe("Borrow with an external provider", () => {
       .element(app.getByRole("button", { name: "Cancel" }))
       .toBeEnabled();
 
-    await app.getByRole("button", { name: "Try Again" }).click();
+    await app.getByRole("button", { name: "Try again" }).click();
     await expect
-      .element(app.getByText("Borrow transaction could not be submitted."))
+      .element(app.getByText("The transaction couldn't be sent. Try again."))
       .toBeInTheDocument();
     expect(api.submitted.has(withdrawTransaction.id)).toBe(false);
     await expect
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeEnabled();
 
-    await app.getByRole("button", { name: "Cancel" }).click();
-    // The host broadcast the transaction, so leaving asks first.
+    // The host broadcast the transaction: the footer offers Leave, not
+    // Cancel, and leaving asks first.
     await app.getByRole("button", { name: "Leave" }).click();
+    await app
+      .getByTestId("leave-confirmation")
+      .getByRole("button", { name: "Leave" })
+      .click();
     await expect.poll(() => stepsPageShown(app)).toBe(false);
     await expect
       .poll(() => api.submitted.get(withdrawTransaction.id))
@@ -432,16 +443,31 @@ describe("Borrow with an external provider", () => {
     await confirmWithdraw(app);
 
     await expect
-      .element(app.getByText("You cancelled this request in your wallet."))
+      .element(app.getByText("Nothing was sent. Try again when you're ready."))
       .toBeInTheDocument();
     await expect
       .element(app.getByText("Withdrawal failed"))
       .not.toBeInTheDocument();
-    await expect
-      .element(app.getByRole("button", { name: "Cancel" }))
-      .toBeEnabled();
+    const cancel = app.getByRole("button", { name: "Cancel" });
+    await expect.element(cancel).toBeEnabled();
 
-    await app.getByRole("button", { name: "Try Again" }).click();
+    // Try again leads the page's footer, full width above Cancel, under the
+    // steps rather than inside the failed one.
+    const retry = app.getByRole("button", { name: "Try again" });
+    await expect.element(retry).toBeVisible();
+    const retryElement = retry.element();
+    expect(retryElement.getAttribute("data-rk")).toBe("borrow-steps-retry");
+    expect(retryElement.closest("li")).toBeNull();
+    const steps = app.getByRole("list", { name: "Transaction progress" });
+    const stepsBox = steps.element().getBoundingClientRect();
+    const retryBox = retryElement.getBoundingClientRect();
+    const cancelBox = cancel.element().getBoundingClientRect();
+    expect(retryBox.top).toBeGreaterThanOrEqual(stepsBox.bottom);
+    expect(retryBox.bottom).toBeLessThanOrEqual(cancelBox.top);
+    expect(retryBox.left).toBe(cancelBox.left);
+    expect(retryBox.width).toBe(cancelBox.width);
+
+    await retry.click();
     await expect.poll(() => completePageShown(app)).toBe(true);
     expect(sendBorrowTransaction).toHaveBeenCalledTimes(2);
 
@@ -594,7 +620,7 @@ describe("Borrow on a network outside Borrow", () => {
     await app.getByTestId(`wallet-chain-${base.id}`).click();
     await expect.poll(() => switchChain).toHaveBeenCalledWith(base.id);
     await expect
-      .element(app.getByRole("status").getByText("Confirm in Wallet"))
+      .element(app.getByRole("status").getByText("Confirm in wallet"))
       .toBeInTheDocument();
 
     await userEvent.keyboard("{Escape}");

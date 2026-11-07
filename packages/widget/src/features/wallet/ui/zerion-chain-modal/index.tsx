@@ -1,5 +1,5 @@
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import { Box } from "../../../../shared/ui/primitives/box";
+import { Box } from "../../../../ui/index";
 import { useSKWallet } from "../../react/use-wallet";
 
 export const ZerionChainModal = () => {
@@ -25,9 +25,5 @@ export const ZerionChainModal = () => {
     selectedChainId: chain.id,
     onSwitchChain,
   });
-  return content ? (
-    <Box minHeight="8" data-rk="chain-modal">
-      {content}
-    </Box>
-  ) : null;
+  return content ? <Box hostHook="chain-modal">{content}</Box> : null;
 };

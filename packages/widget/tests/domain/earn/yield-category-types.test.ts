@@ -33,8 +33,8 @@ const makeYield = (type: string): EarnYieldWithProvider =>
 
 const t = ((key: string) => {
   const values: Record<string, string> = {
-    "yield_types.liquid-staking.title": "Liquid Staking",
-    "yield_types.liquid-staking.review": "Liquid Staking",
+    "yield_types.liquid-staking.title": "Liquid staking",
+    "yield_types.liquid-staking.review": "Liquid staking",
     "yield_types.liquid-staking.cta": "Stake",
   };
 
@@ -108,8 +108,8 @@ describe("getYieldTypeLabels", () => {
   it("uses liquid staking copy for liquid_staking", () => {
     expect(getYieldTypeLabels(makeYield("liquid_staking"), t)).toEqual({
       type: "liquid_staking",
-      title: "Liquid Staking",
-      review: "Liquid Staking",
+      title: "Liquid staking",
+      review: "Liquid staking",
       cta: "Stake",
     });
   });

@@ -2,25 +2,37 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
-import { formatTokenAmount } from "../../../shared/lib/number-format";
 import {
-  DetailRow,
-  DetailRowList,
-} from "../../../shared/ui/components/details-section";
-import { Divider } from "../../../shared/ui/components/divider";
-import { Box } from "../../../shared/ui/primitives/box";
-import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
-import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../shared/ui/widget-presentation";
+  formatBorrowProviderName,
+  formatNetworkName,
+} from "../../../shared/lib/formatters";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import {
+  IconButton,
+  Notice,
+  ReviewSummary,
+  Stack,
+  Text,
+} from "../../../ui/index";
 import { useTrackPage } from "../../tracking/index";
+import { TransactionTerms } from "../../transaction-steps/views";
+import { useWidgetConfig } from "../../widget-configuration/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { estimateBorrowPositionChange } from "../model/borrow-completion";
+import {
+  estimateBorrowPositionChange,
+  getBorrowFlowHeadline,
+} from "../model/borrow-completion";
 import {
   getBorrowReviewRiskBlock,
+  getBorrowTransactionFlowTitle,
   projectBorrowTransactionFlowSummary,
 } from "../model/borrow-transaction-flow";
 import {
@@ -28,18 +40,17 @@ import {
   useBorrowTransactionFlowReview,
 } from "../react/borrow-flow-route";
 import { BorrowReviewConfirmationFailure } from "../state/review-page";
-import { BorrowFlowHeading } from "./flow-heading";
-import { BorrowFlowPositionChangeRows } from "./position-change-rows";
-import * as styles from "./styles.css";
 import {
-  BorrowFlowAmountRows,
-  BorrowFlowOriginationRows,
+  getBorrowFlowCollateralAmountRow,
+  getBorrowFlowOriginationRows,
+  getBorrowFlowPositionChangeRows,
 } from "./summary-rows";
 
 export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
 
   const { t } = useTranslation();
+  const hideGasFee = useWidgetConfig("hideGasFee");
   const { locale } = useWidgetPresentation();
   const flow = useBorrowTransactionFlow();
   const review = useBorrowTransactionFlowReview();
@@ -52,6 +63,8 @@ export const BorrowReviewPage = () => {
   const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
   const riskBlock = getBorrowReviewRiskBlock(reviewState);
+  const title = getBorrowTransactionFlowTitle(summary);
+  const headline = getBorrowFlowHeadline(summary, projectedSummary);
   const createActionErrorDescription = Option.map(
     confirmation.failure,
     BorrowReviewConfirmationFailure.match({
@@ -78,115 +91,151 @@ export const BorrowReviewPage = () => {
       ? `${formatTokenAmount(projectedSummary.collateral.effectiveAmount, locale, "down")} ${projectedSummary.collateral.symbol}`
       : null;
 
+  const origination = getBorrowFlowOriginationRows({
+    locale,
+    origination: projectedSummary.origination,
+    t,
+  });
+  // The headline shows the amount the action is about; the rows show the
+  // rest of what it moves and the position it leaves.
+  const facts = [
+    {
+      label: t("dashboard.borrow.review_page.market"),
+      value: summary.marketLabel,
+    },
+    // A borrow's headline is the loan, so the collateral it supplies is a row.
+    ...(projectedSummary.borrow && projectedSummary.collateral
+      ? [
+          getBorrowFlowCollateralAmountRow({
+            collateral: projectedSummary.collateral,
+            locale,
+            t,
+          }),
+        ]
+      : []),
+    ...(effectiveCollateral
+      ? [
+          {
+            label: t("dashboard.borrow.review_page.effective_collateral"),
+            value: effectiveCollateral,
+          },
+        ]
+      : []),
+    ...getBorrowFlowPositionChangeRows({
+      change: estimateBorrowPositionChange(projectedSummary),
+      locale,
+      t,
+    }),
+    ...(origination ? [origination.principal] : []),
+  ];
+  // Borrow builds its transactions on Confirm and lets the wallet estimate
+  // their gas at signing, so Review has no figure to quote.
+  const gasFeeRow = {
+    info: {
+      label: t("dashboard.borrow.review_page.gas_fee_info_label"),
+      text: t("dashboard.borrow.review_page.gas_fee_info"),
+    },
+    label: t("dashboard.borrow.review_page.gas_fee"),
+    testId: "borrow-review-gas-fee",
+    value: t("dashboard.borrow.review_page.gas_fee_in_wallet"),
+  };
+  const feeRows = [
+    ...(hideGasFee ? [] : [gasFeeRow]),
+    ...(collateralFee
+      ? [
+          {
+            label: t("dashboard.borrow.review_page.collateral_fee"),
+            value: collateralFee,
+          },
+        ]
+      : []),
+    ...(origination ? [origination.fee] : []),
+  ];
+
   return (
     <AnimationPage>
       <PageContainer>
-        <Box display="flex" flexDirection="column" gap="4">
-          <Box display="flex" flexDirection="column" gap="2">
-            <Box
-              aria-label={
-                isPositionFlow
-                  ? t("dashboard.borrow.review_page.back_to_position")
-                  : t("dashboard.borrow.review_page.back")
-              }
-              as="button"
-              className={styles.flowBackButton}
-              onClick={() => back(undefined)}
-              type="button"
-            >
-              <CaretLeftIcon />
-            </Box>
+        <Stack gap={16}>
+          <IconButton
+            icon="CaretLeftIcon"
+            label={
+              isPositionFlow
+                ? t("dashboard.borrow.review_page.back_to_position")
+                : t("dashboard.borrow.review_page.back")
+            }
+            size="sm"
+            onClick={() => back(undefined)}
+          />
 
-            <BorrowFlowHeading summary={summary} />
-          </Box>
-
-          <Divider />
-
-          <DetailRowList>
-            <DetailRow
-              id="market"
-              label={t("dashboard.borrow.review_page.market")}
-              value={summary.marketLabel}
-            />
-            <BorrowFlowAmountRows
-              action={summary.action}
-              projected={projectedSummary}
-            />
-            {effectiveCollateral ? (
-              <DetailRow
-                id="effective-collateral"
-                label={t("dashboard.borrow.review_page.effective_collateral")}
-                value={effectiveCollateral}
-              />
-            ) : null}
-            <BorrowFlowPositionChangeRows
-              change={estimateBorrowPositionChange(projectedSummary)}
-            />
-            {collateralFee ? (
-              <DetailRow
-                id="collateral-fee"
-                label={t("dashboard.borrow.review_page.collateral_fee")}
-                value={collateralFee}
-              />
-            ) : null}
-            <BorrowFlowOriginationRows
-              origination={projectedSummary.origination}
-            />
-          </DetailRowList>
+          <ReviewSummary
+            title={t(title.key, { symbol: title.symbol })}
+            amount={
+              headline.amount === null
+                ? headline.symbol
+                : `${formatTokenAmount(headline.amount, locale, "down")} ${headline.symbol}`
+            }
+            {...(headline.usd
+              ? { amountFiat: formatUsd(headline.usd, locale) }
+              : {})}
+            destination={`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
+            facts={facts}
+            {...(feeRows.length > 0
+              ? { fees: { heading: t("shared.fees"), rows: feeRows } }
+              : {})}
+          />
 
           {Option.match(createActionErrorDescription, {
             onNone: () => null,
             onSome: (description) => (
-              <Box className={styles.executionError}>
-                <Text variant={{ type: "danger" }}>
-                  {t(
-                    `dashboard.borrow.execution_page.error_titles.${summary.action}`
-                  )}
-                </Text>
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  {description}
-                </Text>
-              </Box>
+              <Notice
+                tone="danger"
+                title={t(
+                  `dashboard.borrow.execution_page.error_titles.${summary.action}`
+                )}
+              >
+                {description}
+              </Notice>
             ),
           })}
 
           {summary.warnings.map((warning) => (
-            <Box className={styles.formCard} key={warning}>
-              <Text variant={{ weight: "bold" }}>
-                {t("dashboard.borrow.review_page.warning_title")}
-              </Text>
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t(`dashboard.borrow.review_page.warnings.${warning}`)}
-              </Text>
-            </Box>
+            <Notice
+              key={warning}
+              tone="warning"
+              title={t("dashboard.borrow.review_page.warning_title")}
+            >
+              {t(`dashboard.borrow.review_page.warnings.${warning}`)}
+            </Notice>
           ))}
 
           {riskBlock ? (
-            <Box className={styles.executionError}>
-              <Text variant={{ type: "danger" }}>
-                {t("dashboard.borrow.risk_block.title")}
-              </Text>
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t(`dashboard.borrow.risk_block.${riskBlock}`)}
-              </Text>
-            </Box>
+            <Notice
+              tone="danger"
+              title={t("dashboard.borrow.risk_block.title")}
+            >
+              {t(`dashboard.borrow.risk_block.${riskBlock}`)}
+            </Notice>
           ) : null}
 
-          <Text variant={{ type: "muted", weight: "normal" }}>
+          <Text as="p" variant="caption" tone="muted">
             {t(
               `dashboard.borrow.review_page.risk_disclosures.${summary.action}`
             )}
           </Text>
 
-          <PageCtaButton
-            cta={{
-              disabled: confirmation.pending || riskBlock !== null,
-              isLoading: confirmation.pending,
-              label: t("dashboard.borrow.review_page.confirm"),
-              onClick: () => confirm(undefined),
-            }}
+          <TransactionTerms
+            action={t("dashboard.borrow.review_page.confirm")}
           />
-        </Box>
+        </Stack>
+
+        <PageCtaButton
+          cta={{
+            disabled: confirmation.pending || riskBlock !== null,
+            isLoading: confirmation.pending,
+            label: t("dashboard.borrow.review_page.confirm"),
+            onClick: () => confirm(undefined),
+          }}
+        />
       </PageContainer>
     </AnimationPage>
   );

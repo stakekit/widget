@@ -1,5 +1,10 @@
 {
   "shared": {
+    "amount": "Amount",
+    "clear_search": "Clear search",
+    "search": "Search",
+    "search_tokens": "Search tokens",
+    "search_yields": "Search yields",
     "insufficient_balance": "Insufficient balance",
     "confidential": {
       "decrypt": "Decrypt",
@@ -33,7 +38,9 @@
     "ok": "Ok",
     "something_went_wrong": "Something went wrong",
     "not_enough_gas_token": "Not enough gas token",
-    "retry": "Try Again",
+    "retry": "Try again",
+    "load_failed_description": "Check your connection and try again.",
+    "start_earning": "Start earning",
     "unsupported_network": "Unsupported network",
     "points": "Points",
     "continue": "Continue",
@@ -41,250 +48,264 @@
     "learn_more": "Learn more",
     "change": "Change",
     "manage_validators": "Manage validators",
-    "fee": "Fee"
+    "fee": "Fee",
+    "back": "Back",
+    "close": "Close",
+    "opens_in_new_tab": "opens in a new tab",
+    "powered_by_label": "Powered by",
+    "widget_sections": "Widget sections"
   },
   "errors": {
     "InvalidArgumentError": {
-      "title": "Invalid Argument",
+      "title": "Invalid argument",
       "details": "One or more arguments are invalid for this operation",
       "solution": "Check the submitted information and try again"
     },
     "InvalidAddressError": {
-      "title": "Invalid Address",
+      "title": "Invalid address",
       "details": "The address is invalid or is not supported by the selected network",
       "solution": "Check the address and network, then try again"
     },
     "BlockHeightUnavailableError": {
-      "title": "Block Height Unavailable",
+      "title": "Block height unavailable",
       "details": "The current block height is temporarily unavailable",
       "solution": "Try again later or contact StakeKit support"
     },
     "MinimumAmountNotReachedError": {
-      "title": "Minimum Amount Not Reached",
+      "title": "Minimum amount not reached",
       "details": "The amount is below the minimum required for this operation",
       "solution": "Increase the amount and try again"
     },
     "MaximumAmountExceededError": {
-      "title": "Maximum Amount Exceeded",
+      "title": "Maximum amount exceeded",
       "details": "The amount exceeds the maximum allowed for this operation",
       "solution": "Reduce the amount and try again"
     },
     "DelegationNotActiveError": {
-      "title": "Delegation Not Active",
+      "title": "Delegation not active",
       "details": "The delegation must be active before this operation can be performed",
       "solution": "Wait for the delegation to become active and try again"
     },
     "UnstakeTemporarilyDisabledError": {
-      "title": "Unstaking Temporarily Disabled",
+      "title": "Unstaking temporarily disabled",
       "details": "Unstaking is temporarily unavailable for this yield",
       "solution": "Try again later or contact StakeKit support"
     },
     "StakeTemporarilyDisabledError": {
-      "title": "Staking Temporarily Disabled",
+      "title": "Staking temporarily disabled",
       "details": "Staking is temporarily unavailable for this yield",
       "solution": "Try again later or contact StakeKit support"
     },
     "ValidatorNotActiveError": {
-      "title": "Validator Not Active",
+      "title": "Validator not active",
       "details": "The selected validator is not currently active",
       "solution": "Select an active validator and try again"
     },
     "FigmentValidatorNotExitableError": {
-      "title": "Validator Cannot Exit",
+      "title": "Validator cannot exit",
       "details": "The selected validator is not currently eligible to exit",
       "solution": "Try again when the validator becomes eligible or contact StakeKit support"
     },
     "UnauthorizedError": {
-      "title": "Unauthorized Request",
+      "title": "Unauthorized request",
       "details": "This request is not authorized",
       "solution": "Reconnect the wallet and try again or contact StakeKit support"
     },
     "TransactionConstructorNotFound": {
-      "title": "Transaction Construction Unsupported",
+      "title": "Transaction construction unsupported",
       "details": "Transactions cannot currently be constructed for this operation",
       "solution": "Try again later or contact StakeKit support"
     },
     "ShareConversionDidNotConvergeError": {
-      "title": "Share Conversion Failed",
+      "title": "Share conversion failed",
       "details": "The share amount could not be calculated reliably",
       "solution": "Try again later or contact StakeKit support"
     },
     "RpcTimeoutError": {
-      "title": "Network Request Timed Out",
+      "title": "Network request timed out",
       "details": "The blockchain network did not respond in time",
       "solution": "Try again later or contact StakeKit support"
     },
     "ApiUnreachableError": {
-      "title": "Can't Reach the Server",
+      "title": "Can't reach the server",
       "details": "The request got no answer. You may be offline, or the service may be temporarily unavailable",
       "solution": "Check your internet connection and try again"
     },
     "WithdrawalLimitExceededError": {
-      "title": "Withdrawal Limit Exceeded",
+      "title": "Withdrawal limit exceeded",
       "details": "The requested amount exceeds the current withdrawal limit",
       "solution": "Reduce the amount or try again later"
     },
     "DecommissionedError": {
-      "title": "Service No Longer Available",
+      "title": "Service no longer available",
       "details": "This staking service has been decommissioned",
       "solution": "Select another yield or contact StakeKit support"
     },
     "SparkPoolFrozenError": {
-      "title": "Spark Pool Frozen",
+      "title": "Spark pool frozen",
       "details": "The Spark pool is currently frozen and unavailable",
       "solution": "Try again later or contact StakeKit support"
     },
     "SparkTokenPairNotFoundError": {
-      "title": "Spark Token Pair Not Found",
+      "title": "Spark token pair not found",
       "details": "The specified Spark token pair could not be found",
       "solution": "Try again later or contact StakeKit support"
     },
     "Snx420LockupPeriodNotElapsedError": {
-      "title": "Lockup Period Not Complete",
+      "title": "Lockup period not complete",
       "details": "The Synthetix lockup period has not yet elapsed",
       "solution": "Wait until the lockup period ends and try again"
     },
     "ContractFunctionNotFoundError": {
-      "title": "Contract Function Not Found",
+      "title": "Contract function not found",
       "details": "The required smart contract function is not available",
       "solution": "Try again later or contact StakeKit support"
     },
     "CardanoRewardAddressNotFoundError": {
-      "title": "Reward Address Not Found",
+      "title": "Reward address not found",
       "details": "A Cardano reward address could not be found for this account",
       "solution": "Check the connected account and try again"
     },
     "CardanoStakeAccountNotActiveError": {
-      "title": "Stake Account Not Active",
+      "title": "Stake account not active",
       "details": "The Cardano stake account is not active",
       "solution": "Activate the stake account and try again"
     },
     "CardanoNoUtxosFoundError": {
-      "title": "No UTXOs Found",
+      "title": "No UTXOs found",
       "details": "No spendable Cardano transaction outputs were found",
       "solution": "Add funds to the account and try again"
     },
     "CosmosAccountNotFoundError": {
-      "title": "Cosmos Account Not Found",
+      "title": "Cosmos account not found",
       "details": "The specified Cosmos account could not be found",
       "solution": "Check the account and try again or contact StakeKit support"
     },
     "TonInvalidAddressError": {
-      "title": "Invalid TON Address",
+      "title": "Invalid TON address",
       "details": "The TON address is invalid",
       "solution": "Check the address and try again"
     },
     "TronInvalidAddressError": {
-      "title": "Invalid Tron Address",
+      "title": "Invalid Tron address",
       "details": "The Tron address is invalid",
       "solution": "Check the address and try again"
     },
     "SolanaUnstakeRequiresFullAmountError": {
-      "title": "Full Unstake Required",
+      "title": "Full unstake required",
       "details": "This Solana position can only be unstaked in full",
       "solution": "Select the full staked amount and try again"
     },
     "SolanaUnableToEstimateGasForTransactionError": {
-      "title": "Unable to Estimate Transaction Fee",
+      "title": "Unable to estimate transaction fee",
       "details": "The fee for the Solana transaction could not be estimated",
       "solution": "Try again later or contact StakeKit support"
     },
     "SolanaTransactionSimulationError": {
-      "title": "Transaction Simulation Failed",
+      "title": "Transaction simulation failed",
       "details": "The Solana transaction failed during simulation",
       "solution": "Review the transaction and try again or contact StakeKit support"
     },
     "SolanaStakeAccountsDeactivationLimitExceeded": {
-      "title": "Stake Account Deactivation Limit Exceeded",
+      "title": "Stake account deactivation limit exceeded",
       "details": "Too many Solana stake accounts would need to be deactivated",
       "solution": "Reduce the amount or number of stake accounts and try again"
     },
     "SolanaMarinadeMinStakeUnavailableError": {
-      "title": "Marinade Minimum Stake Unavailable",
+      "title": "Marinade minimum stake unavailable",
       "details": "The minimum Marinade stake amount is temporarily unavailable",
       "solution": "Try again later or contact StakeKit support"
     },
     "DriftLendingNoDepositsFoundError": {
-      "title": "No Drift Deposits Found",
+      "title": "No Drift deposits found",
       "details": "No Drift lending deposits were found for this account",
       "solution": "Check the account and try again"
     },
     "DriftLendingUserAccountDoesNotExistError": {
-      "title": "Drift Account Not Found",
+      "title": "Drift account not found",
       "details": "A Drift user account does not exist for this wallet",
       "solution": "Create or initialize the Drift account and try again"
     },
     "DriftLendingInsufficientBalanceError": {
-      "title": "Insufficient Drift Balance",
+      "title": "Insufficient Drift balance",
       "details": "The Drift lending balance is insufficient for this operation",
       "solution": "Reduce the amount or add funds and try again"
     },
     "DriftLendingWithdrawalLimitExceededError": {
-      "title": "Drift Withdrawal Limit Exceeded",
+      "title": "Drift withdrawal limit exceeded",
       "details": "The requested amount exceeds the current Drift withdrawal limit",
       "solution": "Reduce the amount or try again later"
     },
     "DriftLendingInsufficientSolForRentError": {
-      "title": "Insufficient SOL for Account Rent",
+      "title": "Insufficient SOL for account rent",
       "details": "There is not enough SOL to fund the account rent required by Drift",
       "solution": "Add SOL to the account and try again"
     },
     "KaminoLendingNoDepositsFoundError": {
-      "title": "No Kamino Deposits Found",
+      "title": "No Kamino deposits found",
       "details": "No Kamino lending deposits were found for this account",
       "solution": "Check the account and try again"
     },
     "KaminoLendingInsufficientBalanceError": {
-      "title": "Insufficient Kamino Balance",
+      "title": "Insufficient Kamino balance",
       "details": "The Kamino lending balance is insufficient for this operation",
       "solution": "Reduce the amount or add funds and try again"
     },
     "KaminoLendingInsufficientSolForRentError": {
-      "title": "Insufficient SOL for Account Rent",
+      "title": "Insufficient SOL for account rent",
       "details": "There is not enough SOL to fund the account rent required by Kamino Lending",
       "solution": "Add SOL to the account and try again"
     },
     "KaminoVaultNoDepositsFoundError": {
-      "title": "No Kamino Vault Deposits Found",
+      "title": "No Kamino vault deposits found",
       "details": "No Kamino vault deposits were found for this account",
       "solution": "Check the account and try again"
     },
     "KaminoVaultInsufficientBalanceError": {
-      "title": "Insufficient Kamino Vault Balance",
+      "title": "Insufficient Kamino vault balance",
       "details": "The Kamino vault balance is insufficient for this operation",
       "solution": "Reduce the amount or add funds and try again"
     },
     "KaminoVaultInsufficientSolForRentError": {
-      "title": "Insufficient SOL for Account Rent",
+      "title": "Insufficient SOL for account rent",
       "details": "There is not enough SOL to fund the account rent required by Kamino Vaults",
       "solution": "Add SOL to the account and try again"
     }
   },
   "chain_modal": {
-    "disabled_chain_info": "Add account"
+    "disabled_chain_info": "Add account",
+    "search": "Search networks",
+    "no_results": "No networks found",
+    "groups": {
+      "current": "Current",
+      "networks": "Networks",
+      "testnets": "Testnets"
+    }
   },
   "init": {
     "get_started": "Connect your wallet to get started…",
-    "connect_wallet": "Connect Wallet",
+    "connect_wallet": "Connect wallet",
     "ledger_add_account": "Add account"
   },
   "wallet_modal": {
     "account": "Account",
     "close": "Close",
-    "copy_address": "Copy Address",
+    "copy_address": "Copy address",
     "copied": "Copied!",
-    "connected": "Connected",
-    "confirm": "Confirm in Wallet",
+    "confirm": "Confirm in wallet",
     "confirm_error": "Error switching chain",
     "wrong_network": "Wrong network detected, switch or disconnect to continue.",
     "chain_error": "Couldn't switch networks. Try again.",
-    "select_ecosystem": "Choose ecosystem",
     "connect_wallet": "Connect wallet",
-    "change_ecosystem": "Choose another ecosystem",
+    "ecosystems": "Ecosystems",
+    "all_ecosystems": "All",
     "connection_error": "Couldn't connect to the wallet. Try again.",
     "wallet_not_available": "This wallet is no longer available. Enable or install its extension and try again.",
     "disconnect": "Disconnect",
-    "network": "Switch Networks",
+    "connected_to": "Connected to {{network}}",
+    "other_accounts": "Other accounts",
+    "view_on_explorer": "View on explorer",
+    "network": "Switch networks",
     "install": "Install",
     "checking": "Checking",
     "groups": {
@@ -294,25 +315,42 @@
     }
   },
   "activity": {
+    "list_label": "Activity",
+    "loading_more": "Loading more activity",
+    "copy_hash": "Copy transaction hash",
+    "copied": "Copied",
     "complete": {
       "continue": "Continue"
     },
     "details": {
-      "back": "Back to Activity",
       "canceled": "Canceled",
       "collateral_fee": "Collateral fee",
       "completed": "Completed",
       "continuation_unavailable": "This action cannot continue because its yield details are unavailable.",
       "created": "Created",
+      "error_details": "Details",
       "health_factor": "Health factor",
       "ltv": "LTV",
       "market": "Market",
+      "network": "Network",
       "origination_fee": "Origination fee",
+      "provider": "Provider",
+      "status": "Status",
       "unavailable_description": "This action does not exist or belongs to another wallet.",
       "unavailable_title": "Activity unavailable",
-      "via_network": "via {{provider}} · {{network}}"
+      "validators_one": "Validator",
+      "validators_other": "Validators",
+      "view_on_explorer": "View on explorer"
     },
-    "date_group_labels": {
+    "errors": {
+      "contract_rejected": "The contract rejected this transaction",
+      "insufficient_funds": "Not enough funds to pay the network fee",
+      "network": "The transaction failed on the network",
+      "nonce": "The transaction was replaced or out of order",
+      "out_of_gas": "The transaction ran out of gas",
+      "cancelled_in_wallet": "Cancelled in wallet"
+    },
+    "groups": {
       "today": "Today",
       "yesterday": "Yesterday"
     },
@@ -321,8 +359,7 @@
       "retry": "Retry",
       "continue": "Continue",
       "unknown_error": "Unknown error",
-      "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-      "in_progress": "In Progress",
+      "in_progress": "In progress",
       "confirmed": "Confirmed",
       "not_submitted": "Not submitted",
       "transactions_all_confirmed_one": "{{count}} · confirmed",
@@ -333,16 +370,24 @@
       "transactions_in_progress_other": "{{count}} in progress",
       "view_transaction": "View {{type}} transaction"
     },
-    "no_previous_activity": "No previous activity",
+    "empty_title": "No activity yet",
+    "empty_description": "Your deposits, withdrawals and claims will show here.",
+    "filter_empty_title": "No activity of this type",
+    "load_failed_title": "Couldn't load your activity",
+    "loading": "Loading activity",
     "item": {
       "deposited": "Deposited {{token}}",
       "deposited_without_token": "Deposited",
+      "deposit": "Deposit {{token}}",
+      "deposit_without_token": "Deposit",
       "deposit_submitted": "{{token}} deposit submitted",
       "deposit_submitted_without_token": "Deposit submitted",
       "deposit_canceled": "{{token}} deposit canceled",
       "deposit_canceled_without_token": "Deposit canceled",
       "withdrew": "Withdrew {{token}}",
       "withdrew_without_token": "Withdrew",
+      "withdraw": "Withdraw {{token}}",
+      "withdraw_without_token": "Withdraw",
       "private_withdrawal_requested": "{{token}} private withdrawal requested",
       "private_withdrawal_requested_without_token": "Private withdrawal requested",
       "private_withdrawal_canceled": "{{token}} private withdrawal canceled",
@@ -367,13 +412,29 @@
         "enableCollateral_without_token": "Enabled collateral",
         "disableCollateral": "Disabled {{token}} as collateral",
         "disableCollateral_without_token": "Disabled collateral"
+      },
+      "borrow_in_progress": {
+        "supply": "Supply {{token}}",
+        "supply_without_token": "Supply",
+        "borrow": "Borrow {{token}}",
+        "borrow_without_token": "Borrow",
+        "supplyAndBorrow": "Supply and borrow {{token}}",
+        "supplyAndBorrow_without_token": "Supply and borrow",
+        "repay": "Repay {{token}}",
+        "repay_without_token": "Repay",
+        "withdraw": "Withdraw {{token}}",
+        "withdraw_without_token": "Withdraw",
+        "enableCollateral": "Enable {{token}} as collateral",
+        "enableCollateral_without_token": "Enable collateral",
+        "disableCollateral": "Disable {{token}} as collateral",
+        "disableCollateral_without_token": "Disable collateral"
       }
     },
     "time": {
       "now": "just now",
       "minutes_ago": "{{count}}m ago",
       "hours_ago": "{{count}}h ago",
-      "days_ago": "{{count}}d ago"
+      "ended": "Ended {{time}}"
     },
     "failed": "Failed",
     "status": {
@@ -383,16 +444,19 @@
       "created": "Created",
       "expired": "Expired",
       "failed": "Failed",
+      "in_progress": "In progress",
       "processing": "Processing",
       "stale": "Stale"
     },
     "showing_count": "Showing {{showing}} of {{total}}",
     "filters": {
+      "label": "Filter activity",
       "all": "All",
       "stake": "Stake",
       "defi": "DeFi",
       "rwa": "RWA",
-      "borrow": "Borrow"
+      "borrow": "Borrow",
+      "other": "Other"
     }
   },
   "details": {
@@ -403,6 +467,27 @@
     "yield_strategy": "Yield strategy",
     "via": "via {{providerName}}",
     "additional_info": "Additional info",
+    "amount_error": {
+      "above_maximum": "Enter at most {{amount}} {{symbol}}",
+      "balance_below_minimum": "You need at least {{amount}} {{symbol}} to stake",
+      "balance_below_minimum_deposit": "You need at least {{amount}} {{symbol}} to deposit",
+      "below_minimum": "Enter at least {{amount}} {{symbol}}",
+      "no_balance": "You have no {{symbol}} to stake",
+      "no_balance_deposit": "You have no {{symbol}} to deposit"
+    },
+    "cta_blocker": {
+      "above_maximum": "Above maximum",
+      "below_minimum": "Below minimum",
+      "enter_amount": "Enter an amount",
+      "insufficient_token": "Insufficient {{symbol}}",
+      "verify_identity": "Verify identity first"
+    },
+    "network_fee": {
+      "estimate": "Network fee ≈ {{fee}}",
+      "estimate_unknown": "Network fee —",
+      "max_reserve": "Max leaves {{amount}} {{symbol}} for network fees",
+      "max_reserve_unstated": "Max leaves some {{symbol}} for network fees"
+    },
     "kyc_gate": {
       "check_status": "Check status",
       "modal": {
@@ -441,8 +526,10 @@
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
       "receive_output": "You'll receive",
-      "yearly": "Estimated Yearly Earnings",
-      "monthly": "Estimated Monthly Earnings"
+      "yearly": "Estimated yearly earnings",
+      "monthly": "Estimated monthly earnings",
+      "usd_per_year": "+{{amount}} / yr",
+      "usd_per_year_unknown": "— / yr"
     },
     "tron_resources": {
       "label": "Resource",
@@ -451,8 +538,20 @@
     "risk": {
       "title": "Risk rating",
       "rated_by": "Rated by {{source}}",
-      "tooltip": "Risk ratings are provided by third-party risk assessment providers.",
+      "scale": {
+        "credora": "Credora grades how likely a deposit is to lose 1% or more within a year, from A+, the lowest risk, to D, the highest.",
+        "staking_rewards": "Staking Rewards grades a provider's operations, reliability and security, from AAA, the strongest, to D, the riskiest.",
+        "other": "{{source}} grades risk with letters: A is the lowest risk, and each later letter means more."
+      },
+      "grade": {
+        "positive": "{{rating}} is one of its lowest-risk grades.",
+        "warning": "{{rating}} is a middle grade: moderate risk.",
+        "danger": "{{rating}} is a low grade: high risk."
+      },
+      "not_a_guarantee": "A rating is an independent opinion, not a guarantee against loss.",
+      "methodology": "How {{source}} rates",
       "info_aria_label": "Risk rating details",
+      "badge": "Risk {{rating}}",
       "sources": {
         "credora": "Credora",
         "staking_rewards": "Staking Rewards"
@@ -461,56 +560,63 @@
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
     "no_opportunities": "No yield opportunities for this token",
+    "load_failed_title": "Couldn't load yields",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
     "selected_validators_summary_other": "{{providerName}} and others",
     "campaign_susd_description": "After staking sUSD, the position is locked until April 20, 2026.",
     "campaign_susd_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
-    "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>",
-    "campaign_susd": "Learn more about sUSD staking program <link0>here</link0>",
-    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>",
-    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>",
-    "lockup_period_one": "Minimum lock up time is {{count}} day",
-    "lockup_period_other": "Minimum lock up time is {{count}} days",
+    "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>.",
+    "campaign_susd": "Learn more about the sUSD staking program <link0>here</link0>.",
+    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>.",
+    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>.",
+    "lockup_period_one": "Minimum lock-up time is {{count}} day.",
+    "lockup_period_other": "Minimum lock-up time is {{count}} days.",
     "native_staking": {
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
-      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
-      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
-      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
-      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available"
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets.",
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically.",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound if you claim and restake quickly.",
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately.",
+      "unstake_time_one": "When unstaking, it takes {{count}} day for your tokens to be available.",
+      "unstake_time_other": "When unstaking, it takes {{count}} days for your tokens to be available."
     },
     "vault": {
-      "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
+      "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
       "description_with_fee_configuration": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. This token accumulates yield and represents your share in the vault.",
       "description_ethena_usde": "When you deposit {{stakeToken}} you'll receive {{depositToken}}.",
-      "description_confidential": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. Your balance stays encrypted on-chain",
-      "earn_after_batch": "You'll start earning once the batcher settles your deposit in the next batch",
-      "earn_after_batch_imminent": "You'll start earning once the batcher settles your deposit in the next batch, due any moment",
-      "earn_after_batch_timed": "You'll start earning once the batcher settles your deposit in the next batch, in {{duration}}",
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
-      "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically",
-      "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
-      "withdrawn_time_immediately": "After withdrawing, your assets will be available immediately",
-      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day",
-      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days",
-      "withdrawn_time_confidential": "Withdraw privately when the next batch settles, or instantly with a public amount",
-      "withdrawn_time_confidential_imminent": "Withdraw privately when the next batch settles, due any moment, or instantly with a public amount",
-      "withdrawn_time_confidential_timed": "Withdraw privately when the next batch settles in {{duration}}, or instantly with a public amount"
+      "description_confidential": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. Your balance stays encrypted on-chain.",
+      "description_without_receipt": "Deposit {{stakeToken}} to earn yield.",
+      "description_without_receipt_with_fee_configuration": "Your {{stakeToken}} deposit accumulates yield and represents your share in the vault.",
+      "description_without_receipt_confidential": "Deposit {{stakeToken}} to earn yield. Your balance stays encrypted on-chain.",
+      "earn_after_batch": "You'll start earning once the batcher settles your deposit in the next batch.",
+      "earn_after_batch_imminent": "You'll start earning once the batcher settles your deposit in the next batch, due any moment.",
+      "earn_after_batch_timed": "You'll start earning once the batcher settles your deposit in the next batch, in {{duration}}.",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets.",
+      "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically.",
+      "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually.",
+      "withdrawn_time_immediately": "After withdrawing, your assets will be available immediately.",
+      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day.",
+      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days.",
+      "withdrawn_time_confidential": "Withdraw privately when the next batch settles, or instantly with a public amount.",
+      "withdrawn_time_confidential_imminent": "Withdraw privately when the next batch settles, due any moment, or instantly with a public amount.",
+      "withdrawn_time_confidential_timed": "Withdraw privately when the next batch settles in {{duration}}, or instantly with a public amount."
     },
     "lend": {
-      "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
+      "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}.",
       "description_with_fee_configuration": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. This token accumulates yield and represents your share in the vault.",
-      "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}",
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
-      "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
-      "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
-      "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
-      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day",
-      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days"
+      "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}.",
+      "description_without_receipt": "Supply {{stakeToken}} to earn interest. You can borrow against the supplied assets on {{providerName}}.",
+      "description_without_receipt_with_fee_configuration": "Your supplied {{stakeToken}} accumulates yield and represents your share in the vault.",
+      "description_compound_without_receipt": "Supply {{stakeToken}} to earn interest.",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets.",
+      "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically.",
+      "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually.",
+      "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately.",
+      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day.",
+      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days."
     },
     "liquid_stake": {
       "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
@@ -526,21 +632,24 @@
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
     "restake": {
-      "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
-      "earn_after_warmup_one": "You'll start earning {{count}} day after you stake",
-      "earn_after_warmup_other": "You'll start earning {{count}} days after you stake",
-      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
-      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
-      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
-      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available",
-      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
+      "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time.",
+      "description_without_receipt": "Deposit {{stakeToken}} to earn restaking rewards.",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you stake.",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you stake.",
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically.",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually.",
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately.",
+      "unstake_time_one": "When unstaking, it takes {{count}} day for your tokens to be available.",
+      "unstake_time_other": "When unstaking, it takes {{count}} days for your tokens to be available.",
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position, you can sell {{rewardTokens}} any time on DEXs.",
+      "withdrawn_not_available_without_receipt": "Withdrawals aren't available at the moment."
     },
-    "extra_tezos": "You can use or send staked XTZ as normal",
+    "extra_tezos": "You can use or send staked XTZ as normal.",
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can't be accurately estimated",
     "opportunity_search_title": "Select a yield",
     "opportunities_no_results": "No yields found",
     "opportunity_item_subtitle_no_network": "via {{provider}}",
+    "opportunity_item_tvl": "TVL {{amount}}",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
     "provider_search_title": "Select provider",
@@ -557,7 +666,13 @@
     "validators_jailed": "Jailed",
     "validators_empty": "No validators available",
     "validators_no_results": "No validators found",
+    "validators_loading": "Loading validators",
     "validators_staked_balance": "Validator stake",
+    "validators_remove": "Remove {{name}}",
+    "validator_meta": {
+      "commission": "{{value}} commission",
+      "staked": "{{amount}} staked"
+    },
     "validators_voting_power": "Voting power",
     "validators_address": "Address",
     "validators_comission": "Commission",
@@ -576,9 +691,7 @@
   },
   "dashboard": {
     "split_view": {
-      "earn": "Earn",
-      "details": "Details",
-      "actions": "Actions"
+      "details": "Details"
     },
     "details": {
       "tabs": {
@@ -603,7 +716,7 @@
       "positions_active_one": "{{count}} active",
       "positions_active_other": "{{count}} active",
       "positions_yield": "Yield",
-      "positions_reward_rate": "Reward Rate",
+      "positions_reward_rate": "Reward rate",
       "positions_amount": "Amount",
       "positions_rewards": "Rewards",
       "positions_connect_wallet": "Connect wallet to see your positions",
@@ -623,13 +736,14 @@
       "native": "Native",
       "pooled": "Pooled",
       "auto_compound": "Auto-compound",
-      "reward_rate_period": "{{rewardType}} (7D)",
       "reward_rate": "Reward rate",
       "about": "About",
       "read_docs": "Read the integration docs",
-      "details": "Details",
-      "network": "Network",
-      "provider": "Provider",
+      "chart_history": "{{chart}} history",
+      "chart_period": "{{chart}} period",
+      "no_chart_data": "No chart data",
+      "chart_data_to": "Data to {{date}}",
+      "tvl_in_token": "≈ {{amount}}",
       "reward_token": "Reward token",
       "yield_bearing_reward_token": "{{symbol}} (yield-bearing)",
       "price_per_share": "Price per share",
@@ -644,7 +758,8 @@
       "withdrawal": "Withdrawal",
       "reward_claiming": "Reward claiming",
       "average_position": "Avg position",
-      "users": "Users",
+      "fee_per_year": "{{fee}} / yr",
+      "fee_of_earnings": "{{fee}} of earnings",
       "vault": "Vault",
       "asset": "Asset ({{symbol}})",
       "none": "None",
@@ -689,8 +804,8 @@
         "select_market": "Select borrow market",
         "select_collateral": "Select collateral",
         "search_assets": "Search assets...",
-        "borrowable_assets": "Borrowable Assets",
-        "collateral_assets": "Collateral Assets",
+        "borrowable_assets": "Borrowable assets",
+        "collateral_assets": "Collateral assets",
         "no_assets": "No assets found",
         "collateral_terms": "Max LTV {{maxLtv}} · Liq. {{liquidationThreshold}}",
         "collateral_earns": "Earns {{rate}}",
@@ -708,6 +823,7 @@
         "pooled_collaterals_other": "Pooled · {{count}} collaterals",
         "health_factor": "Health factor",
         "ltv_note": "Liquidation can occur if LTV crosses the selected market threshold.",
+        "projection_unavailable": "We couldn't compute the LTV and health factor from this position's data.",
         "validation": {
           "available_liquidity": "Amount exceeds available liquidity.",
           "minimum_loan": "Resulting debt is below the market minimum.",
@@ -763,6 +879,10 @@
         "collateral_fee": "Collateral fee",
         "origination_fee": "Origination fee",
         "debt_principal": "Debt principal",
+        "gas_fee": "Gas fee",
+        "gas_fee_in_wallet": "Estimated in your wallet",
+        "gas_fee_info_label": "About the gas fee",
+        "gas_fee_info": "The transactions are built when you confirm, so your wallet estimates the gas fee of each before you sign it.",
         "confirmation_error_description": "We couldn't prepare this transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {
@@ -783,6 +903,16 @@
           "withdraw": "Withdrawing collateral can increase LTV and liquidation risk."
         }
       },
+      "risk": {
+        "max_ltv_marker": "Max LTV {{value}}",
+        "alert": {
+          "caution_title": "Close to liquidation",
+          "danger_title": "High liquidation risk",
+          "price_drop": "A {{drop}} drop in collateral value would liquidate this position. Repay debt to lower the risk.",
+          "liquidatable": "This position can be liquidated now. Repay debt to lower the risk.",
+          "near_max_ltv": "The LTV is close to the market's max LTV. Repay debt to lower the risk."
+        }
+      },
       "risk_block": {
         "title": "This action can't be confirmed",
         "healthFactor": "The projected health factor would fall below 1, so the protocol would reject this action or the position could be liquidated. Reduce the amount or add collateral.",
@@ -800,7 +930,8 @@
           "supply": "Supply failed",
           "withdraw": "Withdrawal failed"
         },
-        "cancelled": "You cancelled this request in your wallet.",
+        "partial_supplied": "Your {{amount}} was supplied as collateral, but the borrow didn't go through. Try the borrow again, or withdraw the collateral from your position.",
+        "partial_supplied_without_amount": "Your collateral was supplied, but the borrow didn't go through. Try the borrow again, or withdraw the collateral from your position.",
         "batch_progress": "Step {{current}} of {{total}}",
         "preparing_next_step": "Preparing the next step",
         "tx_type": {
@@ -821,8 +952,8 @@
         "titles": {
           "borrow": "Borrow complete",
           "borrowAndSupply": "Borrow complete",
-          "disableCollateral": "Collateral disabled",
-          "enableCollateral": "Collateral enabled",
+          "disableCollateral": "{{symbol}} disabled as collateral",
+          "enableCollateral": "{{symbol}} enabled as collateral",
           "repay": "Repayment complete",
           "supply": "Supply complete",
           "withdraw": "Withdrawal complete"
@@ -831,7 +962,6 @@
         "unavailable_description": "Return to Borrow to start a new action.",
         "transactions": "Transactions",
         "view_transaction": "View {{type}} transaction",
-        "view_on_explorer": "View on explorer",
         "collateral_supplied": "Collateral supplied",
         "position": {
           "estimated": "Estimated position",
@@ -841,13 +971,11 @@
         "back_to_positions": "Back to positions"
       },
       "position_details": {
-        "actions_title": "Actions",
         "borrowed": "Borrowed",
-        "collateral": "Collateral",
         "debt": "Debt",
-        "details": "Borrow details",
         "empty": "No open position in this market.",
         "health_factor": "Health factor",
+        "net_worth_caption": "Net worth · {{collateral}} collateral",
         "liquidation_penalty": "Liquidation penalty",
         "liquidation_threshold": "Liquidation threshold",
         "ltv": "LTV",
@@ -855,12 +983,10 @@
         "low_risk": "Lower risk",
         "liquidation_at": "Liquidation {{value}}",
         "net_apy": "Net APY",
-        "net_worth": "Net worth",
         "no_actions": "No actions available",
         "supplied": "Supplied",
         "unsupported_network": "Borrow positions are not available on this network.",
-        "collateral_list": "Collateral value",
-        "configure_action": "Manage",
+        "collateral_list": "Collateral",
         "select_withdraw_token": "Select collateral to withdraw",
         "outstanding_debt": "{{amount}} {{symbol}} outstanding",
         "withdrawable": "{{amount}} {{symbol}} withdrawable",
@@ -881,12 +1007,6 @@
           "withdraw_balance": "Amount exceeds withdrawable balance.",
           "withdraw_ltv": "Withdrawal would exceed the market LTV limit."
         },
-        "action_descriptions": {
-          "disableCollateral": "Review the health impact before disabling this collateral.",
-          "enableCollateral": "Review the health impact before enabling this collateral.",
-          "repay": "Choose an amount or repay the full debt.",
-          "withdraw": "Choose collateral and amount to withdraw."
-        },
         "actions": {
           "disableCollateral": "Disable collateral",
           "enableCollateral": "Enable collateral",
@@ -896,34 +1016,19 @@
       }
     },
     "position_details": {
-      "action_available": "Action available",
-      "action_required": "Action required",
-      "actions_available_one": "{{count}} action available",
-      "actions_available_other": "{{count}} actions available",
-      "active": "Active",
-      "instant_withdrawal_in_progress": "Instant withdrawal in progress",
-      "balance": "Balance",
       "shares": "Shares",
       "breadcrumb_root": "Positions",
-      "breakdown": "Balance breakdown",
-      "details": "Staking details",
       "empty": "Position details unavailable",
-      "no_actions": "No actions available",
-      "rewards": "Rewards",
-      "rewards_total": "Total earned",
-      "status": "Status",
-      "withdrawal_unavailable": "Withdrawal unavailable"
-    },
-    "position_details_info": {
-      "balances": "Balances"
+      "no_actions": "No actions available"
     },
     "overview": {
       "summary": {
-        "total_staked": "Total staked",
-        "total_supplied": "Total supplied",
+        "total_value": "Total value",
+        "debt": "Debt",
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
-        "available_balance": "Available",
+        "claimable_rewards": "Claimable rewards",
+        "partial": "Partial",
         "net_worth": "Net worth",
         "excludes_confidential": "Totals exclude hidden confidential positions. Reveal their balances to include them."
       }
@@ -937,43 +1042,52 @@
       }
     },
     "activity_details": {
-      "your_position": "Your Position"
-    },
-    "enabled_rewards_summary_yield_names": {
-      "polkadot_dot_validator_staking": "DOT native staking",
-      "avalanche_avax_liquid_staking": "AVAX liquid staking",
-      "cronos_cro_native_staking": "CRO native staking",
-      "ethereum_matic_native_staking": "POL native staking",
-      "bsc_bnb_native_staking": "BNB native staking",
-      "tron_trx_native_staking": "TRX native staking"
+      "your_position": "Your position"
     }
   },
   "review": {
-    "estimated_reward": "Estimated rewards",
+    "estimated_yearly_rewards": "Estimated yearly rewards",
+    "estimated_monthly_rewards": "Estimated monthly rewards",
     "estimated_gas_fee": "Estimated gas fee",
     "gas_fee_unavailable": "Unavailable",
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
-    "terms_of_use": "By clicking confirm you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
+    "terms_of_use": "By selecting {{action}}, you agree to the <underline0>Terms of Use</underline0> and understand the <underline1>Risk Disclosures</underline1>.",
+    "fee_info": "About {{fee}}",
+    "gas_warning": "This action is unlikely to succeed due to insufficient funds to cover gas fees",
     "additional_info": "Additional info",
     "deposit_fee": "Deposit fee",
     "management_fee": "Management fee",
     "performance_fee": "Performance fee",
+    "withdrawal_fee": "Withdrawal fee",
     "deposit_fee_explanation": "A flat fee deducted at deposit, reducing the principal.",
     "management_fee_explanation": "A flat annual fee deducted from vault deposits by minting new shares, diluting participants. Calculated based on time since the last harvest and applied during harvest.",
     "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold.",
-    "receive_token": "Receive token",
-    "staking_fee": "Staking fee"
+    "withdrawal_fee_explanation": "A fee deducted from the amount you withdraw, reducing what you receive.",
+    "staking_fee": "Staking fee",
+    "signatures": "Wallet signatures",
+    "unlock_period": "Unlock period",
+    "lockup_period": "Lock-up period",
+    "destination": "{{yieldName}} via {{providerName}}",
+    "you_receive": "You receive",
+    "confirm_anyway": "Confirm anyway",
+    "fee_warning": {
+      "title": "High network fee",
+      "rewards_exceeds": "The network fee is higher than the rewards you'd claim.",
+      "rewards_half": "The network fee is more than half the rewards you'd claim.",
+      "amount_exceeds": "The network fee is higher than the amount of this transaction.",
+      "amount_half": "The network fee is more than half the amount of this transaction."
+    }
   },
   "leave_confirmation": {
     "title": "Leave this transaction?",
-    "description": "Your transaction is in progress. If you leave now, its remaining steps won't be completed and you'll need to start again.",
+    "description": "Your transaction is in progress. If you leave now, its remaining steps won't be completed.",
+    "description_resumable": "Your transaction is in progress. If you leave now, you can finish the remaining steps later from Activity.",
     "stay": "Stay",
     "leave": "Leave"
   },
   "steps": {
-    "title": "Follow Steps",
+    "title": "Confirm in wallet",
     "sign_transaction": "Sign transaction",
     "sign_transaction_desc": "Go back to connected wallet to approve transaction",
     "transaction_status": "Transaction status",
@@ -987,12 +1101,11 @@
     "pending": "Pending",
     "completed": "Completed",
     "failed": "Failed",
-    "tx_of_one": "Transaction - {{type}}",
-    "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
+    "tx_of_one": "{{type}}",
+    "tx_of_other": "Step {{current}} of {{count}} · {{type}}",
     "skipped": "Skipped",
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
-    "cancelled": "You cancelled this request in your wallet.",
     "decrypt": "Decrypting the withdrawal amount",
     "decrypt_desc": "Zama publishes the unwrapped amount. Usually takes 10–30 seconds.",
     "decrypt_error": "Decryption failed. Retry to try again.",
@@ -1000,8 +1113,51 @@
     "encrypt_desc": "Usually takes 10–30 seconds. Keep this page open.",
     "encrypt_error": "Encryption failed. Retry to try again.",
     "prepare_rejected": "This request can't be completed. Go back and change it.",
-    "approve_error": "Something went wrong",
-    "view_transaction": "View transaction",
+    "failure": {
+      "rejected": "Nothing was sent. Try again when you're ready.",
+      "wallet_failed": "Your wallet couldn't complete the request. Try again.",
+      "network_changed": "Your wallet switched networks. Switch back and try again.",
+      "account_changed": "Your wallet switched accounts. Switch back and try again.",
+      "disconnected": "Your wallet disconnected. Reconnect it and try again.",
+      "estimate_failed": "The network fee couldn't be estimated. Try again.",
+      "unsignable": "This transaction can't be signed. Go back and try again.",
+      "prepare_failed": "This transaction couldn't be prepared. Try again.",
+      "not_sent": "The transaction couldn't be sent. Try again.",
+      "failed": "The transaction failed. Try again.",
+      "failed_on_chain": "The transaction failed on chain: {{reason}}.",
+      "unconfirmed": "We couldn't confirm the transaction. Try again to check its status.",
+      "dropped": "The transaction was dropped by the network. Try again to send it.",
+      "advance_failed": "The next step couldn't be prepared. Try again.",
+      "detail": "Details: {{detail}}"
+    },
+    "progress_label": "Transaction progress",
+    "progress_count": "{{confirmed}} of {{total}} confirmed",
+    "summary": "{{action}} {{amount}}",
+    "slow": "Taking longer than usual. It's still on its way.",
+    "leave": "Leave",
+    "sent_note": "Sent transactions can't be cancelled. They keep going if you leave.",
+    "check_wallet": {
+      "title": "Check your wallet",
+      "description": "Approve the {{type}} transaction in {{wallet}}",
+      "description_unknown_wallet": "Approve the {{type}} transaction in your wallet"
+    },
+    "details": {
+      "amount": "Amount",
+      "yield": "Yield",
+      "market": "Market",
+      "gas": "Estimated gas",
+      "receive": "You'll receive"
+    },
+    "state": {
+      "pending": "Waiting",
+      "active": "In progress",
+      "signing": "Waiting for signature",
+      "broadcasting": "Broadcasting",
+      "done": "Confirmed",
+      "failed": "Failed",
+      "cancelled": "Cancelled in wallet"
+    },
+    "view_transaction": "View on explorer",
     "tx_type": {
       "DECRYPT": "Decrypt amount",
       "ENCRYPT": "Encrypt amount",
@@ -1072,7 +1228,6 @@
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "deposit_submitted": "Deposit of {{amount}} {{tokenNetwork}} submitted",
-    "receive_token": "Receive token: {{symbol}}",
     "withdrawal_submitted": "Withdrawal of {{amount}} {{tokenNetwork}} submitted",
     "next_batch_in": "Joins the next batch in {{duration}}",
     "next_batch_imminent": "Joins the next batch, due any moment",
@@ -1082,6 +1237,10 @@
     "via": "via {{providerName}}",
     "continue": "Done",
     "continue_ledger": "Go to Earn dashboard",
+    "position": {
+      "heading": "Your position",
+      "yearly_earnings": "Projected yearly earnings"
+    },
     "stake": {
       "staking": "staked",
       "staking_ethena_usde": "deposited",
@@ -1149,11 +1308,17 @@
       "verify_checkpoint_proofs": "verified checkpoint proofs",
       "queue_withdrawals": "queued withdrawals",
       "complete_queued_withdrawals": "completed queued withdrawals"
-    }
+    },
+    "view_position": "View position",
+    "you_received": "You received",
+    "you_will_receive": "You will receive",
+    "unlock_reminder": "{{amount}} {{symbol}} unlocks around {{date}}. Come back then to withdraw it from your position.",
+    "transactions": "Transactions"
   },
   "help_modals": {
+    "close": "Close",
     "geo_block": {
-      "title": "Geo Block",
+      "title": "Not available in your region",
       "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
       "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
       "pending_litigation": "This feature is currently unavailable in {{nameOfRegion}} due to pending litigation on the subject of staking cryptocurrencies",
@@ -1172,13 +1337,13 @@
       "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it's fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     },
     "under_maintenance": {
-      "title": "Under Maintenance",
-      "description": "Yield.xyz is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
-      "description2": "We appreciate your patience and encourage you to check back shortly!"
+      "title": "Under maintenance",
+      "description": "Yield.xyz is down for routine maintenance and should be back in about 5–10 minutes."
     },
     "network_not_supported": {
       "title": "Network not supported",
-      "description": "The selected network isn't enabled for this widget. Switch to a supported network to continue."
+      "description": "The selected network isn't enabled for this widget. Switch to a supported network to continue.",
+      "switch_network": "Switch network"
     },
     "no_enabled_yields": {
       "title": "No yields enabled",
@@ -1190,14 +1355,22 @@
     }
   },
   "positions": {
-    "title": "My Positions",
+    "title": "My positions",
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} more",
     "connect_wallet": "Connect wallet",
     "connect_wallet_manage": "Connect wallet to manage your positions",
-    "no_current_positions": "No active positions",
-    "claim_rewards": "Claim rewards",
+    "empty_title": "No positions yet",
+    "empty_description": "Start earning and your positions will show here.",
+    "load_failed_title": "Couldn't load your positions",
+    "loading": "Loading positions",
+    "rewards_to_claim": "Rewards to claim",
+    "ready_to_withdraw": "Ready to withdraw",
+    "ready_to_unlock": "Ready to unlock",
+    "locked_balance": "Locked balance",
     "action_required": "Action required",
+    "attention_count_one": "{{count}} action to take",
+    "attention_count_other": "{{count}} actions to take",
     "in_progress": "In progress",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
@@ -1208,32 +1381,32 @@
   },
   "yield_types": {
     "native_staking": {
-      "title": "Native Staking",
+      "title": "Native staking",
       "review": "Stake",
       "cta": "Stake"
     },
     "pooled_staking": {
-      "title": "Pooled Staking",
+      "title": "Pooled staking",
       "review": "Stake",
       "cta": "Stake"
     },
     "fixed_yield": {
-      "title": "Fixed Yield",
+      "title": "Fixed yield",
       "review": "Deposit",
       "cta": "Deposit"
     },
     "real_world_asset": {
-      "title": "Real-World Asset",
+      "title": "Real-world asset",
       "review": "Deposit",
       "cta": "Deposit"
     },
     "concentrated_liquidity_pool": {
-      "title": "Concentrated Liquidity",
+      "title": "Concentrated liquidity",
       "review": "Deposit",
       "cta": "Deposit"
     },
     "liquidity_pool": {
-      "title": "Liquidity Pool",
+      "title": "Liquidity pool",
       "review": "Deposit",
       "cta": "Deposit"
     },
@@ -1243,13 +1416,13 @@
       "cta": "Stake"
     },
     "liquid-staking": {
-      "title": "Liquid Staking",
-      "review": "Liquid Staking",
+      "title": "Liquid staking",
+      "review": "Liquid staking",
       "cta": "Stake"
     },
     "liquid_staking": {
-      "title": "Liquid Staking",
-      "review": "Liquid Staking",
+      "title": "Liquid staking",
+      "review": "Liquid staking",
       "cta": "Stake"
     },
     "vault": {
@@ -1270,17 +1443,26 @@
   },
   "position_details": {
     "via": "{{stakeType}} via {{providerName}}",
+    "your_position": "Your position",
+    "details": "Details",
+    "estimated_earnings": "Est. yearly earnings",
+    "earnings_per_year": "+{{amount}} / yr",
+    "earned": "Earned (7d)",
+    "earned_total": "{{amount}} total",
+    "earned_info_label": "About earned",
+    "earned_info": "Tracked since your wallet was first indexed · updated hourly",
     "rewards": "Rewards",
-    "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
-    "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Pending deposit",
-    "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Pending withdrawal",
-    "available_to_instant_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Instant withdrawal in progress",
+    "action_title": "{{pendingAction}} <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_deposit": "Pending deposit <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_withdrawal": "Pending withdrawal <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_instant_withdrawal": "Instant withdrawal in progress <bold>{{amount}} {{symbol}}</bold>",
     "cancel_returns": "Cancelling returns everything you have in this batch as {{symbol}}, right away",
     "cancelling": "Cancelling…",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
     "available": "{{amount}} {{symbol}} available",
+    "amount_above_maximum": "Enter at most {{amount}} {{symbol}}",
     "underlying_amount": "≈ {{amount}} {{symbol}}",
     "personalized_apy": "Personalized APY",
     "receive_token": {
@@ -1432,9 +1614,12 @@
       "cancel_pending_withdrawal": "Cancel withdrawal"
     },
     "unstake_sign": {
-      "title": "Verify Ownership",
+      "title": "Verify ownership",
       "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
-    }
+    },
+    "actions_label": "Position actions",
+    "copy_address": "Copy {{label}}",
+    "copied": "Copied"
   },
   "unstake_review": {
     "terms_of_use": "By clicking confirm your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
@@ -1481,38 +1666,41 @@
     "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {
-    "solution": "Potential solution:"
+    "solution": "How to fix it",
+    "generic_description": "We couldn't complete that request. Try again in a moment.",
+    "dismiss": "Got it"
   },
-  "chain_modal_disclaimer": "Powered by Yield.xyz",
   "tos_modal": {
-    "title": "Terms of Use",
-    "accept_button": "I Accept",
+    "title": "Terms of use",
+    "accept_button": "I accept",
+    "agree_checkbox": "I have read and agree to the Terms of Use",
+    "close": "Close",
     "introduction": "These StakeKit Terms of Use are entered into between you (\"you\" or \"your\") and StakeKit LLC, together with Omni Ltd. and its other affiliates (\"StakeKit\", \"we\", \"us\", and \"our\"). By accessing, downloading, using, or clicking on \"I Agree\" to accept any \"StakeKit Services\" provided by StakeKit, you agree that you have carefully read, understood, and accepted all of the terms and conditions within these Terms of Use (\"Terms\") as well as our Privacy Policy. Our Privacy Policy can be accessed here: StakeKit Privacy Policy.",
     "additional_terms": "In addition, when using some features of the Services, you may be subject to specific additional terms and conditions applicable to those features.",
     "risk_warning": "As with any asset, the values of \"Cryptocurrencies\" may fluctuate significantly and there is a substantial risk of economic losses when purchasing, selling, holding, or investing in Cryptocurrencies and their derivatives. By making use of StakeKit Services, you acknowledge and agree that (1) you are aware of the risks associated with transactions of Cryptocurrencies and their derivatives, (2) you shall assume all risks related to the use of StakeKit Services and transactions of digital currencies and their derivatives, and (3) StakeKit shall not be liable for any such risks or adverse outcomes.",
     "agreement_binding": "By accessing, using, or attempting to use StakeKit Services in any capacity, you acknowledge that you accept and agree to be bound by these Terms. These Terms supersede and replace any and all prior oral and/or written agreements between StakeKit and you regarding the Services.",
     "sections": {
       "stakekit_services": {
-        "title": "StakeKit Services",
+        "title": "StakeKit services",
         "content": "StakeKit allows you to stake Cryptocurrency assets across all major blockchains and allows you to earn interest on your Cryptocurrencies. StakeKit Services include the creation of Cryptocurrency wallets where custody and personal keys remain with the user. Services also include the ability to send, receive, stake, bridge, and swap Cryptocurrency assets. The Cryptocurrency assets that are supported by StakeKit are subject to change."
       },
       "agreement_to_terms": {
-        "title": "Agreement to Terms",
+        "title": "Agreement to terms",
         "content": "When you click \"I Agree\" or when you access the StakeKit application or use any of the StakeKit Services, you agree to be bound by these terms. If you do not agree to these Terms, do not agree to or use the Services."
       },
       "intellectual_property": {
-        "title": "Intellectual Property Rights",
+        "title": "Intellectual property rights",
         "content_1": "The StakeKit application and websites, and their entire contents, features, and functionality (including software, text, images, videos, audio, design, and information) are owned by StakeKit LLC, its licensors, affiliates, or other providers of such material and are protected by both United States and international intellectual property laws (including copyright, trademark, patent, trade secret and other intellectual or proprietary rights laws).",
         "content_2": "Under these Terms, you are permitted to make use of the StakeKit application for your personal, non-commercial use only."
       },
       "user_content": {
-        "title": "User Content",
+        "title": "User content",
         "content_1": "Any content that you make available to StakeKit through its Services constitutes User Content. You must possess the right and the authority to submit your User Content and that your User Content does not infringe upon any intellectual property rights or the rights of a third party. StakeKit reserves the right to a worldwide, non-exclusive, royalty-free, sub-licensable, and transferable license to use, copy, distribute, create derivative works of, and display the User Content that you upload, submit, store, send, or receive on the StakeKit application.",
         "content_2": "You must acknowledge that there may be certain instances in which you may have deleted specific User Content, and some of your User Content may not be completely removed and copies of your User Content may continue to exist on the Services. StakeKit is not responsible or liable for the deletion of any of your User Content.",
         "content_3": "StakeKit maintains no obligation to monitor User Content. When you access StakeKit Services, you must understand that you may be exposed to User Content that is offensive, indecent, or objectionable. StakeKit is neither responsible nor reserves any liability for User Content, including any loss or damage to your User Content."
       },
       "acceptable_use": {
-        "title": "Acceptable Use",
+        "title": "Acceptable use",
         "intro": "You may only use the StakeKit application and Services for lawful purposes and in compliance with these Terms. You may not use the StakeKit application in the following ways:",
         "violation_laws": "• In any way that violates any applicable federal, state, local, or international law or regulation (including, without limitation, any laws regarding the export of data or software to and from the United States or other countries).",
         "harm_minors": "• For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way by exposing them to inappropriate content, asking for personally identifiable information, or otherwise.",
@@ -1522,7 +1710,7 @@
         "additional": "Additionally, you agree not to otherwise attempt to interfere with the proper working of the StakeKit application and Services."
       },
       "termination": {
-        "title": "Termination of Use",
+        "title": "Termination of use",
         "content": "StakeKit reserves the right to terminate your access and use to the StakeKit application and/or Services at our sole discretion."
       },
       "fees": {
@@ -1530,7 +1718,7 @@
         "content": "StakeKit may charge fees for certain Services. We reserve the right to make changes to the fee amount at our discretion. We will disclose the amount of fees that we will charge you for the applicable Services when you access the Services."
       },
       "taxes": {
-        "title": "Taxes and Withholdings",
+        "title": "Taxes and withholdings",
         "content": "You are responsible for paying all taxes, assessments, charges, fees, and levies that may be imposed by any governmental authority in connection with your use of StakeKit Services."
       },
       "confidentiality": {
@@ -1539,47 +1727,47 @@
         "content_2": "A party's Confidential Information includes, but is not limited to, (a) that party's trade secrets, technical information, know-how, technology, prototypes, methods, ideas, data, cost information, client information, financial information, supplier and customer identities and lists, and business and marketing plans, and (b) any copies, extracts, analyses, compilations, forecasts, studies or other documents containing or reflecting that party's Confidential Information that are prepared by, on behalf of, or in cooperation with the other party. StakeKit's Confidential Information includes but is not limited to StakeKit application and Services, subject to the rights and permissions granted to you under these Terms."
       },
       "non_disclosure": {
-        "title": "Confidentiality and Non-Disclosure",
+        "title": "Confidentiality and non-disclosure",
         "content_1": "The recipient acknowledges that the disclosing party's Confidential Information is an asset of considerable value, and that disclosure of that Confidential Information to third parties would be damaging. The recipient will: (a) keep the disclosing party's Confidential Information confidential and use it solely for the purposes of exercising its rights and performing its obligations under the Agreement; (b) not directly, or indirectly, without authorization, reveal, report, publish, disclose or transfer the disclosing party's Confidential Information to any third party except as expressly authorized under this Agreement or otherwise in writing by the disclosing party; (c) use procedures constituting a high degree of care to maintain the security of the disclosing party's Confidential Information, but in no event less than a reasonable standard of care under the circumstances; and (d) disclose the disclosing party's Confidential Information to the recipient's employees, consultants and subcontractors solely as permitted under this Agreement, and in any case only on a need-to-know basis as required in connection with recipient's performance of its duties and exercise of its rights under the Agreement.",
         "content_2": "The parties may disclose the general nature of the Agreement; however, all other terms of the Agreement are StakeKit's Confidential Information and may not be disclosed to any third party without StakeKit's prior written consent."
       },
       "required_disclosures": {
-        "title": "Required Disclosures",
+        "title": "Required disclosures",
         "content": "If the recipient is required by law or court order to disclose any of the disclosing party's Confidential Information, the recipient will: (a) notify the disclosing party in writing as soon as possible, but in no event less than ten days prior to any required disclosure; (b) cooperate with the disclosing party to preserve the confidentiality of its Confidential Information consistent with applicable law; and (c) limit any disclosure to the minimum disclosure necessary to comply with the applicable law or court order."
       },
       "return_confidential": {
-        "title": "Return of Confidential Information",
+        "title": "Return of confidential information",
         "content": "Subject to your rights in previously acquired Confidential Information in accordance with the Termination clause, the recipient shall return or destroy the disclosing party's Confidential Information within 20 days after the effective date of termination of this Agreement. The recipient will not be required to search archived electronic files for the disclosing party's Confidential Information in order to purge that information from its files. The recipient may retain copies of the disclosing party's Confidential Information as necessary to comply with applicable laws, the recipient's written document retention or information governance policies, or any applicable professional standard."
       },
       "limitation_liability": {
-        "title": "Limitation of Liability",
+        "title": "Limitation of liability",
         "content_1": "TO THE FULLEST EXTENT PROVIDED BY LAW, IN NO EVENT WILL STAKEKIT, ITS AFFILIATES, OR THEIR LICENSORS, SERVICE PROVIDERS, EMPLOYEES, AGENTS, OFFICERS, OR DIRECTORS BE LIABLE FOR DAMAGES OF ANY KIND, UNDER ANY LEGAL THEORY, ARISING OUT OF OR IN CONNECTION WITH YOUR USE, OR INABILITY TO USE, THE APPLICATION, ANY SERVICES LINKED TO IT, ANY CONTENT ON THE APPLICATION, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO, PERSONAL INJURY, PAIN AND SUFFERING, EMOTIONAL DISTRESS, LOSS OF REVENUE, LOSS OF PROFITS, LOSS OF BUSINESS OR ANTICIPATED SAVINGS, LOSS OF USE, LOSS OF GOODWILL, LOSS OF DATA, AND WHETHER CAUSED BY TORT (INCLUDING NEGLIGENCE), BREACH OF CONTRACT, OR OTHERWISE, EVEN IF FORESEEABLE.",
         "content_2": "THE FOREGOING DOES NOT AFFECT ANY LIABILITY THAT CANNOT BE EXCLUDED OR LIMITED UNDER APPLICABLE LAW. IN NO EVENT SHALL THE TOTAL LIABILITY TO YOU FROM STAKEKIT FOR ALL DAMAGES EXCEED THE AMOUNT OF ONE HUNDRED U.S. DOLLARS ($100.00) OR ITS EQUIVALENT IN THE LOCAL CURRENCY OF THE APPLICABLE JURISDICTION."
       },
       "dispute_resolution": {
-        "title": "Dispute Resolution",
+        "title": "Dispute resolution",
         "content_1": "You and StakeKit will work together in good faith first to resolve any issues through discussions between their respective relationship managers. If the relationship managers are unable to resolve the issue within 30 days after their discussions on that issue begin, then they will escalate the dispute to their senior management. If an issue is not resolved within 30 days after escalation to senior management, either party may initiate arbitration pursuant to the commercial rules of the American Arbitration Association (\"AAA\").",
         "content_2": "The arbitration will be conducted in New York, New York by one arbitrator agreed upon by the parties or, in the absence of agreement, selected by the AAA. Each party will pay its own expenses arising from the arbitration, and the parties will share equally the expenses of the arbitrator and the AAA. The prevailing party in the arbitration proceedings will be entitled to recover reasonable attorneys' fees and expenses incurred in connection with the proceeding, in addition to any other relief to which the prevailing party may be entitled.",
         "content_3": "Any arbitration award will be final, and judgment on it may be entered in any court of competent jurisdiction. If a party breaches or threatens to breach its obligations under these Terms, the other party may suffer harm that may not be adequately compensated by monetary damages. In that case, the other party may, in addition to pursuing arbitration in accordance with this clause, seek specific performance and injunctive or other equitable relief in any court of competent jurisdiction."
       },
       "governing_law": {
-        "title": "Governing Law and Jurisdiction",
+        "title": "Governing law and jurisdiction",
         "content": "These Terms will be governed by, and construed under, the laws of Delaware, without application of its conflict of laws rules. Subject the preceding Dispute Resolution clause, the parties hereby consent to the exclusive jurisdiction of, and venue in, the courts of Delaware. IF THE ARBITRATION PROVISION IN THE PRECEDING DISPUTE RESOLUTION CLAUSE IS HELD TO BE INVALID AND TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU AND STAKEKIT HEREBY WAIVE ANY RIGHT TO TRIAL BY JURY IN ANY ACTION OR PROCEEDING REGARDING ANY LITIGATION RELATED TO THIS AGREEMENT."
       },
       "class_action": {
-        "title": "Class Action Restrictions",
+        "title": "Class action restrictions",
         "content": "YOU AND STAKEKIT HEREBY AGREE THAT EACH PARTY MAY BRING CLAIMS AGAINST THE OTHER ONLY ON AN INDIVIDUAL BASIS AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE ACTION OR PROCEEDING. UNLESS BOTH PARTIES AGREE OTHERWISE, THE ARBITRATOR MAY NOT CONSOLIDATE OR JOIN MORE THAN ONE PERSON'S OR PARTY'S CLAIMS AND MAY NOT OTHERWISE PRESIDE OVER ANY FORM OF A CONSOLIDATED, REPRESENTATIVE, OR CLASS PROCEEDING."
       },
       "time_limits": {
-        "title": "Time Limits on Claims",
+        "title": "Time limits on claims",
         "content": "No action against StakeKit arising from or relating to the violation of any rights pertaining to these Terms may be brought more than two years after the date on which the alleged claim arose."
       },
       "changes_terms": {
-        "title": "Changes to the Terms of Use",
+        "title": "Changes to the terms of use",
         "content": "It is the sole discretion of StakeKit to periodically revise and update these Terms of Use. These revisions and updates are effective immediately when we post them and apply to all access to and use of StakeKit. It is your responsibility to periodically check our Terms of Use page so that you are up to date on any changes made, since the changes are binding on you. If you continue to access and use StakeKit after a revision or update to the Terms of Use, then accept and agree to the changes."
       },
       "privacy_policy": {
-        "title": "Privacy Policy",
+        "title": "Privacy policy",
         "content_1": "All of the information that StakeKit collects from its users is subject to the StakeKit Privacy Policy, which could be found here: StakeKit Privacy Policy.",
         "content_2": "By using our website and StakeKit Services, you consent to all of our actions with respect to your personal information in compliance with the StakeKit Privacy Policy."
       },

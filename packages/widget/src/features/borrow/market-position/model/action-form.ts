@@ -1,5 +1,9 @@
 import type BigNumber from "bignumber.js";
 import type { TokenAddress } from "../../../../domain/borrow/ids";
+import {
+  classifyRiskBand,
+  type RiskBand,
+} from "../../../../domain/borrow/risk/risk-band";
 import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
@@ -63,12 +67,33 @@ export type BorrowWithdrawFormAction =
       readonly type: "reset";
     };
 
+/** The risk the action would leave: its band and the max LTV it reads against. */
+export type BorrowActionFormRisk = {
+  readonly band: RiskBand | null;
+  readonly maxLtv: BigNumber | null;
+};
+
+const toProjectedRisk = (
+  risk: RepayProjection["risk"] | WithdrawProjection["risk"]
+): BorrowActionFormRisk =>
+  risk.status === "available"
+    ? {
+        band: classifyRiskBand({
+          healthFactor: risk.projectedHealthFactor,
+          ltv: risk.projectedLtv,
+          maxLtv: risk.maxLtv,
+        }),
+        maxLtv: risk.maxLtv,
+      }
+    : { band: null, maxLtv: null };
+
 export type BorrowRepayFormView = {
   readonly amount: BigNumber;
   readonly canSubmit: boolean;
   readonly currentLtv: BigNumber | null;
   readonly warning: BorrowPositionActionFormWarning | null;
   readonly projectedLtv: BigNumber | null;
+  readonly projectedRisk: BorrowActionFormRisk;
   readonly riskStatus: "available" | "unavailable";
   readonly remainingDebt: BigNumber;
   readonly repayAll: boolean;
@@ -84,6 +109,7 @@ export type BorrowWithdrawFormView = {
   readonly warning: BorrowPositionActionFormWarning | null;
   readonly projectedCollateralUsd: BigNumber;
   readonly projectedLtv: BigNumber | null;
+  readonly projectedRisk: BorrowActionFormRisk;
   readonly riskStatus: "available" | "unavailable";
   /** The limit the Risk Gate blocks on; `warning` never repeats it. */
   readonly riskBlock: RiskGateBlockReason | null;
@@ -189,6 +215,7 @@ export const resolveBorrowRepayFormView = ({
       projection.risk.status === "available"
         ? projection.risk.projectedLtv
         : null,
+    projectedRisk: toProjectedRisk(projection.risk),
     remainingDebt: projection.remainingDebt,
     repayAll: intent.repayAll,
     repayUsd: projection.repayUsd,
@@ -261,6 +288,7 @@ export const resolveBorrowWithdrawFormView = ({
       projection.risk.status === "available"
         ? projection.risk.projectedLtv
         : null,
+    projectedRisk: toProjectedRisk(projection.risk),
     riskBlock,
     riskStatus: projection.risk.status,
     selectedToken,

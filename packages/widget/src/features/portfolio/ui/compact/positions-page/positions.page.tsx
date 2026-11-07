@@ -1,23 +1,24 @@
 import { useTranslation } from "react-i18next";
-import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Box, Stack, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
-import {
-  FallbackContent,
-  MountAnimatedPage,
-} from "../../../../widget-shell/views";
+import { MountAnimatedPage } from "../../../../widget-shell/views";
 import { usePositions } from "../../../react/use-positions";
+import { ManageSummary } from "../../components/manage-summary";
+import {
+  PositionsConnectWallet,
+  PositionsEmpty,
+  PositionsLoadFailed,
+  PositionsSkeleton,
+} from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
 import { PositionsListItem } from "./components/positions-list-item";
-import { container } from "./style.css";
 
 const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positions, positionsView, listData, showPositions } = usePositions();
+  const { positions, positionsView, showPositions } = usePositions();
 
   const wallet = useSKWallet();
   const isConnected = wallet?.status === "connected";
@@ -27,71 +28,48 @@ const PositionsPage = () => {
 
   const renderContent = () => {
     if (positionsView._tag === "Loading" && isConnected) {
-      return <FallbackContent type="spinner" />;
+      return <PositionsSkeleton />;
     }
     if (!isConnected && !isConnecting) {
       return (
-        <Box
-          display="flex"
-          flex={1}
-          flexDirection="column"
-          justifyContent="flex-end"
-        >
-          <Box
-            display="flex"
-            flex={1}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text
-              variant={{ weight: "medium", size: "large" }}
-              textAlign="center"
-            >
-              {t("positions.connect_wallet_manage")}
-            </Text>
-          </Box>
-
-          <FallbackContent type="not_connected" />
-        </Box>
+        <PositionsConnectWallet title={t("positions.connect_wallet_manage")} />
       );
     }
-    if (positionsView._tag === "Failed") {
-      return <FallbackContent type="something_wrong" />;
-    }
+    if (positionsView._tag === "Failed") return <PositionsLoadFailed />;
 
     return null;
   };
 
   return (
-    <Box className={container} display="flex" flex={1} flexDirection="column">
+    <Stack grow>
+      {/* Every state with a wallet sums up its positions, as Dashboard does. */}
+      {isConnected && (
+        <Box paddingBlock={8}>
+          <ManageSummary />
+        </Box>
+      )}
+
       {renderContent()}
 
       {showPositions && (
-        <Box flex={1} display="flex" flexDirection="column">
+        <Stack grow>
+          <ZerionChainModal />
+
+          <RevealBalancesHeader />
+
+          {isConnected && !positions.length && <PositionsEmpty />}
+
           <VirtualList
-            estimateSize={() => 60}
-            data={listData}
-            itemContent={(_, item) =>
-              item === "header" ? (
-                <>
-                  <ZerionChainModal />
-
-                  <RevealBalancesHeader />
-
-                  {isConnected && !positions.length && (
-                    <Box my="4">
-                      <FallbackContent type="no_current_positions" />
-                    </Box>
-                  )}
-                </>
-              ) : (
-                <PositionsListItem item={item} />
-              )
-            }
+            label={t("positions.title")}
+            items={positions}
+            getKey={(item) => `${item.integrationId}:${item.balanceId}`}
+            estimateSize={68}
+            maxHeight="lg"
+            renderItem={(item) => <PositionsListItem item={item} />}
           />
-        </Box>
+        </Stack>
       )}
-    </Box>
+    </Stack>
   );
 };
 

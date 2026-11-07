@@ -6,12 +6,8 @@ import {
   getBorrowMarketPairLabel,
   type Market,
 } from "../../../../domain/borrow/catalog/market";
-import {
-  classifyHealthFactor,
-  classifyLtv,
-  type RiskLevel,
-} from "../../../../domain/borrow/risk/ltv-limits";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
+import { classifyRiskBand } from "../../../../domain/borrow/risk/risk-band";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
@@ -23,22 +19,27 @@ import {
   formatPercent,
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../../shared/lib/number-format";
-import type { DetailRowTone } from "../../../../shared/ui/components/details-section";
+import {
+  type LtvMeter,
+  type RiskValueTone,
+  riskBandValueTone,
+  toLtvMeter,
+} from "../../../borrow-transaction-flow/index";
 import type { BorrowFormProjection } from "./borrow-entry";
 
 type BorrowDetailsRow = {
   readonly id: string;
   readonly label: string;
-  readonly tone?: DetailRowTone;
+  /** How the value reads: in its risk band, or plain. */
+  readonly tone?: RiskValueTone;
   readonly value: string;
+  /** The value as a thin gauge under the row: the projected LTV. */
+  readonly meter?: LtvMeter;
+  /** Context under the row, such as why its value is unavailable. */
+  readonly caption?: string;
 };
-
-const riskLevelTone = {
-  nearLimit: "warning",
-  overLimit: "danger",
-  safe: "default",
-} as const satisfies Record<RiskLevel, DetailRowTone>;
 
 type BorrowMetricCard = {
   readonly id: string;
@@ -53,7 +54,7 @@ const formatTransition = ({
 }: {
   readonly current: string;
   readonly projected: string;
-}) => (current === projected ? projected : `${current} -> ${projected}`);
+}) => (current === projected ? projected : `${current} → ${projected}`);
 
 const getTokenUsdValue = ({
   amount,
@@ -85,6 +86,7 @@ export const getBorrowDetailsModel = ({
   locale,
   market,
   projection,
+  projectedMaxLtv,
   t,
 }: {
   readonly borrowAmount: BigNumber;
@@ -94,6 +96,11 @@ export const getBorrowDetailsModel = ({
   readonly locale: string;
   readonly market: Market;
   readonly projection?: BorrowFormProjection | undefined;
+  /**
+   * The max LTV a captured flow projected, such as Review's: account-weighted
+   * across the collaterals, as the projection would read it.
+   */
+  readonly projectedMaxLtv?: BigNumber | undefined;
   readonly t: TFunction;
 }) => {
   const borrowUsd = getTokenUsdValue({
@@ -110,7 +117,10 @@ export const getBorrowDetailsModel = ({
   });
   const marketRisk = deriveMarketRiskLimits(market);
   const maxLtv =
-    projection?.maxLtv ?? collateralToken?.maxLtv ?? marketRisk.maxLtv;
+    projectedMaxLtv ??
+    projection?.maxLtv ??
+    collateralToken?.maxLtv ??
+    marketRisk.maxLtv;
   const displayedProjectedLtv = projection?.projectedLtv ?? projectedLtv;
   const existingLtv = projection
     ? deriveLtv({
@@ -150,9 +160,12 @@ export const getBorrowDetailsModel = ({
     },
   ];
 
+  // The figures exist but can't be projected, such as when the account's
+  // totals disagree with its collateral: say so rather than drop the rows.
+  const projectionUnavailable = projection?.riskStatus === "unavailable";
   const getLtvValue = (): string | null => {
     if (
-      projection?.riskStatus === "unavailable" ||
+      (projection !== undefined && projection.riskStatus !== "available") ||
       displayedCollateralUsd.isZero()
     ) {
       return null;
@@ -166,6 +179,13 @@ export const getBorrowDetailsModel = ({
     });
   };
   const ltvValue = getLtvValue();
+  // One band for the LTV, its meter and the health factor the form projects.
+  const riskBand = classifyRiskBand({
+    healthFactor,
+    ltv: displayedProjectedLtv,
+    maxLtv,
+  });
+  const riskTone = riskBand === null ? "default" : riskBandValueTone[riskBand];
 
   const getLoanValue = (): string => {
     if (hasExistingPosition) {
@@ -175,24 +195,34 @@ export const getBorrowDetailsModel = ({
       });
     }
     return borrowAmount.isZero()
-      ? "-"
+      ? unavailableFigure
       : `${formatTokenAmount(borrowAmount, locale, "up")} ${market.loanToken.symbol}`;
   };
   const loanValue = getLoanValue();
 
+  // LTV and health factor always show: "—" until they can be projected.
   const formRows: BorrowDetailsRow[] = [
-    ...(ltvValue === null
-      ? []
-      : [
-          {
-            id: "ltv",
-            label: t("dashboard.borrow.form.ltv_ratio"),
-            tone: riskLevelTone[
-              classifyLtv({ ltv: displayedProjectedLtv, maxLtv })
-            ],
-            value: ltvValue,
-          },
-        ]),
+    ltvValue === null
+      ? {
+          id: "ltv",
+          label: t("dashboard.borrow.form.ltv_ratio"),
+          value: unavailableFigure,
+          ...(projectionUnavailable
+            ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+            : {}),
+        }
+      : {
+          id: "ltv",
+          label: t("dashboard.borrow.form.ltv_ratio"),
+          tone: riskTone,
+          value: ltvValue,
+          meter: toLtvMeter({
+            locale,
+            ltv: displayedProjectedLtv,
+            maxLtv,
+            t,
+          }),
+        },
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
@@ -218,16 +248,13 @@ export const getBorrowDetailsModel = ({
       label: t("dashboard.borrow.form.borrow_rate"),
       value: formatPercent(market.borrowRate, locale),
     },
-    ...(healthFactor === null
-      ? []
-      : [
-          {
-            id: "health-factor",
-            label: t("dashboard.borrow.form.health_factor"),
-            tone: riskLevelTone[classifyHealthFactor(healthFactor)],
-            value: formatHealthFactor(healthFactor, locale),
-          },
-        ]),
+    {
+      id: "health-factor",
+      label: t("dashboard.borrow.form.health_factor"),
+      ...(healthFactor === null
+        ? { value: unavailableFigure }
+        : { tone: riskTone, value: formatHealthFactor(healthFactor, locale) }),
+    },
   ];
 
   const marketRows: BorrowDetailsRow[] = [

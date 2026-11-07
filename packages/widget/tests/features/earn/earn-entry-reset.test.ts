@@ -41,7 +41,6 @@ describe("Earn Entry amount clearing on workflow start", () => {
       ...settledEntry,
       intent: {
         ...selection,
-        amountInput: "manual",
         stakeAmount: "12",
         useMaxAmount: true,
       },
@@ -75,7 +74,7 @@ describe("Earn Entry amount clearing on workflow start", () => {
 
     expect(clearEarnEntryAmounts(seeded)).toStrictEqual({
       ...seeded,
-      intent: { ...seeded.intent, stakeAmount: "0" },
+      intent: { ...seeded.intent, stakeAmount: "" },
     });
   });
 });

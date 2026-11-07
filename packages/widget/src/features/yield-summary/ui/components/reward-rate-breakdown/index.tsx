@@ -5,9 +5,8 @@ import {
   type YieldRewardRate,
 } from "../../../../../domain/earn/reward-rate";
 import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
+import { DetailList, DetailRow, Stack, Text } from "../../../../../ui/index";
 
 const getLabelKey = (key: RewardRateBreakdownItem["key"]) => {
   switch (key) {
@@ -43,43 +42,29 @@ export const RewardRateBreakdown = ({
   }
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      gap="2"
-      marginTop="3"
-      data-testid={testId}
-    >
-      {title ? (
-        <Text variant={{ type: "muted", weight: "normal" }}>{title}</Text>
-      ) : null}
+    <Stack gap={8} {...(testId ? { testId } : {})}>
+      {title ? <Text tone="muted">{title}</Text> : null}
 
-      {items.map((item) => {
-        const value = formatRewardRatePercent(item.rate, locale);
+      <DetailList>
+        {items.map((item) => {
+          const value = formatRewardRatePercent(item.rate, locale);
 
-        return (
-          <Box
-            key={item.key}
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            gap="3"
-            data-testid={
-              testId ? `${testId}__${item.key.replaceAll("_", "-")}` : undefined
-            }
-          >
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t(getLabelKey(item.key))}
-            </Text>
-
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {item.isUpTo
-                ? t("details.apy_composition.up_to", { value })
-                : value}
-            </Text>
-          </Box>
-        );
-      })}
-    </Box>
+          return (
+            <DetailRow
+              key={item.key}
+              label={t(getLabelKey(item.key))}
+              value={
+                item.isUpTo
+                  ? t("details.apy_composition.up_to", { value })
+                  : value
+              }
+              {...(testId
+                ? { testId: `${testId}__${item.key.replaceAll("_", "-")}` }
+                : {})}
+            />
+          );
+        })}
+      </DetailList>
+    </Stack>
   );
 };

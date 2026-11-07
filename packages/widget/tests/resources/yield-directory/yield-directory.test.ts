@@ -261,48 +261,59 @@ describe("Yield Directory resource", () => {
     expect(result.providerFailures).toEqual([]);
   });
 
-  it("publishes typed failures and retries the exact directory", () => {
-    let offline = true;
-    const requestError = new ApiRequestError({
-      cause: new Error("offline"),
-      failure: { _tag: "Unreachable" },
-      operation: "yield-directory",
-    });
-    const listYields = vi.fn((request: YieldDirectoryRequest) =>
-      offline
-        ? Effect.fail(requestError)
-        : Effect.succeed({
-            items: [],
-            limit: request.limit,
-            offset: request.offset,
-            total: 0,
-          })
-    );
-    const registry = makeRegistry(
-      YieldResourceSource.of({ listYields } as never)
-    );
-    const key = new YieldDirectoryKey({
-      network: "ethereum",
-      yieldIds: [makeYield("yield-retry").id],
-    });
-    const resource = yieldDirectoryResourceAtom(key);
-    const failed = registry.get(resource);
+  it("asks again with backoff, then publishes typed failures and retries the exact directory", async () => {
+    vi.useFakeTimers();
+    try {
+      let offline = true;
+      const requestError = new ApiRequestError({
+        cause: new Error("offline"),
+        failure: { _tag: "Unreachable" },
+        operation: "yield-directory",
+      });
+      const listYields = vi.fn((request: YieldDirectoryRequest) =>
+        offline
+          ? Effect.fail(requestError)
+          : Effect.succeed({
+              items: [],
+              limit: request.limit,
+              offset: request.offset,
+              total: 0,
+            })
+      );
+      const registry = makeRegistry(
+        YieldResourceSource.of({ listYields } as never)
+      );
+      const key = new YieldDirectoryKey({
+        network: "ethereum",
+        yieldIds: [makeYield("yield-retry").id],
+      });
+      const resource = yieldDirectoryResourceAtom(key);
+      const unsubscribe = registry.subscribe(resource, () => undefined);
 
-    expect(AsyncResult.isFailure(failed)).toBe(true);
-    if (!AsyncResult.isFailure(failed)) throw new Error("Expected failure");
-    expect(
-      Option.getOrThrow(Cause.findErrorOption(failed.cause))
-    ).toBeInstanceOf(YieldDirectoryError);
+      // An unreachable API is asked again 1 s and then 2 s later.
+      expect(AsyncResult.isFailure(registry.get(resource))).toBe(false);
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(listYields).toHaveBeenCalledTimes(3);
 
-    const attemptsBeforeRetry = listYields.mock.calls.length;
-    offline = false;
-    registry.refresh(resource);
+      const failed = registry.get(resource);
+      expect(AsyncResult.isFailure(failed)).toBe(true);
+      if (!AsyncResult.isFailure(failed)) throw new Error("Expected failure");
+      expect(
+        Option.getOrThrow(Cause.findErrorOption(failed.cause))
+      ).toBeInstanceOf(YieldDirectoryError);
 
-    expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual({
-      items: [],
-      missingYieldIds: ["yield-retry"],
-    });
-    expect(listYields).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
+      offline = false;
+      registry.refresh(resource);
+
+      expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual({
+        items: [],
+        missingYieldIds: ["yield-retry"],
+      });
+      expect(listYields).toHaveBeenCalledTimes(4);
+      unsubscribe();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it.effect(

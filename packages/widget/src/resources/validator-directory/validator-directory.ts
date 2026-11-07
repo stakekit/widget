@@ -12,6 +12,7 @@ import {
   type ValidatorDirectoryRequest,
   YieldResourceSource,
 } from "../../services/api/resource-sources";
+import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {
   API_MAX_PAGE_SIZE,
@@ -159,6 +160,7 @@ const validatorsCanonicalPullAtom = Atom.family((key: ValidatorsKey) =>
       ).pipe(Stream.mapError((cause) => new ValidatorsError({ cause })));
     })
     .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
       withPullPageDone,
       validatorPolicy,
       Atom.withLabel("validatorsPullAtom")
@@ -197,7 +199,11 @@ const preferredValidatorsCanonicalAtom = Atom.family((yieldId: YieldId) =>
         )
       )
     )
-    .pipe(validatorPolicy, Atom.withLabel("preferredValidatorsResourceAtom"))
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
+      validatorPolicy,
+      Atom.withLabel("preferredValidatorsResourceAtom")
+    )
 );
 
 export const preferredValidatorsResourceAtom = makePresentableResourceFamily(

@@ -69,7 +69,7 @@ describe("HelpModal as SKApp children", () => {
 
     await expect
       .poll(
-        () => document.body.querySelector("[data-select-modal] h4")?.textContent
+        () => document.body.querySelector('[role="dialog"] h2')?.textContent
       )
       .toBe(expectedTitle);
 

@@ -1,6 +1,8 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useSKWallet } from "../../wallet/index";
 import {
+  currentPortfolioBorrowPositionsAtom,
+  isBorrowPositionAtRisk,
   type PositionItem,
   positionsViewAtom,
 } from "../state/read-models/positions";
@@ -14,7 +16,6 @@ export const usePositions = () => {
   const isConnected = useSKWallet()?.status === "connected";
 
   return {
-    listData: ["header" as const, ...positions],
     positions,
     positionsView,
     // A refetch or a failed refetch keeps shown positions on screen.
@@ -22,14 +23,24 @@ export const usePositions = () => {
   };
 };
 
+/**
+ * How many positions ask for the user's attention: Earn positions with an
+ * action or rewards to claim, and borrow positions in the caution or danger
+ * risk band.
+ */
 export const usePortfolioPendingActionsCount = () => {
   const { positions } = usePositions();
+  const borrowPositions = useAtomValue(
+    currentPortfolioBorrowPositionsAtom
+  ).positions;
+  const earnCount = positions.filter(
+    (position) =>
+      position.hasPendingClaimRewards || position.requiredAction !== null
+  ).length;
+  const borrowCount =
+    borrowPositions._tag === "Ready"
+      ? borrowPositions.value.filter(isBorrowPositionAtRisk).length
+      : 0;
 
-  return positions.reduce(
-    (count, position) =>
-      position.hasPendingClaimRewards || position.actionRequired
-        ? count + 1
-        : count,
-    0
-  );
+  return earnCount + borrowCount;
 };

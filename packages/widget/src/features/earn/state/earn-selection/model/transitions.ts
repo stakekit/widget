@@ -15,12 +15,14 @@ const resetYieldIntent = (
   selectedYieldId: YieldId | null
 ): EarnEntryIntent => ({
   ...intent,
-  amountInput: "untouched",
+  amountTouched: false,
   requestedValidator: null,
+  // The user chose; the selection is theirs, no longer the init params'.
+  seededSelection: false,
   selectedProviderOption: null,
   selectedValidators: null,
   selectedYieldId,
-  stakeAmount: "0",
+  stakeAmount: "",
   tronResource: null,
   useMaxAmount: false,
 });
@@ -118,7 +120,7 @@ export const setAmount = (
   stakeAmount: string
 ): EarnEntryIntent => ({
   ...intent,
-  amountInput: "manual",
+  amountTouched: true,
   stakeAmount,
   useMaxAmount: false,
 });
@@ -128,7 +130,7 @@ export const setMaxAmount = (
   stakeAmount: string
 ): EarnEntryIntent => ({
   ...intent,
-  amountInput: "max",
+  amountTouched: true,
   stakeAmount,
   useMaxAmount: true,
 });

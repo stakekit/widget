@@ -1,4 +1,4 @@
 export {
-  GasTokenBalancesKey,
   gasTokenBalancesResourceAtom,
+  walletScopeGasTokenBalancesKey,
 } from "./gas-token-balances";

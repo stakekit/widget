@@ -19,7 +19,7 @@ import {
 } from "../../../domain/earn/yield";
 import type { Token } from "../../../domain/token/token";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
-import { SKAnchor } from "../../../shared/ui/primitives/anchor";
+import { ExternalLink } from "../../../ui/index";
 import {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
@@ -59,6 +59,9 @@ export const useYieldMetaInfo = ({
     .filter((t) => !t.isPoints)
     .map((t) => t.symbol)
     .join(", ");
+  // Without a received token the copy drops its "you'll receive" clause, so
+  // it never interpolates an empty token name.
+  const hasReceivedToken = rewardTokens.length > 0;
   const provider = y.provider;
   const providerName = sv ?? (provider ? provider.name : y.metadata.name);
   const rewardSchedule = y.mechanics.rewardSchedule;
@@ -79,9 +82,12 @@ export const useYieldMetaInfo = ({
           i18nKey="details.campaign_susd_position_locked"
           components={{
             link0: (
-              <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+              <ExternalLink
+                href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/"
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("shared.learn_more")}
-              </SKAnchor>
+              </ExternalLink>
             ),
           }}
         />
@@ -91,9 +97,12 @@ export const useYieldMetaInfo = ({
           i18nKey="details.campaign_susd"
           components={{
             link0: (
-              <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+              <ExternalLink
+                href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/"
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("shared.learn_more")}
-              </SKAnchor>
+              </ExternalLink>
             ),
           }}
         />
@@ -114,9 +123,12 @@ export const useYieldMetaInfo = ({
           i18nKey="details.confidential_campaign"
           components={{
             link0: (
-              <SKAnchor href={confidentialCampaignUrl}>
+              <ExternalLink
+                href={confidentialCampaignUrl}
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
                 {t("shared.learn_more")}
-              </SKAnchor>
+              </ExternalLink>
             ),
           }}
         />
@@ -127,9 +139,12 @@ export const useYieldMetaInfo = ({
         i18nKey="details.campaign"
         components={{
           link0: (
-            <SKAnchor href="https://420.synthetix.io/?collateral=SNX">
+            <ExternalLink
+              href="https://420.synthetix.io/?collateral=SNX"
+              newTabLabel={t("shared.opens_in_new_tab")}
+            >
               {t("shared.learn_more")}
-            </SKAnchor>
+            </ExternalLink>
           ),
         }}
       />
@@ -188,12 +203,64 @@ export const useYieldMetaInfo = ({
       : t("details.vault.withdrawn_time_immediately");
   };
   const vaultDescriptionContext = getVaultDescriptionContext();
+  const getVaultDescription = () => {
+    if (hasReceivedToken) {
+      return t("details.vault.description", {
+        stakeToken,
+        depositToken: rewardTokens,
+        ...(vaultDescriptionContext === undefined
+          ? {}
+          : { context: vaultDescriptionContext }),
+      });
+    }
+    // Ethena's description is only its receive clause.
+    if (
+      vaultDescriptionContext === undefined ||
+      vaultDescriptionContext === "ethena_usde"
+    ) {
+      return t("details.vault.description_without_receipt", { stakeToken });
+    }
+    return t("details.vault.description_without_receipt", {
+      stakeToken,
+      context: vaultDescriptionContext,
+    });
+  };
+  const lendFeeContext = haveFeeConfigurationEnabled
+    ? ({ context: "with_fee_configuration" } as const)
+    : {};
+  const getLendDescription = () => {
+    if (isCompound) {
+      return hasReceivedToken
+        ? t("details.lend.description_compound", { stakeToken, rewardTokens })
+        : t("details.lend.description_compound_without_receipt", {
+            stakeToken,
+          });
+    }
+    return hasReceivedToken
+      ? t("details.lend.description", {
+          stakeToken,
+          rewardTokens,
+          providerName,
+          ...lendFeeContext,
+        })
+      : t("details.lend.description_without_receipt", {
+          stakeToken,
+          providerName,
+          ...lendFeeContext,
+        });
+  };
   const restakingWithdrawnTime =
     cooldownPeriodDays > 0
       ? t("details.restake.unstake_time", {
           count: cooldownPeriodDays,
         })
       : t("details.restake.unstake_time_immediately");
+  const getRestakeWithdrawnNotAvailable = () => {
+    if (y.status.exit) return null;
+    return hasReceivedToken
+      ? t("details.restake.withdrawn_not_available", { rewardTokens })
+      : t("details.restake.withdrawn_not_available_without_receipt");
+  };
 
   switch (yieldType) {
     case "staking":
@@ -245,19 +312,7 @@ export const useYieldMetaInfo = ({
                 count: cooldownPeriodDays,
               })
             : t("details.lend.withdrawn_time_immediately"),
-        description: isCompound
-          ? t("details.lend.description_compound", {
-              stakeToken,
-              rewardTokens,
-            })
-          : t("details.lend.description", {
-              stakeToken,
-              rewardTokens,
-              providerName,
-              ...(haveFeeConfigurationEnabled
-                ? { context: "with_fee_configuration" }
-                : {}),
-            }),
+        description: getLendDescription(),
         withdrawnNotAvailable: null,
         ...def,
       };
@@ -268,13 +323,7 @@ export const useYieldMetaInfo = ({
     case "concentrated_liquidity_pool":
     case "liquidity_pool":
       return {
-        description: t("details.vault.description", {
-          stakeToken,
-          depositToken: rewardTokens,
-          ...(vaultDescriptionContext === undefined
-            ? {}
-            : { context: vaultDescriptionContext }),
-        }),
+        description: getVaultDescription(),
         earnPeriod: getVaultEarnPeriod(),
         earnRewards:
           rewardClaiming === "manual"
@@ -287,10 +336,9 @@ export const useYieldMetaInfo = ({
 
     case "restaking":
       return {
-        description: t("details.restake.description", {
-          stakeToken,
-          rewardTokens,
-        }),
+        description: hasReceivedToken
+          ? t("details.restake.description", { stakeToken, rewardTokens })
+          : t("details.restake.description_without_receipt", { stakeToken }),
         earnPeriod:
           warmupPeriodDays > 0
             ? t("details.restake.earn_after_warmup", {
@@ -302,11 +350,7 @@ export const useYieldMetaInfo = ({
             ? t("details.restake.earn_rewards_manual", { rewardSchedule })
             : t("details.restake.earn_rewards_auto", { rewardSchedule }),
         withdrawnTime: y.status.exit ? restakingWithdrawnTime : null,
-        withdrawnNotAvailable: !y.status.exit
-          ? t("details.restake.withdrawn_not_available", {
-              rewardTokens,
-            })
-          : null,
+        withdrawnNotAvailable: getRestakeWithdrawnNotAvailable(),
         ...def,
       };
 

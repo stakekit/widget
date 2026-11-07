@@ -2,103 +2,75 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getYieldCategory } from "../../../../../domain/earn/yield";
 import { formatNetworkName } from "../../../../../shared/lib/formatters";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
-import { Image } from "../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useTokenLogo } from "../../../../../shared/react/token-logo";
+import { AssetHeader } from "../../../../../ui/index";
 import { formatDisplayTokenSymbol } from "../../../model/yield-details-formatters";
-import * as styles from "./styles.css";
 
 type YieldDetailsHeaderBadge = Readonly<{
   readonly label: string;
   readonly tone: "default" | "auto";
 }>;
 
+const badgeTones = {
+  default: "neutral",
+  auto: "accent",
+} as const;
+
+/**
+ * A yield's or position's header. A position's page passes `compact`: the
+ * title is the yield's own name, as the line under it already names the
+ * provider.
+ */
 export const YieldDetailsHeader = ({
+  density = "default",
   headerBadges,
   providerName,
   yieldDto,
 }: {
+  readonly density?: "default" | "compact";
   readonly headerBadges: ReadonlyArray<YieldDetailsHeaderBadge>;
-  readonly providerName: string;
-  readonly yieldDto: EarnYieldWithProvider;
-}) => (
-  <Box display="flex" alignItems="center" gap="1">
-    <TokenIcon
-      metadata={{
-        logoURI: yieldDto.metadata.logoURI,
-        name: yieldDto.metadata.name,
-        provider: yieldDto.provider,
-      }}
-      token={yieldDto.outputToken ?? yieldDto.token}
-      tokenLogoHw="12"
-    />
-
-    <Box minWidth="0">
-      <Text className={styles.titleText} variant={{ weight: "bold" }}>
-        {formatDetailsTitle({ providerName, yieldDto })}
-      </Text>
-
-      <Box className={styles.headerBadgeRow}>
-        <ProviderLabel providerName={providerName} yieldDto={yieldDto} />
-
-        <Text
-          className={styles.headerProviderText}
-          variant={{ type: "muted", weight: "normal" }}
-        >
-          {" · "}
-          {formatNetworkName(yieldDto.network)}
-          {" · "}
-          {formatDisplayTokenSymbol(yieldDto)}
-        </Text>
-
-        {headerBadges.length > 0 ? (
-          <Text
-            as="span"
-            className={styles.headerBadgeSeparator}
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {" · "}
-          </Text>
-        ) : null}
-
-        {headerBadges.map((badge) => (
-          <HeaderBadge
-            key={badge.label}
-            label={badge.label}
-            tone={badge.tone}
-          />
-        ))}
-      </Box>
-    </Box>
-  </Box>
-);
-
-const ProviderLabel = ({
-  providerName,
-  yieldDto,
-}: {
   readonly providerName: string;
   readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
+  const token = useTokenLogo(yieldDto.outputToken ?? yieldDto.token, {
+    metadata: {
+      logoURI: yieldDto.metadata.logoURI,
+      name: yieldDto.metadata.name,
+      provider: yieldDto.provider,
+    },
+  });
+  const providerLogo = yieldDto.provider?.logoURI;
 
   return (
-    <Box display="flex" alignItems="center" gap="1" flexShrink={0}>
-      <Image
-        wrapperProps={{ hw: "5" }}
-        imgProps={{ borderRadius: "base" }}
-        src={yieldDto.provider?.logoURI}
-        fallbackName={providerName}
-      />
-      <Text
-        className={styles.headerProviderLabelText}
-        variant={{ weight: "normal" }}
-      >
-        {t("positions.via", { providerName, count: 1 })}
-      </Text>
-    </Box>
+    <AssetHeader
+      density={density}
+      title={
+        density === "compact"
+          ? yieldDto.metadata.name
+          : formatDetailsTitle({ providerName, yieldDto })
+      }
+      token={token}
+      provider={{
+        name: providerName,
+        label: t("positions.via", { providerName, count: 1 }),
+        ...(providerLogo ? { src: providerLogo } : {}),
+      }}
+      // A position's page reads "via Provider · Network"; its summary card
+      // names the token with the amount.
+      details={
+        density === "compact"
+          ? [formatNetworkName(yieldDto.network)]
+          : [
+              formatNetworkName(yieldDto.network),
+              formatDisplayTokenSymbol(yieldDto),
+            ]
+      }
+      badges={headerBadges.map((badge) => ({
+        label: badge.label,
+        tone: badgeTones[badge.tone],
+      }))}
+    />
   );
 };
 

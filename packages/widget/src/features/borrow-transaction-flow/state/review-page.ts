@@ -185,7 +185,7 @@ export const borrowFlowReviewPage = Atom.family(
 
 export const makeBorrowFlowReviewPage = (session: BorrowFlowSession) => ({
   backAtom: walletRuntime
-    .fn(() => leaveBorrowFlow(session), { initialValue: undefined })
+    .fn(() => leaveBorrowFlow("Review"), { initialValue: undefined })
     .pipe(Atom.withLabel("backBorrowFlowReview")),
   confirmAtom: walletRuntime
     .fn(

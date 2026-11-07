@@ -4,28 +4,29 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { type PriceRequest, Prices } from "../../src/domain/health/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import { RewardsAddresses } from "../../src/domain/portfolio/models";
-import {
-  RewardSummariesError,
-  RewardSummariesKey,
-  rewardSummariesResourceAtom,
-} from "../../src/resources/reward-summaries/reward-summaries";
+import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
 import {
   TokenPricesKey,
   tokenPricesResourceAtom,
 } from "../../src/resources/token-prices/token-prices";
 import {
+  YieldRewardsSummaryError,
+  YieldRewardsSummaryKey,
+  yieldRewardsSummaryResourceAtom,
+} from "../../src/resources/yield-rewards-summary/yield-rewards-summary";
+import {
   ApiRequestError,
   LegacyResourceSource,
+  YieldResourceSource,
 } from "../../src/services/api/resource-sources";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
+import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const yieldModel = yieldApiYieldFixture();
-const secondYield = yieldApiYieldFixture({ id: "second-yield" });
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
-const addresses = Schema.decodeSync(RewardsAddresses)({ address });
 const token = yieldModel.token;
 const otherToken = { ...token, network: "base" as const };
 
@@ -35,6 +36,27 @@ const makeRegistry = (source: LegacyResourceSource["Service"]) =>
       Atom.initialValue(
         appRuntime.layer,
         Layer.succeed(LegacyResourceSource, source)
+      ),
+    ],
+  });
+
+const makeYieldRegistry = (source: YieldResourceSource["Service"]) =>
+  AtomRegistry.make({
+    initialValues: [
+      Atom.initialValue(
+        appRuntime.layer,
+        Layer.mergeAll(
+          Layer.succeed(YieldResourceSource, source),
+          RichErrorService.layer.pipe(
+            Layer.provide(
+              WidgetConfigService.layer({
+                apiKey: "test-api-key",
+                baseUrl: "https://api.example.com",
+                variant: "default",
+              })
+            )
+          )
+        )
       ),
     ],
   });
@@ -83,67 +105,62 @@ describe("price and reward summary resources", () => {
     expect(getPrices).not.toHaveBeenCalled();
   });
 
-  it("canonicalizes reward IDs and represents missing summaries explicitly", () => {
-    const getRewardsSummaries = vi.fn(() =>
-      Effect.succeed({ [yieldModel.id]: { rewards: {}, token } } as never)
+  it("reads one summary per wallet and Yield, an untracked Yield as none", () => {
+    const getRewardsSummary = vi.fn(() => Effect.succeedNone);
+    const registry = makeYieldRegistry(
+      YieldResourceSource.of({ getRewardsSummary } as never)
     );
-    const registry = makeRegistry(
-      LegacyResourceSource.of({ getRewardsSummaries } as never)
+    const key = () =>
+      new YieldRewardsSummaryKey({ address, yieldId: yieldModel.id });
+
+    const summary = AsyncResult.getOrThrow(
+      registry.get(yieldRewardsSummaryResourceAtom(key()))
     );
-    const key = new RewardSummariesKey({
-      addresses,
-      yieldIds: [secondYield.id, yieldModel.id, yieldModel.id],
+    registry.get(yieldRewardsSummaryResourceAtom(key()));
+
+    expect(getRewardsSummary).toHaveBeenCalledOnce();
+    expect(getRewardsSummary).toHaveBeenCalledWith({
+      address,
+      yieldId: yieldModel.id,
     });
-
-    const summaries = AsyncResult.getOrThrow(
-      registry.get(rewardSummariesResourceAtom(key))
-    );
-    registry.get(
-      rewardSummariesResourceAtom(
-        new RewardSummariesKey({
-          addresses,
-          yieldIds: [yieldModel.id, secondYield.id],
-        })
-      )
-    );
-
-    expect(getRewardsSummaries).toHaveBeenCalledOnce();
-    expect(Object.keys(summaries)).toEqual([yieldModel.id, secondYield.id]);
-    expect(summaries[secondYield.id]).toBeNull();
+    expect(Option.isNone(summary)).toBe(true);
   });
 
-  it("publishes typed reward failure and retries bounded work", () => {
+  it("keeps a rewards summary failure typed and silent where the page reads it, and retries it", async () => {
     let offline = true;
     const requestError = new ApiRequestError({
       cause: new Error("offline"),
       failure: { _tag: "Unreachable" },
       operation: "yield-rewards-summary",
     });
-    const getRewardsSummaries = vi.fn(() =>
-      offline ? Effect.fail(requestError) : Effect.succeed({})
+    const getRewardsSummary = vi.fn(() =>
+      offline ? Effect.fail(requestError) : Effect.succeedNone
     );
-    const registry = makeRegistry(
-      LegacyResourceSource.of({ getRewardsSummaries } as never)
+    const registry = makeYieldRegistry(
+      YieldResourceSource.of({ getRewardsSummary } as never)
     );
-    const key = new RewardSummariesKey({
-      addresses,
-      yieldIds: [yieldModel.id],
-    });
-    const resource = rewardSummariesResourceAtom(key);
+    // The position page reads it locally: a failure hides the figure.
+    const resource = yieldRewardsSummaryResourceAtom.local(
+      new YieldRewardsSummaryKey({ address, yieldId: yieldModel.id })
+    );
+    const unmount = registry.mount(resource);
     const failed = registry.get(resource);
+    await Promise.resolve();
+    expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toBeNull();
 
     expect(AsyncResult.isFailure(failed)).toBe(true);
     if (!AsyncResult.isFailure(failed)) throw new Error("Expected failure");
     expect(
       Option.getOrThrow(Cause.findErrorOption(failed.cause))
-    ).toBeInstanceOf(RewardSummariesError);
+    ).toBeInstanceOf(YieldRewardsSummaryError);
 
-    const attemptsBeforeRetry = getRewardsSummaries.mock.calls.length;
+    const attemptsBeforeRetry = getRewardsSummary.mock.calls.length;
     offline = false;
     registry.refresh(resource);
-    expect(
-      AsyncResult.getOrThrow(registry.get(resource))[yieldModel.id]
-    ).toBeNull();
-    expect(getRewardsSummaries).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
+    expect(Option.isNone(AsyncResult.getOrThrow(registry.get(resource)))).toBe(
+      true
+    );
+    expect(getRewardsSummary).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
+    unmount();
   });
 });

@@ -1,37 +1,61 @@
-export type PositionDetailsActionMode = "stake" | "unstake";
+import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import type { EarnBalance } from "../../../domain/earn/models";
+import { getPendingActionUrgency } from "../../../domain/portfolio/position-callout";
+
+/**
+ * An action of a position's page that takes an amount: exiting it, or
+ * entering it further. Its form opens under its button.
+ */
+export type PositionDetailsAmountAction = "enter" | "exit";
 
 export type PositionDetailsActionCapabilities = {
-  readonly canStake: boolean;
-  readonly canUnstake: boolean;
+  readonly canEnter: boolean;
+  readonly canExit: boolean;
 };
 
-export const resolvePositionDetailsActionMode = ({
-  canStake,
-  canUnstake,
-}: PositionDetailsActionCapabilities): PositionDetailsActionMode | null => {
-  if (canUnstake) return "unstake";
-  if (canStake) return "stake";
-  return null;
-};
-
-export const resolveSelectedPositionDetailsActionMode = ({
-  canStake,
-  canUnstake,
-  selectedMode,
+/**
+ * The amount actions in order, the exit first so the page opens on it, and
+ * entering further only in a Layout that offers it.
+ */
+export const resolvePositionDetailsAmountActions = ({
+  canEnter,
+  canExit,
+  offersEnter,
 }: PositionDetailsActionCapabilities & {
-  selectedMode: PositionDetailsActionMode | null;
-}): PositionDetailsActionMode | null => {
-  if (selectedMode === "stake" && canStake) return "stake";
-  if (selectedMode === "unstake" && canUnstake) return "unstake";
-  return resolvePositionDetailsActionMode({ canStake, canUnstake });
+  readonly offersEnter: boolean;
+}): ReadonlyArray<PositionDetailsAmountAction> => [
+  ...(canExit ? (["exit"] as const) : []),
+  ...(canEnter && offersEnter ? (["enter"] as const) : []),
+];
+
+/**
+ * The pending action a position's page leads with: the first one the
+ * position requires, such as a withdrawal that is ready, else its first
+ * claim of rewards. Optional actions and an Instant Exit under way never
+ * lead. The leading action's card is the page's primary action.
+ */
+export const getLeadingPendingAction = <
+  A extends {
+    readonly pendingAction: { readonly type: YieldPendingActionType };
+    readonly yieldBalance: Pick<EarnBalance, "isEncrypted" | "type">;
+  },
+>(
+  actions: ReadonlyArray<A>
+): A | null => {
+  const urgencyOf = (action: A) =>
+    getPendingActionUrgency({
+      balance: action.yieldBalance,
+      type: action.pendingAction.type,
+    });
+
+  return (
+    actions.find((action) => urgencyOf(action) === "required") ??
+    actions.find((action) => urgencyOf(action) === "claim") ??
+    null
+  );
 };
 
-export const shouldShowPositionDetailsActionTabs = ({
-  canStake,
-  canUnstake,
-}: PositionDetailsActionCapabilities) => canStake && canUnstake;
-
-const positionDetailsStakeHasContent = (val: {
+const positionDetailsEnterHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;
 }) => val.integrationData?.status.enter ?? false;
 
@@ -57,7 +81,7 @@ export const positionDetailsExitHasContent = (val: {
 /**
  * Tab capabilities are content-based, not flag-based: a Yield can support exit
  * while the position has no unstakeable balance (everything locked or pending),
- * and offering an Unstake tab that renders nothing is a dead end.
+ * and offering an exit tab that renders nothing is a dead end.
  */
 export const resolvePositionDetailsActionCapabilities = (val: {
   canChangeUnstakeAmount: boolean | null;
@@ -67,8 +91,8 @@ export const resolvePositionDetailsActionCapabilities = (val: {
   positionBalancesByType?: unknown;
   unstakeToken?: unknown;
 }): PositionDetailsActionCapabilities => ({
-  canStake: positionDetailsStakeHasContent(val),
-  canUnstake: positionDetailsExitHasContent(val),
+  canEnter: positionDetailsEnterHasContent(val),
+  canExit: positionDetailsExitHasContent(val),
 });
 
 export const positionDetailsPendingHasContent = (val: {
@@ -80,14 +104,14 @@ export const positionDetailsHubHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;
   pendingActions?: readonly unknown[] | null;
 }) =>
-  positionDetailsStakeHasContent(val) ||
+  positionDetailsEnterHasContent(val) ||
   val.canUnstake ||
   positionDetailsPendingHasContent(val);
 
 type PositionDetailsPageLayout = "Actions" | "InfoOnly" | "PositionLost";
 
 /**
- * An active flow (stake, unstake, pending action) keeps its pane even when the
+ * An active flow (enter, exit, pending action) keeps its pane even when the
  * position disappears: exiting everything removes the position while the flow
  * still has steps or its completion screen to show.
  */

@@ -12,6 +12,10 @@ export function formatAddress(
       )}`;
 }
 
+/** A transaction hash shortened to read at a glance, such as "0x1234…cdef". */
+export const formatTransactionHash = (hash: string): string =>
+  formatAddress(hash, { leadingChars: 6, trailingChars: 4 });
+
 export const isMobile = () => {
   let mobile = false;
 

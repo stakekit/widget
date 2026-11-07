@@ -53,9 +53,14 @@ const setUrl = ({
 export const setup = async (
   worker: TestWorker,
   {
+    discoveryRateType = "APY",
+    editableAmounts = false,
     personalizedRewardRate: providedPersonalizedRewardRate,
     useRewardRateWithoutCampaign,
   }: {
+    discoveryRateType?: string;
+    /** Gives enter and exit an `amount` argument, so the user types it. */
+    editableAmounts?: boolean;
     personalizedRewardRate?: YieldRewardRate;
     useRewardRateWithoutCampaign?: boolean;
   } = {}
@@ -91,7 +96,7 @@ export const setup = async (
 
   const discoveryRewardRate: YieldRewardRate = yieldRewardRateFixture({
     total: exactDecimal("0.045507546653006034"),
-    rateType: "APY",
+    rateType: discoveryRateType,
     components: [
       {
         rate: exactDecimal("0.0028386677110199426"),
@@ -248,6 +253,18 @@ export const setup = async (
       rewardClaiming: "auto",
       rewardSchedule: "day",
       requiresValidatorSelection: false,
+      ...(editableAmounts
+        ? {
+            arguments: {
+              enter: {
+                fields: [{ name: "amount", required: true, type: "string" }],
+              },
+              exit: {
+                fields: [{ name: "amount", required: true, type: "string" }],
+              },
+            },
+          }
+        : {}),
     },
     status: {
       enter: true,

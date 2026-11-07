@@ -9,6 +9,7 @@ ignores:
   - packages/widget/src/generated/**
   - packages/widget/src/app/runtime/app-runtime.ts
   - packages/widget/src/app/runtime/application-base-runtime.ts
+  - packages/widget/src/app/runtime/color-scheme-runtime.ts
   - packages/widget/src/app/runtime/wallet-connector-source-runtime.ts
   - packages/widget/src/app/runtime/wallet-runtime.ts
 rule:

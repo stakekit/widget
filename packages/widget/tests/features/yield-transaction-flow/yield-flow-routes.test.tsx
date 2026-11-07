@@ -27,17 +27,17 @@ vi.mock(
   })
 );
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/complete/pages/stake-complete.page",
+  "../../../src/features/yield-transaction-flow/ui/complete/pages/enter-complete.page",
   () => ({
-    StakeCompletePage: function StakeCompletePage() {
+    EnterCompletePage: function EnterCompletePage() {
       return null;
     },
   })
 );
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/complete/pages/unstake-complete.page",
+  "../../../src/features/yield-transaction-flow/ui/complete/pages/exit-complete.page",
   () => ({
-    UnstakeCompletePage: function UnstakeCompletePage() {
+    ExitCompletePage: function ExitCompletePage() {
       return null;
     },
   })
@@ -51,17 +51,17 @@ vi.mock(
   })
 );
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/review/pages/stake-review.page",
+  "../../../src/features/yield-transaction-flow/ui/review/pages/enter-review.page",
   () => ({
-    StakeReviewPage: function StakeReviewPage() {
+    EnterReviewPage: function EnterReviewPage() {
       return null;
     },
   })
 );
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/review/pages/unstake-review.page",
+  "../../../src/features/yield-transaction-flow/ui/review/pages/exit-review.page",
   () => ({
-    UnstakeReviewPage: function UnstakeReviewPage() {
+    ExitReviewPage: function ExitReviewPage() {
       return null;
     },
   })
@@ -75,17 +75,17 @@ vi.mock(
   })
 );
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/steps/pages/stake-steps.page",
+  "../../../src/features/yield-transaction-flow/ui/steps/pages/enter-steps.page",
   () => ({
-    StakeStepsPage: function StakeStepsPage() {
+    EnterStepsPage: function EnterStepsPage() {
       return null;
     },
   })
 );
 vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/steps/pages/unstake-steps.page",
+  "../../../src/features/yield-transaction-flow/ui/steps/pages/exit-steps.page",
   () => ({
-    UnstakeStepsPage: function UnstakeStepsPage() {
+    ExitStepsPage: function ExitStepsPage() {
       return null;
     },
   })
@@ -184,27 +184,27 @@ describe("Yield Transaction Flow routes", () => {
       "Earn",
       "Enter",
       {
-        completePage: "StakeCompletePage",
-        reviewPage: "StakeReviewPage",
-        stepsPage: "StakeStepsPage",
+        completePage: "EnterCompletePage",
+        reviewPage: "EnterReviewPage",
+        stepsPage: "EnterStepsPage",
       },
     ],
     [
       "PositionStake",
       "Enter",
       {
-        completePage: "StakeCompletePage",
-        reviewPage: "StakeReviewPage",
-        stepsPage: "StakeStepsPage",
+        completePage: "EnterCompletePage",
+        reviewPage: "EnterReviewPage",
+        stepsPage: "EnterStepsPage",
       },
     ],
     [
       "PositionExit",
       "Exit",
       {
-        completePage: "UnstakeCompletePage",
-        reviewPage: "UnstakeReviewPage",
-        stepsPage: "UnstakeStepsPage",
+        completePage: "ExitCompletePage",
+        reviewPage: "ExitReviewPage",
+        stepsPage: "ExitStepsPage",
       },
     ],
     [

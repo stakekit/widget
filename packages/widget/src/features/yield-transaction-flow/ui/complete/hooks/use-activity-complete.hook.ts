@@ -3,7 +3,7 @@ import type BigNumber from "bignumber.js";
 import type { YieldAction } from "../../../../../domain/action/models";
 import type { Token } from "../../../../../domain/token/token";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
@@ -49,16 +49,7 @@ export const useActivityCompleteView = <
 
   return {
     amount: formatTokenAmount(selectedAction.amount ?? 0, locale, "down"),
-    inputToken: inputToken ?? null,
-    metadata: selectedYield
-      ? {
-          logoURI: selectedYield.metadata.logoURI,
-          name: selectedYield.metadata.name,
-          provider: selectedYield.provider,
-        }
-      : null,
     network: inputToken?.symbol ?? "",
-    providerDetails: yieldSummary.providers,
     selectedAction,
     yieldType: yieldSummary.yieldType,
   };

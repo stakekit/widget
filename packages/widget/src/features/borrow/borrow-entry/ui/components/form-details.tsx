@@ -2,20 +2,18 @@ import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import type { Market } from "../../../../../domain/borrow/catalog/market";
 import type { RiskGateBlockReason } from "../../../../../domain/borrow/risk/risk-gate";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
+  Card,
+  DetailList,
   DetailRow,
-  DetailRowList,
-} from "../../../../../shared/ui/components/details-section";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
-import { BorrowNotice } from "../../../action-feedback/views";
+  Notice,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import type { BorrowMarketWalletBalances } from "../../../action-preparation/index";
 import type { BorrowFormProjection } from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";
-import * as styles from "../styles.css";
-import { BorrowInfoNote } from "./notices";
 
 export const BorrowFormDetails = ({
   borrowAmount,
@@ -50,35 +48,43 @@ export const BorrowFormDetails = ({
   const renderRiskNote = () => {
     if (riskBlock) {
       return (
-        <BorrowNotice
-          tone="error"
-          title={t("dashboard.borrow.risk_block.title")}
-        >
+        <Notice tone="danger" title={t("dashboard.borrow.risk_block.title")}>
           {t(`dashboard.borrow.risk_block.${riskBlock}`)}
-        </BorrowNotice>
+        </Notice>
       );
     }
     if (riskWarning) {
-      return <WarningBox text={t("dashboard.borrow.form.validation.ltv")} />;
+      return (
+        <Notice tone="warning">
+          {t("dashboard.borrow.form.validation.ltv")}
+        </Notice>
+      );
     }
     return (
-      <BorrowInfoNote>{t("dashboard.borrow.form.ltv_note")}</BorrowInfoNote>
+      <Notice tone="neutral">{t("dashboard.borrow.form.ltv_note")}</Notice>
     );
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap="4">
-      <Text variant={{ weight: "bold" }}>
+    <Stack gap={16}>
+      <Text variant="heading" as="h3">
         {t("dashboard.borrow.form.details")}
       </Text>
-      <Box className={styles.detailCard}>
-        <DetailRowList>
+      <Card padding={16}>
+        <DetailList>
           {model.formRows.map((row) => (
-            <DetailRow key={row.id} {...row} />
+            <DetailRow
+              key={row.id}
+              label={row.label}
+              value={row.value}
+              tone={row.tone ?? "default"}
+              {...(row.meter === undefined ? {} : { meter: row.meter })}
+              {...(row.caption === undefined ? {} : { caption: row.caption })}
+            />
           ))}
-        </DetailRowList>
-      </Box>
+        </DetailList>
+      </Card>
       {renderRiskNote()}
-    </Box>
+    </Stack>
   );
 };

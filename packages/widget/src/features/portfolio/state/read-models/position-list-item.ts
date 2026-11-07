@@ -7,10 +7,6 @@ import {
   type PositionTokenSum,
 } from "../../../../domain/portfolio/positions";
 import {
-  type PricesKey,
-  pricesAtom,
-} from "../../../../resources/token-prices/index";
-import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../../resources/yield-opportunity/index";
@@ -22,29 +18,6 @@ export const positionYieldAtom = Atom.family((yieldId: YieldId) =>
     .foreground(new YieldOpportunityKey({ yieldId }))
     .pipe(Atom.map(toPresentable), Atom.withLabel("positionYieldAtom"))
 );
-
-/** Token prices for a position row's amounts, as the row presents them. */
-export const positionPricesAtom = Atom.family((key: PricesKey) =>
-  pricesAtom
-    .foreground(key)
-    .pipe(Atom.map(toPresentable), Atom.withLabel("positionPricesAtom"))
-);
-
-/**
- * How a row presents its first non-active validator: jailed validators get
- * their own badge, every other provider status shares the inactive badge.
- */
-export type InactiveValidatorStatus = "jailed" | "other";
-
-export const toInactiveValidatorStatus = (
-  providers: ReadonlyArray<{ readonly status?: string | undefined }> | null
-): InactiveValidatorStatus | null => {
-  const status = providers?.find(
-    (provider) => provider.status !== "active"
-  )?.status;
-  if (!status) return null;
-  return status === "jailed" ? "jailed" : "other";
-};
 
 /** What a row shows of its total: its amount, and the USD value beside it. */
 export type PositionTotalDisplay = Readonly<{

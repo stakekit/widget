@@ -23,6 +23,7 @@ export const canSubmitEarnForm = ({
   readonly positionsData: PositionsData;
   readonly selectedYield: EarnYieldWithProvider;
 }): boolean => {
+  if (form.stakeAmount === "") return false;
   const amount = exactDecimal(form.stakeAmount);
   if (!amount.isFinite() || !amount.isGreaterThan(0)) return false;
 
@@ -72,15 +73,17 @@ export const resolveForm = ({
   );
 
   return {
+    // A force-max amount is the balance, never one the user has yet to enter.
+    amountTouched: constraint.type === "force-max" || intent.amountTouched,
     providerOption: resolveYieldProviderOption(
       selectedYield,
       intent.selectedProviderOption
     ),
-    stakeAmount: resolveStakeAmount({
-      availableAmount,
-      constraint,
-      intent,
-    }),
+    // A force-max yield always takes the whole balance.
+    stakeAmount:
+      constraint.type === "force-max"
+        ? (availableAmount?.toFixed() ?? "0")
+        : intent.stakeAmount,
     tronResource: resolveTronResource(selectedYield, intent),
     useMaxAmount: constraint.type === "force-max" ? true : intent.useMaxAmount,
   };
@@ -98,24 +101,4 @@ const resolveTronResource = (
   }
 
   return tronArg?.required ? (options[0] ?? null) : null;
-};
-
-const resolveStakeAmount = ({
-  availableAmount,
-  constraint,
-  intent,
-}: {
-  availableAmount: BigNumber | null;
-  constraint: ReturnType<typeof getEnterAmountConstraint>;
-  intent: EarnEntryIntent;
-}) => {
-  if (constraint.type === "force-max") {
-    return availableAmount?.toFixed() ?? "0";
-  }
-
-  if (intent.amountInput !== "untouched") {
-    return intent.stakeAmount;
-  }
-
-  return constraint.minimum.toString(10);
 };

@@ -4,8 +4,8 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
-  getTransactionSignCustomMessage,
   getTransactionStepProgress,
+  getTransactionWorkflowTransactionReference,
   type TransactionStepProgress,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
@@ -14,6 +14,8 @@ import {
 type BorrowExecutionStep = {
   readonly done: boolean;
   readonly explorerUrl: string | null;
+  /** The sent transaction's hash, once it has one. */
+  readonly hash: TransactionHash | null;
   readonly id: Transaction["id"];
   readonly progress: TransactionStepProgress;
   readonly type: Transaction["type"];
@@ -73,16 +75,6 @@ const isWalletCancellation = (error: TransactionWorkflowError | null) =>
   error?._tag === "TransactionSignError" &&
   error.reason._tag === "WalletRequestCancelled";
 
-// A wallet cancellation is not a failure; the flow shows it as a notice.
-const getExecutionErrorMessage = (error: TransactionWorkflowError | null) => {
-  if (!error || isWalletCancellation(error)) return null;
-  const customMessage =
-    error._tag === "TransactionSignError"
-      ? getTransactionSignCustomMessage(error)
-      : null;
-  return customMessage ?? error.message;
-};
-
 export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   const currentBatch = getCurrentTransactionWorkflowBatch(state.context);
   const current = getCurrentTransactionWorkflowTransaction(state.context);
@@ -120,30 +112,26 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
     currentStep: currentBatch?.currentStep ?? action.currentStep,
     currentTransaction,
     error: status.error,
-    errorMessage: getExecutionErrorMessage(status.error),
     isDone: completed,
     isRunning: status.isRunning,
     phase: status.phase,
     state,
     steps: flattenTransactionWorkflowTransactions(state.context).flatMap(
-      (transaction): ReadonlyArray<BorrowExecutionStep> => {
-        if (transaction.source._tag !== "Borrow") return [];
-
-        const submission =
-          transaction.meta.submissionIndex === null
-            ? null
-            : state.context.submissions[transaction.meta.submissionIndex];
-
-        return [
-          {
-            done: transaction.meta.done,
-            explorerUrl: transaction.meta.url ?? submission?.link ?? null,
-            id: transaction.source.transaction.id,
-            progress: getTransactionStepProgress(state, transaction),
-            type: transaction.source.transaction.type,
-          },
-        ];
-      }
+      (transaction): ReadonlyArray<BorrowExecutionStep> =>
+        transaction.source._tag === "Borrow"
+          ? [
+              {
+                ...getTransactionWorkflowTransactionReference(
+                  state.context,
+                  transaction
+                ),
+                done: transaction.meta.done,
+                id: transaction.source.transaction.id,
+                progress: getTransactionStepProgress(state, transaction),
+                type: transaction.source.transaction.type,
+              },
+            ]
+          : []
     ),
     totalSteps: currentBatch?.totalSteps ?? action.totalSteps,
   } as const;
@@ -159,7 +147,6 @@ export const emptyBorrowExecutionView = {
   currentStep: 0,
   currentTransaction: null,
   error: null,
-  errorMessage: null,
   isDone: false,
   isRunning: false,
   phase: "disabled" as const,

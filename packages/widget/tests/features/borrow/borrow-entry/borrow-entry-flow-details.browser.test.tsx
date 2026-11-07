@@ -1,8 +1,13 @@
 import { HttpResponse, http } from "msw";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { borrowApiRoute, legacyApiRoute } from "../../../mocks/api-routes";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
-import { describe, expect, it } from "../../../utils/test-extend";
+import {
+  describe,
+  expect,
+  it,
+  type TestWorker,
+} from "../../../utils/test-extend";
 import { renderApp } from "../../../utils/test-utils";
 
 const account = "0x0000000000000000000000000000000000000001";
@@ -105,7 +110,119 @@ const action = {
   transactions: [transaction],
 } as const;
 
+// $400 of USDC debt behind 0.5 WETH ($1,000) of collateral: 40% LTV, 2.125 HF.
+const existingPosition = {
+  ...emptyPosition,
+  availableToBorrowUsd: "450",
+  currentLtv: "0.4",
+  debtBalances: [
+    {
+      apy: "0.06",
+      balance: "400",
+      balanceRaw: "400000000",
+      balanceUsd: "400",
+      marketId: market.id,
+      pendingActions: [],
+      tokenAddress: market.loanToken.address,
+      tokenSymbol: "USDC",
+    },
+  ],
+  healthFactor: "2.125",
+  netApy: "-0.006",
+  netWorthUsd: "600",
+  supplyBalances: [
+    {
+      apy: "0.02",
+      balance: "0.5",
+      balanceRaw: "500000000000000000",
+      balanceUsd: "1000",
+      isCollateral: true,
+      marketId: market.id,
+      pendingActions: [],
+      positionState: {
+        availableToBorrowUsd: "450",
+        currentLtv: "0.4",
+        healthFactor: "2.125",
+        liquidationThreshold: "0.85",
+      },
+      tokenAddress: weth.address,
+      tokenSymbol: "WETH",
+    },
+  ],
+  totalBorrowedUsd: "400",
+  totalCollateralUsd: "1000",
+  totalSuppliedUsd: "1000",
+};
+
+/** Borrow in the stacked Dashboard, below its two-column width. */
+const renderBorrowEntryAt900 = async (
+  worker: TestWorker,
+  position: typeof existingPosition
+) => {
+  worker.use(
+    http.get(borrowApiRoute("/v1/positions"), () =>
+      HttpResponse.json(position)
+    ),
+    http.get(borrowApiRoute("/v1/integrations"), () =>
+      HttpResponse.json([integration])
+    ),
+    http.get(borrowApiRoute("/v1/markets"), () =>
+      HttpResponse.json({ items: [market], limit: 100, offset: 0, total: 1 })
+    )
+  );
+  await page.viewport(900, 1000);
+  const app = await renderApp({
+    walletListFactory: mockWalletListFactory({ accounts: [account] }),
+    skProps: {
+      apiKey: import.meta.env.VITE_API_KEY,
+      borrowEnabled: true,
+      layout: "dashboard",
+    },
+  });
+  await userEvent.click(app.getByText("Borrow"));
+  await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+  return app;
+};
+
 describe("Borrow Entry flow details", () => {
+  it("projects the LTV and health factor of an existing position in the stacked Dashboard", async ({
+    worker,
+  }) => {
+    const app = await renderBorrowEntryAt900(worker, existingPosition);
+
+    await expect
+      .element(app.getByText("2.12", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("40%", { exact: true }))
+      .toBeInTheDocument();
+
+    await app.unmount();
+    await page.viewport(800, 900);
+  });
+
+  it("shows placeholders and says why when the position can't be projected", async ({
+    worker,
+  }) => {
+    // The account's collateral total disagrees with its collateral balances.
+    const app = await renderBorrowEntryAt900(worker, {
+      ...existingPosition,
+      totalCollateralUsd: "1500",
+    });
+
+    await expect
+      .element(
+        app.getByText(
+          "We couldn't compute the LTV and health factor from this position's data."
+        )
+      )
+      .toBeInTheDocument();
+    await expect.element(app.getByText("Health factor")).toBeInTheDocument();
+
+    await app.unmount();
+    await page.viewport(800, 900);
+  });
+
   it("keeps describing the started market after the catalog drops it", async ({
     worker,
   }) => {

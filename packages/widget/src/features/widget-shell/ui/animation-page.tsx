@@ -1,24 +1,10 @@
-import { type HTMLMotionProps, motion } from "motion/react";
-import { createContext, type PropsWithChildren, useContext } from "react";
-import { animationPage } from "./layout.css";
-
-export type PageTransition = Pick<
-  HTMLMotionProps<"div">,
-  "animate" | "exit" | "initial"
->;
+import type { PropsWithChildren } from "react";
+import { Stack } from "../../../ui/index";
 
 /**
- * The page enter and exit animation; the app container provides it. Without a
- * provider, pages render without a transition.
+ * A route page's root inside the route transition: a column that takes the
+ * height the transition gives it.
  */
-export const PageTransitionContext = createContext<PageTransition>({});
-
-export const AnimationPage = ({ children }: PropsWithChildren) => {
-  const transition = useContext(PageTransitionContext);
-
-  return (
-    <motion.div className={animationPage} {...transition}>
-      {children}
-    </motion.div>
-  );
-};
+export const AnimationPage = ({ children }: PropsWithChildren) => (
+  <Stack grow>{children}</Stack>
+);

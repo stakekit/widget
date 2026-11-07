@@ -489,12 +489,13 @@ const EarnYieldState = Schema.Struct({
   ),
 });
 
-// Only the statistics the widget reads are decoded; `tvl`/`tvlRaw` are unread.
+// Only the statistics the widget reads are decoded; `tvlRaw` is unread.
+// `tvl` is in the yield's token units, the units of its TVL history.
 const EarnYieldStatistics = Schema.Struct({
-  ...Struct.pick(YieldApi.YieldStatisticsDto.fields, ["uniqueUsers"]),
   averagePositionSizeUsd: Schema.optionalKey(
     TolerantExactDecimal("yield-statistics", "averagePositionSizeUsd")
   ),
+  tvl: Schema.optionalKey(TolerantExactDecimal("yield-statistics", "tvl")),
   tvlUsd: Schema.optionalKey(
     TolerantExactDecimal("yield-statistics", "tvlUsd")
   ),

@@ -37,8 +37,8 @@ export const clearEarnEntryAmounts = (
     ...previous,
     intent: {
       ...previous.intent,
-      amountInput: "untouched",
-      stakeAmount: "0",
+      amountTouched: false,
+      stakeAmount: "",
       useMaxAmount: false,
     },
   };
@@ -61,9 +61,7 @@ export const reconcileEarnEntryOwner = (
         ? "applying-init-params"
         : "waiting-for-wallet",
       initParams: applying ? initParams : null,
-      intent: makeDefaultEarnIntent(
-        applying ? (initParams?.validator ?? null) : null
-      ),
+      intent: makeDefaultEarnIntent(applying ? initParams : null),
       owner,
     };
   }
@@ -90,9 +88,7 @@ export const reconcileEarnEntryOwner = (
     categoryGrouping,
     initializationPhase: applying ? "applying-init-params" : "complete",
     initParams: applying ? initParams : null,
-    intent: makeDefaultEarnIntent(
-      applying ? (initParams?.validator ?? null) : null
-    ),
+    intent: makeDefaultEarnIntent(applying ? initParams : null),
     owner,
   };
 };

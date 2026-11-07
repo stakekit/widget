@@ -11,8 +11,16 @@ const scriptedWalletAccount = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 /** Widget wallet list, a scripted host wallet, or a host wallet wrapping the injected EVM wallet. */
 export const walletModes = ["builtin", "scripted", "injected"] as const;
 export const hostVariants = ["default", "utila", "finery", "porto"] as const;
-export const themes = ["dark", "light"] as const;
+export const colorSchemes = ["dark", "light", "system"] as const;
+/** No legacy `theme`, an unchanged legacy theme, or a customized one. */
+export const legacyThemes = [
+  "none",
+  "lightTheme",
+  "darkTheme",
+  "customized",
+] as const;
 export const languages = ["auto", "en", "fr"] as const;
+export const layouts = ["compact", "dashboard"] as const;
 
 const ProviderIds = Schema.Array(Schema.String);
 const ExtraProps = Schema.Record(Schema.String, Schema.Unknown);
@@ -22,9 +30,10 @@ const PlaygroundConfigSchema = Schema.Struct({
   scriptedAddress: Schema.String,
   trackingLog: Schema.Boolean,
   variant: Schema.Literals(hostVariants),
-  theme: Schema.Literals(themes),
+  colorScheme: Schema.Literals(colorSchemes),
+  legacyTheme: Schema.Literals(legacyThemes),
   language: Schema.Literals(languages),
-  dashboardVariant: Schema.Boolean,
+  layout: Schema.Literals(layouts),
   borrowEnabled: Schema.Boolean,
   hideGasFee: Schema.Boolean,
   yieldProviderOrder: Schema.Struct({
@@ -47,9 +56,10 @@ export const defaultPlaygroundConfig: PlaygroundConfig = {
   scriptedAddress: scriptedWalletAccount,
   trackingLog: false,
   variant: "default",
-  theme: "dark",
+  colorScheme: "dark",
+  legacyTheme: "none",
   language: "auto",
-  dashboardVariant: true,
+  layout: "dashboard",
   borrowEnabled: true,
   hideGasFee: false,
   yieldProviderOrder: {},
@@ -57,24 +67,40 @@ export const defaultPlaygroundConfig: PlaygroundConfig = {
 };
 
 /**
- * Host variants whose palette is drawn for one theme only (Utila light, Porto
- * dark); the theme setting does not apply to them.
+ * Host variants whose palette is drawn for one color scheme only (Utila
+ * light, Porto dark); the color scheme setting does not apply to them.
  */
-const singleThemeVariants: Partial<
-  Record<PlaygroundConfig["variant"], PlaygroundConfig["theme"]>
+const singleSchemeVariants: Partial<
+  Record<PlaygroundConfig["variant"], "dark" | "light">
 > = { porto: "dark", utila: "light" };
 
-/** The theme the variant is fixed to, if any. */
-export const fixedVariantTheme = (variant: PlaygroundConfig["variant"]) =>
-  singleThemeVariants[variant];
+/** The color scheme the variant is fixed to, if any. */
+export const fixedVariantColorScheme = (variant: PlaygroundConfig["variant"]) =>
+  singleSchemeVariants[variant];
 
-/** The theme a config mounts the widget with. */
-export const mountedTheme = (config: PlaygroundConfig) =>
-  fixedVariantTheme(config.variant) ?? config.theme;
+/** The `appearance.colorScheme` a config mounts the widget with. */
+export const mountedColorScheme = (config: PlaygroundConfig) =>
+  fixedVariantColorScheme(config.variant) ?? config.colorScheme;
 
-/** Borrow requires the dashboard variant; the widget rejects it otherwise. */
+/** Borrow requires the dashboard layout; the widget rejects it otherwise. */
 export const mountedBorrowEnabled = (config: PlaygroundConfig) =>
-  config.borrowEnabled && config.dashboardVariant;
+  config.borrowEnabled && config.layout === "dashboard";
+
+/**
+ * Host variants that force the institutional wallet list (Finery); the widget
+ * rejects a host wallet with it, so the wallet setting does not apply to them.
+ */
+const builtinWalletVariants: Partial<
+  Record<PlaygroundConfig["variant"], "builtin">
+> = { finery: "builtin" };
+
+/** The wallet mode the variant is fixed to, if any. */
+export const fixedVariantWallet = (variant: PlaygroundConfig["variant"]) =>
+  builtinWalletVariants[variant];
+
+/** The wallet mode a config mounts the widget with. */
+export const mountedWallet = (config: PlaygroundConfig) =>
+  fixedVariantWallet(config.variant) ?? config.wallet;
 
 const searchParam = "playground";
 

@@ -6,10 +6,12 @@ export const SelectValidatorSection = () => (
     renderTrigger={({
       multiSelect,
       onRemoveValidator,
+      open,
       selectedStake,
       selectedValidators,
     }) => (
       <SelectValidatorTrigger
+        onOpen={open}
         onRemoveValidator={onRemoveValidator}
         selectedValidatorsArr={selectedValidators}
         multiSelect={multiSelect}

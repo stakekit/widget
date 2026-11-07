@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../../src/domain/action/models";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import { EarnValidator } from "../../../src/domain/earn/models";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type {
   BorrowActivityItem,
@@ -13,7 +14,9 @@ import {
   confidentialFixture,
   confidentialYieldFixture,
   yieldApiActionFixture,
+  yieldApiProviderFixture,
   yieldApiTransactionFixture,
+  yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
 
@@ -68,7 +71,7 @@ describe("Activity action details projection", () => {
     });
 
     expect(view).toMatchObject({
-      amount: "-1,000,000,000,000,000.12",
+      amount: "\u22121000T",
       canContinue: false,
       statusLabel: "failed",
       transactions: [
@@ -93,7 +96,49 @@ describe("Activity action details projection", () => {
     });
 
     // French groups digits with U+202F and uses a decimal comma.
-    expect(view.amount).toBe("+1\u202f234,56");
+    expect(view.amount).toBe("+1\u202f234,5678");
+  });
+
+  it("lists the fiat value, the provider and the validators", () => {
+    const yieldData = {
+      ...yieldApiYieldFixture(),
+      provider: yieldApiProviderFixture({ name: "Lido" }),
+    };
+    const { name: _name, ...unnamedValidator } = yieldApiValidatorFixture({
+      address: "0x12345678cdef",
+    });
+    const view = projectActivityActionDetails({
+      item: {
+        ...makeItem({ amount: "2", amountUsd: "64.5", type: "STAKE" }),
+        validatorsData: [
+          yieldApiValidatorFixture({ name: "Chorus One" }),
+          unnamedValidator,
+        ].map((validator) => Schema.decodeSync(EarnValidator)(validator)),
+        yieldData,
+      },
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view).toMatchObject({
+      amountFiat: "$64.50",
+      providerName: "Lido",
+      validators: ["Chorus One", "0x12…cdef"],
+    });
+  });
+
+  it("lists no fiat value, provider or validators it does not know", () => {
+    const view = projectActivityActionDetails({
+      item: makeItem({ amount: "2", amountUsd: null }, false),
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view).toMatchObject({
+      amountFiat: null,
+      providerName: null,
+      validators: [],
+    });
   });
 
   it("orders steps without a step index last, then by creation time", () => {

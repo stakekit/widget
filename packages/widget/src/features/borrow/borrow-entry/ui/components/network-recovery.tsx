@@ -2,14 +2,13 @@ import { useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Chain } from "../../../../../services/wallet/wallet-descriptors";
-import { Box } from "../../../../../shared/ui/primitives/box";
+import { Notice, Stack } from "../../../../../ui/index";
 import {
   useScopedWalletChainSelection,
   walletChainSelectionAtom,
 } from "../../../../wallet/index";
 import { ConnectButton, WalletChainPicker } from "../../../../wallet/views";
 import { PageCtaButton } from "../../../../widget-shell/views";
-import { BorrowNotice } from "../../../action-feedback/views";
 import type { BorrowNetworkRecovery } from "../../../wallet/index";
 
 export const BorrowNetworkRecoveryPanel = ({
@@ -26,27 +25,27 @@ export const BorrowNetworkRecoveryPanel = ({
 
   if (recovery._tag === "SwitchManually") {
     return (
-      <BorrowNotice title={t("dashboard.borrow.unsupported_network")}>
+      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
         {t("dashboard.borrow.switch_network_manually", {
           networks: recovery.chains.map((chain) => chain.name).join(", "),
         })}
-      </BorrowNotice>
+      </Notice>
     );
   }
 
   if (recovery._tag === "Unavailable") {
     return (
-      <BorrowNotice title={t("dashboard.borrow.unsupported_network")}>
+      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
         {t("dashboard.borrow.network_unavailable")}
-      </BorrowNotice>
+      </Notice>
     );
   }
 
   return (
     <>
-      <BorrowNotice title={t("dashboard.borrow.unsupported_network")}>
+      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
         {t("dashboard.borrow.unsupported_network_description")}
-      </BorrowNotice>
+      </Notice>
 
       <BorrowConnectCta />
     </>
@@ -55,15 +54,9 @@ export const BorrowNetworkRecoveryPanel = ({
 
 /** Connect CTA docked at the panel bottom, like the page's other CTAs. */
 export const BorrowConnectCta = () => (
-  <Box marginTop="auto">
-    <ConnectButton
-      variant={{
-        animation: "press",
-        color: "primary",
-        size: "compact",
-      }}
-    />
-  </Box>
+  <Stack grow justify="end">
+    <ConnectButton />
+  </Stack>
 );
 
 const BorrowNetworkSwitch = ({
@@ -86,14 +79,14 @@ const BorrowNetworkSwitch = ({
 
   return (
     <>
-      <BorrowNotice title={t("dashboard.borrow.unsupported_network")}>
+      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
         {t("dashboard.borrow.unsupported_network_description")}
-      </BorrowNotice>
+      </Notice>
 
       {selection?.failedChainId !== undefined && (
-        <BorrowNotice tone="error" title={t("wallet_modal.confirm_error")}>
+        <Notice tone="danger" title={t("wallet_modal.confirm_error")}>
           {t("dashboard.borrow.switch_network_error")}
-        </BorrowNotice>
+        </Notice>
       )}
 
       <PageCtaButton

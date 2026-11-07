@@ -1,85 +1,78 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { images } from "../../../../shared/assets/images";
-import { SelectModal } from "../../../../shared/ui/components/select-modal";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Button, Card, Modal, Spot, Stack, Text } from "../../../../ui/index";
 import { richErrorInterpolationValues } from "../../model/rich-error-interpolation-values";
 import { useRichErrors } from "../../react/use-rich-errors";
-import { imageStyle } from "./style.css";
 
+/**
+ * The rich error dialog, for a failure no page section shows on its own: the
+ * error's Error Copy (title, details and a potential solution), or, for an
+ * error without copy, "Something went wrong" and what to do next. Its body
+ * lines up with its title at the dialog's start edge. It ends with "Try
+ * again" when the failed work can run again, and always with a way to close
+ * it.
+ */
 export const RichErrorModal = () => {
   const { i18n, t } = useTranslation();
-  const { error, resetError } = useRichErrors();
+  const { error, resetError, retry } = useRichErrors();
   const { message, details } = error ?? {};
-  const hasKnownErrorCopy = message
-    ? (["title", "details", "solution"] as const).every((field) =>
-        i18n.exists(`errors.${message}.${field}`)
-      )
-    : false;
+  const knownMessage =
+    message &&
+    (["title", "details", "solution"] as const).every((field) =>
+      i18n.exists(`errors.${message}.${field}`)
+    )
+      ? message
+      : null;
   useEffect(() => resetError, [resetError]);
 
   return (
-    <SelectModal
-      state={{ isOpen: !!error, setOpen: (isOpen) => !isOpen && resetError() }}
+    <Modal
+      open={!!error}
+      onOpenChange={(open) => {
+        if (!open) resetError();
+      }}
+      title={
+        knownMessage
+          ? t(`errors.${knownMessage}.title`)
+          : t("shared.something_went_wrong")
+      }
+      closeLabel={t("shared.close")}
+      footer={
+        <Stack gap={8}>
+          {retry !== null && (
+            <Button variant="primary" size="cta" onClick={retry}>
+              {t("shared.retry")}
+            </Button>
+          )}
+          <Button variant="secondary" size="cta" onClick={resetError}>
+            {t("error_modal.dismiss")}
+          </Button>
+        </Stack>
+      }
     >
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        px="6"
-        lineHeight="sm"
-      >
-        <Box as="img" src={images.whatIsLiquidStaking} className={imageStyle} />
-        {message && hasKnownErrorCopy && (
-          <>
-            <Box textAlign="center">
-              <Heading variant={{ level: "h4" }}>
-                {t(`errors.${message}.title`)}
-              </Heading>
-              <Text
-                variant={{ type: "muted", weight: "normal" }}
-                textAlign="center"
-                marginTop="2"
-              >
-                {t(
-                  `errors.${message}.details`,
-                  richErrorInterpolationValues(details)
-                )}
-              </Text>
-            </Box>
-
-            <Box marginTop="4" textAlign="center">
-              <Text variant={{ size: "large" }}>
+      <Stack gap={16}>
+        <Spot icon="WarningIcon" tone="danger" size="md" />
+        <Text as="p" tone="muted">
+          {knownMessage
+            ? t(
+                `errors.${knownMessage}.details`,
+                richErrorInterpolationValues(details)
+              )
+            : t("error_modal.generic_description")}
+        </Text>
+        {knownMessage && (
+          <Card>
+            <Stack gap={4}>
+              <Text variant="heading" as="h3">
                 {t("error_modal.solution")}
               </Text>
-
-              <Box
-                borderRadius="md"
-                background="backgroundMuted"
-                px="4"
-                py="1"
-                marginTop="2"
-              >
-                <Text variant={{ size: "medium" }} textAlign="center">
-                  {t(`errors.${message}.solution`)}
-                </Text>
-              </Box>
-            </Box>
-          </>
+              <Text as="p" tone="muted">
+                {t(`errors.${knownMessage}.solution`)}
+              </Text>
+            </Stack>
+          </Card>
         )}
-
-        {!hasKnownErrorCopy && (
-          <Box textAlign="center">
-            <Heading variant={{ level: "h4" }}>
-              {t("shared.something_went_wrong")}
-            </Heading>
-          </Box>
-        )}
-      </Box>
-    </SelectModal>
+      </Stack>
+    </Modal>
   );
 };

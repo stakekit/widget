@@ -381,6 +381,21 @@ export const resolvePositionDetailsExitSubmission = ({
     : ({ _tag: "Invalid" } as const);
 };
 
+/**
+ * The exit to simulate for its network fee: the one submission would start,
+ * once its amount can be used.
+ */
+export const getPositionDetailsExitSimulationCommand = ({
+  amountValid,
+  facts,
+}: {
+  readonly amountValid: boolean;
+  readonly facts: PositionDetailsExitFacts | null;
+}) =>
+  amountValid && facts
+    ? (preparePositionDetailsExitAction(facts)?.request ?? null)
+    : null;
+
 export type PositionPendingActionCommand =
   | Readonly<{
       readonly _tag: "Select";

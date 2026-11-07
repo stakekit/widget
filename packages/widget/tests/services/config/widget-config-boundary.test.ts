@@ -52,7 +52,7 @@ describe("decodeHostConfiguration", () => {
     if (Result.isFailure(result)) {
       expect(result.failure).toBeInstanceOf(InvalidHostConfiguration);
       expect(result.failure.issues).toEqual(["borrow-requires-dashboard"]);
-      expect(result.failure.issuePaths).toEqual(["dashboardVariant"]);
+      expect(result.failure.issuePaths).toEqual(["layout"]);
     }
   });
 
@@ -71,10 +71,7 @@ describe("decodeHostConfiguration", () => {
         "borrow-requires-dashboard",
         "borrow-requires-category-grouping",
       ]);
-      expect(result.failure.issuePaths).toEqual([
-        "dashboardVariant",
-        "yieldGrouping",
-      ]);
+      expect(result.failure.issuePaths).toEqual(["layout", "yieldGrouping"]);
     }
   });
 
@@ -282,6 +279,32 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
+  it.each([
+    { institutionalWallets: true, variant: "default" },
+    { variant: "finery" },
+  ] as const)(
+    "rejects an external provider with institutional wallets (%o)",
+    (settings) => {
+      const result = decodeHostConfiguration({
+        apiKey: "api-key",
+        externalProviders: {
+          currentAddress: "0xWallet",
+          provider: {},
+          type: "generic",
+        },
+        ...settings,
+      } as unknown as SKHostConfiguration);
+
+      expect(Result.isFailure(result)).toBe(true);
+      if (Result.isFailure(result)) {
+        expect(result.failure.issues).toEqual([
+          "institutional-wallets-with-external-provider",
+        ]);
+        expect(result.failure.issuePaths).toEqual(["externalProviders"]);
+      }
+    }
+  );
+
   it("returns tagged warnings for recovered Host Configuration values", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",
@@ -296,9 +319,11 @@ describe("decodeHostConfiguration", () => {
 
     expect(Result.isSuccess(result)).toBe(true);
     if (Result.isSuccess(result)) {
-      expect(result.success.configuration.theme).toEqual({
-        color: { background: "#fff" },
+      // The valid leaf still maps into the Appearance.
+      expect(result.success.configuration.appearance.colors.light).toEqual({
+        background: "#fff",
       });
+      expect(result.success.configuration).not.toHaveProperty("theme");
       expect(result.success.warnings).toEqual([
         { _tag: "Theme", issue: "invalid-theme-token" },
       ]);

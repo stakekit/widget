@@ -1,6 +1,6 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Schema } from "effect";
-import { exactZero, sumExact } from "../../finance/exact";
+import { sumExact } from "../../finance/exact";
 import type { Integration } from "../catalog/integration";
 import type { Market } from "../catalog/market";
 import { IntegrationId, type MarketId, type TokenAddress } from "../ids";
@@ -35,11 +35,7 @@ const decodePoolRiskId = Schema.decodeSync(PoolRiskId);
  * shared by several debt positions is counted once.
  */
 type BorrowAccountTotals = {
-  /** Net APY weighted by `netApyWeightUsd`. */
-  readonly netApy: BigNumber;
-  /** Sum of positive account net worth; accounts at or below zero earn nothing. */
-  readonly netApyWeightUsd: BigNumber;
-  readonly netWorthUsd: BigNumber;
+  readonly totalBorrowedUsd: BigNumber;
   readonly totalSuppliedUsd: BigNumber;
 };
 
@@ -51,30 +47,14 @@ export type BorrowPositions = {
 
 const deriveBorrowAccountTotals = (
   accountSnapshots: ReadonlyArray<BorrowAccountSnapshot>
-): BorrowAccountTotals => {
-  const earningNetWorths = accountSnapshots.map((snapshot) =>
-    BigNumber.max(snapshot.netWorthUsd, exactZero())
-  );
-  const netApyWeightUsd = sumExact(earningNetWorths);
-  const weightedNetApy = sumExact(
-    accountSnapshots.map((snapshot, index) =>
-      snapshot.netApy.multipliedBy(earningNetWorths[index] ?? exactZero())
-    )
-  );
-
-  return {
-    netApy: netApyWeightUsd.isZero()
-      ? exactZero()
-      : weightedNetApy.dividedBy(netApyWeightUsd),
-    netApyWeightUsd,
-    netWorthUsd: sumExact(
-      accountSnapshots.map((snapshot) => snapshot.netWorthUsd)
-    ),
-    totalSuppliedUsd: sumExact(
-      accountSnapshots.map((snapshot) => snapshot.totalSuppliedUsd)
-    ),
-  };
-};
+): BorrowAccountTotals => ({
+  totalBorrowedUsd: sumExact(
+    accountSnapshots.map((snapshot) => snapshot.totalBorrowedUsd)
+  ),
+  totalSuppliedUsd: sumExact(
+    accountSnapshots.map((snapshot) => snapshot.totalSuppliedUsd)
+  ),
+});
 
 const getPoolRiskId = ({
   integrationId,

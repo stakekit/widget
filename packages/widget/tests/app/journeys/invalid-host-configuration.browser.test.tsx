@@ -41,4 +41,30 @@ describe("Invalid initial Host Configuration", () => {
 
     await app.unmount();
   });
+
+  it("shows the notice for an external provider with the Finery variant's institutional wallets", async () => {
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        variant: "finery",
+        externalProviders: {
+          type: "generic",
+          provider: {
+            signMessage: async () => "hash",
+            switchChain: async () => {},
+            sendTransaction: async () => "hash",
+          },
+          currentAddress: "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7",
+        },
+      },
+    });
+
+    await expect
+      .element(
+        app.getByTestId("widget-unavailable").getByText("Something went wrong")
+      )
+      .toBeInTheDocument();
+
+    await app.unmount();
+  });
 });

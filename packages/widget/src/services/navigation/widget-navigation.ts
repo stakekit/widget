@@ -10,11 +10,15 @@ export type WidgetNavigationOptions = Readonly<{
   readonly scroll?: "preserve" | "reset";
 }>;
 
+/** Going back: one history entry unless `steps` says more. */
+type WidgetBackOptions = WidgetNavigationOptions &
+  Readonly<{ readonly steps?: number }>;
+
 export type WidgetNavigationCommand =
   | Readonly<
       {
         readonly _tag: "Back";
-      } & WidgetNavigationOptions
+      } & WidgetBackOptions
     >
   | Readonly<
       {
@@ -54,7 +58,7 @@ const runNavigation = (
 
 export type WidgetNavigationService = Readonly<{
   readonly back: (
-    options?: WidgetNavigationOptions
+    options?: WidgetBackOptions
   ) => Effect.Effect<void, WidgetNavigationError>;
   readonly execute: (
     command: WidgetNavigationCommand
@@ -96,7 +100,7 @@ export class WidgetNavigation extends Context.Service<
         const back: WidgetNavigation["Service"]["back"] = (options = {}) =>
           runNavigation(async () => {
             await resetScroll(options, canResetScroll);
-            await router.navigate(-1);
+            await router.navigate(-(options.steps ?? 1));
           });
         const push: WidgetNavigation["Service"]["push"] = (to, options = {}) =>
           runNavigation(async () => {

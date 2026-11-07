@@ -4,15 +4,10 @@ import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
 import type { Token } from "../../../../domain/token/token";
 import {
-  SelectModal,
-  SelectModalItem,
-  SelectModalItemContainer,
-} from "../../../../shared/ui/components/select-modal";
-import {
-  SelectedToken,
-  SelectTokenTrigger,
-} from "../../../../shared/ui/components/selected-token";
-import { Box } from "../../../../shared/ui/primitives/box";
+  useTokenLogo,
+  useTokenLogoResolver,
+} from "../../../../shared/react/token-logo";
+import { SelectSheet, TokenTrigger } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import {
   buildExitReceiveTokensByAddress,
@@ -21,7 +16,8 @@ import {
   projectExitReceiveTokenOption,
   resolveExitReceiveTokenAccessory,
 } from "../../model/exit-receive-token";
-import { TokenOptionRow } from "./token-option-row";
+
+const triggerTestId = "position-details-exit-receive-token";
 
 export const ExitReceiveTokenAccessory = ({
   integration,
@@ -37,6 +33,7 @@ export const ExitReceiveTokenAccessory = ({
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
   const [search, setSearch] = useState("");
+  const resolveLogo = useTokenLogoResolver();
 
   const tokensByAddress = buildExitReceiveTokensByAddress(integration);
   const accessory = resolveExitReceiveTokenAccessory({
@@ -44,14 +41,13 @@ export const ExitReceiveTokenAccessory = ({
     selection,
     tokensByAddress,
   });
+  const token = {
+    ...useTokenLogo(accessory.token),
+    name: accessory.token.symbol,
+  };
 
   if (!selection || accessory._tag === "Static") {
-    return (
-      <SelectedToken
-        testId="position-details-exit-receive-token"
-        token={accessory.token}
-      />
-    );
+    return <TokenTrigger token={token} readOnly testId={triggerTestId} />;
   }
 
   const options = selection.options.map((option) =>
@@ -70,42 +66,43 @@ export const ExitReceiveTokenAccessory = ({
           option.formattedAddress.toLowerCase().includes(normalizedSearch)
       )
     : options;
+  const selected = options.find((option) =>
+    equalExitReceiveTokenAddresses(option.address, selection.selected.address)
+  );
 
   return (
-    <SelectModal
+    <SelectSheet
       title={t("position_details.receive_token.select_title")}
-      onOpen={() => trackEvent("exitReceiveTokenModalOpened")}
-      trigger={
-        <SelectTokenTrigger
-          testId="position-details-exit-receive-token"
-          token={accessory.token}
-        />
-      }
-      onSearch={setSearch}
-      searchValue={search}
-      onClose={() => setSearch("")}
-    >
-      <Box>
-        {filteredOptions.map((option) => (
-          <SelectModalItemContainer key={option.address}>
-            <SelectModalItem
-              selected={equalExitReceiveTokenAddresses(
-                option.address,
-                selection.selected.address
-              )}
-              onItemClick={({ closeModal }) => {
-                onSelect(option.address);
-                closeModal();
-              }}
-            >
-              <TokenOptionRow
-                detail={option.formattedAddress}
-                token={option.token}
-              />
-            </SelectModalItem>
-          </SelectModalItemContainer>
-        ))}
-      </Box>
-    </SelectModal>
+      closeLabel={t("shared.close")}
+      listLabel={t("position_details.receive_token.select_title")}
+      trigger={<TokenTrigger token={token} testId={triggerTestId} />}
+      onOpenChange={(open) => {
+        if (open) trackEvent("exitReceiveTokenModalOpened");
+        else setSearch("");
+      }}
+      search={{
+        value: search,
+        onValueChange: setSearch,
+        label: t("shared.search"),
+        placeholder: t("shared.search_tokens"),
+        clearLabel: t("shared.clear_search"),
+      }}
+      options={filteredOptions.map((option) => ({
+        id: option.address,
+        title: option.symbol,
+        subtitle: option.formattedAddress,
+        logo: { ...resolveLogo(option.token), name: option.symbol },
+      }))}
+      {...(selected ? { selectedId: selected.address } : {})}
+      onSelect={(id) => {
+        const option = options.find((candidate) => candidate.address === id);
+        if (option) onSelect(option.address);
+      }}
+      testIds={{
+        container: "select-modal__container",
+        title: "select-modal__title",
+        search: "select-modal__search-input",
+      }}
+    />
   );
 };

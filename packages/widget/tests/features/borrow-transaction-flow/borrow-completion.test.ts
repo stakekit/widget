@@ -1,6 +1,16 @@
+import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { projectBorrowCompletion } from "../../../src/features/borrow-transaction-flow/model/borrow-completion";
+import { Integration } from "../../../src/domain/borrow/catalog/integration";
+import {
+  getBorrowCompletionLogos,
+  projectBorrowCompletion,
+} from "../../../src/features/borrow-transaction-flow/model/borrow-completion";
 import type { BorrowTransactionFlowReview } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import {
+  borrowEntryFlowDetails,
+  borrowEntryFlowEntry,
+  borrowEntryFlowMarket,
+} from "../../utils/borrow-flow-entry";
 
 type Summary = BorrowTransactionFlowReview["summary"];
 
@@ -46,14 +56,17 @@ const borrowAndSupply: Summary = {
 };
 
 describe("Borrow completion", () => {
-  it("headlines the amount the action moved", () => {
+  it("headlines the amount the action moved and its USD value", () => {
+    // A withdrawal is worth the collateral value it removes.
     expect(projectBorrowCompletion({ summary: withdraw }).headline).toEqual({
       amount: "2",
       symbol: "WETH",
+      usd: "2",
     });
+    // A borrow is worth the loan at its price.
     expect(
       projectBorrowCompletion({ summary: borrowAndSupply }).headline
-    ).toEqual({ amount: "25", symbol: "USDC" });
+    ).toEqual({ amount: "25", symbol: "USDC", usd: "25" });
     expect(
       projectBorrowCompletion({
         summary: {
@@ -64,7 +77,7 @@ describe("Borrow completion", () => {
           riskStatus: "unavailable",
         },
       }).headline
-    ).toEqual({ amount: null, symbol: "WETH" });
+    ).toEqual({ amount: null, symbol: "WETH", usd: null });
   });
 
   it("estimates the position from Review until the position settles", () => {
@@ -150,5 +163,53 @@ describe("Borrow completion", () => {
         summary: { ...borrowAndSupply, collateralFeeAmount: "0" },
       }).details.collateralFee
     ).toBeNull();
+  });
+});
+
+describe("Borrow completion logos", () => {
+  const integration = Schema.decodeSync(Integration)({
+    id: "morpho-blue",
+    metadata: {
+      description: "Morpho lending",
+      externalLink: "https://morpho.org",
+      logoURI: "https://assets.stakek.it/protocols/morpho.svg",
+    },
+    name: "Morpho Blue",
+    networks: ["base"],
+  });
+
+  it("leads a debt action with the loan token and the provider's logo", () => {
+    const logos = getBorrowCompletionLogos(borrowAndSupply, {
+      _tag: "BorrowEntry",
+      details: { ...borrowEntryFlowDetails, integration },
+    });
+
+    expect(logos.token).toMatchObject({
+      name: "USD Coin",
+      network: "base",
+      symbol: "USDC",
+    });
+    expect(logos.providerSrc).toBe(
+      "https://assets.stakek.it/protocols/morpho.svg"
+    );
+  });
+
+  it("leads a collateral action with the market's collateral token", () => {
+    const logos = getBorrowCompletionLogos(
+      { ...withdraw, collateralTokenSymbol: "cbBTC" },
+      borrowEntryFlowEntry
+    );
+
+    expect(logos.token).toMatchObject({ network: "base", symbol: "cbBTC" });
+    expect(logos.providerSrc).toBeNull();
+  });
+
+  it("has no logos for a flow started from a position, which keeps only the market's id", () => {
+    expect(
+      getBorrowCompletionLogos(withdraw, {
+        _tag: "MarketPosition",
+        marketId: borrowEntryFlowMarket.id,
+      })
+    ).toEqual({ providerSrc: null, token: null });
   });
 });

@@ -1,9 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { legacyYieldFixture } from "../fixtures";
-import type {
-  TokenDto,
-  YieldRewardsSummaryResponseDto,
-} from "../generated/legacy-api-types";
+import type { TokenDto } from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
@@ -79,24 +76,6 @@ export const getLegacyApiMock = () => [
       })
     );
   }),
-
-  http.post(
-    legacyApiRoute("/v1/yields/:integrationId/rewards-summary"),
-    async () => {
-      await mockDelay();
-
-      return HttpResponse.json({
-        rewards: {
-          total: "0",
-          last24H: "0",
-          last7D: "0",
-          last30D: "0",
-          lastYear: "0",
-        },
-        token: defaultToken,
-      } satisfies YieldRewardsSummaryResponseDto);
-    }
-  ),
 
   http.post(
     legacyApiRoute("/v1/transactions/verification/:network"),

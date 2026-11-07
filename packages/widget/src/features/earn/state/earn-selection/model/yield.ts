@@ -1,5 +1,7 @@
+import type BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { getMinStakeAmount } from "../../../../../domain/earn/stake";
 import {
   isNonZeroRewardRateYield,
   isYieldVisible,
@@ -9,6 +11,10 @@ import {
   type YieldProviderOrder,
 } from "../../../../../domain/earn/yield-provider-order";
 import { YieldId } from "../../../../../domain/identity/identifiers";
+import {
+  hasActivePositionForYield,
+  type PositionsData,
+} from "../../../../../domain/portfolio/positions";
 import { hostTokenKey } from "../../../../../domain/token/token";
 import { isWalletNetwork } from "../../../../../domain/wallet/network";
 import type { EarnEntry, EarnTokenOption } from "../types";
@@ -35,14 +41,39 @@ export const resolveYieldOptions = ({
 const canShowYieldOption = (yieldOption: EarnYieldWithProvider) =>
   isYieldVisible(yieldOption) && isWalletNetwork(yieldOption.token.network);
 
+/**
+ * Whether the user could deposit into a yield picked for them: it is open to
+ * deposits, needs no identity verification, and its minimum (the subsequent
+ * one for a holder) fits the balance. An unknown balance (no wallet) does not
+ * rule a minimum out.
+ */
+export const isReachableDefaultYield = ({
+  availableAmount,
+  positions,
+  yieldOption,
+}: {
+  readonly availableAmount: BigNumber | null;
+  readonly positions: PositionsData;
+  readonly yieldOption: EarnYieldWithProvider;
+}) =>
+  yieldOption.status.enter &&
+  yieldOption.mechanics.requirements?.kycRequired !== true &&
+  (availableAmount === null ||
+    !getMinStakeAmount(
+      yieldOption,
+      hasActivePositionForYield(positions, yieldOption.id)
+    ).isGreaterThan(availableAmount));
+
 export const resolveYield = ({
   entry,
+  positions,
   previousYield,
   selectedYieldId,
   selectedToken,
   yieldOptions,
 }: {
   entry: EarnEntry;
+  positions: PositionsData;
   previousYield: EarnYieldWithProvider | null;
   selectedYieldId: YieldId | null;
   selectedToken: EarnTokenOption;
@@ -75,6 +106,13 @@ export const resolveYield = ({
     }
   }
 
+  const defaultYield = () =>
+    getDefaultYield({
+      availableAmount: selectedToken.amount,
+      positions,
+      providerOrder: entry.yieldProviderOrder ?? {},
+      yieldOptions,
+    });
   const preferredYieldId = getPreferredYieldId({
     preferredTokenYieldsPerNetwork:
       entry.preferredTokenYieldsPerNetwork ?? null,
@@ -82,7 +120,7 @@ export const resolveYield = ({
   });
   if (preferredYieldId) {
     if (preferredYieldId === "*") {
-      return getDefaultYield(yieldOptions, entry.yieldProviderOrder);
+      return defaultYield();
     }
 
     const decodedPreferredYieldId = Schema.decodeOption(YieldId)(
@@ -96,7 +134,7 @@ export const resolveYield = ({
     }
   }
 
-  return getDefaultYield(yieldOptions, entry.yieldProviderOrder);
+  return defaultYield();
 };
 
 const findYieldById = (
@@ -107,9 +145,9 @@ const findYieldById = (
     (yieldOption) => yieldOption.id.toLowerCase() === yieldId.toLowerCase()
   ) ?? null;
 
-const getDefaultYield = (
+const pickDefaultYield = (
   yieldOptions: ReadonlyArray<EarnYieldWithProvider>,
-  providerOrder: YieldProviderOrder = {}
+  providerOrder: YieldProviderOrder
 ) =>
   getRankedDefaultYield(yieldOptions, providerOrder) ??
   yieldOptions.find(
@@ -119,6 +157,28 @@ const getDefaultYield = (
   yieldOptions.find((yieldOption) => yieldOption.status.enter) ??
   yieldOptions[0] ??
   null;
+
+/**
+ * The yield a user lands on: one they can reach first, then the usual order
+ * (ranked provider, a reward rate, open to deposits).
+ */
+const getDefaultYield = ({
+  availableAmount,
+  positions,
+  providerOrder,
+  yieldOptions,
+}: {
+  readonly availableAmount: BigNumber | null;
+  readonly positions: PositionsData;
+  readonly providerOrder: YieldProviderOrder;
+  readonly yieldOptions: ReadonlyArray<EarnYieldWithProvider>;
+}) =>
+  pickDefaultYield(
+    yieldOptions.filter((yieldOption) =>
+      isReachableDefaultYield({ availableAmount, positions, yieldOption })
+    ),
+    providerOrder
+  ) ?? pickDefaultYield(yieldOptions, providerOrder);
 
 const getPreferredYieldId = ({
   preferredTokenYieldsPerNetwork,

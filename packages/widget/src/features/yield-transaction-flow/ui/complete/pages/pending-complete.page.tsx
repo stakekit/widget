@@ -3,7 +3,7 @@ import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
 import { useYieldFlowIntake } from "../../../react/yield-flow-route";
 import { CompletePage } from "./common.page.tsx";
@@ -31,11 +31,6 @@ export const PendingCompletePage = () => {
     <CompletePage
       amount={amount ? formatTokenAmount(amount, locale, "down") : ""}
       integrationId={integrationData.id}
-      metadata={{
-        logoURI: integrationData.metadata.logoURI,
-        name: integrationData.metadata.name,
-        provider: integrationData.provider,
-      }}
       network={token.symbol}
       pendingActionLabelContext={getPendingActionLabelContext(
         manageFlow.pendingActionType,
@@ -43,8 +38,7 @@ export const PendingCompletePage = () => {
         { confidential: isConfidentialYield(integrationData) }
       )}
       pendingActionType={manageFlow.pendingActionType}
-      providersDetails={manageFlow.providersDetails}
-      token={token}
+      markToken={token}
       yieldType={getExtendedYieldType(integrationData)}
     />
   );

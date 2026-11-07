@@ -94,7 +94,11 @@ export type BorrowFormProjection = {
   readonly projectedDebtUsd: BigNumber;
   readonly projectedHealthFactor: BigNumber | null;
   readonly projectedLtv: BigNumber;
-  readonly riskStatus: "available" | "unavailable";
+  /**
+   * `pending` until the form has the facts to project; `unavailable` once it
+   * has them but the position's figures can't be projected.
+   */
+  readonly riskStatus: "available" | "unavailable" | "pending";
 };
 
 export type BorrowEntryView = {
@@ -407,7 +411,7 @@ export const resolveBorrowEntryView = ({
     projectedDebtUsd: financials.projectedDebtUsd,
     projectedHealthFactor: availableRisk?.projectedHealthFactor ?? null,
     projectedLtv: availableRisk?.projectedLtv ?? exactZero(),
-    riskStatus: risk.status,
+    riskStatus: preparedProjection ? risk.status : "pending",
   };
 
   return {
