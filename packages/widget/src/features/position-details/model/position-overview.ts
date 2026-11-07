@@ -174,11 +174,9 @@ export const getPositionOverviewModel = ({
       positionBalancesByType,
       t,
     }),
-    omittedYieldFacts: [
-      ...(summary.metrics.some((metric) => metric.id === "rate")
-        ? (["reward-rate"] as const)
-        : []),
-    ],
+    omittedYieldFacts: summary.metrics.some((metric) => metric.id === "rate")
+      ? ["reward-rate"]
+      : [],
     summary,
   };
 };
