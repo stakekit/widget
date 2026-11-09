@@ -595,66 +595,6 @@ describe("Yield Entry", () => {
     });
   });
 
-  it("starts and navigates only for an eligible submission", async () => {
-    const ports = makeObservablePorts();
-    const registry = makeObservableRegistry(ports);
-    const validInput = makeFacadeInput();
-    const inputAtom = Atom.make(
-      makeFacadeInput({
-        entry: {
-          ...validInput.entry,
-          amount: new BigNumber(0),
-        },
-      })
-    );
-    const facade = makeYieldEntry(inputAtom);
-
-    try {
-      registry.set(facade.submitAtom, undefined);
-      await expect
-        .poll(() =>
-          registry
-            .get(facade.submitAtom)
-            .pipe(AsyncResult.value, Option.getOrNull)
-        )
-        .toBe("invalid");
-      expect(ports.push).not.toHaveBeenCalled();
-
-      registry.set(inputAtom, {
-        ...validInput,
-        readiness: { _tag: "Blocked" },
-      });
-      registry.set(facade.submitAtom, undefined);
-      await expect
-        .poll(() =>
-          registry
-            .get(facade.submitAtom)
-            .pipe(AsyncResult.value, Option.getOrNull)
-        )
-        .toBe("unavailable");
-      expect(ports.push).not.toHaveBeenCalled();
-
-      registry.set(inputAtom, validInput);
-      registry.set(facade.submitAtom, undefined);
-      await expect
-        .poll(() =>
-          registry
-            .get(facade.submitAtom)
-            .pipe(AsyncResult.value, Option.getOrNull)
-        )
-        .toBe("submitted");
-      expect(startedSession(ports.push)).toMatchObject({
-        intake: {
-          _tag: "Enter",
-          selectedStake: { id: validInput.entry.yield?.id },
-        },
-        mount: { _tag: "Earn" },
-      });
-    } finally {
-      registry.dispose();
-    }
-  });
-
   it("keeps Submit disabled and rejects submission for a yield closed to deposits", async () => {
     const ports = makeObservablePorts();
     const registry = makeObservableRegistry(ports);

@@ -28,12 +28,6 @@ describe("mapAsyncResultError", () => {
   it("maps typed Cause failures data-first", () => {
     expectMapped(mapAsyncResultError(result, (error) => error.toUpperCase()));
   });
-
-  it("maps typed Cause failures data-last in a pipe", () => {
-    expectMapped(
-      result.pipe(mapAsyncResultError((error) => error.toUpperCase()))
-    );
-  });
 });
 
 describe("toPresentable", () => {

@@ -23,11 +23,11 @@ export const widgetStorageKeys = {
   tosAccepted: storageKey("tosAccepted"),
 } as const;
 
-export const StoredPublicKeys = Schema.Record(WalletAddress, Schema.String);
-export type StoredPublicKeys = typeof StoredPublicKeys.Type;
+const StoredPublicKeys = Schema.Record(WalletAddress, Schema.String);
+type StoredPublicKeys = typeof StoredPublicKeys.Type;
 
-export const TosAcknowledged = Schema.Boolean;
-export type TosAcknowledged = typeof TosAcknowledged.Type;
+const TosAcknowledged = Schema.Boolean;
+type TosAcknowledged = typeof TosAcknowledged.Type;
 
 class TosAcknowledgementPersistenceError extends Data.TaggedError(
   "TosAcknowledgementPersistenceError"

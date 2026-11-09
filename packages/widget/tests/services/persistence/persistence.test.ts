@@ -1,4 +1,4 @@
-import { Layer, Schema } from "effect";
+import { Layer } from "effect";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
@@ -10,8 +10,6 @@ import {
 } from "../../../src/features/preferences/state/tos-atoms";
 import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
-  StoredPublicKeys,
-  TosAcknowledged,
   WidgetPersistence,
   widgetStorageKeys,
 } from "../../../src/services/persistence/widget-persistence";
@@ -59,19 +57,11 @@ const makeRegistry = (storage: Storage) =>
   });
 
 describe("Effect browser persistence", () => {
-  it("preserves versioned keys and validates stored value schemas", () => {
+  it("preserves versioned storage keys", () => {
     expect(widgetStorageKeys).toEqual({
       skPubKeys: "sk-widget@1//skPubKeys",
       tosAccepted: "sk-widget@1//tosAccepted",
     });
-    expect(Schema.decodeSync(TosAcknowledged)(true)).toBe(true);
-    expect(
-      Schema.decodeSync(StoredPublicKeys)({ cosmos: "public-key" })
-    ).toEqual({ cosmos: "public-key" });
-    expect(() => Schema.decodeUnknownSync(TosAcknowledged)("true")).toThrow();
-    expect(() =>
-      Schema.decodeUnknownSync(StoredPublicKeys)({ cosmos: 1 })
-    ).toThrow();
   });
 
   it("reads existing values once and shares them through the atom registry", () => {

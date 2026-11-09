@@ -12,11 +12,8 @@ import {
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { formatRewardRateLabel } from "../../yield-presentation/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
-import {
-  positionYieldAtom,
-  toPositionTotalDisplay,
-} from "../state/read-models/position-list-item";
-import type { PositionItem } from "../state/read-models/positions";
+import { type PositionItem, toPositionTotalDisplay } from "../model/positions";
+import { positionYieldAtom } from "../state/read-models/position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {
   const { t } = useTranslation();

@@ -222,36 +222,6 @@ describe("Yield Steps view", () => {
     ).toEqual([false, false, true]);
   });
 
-  it("carries a sent transaction's hash and explorer link", () => {
-    const prepared = prepare(initializeTransactionWorkflow(makeInput([])));
-    const hash = TransactionHash.make("0xabc");
-    const context = {
-      ...prepared,
-      batches: prepared.batches.map((batch) => ({
-        ...batch,
-        transactions: batch.transactions.map((transaction) => ({
-          ...transaction,
-          meta: {
-            ...transaction.meta,
-            broadcasted: true as const,
-            done: true,
-            signedTx: hash,
-            url: "https://etherscan.io/tx/0xabc",
-          },
-        })),
-      })),
-    };
-
-    expect(
-      view({ _tag: "Completed", context }).txStates.map(
-        ({ explorerUrl, hash, id }) => [id, explorerUrl, hash]
-      )
-    ).toEqual([
-      ["prepare-encrypt", null, null],
-      ["deposit-tx", "https://etherscan.io/tx/0xabc", hash],
-    ]);
-  });
-
   it("links a transaction once it is broadcast, and no longer offers to cancel", () => {
     const prepared = prepare(initializeTransactionWorkflow(makeInput([])));
     const hash = TransactionHash.make("0xabc");

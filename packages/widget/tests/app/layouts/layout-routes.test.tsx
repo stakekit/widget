@@ -6,7 +6,10 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { createCompactRoutes } from "../../../src/app/layouts/compact/compact-routes";
-import { createDashboardRoutes } from "../../../src/app/layouts/dashboard/dashboard-routes";
+import {
+  createDashboardRoutes,
+  shouldRegisterDashboardEarnFooterButton,
+} from "../../../src/app/layouts/dashboard/dashboard-routes";
 import type { WidgetLayout } from "../../../src/services/config/widget-config-model";
 import {
   widgetBorrowFlowRoutes,
@@ -103,3 +106,22 @@ describe.each(["Compact", "Dashboard"] as const)(
     });
   }
 );
+
+describe("Dashboard earn footer button", () => {
+  it("registers the earn CTA only for the earn index", () => {
+    expect(shouldRegisterDashboardEarnFooterButton("/")).toBe(true);
+    expect(
+      shouldRegisterDashboardEarnFooterButton("/positions/yield-1/default")
+    ).toBe(false);
+    expect(
+      shouldRegisterDashboardEarnFooterButton(
+        "/positions/yield-1/default/stake"
+      )
+    ).toBe(false);
+    expect(
+      shouldRegisterDashboardEarnFooterButton(
+        "/positions/yield-1/default/stake/review"
+      )
+    ).toBe(false);
+  });
+});

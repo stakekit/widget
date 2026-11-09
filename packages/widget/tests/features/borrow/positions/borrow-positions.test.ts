@@ -123,47 +123,6 @@ describe("borrow position items", () => {
     expect(actions[2]?.pendingContext.type).toBe("disableCollateral");
   });
 
-  it("preserves the exact supplied balance for Withdraw Max", () => {
-    const [position] = deriveItems({
-      integrationAccountSnapshots: [
-        {
-          integration: makeBorrowIntegration(),
-          accountSnapshot: aaveAccountSnapshot,
-        },
-      ],
-      markets: [makeBorrowMarket()],
-    });
-
-    if (!position) {
-      throw new Error("Expected borrow position");
-    }
-
-    const precisePosition = {
-      ...position,
-      balances: {
-        ...position.balances,
-        supply: position.balances.supply.map((balance) => ({
-          ...balance,
-          balance: new BigNumber("0.123456789012345678"),
-          balanceRaw: 123_456_789_012_345_678n,
-        })),
-      },
-    };
-    const withdraw = getBorrowPositionActions({
-      position: precisePosition,
-      t,
-    }).find((action) => action.type === "withdraw");
-
-    expect(withdraw?.pendingContext).toMatchObject({
-      type: "withdraw",
-      tokens: [
-        {
-          availableAmount: new BigNumber("0.123456789012345678"),
-        },
-      ],
-    });
-  });
-
   it("derives borrow position details model from local position data", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [

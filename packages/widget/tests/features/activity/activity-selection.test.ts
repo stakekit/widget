@@ -7,6 +7,10 @@ import type {
   ActivitySelectionTarget,
 } from "../../../src/features/activity/model/activity-action";
 import {
+  type ActivityPageView,
+  projectActivityPageView,
+} from "../../../src/features/activity/model/page-view";
+import {
   ActivityDefaultIntent,
   ActivityExplicitIntent,
   BorrowActivityExplicitIntent,
@@ -16,11 +20,7 @@ import {
   resolveActivitySelection,
   resolveDefaultSelection,
   resolveUnavailableActivitySelection,
-} from "../../../src/features/activity/state/details";
-import {
-  type ActivityPageView,
-  projectActivityPageView,
-} from "../../../src/features/activity/state/page";
+} from "../../../src/features/activity/model/selection";
 import { yieldApiActionFixture } from "../../fixtures";
 
 type ActivityActionsResult = Parameters<
@@ -129,12 +129,6 @@ describe("Activity selection from intent", () => {
         { status: "loading" }
       )
     ).toEqual(borrowTarget("borrow-1"));
-  });
-
-  it("resolves default intent from the feed", () => {
-    expect(
-      resolveActivitySelection(new ActivityDefaultIntent(), readyView())
-    ).toEqual(yieldTarget("newest-action"));
   });
 
   it("hides the feed highlight while default selection is still loading", () => {

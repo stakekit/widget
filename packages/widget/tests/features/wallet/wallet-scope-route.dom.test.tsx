@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
-import { useWalletScopeRoute } from "../../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../../src/features/wallet/ui/wallet-scope-route";
+import { useWalletScopeRoute } from "../../../src/features/wallet/ui/wallet-scope-route-context";
 import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/wallet-state";
@@ -150,32 +150,22 @@ describe("wallet scope route", () => {
     });
   });
 
-  it("keeps the route mounted while the same Wallet Scope Owner is connecting", async () => {
-    const connected = connectedWalletState();
-    const app = await renderRoute(connected, {
-      ...connected,
-      status: "connecting",
-    });
-
-    await act(async () => {
-      app.container
-        .querySelector<HTMLButtonElement>('[data-testid="replace-wallet"]')
-        ?.click();
-    });
-
-    expect(
-      app.container.querySelector('[data-testid="scope"]')?.textContent
-    ).toBe(firstAddress);
-    expect(app.container.querySelector('[data-testid="safe"]')).toBeNull();
-  });
-
-  it("keeps the route mounted when additional addresses refresh", async () => {
-    const app = await renderRoute(
-      connectedWalletState(),
-      connectedWalletState({
+  it.each([
+    {
+      name: "while the same Wallet Scope Owner is connecting",
+      replacement: { ...connectedWalletState(), status: "connecting" },
+    },
+    {
+      name: "when additional addresses refresh",
+      replacement: connectedWalletState({
         additionalAddresses: { binanceBeaconAddress: "bnb-refreshed" },
-      })
-    );
+      }),
+    },
+  ] satisfies ReadonlyArray<{
+    name: string;
+    replacement: NormalizedWalletState;
+  }>)("keeps the route mounted $name", async ({ replacement }) => {
+    const app = await renderRoute(connectedWalletState(), replacement);
 
     await act(async () => {
       app.container

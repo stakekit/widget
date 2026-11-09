@@ -5,12 +5,11 @@ import { describe, expect, it } from "vitest";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../../src/features/activity/model/activity-action";
 import {
-  hasActivityActions,
   needsNextOtherPage,
   projectActivityPageView,
   resolveActivityPageFilter,
   resolveActivityPageWalletStatus,
-} from "../../../src/features/activity/state/page";
+} from "../../../src/features/activity/model/page-view";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 
 type ActivityPageProjectionInput = Parameters<
@@ -238,28 +237,6 @@ describe("Activity page projection", () => {
       showingCount: 2,
       status: "ready",
       total: 3,
-    });
-  });
-
-  it("keeps activity actions without a readable token", () => {
-    const visible = makeActionItem("visible");
-    const hidden = makeUnavailableActionItem("hidden");
-
-    expect(
-      projectActivityPageView({
-        actionsResult: makeActionsResult({
-          actions: [visible, hidden],
-          total: 2,
-        }),
-        filterOptionsResult: filterOptions,
-        selectedFilter: "all",
-        walletStatus: "connected",
-      })
-    ).toMatchObject({
-      actions: [visible, hidden],
-      showingCount: 2,
-      total: 2,
-      status: "ready",
     });
   });
 
@@ -543,34 +520,5 @@ describe("Activity page inputs", () => {
         connectionStatus: "connected",
       })
     ).toBe("connected");
-  });
-});
-
-describe("Activity dashboard split", () => {
-  it("only splits when the feed has actions to inspect", () => {
-    expect(hasActivityActions({ status: "empty" })).toBe(false);
-    expect(hasActivityActions({ status: "loading" })).toBe(false);
-    expect(
-      hasActivityActions({
-        actions: [],
-        filterOptions: [{ count: 0, filter: "all" }],
-        pagination: { status: "complete" },
-        selectedFilter: "all",
-        showingCount: 0,
-        status: "ready",
-        total: 0,
-      })
-    ).toBe(false);
-    expect(
-      hasActivityActions({
-        actions: [makeActionItem("a1")],
-        filterOptions: [{ count: 1, filter: "all" }],
-        pagination: { status: "complete" },
-        selectedFilter: "all",
-        showingCount: 1,
-        status: "ready",
-        total: 1,
-      })
-    ).toBe(true);
   });
 });

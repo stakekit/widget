@@ -97,6 +97,21 @@ describe("Layout decoding", () => {
     });
   }
 
+  it("presents a rejected configuration whose theme also has an unknown token", () => {
+    expect(
+      decodeRejectedConfigurationPresentation({
+        borrowEnabled: true,
+        dashboardVariant: false,
+        // A bundle host's stale token, outside the theme contract.
+        theme: JSON.parse('{"color":{"notAThemeToken":"#ff0000"}}'),
+      })
+    ).toMatchObject({
+      appearance: { colorScheme: "light" },
+      layout: "Compact",
+      variant: "default",
+    });
+  });
+
   it("lets Borrow through when layout selects the Dashboard Layout", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",

@@ -14,9 +14,9 @@ import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../../yield-summary/index";
+import type { PositionItem } from "../../model/positions";
 import {
   currentPortfolioBorrowPositionsAtom,
-  type PositionItem,
   positionsTableDataAtom,
 } from "./positions";
 

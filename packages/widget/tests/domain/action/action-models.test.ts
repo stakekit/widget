@@ -3,7 +3,6 @@ import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema } from "effect";
 
 import {
-  ActionCommand,
   PendingAction,
   TransactionGasEstimateJson,
   YieldAction,
@@ -35,19 +34,6 @@ const action = yieldApiActionDtoFixture({
 });
 
 describe("action application schemas", () => {
-  it("brands command and response identifiers at the application boundary", () => {
-    const command = Schema.decodeSync(ActionCommand)({
-      address: "0xWallet",
-      arguments: { amount: "1" },
-      yieldId: "ethereum-eth-native-staking",
-    });
-    const model = Schema.decodeSync(YieldAction)(action);
-
-    expect(command.yieldId).toBe("ethereum-eth-native-staking");
-    expect(model.id).toBe("action-1");
-    expect(model.transactions[0]?.id).toBe("transaction-1");
-  });
-
   it("strictly rejects a malformed nested transaction", () => {
     expect(() =>
       Schema.decodeSync(YieldAction)({

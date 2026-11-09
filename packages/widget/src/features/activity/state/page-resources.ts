@@ -13,7 +13,6 @@ import { ActionStatus } from "../../../domain/action/rules";
 import { getActivityActionCapabilities } from "../../../domain/activity/action-capabilities";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
-  type ActivityHistoryBatch,
   type ActivityHistoryError,
   ActivityHistoryKey,
   activityCountResourceAtom,
@@ -22,7 +21,6 @@ import {
 import { appRuntime } from "../../../runtime/app-runtime";
 import { mapAsyncResultError } from "../../../shared/effect/async-result";
 import { withPullPageDone } from "../../../shared/effect/pagination";
-import type { ActivityActionItem } from "../model/activity-action";
 import { projectActivityActionItem } from "../model/activity-enrichment";
 import {
   type ActivityFeedFilter,
@@ -31,6 +29,7 @@ import {
   getActivityFilterSources,
   projectActivityFilterOptions,
 } from "../model/filters";
+import type { ActivityActionsBatch } from "../model/page-view";
 import {
   ActivityEnrichmentKey,
   activityEnrichmentFactsAtom,
@@ -68,10 +67,6 @@ export const getActivityHistoryKey = (
 export const activityFilterAtom = Atom.make<ActivityFilter>("all").pipe(
   Atom.withLabel("activityFilterAtom")
 );
-
-type ActivityActionsBatch = Omit<ActivityHistoryBatch, "actions"> & {
-  readonly actions: ReadonlyArray<ActivityActionItem>;
-};
 
 class ActivityActionsError extends Data.TaggedError("ActivityActionsError")<{
   readonly cause: ActivityHistoryError | Cause.NoSuchElementError;

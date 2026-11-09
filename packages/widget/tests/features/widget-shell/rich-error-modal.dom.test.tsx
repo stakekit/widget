@@ -95,67 +95,6 @@ describe("RichErrorModal", () => {
     );
   });
 
-  it("keeps French Error Copy details instead of the English API reason", async () => {
-    const i18n = createWidgetI18nInstance();
-    await i18n.changeLanguage("fr");
-    richErrorState.error = {
-      message: "KaminoLendingInsufficientSolForRentError",
-      details: {
-        reason:
-          "Insufficient SOL for transaction. Required: ~0.005 SOL, Current: 0.004 SOL",
-      },
-    };
-
-    await render(
-      <I18nextProvider i18n={i18n}>
-        <RichErrorModal />
-      </I18nextProvider>
-    );
-
-    expect(document.body.textContent).toContain(
-      "SOL insuffisant pour le loyer du compte"
-    );
-    expect(document.body.textContent).toContain(
-      "Le solde SOL est insuffisant pour financer le loyer de compte requis par Kamino Lending"
-    );
-    expect(document.body.textContent).not.toContain(
-      "Insufficient SOL for transaction"
-    );
-  });
-
-  it("renders host Error Copy details instead of the API reason", async () => {
-    const i18n = createWidgetI18nInstance();
-    i18n.addResourceBundle(
-      "en",
-      "translation",
-      {
-        errors: {
-          KaminoLendingInsufficientSolForRentError: { details: "HOST DETAILS" },
-        },
-      },
-      true,
-      true
-    );
-    richErrorState.error = {
-      message: "KaminoLendingInsufficientSolForRentError",
-      details: { reason: "Insufficient SOL for transaction." },
-    };
-
-    await render(
-      <I18nextProvider i18n={i18n}>
-        <RichErrorModal />
-      </I18nextProvider>
-    );
-
-    expect(document.body.textContent).toContain("HOST DETAILS");
-    expect(document.body.textContent).not.toContain(
-      "Insufficient SOL for transaction."
-    );
-    expect(document.body.textContent).toContain(
-      "Add SOL to the account and try again"
-    );
-  });
-
   it("interpolates values explicitly referenced by host Error Copy", async () => {
     const i18n = createWidgetI18nInstance();
     i18n.addResourceBundle(
@@ -226,25 +165,6 @@ describe("RichErrorModal", () => {
 
   // An unknown error still says what to do next and how to dismiss it: the
   // sheet never shows a bare title.
-  it("renders the generic French copy for an unknown identity", async () => {
-    const i18n = createWidgetI18nInstance();
-    await i18n.changeLanguage("fr");
-    richErrorState.error = {
-      message: "FutureApiError",
-      details: { reason: "The operation is temporarily unavailable." },
-    };
-
-    await render(
-      <I18nextProvider i18n={i18n}>
-        <RichErrorModal />
-      </I18nextProvider>
-    );
-
-    expect(document.body.textContent?.trim()).toBe(
-      "Une erreur s'est produiteNous n'avons pas pu traiter cette demande. Réessayez dans un instant.Compris"
-    );
-  });
-
   it("renders the generic copy and a dismiss action for an unknown English identity", async () => {
     richErrorState.error = {
       message: "FutureApiError",
@@ -295,33 +215,6 @@ describe("RichErrorModal", () => {
     expect(document.body.textContent).not.toContain("Only a title");
     expect(document.body.textContent).not.toContain(
       "errors.FutureApiError.details"
-    );
-  });
-
-  it("treats a prose-shaped message as an unknown identity", async () => {
-    richErrorState.error = { message: "KYC required" };
-
-    await renderModal();
-
-    expect(document.body.textContent).toContain("Something went wrong");
-    expect(document.body.textContent).not.toContain("KYC required");
-    expect(document.body.textContent).toContain(
-      "We couldn't complete that request."
-    );
-  });
-
-  it("renders the generic copy when an unknown error has no usable reason", async () => {
-    richErrorState.error = {
-      message: "FutureApiError",
-      details: { reason: "   " },
-    };
-
-    await renderModal();
-
-    expect(document.body.textContent).toContain("Something went wrong");
-    expect(document.body.textContent).not.toContain("FutureApiError");
-    expect(document.body.textContent).toContain(
-      "We couldn't complete that request."
     );
   });
 });

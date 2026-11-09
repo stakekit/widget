@@ -5,7 +5,6 @@ import {
   type PlaygroundConfig,
 } from "../../playground/playground-config";
 import { toWidgetProps } from "../../playground/widget-props";
-import { darkTheme, lightTheme } from "../../src/index.package";
 
 const storedConnection = {
   apiKey: "stored-key",
@@ -54,16 +53,6 @@ describe("Playground widget props", () => {
     expect(
       propsFor({ colorScheme: "light", variant: "default" }).appearance
     ).toEqual({ colorScheme: "light" });
-  });
-
-  it("mounts a legacy theme sample only when one is chosen", () => {
-    expect(propsFor({ legacyTheme: "none" })).not.toHaveProperty("theme");
-    expect(propsFor({ legacyTheme: "lightTheme" }).theme).toBe(lightTheme);
-    expect(propsFor({ legacyTheme: "darkTheme" }).theme).toBe(darkTheme);
-    expect(
-      propsFor({ legacyTheme: "customized" }).theme?.color
-        ?.primaryButtonBackground
-    ).toBe("#E8590C");
   });
 
   it("mounts Borrow only with the dashboard layout", () => {

@@ -20,7 +20,7 @@ import { useWidgetPresentation } from "../../../../shared/react/widget-presentat
 import { Box, ListRow, Skeleton, TokenAvatar } from "../../../../ui/index";
 import { useWidgetLinkProps } from "../../../navigation/index";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
-import type { PositionItem } from "../../state/read-models/positions";
+import type { PositionItem } from "../../model/positions";
 
 export type EarnPositionListItemDetails = {
   readonly hasHiddenBalance: boolean;

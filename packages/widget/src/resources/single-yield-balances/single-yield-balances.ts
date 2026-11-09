@@ -21,7 +21,7 @@ export class SingleYieldBalancesKey extends Data.TaggedClass(
   readonly yieldId: YieldId;
 }> {}
 
-export class SingleYieldBalancesError extends Data.TaggedError(
+class SingleYieldBalancesError extends Data.TaggedError(
   "SingleYieldBalancesError"
 )<{
   readonly cause: ApiRequestError | ResponseDecodeError;

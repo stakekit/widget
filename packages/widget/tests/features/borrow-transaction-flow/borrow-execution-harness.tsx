@@ -13,7 +13,6 @@ import {
   useNavigate,
 } from "react-router";
 import { base } from "viem/chains";
-import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
 
 import { Action as BorrowAction } from "../../../src/domain/borrow/action";
@@ -64,7 +63,6 @@ import { borrowOperationsLayer } from "../../utils/services/borrow-operations";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestWallet } from "../../utils/services/wallet-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
-import { render } from "../../utils/test-utils";
 import { makeTransactionWorkflowTestKit } from "../../utils/transaction-workflow-test-kit";
 import type { WalletOperations } from "../../utils/wallet-operations";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
@@ -317,6 +315,9 @@ export const makeBorrowApi = ({
   };
 };
 
+/** The fake Borrow API a flow test drives. */
+export type BorrowApi = ReturnType<typeof makeBorrowApi>;
+
 const ExecutionProbe = () => {
   const execution = useBorrowExecution();
 
@@ -393,23 +394,30 @@ const HistoryControls = () => {
   );
 };
 
-export const renderExecution = (
-  borrow: ReturnType<typeof makeBorrowApi>,
-  options: {
-    readonly action?: BorrowAction;
-    readonly autoStart?: boolean;
-    readonly completeElement?: ReactNode;
-    readonly historyControls?: boolean;
-    readonly initialEntries?: ReadonlyArray<string>;
-    readonly initialIndex?: number;
-    readonly initialPath?: string;
-    readonly reviewElement?: ReactNode;
-    readonly session?: BorrowFlowSession;
-    readonly stepsElement?: ReactNode;
-    readonly wallet?: WalletOperations;
-    /** The connector the flow's wallet state shows, such as the host's. */
-    readonly walletConnector?: Connector;
-  } = {}
+export type ExecutionOptions = {
+  readonly action?: BorrowAction;
+  readonly autoStart?: boolean;
+  readonly completeElement?: ReactNode;
+  readonly historyControls?: boolean;
+  readonly initialEntries?: ReadonlyArray<string>;
+  readonly initialIndex?: number;
+  readonly initialPath?: string;
+  readonly reviewElement?: ReactNode;
+  readonly session?: BorrowFlowSession;
+  readonly stepsElement?: ReactNode;
+  readonly wallet?: WalletOperations;
+  /** The connector the flow's wallet state shows, such as the host's. */
+  readonly walletConnector?: Connector;
+};
+
+/**
+ * The Borrow flow's routes from Review to Complete on the given API and
+ * wallet, ready to render; Review starts the Execution through the
+ * `start-execution` button unless `reviewElement` replaces it.
+ */
+export const makeExecutionApp = (
+  borrow: BorrowApi,
+  options: ExecutionOptions = {}
 ) =>
   Effect.gen(function* () {
     const navigation: {
@@ -555,33 +563,17 @@ export const renderExecution = (
       }
     );
 
-    const app = yield* Effect.acquireRelease(
-      Effect.promise(() =>
-        render(
-          <I18nextProvider i18n={i18nInstance}>
-            <RegistryProvider
-              initialValues={[
-                applicationRuntimeInitInitialValue(hostConfiguration),
-                [appRuntime.layer, appLayer],
-                [walletRuntime.layer, walletLayer],
-              ]}
-            >
-              <RouterProvider router={router} />
-            </RegistryProvider>
-          </I18nextProvider>
-        )
-      ),
-      (app) => Effect.promise(() => app.unmount())
+    return (
+      <I18nextProvider i18n={i18nInstance}>
+        <RegistryProvider
+          initialValues={[
+            applicationRuntimeInitInitialValue(hostConfiguration),
+            [appRuntime.layer, appLayer],
+            [walletRuntime.layer, walletLayer],
+          ]}
+        >
+          <RouterProvider router={router} />
+        </RegistryProvider>
+      </I18nextProvider>
     );
-
-    if (
-      options.autoStart !== false &&
-      options.initialPath !== "/borrow/complete"
-    ) {
-      yield* Effect.promise(() =>
-        userEvent.click(app.getByTestId("start-execution"))
-      );
-    }
-
-    return app;
   });

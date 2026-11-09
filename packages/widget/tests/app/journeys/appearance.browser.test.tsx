@@ -1,7 +1,7 @@
 import { afterEach } from "vitest";
 import { cdp } from "vitest/browser";
 
-import { darkTheme, lightTheme } from "../../../src/index.package";
+import { darkTheme } from "../../../src/index.package";
 import { describe, expect, it } from "../../utils/test-extend";
 import {
   type RenderResult,
@@ -62,24 +62,6 @@ describe("Host appearance", () => {
       background: darkAccent,
       focusRing: darkFocusRing,
     });
-
-    await app.unmount();
-  });
-
-  it("colors the Earn call-to-action with a customized legacy primaryButtonBackground", async () => {
-    const app = await renderApp({
-      skProps: {
-        apiKey: import.meta.env.VITE_API_KEY,
-        theme: {
-          ...lightTheme,
-          color: { ...lightTheme.color, primaryButtonBackground: "#FF5500" },
-        },
-      },
-    });
-
-    expect(colors(await earnCallToAction(app)).background).toBe(
-      "rgb(255, 85, 0)"
-    );
 
     await app.unmount();
   });

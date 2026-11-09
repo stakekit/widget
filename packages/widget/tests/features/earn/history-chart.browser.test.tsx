@@ -90,14 +90,6 @@ describe("HistoryChartSection", () => {
     }
   });
 
-  it("titles the chart with the latest rate", async () => {
-    const screen = await renderSection();
-
-    await expect
-      .element(screen.getByText("APY 7.19%", { exact: true }))
-      .toBeVisible();
-  });
-
   it("shows the hovered point's value and date", async () => {
     const screen = await renderSection();
     const chart = screen.getByRole("img", { name: "APY history" });

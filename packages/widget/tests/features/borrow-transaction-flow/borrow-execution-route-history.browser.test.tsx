@@ -1,51 +1,17 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Deferred, Effect, Schema } from "effect";
+import { Deferred, Effect } from "effect";
 import { userEvent } from "vitest/browser";
 
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { BorrowStepsPage } from "../../../src/features/borrow-transaction-flow/ui/steps";
 import {
   decodedAction,
   makeBorrowApi,
-  renderExecution,
   transactionHash,
   wallet,
 } from "./borrow-execution-harness";
+import { renderExecution } from "./render-borrow-execution";
 
 describe("borrow execution flow: route history", () => {
-  it.live("routes an incomplete direct completion page back to Borrow", () =>
-    Effect.gen(function* () {
-      const app = yield* renderExecution(makeBorrowApi({}), {
-        initialPath: "/borrow/complete",
-        wallet: {
-          ...wallet,
-          signTransaction: () => Effect.never,
-        },
-      });
-
-      yield* Effect.promise(() =>
-        expect.element(app.getByText("Borrow home")).toBeInTheDocument()
-      );
-    })
-  );
-
-  it.live("returns to Borrow when Transaction Workflow setup fails", () =>
-    Effect.gen(function* () {
-      const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
-        "0x0000000000000000000000000000000000000002"
-      );
-      const app = yield* renderExecution(makeBorrowApi({}), {
-        action: decodedAction({
-          address: otherAddress,
-        }),
-      });
-
-      yield* Effect.promise(() =>
-        expect.element(app.getByText("Borrow home")).toBeInTheDocument()
-      );
-    })
-  );
-
   it.live("asks before history navigation leaves a signing Steps", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(makeBorrowApi({}), {

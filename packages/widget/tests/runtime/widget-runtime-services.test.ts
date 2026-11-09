@@ -3,16 +3,14 @@ import { Cause, Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 
-import { applicationRoutes } from "../../src/app/routes/application-routes";
-import type { SKAppProps } from "../../src/public-api/react-types";
 import { appRuntime } from "../../src/runtime/app-runtime";
 import { applicationBaseRuntime } from "../../src/runtime/application-base-runtime";
-import { applicationRuntimeInitAtom } from "../../src/runtime/application-runtime-init";
 import { walletConnectorSourceRuntime } from "../../src/runtime/wallet-connector-source-runtime";
 import { BorrowResourceSource } from "../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletConnectorSource } from "../../src/services/wallet/wallet-connector-source";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const firstTrackingProbeAtom = appRuntime.atom(
   TrackingService.use((tracking) => Effect.succeed(tracking))
@@ -41,27 +39,15 @@ const makeConfig = (
   variant: "default" as const,
 });
 
-const runtimeInitialValues = (hostConfiguration: SKAppProps) =>
-  [
-    [
-      applicationRuntimeInitAtom,
-      {
-        hostConfiguration,
-        isLedgerLive: false,
-        routes: applicationRoutes,
-      },
-    ],
-  ] as const;
-
 describe("widget runtime service graph", () => {
   it("uses a registry-scoped Wallet Connector Source layer override", () => {
     const walletListFactory = vi.fn(() => []);
     const defaultRegistry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(makeConfig(vi.fn())),
+      initialValues: [applicationRuntimeInitInitialValue(makeConfig(vi.fn()))],
     });
     const customRegistry = AtomRegistry.make({
       initialValues: [
-        ...runtimeInitialValues(makeConfig(vi.fn())),
+        applicationRuntimeInitInitialValue(makeConfig(vi.fn())),
         [
           walletConnectorSourceRuntime.layer,
           WalletConnectorSource.layer(walletListFactory),
@@ -106,7 +92,7 @@ describe("widget runtime service graph", () => {
     const makeRegistry = () =>
       AtomRegistry.make({
         initialValues: [
-          ...runtimeInitialValues(makeConfig(vi.fn())),
+          applicationRuntimeInitInitialValue(makeConfig(vi.fn())),
           [walletConnectorSourceRuntime.layer, connectorSourceLayer],
         ],
       });
@@ -145,7 +131,7 @@ describe("widget runtime service graph", () => {
         const initialConfig = makeConfig(firstTrack);
         const replacementConfig = makeConfig(replacementTrack);
         const registry = AtomRegistry.make({
-          initialValues: runtimeInitialValues(initialConfig),
+          initialValues: [applicationRuntimeInitInitialValue(initialConfig)],
         });
 
         try {
@@ -187,10 +173,14 @@ describe("widget runtime service graph", () => {
         const firstTrack = vi.fn();
         const secondTrack = vi.fn();
         const firstRegistry = AtomRegistry.make({
-          initialValues: runtimeInitialValues(makeConfig(firstTrack)),
+          initialValues: [
+            applicationRuntimeInitInitialValue(makeConfig(firstTrack)),
+          ],
         });
         const secondRegistry = AtomRegistry.make({
-          initialValues: runtimeInitialValues(makeConfig(secondTrack)),
+          initialValues: [
+            applicationRuntimeInitInitialValue(makeConfig(secondTrack)),
+          ],
         });
 
         try {
@@ -242,30 +232,6 @@ describe("widget runtime service graph", () => {
       })
   );
 
-  it("creates fresh lifecycle-sensitive services after a registry remount", () => {
-    const config = makeConfig(vi.fn());
-    const firstRegistry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(config),
-    });
-    const firstService = AsyncResult.getOrThrow(
-      firstRegistry.get(firstTrackingProbeAtom)
-    );
-
-    firstRegistry.dispose();
-
-    const remountedRegistry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(config),
-    });
-
-    try {
-      expect(
-        AsyncResult.getOrThrow(remountedRegistry.get(firstTrackingProbeAtom))
-      ).not.toBe(firstService);
-    } finally {
-      remountedRegistry.dispose();
-    }
-  });
-
   it("keeps the runtime available when a Borrow operation is unavailable", () => {
     const config = {
       apiKey: "test-api-key",
@@ -276,7 +242,7 @@ describe("widget runtime service graph", () => {
       variant: "default" as const,
     };
     const registry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(config),
+      initialValues: [applicationRuntimeInitInitialValue(config)],
     });
 
     try {

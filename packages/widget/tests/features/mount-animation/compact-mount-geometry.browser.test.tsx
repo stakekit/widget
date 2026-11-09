@@ -13,6 +13,18 @@ const animationDeadlineMs = 4_000;
 const nextAnimationFrame = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
+const containerHeight = (container: HTMLElement) =>
+  container
+    .querySelector<HTMLElement>("[data-rk='widget-container']")
+    ?.getBoundingClientRect().height ?? -1;
+
+/** How many sampled heights sit between closed and fully open. */
+const intermediateHeights = (heights: ReadonlyArray<number>) => {
+  const fullHeight = Math.max(...heights);
+  return heights.filter((height) => height > 2 && height < fullHeight - 1)
+    .length;
+};
+
 afterEach(() => {
   MotionGlobalConfig.skipAnimations = true;
 });
@@ -137,6 +149,11 @@ describe("compact mount geometry", () => {
             index === 0 || height + 1 >= (containerHeights[index - 1] ?? 0)
         )
       ).toBe(true);
+      // The reveal gate replaced the transition's fixed delay, not the
+      // transition: the reveal is still an animation, so it passes through
+      // intermediate heights. The gate's timing is pinned in
+      // `mount-reveal-gate.test.ts`.
+      expect(intermediateHeights(containerHeights)).toBeGreaterThan(2);
       expect(
         Math.max(...skeletonHeights) - Math.min(...skeletonHeights)
       ).toBeLessThan(1);
@@ -154,6 +171,34 @@ describe("compact mount geometry", () => {
       await app.unmount();
     });
   }
+
+  it("reveals in one step when the host disables the init layout animation", async () => {
+    MotionGlobalConfig.skipAnimations = false;
+    let complete = false;
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        disableInitLayoutAnimation: true,
+        onMountAnimationComplete: () => {
+          complete = true;
+        },
+        variant: "default",
+      },
+    });
+    const startedAt = performance.now();
+    const heights = [containerHeight(app.container)];
+
+    while (!complete && performance.now() - startedAt < animationDeadlineMs) {
+      await nextAnimationFrame();
+      heights.push(containerHeight(app.container));
+    }
+    await app.unmount();
+
+    expect(complete).toBe(true);
+    expect(Math.max(...heights)).toBeGreaterThan(300);
+    // The height reaches its target in one step rather than ramping.
+    expect(intermediateHeights(heights)).toBe(0);
+  });
 
   it("starts a default remount with a clean translation generation", async () => {
     const generationCopy = "PREMIERE GENERATION";

@@ -204,15 +204,6 @@ describe("getYieldFacts", () => {
     ).toEqual(["performance-fee"]);
   });
 
-  it("lists no users fact, whatever the yield's statistics", () => {
-    const yieldDto = {
-      ...makeYield(),
-      statistics: { uniqueUsers: 1200 },
-    } as EarnYieldWithProvider;
-
-    expect(factOf(yieldDto, "users")).toBeUndefined();
-  });
-
   it("describes redemption and warmup of a batched vault by its batches", () => {
     const dailyPath = (cutoffTime: string) => ({
       cadence: "daily_cutoff",

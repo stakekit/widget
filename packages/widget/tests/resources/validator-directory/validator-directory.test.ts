@@ -1,11 +1,10 @@
-import { Cause, Effect, Layer, Option } from "effect";
+import { Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
 
 import {
   preferredValidatorsResourceAtom,
   ValidatorByAddressKey,
-  ValidatorsError,
   ValidatorsKey,
   validatorByAddressAtom,
   validatorsPullAtom,
@@ -319,39 +318,5 @@ describe("Validator resources", () => {
     expect(resolve("cosmosvaloper1AbCd", "cosmosvaloper1aBcD")).toBe(
       "cosmosvaloper1aBcD"
     );
-  });
-
-  it("publishes a typed failure and refreshes the exact discovery", () => {
-    let offline = true;
-    const requestError = new ApiRequestError({
-      cause: new Error("offline"),
-      failure: { _tag: "Unreachable" },
-      operation: "validator-directory",
-    });
-    const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
-      offline
-        ? Effect.fail(requestError)
-        : Effect.succeed({
-            items: [],
-            limit: request.limit,
-            offset: request.offset,
-            total: 0,
-          })
-    );
-    const registry = makeRegistry(listValidators);
-    const resource = validatorsPullAtom(new ValidatorsKey({ yieldId }));
-    const failed = registry.get(resource);
-
-    expect(AsyncResult.isFailure(failed)).toBe(true);
-    if (!AsyncResult.isFailure(failed)) throw new Error("Expected failure");
-    expect(
-      Option.getOrThrow(Cause.findErrorOption(failed.cause))
-    ).toBeInstanceOf(ValidatorsError);
-
-    const attemptsBeforeRetry = listValidators.mock.calls.length;
-    offline = false;
-    registry.refresh(resource);
-    expect(getValidators(registry.get(resource))).toEqual([]);
-    expect(listValidators).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
   });
 });

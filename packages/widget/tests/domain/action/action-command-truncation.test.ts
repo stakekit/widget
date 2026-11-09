@@ -6,12 +6,11 @@ import {
   getPendingActionStateKey,
   preparePendingActionCommand,
 } from "../../../src/domain/action/action-command";
-import { YieldAction } from "../../../src/domain/earn/action-models";
 import { EarnBalance } from "../../../src/domain/earn/balance";
+import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { projectYieldEntry } from "../../../src/features/yield-entry/model/yield-entry";
 import {
-  yieldApiActionDtoFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
@@ -21,136 +20,51 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 
-describe("executable token amount truncation", () => {
-  it("decodes Yield Action amounts from number and string wire forms", () => {
-    const fromNumber = Schema.decodeSync(YieldAction)(
-      yieldApiActionDtoFixture({
-        amount: 1.5,
-        amountRaw: 1_500_000,
-        amountUsd: 3,
-      })
-    );
-    const fromString = Schema.decodeSync(YieldAction)(
-      yieldApiActionDtoFixture({
-        amount: "1.5",
-        amountRaw: "1500000",
-        amountUsd: "3",
-      })
-    );
+// Enter amounts project against a 6-decimal token with a balance of 2.
+const projectEnter = (
+  amount: string,
+  selectedYield: EarnYield = yieldApiYieldFixture()
+) =>
+  projectYieldEntry({
+    input: {
+      amountInitialization: "PreserveIntent",
+      availableAmount: new BigNumber("2"),
+      connected: true,
+      entry: {
+        amount: new BigNumber(amount),
+        selectedProviderOption: null,
+        token: { ...selectedYield.token, decimals: 6 },
+        tronResource: null,
+        useMaxAmount: false,
+        validators: new Map(),
+        yield: selectedYield,
+      },
+      externalProviders: false,
+      hasNoYields: false,
+      isKycBlocking: false,
+      isKycLoading: false,
+      isLedgerAccountPlaceholder: false,
+      readiness: { _tag: "Ready" },
+      selectedYieldHasActivePosition: false,
+      providers: null,
+      validateAmount: true,
+      wallet: {
+        additionalAddresses: null,
+        address,
+        isLedgerLive: false,
+      },
+    },
+    submitted: false,
+  });
 
-    expect(fromNumber.amount?.isEqualTo(fromString.amount ?? 0)).toBe(true);
-    expect(fromNumber.amountRaw).toBe(fromString.amountRaw);
-    expect(fromNumber.amountUsd?.isEqualTo(fromString.amountUsd ?? 0)).toBe(
+describe("executable token amount truncation", () => {
+  it("truncates excess Enter precision and rejects dust that becomes zero", () => {
+    expect(
+      projectEnter("1.123456789").preparation?.command.arguments?.amount
+    ).toBe("1.123456");
+    expect(projectEnter("0.0000001").validation.errors.stakeAmountIsZero).toBe(
       true
     );
-  });
-
-  it("keeps Enter amounts already within token precision", () => {
-    const selectedYield = yieldApiYieldFixture();
-    const view = projectYieldEntry({
-      input: {
-        amountInitialization: "PreserveIntent",
-        availableAmount: new BigNumber("1.5"),
-        connected: true,
-        entry: {
-          amount: new BigNumber("1.5"),
-          selectedProviderOption: null,
-          token: { ...selectedYield.token, decimals: 6 },
-          tronResource: null,
-          useMaxAmount: false,
-          validators: new Map(),
-          yield: selectedYield,
-        },
-        externalProviders: false,
-        hasNoYields: false,
-        isKycBlocking: false,
-        isKycLoading: false,
-        isLedgerAccountPlaceholder: false,
-        readiness: { _tag: "Ready" },
-        selectedYieldHasActivePosition: false,
-        providers: null,
-        validateAmount: true,
-        wallet: {
-          additionalAddresses: null,
-          address,
-          isLedgerLive: false,
-        },
-      },
-      submitted: false,
-    });
-
-    expect(view.preparation?.command.arguments?.amount).toBe("1.5");
-    expect(view.validation.hasErrors).toBe(false);
-  });
-
-  it("truncates excess Enter precision and rejects dust that becomes zero", () => {
-    const selectedYield = yieldApiYieldFixture();
-    const token = { ...selectedYield.token, decimals: 6 };
-    const truncated = projectYieldEntry({
-      input: {
-        amountInitialization: "PreserveIntent",
-        availableAmount: new BigNumber("2"),
-        connected: true,
-        entry: {
-          amount: new BigNumber("1.123456789"),
-          selectedProviderOption: null,
-          token,
-          tronResource: null,
-          useMaxAmount: false,
-          validators: new Map(),
-          yield: selectedYield,
-        },
-        externalProviders: false,
-        hasNoYields: false,
-        isKycBlocking: false,
-        isKycLoading: false,
-        isLedgerAccountPlaceholder: false,
-        readiness: { _tag: "Ready" },
-        selectedYieldHasActivePosition: false,
-        providers: null,
-        validateAmount: true,
-        wallet: {
-          additionalAddresses: null,
-          address,
-          isLedgerLive: false,
-        },
-      },
-      submitted: false,
-    });
-    const dust = projectYieldEntry({
-      input: {
-        amountInitialization: "PreserveIntent",
-        availableAmount: new BigNumber("2"),
-        connected: true,
-        entry: {
-          amount: new BigNumber("0.0000001"),
-          selectedProviderOption: null,
-          token,
-          tronResource: null,
-          useMaxAmount: false,
-          validators: new Map(),
-          yield: selectedYield,
-        },
-        externalProviders: false,
-        hasNoYields: false,
-        isKycBlocking: false,
-        isKycLoading: false,
-        isLedgerAccountPlaceholder: false,
-        readiness: { _tag: "Ready" },
-        selectedYieldHasActivePosition: false,
-        providers: null,
-        validateAmount: true,
-        wallet: {
-          additionalAddresses: null,
-          address,
-          isLedgerLive: false,
-        },
-      },
-      submitted: false,
-    });
-
-    expect(truncated.preparation?.command.arguments?.amount).toBe("1.123456");
-    expect(dust.validation.errors.stakeAmountIsZero).toBe(true);
   });
 
   it("rejects Enter amounts that fall below the minimum after truncation", () => {
@@ -173,37 +87,7 @@ describe("executable token amount truncation", () => {
         },
       },
     });
-    const view = projectYieldEntry({
-      input: {
-        amountInitialization: "PreserveIntent",
-        availableAmount: new BigNumber("2"),
-        connected: true,
-        entry: {
-          amount: new BigNumber("1.123456789"),
-          selectedProviderOption: null,
-          token: { ...selectedYield.token, decimals: 6 },
-          tronResource: null,
-          useMaxAmount: false,
-          validators: new Map(),
-          yield: selectedYield,
-        },
-        externalProviders: false,
-        hasNoYields: false,
-        isKycBlocking: false,
-        isKycLoading: false,
-        isLedgerAccountPlaceholder: false,
-        readiness: { _tag: "Ready" },
-        selectedYieldHasActivePosition: false,
-        providers: null,
-        validateAmount: true,
-        wallet: {
-          additionalAddresses: null,
-          address,
-          isLedgerLive: false,
-        },
-      },
-      submitted: false,
-    });
+    const view = projectEnter("1.123456789", selectedYield);
 
     expect(view.preparation?.command.arguments?.amount).toBe("1.123456");
     expect(view.validation.errors.stakeAmountLessThanMin).toBe(true);

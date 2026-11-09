@@ -1,13 +1,11 @@
 import { Schema } from "effect";
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   equalTokens,
-  type HostTokenKey,
   hostTokenKey,
   sameTokenContract,
   Token,
-  type TokenString,
   tokenString,
 } from "../../../src/domain/token/token";
 
@@ -64,10 +62,5 @@ describe("Token", () => {
       hostTokenKey(token())
     );
     expect(hostTokenKey({ network: "ethereum" })).toBe("ethereum-");
-  });
-
-  it("keeps internal token identities out of host-keyed lookups", () => {
-    expectTypeOf<TokenString>().not.toMatchTypeOf<HostTokenKey>();
-    expectTypeOf<HostTokenKey>().not.toMatchTypeOf<TokenString>();
   });
 });

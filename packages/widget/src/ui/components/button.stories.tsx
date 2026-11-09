@@ -22,15 +22,6 @@ const variants = [
 ] as const;
 const sizes = ["sm", "md", "lg", "cta"] as const;
 
-export const Primary: Story = { args: { variant: "primary" } };
-export const Secondary: Story = { args: { variant: "secondary" } };
-export const Ghost: Story = { args: { variant: "ghost" } };
-/** `soft` is the accent on its tint, for an action on a filled surface. */
-export const Soft: Story = { args: { variant: "soft", children: "Claim" } };
-export const Danger: Story = {
-  args: { variant: "danger", children: "Unstake" },
-};
-
 /**
  * `dangerOutline` draws a secondary button's label and edge in the danger
  * color, for a destructive action beside a secondary one.
@@ -93,7 +84,8 @@ export const SharedRow: Story = {
 };
 
 /**
- * Every variant at every size. Corners follow the size, so a small button
+ * Every variant at every size. `soft` is the accent on its tint, for an
+ * action on a filled surface. Corners follow the size, so a small button
  * keeps the larger ones' curve rather than reading as a pill.
  */
 export const VariantsAndSizes: Story = {

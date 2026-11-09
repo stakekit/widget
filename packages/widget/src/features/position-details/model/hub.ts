@@ -96,7 +96,7 @@ export const resolvePositionDetailsActionCapabilities = (val: {
   canExit: positionDetailsExitHasContent(val),
 });
 
-export const positionDetailsPendingHasContent = (val: {
+const positionDetailsPendingHasContent = (val: {
   pendingActions?: readonly unknown[] | null;
 }) => !!val.pendingActions?.length;
 

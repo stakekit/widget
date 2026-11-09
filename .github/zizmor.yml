@@ -1,0 +1,8 @@
+# zizmor configuration (`mise run lint:workflows`).
+rules:
+  # Prefers `uses: $/...` over `uses: ./...` for same-repository actions.
+  # actionlint does not parse `$/` yet, and it validates the inputs of `./`
+  # actions against their action.yml. Every job checks out before its first
+  # local action and no step rewrites `.github/actions`.
+  self-repository:
+    disable: true

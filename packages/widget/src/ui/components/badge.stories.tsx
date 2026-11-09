@@ -23,8 +23,6 @@ const tones = [
   "info",
 ] as const;
 
-export const Soft: Story = { args: { variant: "soft" } };
-export const Outline: Story = { args: { variant: "outline" } };
 export const WithIcon: Story = {
   args: { tone: "success", icon: "PreferredIcon", children: "Preferred" },
 };

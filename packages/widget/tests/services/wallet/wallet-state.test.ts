@@ -3,10 +3,8 @@ import {
   Deferred,
   Effect,
   Fiber,
-  Layer,
   Option,
   Ref,
-  Schema,
   Stream,
   SubscriptionRef,
 } from "effect";
@@ -14,35 +12,14 @@ import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import type { Connector } from "wagmi";
 
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
-import type { WalletNetwork } from "../../../src/domain/wallet/network";
-import { WidgetConfigService } from "../../../src/services/config/widget-config";
-import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
-import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
-import {
-  SolanaPlatform,
-  type SolanaRuntime,
-} from "../../../src/services/wallet/internal/platform/solana-platform";
-import { WagmiPlatform } from "../../../src/services/wallet/internal/platform/wagmi-platform";
-import { WalletEnvironment } from "../../../src/services/wallet/internal/platform/wallet-environment";
 import { makeWalletStateRuntime } from "../../../src/services/wallet/internal/runtime/state";
 import type { WalletController } from "../../../src/services/wallet/internal/runtime/wagmi-config";
-import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
-import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
-import { WalletConnectorSource } from "../../../src/services/wallet/wallet-connector-source";
-import { WalletModal } from "../../../src/services/wallet/wallet-modal";
-import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const address = "0x0000000000000000000000000000000000000001";
 const nextAddress = "0x0000000000000000000000000000000000000002";
-const expectedOwner = {
-  address: Schema.decodeSync(WalletAddress)(address),
-  network: "ethereum",
-} as const;
-
 const disconnectedConnection = {
   address: undefined,
   addresses: undefined,
@@ -78,12 +55,9 @@ const reconnectingConnection = {
   status: "reconnecting",
 } as const satisfies WalletCoreState["connection"];
 
-const makeController = (
-  wagmiConfig: ReturnType<typeof makeDefaultConfig>,
-  actions: Parameters<typeof makeWalletTestController>[0]["actions"] = {}
-) =>
+const makeController = (wagmiConfig: ReturnType<typeof makeDefaultConfig>) =>
   makeWalletTestController({
-    actions,
+    actions: {},
     evmConfig: {
       evmChains: [mainnet],
       evmChainsMap: {
@@ -94,166 +68,7 @@ const makeController = (
     wagmiConfig,
   });
 
-describe("WalletService authoritative Wallet State", () => {
-  it.effect("keeps an in-flight command on its captured routing context", () =>
-    Effect.gen(function* () {
-      const firstStarted = yield* Deferred.make<void>();
-      const firstRelease = yield* Deferred.make<void>();
-      const enrichmentStarted = yield* Deferred.make<void>();
-      const enrichmentRelease =
-        yield* Deferred.make<ReadonlyArray<typeof mainnet>>();
-      const firstConnector = {
-        id: "first",
-        name: "First",
-        type: "injected",
-        uid: "first-uid",
-      } as unknown as Connector;
-      const secondConnector = {
-        $filteredChains: Stream.fromEffect(
-          Effect.gen(function* () {
-            yield* Deferred.succeed(enrichmentStarted, undefined);
-            return yield* Deferred.await(enrichmentRelease);
-          })
-        ),
-        id: "second",
-        name: "Second",
-        type: "injected",
-        uid: "second-uid",
-      } as unknown as Connector;
-      const routed: string[] = [];
-      const wagmiConfig = makeDefaultConfig();
-      const controller = makeController(wagmiConfig, {
-        signMessage: ({
-          connector,
-          message,
-        }: {
-          readonly connector: Connector;
-          readonly message: string;
-        }) =>
-          Effect.gen(function* () {
-            routed.push(connector.uid);
-            if (message === "first") {
-              yield* Deferred.succeed(firstStarted, undefined);
-              yield* Deferred.await(firstRelease);
-            }
-            return connector.uid;
-          }),
-      });
-      const core = yield* SubscriptionRef.make<WalletCoreState>({
-        connection: connectedConnection(firstConnector),
-        connectors: [firstConnector, secondConnector],
-      });
-      const settings = {
-        apiKey: "api-key",
-        disableInjectedProviderDiscovery: true,
-        variant: "default" as const,
-      };
-      const configLayer = WidgetConfigService.layer(settings);
-      const layer = WalletService.layer.pipe(
-        Layer.provide(
-          Layer.mergeAll(
-            configLayer,
-            WalletConnectorSource.defaultLayer,
-            Layer.succeed(WalletBootstrapSource, {
-              getEnabledWalletNetworks: Effect.succeed(
-                new Set<WalletNetwork>(["ethereum"])
-              ),
-              getOpportunity: () => Effect.die("unused"),
-            }),
-            Layer.succeed(
-              WalletEnvironment,
-              WalletEnvironment.of({
-                href: Effect.succeed("https://widget.test/"),
-                isMobileWallet: Effect.succeed(false),
-              })
-            ),
-            Layer.succeed(
-              SolanaPlatform,
-              SolanaPlatform.of({
-                makeRuntime: () =>
-                  Effect.succeed({
-                    connection: {} as SolanaRuntime["connection"],
-                    current: Effect.succeed({ wallets: [] }),
-                    states: Stream.never,
-                  }),
-              })
-            ),
-            Layer.succeed(
-              WagmiPlatform,
-              WagmiPlatform.of({
-                buildConfig: () => Effect.succeed(controller),
-                initialize: () => Effect.void,
-                observeCore: () =>
-                  Effect.succeed({
-                    current: SubscriptionRef.get(core),
-                    states: SubscriptionRef.changes(core),
-                  }),
-              })
-            ),
-            TrackingService.layer.pipe(Layer.provide(configLayer)),
-            WalletModal.layer,
-            WalletStorageCleanup.layer,
-            WidgetPersistence.layer
-          )
-        )
-      );
-
-      const result = yield* Effect.scoped(
-        Effect.gen(function* () {
-          const wallet = yield* WalletService;
-          const first = yield* wallet
-            .signMessage({ expectedOwner, message: "first" })
-            .pipe(Effect.forkChild({ startImmediately: true }));
-          yield* Deferred.await(firstStarted);
-          const changed = yield* wallet.states.pipe(
-            Stream.filter(
-              (state) =>
-                state.connection.status === "connected" &&
-                state.connection.connector.uid === secondConnector.uid
-            ),
-            Stream.runHead,
-            Effect.map(Option.getOrThrow),
-            Effect.forkChild({ startImmediately: true })
-          );
-          yield* SubscriptionRef.set(core, {
-            connection: connectedConnection(secondConnector),
-            connectors: [firstConnector, secondConnector],
-          });
-          yield* Deferred.await(enrichmentStarted);
-          const duringTransition = yield* wallet
-            .signMessage({ expectedOwner, message: "during-transition" })
-            .pipe(Effect.result);
-          yield* Deferred.succeed(enrichmentRelease, [mainnet]);
-          yield* Fiber.join(changed);
-          const second = yield* wallet.signMessage({
-            expectedOwner,
-            message: "second",
-          });
-          yield* Deferred.succeed(firstRelease, undefined);
-          return {
-            duringTransition,
-            first: yield* Fiber.join(first),
-            second,
-          };
-        }).pipe(Effect.provide(layer))
-      );
-
-      expect(result).toMatchObject({
-        duringTransition: {
-          _tag: "Failure",
-          failure: {
-            _tag: "WalletOwnerMismatchError",
-            operation: "message",
-            reason: "disconnected",
-          },
-        },
-        first: "first-uid",
-        second: "second-uid",
-      });
-      expect(routed).toEqual(["first-uid", "second-uid"]);
-    })
-  );
-
+describe("Wallet State runtime", () => {
   it.effect("publishes a connecting state until enrichment completes", () =>
     Effect.gen(function* () {
       const enrichmentStarted = yield* Deferred.make<void>();

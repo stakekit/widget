@@ -9,6 +9,7 @@ import { getConfig } from "./vite.config.base.ts";
 
 const browserTestPattern = "tests/**/*.browser.test.{ts,tsx}";
 const domTestPattern = "tests/**/*.dom.test.{ts,tsx}";
+const isolatedTestPattern = "tests/**/*.isolated.test.{ts,tsx}";
 const unitTestPatterns = ["tests/**/*.test.{ts,tsx}"] as const;
 const inlineTestDependencies = [
   /@ledgerhq/,
@@ -17,18 +18,27 @@ const inlineTestDependencies = [
   /@tronweb3/,
   /@zondax/,
 ];
+const nodeTest = {
+  environment: "node",
+  testTimeout: 5_000,
+  server: { deps: { inline: inlineTestDependencies } },
+} as const;
 const testCacheDir = (project: "browser" | "dom" | "unit") =>
   path.resolve(import.meta.dirname, "..", "node_modules", ".vite", project);
 
 // Browser tests and Design System stories render in the same headless Chromium.
-const chromium = {
-  enabled: true,
-  screenshotFailures: false,
-  provider: playwright(),
-  instances: [{ browser: "chromium" }],
-  viewport: { width: 800, height: 900 },
-  headless: true,
-} satisfies BrowserConfigOptions;
+// Each project takes fresh options: Vitest names a project's browser instance
+// in place, so a shared `instances` array makes every later project a
+// duplicate "browser (chromium)" whenever more than one project runs.
+const chromium = () =>
+  ({
+    enabled: true,
+    screenshotFailures: false,
+    provider: playwright(),
+    instances: [{ browser: "chromium" }],
+    viewport: { width: 800, height: 900 },
+    headless: true,
+  }) satisfies BrowserConfigOptions;
 
 export default defineConfig(
   getConfig(
@@ -49,19 +59,32 @@ export default defineConfig(
       test: {
         projects: [
           {
+            // Node test files share workers, so the modules they have in
+            // common load once per worker instead of once per file. A module
+            // mock would leak into later files, so
+            // widget/no-module-mock-in-shared-test keeps module mocks in
+            // *.isolated.test.* files, which get a fresh worker each.
             extends: true,
             cacheDir: testCacheDir("unit"),
             test: {
+              ...nodeTest,
               name: "unit",
-              environment: "node",
-              exclude: [browserTestPattern, domTestPattern],
+              isolate: false,
+              exclude: [
+                browserTestPattern,
+                domTestPattern,
+                isolatedTestPattern,
+              ],
               include: [...unitTestPatterns],
-              testTimeout: 5_000,
-              server: {
-                deps: {
-                  inline: inlineTestDependencies,
-                },
-              },
+            },
+          },
+          {
+            extends: true,
+            cacheDir: testCacheDir("unit"),
+            test: {
+              ...nodeTest,
+              name: "unit-isolated",
+              include: [isolatedTestPattern],
             },
           },
           {
@@ -105,7 +128,7 @@ export default defineConfig(
               ],
               testTimeout: 20_000,
               browser: {
-                ...chromium,
+                ...chromium(),
                 // MSW intercepts fetch and XMLHttpRequest in the page; images,
                 // fonts, scripts and frames bypass it. Resolving every host but
                 // the Vitest server to nothing keeps those off the real network.
@@ -142,7 +165,7 @@ export default defineConfig(
                   "tests/utils/setup.storybook.ts"
                 ),
               ],
-              browser: chromium,
+              browser: chromium(),
             },
           },
         ],

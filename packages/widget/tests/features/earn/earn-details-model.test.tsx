@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 
@@ -89,36 +88,11 @@ describe("getEarnDetailsModel", () => {
       }),
     });
 
-    expect(model.metricCards.length).toBeGreaterThan(0);
-    expect(model.metricCards.length).toBeLessThanOrEqual(3);
-    expect(model.omittedYieldFacts).toHaveLength(model.metricCards.length);
-    expect(model.omittedYieldFacts).not.toContain("website");
-    expect(model.omittedYieldFacts[0]).toBe("reward-rate");
-  });
-
-  it("lists a DeFi yield's fees with its facts, never as metric cards", () => {
-    const model = getEarnDetailsModel({
-      locale: "en",
-      t: t as TFunction,
-      yieldDto: makeYield({
-        mechanics: {
-          ...yieldApiYieldFixture().mechanics,
-          fee: {
-            deposit: new BigNumber("0.5"),
-            management: new BigNumber("2"),
-            performance: new BigNumber("20"),
-            withdrawal: new BigNumber("0.1"),
-          },
-          type: "vault",
-        },
-      }),
-    });
-
-    expect(model.omittedYieldFacts.filter((id) => id.endsWith("-fee"))).toEqual(
-      []
-    );
-    expect(model.metricCards.map((card) => card.label)).not.toEqual(
-      expect.arrayContaining([expect.stringMatching(/fee$/)])
-    );
+    expect(model.metricCards).toHaveLength(3);
+    expect(model.omittedYieldFacts).toEqual([
+      "reward-rate",
+      "cooldown",
+      "withdrawal",
+    ]);
   });
 });

@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   getPendingActionStateKey,
-  PendingActionStateKey,
   preparePendingActionCommand,
 } from "../../../src/domain/action/action-command";
 import { EarnBalance } from "../../../src/domain/earn/balance";
@@ -91,91 +90,6 @@ const balance = Schema.decodeSync(EarnBalance)(
 const pendingAction = balance.pendingActions[0]!;
 
 describe("Position Details action model", () => {
-  it("constructs opaque Pending Action state keys through the domain factory", () => {
-    const key = getPendingActionStateKey({
-      actionType: pendingAction.type,
-      balanceType: balance.type,
-      passthrough: pendingAction.passthrough,
-      token: balance.token,
-    });
-
-    expect(Schema.is(PendingActionStateKey)(key)).toBe(true);
-    expect(Schema.is(PendingActionStateKey)("")).toBe(false);
-    expect(key).toContain(pendingAction.passthrough);
-  });
-
-  it("defaults an eligible Sky Savings Rate exit to USDS", () => {
-    const baseYield = yieldApiYieldDtoFixture();
-    const usds = {
-      ...baseYield.token,
-      address: "0x1111111111111111111111111111111111111111",
-      name: "USDS",
-      symbol: "USDS",
-    };
-    const usdc = {
-      ...baseYield.token,
-      address: "0x2222222222222222222222222222222222222222",
-      name: "USD Coin",
-      symbol: "USDC",
-    };
-    const skySavingsRate = yieldApiYieldFixture({
-      id: "sky-savings-rate-from-decoded-fields",
-      inputTokens: [usds, usdc],
-      mechanics: {
-        ...baseYield.mechanics,
-        arguments: {
-          ...baseYield.mechanics.arguments,
-          exit: {
-            fields: [
-              {
-                label: "Output Token",
-                name: "outputToken",
-                options: [
-                  "0x1111111111111111111111111111111111111111",
-                  "0x2222222222222222222222222222222222222222",
-                ],
-                required: false,
-                type: "string",
-              },
-            ],
-          },
-        },
-      },
-      outputToken: {
-        ...baseYield.token,
-        address: "0x3333333333333333333333333333333333333333",
-        name: "Savings USDS",
-        symbol: "sUSDS",
-      },
-      providerId: "sky",
-      token: usds,
-      tokens: [usds],
-    });
-
-    expect(
-      resolvePositionDetailsExitReceiveTokenSelection({
-        integration: skySavingsRate,
-        selectedAddress: null,
-      })
-    ).toEqual({
-      confidentialExit: null,
-      options: [
-        {
-          address: "0x1111111111111111111111111111111111111111",
-          symbol: "USDS",
-        },
-        {
-          address: "0x2222222222222222222222222222222222222222",
-          symbol: "USDC",
-        },
-      ],
-      selected: {
-        address: "0x1111111111111111111111111111111111111111",
-        symbol: "USDS",
-      },
-    });
-  });
-
   it("offers the private batched and instant public exits of a confidential vault", () => {
     const { cUsdc, depositBatcher, redeemBatcher, usdc } = confidentialFixture;
     const baseMechanics = yieldApiYieldDtoFixture().mechanics;
@@ -273,63 +187,6 @@ describe("Position Details action model", () => {
       ).toBeNull();
     }
   );
-
-  it("uses every receive token advertised by Sky Savings Rate", () => {
-    const baseYield = yieldApiYieldDtoFixture();
-    const usds = {
-      ...baseYield.token,
-      address: "0x1111111111111111111111111111111111111111",
-      name: "USDS",
-      symbol: "USDS",
-    };
-    const incompleteSkySavingsRate = yieldApiYieldFixture({
-      inputTokens: [usds],
-      mechanics: {
-        ...baseYield.mechanics,
-        arguments: {
-          ...baseYield.mechanics.arguments,
-          exit: {
-            fields: [
-              {
-                label: "Output Token",
-                name: "outputToken",
-                options: ["0x1111111111111111111111111111111111111111"],
-                type: "string",
-              },
-            ],
-          },
-        },
-      },
-      outputToken: {
-        ...baseYield.token,
-        address: "0x3333333333333333333333333333333333333333",
-        name: "Savings USDS",
-        symbol: "sUSDS",
-      },
-      providerId: "sky",
-      token: usds,
-      tokens: [usds],
-    });
-
-    expect(
-      resolvePositionDetailsExitReceiveTokenSelection({
-        integration: incompleteSkySavingsRate,
-        selectedAddress: null,
-      })
-    ).toEqual({
-      confidentialExit: null,
-      options: [
-        {
-          address: "0x1111111111111111111111111111111111111111",
-          symbol: "USDS",
-        },
-      ],
-      selected: {
-        address: "0x1111111111111111111111111111111111111111",
-        symbol: "USDS",
-      },
-    });
-  });
 
   it("closes only the pending-action attempt acknowledged by Started", () => {
     const first = openPendingActionModal({

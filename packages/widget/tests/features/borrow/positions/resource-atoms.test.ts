@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
@@ -78,74 +77,6 @@ const borrowUnavailable = (operation: string) =>
   });
 
 describe("Borrow Positions resource atoms", () => {
-  it("fetches, decodes, and derives borrow positions through atom resources", () => {
-    const integration = makeBorrowIntegration();
-    const market = makeBorrowMarket();
-    const position = makeBorrowAccountSnapshot();
-    const registry = makeRegistry({
-      getIntegrations: Effect.succeed([integration]),
-      getMarkets: () =>
-        Effect.succeed({
-          items: [market],
-          limit: 100,
-          offset: 0,
-          total: 1,
-        }),
-      getPositionData: () => Effect.succeed([{ integration, position }]),
-    });
-
-    const result = registry.get(
-      borrowPositionsAtom(
-        new BorrowPositionsKey({
-          scope: walletScope,
-        })
-      )
-    );
-
-    expect(AsyncResult.isSuccess(result)).toBe(true);
-    if (AsyncResult.isSuccess(result)) {
-      expect(result.value.items[0]?.id).toBe(market.id);
-      expect(result.value.items[0]?.balances.debt?.balance).toEqual(
-        new BigNumber(400)
-      );
-    }
-  });
-
-  it("resolves current borrow positions from wallet scope inside the atom runtime", () => {
-    const integration = makeBorrowIntegration();
-    const market = makeBorrowMarket();
-    const position = makeBorrowAccountSnapshot();
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          borrowResourceSourceLayer({
-            getIntegrations: Effect.succeed([integration]),
-            getMarkets: () =>
-              Effect.succeed({
-                items: [market],
-                limit: 100,
-                offset: 0,
-                total: 1,
-              }),
-            getPositionData: () => Effect.succeed([{ integration, position }]),
-          })
-        ),
-        Atom.initialValue(walletScopeAtom, walletScope),
-        applicationRuntimeInitInitialValue({
-          apiKey: "api-key",
-          borrowEnabled: true,
-          dashboardVariant: true,
-          variant: "default",
-        }),
-      ],
-    });
-
-    expect(
-      AsyncResult.getOrThrow(registry.get(currentBorrowPositionsAtom))[0]?.id
-    ).toBe(market.id);
-  });
-
   it("keeps positions in markets outside the enabled catalog visible", () => {
     const integration = makeBorrowIntegration();
     const market = makeBorrowMarket();

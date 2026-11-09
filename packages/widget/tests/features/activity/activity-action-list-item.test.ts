@@ -2,7 +2,6 @@ import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import {
-  getActivityActionCapabilities,
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
 } from "../../../src/domain/activity/action-capabilities";
@@ -67,23 +66,6 @@ const makeBorrowItem = ({
 });
 
 describe("Activity action list item projection", () => {
-  it.each([
-    ["SUCCESS", true],
-    ["FAILED", true],
-    ["WAITING_FOR_NEXT", true],
-    ["CREATED", false],
-    ["PROCESSING", false],
-    ["CANCELED", false],
-    ["STALE", false],
-  ] as const)(
-    "projects the %s Activity capabilities",
-    (status, visibleInFeed) => {
-      expect(getActivityActionCapabilities(status)).toEqual({
-        visibleInFeed,
-      });
-    }
-  );
-
   it("projects domain and time values without React", () => {
     const yieldData = yieldApiYieldFixture();
     const projection = projectActivityActionListItem({
@@ -704,18 +686,12 @@ describe("Activity action list item projection", () => {
     });
   });
 
-  it.each([
-    "VOTE",
-    "REVOKE",
-    "VOTE_LOCKED",
-    "REVOTE",
-    "MIGRATE",
-    "MERGE",
-    "VERIFY_WITHDRAW_CREDENTIALS",
-    "DELEGATE",
-  ] as const)("projects %s as neutral", (type) => {
+  it("projects a governance action as neutral", () => {
     const projection = projectActivityActionListItem({
-      action: makeItem(yieldApiActionFixture({ type }), yieldApiYieldFixture()),
+      action: makeItem(
+        yieldApiActionFixture({ type: "VOTE" }),
+        yieldApiYieldFixture()
+      ),
       locale: "en-US",
       presentationTime: null,
     });

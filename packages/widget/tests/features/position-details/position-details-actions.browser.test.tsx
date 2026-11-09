@@ -1,28 +1,13 @@
 import { userEvent } from "vitest/browser";
 
-import { shouldRegisterDashboardEarnFooterButton } from "../../../src/app/layouts/dashboard/dashboard-routes";
 import { setup } from "../../app/journeys/trust-incentive-apy/setup";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 
-describe("Position details actions", () => {
-  it("registers the earn CTA only for the earn index", () => {
-    expect(shouldRegisterDashboardEarnFooterButton("/")).toBe(true);
-    expect(
-      shouldRegisterDashboardEarnFooterButton("/positions/yield-1/default")
-    ).toBe(false);
-    expect(
-      shouldRegisterDashboardEarnFooterButton(
-        "/positions/yield-1/default/stake"
-      )
-    ).toBe(false);
-    expect(
-      shouldRegisterDashboardEarnFooterButton(
-        "/positions/yield-1/default/stake/review"
-      )
-    ).toBe(false);
-  });
+/** More than the position, and the wallet, hold. */
+const moreThanHeld = "2000000";
 
+describe("Position details actions", () => {
   it("opens on the exit and switches to entering further without changing the URL", async ({
     worker,
   }) => {
@@ -62,6 +47,13 @@ describe("Position details actions", () => {
       .element(app.getByTestId("position-details-enter-amount"))
       .toBeInTheDocument();
     expect(window.location.pathname).toBe(path);
+
+    // Depositing more than the wallet holds says so.
+    await userEvent.click(app.getByRole("textbox", { name: "Amount" }));
+    await userEvent.keyboard(moreThanHeld);
+    await expect
+      .element(app.getByText("Insufficient balance"))
+      .toBeInTheDocument();
 
     await app.unmount();
   });
@@ -132,6 +124,13 @@ describe("Position details actions", () => {
     expect(
       app.getByRole("tablist", { name: "Position actions" }).query()
     ).toBeNull();
+
+    // Exiting more than the position holds says so.
+    await userEvent.click(app.getByRole("textbox", { name: "Amount" }));
+    await userEvent.keyboard(moreThanHeld);
+    await expect
+      .element(app.getByText("Insufficient balance"))
+      .toBeInTheDocument();
 
     await app.unmount();
   });

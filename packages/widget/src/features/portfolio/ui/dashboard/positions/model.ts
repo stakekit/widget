@@ -12,7 +12,7 @@ import {
   formatUsd,
 } from "../../../../../shared/lib/number-format";
 import { riskBandValueTone } from "../../../../borrow-transaction-flow/index";
-import { getBorrowPositionRiskBand } from "../../../state/read-models/positions";
+import { getBorrowPositionRiskBand } from "../../../model/positions";
 
 /** A borrow row's risk status: shown in the caution and danger bands only. */
 type BorrowRiskStatus = {

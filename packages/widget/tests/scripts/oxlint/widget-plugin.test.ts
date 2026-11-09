@@ -330,8 +330,33 @@ run("no-blanket-disable", {
     "x() // oxlint-disable-line",
     "// eslint-disable no-console",
     "{/* eslint-disable-next-line */}",
+    "// oxlint-disable-next-line no-console - single dash\nx()",
+    "{/* oxlint-disable-next-line no-console */}",
   ],
   outOfScope: [{ code: "/* oxlint-disable */", filename: generated }],
+});
+
+run("no-module-mock-in-shared-test", {
+  filename: testFile,
+  message:
+    "Node test files share workers, so a module mock leaks into later files. Inject the dependency through a Layer, or move the mock to a *.isolated.test.* file.",
+  valid: [
+    "const send = vi.fn()",
+    'vi.spyOn(client, "request")',
+    "const rpc = vi.hoisted(() => ({ send: vi.fn() }))",
+    'mock("viem")',
+  ],
+  invalid: [
+    'vi.mock("viem")',
+    'vi.mock("viem", async (importOriginal) => ({ ...(await importOriginal()) }))',
+    'vi.doMock("../../src/services/zama/encrypt-worker")',
+  ],
+  outOfScope: [
+    `${widget}tests/services/zama-service.isolated.test.ts`,
+    `${widget}tests/features/earn/page.dom.test.tsx`,
+    `${widget}tests/features/earn/page.browser.test.tsx`,
+    source,
+  ],
 });
 
 tester.run(

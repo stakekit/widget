@@ -9,7 +9,12 @@ import {
   makeBorrowMarketDto,
   makeBorrowSupplyBalanceDto,
 } from "../../../fixtures/borrow";
-import { borrowApiRoute, legacyApiRoute } from "../../../mocks/api-routes";
+import {
+  borrowApiRoute,
+  legacyApiRoute,
+  yieldApiRoute,
+} from "../../../mocks/api-routes";
+import { mockDelay } from "../../../mocks/delay";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
 import {
   describe,
@@ -120,28 +125,6 @@ describe("Borrow Entry flow details", () => {
     await page.viewport(800, 900);
   });
 
-  it("shows placeholders and says why when the position can't be projected", async ({
-    worker,
-  }) => {
-    // The account's collateral total disagrees with its collateral balances.
-    const app = await renderBorrowEntryAt900(worker, {
-      ...existingPosition,
-      totalCollateralUsd: "1500",
-    });
-
-    await expect
-      .element(
-        app.getByText(
-          "We couldn't compute the LTV and health factor from this position's data."
-        )
-      )
-      .toBeInTheDocument();
-    await expect.element(app.getByText("Health factor")).toBeInTheDocument();
-
-    await app.unmount();
-    await page.viewport(800, 900);
-  });
-
   it("keeps describing the started market after the catalog drops it", async ({
     worker,
   }) => {
@@ -232,6 +215,211 @@ describe("Borrow Entry flow details", () => {
     await expect
       .element(app.getByText("Select a borrow market"))
       .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+});
+
+const wbtcCollateral = makeBorrowCollateralTokenDto({
+  liquidationThreshold: "0.8",
+  maxLtv: "0.75",
+  priceUsd: "60000",
+  supplyRate: "0.015",
+  token: {
+    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    decimals: 8,
+    name: "Wrapped Bitcoin",
+    symbol: "WBTC",
+  },
+});
+
+const daiMarket = makeBorrowMarketDto({
+  availableLiquidity: "375000",
+  availableLiquidityRaw: "375000000000000000000000",
+  borrowRate: "0.04",
+  id: "aave-v3-ethereum-dai",
+  loanToken: {
+    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    decimals: 18,
+    name: "Dai Stablecoin",
+    symbol: "DAI",
+  },
+  poolAddress: "0x0000000000000000000000000000000000000002",
+  totalBorrow: "125000",
+  totalBorrowRaw: "125000000000000000000000",
+  totalSupply: "500000",
+  totalSupplyRaw: "500000000000000000000000",
+  utilizationRate: "0.25",
+});
+
+describe("Borrow dashboard tab", () => {
+  it("opens the native Borrow entry with its collateral and market sheets", async ({
+    worker,
+  }) => {
+    const tokenBalanceRequestSignals: AbortSignal[] = [];
+    const yieldBalanceRequestSignals: AbortSignal[] = [];
+
+    worker.use(
+      http.get(
+        legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+        async ({ request }) => {
+          tokenBalanceRequestSignals.push(request.signal);
+          await mockDelay();
+          return HttpResponse.json([]);
+        }
+      ),
+      http.post(yieldApiRoute("/v1/yields/balances"), async ({ request }) => {
+        yieldBalanceRequestSignals.push(request.signal);
+        await mockDelay();
+        return HttpResponse.json({ items: [], errors: [] });
+      }),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json(emptyPosition)
+      ),
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () => {
+        const items = [
+          makeBorrowMarketDto({
+            collateralTokens: [makeBorrowCollateralTokenDto(), wbtcCollateral],
+          }),
+          daiMarket,
+        ];
+        return HttpResponse.json({
+          items,
+          limit: 100,
+          offset: 0,
+          total: items.length,
+        });
+      })
+    );
+
+    const app = await renderApp({
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Borrow"));
+
+    await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+    await expect.element(app.getByText("Market stats")).toBeInTheDocument();
+    // Without amounts the LTV row stays, as a placeholder.
+    await expect.element(app.getByText("LTV ratio")).toBeInTheDocument();
+    await expect
+      .poll(() => tokenBalanceRequestSignals.length)
+      .toBeGreaterThanOrEqual(1);
+    await expect
+      .poll(() => yieldBalanceRequestSignals.length)
+      .toBeGreaterThanOrEqual(1);
+
+    await app.getByTestId("borrow-collateral-select").click();
+    await expect
+      .element(app.getByText("Select collateral"))
+      .toBeInTheDocument();
+    await app
+      .getByTestId("select-modal__container")
+      .getByTestId(
+        "borrow-collateral-select__item_0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+      )
+      .click();
+    await expect.element(app.getByText("WBTC / USDC")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-collateral-select"))
+      .toMatchTextContent("WBTC");
+
+    await app.getByTestId("borrow-market-select").click();
+    await expect
+      .element(app.getByText("Select borrow market"))
+      .toBeInTheDocument();
+    await app
+      .getByTestId("select-modal__container")
+      .getByTestId("borrow-market-select__item_aave-v3-ethereum-dai")
+      .click();
+    await expect.element(app.getByText("WETH / DAI")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-market-select"))
+      .toMatchTextContent("DAI");
+
+    await userEvent.click(app.getByTestId("number-input").last());
+    await userEvent.keyboard("1");
+    await expect
+      .element(app.getByText("Amount exceeds wallet balance."))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("number-input").last())
+      .toHaveAttribute("aria-invalid", "true");
+    expect(app.container.textContent).not.toContain("3M");
+    expect(tokenBalanceRequestSignals.every((signal) => !signal.aborted)).toBe(
+      true
+    );
+    expect(yieldBalanceRequestSignals.every((signal) => !signal.aborted)).toBe(
+      true
+    );
+
+    await app.unmount();
+  });
+
+  it("opens a supply-only action for collateral alone and reviews a borrow", async ({
+    worker,
+  }) => {
+    worker.use(
+      http.get(
+        legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+        () =>
+          HttpResponse.json([
+            {
+              token: {
+                ...makeBorrowCollateralTokenDto().token,
+                network: "ethereum",
+              },
+              amount: "1",
+              availableYields: [],
+            },
+          ])
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json(emptyPosition)
+      ),
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({ items: [market], limit: 100, offset: 0, total: 1 })
+      )
+    );
+
+    const app = await renderApp({
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Borrow"));
+    await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+
+    await userEvent.click(app.getByTestId("number-input").last());
+    await userEvent.keyboard("0.5");
+    // Collateral alone opens a supply-only action.
+    await expect
+      .element(app.getByRole("button", { name: "Review supply" }))
+      .toBeEnabled();
+
+    await userEvent.click(app.getByTestId("number-input").first());
+    await userEvent.keyboard("25");
+    await app.getByRole("button", { name: "Review borrow" }).click();
+
+    await expect.element(app.getByText("Borrow USDC")).toBeInTheDocument();
+    await expect.element(app.getByText("25 USDC")).toBeInTheDocument();
+    await expect.element(app.getByText("0.5 WETH")).toBeInTheDocument();
+    expect(app.container.textContent).not.toContain("aave-v3-ethereum-usdc");
 
     await app.unmount();
   });

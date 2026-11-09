@@ -2,97 +2,21 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 
 import type { SKHostConfiguration } from "../../../src/public-api/react-types";
-import type {
-  HostProfile,
-  WidgetVariant,
+import {
+  variantHostProfiles,
+  type WidgetVariant,
 } from "../../../src/services/config/host-profile";
 import {
   selectWidgetBootstrapSnapshot,
   WidgetConfigService,
 } from "../../../src/services/config/widget-config";
 
-const standard: HostProfile = {
-  appearancePreset: "default",
-  earnPresentation: { condensed: false, yieldTitle: "above", zerion: false },
-  forcesInstitutionalWallets: false,
-  hidesHeaderWalletControl: false,
-  hostTokenIconMapping: false,
-  hostTracking: false,
-  presentation: {},
-  requiresTermsAcknowledgement: false,
-  showsPendingApprovalsNotice: false,
-  translationOverlay: "none",
-  walletCatalogue: "default",
-};
-
-const compact = {
-  condensed: true,
-  yieldTitle: "above",
-  zerion: false,
-} as const;
-
-const finery: HostProfile = {
-  ...standard,
-  appearancePreset: "finery",
-  forcesInstitutionalWallets: true,
-  presentation: { surfaceStyle: "elevated", tabsIndicator: "underline" },
-};
-
-const porto: HostProfile = {
-  ...standard,
-  appearancePreset: "porto",
-  earnPresentation: compact,
-  presentation: {
-    callToActionSize: "md",
-    surfaceStyle: "outlined",
-    tabsIndicator: "pill",
-  },
-  walletCatalogue: "porto",
-};
-
-const utila: HostProfile = {
-  ...standard,
-  appearancePreset: "utila",
-  earnPresentation: { ...compact, yieldTitle: "hidden" },
-  presentation: {
-    callToActionSize: "lg",
-    gutter: "md",
-    surfaceStyle: "outlined",
-    tabsIndicator: "tint",
-  },
-  requiresTermsAcknowledgement: true,
-  showsPendingApprovalsNotice: true,
-  translationOverlay: "utila",
-};
-
-const zerion: HostProfile = {
-  ...standard,
-  earnPresentation: { condensed: false, yieldTitle: "inside", zerion: true },
-  hidesHeaderWalletControl: true,
-  hostTokenIconMapping: true,
-  hostTracking: true,
-};
-
-const resolutionTable: ReadonlyArray<
-  readonly [WidgetVariant, boolean, HostProfile]
-> = [
-  ["default", false, standard],
-  ["default", true, { ...standard, earnPresentation: compact }],
-  ["finery", false, finery],
-  ["finery", true, { ...finery, earnPresentation: compact }],
-  ["porto", false, porto],
-  ["porto", true, porto],
-  ["utila", false, utila],
-  ["utila", true, utila],
-  ["zerion", false, zerion],
-  [
-    "zerion",
-    true,
-    {
-      ...zerion,
-      earnPresentation: { condensed: true, yieldTitle: "inside", zerion: true },
-    },
-  ],
+const variants: ReadonlyArray<WidgetVariant> = [
+  "default",
+  "finery",
+  "porto",
+  "utila",
+  "zerion",
 ];
 
 const hostConfiguration = (
@@ -111,17 +35,27 @@ const currentConfig = (configuration: SKHostConfiguration) =>
   );
 
 describe("Host Profile resolution", () => {
-  for (const [variant, dashboardVariant, profile] of resolutionTable) {
+  for (const variant of variants) {
     it.effect(
-      `resolves ${variant}${dashboardVariant ? " with dashboard" : ""}`,
+      `resolves ${variant}'s profile, condensing Earn in the Dashboard Layout`,
       () =>
         Effect.gen(function* () {
-          const config = yield* currentConfig(
-            hostConfiguration(variant, dashboardVariant)
+          const compact = yield* currentConfig(
+            hostConfiguration(variant, false)
+          );
+          const dashboard = yield* currentConfig(
+            hostConfiguration(variant, true)
           );
 
-          expect(config.variant).toBe(variant);
-          expect(config.hostProfile).toEqual(profile);
+          expect(compact.variant).toBe(variant);
+          expect(compact.hostProfile).toEqual(variantHostProfiles[variant]);
+          expect(dashboard.hostProfile).toEqual({
+            ...compact.hostProfile,
+            earnPresentation: {
+              ...compact.hostProfile.earnPresentation,
+              condensed: true,
+            },
+          });
         })
     );
   }
@@ -130,7 +64,7 @@ describe("Host Profile resolution", () => {
     Effect.gen(function* () {
       const config = yield* currentConfig({ apiKey: "api-key" });
 
-      expect(config.hostProfile).toEqual(standard);
+      expect(config.hostProfile).toEqual(variantHostProfiles.default);
     })
   );
 

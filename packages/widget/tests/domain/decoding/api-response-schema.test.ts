@@ -1,5 +1,4 @@
 import { describe, expect, it } from "@effect/vitest";
-import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema, SchemaGetter } from "effect";
 
 import {
@@ -54,47 +53,6 @@ const captureDiagnostics = <A, E>(effect: Effect.Effect<A, E>) => {
 };
 
 describe("API response schemas", () => {
-  it.effect("strictly decodes a valid single domain model", () =>
-    Effect.gen(function* () {
-      const result = yield* Schema.decodeEffect(Item)(validItem("item-1"));
-
-      expect(result.id).toBe("item-1");
-      expect(BigNumber.isBigNumber(result.amount)).toBe(true);
-      expect(result.amount.toFixed()).toBe("1.25");
-    })
-  );
-
-  it.effect("rejects a malformed single domain model", () =>
-    Effect.gen(function* () {
-      const failure = yield* Effect.flip(
-        Schema.decodeUnknownEffect(Item)({
-          ...validItem("item-1"),
-          nested: { enabled: "yes" },
-        })
-      );
-
-      expect(() => {
-        throw failure;
-      }).toThrow(/Expected boolean/);
-    })
-  );
-
-  it.effect("rejects a malformed response envelope", () =>
-    Effect.gen(function* () {
-      const failure = yield* Effect.flip(
-        Schema.decodeUnknownEffect(Envelope)({
-          items: [validItem("item-1")],
-          total: "1",
-          offset: 0,
-        })
-      );
-
-      expect(() => {
-        throw failure;
-      }).toThrow(/Expected number/);
-    })
-  );
-
   it.effect(
     "keeps valid items in source order and rejects complete invalid parents",
     () =>

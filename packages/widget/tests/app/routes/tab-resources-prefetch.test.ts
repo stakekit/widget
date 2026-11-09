@@ -40,18 +40,6 @@ const connectedWallet = {
   network: "ethereum" as const,
   status: "connected" as const,
 };
-const disconnectedWallet = {
-  additionalAddresses: null,
-  address: null,
-  chain: null,
-  connector: null,
-  connectorChains: [] as never[],
-  isLedgerLive: false as const,
-  isLedgerLiveAccountPlaceholder: false as const,
-  ledgerAccounts: null,
-  network: null,
-  status: "disconnected" as const,
-};
 
 type ListActivity = YieldResourceSource["Service"]["listActivity"];
 type GetPositions = YieldResourceSource["Service"]["getPositions"];
@@ -59,18 +47,16 @@ type GetPositions = YieldResourceSource["Service"]["getPositions"];
 const makeRegistry = ({
   getPositions,
   listActivity,
-  pathname = "/positions",
-  scope = walletScope,
 }: {
   readonly getPositions: GetPositions;
   readonly listActivity: ListActivity;
-  readonly pathname?: string;
-  readonly scope?: WalletScopeKey | null;
 }) =>
   AtomRegistry.make({
     initialValues: [
       applicationRuntimeInitInitialValue(),
-      Atom.initialValue(applicationRouterLocationAtom, { pathname }),
+      Atom.initialValue(applicationRouterLocationAtom, {
+        pathname: "/positions",
+      }),
       Atom.initialValue(
         appRuntime.layer,
         Layer.mergeAll(
@@ -85,11 +71,8 @@ const makeRegistry = ({
         walletConfigResultAtom,
         AsyncResult.success({} as never)
       ),
-      Atom.initialValue(
-        walletConnectionStateAtom,
-        scope ? connectedWallet : disconnectedWallet
-      ),
-      Atom.initialValue(walletScopeAtom, scope),
+      Atom.initialValue(walletConnectionStateAtom, connectedWallet),
+      Atom.initialValue(walletScopeAtom, walletScope),
     ],
   });
 
@@ -120,35 +103,6 @@ describe("tab resources prefetch", () => {
           )
         ).toBe(true);
       });
-    } finally {
-      unmount();
-      registry.dispose();
-    }
-  });
-
-  it("stays idle when there is no wallet scope", () => {
-    const getPositions = vi.fn<GetPositions>(() =>
-      Effect.succeed({ errors: [], items: [] })
-    );
-    const listActivity = vi.fn<ListActivity>((request) =>
-      Effect.succeed({
-        items: [],
-        limit: request.limit ?? 50,
-        offset: request.offset ?? 0,
-        total: 0,
-      })
-    );
-    const registry = makeRegistry({
-      getPositions,
-      listActivity,
-      scope: null,
-    });
-    const unmount = registry.mount(tabResourcesPrefetchAtom);
-
-    try {
-      expect(registry.get(tabResourcesPrefetchAtom)).toBe("idle");
-      expect(getPositions).not.toHaveBeenCalled();
-      expect(listActivity).not.toHaveBeenCalled();
     } finally {
       unmount();
       registry.dispose();

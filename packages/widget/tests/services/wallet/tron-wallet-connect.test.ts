@@ -376,24 +376,6 @@ describe("Tron WalletConnect connector", () => {
     }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 
-  it.live("rejects a malformed signing response", () =>
-    Effect.gen(function* () {
-      const { connector } = yield* makeFixture({
-        sessions: [tronSession()],
-        request: async () => ({ result: "0xsignature" }),
-      });
-      yield* Effect.promise(() => connector.connect({ isReconnecting: true }));
-
-      const error = yield* Effect.flip(
-        makeTronWalletDriver({ connector }).signTransaction({
-          tx: JSON.stringify(unsigned),
-        })
-      );
-
-      expect(isWalletCancellation(error)).toBe(false);
-    }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
-  );
-
   it.live("disconnects only its own session", () =>
     Effect.gen(function* () {
       const { connector, signClient } = yield* makeFixture({

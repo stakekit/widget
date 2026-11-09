@@ -10,6 +10,17 @@ import {
 } from "../../scripts/declarations/entry-declarations";
 import { widgetRoot } from "../../scripts/paths";
 import type {
+  BundledSKWidgetProps,
+  SKWallet as BundledWallet,
+  SKWalletPolicy as BundledWalletPolicy,
+  renderSKWidget,
+} from "../../src/index.bundle";
+import type {
+  SKAppProps as PackageSKAppProps,
+  SKWallet as PackageWallet,
+  SKWalletPolicy as PackageWalletPolicy,
+} from "../../src/index.package";
+import type {
   HelpModalProps as PublicHelpModalProps,
   SKAppProps as PublicSKAppProps,
 } from "../../src/public-api/react-types";
@@ -32,10 +43,11 @@ import type {
  * explicit annotations on their values are the declarations hosts compile
  * against, and `tsc` checks the implementations against them.
  *
- * - `describe("entry declarations")` keeps those declarations free of
- *   implementation modules and removed exports.
- * - `describe("public API dependencies")` keeps host declarations on the
- *   deliberate Domain contract paths and rejects Domain implementation imports.
+ * - `describe("package and bundled entry contracts")` keeps the two entry
+ *   modes on one wallet contract.
+ * - `describe("entry declarations")` pins the published names and their
+ *   deprecations; `build:types` itself rejects implementation imports and
+ *   unstated value types.
  */
 
 type YieldExternalProviderProps = {
@@ -191,11 +203,64 @@ describe("removed public surface", () => {
   });
 });
 
-const removedEntryExports = [
-  "SKBundleConfiguration",
-  "createWallet",
-  "evmChainGroup",
-] as const;
+describe("package and bundled entry contracts", () => {
+  const packageProps = {
+    apiKey: "public-contract-api-key",
+    externalProviders: {
+      type: "generic",
+      currentAddress: "0x0000000000000000000000000000000000000001",
+      currentChain: 1,
+      supportedChainIds: [1],
+      provider: {
+        signMessage: async () => "signed-message",
+        switchChain: async () => undefined,
+        sendTransaction: async () => ({
+          type: "success" as const,
+          txHash: "0xbroadcast-hash",
+        }),
+      },
+    },
+  } satisfies PackageSKAppProps;
+
+  it("keeps generic wallet callbacks Promise-based in both entry modes", () => {
+    expectTypeOf<PackageWallet>().toEqualTypeOf<BundledWallet>();
+    expectTypeOf<PackageWallet["signMessage"]>().returns.toEqualTypeOf<
+      Promise<
+        | string
+        | { type: "success"; signature: string }
+        | { type: "cancelled" }
+        | { type: "error"; error: string }
+      >
+    >();
+    expectTypeOf<PackageWallet["switchChain"]>().returns.toEqualTypeOf<
+      Promise<void>
+    >();
+    expectTypeOf<PackageWallet["sendTransaction"]>().returns.toEqualTypeOf<
+      Promise<
+        | string
+        | { type: "success"; txHash: string }
+        | { type: "cancelled" }
+        | { type: "error"; error: string; txHash?: string }
+      >
+    >();
+  });
+
+  it("keeps bundled lifecycle controls on the non-React configuration", () => {
+    type BundledRenderProps = Parameters<typeof renderSKWidget>[0];
+    const bundledRenderProps = {
+      ...packageProps,
+      container: {} as HTMLElement,
+    } satisfies BundledRenderProps;
+
+    expectTypeOf(packageProps).toMatchTypeOf<BundledSKWidgetProps>();
+    expectTypeOf(bundledRenderProps).toMatchTypeOf<BundledRenderProps>();
+    expectTypeOf<ReturnType<typeof renderSKWidget>>().toEqualTypeOf<{
+      rerender: (newProps: BundledSKWidgetProps) => void;
+      unmount: () => void;
+    }>();
+    expectTypeOf<BundledWalletPolicy>().toEqualTypeOf<PackageWalletPolicy>();
+  });
+});
 
 const sharedEntryExports = [
   "ActionMeta",
@@ -266,14 +331,6 @@ const publishedEntryExports = {
 } satisfies Record<(typeof packageEntries)[number], ReadonlyArray<string>>;
 
 describe.each(packageEntries)("entry declarations: %s", (entry) => {
-  it("reference only src/public-api and state every value type", async () => {
-    const { diagnostics, implementationImports } =
-      await transpileEntryDeclaration(entry);
-
-    expect(diagnostics).toStrictEqual([]);
-    expect(implementationImports).toStrictEqual([]);
-  });
-
   it("export every published name explicitly", async () => {
     const { exportedNames, unexportedSignatureTypes, wildcardExports } =
       await transpileEntryDeclaration(entry);
@@ -283,16 +340,6 @@ describe.each(packageEntries)("entry declarations: %s", (entry) => {
     );
     expect(unexportedSignatureTypes).toStrictEqual([]);
     expect(wildcardExports).toStrictEqual([]);
-  });
-
-  it("do not restore removed implementation-shaped exports", async () => {
-    const { outputText } = await transpileEntryDeclaration(entry);
-
-    expect(
-      removedEntryExports.filter((name) =>
-        new RegExp(`\\b${name}\\b`, "u").test(outputText)
-      )
-    ).toStrictEqual([]);
   });
 
   it("mark the legacy theme exports deprecated", async () => {

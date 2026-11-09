@@ -730,62 +730,40 @@ describe("confidential vault Review", () => {
       })
   );
 
-  it.effect(
-    "shows no gas rather than only the conversion's when the deposit has no estimate",
-    () =>
-      Effect.gen(function* () {
-        const { awaitView, page } = yield* makeReviewHarness({
-          evmRpc: {
-            estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
-          },
-          previewAction: () =>
-            Effect.succeed({
-              ...vaultAction,
-              transactions: [yieldApiTransactionFixture()],
-            }),
-          session: enterVault("underlying"),
-          zama: {
-            ...encrypted,
-            planConversion: () =>
-              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
-          },
-        });
+  it.effect.each([
+    [
+      "rather than only the conversion's when the deposit has no estimate",
+      { ...vaultAction, transactions: [yieldApiTransactionFixture()] },
+      ether,
+    ],
+    [
+      "when the approve and wrap would be priced in a non-native gas token",
+      vaultAction,
+      vault.token,
+    ],
+  ] as const)("shows no gas %s", ([, action, gasFeeToken]) =>
+    Effect.gen(function* () {
+      const { awaitView, page } = yield* makeReviewHarness({
+        evmRpc: {
+          estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
+        },
+        previewAction: () => Effect.succeed(action),
+        session: enterVault("underlying", gasFeeToken),
+        zama: {
+          ...encrypted,
+          planConversion: () =>
+            Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
+        },
+      });
 
-        const view = yield* awaitView(
-          page.reviewViewAtom,
-          ({ gasCheckLoading }) => !gasCheckLoading
-        );
+      const view = yield* awaitView(
+        page.reviewViewAtom,
+        ({ gasCheckLoading }) => !gasCheckLoading
+      );
 
-        expect(view.action).not.toBeNull();
-        expect(view.gasAmount).toBeNull();
-      })
-  );
-
-  it.effect(
-    "shows no gas when the approve and wrap would be priced in a non-native gas token",
-    () =>
-      Effect.gen(function* () {
-        const { awaitView, page } = yield* makeReviewHarness({
-          evmRpc: {
-            estimateFee: () => Effect.succeed(2_000_000_000_000_000n),
-          },
-          previewAction: () => Effect.succeed(vaultAction),
-          session: enterVault("underlying", vault.token),
-          zama: {
-            ...encrypted,
-            planConversion: () =>
-              Effect.succeed([direct("APPROVAL"), direct("WRAP")]),
-          },
-        });
-
-        const view = yield* awaitView(
-          page.reviewViewAtom,
-          ({ gasCheckLoading }) => !gasCheckLoading
-        );
-
-        expect(view.action).not.toBeNull();
-        expect(view.gasAmount).toBeNull();
-      })
+      expect(view.action).not.toBeNull();
+      expect(view.gasAmount).toBeNull();
+    })
   );
 
   it.effect(

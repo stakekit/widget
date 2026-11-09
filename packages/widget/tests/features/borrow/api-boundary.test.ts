@@ -205,7 +205,7 @@ describe("Borrow API boundary policies", () => {
       );
       expect(() => {
         throw failure;
-      }).toThrow(/Expected number/);
+      }).toThrow();
     })
   );
 

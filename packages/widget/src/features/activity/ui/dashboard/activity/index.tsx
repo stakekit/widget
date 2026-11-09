@@ -9,7 +9,8 @@ import {
   AnimationPage,
   BackButtonProvider,
 } from "../../../../widget-shell/views";
-import { activityPageViewAtom, hasActivityActions } from "../../../state/page";
+import { hasActivityActions } from "../../../model/page-view";
+import { activityPageViewAtom } from "../../../state/page";
 import { ActivityPageContent } from "../../activity-page/activity-page-content";
 
 export const ActivityTabPage = () => {

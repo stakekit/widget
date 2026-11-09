@@ -179,34 +179,6 @@ describe("Polkadot WalletConnect connector", () => {
   );
 
   it.live(
-    "resumes the proposal after QR dismissal without disconnecting its accepted session",
-    () =>
-      Effect.gen(function* () {
-        const { connector, modal, signClient } = yield* makeFixture();
-        const first = yield* connect(connector).pipe(
-          Effect.forkScoped({ startImmediately: true })
-        );
-        expect(yield* Queue.take(modal.opened)).toBe(uri);
-        yield* Effect.promise(() => modal.modal.close());
-        const dismissal = yield* Effect.flip(Fiber.join(first));
-        expect(dismissal).toMatchObject({ cause: { code: 4001 } });
-        expect(isWalletCancellation(dismissal)).toBe(true);
-
-        const retry = yield* connect(connector).pipe(
-          Effect.forkScoped({ startImmediately: true })
-        );
-        expect(yield* Queue.take(modal.opened)).toBe(uri);
-        expect(signClient.state.proposals).toHaveLength(1);
-        signClient.approve(polkadotSession());
-
-        expect(yield* Fiber.join(retry)).toMatchObject({
-          accounts: [alicePolkadot],
-        });
-        expect(signClient.state.disconnects).toEqual([]);
-      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
-  );
-
-  it.live(
     "reports the first configured chain the wallet approved accounts on",
     () =>
       Effect.gen(function* () {

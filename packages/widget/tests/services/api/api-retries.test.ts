@@ -158,40 +158,20 @@ const reads: ReadonlyArray<ApiCall> = [
   },
 ];
 
-type Failure = {
-  readonly name: string;
-  readonly respond: () => Promise<Response>;
-};
-
-const failures: ReadonlyArray<Failure> = [
-  {
-    name: "a transport error",
-    respond: () => Promise.reject(new TypeError("Failed to fetch")),
-  },
-  {
-    name: "a timeout",
-    respond: () =>
-      Promise.reject(new DOMException("signal timed out", "TimeoutError")),
-  },
-  {
-    name: "a 503",
-    respond: () =>
-      Promise.resolve(
-        new Response(JSON.stringify({ message: "unavailable" }), {
-          headers: { "content-type": "application/json" },
-          status: 503,
-        })
-      ),
-  },
-];
-
-const countRequests = (call: ApiCall, failure: Failure) =>
+// Which failures are transient is Effect's `retryTransient`; what this checks
+// is which client, read or write, each operation sends through.
+const countRequests = (call: ApiCall) =>
   Effect.gen(function* () {
     const context = yield* Layer.build(makeTestStakeKitApiLayer(config));
     let requests = 0;
     const fetch: typeof globalThis.fetch = () => {
       requests += 1;
-      return failure.respond();
+      return Promise.resolve(
+        new Response(JSON.stringify({ message: "unavailable" }), {
+          headers: { "content-type": "application/json" },
+          status: 503,
+        })
+      );
     };
 
     yield* call
@@ -202,21 +182,19 @@ const countRequests = (call: ApiCall, failure: Failure) =>
   }).pipe(Effect.scoped);
 
 describe("API transport retries", () => {
-  for (const failure of failures) {
-    for (const write of writes) {
-      it.effect(`sends ${write.name} once on ${failure.name}`, () =>
-        Effect.gen(function* () {
-          expect(yield* countRequests(write, failure)).toBe(1);
-        })
-      );
-    }
+  for (const write of writes) {
+    it.effect(`sends ${write.name} once on a 503`, () =>
+      Effect.gen(function* () {
+        expect(yield* countRequests(write)).toBe(1);
+      })
+    );
+  }
 
-    for (const read of reads) {
-      it.effect(`retries ${read.name} on ${failure.name}`, () =>
-        Effect.gen(function* () {
-          expect(yield* countRequests(read, failure)).toBe(4);
-        })
-      );
-    }
+  for (const read of reads) {
+    it.effect(`retries ${read.name} on a 503`, () =>
+      Effect.gen(function* () {
+        expect(yield* countRequests(read)).toBe(4);
+      })
+    );
   }
 });

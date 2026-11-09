@@ -37,6 +37,7 @@
     "widget/no-financial-finite-from-string": "error",
     "widget/no-local-storage": "error",
     "widget/no-manual-memo": "error",
+    "widget/no-module-mock-in-shared-test": "error",
     "widget/no-source-less-type-export": "error",
     "widget/no-tonumber-outside-representation": "error",
     "widget/no-unbranded-domain-identifier": "error",

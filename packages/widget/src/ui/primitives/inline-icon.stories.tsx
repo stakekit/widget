@@ -20,32 +20,40 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const typeRoles: ReadonlyArray<TypeRole> = [
+  "display",
+  "title",
+  "heading",
+  "metric",
+  "body",
+  "label",
+  "caption",
+  "overline",
+];
+
 /**
- * The icon leads a `Text` of `variant`'s role: it sits centered on the first
+ * The icon leads a `Text` of each type role: it sits centered on the first
  * line, and the wrapped lines start under it, at the text's left edge.
  */
-const leadingText = (variant: TypeRole): Story => ({
-  args: { variant },
+export const LeadsEveryTypeRole: Story = {
   render: (args) => (
-    <div style={{ width: 200 }}>
-      <Text variant={variant} as="p">
-        <InlineIcon {...args} />
-        Withdrawals take up to seven days to arrive
-      </Text>
+    <div style={{ width: 200, display: "grid", gap: 16 }}>
+      {typeRoles.map((variant) => (
+        <Text key={variant} variant={variant} as="p">
+          <InlineIcon {...args} variant={variant} />
+          Withdrawals take up to seven days to arrive
+        </Text>
+      ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
-    const text = canvasElement.querySelector("p");
-    const icon = text?.querySelector("svg");
-    await expect(text && icon && iconLeadsInline(text, icon)).toBe(true);
+    const paragraphs = [...canvasElement.querySelectorAll("p")];
+    const misaligned = typeRoles.filter((_, index) => {
+      const text = paragraphs[index];
+      const icon = text?.querySelector("svg");
+      return !(text && icon && iconLeadsInline(text, icon));
+    });
+    await expect(paragraphs).toHaveLength(typeRoles.length);
+    await expect(misaligned).toEqual([]);
   },
-});
-
-export const Display = leadingText("display");
-export const Title = leadingText("title");
-export const Heading = leadingText("heading");
-export const Metric = leadingText("metric");
-export const Body = leadingText("body");
-export const Label = leadingText("label");
-export const Caption = leadingText("caption");
-export const Overline = leadingText("overline");
+};

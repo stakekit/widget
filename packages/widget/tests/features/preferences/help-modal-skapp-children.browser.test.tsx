@@ -3,7 +3,7 @@ import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 
 describe("HelpModal as SKApp children", () => {
-  it("themes the trigger and popup while the trigger flows in the host's footer", async () => {
+  it("themes and translates the popup while the trigger flows in the host's footer", async () => {
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
@@ -42,6 +42,12 @@ describe("HelpModal as SKApp children", () => {
     await expect.element(dialog).toBeVisible();
     expect(dialog.element().closest("[data-sk-portal]")).not.toBeNull();
     expect(footer.element().contains(dialog.element())).toBe(true);
+    // Translated though it renders outside the Widget's frame, while the
+    // host chrome beside it stays mounted.
+    await expect
+      .element(dialog.getByRole("heading", { name: "What is Yield.xyz?" }))
+      .toBeVisible();
+    await expect.element(app.getByTestId("terms")).toHaveTextContent("Terms");
     // The popup paints the same `background` role as the Widget's frame.
     const frame = app.container.querySelector("[data-rk='widget-container']");
     if (frame === null) throw new Error("The Widget frame is missing.");

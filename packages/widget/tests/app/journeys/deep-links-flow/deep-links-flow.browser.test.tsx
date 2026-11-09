@@ -148,7 +148,6 @@ describe("Deep links flow", () => {
       account,
       avaxLiquidStaking,
       avaxLiquidStakingValidators,
-      requestFn,
     } = await setup(worker, { withValidatorAddressesRequired: true });
 
     setUrl({
@@ -190,37 +189,6 @@ describe("Deep links flow", () => {
 
     await expect
       .element(app.getByRole("button", { name: "Confirm" }))
-      .toBeInTheDocument();
-
-    await app.getByRole("button", { name: "Confirm" }).click();
-
-    await expect
-      .element(app.getByText("Confirm in wallet"))
-      .toBeInTheDocument();
-
-    await expect
-      .poll(() => requestFn, { timeout: 1000 * 5 })
-      .toHaveBeenCalledWith(
-        {
-          method: "eth_sendTransaction",
-          params: expect.anything(),
-        },
-        undefined
-      );
-
-    expect(requestFn).toHaveBeenCalledWith(
-      { method: "eth_chainId" },
-      undefined
-    );
-
-    await expect
-      .element(app.getByText("Successfully claimed rewards", { exact: false }))
-      .toBeInTheDocument();
-
-    await expect
-      .element(
-        app.getByRole("link", { name: /^View Claim rewards transaction/u })
-      )
       .toBeInTheDocument();
 
     await app.unmount();

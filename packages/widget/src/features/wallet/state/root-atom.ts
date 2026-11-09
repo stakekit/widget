@@ -18,7 +18,7 @@ export const walletStateResultAtom = Atom.make((get) =>
   get(walletStateAtom).pipe(AsyncResult.map((state) => state.connection))
 ).pipe(Atom.withLabel("walletStateResultAtom"));
 
-export const walletLedgerStateResultAtom = Atom.make((get) =>
+const walletLedgerStateResultAtom = Atom.make((get) =>
   get(walletStateAtom).pipe(AsyncResult.map((state) => state.ledger))
 ).pipe(Atom.withLabel("walletLedgerStateResultAtom"));
 

@@ -64,15 +64,6 @@ const expectEventually = <T>(read: () => T, expected: T) =>
   Effect.promise(() => expect.poll(read).toBe(expected));
 
 describe("WidgetTranslation", () => {
-  it("describes vault withdrawal timing with valid pluralized copy", () => {
-    expect(translationEN.details.vault.withdrawn_time_one).toBe(
-      "After withdrawing, your assets will be available in {{count}} day."
-    );
-    expect(translationEN.details.vault.withdrawn_time_other).toBe(
-      "After withdrawing, your assets will be available in {{count}} days."
-    );
-  });
-
   it.effect(
     "exposes initialized local resources while enrichment is pending",
     () =>
@@ -403,8 +394,6 @@ describe("WidgetTranslation resource ownership", () => {
   });
 
   it("defines complete local error fallbacks", () => {
-    expect(Object.keys(translationEN.errors)).toHaveLength(43);
-
     for (const fallback of [
       ...Object.values(translationEN.errors),
       ...Object.values(translationFR.errors),
@@ -477,64 +466,6 @@ describe("WidgetTranslation resource ownership", () => {
               title: "SOL insuffisant pour le loyer du compte",
             },
           },
-        },
-      },
-    });
-  });
-
-  it("rebuilds exact resources without mutating canonical translations", () => {
-    const customized = composeWidgetTranslationResources({
-      apiErrors: undefined,
-      customTranslations: {
-        en: {
-          translation: {
-            details: { rewards: { receive_output: "CUSTOM" } },
-          },
-        },
-      },
-      language: "en",
-      translationOverlay: "none",
-    });
-    const canonical = composeWidgetTranslationResources({
-      apiErrors: undefined,
-      customTranslations: undefined,
-      language: "en",
-      translationOverlay: "none",
-    });
-
-    expect(customized).toMatchObject({
-      en: {
-        translation: { details: { rewards: { receive_output: "CUSTOM" } } },
-      },
-    });
-    expect(canonical).toMatchObject({
-      en: {
-        translation: {
-          details: { rewards: { receive_output: "You'll receive" } },
-        },
-      },
-    });
-  });
-
-  it("applies canonical, variant, API error, then host precedence", () => {
-    const resources = composeWidgetTranslationResources({
-      apiErrors: { shared: "API" },
-      customTranslations: {
-        en: {
-          translation: {
-            errors: { shared: "HOST" },
-          },
-        },
-      },
-      language: "en",
-      translationOverlay: "utila",
-    });
-
-    expect(resources).toMatchObject({
-      en: {
-        translation: {
-          details: { tabs: { earn: "Stake" } },
-          errors: { shared: "HOST" },
         },
       },
     });

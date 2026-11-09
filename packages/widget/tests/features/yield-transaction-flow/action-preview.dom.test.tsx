@@ -6,21 +6,14 @@ import type { PropsWithChildren } from "react";
 
 import { ActionCommand } from "../../../src/domain/earn/action-models";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import {
-  walletScopeAtom,
-  walletStateResultAtom,
-} from "../../../src/features/wallet/index";
+import { walletStateResultAtom } from "../../../src/features/wallet/index";
 import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import { makeYieldFlowSession } from "../../../src/features/yield-transaction-flow/model/session";
 import { makeYieldFlowReviewPage } from "../../../src/features/yield-transaction-flow/state/review-page";
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { TransactionWorkflowService } from "../../../src/services/transaction-workflow/transaction-workflow-service";
-import {
-  yieldApiActionFixture,
-  yieldApiTransactionFixture,
-  yieldApiYieldFixture,
-} from "../../fixtures";
+import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
 import { TestAtomRuntimeProvider } from "../../utils/atom-runtime-provider";
 import { makeTestTracking } from "../../utils/services/tracking-service";
@@ -36,7 +29,6 @@ const command = Schema.decodeSync(ActionCommand)({
   address: "0xWallet",
   yieldId: "ethereum-eth-native-staking",
 });
-const stake = yieldApiYieldFixture({ id: command.yieldId });
 const walletScope = new WalletScopeKey({
   address: command.address,
   network: "ethereum",
@@ -82,18 +74,6 @@ const hostConfiguration: SKAppProps = {
   yieldsApiUrl: yieldApiUrl,
 };
 
-const Wrapper = ({ children }: PropsWithChildren) => (
-  <TestAtomRuntimeProvider
-    hostConfiguration={hostConfiguration}
-    initialValues={[
-      [walletScopeAtom, walletScope],
-      [walletRuntime.layer, yieldDependencies as never],
-    ]}
-  >
-    {children}
-  </TestAtomRuntimeProvider>
-);
-
 /** Opens an Earn Flow Session and its Review page, as the flow routes do. */
 const makeEarnReviewPage = (
   intake: Extract<YieldTransactionFlowIntake, { readonly _tag: "Enter" }>
@@ -129,58 +109,6 @@ const ConnectedWrapper = ({ children }: PropsWithChildren) => (
 );
 
 describe("action preview", () => {
-  it("exposes a strictly decoded action from the Effect API service", async ({
-    worker,
-  }) => {
-    const transaction = yieldApiTransactionFixture({
-      gasEstimate: JSON.stringify({
-        amount: "0.01",
-        token: {
-          decimals: 18,
-          name: "Ethereum",
-          network: "ethereum",
-          symbol: "ETH",
-        },
-      }),
-      id: "transaction-1",
-      network: "ethereum",
-    });
-    worker.use(
-      http.post(`${yieldApiUrl}/v1/actions/enter`, () =>
-        HttpResponse.json(
-          yieldApiActionFixture({
-            address: "0xWallet",
-            id: "action-1",
-            transactions: [transaction],
-            yieldId: "ethereum-eth-native-staking",
-          })
-        )
-      )
-    );
-
-    const review = makeEarnReviewPage({
-      _tag: "Enter",
-      gasFeeToken: stake.mechanics.gasFeeToken,
-      providersDetails: [],
-      request: command,
-      selectedProviderOption: null,
-      selectedStake: stake,
-      selectedToken: stake.token,
-      selectedValidators: new Map(),
-      walletScope,
-    });
-    const { result } = await renderHook(
-      () => useAtomValue(review.reviewViewAtom),
-      { wrapper: Wrapper }
-    );
-
-    const getAction = () => result.current?.action;
-    await expect.poll(() => getAction()?.id).toBe("action-1");
-    expect(getAction()?.transactions[0]?.gasEstimate).toBe(
-      transaction.gasEstimate
-    );
-  });
-
   it("does not preview a KYC-blocked Enter flow", async ({ worker }) => {
     let actionPreviewCalls = 0;
     let kycStatusCalls = 0;

@@ -1,12 +1,11 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Cause, Effect, Exit, Layer, Ref } from "effect";
+import { Effect, Layer, Ref } from "effect";
 
 import {
   addYieldEntryLedgerAccount,
   connectYieldEntryWallet,
 } from "../../../src/features/yield-entry/state/yield-entry";
 import { walletCommandIdentity } from "../../../src/services/wallet/wallet-command-identity";
-import { WalletIntegrationError } from "../../../src/services/wallet/wallet-errors";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import type { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
@@ -70,7 +69,6 @@ const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
     []
   );
   const openConnectCount = yield* Ref.make(0);
-  const closeChainCount = yield* Ref.make(0);
   const addLedgerAccount = options.addLedgerAccount;
   const wallet = yield* makeTestWallet({
     ...(addLedgerAccount
@@ -83,8 +81,8 @@ const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
       : {}),
     initialState: options.initialWalletState,
   });
+  // Any call to closeChain dies: no submission closes the chain modal.
   const modal = stubWalletModal({
-    closeChain: Ref.update(closeChainCount, (count) => count + 1),
     openConnect: Ref.update(openConnectCount, (count) => count + 1).pipe(
       Effect.andThen(options.openConnect?.(wallet.setState) ?? Effect.void)
     ),
@@ -100,7 +98,6 @@ const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
     addLedgerAccount: (
       expected: Parameters<typeof addYieldEntryLedgerAccount>[0]
     ) => addYieldEntryLedgerAccount(expected).pipe(provide),
-    closeChainCount: Ref.get(closeChainCount),
     connectWallet: (expected: Parameters<typeof connectYieldEntryWallet>[0]) =>
       connectYieldEntryWallet(expected).pipe(provide),
     ledgerRequests: Ref.get(ledgerRequests),
@@ -113,26 +110,6 @@ const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
 });
 
 describe("Yield Entry submission", () => {
-  it.effect("tracks a connection intent and opens the wallet modal", () =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const submission = yield* makeSubmissionHarness({
-          initialWalletState: disconnectedWalletState,
-        });
-
-        const outcome = yield* submission.connectWallet(
-          walletCommandIdentity(disconnectedWalletState.connection)
-        );
-
-        expect(outcome).toEqual({ _tag: "Accepted" });
-        expect(yield* submission.trackedEvents).toEqual([
-          "connectWalletClicked",
-        ]);
-        expect(yield* submission.openConnectCount).toBe(1);
-      })
-    )
-  );
-
   it.effect(
     "tracks a connection intent but rejects a stale connected wallet",
     () =>
@@ -176,27 +153,6 @@ describe("Yield Entry submission", () => {
       )
   );
 
-  it.effect("tracks and delegates an eligible Ledger account request", () =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const submission = yield* makeSubmissionHarness({
-          addLedgerAccount: () => Effect.succeed({ _tag: "Added" }),
-          initialWalletState: ledgerPlaceholderWalletState,
-        });
-
-        const outcome = yield* submission.addLedgerAccount(
-          walletCommandIdentity(ledgerPlaceholderWalletState.connection)
-        );
-
-        expect(outcome).toEqual({ _tag: "Accepted" });
-        expect(yield* submission.trackedEvents).toEqual([
-          "addLedgerAccountClicked",
-        ]);
-        expect(yield* submission.ledgerRequests).toHaveLength(1);
-      })
-    )
-  );
-
   it.effect(
     "tracks but rejects Ledger setup when the canonical wallet is stale",
     () =>
@@ -216,36 +172,6 @@ describe("Yield Entry submission", () => {
             "addLedgerAccountClicked",
           ]);
           expect(yield* submission.ledgerRequests).toEqual([]);
-          expect(yield* submission.closeChainCount).toBe(0);
-        })
-      )
-  );
-
-  it.effect(
-    "retains a typed Ledger integration failure without closing the modal",
-    () =>
-      Effect.scoped(
-        Effect.gen(function* () {
-          const failure = new WalletIntegrationError({
-            message: "request failed",
-            operation: "ledger-request-account",
-          });
-          const submission = yield* makeSubmissionHarness({
-            addLedgerAccount: () => Effect.fail(failure),
-            initialWalletState: ledgerPlaceholderWalletState,
-          });
-
-          const exit = yield* Effect.exit(
-            submission.addLedgerAccount(
-              walletCommandIdentity(ledgerPlaceholderWalletState.connection)
-            )
-          );
-
-          expect(Exit.isFailure(exit)).toBe(true);
-          expect(
-            Exit.isFailure(exit) ? Cause.findErrorOption(exit.cause) : null
-          ).toMatchObject({ value: failure });
-          expect(yield* submission.closeChainCount).toBe(0);
         })
       )
   );

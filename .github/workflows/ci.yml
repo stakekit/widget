@@ -21,44 +21,45 @@ env:
   # storing results would only cost time.
   MISE_TASK_CACHE: "off"
 
-# One job per check, so checks run in parallel and a failure names its check.
+# One job per runner-sized group of checks, so groups run in parallel and each
+# pays the setup once. A failure names its step; within a job, every check
+# after setup runs even when an earlier one failed, so one run reports them all.
 jobs:
-  lint:
+  # The one job that verifies the lockfile against the supply-chain policies;
+  # the others trust the lockfile this job verified.
+  static:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ./.github/actions/setup
+        with:
+          persist-credentials: false
+      - id: setup
+        uses: ./.github/actions/setup
+        with:
+          verify-lockfile: "true"
       - run: mise run lint:widget
-      - run: mise run lint:format
+      - if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: mise run lint:format
+      - if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: mise run lint:workflows
+      - if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: mise run check-hygiene
 
-  hygiene:
+  node-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ./.github/actions/setup
-      - run: mise run check-hygiene
-
-  unit:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      # actions/checkout@v7.0.1
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ./.github/actions/setup
+        with:
+          persist-credentials: false
+      - id: setup
+        uses: ./.github/actions/setup
       - run: mise run test:unit
-
-  dom:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      # actions/checkout@v7.0.1
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ./.github/actions/setup
-      - run: mise run test:dom
+      - if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: mise run test:dom
 
   # Browser test files run two at a time within a runner; shards split them across runners.
   browser:
@@ -72,6 +73,8 @@ jobs:
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/playwright
       - run: mise run test:browser -- --shard=${{ matrix.shard }}/2
@@ -83,26 +86,23 @@ jobs:
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/playwright
       - run: mise run test:storybook
 
-  # One invocation, so the widget build that both tasks depend on runs once.
-  build:
+  # One invocation, so the widget build both tasks depend on runs once. The
+  # smoke test builds every example host against that build, so CI does not
+  # run the separate examples `build` task.
+  build-and-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ./.github/actions/setup
-      - run: "mise run build ::: lint:examples"
-
-  production-consumer-smoke:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      # actions/checkout@v7.0.1
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/playwright
-      - run: mise run test:smoke
+      - run: "mise run test:smoke ::: lint:examples"

@@ -350,6 +350,29 @@ const noBlanketDisable: Rule = scopedRule(
   })
 );
 
+const moduleMocks: Record<string, true> = {
+  "vi.mock": true,
+  "vi.doMock": true,
+};
+
+/** Node unit tests share workers; module mocks stay in isolated files. */
+const noModuleMockInSharedTest: Rule = nodeRule(
+  {
+    files: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    ignores: [
+      "tests/**/*.isolated.test.*",
+      "tests/**/*.dom.test.*",
+      "tests/**/*.browser.test.*",
+    ],
+  },
+  "Node test files share workers, so a module mock leaks into later files. Inject the dependency through a Layer, or move the mock to a *.isolated.test.* file.",
+  (report) => ({
+    CallExpression(node) {
+      if (isMemberPath(node.callee, moduleMocks)) report(node);
+    },
+  })
+);
+
 export default {
   meta: { name: "widget" },
   rules: {
@@ -361,6 +384,7 @@ export default {
     "no-financial-finite-from-string": noFinancialFiniteFromString,
     "no-local-storage": noLocalStorage,
     "no-manual-memo": noManualMemo,
+    "no-module-mock-in-shared-test": noModuleMockInSharedTest,
     "no-source-less-type-export": noSourceLessTypeExport,
     "no-tonumber-outside-representation": noTonumberOutsideRepresentation,
     "no-unbranded-domain-identifier": noUnbrandedDomainIdentifier,

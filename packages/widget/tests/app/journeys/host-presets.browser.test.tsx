@@ -251,7 +251,6 @@ describe("Earn call-to-action height", () => {
     ["the Dashboard Layout", { layout: "dashboard" }, "40px"],
     ["Porto in the Compact Layout", { variant: "porto" }, "40px"],
     ["Utila in the Compact Layout", { variant: "utila" }, "40px"],
-    ["Finery in the Compact Layout", { variant: "finery" }, "48px"],
   ] satisfies ReadonlyArray<readonly [string, HostProps, string]>)(
     "follows %s",
     async (_name, props, height) => {

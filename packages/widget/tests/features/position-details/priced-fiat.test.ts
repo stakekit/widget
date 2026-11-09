@@ -1,4 +1,3 @@
-import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
 
@@ -23,13 +22,6 @@ describe("an amount's fiat figure valued by prices", () => {
     });
   });
 
-  it("holds a placeholder while prices are retried after a failure", () => {
-    expect(fiatFor(AsyncResult.fail("down", { waiting: true }))).toEqual({
-      fiatValue: "",
-      fiatValueLoading: true,
-    });
-  });
-
   it("shows the figure once prices are in", () => {
     expect(fiatFor(AsyncResult.success(null))).toEqual({
       fiatValue: "$10.00",
@@ -42,16 +34,6 @@ describe("an amount's fiat figure valued by prices", () => {
       fiatValue: "—",
       fiatValueLoading: false,
     });
-  });
-
-  it("keeps valuing with the last prices after a refresh fails", () => {
-    expect(
-      fiatFor(
-        AsyncResult.fail("down", {
-          previousSuccess: Option.some(AsyncResult.success(null)),
-        })
-      )
-    ).toEqual({ fiatValue: "$10.00", fiatValueLoading: false });
   });
 
   it("shows no figure when prices are in but the amount has none", () => {

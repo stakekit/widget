@@ -210,9 +210,6 @@ const StartPage = () => {
       <button type="button" onClick={() => void navigate("/review")}>
         Review
       </button>
-      <button type="button" onClick={() => void navigate("/steps")}>
-        Steps
-      </button>
     </>
   );
 };
@@ -223,12 +220,10 @@ const ReviewPage = () => {
   const navigate = useNavigate();
   const review = useAtomValue(reviewFacade.reviewViewAtom);
   const confirm = useAtomSet(reviewFacade.confirmAtom);
-  const start = useAtomSet(startYieldTransactionFlowAtom);
 
   return (
     <>
       <output data-testid="review-session">present</output>
-      <output data-testid="review-action">{review.action?.id}</output>
       <output data-testid="review-prices">
         {review.prices ? "ready" : "loading"}
       </output>
@@ -241,15 +236,6 @@ const ReviewPage = () => {
       </button>
       <button type="button" onClick={() => void navigate(1)}>
         Browser Forward
-      </button>
-      <button type="button" onClick={() => void navigate("/steps")}>
-        Host Steps
-      </button>
-      <button
-        type="button"
-        onClick={() => start({ intake, mount: { _tag: "Earn" } })}
-      >
-        Replace Session
       </button>
     </>
   );
@@ -357,10 +343,8 @@ const FlowRoutes = ({
 };
 
 const FlowTestApp = ({
-  initialPath = "/",
   walletState = connectedWalletState,
 }: {
-  readonly initialPath?: string;
   readonly walletState?: NormalizedWalletState;
 }) => {
   const hostConfiguration = {
@@ -371,7 +355,7 @@ const FlowTestApp = ({
   };
   const [router] = useState(() =>
     createMemoryRouter([...applicationRoutes], {
-      initialEntries: [initialPath],
+      initialEntries: ["/"],
     })
   );
   const applicationRouterLayer = Layer.merge(
@@ -475,83 +459,6 @@ const FlowRouter = ({
 };
 
 describe("Yield Transaction Flow navigation", () => {
-  it("redirects routes with missing intake or execution action", async () => {
-    const directReview = await render(<FlowTestApp initialPath="/review" />);
-    await vi.waitFor(() =>
-      expect(directReview.container.textContent).toContain("Start")
-    );
-    directReview.unmount();
-
-    const directSteps = await render(<FlowTestApp />);
-    const button = (label: string) => {
-      const match = [
-        ...directSteps.container.querySelectorAll<HTMLButtonElement>("button"),
-      ].find((candidate) => candidate.textContent === label);
-      if (!match) throw new Error(`Expected ${label} button`);
-      return match;
-    };
-    await act(async () => button("Steps").click());
-    await vi.waitFor(() => expect(button("Start")).toBeDefined());
-    await act(async () => button("Start").click());
-    await vi.waitFor(() => expect(button("Host Steps")).toBeDefined());
-    await act(async () => button("Host Steps").click());
-    await vi.waitFor(() =>
-      expect(directSteps.container.textContent).toContain("Start")
-    );
-  });
-
-  it("remounts the Flow Session boundary for a replacement snapshot", async ({
-    worker,
-  }) => {
-    let actionPreviewCalls = 0;
-    worker.use(
-      http.post(`${legacyApiUrl}/v1/tokens/prices`, () =>
-        HttpResponse.json({
-          "ethereum-": { price: 1, price_24_h: 0 },
-        })
-      ),
-      http.post(`${yieldApiUrl}/v1/actions/enter`, () => {
-        actionPreviewCalls += 1;
-        return HttpResponse.json(
-          yieldApiActionFixture({ id: `action-${actionPreviewCalls}` })
-        );
-      })
-    );
-
-    const app = await render(<FlowTestApp />);
-    const getButton = (label: string) => {
-      const button = [
-        ...app.container.querySelectorAll<HTMLButtonElement>("button"),
-      ].find((candidate) => candidate.textContent === label);
-      if (!button) throw new Error(`Expected ${label} button`);
-      return button;
-    };
-
-    await act(async () => getButton("Start").click());
-    await vi.waitFor(() =>
-      expect(
-        app.container.querySelector('[data-testid="review-action"]')
-          ?.textContent
-      ).toBe("action-1")
-    );
-
-    await act(async () => getButton("Replace Session").click());
-    await vi.waitFor(() =>
-      expect(
-        app.container.querySelector('[data-testid="review-action"]')
-          ?.textContent
-      ).toBe("action-2")
-    );
-
-    await act(async () => getButton("Confirm").click());
-    await vi.waitFor(() =>
-      expect(
-        app.container.querySelector('[data-testid="steps-session"]')
-      ).not.toBeNull()
-    );
-    expect(actionPreviewCalls).toBe(2);
-  });
-
   it("keeps the session and prepares a fresh action after Back", async ({
     worker,
   }) => {

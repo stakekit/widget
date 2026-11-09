@@ -90,17 +90,19 @@ const borrowTransaction = (id: string, status = "WAITING_FOR_SIGNATURE") =>
 
 const borrowAction = ({
   currentStep = 1,
+  owner = address,
   status = "CREATED",
   totalSteps = 2,
   transactions = [borrowTransaction("borrow-1")],
 }: {
   readonly currentStep?: number;
+  readonly owner?: WalletAddress;
   readonly status?: string;
   readonly totalSteps?: number;
   readonly transactions?: ReadonlyArray<Transaction>;
 } = {}) =>
   Schema.decodeUnknownSync(Action)({
-    address,
+    address: owner,
     action: "borrow",
     createdAt: "2026-07-10T12:00:00.000Z",
     currentStep,
@@ -166,6 +168,21 @@ describe("transaction workflow model", () => {
       ],
       walletScope: yieldWalletScope,
       yieldId,
+    });
+
+    expect(validateTransactionWorkflowInput(input)?._tag).toBe(
+      "TransactionWorkflowInputError"
+    );
+  });
+
+  it("rejects a Borrow action owned by another wallet", () => {
+    const input = new BorrowTransactionWorkflowInput({
+      action: borrowAction({
+        owner: Schema.decodeSync(WalletAddress)(
+          "0x0000000000000000000000000000000000000002"
+        ),
+      }),
+      walletScope: borrowWalletScope,
     });
 
     expect(validateTransactionWorkflowInput(input)?._tag).toBe(

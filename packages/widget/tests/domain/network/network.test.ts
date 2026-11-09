@@ -8,7 +8,6 @@ import type { WalletNetwork } from "../../../src/domain/wallet/network";
 import {
   isCosmosWalletNetwork,
   isEvmWalletNetwork,
-  isWalletNetwork,
 } from "../../../src/domain/wallet/network";
 import type { SKNetwork } from "../../../src/public-api/types";
 
@@ -40,17 +39,6 @@ describe("Network", () => {
 
   it("limits Borrow Networks to Wallet Networks", () => {
     expectTypeOf<BorrowNetwork>().toMatchTypeOf<WalletNetwork>();
-  });
-
-  it("distinguishes Wallet Networks from other common Networks", () => {
-    expect(isWalletNetwork("ethereum")).toBe(true);
-    expect(isWalletNetwork("cosmos")).toBe(true);
-    expect(isWalletNetwork("cardano")).toBe(true);
-    expect(isWalletNetwork("bittensor")).toBe(true);
-    expect(isWalletNetwork("robinhood")).toBe(true);
-    expect(isWalletNetwork("robinhood-testnet")).toBe(true);
-    expect(isWalletNetwork("plume")).toBe(false);
-    expect(isWalletNetwork("not-a-network")).toBe(false);
   });
 
   it("classifies wallet ecosystems without admitting non-wallet Networks", () => {

@@ -13,10 +13,10 @@ import { fillConfidentialPosition } from "../../../src/domain/earn/confidential-
 import { getYieldCategory } from "../../../src/domain/earn/yield";
 import type { exactDecimal } from "../../../src/domain/finance/exact";
 import { toPositionsData } from "../../../src/domain/portfolio/positions";
+import { toPositionItems } from "../../../src/features/portfolio/model/positions";
 import {
   currentGroupedPositionsAtom,
   positionsTableDataAtom,
-  toPositionItems,
 } from "../../../src/features/portfolio/state/read-models/positions";
 import {
   allPositionsSummaryAtom,
@@ -44,7 +44,6 @@ import {
 import type { Presentable } from "../../../src/shared/effect/async-result";
 import {
   confidentialYieldFixture,
-  yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
@@ -209,76 +208,6 @@ describe("summary atom derivations", () => {
     expect(hasHiddenPositions(partiallyHidden)).toBe(true);
   });
 
-  it("recomputes position total and weighted APY when source state changes", () => {
-    const first = makePosition({
-      amountUsd: "5",
-      rewardRate: 0.05,
-      yieldId: "yield-1",
-    });
-    const second = makePosition({
-      amountUsd: "15",
-      rewardRate: 0.1,
-      yieldId: "yield-2",
-    });
-    const yields = new Map([
-      [first.yieldDto.id, first.yieldDto],
-      [second.yieldDto.id, second.yieldDto],
-    ]);
-    const positionsAtom = Atom.make([first.item]);
-    const totalAtom = Atom.make((get) =>
-      getPositionsTotal(get(positionsAtom), yields)
-    );
-    const averageApyAtom = Atom.make((get) =>
-      getPositionsAverageApy(get(positionsAtom), yields)
-    );
-    const registry = AtomRegistry.make();
-
-    expect(registry.get(totalAtom).toFixed()).toBe("5");
-    expect(registry.get(averageApyAtom).toFixed()).toBe("5");
-
-    registry.set(positionsAtom, [first.item, second.item]);
-
-    expect(registry.get(totalAtom).toFixed()).toBe("20");
-    expect(registry.get(averageApyAtom).toFixed()).toBe("8.75");
-  });
-
-  it("retains a non-enterable Yield referenced by a historical position", () => {
-    const historicalYield = yieldApiYieldFixture({
-      status: { enter: false, exit: true },
-    });
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(YieldResourceSource, {
-            getProvider: () => Effect.succeedSome(yieldApiProviderFixture()),
-            listYields: () =>
-              Effect.succeed({
-                items: [historicalYield],
-                limit: 100,
-                offset: 0,
-                total: 1,
-              }),
-          } as never)
-        ),
-      ],
-    });
-
-    const key = new MultiYieldsKey({ yieldIds: [historicalYield.id] });
-    const result = registry.get(multiYieldsByIdAtom(key));
-    const yields = AsyncResult.getOrThrow(result);
-    const historicalPosition = makePosition({
-      amountUsd: "5",
-      rewardRate: historicalYield.rewardRate.total,
-      yieldId: historicalYield.id,
-    });
-
-    expect(yields.has(historicalYield.id)).toBe(true);
-    expect(getPositionsTotal([historicalPosition.item], yields).toFixed()).toBe(
-      "5"
-    );
-  });
-
   it("publishes Portfolio summaries as AsyncResult without dropping failures", () => {
     const position = makePosition({
       amountUsd: "5",
@@ -407,60 +336,6 @@ describe("summary atom derivations", () => {
       unmountTotal();
       registry.dispose();
     }
-  });
-
-  it("publishes category-grouped position rows from the Portfolio atom", async () => {
-    const position = makePosition({
-      amountUsd: "5",
-      rewardRate: 0.05,
-      yieldId: "yield-1",
-    });
-    const category = getYieldCategory(position.yieldDto);
-    if (!category) throw new Error("expected a dashboard Yield category");
-    const listYields = vi.fn(() =>
-      Effect.succeed({
-        items: [position.yieldDto],
-        limit: 100,
-        offset: 0,
-        total: 1,
-      })
-    );
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(YieldResourceSource, {
-            listYields,
-          } as never)
-        ),
-        applicationRuntimeInitInitialValue({
-          apiKey: "test-key",
-          baseUrl: "https://api.example.com",
-          dashboardVariant: true,
-          variant: "default",
-          yieldGrouping: "category",
-          yieldsApiUrl: "https://yield.example.com",
-        }),
-        [positionsTableDataAtom, AsyncResult.success([position.item])],
-      ],
-    });
-    const resource = currentGroupedPositionsAtom;
-    const unmount = registry.mount(resource);
-
-    await vi.waitFor(() =>
-      expect(registry.get(resource)).toEqual([
-        { kind: "chain-modal" },
-        { category, count: 1, kind: "section" },
-        {
-          item: { kind: "earn", position: position.item },
-          kind: "position",
-        },
-      ])
-    );
-    expect(listYields).toHaveBeenCalledOnce();
-
-    unmount();
-    registry.dispose();
   });
 
   it("lists a position worth less than a cent as a row in its category", async () => {

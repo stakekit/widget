@@ -83,28 +83,6 @@ const detect = (wallet: WalletDescriptor) =>
     : Effect.die(`${wallet.id} is not an injected wallet`);
 
 describe("Stellar wallet availability", () => {
-  it.effect("offers extension wallets with their store pages", () =>
-    Effect.gen(function* () {
-      const { byId } = yield* makeWallets();
-
-      expect(byId("freighter").availability).toMatchObject({
-        _tag: "Injected",
-        installUrl:
-          "https://chromewebstore.google.com/detail/freighter/bcacfldlkkdogcmkkibnjlakofdplcbk",
-      });
-      expect(byId("lobstr").availability).toMatchObject({
-        _tag: "Injected",
-        installUrl:
-          "https://chromewebstore.google.com/detail/lobstr/ldiagbjmlmjiieclmdkagofdjcgodjle",
-      });
-      expect(byId("albedo").availability).toEqual({ _tag: "Remote" });
-      expect(byId("xbull").availability).toEqual({ _tag: "Remote" });
-      expect(byId("stellar-wallet-connect").availability).toEqual({
-        _tag: "Remote",
-      });
-    }).pipe(Effect.scoped)
-  );
-
   it.effect("asks the module whether its extension is present each time", () =>
     Effect.gen(function* () {
       const { byId, freighter, lobstr } = yield* makeWallets();

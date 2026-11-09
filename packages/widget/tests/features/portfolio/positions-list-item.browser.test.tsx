@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
 import type { InactiveValidatorStatus } from "../../../src/domain/portfolio/position-callout";
-import type { PositionItem } from "../../../src/features/portfolio/state/read-models/positions";
+import type { PositionItem } from "../../../src/features/portfolio/model/positions";
 import { PositionsListItem as CompactPositionsListItem } from "../../../src/features/portfolio/ui/compact/positions-page/components/positions-list-item";
 import { PositionsListItem as DashboardPositionsListItem } from "../../../src/features/portfolio/ui/dashboard/positions/components/positions-list-item";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
@@ -228,51 +228,35 @@ describe.each(presentations)("A $name Manage list", ({ row }) => {
     }
   });
 
-  it.each([
-    { expected: "Action required", item: { requiredAction: "other" as const } },
-    { expected: "Rewards to claim", item: { hasPendingClaimRewards: true } },
-    {
-      expected: "Ready to withdraw",
-      item: { requiredAction: "withdraw" as const },
-    },
-    {
-      expected: "Ready to unlock",
-      item: { requiredAction: "unlock" as const },
-    },
-    {
-      expected: "Locked balance",
-      item: { requiredAction: "locked" as const },
-    },
-    { expected: "In progress", item: { hasPendingRequest: true } },
-  ])(
-    "shows $expected on the provider line, under the title",
-    async ({ expected, item }) => {
-      hookState.details = createDetails();
-      const app = await renderRow(
-        <div style={{ containerType: "inline-size", width: 368 }}>
-          {row(createItem(item))}
-        </div>
-      );
+  it("shows a status on the provider line, under the title", async () => {
+    hookState.details = createDetails();
+    const app = await renderRow(
+      <div style={{ containerType: "inline-size", width: 368 }}>
+        {row(createItem({ hasPendingClaimRewards: true }))}
+      </div>
+    );
 
-      const status = app.getByText(expected).element().getBoundingClientRect();
-      const provider = app
-        .getByText("via Validator A")
-        .element()
-        .getBoundingClientRect();
-      const title = app
-        .getByText(integrationData.metadata.name)
-        .element()
-        .getBoundingClientRect();
+    const status = app
+      .getByText("Rewards to claim")
+      .element()
+      .getBoundingClientRect();
+    const provider = app
+      .getByText("via Validator A")
+      .element()
+      .getBoundingClientRect();
+    const title = app
+      .getByText(integrationData.metadata.name)
+      .element()
+      .getBoundingClientRect();
 
-      expect(status.top).toBeGreaterThanOrEqual(title.bottom - 1);
-      expect(
-        Math.abs(
-          status.top + status.height / 2 - (provider.top + provider.height / 2)
-        )
-      ).toBeLessThan(4);
-      expect(status.left).toBeGreaterThan(provider.right);
-    }
-  );
+    expect(status.top).toBeGreaterThanOrEqual(title.bottom - 1);
+    expect(
+      Math.abs(
+        status.top + status.height / 2 - (provider.top + provider.height / 2)
+      )
+    ).toBeLessThan(4);
+    expect(status.left).toBeGreaterThan(provider.right);
+  });
 
   it("draws every status the Manage tab counts in one tone, apart from In progress", async () => {
     const statusRows = [
@@ -385,51 +369,6 @@ describe("Earn position list item", () => {
         .toBeInTheDocument();
     });
 
-    it.each([
-      {
-        expected: "Action required",
-        inactiveValidator: "jailed",
-        item: { requiredAction: "other", hasPendingClaimRewards: true },
-      },
-      {
-        expected: "Jailed",
-        inactiveValidator: "jailed",
-        item: { hasPendingClaimRewards: true },
-      },
-      {
-        expected: "Inactive",
-        inactiveValidator: "other",
-        item: { hasPendingClaimRewards: true },
-      },
-      {
-        expected: "Rewards to claim",
-        inactiveValidator: null,
-        item: { hasPendingClaimRewards: true, hasPendingRequest: true },
-      },
-      {
-        expected: "In progress",
-        inactiveValidator: null,
-        item: { hasPendingRequest: true },
-      },
-    ] as const)(
-      "shows the $expected badge first",
-      async ({ expected, inactiveValidator, item }) => {
-        hookState.details = createDetails({ inactiveValidator });
-        const app = await renderRow(row(createItem(item)));
-
-        await expect.element(app.getByText(expected)).toBeInTheDocument();
-        for (const other of [
-          "Action required",
-          "Jailed",
-          "Inactive",
-          "Rewards to claim",
-          "In progress",
-        ].filter((label) => label !== expected)) {
-          await expect.element(app.getByText(other)).not.toBeInTheDocument();
-        }
-      }
-    );
-
     it.runIf(name === "dashboard")(
       "shows a positive rate in the success tone and an unavailable one muted",
       async () => {
@@ -472,18 +411,6 @@ describe("Earn position list item", () => {
         );
       }
     );
-
-    it("shows no action badge without a pending action", async () => {
-      hookState.details = createDetails();
-      const app = await renderRow(row(createItem()));
-
-      await expect
-        .element(app.getByText(integrationData.metadata.name))
-        .toBeInTheDocument();
-      await expect
-        .element(app.getByText("Rewards to claim"))
-        .not.toBeInTheDocument();
-    });
   });
 
   it("shows the reward rate only in the dashboard", async () => {

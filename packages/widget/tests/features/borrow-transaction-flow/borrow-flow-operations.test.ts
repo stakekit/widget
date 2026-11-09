@@ -34,7 +34,6 @@ import {
 } from "../../../src/features/borrow-transaction-flow/model/session";
 import {
   leaveBorrowFlow,
-  restartBorrowFlow,
   startBorrowTransactionFlow,
 } from "../../../src/features/borrow-transaction-flow/state/borrow-flow-session";
 import { startBorrowFlowExecution } from "../../../src/features/borrow-transaction-flow/state/execution-page";
@@ -48,7 +47,6 @@ import {
   WidgetNavigationError,
 } from "../../../src/services/navigation/widget-navigation";
 import {
-  widgetRoutes,
   widgetTargetPath,
   widgetTargetState,
 } from "../../../src/services/navigation/widget-routes";
@@ -904,24 +902,6 @@ describe("startBorrowFlowExecution", () => {
 });
 
 describe("leaveBorrowFlow", () => {
-  const leave = (from: "Review" | "Steps") =>
-    Effect.gen(function* () {
-      const kit = yield* makeKit();
-      yield* leaveBorrowFlow(from).pipe(Effect.provide(kit.layer));
-      return yield* kit.navigation.commands;
-    });
-
-  it.effect.each([
-    ["Review", 1],
-    ["Steps", 2],
-  ] as const)(
-    "goes back from %s to the page the flow started from",
-    ([from, steps]) =>
-      Effect.gen(function* () {
-        expect(yield* leave(from)).toEqual([{ _tag: "Back", steps }]);
-      })
-  );
-
   it.effect("lets an interrupted leave navigation finish first", () =>
     Effect.gen(function* () {
       const leaveStarted = yield* Deferred.make<void>();
@@ -951,37 +931,5 @@ describe("leaveBorrowFlow", () => {
         { _tag: "Back", steps: 2 },
       ]);
     })
-  );
-});
-
-describe("restartBorrowFlow", () => {
-  const restart = (intake: BorrowTransactionFlowIntake) =>
-    Effect.gen(function* () {
-      const kit = yield* makeKit();
-      yield* restartBorrowFlow(
-        new BorrowFlowSession({ intake, walletScope })
-      ).pipe(Effect.provide(kit.layer));
-      return yield* kit.navigation.commands;
-    });
-
-  it.effect("replaces the flow with Borrow for a Borrow Entry flow", () =>
-    Effect.gen(function* () {
-      expect(yield* restart(borrowEntryIntake)).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
-    })
-  );
-
-  it.effect(
-    "replaces the flow with its position for a Market Position flow",
-    () =>
-      Effect.gen(function* () {
-        expect(yield* restart(marketPositionIntake)).toEqual([
-          {
-            _tag: "Replace",
-            to: widgetRoutes.borrowPosition.build("Dashboard", { marketId }),
-          },
-        ]);
-      })
   );
 });

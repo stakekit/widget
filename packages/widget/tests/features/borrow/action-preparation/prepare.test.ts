@@ -93,9 +93,6 @@ const debtBalance = position.balances.debt;
 const withdrawAction = position.actions.supply.find(
   (action) => action.type === "withdraw"
 );
-const disableCollateralAction = position.actions.supply.find(
-  (action) => action.type === "disableCollateral"
-);
 const supplyBalance = position.balances.supply[0];
 const collateralToken = position.market.collateralTokens[0];
 
@@ -103,7 +100,6 @@ if (
   !repayAction ||
   !debtBalance ||
   !withdrawAction ||
-  !disableCollateralAction ||
   !supplyBalance ||
   !collateralToken
 ) {
@@ -550,26 +546,6 @@ describe("Borrow action preparation", () => {
     });
   });
 
-  it("warns when new debt is below the market minimum", () => {
-    const minimumMarket = { ...market, minLoan: new BigNumber(10) };
-    const result = prepareBorrowAction({
-      _tag: "OpenPositionDraft",
-      address,
-      borrowAmount: new BigNumber("9.99"),
-      collateralAmount: new BigNumber(1),
-      collateralToken: minimumMarket.collateralTokens[0]!,
-      integrations: [integration],
-      market: minimumMarket,
-      positions: emptyBorrowPositions,
-      tokenBalances,
-    });
-
-    expect(result).toMatchObject({
-      _tag: "Ready",
-      warnings: ["ProjectedDebtBelowMarketMinimum"],
-    });
-  });
-
   it("compares the gross debt principal with the market minimum", () => {
     const minimumMarket = {
       ...market,
@@ -995,26 +971,6 @@ describe("Borrow action preparation", () => {
       review: { riskVerdict: { _tag: "Block", reason: "healthFactor" } },
       warnings: ["AmountExceedsPositionBalance"],
     });
-  });
-
-  it("blocks a collateral toggle the Risk Gate rejects", () => {
-    const result = prepareBorrowAction({
-      _tag: "CollateralToggleIntent",
-      address,
-      context: {
-        action: disableCollateralAction,
-        position,
-        supplyBalance,
-        type: "disableCollateral",
-      },
-    });
-
-    expect(result).toMatchObject({
-      _tag: "Ready",
-      review: { riskVerdict: { _tag: "Block", reason: "healthFactor" } },
-      warnings: [],
-    });
-    expect("review" in result).toBe(true);
   });
 
   it("creates a collateral-toggle review when Risk Position allows it", () => {

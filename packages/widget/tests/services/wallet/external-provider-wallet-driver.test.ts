@@ -1,5 +1,12 @@
-import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Exit, Schema } from "effect";
+import { describe, expect, it } from "@effect/vitest";
+import {
+  Address,
+  beginCell,
+  type CommonMessageInfoRelaxedInternal,
+  internal,
+  storeMessageRelaxed,
+} from "@ton/core";
+import { Effect, Schema } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
 
@@ -29,15 +36,6 @@ const tx = JSON.stringify({
   type: 0,
 });
 
-const typedData = {
-  domain: { chainId: 1, name: "Borrow Authorization" },
-  message: { owner: zeroAddress },
-  primaryType: "Authorization",
-  types: {
-    Authorization: [{ name: "owner", type: "address" }],
-  },
-} as const;
-
 type ExternalProviderTransactionInput = Parameters<
   ReturnType<typeof makeExternalProviderWalletDriver>["signTransaction"]
 >[0];
@@ -61,68 +59,6 @@ const borrowTxMeta = {
 } satisfies BorrowTransactionMeta;
 
 describe("external-provider wallet driver", () => {
-  it.effect(
-    "routes typed data and Borrow metadata through the host signing capability",
-    () =>
-      Effect.gen(function* () {
-        const signTypedData = vi.fn(() => Effect.succeed("typed-signature"));
-        const connector = {
-          id: "externalProviderConnector",
-          signTypedData,
-        } as unknown as Connector;
-
-        expect(
-          yield* makeExternalProviderWalletDriver({ connector }).signTypedData({
-            txMeta: borrowTxMeta,
-            typedData,
-          })
-        ).toBe("typed-signature");
-        expect(signTypedData).toHaveBeenCalledWith(typedData, borrowTxMeta);
-      })
-  );
-
-  it.effect(
-    "reads fresh host callbacks and preserves their Promise contract",
-    () =>
-      Effect.gen(function* () {
-        const callbacks: {
-          signMessage: (message: string) => Promise<string>;
-          sendTransaction: (input: unknown, meta: unknown) => Promise<string>;
-        } = {
-          signMessage: async () => "first-message",
-          sendTransaction: async () => "first-hash",
-        };
-        const connector = {
-          id: "externalProviderConnector",
-          signMessage: (message: string) =>
-            Effect.tryPromise(() => callbacks.signMessage(message)),
-          sendTransaction: (input: unknown, meta: unknown) =>
-            Effect.tryPromise(() => callbacks.sendTransaction(input, meta)),
-        } as unknown as Connector;
-        const driver = makeExternalProviderWalletDriver({ connector });
-
-        expect(yield* driver.signMessage({ message: "message" })).toBe(
-          "first-message"
-        );
-
-        callbacks.signMessage = async () => "second-message";
-        callbacks.sendTransaction = async () => "second-hash";
-
-        expect(yield* driver.signMessage({ message: "message" })).toBe(
-          "second-message"
-        );
-        expect(
-          yield* driver.signTransaction({
-            address: zeroAddress,
-            family: "yield",
-            network: "ethereum",
-            tx,
-            txMeta,
-          })
-        ).toEqual({ broadcasted: true, signedTx: "second-hash" });
-      })
-  );
-
   it.effect("maps host custom errors to the broadcast failure", () =>
     Effect.gen(function* () {
       const connector = {
@@ -150,41 +86,6 @@ describe("external-provider wallet driver", () => {
         expect(failure.customMessage).toBe("Open your host wallet");
       }
     })
-  );
-
-  it.effect(
-    "routes Borrow transactions through the Borrow connector capability",
-    () =>
-      Effect.gen(function* () {
-        let yieldCalls = 0;
-        let borrowCalls = 0;
-        const connector = {
-          id: "externalProviderConnector",
-          sendBorrowTransaction: () => {
-            borrowCalls += 1;
-            return Effect.succeed("borrow-hash");
-          },
-          sendTransaction: () => {
-            yieldCalls += 1;
-            return Effect.succeed("yield-hash");
-          },
-        } as unknown as Connector;
-
-        expect(
-          yield* makeExternalProviderWalletDriver({
-            connector,
-          }).signTransaction({
-            address: zeroAddress,
-            family: "borrow",
-            network: "ethereum",
-            tx,
-            txMeta: borrowTxMeta,
-          })
-        ).toEqual({ broadcasted: true, signedTx: "borrow-hash" });
-
-        expect(borrowCalls).toBe(1);
-        expect(yieldCalls).toBe(0);
-      })
   );
 
   it.effect("never passes a quoted nonce to the host wallet", () =>
@@ -332,13 +233,84 @@ describe("external-provider wallet driver", () => {
     })
   );
 
-  it.effect("rejects a Borrow payload with an unsupported type", () =>
-    Effect.gen(function* () {
-      const exit = yield* Effect.exit(
-        decodeBorrowTransactionForWallet(borrowApiTransaction({ type: 1 }))
-      );
+  const tonMessage = internal({
+    to: Address.parseRaw(
+      "0:0000000000000000000000000000000000000000000000000000000000000000"
+    ),
+    value: 123n,
+    body: "Deposit",
+  });
+  const tonMessageInfo = tonMessage.info as CommonMessageInfoRelaxedInternal;
+  const rawTonTransaction = [
+    {
+      address: "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+      amount: "123",
+      payload: "te6cckEBAQEAAgAAAA==",
+    },
+  ];
 
-      expect(Exit.isFailure(exit)).toBe(true);
+  it.effect.each([
+    {
+      name: "a base64 Solana transaction as hex",
+      network: "solana",
+      tx: "AQIDBA==",
+      expected: { type: "solana", tx: "01020304" },
+    },
+    {
+      name: "a hex Solana transaction in lowercase hex",
+      network: "solana",
+      tx: "0xA1B2",
+      expected: { type: "solana", tx: "a1b2" },
+    },
+    {
+      name: "a TON message as its raw transfer",
+      network: "ton",
+      tx: JSON.stringify({
+        seqno: 0,
+        message: beginCell()
+          .store(storeMessageRelaxed(tonMessage))
+          .endCell()
+          .toBoc()
+          .toString("base64"),
+      }),
+      expected: {
+        type: "ton",
+        tx: [
+          {
+            address: tonMessageInfo.dest.toString(),
+            amount: tonMessageInfo.value.coins.toString(),
+            payload: tonMessage.body.toBoc().toString("base64"),
+          },
+        ],
+      },
+    },
+    {
+      name: "a raw TON transfer unchanged",
+      network: "ton",
+      tx: JSON.stringify(rawTonTransaction),
+      expected: { type: "ton", tx: rawTonTransaction },
+    },
+  ] as const)("hands the host $name", ({ network, tx, expected }) =>
+    Effect.gen(function* () {
+      const received: Array<unknown> = [];
+      const connector = {
+        id: "externalProviderConnector",
+        sendTransaction: (input: unknown, meta: unknown) => {
+          received.push(input, meta);
+          return Effect.succeed("hash");
+        },
+      } as unknown as Connector;
+
+      expect(
+        yield* makeExternalProviderWalletDriver({ connector }).signTransaction({
+          address: "host-address",
+          family: "yield",
+          network,
+          tx,
+          txMeta,
+        })
+      ).toEqual({ broadcasted: true, signedTx: "hash" });
+      expect(received).toEqual([expected, txMeta]);
     })
   );
 

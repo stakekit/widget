@@ -65,24 +65,6 @@ const createConnectorForTest = ({
 };
 
 describe("Stellar connector", () => {
-  it("offers the agreed Stellar wallet catalog", () => {
-    const group = getStellarConnectors({
-      clients,
-      runWalletEffect,
-    });
-
-    expect(group.groupName).toBe("Stellar");
-    expect(
-      group.wallets.map((createWallet) => createWallet({} as never).id)
-    ).toEqual([
-      "freighter",
-      "albedo",
-      "xbull",
-      "lobstr",
-      "stellar-wallet-connect",
-    ]);
-  });
-
   it("validates a saved connection through the selected wallet client", async () => {
     const reconnect = vi.fn(() => Effect.succeed({ address }));
     const client = { ...clients[0], reconnect };

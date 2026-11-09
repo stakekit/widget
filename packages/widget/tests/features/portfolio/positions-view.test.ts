@@ -1,18 +1,23 @@
 import { Effect, Layer, Option, Schema } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
 
+import { Integration } from "../../../src/domain/borrow/integration";
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { positionsViewAtom } from "../../../src/features/portfolio/state/read-models/positions";
 import { yieldBalancesScanAtom } from "../../../src/features/portfolio/state/read-models/yield-balances";
+import { retryPositionsAtom } from "../../../src/features/portfolio/state/retry-positions";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
+import { borrowIntegrationsResourceAtom } from "../../../src/resources/borrow-integrations/borrow-integrations";
 import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
+  BorrowResourceSource,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../../fixtures";
@@ -113,6 +118,77 @@ describe("Portfolio positions view", () => {
 
     try {
       expect(registry.get(positionsViewAtom)._tag).toBe("Failed");
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+});
+
+const integration = Schema.decodeSync(Integration)({
+  id: "aave-borrow",
+  name: "Aave V3",
+  networks: ["ethereum"],
+  metadata: {
+    description: "Aave lending and borrowing",
+    externalLink: "https://aave.com",
+    logoURI: "https://assets.stakek.it/protocols/aave.svg",
+  },
+});
+
+describe("retryPositionsAtom", () => {
+  it("loads the Borrow integrations again after they failed", () => {
+    let online = false;
+    const borrowSource = BorrowResourceSource.of({
+      getAction: () => Effect.succeedNone,
+      getIntegrations: Effect.suspend(() =>
+        online
+          ? Effect.succeed([integration])
+          : Effect.fail(
+              new ApiRequestError({
+                cause: new Error("borrow unavailable"),
+                failure: { _tag: "Unreachable" },
+                operation: "borrow-integrations",
+              })
+            )
+      ),
+      getMarkets: () =>
+        Effect.succeed({ items: [], limit: 100, offset: 0, total: 0 }),
+      getPositionData: () => Effect.succeed([]),
+      listActions: () => Effect.die("unused"),
+    });
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(BorrowResourceSource, borrowSource)
+        ),
+        Atom.initialValue(walletScopeAtom, scope),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        }),
+      ],
+    });
+    const unmount = registry.mount(borrowIntegrationsResourceAtom.local);
+
+    try {
+      expect(
+        AsyncResult.isFailure(
+          registry.get(borrowIntegrationsResourceAtom.local)
+        )
+      ).toBe(true);
+
+      online = true;
+      registry.set(retryPositionsAtom, undefined);
+
+      expect(
+        AsyncResult.getOrThrow(
+          registry.get(borrowIntegrationsResourceAtom.local)
+        )
+      ).toEqual([integration]);
     } finally {
       unmount();
       registry.dispose();

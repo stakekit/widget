@@ -72,7 +72,7 @@ export class ActivityActionKey extends Data.TaggedClass("ActivityActionKey")<{
   }
 }
 
-export type ActivityHistoryBatch = {
+type ActivityHistoryBatch = {
   readonly actions: ReadonlyArray<ActivityHistoryEntry>;
   readonly hasNextPage: boolean;
   readonly total: number;

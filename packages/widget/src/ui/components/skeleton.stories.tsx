@@ -16,11 +16,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** A line takes the line height of the type role `variant` names. */
-export const Line: Story = { args: { shape: "line", variant: "body" } };
 export const LineDisplay: Story = {
   args: { shape: "line", variant: "display", width: "half" },
 };
-export const Rect: Story = { args: { shape: "rect", height: "md" } };
 /** `panel` stands in for an amount panel; `section` for a taller section. */
 export const RectPanel: Story = { args: { shape: "rect", height: "panel" } };
 export const RectSection: Story = {

@@ -23,6 +23,7 @@ import {
 } from "../../../src/features/position-details/state/actions/reveal";
 import { positionDetailsViewAtom } from "../../../src/features/position-details/state/details-view";
 import {
+  makePositionDetailsWorkflowState,
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
 } from "../../../src/features/position-details/state/workflow";
@@ -373,6 +374,26 @@ const makeRegistry = ({
   });
 };
 
+const setExitAmount = (
+  registry: AtomRegistry.AtomRegistry,
+  amount: BigNumber.Value
+) =>
+  registry.set(
+    positionDetailsWorkflowAtom(workflowKey),
+    makePositionDetailsWorkflowState(new BigNumber(amount))
+  );
+
+/** A command's outcome once it settles. */
+const settledOutcome = async <A, E>(
+  registry: AtomRegistry.AtomRegistry,
+  atom: Atom.Atom<AsyncResult.AsyncResult<A, E>>
+): Promise<A> => {
+  await vi.waitFor(() =>
+    expect(AsyncResult.isSuccess(registry.get(atom))).toBe(true)
+  );
+  return AsyncResult.getOrThrow(registry.get(atom));
+};
+
 describe("Position Details exit command", () => {
   it("keeps an untouched exit amount neutral, disabled with its reason", async () => {
     const yieldDto = yieldApiYieldDtoFixture();
@@ -415,12 +436,7 @@ describe("Position Details exit command", () => {
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.5"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.5");
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
         unstakeAmountGreaterThanAvailable: false,
@@ -429,12 +445,7 @@ describe("Position Details exit command", () => {
         unstakeIsGreaterOrLessIntegrationLimitError: true,
       });
 
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber(0),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, 0);
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
         unstakeBlocker: "EnterAmount",
@@ -490,16 +501,8 @@ describe("Position Details exit command", () => {
     });
     const viewAtom = positionDetailsViewAtom(workflowKey);
     const unmountView = registry.mount(viewAtom);
-    const setAmount = (amount: string) =>
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber(amount),
-        unstakeUseMaxAmount: false,
-      });
-
     try {
-      setAmount("2");
+      setExitAmount(registry, "2");
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
         unstakeAmountGreaterThanAvailable: true,
@@ -507,7 +510,7 @@ describe("Position Details exit command", () => {
         unstakeDisabled: true,
       });
 
-      setAmount("0.5");
+      setExitAmount(registry, "0.5");
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
         unstakeAmountGreaterThanAvailable: false,
@@ -553,9 +556,10 @@ describe("Position Details exit command", () => {
                 {
                   label: "Output Token",
                   name: "outputToken",
+                  // USDS is listed second: Sky Savings Rate prefers it.
                   options: [
-                    "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
                     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                    "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
                   ],
                   required: false,
                   type: "string",
@@ -575,12 +579,7 @@ describe("Position Details exit command", () => {
       const unmountView = registry.mount(viewAtom);
 
       try {
-        registry.set(positionDetailsWorkflowAtom(workflowKey), {
-          exitReceiveTokenAddress: null,
-          pendingActions: new Map(),
-          unstakeAmount: new BigNumber("0.4"),
-          unstakeUseMaxAmount: false,
-        });
+        setExitAmount(registry, "0.4");
         if (selectedAddress) {
           registry.set(
             setPositionDetailsExitReceiveTokenAtom(workflowKey),
@@ -645,12 +644,7 @@ describe("Position Details exit command", () => {
       const unmountView = registry.mount(viewAtom);
 
       try {
-        registry.set(positionDetailsWorkflowAtom(workflowKey), {
-          exitReceiveTokenAddress: null,
-          pendingActions: new Map(),
-          unstakeAmount: new BigNumber("0.4"),
-          unstakeUseMaxAmount: false,
-        });
+        setExitAmount(registry, "0.4");
         if (selectedAddress) {
           registry.set(
             setPositionDetailsExitReceiveTokenAtom(workflowKey),
@@ -722,12 +716,7 @@ describe("Position Details exit command", () => {
       });
 
       try {
-        registry.set(positionDetailsWorkflowAtom(workflowKey), {
-          exitReceiveTokenAddress: null,
-          pendingActions: new Map(),
-          unstakeAmount: new BigNumber("0.4"),
-          unstakeUseMaxAmount: false,
-        });
+        setExitAmount(registry, "0.4");
         registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
         await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -741,39 +730,6 @@ describe("Position Details exit command", () => {
       }
     }
   );
-
-  it("does not offer a receive token when the optional field advertises no options", async () => {
-    const push = vi.fn<Push>();
-    const registry = makeRegistry({
-      push,
-      trackEvent: () => Effect.void,
-      yieldOpportunity: optionalOutputTokenYield({
-        options: [],
-        outputToken: susdsToken,
-        providerId: "sky",
-      }),
-    });
-
-    try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
-      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
-
-      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      const intake = startedIntake(push, exitReviewPath);
-      expect(intake).toMatchObject({ _tag: "Exit", receiveToken: null });
-      if (intake._tag !== "Exit") {
-        throw new Error("Expected an active Exit intake");
-      }
-      expect(intake.request.arguments).not.toHaveProperty("outputToken");
-    } finally {
-      registry.dispose();
-    }
-  });
 
   it("blocks an Exit whose required receive token is unresolved", () => {
     expect(
@@ -806,12 +762,7 @@ describe("Position Details exit command", () => {
     const commandAtom = submitPositionDetailsExitAtom(workflowKey);
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.4");
       registry.set(commandAtom, undefined);
 
       await vi.waitFor(() =>
@@ -872,7 +823,12 @@ describe("Position Details exit command", () => {
         yieldBalance: manageBalance,
       });
 
-      await Promise.resolve();
+      expect(
+        await settledOutcome(
+          registry,
+          runPositionPendingActionAtom(workflowKey)
+        )
+      ).toMatchObject({ _tag: "Unavailable" });
       expect(push).not.toHaveBeenCalled();
     } finally {
       registry.dispose();
@@ -934,7 +890,12 @@ describe("Position Details exit command", () => {
         yieldBalance: constrainedBalance,
       });
 
-      await Promise.resolve();
+      expect(
+        await settledOutcome(
+          registry,
+          runPositionPendingActionAtom(workflowKey)
+        )
+      ).toMatchObject({ _tag: "Unavailable" });
       expect(push).not.toHaveBeenCalled();
     } finally {
       registry.dispose();
@@ -1009,16 +970,15 @@ describe("Position Details exit command", () => {
       });
 
       try {
-        registry.set(positionDetailsWorkflowAtom(workflowKey), {
-          exitReceiveTokenAddress: null,
-          pendingActions: new Map(),
-          unstakeAmount: new BigNumber("0.4"),
-          unstakeUseMaxAmount: false,
-        });
+        setExitAmount(registry, "0.4");
         registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
-        await Promise.resolve();
-
+        expect(
+          await settledOutcome(
+            registry,
+            submitPositionDetailsExitAtom(workflowKey)
+          )
+        ).toEqual({ _tag: "Invalid" });
         expect(push).not.toHaveBeenCalled();
       } finally {
         registry.dispose();
@@ -1034,12 +994,7 @@ describe("Position Details exit command", () => {
     const registry = makeRegistry({ push, trackEvent });
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.4");
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -1088,12 +1043,7 @@ describe("Position Details exit command", () => {
     });
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.4");
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -1147,12 +1097,7 @@ describe("Position Details exit command", () => {
     });
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber(0),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, 0);
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -1229,12 +1174,7 @@ describe("Position Details exit command", () => {
     });
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.4");
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -1307,8 +1247,12 @@ describe("Position Details exit command", () => {
           )
         );
 
-        await Promise.resolve();
-
+        expect(
+          await settledOutcome(
+            registry,
+            runPositionPendingActionAtom(workflowKey)
+          )
+        ).toMatchObject({ _tag: "Unavailable" });
         expect(push).not.toHaveBeenCalled();
       } finally {
         registry.dispose();
@@ -1485,12 +1429,7 @@ describe("Position Details exit command", () => {
     const unmountView = registry.mount(viewAtom);
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.5"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.5");
 
       const view = registry.get(viewAtom);
       expect(view.unstakeAmount).toEqual(new BigNumber("0.5"));
@@ -1513,16 +1452,15 @@ describe("Position Details exit command", () => {
     });
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.4");
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
-      await Promise.resolve();
-
+      expect(
+        await settledOutcome(
+          registry,
+          submitPositionDetailsExitAtom(workflowKey)
+        )
+      ).toEqual({ _tag: "Rejected", reason: "RejectedOwner" });
       expect(push).not.toHaveBeenCalled();
     } finally {
       registry.dispose();
@@ -1538,6 +1476,8 @@ describe("Position Details exit command", () => {
       push,
       trackEvent,
       wallet: makeConnectedWallet({ address: otherAddress }),
+      // The action is still held, so only the owner change can reject it.
+      yieldBalance: manageBalance,
     });
 
     try {
@@ -1547,8 +1487,12 @@ describe("Position Details exit command", () => {
         yieldBalance: manageBalance,
       });
 
-      await Promise.resolve();
-
+      expect(
+        await settledOutcome(
+          registry,
+          runPositionPendingActionAtom(workflowKey)
+        )
+      ).toMatchObject({ _tag: "Rejected", reason: "RejectedOwner" });
       expect(push).not.toHaveBeenCalled();
     } finally {
       registry.dispose();
@@ -1570,12 +1514,7 @@ describe("Position Details exit command", () => {
     });
 
     try {
-      registry.set(positionDetailsWorkflowAtom(workflowKey), {
-        exitReceiveTokenAddress: null,
-        pendingActions: new Map(),
-        unstakeAmount: new BigNumber("0.4"),
-        unstakeUseMaxAmount: false,
-      });
+      setExitAmount(registry, "0.4");
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -1616,6 +1555,90 @@ describe("Position Details exit command", () => {
     } finally {
       registry.dispose();
     }
+  });
+});
+
+describe("Position Details pending action wallet ownership", () => {
+  const validatorBalance = Schema.decodeSync(EarnBalance)(
+    yieldBalanceFixture({
+      address,
+      pendingActions: [
+        {
+          arguments: {
+            fields: [
+              {
+                label: "Validator",
+                name: "validatorAddress",
+                required: true,
+                type: "address",
+              },
+            ],
+          },
+          intent: "manage",
+          passthrough: "wallet-a-action",
+          type: "CLAIM_REWARDS",
+        },
+      ],
+      token: selectedYield.token,
+    })
+  );
+  /** Opens the modal for the position's owner, then reads it for `walletScope`. */
+  const openedFor = (walletScope: WalletScopeKey) => {
+    const registry = makeRegistry({
+      push: vi.fn(),
+      trackEvent: () => Effect.void,
+      yieldBalance: validatorBalance,
+    });
+    const openedAtom = positionPendingActionModalViewAtom(workflowKey);
+    const viewAtom = positionPendingActionModalViewAtom(
+      new PositionDetailsWorkflowKey({
+        balanceId: workflowKey.balanceId,
+        integrationId: workflowKey.integrationId,
+        pendingActionType: null,
+        scope: walletScope,
+      })
+    );
+    const unmountOpened = registry.mount(openedAtom);
+    const unmountView = registry.mount(viewAtom);
+
+    try {
+      registry.set(openPositionPendingActionModalAtom(workflowKey), {
+        pendingAction: validatorBalance.pendingActions[0]!,
+        yieldBalance: validatorBalance,
+      });
+      expect(registry.get(openedAtom)).toMatchObject({
+        _tag: "Open",
+        pendingAction: { pendingAction: { passthrough: "wallet-a-action" } },
+      });
+      return registry.get(viewAtom);
+    } finally {
+      unmountView();
+      unmountOpened();
+      registry.dispose();
+    }
+  };
+
+  it("closes a validator-required pending action when its wallet owner changes", () => {
+    expect(
+      openedFor(
+        new WalletScopeKey({ address: otherAddress, network: "ethereum" })
+      )._tag
+    ).toBe("Closed");
+  });
+
+  it("keeps validator selection open when only additional addresses refresh", () => {
+    expect(
+      openedFor(
+        new WalletScopeKey({
+          additionalAddresses: { binanceBeaconAddress: "bnb-refreshed" },
+          address,
+          network: "ethereum",
+        })
+      )
+    ).toMatchObject({
+      _tag: "Open",
+      pendingAction: { pendingAction: { passthrough: "wallet-a-action" } },
+    });
   });
 });
 

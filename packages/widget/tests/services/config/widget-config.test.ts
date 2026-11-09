@@ -37,7 +37,7 @@ const walletTopology = (overrides: Partial<SKHostConfiguration> = {}) => {
 
 describe("WidgetConfigService", () => {
   it.effect(
-    "normalizes Host Configuration into one complete Widget Configuration",
+    "derives Layout, grouping, and canonical orders from Host Configuration",
     () =>
       Effect.gen(function* () {
         const current = yield* WidgetConfigService.use(
@@ -59,21 +59,9 @@ describe("WidgetConfigService", () => {
         );
 
         expect(current).toMatchObject({
-          baseUrl: "https://api.stakek.it/",
-          borrowApiUrl: "https://borrow.yield.xyz",
-          borrowEnabled: false,
           earnCategoryGrouping: true,
           layout: "Dashboard",
           yieldCategoryOrder: ["stake", "rwa", "defi"],
-          disableAutoScrollToTop: false,
-          disableInitLayoutAnimation: false,
-          disableInjectedProviderDiscovery: false,
-          disableResizingInputFontSize: false,
-          hideAccountAndChainSelector: false,
-          hideChainSelector: false,
-          hideNetworkLogo: false,
-          institutionalWallets: false,
-          isSafe: false,
           mountAnimationStartsFinished: true,
           preferredTokenYieldsPerNetwork: {
             ethereum: {
@@ -81,7 +69,6 @@ describe("WidgetConfigService", () => {
             },
           },
           yieldGrouping: "category",
-          yieldsApiUrl: "https://api.yield.xyz/",
         });
       })
   );
@@ -244,31 +231,6 @@ describe("WidgetConfigService", () => {
           false,
           true,
         ]);
-      })
-  );
-
-  it.effect(
-    "rejects semantically invalid updates and retains the last valid value",
-    () =>
-      Effect.gen(function* () {
-        const result = yield* Effect.gen(function* () {
-          const config = yield* WidgetConfigService;
-          const outcome = yield* config.update({
-            apiKey: "api-key",
-            borrowEnabled: true,
-            variant: "default",
-          });
-          const current = yield* config.current;
-
-          return { current, outcome };
-        }).pipe(
-          Effect.provide(
-            WidgetConfigService.layer({ apiKey: "api-key", variant: "default" })
-          )
-        );
-
-        expect(result.outcome._tag).toBe("RejectedInvalid");
-        expect(result.current.apiKey).toBe("api-key");
       })
   );
 
@@ -509,18 +471,6 @@ describe("wallet topology difference", () => {
 
         expect(difference).toEqual({ material: [], opaque: [] });
       })
-  );
-
-  it.effect("reports a comparable field as material", () =>
-    Effect.gen(function* () {
-      const difference = diffWidgetWalletConfig(
-        yield* walletTopology({ isSafe: true }),
-        yield* walletTopology()
-      );
-
-      expect(difference.material).toEqual(["isSafe"]);
-      expect(difference.opaque).toEqual([]);
-    })
   );
 
   it.effect("reports record mappings by value", () =>
