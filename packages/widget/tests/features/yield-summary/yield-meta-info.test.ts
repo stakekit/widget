@@ -16,6 +16,10 @@ import {
 } from "../../fixtures";
 
 const t = createWidgetI18nInstance().getFixedT("en");
+const translations = {
+  en: t,
+  fr: createWidgetI18nInstance().getFixedT("fr"),
+} as const;
 
 const usdc = {
   name: "USD Coin",
@@ -35,12 +39,14 @@ const baseMechanics = yieldApiYieldDtoFixture().mechanics;
 
 const makeYield = ({
   exit = true,
+  outputToken = aUsdc,
   providerName = "Aave",
   rewardSchedule = "day",
   stakeSymbol = "USDC",
   type,
 }: {
   readonly exit?: boolean;
+  readonly outputToken?: typeof usdc | typeof aUsdc;
   readonly providerName?: string;
   readonly rewardSchedule?: "day" | "campaign";
   readonly stakeSymbol?: string;
@@ -49,7 +55,7 @@ const makeYield = ({
   ({
     ...yieldApiYieldFixture({
       token: { ...usdc, symbol: stakeSymbol },
-      outputToken: aUsdc,
+      outputToken,
       mechanics: { ...baseMechanics, type, rewardSchedule },
       status: { enter: true, exit },
     }),
@@ -58,9 +64,19 @@ const makeYield = ({
 
 const metaOf = (
   yieldDto: EarnYieldWithProvider,
-  now: DateTime.Utc | null = null
+  now: DateTime.Utc | null = null,
+  translate = t
 ) =>
-  getYieldMetaInfo({ now, t, token: yieldDto.token, validators: [], yieldDto });
+  getYieldMetaInfo({
+    now,
+    t: translate,
+    token: yieldDto.token,
+    validators: [],
+    yieldDto,
+  });
+
+// An empty token interpolation leaves "receive ." or "recevrez des .".
+const emptyTokenSlot = /\s[.,]|\s$|(du|des)\s*\./;
 
 const confidentialVault = (
   overrides?: Parameters<typeof confidentialYieldFixture>[0]
@@ -230,5 +246,36 @@ describe("getYieldMetaInfo", () => {
     it("has no campaign for a regularly rewarded yield", () => {
       expect(metaOf(makeYield({ type: "vault" })).campaign).toBeNull();
     });
+  });
+
+  describe("received token", () => {
+    it.each(["lending", "vault", "restaking"] as const)(
+      "names the received token for %s",
+      (type) => {
+        expect(metaOf(makeYield({ type })).description).toContain("aUSDC");
+      }
+    );
+
+    it.each([
+      ["lending", "en"],
+      ["vault", "en"],
+      ["restaking", "en"],
+      ["lending", "fr"],
+      ["vault", "fr"],
+      ["restaking", "fr"],
+    ] as const)(
+      "drops the receive clause for %s (%s) when no token is received",
+      (type, language) => {
+        const { description } = metaOf(
+          makeYield({ outputToken: usdc, type }),
+          null,
+          translations[language]
+        );
+
+        expect(description).toContain("USDC");
+        expect(description).not.toMatch(/receive|recevrez/);
+        expect(description).not.toMatch(emptyTokenSlot);
+      }
+    );
   });
 });

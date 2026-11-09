@@ -257,9 +257,29 @@ describe("external-provider synchronization", () => {
       })
   );
 
-  it.effect(
-    "keeps synchronizing when only host functions change identity",
-    () =>
+  type HarnessSettings = NonNullable<
+    Parameters<typeof makeHarness>[0]["settings"]
+  >;
+  const unchangedTopologyUpdates: ReadonlyArray<{
+    readonly name: string;
+    readonly settings: HarnessSettings;
+    readonly update: HarnessSettings;
+  }> = [
+    {
+      name: "only host functions change identity",
+      settings: { mapWalletFn: (wallet) => wallet },
+      update: { mapWalletFn: (wallet) => wallet },
+    },
+    {
+      name: "a comparable wallet field changes",
+      settings: {},
+      update: { isSafe: true },
+    },
+  ];
+
+  it.effect.each(unchangedTopologyUpdates)(
+    "keeps synchronizing when $name",
+    ({ settings, update }) =>
       Effect.gen(function* () {
         const notified = Promise.withResolvers<void>();
         const connector = {
@@ -276,7 +296,7 @@ describe("external-provider synchronization", () => {
         const harness = yield* makeHarness({
           connected: true,
           connector,
-          settings: { mapWalletFn: (wallet) => wallet },
+          settings,
         });
 
         const failed = yield* Effect.scoped(
@@ -284,11 +304,11 @@ describe("external-provider synchronization", () => {
             yield* installExternalProviderSynchronization(harness);
             const config = yield* WidgetConfigService;
             yield* config.update({
+              ...update,
               apiKey: "api-key",
               externalProviders: externalProviders({
                 currentAddress: secondAddress,
               }),
-              mapWalletFn: (wallet) => wallet,
               variant: "default",
             });
             yield* Effect.promise(() => notified.promise);
@@ -303,48 +323,6 @@ describe("external-provider synchronization", () => {
           harness.bootstrap.externalProviders?.current.currentAddress
         ).toBe(secondAddress);
       })
-  );
-
-  it.effect("keeps synchronizing when a comparable wallet field changes", () =>
-    Effect.gen(function* () {
-      const notified = Promise.withResolvers<void>();
-      const connector = {
-        id: "externalProviderConnector",
-        name: "External",
-        onAccountsChanged: () => {
-          notified.resolve();
-        },
-        onChainChanged: () => undefined,
-        onSupportedChainsChanged: () => undefined,
-        type: "externalProvider",
-        uid: "external-uid",
-      } as unknown as Connector;
-      const harness = yield* makeHarness({ connected: true, connector });
-
-      const failed = yield* Effect.scoped(
-        Effect.gen(function* () {
-          yield* installExternalProviderSynchronization(harness);
-          const config = yield* WidgetConfigService;
-          yield* config.update({
-            apiKey: "api-key",
-            externalProviders: externalProviders({
-              currentAddress: secondAddress,
-            }),
-            isSafe: true,
-            variant: "default",
-          });
-          yield* Effect.promise(() => notified.promise);
-          yield* Effect.yieldNow;
-
-          return yield* Deferred.isDone(harness.invariant);
-        }).pipe(Effect.provide(harness.configLayer))
-      );
-
-      expect(failed).toBe(false);
-      expect(harness.bootstrap.externalProviders?.current.currentAddress).toBe(
-        secondAddress
-      );
-    })
   );
 
   it.effect(

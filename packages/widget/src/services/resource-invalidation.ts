@@ -54,7 +54,7 @@ class BorrowPositionsInvalidationKey extends Data.TaggedClass(
   }
 }
 
-export class BorrowMarketsInvalidationKey extends Data.TaggedClass(
+class BorrowMarketsInvalidationKey extends Data.TaggedClass(
   "BorrowMarketsInvalidationKey"
 )<{
   readonly network: BorrowNetwork;

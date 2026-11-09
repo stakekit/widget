@@ -131,7 +131,7 @@ const stepPart = (
 /**
  * Waiting for its signature, a step's wallet pulses a halo, slowly, around
  * its marker; no other step has one. Reduced motion holds it still: see
- * `steps-reduced-motion.browser.test.tsx`.
+ * `tests/ui/reduced-motion.browser.test.tsx`.
  */
 export const SigningHalo: Story = {
   ...Signing,

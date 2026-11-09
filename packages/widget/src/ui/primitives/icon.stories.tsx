@@ -70,16 +70,6 @@ export const EverySizeDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
-export const Sizes: Story = {
-  render: () => (
-    <Stack direction="row" align="center" gap={12}>
-      {sizes.map((size) => (
-        <Icon key={size} name="SearchIcon" size={size} />
-      ))}
-    </Stack>
-  ),
-};
-
 const tones = [
   "default",
   "muted",

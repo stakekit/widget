@@ -27,7 +27,7 @@ import type { ActivityFilter } from "../../model/filters";
 import type {
   ActivityPagePagination,
   ActivityPageView,
-} from "../../state/page";
+} from "../../model/page-view";
 import { ActivityRetryMessage } from "../components/activity-retry-message";
 import { ActionListItem } from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";

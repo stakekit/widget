@@ -2,46 +2,10 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 
 import { exactDecimal } from "../../../src/domain/finance/exact";
-import {
-  PriceRequest,
-  PriceResponse,
-} from "../../../src/domain/finance/prices";
-import { HealthStatus } from "../../../src/domain/health/models";
+import { PriceResponse } from "../../../src/domain/finance/prices";
 import { Token } from "../../../src/domain/token/token";
 
-describe("health and price application schemas", () => {
-  it("strictly decodes health responses", () => {
-    const health = Schema.decodeSync(HealthStatus)({
-      status: "OK",
-      timestamp: "2026-07-10T12:00:00.000Z",
-    });
-
-    expect(health.status).toBe("OK");
-    expect(() =>
-      Schema.decodeUnknownSync(HealthStatus)({
-        status: "DEGRADED",
-        timestamp: "not-a-date",
-      })
-    ).toThrow();
-  });
-
-  it("decodes application price commands from the generated wire shape", () => {
-    const request = Schema.decodeSync(PriceRequest)({
-      currency: "USD",
-      tokenList: [
-        {
-          address: "0xToken",
-          decimals: 18,
-          name: "Ethereum",
-          network: "ethereum",
-          symbol: "ETH",
-        },
-      ],
-    });
-
-    expect(request.tokenList[0]?.address).toBe("0xToken");
-  });
-
+describe("price application schemas", () => {
   it.effect(
     "omits malformed top-level price entries while retaining valid siblings",
     () =>

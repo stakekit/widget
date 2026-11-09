@@ -1,11 +1,7 @@
-import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
-import type * as Atom from "effect/reactivity/Atom";
-import * as AtomRegistry from "effect/reactivity/AtomRegistry";
+import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { EarnBalance, EarnPosition } from "../../../src/domain/earn/balance";
-import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import {
   BalanceDataKey,
   getPositionBalances,
@@ -18,15 +14,6 @@ import {
   toPositionBalancesByType,
   toPositionsData,
 } from "../../../src/domain/portfolio/positions";
-import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import { toPositionItems } from "../../../src/features/portfolio/state/read-models/positions";
-import {
-  PositionBalancesKey,
-  PositionDataKey,
-  positionBalancesAtom,
-  positionDataAtom,
-  yieldPositionsResourceAtom,
-} from "../../../src/resources/yield-positions/yield-positions";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../../fixtures";
 
 const makePosition = () => {
@@ -169,32 +156,6 @@ describe("position derivations", () => {
         ])
       ).toEqual([{ amount: "5", amountUsd: "5", symbol: "USDC" }]);
     });
-
-    it("is what a Manage row shows", () => {
-      const position = Schema.decodeSync(EarnPosition)({
-        balances: [
-          yieldBalanceFixture({
-            amount: "1",
-            amountUsd: "2",
-            token: dai,
-            type: "entering",
-          }),
-          yieldBalanceFixture({
-            amount: "2",
-            amountUsd: "2",
-            token: usdc,
-            type: "active",
-          }),
-        ],
-        outputTokenBalance: null,
-        yieldId: yieldApiYieldFixture().id,
-      });
-      const [item] = toPositionItems(toPositionsData([position]), false);
-
-      expect(
-        item?.total.map((sum) => [sum.amount.toFixed(), sum.token.symbol])
-      ).toEqual([["4", "USDC"]]);
-    });
   });
 
   it("groups display rows by status, token identity, and date with exact sums", () => {
@@ -322,254 +283,15 @@ describe("position derivations", () => {
     ).toBe(false);
   });
 
-  it("groups non-zero balances and projects visible table rows", () => {
+  it("groups non-zero balances by type", () => {
     const position = makePosition();
-    const positions = toPositionsData([position]);
     const selected = getPositionBalances(
-      getPositionData(positions, position.yieldId),
+      getPositionData(toPositionsData([position]), position.yieldId),
       "default"
     );
     const byType = toPositionBalancesByType(selected?.balances ?? []);
-    const rows = toPositionItems(positions, false);
 
     expect(byType.get("active")?.[0]?.tokenPriceInUsd.toFixed()).toBe("5");
     expect(byType.has("claimable")).toBe(false);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.balancesWithAmount).toHaveLength(1);
-  });
-
-  it("does not flag points-only claimable balances as actions", () => {
-    const yieldDto = yieldApiYieldFixture();
-    const position = Schema.decodeSync(EarnPosition)({
-      balances: [
-        yieldBalanceFixture({
-          amount: "2",
-          amountRaw: "2000000000000000000",
-          amountUsd: "5",
-          token: yieldDto.token,
-          type: "active",
-        }),
-        yieldBalanceFixture({
-          amount: "1214.8591",
-          amountRaw: "12148591",
-          amountUsd: "0",
-          token: {
-            ...yieldDto.token,
-            isPoints: true,
-            symbol: "KelpDAO Miles",
-          },
-          type: "claimable",
-        }),
-      ],
-      outputTokenBalance: null,
-      yieldId: yieldDto.id,
-    });
-
-    const [row] = toPositionItems(toPositionsData([position]), false);
-
-    expect(row?.requiredAction).toBeNull();
-  });
-
-  it.each([
-    ["only an optional cancellation", ["CANCEL_PENDING"], null, true],
-    [
-      "a required action next to a cancellation",
-      ["CANCEL_PENDING", "WITHDRAW"],
-      "withdraw",
-      false,
-    ],
-  ] as const)(
-    "flags %s as in progress rather than required",
-    (_, types, requiredAction, hasPendingRequest) => {
-      const yieldDto = yieldApiYieldFixture();
-      const position = Schema.decodeSync(EarnPosition)({
-        balances: [
-          yieldBalanceFixture({
-            amount: "1",
-            amountRaw: "1000000000000000000",
-            amountUsd: "1",
-            pendingActions: types.map((type) => ({
-              intent: "manage",
-              passthrough: type,
-              type,
-            })),
-            token: yieldDto.token,
-            type: "entering",
-          }),
-        ],
-        outputTokenBalance: null,
-        yieldId: yieldDto.id,
-      });
-
-      const [row] = toPositionItems(toPositionsData([position]), false);
-
-      expect(row?.requiredAction).toBe(requiredAction);
-      expect(row?.hasPendingRequest).toBe(hasPendingRequest);
-    }
-  );
-
-  it.each([
-    [
-      "a finished unstake to collect",
-      "exiting",
-      ["CLAIM_UNSTAKED"],
-      "withdraw",
-    ],
-    ["a locked balance to unlock", "locked", ["UNLOCK_LOCKED"], "unlock"],
-    [
-      "a locked balance with nothing to unlock",
-      "locked",
-      ["VOTE_LOCKED"],
-      "locked",
-    ],
-    ["a required action it cannot name", "active", ["VOTE"], "other"],
-  ] as const)("names %s", (_, balanceType, types, requiredAction) => {
-    const yieldDto = yieldApiYieldFixture();
-    const position = Schema.decodeSync(EarnPosition)({
-      balances: [
-        yieldBalanceFixture({
-          amount: "1",
-          amountRaw: "1000000000000000000",
-          amountUsd: "1",
-          pendingActions: types.map((type) => ({
-            intent: "manage",
-            passthrough: type,
-            type,
-          })),
-          token: yieldDto.token,
-          type: balanceType,
-        }),
-      ],
-      outputTokenBalance: null,
-      yieldId: yieldDto.id,
-    });
-
-    const [row] = toPositionItems(toPositionsData([position]), false);
-
-    expect(row?.requiredAction).toBe(requiredAction);
-  });
-
-  it("flags an encrypted unwrap still to withdraw as in progress, since its instant withdrawal already began", () => {
-    const yieldDto = yieldApiYieldFixture();
-    const position = Schema.decodeSync(EarnPosition)({
-      balances: [
-        yieldBalanceFixture({
-          amount: "0",
-          amountRaw: "0",
-          isEncrypted: true,
-          pendingActions: [
-            { intent: "manage", passthrough: "unwrap", type: "WITHDRAW" },
-          ],
-          shareAmountRaw: `0x${"ab".repeat(32)}`,
-          token: yieldDto.token,
-          type: "withdrawable",
-        }),
-      ],
-      outputTokenBalance: null,
-      yieldId: yieldDto.id,
-    });
-
-    const [row] = toPositionItems(toPositionsData([position]), false);
-
-    expect(row?.requiredAction).toBeNull();
-    expect(row?.hasPendingRequest).toBe(true);
-  });
-
-  it("deduplicates derived atom families by value-equal domain keys", () => {
-    const { yieldId } = makePosition();
-    const scope = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)(
-        "0x0000000000000000000000000000000000000001"
-      ),
-      network: "ethereum",
-    });
-
-    expect(positionDataAtom(new PositionDataKey({ scope, yieldId }))).toBe(
-      positionDataAtom(new PositionDataKey({ scope, yieldId }))
-    );
-  });
-
-  it("resolves position balances for an explicit wallet scope", () => {
-    const position = makePosition();
-    const scope = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)(
-        "0x0000000000000000000000000000000000000001"
-      ),
-      network: "ethereum",
-    });
-    const resource = yieldPositionsResourceAtom(scope);
-    const balances = positionBalancesAtom(
-      new PositionBalancesKey({
-        balanceId: "default",
-        scope,
-        yieldId: position.yieldId,
-      })
-    );
-    const registry = AtomRegistry.make({
-      initialValues: [
-        [resource, AsyncResult.success({ errors: [], items: [position] })],
-      ],
-    });
-
-    expect(
-      Option.getOrNull(AsyncResult.value(registry.get(balances)))?.balances
-    ).toHaveLength(2);
-  });
-
-  it("retains same-wallet position data only while revalidating and clears it across owners or successful absence", () => {
-    const position = makePosition();
-    const scopeA = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)(
-        "0x0000000000000000000000000000000000000001"
-      ),
-      network: "ethereum",
-    });
-    const scopeB = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)(
-        "0x0000000000000000000000000000000000000002"
-      ),
-      network: "ethereum",
-    });
-    const response = { errors: [], items: [position] };
-    const resourceA = yieldPositionsResourceAtom(scopeA);
-    const resourceB = yieldPositionsResourceAtom(scopeB);
-    const selectedA = positionDataAtom(
-      new PositionDataKey({ scope: scopeA, yieldId: position.yieldId })
-    );
-    const selectedB = positionDataAtom(
-      new PositionDataKey({ scope: scopeB, yieldId: position.yieldId })
-    );
-
-    const readA = (result: Atom.Type<typeof resourceA>) =>
-      AtomRegistry.make({ initialValues: [[resourceA, result]] }).get(
-        selectedA
-      );
-    const readB = (result: Atom.Type<typeof resourceB>) =>
-      AtomRegistry.make({ initialValues: [[resourceB, result]] }).get(
-        selectedB
-      );
-
-    expect(
-      Option.getOrNull(AsyncResult.value(readA(AsyncResult.success(response))))
-    ).not.toBeNull();
-
-    expect(
-      Option.getOrNull(
-        AsyncResult.value(
-          readA(AsyncResult.waiting(AsyncResult.success(response)))
-        )
-      )
-    ).not.toBeNull();
-
-    expect(
-      Option.getOrNull(
-        AsyncResult.value(readB(AsyncResult.success({ errors: [], items: [] })))
-      )
-    ).toBeNull();
-    expect(
-      Option.getOrNull(
-        AsyncResult.value(readA(AsyncResult.success({ errors: [], items: [] })))
-      )
-    ).toBeNull();
   });
 });

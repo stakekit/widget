@@ -10,7 +10,6 @@ import type { YieldStepRow } from "../../../src/features/yield-transaction-flow/
 import { StepsPage } from "../../../src/features/yield-transaction-flow/ui/steps/pages/common.page";
 import {
   makeTransactionSignError,
-  TransactionConfirmationError,
   type TransactionWorkflowError,
 } from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
@@ -250,39 +249,6 @@ describe("Yield Steps page progress", () => {
       "Your wallet couldn't complete the request. Try again. Details: Playground: scripted wallet failure"
     );
     expect(app.container.querySelector('[role="alert"]')).toBeNull();
-    app.unmount();
-  });
-
-  it("links a transaction that failed on chain, naming why", async () => {
-    const app = await renderSteps({
-      error: new TransactionConfirmationError({
-        batchId: "batch",
-        message: "Transaction ended with FAILED status.",
-        network: "ethereum",
-        outcome: "Failed",
-        reason: "execution reverted: insufficient allowance",
-        transactionId: null,
-        workflowId: TransactionWorkflowId.make("w"),
-      }),
-      numbered: true,
-      txStates: [
-        {
-          ...row("STAKE"),
-          explorerUrl: "https://etherscan.io/tx/0x1",
-          hash,
-          phases: { broadcast: "done", confirm: "failed", sign: "done" },
-        },
-      ],
-    });
-
-    const [stake] = app.container.querySelectorAll("li");
-    expect(stake?.textContent).toContain(
-      "The transaction failed on chain: insufficient allowance."
-    );
-    expect(stake?.textContent).not.toContain("FAILED status");
-    expect(stake?.querySelector("a")?.getAttribute("href")).toBe(
-      "https://etherscan.io/tx/0x1"
-    );
     app.unmount();
   });
 

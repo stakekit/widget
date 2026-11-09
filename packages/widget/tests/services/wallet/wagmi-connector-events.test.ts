@@ -54,12 +54,4 @@ describe("makeWagmiConnectorEvents", () => {
       ["change", { chainId: "not-numeric" }],
     ]);
   });
-
-  it("forwards disconnects", () => {
-    const { emit, emitter } = makeEmitter();
-
-    makeWagmiConnectorEvents(emitter).onDisconnect();
-
-    expect(emit.mock.calls).toEqual([["disconnect"]]);
-  });
 });

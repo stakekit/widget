@@ -38,7 +38,8 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
   linted but not type-checked.
 - `pnpm format` — formats the repository with oxfmt (`.oxfmtrc.json`), imports
   sorted; `pnpm lint:format` checks it.
-- `pnpm --filter @stakekit/widget test:unit` — Node tests.
+- `pnpm --filter @stakekit/widget test:unit` — Node tests: the `unit` project
+  and, for `*.isolated.test.*` files, `unit-isolated`.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
 - `pnpm --filter @stakekit/widget test:browser:diagnostic` — Chromium tests with trace replay in `packages/widget/.vitest/index.html`; serve that directory over HTTP to view the report.
@@ -49,34 +50,52 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm --filter @stakekit/widget test:storybook` — every story as a Chromium
   test; accessibility violations, failed plays and console errors fail it.
   `pnpm test` and `pnpm check` include it.
-- `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication; run after changing the import graph or copying code between Modules.
+- `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication of
+  source and of tests; run after changing the import graph or copying code
+  between Modules. The tests' limit (`packages/widget/.jscpd-tests.json`) is a
+  ratchet: lower it when duplication drops, never raise it to pass.
 - `pnpm --filter @stakekit/widget gen:yield-providers` — regenerates the
   public `YieldProviderId` constants from the backend's yield provider enum,
   read from `YIELD_PROVIDERS_ENUM_PATH` (set in `mise.local.toml`) or
   `--source <enum file>`. Commit the regenerated file.
-- `pnpm lint` — formatting plus every workspace's oxlint and type checks.
+- `pnpm lint` — formatting, every workspace's oxlint and type checks, and the
+  workflow checks (`lint:workflows`: actionlint with shellcheck, and zizmor's
+  offline audits configured in `.github/zizmor.yml`).
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm --filter @stakekit/widget check:host-bundlers` — checks that esbuild
   hosts such as Angular can resolve the built `dist`; part of `build`.
 - `pnpm --filter @stakekit/widget check:stylex-css` — fails when the built
   package, bundle or website stylesheets hold no StyleX rules; part of `build`.
-- `pnpm test:smoke` — builds the example hosts against `dist` and loads them in
-  Chromium with the API mocked by the widget's MSW fixtures.
+- `pnpm --filter @stakekit/widget check:bundle-size` — fails when the gzip size
+  of an entry plus every chunk it imports statically exceeds its budget in
+  `scripts/bundle-size/check-entry-size.ts`; part of `build`. Raise a budget
+  only for an intended increase, in the same change.
+- `pnpm test:smoke` — builds `dist` (`build:widget`), then builds the example
+  hosts against it and loads them in Chromium with the API mocked by the
+  widget's MSW fixtures. CI runs it instead of the examples `build`.
 
-mise caches `lint:widget`, `lint:examples`, `check-hygiene`, `test:unit`,
-`test:dom`, `test:browser`, `test:storybook`, `build:widget`, and `build`
-(`tools/mise/cached-tasks.toml`), so `pnpm lint`, `pnpm test`, and `pnpm check`
-skip work whose inputs (the widget or example files, env files, lockfile, and
-root configs) are unchanged, and restore results stored on any branch or
-worktree. `mise run --force <task>` reruns one; `--task-cache off` ignores
-stored results. A new input, such as a widget file outside the listed
-directories, belongs in the input groups in `mise.toml`.
+mise caches `lint:widget`, `lint:examples`, `lint:workflows`, `check-hygiene`,
+`test:unit`, `test:dom`, `test:browser`, `test:storybook`, `build:widget`, and
+`build` (`tools/mise/cached-tasks.toml`), so `pnpm lint`, `pnpm test`, and
+`pnpm check` skip work whose inputs (the widget or example files, env files,
+lockfile, and root configs) are unchanged, and restore results stored on any
+branch or worktree. `build:widget` reads no tests but the packed-types
+consumers and no stories, and `test:storybook` reads only `src/ui`, so editing
+a test leaves the builds cached. `mise run --force <task>` reruns one;
+`--task-cache off` ignores stored results. A new input, such as a widget file
+outside the listed directories, belongs in the input groups in `mise.toml`.
 
 Install dependencies only when manifests, the lockfile, or the task require it.
 Use the normal pnpm store rather than creating a project-local store.
 
 Test project selection is filename-based: `*.browser.test.*` uses Chromium,
-`*.dom.test.*` uses jsdom, and other tests run in Node. Chromium test files run
+`*.dom.test.*` uses jsdom, `*.isolated.test.*` runs in Node in a fresh worker
+per file, and other tests run in Node in shared workers, so a module the files
+have in common loads once per worker. A shared worker keeps module state
+between files: a module mock (`vi.mock`, `vi.doMock`) belongs in an
+`*.isolated.test.*` file (`widget/no-module-mock-in-shared-test`), and so does
+a Node test that relies on MSW patching `fetch`, since Effect's
+`FetchHttpClient` keeps the first `fetch` it sees. Chromium test files run
 two at a time, each mocking the API in its own page through MSW's `fetch` and
 `XMLHttpRequest` interceptors (`tests/mocks/network.ts`, no service worker);
 Chromium resolves no host but the Vitest server, so images, fonts and scripts

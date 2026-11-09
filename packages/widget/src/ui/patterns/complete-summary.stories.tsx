@@ -163,7 +163,7 @@ export const CheckMarkFallback: Story = {
 /**
  * Once the check has drawn, a success ring beats out from the mark once and
  * fades; reduced motion skips it (see
- * `complete-summary-reduced-motion.browser.test.tsx`).
+ * `tests/ui/reduced-motion.browser.test.tsx`).
  */
 export const SuccessBeat: Story = {
   play: async ({ canvasElement }) => {

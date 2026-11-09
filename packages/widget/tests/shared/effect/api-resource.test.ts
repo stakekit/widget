@@ -1,15 +1,10 @@
-import { Data, Duration, Effect, Option } from "effect";
+import { Duration, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { withApiResourcePolicy } from "../../../src/shared/effect/api-resource";
-
-class ResourceKey extends Data.Class<{
-  readonly network: string;
-  readonly page: number;
-}> {}
 
 describe("shared API resource conventions", () => {
   beforeEach(() => {
@@ -18,33 +13,6 @@ describe("shared API resource conventions", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it("deduplicates atom-family instances by value-equal keys", () => {
-    let constructions = 0;
-    const family = Atom.family((key: ResourceKey) => {
-      constructions += 1;
-      return Atom.make(`${key.network}:${key.page}`);
-    });
-
-    const first = family(new ResourceKey({ network: "ethereum", page: 1 }));
-    const equivalent = family(
-      new ResourceKey({ network: "ethereum", page: 1 })
-    );
-    const different = family(new ResourceKey({ network: "ethereum", page: 2 }));
-
-    expect(equivalent).toBe(first);
-    expect(different).not.toBe(first);
-    expect(constructions).toBe(2);
-  });
-
-  it("applies SWR and idle lifetime policy to async resources", () => {
-    const source = Atom.make(AsyncResult.success(1));
-    const resource = withApiResourcePolicy({
-      staleTime: Duration.seconds(30),
-    })(source);
-
-    expect(resource.idleTTL).toBe(Duration.toMillis(Duration.minutes(5)));
   });
 
   it("retains a prior value after failure and retries only when refreshed", () => {

@@ -11,7 +11,7 @@
 
 ["build:widget"]
 run = "pnpm --filter @stakekit/widget build"
-sources = ["@group:widget"]
+sources = ["@group:widget-build"]
 outputs = ["packages/widget/dist"]
 
 # The examples consume the built widget from packages/widget/dist. When
@@ -31,6 +31,13 @@ outputs = []
 depends = ["build:widget"]
 run = "pnpm --filter './packages/examples/*' run lint"
 sources = ["@group:examples"]
+outputs = []
+
+# actionlint (with shellcheck) and zizmor's offline audits on the workflows
+# and composite actions; zizmor reads .github/zizmor.yml.
+["lint:workflows"]
+run = ["actionlint", "zizmor --offline .github"]
+sources = [".github/**", "mise.lock"]
 outputs = []
 
 ["check-hygiene"]
@@ -57,5 +64,5 @@ outputs = []
 ["test:storybook"]
 wait_for = ["test:browser"]
 run = "pnpm --filter @stakekit/widget test:storybook"
-sources = ["@group:widget"]
+sources = ["@group:widget-stories"]
 outputs = []

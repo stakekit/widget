@@ -4,10 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { getTokenPriceInUSD } from "../../../src/domain/finance/price";
 import { PriceResponse } from "../../../src/domain/finance/prices";
-import { formatUsd } from "../../../src/shared/lib/number-format";
 
 describe("token USD prices", () => {
-  it("formats a native-token amount from the API price key", () => {
+  it("values a native-token amount from the API price key", () => {
     const token = { network: "ethereum" } as const;
     const prices = Schema.decodeSync(PriceResponse)({
       "ethereum-undefined": { price: 1619.22, price_24_h: 0 },
@@ -21,6 +20,6 @@ describe("token USD prices", () => {
       token,
     });
 
-    expect(formatUsd(amountInUsd, "en")).toBe("$1.94");
+    expect(amountInUsd.toFixed()).toBe("1.943064");
   });
 });

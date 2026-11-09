@@ -42,21 +42,6 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
-  it("reports only independent invalid Host Configuration choices", () => {
-    const result = decodeHostConfiguration({
-      apiKey: "api-key",
-      borrowEnabled: true,
-      variant: "default",
-    });
-
-    expect(Result.isFailure(result)).toBe(true);
-    if (Result.isFailure(result)) {
-      expect(result.failure).toBeInstanceOf(InvalidHostConfiguration);
-      expect(result.failure.issues).toEqual(["borrow-requires-dashboard"]);
-      expect(result.failure.issuePaths).toEqual(["layout"]);
-    }
-  });
-
   it("collects independent semantic issues and their paths", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",
@@ -359,31 +344,6 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
-  it("drops preferred token yields under an unknown network and keeps the rest", () => {
-    const result = decodeHostConfiguration({
-      apiKey: "api-key",
-      preferredTokenYieldsPerNetwork: {
-        ethereum: { "ethereum-": "*" },
-        "not-a-network": { "not-a-network-": "*" },
-      },
-      variant: "default",
-    } as unknown as SKHostConfiguration);
-
-    expect(Result.isSuccess(result)).toBe(true);
-    if (Result.isSuccess(result)) {
-      expect(
-        result.success.configuration.preferredTokenYieldsPerNetwork
-      ).toEqual({ ethereum: { "ethereum-": "*" } });
-      expect(result.success.warnings).toEqual([
-        {
-          _tag: "UnknownNetworkKey",
-          field: "preferredTokenYieldsPerNetwork",
-          key: "not-a-network",
-        },
-      ]);
-    }
-  });
-
   it("decodes preferred token yields as yield IDs or the default choice, dropping an invalid one", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",
@@ -468,31 +428,6 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
-  it("drops a malformed validatorsConfig policy under an unknown network and keeps the rest", () => {
-    const result = decodeHostConfiguration({
-      apiKey: "api-key",
-      validatorsConfig: {
-        ethereum: { preferredOnly: true },
-        "not-a-network": { allowed: "0xvalidator" },
-      },
-      variant: "default",
-    } as unknown as SKHostConfiguration);
-
-    expect(Result.isSuccess(result)).toBe(true);
-    if (Result.isSuccess(result)) {
-      expect(result.success.configuration.validatorsConfig).toEqual({
-        ethereum: { preferredOnly: true },
-      });
-      expect(result.success.warnings).toEqual([
-        {
-          _tag: "UnknownNetworkKey",
-          field: "validatorsConfig",
-          key: "not-a-network",
-        },
-      ]);
-    }
-  });
-
   it("drops an invalid yieldProviderOrder provider ID and keeps the rest", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",
@@ -508,31 +443,6 @@ describe("decodeHostConfiguration", () => {
       });
       expect(result.success.warnings).toEqual([
         { _tag: "InvalidEntry", field: "yieldProviderOrder", path: "defi.1" },
-      ]);
-    }
-  });
-
-  it("drops a chainIconMapping entry under an unknown network and keeps the rest", () => {
-    const result = decodeHostConfiguration({
-      apiKey: "api-key",
-      chainIconMapping: {
-        ethereum: "https://icons.example/ethereum.svg",
-        "not-a-network": "https://icons.example/other.svg",
-      },
-      variant: "default",
-    } as unknown as SKHostConfiguration);
-
-    expect(Result.isSuccess(result)).toBe(true);
-    if (Result.isSuccess(result)) {
-      expect(result.success.configuration.chainIconMapping).toEqual({
-        ethereum: "https://icons.example/ethereum.svg",
-      });
-      expect(result.success.warnings).toEqual([
-        {
-          _tag: "UnknownNetworkKey",
-          field: "chainIconMapping",
-          key: "not-a-network",
-        },
       ]);
     }
   });

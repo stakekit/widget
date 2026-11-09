@@ -82,6 +82,9 @@ const config = getConfig({
       ],
     },
     copyPublicDir: false,
+    // `.vite/manifest.json` for check:bundle-size; `files` in package.json
+    // keeps dot directories out of the published package.
+    manifest: true,
     minify: false,
     outDir: "dist/package",
     sourcemap: false,

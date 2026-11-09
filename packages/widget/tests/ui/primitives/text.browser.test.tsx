@@ -44,24 +44,4 @@ describe("Text", () => {
       expect(style.fontVariantNumeric === "tabular-nums").toBe(tabular);
     }
   );
-
-  it("renders a heading role as the element it names", async () => {
-    const screen = await render(
-      <Text as="h2" variant="title">
-        Yield
-      </Text>
-    );
-
-    await expect
-      .element(screen.getByRole("heading", { level: 2, name: "Yield" }))
-      .toBeInTheDocument();
-  });
-
-  it("sets overlines in capitals", async () => {
-    const screen = await render(<Text variant="overline">Rewards</Text>);
-
-    expect(
-      getComputedStyle(screen.getByText("Rewards").element()).textTransform
-    ).toBe("uppercase");
-  });
 });

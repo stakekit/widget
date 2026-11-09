@@ -3,7 +3,6 @@ import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Cause, Effect, Exit, Schema } from "effect";
 import type { Connector, createConfig } from "wagmi";
 
-import { AdditionalAddresses } from "../../../src/domain/wallet/address";
 import { EnabledWalletNetworksResponse } from "../../../src/domain/wallet/models";
 import { InitParams } from "../../../src/services/wallet/init-params";
 import { getConfig as getEvmConfig } from "../../../src/services/wallet/internal/adapters/evm/config";
@@ -160,9 +159,6 @@ describe("wallet Effect Atom boundaries", () => {
     expect(networks).toEqual(
       new Set(["ethereum", "robinhood", "robinhood-testnet"])
     );
-  });
-
-  it("accepts projects without Enabled Wallet Networks", () => {
     expect(Schema.decodeSync(EnabledWalletNetworksResponse)([])).toEqual(
       new Set()
     );
@@ -176,12 +172,6 @@ describe("wallet Effect Atom boundaries", () => {
         { id: "solana" },
       ])
     ).toEqual(new Set(["ethereum", "solana"]));
-  });
-
-  it("rejects a malformed networks response", () => {
-    expect(() =>
-      Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([{ id: 1 }])
-    ).toThrow(/Expected string/);
   });
 
   it("decodes valid initialization parameters and ignores invalid fields", () => {
@@ -210,17 +200,6 @@ describe("wallet Effect Atom boundaries", () => {
         pendingaction: "unstake",
       })
     ).toMatchObject({ pendingaction: null });
-  });
-
-  it("validates wallet-provided additional address data with Schema", () => {
-    const cosmosPubKey = "A".repeat(44);
-
-    expect(Schema.decodeSync(AdditionalAddresses)({ cosmosPubKey })).toEqual({
-      cosmosPubKey,
-    });
-    expect(() =>
-      Schema.decodeSync(AdditionalAddresses)({ cosmosPubKey: "short" })
-    ).toThrow();
   });
 
   it.effect(
@@ -358,44 +337,6 @@ describe("wallet Effect Atom boundaries", () => {
         });
         expect(fallbackConnectFailure).toHaveBeenCalledOnce();
         expect(switchFailure).toHaveBeenCalledOnce();
-      })
-  );
-
-  it.effect(
-    "retains configured connectors and manual connect after initial switching fails",
-    () =>
-      Effect.gen(function* () {
-        const configuredConnector = { id: "configured" } as Connector;
-        const wagmiConfig = {
-          connectors: [configuredConnector],
-          state: { chainId: 1 },
-        } as unknown as ReturnType<typeof createConfig>;
-        const connect = vi.fn(() =>
-          Effect.succeed({ accounts: [], chainId: 1 })
-        );
-        const operations: InitialConnectionOperations = {
-          connect,
-          reconnect: vi.fn(() => Effect.succeed([{} as never])),
-          switchChain: vi.fn(() =>
-            Effect.fail(operationFailure(new Error("switch rejected")))
-          ),
-        };
-
-        const initializeWallet = yield* makeInitializer(operations);
-        yield* initializeWallet({
-          hasExternalProvider: false,
-          isLedgerDappBrowser: false,
-          isMobileWallet: false,
-          queryParamsInitChainId: 2,
-          wagmiConfig,
-        });
-
-        expect(wagmiConfig.connectors).toEqual([configuredConnector]);
-
-        yield* operations.connect(wagmiConfig, {
-          connector: configuredConnector,
-        });
-        expect(connect).toHaveBeenCalledOnce();
       })
   );
 

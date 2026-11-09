@@ -157,4 +157,24 @@ describe("borrow transaction wallet normalization", () => {
         });
       })
   );
+
+  it.effect("rejects an EVM payload with an unsupported transaction type", () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(
+        decodeBorrowTransactionForWallet(
+          transaction(
+            JSON.stringify({
+              data: "0xabcdef",
+              from: address,
+              gasLimit: "21000",
+              to: address,
+              type: 1,
+            })
+          )
+        )
+      );
+
+      expect(Exit.isFailure(exit)).toBe(true);
+    })
+  );
 });

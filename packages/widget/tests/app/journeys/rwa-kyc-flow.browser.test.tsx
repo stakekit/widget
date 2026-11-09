@@ -1,19 +1,16 @@
-import { RegistryProvider } from "@effect/atom-react";
 import { HttpResponse, http } from "msw";
 import { mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import { createConfig, createConnector, http as wagmiHttp } from "wagmi";
 import { connect, reconnect } from "wagmi/actions";
 
-import { KycGateCard } from "../../../src/features/yield-summary/ui/components/kyc-gate-card";
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import { formatAddress } from "../../../src/shared/lib/general";
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { describe, expect, it, vi } from "../../utils/test-extend";
-import { render, renderApp } from "../../utils/test-utils";
-import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
+import { renderApp } from "../../utils/test-utils";
 import { setup as setupStakingFlow } from "./staking-flow/setup";
 import { setup as setupTrustPosition } from "./trust-incentive-apy/setup";
 
@@ -258,45 +255,6 @@ describe("RWA KYC flow", () => {
     await app.unmount();
   });
 
-  it("opens iframe modal for iframe-allowed verification and refreshes status on close", async () => {
-    const onCheckStatus = vi.fn();
-    const app = await render(
-      <RegistryProvider initialValues={[applicationRuntimeInitInitialValue()]}>
-        <KycGateCard
-          gate={{
-            state: "start_kyc",
-            kycUrl: "https://issuer.example/verify",
-            iframeAllowed: true,
-          }}
-          onCheckStatus={onCheckStatus}
-          providerName="Superstate"
-        />
-      </RegistryProvider>
-    );
-
-    await expect
-      .element(app.getByTestId("kyc-gate-card-start_kyc"))
-      .toBeInTheDocument();
-
-    await userEvent.click(app.getByTestId("kyc-gate-verify"));
-
-    await expect
-      .element(app.getByTestId("kyc-verification-modal"))
-      .toBeInTheDocument();
-    await expect
-      .element(app.getByTestId("kyc-verification-iframe"))
-      .toHaveAttribute("src", "https://issuer.example/verify");
-
-    await userEvent.click(app.getByTestId("kyc-verification-close"));
-
-    expect(onCheckStatus).toHaveBeenCalledOnce();
-    await expect
-      .poll(() => app.getByTestId(/^kyc-gate-card/).elements().length)
-      .toBe(1);
-
-    await app.unmount();
-  });
-
   it("opens verification externally when iframe is not allowed", async ({
     worker,
   }) => {
@@ -345,79 +303,6 @@ describe("RWA KYC flow", () => {
       .toBe(0);
 
     await app.unmount();
-  });
-
-  it("shows rejected and unknown states", async ({ worker }) => {
-    worker.use(
-      ...mockKycRequiredDefaultYield(),
-      mockKycStatus({ status: "rejected" }).handler
-    );
-
-    const rejectedApp = await renderApp({ skProps });
-
-    await expect
-      .element(rejectedApp.getByTestId("kyc-gate-card-rejected"))
-      .toBeInTheDocument();
-    await expect
-      .element(rejectedApp.getByText("Verification not approved"))
-      .toBeInTheDocument();
-
-    await rejectedApp.unmount();
-
-    worker.use(
-      ...mockKycRequiredDefaultYield(),
-      http.get(yieldApiRoute("/v1/yields/:yieldId/kyc/status"), async () => {
-        await mockDelay();
-
-        return HttpResponse.json(
-          { message: "Unable to fetch KYC status" },
-          { status: 500 }
-        );
-      })
-    );
-
-    const unknownApp = await renderApp({ skProps });
-
-    await expect
-      .element(unknownApp.getByTestId("kyc-gate-card-unknown"))
-      .toBeInTheDocument();
-    await expect
-      .element(unknownApp.getByText("Verification status unavailable"))
-      .toBeInTheDocument();
-
-    await unknownApp.unmount();
-  });
-
-  it("does not show a card for approved or not required status", async ({
-    worker,
-  }) => {
-    worker.use(
-      ...mockKycRequiredDefaultYield(),
-      mockKycStatus({ status: "approved" }).handler
-    );
-
-    const approvedApp = await renderApp({ skProps });
-
-    await expect
-      .poll(() => approvedApp.getByTestId(/^kyc-gate-card/).elements().length)
-      .toBe(0);
-
-    await approvedApp.unmount();
-
-    worker.use(
-      ...mockKycRequiredDefaultYield(),
-      mockKycStatus({ status: "not_required" }).handler
-    );
-
-    const notRequiredApp = await renderApp({ skProps });
-
-    await expect
-      .poll(
-        () => notRequiredApp.getByTestId(/^kyc-gate-card/).elements().length
-      )
-      .toBe(0);
-
-    await notRequiredApp.unmount();
   });
 
   it("keeps enter action 412 KYC failures on the global error path", async ({

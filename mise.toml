@@ -14,6 +14,10 @@ task.cache_max_size = "2GiB"
 [tools]
 node = "24"
 "aqua:pnpm/pnpm" = "12"
+# Workflow checks (`lint:workflows`); actionlint runs shellcheck on `run:` scripts.
+"aqua:rhysd/actionlint" = "1"
+"aqua:koalaman/shellcheck" = "0"
+"aqua:zizmorcore/zizmor" = "1"
 
 # Workspace tasks. Package commands stay in each package.json; these compose them.
 # Root package.json scripts alias these tasks, so `pnpm <task>` and `mise run <task>` are equivalent.
@@ -27,12 +31,34 @@ includes = ["tools/mise/cached-tasks.toml"]
 widget = [
   "packages/widget/{src,tests,scripts,playground,vite,.storybook,public,ledger-manifest}/**",
   "packages/widget/*.{json,ts,html}",
-  "packages/widget/.{oxlintrc,jscpd}.json",
+  "packages/widget/.{oxlintrc,jscpd,jscpd-tests}.json",
   # Vite reads them: API URLs reach the build and the tests.
   "packages/widget/.env*",
   "!packages/widget/**/*.md",
   "!packages/widget/**/.DS_Store",
   "!packages/widget/**/.vitest/**",
+  "@group:workspace",
+]
+# What `build:widget` reads: the tests only through the packed-types consumers.
+# A test or story edit leaves the build, and the examples behind it, cached.
+widget-build = [
+  "packages/widget/{src,scripts,playground,vite,public,ledger-manifest}/**",
+  "packages/widget/tests/package-types/**",
+  "packages/widget/*.{json,ts,html}",
+  "packages/widget/.env*",
+  "!packages/widget/src/**/*.stories.tsx",
+  "!packages/widget/**/*.md",
+  "!packages/widget/**/.DS_Store",
+  "@group:workspace",
+]
+# What the story tests read: the Design System only imports itself.
+widget-stories = [
+  "packages/widget/{src/ui,.storybook,vite}/**",
+  "packages/widget/tests/utils/setup.storybook.ts",
+  "packages/widget/*.{json,ts}",
+  "packages/widget/.env*",
+  "!packages/widget/**/*.md",
+  "!packages/widget/**/.DS_Store",
   "@group:workspace",
 ]
 examples = [
@@ -78,8 +104,8 @@ run = "pnpm --filter @stakekit/widget dev"
 run = "pnpm exec oxfmt --check ."
 
 [tasks.lint]
-description = "Formatting, widget and example lint"
-depends = ["lint:format", "lint:widget", "lint:examples"]
+description = "Formatting, widget, example and workflow lint"
+depends = ["lint:format", "lint:widget", "lint:examples", "lint:workflows"]
 
 [tasks.format]
 run = "pnpm exec oxfmt ."
@@ -91,7 +117,9 @@ run = "pnpm --recursive run clean"
 description = "Widget unit, jsdom, Chromium and Storybook tests"
 depends = ["test:unit", "test:dom", "test:browser", "test:storybook"]
 
+# Builds the example hosts against the built `dist` and loads them in Chromium.
 [tasks."test:smoke"]
+depends = ["build:widget"]
 run = "pnpm --filter @stakekit/widget test:smoke"
 
 # Continue independent gates so one run reports every failure, then fail if any did.

@@ -16,7 +16,10 @@ import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
 import { Transaction } from "../../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import { emptyBorrowExecutionView } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";
+import {
+  emptyBorrowExecutionView,
+  projectBorrowExecution,
+} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowIntake,
@@ -25,15 +28,20 @@ import {
 import { makeBorrowFlowExecutionPage } from "../../../src/features/borrow-transaction-flow/state/execution-page";
 import {
   BorrowFlowReviewVisit,
+  BorrowReviewConfirmationFailure,
   borrowFlowReviewPage,
   makeBorrowFlowReviewPage,
+  toBorrowReviewConfirmation,
 } from "../../../src/features/borrow-transaction-flow/state/review-page";
 import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import type { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
-import type { TransactionWorkflowCommand } from "../../../src/services/transaction-workflow/transaction-workflow-model";
+import {
+  BorrowTransactionWorkflowInput,
+  type TransactionWorkflowCommand,
+} from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import { borrowEntryFlowEntry } from "../../utils/borrow-flow-entry";
 import { borrowOperationsLayer } from "../../utils/services/borrow-operations";
@@ -311,6 +319,36 @@ describe("Borrow flow Review page", () => {
   );
 });
 
+describe("Borrow Review confirmation", () => {
+  const rejected = BorrowReviewConfirmationFailure.cases.Rejected.make({
+    reason: "Insufficient WETH.",
+  });
+  const failed = BorrowReviewConfirmationFailure.cases.Failed.make({});
+
+  it.each([
+    ["an API refusal keeps its reason", Cause.fail(rejected), rejected],
+    [
+      "a runtime error is a generic failure",
+      Cause.fail({ _tag: "WalletRuntimeInvariantError" }),
+      failed,
+    ],
+    ["a defect is a generic failure", Cause.die(new Error("boom")), failed],
+  ] as const)("%s", (_, cause, failure) => {
+    expect(toBorrowReviewConfirmation(AsyncResult.failure(cause))).toEqual({
+      failure: Option.some(failure),
+      pending: false,
+    });
+  });
+
+  it("is pending without a failure while a retry runs", () => {
+    const confirmation = toBorrowReviewConfirmation(
+      AsyncResult.failure(Cause.fail(rejected), { waiting: true })
+    );
+
+    expect(confirmation).toEqual({ failure: Option.none(), pending: true });
+  });
+});
+
 describe("Borrow flow Execution page", () => {
   it.effect(
     "fails its workflow and shows the empty view when nothing was handed off",
@@ -442,33 +480,6 @@ describe("Borrow flow Execution page", () => {
     })
   );
 
-  it.effect("views the position page of the market the flow acted on", () =>
-    Effect.gen(function* () {
-      const { handle, navigation, registry } = yield* makeHarness({
-        sessionIntake: {
-          ...intake,
-          entry: { _tag: "MarketPosition", marketId: positionMarketId },
-        },
-      });
-      const page = makeBorrowFlowExecutionPage(handle, action.id);
-      registry.mount(page.viewPositionAtom);
-
-      registry.set(page.viewPositionAtom, undefined);
-      yield* AtomRegistry.getResult(registry, page.viewPositionAtom, {
-        suspendOnWaiting: true,
-      });
-
-      expect(yield* navigation.commands).toEqual([
-        {
-          _tag: "Replace",
-          to: widgetRoutes.borrowPosition.build("Dashboard", {
-            marketId: positionMarketId,
-          }),
-        },
-      ]);
-    })
-  );
-
   it.effect("views a new borrow's position in the market it opened", () =>
     Effect.gen(function* () {
       const { handle, navigation, registry } = yield* makeHarness();
@@ -490,4 +501,38 @@ describe("Borrow flow Execution page", () => {
       ]);
     })
   );
+});
+
+describe("Borrow execution projection", () => {
+  const project = (status: string) =>
+    projectBorrowExecution(
+      initializeTransactionWorkflow(
+        new BorrowTransactionWorkflowInput({
+          action: Schema.decodeUnknownSync(Action)({
+            ...Schema.encodeSync(Action)(action),
+            transactions: [
+              {
+                ...Schema.encodeSync(Transaction)(action.transactions[0]!),
+                status,
+              },
+            ],
+          }),
+          walletScope,
+        })
+      ),
+      "borrow"
+    );
+
+  it("offers Cancel while nothing went to the network", () => {
+    expect(project("WAITING_FOR_SIGNATURE").sent).toBe(false);
+  });
+
+  it("treats a transaction the API reports broadcast without a local hash as sent", () => {
+    const view = project("BROADCASTED");
+
+    expect(view.steps.map(({ hash, sent }) => [hash, sent])).toEqual([
+      [null, true],
+    ]);
+    expect(view.sent).toBe(true);
+  });
 });

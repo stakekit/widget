@@ -13,7 +13,7 @@ import {
 import {
   parseActivityRouteIntent,
   resolveActivityHighlightAction,
-} from "../state/details";
+} from "../model/selection";
 import {
   activityPageViewAtom,
   loadMoreActivityAtom,

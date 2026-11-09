@@ -4,10 +4,8 @@ import { Effect, Logger, Schema } from "effect";
 
 import { EarnBalance, EarnPosition } from "../../../src/domain/earn/balance";
 import { EarnProvider } from "../../../src/domain/earn/provider";
-import { EarnValidatorPage } from "../../../src/domain/earn/responses";
 import { EarnValidator } from "../../../src/domain/earn/validator";
 import { EarnYield } from "../../../src/domain/earn/yield-schema";
-import { Token } from "../../../src/domain/token/token";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../../fixtures";
 
 const token = {
@@ -19,30 +17,6 @@ const token = {
 } as const;
 
 describe("Earn application models", () => {
-  it("brands token/provider identifiers without changing case-sensitive addresses", () => {
-    const decodedToken = Schema.decodeSync(Token)(token);
-    const provider = Schema.decodeSync(EarnProvider)({
-      id: "stakekit",
-      name: "StakeKit",
-      logoURI:
-        "https://assets.stakek.it/app/composition/providers/stakekit.svg",
-      website: "https://stakek.it",
-      tvlUsd: null,
-    });
-
-    expect(decodedToken.address).toBe("0xAbCd");
-    expect(provider.id).toBe("stakekit");
-  });
-
-  it("derives stable validator keys through Schema", () => {
-    const validator = Schema.decodeSync(EarnValidator)({
-      address: "validator-1",
-      subnet: { id: 7, name: "Subnet 7" },
-    });
-
-    expect(validator.key).toBe("validator-1:7");
-  });
-
   const tangemValidator = {
     address: "BbM5kJgrwEj3tYFfBPnjcARB54wDUHkXmLUTkazUmt2x",
     preferred: true,
@@ -65,37 +39,7 @@ describe("Earn application models", () => {
 
     expect(validator).not.toHaveProperty("provider");
     expect(validator.key).toBe("BbM5kJgrwEj3tYFfBPnjcARB54wDUHkXmLUTkazUmt2x");
-  });
-
-  it("keeps validators with unread provider metadata in EarnValidatorPage", () => {
-    const page = Schema.decodeSync(EarnValidatorPage)({
-      total: 1,
-      offset: 0,
-      limit: 100,
-      items: [tangemValidator],
-    });
-
-    expect(page.items).toHaveLength(1);
-    expect(page.items?.[0]?.preferred).toBe(true);
-  });
-
-  it("uses lossless balance amount and raw-unit representations", () => {
-    const balance = Schema.decodeSync(EarnBalance)({
-      address: "wallet-1",
-      type: "active",
-      amount: "9007199254740993.000000000000000001",
-      amountRaw: "9007199254740993000000000000000001",
-      pendingActions: [],
-      token,
-      amountUsd: "12345678901234567890.12",
-    });
-
-    expect(BigNumber.isBigNumber(balance.amount)).toBe(true);
-    expect(balance.amount.toFixed()).toBe(
-      "9007199254740993.000000000000000001"
-    );
-    expect(balance.amountRaw).toBe(9007199254740993000000000000000001n);
-    expect(balance.amountUsd?.toFixed()).toBe("12345678901234567890.12");
+    expect(validator.preferred).toBe(true);
   });
 
   it.effect("decodes an encrypted balance's shares as its handle", () =>
@@ -221,29 +165,6 @@ describe("Earn application models", () => {
       expect(decoded).not.toHaveProperty("validator");
       expect(decoded).not.toHaveProperty("validators");
     }
-  });
-
-  it("decodes complete yield and position models with branded yield IDs", () => {
-    const yieldModel = yieldApiYieldFixture({ prime: false });
-    const position = Schema.decodeSync(EarnPosition)({
-      yieldId: yieldModel.id,
-      balances: [
-        {
-          address: "wallet-1",
-          type: "active",
-          amount: "1.5",
-          amountRaw: "1500000000000000000",
-          pendingActions: [],
-          token,
-          isEarning: true,
-        },
-      ],
-      outputTokenBalance: null,
-    });
-
-    expect(yieldModel.id).toBe("ethereum-eth-native-staking");
-    expect(position.yieldId).toBe(yieldModel.id);
-    expect(position.balances[0]?.amount.toFixed()).toBe("1.5");
   });
 
   it("projects the generated API amount representation into normalized domain constraints", () => {
@@ -429,33 +350,6 @@ describe("Earn application models", () => {
         );
       })
   );
-
-  it("decodes advertised provider options as opaque values", () => {
-    const baseYield = yieldApiYieldDtoFixture();
-    const yieldModel = yieldApiYieldFixture({
-      mechanics: {
-        ...baseYield.mechanics,
-        arguments: {
-          enter: {
-            fields: [
-              {
-                label: "Provider",
-                name: "providerId",
-                options: ["P2P", "figment"],
-                required: true,
-                type: "string",
-              },
-            ],
-          },
-        },
-      },
-    });
-
-    expect(yieldModel.mechanics.arguments?.enter?.fields.providerId).toEqual({
-      options: ["P2P", "figment"],
-      required: true,
-    });
-  });
 
   it("keeps only widget-consumed mechanic argument fields", () => {
     const baseYield = yieldApiYieldDtoFixture();

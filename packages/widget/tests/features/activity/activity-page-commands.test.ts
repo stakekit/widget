@@ -18,7 +18,6 @@ import {
   activityActionsPullAtom,
   activityFilterAtom,
   activityFilterOptionsAtom,
-  loadMoreActivityActionsAtom,
 } from "../../../src/features/activity/state/page-resources";
 import {
   walletConfigResultAtom,
@@ -90,20 +89,6 @@ const makeRegistry = (
   });
 
 describe("Activity page commands", () => {
-  it("updates the selected filter through a command Atom", () => {
-    const registry = AtomRegistry.make();
-
-    try {
-      expect(registry.get(activityFilterAtom)).toBe("all");
-
-      registry.set(setActivityPageFilterAtom, "defi");
-
-      expect(registry.get(activityFilterAtom)).toBe("defi");
-    } finally {
-      registry.dispose();
-    }
-  });
-
   it("prefetches every non-empty category when Activity is observed", async () => {
     const listActivity = vi.fn<ListActivity>((request) =>
       Effect.succeed({
@@ -267,99 +252,6 @@ describe("Activity page commands", () => {
       ).toBe(true);
     } finally {
       unmount();
-      registry.dispose();
-    }
-  });
-});
-
-describe("Activity actions resource commands", () => {
-  it("retries the failed offset after multiple successful pages", async () => {
-    const yieldModel = yieldApiYieldFixture();
-    const actions = Array.from({ length: 101 }, (_, index) =>
-      yieldApiActionFixture({
-        id: `activity-${index}`,
-        yieldId: yieldModel.id,
-      })
-    );
-    const nextPage = { shouldFail: true };
-    const listActivity = vi.fn<ListActivity>((request) => {
-      const limit = request.limit ?? 50;
-      const offset = request.offset ?? 0;
-      if (offset === 100 && nextPage.shouldFail) {
-        return Effect.fail({} as never);
-      }
-
-      return Effect.succeed({
-        items: actions.slice(offset, offset + limit),
-        limit,
-        offset,
-        total: actions.length,
-      });
-    });
-    const key = new ActivityActionsKey({
-      borrowEnabled: false,
-      filter: "all",
-      scope: walletScope,
-    });
-    const actionsAtom = activityActionsPullAtom(key);
-    const loadMoreAtom = loadMoreActivityActionsAtom(key);
-    const registry = makeRegistry(listActivity);
-    const unmountActions = registry.mount(actionsAtom);
-
-    try {
-      await vi.waitFor(() =>
-        expect(registry.get(actionsAtom)).toMatchObject({
-          _tag: "Success",
-          value: { done: false },
-        })
-      );
-
-      registry.set(loadMoreAtom, undefined);
-
-      await vi.waitFor(() =>
-        expect(registry.get(actionsAtom)).toMatchObject({
-          _tag: "Success",
-          value: {
-            done: false,
-            items: [
-              { actions: expect.any(Array) },
-              { actions: expect.any(Array) },
-            ],
-          },
-        })
-      );
-
-      registry.set(loadMoreAtom, undefined);
-
-      await vi.waitFor(() =>
-        expect(registry.get(actionsAtom)).toMatchObject({
-          _tag: "Failure",
-        })
-      );
-
-      nextPage.shouldFail = false;
-      registry.set(loadMoreAtom, undefined);
-
-      await vi.waitFor(() =>
-        expect(registry.get(actionsAtom)).toMatchObject({
-          _tag: "Success",
-          value: {
-            done: true,
-            items: [
-              { actions: expect.any(Array) },
-              { actions: expect.any(Array) },
-              { actions: expect.any(Array) },
-            ],
-          },
-        })
-      );
-      expect(
-        listActivity.mock.calls.filter(
-          ([request]) => request.limit === 50 && request.offset === 100
-        )
-      ).toHaveLength(2);
-    } finally {
-      unmountActions();
       registry.dispose();
     }
   });

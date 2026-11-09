@@ -1,0 +1,9 @@
+{
+  "path": ["tests"],
+  "format": ["typescript", "tsx"],
+  "minTokens": 50,
+  "threshold": 4.8,
+  "reporters": ["console"],
+  "silent": true,
+  "absolute": false
+}

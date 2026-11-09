@@ -21,10 +21,12 @@ import {
   getActivitySelectionTarget,
 } from "../model/activity-action";
 import {
-  ActivitySelectionKey,
-  activityDetailsViewAtom,
   parseActivityRouteIntent,
   resolveUnavailableActivitySelection,
+} from "../model/selection";
+import {
+  ActivitySelectionKey,
+  activityDetailsViewAtom,
   retryActivityActionRouteAtom,
 } from "../state/details";
 import {

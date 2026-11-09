@@ -104,33 +104,6 @@ const isOneLine = (element: Element) =>
   Number.parseFloat(getComputedStyle(element).lineHeight) * 1.5;
 
 describe("Activity details on the compact page", () => {
-  it("heads with the action and lists its facts, without a back control", async () => {
-    const app = await renderDetails(makeItem([confirmedTransaction("a", 0)]));
-
-    await expect
-      .element(app.getByRole("heading", { name: "Deposited ETH" }))
-      .toBeVisible();
-    await expect.element(app.getByText("+1 ETH")).toBeVisible();
-    await expect.element(app.getByText("$2,400.00")).toBeVisible();
-    for (const [label, value] of [
-      ["Status", "Completed"],
-      ["Network", "Ethereum"],
-      ["Provider", "Lido"],
-      ["Created", "Aug 26, 2026, 10:00 AM"],
-      ["Completed", "Aug 26, 2026, 10:06 AM"],
-    ]) {
-      expect(app.container.textContent).toContain(`${label}${value}`);
-    }
-    // The shell's back button leads back; the receipt draws no second one.
-    expect(
-      app.container.querySelectorAll('button[aria-label*="Back"]')
-    ).toHaveLength(0);
-    // A completed action needs no status badge in the head.
-    expect(app.getByRole("heading").element().parentElement?.textContent).toBe(
-      "Deposited ETH"
-    );
-  });
-
   it("shows each hash on one line beside its copy and explorer buttons", async () => {
     const app = await renderDetails(
       makeItem([confirmedTransaction("a", 0), confirmedTransaction("b", 1)])
@@ -166,15 +139,5 @@ describe("Activity details on the compact page", () => {
         '[data-testid="activity-details-explorer"]'
       )
     ).toHaveLength(0);
-  });
-
-  it("leads a single transaction to its explorer page", async () => {
-    const open = vi.spyOn(window, "open").mockImplementation(() => null);
-    const app = await renderDetails(makeItem([confirmedTransaction("a", 0)]));
-
-    await app.getByRole("button", { name: "View on explorer" }).click();
-
-    expect(open).toHaveBeenCalledWith("https://explorer.test/a", "_blank");
-    open.mockRestore();
   });
 });

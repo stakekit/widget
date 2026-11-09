@@ -1,5 +1,4 @@
 import plugin from "../../../scripts/oxlint/design-system-plugin";
-import widgetPlugin from "../../../scripts/oxlint/widget-plugin";
 import { ruleRunner, tester, widget } from "./rule-tester";
 
 const run = ruleRunner(plugin.rules);
@@ -204,35 +203,5 @@ tester.run(
         ],
       },
     ],
-  }
-);
-
-// A Design System suppression names its rule and states its reason; the
-// widget's blanket-disable rule covers every named oxlint or ESLint disable.
-tester.run(
-  "no-blanket-disable on Design System suppressions",
-  widgetPlugin.rules["no-blanket-disable"],
-  {
-    valid: [
-      "// oxlint-disable-next-line design-system/no-raw-design-value -- hairline divider matches the host's 1px rule\nconst styles = stylex.create({ root: { borderWidth: 1 } })",
-      "// oxlint-disable-next-line @stylexjs/sort-keys -- order mirrors the cascade the reset relies on\nconst styles = stylex.create({ root: { width: 1, height: 1 } })",
-      "/* oxlint-disable @stylexjs/no-unused -- styles read through a dynamic key */\nconst styles = stylex.create({})",
-    ].map((code) => ({ code, filename: part })),
-    invalid: [
-      "// oxlint-disable-next-line design-system/no-raw-design-value\nconst styles = stylex.create({ root: { borderWidth: 1 } })",
-      '// oxlint-disable-next-line design-system/no-html-element-outside-design-system, design-system/no-class-name-or-style-outside-design-system\nconst link = <a className="x" href="/" />',
-      '// oxlint-disable-next-line design-system/no-color-literal-in-design-system - forgot the second dash\nconst styles = stylex.create({ root: { color: "#fff" } })',
-      "const link = <>{/* oxlint-disable-next-line design-system/no-class-name-or-style-outside-design-system */}</>",
-      "// oxlint-disable-next-line @stylexjs/sort-keys\nconst styles = stylex.create({ root: { width: 1, height: 1 } })",
-      "/* eslint-disable @stylexjs/valid-styles */\nconst styles = stylex.create({})",
-      "// oxlint-disable-next-line\nconst styles = stylex.create({ root: { width: 1 } })",
-      "/* oxlint-disable */\nconst styles = stylex.create({})",
-    ].map((code) => ({
-      code,
-      filename: part,
-      errors: [
-        { message: "Suppress named rules and give the reason after `--`." },
-      ],
-    })),
   }
 );

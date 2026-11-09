@@ -27,13 +27,11 @@ const makeConnector = () => {
   );
   const deserializeTransaction = vi.fn(() => ({ family: "ethereum" }));
   const signAndBroadcast = vi.fn(async () => "0xledger-hash");
-  const switchAccount = vi.fn();
   const connector = {
     id: "ledgerLive",
     prepareTransaction,
     deserializeTransaction,
     walletApiClient: { transaction: { signAndBroadcast } },
-    switchAccount,
   } as unknown as Connector;
 
   return {
@@ -41,7 +39,6 @@ const makeConnector = () => {
     deserializeTransaction,
     prepareTransaction,
     signAndBroadcast,
-    switchAccount,
   };
 };
 
@@ -112,20 +109,6 @@ describe("Ledger wallet driver", () => {
 
       expect(decodeFailure._tag).toBe("WalletDecodeError");
       expect(broadcastFailure._tag).toBe("WalletBroadcastError");
-    })
-  );
-
-  it.effect("switches the Ledger account through the driver", () =>
-    Effect.gen(function* () {
-      const ledger = makeConnector();
-      const driver = makeLedgerWalletDriver({
-        connector: ledger.connector,
-        currentAccountId: account.id,
-      });
-
-      yield* driver.switchAccount({ account, connector: ledger.connector });
-
-      expect(ledger.switchAccount).toHaveBeenCalledWith(account);
     })
   );
 });

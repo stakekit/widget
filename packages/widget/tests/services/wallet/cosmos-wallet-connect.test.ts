@@ -232,32 +232,6 @@ describe("Cosmos WalletConnect connector", () => {
   );
 
   it.live(
-    "resumes the same proposal after QR dismissal without disconnecting its session",
-    () =>
-      Effect.gen(function* () {
-        const fixture = yield* makeFixture();
-        const walletModal = yield* WalletModal;
-
-        const first = yield* Effect.promise(() =>
-          fixture.connector.connect().then(
-            () => undefined,
-            (error: unknown) => error
-          )
-        ).pipe(Effect.forkScoped);
-        expect(yield* Queue.take(fixture.opened)).toBe(uri);
-        yield* walletModal.connectOpen.set(false);
-        expect(isWalletCancellation(yield* Fiber.join(first))).toBe(true);
-
-        expect(yield* connectApproved(fixture)).toEqual({
-          accounts: [address],
-          chainId,
-        });
-        expect(fixture.signClient.state.proposals).toHaveLength(1);
-        expect(fixture.signClient.state.disconnects).toEqual([]);
-      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
-  );
-
-  it.live(
     "restores a live session holding the saved account after reload without a QR",
     () =>
       Effect.gen(function* () {
@@ -665,16 +639,6 @@ describe("Cosmos extension wallets", () => {
       delete page.keplr;
 
       expect(yield* availability.detect).toBe(false);
-      expect(yield* connectFailure).toEqual(
-        new WalletNotAvailableError({ walletId: "keplr-extension" })
-      );
-    }).pipe(Effect.scoped)
-  );
-
-  it.effect("reports a missing extension as not available on connect", () =>
-    Effect.gen(function* () {
-      const { connectFailure } = yield* makeExtension();
-
       expect(yield* connectFailure).toEqual(
         new WalletNotAvailableError({ walletId: "keplr-extension" })
       );

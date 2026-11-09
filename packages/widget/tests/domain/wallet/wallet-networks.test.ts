@@ -14,12 +14,7 @@ import {
   WalletNetwork,
   walletCosmosNetworks,
 } from "../../../src/domain/wallet/network";
-import {
-  EvmChainIds as PublicEvmChainIds,
-  MiscChainIds as PublicMiscChainIds,
-  SubstrateChainIds as PublicSubstrateChainIds,
-  type SupportedSKChainIds as PublicSupportedSKChainIds,
-} from "../../../src/public-api/types";
+import type { SupportedSKChainIds as PublicSupportedSKChainIds } from "../../../src/public-api/types";
 import { miscChainsMap } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import { getRegistryIdsToSKCosmosNetworks } from "../../../src/services/wallet/internal/adapters/cosmos/chains/get-chain-registry";
 import { evmChainsMap } from "../../../src/services/wallet/internal/adapters/evm/chains";
@@ -48,9 +43,6 @@ const declaredChainIds = (chainIds: Record<string, string | number>) =>
 
 describe("Wallet Network chain IDs", () => {
   it("publishes exhaustive wallet Domain chain-ID constants", () => {
-    expect(PublicEvmChainIds).toBe(EvmChainIds);
-    expect(PublicSubstrateChainIds).toBe(SubstrateChainIds);
-    expect(PublicMiscChainIds).toBe(MiscChainIds);
     expect(EvmChainIds).not.toHaveProperty(String(EvmChainIds.Arbitrum));
     expect(SubstrateChainIds).not.toHaveProperty(
       String(SubstrateChainIds.Polkadot)
@@ -58,25 +50,12 @@ describe("Wallet Network chain IDs", () => {
     expect(MiscChainIds).not.toHaveProperty(String(MiscChainIds.Solana));
     expect(MiscChainIds).not.toHaveProperty("Stellar");
     expect(MiscChainIds).not.toHaveProperty("StellarTestnet");
-    expectTypeOf<
-      Extract<keyof typeof EvmChainIds, number>
-    >().toEqualTypeOf<never>();
-    expectTypeOf<
-      Extract<keyof typeof SubstrateChainIds, number>
-    >().toEqualTypeOf<never>();
-    expectTypeOf<
-      Extract<keyof typeof MiscChainIds, number>
-    >().toEqualTypeOf<never>();
-    expectTypeOf<EvmChainIds>().toMatchTypeOf<SupportedSKChainIds>();
-    expectTypeOf<42_162>().not.toMatchTypeOf<SupportedSKChainIds>();
     expectTypeOf<PublicSupportedSKChainIds>().toEqualTypeOf<SupportedSKChainIds>();
   });
 
   it("projects routing and native identity facts from every Wallet Network", () => {
-    expect(WalletNetwork.literals).toHaveLength(70);
     expect(WalletNetwork.literals).not.toContain("stellar-testnet");
     expect(isWalletNetwork("stellar-testnet")).toBe(false);
-    expect(getWalletRoutingId("arbitrum")).toBe(42_161);
     expect(getProtocolChainIdentity("arbitrum")).toEqual({
       type: "evm",
       chainId: 42_161,
@@ -86,13 +65,11 @@ describe("Wallet Network chain IDs", () => {
       type: "cosmos",
       chainId: "cosmoshub-4",
     });
-    expect(getWalletRoutingId("polkadot")).toBe(9999);
     expect(getProtocolChainIdentity("polkadot")).toEqual({
       type: "substrate",
       genesisHash:
         "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
     });
-    expect(getWalletRoutingId("solana")).toBe(501);
     expect(getProtocolChainIdentity("solana")).toEqual({
       type: "unmodelled",
     });

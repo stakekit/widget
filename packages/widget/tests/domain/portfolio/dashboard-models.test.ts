@@ -1,7 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
 
-import { KycStatus } from "../../../src/domain/earn/kyc";
 import {
   RewardRateHistoryResponse,
   TvlHistoryResponse,
@@ -26,15 +25,6 @@ const token = {
 } as const;
 
 describe("dashboard application schemas", () => {
-  it("strictly validates KYC singles", () => {
-    expect(Schema.decodeSync(KycStatus)({ kycStatus: "approved" })).toEqual({
-      kycStatus: "approved",
-    });
-    expect(() =>
-      Schema.decodeUnknownSync(KycStatus)({ kycStatus: "unknown" })
-    ).toThrow();
-  });
-
   it.effect("omits malformed reward-rate and TVL points independently", () =>
     Effect.gen(function* () {
       const rewardRate = yield* Schema.decodeEffect(RewardRateHistoryResponse)({

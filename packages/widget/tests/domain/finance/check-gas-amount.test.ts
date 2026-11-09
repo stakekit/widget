@@ -54,4 +54,27 @@ describe("gas balance warning", () => {
       })
     ).toBe(false);
   });
+
+  it("keeps the whole gas-token balance when the stake uses another token", () => {
+    const usdc = { ...gasTokenBalance.token, symbol: "USDC" };
+
+    expect(
+      checkGasAmount({
+        gasEstimate: new BigNumber("0.2"),
+        gasTokenBalance,
+        isStake: true,
+        stakeAmount: new BigNumber("0.9"),
+        stakeToken: usdc,
+      })
+    ).toBe(false);
+    expect(
+      checkGasAmount({
+        gasEstimate: new BigNumber("1.1"),
+        gasTokenBalance,
+        isStake: true,
+        stakeAmount: new BigNumber("0.9"),
+        stakeToken: usdc,
+      })
+    ).toBe(true);
+  });
 });

@@ -1,21 +1,12 @@
-import { Effect, Layer } from "effect";
-import { Atom, AtomRegistry } from "effect/reactivity";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { resolveYieldSummaryView } from "../../../src/features/yield-summary/model/yield-summary";
-import { makeYieldSummary } from "../../../src/features/yield-summary/state/yield-summary";
-import { appRuntime } from "../../../src/runtime/app-runtime";
-import { YieldResourceSource } from "../../../src/services/api/resource-sources";
-import {
-  yieldApiValidatorFixture,
-  yieldApiYieldDtoFixture,
-  yieldApiYieldFixture,
-} from "../../fixtures";
+import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
 import { decodeValidator } from "../../utils/validators";
 
 describe("Yield Summary", () => {
-  it("publishes semantic provider, reward-token, and yield-type facts", () => {
+  it("publishes semantic provider and reward-token facts", () => {
     const selectedYield = yieldApiYieldFixture();
     const view = resolveYieldSummaryView({
       validators: new Map(),
@@ -30,78 +21,14 @@ describe("Yield Summary", () => {
       ],
       rewardToken: null,
     });
-    expect(view.yieldType).not.toBeNull();
   });
 
-  it("summarizes validators of a yield with provider options without reading the yield directory", () => {
-    const base = yieldApiYieldDtoFixture();
-    const selectedYield = yieldApiYieldFixture({
-      mechanics: {
-        ...base.mechanics,
-        arguments: {
-          ...base.mechanics.arguments,
-          enter: {
-            fields: [
-              {
-                label: "Provider",
-                name: "providerId",
-                options: ["P2P"],
-                required: true,
-                type: "string",
-              },
-            ],
-          },
-        },
-      },
-    });
-    const listYields = vi.fn(() => Effect.die("yield directory was queried"));
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getProvider: () => Effect.succeedNone,
-              listYields,
-            } as never)
-          )
-        ),
-      ],
-    });
-    const summary = makeYieldSummary(
-      Atom.make({
-        validators: [
-          decodeValidator(
-            yieldApiValidatorFixture({
-              name: "Validator A",
-              rewardRate: {
-                components: [],
-                rateType: "APY",
-                total: 0.01,
-              },
-            })
-          ),
-        ],
-        yield: selectedYield,
-      })
-    );
-
-    try {
-      expect(registry.get(summary.viewAtom)).toMatchObject({
-        providers: [{ name: "Validator A", rewardRate: exactDecimal("0.01") }],
-      });
-      expect(listYields).not.toHaveBeenCalled();
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("labels a validator's return with the validator's own rate type", () => {
+  it("names each validator with its own return and rate type", () => {
     const view = resolveYieldSummaryView({
       validators: [
         decodeValidator(
           yieldApiValidatorFixture({
+            name: "Validator A",
             rewardRate: { components: [], rateType: "APR", total: 0.07 },
           })
         ),
@@ -111,6 +38,12 @@ describe("Yield Summary", () => {
       }),
     });
 
-    expect(view.providers).toMatchObject([{ rewardType: "apr" }]);
+    expect(view.providers).toMatchObject([
+      {
+        name: "Validator A",
+        rewardRate: exactDecimal("0.07"),
+        rewardType: "apr",
+      },
+    ]);
   });
 });

@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
+import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/borrow-positions";
@@ -15,7 +16,12 @@ import {
   makeDefaultBorrowRepayFormIntent,
   makeDefaultBorrowWithdrawFormIntent,
   resolveBorrowRepayFormView,
+  resolveBorrowWithdrawFormView,
 } from "../../../../src/features/borrow/market-position/model/action-form";
+import {
+  getBorrowPositionActionDescriptors,
+  getBorrowPositionDetailsModel,
+} from "../../../../src/features/borrow/market-position/model/details";
 import {
   borrowWalletAddress,
   makeBorrowAccountSnapshot,
@@ -25,6 +31,7 @@ import {
   makeBorrowMarketDto,
   makeBorrowSupplyBalanceDto,
   usdcTokenAddress,
+  wethTokenAddress,
 } from "../../../fixtures/borrow";
 
 describe("Borrow position action form intent", () => {
@@ -161,4 +168,70 @@ describe("Borrow repay form view", () => {
       });
     }
   );
+});
+
+describe("Borrow withdraw form without projected risk", () => {
+  // The collateral is priced at $0, so the position's risk can't be computed.
+  const market = makeBorrowMarket();
+  const position = deriveBorrowPositions({
+    integrationAccountSnapshots: [
+      {
+        accountSnapshot: makeBorrowAccountSnapshot({
+          supplyBalances: [
+            makeBorrowSupplyBalanceDto({
+              balanceUsd: "0",
+              pendingActions: [
+                {
+                  args: {
+                    amountRaw: "500000000000000000",
+                    marketId: market.id,
+                    tokenAddress: wethTokenAddress,
+                  },
+                  label: "Withdraw",
+                  type: "withdraw",
+                },
+              ],
+            }),
+          ],
+          totalCollateralUsd: "0",
+          totalSuppliedUsd: "0",
+        }),
+        integration: makeBorrowIntegration(),
+      },
+    ],
+    markets: [market],
+  }).items[0]!;
+
+  it("hides the health factor and loan to value from the position summary", () => {
+    const model = getBorrowPositionDetailsModel({
+      locale: "en",
+      position,
+      t: ((key: string) => key) as TFunction,
+    });
+
+    expect(model.summary.metrics.map((metric) => metric.id)).toEqual(["debt"]);
+    expect(model.currentLtv).toBeNull();
+  });
+
+  it("warns past the withdrawable balance without blocking review", () => {
+    const context = getBorrowPositionActionDescriptors(position)
+      .map((action) => action.pendingContext)
+      .find((candidate) => candidate.type === "withdraw");
+    if (context?.type !== "withdraw") {
+      throw new Error("Expected a withdraw action");
+    }
+
+    expect(
+      resolveBorrowWithdrawFormView({
+        address: Schema.decodeSync(WalletAddress)(borrowWalletAddress),
+        context,
+        intent: { amount: "0.6", selectedTokenAddress: null },
+      })
+    ).toMatchObject({
+      canSubmit: true,
+      riskBlock: null,
+      riskStatus: "unavailable",
+      warning: "withdrawBalance",
+    });
+  });
 });

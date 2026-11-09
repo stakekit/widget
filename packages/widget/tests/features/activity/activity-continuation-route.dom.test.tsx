@@ -17,6 +17,8 @@ import type { YieldActivityItem } from "../../../src/features/activity/model/act
 import {
   ActivityDefaultIntent,
   ActivityExplicitIntent,
+} from "../../../src/features/activity/model/selection";
+import {
   ActivitySelectionKey,
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";

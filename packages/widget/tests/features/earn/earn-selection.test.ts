@@ -264,60 +264,6 @@ describe("Earn Selection", () => {
     }
   });
 
-  it("keeps a captured initialization seed across Earn route remounts", async () => {
-    const { registry } = makeRegistry({
-      entry: {
-        ...compactEntry,
-        initParams: {
-          accountId: null,
-          balanceId: null,
-          network: "ethereum",
-          pendingaction: null,
-          tab: "earn",
-          token: null,
-          validator: null,
-          yieldId: secondYield.id,
-        },
-      },
-      scanTokenBalances: () =>
-        Effect.succeed(
-          Schema.decodeSync(TokenBalancesResponse)([
-            {
-              amount: "2",
-              availableYields: [firstYield.id],
-              token: firstYield.token,
-            },
-            {
-              amount: "1",
-              availableYields: [secondYield.id],
-              token: secondYield.token,
-            },
-          ])
-        ),
-    });
-    let unmount = registry.mount(earnSelectionViewAtom);
-
-    try {
-      await vi.waitFor(() =>
-        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
-          secondYield.id
-        )
-      );
-      unmount();
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      unmount = registry.mount(earnSelectionViewAtom);
-
-      await vi.waitFor(() =>
-        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
-          secondYield.id
-        )
-      );
-    } finally {
-      unmount();
-      registry.dispose();
-    }
-  });
-
   describe("host token keys use network and address", () => {
     const usdcVault = yieldApiYieldFixture({
       id: "ethereum-usdc-vault",
@@ -721,7 +667,7 @@ describe("Earn Selection", () => {
     });
   });
 
-  it("does not reopen initialization after user intent completes it", async () => {
+  it("keeps the seed across remounts until user intent completes initialization", async () => {
     const { registry } = makeRegistry({
       entry: {
         ...compactEntry,
@@ -760,6 +706,14 @@ describe("Earn Selection", () => {
           secondYield.id
         )
       );
+      unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      unmount = registry.mount(earnSelectionViewAtom);
+      await vi.waitFor(() =>
+        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
+          secondYield.id
+        )
+      );
       registry.set(selectEarnSelectionTokenAtom, tokenString(firstYield.token));
       await vi.waitFor(() =>
         expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
@@ -773,65 +727,6 @@ describe("Earn Selection", () => {
       await vi.waitFor(() =>
         expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
           firstYield.id
-        )
-      );
-    } finally {
-      unmount();
-      registry.dispose();
-    }
-  });
-
-  it("keeps initialization active while the seeded yield is loading", async () => {
-    const seededYield = yieldApiYieldFixture({
-      id: "ethereum-eth-seeded",
-      token: firstYield.token,
-    });
-    const { registry } = makeRegistry({
-      entry: {
-        ...compactEntry,
-        initParams: {
-          accountId: null,
-          balanceId: null,
-          network: "ethereum",
-          pendingaction: null,
-          tab: "earn",
-          token: null,
-          validator: null,
-          yieldId: seededYield.id,
-        },
-      },
-      listYields: () =>
-        Effect.sleep("100 millis").pipe(
-          Effect.as({
-            items: [firstYield, seededYield],
-            limit: 100,
-            offset: 0,
-            total: 2,
-          })
-        ),
-      scanTokenBalances: () =>
-        Effect.succeed(
-          Schema.decodeSync(TokenBalancesResponse)([
-            {
-              amount: "1",
-              availableYields: [firstYield.id, seededYield.id],
-              token: firstYield.token,
-            },
-          ])
-        ),
-      tokenOptions: [
-        {
-          availableYields: [firstYield.id, seededYield.id],
-          token: firstYield.token,
-        },
-      ],
-    });
-    const unmount = registry.mount(earnSelectionViewAtom);
-
-    try {
-      await vi.waitFor(() =>
-        expect(registry.get(earnSelectionViewAtom).selection.yield?.id).toBe(
-          seededYield.id
         )
       );
     } finally {

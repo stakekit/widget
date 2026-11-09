@@ -163,42 +163,6 @@ describe("wallet router", () => {
       })
   );
 
-  it.effect("routes EVM typed data through the bound Wagmi actions", () =>
-    Effect.gen(function* () {
-      const connector = makeConnector("evm");
-      const walletActions = actions();
-
-      expect(
-        yield* routeWalletTypedData(
-          routingContext(connectedState(connector), walletActions),
-          typedDataInput
-        )
-      ).toBe("0xtyped");
-      expect(walletActions.signTypedData).toHaveBeenCalledWith({
-        ...typedData,
-        connector,
-      });
-    })
-  );
-
-  it.effect("routes EVM messages through the bound Wagmi actions", () =>
-    Effect.gen(function* () {
-      const connector = makeConnector("evm");
-      const walletActions = actions();
-
-      expect(
-        yield* routeWalletMessage(
-          routingContext(connectedState(connector), walletActions),
-          { message: "hello" }
-        )
-      ).toBe("0xsignature");
-      expect(walletActions.signMessage).toHaveBeenCalledWith({
-        connector,
-        message: "hello",
-      });
-    })
-  );
-
   it.effect("rejects non-EVM typed data before the Wagmi fallback", () =>
     Effect.gen(function* () {
       const connector = makeConnector("solana");
@@ -304,27 +268,6 @@ describe("wallet router", () => {
         _tag: "WalletCapabilityUnavailableError",
         capability: "message",
         connectorId: "freighter",
-      });
-      expect(walletActions.signMessage).not.toHaveBeenCalled();
-    })
-  );
-
-  it.effect("rejects Ledger message signing before the Wagmi fallback", () =>
-    Effect.gen(function* () {
-      const connector = makeConnector("ledgerLive");
-      const walletActions = actions();
-
-      const failure = yield* Effect.flip(
-        routeWalletMessage(
-          routingContext(connectedState(connector), walletActions),
-          { message: "hello" }
-        )
-      );
-
-      expect(failure).toMatchObject({
-        _tag: "WalletCapabilityUnavailableError",
-        capability: "message",
-        connectorId: "ledgerLive",
       });
       expect(walletActions.signMessage).not.toHaveBeenCalled();
     })

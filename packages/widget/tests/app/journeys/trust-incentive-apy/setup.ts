@@ -53,12 +53,10 @@ const setUrl = ({
 export const setup = async (
   worker: TestWorker,
   {
-    discoveryRateType = "APY",
     editableAmounts = false,
     personalizedRewardRate: providedPersonalizedRewardRate,
     useRewardRateWithoutCampaign,
   }: {
-    discoveryRateType?: string;
     /** Gives enter and exit an `amount` argument, so the user types it. */
     editableAmounts?: boolean;
     personalizedRewardRate?: YieldRewardRate;
@@ -96,7 +94,7 @@ export const setup = async (
 
   const discoveryRewardRate: YieldRewardRate = yieldRewardRateFixture({
     total: exactDecimal("0.045507546653006034"),
-    rateType: discoveryRateType,
+    rateType: "APY",
     components: [
       {
         rate: exactDecimal("0.0028386677110199426"),

@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Schema } from "effect";
+import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,6 +9,7 @@ import {
 import {
   ExactBaseUnitAmount,
   ExactDecimal,
+  UtcDateTimeFromString,
 } from "../../../src/domain/finance/scalars";
 
 describe("exact finance schemas", () => {
@@ -55,13 +56,15 @@ describe("exact finance schemas", () => {
     ).toThrow();
   });
 
-  it("divides with 20 decimal places and half-up rounding", () => {
-    expect(new BigNumber(1).dividedBy(3).toFixed()).toBe(
-      "0.33333333333333333333"
+  it("rejects invalid dates and normalizes valid date-times to UTC", () => {
+    const dateTime = Schema.decodeSync(UtcDateTimeFromString)(
+      "2026-07-10T14:00:00+02:00"
     );
-    expect(new BigNumber(2).dividedBy(3).toFixed()).toBe(
-      "0.66666666666666666667"
-    );
+
+    expect(DateTime.formatIso(dateTime)).toBe("2026-07-10T12:00:00.000Z");
+    expect(() =>
+      Schema.decodeSync(UtcDateTimeFromString)("not-a-date")
+    ).toThrow();
   });
 
   it("converts integer counts without using JavaScript number until the value is a safe integer", () => {

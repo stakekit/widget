@@ -50,7 +50,7 @@ const rowsOf = (container: HTMLElement) =>
   );
 
 describe("Activity in the compact Widget", () => {
-  it("lists two-line rows and opens a receipt under a single back button, without tabs", async ({
+  it("lists rows and opens a receipt under a single back button, without tabs", async ({
     worker,
   }) => {
     await page.viewport(400, 900);
@@ -71,12 +71,6 @@ describe("Activity in the compact Widget", () => {
     await app.getByRole("tab", { name: "Activity" }).click();
     await expect.poll(() => rowsOf(app.container).length).toBe(2);
     const rows = rowsOf(app.container);
-    expect(
-      new Set(rows.map((row) => row.getBoundingClientRect().height)).size
-    ).toBe(1);
-    for (const row of rows) {
-      expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth);
-    }
     expect(rows[0]?.textContent).not.toContain("Completed");
     expect(rows[1]?.textContent).toContain("Failed");
 

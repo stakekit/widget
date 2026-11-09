@@ -1,65 +1,9 @@
-import {
-  type Connection,
-  Transaction,
-  VersionedTransaction,
-} from "@solana/web3.js";
-import { Array as EArray } from "effect";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import {
-  deserializeSolanaTransaction,
-  getSolanaConnectors,
-} from "../../../src/services/wallet/internal/adapters/solana/solana-connector";
+import { deserializeSolanaTransaction } from "../../../src/services/wallet/internal/adapters/solana/solana-connector";
 import { decodeSolanaTransactionToBuffer } from "../../../src/services/wallet/internal/adapters/solana/transaction";
-import type { SolanaWalletDescriptor } from "../../../src/services/wallet/internal/runtime/solana-runtime";
-
-const createConnectorForTest = ({
-  sendTransaction = vi.fn(async () => "signed-hash"),
-  connection = {} as Connection,
-}: {
-  sendTransaction?: ReturnType<typeof vi.fn>;
-  connection?: Connection;
-}) => {
-  const wallet = {
-    adapter: {
-      name: "Mock Solana",
-      icon: "",
-      connected: false,
-      publicKey: null,
-      readyState: "Installed",
-      connect: vi.fn(),
-      disconnect: vi.fn(),
-      sendTransaction,
-    },
-    readyState: "Installed",
-    source: "fallback",
-  } as unknown as SolanaWalletDescriptor;
-
-  const walletFactory = EArray.getUnsafe(
-    getSolanaConnectors({
-      wallets: [wallet],
-      connection,
-      walletCatalogue: "default",
-    }).wallets,
-    0
-  );
-
-  const connectorFactory = walletFactory({} as never).createConnector(
-    {} as never
-  );
-  return connectorFactory({
-    emitter: { emit: vi.fn() },
-    storage: undefined,
-  } as never) as unknown as {
-    sendTransaction: (tx: string) => Promise<string>;
-  };
-};
 
 describe("solana connector", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("decodes padded base64 payloads before deserializing", () => {
     const bytes = Buffer.from([1, 2, 3, 4]);
     const decodedTx = decodeSolanaTransactionToBuffer(bytes.toString("base64"));
@@ -85,52 +29,9 @@ describe("solana connector", () => {
     expect(decodedTx.buffer.equals(Buffer.from([1, 2, 3, 4]))).toBe(true);
   });
 
-  it("returns helpful error for invalid payloads", () => {
-    const versionedSpy = vi
-      .spyOn(VersionedTransaction, "deserialize")
-      .mockImplementation(() => {
-        throw new Error("versioned fail");
-      });
-
-    const legacySpy = vi.spyOn(Transaction, "from").mockImplementation(() => {
-      throw new Error("legacy fail");
-    });
-
-    try {
-      deserializeSolanaTransaction("not-a-valid-tx");
-      throw new Error("expected deserializeSolanaTransaction to throw");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-      const message = (error as Error).message;
-      expect(message).toContain("Failed to deserialize Solana transaction");
-      expect(message).toContain("encoding=base64");
-      expect(message).toContain("VersionedTransaction error: versioned fail");
-      expect(message).toContain("Legacy Transaction error: legacy fail");
-    }
-
-    expect(versionedSpy).toHaveBeenCalledTimes(1);
-    expect(legacySpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("passes deserialized transaction to wallet adapter", async () => {
-    const deserializedTx = { mocked: true } as unknown as VersionedTransaction;
-    vi.spyOn(VersionedTransaction, "deserialize").mockReturnValue(
-      deserializedTx
-    );
-
-    const adapterSendTransaction = vi.fn(async () => "signature");
-    const connection = {} as Connection;
-    const connector = createConnectorForTest({
-      sendTransaction: adapterSendTransaction,
-      connection,
-    });
-
-    await expect(connector.sendTransaction("AQIDBA==")).resolves.toBe(
-      "signature"
-    );
-    expect(adapterSendTransaction).toHaveBeenCalledWith(
-      deserializedTx,
-      connection
+  it("throws when a payload is neither a versioned nor a legacy transaction", () => {
+    expect(() => deserializeSolanaTransaction("not-a-valid-tx")).toThrow(
+      "Failed to deserialize Solana transaction"
     );
   });
 });

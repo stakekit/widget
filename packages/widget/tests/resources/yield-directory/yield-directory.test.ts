@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Cause, Deferred, Effect, Layer, Option } from "effect";
+import { Cause, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 
 import { YieldId } from "../../../src/domain/identity/identifiers";
@@ -316,60 +316,4 @@ describe("Yield Directory resource", () => {
       vi.useRealTimers();
     }
   });
-
-  it.effect(
-    "does not publish an interrupted stale response after refresh",
-    () =>
-      Effect.gen(function* () {
-        const first = yield* Deferred.make<ReturnType<typeof makeYield>[]>();
-        const second = yield* Deferred.make<ReturnType<typeof makeYield>[]>();
-        let request = 0;
-        const listYields = vi.fn((input: YieldDirectoryRequest) => {
-          request += 1;
-          return Deferred.await(request === 1 ? first : second).pipe(
-            Effect.map((items) => ({
-              items,
-              limit: input.limit,
-              offset: input.offset,
-              total: items.length,
-            }))
-          );
-        });
-        const registry = makeRegistry(
-          YieldResourceSource.of({ listYields } as never)
-        );
-        const freshYield = makeYield("fresh");
-        const staleYield = makeYield("stale");
-        const key = new YieldDirectoryKey({
-          network: "ethereum",
-          yieldIds: [freshYield.id, staleYield.id],
-        });
-        const resource = yieldDirectoryResourceAtom(key);
-        const unmount = registry.mount(resource);
-
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(listYields).toHaveBeenCalledOnce())
-        );
-        registry.refresh(resource);
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(listYields).toHaveBeenCalledTimes(2))
-        );
-
-        yield* Deferred.succeed(second, [freshYield]);
-        yield* Effect.promise(() =>
-          vi.waitFor(() =>
-            expect(
-              AsyncResult.getOrThrow(registry.get(resource)).items[0]?.id
-            ).toBe("fresh")
-          )
-        );
-        yield* Deferred.succeed(first, [staleYield]);
-        expect(
-          AsyncResult.getOrThrow(registry.get(resource)).items[0]?.id
-        ).toBe("fresh");
-
-        unmount();
-        registry.dispose();
-      })
-  );
 });

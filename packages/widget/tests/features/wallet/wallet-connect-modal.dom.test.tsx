@@ -425,31 +425,6 @@ describe("wallet connection picker", () => {
       })
   );
 
-  it.effect("detects extensions each time the picker opens", () =>
-    Effect.gen(function* () {
-      const picker = yield* openPicker({
-        groups: singleGroup(
-          { id: "remote" },
-          { id: "extension", injected: { installUrl: "https://example.com" } }
-        ),
-      });
-      yield* waitForRowTag("connect-wallet-evm-extension", "A");
-
-      yield* picker.install("extension");
-      yield* click(() => document.querySelector('button[aria-label="Close"]'));
-      yield* Effect.promise(() =>
-        expect.poll(() => element("wallet-connect-dialog")).toBeNull()
-      );
-      yield* click(() => button("Open wallets"));
-      yield* waitForRowTag("connect-wallet-evm-extension", "BUTTON");
-      yield* click(() => element("connect-wallet-evm-extension"));
-
-      expect(yield* awaitCalls(picker.calls, 1)).toEqual([
-        { walletId: "extension", chainId: undefined },
-      ]);
-    })
-  );
-
   it.effect(
     "offers to install a missing extension on desktop instead of connecting",
     () =>
@@ -625,7 +600,7 @@ describe("wallet connection picker", () => {
   );
 
   it.effect(
-    "reopens with the last detection while checking again, updating in place",
+    "detects extensions again on reopen, updating the last detection in place",
     () =>
       Effect.gen(function* () {
         const picker = yield* openPicker({
@@ -650,6 +625,12 @@ describe("wallet connection picker", () => {
         yield* picker.settle("extension");
         yield* pollTagName("connect-wallet-evm-extension", "BUTTON");
         expect(walletRows()).toEqual(rows);
+
+        // The extension detected on reopen connects.
+        yield* click(() => element("connect-wallet-evm-extension"));
+        expect(yield* awaitCalls(picker.calls, 1)).toEqual([
+          { walletId: "extension", chainId: undefined },
+        ]);
       })
   );
 

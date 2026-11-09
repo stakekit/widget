@@ -1,11 +1,11 @@
-import { describe, expect, it } from "@effect/vitest";
+import { describe, expect, it, vi } from "@effect/vitest";
 import {
   type Adapter,
   type WalletName,
   WalletReadyState,
 } from "@solana/wallet-adapter-base";
 import { Connection } from "@solana/web3.js";
-import { Effect, Stream } from "effect";
+import { Effect, Stream, SubscriptionRef } from "effect";
 import type { Address } from "viem";
 import { createConfig, createConnector, http } from "wagmi";
 import { connect, disconnect, watchConnectors } from "wagmi/actions";
@@ -13,7 +13,10 @@ import { connect, disconnect, watchConnectors } from "wagmi/actions";
 import { solana } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import type { SolanaRuntime } from "../../../src/services/wallet/internal/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../../src/services/wallet/internal/runtime/solana-connector-membership";
-import type { SolanaWalletDescriptor } from "../../../src/services/wallet/internal/runtime/solana-runtime";
+import type {
+  SolanaWalletDescriptor,
+  SolanaWalletSnapshot,
+} from "../../../src/services/wallet/internal/runtime/solana-runtime";
 
 const account = "0x0000000000000000000000000000000000000501" as Address;
 
@@ -117,6 +120,53 @@ describe("Solana connector membership", () => {
         solanaAdapterSource: "standard",
       });
     })
+  );
+
+  it.effect(
+    "replaces a fallback with one publication when the runtime later discovers its Standard",
+    () =>
+      Effect.gen(function* () {
+        const fallback = descriptor(makeAdapter("Phantom"), "fallback");
+        const standard = descriptor(makeAdapter("Phantom"), "standard");
+        const harness = makeHarness(fallback, fallback);
+        const snapshots = yield* SubscriptionRef.make<SolanaWalletSnapshot>({
+          wallets: [fallback],
+        });
+        const publications: unknown[] = [];
+        const unsubscribe = watchConnectors(harness.config, {
+          onChange: (connectors) => publications.push(connectors),
+        });
+
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* installSolanaConnectorMembership({
+              actions: harness.actions,
+              config: harness.config,
+              core: harness.core,
+              createConnector: harness.createConnector,
+              runtime: {
+                ...harness.runtime,
+                current: SubscriptionRef.get(snapshots),
+                states: SubscriptionRef.changes(snapshots),
+              },
+            });
+            expect(publications).toEqual([]);
+
+            yield* SubscriptionRef.set(snapshots, { wallets: [standard] });
+            yield* Effect.promise(() =>
+              vi.waitFor(() =>
+                expect(harness.config.connectors[0]).toMatchObject({
+                  solanaAdapter: standard.adapter,
+                  solanaAdapterSource: "standard",
+                })
+              )
+            );
+          })
+        );
+        unsubscribe();
+
+        expect(publications).toHaveLength(1);
+      })
   );
 
   it.effect(

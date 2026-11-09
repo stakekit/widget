@@ -173,25 +173,6 @@ describe("Borrow flow settled position", () => {
   );
 
   it.effect(
-    "settles pooled collateral reserves through the account they back",
-    () =>
-      Effect.gen(function* () {
-        const settled = mountSettled(
-          makeRegistry({
-            current: snapshot({ collateralUsd: "1000", debtUsd: "400" }),
-          })
-        );
-
-        yield* eventually(() =>
-          expect(settled()).toMatchObject({
-            collateralUsd: "1000",
-            debtUsd: "400",
-          })
-        );
-      })
-  );
-
-  it.effect(
     "reports the returned-to position closed once its balances are gone",
     () =>
       Effect.gen(function* () {

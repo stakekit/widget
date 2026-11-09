@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import * as Reactivity from "effect/reactivity/Reactivity";
 
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";
@@ -10,7 +9,9 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { positionsDataAtom as earnPositionsDataAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
 import { PositionsDataKey } from "../../../src/features/earn/state/earn-selection/catalog/keys";
 import {
+  PositionBalancesKey,
   PositionDataKey,
+  positionBalancesAtom,
   positionDataAtom,
   refreshYieldPositionsAtom,
   YieldPositionsError,
@@ -21,7 +22,6 @@ import {
   ApiRequestError,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
-import { resourceInvalidationKeys } from "../../../src/services/resource-invalidation";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -61,27 +61,7 @@ const makeRegistry = (source: YieldResourceSource["Service"]) =>
     ],
   });
 
-const reactivityAtom = appRuntime.atom(Reactivity.Reactivity);
-
 describe("Yield Positions resource", () => {
-  it("shares one acquisition for equivalent Wallet Scope requests", () => {
-    const getPositions = vi.fn((_command: YieldBalancesCommand) =>
-      Effect.succeed({ errors: [], items: [makePosition()] })
-    );
-    const registry = makeRegistry(
-      YieldResourceSource.of({
-        getPositions,
-      } as never)
-    );
-
-    const first = registry.get(yieldPositionsResourceAtom(makeScope()));
-    const second = registry.get(yieldPositionsResourceAtom(makeScope()));
-
-    expect(AsyncResult.getOrThrow(first).items).toHaveLength(1);
-    expect(AsyncResult.getOrThrow(second).items).toHaveLength(1);
-    expect(getPositions).toHaveBeenCalledOnce();
-  });
-
   it("ignores additional addresses that do not affect the request", () => {
     const getPositions = vi.fn((_command: YieldBalancesCommand) =>
       Effect.succeed({ errors: [], items: [makePosition()] })
@@ -229,85 +209,6 @@ describe("Yield Positions resource", () => {
     ]);
   });
 
-  it("starts with a fresh cache in a new Widget Instance registry", () => {
-    const getPositions = vi.fn(() =>
-      Effect.succeed({ errors: [], items: [makePosition()] })
-    );
-    const source = YieldResourceSource.of({ getPositions } as never);
-    const resource = yieldPositionsResourceAtom(makeScope());
-    const firstRegistry = makeRegistry(source);
-
-    expect(
-      AsyncResult.getOrThrow(firstRegistry.get(resource)).items
-    ).toHaveLength(1);
-    firstRegistry.dispose();
-
-    const secondRegistry = makeRegistry(source);
-    expect(
-      AsyncResult.getOrThrow(secondRegistry.get(resource)).items
-    ).toHaveLength(1);
-    expect(getPositions).toHaveBeenCalledTimes(2);
-    secondRegistry.dispose();
-  });
-
-  it.effect("refreshes the matching resource after semantic invalidation", () =>
-    Effect.gen(function* () {
-      let amount = "2";
-      const getPositions = vi.fn(() =>
-        Effect.succeed({ errors: [], items: [makePosition(amount)] })
-      );
-      const registry = AtomRegistry.make({
-        initialValues: [
-          Atom.initialValue(
-            appRuntime.layer,
-            Layer.mergeAll(
-              Reactivity.layer,
-              Layer.succeed(
-                YieldResourceSource,
-                YieldResourceSource.of({ getPositions } as never)
-              )
-            ) as never
-          ),
-        ],
-      });
-      const scope = makeScope();
-      const resource = yieldPositionsResourceAtom(scope);
-      const unmountResource = registry.mount(resource);
-      const unmountReactivity = registry.mount(reactivityAtom);
-
-      yield* Effect.promise(() =>
-        vi.waitFor(() =>
-          expect(
-            AsyncResult.getOrThrow(
-              registry.get(resource)
-            ).items[0]?.balances[0]?.amount.toFixed()
-          ).toBe("2")
-        )
-      );
-
-      amount = "7";
-      const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
-      yield* reactivity.withBatch(
-        reactivity.invalidate(resourceInvalidationKeys.yieldPositions(scope))
-      );
-
-      yield* Effect.promise(() =>
-        vi.waitFor(() =>
-          expect(
-            AsyncResult.getOrThrow(
-              registry.get(resource)
-            ).items[0]?.balances[0]?.amount.toFixed()
-          ).toBe("7")
-        )
-      );
-      expect(getPositions).toHaveBeenCalledTimes(2);
-
-      unmountResource();
-      unmountReactivity();
-      registry.dispose();
-    })
-  );
-
   it("polls while mounted and stops polling after unmount", async () => {
     vi.useFakeTimers();
     try {
@@ -332,5 +233,81 @@ describe("Yield Positions resource", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("resolves position balances for an explicit wallet scope", () => {
+    const position = makePosition();
+    const scope = makeScope();
+    const balances = positionBalancesAtom(
+      new PositionBalancesKey({
+        balanceId: "default",
+        scope,
+        yieldId: position.yieldId,
+      })
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          yieldPositionsResourceAtom(scope),
+          AsyncResult.success({ errors: [], items: [position] }),
+        ],
+      ],
+    });
+
+    expect(
+      Option.getOrNull(AsyncResult.value(registry.get(balances)))?.balances
+    ).toHaveLength(1);
+  });
+
+  it("retains same-wallet position data only while revalidating and clears it across owners or successful absence", () => {
+    const position = makePosition();
+    const scopeA = makeScope();
+    const scopeB = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x0000000000000000000000000000000000000002"
+      ),
+      network: "ethereum",
+    });
+    const response = { errors: [], items: [position] };
+    const resourceA = yieldPositionsResourceAtom(scopeA);
+    const resourceB = yieldPositionsResourceAtom(scopeB);
+    const selectedA = positionDataAtom(
+      new PositionDataKey({ scope: scopeA, yieldId: position.yieldId })
+    );
+    const selectedB = positionDataAtom(
+      new PositionDataKey({ scope: scopeB, yieldId: position.yieldId })
+    );
+
+    const readA = (result: Atom.Type<typeof resourceA>) =>
+      AtomRegistry.make({ initialValues: [[resourceA, result]] }).get(
+        selectedA
+      );
+    const readB = (result: Atom.Type<typeof resourceB>) =>
+      AtomRegistry.make({ initialValues: [[resourceB, result]] }).get(
+        selectedB
+      );
+
+    expect(
+      Option.getOrNull(AsyncResult.value(readA(AsyncResult.success(response))))
+    ).not.toBeNull();
+
+    expect(
+      Option.getOrNull(
+        AsyncResult.value(
+          readA(AsyncResult.waiting(AsyncResult.success(response)))
+        )
+      )
+    ).not.toBeNull();
+
+    expect(
+      Option.getOrNull(
+        AsyncResult.value(readB(AsyncResult.success({ errors: [], items: [] })))
+      )
+    ).toBeNull();
+    expect(
+      Option.getOrNull(
+        AsyncResult.value(readA(AsyncResult.success({ errors: [], items: [] })))
+      )
+    ).toBeNull();
   });
 });

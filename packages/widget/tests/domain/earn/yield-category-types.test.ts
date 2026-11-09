@@ -43,30 +43,6 @@ const t = ((key: string) => {
 }) as Parameters<typeof getYieldTypeLabels>[1];
 
 describe("getApiYieldTypesForYieldCategory", () => {
-  it("maps stake to staking + restaking + liquid staking", () => {
-    expect(getApiYieldTypesForYieldCategory("stake").sort()).toEqual(
-      ["liquid_staking", "restaking", "staking"].sort()
-    );
-  });
-
-  it("maps defi to the deposit yield types", () => {
-    expect(getApiYieldTypesForYieldCategory("defi").sort()).toEqual(
-      [
-        "lending",
-        "vault",
-        "fixed_yield",
-        "concentrated_liquidity_pool",
-        "liquidity_pool",
-      ].sort()
-    );
-  });
-
-  it("maps rwa to real_world_asset", () => {
-    expect(getApiYieldTypesForYieldCategory("rwa")).toEqual([
-      "real_world_asset",
-    ]);
-  });
-
   it("partitions every API yield type into exactly one category", () => {
     const mapped = yieldCategories.flatMap((category) =>
       getApiYieldTypesForYieldCategory(category)

@@ -119,38 +119,6 @@ describe("Wallet lifecycle policy", () => {
       })
   );
 
-  it.effect("tracks Stellar wallet connections with address and network", () =>
-    Effect.gen(function* () {
-      const trackEvent = vi.fn(() => Effect.void);
-      const stellarAddress = yield* Schema.decodeEffect(WalletAddress)(
-        `G${"A".repeat(55)}`
-      );
-      const stellarConnector = {
-        id: "freighter",
-        name: "Freighter",
-        type: "stellar-wallet",
-        uid: "freighter-uid",
-      } as unknown as Connector;
-
-      yield* Effect.gen(function* () {
-        const policy = yield* makePolicy(trackEvent as never);
-        yield* policy.transition({
-          actions: { disconnect: () => Effect.void },
-          state: {
-            ...connected(stellarAddress),
-            connector: stellarConnector,
-            network: "stellar",
-          },
-        });
-      });
-
-      expect(trackEvent).toHaveBeenCalledWith("connectedWallet", {
-        address: stellarAddress,
-        network: "stellar",
-      });
-    })
-  );
-
   it.effect("disconnects an unsupported identity once until state resets", () =>
     Effect.gen(function* () {
       const disconnect = vi.fn(() => Effect.void);

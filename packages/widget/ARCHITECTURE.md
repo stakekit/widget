@@ -366,8 +366,10 @@ and Effect Atom registry.
   literal absolute Widget paths outside the Route Registry, Layout reads outside
   application composition and Widget Configuration, Layout-named identifiers in
   Domain, runtime, Resource, service, and Feature `model/` and `state/` code,
-  Layout-named files outside `ui/` and `app/layouts/`, and suppressions that
-  name no rule or give no reason after `--`.
+  Layout-named files outside `ui/` and `app/layouts/`, suppressions that
+  name no rule or give no reason after `--`, and module mocks (`vi.mock`,
+  `vi.doMock`) in Node test files that share workers (only
+  `*.isolated.test.*` files may mock modules).
 - The `design-system` oxlint plugin rejects lowercase JSX elements,
   `createElement` calls with a lowercase tag, and `className` or `style`
   attributes (spread too) in Features and application composition, and,
@@ -402,7 +404,11 @@ and Effect Atom registry.
 - Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
 - jscpd fails when duplicated source and tooling code (tests and generated API
-  clients excluded) exceeds 1% of lines.
+  clients excluded) exceeds 1% of lines, and when duplicated test code exceeds
+  the ratchet in `.jscpd-tests.json`.
+- `check:bundle-size` (part of `build`) fails when the gzip size of an entry
+  and every chunk it imports statically exceeds its budget, which keeps the
+  wallet SDKs behind `import()`.
 
 Run `mise exec -- pnpm check-hygiene` after changing the module graph. Change
 the implementation or the exact policy when the design changes; do not silence

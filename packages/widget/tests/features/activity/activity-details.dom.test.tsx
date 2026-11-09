@@ -15,6 +15,7 @@ import { ActivityDetailsPage } from "../../../src/features/activity/ui/activity-
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import {
   yieldApiActionFixture,
+  yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
@@ -80,6 +81,41 @@ const makeItem = ({
     validatorsData: [],
     walletScope: { network: "ethereum" } as never,
     yieldData: withYield ? yieldData : null,
+  };
+};
+
+const makeCompletedItem = (): YieldActivityItem => {
+  const yieldData = {
+    ...yieldApiYieldFixture(),
+    provider: yieldApiProviderFixture({ name: "Lido" }),
+  };
+  return {
+    _tag: "yield",
+    actionData: yieldApiActionFixture({
+      amount: "1",
+      amountUsd: "2400",
+      completedAt: DateTime.makeUnsafe("2026-08-26T10:06:00.000Z"),
+      createdAt: DateTime.makeUnsafe("2026-08-26T10:00:00.000Z"),
+      status: "SUCCESS",
+      transactions: [
+        yieldApiTransactionFixture({
+          broadcastedAt: DateTime.makeUnsafe("2026-08-26T10:05:00.000Z"),
+          explorerUrl: "https://explorer.test/a",
+          hash: TransactionHash.make(
+            "0x03fa9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7ee314"
+          ),
+          id: "a",
+          status: "CONFIRMED",
+          stepIndex: 0,
+          type: "APPROVAL",
+        }),
+      ],
+      type: "STAKE",
+      yieldId: yieldData.id,
+    }),
+    validatorsData: [],
+    walletScope: { network: "ethereum" } as never,
+    yieldData,
   };
 };
 
@@ -229,6 +265,56 @@ describe("Activity details receipt", () => {
     expect(text).toContain("Supplied and borrowed");
     expect(text).not.toContain("Continue");
     expect(trackPage).not.toHaveBeenCalled();
+  });
+
+  it("heads with the action and lists its facts, without a back control", async () => {
+    route.current = {
+      continuationReady: false,
+      item: makeCompletedItem(),
+      receiptPlacement: "page",
+    };
+
+    const app = await renderDetails();
+    const text = app.container.textContent;
+    const heading = app.container.querySelector("h2");
+
+    expect(heading?.textContent).toBe("Deposited ETH");
+    expect(text).toContain("+1 ETH");
+    expect(text).toContain("$2,400.00");
+    for (const [label, value] of [
+      ["Status", "Completed"],
+      ["Network", "Ethereum"],
+      ["Provider", "Lido"],
+      ["Created", "Aug 26, 2026, 10:00 AM"],
+      ["Completed", "Aug 26, 2026, 10:06 AM"],
+    ]) {
+      expect(text).toContain(`${label}${value}`);
+    }
+    // The shell's back button leads back; the receipt draws no second one.
+    expect(
+      app.container.querySelectorAll('button[aria-label*="Back"]')
+    ).toHaveLength(0);
+    // A completed action needs no status badge in the head.
+    expect(heading?.parentElement?.textContent).toBe("Deposited ETH");
+  });
+
+  it("leads a single transaction to its explorer page", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    route.current = {
+      continuationReady: false,
+      item: makeCompletedItem(),
+      receiptPlacement: "page",
+    };
+
+    const app = await renderDetails();
+    const explorer = app.container.querySelector<HTMLButtonElement>(
+      '[data-testid="activity-details-explorer"]'
+    );
+
+    expect(explorer?.textContent).toBe("View on explorer");
+    await act(async () => explorer?.click());
+    expect(open).toHaveBeenCalledWith("https://explorer.test/a", "_blank");
+    open.mockRestore();
   });
 
   it("shows a retryable failure when the action cannot be loaded", async () => {

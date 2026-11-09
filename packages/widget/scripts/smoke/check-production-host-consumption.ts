@@ -19,7 +19,9 @@
  * cross-origin requests, so the hosts run with a placeholder API key and
  * never reach a live API.
  *
- * Run via `pnpm test:smoke`. Not part of `check`, `test`, or `test:changed`.
+ * Run via `pnpm test:smoke` at the repository root: the mise task builds
+ * `dist` first (`build:widget`), and this script consumes that `dist` without
+ * rebuilding it. Not part of `check`, `test`, or `test:changed`.
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -28,6 +30,7 @@ import { access, readdir, readFile, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { join, relative, sep } from "node:path";
+import { createInterface } from "node:readline";
 import type { Readable } from "node:stream";
 import { stripVTControlCharacters } from "node:util";
 
@@ -196,7 +199,7 @@ const assertBuiltWidgetArtifacts = async () => {
         await access(join(widgetRoot, path));
       } catch {
         throw new Error(
-          `Built widget artifact is missing: packages/widget/${path}`
+          `Built widget artifact is missing: packages/widget/${path}. Run \`mise run build:widget\` first.`
         );
       }
     })
@@ -347,25 +350,6 @@ const assertEncryptWorkerStarts = async (
   );
 };
 
-const runCommand = async (
-  label: string,
-  args: ReadonlyArray<string>,
-  env: ProcessEnv
-) => {
-  console.log(`\n[smoke] ${label}`);
-  const child = spawn("pnpm", [...args], {
-    cwd: repositoryRoot,
-    env,
-    stdio: "inherit",
-  });
-  const [code, signal] = await once(child, "exit");
-  if (code !== 0) {
-    throw new Error(
-      `${label} failed${signal ? ` with signal ${signal}` : ` with exit code ${code}`}`
-    );
-  }
-};
-
 const getFreePort = () =>
   new Promise<number>((resolve, reject) => {
     const server = createServer();
@@ -388,20 +372,61 @@ const getFreePort = () =>
     });
   });
 
-const pipeServerOutput = (
+// Prefixes each line of a child's output with its label; readline splits on
+// real line ends, so a line that spans two chunks prints whole.
+const pipeOutput = (
   stream: Readable,
   label: string,
-  onLine: (line: string) => void
+  onLine?: (line: string) => void
 ) => {
-  stream.setEncoding("utf8");
-  stream.on("data", (chunk: string) => {
-    for (const line of chunk.trimEnd().split(/\r?\n/u)) {
-      if (line) {
-        console.log(`[${label}] ${line}`);
-        onLine(line);
-      }
+  createInterface({ input: stream, crlfDelay: Infinity }).on("line", (line) => {
+    if (line.trim()) {
+      console.log(`[${label}] ${line}`);
+      onLine?.(line);
     }
   });
+};
+
+// Output is piped and prefixed, so builds running side by side stay readable.
+const runCommand = async ({
+  label,
+  args,
+  env,
+}: {
+  readonly label: string;
+  readonly args: ReadonlyArray<string>;
+  readonly env: ProcessEnv;
+}) => {
+  console.log(`[smoke] ${label}`);
+  const child = spawn("pnpm", [...args], {
+    cwd: repositoryRoot,
+    env,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  pipeOutput(child.stdout, label);
+  pipeOutput(child.stderr, label);
+  // `close` waits for both pipes to drain, unlike `exit`.
+  const [code, signal] = await once(child, "close");
+  if (code !== 0) {
+    throw new Error(
+      `${label} failed${signal ? ` with signal ${signal}` : ` with exit code ${code}`}`
+    );
+  }
+};
+
+// The hosts build independently, so they build at once. A failure is reported
+// only after every build has exited, so none is left running behind the
+// error, and one run names every failing host.
+const runCommandsInParallel = async (
+  commands: ReadonlyArray<Parameters<typeof runCommand>[0]>
+) => {
+  const results = await Promise.allSettled(commands.map(runCommand));
+  const failures = results
+    .flatMap((result) => (result.status === "rejected" ? [result.reason] : []))
+    .map((reason) => (reason instanceof Error ? reason.message : `${reason}`));
+  if (failures.length > 0) {
+    throw new Error(failures.join("\n"));
+  }
 };
 
 const startServer = ({
@@ -436,8 +461,8 @@ const startServer = ({
     throw new Error(`${label} did not expose stdout and stderr pipes`);
   }
 
-  pipeServerOutput(child.stdout, label, handleLine);
-  pipeServerOutput(child.stderr, label, handleLine);
+  pipeOutput(child.stdout, label, handleLine);
+  pipeOutput(child.stderr, label, handleLine);
 
   const exit = once(child, "exit").then(([code, signal]) => ({
     code: typeof code === "number" ? code : null,
@@ -739,9 +764,6 @@ const withServer = async ({
 
 const main = async () => {
   assertSharedScheduler();
-  if (process.argv.includes("--check-dependencies")) {
-    return;
-  }
   const env = {
     ...process.env,
     VITE_API_KEY: placeholderApiKey,
@@ -751,31 +773,26 @@ const main = async () => {
   await assertBuiltWidgetArtifacts();
   assertHostsResolveBuiltWidget();
 
-  await runCommand(
-    `${hosts.vitePackage.label} build`,
-    ["--filter", hosts.vitePackage.packageName, "run", "build"],
-    env
-  );
-  await runCommand(
-    `${hosts.viteBundle.label} build`,
-    ["--filter", hosts.viteBundle.packageName, "run", "build"],
-    env
-  );
-  await runCommand(
-    `${hosts.next.label} production build`,
-    ["--filter", hosts.next.packageName, "run", "build"],
-    env
-  );
   // Angular caches build and pre-bundle output across runs; start clean so the
   // Angular stages consume this run's `dist`.
   await rm(join(hosts.angular.directory, ".angular"), {
     force: true,
     recursive: true,
   });
-  await runCommand(
-    `${hosts.angular.label} production build`,
-    ["--filter", hosts.angular.packageName, "run", "build"],
-    env
+  await runCommandsInParallel(
+    [
+      { label: `${hosts.vitePackage.label} build`, host: hosts.vitePackage },
+      { label: `${hosts.viteBundle.label} build`, host: hosts.viteBundle },
+      { label: `${hosts.next.label} production build`, host: hosts.next },
+      {
+        label: `${hosts.angular.label} production build`,
+        host: hosts.angular,
+      },
+    ].map(({ label, host }) => ({
+      label,
+      args: ["--filter", host.packageName, "run", "build"],
+      env,
+    }))
   );
   await assertNextCopiesEncryptWorker();
 

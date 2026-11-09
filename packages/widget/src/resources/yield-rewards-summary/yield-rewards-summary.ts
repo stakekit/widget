@@ -18,7 +18,7 @@ export class YieldRewardsSummaryKey extends Data.TaggedClass(
   readonly yieldId: YieldId;
 }> {}
 
-export class YieldRewardsSummaryError extends Data.TaggedError(
+class YieldRewardsSummaryError extends Data.TaggedError(
   "YieldRewardsSummaryError"
 )<{
   readonly cause: ApiRequestError | ResponseDecodeError;

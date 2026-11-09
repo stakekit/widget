@@ -7,8 +7,8 @@ import { ActivityActionsPage } from "../../../src/domain/activity/models";
 import type { YieldAction } from "../../../src/domain/earn/action-models";
 import { EarnValidator } from "../../../src/domain/earn/validator";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { ActivityExplicitIntent } from "../../../src/features/activity/model/selection";
 import {
-  ActivityExplicitIntent,
   ActivitySelectionKey,
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";
@@ -49,18 +49,6 @@ const getActivityActions = (
 ) => getPullResultItems(result).flatMap((batch) => batch.actions);
 
 describe("activity action atom boundary", () => {
-  it("constructs value-equal activity resource keys", () => {
-    const fields = {
-      borrowEnabled: true,
-      filter: "stake" as const,
-      scope: new WalletScopeKey({ address, network }),
-    };
-
-    expect(new ActivityActionsKey(fields)).toEqual(
-      new ActivityActionsKey({ ...fields })
-    );
-  });
-
   it.effect("omits a malformed action while retaining valid siblings", () =>
     Effect.gen(function* () {
       const valid = yieldApiActionDtoFixture({ id: "valid-action" });
@@ -315,60 +303,6 @@ describe("activity action atom boundary", () => {
         { actionData: { id: "action-a" }, yieldData: null },
       ])
     );
-
-    unmount();
-    registry.dispose();
-  });
-
-  it("manual refresh republishes data from the shared history authority", async () => {
-    const yieldModel = yieldApiYieldFixture();
-    let actionId = "action-before-refresh";
-    const listActivity = vi.fn<ListActivity>(({ limit = 50, offset = 0 }) =>
-      Effect.succeed({
-        items: [
-          yieldApiActionFixture({ id: actionId, yieldId: yieldModel.id }),
-        ],
-        limit,
-        offset,
-        total: 1,
-      })
-    );
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          yieldResourceSourceLayer({
-            getOpportunity: () => Effect.succeed(yieldModel),
-            getProvider: () => Effect.succeedNone,
-            listActivity,
-          }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
-        ),
-      ],
-    });
-    const resource = activityActionsPullAtom(
-      new ActivityActionsKey({
-        borrowEnabled: false,
-        filter: "all",
-        scope: walletScope,
-      })
-    );
-    const unmount = registry.mount(resource);
-
-    await vi.waitFor(() =>
-      expect(getActivityActions(registry.get(resource))[0]?.actionData.id).toBe(
-        "action-before-refresh"
-      )
-    );
-
-    actionId = "action-after-refresh";
-    registry.refresh(resource);
-
-    await vi.waitFor(() =>
-      expect(getActivityActions(registry.get(resource))[0]?.actionData.id).toBe(
-        "action-after-refresh"
-      )
-    );
-    expect(listActivity).toHaveBeenCalledTimes(2);
 
     unmount();
     registry.dispose();

@@ -18,12 +18,12 @@ import {
   decodedAction,
   enableCollateralSession,
   makeBorrowApi,
-  renderExecution,
   transaction,
   transactionHash,
   wallet,
   withdrawSession,
 } from "./borrow-execution-harness";
+import { renderExecution } from "./render-borrow-execution";
 
 describe("borrow execution flow: execution and lifetime", () => {
   it.live(
@@ -85,29 +85,6 @@ describe("borrow execution flow: execution and lifetime", () => {
       })
   );
 
-  it.live("labels steps with human-readable transaction types", () =>
-    Effect.gen(function* () {
-      const app = yield* renderExecution(makeBorrowApi({}), {
-        action: decodedAction({
-          action: "disableCollateral",
-          transactions: [transaction({ type: "DISABLE_COLLATERAL" })],
-        }),
-        stepsElement: <BorrowStepsPage />,
-        wallet: {
-          ...wallet,
-          signTransaction: () => Effect.never,
-        },
-      });
-
-      yield* Effect.promise(() =>
-        expect
-          .poll(() => app.container.textContent)
-          .toContain("Disable collateral")
-      );
-      expect(app.container.textContent).not.toContain("DISABLE_COLLATERAL");
-    })
-  );
-
   it.live("renders each borrow transaction as a step in a timeline", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(makeBorrowApi({}), {
@@ -144,7 +121,9 @@ describe("borrow execution flow: execution and lifetime", () => {
           )
           .toEqual(["step", null])
       );
-      expect(app.container.textContent).not.toContain("Transaction history");
+      // Steps name each transaction type, never the raw API enum.
+      expect(app.container.textContent).not.toContain("APPROVAL");
+      expect(app.container.textContent).not.toContain("SUPPLY");
     })
   );
 
@@ -172,27 +151,6 @@ describe("borrow execution flow: execution and lifetime", () => {
       );
       yield* Effect.promise(() =>
         expect.element(app.getByText("Step 1 of 2")).toBeInTheDocument()
-      );
-    })
-  );
-
-  it.live("routes to success when execution completes", () =>
-    Effect.gen(function* () {
-      const app = yield* renderExecution(
-        makeBorrowApi({
-          getActions: [
-            action({
-              status: "SUCCESS",
-              transactions: [transaction({ status: "CONFIRMED" })],
-            }),
-          ],
-        })
-      );
-
-      yield* Effect.promise(() =>
-        expect
-          .element(app.getByTestId("complete"))
-          .toHaveTextContent("/borrow/complete action-1")
       );
     })
   );
@@ -371,9 +329,7 @@ describe("borrow execution flow: execution and lifetime", () => {
       yield* Effect.promise(() =>
         expect.element(app.getByText("Withdrawal failed")).toBeInTheDocument()
       );
-      expect(app.container.textContent).not.toContain(
-        "Borrow transaction failed"
-      );
+      expect(app.container.textContent).not.toContain("Borrow failed");
     })
   );
 

@@ -15,6 +15,8 @@ export default defineConfig(
         formats: ["es"],
       },
       copyPublicDir: false,
+      // `.vite/manifest.json` for check:bundle-size.
+      manifest: true,
       outDir: "dist/bundle",
       sourcemap: false,
     },

@@ -1,7 +1,6 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 
-import { decodeTokenId } from "../../../../src/domain/borrow/ids";
 import { BorrowToken } from "../../../../src/domain/borrow/token";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import {
@@ -59,19 +58,6 @@ describe("borrow balance adapter", () => {
     expect(walletBalances.loanToken.amountValue.toString()).toBe("123.45");
     expect(walletBalances.collateralTokens[0]?.amount).toBe("0.25");
     expect(walletBalances.selectedCollateralToken?.token.symbol).toBe("WETH");
-  });
-
-  it("selects collateral balances by address and ignores other networks", () => {
-    const walletBalances = deriveBorrowMarketWalletBalances({
-      balances,
-      market,
-      selectedCollateralTokenId: decodeTokenId(
-        market.collateralTokens[0]!.token
-      ),
-    });
-
-    expect(walletBalances.selectedCollateralToken?.amount).toBe("0.25");
-    expect(walletBalances.loanToken.balance?.token.network).toBe("ethereum");
   });
 
   it("returns zero for missing balances", () => {

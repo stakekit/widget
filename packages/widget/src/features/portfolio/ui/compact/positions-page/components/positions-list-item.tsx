@@ -1,4 +1,4 @@
-import type { PositionItem } from "../../../../state/read-models/positions";
+import type { PositionItem } from "../../../../model/positions";
 import { EarnPositionListItem } from "../../../components/earn-position-list-item";
 import { usePositionListItem } from "../../../use-position-list-item";
 

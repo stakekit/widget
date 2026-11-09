@@ -7,7 +7,7 @@ import { toPositionsData } from "../../../src/domain/portfolio/positions";
 import {
   toBorrowManageOrder,
   toPositionItems,
-} from "../../../src/features/portfolio/state/read-models/positions";
+} from "../../../src/features/portfolio/model/positions";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../../fixtures";
 
 const makePosition = ({
@@ -178,5 +178,150 @@ describe("positions worth less than a cent", () => {
       "cent",
       "dust",
     ]);
+  });
+});
+
+describe("Manage row projection", () => {
+  const yieldDto = yieldApiYieldFixture();
+  const rowFor = (
+    balances: ReadonlyArray<Parameters<typeof yieldBalanceFixture>[0]>
+  ) =>
+    toPositionItems(
+      toPositionsData([
+        Schema.decodeSync(EarnPosition)({
+          balances: balances.map((balance) => yieldBalanceFixture(balance)),
+          outputTokenBalance: null,
+          yieldId: yieldDto.id,
+        }),
+      ]),
+      false
+    );
+  const withPendingActions = (types: ReadonlyArray<string>) =>
+    types.map((type) => ({ intent: "manage", passthrough: type, type }));
+
+  it("totals a priced second token into the primary Value Token", () => {
+    const usdc = {
+      ...yieldDto.token,
+      address: "0x00000000000000000000000000000000000000a1",
+      symbol: "USDC",
+    };
+    const dai = {
+      ...usdc,
+      address: "0x00000000000000000000000000000000000000d1",
+      symbol: "DAI",
+    };
+    const [item] = rowFor([
+      { amount: "1", amountUsd: "2", token: dai, type: "entering" },
+      { amount: "2", amountUsd: "2", token: usdc, type: "active" },
+    ]);
+
+    expect(
+      item?.total.map((sum) => [sum.amount.toFixed(), sum.token.symbol])
+    ).toEqual([["4", "USDC"]]);
+  });
+
+  it("lists only balances with an amount", () => {
+    const rows = rowFor([
+      { amount: "2", amountUsd: "5", type: "active", token: yieldDto.token },
+      { amount: "0", amountUsd: "0", type: "claimable", token: yieldDto.token },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.balancesWithAmount).toHaveLength(1);
+  });
+
+  it("does not flag points-only claimable balances as actions", () => {
+    const [row] = rowFor([
+      {
+        amount: "2",
+        amountRaw: "2000000000000000000",
+        amountUsd: "5",
+        token: yieldDto.token,
+        type: "active",
+      },
+      {
+        amount: "1214.8591",
+        amountRaw: "12148591",
+        amountUsd: "0",
+        token: { ...yieldDto.token, isPoints: true, symbol: "KelpDAO Miles" },
+        type: "claimable",
+      },
+    ]);
+
+    expect(row?.requiredAction).toBeNull();
+  });
+
+  it.each([
+    ["only an optional cancellation", ["CANCEL_PENDING"], null, true],
+    [
+      "a required action next to a cancellation",
+      ["CANCEL_PENDING", "WITHDRAW"],
+      "withdraw",
+      false,
+    ],
+  ] as const)(
+    "flags %s as in progress rather than required",
+    (_, types, requiredAction, hasPendingRequest) => {
+      const [row] = rowFor([
+        {
+          amount: "1",
+          amountRaw: "1000000000000000000",
+          amountUsd: "1",
+          pendingActions: withPendingActions(types),
+          token: yieldDto.token,
+          type: "entering",
+        },
+      ]);
+
+      expect(row?.requiredAction).toBe(requiredAction);
+      expect(row?.hasPendingRequest).toBe(hasPendingRequest);
+    }
+  );
+
+  it.each([
+    [
+      "a finished unstake to collect",
+      "exiting",
+      ["CLAIM_UNSTAKED"],
+      "withdraw",
+    ],
+    ["a locked balance to unlock", "locked", ["UNLOCK_LOCKED"], "unlock"],
+    [
+      "a locked balance with nothing to unlock",
+      "locked",
+      ["VOTE_LOCKED"],
+      "locked",
+    ],
+    ["a required action it cannot name", "active", ["VOTE"], "other"],
+  ] as const)("names %s", (_, balanceType, types, requiredAction) => {
+    const [row] = rowFor([
+      {
+        amount: "1",
+        amountRaw: "1000000000000000000",
+        amountUsd: "1",
+        pendingActions: withPendingActions(types),
+        token: yieldDto.token,
+        type: balanceType,
+      },
+    ]);
+
+    expect(row?.requiredAction).toBe(requiredAction);
+  });
+
+  it("flags an encrypted unwrap still to withdraw as in progress, since its instant withdrawal already began", () => {
+    const [row] = rowFor([
+      {
+        amount: "0",
+        amountRaw: "0",
+        isEncrypted: true,
+        pendingActions: withPendingActions(["WITHDRAW"]),
+        shareAmountRaw: `0x${"ab".repeat(32)}`,
+        token: yieldDto.token,
+        type: "withdrawable",
+      },
+    ]);
+
+    expect(row?.requiredAction).toBeNull();
+    expect(row?.hasPendingRequest).toBe(true);
   });
 });

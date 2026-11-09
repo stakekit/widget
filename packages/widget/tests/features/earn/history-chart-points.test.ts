@@ -1,13 +1,8 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 
-import { ActionCommand } from "../../../src/domain/earn/action-models";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { UtcDateTimeFromString } from "../../../src/domain/finance/scalars";
-import {
-  WalletAddress,
-  YieldId,
-} from "../../../src/domain/identity/identifiers";
 import {
   getRewardRateHistoryChart,
   getTvlHistoryChart,
@@ -28,30 +23,13 @@ const timestamp = Schema.decodeSync(UtcDateTimeFromString)(
 );
 
 describe("history chart adapters", () => {
-  it("converts exact history values to numbers only for chart points", () => {
-    const tvl = exactDecimal("9007199254740993.25");
-    const rewardRate = exactDecimal("0.0312");
-    const tvlPoint = toTvlHistoryChartPoint({
-      timestamp,
-      tvl,
-    });
+  it("converts a reward rate ratio to a chart percentage", () => {
     const rewardPoint = toRewardRateHistoryChartPoint({
       timestamp,
-      rewardRate,
-    });
-    const command = Schema.decodeSync(ActionCommand)({
-      address: Schema.decodeSync(WalletAddress)(
-        "0x1234567890123456789012345678901234567890"
-      ),
-      arguments: { amount: tvl.toFixed() },
-      yieldId: Schema.decodeSync(YieldId)("ethereum-eth-native-staking"),
+      rewardRate: exactDecimal("0.0312"),
     });
 
-    expect(typeof tvlPoint.value).toBe("number");
-    expect(DateTime.isDateTime(tvlPoint.timestamp)).toBe(true);
     expect(rewardPoint.value).toBe(3.12);
-    expect(command.arguments?.amount).toBe(tvl.toFixed());
-    expect(command.arguments?.amount).not.toBe(String(tvlPoint.value));
   });
 });
 

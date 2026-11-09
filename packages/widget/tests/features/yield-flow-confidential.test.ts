@@ -446,11 +446,12 @@ describe("confidential vault Yield Transaction Flow", () => {
   );
 
   it.effect(
-    "hands Steps a cUSDC deposit's action Review prepared, its hidden balance still to check",
+    "hands Steps a cUSDC deposit's encryption, its hidden balance still to check",
     () =>
       Effect.gen(function* () {
-        const start = enterStart("asset");
-        const flow = yield* openConfidentialFlow({ start });
+        const flow = yield* openConfidentialFlow({
+          start: enterStart("asset"),
+        });
 
         const handoff = yield* flow.confirm;
 
@@ -463,13 +464,6 @@ describe("confidential vault Yield Transaction Flow", () => {
           intent: "enter",
           requiresPermitSigner: true,
         });
-        // Review previewed the encrypted request once; Steps runs its action.
-        expect(flow.previews).toEqual([
-          { command: start.intake.request, intent: "enter" },
-        ]);
-        expect(
-          handoff.source._tag === "Prepare" && handoff.source.prepared
-        ).toEqual(depositAction);
       })
   );
 

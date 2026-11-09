@@ -30,6 +30,7 @@ import {
 } from "../../../src/features/yield-transaction-flow/model/completion";
 import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import {
+  getYieldFlowRouteGroup,
   makeYieldActionContinuationSession,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
@@ -1239,5 +1240,100 @@ describe("getYieldFlowExitUnlockDate", () => {
         yieldDto: yieldApiYieldFixture(),
       })
     ).toBeNull();
+  });
+});
+
+describe("Yield Flow destination", () => {
+  const cases: ReadonlyArray<
+    readonly [string, NavigatingYieldTransactionFlowStart, string, string]
+  > = [
+    ["root Enter", enterStart(), "", "/"],
+    [
+      "position Stake",
+      {
+        intake: makeEnterIntake(),
+        mount: { _tag: "PositionStake", balanceId: "default", integrationId },
+      },
+      "/positions/integration/default/stake",
+      "/positions/integration/default",
+    ],
+    [
+      "position Exit",
+      exitStart(),
+      "/positions/integration/default/unstake",
+      "/positions/integration/default",
+    ],
+    [
+      "position Manage",
+      {
+        intake: makeManageIntake(),
+        mount: { _tag: "PositionManage", balanceId: "default", integrationId },
+      },
+      "/positions/integration/default/pending-action",
+      "/positions/integration/default",
+    ],
+  ];
+
+  it.each(cases)(
+    "routes a %s flow under its mount and finishes it there",
+    (_, start, base, finishPath) => {
+      expect(
+        makeYieldFlowSession(start, walletScope).destination
+      ).toMatchObject({
+        completePath: `${base}/complete`,
+        finishPath,
+        reviewPath: `${base}/review`,
+        stepsPath: `${base}/steps`,
+      });
+    }
+  );
+});
+
+describe("Yield Flow route group", () => {
+  it.each([
+    ["/review", "/"],
+    ["/steps", "/"],
+    ["/complete", "/"],
+    ["/complete/", "/"],
+    ["/positions/yield/default/stake/review", "/positions/yield/default/stake"],
+    ["/positions/yield/default/stake/steps", "/positions/yield/default/stake"],
+    [
+      "/positions/yield/default/stake/complete/",
+      "/positions/yield/default/stake",
+    ],
+    [
+      "/positions/yield/default/unstake/review",
+      "/positions/yield/default/unstake",
+    ],
+    [
+      "/positions/yield/default/unstake/complete",
+      "/positions/yield/default/unstake",
+    ],
+    [
+      "/positions/yield/default/pending-action/steps",
+      "/positions/yield/default/pending-action",
+    ],
+    [
+      "/positions/yield/validators/pending-action/steps",
+      "/positions/yield/validators/pending-action",
+    ],
+    ["/activity/action-1", "/activity/action-1"],
+    ["/activity/action-1/", "/activity/action-1"],
+    ["/activity/action-1/steps", "/activity/action-1"],
+    ["/activity/action-1/complete", "/activity/action-1"],
+    ["/activity/action-2/steps", "/activity/action-2"],
+  ] as const)("groups %s as %s", (pathname, group) => {
+    expect(getYieldFlowRouteGroup(pathname)).toBe(group);
+  });
+
+  it.each([
+    "/",
+    "/positions",
+    "/positions/yield/default",
+    "/activity",
+    "/activity/",
+    "/borrow/review",
+  ])("does not group %s", (pathname) => {
+    expect(getYieldFlowRouteGroup(pathname)).toBeNull();
   });
 });

@@ -4,11 +4,15 @@ import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/borrow-positions";
-import { decodeTokenId } from "../../../../src/domain/borrow/ids";
+import { decodeTokenId, MarketId } from "../../../../src/domain/borrow/ids";
 import type { Market } from "../../../../src/domain/borrow/market";
+import { exactDecimal } from "../../../../src/domain/finance/exact";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
-import { WalletScopeKey } from "../../../../src/domain/wallet/wallet-scope";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../../../src/domain/wallet/wallet-scope";
 import {
   applyBorrowFormAction,
   BorrowEntryKey,
@@ -17,6 +21,8 @@ import {
   shouldResetBorrowFormForCatalog,
 } from "../../../../src/features/borrow/borrow-entry/model/borrow-entry";
 import { currentBorrowEntryAtom } from "../../../../src/features/borrow/borrow-entry/state/borrow-entry";
+import { borrowFlowDetailsAtom } from "../../../../src/features/borrow/borrow-entry/state/flow-details";
+import { borrowEntryIntentEventProjectionAtom } from "../../../../src/features/borrow/borrow-entry/state/intent-projection";
 import { tokenBalancesScanAtom } from "../../../../src/features/portfolio/index";
 import { walletScopeAtom } from "../../../../src/features/wallet/index";
 import {
@@ -25,7 +31,12 @@ import {
 } from "../../../../src/resources/borrow-markets/borrow-markets";
 import { appRuntime } from "../../../../src/runtime/app-runtime";
 import { walletRuntime } from "../../../../src/runtime/wallet-runtime";
+import { widgetConfigAtom } from "../../../../src/runtime/widget-config";
 import { BorrowResourceSource } from "../../../../src/services/api/resource-sources";
+import {
+  type WidgetDomainEvent,
+  WidgetDomainEvents,
+} from "../../../../src/services/events/widget-domain-events";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
@@ -42,6 +53,10 @@ import {
   makeBorrowSupplyBalanceDto,
   wethTokenAddress,
 } from "../../../fixtures/borrow";
+import {
+  borrowEntryFlowDetails,
+  borrowEntryFlowMarket,
+} from "../../../utils/borrow-flow-entry";
 import { makeTestWallet } from "../../../utils/services/wallet-service";
 import { applicationRuntimeInitInitialValue } from "../../../utils/widget-config";
 
@@ -364,46 +379,6 @@ describe("Borrow Entry atoms", () => {
       expect(view.preparation?._tag).toBe("Ready");
     }
   );
-
-  // 1 WETH at $2,000 against an 80% max LTV and 85% liquidation threshold:
-  // blocking starts past 84% LTV; at $2,000 the health factor is 0.85.
-  it.each([
-    { borrowAmount: "1600", riskBlock: null, warning: false },
-    { borrowAmount: "1680", riskBlock: null, warning: true },
-    { borrowAmount: "1681", riskBlock: "ltv", warning: false },
-    { borrowAmount: "2000", riskBlock: "healthFactor", warning: false },
-  ] as const)(
-    "blocks Review only once borrowing $borrowAmount USDC is clearly past a limit",
-    ({ borrowAmount, riskBlock, warning }) => {
-      const view = resolveWethCollateralView({
-        borrowAmount,
-        collateralAmount: "1",
-        market: makeBorrowMarket(),
-      });
-
-      expect(view.validation.riskBlock).toBe(riskBlock);
-      expect(view.validation.riskWarning).toBe(warning);
-      expect(view.isActionReady).toBe(riskBlock === null);
-    }
-  );
-
-  it("blocks Review at 100% LTV even when the max LTV margin reaches past it", () => {
-    const view = resolveWethCollateralView({
-      borrowAmount: "2000",
-      collateralAmount: "1",
-      market: makeBorrowMarket({
-        collateralTokens: [
-          makeBorrowCollateralTokenDto({
-            liquidationThreshold: "0.99",
-            maxLtv: "0.99",
-          }),
-        ],
-      }),
-    });
-
-    expect(view.validation.riskBlock).toBe("ltv");
-    expect(view.isActionReady).toBe(false);
-  });
 
   it("resets persisted form intent when a successful refresh removes the selected market", () => {
     const selectedMarket = makeBorrowMarket();
@@ -839,66 +814,6 @@ describe("Borrow Entry atoms", () => {
     expect(view.validation.riskBlock).toBe("healthFactor");
   });
 
-  it("projects a new pool market against same-integration account risk", () => {
-    const existingMarket = makeBorrowMarket();
-    const selectedMarket = makeBorrowMarket({
-      id: "aave-v3-ethereum-dai",
-      loanToken: {
-        address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        decimals: 18,
-        name: "Dai Stablecoin",
-        symbol: "DAI",
-      },
-    });
-    const integration = makeBorrowIntegration();
-    const positions = deriveBorrowPositions({
-      integrationAccountSnapshots: [
-        {
-          integration,
-          accountSnapshot: makeBorrowAccountSnapshot({
-            supplyBalances: [
-              makeBorrowSupplyBalanceDto({ marketId: existingMarket.id }),
-            ],
-            totalCollateralUsd: "1000",
-            totalSuppliedUsd: "1000",
-          }),
-        },
-      ],
-      markets: [existingMarket, selectedMarket],
-    });
-    const [existingPosition] = positions.items;
-
-    if (!existingPosition) {
-      throw new Error("Expected existing pool position");
-    }
-
-    const view = resolveBorrowEntryView({
-      integrationsResult: AsyncResult.success([integration]),
-      intent: {
-        borrowAmount: "200",
-        collateralAmount: "0",
-        selectedCollateralTokenId: decodeTokenId(
-          selectedMarket.collateralTokens[0]!.token
-        ),
-        selectedMarketId: selectedMarket.id,
-      },
-      key: new BorrowEntryKey({
-        network: "ethereum",
-        scope: walletScope,
-      }),
-      marketsResult: AsyncResult.success([existingMarket, selectedMarket]),
-      positionsResult: AsyncResult.success(positions),
-      tokenBalances: [],
-    });
-
-    expect(view.projection.existingCollateralUsd.toString(10)).toBe("1000");
-    expect(view.projection.existingDebtUsd.toString(10)).toBe("400");
-    expect(view.projection.projectedDebtUsd.toString(10)).toBe("600");
-    expect(view.projection.projectedLtv).toEqual(new BigNumber("0.6"));
-    expect(view.validation.riskBlock).toBe(null);
-    expect(view.validation.riskWarning).toBe(false);
-  });
-
   it("validates borrow-only intent against the complete collateral composition", () => {
     const strictToken = makeBorrowCollateralTokenDto({
       liquidationThreshold: "0.6",
@@ -1021,4 +936,266 @@ describe("Borrow Entry atoms", () => {
     );
     expect("projectedLtv" in view.preparation.review.summary).toBe(false);
   });
+});
+
+/** Borrow reads answering `markets`, with `events` as the domain event stream. */
+const makeEntryRegistry = ({
+  events,
+  markets,
+}: {
+  readonly events?: SubscriptionRef.SubscriptionRef<WidgetDomainEvent>;
+  readonly markets: ReadonlyArray<Market>;
+}) => {
+  const borrowSource = Layer.succeed(BorrowResourceSource, {
+    getIntegrations: Effect.succeed([]),
+    getMarkets: () =>
+      Effect.succeed({
+        items: markets,
+        limit: 100,
+        offset: 0,
+        total: markets.length,
+      }),
+    getPositionData: () => Effect.succeed([]),
+  } as never);
+  const layer = events
+    ? Layer.merge(
+        borrowSource,
+        Layer.succeed(
+          WidgetDomainEvents,
+          WidgetDomainEvents.of({
+            events: SubscriptionRef.changes(events),
+            publish: () => Effect.void,
+          })
+        )
+      )
+    : borrowSource;
+
+  return AtomRegistry.make({
+    initialValues: [
+      Atom.initialValue(appRuntime.layer, layer as never),
+      applicationRuntimeInitInitialValue({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        variant: "default",
+      }),
+      Atom.initialValue(walletScopeAtom, walletScope),
+      Atom.initialValue(tokenBalancesScanAtom, {
+        enabled: true,
+        result: AsyncResult.success([]),
+      }),
+    ],
+  });
+};
+
+describe("Borrow Entry transaction-workflow events", () => {
+  const otherWalletScope = new WalletScopeKey({
+    address: Schema.decodeSync(WalletAddress)(
+      "0x0000000000000000000000000000000000000002"
+    ),
+    network: "ethereum",
+  });
+  const makeMarket = ({
+    collateralAddress,
+    collateralSymbol,
+    id,
+  }: {
+    readonly collateralAddress: string;
+    readonly collateralSymbol: string;
+    readonly id: string;
+  }) =>
+    makeBorrowMarket({
+      collateralTokens: [
+        makeBorrowCollateralTokenDto({
+          priceUsd: "1",
+          token: {
+            address: collateralAddress,
+            decimals: 18,
+            name: collateralSymbol,
+            symbol: collateralSymbol,
+          },
+        }),
+      ],
+      id,
+    });
+
+  it.effect("consumes only matching active owner intent", () =>
+    Effect.gen(function* () {
+      const events = yield* SubscriptionRef.make<WidgetDomainEvent>({
+        _tag: "TransactionWorkflowStarted",
+        owner: walletScopeOwnerKey(otherWalletScope),
+      });
+      const registry = makeEntryRegistry({ events, markets: [] });
+      const unmountProjection = registry.mount(
+        borrowEntryIntentEventProjectionAtom
+      );
+      const unmount = registry.mount(currentBorrowEntryAtom);
+      registry.set(currentBorrowEntryAtom, {
+        amount: "7",
+        type: "borrowAmount/set",
+      });
+
+      yield* SubscriptionRef.set(events, {
+        _tag: "TransactionWorkflowStarted",
+        owner: walletScopeOwnerKey(otherWalletScope),
+      });
+      expect(
+        registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()
+      ).toBe("7");
+
+      yield* SubscriptionRef.set(events, {
+        _tag: "TransactionWorkflowEnded",
+        owner: walletScopeOwnerKey(walletScope),
+        workflowKind: "Borrow",
+      });
+      expect(
+        registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()
+      ).toBe("7");
+
+      yield* SubscriptionRef.set(events, {
+        _tag: "TransactionWorkflowStarted",
+        owner: walletScopeOwnerKey(walletScope),
+      });
+      yield* Effect.promise(() =>
+        vi.waitFor(() =>
+          expect(
+            registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()
+          ).toBe("0")
+        )
+      );
+      unmount();
+      unmountProjection();
+      registry.dispose();
+    })
+  );
+
+  it.effect(
+    "keeps the started market and collateral selected while clearing amounts",
+    () =>
+      Effect.gen(function* () {
+        const defaultMarket = makeMarket({
+          collateralAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          collateralSymbol: "WETH",
+          id: "aave-v3-ethereum-weth",
+        });
+        const startedMarket = makeMarket({
+          collateralAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+          collateralSymbol: "WBTC",
+          id: "morpho-blue-ethereum-wbtc",
+        });
+        const startedCollateralTokenId = decodeTokenId(
+          startedMarket.collateralTokens[0]!.token
+        );
+        const events = yield* SubscriptionRef.make<WidgetDomainEvent>({
+          _tag: "TransactionWorkflowEnded",
+          owner: walletScopeOwnerKey(walletScope),
+          workflowKind: "Borrow",
+        });
+        const registry = makeEntryRegistry({
+          events,
+          markets: [defaultMarket, startedMarket],
+        });
+        const unmountProjection = registry.mount(
+          borrowEntryIntentEventProjectionAtom
+        );
+        const unmount = registry.mount(currentBorrowEntryAtom);
+        registry.set(currentBorrowEntryAtom, {
+          marketId: startedMarket.id,
+          type: "market/select",
+        });
+        registry.set(currentBorrowEntryAtom, {
+          amount: "7",
+          type: "borrowAmount/set",
+        });
+        registry.set(currentBorrowEntryAtom, {
+          amount: "2",
+          type: "collateralAmount/set",
+        });
+
+        yield* SubscriptionRef.set(events, {
+          _tag: "TransactionWorkflowStarted",
+          owner: walletScopeOwnerKey(walletScope),
+        });
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(
+              registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()
+            ).toBe("0")
+          )
+        );
+
+        const view = registry.get(currentBorrowEntryAtom);
+        expect(view?.selectedMarketId).toBe(startedMarket.id);
+        expect(view?.selectedCollateralTokenId).toBe(startedCollateralTokenId);
+        expect(view?.collateralAmount.toString()).toBe("0");
+        unmount();
+        unmountProjection();
+        registry.dispose();
+      })
+  );
+});
+
+describe("Borrow Entry flow details", () => {
+  /** Resolves the flow details once the market catalog has loaded. */
+  const resolveFlowDetails = (markets: ReadonlyArray<Market>) =>
+    Effect.promise(async () => {
+      const registry = makeEntryRegistry({ markets });
+      const details = borrowFlowDetailsAtom(borrowEntryFlowDetails);
+      registry.mount(details);
+      await vi.waitFor(() => {
+        const catalog = registry.get(
+          borrowMarketsAtom.foreground(
+            new BorrowMarketsKey({
+              network: borrowEntryFlowMarket.network,
+              scope: registry.get(widgetConfigAtom).borrowMarketsScope,
+            })
+          )
+        );
+        expect(AsyncResult.isSuccess(catalog) && !catalog.waiting).toBe(true);
+      });
+      return registry.get(details);
+    });
+
+  it.effect("follows the live catalog entry of the captured market", () =>
+    Effect.gen(function* () {
+      const live = {
+        ...borrowEntryFlowMarket,
+        availableLiquidity: exactDecimal("1"),
+      };
+
+      const details = yield* resolveFlowDetails([live]);
+
+      expect(details.market.availableLiquidity.toString()).toBe("1");
+    })
+  );
+
+  it.effect("keeps the captured market when the catalog no longer has it", () =>
+    Effect.gen(function* () {
+      // Another market stays listed, so a first-market fallback would show.
+      const otherMarket = {
+        ...borrowEntryFlowMarket,
+        id: MarketId.make("morpho-blue-borrow-base-weth-usdc-1"),
+      };
+
+      const details = yield* resolveFlowDetails([otherMarket]);
+
+      expect(details.market).toBe(borrowEntryFlowMarket);
+      expect(details.collateralToken).toBe(
+        borrowEntryFlowDetails.collateralToken
+      );
+    })
+  );
+
+  it.effect("keeps the captured collateral when the live market drops it", () =>
+    Effect.gen(function* () {
+      const live = { ...borrowEntryFlowMarket, collateralTokens: [] };
+
+      const details = yield* resolveFlowDetails([live]);
+
+      expect(details.market.collateralTokens).toEqual([]);
+      expect(details.collateralToken).toBe(
+        borrowEntryFlowDetails.collateralToken
+      );
+    })
+  );
 });

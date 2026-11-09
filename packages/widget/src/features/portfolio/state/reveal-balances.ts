@@ -13,10 +13,8 @@ import {
   revealConfidentialPositions,
 } from "../../../services/zama/confidential-positions";
 import { walletScopeAtom } from "../../wallet/index";
-import {
-  type PositionItem,
-  positionsTableDataAtom,
-} from "./read-models/positions";
+import type { PositionItem } from "../model/positions";
+import { positionsTableDataAtom } from "./read-models/positions";
 import { positionYieldsResultAtom } from "./read-models/summary";
 
 /** Reveals every hidden confidential balance of the current owner. */

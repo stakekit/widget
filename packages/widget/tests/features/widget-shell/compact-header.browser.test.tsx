@@ -4,40 +4,21 @@ import { render } from "../../utils/test-utils";
 
 const header = vi.hoisted(() => ({ showBack: false, showDisconnect: true }));
 
-vi.mock("../../../src/features/wallet/views", async (importOriginal) => {
-  const actual = await importOriginal<object>();
+// Plain factories, not `importOriginal`: the real modules pull in the wallet
+// connection and runtime graphs this header test replaces.
+vi.mock("../../../src/features/wallet/views", () => ({
+  AccountModal: () => <div>Account</div>,
+  ChainModal: () => <div>Chain</div>,
+}));
 
-  return {
-    ...actual,
-    AccountModal: () => <div>Account</div>,
-    ChainModal: () => <div>Chain</div>,
-  };
-});
-
-vi.mock(
-  "../../../src/features/mount-animation/index",
-  async (importOriginal) => {
-    const actual = await importOriginal<object>();
-
-    return {
-      ...actual,
-      useMountAnimation: () => ({
-        state: { earnPage: true, layout: true },
-        dispatch: vi.fn(),
-      }),
-      useMountRevealReady: () => true,
-    };
-  }
-);
-
-vi.mock(
-  "../../../src/features/widget-configuration/index",
-  async (importOriginal) => {
-    const actual = await importOriginal<object>();
-
-    return { ...actual, useWidgetConfig: () => true };
-  }
-);
+vi.mock("../../../src/features/mount-animation/index", () => ({
+  isMountAnimationFinished: () => true,
+  useMountAnimation: () => ({
+    state: { earnPage: true, layout: true },
+    dispatch: vi.fn(),
+  }),
+  useMountRevealReady: () => true,
+}));
 
 vi.mock("../../../src/features/widget-shell/ui/use-header", () => ({
   useHeader: () => ({

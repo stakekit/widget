@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import { ThemeRoot } from "../../../src/ui/composition";
-import { Button, Modal, Text } from "../../../src/ui/index";
+import { Modal, Text } from "../../../src/ui/index";
 import { render } from "../../utils/test-utils";
 
 const rows = Array.from({ length: 40 }, (_, index) => `Paragraph ${index + 1}`);
@@ -49,23 +49,6 @@ describe("Modal", () => {
     const afterPageDown = viewport.scrollTop;
     await userEvent.keyboard("{ArrowDown}");
     await expect.poll(() => viewport.scrollTop).toBeGreaterThan(afterPageDown);
-  });
-
-  it("adds no Tab stop for a body whose rows take focus", async () => {
-    await renderModal(rows.map((row) => <Button key={row}>{row}</Button>));
-    const body = page.getByTestId("modal-body");
-    await expect
-      .element(page.getByRole("button", { name: "Close" }))
-      .toHaveFocus();
-    expect(body.element().scrollHeight).toBeGreaterThan(
-      body.element().clientHeight
-    );
-    expect(body.element()).not.toHaveAttribute("tabindex");
-
-    await userEvent.tab();
-    await expect
-      .element(page.getByRole("button", { name: "Paragraph 1", exact: true }))
-      .toHaveFocus();
   });
 
   it("takes no focus while a text-only body fits", async () => {

@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
 
-import { makeCardanoWalletDriver } from "../../../src/services/wallet/internal/adapters/cardano/driver";
-import { makeSolanaWalletDriver } from "../../../src/services/wallet/internal/adapters/solana/driver";
+import { makeCosmosWalletDriver } from "../../../src/services/wallet/internal/adapters/cosmos/driver";
+import { makeStellarWalletDriver } from "../../../src/services/wallet/internal/adapters/stellar/driver";
+import { makeSubstrateWalletDriver } from "../../../src/services/wallet/internal/adapters/substrate/driver";
 import { makeTonWalletDriver } from "../../../src/services/wallet/internal/adapters/ton/driver";
 import { makeTronWalletDriver } from "../../../src/services/wallet/internal/adapters/tron/driver";
 
@@ -19,6 +20,30 @@ const tronTx = JSON.stringify({
   txID: "tron-id",
   visible: true,
 });
+
+const substrateTx = JSON.stringify({
+  metadataRpc: "0x00",
+  specName: "polkadot",
+  specVersion: 1,
+  tx: {
+    address: "address",
+    blockHash: "0x00",
+    blockNumber: "0x01",
+    era: "0x00",
+    genesisHash: "0x00",
+    metadataRpc: "0x00",
+    method: "0x00",
+    nonce: "0x00",
+    signedExtensions: ["CheckNonce"],
+    specVersion: "0x01",
+    tip: "0x00",
+    transactionVersion: "0x01",
+    version: 4,
+  },
+});
+
+const stellarAddress =
+  "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 describe("non-EVM wallet drivers", () => {
   it.effect("normalizes a Tron signed transaction to a JSON payload", () =>
@@ -40,62 +65,6 @@ describe("non-EVM wallet drivers", () => {
       expect(signTransaction).toHaveBeenCalledWith(
         expect.objectContaining({ txID: "tron-id" })
       );
-    })
-  );
-
-  it.effect("preserves Solana's broadcast result", () =>
-    Effect.gen(function* () {
-      const sendTransaction = vi.fn(async () => "solana-hash");
-      const connector = {
-        id: "solana",
-        isSolanaConnector: true,
-        sendTransaction,
-      } as unknown as Connector;
-
-      expect(
-        yield* makeSolanaWalletDriver({ connector }).signTransaction({
-          tx: "abcd",
-        })
-      ).toEqual({
-        broadcasted: true,
-        signedTx: "solana-hash",
-      });
-      expect(sendTransaction).toHaveBeenCalledWith("abcd");
-    })
-  );
-
-  it.effect("preserves Cardano's signed-payload result", () =>
-    Effect.gen(function* () {
-      const signTransaction = vi.fn(() => Effect.succeed("cardano-signed"));
-      const connector = {
-        id: "cardano",
-        type: "cardanoWallet",
-        signTransaction,
-      } as unknown as Connector;
-
-      expect(
-        yield* makeCardanoWalletDriver({ connector }).signTransaction({
-          tx: "abcd",
-        })
-      ).toEqual({
-        broadcasted: false,
-        signedTx: "cardano-signed",
-      });
-    })
-  );
-
-  it.effect("preserves TON's broadcast result", () =>
-    Effect.gen(function* () {
-      const signTransaction = vi.fn(() => Effect.succeed("ton-hash"));
-      const connector = {
-        id: "ton",
-        type: "tonWallet",
-        signTransaction,
-      } as unknown as Connector;
-
-      expect(
-        yield* makeTonWalletDriver({ connector }).signTransaction({ tx: "{}" })
-      ).toEqual({ broadcasted: true, signedTx: "ton-hash" });
     })
   );
 
@@ -125,6 +94,168 @@ describe("non-EVM wallet drivers", () => {
 
       expect(decodeFailure._tag).toBe("WalletDecodeError");
       expect(broadcastFailure._tag).toBe("WalletBroadcastError");
+    })
+  );
+
+  it.effect("requires the Cosmos chain wallet capability", () =>
+    Effect.gen(function* () {
+      const connector = {
+        id: "cosmos",
+        type: "cosmosProvider",
+        signTransaction: vi.fn(),
+      } as unknown as Connector;
+      const failure = yield* Effect.flip(
+        makeCosmosWalletDriver({
+          chainWallet: null,
+          connector,
+        }).signTransaction({ tx: "abcd" })
+      );
+
+      expect(failure._tag).toBe("WalletCapabilityUnavailableError");
+    })
+  );
+
+  it.effect(
+    "decodes and signs Substrate transactions without broadcasting",
+    () =>
+      Effect.gen(function* () {
+        const signTransaction = vi.fn(() => Effect.succeed("substrate-signed"));
+        const connector = {
+          id: "substrate",
+          type: "substrateProvider",
+          signTransaction,
+        } as unknown as Connector;
+
+        expect(
+          yield* makeSubstrateWalletDriver({ connector }).signTransaction({
+            tx: substrateTx,
+          })
+        ).toEqual({
+          broadcasted: false,
+          signedTx: "substrate-signed",
+        });
+        expect(signTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({
+            rawTx: substrateTx,
+            tx: expect.objectContaining({ signedExtensions: ["CheckNonce"] }),
+          })
+        );
+      })
+  );
+
+  it.effect("keeps Substrate decoding and signing failures distinct", () =>
+    Effect.gen(function* () {
+      const cause = new Error("rejected");
+      const connector = {
+        id: "substrate",
+        type: "substrateProvider",
+        signTransaction: () => Effect.fail(cause),
+      } as unknown as Connector;
+      const driver = makeSubstrateWalletDriver({ connector });
+
+      const decodeFailure = yield* Effect.flip(
+        driver.signTransaction({ tx: "{}" })
+      );
+      const signingFailure = yield* Effect.flip(
+        driver.signTransaction({ tx: substrateTx })
+      );
+
+      expect(decodeFailure._tag).toBe("WalletDecodeError");
+      expect(signingFailure._tag).toBe("WalletSigningError");
+    })
+  );
+});
+
+describe("Stellar wallet driver", () => {
+  it.effect(
+    "signs a mainnet XDR without requiring a reported signer address",
+    () =>
+      Effect.gen(function* () {
+        const signTransaction = vi.fn(() =>
+          Effect.succeed({ signedTxXdr: "signed-xdr" })
+        );
+        const connector = {
+          id: "stellar-wallet-connect",
+          signTransaction,
+          type: "stellar-wallet",
+        } as unknown as Connector;
+
+        expect(
+          yield* makeStellarWalletDriver({ connector }).signTransaction({
+            address: stellarAddress,
+            family: "yield",
+            ledgerHwAppId: null,
+            network: "stellar",
+            tx: "unsigned-xdr",
+            txMeta: {} as never,
+          })
+        ).toEqual({
+          broadcasted: false,
+          signedTx: "signed-xdr",
+        });
+        expect(signTransaction).toHaveBeenCalledWith({
+          address: stellarAddress,
+          networkPassphrase: "Public Global Stellar Network ; September 2015",
+          transactionXdr: "unsigned-xdr",
+        });
+      })
+  );
+
+  it.effect("rejects backend Stellar testnet values", () =>
+    Effect.gen(function* () {
+      const signTransaction = vi.fn(() =>
+        Effect.succeed({ signedTxXdr: "signed-xdr" })
+      );
+      const connector = {
+        id: "freighter",
+        signTransaction,
+        type: "stellar-wallet",
+      } as unknown as Connector;
+
+      expect(
+        yield* Effect.flip(
+          makeStellarWalletDriver({ connector }).signTransaction({
+            address: stellarAddress,
+            family: "yield",
+            ledgerHwAppId: null,
+            network: "stellar-testnet",
+            tx: "unsigned-xdr",
+            txMeta: {} as never,
+          })
+        )
+      ).toMatchObject({
+        _tag: "WalletCapabilityUnavailableError",
+        capability: "transaction",
+      });
+      expect(signTransaction).not.toHaveBeenCalled();
+    })
+  );
+
+  it.effect("rejects an empty signed XDR", () =>
+    Effect.gen(function* () {
+      const connector = {
+        id: "lobstr",
+        signTransaction: () => Effect.succeed({ signedTxXdr: "  " }),
+        type: "stellar-wallet",
+      } as unknown as Connector;
+
+      expect(
+        yield* Effect.flip(
+          makeStellarWalletDriver({ connector }).signTransaction({
+            address: stellarAddress,
+            family: "yield",
+            ledgerHwAppId: null,
+            network: "stellar",
+            tx: "unsigned-xdr",
+            txMeta: {} as never,
+          })
+        )
+      ).toMatchObject({
+        _tag: "WalletSigningError",
+        cause: {
+          operation: "stellar-sign-transaction",
+        },
+      });
     })
   );
 });

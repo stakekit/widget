@@ -6,6 +6,7 @@ import {
   positionDetailsHubHasContent,
   resolvePositionDetailsActionCapabilities,
   resolvePositionDetailsAmountActions,
+  resolvePositionDetailsPageLayout,
 } from "../../../src/features/position-details/model/hub";
 import { yieldApiYieldFixture } from "../../fixtures";
 
@@ -136,5 +137,50 @@ describe("position details hub model", () => {
         pendingActions: [{ pendingAction: { type: "CLAIM_REWARDS" } }],
       })
     ).toBe(true);
+  });
+
+  it("shows the actions while the position is ready", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: false,
+        page: { _tag: "Ready" },
+      })
+    ).toBe("Actions");
+  });
+
+  it("leaves the details page once the position is gone", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: false,
+        page: { _tag: "PositionLost" },
+      })
+    ).toBe("PositionLost");
+  });
+
+  it("keeps an active flow mounted when its exit removes the position", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: true,
+        page: { _tag: "PositionLost" },
+      })
+    ).toBe("Actions");
+  });
+
+  it("presents a failed first load in place of the actions", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: false,
+        page: { _tag: "Failed" },
+      })
+    ).toBe("Failed");
+  });
+
+  it("keeps an active flow mounted when the position fails to load", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: true,
+        page: { _tag: "Failed" },
+      })
+    ).toBe("Actions");
   });
 });

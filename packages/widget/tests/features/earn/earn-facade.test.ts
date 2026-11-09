@@ -21,9 +21,7 @@ import {
 } from "../../../src/features/earn/state/token-selection";
 import {
   earnValidatorModalEventAtom,
-  earnValidatorSelectionViewAtom,
   selectEarnValidatorAtom,
-  setEarnValidatorSearchAtom,
 } from "../../../src/features/earn/state/validator-selection";
 import {
   earnYieldSelectionViewAtom,
@@ -280,8 +278,6 @@ describe("Earn facade", () => {
     });
     const funded = option("FND", "0xaaa", "0.002");
     const pricedDust = option("PDU", "0xbbb", "0.001");
-    const weiDust = option("WEI", "0xccc", "0.000000000000000001");
-    const unpricedDust = option("UDU", "0xddd", "0.0000005");
     const getPrices = vi.fn((_request: PriceRequest) =>
       Effect.succeed(
         new Prices(
@@ -294,10 +290,6 @@ describe("Earn facade", () => {
               `${funded.token.network}-0xbbb`,
               { price: new BigNumber(1), price24H: undefined },
             ],
-            [
-              `${funded.token.network}-0xccc`,
-              { price: new BigNumber(3000), price24H: undefined },
-            ],
           ])
         )
       )
@@ -309,12 +301,7 @@ describe("Earn facade", () => {
           appRuntime.layer,
           Layer.succeed(LegacyResourceSource, { getPrices } as never) as never
         ),
-        ...tokenSelectionInitialValues([
-          funded,
-          pricedDust,
-          weiDust,
-          unpricedDust,
-        ]),
+        ...tokenSelectionInitialValues([funded, pricedDust]),
       ],
     });
     const unmount = registry.mount(earnTokenSelectionViewAtom);
@@ -332,29 +319,8 @@ describe("Earn facade", () => {
         ).toEqual([
           { symbol: "FND", fundedAmount: "0.002", fundedUsd: "5" },
           { symbol: "PDU", fundedAmount: null, fundedUsd: null },
-          { symbol: "WEI", fundedAmount: null, fundedUsd: null },
-          { symbol: "UDU", fundedAmount: null, fundedUsd: null },
         ])
       );
-    } finally {
-      unmount();
-      registry.dispose();
-    }
-  });
-
-  it("forwards validator search into the stable selection view", () => {
-    const registry = AtomRegistry.make({
-      initialValues: [applicationRuntimeInitInitialValue()],
-    });
-    const unmount = registry.mount(earnValidatorSelectionViewAtom);
-
-    try {
-      registry.set(setEarnValidatorSearchAtom, " validator ");
-      expect(registry.get(earnValidatorSelectionViewAtom)).toMatchObject({
-        isDebouncing: true,
-        isLoading: true,
-        search: " validator ",
-      });
     } finally {
       unmount();
       registry.dispose();

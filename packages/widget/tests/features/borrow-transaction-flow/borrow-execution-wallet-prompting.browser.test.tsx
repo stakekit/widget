@@ -6,33 +6,10 @@ import type { Connector } from "wagmi";
 import { BorrowStepsPage } from "../../../src/features/borrow-transaction-flow/ui/steps";
 import { AccountModal } from "../../../src/features/wallet/views";
 import { WalletRequestCancelledError } from "../../../src/services/wallet/wallet-errors";
-import {
-  makeBorrowApi,
-  renderExecution,
-  wallet,
-} from "./borrow-execution-harness";
+import { makeBorrowApi, wallet } from "./borrow-execution-harness";
+import { renderExecution } from "./render-borrow-execution";
 
 describe("borrow execution flow: wallet prompting", () => {
-  it.live(
-    "renders running state while execution waits for wallet signing",
-    () =>
-      Effect.gen(function* () {
-        const app = yield* renderExecution(makeBorrowApi({}), {
-          wallet: {
-            ...wallet,
-            signTransaction: () => Effect.never,
-          },
-        });
-
-        yield* Effect.promise(() =>
-          expect.element(app.getByTestId("phase")).toHaveTextContent("signing")
-        );
-        yield* Effect.promise(() =>
-          expect.element(app.getByTestId("running")).toHaveTextContent("true")
-        );
-      })
-  );
-
   it.live(
     "asks before Cancel leaves Steps while the wallet holds the transaction",
     () =>

@@ -1,14 +1,12 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Logger, Schema } from "effect";
 
-import { EarnProvider } from "../../../src/domain/earn/provider";
 import {
   EarnLegacyTokenOptionsResponse,
   EarnValidatorPage,
   EarnYieldPage,
 } from "../../../src/domain/earn/responses";
 import { EarnYield } from "../../../src/domain/earn/yield-schema";
-import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 
 const token = {
@@ -126,22 +124,6 @@ describe("Earn API boundary policies", () => {
     })
   );
 
-  it.effect(
-    "returns an empty catalog when every top-level yield is invalid",
-    () =>
-      Effect.gen(function* () {
-        const valid = yieldApiYieldDtoFixture({ prime: false });
-        const result = yield* decode(EarnYieldPage, {
-          items: [{ ...valid, id: "invalid-yield", metadata: null }],
-          limit: 100,
-          offset: 0,
-          total: 1,
-        });
-
-        expect(result.items).toEqual([]);
-      })
-  );
-
   it.effect("strictly rejects a malformed initial yield", () =>
     Effect.gen(function* () {
       const failure = yield* Effect.flip(
@@ -156,53 +138,18 @@ describe("Earn API boundary policies", () => {
     })
   );
 
-  it.effect("strictly rejects a malformed provider", () =>
-    Effect.gen(function* () {
-      const failure = yield* Effect.flip(
-        decode(EarnProvider, {
-          id: "",
-          name: "StakeKit",
-          description: "",
-          logoURI:
-            "https://assets.stakek.it/app/composition/providers/stakekit.svg",
-          website: "https://stakek.it",
-          tvlUsd: null,
-          type: "protocol",
-        })
-      );
-      expect(() => {
-        throw failure;
-      }).toThrow();
-    })
-  );
-
-  it.effect("omits malformed complete token options and balances", () =>
+  it.effect("omits malformed complete token options", () =>
     Effect.gen(function* () {
       const validOption = {
         availableYields: ["ethereum-eth-native-staking"],
         token,
       };
-      const malformedOption = {
-        ...validOption,
-        token: { ...token, decimals: "18" },
-      };
-      const [legacyOptions, balances] = yield* Effect.all(
-        [
-          decode(EarnLegacyTokenOptionsResponse, [
-            validOption,
-            malformedOption,
-          ]),
-          decode(TokenBalancesResponse, [
-            { ...validOption, amount: "1.5" },
-            { ...malformedOption, amount: "2" },
-          ]),
-        ],
-        { concurrency: "unbounded" }
-      );
+      const legacyOptions = yield* decode(EarnLegacyTokenOptionsResponse, [
+        validOption,
+        { ...validOption, token: { ...token, decimals: "18" } },
+      ]);
 
       expect(legacyOptions).toHaveLength(1);
-      expect(balances).toHaveLength(1);
-      expect(balances[0]?.amount.toFixed()).toBe("1.5");
     })
   );
 

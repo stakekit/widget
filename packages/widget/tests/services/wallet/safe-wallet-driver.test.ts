@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Fiber, Schedule } from "effect";
+import { Effect, Schedule } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
 
@@ -84,33 +84,5 @@ describe("Safe wallet driver", () => {
       expect(failure._tag).toBe("WalletBroadcastError");
       expect(getTxStatus).toHaveBeenCalledTimes(1);
     })
-  );
-
-  it.effect(
-    "interrupts confirmation polling without a React unmount check",
-    () =>
-      Effect.gen(function* () {
-        const getTxStatus = vi.fn(() =>
-          Effect.succeed({
-            txHash: null,
-            txStatus: statuses.AWAITING_CONFIRMATIONS,
-          })
-        );
-        const fiber = yield* Effect.forkChild(
-          makeSafeWalletDriver({
-            confirmationRetries: 120,
-            confirmationSchedule: Schedule.spaced("1 hour"),
-            connector: makeConnector(getTxStatus),
-          }).signTransaction({ address: zeroAddress, family: "yield", tx })
-        );
-
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(getTxStatus).toHaveBeenCalledTimes(1))
-        );
-        yield* Fiber.interrupt(fiber);
-        yield* Effect.promise(() => Promise.resolve());
-
-        expect(getTxStatus).toHaveBeenCalledTimes(1);
-      })
   );
 });

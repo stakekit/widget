@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       # Release-please and the publish check need only node and pnpm; publishing installs
       # the tagged commit's own toolchain and dependencies.
@@ -77,8 +78,10 @@ jobs:
 
       - name: Publish to npm
         if: steps.publish.outputs.should_publish == 'true'
+        env:
+          TAG: ${{ steps.publish.outputs.tag }}
         run: |
-          tag="${{ steps.publish.outputs.tag }}"
+          tag="$TAG"
           git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
           git checkout --detach "$tag"
           mise install --locked

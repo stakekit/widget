@@ -258,6 +258,9 @@ describe("Widget portal container", () => {
       name: "Not available in your region",
     });
     await expect.element(modal).toBeVisible();
+    await expect
+      .element(app.getByText("This feature is not available in Austria."))
+      .toBeInTheDocument();
     const root = modal.element().closest("[data-sk-root]");
     expect(root).not.toBeNull();
     expect(modal.element().closest("[data-sk-portal]")).not.toBeNull();

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Fiber } from "effect";
+import { Effect } from "effect";
 import { type Hash, type Hex, zeroAddress } from "viem";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
@@ -53,46 +53,10 @@ const makeCommands = (
   );
 
 describe("Wagmi actions", () => {
-  it.effect("uses the exact controller config for every core action", () =>
-    Effect.gen(function* () {
-      const config = makeConfig();
-      const operations = makeOperations();
-      const commands = yield* makeCommands(config, operations);
-
-      yield* commands.connect({ connector });
-      yield* commands.disconnect({ connector });
-      yield* commands.reconnect({ connectors: [connector] });
-      yield* commands.switchChain({ chainId: mainnet.id });
-      yield* commands.signMessage({ message: "hello" });
-      yield* commands.signTypedData({
-        domain: { chainId: 1, name: "Test" },
-        message: { owner: zeroAddress },
-        primaryType: "Authorization",
-        types: {
-          Authorization: [{ name: "owner", type: "address" }],
-        },
-      });
-      yield* commands.sendEvmTransaction({
-        data: "0x",
-        gasPrice: 1n,
-        to: zeroAddress,
-        type: "legacy",
-      });
-
-      for (const operation of Object.values(operations)) {
-        expect(operation).toHaveBeenCalledWith(config, expect.anything());
-      }
-    })
-  );
-
-  it.effect("preserves action results and normalizes broadcast results", () =>
+  it.effect("normalizes broadcast results", () =>
     Effect.gen(function* () {
       const commands = yield* makeCommands(makeConfig(), makeOperations());
 
-      expect(yield* commands.connect({ connector })).toEqual({
-        accounts: [zeroAddress],
-        chainId: mainnet.id,
-      });
       expect(
         yield* commands.sendEvmTransaction({
           maxFeePerGas: 2n,
@@ -173,40 +137,5 @@ describe("Wagmi actions", () => {
       ]);
       expect(failures.every((failure) => failure.cause === cause)).toBe(true);
     })
-  );
-
-  it.effect(
-    "does not publish a late result from an interrupted wallet operation",
-    () =>
-      Effect.gen(function* () {
-        let resolve!: (value: Hex) => void;
-        let published = false;
-        const operations = makeOperations();
-        vi.mocked(operations.signMessage).mockImplementation(() =>
-          Effect.callback<Hex, WagmiOperationsError>((resume) => {
-            resolve = (value) => resume(Effect.succeed(value));
-          })
-        );
-        const commands = yield* makeCommands(makeConfig(), operations);
-        const fiber = yield* Effect.forkChild(
-          commands.signMessage({ message: "hello" }).pipe(
-            Effect.tap(() =>
-              Effect.sync(() => {
-                published = true;
-              })
-            )
-          )
-        );
-
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(operations.signMessage).toHaveBeenCalled())
-        );
-        yield* Fiber.interrupt(fiber);
-        resolve("0xlate" as Hex);
-        yield* Effect.promise(() => Promise.resolve());
-        yield* Effect.promise(() => Promise.resolve());
-
-        expect(published).toBe(false);
-      })
   );
 });

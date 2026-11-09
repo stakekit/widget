@@ -1,9 +1,11 @@
 import BigNumber from "bignumber.js";
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
+import { ProviderOption } from "../../../src/domain/identity/identifiers";
+import type { EarnProviderOption } from "../../../src/features/earn/state/earn-selection/types";
 import { SelectYieldRewardDetails } from "../../../src/features/earn/ui/components/select-yield-section/select-yield-reward-details";
 import {
   ProviderSelectionCard,
@@ -20,6 +22,8 @@ const i18nInstance = createWidgetI18nInstance();
 
 const hookState = vi.hoisted(() => ({
   entryView: {} as Record<string, unknown>,
+  providerItems: [] as ReadonlyArray<EarnProviderOption>,
+  selectProvider: (() => undefined) as (option: string) => void,
   selectValidator: undefined as unknown as ReturnType<
     typeof useSelectValidator
   >,
@@ -37,6 +41,15 @@ vi.mock(
       ...actual,
       useEarnDetails: () => ({ view: hookState.entryView }),
       useEarnEntry: () => ({ view: hookState.entryView }),
+      useEarnProviderOptions: () => ({
+        select: hookState.selectProvider,
+        view: {
+          appLoading: false,
+          canSelect: hookState.providerItems.length > 1,
+          items: hookState.providerItems,
+          selected: hookState.providerItems[0]?.value ?? null,
+        },
+      }),
     };
   }
 );
@@ -57,6 +70,20 @@ const multiSelectStake = {
         },
       },
     },
+  },
+} satisfies EarnYieldWithProvider;
+const providerOptionsStake = {
+  ...baseYield,
+  mechanics: {
+    ...baseYield.mechanics,
+    requiresValidatorSelection: false,
+  },
+} satisfies EarnYieldWithProvider;
+const singleSelectStake = {
+  ...baseYield,
+  mechanics: {
+    ...baseYield.mechanics,
+    requiresValidatorSelection: true,
   },
 } satisfies EarnYieldWithProvider;
 
@@ -113,6 +140,18 @@ const renderSelectYieldRewardDetails = ({
       </TestWidgetConfigProvider>
     </I18nextProvider>
   );
+
+const findButtonByText = (text: string) =>
+  [...document.querySelectorAll("button")].find((button) =>
+    button.textContent?.includes(text)
+  );
+
+beforeEach(() => {
+  hookState.entryView = { providers: [] };
+  hookState.providerItems = [];
+  hookState.selectProvider = vi.fn();
+  hookState.selectValidator = createHookValue();
+});
 
 describe("ProviderSelectionCard", () => {
   it("renders all selected validators with removal controls", async () => {
@@ -217,6 +256,64 @@ describe("ProviderSelectionCard", () => {
       .element(app.getByText("No validators found").first())
       .toBeInTheDocument();
   });
+
+  it("keeps the Change control for a single-validator yield", async () => {
+    const validator = decodeValidator(
+      yieldApiValidatorFixture({ address: "validator-1", name: "Kiln" })
+    );
+    hookState.selectValidator = createHookValue({
+      selectedStake: singleSelectStake,
+      selectedValidators: new Map([[validator.key, validator]]),
+    });
+
+    const app = await renderProviderSelectionCard();
+
+    expect(app.container.textContent).toContain("Kiln");
+    expect(findButtonByText("Change")).toBeDefined();
+  });
+});
+
+describe("ProviderSelectionCard provider options", () => {
+  const p2p = ProviderOption.make("P2P");
+  const other = ProviderOption.make("OTHER");
+
+  beforeEach(() => {
+    hookState.selectValidator = createHookValue({
+      selectedStake: providerOptionsStake,
+    });
+  });
+
+  it("lets the user choose among advertised provider options", async () => {
+    hookState.providerItems = [
+      { provider: null, value: p2p },
+      { provider: null, value: other },
+    ];
+
+    const app = await renderProviderSelectionCard();
+
+    expect(app.container.textContent).toContain("P2P");
+
+    await userEvent.click(app.getByRole("button", { name: "Change" }));
+
+    await userEvent.click(app.getByTestId("select-provider-option-OTHER"));
+
+    expect(hookState.selectProvider).toHaveBeenCalledWith(other);
+  });
+
+  it("renders a single provider option without a change control", async () => {
+    hookState.providerItems = [{ provider: null, value: p2p }];
+
+    const app = await renderProviderSelectionCard();
+
+    expect(app.container.textContent).toContain("P2P");
+    expect(findButtonByText("Change")).toBeUndefined();
+  });
+
+  it("renders nothing when the yield advertises no provider options", async () => {
+    const app = await renderProviderSelectionCard();
+
+    expect(app.container.textContent).toBe("");
+  });
 });
 
 describe("SelectYieldRewardDetails", () => {
@@ -265,13 +362,18 @@ describe("SelectYieldRewardDetails", () => {
       stakeAmount: new BigNumber(1),
     };
 
-    const app = await renderSelectYieldRewardDetails({
+    const hidden = await renderSelectYieldRewardDetails({
       alwaysShowStrategy: false,
     });
 
     await expect
-      .element(app.getByText("EarnYieldWithProvider strategy"))
+      .element(hidden.getByText("Yield strategy"))
       .not.toBeInTheDocument();
+    await hidden.unmount();
+
+    const shown = await renderSelectYieldRewardDetails();
+
+    await expect.element(shown.getByText("Yield strategy")).toBeInTheDocument();
   });
 });
 

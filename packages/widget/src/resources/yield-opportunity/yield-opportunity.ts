@@ -13,9 +13,7 @@ import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
 
-export class YieldOpportunityError extends Data.TaggedError(
-  "YieldOpportunityError"
-)<{
+class YieldOpportunityError extends Data.TaggedError("YieldOpportunityError")<{
   readonly cause: ApiRequestError | ResponseDecodeError;
 }> {}
 

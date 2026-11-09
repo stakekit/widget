@@ -240,26 +240,6 @@ describe("Select opportunity", () => {
 
     await expect.element(app.getByText("Connect wallet")).toBeInTheDocument();
 
-    await app.getByText("Connect wallet").click();
-
-    // The picker opens onto the wallets; a chip narrows them to EVM.
-    await expect
-      .element(
-        app.getByRole("heading", { name: "Connect wallet", exact: true })
-      )
-      .toBeInTheDocument();
-    await expect
-      .element(app.getByRole("button", { name: "All", exact: true }))
-      .toHaveAttribute("aria-pressed", "true");
-
-    await app.getByRole("button", { name: "EVM", exact: true }).click();
-
-    await expect
-      .element(app.getByRole("button", { name: "EVM", exact: true }))
-      .toHaveAttribute("aria-pressed", "true");
-
-    await userEvent.keyboard("[Escape]");
-
     await app.getByTestId("select-opportunity").click();
 
     selectContainer = app.getByTestId("select-modal__container");

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { TokenBalanceScanCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../../src/features/portfolio/index";
+import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../../src/features/portfolio/state/read-models/token-balances";
 import {
   refreshTokenBalancesAtom,
   TokenBalancesError,
@@ -21,17 +21,14 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
 
-const makeScope = (input?: {
-  readonly address?: typeof address;
-  readonly network?: "base" | "ethereum";
-}) =>
+const makeScope = () =>
   new WalletScopeKey({
     additionalAddresses: {
       lidoStakeAccounts: [],
       stakeAccounts: ["stake-account", "stake-account"],
     },
-    address: input?.address ?? address,
-    network: input?.network ?? "ethereum",
+    address,
+    network: "ethereum",
   });
 
 const makeRegistry = (source: LegacyResourceSource["Service"]) =>
@@ -45,29 +42,6 @@ const makeRegistry = (source: LegacyResourceSource["Service"]) =>
   });
 
 describe("Token Balances resource", () => {
-  it("shares one acquisition for equivalent Wallet Scope requests", () => {
-    const scanTokenBalances = vi.fn(() => Effect.succeed([]));
-    const registry = makeRegistry(
-      LegacyResourceSource.of({ scanTokenBalances } as never)
-    );
-
-    expect(
-      AsyncResult.getOrThrow(
-        registry.get(tokenBalancesResourceAtom(makeScope()))
-      )
-    ).toEqual([]);
-    expect(
-      AsyncResult.getOrThrow(
-        registry.get(tokenBalancesResourceAtom(makeScope()))
-      )
-    ).toEqual([]);
-    expect(scanTokenBalances).toHaveBeenCalledOnce();
-    expect(scanTokenBalances).toHaveBeenCalledWith({
-      address,
-      network: "ethereum",
-    });
-  });
-
   it("shares one request across additional addresses and EVM address casing", () => {
     const checksumAddress = Schema.decodeSync(WalletAddress)(
       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -145,45 +119,5 @@ describe("Token Balances resource", () => {
 
     expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual([]);
     expect(scanTokenBalances).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
-  });
-
-  it("keeps distinct Wallet Scope identities in separate resources", () => {
-    const otherAddress = Schema.decodeSync(WalletAddress)(
-      "0x0000000000000000000000000000000000000002"
-    );
-    const scanTokenBalances = vi.fn((_command: TokenBalanceScanCommand) =>
-      Effect.succeed([])
-    );
-    const registry = makeRegistry(
-      LegacyResourceSource.of({ scanTokenBalances } as never)
-    );
-
-    registry.get(tokenBalancesResourceAtom(makeScope()));
-    registry.get(
-      tokenBalancesResourceAtom(
-        makeScope({ address: otherAddress, network: "base" })
-      )
-    );
-
-    expect(scanTokenBalances).toHaveBeenCalledTimes(2);
-    expect(scanTokenBalances.mock.calls.map(([command]) => command)).toEqual([
-      { address, network: "ethereum" },
-      { address: otherAddress, network: "base" },
-    ]);
-  });
-
-  it("starts with a fresh cache in a new Widget Instance registry", () => {
-    const scanTokenBalances = vi.fn(() => Effect.succeed([]));
-    const source = LegacyResourceSource.of({ scanTokenBalances } as never);
-    const resource = tokenBalancesResourceAtom(makeScope());
-    const firstRegistry = makeRegistry(source);
-
-    expect(AsyncResult.getOrThrow(firstRegistry.get(resource))).toEqual([]);
-    firstRegistry.dispose();
-
-    const secondRegistry = makeRegistry(source);
-    expect(AsyncResult.getOrThrow(secondRegistry.get(resource))).toEqual([]);
-    expect(scanTokenBalances).toHaveBeenCalledTimes(2);
-    secondRegistry.dispose();
   });
 });

@@ -4,6 +4,7 @@ import { expect, within } from "storybook/test";
 import { Card } from "../components/card";
 import { ContainerFrame, narrowAndWide } from "../storybook/container-frame";
 import { Grid } from "./grid";
+import { Stack } from "./stack";
 import { Text } from "./text";
 
 const cells = (count: number) =>
@@ -22,10 +23,16 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const OneColumn: Story = { args: { columns: 1 } };
-export const TwoColumns: Story = { args: { columns: 2 } };
-export const ThreeColumns: Story = { args: { columns: 3, children: cells(6) } };
-export const FourColumns: Story = { args: { columns: 4 } };
+/** One to four equal columns. */
+export const Columns: Story = {
+  render: (args) => (
+    <Stack gap={24}>
+      {([1, 2, 3, 4] as const).map((columns) => (
+        <Grid key={columns} {...args} columns={columns} />
+      ))}
+    </Stack>
+  ),
+};
 
 /** As many metric columns as the width allows. */
 export const Metrics: Story = {

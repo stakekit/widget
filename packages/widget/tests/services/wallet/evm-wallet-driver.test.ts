@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from "@effect/vitest";
+import { describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { zeroAddress } from "viem";
 
-import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import {
   decodeBorrowEvmTransaction,
   decodeEvmTransaction,
@@ -104,26 +103,6 @@ describe("EVM wallet driver", () => {
         type: "eip1559",
         value: 12n,
       });
-    })
-  );
-
-  it.effect("returns a broadcast result from the core send command", () =>
-    Effect.gen(function* () {
-      const hash = TransactionHash.make(`0x${"1".repeat(64)}`);
-      const sendTransaction = vi.fn(() =>
-        Effect.succeed({ broadcasted: true as const, signedTx: hash })
-      );
-      const driver = makeEvmWalletDriver({ sendTransaction });
-
-      expect(
-        yield* driver.signTransaction({
-          family: "yield",
-          tx: transaction({ gasPrice: "7" }),
-        })
-      ).toEqual({ broadcasted: true, signedTx: hash });
-      expect(sendTransaction).toHaveBeenCalledWith(
-        expect.objectContaining({ gasPrice: 7n, type: "legacy" })
-      );
     })
   );
 

@@ -291,29 +291,6 @@ describe("external provider runtime generations", () => {
     expect(mounted.connectedIdentities).toEqual([]);
   });
 
-  it("uses the new identity and topology after a sequential mount", async ({
-    worker,
-  }) => {
-    worker.use(enabledNetworks);
-    const first = await mountWallet(externalProvider(firstAddress, mainnet.id));
-    await waitForIdentity(first, firstAddress, mainnet.id);
-    const oldConnector = await getConnector(first);
-    first.unmount();
-
-    const second = await mountWallet(
-      externalProvider(secondAddress, optimism.id)
-    );
-    await waitForIdentity(second, secondAddress, optimism.id);
-    await second.act(async () => emitObsoleteIdentity(oldConnector));
-    await waitForIdentity(second, secondAddress, optimism.id);
-    expect(
-      second.connectedIdentities.every(
-        (identity) =>
-          identity.address === secondAddress && identity.chainId === optimism.id
-      )
-    ).toBe(true);
-  });
-
   it("ignores an old connection that completes after a new mount", async ({
     worker,
   }) => {
@@ -366,26 +343,6 @@ describe("external provider runtime generations", () => {
       release.resolve();
       delayedConnect.mockRestore();
     }
-  });
-
-  it("clears the connected identity and restores the new host address and chain", async ({
-    worker,
-  }) => {
-    worker.use(enabledNetworks);
-    const mounted = await mountWallet(
-      externalProvider(firstAddress, mainnet.id, [mainnet.id, optimism.id])
-    );
-    await waitForIdentity(mounted, firstAddress, mainnet.id);
-
-    await mounted.updateProvider(
-      externalProvider("", mainnet.id, [mainnet.id, optimism.id])
-    );
-    await waitForDisconnected(mounted);
-
-    await mounted.updateProvider(
-      externalProvider(secondAddress, optimism.id, [mainnet.id, optimism.id])
-    );
-    await waitForIdentity(mounted, secondAddress, optimism.id);
   });
 
   it("keeps an excluded host chain unsupported without reconnecting and restores it when allowed", async ({

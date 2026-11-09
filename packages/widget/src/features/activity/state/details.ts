@@ -1,12 +1,12 @@
-import { Data, Effect, Option, Schema } from "effect";
+import { Data, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 
 import {
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
 } from "../../../domain/activity/action-capabilities";
-import { ActionId as BorrowActionId } from "../../../domain/borrow/ids";
-import { ActionId } from "../../../domain/identity/identifiers";
+import type { ActionId as BorrowActionId } from "../../../domain/borrow/ids";
+import type { ActionId } from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   ActivityActionKey,
@@ -25,21 +25,21 @@ import {
   type YieldSummaryProvider,
   yieldSummaryAtom,
 } from "../../yield-summary/index";
-import {
-  type ActivityActionItem,
-  type ActivitySelectionTarget,
-  getActivitySelectionTarget,
-  isActivitySelectionTarget,
-} from "../model/activity-action";
+import type { ActivityActionItem } from "../model/activity-action";
 import {
   projectBorrowActivityItem,
   projectYieldActivityItem,
 } from "../model/activity-enrichment";
 import {
+  type ActivitySelectionIntent,
+  findActivityActionInFeed,
+  resolveActivitySelection,
+} from "../model/selection";
+import {
   ActivityEnrichmentKey,
   loadActivityEnrichmentFacts,
 } from "./enrichment";
-import { type ActivityPageView, activityPageViewAtom } from "./page";
+import { activityPageViewAtom } from "./page";
 
 class ActivityDetailsKey extends Data.Class<{
   readonly actionId: ActionId;
@@ -146,29 +146,6 @@ const retryBorrowActivityActionDetailsAtom = Atom.family(
     ).pipe(Atom.withLabel("retryBorrowActivityActionDetailsAtom"))
 );
 
-export class ActivityDefaultIntent extends Data.TaggedClass("default")<{
-  readonly _Intent: "default";
-}> {
-  constructor() {
-    super({ _Intent: "default" });
-  }
-}
-
-export class ActivityExplicitIntent extends Data.TaggedClass("explicit")<{
-  readonly actionId: ActionId;
-}> {}
-
-export class BorrowActivityExplicitIntent extends Data.TaggedClass(
-  "explicitBorrow"
-)<{
-  readonly actionId: BorrowActionId;
-}> {}
-
-export type ActivitySelectionIntent =
-  | ActivityDefaultIntent
-  | ActivityExplicitIntent
-  | BorrowActivityExplicitIntent;
-
 export class ActivitySelectionKey extends Data.Class<{
   readonly intent: ActivitySelectionIntent;
   readonly scope: WalletScopeKey;
@@ -184,93 +161,6 @@ type ActivitySelectedActionView =
       readonly status: "ready";
     };
 
-/** Default selects the first row of the feed, Yield or Borrow. */
-export const resolveDefaultSelection = (
-  view: Atom.Type<typeof activityPageViewAtom>
-): ActivitySelectionTarget | "loading" | null => {
-  if (view.status !== "ready") {
-    if (view.status === "empty") return null;
-    return "loading";
-  }
-  const first = view.actions[0];
-  return first ? getActivitySelectionTarget(first) : null;
-};
-
-/**
- * URL intent wins; Default takes the first row of the feed on screen, so a
- * background refetch never blanks the selection.
- */
-export const resolveActivitySelection = (
-  intent: ActivitySelectionIntent,
-  view: Atom.Type<typeof activityPageViewAtom>
-): ActivitySelectionTarget | "loading" | null => {
-  switch (intent._tag) {
-    case "explicit":
-      return { actionId: intent.actionId, source: "yield" };
-    case "explicitBorrow":
-      return { actionId: intent.actionId, source: "borrow" };
-    case "default":
-      return resolveDefaultSelection(view);
-  }
-};
-
-export type ActivityRouteIntentParse =
-  | { readonly intent: ActivitySelectionIntent; readonly status: "ok" }
-  | { readonly status: "invalid" }
-  | { readonly status: "missing" };
-
-/**
- * Decode route params into selection intent. Missing is only Default on
- * Dashboard; `source` is the route the param came from.
- */
-export const parseActivityRouteIntent = ({
-  actionIdParam,
-  allowDefault,
-  source,
-}: {
-  readonly actionIdParam: string | undefined;
-  readonly allowDefault: boolean;
-  readonly source: ActivitySelectionTarget["source"];
-}): ActivityRouteIntentParse => {
-  if (actionIdParam === undefined || actionIdParam === "") {
-    return allowDefault
-      ? { intent: new ActivityDefaultIntent(), status: "ok" }
-      : { status: "missing" };
-  }
-
-  if (source === "borrow") {
-    const actionId = Schema.decodeOption(BorrowActionId)(actionIdParam).pipe(
-      Option.getOrNull
-    );
-    return actionId
-      ? { intent: new BorrowActivityExplicitIntent({ actionId }), status: "ok" }
-      : { status: "invalid" };
-  }
-
-  const actionId = Schema.decodeOption(ActionId)(actionIdParam).pipe(
-    Option.getOrNull
-  );
-  return actionId
-    ? { intent: new ActivityExplicitIntent({ actionId }), status: "ok" }
-    : { status: "invalid" };
-};
-
-/** Highlighted feed row; loading defaults show nothing selected yet. */
-export const resolveActivityHighlightAction = (
-  intent: ActivitySelectionIntent | null,
-  view: Atom.Type<typeof activityPageViewAtom>
-): ActivitySelectionTarget | null => {
-  if (intent === null) return null;
-  const resolved = resolveActivitySelection(intent, view);
-  return resolved === "loading" ? null : resolved;
-};
-
-/** Explicit action ids clear the route; default selection stays empty. */
-export const resolveUnavailableActivitySelection = (
-  intent: ActivitySelectionIntent
-): "clear-route" | "empty" =>
-  intent._tag === "default" ? "empty" : "clear-route";
-
 const projectDetailsResult = (
   details: Presentable<ActivityActionItem | null, unknown>
 ): ActivitySelectedActionView => {
@@ -284,17 +174,6 @@ const projectDetailsResult = (
         ? { item: details.value, status: "ready" }
         : { status: "unavailable" };
   }
-};
-
-/** Prefer the enriched feed row so selection does not wait on GET-by-id. */
-export const findActivityActionInFeed = (
-  target: ActivitySelectionTarget,
-  view: ActivityPageView
-): ActivityActionItem | null => {
-  if (view.status !== "ready") return null;
-  return (
-    view.actions.find((item) => isActivitySelectionTarget(item, target)) ?? null
-  );
 };
 
 const activitySelectedActionAtom = Atom.family((key: ActivitySelectionKey) =>
