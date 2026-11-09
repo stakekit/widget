@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
+
 import { getYieldCategory } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { formatNetworkName } from "../../../../../shared/lib/formatters";
 import { useTokenLogo } from "../../../../../shared/react/token-logo";
 import { AssetHeader } from "../../../../../ui/index";
-import { formatDisplayTokenSymbol } from "../../../model/yield-details-formatters";
+import { formatDisplayTokenSymbol } from "../../../../yield-presentation/index";
 
 type YieldDetailsHeaderBadge = Readonly<{
   readonly label: string;

@@ -3,6 +3,7 @@ import { Deferred, Effect, Exit, Fiber, Layer, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
+
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";

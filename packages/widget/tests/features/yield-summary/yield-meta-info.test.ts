@@ -1,5 +1,6 @@
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { getConfidentialCampaignUrl } from "../../../src/domain/earn/confidential-campaign";
 import type {
   EarnInvestmentSchedule,

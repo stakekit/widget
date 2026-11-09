@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
+
 import { EarnBalance, EarnPosition } from "../../../src/domain/earn/balance";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import {

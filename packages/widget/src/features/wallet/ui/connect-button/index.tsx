@@ -1,12 +1,13 @@
 import { useAtomSet } from "@effect/atom-react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Button, EmptyState } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import { useWidgetConfig } from "../../../widget-configuration/index";
-import { useSKWallet } from "../../react/use-wallet";
 import { setWalletConnectModalOpenAtom } from "../../state/wallet-modal";
 import { addLedgerAccountAtom } from "../../state/workflows";
+import { useSKWallet } from "../use-wallet";
 
 /**
  * What connecting a wallet takes from here: its label and what a click does,

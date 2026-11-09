@@ -1,6 +1,7 @@
 import { Input } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
 import { type RefObject, useRef } from "react";
+
 import { Icon } from "../primitives/icon";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";

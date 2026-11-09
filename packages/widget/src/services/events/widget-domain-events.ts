@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, PubSub, Stream } from "effect";
+
 import type { WalletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 
 export type WidgetDomainEvent =
@@ -30,7 +31,9 @@ type WidgetDomainEventsApi = Readonly<{
 export class WidgetDomainEvents extends Context.Service<
   WidgetDomainEvents,
   WidgetDomainEventsApi
->()("stakekit/widget/events/WidgetDomainEvents") {
+>()(
+  "@stakekit/widget/services/events/widget-domain-events/WidgetDomainEvents"
+) {
   static readonly layer = Layer.effect(
     WidgetDomainEvents,
     Effect.gen(function* () {

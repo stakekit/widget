@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { checkGasAmount } from "../../../src/domain/finance/gas";
 import { TokenBalance } from "../../../src/domain/finance/models";
 

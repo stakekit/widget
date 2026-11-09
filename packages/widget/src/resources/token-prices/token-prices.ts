@@ -1,8 +1,9 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
-import { type PriceRequest, Prices } from "../../domain/health/models";
+
+import { type PriceRequest, Prices } from "../../domain/finance/prices";
 import { tokenString } from "../../domain/token/token";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   InputValidationError,

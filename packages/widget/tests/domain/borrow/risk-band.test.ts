@@ -1,9 +1,10 @@
 import BigNumber from "bignumber.js";
 import { describe, expect, it } from "vitest";
+
 import {
   classifyRiskBand,
   liquidationPriceDrop,
-} from "../../../src/domain/borrow/risk/risk-band";
+} from "../../../src/domain/borrow/risk-band";
 
 const band = ({
   healthFactor = null,

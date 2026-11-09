@@ -2,16 +2,17 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+
+import { BorrowAccountSnapshot } from "../../../src/domain/borrow/borrow-account-snapshot";
+import {
+  deriveBorrowPositions,
+  emptyBorrowPositions,
+} from "../../../src/domain/borrow/borrow-positions";
 import {
   decodeTokenId,
   TokenAddress,
   TokenId,
 } from "../../../src/domain/borrow/ids";
-import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
-import {
-  deriveBorrowPositions,
-  emptyBorrowPositions,
-} from "../../../src/domain/borrow/positions/borrow-positions";
 import { getBorrowPositionDetailsModel } from "../../../src/features/borrow/market-position/model/details";
 import {
   type BorrowMarketDto,

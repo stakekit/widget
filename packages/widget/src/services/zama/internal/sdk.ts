@@ -13,6 +13,7 @@ import {
   http,
   type PublicClient,
 } from "viem";
+
 import { ConfidentialHandle } from "../../../domain/earn/balance";
 import type {
   ConfidentialChainId,
@@ -136,7 +137,6 @@ export const makeZamaSdk = Effect.gen(function* () {
     return {
       on: () => {},
       removeListener: () => {},
-      // biome-ignore lint/nursery/noUnsafeTypeAssertion: viem types a client's `request` by its RPC schema, which its own `EIP1193Provider["request"]` overloads do not accept though both send the same EIP-1193 requests.
       request: client.request as EIP1193Provider["request"],
     };
   };
@@ -183,6 +183,7 @@ export const makeZamaSdk = Effect.gen(function* () {
     const cached = sdks.get(key);
     if (cached) return cached;
 
+    const signerAddress = yield* toEvmAddress(owner, "signer");
     const sdk = new zama.core.ZamaSDK(
       zama.core.createConfig({
         chains: [chain],
@@ -196,12 +197,7 @@ export const makeZamaSdk = Effect.gen(function* () {
               : { offloadWorker: zama.encryptWorker }
           ),
         },
-        signer: makeSigner(
-          zama.core.BaseSigner,
-          owner,
-          yield* toEvmAddress(owner, "signer"),
-          chainId
-        ),
+        signer: makeSigner(zama.core.BaseSigner, owner, signerAddress, chainId),
         // The default IndexedDB would keep keys and cleartexts for 30 days.
         storage: zama.core.memoryStorage,
       })
@@ -213,7 +209,9 @@ export const makeZamaSdk = Effect.gen(function* () {
   const getPublicClient: ZamaSdkAdapter["getPublicClient"] = Effect.fn(
     "ZamaService.getPublicClient"
   )(function* (chainId) {
-    return publicClientFor(yield* getChain(yield* modules, chainId));
+    const zama = yield* modules;
+    const chain = yield* getChain(zama, chainId);
+    return publicClientFor(chain);
   });
 
   const encrypt: ZamaSdkAdapter["encrypt"] = Effect.fn("ZamaService.encrypt")(

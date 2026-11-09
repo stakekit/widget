@@ -1,4 +1,5 @@
 import { Schema, SchemaGetter, Struct } from "effect";
+
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantArray } from "../decoding/response-schema";
 import { ValidatorAddress, YieldId } from "../identity/identifiers";

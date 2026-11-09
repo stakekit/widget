@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
+
 import { ExpandableAmount } from "./expandable-amount";
 import { Metric, MetricGroup } from "./metric";
 

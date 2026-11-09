@@ -2,9 +2,10 @@ import type BigNumber from "bignumber.js";
 import { Data } from "effect";
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
 import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
-import type { TronResource } from "../../../../domain/action/tron-resource";
+
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import type { EarnProvider } from "../../../../domain/earn/provider";
+import type { TronResource } from "../../../../domain/earn/tron-resource";
 import type { EarnValidator } from "../../../../domain/earn/validator";
 import type { PreferredTokenYieldsPerNetwork } from "../../../../domain/earn/yield";
 import type { YieldProviderOrder } from "../../../../domain/earn/yield-provider-order";

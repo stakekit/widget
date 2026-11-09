@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { Connector, createConfig } from "wagmi";
+
 import { configMeta as safeConfigMeta } from "../adapters/safe/safe-connector-meta";
 import { WagmiOperations } from "../platform/wagmi-operations";
 
@@ -40,12 +41,11 @@ export const makeInitializeWallet = Effect.gen(function* () {
     wagmiConfig,
   }: WalletInitialConnectionInput) {
     const reconnectedCount = yield* operations.reconnect(wagmiConfig).pipe(
-      Effect.mapError(
-        (error) =>
-          new WalletInitialConnectionError({
-            cause: error.cause,
-            operation: "reconnect",
-          })
+      Effect.mapError((error) =>
+        WalletInitialConnectionError.make({
+          cause: error.cause,
+          operation: "reconnect",
+        })
       ),
       Effect.catch((error) => recover(error).pipe(Effect.as([]))),
       Effect.map((connections) => connections.length)
@@ -70,12 +70,11 @@ export const makeInitializeWallet = Effect.gen(function* () {
               : { chainId: queryParamsInitChainId }),
           })
           .pipe(
-            Effect.mapError(
-              (error) =>
-                new WalletInitialConnectionError({
-                  cause: error.cause,
-                  operation: "connect",
-                })
+            Effect.mapError((error) =>
+              WalletInitialConnectionError.make({
+                cause: error.cause,
+                operation: "connect",
+              })
             ),
             Effect.catch(recover)
           );
@@ -91,12 +90,11 @@ export const makeInitializeWallet = Effect.gen(function* () {
           chainId: queryParamsInitChainId,
         })
         .pipe(
-          Effect.mapError(
-            (error) =>
-              new WalletInitialConnectionError({
-                cause: error.cause,
-                operation: "switch-chain",
-              })
+          Effect.mapError((error) =>
+            WalletInitialConnectionError.make({
+              cause: error.cause,
+              operation: "switch-chain",
+            })
           ),
           Effect.catch(recover)
         );

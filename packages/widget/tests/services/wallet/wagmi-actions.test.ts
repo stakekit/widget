@@ -3,6 +3,7 @@ import { Effect, Fiber } from "effect";
 import { type Hash, type Hex, zeroAddress } from "viem";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
+
 import {
   WagmiOperations,
   WagmiOperationsError,

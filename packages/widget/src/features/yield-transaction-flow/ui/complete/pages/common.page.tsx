@@ -2,10 +2,9 @@ import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  PendingActionLabelContext,
-  YieldPendingActionType,
-} from "../../../../../domain/action/pending-action";
+
+import type { PendingActionLabelContext } from "../../../../../domain/action/pending-action";
+import type { YieldPendingActionType } from "../../../../../domain/earn/action-models";
 import type { ConfidentialBatchSide } from "../../../../../domain/earn/confidential";
 import {
   type ExtendedYieldType,
@@ -28,7 +27,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
-import { formatNextBatchTiming } from "../../../../yield-summary/index";
+import { formatNextBatchTiming } from "../../../../yield-presentation/index";
 import { formatTransactionTypeLabel } from "../../../model/yield-transaction-workflow";
 import { useComplete } from "../hooks/use-complete.hook";
 
@@ -252,6 +251,6 @@ export const CompletePageComponent = ({
   );
 };
 
-export const CompletePage = (props: CompletePageProps) => {
-  return <CompletePageComponent {...props} completion={useComplete()} />;
-};
+export const CompletePage = (props: CompletePageProps) => (
+  <CompletePageComponent {...props} completion={useComplete()} />
+);

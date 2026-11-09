@@ -1,9 +1,0 @@
-id: no-effect-atom-in-feature-logic
-language: Tsx
-severity: error
-message: Feature models must stay independent of Effect Atom.
-files:
-  - packages/widget/src/features/**/model/**/*.ts
-rule:
-  kind: string
-  regex: ^["']effect/reactivity/(?:Atom|AtomRegistry)["']$

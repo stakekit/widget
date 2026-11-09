@@ -2,7 +2,7 @@ import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { EarnBalance } from "../../../src/domain/earn/balance";
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -18,6 +18,7 @@ import {
   PositionBalancesKey,
   positionBalancesAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   type ValidatorDirectoryRequest,
   YieldResourceSource,

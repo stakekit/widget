@@ -1,15 +1,16 @@
 import { useState } from "react";
+
 import { makeYieldActionContinuationSession } from "../model/session";
-import {
-  useYieldFlowIntake,
-  YieldFlowExecutionPage,
-  YieldFlowExecutionRoute,
-  YieldFlowSessionRoute,
-} from "../react/yield-flow-route";
 import { ActivityCompletePage } from "./complete/pages/activity-complete.page";
 import { EnterStepsPage } from "./steps/pages/enter-steps.page";
 import { ExitStepsPage } from "./steps/pages/exit-steps.page";
 import { PendingStepsPage } from "./steps/pages/pending-steps.page";
+import {
+  YieldFlowExecutionPage,
+  YieldFlowExecutionRoute,
+  YieldFlowSessionRoute,
+} from "./yield-flow-route";
+import { useYieldFlowIntake } from "./yield-flow-session";
 
 type YieldActionContinuationInput = Omit<
   Parameters<typeof makeYieldActionContinuationSession>[0],

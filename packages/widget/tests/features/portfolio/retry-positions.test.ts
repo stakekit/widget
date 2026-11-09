@@ -1,13 +1,14 @@
 import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { Integration } from "../../../src/domain/borrow/catalog/integration";
+
+import { Integration } from "../../../src/domain/borrow/integration";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { retryPositionsAtom } from "../../../src/features/portfolio/state/retry-positions";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
-import { borrowIntegrationsResourceAtom } from "../../../src/resources/borrow-integrations/index";
+import { borrowIntegrationsResourceAtom } from "../../../src/resources/borrow-integrations/borrow-integrations";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   BorrowResourceSource,

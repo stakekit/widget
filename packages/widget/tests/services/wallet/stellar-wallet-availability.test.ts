@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { vi } from "vitest";
 import type { Connector } from "wagmi";
+
 import { getStellarConnectors } from "../../../src/services/wallet/internal/adapters/stellar/stellar-connector";
 import {
   makeDirectStellarWalletClient,

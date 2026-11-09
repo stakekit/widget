@@ -1,5 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import {
   formatBorrowProviderName,
   formatNetworkName,
@@ -43,7 +44,7 @@ import { getBorrowTransactionFlowDestination } from "../model/session";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
-} from "../react/borrow-flow-route";
+} from "./borrow-flow-session";
 import { BorrowFlowHeading } from "./flow-heading";
 import { useBorrowExecution } from "./use-borrow-execution";
 

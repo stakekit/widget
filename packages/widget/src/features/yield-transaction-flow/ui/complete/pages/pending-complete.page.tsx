@@ -5,7 +5,7 @@ import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
-import { useYieldFlowIntake } from "../../../react/yield-flow-route";
+import { useYieldFlowIntake } from "../../yield-flow-session";
 import { CompletePage } from "./common.page.tsx";
 
 export const PendingCompletePage = () => {

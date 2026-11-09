@@ -1,5 +1,6 @@
 import { Duration, Effect } from "effect";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
+import { appRuntime } from "../../runtime/app-runtime";
 import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { withBorrowResourceError } from "../borrow-resource-error";

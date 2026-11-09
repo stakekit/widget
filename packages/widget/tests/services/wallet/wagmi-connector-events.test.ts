@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+
 import { makeWagmiConnectorEvents } from "../../../src/services/wallet/internal/adapters/wagmi-connector-events";
 import { parseWalletRoutingId } from "../../../src/services/wallet/internal/wagmi-seam";
 

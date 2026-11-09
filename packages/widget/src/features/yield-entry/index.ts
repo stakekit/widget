@@ -8,7 +8,7 @@ export {
   type YieldEntryBalanceWarning,
   type YieldEntryCtaBlocker,
 } from "./model/yield-entry";
-export { useNetworkFeeNotes } from "./react/use-network-fee-notes";
+export { useNetworkFeeNotes } from "./ui/use-network-fee-notes";
 export { makeConfidentialTokenBalance } from "./state/confidential-token-balance";
 export { makeYieldEntry } from "./state/yield-entry";
 export {

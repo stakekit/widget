@@ -17,11 +17,10 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { act } from "react";
 import type { DataRouter } from "react-router";
+
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../../src/app/runtime/application-router";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
@@ -30,6 +29,8 @@ import {
   YieldFlowHandoff,
 } from "../../../src/features/yield-transaction-flow/model/session";
 import { makeYieldFlowExecutionPage } from "../../../src/features/yield-transaction-flow/state/execution-page";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import type { TransactionWorkflowHandle } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
@@ -55,7 +56,7 @@ type WorkflowProbe = {
 
 const stagedWorkflowAtom = Atom.make("empty");
 const trackingServiceProbeAtom = appRuntime.atom(
-  TrackingService.use((tracking) => Effect.succeed(tracking))
+  Effect.service(TrackingService)
 );
 const runtimeLifecycleAtom = Atom.family((probe: LifecycleProbe) =>
   appRuntime.atom(
@@ -137,7 +138,7 @@ const RuntimeHarness = ({
         disabled={!AsyncResult.isSuccess(tracking)}
         onClick={() => {
           if (AsyncResult.isSuccess(tracking)) {
-            // ast-grep-ignore: no-run-effect-in-test -- React event handlers are non-Effect boundaries
+            // oxlint-disable-next-line effect/no-run-effect-in-test -- React event handlers are non-Effect boundaries
             Effect.runFork(tracking.value.trackEvent("txNotConfirmed"));
           }
         }}

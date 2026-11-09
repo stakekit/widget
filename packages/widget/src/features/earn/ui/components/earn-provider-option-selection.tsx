@@ -1,8 +1,9 @@
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { SelectSheet } from "../../../../ui/index";
-import { useEarnProviderOptions } from "../../react/use-earn-facades";
 import type { EarnProviderOption } from "../../state/earn-selection/types";
+import { useEarnProviderOptions } from "../use-earn-facades";
 
 export type EarnProviderOptionTriggerState = {
   /** `true` when the trigger offers to `open` the option list. */

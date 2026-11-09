@@ -1,13 +1,14 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { decodeTokenId } from "../../../../domain/borrow/ids";
-import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
-import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/index";
+import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/borrow-integrations";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../../../../resources/borrow-markets/index";
+} from "../../../../resources/borrow-markets/borrow-markets";
+import { widgetConfigAtom } from "../../../../runtime/widget-config";
 import type { BorrowEntryFlowDetails } from "../../../borrow-transaction-flow/index";
 
 /**

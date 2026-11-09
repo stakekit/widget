@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { SelectYield } from "../../../src/features/earn/ui/components/select-yield-section/select-yield";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
@@ -15,7 +16,7 @@ const hookState = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "../../../src/features/earn/react/use-earn-facades",
+  "../../../src/features/earn/ui/use-earn-facades",
   async (importOriginal) => {
     const actual = await importOriginal<object>();
     return {

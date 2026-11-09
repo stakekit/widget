@@ -1,12 +1,13 @@
 import type { ReactElement } from "react";
 import { Route } from "react-router";
+
 import { widgetBorrowFlowRoutes } from "../../../services/navigation/widget-routes";
 import type { BorrowTransactionFlowEntry } from "../model/session";
 import {
   BorrowTransactionFlowExecutionPage,
   BorrowTransactionFlowExecutionRoute,
   BorrowTransactionFlowRoute,
-} from "../react/borrow-flow-route";
+} from "./borrow-flow-route";
 import { BorrowCompletePage } from "./complete";
 import { BorrowReviewPage } from "./review";
 import { BorrowStepsPage } from "./steps";

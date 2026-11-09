@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { KycGate } from "../../../../../domain/earn/kyc";
 import { Button, Notice, type Tone } from "../../../../../ui/index";
 import { KycVerificationModal } from "./verification-modal";

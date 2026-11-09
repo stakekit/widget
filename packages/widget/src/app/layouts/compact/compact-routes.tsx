@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from "react-router";
+
 import {
   AnimatedActivityPage,
   createActivityActionRoutes,

@@ -1,17 +1,18 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import { toBorrowNetworkToken } from "../../../../domain/borrow/catalog/token";
+
 import {
   deriveMarketPositionOverview,
   type MarketPosition,
-} from "../../../../domain/borrow/positions/market-position";
-import type { BorrowPositionActionKey } from "../../../../domain/borrow/positions/position-action-key";
-import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
+} from "../../../../domain/borrow/market-position";
+import { deriveMarketRiskLimits } from "../../../../domain/borrow/market-risk";
+import type { BorrowPositionActionKey } from "../../../../domain/borrow/position-action-key";
 import {
   classifyRiskBand,
   liquidationPriceDrop,
   type RiskBand,
-} from "../../../../domain/borrow/risk/risk-band";
+} from "../../../../domain/borrow/risk-band";
+import { toBorrowNetworkToken } from "../../../../domain/borrow/token";
 import {
   formatBorrowProviderName,
   formatNetworkName,

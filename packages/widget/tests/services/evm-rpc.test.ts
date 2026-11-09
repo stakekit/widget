@@ -8,6 +8,7 @@ import {
 } from "viem";
 import { mainnet } from "viem/chains";
 import { vi } from "vitest";
+
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { EvmRpc, explorerAddressUrl } from "../../src/services/evm-rpc/evm-rpc";

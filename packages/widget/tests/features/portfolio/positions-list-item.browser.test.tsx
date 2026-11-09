@@ -3,6 +3,7 @@ import { act, type ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
 import type { InactiveValidatorStatus } from "../../../src/domain/portfolio/position-callout";
@@ -46,7 +47,7 @@ const hookState = vi.hoisted(() => ({
   detailsByYield: new Map<string, RowDetails>(),
 }));
 
-vi.mock("../../../src/features/portfolio/react/use-position-list-item", () => ({
+vi.mock("../../../src/features/portfolio/ui/use-position-list-item", () => ({
   usePositionListItem: (item: { integrationId: string }) =>
     hookState.detailsByYield.get(item.integrationId) ?? hookState.details,
 }));

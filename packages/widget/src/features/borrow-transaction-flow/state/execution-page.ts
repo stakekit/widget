@@ -1,17 +1,18 @@
 import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
 import type { ActionId } from "../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../domain/borrow/network";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../../../resources/borrow-markets/index";
+} from "../../../resources/borrow-markets/borrow-markets";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../resources/borrow-positions/index";
+} from "../../../resources/borrow-positions/borrow-positions";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { WidgetNavigation } from "../../../services/navigation/widget-navigation";
 import {
   type WidgetPath,
@@ -20,6 +21,7 @@ import {
 import { BorrowTransactionWorkflowInput } from "../../../services/transaction-workflow/transaction-workflow-model";
 import {
   makeTransactionFlowWorkflowAtoms,
+  type TransactionFlowExecutionStatus,
   startTransactionFlowExecution,
 } from "../../transaction-flow/index";
 import { settleBorrowPosition } from "../model/borrow-completion";
@@ -139,7 +141,20 @@ export const makeBorrowFlowExecutionPage = (
     );
 
   return {
+    /** Whether the workflow completed; null until its state is known. */
+    completionAtom: Atom.make((get) => {
+      const state = get(stateAtom);
+      return AsyncResult.isSuccess(state)
+        ? state.value._tag === "Completed"
+        : null;
+    }).pipe(Atom.withLabel("borrowFlowExecutionCompleted")),
     dispatchAtom,
+    /** `Failed` when the Execution could not start, `Starting` until it runs. */
+    executionStatusAtom: Atom.make((get): TransactionFlowExecutionStatus => {
+      const workflow = get(workflowAtom);
+      if (AsyncResult.isFailure(workflow)) return "Failed";
+      return AsyncResult.isInitial(workflow) ? "Starting" : "Running";
+    }).pipe(Atom.withLabel("borrowFlowExecutionStatus")),
     /** Back from Steps: returns where the flow began. */
     leaveAtom: walletRuntime
       .fn(() => leaveBorrowFlow("Steps"), { initialValue: undefined })

@@ -15,14 +15,13 @@ import {
 import { base } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
-import { Action as BorrowAction } from "../../../src/domain/borrow/execution/action";
-import { ActionCommand } from "../../../src/domain/borrow/execution/action-command";
+
+import { Action as BorrowAction } from "../../../src/domain/borrow/action";
+import { ActionCommand } from "../../../src/domain/borrow/action-command";
 import type {
   Transaction as BorrowTransaction,
   SubmitTransactionCommand,
-} from "../../../src/domain/borrow/execution/transaction";
+} from "../../../src/domain/borrow/transaction";
 import {
   TransactionHash,
   WalletAddress,
@@ -34,13 +33,17 @@ import {
   BorrowTransactionFlowExecutionPage,
   BorrowTransactionFlowExecutionRoute,
   BorrowTransactionFlowRoute,
+} from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-route";
+import {
   useBorrowTransactionFlowExecution,
   useBorrowTransactionFlowReview,
-} from "../../../src/features/borrow-transaction-flow/react/borrow-flow-route";
+} from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-session";
 import { useBorrowExecution } from "../../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
-import { WalletScopeRoute } from "../../../src/features/wallet/react/wallet-scope-route";
+import { WalletScopeRoute } from "../../../src/features/wallet/ui/wallet-scope-route";
 import type { SKAppProps } from "../../../src/public-api/react-types";
-import { withResponseDecodeError } from "../../../src/services/api/api-operation";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
+import { withResponseDecodeError } from "../../../src/services/api/internal/api-operation";
 import type { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -380,10 +383,10 @@ const HistoryControls = () => {
   return (
     <>
       <div data-testid="history-path">{location.pathname}</div>
-      <button onClick={() => navigate(-1)} type="button">
+      <button onClick={() => void navigate(-1)} type="button">
         Back
       </button>
-      <button onClick={() => navigate(1)} type="button">
+      <button onClick={() => void navigate(1)} type="button">
         Forward
       </button>
     </>
@@ -415,17 +418,17 @@ export const renderExecution = (
     const navigationService = makeWidgetNavigation({
       back: (options) =>
         Effect.sync(() => {
-          navigation.current?.(-(options?.steps ?? 1));
+          void navigation.current?.(-(options?.steps ?? 1));
         }),
       push: (to) =>
         Effect.sync(() => {
-          navigation.current?.(widgetTargetPath(to), {
+          void navigation.current?.(widgetTargetPath(to), {
             state: widgetTargetState(to),
           });
         }),
       replace: (to) =>
         Effect.sync(() => {
-          navigation.current?.(widgetTargetPath(to), {
+          void navigation.current?.(widgetTargetPath(to), {
             replace: true,
             state: widgetTargetState(to),
           });

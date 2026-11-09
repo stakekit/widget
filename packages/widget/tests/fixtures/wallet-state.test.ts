@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Schema } from "effect";
+
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {

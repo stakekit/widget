@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+
 import { type ShellFrameWidth, ShellFrameWidthContext } from "./shell-frame";
 
 /**

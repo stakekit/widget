@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Fiber, Option, Queue, Schema } from "effect";
+
 import {
   CaipChainId,
   sharedSignClients,

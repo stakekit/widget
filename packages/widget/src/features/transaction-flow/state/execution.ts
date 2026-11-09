@@ -1,11 +1,18 @@
 import { Effect, type Scope, Stream } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import type { TransactionWorkflowCommand } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type {
   TransactionWorkflowHandle,
   TransactionWorkflowService,
 } from "../../../services/transaction-workflow/transaction-workflow-service";
+
+/**
+ * Whether Steps and Complete can show their Execution: `Failed` leaves the
+ * flow, `Starting` renders nothing until it runs.
+ */
+export type TransactionFlowExecutionStatus = "Failed" | "Running" | "Starting";
 
 /**
  * An Execution's workflow as Atoms: `start` runs while something reads

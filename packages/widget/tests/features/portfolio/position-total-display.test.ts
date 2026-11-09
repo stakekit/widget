@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { toPositionTotalDisplay } from "../../../src/features/portfolio/state/read-models/position-list-item";
 import { yieldApiYieldFixture } from "../../fixtures";

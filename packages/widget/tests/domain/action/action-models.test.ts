@@ -1,12 +1,13 @@
 import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema } from "effect";
+
 import {
   ActionCommand,
   PendingAction,
   TransactionGasEstimateJson,
   YieldAction,
-} from "../../../src/domain/action/models";
+} from "../../../src/domain/earn/action-models";
 import {
   yieldApiActionDtoFixture,
   yieldApiTransactionDtoFixture,

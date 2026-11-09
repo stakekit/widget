@@ -220,27 +220,27 @@ properties on the Widget root and the portal container.
 
 ### Color Roles
 
-| Role | Use |
-| --- | --- |
-| `background` | Widget canvas |
-| `surface` | Filled cards, rows, inputs |
-| `surfaceHover` | Hover on interactive surfaces, at least 1.12:1 off the fill it replaces |
-| `surfaceRaised` | Menus, popovers, token trigger |
-| `border` | Dividers |
-| `borderStrong` | Outlined cards and inputs |
-| `text` | Primary text |
-| `textMuted` | Secondary text |
-| `textSubtle` | Disabled and decorative text only |
-| `accent` / `accentHover` | Primary actions and their hover |
-| `onAccent` | Text on accent |
-| `accentSoft` | Chips, selection tint, accent cards and notices, marked text |
-| `accentText` | Links, chip text |
-| `success` / `successSoft` | Positive rates, claimable amounts and an estimate of what an amount earns ("+$6.08 / yr"); a rate of zero or none is `textMuted`, shown as "—" |
+| Role                      | Use                                                                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `background`              | Widget canvas                                                                                                                                                                        |
+| `surface`                 | Filled cards, rows, inputs                                                                                                                                                           |
+| `surfaceHover`            | Hover on interactive surfaces, at least 1.12:1 off the fill it replaces                                                                                                              |
+| `surfaceRaised`           | Menus, popovers, token trigger                                                                                                                                                       |
+| `border`                  | Dividers                                                                                                                                                                             |
+| `borderStrong`            | Outlined cards and inputs                                                                                                                                                            |
+| `text`                    | Primary text                                                                                                                                                                         |
+| `textMuted`               | Secondary text                                                                                                                                                                       |
+| `textSubtle`              | Disabled and decorative text only                                                                                                                                                    |
+| `accent` / `accentHover`  | Primary actions and their hover                                                                                                                                                      |
+| `onAccent`                | Text on accent                                                                                                                                                                       |
+| `accentSoft`              | Chips, selection tint, accent cards and notices, marked text                                                                                                                         |
+| `accentText`              | Links, chip text                                                                                                                                                                     |
+| `success` / `successSoft` | Positive rates, claimable amounts and an estimate of what an amount earns ("+$6.08 / yr"); a rate of zero or none is `textMuted`, shown as "—"                                       |
 | `warning` / `warningSoft` | Action required (rewards to claim among it, and the Manage tab's count), a jailed or inactive validator, risk, KYC notice, a balance that cannot fund any amount before one is typed |
-| `danger` / `dangerSoft` | Errors and failures; on an invalid amount, only the line that says why and the amount panel's edge |
-| `info` / `infoSoft` | Informational notices; pending requests and positions in progress. A sky blue of its own, never the accent's hue |
-| `focusRing` | Focus indicator, a ring outside the edge past a gap (see Other scales) |
-| `scrim` | Overlay backdrop |
+| `danger` / `dangerSoft`   | Errors and failures; on an invalid amount, only the line that says why and the amount panel's edge                                                                                   |
+| `info` / `infoSoft`       | Informational notices; pending requests and positions in progress. A sky blue of its own, never the accent's hue                                                                     |
+| `focusRing`               | Focus indicator, a ring outside the edge past a gap (see Other scales)                                                                                                               |
+| `scrim`                   | Overlay backdrop                                                                                                                                                                     |
 
 Rules:
 
@@ -282,16 +282,16 @@ Rules:
 Sizes are in px, so the host's root font size does not scale them. Each role
 fixes size, line height, weight and tracking together.
 
-| Role | Size / line height | Weight | Use |
-| --- | --- | --- | --- |
-| `display` | 32/40, tabular, −0.02em | 600 | Amount input; shrinks 32 → 28 → 24 → 20 as it fills |
-| `title` | 20/28 | 600 | Dialog titles, yield name, a summary's lead metric (tabular) |
-| `heading` | 16/24 | 500 (Utila 600) | Section headings |
-| `metric` | 18/24, tabular | 600 | Metric values |
-| `body` | 14/20 | 400 | Default text |
-| `label` | 13/18 | 500 | Field labels, tabs, metric labels |
-| `caption` | 12/16 | 400 | Metadata, helper text |
-| `overline` | 11/16, uppercase | 600 | Group headers |
+| Role       | Size / line height      | Weight          | Use                                                          |
+| ---------- | ----------------------- | --------------- | ------------------------------------------------------------ |
+| `display`  | 32/40, tabular, −0.02em | 600             | Amount input; shrinks 32 → 28 → 24 → 20 as it fills          |
+| `title`    | 20/28                   | 600             | Dialog titles, yield name, a summary's lead metric (tabular) |
+| `heading`  | 16/24                   | 500 (Utila 600) | Section headings                                             |
+| `metric`   | 18/24, tabular          | 600             | Metric values                                                |
+| `body`     | 14/20                   | 400             | Default text                                                 |
+| `label`    | 13/18                   | 500             | Field labels, tabs, metric labels                            |
+| `caption`  | 12/16                   | 400             | Metadata, helper text                                        |
+| `overline` | 11/16, uppercase        | 600             | Group headers                                                |
 
 Amounts, rates and balances use tabular figures. Heading roles require an
 explicit `as`, so headings form a real outline.
@@ -614,8 +614,8 @@ around it in the Feature.
 8. Add its stories.
 
 Do not suppress a design-system rule to ship a screen. A suppression is a
-deliberate exception and states its reason after ` -- `, for example
-`// ast-grep-ignore: no-raw-design-value -- <why no token fits>`.
+deliberate exception and states its reason after `--`, for example
+`// oxlint-disable-next-line design-system/no-raw-design-value -- <why no token fits>`.
 
 ## Enforcement
 
@@ -628,8 +628,10 @@ deliberate exception and states its reason after ` -- `, for example
   lets only application composition use the composition interface
   (`design-system-composition-importers`), and lets `src/ui/` import only
   itself (`layer-ui`). These run in `check-hygiene`.
-- ast-grep rejects lowercase JSX elements and `createElement` calls with a
-  lowercase tag (`no-html-element-outside-design-system`) and `className` or
+- The widget's `design-system` oxlint plugin
+  (`packages/widget/scripts/oxlint/design-system-plugin.ts`) rejects lowercase
+  JSX elements and `createElement` calls with a lowercase tag
+  (`no-html-element-outside-design-system`) and `className` or
   `style`, as attributes or spread
   (`no-class-name-or-style-outside-design-system`), in Features and
   application composition, and, inside `src/ui/` outside the token definitions
@@ -639,11 +641,11 @@ deliberate exception and states its reason after ` -- `, for example
   raw font sizes, weights, line heights, radii, shadows, z-indices, durations
   and px, rem, em, ch, vw and vh lengths in StyleX definitions
   (`no-raw-design-value`; `1em`, `100vw` and `100vh` stay allowed).
-  `no-unexplained-design-system-suppression` fails a suppression of these
-  rules, or of StyleX's lint rules, without a reason.
+  `widget/no-blanket-disable` fails any oxlint suppression, of these rules or
+  any other, that names no rule or gives no reason after `--`.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid
-  shorthands, sorted keys) on `src/ui/`:
-  `pnpm --filter @stakekit/widget lint:stylex`.
+  shorthands, sorted keys) on `src/ui/` as part of
+  `pnpm --filter @stakekit/widget lint`.
 
 Every rule applies to every file; the only exceptions are suppressions that
 state their reason.

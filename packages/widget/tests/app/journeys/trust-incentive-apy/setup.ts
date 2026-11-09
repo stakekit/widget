@@ -2,6 +2,7 @@ import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
+
 import type { YieldRewardRate } from "../../../../src/domain/earn/reward-rate";
 import type { EarnYield } from "../../../../src/domain/earn/yield-schema";
 import { exactDecimal } from "../../../../src/domain/finance/exact";
@@ -191,13 +192,13 @@ export const setup = async (
     providerId: "trust",
     rewardRate: encodeYieldRewardRateFixture(discoveryRewardRate),
     metadata: {
-      ...(rawYieldBase.metadata ?? {}),
+      ...rawYieldBase.metadata,
       name: "Trust USDA Earn",
       description: "Trust campaign vault",
       logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
     },
     mechanics: {
-      ...(rawYieldBase.mechanics ?? {}),
+      ...rawYieldBase.mechanics,
       type: "vault",
       gasFeeToken: token,
       rewardClaiming: "auto",

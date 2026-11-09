@@ -10,10 +10,10 @@ import {
   Stream,
 } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
-import { Action } from "../../../src/domain/borrow/execution/action";
-import { Transaction } from "../../../src/domain/borrow/execution/transaction";
+
+import { Action } from "../../../src/domain/borrow/action";
 import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
+import { Transaction } from "../../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { emptyBorrowExecutionView } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";
@@ -28,6 +28,7 @@ import {
   borrowFlowReviewPage,
   makeBorrowFlowReviewPage,
 } from "../../../src/features/borrow-transaction-flow/state/review-page";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import type { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { widgetRoutes } from "../../../src/services/navigation/widget-routes";

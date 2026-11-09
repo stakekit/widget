@@ -1,4 +1,5 @@
 import { DateTime, Array as EArray, Option } from "effect";
+
 import type { EarnInvestmentSchedule } from "./yield-schema";
 
 /** Deposits join the subscription batch; withdrawals the redemption batch. */

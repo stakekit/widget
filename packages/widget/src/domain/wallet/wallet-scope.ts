@@ -1,4 +1,5 @@
 import { Data } from "effect";
+
 import { WalletAddress } from "../identity/identifiers";
 import type { AdditionalAddresses } from "./address";
 import { isEvmWalletNetwork, type WalletNetwork } from "./network";

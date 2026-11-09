@@ -1,13 +1,9 @@
 import { Schema, Struct } from "effect";
+
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantArray } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { TokenAddress, YieldId } from "../identity/identifiers";
-
-export const KycStatus = YieldApi.KycStatusResponseDto.mapFields(
-  Struct.pick(["kycStatus", "authorizeUrl"])
-);
-export type KycStatus = typeof KycStatus.Type;
 
 export const HistoryPeriod = Schema.Literals(["30d", "90d", "1y", "all"]);
 export type HistoryPeriod = typeof HistoryPeriod.Type;

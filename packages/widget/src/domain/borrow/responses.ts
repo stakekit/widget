@@ -1,4 +1,5 @@
 import { Schema, SchemaGetter, Struct } from "effect";
+
 import * as BorrowApi from "../../generated/api/borrow";
 import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
 import {
@@ -6,10 +7,8 @@ import {
   ExactDecimal,
   UtcDateTimeFromString,
 } from "../finance/scalars";
-import { Integration } from "./catalog/integration";
-import { Market } from "./catalog/market";
-import { ActionMetadata } from "./execution/action";
-import { Transaction } from "./execution/transaction";
+import { ActionMetadata } from "./action";
+import { BorrowAccountSnapshot } from "./borrow-account-snapshot";
 import {
   ActionId,
   IntegrationId,
@@ -17,7 +16,9 @@ import {
   TokenAddress,
   WalletAddress,
 } from "./ids";
-import { BorrowAccountSnapshot } from "./positions/borrow-account-snapshot";
+import { Integration } from "./integration";
+import { Market } from "./market";
+import { Transaction } from "./transaction";
 
 const itemIdentifier = (
   id: typeof IntegrationId | typeof MarketId | typeof ActionId

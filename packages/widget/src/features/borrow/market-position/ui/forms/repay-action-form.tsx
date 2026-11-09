@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import {
   formatFigureChange,
   formatTokenAmount,
@@ -17,7 +18,7 @@ import {
 import { PageCtaButton } from "../../../../widget-shell/views";
 import type { BorrowRepayActionContext } from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
-import { useBorrowRepayForm } from "../../react/use-action-form";
+import { useBorrowRepayForm } from "../use-action-form";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormWarningMessage } from "./form-warning";
 import { LtvTransitionRow } from "./ltv-transition-row";

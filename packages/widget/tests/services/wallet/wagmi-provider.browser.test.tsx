@@ -40,15 +40,16 @@ import {
   watchConnectors,
 } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { applicationBaseRuntime } from "../../../src/app/runtime/application-base-runtime";
-import { walletConnectorSourceRuntime } from "../../../src/app/runtime/wallet-connector-source-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import { WagmiConfigProvider } from "../../../src/features/wallet/composition";
 import {
-  useWalletConfig,
+  walletConfigResultAtom,
   walletStateResultAtom,
 } from "../../../src/features/wallet/index";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { applicationBaseRuntime } from "../../../src/runtime/application-base-runtime";
+import { walletConnectorSourceRuntime } from "../../../src/runtime/wallet-connector-source-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { GeoBlockService } from "../../../src/services/geoblocking";
 import { solana } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import type { SolanaRuntime } from "../../../src/services/wallet/internal/platform/solana-platform";
@@ -67,13 +68,13 @@ import { describe, expect, it, vi } from "../../utils/test-extend";
 import { render, renderHook } from "../../utils/test-utils";
 
 const baseConnectorSourceProbeAtom = applicationBaseRuntime.atom(
-  WalletConnectorSource.use((source) => Effect.succeed(source))
+  Effect.service(WalletConnectorSource)
 );
 const appConnectorSourceProbeAtom = appRuntime.atom(
-  WalletConnectorSource.use((source) => Effect.succeed(source))
+  Effect.service(WalletConnectorSource)
 );
 const walletConnectorSourceProbeAtom = walletRuntime.atom(
-  WalletConnectorSource.use((source) => Effect.succeed(source))
+  Effect.service(WalletConnectorSource)
 );
 
 const RuntimeConnectorSourceObserver = ({
@@ -125,7 +126,7 @@ class RuntimeErrorBoundary extends Component<
 
 const useWagmiProviderContract = () => ({
   contextConfig: useContext(WagmiContext) as Config | undefined,
-  walletConfig: useWalletConfig(),
+  walletConfig: useAtomValue(walletConfigResultAtom),
 });
 
 const ConfigObserver = ({
@@ -133,7 +134,7 @@ const ConfigObserver = ({
 }: {
   readonly onConfig: (config: Config) => void;
 }) => {
-  const walletConfig = useWalletConfig();
+  const walletConfig = useAtomValue(walletConfigResultAtom);
   const config = walletConfig.pipe(AsyncResult.value, Option.getOrUndefined);
 
   useEffect(() => {
@@ -147,7 +148,7 @@ const useWagmiContract = () => ({
   account: useAccount(),
   connectors: useConnectors(),
   contextConfig: useContext(WagmiContext) as Config | undefined,
-  walletConfig: useWalletConfig(),
+  walletConfig: useAtomValue(walletConfigResultAtom),
   walletProjection: useAtomValue(walletStateResultAtom),
 });
 
@@ -196,7 +197,7 @@ const makeSolanaConnectorFactory = (wallet: SolanaWalletDescriptor) =>
   }));
 
 const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
-  const listeners = new Set<() => Promise<void> | void>();
+  const listeners = new Set<() => void>();
   let snapshot = initial;
   const runtime = {
     connection: {} as Connection,
@@ -219,7 +220,7 @@ const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
   return {
     emit: async (next: SolanaWalletSnapshot) => {
       snapshot = next;
-      await Promise.all([...listeners].map((listener) => listener()));
+      for (const listener of listeners) listener();
     },
     listenerCount: () => listeners.size,
     runtime,

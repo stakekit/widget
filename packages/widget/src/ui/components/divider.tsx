@@ -1,5 +1,6 @@
 import { Separator } from "@base-ui/react/separator";
 import * as stylex from "@stylexjs/stylex";
+
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 

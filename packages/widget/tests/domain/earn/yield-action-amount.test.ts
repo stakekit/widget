@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { isYieldActionAmountEditable } from "../../../src/domain/earn/stake";
 import {
   confidentialYieldFixture,

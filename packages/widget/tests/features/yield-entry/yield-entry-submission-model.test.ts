@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { resolveYieldEntrySubmission } from "../../../src/features/yield-entry/model/yield-entry-submission";
 
 const eligibleSubmission = {

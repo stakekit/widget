@@ -1,6 +1,8 @@
 import { Duration, Array as EArray, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
+import { widgetConfigAtom } from "../../../runtime/widget-config";
 import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
 import {
   type Presentable,
@@ -11,7 +13,6 @@ import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../wallet/index";
-import { widgetConfigAtom } from "../../widget-configuration/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import { getActivitySettlement } from "../model/activity-action-list-item";
 import {

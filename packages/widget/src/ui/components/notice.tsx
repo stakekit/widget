@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import type { IconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { InlineIcon } from "../primitives/inline-icon";

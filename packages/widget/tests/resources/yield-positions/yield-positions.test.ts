@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -16,6 +16,7 @@ import {
   YieldPositionsError,
   yieldPositionsResourceAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   YieldResourceSource,

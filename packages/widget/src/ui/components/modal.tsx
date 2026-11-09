@@ -9,6 +9,7 @@ import {
 } from "motion/react";
 import type { PointerEvent, ReactElement, ReactNode, RefObject } from "react";
 import { useId, useRef, useState } from "react";
+
 import { scrollStyles } from "../primitives/scroll";
 import { Text } from "../primitives/text";
 import { usePortalContainer } from "../theme/portal-container";
@@ -16,8 +17,8 @@ import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { layer } from "../tokens/layer.stylex";
-import { motion } from "../tokens/motion.stylex";
 import { motionEasing, motionSeconds } from "../tokens/motion-timing";
+import { motion } from "../tokens/motion.stylex";
 import { overlaySize } from "../tokens/overlay.stylex";
 import { radius } from "../tokens/radius.stylex";
 import { space } from "../tokens/space.stylex";

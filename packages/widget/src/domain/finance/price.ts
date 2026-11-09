@@ -1,7 +1,8 @@
 import type BigNumber from "bignumber.js";
-import type { Prices } from "../health/models";
+
 import type { Token } from "../token/token";
 import { exactZero } from "./exact";
+import type { Prices } from "./prices";
 
 type PriceLookupToken = Pick<Token, "network" | "address">;
 

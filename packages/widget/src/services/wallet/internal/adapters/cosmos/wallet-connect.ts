@@ -1,5 +1,6 @@
 import type { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Effect, Option, Predicate, Schema } from "effect";
+
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { makeWalletConnectAttempts } from "../../platform/wallet-connect-attempts";
 import {
@@ -232,10 +233,11 @@ const makeSession = ({
 
   /** The persisted connection, if its session is still live and holds its account. */
   const restorable = Effect.gen(function* () {
+    const stored = yield* Effect.promise(async () =>
+      storage?.getItem(cosmosWalletConnectStorageKey)
+    );
     const record = Schema.decodeUnknownOption(CosmosWalletConnectRecord)(
-      yield* Effect.promise(async () =>
-        storage?.getItem(cosmosWalletConnectStorageKey)
-      )
+      stored
     ).pipe(
       Option.filter((record) => record.connectorId === connectorId),
       Option.getOrUndefined
@@ -333,7 +335,7 @@ const makeSession = ({
         Effect.gen(function* () {
           yield* attempts.interrupt;
           const topics = new Set([...owned.values()].map(({ topic }) => topic));
-          for (const chainId of [...owned.keys()]) release(chainId);
+          for (const chainId of owned.keys()) release(chainId);
           activeChainId = undefined;
           yield* removeRecord;
           yield* Effect.forEach(topics, protocol.disconnect, {

@@ -1,12 +1,16 @@
 import type BigNumber from "bignumber.js";
+
+import type { ExitReceiveToken } from "../../../domain/action/rules";
 import type {
   ActionCommand,
   ManageActionCommand,
   YieldAction,
-} from "../../../domain/action/models";
-import type { YieldPendingActionType } from "../../../domain/action/pending-action";
-import type { ExitReceiveToken } from "../../../domain/action/rules";
-import type { ConfidentialHandle } from "../../../domain/earn/balance";
+  YieldPendingActionType,
+} from "../../../domain/earn/action-models";
+import type {
+  ConfidentialHandle,
+  YieldBalanceType,
+} from "../../../domain/earn/balance";
 import type { TokenAmount } from "../../../domain/earn/denomination";
 import type { EarnProvider } from "../../../domain/earn/provider";
 import type {
@@ -15,7 +19,6 @@ import type {
 } from "../../../domain/earn/validator";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { ProviderOption } from "../../../domain/identity/identifiers";
-import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,

@@ -1,11 +1,12 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type * as Atom from "effect/reactivity/Atom";
+
 import { isYieldValidatorSelectionRequired } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { tokenString } from "../../../../../domain/token/token";
-import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
-import { EarnTokenCatalogKey } from "../../../../../resources/earn-token-catalog/index";
+import { EarnTokenCatalogKey } from "../../../../../resources/earn-token-catalog/earn-token-catalog";
+import { widgetConfigAtom } from "../../../../../runtime/widget-config";
 import {
   availableYieldCategoriesAtom,
   earnTokenCatalogAtom,

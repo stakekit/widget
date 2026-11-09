@@ -1,12 +1,13 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type {
   HistoryPeriod,
   HistoryPoint,
 } from "../../../domain/portfolio/models";
-import type { YieldInsightError } from "../../../resources/yield-insights/index";
+import type { YieldInsightError } from "../../../resources/yield-insights/yield-insights";
 import {
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,

@@ -1,10 +1,11 @@
 import { Data, Duration, Effect, Result, Schedule } from "effect";
 import { isHex, keccak256 } from "viem";
+
+import { getValidStakeSessionTx } from "../../../domain/action/rules";
 import type {
   ManageActionCommand,
   YieldAction,
-} from "../../../domain/action/models";
-import { getValidStakeSessionTx } from "../../../domain/action/rules";
+} from "../../../domain/earn/action-models";
 import { getEncryptedHandle } from "../../../domain/earn/balance";
 import type { ConfidentialChainId } from "../../../domain/earn/confidential";
 import { TransactionHash } from "../../../domain/identity/identifiers";

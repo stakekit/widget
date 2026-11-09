@@ -1,6 +1,7 @@
 import { Effect, Schema, Stream } from "effect";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
+
 import {
   WalletAddress,
   type WalletAddress as WalletAddressType,
@@ -45,16 +46,13 @@ const wagmiNetworkToSKNetwork = ({
   cosmosChainsMap: Partial<CosmosChainsMap>;
   miscChainsMap: Partial<MiscChainsMap>;
   substrateChainsMap: Partial<SubstrateChainsMap>;
-}): WalletNetwork | null => {
-  return (
-    Object.values({
-      ...evmChainsMap,
-      ...cosmosChainsMap,
-      ...miscChainsMap,
-      ...substrateChainsMap,
-    }).find((c) => c.wagmiChain.id === chain.id)?.network ?? null
-  );
-};
+}): WalletNetwork | null =>
+  Object.values({
+    ...evmChainsMap,
+    ...cosmosChainsMap,
+    ...miscChainsMap,
+    ...substrateChainsMap,
+  }).find((c) => c.wagmiChain.id === chain.id)?.network ?? null;
 
 export type WalletStateController = {
   readonly cosmosConfig: { readonly cosmosChainsMap: Partial<CosmosChainsMap> };

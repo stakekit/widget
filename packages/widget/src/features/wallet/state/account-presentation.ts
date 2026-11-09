@@ -1,12 +1,13 @@
 import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { makeScopedEffectAtom } from "../../../app/runtime/scoped-effect-atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
 import {
   gasTokenBalancesResourceAtom,
   walletScopeGasTokenBalancesKey,
-} from "../../../resources/gas-token-balances/index";
+} from "../../../resources/gas-token-balances/gas-token-balances";
+import { makeScopedEffectAtom } from "../../../runtime/scoped-effect-atom";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import {
   WalletChainSelection,
   type WalletChainSelectionInput,
@@ -18,7 +19,7 @@ import {
   walletCommandIdentity,
 } from "../../../services/wallet/wallet-command-identity";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import { currentWalletStateResultAtom } from "./root-atom";
+import { walletStateResultAtom } from "./root-atom";
 
 /** The wallet chain selection; `undefined` until the service first emits. */
 export const walletChainSelectionAtom = walletRuntime
@@ -86,7 +87,7 @@ export const walletAddressCopiedAtom = Atom.make((get) => {
   // Reading the expiry keeps it running while the feedback is shown.
   get(addressCopyExpiryAtom);
   const copy = get(addressCopyAtom);
-  const connection = get(currentWalletStateResultAtom);
+  const connection = get(walletStateResultAtom);
   return (
     copy !== null &&
     AsyncResult.isSuccess(connection) &&
@@ -125,7 +126,7 @@ export const copyWalletAddressAtom = walletRuntime
  * account dialog, not something to interrupt the user with.
  */
 export const walletGasTokenBalanceAtom = Atom.make((get) => {
-  const connection = get(currentWalletStateResultAtom);
+  const connection = get(walletStateResultAtom);
   if (!AsyncResult.isSuccess(connection)) return null;
   const { additionalAddresses, address, network } = connection.value;
   if (address === null || network === null) return null;

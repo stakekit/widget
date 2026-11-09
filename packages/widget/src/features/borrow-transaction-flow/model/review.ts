@@ -1,11 +1,11 @@
-import type { ActionMetadata } from "../../../domain/borrow/execution/action";
-import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
+import type { ActionMetadata } from "../../../domain/borrow/action";
+import type { ActionCommand } from "../../../domain/borrow/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
   RiskGateBlockReason,
   RiskGateVerdict,
   RiskGateWarning,
-} from "../../../domain/borrow/risk/risk-gate";
+} from "../../../domain/borrow/risk-gate";
 import { exactDecimal } from "../../../domain/finance/exact";
 
 export type BorrowConstraintWarning =

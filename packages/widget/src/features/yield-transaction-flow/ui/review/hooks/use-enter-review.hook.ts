@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import {
   getYieldOutputAmount,
@@ -20,12 +21,12 @@ import { useWidgetPresentation } from "../../../../../shared/react/widget-presen
 import type { HostHook } from "../../../../../ui/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import type { PageCta } from "../../../../widget-shell/views";
-import { formatRewardRateLabel } from "../../../../yield-summary/index";
+import { formatRewardRateLabel } from "../../../../yield-presentation/index";
 import { getYieldFlowAttribution } from "../../../model/attribution";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
-} from "../../../react/yield-flow-route";
+} from "../../yield-flow-session";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
 import {

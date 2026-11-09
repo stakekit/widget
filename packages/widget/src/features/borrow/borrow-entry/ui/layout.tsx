@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+
 import { exactDecimal } from "../../../../domain/finance/exact";
 import { EmptyState, SplitView, Stack } from "../../../../ui/index";
 import {
@@ -10,13 +11,13 @@ import {
 } from "../../../borrow-transaction-flow/index";
 import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowWalletView } from "../../wallet/index";
-import { useBorrowEntryView } from "../react/use-borrow-entry";
 import { borrowFlowDetailsAtom } from "../state/flow-details";
 import {
   BorrowEntryDetailsPanel,
   BorrowMarketDetails,
 } from "./components/details-panel";
 import { BorrowDetailsSkeleton } from "./components/skeletons";
+import { useBorrowEntryView } from "./use-borrow-entry";
 
 /**
  * Stays mounted across the form and the flow, so moving between their split

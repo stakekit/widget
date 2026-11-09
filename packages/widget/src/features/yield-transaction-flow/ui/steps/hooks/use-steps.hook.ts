@@ -1,5 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { useExecutionLeaveConfirmation } from "../../../../leave-confirmation/index";
 import { useTrackEvent } from "../../../../tracking/index";
 import { useConnectedWallet } from "../../../../wallet/index";
@@ -7,7 +8,7 @@ import type { PageCta } from "../../../../widget-shell/views";
 import {
   useYieldFlowExecution,
   useYieldFlowSession,
-} from "../../../react/yield-flow-route";
+} from "../../yield-flow-session";
 import { useStepsDetails, useStepsSummary } from "./use-steps-summary.hook";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 

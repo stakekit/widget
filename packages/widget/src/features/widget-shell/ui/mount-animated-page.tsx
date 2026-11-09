@@ -1,4 +1,5 @@
 import { type PropsWithChildren, type ReactElement, useState } from "react";
+
 import { Entrance } from "../../../ui/index";
 import { useMountAnimation } from "../../mount-animation/index";
 import { PageContainer } from "./page-container";

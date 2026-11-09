@@ -1,17 +1,16 @@
 import type BigNumber from "bignumber.js";
 import { Data } from "effect";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { PendingActionStateKey } from "../../../domain/action/action-command";
-import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import type { YieldPendingActionType } from "../../../domain/earn/action-models";
+import type { YieldBalanceType } from "../../../domain/earn/balance";
 import { exactZero } from "../../../domain/finance/exact";
 import type {
   TokenAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
-import type {
-  BalanceDataKey,
-  YieldBalanceType,
-} from "../../../domain/portfolio/positions";
+import type { BalanceDataKey } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 

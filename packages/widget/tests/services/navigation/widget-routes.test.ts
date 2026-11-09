@@ -1,5 +1,6 @@
 import { Option, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import { BalanceDataKey } from "../../../src/domain/portfolio/positions";
 import {

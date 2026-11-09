@@ -2,34 +2,35 @@ import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnValidator } from "../../../../../domain/earn/validator";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { exactZero } from "../../../../../domain/finance/exact";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
-import type { Prices } from "../../../../../domain/health/models";
+import type { Prices } from "../../../../../domain/finance/prices";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
-import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
 import {
   EarnTokenCatalogKey,
   earnTokenCatalogResourceAtom,
-} from "../../../../../resources/earn-token-catalog/index";
-import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/index";
+} from "../../../../../resources/earn-token-catalog/earn-token-catalog";
+import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/token-balances";
 import {
   PricesKey,
   pricesAtom,
-} from "../../../../../resources/token-prices/index";
+} from "../../../../../resources/token-prices/prices";
 import {
   preferredValidatorsResourceAtom,
   ValidatorsKey,
   validatorsPullAtom as validatorsResourcePullAtom,
-} from "../../../../../resources/validator-directory/index";
+} from "../../../../../resources/validator-directory/validator-directory";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
-} from "../../../../../resources/yield-directory/index";
-import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/index";
+} from "../../../../../resources/yield-directory/yield-directory";
+import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/yield-positions";
+import { widgetConfigAtom } from "../../../../../runtime/widget-config";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import { makeEmptyPositionsData } from "../model/view-model";

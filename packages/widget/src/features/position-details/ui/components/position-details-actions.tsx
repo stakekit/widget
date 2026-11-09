@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
   getExtendedYieldType,
   getYieldTypeLabels,
@@ -12,7 +13,7 @@ import {
   resolvePositionDetailsActionCapabilities,
   resolvePositionDetailsAmountActions,
 } from "../../model/hub";
-import { usePositionDetails } from "../../react/use-position-details";
+import { usePositionDetails } from "../use-position-details";
 import { PositionDetailsExitActions } from "./position-details-exit-actions";
 import { PositionDetailsPendingActions } from "./position-details-pending-actions";
 import { PositionDetailsSkeleton } from "./position-details-skeleton";

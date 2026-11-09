@@ -14,6 +14,7 @@ import {
   signTypedData,
   switchChain,
 } from "wagmi/actions";
+
 import type {
   WalletConnectInput,
   WalletDisconnectInput,
@@ -60,8 +61,11 @@ const connectionOwner = (config: Config) => {
 
 const detachCoreListeners = (config: Config, connector: Connector) => {
   const events = config._internal.events;
+  // oxlint-disable-next-line typescript/unbound-method -- wagmi's core listeners are plain functions that never read `this`
   connector.emitter.off("connect", events.connect);
+  // oxlint-disable-next-line typescript/unbound-method -- wagmi's core listeners are plain functions that never read `this`
   connector.emitter.off("change", events.change);
+  // oxlint-disable-next-line typescript/unbound-method -- wagmi's core listeners are plain functions that never read `this`
   connector.emitter.off("disconnect", events.disconnect);
 };
 
@@ -121,7 +125,7 @@ export const wagmiOperations = {
   > {
     const owner = connectionOwner(config);
     if (config.state.current === input.connector.uid) {
-      return yield* new WagmiOperationsError({
+      return yield* WagmiOperationsError.make({
         cause: new ConnectorAlreadyConnectedError(),
         operation: "connect",
       });
@@ -145,7 +149,7 @@ export const wagmiOperations = {
             withCapabilities: false,
           }),
         catch: (cause) =>
-          new WagmiOperationsError({ cause, operation: "connect" }),
+          WagmiOperationsError.make({ cause, operation: "connect" }),
       });
       if (owner.pending !== attempt) return yield* Effect.interrupt;
       yield* Effect.tryPromise({
@@ -156,13 +160,13 @@ export const wagmiOperations = {
           );
         },
         catch: (cause) =>
-          new WagmiOperationsError({ cause, operation: "connect" }),
+          WagmiOperationsError.make({ cause, operation: "connect" }),
       });
       if (owner.pending !== attempt) return yield* Effect.interrupt;
       const accounts = result.accounts;
       // Wagmi records a connection only with at least one account.
       if (!EArray.isReadonlyArrayNonEmpty(accounts)) {
-        return yield* new WagmiOperationsError({
+        return yield* WagmiOperationsError.make({
           cause: new Error("Connector returned no accounts"),
           operation: "connect",
         });
@@ -198,7 +202,7 @@ export const wagmiOperations = {
     return yield* Effect.tryPromise({
       try: () => disconnect(config, input),
       catch: (cause) =>
-        new WagmiOperationsError({ cause, operation: "disconnect" }),
+        WagmiOperationsError.make({ cause, operation: "disconnect" }),
     }).pipe(
       Effect.ensuring(
         Effect.sync(() => {
@@ -215,7 +219,7 @@ export const wagmiOperations = {
     return yield* Effect.tryPromise({
       try: () => reconnect(config, input),
       catch: (cause) =>
-        new WagmiOperationsError({ cause, operation: "reconnect" }),
+        WagmiOperationsError.make({ cause, operation: "reconnect" }),
     }).pipe(
       Effect.ensuring(
         Effect.sync(() => {
@@ -232,7 +236,7 @@ export const wagmiOperations = {
     return yield* Effect.tryPromise({
       try: () => sendTransaction(config, input),
       catch: (cause) =>
-        new WagmiOperationsError({ cause, operation: "send-transaction" }),
+        WagmiOperationsError.make({ cause, operation: "send-transaction" }),
     });
   }),
   signMessage: Effect.fn("signMessage")(function* (
@@ -242,7 +246,7 @@ export const wagmiOperations = {
     return yield* Effect.tryPromise({
       try: () => signMessage(config, input),
       catch: (cause) =>
-        new WagmiOperationsError({ cause, operation: "sign-message" }),
+        WagmiOperationsError.make({ cause, operation: "sign-message" }),
     });
   }),
   signTypedData: Effect.fn("signTypedData")(function* (
@@ -252,7 +256,7 @@ export const wagmiOperations = {
     return yield* Effect.tryPromise({
       try: () => signTypedData(config, input),
       catch: (cause) =>
-        new WagmiOperationsError({ cause, operation: "sign-typed-data" }),
+        WagmiOperationsError.make({ cause, operation: "sign-typed-data" }),
     });
   }),
   switchChain: Effect.fn("switchChain")(function* (
@@ -262,7 +266,7 @@ export const wagmiOperations = {
     return yield* Effect.tryPromise({
       try: () => switchChain(config, input),
       catch: (cause) =>
-        new WagmiOperationsError({ cause, operation: "switch-chain" }),
+        WagmiOperationsError.make({ cause, operation: "switch-chain" }),
     });
   }),
 };
@@ -272,7 +276,9 @@ export type WagmiOperationsService = typeof wagmiOperations;
 export class WagmiOperations extends Context.Service<
   WagmiOperations,
   WagmiOperationsService
->()("stakekit/widget/wallet/platform/WagmiOperations") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/wagmi-operations/WagmiOperations"
+) {
   static readonly layer = Layer.succeed(
     WagmiOperations,
     WagmiOperations.of(wagmiOperations)

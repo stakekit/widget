@@ -2,9 +2,9 @@ import type BigNumber from "bignumber.js";
 import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../../app/runtime/app-runtime";
+
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
 import { decodeTokenId, type MarketId } from "../../../../domain/borrow/ids";
 import {
   type BorrowNetwork,
@@ -15,16 +15,17 @@ import {
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../../../domain/wallet/wallet-scope";
-import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
-import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/index";
+import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/borrow-integrations";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../../../../resources/borrow-markets/index";
+} from "../../../../resources/borrow-markets/borrow-markets";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../../resources/borrow-positions/index";
+} from "../../../../resources/borrow-positions/borrow-positions";
+import { appRuntime } from "../../../../runtime/app-runtime";
+import { widgetConfigAtom } from "../../../../runtime/widget-config";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/index";
 import { tokenBalancesScanAtom } from "../../../portfolio/index";

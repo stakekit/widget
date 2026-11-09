@@ -2,6 +2,7 @@ import { Equal, Schema } from "effect";
 import type { Chain } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
+
 import {
   WalletAddress,
   YieldId,
@@ -15,7 +16,7 @@ import { YieldCatalogKey } from "../../../src/features/earn/state/earn-selection
 import {
   YieldRewardsSummaryKey,
   yieldRewardsSummaryResourceAtom,
-} from "../../../src/resources/yield-rewards-summary/index";
+} from "../../../src/resources/yield-rewards-summary/yield-rewards-summary";
 import {
   ActivityInvalidationKey,
   BorrowMarketsInvalidationKey,
@@ -31,8 +32,8 @@ const firstAddress = Schema.decodeSync(WalletAddress)("0xwallet-a");
 const secondAddress = Schema.decodeSync(WalletAddress)("0xwallet-b");
 
 const connectedWalletState = ({
-  additionalAddresses = null,
-  address = firstAddress,
+  additionalAddresses,
+  address,
 }: Pick<
   Extract<NormalizedWalletState, { readonly status: "connected" }>,
   "additionalAddresses" | "address"

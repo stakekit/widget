@@ -5,8 +5,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { sepolia } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import { ConfidentialTokenBalanceKey } from "../../../src/domain/earn/confidential-balance";
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -21,6 +20,8 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../src/resources/yield-opportunity/provider";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { RevealedBalances } from "../../../src/services/zama/revealed-balances";
 import {

@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
-import type { ActionCommand } from "../../../../src/domain/action/models";
+
+import type { ActionCommand } from "../../../../src/domain/earn/action-models";
 import { exactDecimal } from "../../../../src/domain/finance/exact";
 import {
   yieldApiActionFixture,

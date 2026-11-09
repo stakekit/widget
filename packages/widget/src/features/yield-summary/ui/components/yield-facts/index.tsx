@@ -1,5 +1,6 @@
 import type { DateTime } from "effect";
 import { useTranslation } from "react-i18next";
+
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { formatAddress } from "../../../../../shared/lib/general";
@@ -19,7 +20,7 @@ import {
   getYieldFacts,
   type YieldFactId,
   type YieldFactValue as YieldFactValueModel,
-} from "../../../model/yield-facts";
+} from "../../../../yield-presentation/index";
 import { YieldRiskRatingActions } from "../yield-risk";
 
 /** A yield fact's value: text, the risk rating with its explainer, or a link. */

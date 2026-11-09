@@ -17,6 +17,9 @@ permissions:
 
 env:
   HUSKY: "0"
+  # Runners start empty and nothing persists the task artifact cache, so
+  # storing results would only cost time.
+  MISE_TASK_CACHE: "off"
 
 # One job per check, so checks run in parallel and a failure names its check.
 jobs:
@@ -26,12 +29,9 @@ jobs:
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        # The allowlist check compares against the merge base with main.
-        with:
-          fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: mise run lint:widget
-      - run: mise run lint:ast
+      - run: mise run lint:format
 
   hygiene:
     runs-on: ubuntu-24.04
@@ -60,7 +60,7 @@ jobs:
       - uses: ./.github/actions/setup
       - run: mise run test:dom
 
-  # Browser test files run serially (fileParallelism: false); shards split them across runners.
+  # Browser test files run two at a time within a runner; shards split them across runners.
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

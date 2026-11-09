@@ -1,6 +1,7 @@
 import { Data, Effect, Schedule, type Schema } from "effect";
 import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
+
 import {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,

@@ -1,10 +1,11 @@
 import type { TFunction } from "i18next";
+
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
-import type { YieldAction } from "../../../domain/action/models";
 import type {
   TransactionStatus,
   TransactionType,
 } from "../../../domain/action/rules";
+import type { YieldAction } from "../../../domain/earn/action-models";
 import type { TransactionHash } from "../../../domain/identity/identifiers";
 import type {
   TransactionPhaseProgress,
@@ -179,17 +180,15 @@ export const getYieldTransactionStepsView = (
   const plannedRows = getPendingPlannedSteps(
     machineState.context,
     plannedStepTypes
-  ).map(
-    (type, index): YieldStepRow => ({
-      done: false,
-      explorerUrl: null,
-      hash: null,
-      id: `planned-${index}-${type}`,
-      phases: idle,
-      rejected: false,
-      type,
-    })
-  );
+  ).map((type, index): YieldStepRow => ({
+    done: false,
+    explorerUrl: null,
+    hash: null,
+    id: `planned-${index}-${type}`,
+    phases: idle,
+    rejected: false,
+    type,
+  }));
   const transactions = projectTransactionWorkflowTransactions(machineState);
   const transactionRows = transactions.flatMap(
     ({

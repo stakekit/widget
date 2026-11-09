@@ -5,8 +5,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import type { Mock } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import { getPendingActionStateKey } from "../../../src/domain/action/action-command";
 import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
@@ -39,6 +38,8 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import {
   makeWidgetNavigation,
   type WidgetNavigationOptions,

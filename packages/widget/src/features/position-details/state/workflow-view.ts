@@ -2,15 +2,16 @@ import BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   getPendingActionStateKey,
   type PendingActionStateKey,
 } from "../../../domain/action/action-command";
-import type { PendingAction } from "../../../domain/action/models";
 import {
   getPendingActionAmountConfig,
   isPendingActionAmountRequired,
 } from "../../../domain/action/pending-action";
+import type { PendingAction } from "../../../domain/earn/action-models";
 import {
   getExitUnit,
   getSharesExitBalance,
@@ -28,16 +29,16 @@ import {
   type PositionBalancesByType,
   type PositionTokenSum,
 } from "../../../domain/portfolio/positions";
-import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
+import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/index";
+} from "../../../resources/yield-opportunity/provider";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../../resources/yield-positions/index";
+} from "../../../resources/yield-positions/yield-positions";
 import { config } from "../../../shared/config/widget-defaults";
 import {
   presentedValue,

@@ -1,6 +1,7 @@
 import { Effect, Struct } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
+
 import { WalletDecodeError } from "../../../wallet-errors";
 import type { WalletEvmTransactionInput } from "../../../wallet-transactions";
 import type { WagmiActions } from "../../runtime/wagmi-actions";
@@ -42,8 +43,10 @@ export const decodeEvmTransaction = (
   tx: string
 ): Effect.Effect<WalletEvmTransactionInput, WalletDecodeError> =>
   decodeUnsignedEvmTransactionJson(tx).pipe(
-    Effect.mapError((cause) => new WalletDecodeError({ cause })),
-    Effect.map(prepareEvmTransaction)
+    Effect.mapBoth({
+      onFailure: (cause) => new WalletDecodeError({ cause }),
+      onSuccess: prepareEvmTransaction,
+    })
   );
 
 /**

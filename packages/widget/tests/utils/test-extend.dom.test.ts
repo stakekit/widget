@@ -1,6 +1,7 @@
 import { Cause, Effect } from "effect";
 import { HttpResponse, http } from "msw";
 import { expectTypeOf } from "vitest";
+
 import { expect, it } from "./test-extend.dom.ts";
 
 const fixtureUrl = "https://fixture.test/effect-vitest";

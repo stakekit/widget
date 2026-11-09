@@ -3,11 +3,12 @@ import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import {
   acknowledgeTosAtom,
   tosAcknowledgementAtom,
 } from "../../../src/features/preferences/state/tos-atoms";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   StoredPublicKeys,
   TosAcknowledged,

@@ -2,14 +2,14 @@ import BigNumber from "bignumber.js";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
-import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 
-import type { useSelectValidator } from "../../../src/features/earn/react/use-select-validator";
+import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { SelectYieldRewardDetails } from "../../../src/features/earn/ui/components/select-yield-section/select-yield-reward-details";
 import {
   ProviderSelectionCard,
   ProviderSummary,
 } from "../../../src/features/earn/ui/dashboard/earn-details/components/provider-selection-card";
+import type { useSelectValidator } from "../../../src/features/earn/ui/use-select-validator";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils";
@@ -25,12 +25,12 @@ const hookState = vi.hoisted(() => ({
   >,
 }));
 
-vi.mock("../../../src/features/earn/react/use-select-validator", () => ({
+vi.mock("../../../src/features/earn/ui/use-select-validator", () => ({
   useSelectValidator: () => hookState.selectValidator,
 }));
 
 vi.mock(
-  "../../../src/features/earn/react/use-earn-facades",
+  "../../../src/features/earn/ui/use-earn-facades",
   async (importOriginal) => {
     const actual = await importOriginal<object>();
     return {

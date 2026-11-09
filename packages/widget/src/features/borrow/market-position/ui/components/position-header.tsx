@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import type { MarketPosition } from "../../../../../domain/borrow/positions/market-position";
+
+import type { MarketPosition } from "../../../../../domain/borrow/market-position";
 import { useTokenLogo } from "../../../../../shared/react/token-logo";
 import { AssetHeader } from "../../../../../ui/index";
 import type { BorrowPositionDetailsModel } from "../../model/details";

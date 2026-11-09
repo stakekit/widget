@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import type { Token } from "../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
@@ -7,7 +8,7 @@ import { Stack, Text } from "../../../../ui/index";
 import {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
-} from "../../../yield-summary/index";
+} from "../../../yield-presentation/index";
 import {
   type PositionDetailsExitReceiveTokenSelection,
   resolveExitReceiveTokenNote,

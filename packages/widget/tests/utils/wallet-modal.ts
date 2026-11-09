@@ -1,4 +1,5 @@
 import { Effect, Stream } from "effect";
+
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
 
 const unexpectedModalOperation = (operation: string) =>

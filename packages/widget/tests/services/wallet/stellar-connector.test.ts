@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Exit } from "effect";
 import type { Connector } from "wagmi";
+
 import { getStellarConnectors } from "../../../src/services/wallet/internal/adapters/stellar/stellar-connector";
 import type { StellarWalletClient } from "../../../src/services/wallet/internal/platform/stellar-wallets-kit-platform";
 import { runWalletEffect } from "../../utils/run-wallet-effect";

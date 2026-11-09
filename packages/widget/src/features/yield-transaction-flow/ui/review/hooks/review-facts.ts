@@ -1,20 +1,21 @@
 import type BigNumber from "bignumber.js";
 import { Duration } from "effect";
 import type { TFunction } from "i18next";
+
 import {
   getYieldCooldownDuration,
   getYieldLockupDuration,
 } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { getTokenPriceInUSD } from "../../../../../domain/finance/price";
-import type { Prices } from "../../../../../domain/health/models";
+import type { Prices } from "../../../../../domain/finance/prices";
 import type { Token } from "../../../../../domain/token/token";
 import { getFeesInUSD } from "../../../../../shared/lib/formatters";
 import { formatRoundedPercent } from "../../../../../shared/lib/number-format";
 import {
   formatCooldownDays,
   formatDailyBatch,
-} from "../../../../yield-summary/index";
+} from "../../../../yield-presentation/index";
 import {
   formatTransactionTypeLabel,
   type YieldFlowTransactionToSign,

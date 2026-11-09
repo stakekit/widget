@@ -1,6 +1,7 @@
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import type { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { WalletIntegrationError } from "../../../wallet-errors";
 

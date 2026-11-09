@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import type { Chain } from "viem";
 import { arbitrum, base, mainnet, optimism } from "viem/chains";
+
 import type { WalletNetwork } from "../wallet/network";
 import { type ChainId, decodeChainId } from "./ids";
 

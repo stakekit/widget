@@ -1,7 +1,8 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import type { Market } from "../../../../../domain/borrow/catalog/market";
-import type { RiskGateBlockReason } from "../../../../../domain/borrow/risk/risk-gate";
+
+import type { Market } from "../../../../../domain/borrow/market";
+import type { RiskGateBlockReason } from "../../../../../domain/borrow/risk-gate";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   Card,

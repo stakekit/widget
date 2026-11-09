@@ -1,13 +1,9 @@
 import { Match } from "effect";
 import type { ComponentType, ReactNode } from "react";
 import { Route } from "react-router";
+
 import { widgetYieldFlowRoutes } from "../../../services/navigation/widget-routes";
 import type { YieldFlowMountTag } from "../model/session";
-import {
-  YieldFlowExecutionPage,
-  YieldFlowExecutionRoute,
-  YieldFlowRoute,
-} from "../react/yield-flow-route";
 import { EnterCompletePage } from "./complete/pages/enter-complete.page.tsx";
 import { ExitCompletePage } from "./complete/pages/exit-complete.page.tsx";
 import { PendingCompletePage } from "./complete/pages/pending-complete.page.tsx";
@@ -17,6 +13,11 @@ import { PendingReviewPage } from "./review/pages/pending-review.page.tsx";
 import { EnterStepsPage } from "./steps/pages/enter-steps.page.tsx";
 import { ExitStepsPage } from "./steps/pages/exit-steps.page.tsx";
 import { PendingStepsPage } from "./steps/pages/pending-steps.page.tsx";
+import {
+  YieldFlowExecutionPage,
+  YieldFlowExecutionRoute,
+  YieldFlowRoute,
+} from "./yield-flow-route";
 
 type YieldFlowRouteMount = {
   readonly mount: Exclude<YieldFlowMountTag, "YieldActionContinuation">;

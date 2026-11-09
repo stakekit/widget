@@ -1,4 +1,7 @@
-export { makeTransactionFlowWorkflowAtoms } from "./state/execution";
+export {
+  makeTransactionFlowWorkflowAtoms,
+  type TransactionFlowExecutionStatus,
+} from "./state/execution";
 export {
   handOffTransactionFlow,
   makeTransactionFlowReviewPage,

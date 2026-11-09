@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Fiber, Schedule } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
+
 import { makeSafeWalletDriver } from "../../../src/services/wallet/internal/adapters/safe/driver";
 
 const tx = JSON.stringify({

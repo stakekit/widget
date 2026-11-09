@@ -1,10 +1,11 @@
 import { DateTime, Struct } from "effect";
-import type { ActionEvent, YieldAction } from "../action/models";
+
 import type { ContractAddress, TokenAddress } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { sameTokenContract, type Token } from "../token/token";
 import type { EvmChainIds } from "../wallet/chain-ids";
 import { getWalletRoutingId } from "../wallet/network";
+import type { ActionEvent, YieldAction } from "./action-models";
 import type { ConfidentialHandle, EarnBalance } from "./balance";
 import { getYieldActionArg } from "./yield";
 import type { EarnYieldWithProvider } from "./yield-schema";

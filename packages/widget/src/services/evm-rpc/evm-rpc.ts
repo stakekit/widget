@@ -1,4 +1,4 @@
-import { Context, Data, Duration, Effect, Layer } from "effect";
+import { Context, Data, Duration, Effect, Layer, Schema } from "effect";
 import {
   BaseError,
   type Chain,
@@ -19,9 +19,12 @@ import {
   sendRawTransaction,
   waitForTransactionReceipt,
 } from "viem/actions";
+
 import type { Erc20Approval } from "../../domain/action/direct-transaction";
 import type { EvmChainIds } from "../../domain/wallet/chain-ids";
 import { WalletService } from "../wallet/wallet-service";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 export class EvmRpcError extends Data.TaggedError("EvmRpcError")<{
   readonly cause: unknown;
@@ -113,7 +116,7 @@ const tryRpc = <A>(operation: string, run: () => Promise<A>) =>
 
 /** EVM reads and broadcasts for transactions the widget builds itself. */
 export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
-  "stakekit/widget/EvmRpc"
+  "@stakekit/widget/services/evm-rpc/evm-rpc/EvmRpc"
 ) {
   static readonly layer = Layer.effect(
     EvmRpc,
@@ -149,9 +152,8 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
                 timeout: Duration.toMillis(receiptTimeout),
               })
             ).pipe(
-              Effect.map(
-                ({ status }): EvmTransactionOutcome =>
-                  status === "success" ? "Confirmed" : "Reverted"
+              Effect.map(({ status }): EvmTransactionOutcome =>
+                status === "success" ? "Confirmed" : "Reverted"
               ),
               // Past the timeout, a hash the node no longer knows was dropped.
               Effect.catchIf(
@@ -214,7 +216,7 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
                 estimateFeesPerGas(client),
               ])
             );
-            return JSON.stringify({
+            return yield* encodeJson({
               chainId,
               data,
               from,
@@ -223,7 +225,12 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
               maxPriorityFeePerGas: numberToHex(fees.maxPriorityFeePerGas),
               to,
               type: 2,
-            });
+            }).pipe(
+              Effect.mapError(
+                (cause) =>
+                  new EvmRpcError({ cause, operation: "prepare-transaction" })
+              )
+            );
           }),
         estimateFee: ({ chainId, from, transactions }) =>
           Effect.gen(function* () {

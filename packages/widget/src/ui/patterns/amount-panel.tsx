@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { AmountInput } from "../components/amount-input";
 import type { AmountSeparators } from "../components/amount-input-text";
 import { Card } from "../components/card";

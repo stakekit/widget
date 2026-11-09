@@ -1,13 +1,14 @@
 import type BigNumber from "bignumber.js";
 import { Option, Result, Schema } from "effect";
-import type { EarnYieldWithProvider } from "../earn/yield-schema";
-import type { TokenAddress, ValidatorAddress } from "../identity/identifiers";
-import { NATIVE_TOKEN_ADDRESS, type Token } from "../token/token";
+
 import {
   type ActionTransaction,
   TransactionGasEstimateJson,
   type YieldAction,
-} from "./models";
+} from "../earn/action-models";
+import type { EarnYieldWithProvider } from "../earn/yield-schema";
+import type { TokenAddress, ValidatorAddress } from "../identity/identifiers";
+import { NATIVE_TOKEN_ADDRESS, type Token } from "../token/token";
 
 export type TransactionType = ActionTransaction["type"];
 export type ActionType = YieldAction["type"];

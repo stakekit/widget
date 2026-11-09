@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import { exactDecimal, exactZero } from "../../domain/finance/exact";
 import { getLocaleNumberSymbols } from "./number-format";
 

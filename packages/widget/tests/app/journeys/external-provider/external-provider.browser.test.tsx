@@ -1,5 +1,6 @@
 import { avalanche, mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
+
 import { SKApp } from "../../../../src/App";
 import type { SKAppProps } from "../../../../src/public-api/react-types";
 import {
@@ -17,7 +18,9 @@ describe("External Provider", () => {
   }) => {
     setup(worker);
 
-    const switchChainSpy = vi.fn(async (_: number) => {});
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     const skProps = {

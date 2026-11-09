@@ -1,2 +1,2 @@
-export { useTrackEvent } from "./react/use-track-event";
-export { useTrackPage } from "./react/use-track-page";
+export { useTrackEvent } from "./ui/use-track-event";
+export { useTrackPage } from "./ui/use-track-page";

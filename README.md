@@ -46,7 +46,10 @@ const widget = renderSKWidget({
   appearance: { colorScheme: "dark" },
 });
 
-widget.rerender({ apiKey: "your-api-key", appearance: { colorScheme: "system" } });
+widget.rerender({
+  apiKey: "your-api-key",
+  appearance: { colorScheme: "system" },
+});
 widget.unmount();
 ```
 
@@ -137,10 +140,10 @@ export function ExternalWalletWidget({
 
 Implement `wallet` using your wallet SDK:
 
-| Method | Contract |
-| --- | --- |
-| `signMessage(message)` | Return the signature string, `{ type: "success", signature }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
-| `switchChain(chainId)` | Switch the host wallet and resolve when the switch completes. Publish the new `currentChain` through props. |
+| Method                        | Contract                                                                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `signMessage(message)`        | Return the signature string, `{ type: "success", signature }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`.                                                                                               |
+| `switchChain(chainId)`        | Switch the host wallet and resolve when the switch completes. Publish the new `currentChain` through props.                                                                                                                                 |
 | `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, `{ type: "cancelled" }` when the user declines, `{ type: "error", error }`, or `{ type: "error", error, txHash }` when it was broadcast before failing. |
 
 `{ type: "cancelled" }` shows a cancellation notice with a retry instead of an
@@ -181,10 +184,13 @@ type ExternalProvider = NonNullable<BundledSKWidgetProps["externalProviders"]>;
 export function mountExternalWallet(
   container: Element,
   apiKey: string,
-  externalProviders: ExternalProvider,
+  externalProviders: ExternalProvider
 ) {
-  const props = { apiKey, borrowEnabled: false, externalProviders } satisfies
-    BundledSKWidgetProps;
+  const props = {
+    apiKey,
+    borrowEnabled: false,
+    externalProviders,
+  } satisfies BundledSKWidgetProps;
   const widget = renderSKWidget({ ...props, container });
 
   return {
@@ -252,12 +258,12 @@ widget rejects the configuration when either is missing:
 
 Both results are discriminated by `type`:
 
-| Result | Meaning | Widget behavior |
-|---|---|---|
-| `{ type: "success", txHash }` / `{ type: "success", signature }` | Broadcast or signed. Resolve as soon as the transaction is broadcast; do not wait for confirmation. | Continues the flow. |
-| `{ type: "cancelled" }` | The user declined in the wallet. | Shows a cancellation notice and lets the user try again. |
-| `{ type: "error", error }` | Failed; nothing was broadcast. | Shows `error` and lets the user retry the step. |
-| `{ type: "error", error, txHash }` | Broadcast, then failed (for example a receipt timeout). Transactions only. | Tracks `txHash` instead of asking to sign again. |
+| Result                                                           | Meaning                                                                                             | Widget behavior                                          |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `{ type: "success", txHash }` / `{ type: "success", signature }` | Broadcast or signed. Resolve as soon as the transaction is broadcast; do not wait for confirmation. | Continues the flow.                                      |
+| `{ type: "cancelled" }`                                          | The user declined in the wallet.                                                                    | Shows a cancellation notice and lets the user try again. |
+| `{ type: "error", error }`                                       | Failed; nothing was broadcast.                                                                      | Shows `error` and lets the user retry the step.          |
+| `{ type: "error", error, txHash }`                               | Broadcast, then failed (for example a receipt timeout). Transactions only.                          | Tracks `txHash` instead of asking to sign again.         |
 
 Always include `txHash` once a transaction was broadcast; omitting it lets the
 user sign the same step again, which can send it twice. A rejected Promise is
@@ -354,12 +360,12 @@ pass `appearance` and `layout` need no changes. Otherwise:
 **Deprecated options.** `theme`, `lightTheme`, `darkTheme` and
 `dashboardVariant` still work and are removed in the next major version:
 
-| Before | After |
-| --- | --- |
-| `theme={lightTheme}` | `appearance={{ colorScheme: "light" }}` (the default) |
-| `theme={darkTheme}` | `appearance={{ colorScheme: "dark" }}` |
+| Before               | After                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `theme={lightTheme}` | `appearance={{ colorScheme: "light" }}` (the default)                                                      |
+| `theme={darkTheme}`  | `appearance={{ colorScheme: "dark" }}`                                                                     |
 | a customized `theme` | `appearance.colors.light` / `.dark` by Color Role, plus `radius`, `controlHeight`, `font` and `fontWeight` |
-| `dashboardVariant` | `layout: "dashboard"` |
+| `dashboardVariant`   | `layout: "dashboard"`                                                                                      |
 
 See [Legacy `theme`](#legacy-theme) for how a customized theme carries over.
 

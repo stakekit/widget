@@ -12,6 +12,7 @@ import { BaseError, UserRejectedRequestError, zeroAddress } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import { expectTypeOf } from "vitest";
 import type { Connector } from "wagmi";
+
 import type { WalletAddress } from "../../../src/domain/identity/identifiers";
 import type { WalletNetwork } from "../../../src/domain/wallet/network";
 import { WalletScopeOwnerKey } from "../../../src/domain/wallet/wallet-scope";

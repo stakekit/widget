@@ -1,7 +1,8 @@
 import type BigNumber from "bignumber.js";
+
 import type { EarnYieldWithProvider } from "../../domain/earn/yield-schema";
 import { getTokenPriceInUSD } from "../../domain/finance/price";
-import { Prices } from "../../domain/health/models";
+import { Prices } from "../../domain/finance/prices";
 import type { Token } from "../../domain/token/token";
 import { formatTokenAmount, formatUsd } from "./number-format";
 
@@ -11,9 +12,7 @@ export const formatCountryCode = ({
 }: {
   language: string;
   countryCode: string;
-}) => {
-  return new Intl.DisplayNames([language], { type: "region" }).of(countryCode);
-};
+}) => new Intl.DisplayNames([language], { type: "region" }).of(countryCode);
 
 export const getRewardTypeFormatted = (rewardType: string | undefined) => {
   switch (rewardType?.toLowerCase()) {

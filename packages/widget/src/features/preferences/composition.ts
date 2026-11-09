@@ -1,1 +1,1 @@
-export { WidgetTranslationGate as WidgetTranslationProvider } from "./react/widget-translation-gate";
+export { WidgetTranslationGate as WidgetTranslationProvider } from "./ui/widget-translation-gate";

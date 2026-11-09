@@ -4,7 +4,7 @@ import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
 import { getYieldFlowExitCompletion } from "../../../model/completion";
-import { useYieldFlowIntake } from "../../../react/yield-flow-route";
+import { useYieldFlowIntake } from "../../yield-flow-session";
 import { useExitSummary } from "../hooks/use-exit-summary.hook";
 import { CompletePage } from "./common.page.tsx";
 

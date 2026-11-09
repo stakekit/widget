@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
+
 import { SolanaPlatform } from "../../../src/services/wallet/internal/platform/solana-platform";
 import { WalletConnectPresentationPlatform } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
 import { WalletConnectProtocolPlatform } from "../../../src/services/wallet/internal/platform/wallet-connect-protocol";

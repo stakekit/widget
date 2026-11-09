@@ -3,7 +3,7 @@ import { Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { tokenString } from "../../../src/domain/token/token";
@@ -16,8 +16,9 @@ import {
   TokenOptionsKey,
   YieldValidatorsKey,
 } from "../../../src/features/earn/state/earn-selection/catalog/keys";
-import { tokenBalancesResourceAtom } from "../../../src/resources/token-balances/index";
-import { preferredValidatorsResourceAtom } from "../../../src/resources/validator-directory/index";
+import { tokenBalancesResourceAtom } from "../../../src/resources/token-balances/token-balances";
+import { preferredValidatorsResourceAtom } from "../../../src/resources/validator-directory/validator-directory";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   LegacyResourceSource,

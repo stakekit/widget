@@ -3,4 +3,4 @@
 export {
   TransactionFlowExecutionPage,
   TransactionFlowSessionMount,
-} from "./react/transaction-flow-route";
+} from "./ui/transaction-flow-route";

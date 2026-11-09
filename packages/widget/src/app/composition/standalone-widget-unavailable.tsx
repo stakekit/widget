@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
+
 import { WidgetUnavailable } from "../../features/widget-shell/composition";
 import { variantHostProfiles } from "../../services/config/host-profile";
 import type { RejectedConfigurationPresentation } from "../../services/config/widget-config-boundary";

@@ -2,4 +2,4 @@ export type {
   BorrowNetworkRecovery,
   BorrowWalletView,
 } from "./model/wallet-view";
-export { useBorrowWalletView } from "./react/use-borrow-wallet";
+export { useBorrowWalletView } from "./ui/use-borrow-wallet";

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { getTransactionErrorReason } from "../../../src/features/activity/model/transaction-error";
 
 describe("Activity transaction error reasons", () => {

@@ -1,15 +1,13 @@
 import type BigNumber from "bignumber.js";
 import * as Atom from "effect/reactivity/Atom";
+
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import { getYieldOutputAmount } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
-import type { Prices } from "../../../domain/health/models";
-import {
-  getYieldEstimatedRewards,
-  YieldSummaryKey,
-  yieldSummaryAtom,
-} from "../../yield-summary/index";
+import type { Prices } from "../../../domain/finance/prices";
+import { getYieldEstimatedRewards } from "../../yield-presentation/index";
+import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import type { YieldTransactionFlowIntake } from "../model/intake";
 import { getYieldFlowRewardsTokenSymbol } from "../model/pricing";
 

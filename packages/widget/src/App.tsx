@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
+
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
@@ -12,16 +13,13 @@ import { CompactRoutes } from "./app/layouts/compact/compact-routes";
 import { DashboardRoutes } from "./app/layouts/dashboard/dashboard-routes";
 import { LayoutAppContainer } from "./app/layouts/layout-app-container";
 import { applicationRoutes } from "./app/routes/application-routes";
-import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
+import { useApplicationRouteEffects } from "./app/routes/ui/use-application-route-effects";
 import { applicationRouterAtom } from "./app/runtime/application-router";
 import {
   walletEnabledNetworksResultAtom,
   walletExternalProviderChainsEnabledResultAtom,
 } from "./features/wallet/index";
-import {
-  rejectedWidgetConfigAtom,
-  useWidgetConfig,
-} from "./features/widget-configuration/index";
+import { useWidgetConfig } from "./features/widget-configuration/index";
 import {
   NetworkNotSupported,
   NoEnabledYields,
@@ -30,6 +28,7 @@ import { useUnderMaintenance } from "./features/widget-shell/index";
 import { UnderMaintenance } from "./features/widget-shell/views";
 import type { SKAppProps } from "./public-api/react-types";
 import type { BundledSKWidgetProps } from "./public-api/types";
+import { rejectedWidgetConfigAtom } from "./runtime/widget-config";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
 

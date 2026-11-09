@@ -4,6 +4,7 @@
  * can emit this file alone, without implementation types.
  */
 import type { ReactElement } from "react";
+
 import { SKApp as SKAppImplementation } from "./App";
 import { HelpModal as HelpModalImplementation } from "./app/composition/help-modal";
 import type { HelpModalProps, SKAppProps } from "./public-api/react-types.js";

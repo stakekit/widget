@@ -1,6 +1,7 @@
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactElement } from "react";
+
 import { usePortalContainer } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";

@@ -13,12 +13,13 @@ import {
 } from "effect";
 import { TestClock } from "effect/testing";
 import { keccak256 } from "viem";
+
 import {
   type DirectTransaction,
   DirectTransactionId,
   makeErc20Approval,
 } from "../../../src/domain/action/direct-transaction";
-import type { ActionTransaction } from "../../../src/domain/action/models";
+import type { ActionTransaction } from "../../../src/domain/earn/action-models";
 import {
   ConfidentialHandle,
   EarnPosition,

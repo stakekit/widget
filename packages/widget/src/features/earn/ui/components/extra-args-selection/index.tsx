@@ -1,6 +1,6 @@
 import { Divider } from "../../../../../ui/index";
 import { TronResourceSelection } from "../../../../yield-entry/views";
-import { useEarnEntry } from "../../../react/use-earn-facades";
+import { useEarnEntry } from "../../use-earn-facades";
 
 export const ExtraArgsSelection = ({
   showDivider,

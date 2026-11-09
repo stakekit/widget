@@ -1,8 +1,9 @@
 import { Data, Effect } from "effect";
+
 import type {
   ActionCommand,
   ManageActionCommand,
-} from "../../domain/action/models";
+} from "../../domain/earn/action-models";
 import type { ConfidentialHandle } from "../../domain/earn/balance";
 import type {
   ConfidentialChainId,

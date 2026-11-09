@@ -1,7 +1,8 @@
 import { Data, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import type { YieldId } from "../../domain/identity/identifiers";
+import { appRuntime } from "../../runtime/app-runtime";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { enrichedYieldOpportunityResourceAtom } from "./yield-opportunity";
 

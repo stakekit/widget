@@ -1,11 +1,12 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { MarketId, TokenAddress } from "../../../../src/domain/borrow/ids";
+
 import {
   deriveBorrowPositions,
   emptyBorrowPositions,
-} from "../../../../src/domain/borrow/positions/borrow-positions";
+} from "../../../../src/domain/borrow/borrow-positions";
+import { MarketId, TokenAddress } from "../../../../src/domain/borrow/ids";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import { prepareBorrowAction } from "../../../../src/features/borrow/action-preparation/model/prepare";

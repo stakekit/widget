@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import {
   getYieldOutputToken,
   getYieldRiskDisplay,
@@ -17,8 +18,8 @@ import { useTrackEvent } from "../../../../tracking/index";
 import {
   getRiskRatingTone,
   getYieldFigures,
-} from "../../../../yield-summary/index";
-import { useEarnYieldSelection } from "../../../react/use-earn-facades";
+} from "../../../../yield-presentation/index";
+import { useEarnYieldSelection } from "../../use-earn-facades";
 
 /** The chosen yield beside its reward rate, and the sheet to choose another. */
 export const SelectYield = () => {

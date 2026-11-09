@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Ref } from "effect";
+
 import {
   type WidgetNavigationCommand,
   WidgetNavigationError,

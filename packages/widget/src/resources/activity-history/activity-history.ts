@@ -9,8 +9,7 @@ import {
 } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
-import type { YieldAction } from "../../domain/action/models";
+
 import { isActivityActionOwnedByScope } from "../../domain/activity/action-capabilities";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type { ActionId as BorrowActionId } from "../../domain/borrow/ids";
@@ -19,6 +18,7 @@ import {
   isBorrowNetwork,
 } from "../../domain/borrow/network";
 import type { BorrowActivityAction } from "../../domain/borrow/responses";
+import type { YieldAction } from "../../domain/earn/action-models";
 import type { ActionId } from "../../domain/identity/identifiers";
 import {
   sameWalletScopeOwner,
@@ -26,6 +26,7 @@ import {
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -147,8 +148,10 @@ const activityActionCanonicalAtom = Atom.family((key: ActivityActionKey) =>
               })
             )
           ),
-          Effect.map(Option.getOrNull),
-          Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+          Effect.mapBoth({
+            onFailure: (cause) => new ActivityHistoryError({ cause }),
+            onSuccess: Option.getOrNull,
+          })
         )
       )
     )
@@ -315,16 +318,14 @@ const yieldSourcePage = (key: ActivityHistoryKey, offset: number) =>
   YieldResourceSource.use((source) =>
     source.listActivity(activityRequest(key, { limit: PAGE_SIZE, offset }))
   ).pipe(
-    Effect.map(
-      (page): ActivityHistorySourcePage => ({
-        entries: (page.items ?? []).map((action) => ({
-          _tag: "yield" as const,
-          action,
-        })),
-        nextOffset: getNextPageOffset(page),
-        total: page.total,
-      })
-    )
+    Effect.map((page): ActivityHistorySourcePage => ({
+      entries: (page.items ?? []).map((action) => ({
+        _tag: "yield" as const,
+        action,
+      })),
+      nextOffset: getNextPageOffset(page),
+      total: page.total,
+    }))
   );
 
 // Borrow is optional: when it is unconfigured or failing, Activity stays Yield-only.
@@ -337,17 +338,15 @@ const fetchBorrowCursor = (
 
   return fetchSourcePage(cursor, (offset) =>
     listBorrowActions(network, key, { limit: PAGE_SIZE, offset }).pipe(
-      Effect.map(
-        (page): ActivityHistorySourcePage => ({
-          entries: (page.items ?? []).map((action) => ({
-            _tag: "borrow" as const,
-            action,
-            network,
-          })),
-          nextOffset: getNextPageOffset(page),
-          total: page.total,
-        })
-      )
+      Effect.map((page): ActivityHistorySourcePage => ({
+        entries: (page.items ?? []).map((action) => ({
+          _tag: "borrow" as const,
+          action,
+          network,
+        })),
+        nextOffset: getNextPageOffset(page),
+        total: page.total,
+      }))
     )
   ).pipe(
     Effect.orElseSucceed(() => ({ ...cursor, nextOffset: Option.none() }))
@@ -551,8 +550,10 @@ const activityCountCanonicalAtom = Atom.family((key: ActivityHistoryKey) =>
         ],
         { concurrency: "unbounded" }
       ).pipe(
-        Effect.map(([yieldCount, borrowCount]) => yieldCount + borrowCount),
-        Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+        Effect.mapBoth({
+          onFailure: (cause) => new ActivityHistoryError({ cause }),
+          onSuccess: ([yieldCount, borrowCount]) => yieldCount + borrowCount,
+        })
       )
     )
     .pipe(

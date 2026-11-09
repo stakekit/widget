@@ -1,10 +1,10 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { type PriceRequest, Prices } from "../../src/domain/health/models";
+
+import { type PriceRequest, Prices } from "../../src/domain/finance/prices";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
+import { richErrorAtom } from "../../src/features/widget-shell/state/rich-errors";
 import {
   TokenPricesKey,
   tokenPricesResourceAtom,
@@ -14,6 +14,7 @@ import {
   YieldRewardsSummaryKey,
   yieldRewardsSummaryResourceAtom,
 } from "../../src/resources/yield-rewards-summary/yield-rewards-summary";
+import { appRuntime } from "../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   LegacyResourceSource,

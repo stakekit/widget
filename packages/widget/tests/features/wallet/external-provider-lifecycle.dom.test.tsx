@@ -16,12 +16,13 @@ import {
   type UseConnectionReturnType,
   useAccount,
 } from "wagmi";
+
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { WagmiConfigProvider } from "../../../src/features/wallet/composition";
 import {
   useSKWallet,
-  useWalletConfig,
+  walletConfigResultAtom,
   walletExternalProviderChainsEnabledResultAtom,
   walletScopeAtom,
   walletStateResultAtom,
@@ -78,7 +79,7 @@ const RuntimeResultProbe = ({
 }: {
   readonly onResult: (result: RuntimeResult) => void;
 }) => {
-  const config = useWalletConfig();
+  const config = useAtomValue(walletConfigResultAtom);
   const wallet = useAtomValue(walletStateResultAtom);
   useEffect(() => onResult({ config, wallet }), [config, onResult, wallet]);
   return null;
@@ -125,7 +126,7 @@ const mountWallet = async (
     () => {
       const wallet = useSKWallet();
       const account = useAccount();
-      const config = useWalletConfig();
+      const config = useAtomValue(walletConfigResultAtom);
       const scope = useAtomValue(walletScopeAtom);
       const chainsEnabled = useAtomValue(
         walletExternalProviderChainsEnabledResultAtom

@@ -1,5 +1,6 @@
 import { toLowerCase } from "effect/String";
 import { useTranslation } from "react-i18next";
+
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
@@ -7,7 +8,7 @@ import { useWidgetPresentation } from "../../../../shared/react/widget-presentat
 import { Stack } from "../../../../ui/index";
 import { getLeadingPendingAction } from "../../model/hub";
 import { getPricedFiat } from "../../model/priced-fiat";
-import { usePositionDetails } from "../../react/use-position-details";
+import { usePositionDetails } from "../use-position-details";
 import { AmountBlock } from "./amount-block";
 import { StaticActionBlock } from "./static-action-block";
 

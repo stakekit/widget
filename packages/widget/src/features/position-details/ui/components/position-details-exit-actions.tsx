@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import {
   formatTokenAmount,
@@ -9,9 +10,9 @@ import { Button, Card, Stack, Text } from "../../../../ui/index";
 import { type PageCta, PageCtaButton } from "../../../widget-shell/views";
 import { useNetworkFeeNotes } from "../../../yield-entry/index";
 import { KycGateCard } from "../../../yield-summary/views";
-import { useExitNetworkFee } from "../../react/use-exit-network-fee";
-import { usePositionDetails } from "../../react/use-position-details";
 import type { PositionDetailsExitBlocker } from "../../state/details-view";
+import { useExitNetworkFee } from "../use-exit-network-fee";
+import { usePositionDetails } from "../use-position-details";
 import { AmountBlock, ExitInfo } from "./amount-block";
 import { ExitReceiveTokenAccessory } from "./exit-receive-token-accessory";
 import { ExitReceiveTokenNote } from "./exit-receive-token-note";

@@ -1,6 +1,6 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import type { YieldCategory } from "../../domain/earn/contract";
 import {
   getApiYieldTypesForYieldCategory,
@@ -8,6 +8,7 @@ import {
   withDisplayOnlyYields,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,

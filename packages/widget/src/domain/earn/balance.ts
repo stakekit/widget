@@ -9,8 +9,8 @@ import {
   SchemaTransformation,
   Struct,
 } from "effect";
+
 import * as YieldApi from "../../generated/api/yield-schema";
-import { PendingAction } from "../action/models";
 import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
 import {
   ExactBaseUnitAmount,
@@ -19,6 +19,7 @@ import {
 } from "../finance/scalars";
 import { YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
+import { PendingAction } from "./action-models";
 import { EarnValidator } from "./validator";
 import { EarnRewardRate, TolerantExactDecimal } from "./wire-fields";
 
@@ -180,6 +181,7 @@ export const EarnBalance = EarnBalanceWire.pipe(
   })
 );
 export type EarnBalance = typeof EarnBalance.Type;
+export type YieldBalanceType = EarnBalance["type"];
 
 export const EarnPosition = Schema.Struct({
   yieldId: YieldId,

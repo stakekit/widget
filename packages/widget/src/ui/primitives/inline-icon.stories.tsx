@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
+
 import { iconLeadsInline } from "../storybook/geometry";
 import { Icon } from "./icon";
 import { InlineIcon } from "./inline-icon";

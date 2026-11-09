@@ -1,17 +1,18 @@
 import { MotionGlobalConfig } from "motion/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cdp } from "vitest/browser";
+
 import { ThemeRoot } from "../../../src/ui/composition";
 import {
   AnimatedNumber,
   PageTransition,
   WidgetFrame,
 } from "../../../src/ui/index";
-import { motion } from "../../../src/ui/tokens/motion.stylex";
 import {
   motionEasing,
   motionSeconds,
 } from "../../../src/ui/tokens/motion-timing";
+import { motion } from "../../../src/ui/tokens/motion.stylex";
 import { render } from "../../utils/test-utils";
 
 const emulateReducedMotion = (value: "reduce" | "") =>

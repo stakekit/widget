@@ -11,6 +11,7 @@ import { Cell, loadMessageRelaxed } from "@ton/core";
 import BigNumber from "bignumber.js";
 import { Effect, Option, Result, Schema } from "effect";
 import { hexToBytes } from "viem";
+
 import {
   exactDecimal,
   exactZero,
@@ -77,7 +78,7 @@ class LedgerTransactionPreparationError extends Schema.TaggedError<
 const transactionPreparationError = (
   message: string
 ): LedgerTransactionPreparationError =>
-  new LedgerTransactionPreparationError({ message });
+  LedgerTransactionPreparationError.make({ message });
 
 /**
  * The Polkadot builder pulls in `@polkadot/types`, whose evaluation inflates a
@@ -315,15 +316,13 @@ const buildTronLedgerTransaction = (
         txMeta,
         validatorAddresses,
       }).pipe(
-        Result.map(
-          (votes): RawTronTransaction => ({
-            amount: amount.toString(),
-            recipient,
-            family: "tron",
-            mode: "vote",
-            votes,
-          })
-        )
+        Result.map((votes): RawTronTransaction => ({
+          amount: amount.toString(),
+          recipient,
+          family: "tron",
+          mode: "vote",
+          votes,
+        }))
       );
     }
     case "UNDELEGATE_BANDWIDTH":

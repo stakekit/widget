@@ -2,6 +2,7 @@ import type BigNumber from "bignumber.js";
 import { Equal } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   type ConfidentialHandle,
   getVisibleShares,
@@ -20,7 +21,7 @@ import { walletScopeOwnerKey } from "../../../domain/wallet/wallet-scope";
 import {
   InFlightCancelsKey,
   inFlightCancelsResourceAtom,
-} from "../../../resources/in-flight-cancels/index";
+} from "../../../resources/in-flight-cancels/in-flight-cancels";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { resolvePositionDetailsPageState } from "../model/page-state";
 import { positionDetailsExitActions } from "./actions/exit";

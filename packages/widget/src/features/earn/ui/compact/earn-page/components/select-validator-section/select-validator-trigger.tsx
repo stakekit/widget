@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import type { EarnValidator } from "../../../../../../../domain/earn/validator";
 import type { EarnYieldWithProvider } from "../../../../../../../domain/earn/yield-schema";
 import {

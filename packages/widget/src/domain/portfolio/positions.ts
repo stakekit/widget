@@ -1,14 +1,17 @@
 import type BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
-import type { EarnBalance, EarnPosition } from "../earn/balance";
+
+import type {
+  EarnBalance,
+  EarnPosition,
+  YieldBalanceType,
+} from "../earn/balance";
 import { getBalanceShares, type TokenAmount } from "../earn/denomination";
 import type { YieldRewardRate } from "../earn/reward-rate";
 import { type EarnValidator, EarnValidatorKey } from "../earn/validator";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
 import { type TokenString, tokenString } from "../token/token";
-
-export type YieldBalanceType = EarnBalance["type"];
 
 export type PositionBalancesByType = Map<
   YieldBalanceType,

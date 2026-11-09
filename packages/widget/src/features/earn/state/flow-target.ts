@@ -1,25 +1,26 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import {
   ProviderId,
   type ProviderOption,
 } from "../../../domain/identity/identifiers";
-import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
-import { yieldProviderResourceAtom } from "../../../resources/yield-provider/index";
+import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/yield-opportunity";
+import { yieldProviderResourceAtom } from "../../../resources/yield-provider/yield-provider";
 import type { EarnProviderOption } from "./earn-selection/types";
 
 /** A `providerId` option with its provider details once they resolve. */
 export const earnProviderOptionAtom = Atom.family((value: ProviderOption) =>
-  Atom.make(
-    (get): EarnProviderOption => ({
-      provider: get(
-        yieldProviderResourceAtom.local(ProviderId.make(value))
-      ).pipe(AsyncResult.value, Option.flatten, Option.getOrNull),
-      value,
-    })
-  ).pipe(Atom.withLabel("earnProviderOptionAtom"))
+  Atom.make((get): EarnProviderOption => ({
+    provider: get(yieldProviderResourceAtom.local(ProviderId.make(value))).pipe(
+      AsyncResult.value,
+      Option.flatten,
+      Option.getOrNull
+    ),
+    value,
+  })).pipe(Atom.withLabel("earnProviderOptionAtom"))
 );
 
 /**
@@ -48,12 +49,10 @@ export const earnFlowYieldAtom = Atom.family(
  */
 export const earnFlowProviderOptionAtom = Atom.family(
   (captured: EarnProviderOption) =>
-    Atom.make(
-      (get): EarnProviderOption => ({
-        provider:
-          get(earnProviderOptionAtom(captured.value)).provider ??
-          captured.provider,
-        value: captured.value,
-      })
-    ).pipe(Atom.withLabel("earnFlowProviderOptionAtom"))
+    Atom.make((get): EarnProviderOption => ({
+      provider:
+        get(earnProviderOptionAtom(captured.value)).provider ??
+        captured.provider,
+      value: captured.value,
+    })).pipe(Atom.withLabel("earnFlowProviderOptionAtom"))
 );

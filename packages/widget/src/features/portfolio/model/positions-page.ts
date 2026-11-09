@@ -1,4 +1,5 @@
 import { Option } from "effect";
+
 import type { Presentable } from "../../../shared/effect/async-result";
 
 /** The wallet as a positions page sees it. */

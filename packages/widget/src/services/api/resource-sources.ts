@@ -1,18 +1,14 @@
 import { Context, Data, type Effect, type Option, Schema } from "effect";
-import type {
-  ActionCommand,
-  ActionSimulation,
-  YieldAction,
-} from "../../domain/action/models";
+
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
-import type { Integration } from "../../domain/borrow/catalog/integration";
-import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type {
   ActionId as BorrowActionId,
   IntegrationId as BorrowIntegrationId,
 } from "../../domain/borrow/ids";
+import type { Integration } from "../../domain/borrow/integration";
+import type { BorrowMarketsScope } from "../../domain/borrow/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import type {
   BorrowActionsPage,
@@ -21,6 +17,12 @@ import type {
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
 } from "../../domain/borrow/responses";
+import type {
+  ActionCommand,
+  ActionSimulation,
+  YieldAction,
+} from "../../domain/earn/action-models";
+import type { KycStatus } from "../../domain/earn/kyc";
 import type { EarnProvider } from "../../domain/earn/provider";
 import type {
   EarnLegacyTokenOptionsResponse,
@@ -38,11 +40,8 @@ import type {
   TokenBalancesResponse,
   YieldBalancesCommand,
 } from "../../domain/finance/models";
-import type {
-  HealthStatus,
-  PriceRequest,
-  PriceResponse,
-} from "../../domain/health/models";
+import type { PriceRequest, PriceResponse } from "../../domain/finance/prices";
+import type { HealthStatus } from "../../domain/health/models";
 import type {
   ActionId,
   ProviderId,
@@ -52,7 +51,6 @@ import type {
 import type { Network } from "../../domain/network/network";
 import type {
   HistoryPeriod,
-  KycStatus,
   RewardRateHistoryResponse,
   TvlHistoryResponse,
   YieldRewardsSummary,
@@ -283,14 +281,14 @@ type YieldResourceSourceService = {
 export class BorrowResourceSource extends Context.Service<
   BorrowResourceSource,
   BorrowResourceSourceService
->()("stakekit/widget/services/api/BorrowResourceSource") {}
+>()("@stakekit/widget/services/api/resource-sources/BorrowResourceSource") {}
 
 export class LegacyResourceSource extends Context.Service<
   LegacyResourceSource,
   LegacyResourceSourceService
->()("stakekit/widget/services/api/LegacyResourceSource") {}
+>()("@stakekit/widget/services/api/resource-sources/LegacyResourceSource") {}
 
 export class YieldResourceSource extends Context.Service<
   YieldResourceSource,
   YieldResourceSourceService
->()("stakekit/widget/services/api/YieldResourceSource") {}
+>()("@stakekit/widget/services/api/resource-sources/YieldResourceSource") {}

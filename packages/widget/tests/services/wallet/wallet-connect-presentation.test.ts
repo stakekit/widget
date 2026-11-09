@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Fiber, Option, Queue, Scope } from "effect";
+
 import {
   makeWalletConnectConnection,
   makeWalletConnectPresentation,

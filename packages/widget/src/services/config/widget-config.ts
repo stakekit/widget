@@ -10,6 +10,7 @@ import {
   Struct,
   SubscriptionRef,
 } from "effect";
+
 import type { YieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {
@@ -343,7 +344,7 @@ const logHostConfigurationWarnings = (
 export class WidgetConfigService extends Context.Service<
   WidgetConfigService,
   WidgetConfigServiceValue
->()("stakekit/widget/WidgetConfigService") {
+>()("@stakekit/widget/services/config/widget-config/WidgetConfigService") {
   static layer(
     initialHostConfiguration: SKHostConfiguration,
     options: { readonly isLedgerLive?: boolean } = {}
@@ -498,7 +499,7 @@ export class WidgetConfigService extends Context.Service<
           yield* reportDeprecatedOptions(nextResult.success.deprecatedOptions);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
-        }, updatePermit.withPermit);
+        }, updatePermit.withPermits(1));
 
         return WidgetConfigService.of({ current, update, values });
       })

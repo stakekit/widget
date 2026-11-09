@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { space } from "../tokens/space.stylex";
 import { lineHeight } from "../tokens/typography.stylex";
 import type { TypeRole } from "./type-role";

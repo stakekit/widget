@@ -1,5 +1,6 @@
 import { Effect, Schema, SchemaTransformation } from "effect";
 import { type Address, type Hex, hexToBigInt, isHex, numberToHex } from "viem";
+
 import { ExactBaseUnitAmount } from "../../../../../domain/finance/scalars";
 
 const HexString = Schema.declare<Hex>(

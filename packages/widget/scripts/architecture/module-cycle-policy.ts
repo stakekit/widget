@@ -1,108 +1,51 @@
 /**
- * Maps `src` files to owned Modules and reports cycles against the baseline.
+ * Maps `src` files to Modules (`module-map.ts`) and reports Module cycles:
+ * cycles between Modules even when their files are acyclic.
  *
  * Used by `check-architecture.ts`.
  */
 import type { ICruiseResult } from "dependency-cruiser";
-import type {
-  ModuleCollectionDeclaration,
-  OwnedModuleDeclaration,
-} from "./dependency-cruiser.config.mts";
 
-export type ModuleCyclePolicy = Readonly<{
-  moduleCollections: ReadonlyArray<ModuleCollectionDeclaration>;
-  ownedModules: ReadonlyArray<OwnedModuleDeclaration>;
-}>;
+import { resolveModule } from "./module-map.ts";
 
-export type OwnedModuleEdge = Readonly<{
+type ModuleEdge = Readonly<{
   from: string;
   to: string;
+  source: string;
+  resolved: string;
 }>;
 
-type ConcreteModuleEdge = OwnedModuleEdge &
-  Readonly<{
-    source: string;
-    resolved: string;
-  }>;
-
-type OwnedModuleCycle = Readonly<{
-  edges: ReadonlyArray<ConcreteModuleEdge>;
+export type ModuleCycle = Readonly<{
+  edges: ReadonlyArray<ModuleEdge>;
   modules: ReadonlyArray<string>;
   path: ReadonlyArray<string>;
 }>;
 
-export type ModuleCycleCheck = Readonly<{
-  cycles: ReadonlyArray<OwnedModuleCycle>;
-  staleBaseline: ReadonlyArray<OwnedModuleEdge>;
-  unbaselinedEdges: ReadonlyArray<OwnedModuleEdge>;
-}>;
-
-const edgeKey = ({ from, to }: OwnedModuleEdge) => `${from} -> ${to}`;
-
-const matchesCollection = (
-  source: string,
-  declaration: ModuleCollectionDeclaration
-) => {
-  const prefix = `${declaration.root}/`;
-  if (!source.startsWith(prefix)) return null;
-
-  const child = source.slice(prefix.length).split("/")[0];
-  if (!child || declaration.excludedChildren?.includes(child)) return null;
-
-  return `${declaration.root}/${child}`;
-};
-
-export const resolveOwnedModule = (
-  source: string,
-  policy: ModuleCyclePolicy
-) => {
-  const collectionOwners = policy.moduleCollections.flatMap((declaration) => {
-    const owner = matchesCollection(source, declaration);
-    return owner ? [owner] : [];
-  });
-  const singularOwners = policy.ownedModules.flatMap((declaration) =>
-    source === declaration.root || source.startsWith(`${declaration.root}/`)
-      ? [declaration.root]
-      : []
-  );
-
-  return (
-    [...collectionOwners, ...singularOwners].sort(
-      (left, right) => right.length - left.length
-    )[0] ?? null
-  );
-};
-
-const buildOwnedGraph = (
-  modules: ICruiseResult["modules"],
-  policy: ModuleCyclePolicy
-) => {
+const buildModuleGraph = (modules: ICruiseResult["modules"]) => {
   const graph = new Map<string, Set<string>>();
-  const concreteEdges = new Map<string, ConcreteModuleEdge[]>();
+  const edges: ModuleEdge[] = [];
 
   for (const module of modules) {
-    const from = resolveOwnedModule(module.source, policy);
+    const from = resolveModule(module.source);
     if (!from) continue;
 
     graph.set(from, graph.get(from) ?? new Set());
     for (const dependency of module.dependencies) {
-      const to = resolveOwnedModule(dependency.resolved, policy);
+      const to = resolveModule(dependency.resolved);
       if (!to || to === from) continue;
 
       graph.set(to, graph.get(to) ?? new Set());
       graph.get(from)?.add(to);
-      const edge = {
+      edges.push({
         from,
         resolved: dependency.resolved,
         source: module.source,
         to,
-      };
-      const key = edgeKey(edge);
-      concreteEdges.set(key, [...(concreteEdges.get(key) ?? []), edge]);
+      });
     }
   }
 
-  return { concreteEdges, graph } as const;
+  return { edges, graph } as const;
 };
 
 const stronglyConnectedComponents = (
@@ -173,68 +116,33 @@ const findCyclePath = (
   return search(start, [start], new Set([start])) ?? component;
 };
 
-const uniqueOwnedEdges = (edges: ReadonlyArray<ConcreteModuleEdge>) =>
-  Array.from(
-    new Map(
-      edges.map((edge) => [edgeKey(edge), { from: edge.from, to: edge.to }])
-    ).values()
-  ).sort((left, right) => edgeKey(left).localeCompare(edgeKey(right)));
-
-export const checkOwnedModuleCycles = ({
-  baseline,
-  cruiseResult,
-  policy,
-}: Readonly<{
-  baseline: ReadonlyArray<OwnedModuleEdge>;
-  cruiseResult: Pick<ICruiseResult, "modules">;
-  policy: ModuleCyclePolicy;
-}>): ModuleCycleCheck => {
-  const { concreteEdges, graph } = buildOwnedGraph(
-    cruiseResult.modules,
-    policy
-  );
-  const cycles = stronglyConnectedComponents(graph).map((modules) => {
+export const findModuleCycles = (
+  cruiseResult: Pick<ICruiseResult, "modules">
+): ReadonlyArray<ModuleCycle> => {
+  const { edges, graph } = buildModuleGraph(cruiseResult.modules);
+  return stronglyConnectedComponents(graph).map((modules) => {
     const members = new Set(modules);
-    const edges = Array.from(concreteEdges.values())
-      .flat()
-      .filter((edge) => members.has(edge.from) && members.has(edge.to))
-      .sort((left, right) =>
-        `${edgeKey(left)} ${left.source} ${left.resolved}`.localeCompare(
-          `${edgeKey(right)} ${right.source} ${right.resolved}`
-        )
-      );
-    return { edges, modules, path: findCyclePath(graph, modules) };
+    return {
+      edges: edges
+        .filter((edge) => members.has(edge.from) && members.has(edge.to))
+        .sort((left, right) =>
+          `${left.from} ${left.to} ${left.source} ${left.resolved}`.localeCompare(
+            `${right.from} ${right.to} ${right.source} ${right.resolved}`
+          )
+        ),
+      modules,
+      path: findCyclePath(graph, modules),
+    };
   });
-  const activeEdges = uniqueOwnedEdges(cycles.flatMap((cycle) => cycle.edges));
-  const activeKeys = new Set(activeEdges.map(edgeKey));
-  const baselineKeys = new Set(baseline.map(edgeKey));
-
-  return {
-    cycles,
-    staleBaseline: baseline.filter((edge) => !activeKeys.has(edgeKey(edge))),
-    unbaselinedEdges: activeEdges.filter(
-      (edge) => !baselineKeys.has(edgeKey(edge))
-    ),
-  };
 };
 
-export const formatModuleCycleCheck = (check: ModuleCycleCheck) => {
-  const lines: string[] = [];
-  for (const cycle of check.cycles) {
-    lines.push(`Owned Module cycle: ${cycle.path.join(" -> ")}`);
-    for (const edge of cycle.edges) {
-      lines.push(
-        `  ${edge.from} -> ${edge.to}: ${edge.source} -> ${edge.resolved}`
-      );
-    }
-  }
-  if (check.unbaselinedEdges.length > 0) {
-    lines.push("Unbaselined cyclic Module edges:");
-    for (const edge of check.unbaselinedEdges) lines.push(`  ${edgeKey(edge)}`);
-  }
-  if (check.staleBaseline.length > 0) {
-    lines.push("Stale Module-cycle baseline edges (remove them):");
-    for (const edge of check.staleBaseline) lines.push(`  ${edgeKey(edge)}`);
-  }
-  return lines.join("\n");
-};
+export const formatModuleCycles = (cycles: ReadonlyArray<ModuleCycle>) =>
+  cycles
+    .flatMap((cycle) => [
+      `Module cycle: ${cycle.path.join(" -> ")}`,
+      ...cycle.edges.map(
+        (edge) =>
+          `  ${edge.from} -> ${edge.to}: ${edge.source} -> ${edge.resolved}`
+      ),
+    ])
+    .join("\n");

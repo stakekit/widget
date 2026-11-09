@@ -7,6 +7,7 @@ import {
   Schema,
 } from "effect";
 import type { TFunction } from "i18next";
+
 import { type ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
@@ -523,11 +524,9 @@ export const resolveYieldProviderOption = (
 export const isYieldValidatorSelectionRequired = (
   yieldDto: EarnYieldWithProvider
 ) =>
-  !!(
-    yieldDto.mechanics.requiresValidatorSelection ||
-    isYieldActionArgRequired(yieldDto, "enter", "validatorAddress") ||
-    isYieldActionArgRequired(yieldDto, "enter", "validatorAddresses")
-  );
+  yieldDto.mechanics.requiresValidatorSelection ||
+  isYieldActionArgRequired(yieldDto, "enter", "validatorAddress") ||
+  isYieldActionArgRequired(yieldDto, "enter", "validatorAddresses");
 
 const decodeYieldId = Schema.decodeSync(YieldId);
 

@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
@@ -21,7 +22,7 @@ import {
   useEarnRewardRateHistoryChart,
   useEarnTvlHistoryChart,
   useEarnYieldSelection,
-} from "../../../react/use-earn-facades";
+} from "../../use-earn-facades";
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
 import { HistoryChartSection } from "./components/history-chart-section";
 import {

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+
 import type { Token } from "../../../../../domain/token/token";
 import { tokenString } from "../../../../../domain/token/token";
 import { TokenAvatar } from "../../../../../ui/index";

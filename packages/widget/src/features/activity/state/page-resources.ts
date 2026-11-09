@@ -8,7 +8,7 @@ import {
 } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
+
 import { ActionStatus } from "../../../domain/action/rules";
 import { getActivityActionCapabilities } from "../../../domain/activity/action-capabilities";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
@@ -18,7 +18,8 @@ import {
   ActivityHistoryKey,
   activityCountResourceAtom,
   activityHistoryPullAtom,
-} from "../../../resources/activity-history/index";
+} from "../../../resources/activity-history/activity-history";
+import { appRuntime } from "../../../runtime/app-runtime";
 import { mapAsyncResultError } from "../../../shared/effect/async-result";
 import { withPullPageDone } from "../../../shared/effect/pagination";
 import type { ActivityActionItem } from "../model/activity-action";

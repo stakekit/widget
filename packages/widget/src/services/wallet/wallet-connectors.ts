@@ -8,11 +8,8 @@ export type ConnectorWithFilteredChains = {
 
 export const isConnectorWithFilteredChains = (
   connector: Connector
-): connector is Connector & ConnectorWithFilteredChains => {
-  return (
-    "$filteredChains" in connector && Stream.isStream(connector.$filteredChains)
-  );
-};
+): connector is Connector & ConnectorWithFilteredChains =>
+  "$filteredChains" in connector && Stream.isStream(connector.$filteredChains);
 
 const connectorsWithoutDisconnect = new Set([
   "externalProviderConnector",

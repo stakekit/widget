@@ -1,5 +1,6 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
+
 import { ReviewOverview } from "../../../src/features/yield-transaction-flow/ui/review/pages/review-overview";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { render } from "../../utils/test-utils";

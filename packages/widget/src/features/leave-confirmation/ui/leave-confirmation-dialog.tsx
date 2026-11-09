@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
+
 import { AlertDialog } from "../../../ui/index";
-import type { LeaveConfirmationDialogProps } from "../react/use-leave-confirmation";
+import type { LeaveConfirmationDialogProps } from "./use-leave-confirmation";
 
 /** Mounted only while asking, so the controls that host it stay light. */
 export const LeaveConfirmationDialog = (props: LeaveConfirmationDialogProps) =>

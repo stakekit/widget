@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useYieldFlowExecution } from "../../../react/yield-flow-route";
+
+import { useYieldFlowExecution } from "../../yield-flow-session";
 
 export const useTransactionWorkflow = () => {
   const facade = useYieldFlowExecution().workflow;

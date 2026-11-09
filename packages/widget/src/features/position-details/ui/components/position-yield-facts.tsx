@@ -1,8 +1,9 @@
 import { useAtomValue } from "@effect/atom-react";
+
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import { YieldFactsSection } from "../../../yield-summary/views";
-import { usePositionDetails } from "../../react/use-position-details";
-import { usePositionOverview } from "../../react/use-position-overview";
+import { usePositionDetails } from "../use-position-details";
+import { usePositionOverview } from "../use-position-overview";
 
 /**
  * The yield's facts after the position's Details, in both Layouts, as the

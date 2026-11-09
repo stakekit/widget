@@ -1,12 +1,13 @@
 import { Effect, Match } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
+
 import type {
   EarnValidator,
   EarnValidatorKey,
 } from "../../../domain/earn/validator";
 import { exactZero } from "../../../domain/finance/exact";
-import { widgetConfigAtom } from "../../../features/widget-configuration/index";
+import { appRuntime } from "../../../runtime/app-runtime";
+import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
   earnSelectionStatusViewAtom,

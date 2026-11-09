@@ -3,9 +3,10 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
+
+import { richErrorAtom } from "../../src/features/widget-shell/state/rich-errors";
 import { makePresentableResource } from "../../src/resources/resource-failure-presentation";
+import { appRuntime } from "../../src/runtime/app-runtime";
 import { ApiRequestError } from "../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";

@@ -1,5 +1,6 @@
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
+
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { PositionBalanceRow } from "../../../domain/portfolio/positions";
@@ -7,7 +8,7 @@ import {
   formatDurationUntil,
   formatNextBatchLabel,
   formatNextBatchTiming,
-} from "../../yield-summary/index";
+} from "../../yield-presentation/index";
 
 /**
  * When a pending balance settles: its own date first, else the vault's next

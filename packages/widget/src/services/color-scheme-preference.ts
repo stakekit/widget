@@ -41,7 +41,7 @@ const preferenceStream: Stream.Stream<PreferredColorScheme> =
 export class ColorSchemePreference extends Context.Service<
   ColorSchemePreference,
   { readonly changes: Stream.Stream<PreferredColorScheme> }
->()("stakekit/widget/services/ColorSchemePreference") {
+>()("@stakekit/widget/services/color-scheme-preference/ColorSchemePreference") {
   static readonly layer = Layer.succeed(
     ColorSchemePreference,
     ColorSchemePreference.of({ changes: preferenceStream })

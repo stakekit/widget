@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { Deferred, Effect } from "effect";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
+
 import { BorrowStepsPage } from "../../../src/features/borrow-transaction-flow/ui/steps";
 import { AccountModal } from "../../../src/features/wallet/views";
 import { WalletRequestCancelledError } from "../../../src/services/wallet/wallet-errors";

@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
+
 import type { BorrowNetwork } from "../../../src/domain/borrow/network";
 import type { Network as NetworkContract } from "../../../src/domain/network/contract";
 import { intersectNetworkLiterals } from "../../../src/domain/network/intersection";

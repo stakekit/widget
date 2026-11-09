@@ -1,10 +1,14 @@
 import { Effect, Ref, Result, type Scope, Stream } from "effect";
+
 import {
   diffWidgetWalletConfig,
   selectWidgetBootstrapSnapshot,
   WidgetConfigService,
 } from "../../../config/widget-config";
-import { WalletRuntimeInvariantError } from "../../wallet-errors";
+import {
+  WalletIntegrationError,
+  WalletRuntimeInvariantError,
+} from "../../wallet-errors";
 import {
   ignoredExternalProviderChainIds,
   isExternalProviderConnector,
@@ -31,7 +35,15 @@ const initialMemory: SynchronizationMemory = {
 
 const runConnectorNotification = Effect.fn("runConnectorNotification")(
   function* (notify: () => void) {
-    yield* Effect.try(notify).pipe(
+    yield* Effect.try({
+      try: notify,
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "External provider notification failed",
+          operation: "external-provider-notification",
+        }),
+    }).pipe(
       Effect.catch((cause) =>
         Effect.logWarning("External provider notification failed").pipe(
           Effect.annotateLogs({ cause })
@@ -139,12 +151,19 @@ export const installExternalProviderSynchronization = Effect.fn(
         ...current,
         supportedChainsNotification: supportedChainsKey,
       }));
-      const notification = yield* Effect.try(() =>
-        connector.onSupportedChainsChanged({
-          currentChainId,
-          supportedChainIds,
-        })
-      ).pipe(Effect.result);
+      const notification = yield* Effect.try({
+        try: () =>
+          connector.onSupportedChainsChanged({
+            currentChainId,
+            supportedChainIds,
+          }),
+        catch: (cause) =>
+          new WalletIntegrationError({
+            cause,
+            message: "External provider supported chains update failed",
+            operation: "external-provider-supported-chains-update",
+          }),
+      }).pipe(Effect.result);
       if (Result.isFailure(notification)) {
         return yield* failInvariant(
           "external-provider-supported-chains-update-failed",

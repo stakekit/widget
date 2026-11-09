@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
+
 import { IconButton, Stack } from "../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { AccountModal, ChainModal } from "../../../wallet/views";
-import { useHeader } from "../../react/use-header";
+import { useHeader } from "../use-header";
 
 /**
  * The Dashboard Layout's wallet controls: the chain and account buttons and

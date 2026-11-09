@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
+
 import { loadAllPages } from "../../../src/shared/effect/pagination";
 
 describe("shared pagination conventions", () => {

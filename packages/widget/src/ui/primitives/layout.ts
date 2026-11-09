@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { AriaAttributes, AriaRole, ReactNode } from "react";
+
 import type { HostHook } from "../host-hook";
 import { containerBand } from "../tokens/container.stylex";
 import { gutter } from "../tokens/presentation.stylex";

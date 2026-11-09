@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import { getCardanoConnectors } from "../../../src/services/wallet/internal/adapters/cardano/cardano-connector";
 import type { WalletDescriptor } from "../../../src/services/wallet/wallet-descriptors";
 import { WalletNotAvailableError } from "../../../src/services/wallet/wallet-errors";

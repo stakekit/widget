@@ -1,7 +1,8 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import type { ActionTransaction } from "../../../src/domain/action/models";
+
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import type { ActionTransaction } from "../../../src/domain/earn/action-models";
 import { EarnValidator } from "../../../src/domain/earn/validator";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type {

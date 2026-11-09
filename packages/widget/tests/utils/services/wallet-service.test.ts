@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Effect, Exit, Fiber, Stream, SubscriptionRef } from "effect";
+
 import { walletCommandIdentity } from "../../../src/services/wallet/wallet-command-identity";
 import {
   disconnectedLedgerConnectorState,

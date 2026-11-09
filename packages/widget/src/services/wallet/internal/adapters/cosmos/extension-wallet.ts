@@ -1,5 +1,6 @@
 import type { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
 import { Effect, Option, Schema } from "effect";
+
 import {
   WalletIntegrationError,
   WalletNotAvailableError,
@@ -113,9 +114,10 @@ export const makeExtensionWallet = (
     iconUrl: logoUrl(walletInfo.logo),
     availability: {
       _tag: "Injected",
-      detect: Effect.tryPromise(detectClient).pipe(
-        Effect.orElseSucceed(() => false)
-      ),
+      detect: Effect.tryPromise({
+        try: detectClient,
+        catch: (cause) => extensionError("cosmos-detect", cause),
+      }).pipe(Effect.orElseSucceed(() => false)),
       ...(installUrl === undefined ? {} : { installUrl }),
     },
     makeSession: ({ connectorId, storage }) => {

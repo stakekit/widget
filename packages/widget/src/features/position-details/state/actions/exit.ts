@@ -1,14 +1,15 @@
 import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../../app/runtime/app-runtime";
+
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
 import {
   ActionSimulationKey,
   actionSimulationResourceAtom,
-} from "../../../../resources/action-simulation/index";
+} from "../../../../resources/action-simulation/action-simulation";
+import { appRuntime } from "../../../../runtime/app-runtime";
+import { widgetConfigAtom } from "../../../../runtime/widget-config";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
-import { widgetConfigAtom } from "../../../widget-configuration/index";
 import { getNetworkFeeEstimate } from "../../../yield-entry/index";
 import { startYieldTransactionFlowAtom } from "../../../yield-transaction-flow/index";
 import {
@@ -127,11 +128,10 @@ const submitPositionDetailsExitAtom = Atom.family(
             },
           })
           .pipe(
-            Effect.map(
-              (outcome): PositionDetailsExitOutcome =>
-                outcome._tag === "Started"
-                  ? { _tag: "Started" }
-                  : { _tag: "Rejected", reason: outcome._tag }
+            Effect.map((outcome): PositionDetailsExitOutcome =>
+              outcome._tag === "Started"
+                ? { _tag: "Started" }
+                : { _tag: "Rejected", reason: outcome._tag }
             )
           );
       })

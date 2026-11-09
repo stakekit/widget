@@ -1,4 +1,5 @@
 import path from "node:path";
+
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import macros from "unplugin-macros/vite";
@@ -11,6 +12,7 @@ import {
 } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
+
 import { hostBundlerOutputPlugin } from "./host-bundler-output.ts";
 import { type StyleXInjection, stylexPlugins } from "./stylex.ts";
 

@@ -88,7 +88,8 @@ const makeOpenState = Effect.gen(function* () {
     const scope = yield* Scope.fork(owner);
     return { opening: makeOpening(scope), scope } as const;
   });
-  const current = yield* Ref.make(yield* makeCurrent);
+  const initial = yield* makeCurrent;
+  const current = yield* Ref.make(initial);
   return {
     changes: SubscriptionRef.changes(state),
     current: SubscriptionRef.get(state),
@@ -96,7 +97,8 @@ const makeOpenState = Effect.gen(function* () {
     set: (open: boolean) =>
       Effect.uninterruptible(
         Effect.gen(function* () {
-          const previous = yield* Ref.getAndSet(current, yield* makeCurrent);
+          const next = yield* makeCurrent;
+          const previous = yield* Ref.getAndSet(current, next);
           yield* Scope.close(previous.scope, Exit.void);
           yield* SubscriptionRef.set(state, open);
         })
@@ -113,7 +115,7 @@ export class WalletModal extends Context.Service<
     readonly openConnect: Effect.Effect<void>;
     readonly presentationOpen: WalletModalOpenState;
   }
->()("@stakekit/widget/services/wallet/WalletModal") {
+>()("@stakekit/widget/services/wallet/wallet-modal/WalletModal") {
   static readonly layer = Layer.effect(
     WalletModal,
     Effect.gen(function* () {

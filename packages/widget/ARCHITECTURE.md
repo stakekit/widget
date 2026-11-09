@@ -2,8 +2,8 @@
 
 This document records stable ownership and dependency boundaries. Behavior,
 route topology, failure presentation, and detailed workflows belong in code and
-tests. Executable policy lives in Biome, dependency-cruiser, Knip, jscpd, and
-ast-grep.
+tests. Executable policy lives in oxlint, dependency-cruiser, the Effect
+language service, Knip, and jscpd.
 
 ## Ownership
 
@@ -12,6 +12,7 @@ ast-grep.
 ```text
 app/          application composition, Layouts, routing, and runtime assembly
 features/     user-facing capabilities and their state
+runtime/      the Application Runtime and the Atom runtimes Features and Resources build on
 resources/    authoritative cacheable remote reads
 services/     side effects and external-system adapters
 domain/       framework-independent rules and models
@@ -20,11 +21,15 @@ shared/       neutral non-visual utilities
 public-api/   host-facing types
 ```
 
+The layers and what each may import are declared once, in
+`scripts/architecture/module-map.ts`; every architecture check derives its paths
+from it.
+
 Code stays private to its owner unless another owner needs a deliberate
 interface. Shared is for neutral non-visual building blocks, not displaced
 feature logic or UI. Shared may depend on Domain types and rules, but not on
-features, resources, or services. The application composes Modules; it does not
-absorb their behavior.
+features, resources, services, or `public-api`. The application composes
+Modules; it does not absorb their behavior.
 
 The Design System (`ui/`) owns tokens, themes, the scoped reset, primitives,
 components, patterns, icons, and artwork. It is the only owner that uses StyleX,
@@ -49,9 +54,10 @@ The Compact Layout and the Dashboard Layout are application composition under
 `app/layouts/<layout>/`: each owns its shell, route tree, tabs, and page
 transitions. Widget Configuration derives the Layout from Host Configuration,
 and only application composition and Widget Configuration read it. Features are
-Layout-agnostic: a Feature's `ui/` holds what both Layouts render,
-`ui/compact/` and `ui/dashboard/` hold Layout-specific screens and never import
-each other, and `model/`, `state/`, and `react/` never import either. A Layout
+Layout-agnostic: a Feature's `ui/` holds what both Layouts render, including its
+hooks and route adapters, `ui/compact/` and `ui/dashboard/` hold Layout-specific
+screens and never import each other, and nothing but the Feature's
+`composition.ts` imports them. A Layout
 difference is a Presentation Setting, a prop the Layout's composition supplies
 that names the difference, or a Layout-specific component. See
 [ADR 0013](../../docs/adr/0013-layouts-are-application-composition.md).
@@ -91,18 +97,28 @@ Dependencies point toward narrow interfaces and stable lower-level concepts:
 outbound package entries
           |
           v
-application composition
+application composition and runtime assembly (app/)
           |
           v
-feature interfaces and resource interfaces
+feature interfaces
           |
           v
-owned implementations -> domain rules / services / shared utilities / Design System
+resource interfaces
+          |
+          v
+Atom runtimes (runtime/)
+          |
+          v
+services / domain rules / shared utilities
 ```
 
-Imports within an owner may target its implementation. Imports across owners
-use that owner's declared interface. Generated API clients and transport details
-remain private to `services/api`.
+Features and application composition also use the Design System. The direction
+holds between Modules, not only between files: the architecture check fails on
+any cycle between Modules, with no baseline.
+
+Imports within a Module may target its implementation. Imports across Modules
+use that Module's interface. Generated API clients and transport details remain
+private to `services/api`.
 
 `public-api` may import Domain only through `domain/**/contract.ts`. Domain never
 imports `public-api`. A Domain contract may publish selected stable types and
@@ -151,41 +167,58 @@ entry.
 
 ## Module interfaces
 
-An Owned Module publishes only the finite interfaces its actual consumers need,
-as recorded in [ADR 0007](../../docs/adr/0007-owned-modules-expose-finite-interfaces.md).
-Files not named below are private even when they sit at a Module root.
+An Owned Module (a Module, for short) is an immediate child of `features/`,
+`resources/`, `services/`, `domain/`, or `shared/` (a directory or a single
+file), or a child of a Module Collection such as `features/borrow/`. Every
+other layer (`app`, `runtime`, `ui`, `public-api`, `generated`) is one Module.
+A Module's root files are its interface; its subdirectories are private,
+`internal/` and the Feature tiers alike. Modules are not registered one by one:
+the folder layout is the policy, and the Module map declares only the layers
+and the Module Collections, as recorded in
+[ADR 0007](../../docs/adr/0007-owned-modules-expose-finite-interfaces.md). A
+Module keeps its root to the files its consumers need.
 
-A Feature Module may publish:
+Root files named for a role have a fixed audience or content:
 
 - `index.ts` for headless models, commands, Atoms, types, and zero-logic adapter
-  hooks.
-- `composition.ts` for screens, routes, layouts, providers, guards, and mounts.
-- `views.ts` for rendered elements intentionally reused outside the Feature.
-- `runtime.ts` for operations used in runtime assembly.
+  hooks. It re-exports no rendered UI: hooks come from `.ts` files under `ui/`,
+  components only through `views.ts` or `composition.ts`.
+- `composition.ts` for screens, routes, layouts, providers, guards, and mounts;
+  only application composition, or the Module Collection's own composition,
+  imports it.
+- `views.ts` for rendered elements intentionally reused outside the Module;
+  runtimes never import it.
+- `runtime.ts` for operations used in runtime construction and assembly; only
+  `runtime/` and `app/runtime/` import it.
 
-Create only the entries with consumers. Internal code normally lives under
-`model/`, `state/`, `react/`, and `ui/`. `state/` is organized by page: a page
-module holds its page's Atom family and the Effect functions only that page
-runs; what several pages share, such as starting or leaving a flow, lives in a
-module of its own. An operation a runtime service also runs does not import the
-application runtime, since that import would cycle.
+A Module's own files import its implementation directly, never its role files.
+A Feature creates only the role files with consumers; its implementation lives
+under `model/`, `state/`, and `ui/`, so its root holds nothing else. The tiers
+match ADR 0002 and depend downward: `ui/` (React: components, hooks, route
+adapters) → `state/` (Effect and Atom) → `model/` (plain TypeScript). `model/`
+and `state/` import no React. `ui/` never reads an `AsyncResult`: `state/`
+publishes plain values or view states, such as a flow's execution status, for
+it to render. `state/` is organized by page: a page module holds its page's
+Atom family and the Effect functions only that page runs; what several pages
+share, such as starting or leaving a flow, lives in a module of its own.
 
-Each immediate child of `resources/` is a Resource Module and publishes
-`index.ts`. A nested Module Collection consumes child interfaces and publishes
-its own facade instead of re-exporting child internals.
+A Resource Module's root files define its Resource. A Module Collection
+consumes its children's interfaces and publishes its own facade from them; it
+never reaches a child's private files.
 
-`services/api` is one owned Module with purpose-specific interfaces:
+`services/api` is one Module with purpose-specific interfaces:
 
 - `resource-sources.ts` for Resources.
-- `operations.ts` for feature orchestration and transaction internals.
-- `runtime.ts` for application runtime assembly.
+- `operations.ts` for Feature `state/` and transaction internals.
+- `runtime.ts` for the Application Runtime.
 
-It has no `index.ts`. Transport, generated clients, and capability
-implementations remain private.
+Transport, generated clients, and capability implementations live in its
+`internal/`.
 
-Interface exports are explicit and named. Wildcard exports and convenience
-barrels are not interfaces. Tests may deep-import private machinery when the
-test is intentionally about that machinery.
+Interface exports are explicit and named, and an interface re-exports only its
+own Module. Wildcard exports and convenience barrels are not interfaces. Tests
+may deep-import private machinery when the test is intentionally about that
+machinery.
 
 The Design System publishes:
 
@@ -283,6 +316,13 @@ composition preserves registry-scoped Layer memoization; do not reconstruct
 Layers from built Effect contexts or use `Layer.fresh` without an explicit need
 for separate service instances.
 
+The Atom runtimes Features and Resources build on (`appRuntime`,
+`walletRuntime`, and the Widget Configuration Atoms they read) live in
+`runtime/`, below the Features. A runtime that needs a Feature's operation, such
+as the Deep Link Coordinator starting a Yield Transaction Flow, is assembled in
+`app/runtime/` on top of the runtime it extends, so no lower runtime imports a
+Feature.
+
 The Widget is designed and tested for one mounted Widget Instance per browser
 document, though runtime claims no longer block concurrent mounts. Unmounting and
 later mounting a new instance creates a fresh generation. See
@@ -294,35 +334,46 @@ and Effect Atom registry.
 
 ## Enforcement
 
-- dependency-cruiser enforces cross-Module direction, keeps API internals
-  private, keeps the `internal/` folders of `services/wallet`,
-  `services/transaction-workflow` and `services/zama` private to their
-  service, keeps API
-  transport free of error presentation, and keeps `ui/compact/` and
+- dependency-cruiser (`scripts/architecture/dependency-cruiser.config.mts`)
+  owns every import rule, generated from the Module map: the layer matrix,
+  private Module subdirectories, the audiences of role files, re-exports only of
+  a Module's own code, downward Feature tiers, React only outside headless
+  code (`domain`, `runtime`, Resources, services, `app/runtime`, and `model/`
+  and `state/`), outbound-only package entries, the `services/api` interfaces,
+  API transport free of error presentation, and `ui/compact/` and
   `ui/dashboard/` independent of each other and out of Layout-free code. It
   allows StyleX, Base UI, `motion`, Recharts, TanStack Virtual, and style
-  definition modules only inside the Design System, with no cross-owner
-  exception for style modules, restricts Features and application composition
-  to its main interface and its composition interface to application
-  composition, and lets the Design System import only itself (`layer-ui`).
-- Biome constrains barrels and keeps React out of domain, Resource, and service
-  logic and out of Feature `model/` and `state/`.
-- ast-grep rejects manual memoization (`useMemo`, `useCallback`, `memo`; React
-  Compiler memoizes, and only functions with a `"use no memo"` directive may
-  memoize by hand), ad hoc Atom runtimes, direct Effect runtime execution,
-  native `Date`, global `fetch`, throws in Effect generators, wildcard Module
-  exports, Resources that read an API ResourceSource without
-  `makePresentableResource`, literal absolute Widget paths outside the Route
-  Registry, Layout reads outside application composition and Widget
-  Configuration, Layout-named identifiers in Domain, Resource, service, and
-  Feature `model/` and `state/` code, and Layout-named files outside `ui/` and
-  `app/layouts/`.
-- ast-grep rejects lowercase JSX elements, `createElement` calls with a
-  lowercase tag, and `className` or `style` attributes (spread too) in Features
-  and application composition, and, inside the Design System outside its token
-  definitions and artwork, color literals and raw font size, weight, line
-  height, radius, shadow, z-index, duration, and px, rem, em, ch, vw, and vh
-  values. Every suppression of these rules states its reason.
+  definition modules only inside the Design System, restricts other owners to
+  its main and composition interfaces, and lets the Design System import only
+  itself (`layer-ui`). The architecture check also fails on any cycle between
+  Modules, and, through the native TypeScript 7 checker
+  (`scripts/architecture/async-result-in-ui.ts`; oxlint gives JS plugins no
+  types), on any `AsyncResult`-typed value in a Feature's `ui/`, however it got
+  there; oxlint's `no-async-result-in-feature-ui` only catches the import.
+- oxlint (the shared rules in the root `.oxlintrc.json`, the widget's in
+  `packages/widget/.oxlintrc.json`) checks code shape, not imports. With type
+  information it rejects floating and misused promises, non-exhaustive
+  switches and unsafe type assertions in `src`. `lint` runs it on the
+  Effect-patched tsrs, which type-checks `tsconfig.json` in the same pass.
+- The widget's oxlint plugins (`scripts/oxlint/`, one rule per policy, each
+  carrying its own file scope, tested in `tests/scripts/oxlint/`) reject
+  manual memoization (`useMemo`, `useCallback`, `memo`; React Compiler
+  memoizes, and only functions with a `"use no memo"` directive may memoize by
+  hand), Atom runtimes outside `runtime/` and `app/runtime/`, direct Effect
+  runtime execution, native `Date`, throws in Effect generators, wildcard
+  exports and barrels outside Module interfaces (the Module map's root files),
+  Resources that read an API ResourceSource without `makePresentableResource`,
+  literal absolute Widget paths outside the Route Registry, Layout reads outside
+  application composition and Widget Configuration, Layout-named identifiers in
+  Domain, runtime, Resource, service, and Feature `model/` and `state/` code,
+  Layout-named files outside `ui/` and `app/layouts/`, and suppressions that
+  name no rule or give no reason after `--`.
+- The `design-system` oxlint plugin rejects lowercase JSX elements,
+  `createElement` calls with a lowercase tag, and `className` or `style`
+  attributes (spread too) in Features and application composition, and,
+  inside the Design System outside its token definitions and artwork, color
+  literals and raw font size, weight, line height, radius, shadow, z-index,
+  duration, and px, rem, em, ch, vw, and vh values.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid
   shorthands, sorted keys) on the Design System as part of the widget `lint`.
 - The Design System rules apply to every file, with no exemption list; the
@@ -335,6 +386,19 @@ and Effect Atom registry.
   text/surface Color Role pair in every scheme and Appearance Preset but Utila,
   which keeps its shipped palette by product decision
   ([ADR 0015](../../docs/adr/0015-the-design-system-owns-every-visual-decision.md)).
+- The Effect language service (configured in `tsconfig.json`, run by `lint`)
+  fails on every Effect diagnostic. In `src` it also enforces the default-off
+  rules: deterministic service keys, Schema class constructors, typed `Effect.try`
+  failures, Effect APIs over global JSON, timers, dates, randomness and
+  promises, and Effect code over `async` functions. `.tsx` files and the
+  wallet internals may declare `async` functions (React event handlers and the
+  Promise-based wallet SDK contracts), wallet adapters may build promises and
+  timers for those contracts, `shared/react` and the Design System (`ui/`) may
+  use timers, and stories may build promises for their play functions. Each
+  exemption, each rule kept off and each single-line
+  `@effect-diagnostics` directive carries its reason. Build a string key from
+  JSON parts with `compositeKey` (`shared/lib/composite-key.ts`), not
+  `JSON.stringify`.
 - Architecture rules live in these tools, not in tests that read source text.
 - Knip checks ordinary and production reachability.
 - jscpd fails when duplicated source and tooling code (tests and generated API

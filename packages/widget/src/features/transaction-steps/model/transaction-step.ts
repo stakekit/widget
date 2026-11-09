@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+
 import type { TransactionPhaseProgress } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { TransactionFailure } from "./transaction-failure";
 

@@ -1,5 +1,6 @@
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { logoutAtom } from "../../wallet/index";
 
 export const disconnectWidgetAtom = walletRuntime

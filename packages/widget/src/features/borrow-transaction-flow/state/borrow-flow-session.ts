@@ -1,10 +1,11 @@
 import { Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
 import {
   sameWalletScopeOwner,
   WalletScopeKey,
 } from "../../../domain/wallet/wallet-scope";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { WidgetConfigService } from "../../../services/config/widget-config";
 import { WidgetNavigation } from "../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../services/tracking/tracking-service";

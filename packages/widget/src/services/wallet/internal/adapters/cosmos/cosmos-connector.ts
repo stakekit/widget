@@ -5,6 +5,7 @@ import { Array as EArray, Effect, Option, Schema, Stream } from "effect";
 import type { Chain } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
+
 import {
   WalletAddress,
   type WalletAddress as WalletAddressType,

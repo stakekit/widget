@@ -16,9 +16,10 @@ import {
   HttpClientResponse,
 } from "effect/http";
 import { TestClock } from "effect/testing";
-import type { ActionTransaction } from "../../../src/domain/action/models";
-import { Action } from "../../../src/domain/borrow/execution/action";
-import { Transaction } from "../../../src/domain/borrow/execution/transaction";
+
+import { Action } from "../../../src/domain/borrow/action";
+import { Transaction } from "../../../src/domain/borrow/transaction";
+import type { ActionTransaction } from "../../../src/domain/earn/action-models";
 import {
   SignedTransactionPayload,
   TransactionHash,
@@ -31,7 +32,7 @@ import {
   walletScopeOwnerKey,
 } from "../../../src/domain/wallet/wallet-scope";
 import { BorrowApiError } from "../../../src/generated/api/borrow-client";
-import { makeBorrowOperations } from "../../../src/services/api/borrow-operations";
+import { makeBorrowOperations } from "../../../src/services/api/internal/borrow-operations";
 import type {
   BorrowOperations,
   YieldOperations,
@@ -561,7 +562,7 @@ describe("transaction workflow runtime", () => {
           _tag: "SignFailed",
           error: {
             _tag: "TransactionSignError",
-            message: "Borrow transaction payload could not be decoded.",
+            message: "The transaction payload could not be decoded.",
             reason: { _tag: "DecodeFailed" },
           },
         });

@@ -1,7 +1,8 @@
 import * as Atom from "effect/reactivity/Atom";
+
+import { widgetConfigAtom } from "../../../../runtime/widget-config";
 import { selectAtom } from "../../../../shared/effect/select-atom";
 import { walletConnectionStateAtom } from "../../../wallet/index";
-import { widgetConfigAtom } from "../../../widget-configuration/index";
 import { projectBorrowWalletView } from "../model/wallet-view";
 
 const borrowWalletInputAtom = Atom.make((get) => ({

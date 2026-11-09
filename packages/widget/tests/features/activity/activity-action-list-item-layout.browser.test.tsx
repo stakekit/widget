@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+
 import "../../../src/ui/theme/reset.css";
 import { ActionListItem } from "../../../src/features/activity/ui/activity-page/components/action-list-item";
 

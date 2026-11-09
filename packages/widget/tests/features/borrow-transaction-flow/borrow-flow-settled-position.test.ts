@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { ActionCommand } from "../../../src/domain/borrow/execution/action-command";
-import type { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
+
+import { ActionCommand } from "../../../src/domain/borrow/action-command";
+import type { BorrowAccountSnapshot } from "../../../src/domain/borrow/borrow-account-snapshot";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { BorrowTransactionFlowReview } from "../../../src/features/borrow-transaction-flow/model/review";
@@ -12,7 +12,8 @@ import { makeBorrowFlowSettledPositionAtom } from "../../../src/features/borrow-
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../src/resources/borrow-positions/index";
+} from "../../../src/resources/borrow-positions/borrow-positions";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   BorrowResourceSource,

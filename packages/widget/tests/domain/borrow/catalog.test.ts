@@ -1,11 +1,12 @@
 import BigNumber from "bignumber.js";
 import { describe, expect, it } from "vitest";
-import { getBorrowMarketPairLabel } from "../../../src/domain/borrow/catalog/market";
+
+import { getBorrowMarketPairLabel } from "../../../src/domain/borrow/market";
+import { deriveMarketRiskLimits } from "../../../src/domain/borrow/market-risk";
 import {
   getBorrowNetworkForChainId,
   isBorrowNetwork,
 } from "../../../src/domain/borrow/network";
-import { deriveMarketRiskLimits } from "../../../src/domain/borrow/risk/market-risk";
 import { makeBorrowMarket } from "../../fixtures/borrow";
 
 describe("borrow domain", () => {

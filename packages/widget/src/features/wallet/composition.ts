@@ -1,2 +1,2 @@
-export { WagmiConfigProvider } from "./react/provider";
-export { WalletScopeRouteGuard } from "./react/wallet-scope-route";
+export { WagmiConfigProvider } from "./ui/provider";
+export { WalletScopeRouteGuard } from "./ui/wallet-scope-route";

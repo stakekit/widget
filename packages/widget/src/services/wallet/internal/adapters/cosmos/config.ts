@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import {
@@ -82,17 +83,31 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
   );
 
   yield* Effect.matchEffect(
-    Effect.tryPromise(() => walletManager.onMounted()),
+    Effect.tryPromise({
+      try: () => walletManager.onMounted(),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not mount cosmos wallet manager",
+          operation: "cosmos-wallet-manager-mount",
+        }),
+    }),
     {
       onFailure: () => {
-        // biome-ignore lint/nursery/noUnsafeTypeAssertion: @cosmos-kit/core declares _restoreAccounts private and untyped; it is the only restore path after a failed mount
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- @cosmos-kit/core declares _restoreAccounts private and untyped; it is the only restore path after a failed mount
         const restorableWalletManager = walletManager as unknown as {
           _restoreAccounts: () => Promise<void>;
         };
 
-        return Effect.tryPromise(() =>
-          restorableWalletManager._restoreAccounts()
-        ).pipe(Effect.ignore);
+        return Effect.tryPromise({
+          try: () => restorableWalletManager._restoreAccounts(),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "Could not restore cosmos wallet accounts",
+              operation: "cosmos-wallet-manager-restore",
+            }),
+        }).pipe(Effect.ignore);
       },
       onSuccess: () => Effect.void,
     }

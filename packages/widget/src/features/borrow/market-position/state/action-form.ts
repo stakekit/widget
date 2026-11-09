@@ -1,18 +1,19 @@
 import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../../app/runtime/app-runtime";
+
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import type { BorrowPositionActionKey } from "../../../../domain/borrow/positions/position-action-key";
+import type { BorrowPositionActionKey } from "../../../../domain/borrow/position-action-key";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../../../domain/wallet/wallet-scope";
-import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
+import { appRuntime } from "../../../../runtime/app-runtime";
+import { widgetConfigAtom } from "../../../../runtime/widget-config";
 import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/index";
 import { tokenBalancesScanAtom } from "../../../portfolio/index";
 import { walletScopeAtom } from "../../../wallet/index";
@@ -65,7 +66,9 @@ const makeFormKey = (
   scope: WalletScopeKey
 ) =>
   new BorrowPositionActionFormKey({
-    ...key,
+    actionId: key.actionId,
+    marketId: key.marketId,
+    network: key.network,
     owner: walletScopeOwnerKey(scope),
   });
 

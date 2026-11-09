@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../src/domain/borrow/catalog/integration";
+
+import { Integration } from "../../../src/domain/borrow/integration";
 import {
   getBorrowCompletionLogos,
   projectBorrowCompletion,

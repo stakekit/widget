@@ -2,6 +2,7 @@ import { Schema } from "effect";
 import { base, mainnet, polygon } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
+
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import {
   type BorrowWalletView,

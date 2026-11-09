@@ -1,6 +1,7 @@
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { render } from "../../utils/test-utils.dom";
 import { TestWidgetConfigProvider } from "../../utils/widget-config-provider";

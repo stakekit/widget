@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
-import type { YieldAction } from "../../../../../domain/action/models";
+
+import type { YieldAction } from "../../../../../domain/earn/action-models";
 import type { Token } from "../../../../../domain/token/token";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
@@ -9,7 +10,7 @@ import {
   yieldSummaryAtom,
 } from "../../../../yield-summary/index";
 import type { YieldTransactionFlowIntake } from "../../../model/intake";
-import { useYieldFlowExecution } from "../../../react/yield-flow-route";
+import { useYieldFlowExecution } from "../../yield-flow-session";
 
 type ActivityIntake = Extract<
   YieldTransactionFlowIntake,

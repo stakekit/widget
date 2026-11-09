@@ -1,18 +1,18 @@
 import { toLowerCase } from "effect/String";
 import type { TFunction } from "i18next";
+
 import {
   getPendingActionLabelContext,
   type PendingActionLabelContext,
-  type YieldPendingActionType,
 } from "../../../domain/action/pending-action";
-import type { ActionType } from "../../../domain/action/rules";
+import type { YieldPendingActionType } from "../../../domain/earn/action-models";
+import type { YieldBalanceType } from "../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import {
   getExtendedYieldType,
   isUnstakeYieldType,
 } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
-import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 
 /** What an exit is called: Unstake from a staking yield, else Withdraw. */
 export const getExitActionTitle = (
@@ -26,7 +26,7 @@ export const getExitActionTitle = (
 /** What a pending action is called, as the position's button names it. */
 export const getPendingActionTitle = (
   t: TFunction,
-  type: YieldPendingActionType | ActionType,
+  type: YieldPendingActionType,
   labelContext: PendingActionLabelContext | undefined
 ) =>
   t(

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Deferred, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,
@@ -9,6 +9,7 @@ import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
 } from "../../../src/resources/yield-directory/yield-directory";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import type { YieldDirectoryRequest } from "../../../src/services/api/resource-sources";
 import {
   ApiRequestError,

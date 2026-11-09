@@ -2,6 +2,7 @@ import { Option } from "effect";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
+
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import { useEarnYieldSelection } from "../../../../features/earn/index";
 import { useWidgetNavigate } from "../../../../features/navigation/index";

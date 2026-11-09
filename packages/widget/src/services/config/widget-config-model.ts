@@ -1,4 +1,4 @@
-import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
+import type { BorrowMarketsScope } from "../../domain/borrow/market";
 import type { YieldCategory } from "../../domain/earn/contract";
 import type {
   PreferredTokenYieldsPerNetwork,

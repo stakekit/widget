@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
+import { appRuntime } from "../../runtime/app-runtime";
 import { projectTransactionWorkflowStarted } from "../../services/events/widget-domain-events";
 import { clearEarnEntryAmountsForOwnerAtom } from "./state/earn-selection/state/atoms";
 
@@ -19,6 +20,6 @@ export const earnEntryIntentEventProjectionAtom = appRuntime
 export {
   useEarnYieldSelection,
   useSelectEarnCategory,
-} from "./react/use-earn-facades";
+} from "./ui/use-earn-facades";
 export { earnLandingPrimaryReadyAtom } from "./state/earn-selection";
 export { pendingActionDeepLinkViewAtom } from "./state/pending-action-deep-link";

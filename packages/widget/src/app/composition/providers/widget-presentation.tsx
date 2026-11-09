@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Network } from "../../../domain/network/network";
 import type { Token } from "../../../domain/token/token";
 import { isWalletNetwork } from "../../../domain/wallet/network";
@@ -26,7 +27,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
   const tokenIconMapping = useWidgetConfig("tokenIconMapping");
 
   const value: WidgetPresentation = {
-    hideNetworkLogo: !!hideNetworkLogo,
+    hideNetworkLogo,
     hostTokenIconMapping,
     locale: i18n.resolvedLanguage ?? i18n.language,
     mapNetworkIconUrl: (network: Token["network"]) => {

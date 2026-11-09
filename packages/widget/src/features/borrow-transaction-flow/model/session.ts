@@ -1,9 +1,10 @@
 import { Equal, Ref, Schema } from "effect";
-import type { CollateralToken } from "../../../domain/borrow/catalog/collateral-token";
-import type { Integration } from "../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../domain/borrow/catalog/market";
-import type { Action } from "../../../domain/borrow/execution/action";
+
+import type { Action } from "../../../domain/borrow/action";
+import type { CollateralToken } from "../../../domain/borrow/collateral-token";
 import { ActionId, type MarketId } from "../../../domain/borrow/ids";
+import type { Integration } from "../../../domain/borrow/integration";
+import type { Market } from "../../../domain/borrow/market";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   type WidgetFlowDestination,

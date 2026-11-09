@@ -1,4 +1,4 @@
-import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk-gate";
 import { prepareCollateralToggleAction } from "./collateral-toggle";
 import { prepareOpenPositionAction } from "./open-position";
 import { prepareRepayAction } from "./repay";

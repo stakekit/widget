@@ -1,6 +1,7 @@
 import type { BaseSigner, EIP712TypedData } from "@zama-fhe/sdk";
 import { Effect, FiberSet, Schema } from "effect";
 import { type Address, type Hex, isHex } from "viem";
+
 import {
   type ConfidentialChainId,
   getConfidentialNetwork,

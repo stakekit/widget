@@ -10,7 +10,9 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+
 import ts from "typescript";
+
 import { widgetRoot } from "../paths";
 import { declarationSpecifiers } from "./declaration-graph.ts";
 

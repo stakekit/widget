@@ -1,7 +1,7 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import type { TokenBalanceScanCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
@@ -11,6 +11,7 @@ import {
   TokenBalancesError,
   tokenBalancesResourceAtom,
 } from "../../../src/resources/token-balances/token-balances";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   LegacyResourceSource,

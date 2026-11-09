@@ -1,9 +1,10 @@
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   refreshTokenBalancesAtom,
   tokenBalancesResourceAtom,
-} from "../../../../resources/token-balances/index";
+} from "../../../../resources/token-balances/token-balances";
 import { walletScopeAtom } from "../../../wallet/index";
 
 const tokenBalancesScanResourceAtom = Atom.readable((get) => {

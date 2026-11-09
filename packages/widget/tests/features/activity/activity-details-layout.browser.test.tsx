@@ -4,8 +4,9 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+
 import "../../../src/ui/theme/reset.css";
-import type { ActionTransaction } from "../../../src/domain/action/models";
+import type { ActionTransaction } from "../../../src/domain/earn/action-models";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type { YieldActivityItem } from "../../../src/features/activity/model/activity-action";
 import { ActivityDetailsPage } from "../../../src/features/activity/ui/activity-details/activity-details.page";
@@ -24,7 +25,7 @@ vi.mock("@effect/atom-react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@effect/atom-react")>()),
   useAtomValue: () => atomValue.current,
 }));
-vi.mock("../../../src/features/activity/react/activity-action-route", () => ({
+vi.mock("../../../src/features/activity/ui/activity-action-route", () => ({
   useActivityActionRoute: () => route.current,
 }));
 vi.mock("../../../src/features/tracking/index", () => ({

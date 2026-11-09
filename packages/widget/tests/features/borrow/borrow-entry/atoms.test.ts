@@ -2,11 +2,10 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { appRuntime } from "../../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../../src/app/runtime/wallet-runtime";
-import type { Market } from "../../../../src/domain/borrow/catalog/market";
+
+import { deriveBorrowPositions } from "../../../../src/domain/borrow/borrow-positions";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
-import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
+import type { Market } from "../../../../src/domain/borrow/market";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../../src/domain/wallet/wallet-scope";
@@ -24,6 +23,8 @@ import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom as borrowMarketsAtom,
 } from "../../../../src/resources/borrow-markets/borrow-markets";
+import { appRuntime } from "../../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../../src/runtime/wallet-runtime";
 import { BorrowResourceSource } from "../../../../src/services/api/resource-sources";
 import {
   disconnectedLedgerConnectorState,

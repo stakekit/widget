@@ -1,19 +1,20 @@
 import type BigNumber from "bignumber.js";
 import { Data, Array as EArray, Option, Result } from "effect";
+
 import {
   getPendingActionStateKey,
   type PendingActionStateKey,
   preparePendingActionCommand,
 } from "../../../domain/action/action-command";
 import {
-  ActionCommand,
-  type PendingAction,
-} from "../../../domain/action/models";
-import {
   isPendingActionValidatorAddressesRequired,
   isPendingActionValidatorAddressRequired,
 } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
+import {
+  ActionCommand,
+  type PendingAction,
+} from "../../../domain/earn/action-models";
 import {
   type EarnBalance,
   getVisibleShares,
@@ -34,6 +35,7 @@ import type {
 } from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
+import { compositeKey } from "../../../shared/lib/composite-key";
 
 class PendingActionAttemptId extends Data.Class<{
   readonly value: string;
@@ -133,14 +135,14 @@ export const makeAutomaticPendingActionModalState = (
   makeOpenPendingActionModalState({
     ...input,
     attemptId: new PendingActionAttemptId({
-      value: JSON.stringify([
+      value: compositeKey([
         "automatic",
         input.yieldBalance.address,
         input.yieldBalance.type,
         input.pendingAction.intent,
         input.pendingAction.type,
         input.pendingAction.passthrough,
-        input.pendingAction.amount ?? null,
+        input.pendingAction.amount?.toJSON() ?? null,
       ]),
     }),
   });
@@ -357,7 +359,7 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
         ...confidentialArguments,
         ...optionArguments,
         ...validatorArguments,
-        ...(facts.additionalAddresses ?? {}),
+        ...facts.additionalAddresses,
       },
       yieldId: facts.integration.id,
     }),

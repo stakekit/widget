@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import type { HostHook } from "../host-hook";
 import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";

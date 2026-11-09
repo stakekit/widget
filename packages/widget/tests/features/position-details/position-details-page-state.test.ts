@@ -5,8 +5,7 @@ import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import { EarnBalance } from "../../../src/domain/earn/balance";
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -26,6 +25,8 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import {
   ResponseDecodeError,
   YieldResourceSource,

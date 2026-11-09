@@ -1,4 +1,5 @@
 import { DateTime } from "effect";
+
 import {
   ActionStatus,
   type ActionType,
@@ -6,7 +7,7 @@ import {
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
-import { toBorrowNetworkToken } from "../../../domain/borrow/catalog/token";
+import { toBorrowNetworkToken } from "../../../domain/borrow/token";
 import {
   type ConfidentialActionKind,
   type ConfidentialSettlement,

@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+
 import type { TokenDto } from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";

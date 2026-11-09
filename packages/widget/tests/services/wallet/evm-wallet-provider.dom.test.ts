@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Fiber, Queue, Stream, Struct } from "effect";
 import { afterEach, vi } from "vitest";
@@ -6,6 +7,7 @@ import { createConfig, http } from "wagmi";
 import { connect, getAccount } from "wagmi/actions";
 import { mainnet } from "wagmi/chains";
 import type * as WagmiConnectors from "wagmi/connectors";
+
 import { createEvmWallets } from "../../../src/services/wallet/internal/adapters/evm/wallets";
 import {
   makeWalletConnectConnection,

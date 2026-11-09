@@ -1,5 +1,5 @@
-import type { TronResource } from "../../../../../domain/action/tron-resource";
 import type { YieldCategory } from "../../../../../domain/earn/contract";
+import type { TronResource } from "../../../../../domain/earn/tron-resource";
 import type {
   EarnValidator,
   EarnValidatorKey,

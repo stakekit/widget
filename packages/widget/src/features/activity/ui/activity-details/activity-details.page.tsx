@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { capitalize, toLowerCase } from "effect/String";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
+
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import { capitalizeFirstLetters } from "../../../../shared/lib/formatters";
@@ -35,7 +36,7 @@ import {
   type ActivityActionDetailsProjection,
   projectActivityActionDetails,
 } from "../../model/activity-action-details";
-import { useActivityActionRoute } from "../../react/activity-action-route";
+import { useActivityActionRoute } from "../activity-action-route";
 import { useActivityActionTitle } from "../activity-page/hooks/use-activity-action-title";
 import { ActivityAvatar } from "../components/activity-avatar";
 import {

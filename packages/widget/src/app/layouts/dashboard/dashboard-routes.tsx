@@ -1,16 +1,17 @@
 import { Option } from "effect";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
+
 import type { YieldCategory } from "../../../domain/earn/contract";
 import {
   ActivityTabPage,
   createActivityActionRoutes,
 } from "../../../features/activity/composition";
+import { createBorrowTransactionFlowRoutes } from "../../../features/borrow-transaction-flow/composition";
 import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
 } from "../../../features/borrow/composition";
-import { createBorrowTransactionFlowRoutes } from "../../../features/borrow-transaction-flow/composition";
 import { EarnPageContent } from "../../../features/earn/composition";
 import { useSelectEarnCategory } from "../../../features/earn/index";
 import { useWidgetRouteState } from "../../../features/navigation/index";

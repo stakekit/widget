@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import {
   formatPairedTokenAmounts,
   formatTokenAmount,
@@ -6,7 +7,7 @@ import {
   unavailableFigure,
   withFigureUnit,
 } from "../../../../../shared/lib/number-format";
-import { getEstimatedRewardsUsd } from "../../../../yield-summary/index";
+import { getEstimatedRewardsUsd } from "../../../../yield-presentation/index";
 
 /**
  * A figure computed from the entered amount, such as the amount received or

@@ -1,5 +1,6 @@
 import { Array as EArray } from "effect";
 import { createConnector } from "wagmi";
+
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 
 export const passCorrectChainsToWallet =

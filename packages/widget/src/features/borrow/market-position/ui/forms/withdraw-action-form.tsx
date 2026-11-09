@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { toBorrowNetworkToken } from "../../../../../domain/borrow/catalog/token";
+
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
+import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
 import {
   formatFigureChange,
   formatTokenAmount,
@@ -27,7 +28,7 @@ import type {
   BorrowWithdrawTokenOption,
 } from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
-import { useBorrowWithdrawForm } from "../../react/use-action-form";
+import { useBorrowWithdrawForm } from "../use-action-form";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormWarningMessage } from "./form-warning";
 import { LtvTransitionRow } from "./ltv-transition-row";

@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { ComponentProps, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import {
   formatPositionCallout,

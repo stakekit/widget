@@ -1,4 +1,5 @@
 import type { Connector } from "wagmi";
+
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { UnsignedTronTransaction } from "./transaction";
 

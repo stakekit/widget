@@ -1,11 +1,12 @@
 import { DateTime, Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { UtcDateTimeFromString } from "../../../src/domain/finance/scalars";
 import type { HistoryPeriod } from "../../../src/domain/portfolio/models";
 import { earnRewardRateHistoryChart } from "../../../src/features/earn/state/yield-history-charts";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import { YieldResourceSource } from "../../../src/services/api/resource-sources";
 import { yieldApiYieldFixture } from "../../fixtures";
 

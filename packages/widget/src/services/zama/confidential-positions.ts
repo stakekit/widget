@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
+
 import {
   type ConfidentialRevealPosition,
   getConfidentialRevealRequests,

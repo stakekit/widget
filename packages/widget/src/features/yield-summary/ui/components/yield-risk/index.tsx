@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+
 import {
   getYieldRiskDisplay,
   getYieldRiskSourceLabel,
@@ -15,7 +16,7 @@ import {
   Text,
   VisuallyHidden,
 } from "../../../../../ui/index";
-import { getRiskRatingTone } from "../../../model/risk-rating-tone";
+import { getRiskRatingTone } from "../../../../yield-presentation/index";
 
 /**
  * What a rater's scale measures and runs over, and where it explains it. An

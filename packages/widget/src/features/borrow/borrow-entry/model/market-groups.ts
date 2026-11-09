@@ -1,16 +1,17 @@
 import BigNumber from "bignumber.js";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
-import type { Integration } from "../../../../domain/borrow/catalog/integration";
+
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
+import { decodeTokenId } from "../../../../domain/borrow/ids";
+import type { Integration } from "../../../../domain/borrow/integration";
 import {
   getBorrowMarketPairLabel,
   getListedCollateralTokens,
   getMarketAvailableLiquidityUsd,
   isListedBorrowMarket,
   type Market,
-} from "../../../../domain/borrow/catalog/market";
-import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
-import { decodeTokenId } from "../../../../domain/borrow/ids";
+} from "../../../../domain/borrow/market";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import type { BorrowToken } from "../../../../domain/borrow/token";
 import { exactZero, sumExact } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import { deriveBorrowMarketWalletBalances } from "../../action-preparation/index";
@@ -108,22 +109,20 @@ export const filterBorrowMarketGroups = ({
   }
 
   return [...marketsByGroupKey]
-    .map(
-      ([key, groupMarkets]): BorrowMarketGroup => ({
-        availableLiquidityUsd: sumExact(
-          groupMarkets.map(getMarketAvailableLiquidityUsd)
-        ),
-        bestRate: BigNumber.min(
-          ...groupMarkets.map((market) => market.borrowRate)
-        ),
-        key,
-        loanToken: groupMarkets[0].loanToken,
-        marketItems: [...groupMarkets].sort(
-          byAvailableLiquidityDesc(getMarketAvailableLiquidityUsd)
-        ),
-        network: groupMarkets[0].network,
-      })
-    )
+    .map(([key, groupMarkets]): BorrowMarketGroup => ({
+      availableLiquidityUsd: sumExact(
+        groupMarkets.map(getMarketAvailableLiquidityUsd)
+      ),
+      bestRate: BigNumber.min(
+        ...groupMarkets.map((market) => market.borrowRate)
+      ),
+      key,
+      loanToken: groupMarkets[0].loanToken,
+      marketItems: [...groupMarkets].sort(
+        byAvailableLiquidityDesc(getMarketAvailableLiquidityUsd)
+      ),
+      network: groupMarkets[0].network,
+    }))
     .sort(byAvailableLiquidityDesc((group) => group.availableLiquidityUsd));
 };
 

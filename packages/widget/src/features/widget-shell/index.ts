@@ -1,2 +1,2 @@
-export { useDetailsMatch } from "./react/use-details-match";
-export { useUnderMaintenance } from "./react/use-under-maintenance";
+export { useDetailsMatch } from "./ui/use-details-match";
+export { useUnderMaintenance } from "./ui/use-under-maintenance";

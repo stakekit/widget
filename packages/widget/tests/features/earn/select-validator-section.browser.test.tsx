@@ -1,9 +1,10 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
-import type { useSelectValidator } from "../../../src/features/earn/react/use-select-validator";
 import { SelectValidatorSection } from "../../../src/features/earn/ui/compact/earn-page/components/select-validator-section";
+import type { useSelectValidator } from "../../../src/features/earn/ui/use-select-validator";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils";
@@ -16,7 +17,7 @@ const hookState = vi.hoisted(() => ({
   current: undefined as unknown as ReturnType<typeof useSelectValidator>,
 }));
 
-vi.mock("../../../src/features/earn/react/use-select-validator", () => ({
+vi.mock("../../../src/features/earn/ui/use-select-validator", () => ({
   useSelectValidator: () => hookState.current,
 }));
 

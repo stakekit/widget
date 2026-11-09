@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+
 import type { FixedIconName } from "../icons/glyphs";
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";

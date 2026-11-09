@@ -6,6 +6,7 @@ import {
   Schema,
   type Scope,
 } from "effect";
+
 import { getProtocolChainIdentity } from "../../../../domain/wallet/network";
 import type { WalletAvailability } from "../../wallet-descriptors";
 import {
@@ -287,7 +288,8 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
     unsubscribeEnded = protocol.subscribeEnded(next.topic, () => {
       if (selected !== next) return;
       select(undefined);
-      for (const listener of [...endedListeners]) listener();
+      // Snapshot: a listener may unsubscribe or subscribe while this runs.
+      for (const listener of Array.from(endedListeners)) listener();
     });
   };
   yield* Effect.addFinalizer(() =>
@@ -513,7 +515,9 @@ const load = Effect.fn("StellarWalletsKitPlatform.load")(function* (
 export class StellarWalletsKitPlatform extends Context.Service<
   StellarWalletsKitPlatform,
   StellarWalletsKitPlatformService
->()("stakekit/widget/wallet/platform/StellarWalletsKitPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/stellar-wallets-kit-platform/StellarWalletsKitPlatform"
+) {
   static readonly layer = Layer.succeed(
     StellarWalletsKitPlatform,
     StellarWalletsKitPlatform.of({ load })

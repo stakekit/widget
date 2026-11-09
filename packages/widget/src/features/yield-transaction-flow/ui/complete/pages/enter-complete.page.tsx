@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import {
   formatTokenAmount,
   formatUsd,
@@ -9,7 +10,7 @@ import { useTrackPage } from "../../../../tracking/index";
 import {
   useYieldFlowExecution,
   useYieldFlowIntake,
-} from "../../../react/yield-flow-route";
+} from "../../yield-flow-session";
 import { CompletePage } from "./common.page.tsx";
 
 export const EnterCompletePage = () => {

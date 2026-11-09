@@ -1,19 +1,22 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option, Result, Schema } from "effect";
-import type { EarnBalance } from "../earn/balance";
+
+import type {
+  ManageActionCommand,
+  PendingAction,
+  YieldPendingActionType,
+} from "../earn/action-models";
+import type { EarnBalance, YieldBalanceType } from "../earn/balance";
 import type { ValidatorInput as ValidatorDto } from "../earn/validator";
 import type { EarnYieldWithProvider } from "../earn/yield-schema";
 import { truncateToTokenDecimals } from "../finance/exact";
 import type { WalletAddress } from "../identity/identifiers";
-import type { YieldBalanceType } from "../portfolio/positions";
 import { type Token, tokenString } from "../token/token";
 import type { AdditionalAddresses } from "../wallet/address";
-import type { ManageActionCommand, PendingAction } from "./models";
 import {
   isPendingActionAmountRequired,
   isPendingActionValidatorAddressesRequired,
   isPendingActionValidatorAddressRequired,
-  type YieldPendingActionType,
 } from "./pending-action";
 
 export const PendingActionStateKey = Schema.NonEmptyString.pipe(
@@ -122,7 +125,7 @@ export const preparePendingActionCommand = ({
     command: {
       action: pendingAction.type,
       address,
-      arguments: { ...args, ...(additionalAddresses ?? {}) },
+      arguments: { ...args, ...additionalAddresses },
       passthrough: pendingAction.passthrough,
       yieldId: integration.id,
     },

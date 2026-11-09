@@ -1,7 +1,15 @@
 [settings]
+# For the task artifact cache.
+experimental = true
 lockfile = true
 task.output = "prefix"
 task.timings = true
+# Compare source contents, not timestamps: a branch switch or a new worktree
+# rewrites timestamps without changing what a task reads.
+task.source_freshness_hash_contents = true
+# Each build:widget entry stores dist (about 45 MB); mise evicts the least
+# recently used entries past this.
+task.cache_max_size = "2GiB"
 
 [tools]
 node = "24"
@@ -9,59 +17,75 @@ node = "24"
 
 # Workspace tasks. Package commands stay in each package.json; these compose them.
 # Root package.json scripts alias these tasks, so `pnpm <task>` and `mise run <task>` are equivalent.
+# The cached checks and builds live in tools/mise/cached-tasks.toml.
+
+[task_config]
+includes = ["tools/mise/cached-tasks.toml"]
+
+# What the cached tasks read. Docs and generated output stay out.
+[task_config.input_groups]
+widget = [
+  "packages/widget/{src,tests,scripts,playground,vite,.storybook,public,ledger-manifest}/**",
+  "packages/widget/*.{json,ts,html}",
+  "packages/widget/.{oxlintrc,jscpd}.json",
+  # Vite reads them: API URLs reach the build and the tests.
+  "packages/widget/.env*",
+  "!packages/widget/**/*.md",
+  "!packages/widget/**/.DS_Store",
+  "!packages/widget/**/.vitest/**",
+  "@group:workspace",
+]
+examples = [
+  "packages/examples/*/{src,public,app,pages}/**",
+  "packages/examples/*/*.{json,ts,mts,mjs,js,html,css}",
+  "packages/examples/*/.env*",
+  "!packages/examples/**/.DS_Store",
+  # Next.js rewrites it on every dev server start and build.
+  "!packages/examples/*/next-env.d.ts",
+  "@group:workspace",
+]
+workspace = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "tsconfig.base.json",
+  "tsconfig.json",
+  ".oxlintrc.json",
+  # Knip skips gitignored files.
+  ".gitignore",
+]
+
+# Every task with sources and outputs stores its result. A cached result must
+# follow from the key alone, so tasks that read the network or the clock stay
+# uncached. Shell-exported overrides of the .env API settings join the key; the
+# API key only as a hash, since mise stores `env` values verbatim.
+[task_config.cache]
+enabled = true
+env = [
+  "VITE_API_URL",
+  "VITE_BORROW_API_URL",
+  "VITE_YIELDS_API_URL",
+  "VITE_FORCE_ADDRESS",
+]
+command_inputs = ["echo \"api-key:${VITE_API_KEY:-}\""]
 
 [tasks.dev]
 raw = true
 run = "pnpm --filter @stakekit/widget dev"
 
-[tasks."build:widget"]
-run = "pnpm --filter @stakekit/widget build"
-
-# The examples consume the built widget from packages/widget/dist.
-[tasks.build]
-depends = ["build:widget"]
-run = "pnpm --filter './packages/examples/*' run build"
-
-[tasks."lint:widget"]
-run = "pnpm --filter @stakekit/widget lint"
-
-[tasks."lint:examples"]
-depends = ["build:widget"]
-run = "pnpm --filter './packages/examples/*' run lint"
-
-[tasks."lint:ast"]
-depends = ["test:ast"]
-run = "pnpm exec ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never"
-
-[tasks."test:ast"]
-run = "pnpm exec ast-grep test --skip-snapshot-tests --color=never"
+# One oxfmt pass formats the whole repository; oxlint runs per package.
+[tasks."lint:format"]
+run = "pnpm exec oxfmt --check ."
 
 [tasks.lint]
-description = "Widget, example and ast-grep lint"
-depends = ["lint:widget", "lint:examples", "lint:ast"]
+description = "Formatting, widget and example lint"
+depends = ["lint:format", "lint:widget", "lint:examples"]
 
 [tasks.format]
-run = "pnpm --recursive run format"
+run = "pnpm exec oxfmt ."
 
 [tasks.clean]
 run = "pnpm --recursive run clean"
-
-[tasks."check-hygiene"]
-run = "pnpm --filter @stakekit/widget check-hygiene"
-
-[tasks."test:unit"]
-run = "pnpm --filter @stakekit/widget test:unit"
-
-[tasks."test:dom"]
-run = "pnpm --filter @stakekit/widget test:dom"
-
-[tasks."test:browser"]
-run = "pnpm --filter @stakekit/widget test:browser"
-
-# One Chromium suite at a time: a failed browser suite does not skip the stories.
-[tasks."test:storybook"]
-wait_for = ["test:browser"]
-run = "pnpm --filter @stakekit/widget test:storybook"
 
 [tasks.test]
 description = "Widget unit, jsdom, Chromium and Storybook tests"

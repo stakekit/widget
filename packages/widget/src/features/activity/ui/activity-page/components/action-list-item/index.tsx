@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { Box, ListRow } from "../../../../../../ui/index";
 import type { ActivityActionItem } from "../../../../model/activity-action";
 import { ActivityAvatar } from "../../../components/activity-avatar";

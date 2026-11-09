@@ -7,11 +7,12 @@ transitions. Features own their screens and state for both Layouts and never
 read which Layout is active, so a Feature's behavior cannot silently diverge
 between Layouts and a Layout can change without touching Feature logic.
 
-Inside a Feature, `ui/` holds components both Layouts render, while
+Inside a Feature, `ui/` holds components and hooks both Layouts render, while
 `ui/compact/` and `ui/dashboard/` hold Layout-specific screens and never import
-each other. `model/`, `state/`, and `react/` are Layout-free and are named after
-what they model: they never read or branch on the active Layout, though they may
-name the Layouts a navigation target requires. A Layout difference is expressed
+each other; only the Feature's composition imports them. `model/` and `state/`
+are Layout-free and are named after what they model, and no Feature code reads
+or branches on the active Layout, though `model/` and `state/` may name the
+Layouts a navigation target requires. A Layout difference is expressed
 as a Layout-specific component, a prop supplied by the Layout's composition
 that names the difference rather than the Layout, or a Presentation Setting; it
 is never a runtime branch on the Layout inside a Feature.
@@ -42,5 +43,6 @@ Widget Configuration normalizes it to the Layout. The deprecated
 `dashboardVariant` option is still accepted and mapped to `layout`, and `layout`
 wins when a host passes both. dependency-cruiser forbids imports between
 `ui/compact/` and `ui/dashboard/` and from Layout-free folders into either, and
-ast-grep rejects Layout reads outside application composition and Widget
+oxlint (`layout/no-layout-read-in-features`) rejects Layout reads outside
+application composition and Widget
 Configuration.

@@ -230,7 +230,7 @@ export const legacyThemeDefaults: Readonly<
       smallLightButtonBackground: "#F4F5FF",
       disabledButtonColor: "var(--sk-color-white)",
       disabledButtonBackground: "var(--sk-color-disabled)",
-      // ast-grep-ignore: no-layout-name-in-logic -- frozen public legacy theme token name
+      // oxlint-disable-next-line layout/no-layout-name-in-logic -- frozen public legacy theme token name
       dashboardDetailsSectionBackground: "#f5f5f6",
       summaryItemBackground: "#f5f5f6",
       summaryLabelStakedBackground: "#F6F0FF",
@@ -286,7 +286,7 @@ export const legacyThemeDefaults: Readonly<
       smallLightButtonBackground: "#333333",
       disabledButtonColor: "#000000",
       disabledButtonBackground: "var(--sk-color-disabled)",
-      // ast-grep-ignore: no-layout-name-in-logic -- frozen public legacy theme token name
+      // oxlint-disable-next-line layout/no-layout-name-in-logic -- frozen public legacy theme token name
       dashboardDetailsSectionBackground: "#282828",
       summaryItemBackground: "#282828",
       summaryLabelStakedBackground: "#333333",

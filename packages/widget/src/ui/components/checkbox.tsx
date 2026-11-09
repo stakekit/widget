@@ -1,6 +1,7 @@
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import * as stylex from "@stylexjs/stylex";
 import { type ReactNode, useId } from "react";
+
 import { Icon } from "../primitives/icon";
 import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";

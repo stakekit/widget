@@ -1,7 +1,8 @@
 import { createContext, type PropsWithChildren, useContext } from "react";
 import { useTranslation } from "react-i18next";
+
 import { IconButton } from "../../../ui/index";
-import { useHeader } from "../react/use-header";
+import { useHeader } from "./use-header";
 
 const BackButtonContext = createContext<boolean>(false);
 

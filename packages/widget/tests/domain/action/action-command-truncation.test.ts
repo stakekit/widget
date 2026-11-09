@@ -1,11 +1,12 @@
 import BigNumber from "bignumber.js";
 import { Result, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import {
   getPendingActionStateKey,
   preparePendingActionCommand,
 } from "../../../src/domain/action/action-command";
-import { YieldAction } from "../../../src/domain/action/models";
+import { YieldAction } from "../../../src/domain/earn/action-models";
 import { EarnBalance } from "../../../src/domain/earn/balance";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { projectYieldEntry } from "../../../src/features/yield-entry/model/yield-entry";

@@ -1,6 +1,7 @@
 import { act, type ReactNode, useState } from "react";
 import { MemoryRouter, type NavigateFunction, useNavigate } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { ActivityPageView } from "../../../src/features/activity/state/page";
 import { ActivityTabPage } from "../../../src/features/activity/ui/dashboard/activity";
 import { render } from "../../utils/test-utils.dom";

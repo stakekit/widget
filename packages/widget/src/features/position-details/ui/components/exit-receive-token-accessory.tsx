@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
 import type { Token } from "../../../../domain/token/token";

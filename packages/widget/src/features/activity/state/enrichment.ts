@@ -1,27 +1,28 @@
 import { Data, Effect } from "effect";
 import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
-import type { YieldAction } from "../../../domain/action/models";
+
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
-import type { Integration } from "../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../domain/borrow/catalog/market";
 import type { IntegrationId, MarketId } from "../../../domain/borrow/ids";
+import type { Integration } from "../../../domain/borrow/integration";
+import type { Market } from "../../../domain/borrow/market";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
+import type { YieldAction } from "../../../domain/earn/action-models";
 import type { EarnValidator } from "../../../domain/earn/validator";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
-import type { ActivityHistoryEntry } from "../../../resources/activity-history/index";
-import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/index";
+import type { ActivityHistoryEntry } from "../../../resources/activity-history/activity-history";
+import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/borrow-integrations";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../../../resources/borrow-markets/index";
+} from "../../../resources/borrow-markets/borrow-markets";
 import {
   ValidatorByAddressKey,
   validatorByAddressAtom,
-} from "../../../resources/validator-directory/index";
-import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
+} from "../../../resources/validator-directory/validator-directory";
+import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/yield-opportunity";
+import { appRuntime } from "../../../runtime/app-runtime";
 import {
   type ActivityEnrichmentFacts,
   validatorFactKey,

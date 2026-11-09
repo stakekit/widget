@@ -4,7 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import {
   EarnPosition,
   getEncryptedHandle,
@@ -35,7 +35,8 @@ import {
 import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
-} from "../../../src/resources/yield-directory/index";
+} from "../../../src/resources/yield-directory/yield-directory";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   YieldResourceSource,

@@ -25,11 +25,10 @@ export const runLatest = <A, E, S>(
           Effect.onInterrupt(() => Fiber.interrupt(fiber))
         )
       ),
-      Effect.flatMap(
-        (exit): Effect.Effect<A, E | S> =>
-          Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)
-            ? Effect.fail(superseded())
-            : exit
+      Effect.flatMap((exit): Effect.Effect<A, E | S> =>
+        Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)
+          ? Effect.fail(superseded())
+          : exit
       )
     )
   );

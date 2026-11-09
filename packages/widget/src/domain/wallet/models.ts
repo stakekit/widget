@@ -1,4 +1,5 @@
 import { Schema, SchemaTransformation } from "effect";
+
 import {
   isWalletNetwork,
   WalletNetwork,

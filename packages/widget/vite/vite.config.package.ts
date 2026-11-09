@@ -1,5 +1,7 @@
 import path from "node:path";
+
 import { defineConfig, esmExternalRequirePlugin } from "vite";
+
 import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 
 // These packages coordinate work with the embedding application. Bundling a

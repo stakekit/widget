@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+
 import { color } from "../tokens/color.stylex";
 
 /** A tone's soft tint with its text color on top. */

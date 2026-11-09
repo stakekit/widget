@@ -1,7 +1,8 @@
 import BigNumber from "bignumber.js";
-import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
-import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
-import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";
+
+import { getBorrowMarketPairLabel } from "../../../../domain/borrow/market";
+import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/minimum-debt";
+import { assessRiskGate } from "../../../../domain/borrow/risk-gate";
 import {
   exactZero,
   truncateToTokenDecimals,

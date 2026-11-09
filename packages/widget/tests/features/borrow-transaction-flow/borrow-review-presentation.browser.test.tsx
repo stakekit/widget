@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { userEvent } from "vitest/browser";
+
 import { BorrowFlowSession } from "../../../src/features/borrow-transaction-flow/model/session";
 import { BorrowReviewPage } from "../../../src/features/borrow-transaction-flow/ui/review";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
@@ -92,7 +93,7 @@ describe("borrow execution flow: Review presentation", () => {
   it.live("heads Review with the repaid amount and its USD value", () =>
     Effect.gen(function* () {
       const repaySession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           command: {
@@ -196,7 +197,7 @@ describe("borrow execution flow: Review presentation", () => {
   it.live("titles a collateral toggle with its asset", () =>
     Effect.gen(function* () {
       const toggleSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -231,7 +232,7 @@ describe("borrow execution flow: Review presentation", () => {
   it.live("shows current to projected risk on Review", () =>
     Effect.gen(function* () {
       const riskSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -262,7 +263,7 @@ describe("borrow execution flow: Review presentation", () => {
   it.live("omits projected metrics when risk is unavailable", () =>
     Effect.gen(function* () {
       const unavailableSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -299,7 +300,7 @@ describe("borrow execution flow: Review presentation", () => {
   it.live("shows known constraint warnings without blocking Confirm", () =>
     Effect.gen(function* () {
       const warnedSession = new BorrowFlowSession({
-        ...session,
+        walletScope: session.walletScope,
         intake: {
           ...session.intake,
           summary: {
@@ -336,7 +337,7 @@ describe("borrow execution flow: Review presentation", () => {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
         session: new BorrowFlowSession({
-          ...session,
+          walletScope: session.walletScope,
           intake: {
             ...session.intake,
             riskVerdict: { _tag: "Block", reason: "healthFactor" },
@@ -363,7 +364,7 @@ describe("borrow execution flow: Review presentation", () => {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
         session: new BorrowFlowSession({
-          ...session,
+          walletScope: session.walletScope,
           intake: {
             ...session.intake,
             riskVerdict: { _tag: "Block", reason: "ltv" },
@@ -392,7 +393,7 @@ describe("borrow execution flow: Review presentation", () => {
           autoStart: false,
           reviewElement: <BorrowReviewPage />,
           session: new BorrowFlowSession({
-            ...session,
+            walletScope: session.walletScope,
             intake: {
               ...session.intake,
               riskVerdict: { _tag: "Allow" },

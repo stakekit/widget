@@ -4,4 +4,4 @@ export {
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,
   useWidgetRouteState,
-} from "./react/widget-navigation";
+} from "./ui/widget-navigation";

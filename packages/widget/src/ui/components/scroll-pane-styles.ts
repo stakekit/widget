@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+
 import { scrollAreaMaxHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { scrollFadeVars } from "./scroll-area.stylex";

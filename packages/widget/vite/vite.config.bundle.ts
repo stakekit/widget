@@ -1,5 +1,7 @@
 import path from "node:path";
+
 import { defineConfig } from "vite";
+
 import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 
 export default defineConfig(

@@ -3,9 +3,10 @@ import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
-import { YieldAction } from "../../../src/domain/action/models";
+
 import { BorrowFeatureDisabled } from "../../../src/domain/borrow/availability";
 import { ActionId as BorrowActionId } from "../../../src/domain/borrow/ids";
+import { YieldAction } from "../../../src/domain/earn/action-models";
 import {
   ActionId,
   TransactionHash,
@@ -15,9 +16,11 @@ import {
 } from "../../../src/domain/identity/identifiers";
 import { BorrowApiError } from "../../../src/generated/api/borrow-client";
 import { YieldApiError } from "../../../src/generated/api/yield";
-import { makeBorrowOperations } from "../../../src/services/api/borrow-operations";
-import { makeBorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
-import { makeLegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
+import { makeBorrowOperations } from "../../../src/services/api/internal/borrow-operations";
+import { makeBorrowResourceSource } from "../../../src/services/api/internal/borrow-resource-source";
+import { makeLegacyResourceSource } from "../../../src/services/api/internal/legacy-resource-source";
+import { makeYieldOperations } from "../../../src/services/api/internal/yield-operations";
+import { makeYieldResourceSource } from "../../../src/services/api/internal/yield-resource-source";
 import {
   BorrowOperations,
   YieldOperations,
@@ -30,8 +33,6 @@ import {
   ResponseDecodeError,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
-import { makeYieldOperations } from "../../../src/services/api/yield-operations";
-import { makeYieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
 import {
   confidentialFixture,

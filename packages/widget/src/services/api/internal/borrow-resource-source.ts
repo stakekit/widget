@@ -1,0 +1,119 @@
+import { Effect, Schema } from "effect";
+
+import type { ActionId } from "../../../domain/borrow/ids";
+import type { Integration } from "../../../domain/borrow/integration";
+import type { BorrowMarketsScope } from "../../../domain/borrow/market";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
+import {
+  BorrowActionsPage,
+  BorrowActivityAction,
+  BorrowIntegrationPositionsResponse,
+  BorrowIntegrationsResponse,
+  BorrowMarketsResponse,
+} from "../../../domain/borrow/responses";
+import type { WalletAddress } from "../../../domain/identity/identifiers";
+import type * as BorrowApi from "../../../generated/api/borrow-client";
+import type { BorrowActionsRequest } from "../resource-sources";
+import {
+  decodeApiResponse,
+  decodeOptionalApiResponse,
+  withApiRequestError,
+  withResponseDecodeError,
+} from "./api-operation";
+import { requireBorrowTransport } from "./borrow-transport";
+
+export const makeBorrowResourceSource = (
+  borrow: BorrowApi.BorrowApi | null,
+  borrowEnabled: boolean
+) => {
+  const requireTransport = Effect.fn("BorrowResourceSource.requireTransport")(
+    function* () {
+      return yield* requireBorrowTransport(borrow, borrowEnabled);
+    }
+  );
+
+  const getIntegrations = Effect.gen(function* () {
+    const client = yield* requireTransport();
+    return yield* client
+      .IntegrationsControllerGetIntegrationsV1(undefined)
+      .pipe(
+        decodeApiResponse("borrow-integrations", BorrowIntegrationsResponse)
+      );
+  }).pipe(Effect.withSpan("BorrowResourceSource.getIntegrations"));
+
+  const getMarkets = Effect.fn("BorrowResourceSource.getMarkets")(
+    function* (request: {
+      readonly limit: number;
+      readonly network: BorrowNetwork;
+      readonly offset: number;
+      readonly scope: BorrowMarketsScope;
+    }) {
+      const client = yield* requireTransport();
+      return yield* client
+        .MarketsControllerGetMarketsV1({ params: request })
+        .pipe(decodeApiResponse("borrow-markets", BorrowMarketsResponse));
+    }
+  );
+
+  const getPositionData = Effect.fn("BorrowResourceSource.getPositionData")(
+    function* (request: {
+      readonly address: WalletAddress;
+      readonly integrations: ReadonlyArray<Integration>;
+      readonly network: BorrowNetwork;
+    }) {
+      const client = yield* requireTransport();
+      const responses = yield* Effect.forEach(
+        request.integrations,
+        (integration) =>
+          client
+            .PositionsControllerGetPositionsV1({
+              params: {
+                address: request.address,
+                integrationId: integration.id,
+                network: request.network,
+              },
+            })
+            .pipe(
+              withApiRequestError("borrow-positions"),
+              Effect.map((position) => ({ integration, position }))
+            ),
+        { concurrency: 5 }
+      );
+
+      return yield* Schema.decodeEffect(BorrowIntegrationPositionsResponse)(
+        responses
+      ).pipe(withResponseDecodeError("borrow-positions"));
+    }
+  );
+
+  const getAction = Effect.fn("BorrowResourceSource.getAction")(function* (
+    actionId: ActionId
+  ) {
+    const client = yield* requireTransport();
+    return yield* client
+      .ActionsControllerGetActionV1(actionId, undefined)
+      .pipe(
+        decodeOptionalApiResponse(
+          "borrow-activity-action",
+          BorrowActivityAction
+        )
+      );
+  });
+
+  const listActions = Effect.fn("BorrowResourceSource.listActions")(function* (
+    request: BorrowActionsRequest
+  ) {
+    const client = yield* requireTransport();
+    return yield* client
+      .ActionsControllerGetActionsV1({ params: request })
+      .pipe(decodeApiResponse("borrow-actions", BorrowActionsPage));
+  });
+
+  return {
+    getAction,
+    getIntegrations,
+    getMarkets,
+    getPositionData,
+    listActions,
+  } as const;
+};

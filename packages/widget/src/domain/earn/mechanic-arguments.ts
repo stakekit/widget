@@ -1,12 +1,13 @@
 import { Effect, Schema, SchemaGetter, SchemaParser, Struct } from "effect";
+
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TronResource } from "../action/tron-resource";
 import { ExactDecimal, ExactDecimalInput } from "../finance/scalars";
 import {
   ContractAddress,
   ProviderOption,
   TokenAddress,
 } from "../identity/identifiers";
+import { TronResource } from "./tron-resource";
 
 type ApiArgumentField = typeof ArgumentField.Type;
 type ApiArgumentName = YieldApi.ArgumentFieldDto["name"];

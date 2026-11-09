@@ -1,5 +1,6 @@
 import { Context, Effect, Layer, Stream } from "effect";
 import { FetchHttpClient } from "effect/http";
+
 import type { DirectTransaction } from "../../domain/action/direct-transaction";
 import type {
   ConfidentialChainId,
@@ -101,7 +102,8 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
   const revealHandles: ZamaServiceApi["revealHandles"] = Effect.fn(
     "ZamaService.revealHandles"
   )(function* (input) {
-    yield* values.addHandles(yield* sdk.decryptHandles(input));
+    const handles = yield* sdk.decryptHandles(input);
+    yield* values.addHandles(handles);
   }, logRevealFailure);
 
   const revealTokenBalance: ZamaServiceApi["revealTokenBalance"] = Effect.fn(
@@ -134,7 +136,7 @@ const makeZamaService = Effect.fn("makeZamaService")(function* () {
 });
 
 export class ZamaService extends Context.Service<ZamaService, ZamaServiceApi>()(
-  "stakekit/widget/ZamaService"
+  "@stakekit/widget/services/zama/zama-service/ZamaService"
 ) {
   static readonly layer = Layer.effect(ZamaService, makeZamaService()).pipe(
     Layer.provide(FetchHttpClient.layer)

@@ -1,7 +1,7 @@
 import {
   getTokensPricesRequest,
   PricesKey,
-} from "../../../resources/token-prices/index";
+} from "../../../resources/token-prices/prices";
 import type { YieldTransactionFlowIntake } from "../model/intake";
 import { getYieldTransactionFlowReviewPricingInput } from "../model/pricing";
 

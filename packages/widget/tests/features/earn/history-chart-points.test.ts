@@ -1,6 +1,7 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
-import { ActionCommand } from "../../../src/domain/action/models";
+
+import { ActionCommand } from "../../../src/domain/earn/action-models";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { UtcDateTimeFromString } from "../../../src/domain/finance/scalars";
 import {
@@ -16,7 +17,7 @@ import {
   toTvlHistoryChartPoint,
 } from "../../../src/features/earn/model/history-chart-points";
 import { toHistoryPoints } from "../../../src/features/earn/model/yield-history-series";
-import { getYieldFigures } from "../../../src/features/yield-summary/model/yield-figures";
+import { getYieldFigures } from "../../../src/features/yield-presentation/model/yield-figures";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiYieldFixture } from "../../fixtures";
 

@@ -1,8 +1,9 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
+import { deriveBorrowPositions } from "../../../../src/domain/borrow/borrow-positions";
 import { TokenAddress } from "../../../../src/domain/borrow/ids";
-import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import {
   type TokenBalance,
   TokenBalancesResponse,

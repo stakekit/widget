@@ -1,5 +1,6 @@
 import { useAtomMount } from "@effect/atom-react";
 import { useEffect } from "react";
+
 import {
   mountAnimationCompletionAtom,
   useMountAnimation,

@@ -1,16 +1,20 @@
 import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import type { EarnBalance } from "../../domain/earn/balance";
 import {
   fillConfidentialPosition,
   hasRevealedBalance,
 } from "../../domain/earn/confidential-balance";
 import type { YieldId } from "../../domain/identity/identifiers";
+import { appRuntime } from "../../runtime/app-runtime";
 import { RevealedBalances } from "../../services/zama/revealed-balances";
-import { TokenPricesKey, tokenPricesResourceAtom } from "../token-prices/index";
-import { yieldOpportunityResourceAtom } from "../yield-opportunity/index";
+import {
+  TokenPricesKey,
+  tokenPricesResourceAtom,
+} from "../token-prices/token-prices";
+import { yieldOpportunityResourceAtom } from "../yield-opportunity/yield-opportunity";
 
 export const revealedBalancesAtom = appRuntime
   .atom(

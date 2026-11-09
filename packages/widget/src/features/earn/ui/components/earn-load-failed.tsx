@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
+
 import { ErrorState } from "../../../../ui/index";
-import { useEarnPageStatus } from "../../react/use-earn-facades";
+import { useEarnPageStatus } from "../use-earn-facades";
 
 /**
  * The Earn form failed to load what it needs, such as the yields: one error

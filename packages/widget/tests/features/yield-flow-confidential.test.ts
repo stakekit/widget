@@ -14,8 +14,7 @@ import {
 } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
-import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
+
 import {
   type DirectTransaction,
   DirectTransactionId,
@@ -40,6 +39,8 @@ import { getYieldFlowWorkflowInput } from "../../src/features/yield-transaction-
 import { getYieldTransactionStepsView } from "../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
 import { startYieldFlowExecution } from "../../src/features/yield-transaction-flow/state/execution-page";
 import { makeYieldFlowReviewPage } from "../../src/features/yield-transaction-flow/state/review-page";
+import { appRuntime } from "../../src/runtime/app-runtime";
+import { walletRuntime } from "../../src/runtime/wallet-runtime";
 import type { ActionPreviewRequest } from "../../src/services/api/operations";
 import {
   LegacyResourceSource,
