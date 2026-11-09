@@ -6,7 +6,7 @@ import {
   inject,
   viewChild,
 } from "@angular/core";
-import { darkTheme, renderSKWidget } from "@stakekit/widget/bundle";
+import { renderSKWidget } from "@stakekit/widget/bundle";
 
 // Replaced at build time from `VITE_API_KEY` by `ng build --define`.
 declare const SK_API_KEY: string;
@@ -26,7 +26,7 @@ export class App {
       const widget = renderSKWidget({
         container: this.container().nativeElement,
         apiKey: SK_API_KEY,
-        theme: darkTheme,
+        appearance: { colorScheme: "dark" },
       });
       destroyRef.onDestroy(() => widget.unmount());
     });

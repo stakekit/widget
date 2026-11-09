@@ -1,4 +1,4 @@
-import type { EarnValidator } from "../../../domain/earn/models";
+import type { EarnValidator } from "../../../domain/earn/validator";
 import { useEarnValidatorSelection } from "./use-earn-facades";
 
 export const useSelectValidator = () => {

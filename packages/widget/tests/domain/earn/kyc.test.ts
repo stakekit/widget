@@ -4,7 +4,7 @@ import {
   getKycUrl,
   mapKycStatusToGate,
 } from "../../../src/domain/earn/kyc";
-import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../../fixtures";
 

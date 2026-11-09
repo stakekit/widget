@@ -13,7 +13,6 @@ import {
   WalletAddress,
   YieldId,
 } from "../../../src/domain/identity/identifiers";
-import { RewardsAddresses } from "../../../src/domain/portfolio/models";
 import { BorrowApiError } from "../../../src/generated/api/borrow-client";
 import { YieldApiError } from "../../../src/generated/api/yield";
 import { makeBorrowOperations } from "../../../src/services/api/borrow-operations";
@@ -54,7 +53,6 @@ const borrowActionId = Schema.decodeSync(BorrowActionId)("borrow-action");
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
 const firstYieldId = Schema.decodeSync(YieldId)("ethereum-eth-native-staking");
-const secondYieldId = Schema.decodeSync(YieldId)("cosmos-atom-native-staking");
 const transactionId = Schema.decodeSync(TransactionId)("transaction-1");
 
 describe("application API services", () => {
@@ -77,7 +75,6 @@ describe("application API services", () => {
 
         expect(legacySource.scanTokenBalances).toBeTypeOf("function");
         expect(legacySource.getPrices).toBeTypeOf("function");
-        expect(legacySource.getRewardsSummaries).toBeTypeOf("function");
         expect(yieldOperations.previewAction).toBeTypeOf("function");
         expect(yieldSource.getPositions).toBeTypeOf("function");
         expect(Effect.isEffect(yieldSource.getEnabledWalletNetworks)).toBe(
@@ -86,6 +83,7 @@ describe("application API services", () => {
         expect(Effect.isEffect(yieldSource.getHealth)).toBe(true);
         expect(yieldSource.getOpportunity).toBeTypeOf("function");
         expect(yieldSource.getProvider).toBeTypeOf("function");
+        expect(yieldSource.getRewardsSummary).toBeTypeOf("function");
         expect(yieldSource.listYields).toBeTypeOf("function");
         expect(
           Effect.isEffect(walletBootstrapSource.getEnabledWalletNetworks)
@@ -681,6 +679,16 @@ describe("application API services", () => {
           .pipe(Effect.map(Option.isNone)),
       },
       {
+        read: "rewards summary",
+        spec,
+        isAbsent: makeYieldResourceSource({
+          YieldsControllerGetYieldRewardsSummary: () =>
+            Effect.fail(yieldNotFound[spec]()),
+        } as never)
+          .getRewardsSummary({ address, yieldId: firstYieldId })
+          .pipe(Effect.map(Option.isNone)),
+      },
+      {
         read: "Borrow action",
         spec,
         isAbsent: Effect.gen(function* () {
@@ -756,40 +764,47 @@ describe("application API services", () => {
   );
 
   it.effect(
-    "retains valid aggregate entries when a sibling response is malformed",
+    "reads the wallet's rewards summary by address and decodes it",
     () =>
       Effect.gen(function* () {
-        const rewards = {
-          last24H: "0",
-          last30D: "3",
-          last7D: "1",
-          lastYear: "12",
-          total: "20",
-        };
-        const token = {
-          decimals: 18,
-          name: "Ethereum",
-          network: "ethereum",
-          symbol: "ETH",
-        };
-        const source = makeLegacyResourceSource({
-          YieldControllerGetSingleYieldRewardsSummary: (yieldId: string) =>
-            Effect.succeed(
-              yieldId === firstYieldId
-                ? { rewards, token }
-                : { rewards, token: { ...token, decimals: "invalid" } }
-            ),
+        const window = (amount: string) => ({ amount, amountRaw: "0" });
+        const getSummary = vi.fn(() =>
+          Effect.succeed({
+            yieldId: firstYieldId,
+            address,
+            token: { decimals: 18, network: "ethereum", symbol: "ETH" },
+            last24H: window("0.01"),
+            last7D: window("-0.5"),
+            last30D: window("1"),
+            lastYear: window("2"),
+            total: window("3"),
+          })
+        );
+        const source = makeYieldResourceSource({
+          YieldsControllerGetYieldRewardsSummary: getSummary,
         } as never);
-        const addresses = yield* Schema.decodeEffect(RewardsAddresses)({
+
+        const summary = yield* source.getRewardsSummary({
           address,
+          yieldId: firstYieldId,
         });
 
-        const result = yield* source.getRewardsSummaries({
-          addresses,
-          yieldIds: [firstYieldId, secondYieldId],
+        expect(getSummary).toHaveBeenCalledWith(firstYieldId, {
+          params: { address },
         });
+        expect(
+          Option.map(summary, (value) => value.last7D.amount.toFixed())
+        ).toEqual(Option.some("-0.5"));
 
-        expect(Object.keys(result)).toEqual([firstYieldId]);
+        const malformed = yield* makeYieldResourceSource({
+          YieldsControllerGetYieldRewardsSummary: () =>
+            Effect.succeed({ token: { symbol: "ETH" } }),
+        } as never)
+          .getRewardsSummary({ address, yieldId: firstYieldId })
+          .pipe(Effect.flip);
+
+        expect(malformed).toBeInstanceOf(ResponseDecodeError);
+        expect(malformed).toMatchObject({ operation: "yield-rewards-summary" });
       })
   );
 });

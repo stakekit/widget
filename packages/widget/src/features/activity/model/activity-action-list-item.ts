@@ -1,4 +1,4 @@
-import type { DateTime } from "effect";
+import { DateTime } from "effect";
 import {
   ActionStatus,
   type ActionType,
@@ -6,6 +6,7 @@ import {
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
+import { toBorrowNetworkToken } from "../../../domain/borrow/catalog/token";
 import {
   type ConfidentialActionKind,
   type ConfidentialSettlement,
@@ -13,21 +14,24 @@ import {
   getConfidentialSettlement,
 } from "../../../domain/earn/confidential";
 import { getExitAmountToken } from "../../../domain/earn/denomination";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
-import { exactDecimal } from "../../../domain/finance/exact";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
+import { fromBaseUnits } from "../../../domain/finance/base-units";
 import type { Token } from "../../../domain/token/token";
 import {
   formatDateTime,
-  getActivityDayKind,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
-import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
-import { formatTokenAmount } from "../../../shared/lib/number-format";
+import { sentenceCaseEnumValue } from "../../../shared/lib/formatters";
+import {
+  formatTokenAmount,
+  formatUsd,
+} from "../../../shared/lib/number-format";
 import type {
   ActivityActionItem,
   BorrowActivityItem,
   YieldActivityItem,
 } from "./activity-action";
+import { getActivityDayKey } from "./activity-days";
 
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
@@ -39,6 +43,8 @@ export type ActivityStatusLabel =
   | "created"
   | "expired"
   | "failed"
+  /** Waiting for its next transaction; a yield action continues from Activity. */
+  | "in_progress"
   | "processing"
   | "stale";
 
@@ -46,11 +52,15 @@ type BorrowActivityActionType = BorrowActivityItem["actionData"]["action"];
 
 export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
+  /** A deposit still under way: it reads as what it does, not what it did. */
+  | { readonly _tag: "deposit"; readonly tokenSymbol: string | null }
   /** Confidential deposits only settle when a later batch runs. */
   | { readonly _tag: "deposit_submitted"; readonly tokenSymbol: string | null }
   /** A confidential deposit its batch cancelled. */
   | { readonly _tag: "deposit_canceled"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
+  /** A withdrawal still under way. */
+  | { readonly _tag: "withdraw"; readonly tokenSymbol: string | null }
   /** A confidential private exit only joins the next redemption batch. */
   | {
       readonly _tag: "private_withdrawal_requested";
@@ -75,6 +85,8 @@ export type ActivityActionTitle =
   | {
       readonly _tag: "borrow";
       readonly action: BorrowActivityActionType;
+      /** Still under way: it reads as what it does, not what it did. */
+      readonly inProgress: boolean;
       readonly tokenSymbol: string | null;
     };
 
@@ -83,23 +95,115 @@ export type ActivityPresentationTime = {
   readonly timeZone: DateTime.TimeZone;
 };
 
-type ActivityActionTimestamp = {
-  readonly date: string;
-  readonly dayKind: ReturnType<typeof getActivityDayKind>;
-  readonly relative: ReturnType<typeof getActivityRelativeTime>;
-  readonly time: string;
-};
+/**
+ * When a row's action happened, under the header of the day it was created:
+ * how long ago within a day, its time of day after that, with its date too
+ * when that falls on another day.
+ */
+type ActivityListTime =
+  | { readonly unit: "now" }
+  | { readonly unit: "minutes" | "hours"; readonly value: number }
+  | { readonly unit: "clock"; readonly label: string };
 
 type ActivityActionListItemProjection = {
   readonly amount: string | null;
-  readonly amountSign: "" | "+" | "-";
+  /** `−` is the minus sign (U+2212), as negative figures read everywhere. */
+  readonly amountSign: "" | "+" | "−";
   readonly direction: ActivityDirection;
   readonly isPositive: boolean;
   readonly statusLabel: ActivityStatusLabel | null;
-  readonly timestamp: ActivityActionTimestamp | null;
+  /**
+   * It ended without taking effect (failed or canceled): its amount never
+   * moved, and its time is when it ended.
+   */
+  readonly voided: boolean;
+  /**
+   * When the action was created, or when it ended if voided; the receipt
+   * gives its full dates and times.
+   */
+  readonly time: ActivityListTime | null;
   readonly title: ActivityActionTitle;
+  /** The token the action names, whose logo leads its row and receipt. */
+  readonly token: Token | null;
   /** The symbol of the token the amount is in. */
   readonly amountTokenSymbol: string | null;
+  /** The amount in USD, which a row shows when its token is unknown. */
+  readonly amountFiat: string | null;
+  /** The amount a row shows, signed: see `resolveAmountText`. */
+  readonly amountText: string | null;
+};
+
+const projectActivityListTime = ({
+  at,
+  createdAt,
+  locale,
+  presentationTime,
+}: {
+  readonly at: DateTime.Utc;
+  readonly createdAt: DateTime.Utc;
+  readonly locale: string;
+  readonly presentationTime: ActivityPresentationTime | null;
+}): ActivityListTime | null => {
+  if (!presentationTime) return null;
+  const { now, timeZone } = presentationTime;
+  const relative = getActivityRelativeTime(at, now);
+  switch (relative.unit) {
+    case "now":
+      return relative;
+    case "minutes":
+    case "hours":
+      return { unit: relative.unit, value: relative.value };
+    case "days": {
+      const onCreationDay =
+        getActivityDayKey(at, timeZone) ===
+        getActivityDayKey(createdAt, timeZone);
+      return {
+        unit: "clock",
+        label: formatDateTime(at, {
+          locale,
+          timeZone,
+          hour: "numeric",
+          minute: "2-digit",
+          ...(onCreationDay ? {} : { day: "numeric", month: "short" }),
+        }),
+      };
+    }
+  }
+};
+
+/**
+ * Whether an outcome took no effect, so its amount never moved. An expired
+ * action is not: it stopped waiting for its next transaction after earlier
+ * ones confirmed.
+ */
+const VOIDED_STATUS: Record<ActivityStatusLabel, boolean> = {
+  awaiting_settlement: false,
+  canceled: true,
+  completed: false,
+  created: false,
+  expired: false,
+  failed: true,
+  in_progress: false,
+  processing: false,
+  stale: false,
+};
+
+/**
+ * When a voided Yield action ended: its batch's cancellation, its completion,
+ * else when its last transaction was sent, else its creation. Transactions
+ * are created with the action, so only a send dates its end.
+ */
+const resolveYieldEndedAt = (
+  action: YieldActivityItem["actionData"],
+  settlement: ConfidentialSettlement | null
+): DateTime.Utc => {
+  if (settlement?._tag === "Cancelled") return settlement.at;
+  if (action.completedAt) return action.completedAt;
+  return action.transactions.reduce(
+    (latest, { broadcastedAt }) =>
+      broadcastedAt ? DateTime.max(latest, broadcastedAt) : latest,
+    action.createdAt
+  );
 };
 
 const getActivityDirection = (type: ActionType): ActivityDirection => {
@@ -148,7 +252,7 @@ const BORROW_ACTIVITY_DIRECTION: Record<
   withdraw: "withdraw",
 };
 
-// Borrow rows cannot be continued from Activity, so waiting reads as processing.
+// Borrow rows cannot be continued from Activity; waiting still reads as under way.
 const BORROW_ACTIVITY_STATUS_LABEL: Record<
   BorrowActivityItem["actionData"]["status"],
   ActivityStatusLabel
@@ -159,7 +263,7 @@ const BORROW_ACTIVITY_STATUS_LABEL: Record<
   PROCESSING: "processing",
   STALE: "stale",
   SUCCESS: "completed",
-  WAITING_FOR_NEXT: "processing",
+  WAITING_FOR_NEXT: "in_progress",
 };
 
 /** How a confidential deposit's or private exit's batch resolved, if it is one. */
@@ -178,7 +282,7 @@ const SETTLEMENT_STATUS_LABEL: Record<
   Settled: "completed",
 };
 
-/** Waiting actions show no badge: the user may have continued elsewhere. */
+/** A waiting action is in progress until its continuation window closes. */
 const projectActivityStatusLabel = (
   action: YieldActivityItem["actionData"],
   settlement: ConfidentialSettlement | null,
@@ -194,7 +298,7 @@ const projectActivityStatusLabel = (
       return presentationTime &&
         !isContinuableYieldAction(action, presentationTime.now)
         ? "expired"
-        : null;
+        : "in_progress";
     case ActionStatus.CANCELED:
       return "canceled";
     case ActionStatus.CREATED:
@@ -230,7 +334,7 @@ const getReadableRawTokenSymbol = (
  * token; an exit's amount is in the Exit Unit and its title names the Exit
  * Receive Token; any other action pays the Value Token.
  */
-export const resolveActivityActionTokens = (
+const resolveActivityActionTokens = (
   yieldData: EarnYieldWithProvider,
   action: YieldActivityItem["actionData"]
 ): Readonly<{ readonly amountToken: Token; readonly titleToken: Token }> => {
@@ -256,7 +360,12 @@ export const resolveActivityActionTokens = (
   }
 };
 
-const resolveTokenSymbols = ({
+/**
+ * The symbols a row shows and the token its logo shows. A yield the API no
+ * longer lists leaves only the raw token its arguments name: a symbol, with
+ * no logo.
+ */
+const resolveListTokens = ({
   action,
   direction,
 }: {
@@ -264,6 +373,7 @@ const resolveTokenSymbols = ({
   readonly direction: ActivityDirection;
 }): Readonly<{
   readonly amountTokenSymbol: string | null;
+  readonly titleToken: Token | null;
   readonly titleTokenSymbol: string | null;
 }> => {
   const yieldData = action.yieldData;
@@ -276,7 +386,11 @@ const resolveTokenSymbols = ({
         : (inputToken ?? outputToken);
     const symbol = getReadableRawTokenSymbol(preferredToken);
 
-    return { amountTokenSymbol: symbol, titleTokenSymbol: symbol };
+    return {
+      amountTokenSymbol: symbol,
+      titleToken: null,
+      titleTokenSymbol: symbol,
+    };
   }
 
   const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
@@ -288,22 +402,45 @@ const resolveTokenSymbols = ({
   return {
     amountTokenSymbol:
       getReadableRawTokenSymbol(amountToken.symbol) ?? yieldTokenSymbol,
+    titleToken,
     titleTokenSymbol:
       getReadableRawTokenSymbol(titleToken.symbol) ?? yieldTokenSymbol,
   };
 };
 
 const resolveAmountSign = ({
-  amount,
+  shown,
   direction,
 }: {
-  readonly amount: string | null;
+  /** The amount shown, in its token or in USD. */
+  readonly shown: string | null;
   readonly direction: ActivityDirection;
-}): "" | "+" | "-" => {
-  if (!amount) return "";
-  if (direction === "withdraw") return "-";
+}): "" | "+" | "−" => {
+  if (!shown) return "";
+  if (direction === "withdraw") return "−";
   if (direction === "deposit" || direction === "rewards") return "+";
   return "";
+};
+
+/**
+ * The amount a row shows, signed: in its token, or in USD when the token is
+ * unknown. With neither, none: a number without its unit is no amount.
+ */
+const resolveAmountText = ({
+  amount,
+  amountFiat,
+  amountSign,
+  amountTokenSymbol,
+}: {
+  readonly amount: string | null;
+  readonly amountFiat: string | null;
+  readonly amountSign: "" | "+" | "−";
+  readonly amountTokenSymbol: string | null;
+}) => {
+  if (amount && amountTokenSymbol) {
+    return `${amountSign}${amount} ${amountTokenSymbol}`;
+  }
+  return amountFiat ? `${amountSign}${amountFiat}` : null;
 };
 
 const resolveTitle = ({
@@ -319,10 +456,13 @@ const resolveTitle = ({
   readonly settlement: ConfidentialSettlement | null;
   readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
+  const waiting = action.actionData.status === ActionStatus.WAITING_FOR_NEXT;
   switch (direction) {
     case "deposit":
       if (confidentialKind !== "deposit" || settlement?._tag === "Settled") {
-        return { _tag: "deposited", tokenSymbol };
+        return waiting
+          ? { _tag: "deposit", tokenSymbol }
+          : { _tag: "deposited", tokenSymbol };
       }
       return settlement?._tag === "Cancelled"
         ? { _tag: "deposit_canceled", tokenSymbol }
@@ -339,53 +479,18 @@ const resolveTitle = ({
       if (confidentialKind === "instantExitPayout") {
         return { _tag: "instant_withdrawal_finalized", tokenSymbol };
       }
-      return { _tag: "withdrew", tokenSymbol };
+      return waiting
+        ? { _tag: "withdraw", tokenSymbol }
+        : { _tag: "withdrew", tokenSymbol };
     case "rewards":
       return { _tag: "rewards" };
     default:
       return {
         _tag: "generic",
-        actionLabel: capitalizeFirstLetters(
-          action.actionData.type.replaceAll("_", " ")
-        ),
+        actionLabel: sentenceCaseEnumValue(action.actionData.type),
         tokenSymbol,
       };
   }
-};
-
-const resolveTimestamp = ({
-  createdAt,
-  locale,
-  presentationTime,
-}: {
-  readonly createdAt: DateTime.Utc | null | undefined;
-  readonly locale: string;
-  readonly presentationTime: ActivityPresentationTime | null;
-}): ActivityActionTimestamp | null => {
-  if (!createdAt || !presentationTime) return null;
-
-  return {
-    date: formatDateTime(createdAt, {
-      locale,
-      timeZone: presentationTime.timeZone,
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
-    dayKind: getActivityDayKind(
-      createdAt,
-      presentationTime.now,
-      presentationTime.timeZone
-    ),
-    relative: getActivityRelativeTime(createdAt, presentationTime.now),
-    time: formatDateTime(createdAt, {
-      locale,
-      timeZone: presentationTime.timeZone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }),
-  };
 };
 
 // Borrow actions carry either a decimal amount or base units in the token's decimals.
@@ -397,7 +502,7 @@ export const resolveBorrowActivityAmount = ({
   if (amount) return amount;
   if (amountRaw === undefined || !token) return null;
 
-  return exactDecimal(amountRaw.toString()).shiftedBy(-token.decimals);
+  return fromBaseUnits(amountRaw, token.decimals);
 };
 
 const projectBorrowActivityListItem = ({
@@ -417,19 +522,47 @@ const projectBorrowActivityListItem = ({
     ? formatTokenAmount(exactAmount, locale, "down")
     : null;
 
+  const amountSign = resolveAmountSign({ shown: amount, direction });
+  // Borrow actions carry no USD value.
+  const amountFiat = null;
+
+  const statusLabel = BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status];
+  const voided = VOIDED_STATUS[statusLabel];
+
   return {
     amount,
-    amountSign: resolveAmountSign({ amount, direction }),
+    amountSign,
     direction,
     isPositive: direction === "deposit",
-    statusLabel: BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status],
-    timestamp: resolveTimestamp({
+    statusLabel,
+    voided,
+    // A Borrow action records only when it was created.
+    time: projectActivityListTime({
+      at: borrowAction.createdAt,
       createdAt: borrowAction.createdAt,
       locale,
       presentationTime,
     }),
-    title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
+    title: {
+      _tag: "borrow",
+      action: borrowAction.action,
+      inProgress:
+        statusLabel === "created" ||
+        statusLabel === "processing" ||
+        statusLabel === "in_progress",
+      tokenSymbol,
+    },
+    token: action.token
+      ? toBorrowNetworkToken({ network: action.network, token: action.token })
+      : null,
     amountTokenSymbol: tokenSymbol,
+    amountFiat,
+    amountText: resolveAmountText({
+      amount,
+      amountFiat,
+      amountSign,
+      amountTokenSymbol: tokenSymbol,
+    }),
   };
 };
 
@@ -451,27 +584,44 @@ export const projectActivityActionListItem = ({
     ? getConfidentialActionKind(action.yieldData, action.actionData)
     : null;
   const settlement = getActivitySettlement(action);
-  const { amountTokenSymbol, titleTokenSymbol } = resolveTokenSymbols({
-    action,
-    direction,
-  });
+  const { amountTokenSymbol, titleToken, titleTokenSymbol } = resolveListTokens(
+    {
+      action,
+      direction,
+    }
+  );
   const amount =
     action.actionData.amount == null
       ? null
       : formatTokenAmount(action.actionData.amount, locale, "down");
+  const amountFiat = action.actionData.amountUsd?.isGreaterThan(0)
+    ? formatUsd(action.actionData.amountUsd, locale)
+    : null;
+  const amountSign = resolveAmountSign({
+    shown: amount ?? amountFiat,
+    direction,
+  });
+
+  const statusLabel = projectActivityStatusLabel(
+    action.actionData,
+    settlement,
+    presentationTime
+  );
+  const voided = statusLabel !== null && VOIDED_STATUS[statusLabel];
+  const { createdAt } = action.actionData;
 
   return {
     amount,
-    amountSign: resolveAmountSign({ amount, direction }),
+    amountSign,
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
-    statusLabel: projectActivityStatusLabel(
-      action.actionData,
-      settlement,
-      presentationTime
-    ),
-    timestamp: resolveTimestamp({
-      createdAt: action.actionData.createdAt,
+    statusLabel,
+    voided,
+    time: projectActivityListTime({
+      at: voided
+        ? resolveYieldEndedAt(action.actionData, settlement)
+        : createdAt,
+      createdAt,
       locale,
       presentationTime,
     }),
@@ -482,6 +632,14 @@ export const projectActivityActionListItem = ({
       settlement,
       tokenSymbol: titleTokenSymbol,
     }),
+    token: titleToken,
     amountTokenSymbol,
+    amountFiat,
+    amountText: resolveAmountText({
+      amount,
+      amountFiat,
+      amountSign,
+      amountTokenSymbol,
+    }),
   };
 };

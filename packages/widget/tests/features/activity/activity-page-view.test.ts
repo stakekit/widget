@@ -5,6 +5,7 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../../src/features/activity/model/activity-action";
 import {
   hasActivityActions,
+  needsNextOtherPage,
   projectActivityPageView,
   resolveActivityPageFilter,
   resolveActivityPageWalletStatus,
@@ -361,6 +362,124 @@ describe("Activity page projection", () => {
       status: "ready",
     });
   });
+
+  describe("the Other filter", () => {
+    const otherOptions: ActivityFilterOptionsResult = AsyncResult.success([
+      { count: 3, filter: "all" },
+      { count: 1, filter: "stake" },
+      { count: 2, filter: "other" },
+    ]);
+    const categorized = makeActionItem("categorized");
+    const firstUncategorized = makeUnavailableActionItem("first-other");
+    const secondUncategorized = makeUnavailableActionItem("second-other");
+
+    it("shows the uncategorized actions of the All feed, loading its pages until it has them all", () => {
+      const input = {
+        actionsResult: makeActionsResult({
+          actions: [categorized, firstUncategorized],
+          done: false,
+          total: 3,
+        }),
+        filterOptionsResult: otherOptions,
+        selectedFilter: "other",
+      } as const;
+
+      expect(
+        projectActivityPageView({ ...input, walletStatus: "connected" })
+      ).toMatchObject({
+        actions: [firstUncategorized],
+        pagination: { status: "loading-more" },
+        showingCount: 1,
+        status: "ready",
+        total: 2,
+      });
+      expect(needsNextOtherPage(input)).toBe(true);
+      // A page already loading is not asked for again.
+      expect(
+        needsNextOtherPage({
+          ...input,
+          actionsResult: AsyncResult.waiting(input.actionsResult),
+        })
+      ).toBe(false);
+    });
+
+    it("keeps loading past its count until the feed ends", () => {
+      // A yield that failed to load reads as Other here though the API
+      // counts it in a category, so older Other actions may still follow.
+      const found = {
+        actionsResult: makeActionsResult({
+          actions: [categorized, firstUncategorized, secondUncategorized],
+          done: false,
+          total: 4,
+        }),
+        filterOptionsResult: otherOptions,
+        selectedFilter: "other",
+      } as const;
+      const ended = {
+        ...found,
+        actionsResult: makeActionsResult({
+          actions: [categorized, firstUncategorized],
+          done: true,
+        }),
+      } as const;
+
+      expect(
+        projectActivityPageView({ ...found, walletStatus: "connected" })
+      ).toMatchObject({
+        actions: [firstUncategorized, secondUncategorized],
+        pagination: { status: "loading-more" },
+        total: 2,
+      });
+      expect(needsNextOtherPage(found)).toBe(true);
+      expect(
+        projectActivityPageView({ ...ended, walletStatus: "connected" })
+      ).toMatchObject({
+        actions: [firstUncategorized],
+        pagination: { status: "complete" },
+        total: 1,
+      });
+      expect(needsNextOtherPage(ended)).toBe(false);
+    });
+
+    it("keeps loading while none of the loaded pages holds one", () => {
+      expect(
+        projectActivityPageView({
+          actionsResult: makeActionsResult({
+            actions: [categorized],
+            done: false,
+            total: 3,
+          }),
+          filterOptionsResult: otherOptions,
+          selectedFilter: "other",
+          walletStatus: "connected",
+        })
+      ).toEqual({ status: "loading" });
+    });
+
+    it("offers a retry, not another load, when the next page fails", () => {
+      const previous = makeActionsResult({
+        actions: [firstUncategorized],
+        done: false,
+        total: 3,
+      });
+      const input = {
+        actionsResult: AsyncResult.failureWithPrevious(
+          Cause.fail(undefined as never),
+          { previous: Option.some(previous) }
+        ),
+        filterOptionsResult: otherOptions,
+        selectedFilter: "other",
+      } as const;
+
+      expect(
+        projectActivityPageView({ ...input, walletStatus: "connected" })
+      ).toMatchObject({
+        actions: [firstUncategorized],
+        pagination: { status: "load-more-failed" },
+      });
+      expect(needsNextOtherPage(input)).toBe(false);
+    });
+  });
 });
 
 describe("Activity page inputs", () => {
@@ -389,6 +508,13 @@ describe("Activity page inputs", () => {
         selectedFilter: "defi",
       })
     ).toBe("defi");
+    // Other falls back to All once the options no longer list it.
+    expect(
+      resolveActivityPageFilter({
+        filterOptionsResult: filterOptions,
+        selectedFilter: "other",
+      })
+    ).toBe("all");
   });
 
   it("distinguishes wallet bootstrap from a settled disconnect", () => {

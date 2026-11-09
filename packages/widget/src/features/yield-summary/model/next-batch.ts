@@ -8,7 +8,7 @@ import {
   isPublishedBatchDue,
 } from "../../../domain/earn/batch-schedule";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { getDisplayDurationUntil } from "../../../shared/lib/date";
 
 /** Localized time left until `future`, e.g. "3 hours"; null once passed. */

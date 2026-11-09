@@ -1,13 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
 import { SelectValidator } from "../../../yield-entry/views";
 import { usePositionDetails } from "../../react/use-position-details";
 
 /**
- * Rendered next to the whole position-details surface, not inside the unstake
+ * Rendered next to the whole position-details surface, not inside the exit
  * section: pending actions can require validator selection while the position
- * has nothing to unstake.
+ * has nothing to exit.
  */
 export const PositionDetailsValidatorModal = () => {
   const {
@@ -31,6 +29,10 @@ export const PositionDetailsValidatorModal = () => {
 
   return (
     <SelectValidator
+      open
+      onOpenChange={(open) => {
+        if (!open) validatorAddressesHandling.closeModal();
+      }}
       selectedValidators={validatorAddressesHandling.selectedValidatorKeys}
       onItemClick={(val) => {
         validatorAddressesHandling.onItemClick(val);
@@ -42,26 +44,18 @@ export const PositionDetailsValidatorModal = () => {
       selectedStake={integrationDataValue}
       validators={validatorsData}
       hasMore={hasMoreValidators}
-      isLoadingMore={isLoadingMoreValidators}
       onLoadMore={onLoadMoreValidators}
+      isLoadingMore={isLoadingMoreValidators}
       multiSelect={validatorAddressesHandling.multiSelect}
-      state={validatorAddressesHandling.modalState}
-    >
-      {validatorAddressesHandling.multiSelect && (
-        <Box px="4" display="flex" alignItems="center" justifyContent="center">
-          <Button
-            variant={{
-              color: validatorAddressesHandling.submitDisabled
-                ? "disabled"
-                : "primary",
-            }}
-            disabled={validatorAddressesHandling.submitDisabled}
-            onClick={() => onValidatorsSubmit()}
-          >
-            {t("position_details.select_validators.submit")}
-          </Button>
-        </Box>
-      )}
-    </SelectValidator>
+      {...(validatorAddressesHandling.multiSelect
+        ? {
+            confirm: {
+              label: t("position_details.select_validators.submit"),
+              onClick: () => onValidatorsSubmit(),
+              disabled: validatorAddressesHandling.submitDisabled,
+            },
+          }
+        : {})}
+    />
   );
 };

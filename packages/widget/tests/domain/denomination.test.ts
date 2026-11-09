@@ -2,16 +2,16 @@ import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import {
+  ConfidentialHandle,
+  type EarnBalance,
+} from "../../src/domain/earn/balance";
+import {
   getBalanceShares,
   getExitAmountToken,
   getExitUnit,
   getPendingActionReturn,
   getPositionShares,
 } from "../../src/domain/earn/denomination";
-import {
-  ConfidentialHandle,
-  type EarnBalance,
-} from "../../src/domain/earn/models";
 import { Token } from "../../src/domain/token/token";
 import {
   confidentialFixture,

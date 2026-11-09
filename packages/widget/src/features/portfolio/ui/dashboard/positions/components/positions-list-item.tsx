@@ -1,23 +1,13 @@
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../../domain/borrow/positions/market-position";
 import { widgetRoutes } from "../../../../../../services/navigation/widget-routes";
-import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
-import { WidgetLink } from "../../../../../navigation/views";
+import { useTokenLogo } from "../../../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../../../shared/react/widget-presentation";
+import { Box, ListRow, TokenAvatar } from "../../../../../../ui/index";
+import { useWidgetLinkProps } from "../../../../../navigation/index";
+import { usePositionListItem } from "../../../../react/use-position-list-item";
 import type { UnifiedPositionItem } from "../../../../state/read-models/positions";
 import { EarnPositionListItem } from "../../../components/earn-position-list-item";
-import {
-  listItem,
-  noWrap,
-  positionInfoColumn,
-  positionName,
-  rewardRateText,
-  viaText,
-} from "../../../components/position-list-item.css";
-import { usePositionListItem } from "../hooks/use-position-list-item";
 import { getBorrowMarketPositionListItemModel } from "../model";
 
 const BorrowMarketPositionListItem = ({
@@ -28,69 +18,29 @@ const BorrowMarketPositionListItem = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const model = getBorrowMarketPositionListItemModel({ locale, position, t });
+  const link = useWidgetLinkProps(
+    widgetRoutes.borrowPosition.build("Dashboard", { marketId: position.id })
+  );
+  const logo = useTokenLogo(model.headerToken);
 
   return (
-    <WidgetLink
-      to={widgetRoutes.borrowPosition.build("Dashboard", {
-        marketId: position.id,
-      })}
-    >
-      <Box py="1">
-        <ListItem className={listItem}>
-          <Box
-            display="flex"
-            width="full"
-            alignItems="center"
-            justifyContent="space-between"
-            gap="2"
-          >
-            <Box
-              display="flex"
-              alignItems="center"
-              gap="2"
-              flex={1}
-              minWidth="0"
-            >
-              <TokenIcon token={model.headerToken} />
-
-              <Box className={positionInfoColumn}>
-                <Text className={positionName}>{model.title}</Text>
-
-                <Text
-                  className={viaText}
-                  variant={{ type: "muted", weight: "normal" }}
-                >
-                  {t("positions.via", {
-                    providerName: model.providerName,
-                    count: 1,
-                  })}
-                </Text>
-              </Box>
-            </Box>
-
-            <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-              <Text className={rewardRateText}>{model.borrowApy}</Text>
-
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="flex-end"
-                textAlign="end"
-                gap="1"
-              >
-                <Text className={noWrap}>{model.balanceText}</Text>
-                <Text
-                  className={noWrap}
-                  variant={{ type: "muted", weight: "normal" }}
-                >
-                  {model.subValue}
-                </Text>
-              </Box>
-            </Box>
-          </Box>
-        </ListItem>
-      </Box>
-    </WidgetLink>
+    <Box paddingBlock={4}>
+      <ListRow
+        link={link}
+        leading={<TokenAvatar {...logo} />}
+        title={model.title}
+        subtitle={t("positions.via", {
+          providerName: model.providerName,
+          count: 1,
+        })}
+        {...(model.status ? { status: model.status } : {})}
+        // A borrow rate is a cost, not a positive rate, so it stays neutral;
+        // a narrow row keeps its room for the title and the value.
+        figure={{ text: model.borrowApy, from: "sm" }}
+        value={model.balanceText}
+        subvalue={model.subValue}
+      />
+    </Box>
   );
 };
 

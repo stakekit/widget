@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { PendingAction } from "../../../domain/action/models";
-import type { EarnBalance } from "../../../domain/earn/models";
+import type { EarnBalance } from "../../../domain/earn/balance";
 
 import { positionDetailsPendingActions } from "../state/actions/pending-action";
 import type {

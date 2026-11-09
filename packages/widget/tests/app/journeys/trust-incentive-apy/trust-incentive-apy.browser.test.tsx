@@ -3,13 +3,14 @@ import { renderApp } from "../../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Trust incentive APY", () => {
-  it("shows APY composition during discovery", async ({ worker }) => {
-    const { account, customConnectors, legacyYield, setUrl } =
-      await setup(worker);
+  it("shows the average rate for a variable-rate yield", async ({ worker }) => {
+    const { account, customConnectors, yieldId, setUrl } = await setup(worker, {
+      discoveryRateType: "variable",
+    });
 
     setUrl({
       accountId: account,
-      yieldId: legacyYield.id,
+      yieldId,
     });
 
     const app = await renderApp({
@@ -17,7 +18,30 @@ describe("Trust incentive APY", () => {
     });
 
     await expect
-      .element(app.getByTestId("estimated-reward__percent").getByText("4.55%"))
+      .element(
+        app.getByTestId("estimated-reward__percent").getByText("4.55%").first()
+      )
+      .toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("shows APY composition during discovery", async ({ worker }) => {
+    const { account, customConnectors, yieldId, setUrl } = await setup(worker);
+
+    setUrl({
+      accountId: account,
+      yieldId,
+    });
+
+    const app = await renderApp({
+      walletListFactory: customConnectors,
+    });
+
+    await expect
+      .element(
+        app.getByTestId("estimated-reward__percent").getByText("4.55%").first()
+      )
       .toBeInTheDocument();
 
     await expect.element(app.getByText("APY composition")).toBeInTheDocument();
@@ -37,7 +61,7 @@ describe("Trust incentive APY", () => {
       .element(
         app
           .getByTestId("reward-rate-breakdown__campaign")
-          .getByText("Up to 0.2%")
+          .getByText("Up to 0.20%")
       )
       .toBeInTheDocument();
 
@@ -51,7 +75,10 @@ describe("Trust incentive APY", () => {
     await expect
       .element(selectContainer.getByText("4.55%"))
       .toBeInTheDocument();
-    await expect.element(selectContainer.getByText("APY")).toBeInTheDocument();
+    // The rate's label names its type alone.
+    await expect
+      .element(selectContainer.getByText("APY", { exact: true }))
+      .toBeInTheDocument();
 
     await app.unmount();
   });
@@ -59,22 +86,26 @@ describe("Trust incentive APY", () => {
   it("shows personalized APY on the position details page", async ({
     worker,
   }) => {
-    const { account, customConnectors, legacyYield, setUrl } =
-      await setup(worker);
+    const { account, customConnectors, yieldId, setUrl } = await setup(worker);
 
     setUrl({
       accountId: account,
       balanceId: "default",
-      yieldId: legacyYield.id,
+      yieldId,
     });
 
     const app = await renderApp({
       walletListFactory: customConnectors,
     });
 
-    await expect.element(app.getByText("Personalized APY")).toBeInTheDocument();
+    // The summary card leads with the personalized rate; its composition is
+    // under the Details, open at first.
     await expect
-      .element(app.getByTestId("personalized-reward-rate").getByText("4.53%"))
+      .element(
+        app
+          .getByTestId("position-summary")
+          .getByText("4.53% Personalized APY", { exact: true })
+      )
       .toBeInTheDocument();
     await expect
       .element(
@@ -104,17 +135,14 @@ describe("Trust incentive APY", () => {
   it("falls back to yield APY composition when the balance has no campaign component", async ({
     worker,
   }) => {
-    const { account, customConnectors, legacyYield, setUrl } = await setup(
-      worker,
-      {
-        useRewardRateWithoutCampaign: true,
-      }
-    );
+    const { account, customConnectors, yieldId, setUrl } = await setup(worker, {
+      useRewardRateWithoutCampaign: true,
+    });
 
     setUrl({
       accountId: account,
       balanceId: "default",
-      yieldId: legacyYield.id,
+      yieldId,
     });
 
     const app = await renderApp({
@@ -122,9 +150,6 @@ describe("Trust incentive APY", () => {
     });
 
     await expect.poll(() => app.getByText("Personalized APY").length).toBe(0);
-    await expect
-      .poll(() => app.getByTestId("personalized-reward-rate").length)
-      .toBe(0);
     await expect
       .poll(
         () =>
@@ -148,7 +173,7 @@ describe("Trust incentive APY", () => {
       .element(
         app
           .getByTestId("reward-rate-breakdown__campaign")
-          .getByText("Up to 0.2%")
+          .getByText("Up to 0.20%")
       )
       .toBeInTheDocument();
 

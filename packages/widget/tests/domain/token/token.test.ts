@@ -4,6 +4,7 @@ import {
   equalTokens,
   type HostTokenKey,
   hostTokenKey,
+  sameTokenContract,
   Token,
   type TokenString,
   tokenString,
@@ -42,6 +43,16 @@ describe("Token", () => {
       equalTokens(
         { network: "ethereum", symbol: "ETH" },
         token({ network: "ethereum", symbol: "ETH", address: "0x" })
+      )
+    ).toBe(false);
+  });
+
+  it("compares token contracts by address identity", () => {
+    expect(sameTokenContract(token(), token({ address: "0xabCD" }))).toBe(true);
+    expect(
+      sameTokenContract(
+        token({ network: "solana", address: "AbCd" }),
+        token({ network: "solana", address: "abcd" })
       )
     ).toBe(false);
   });

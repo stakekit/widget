@@ -73,7 +73,9 @@ describe("Staking flow Leave Confirmation", () => {
     await expect
       .element(app.getByTestId("leave-confirmation"))
       .not.toBeInTheDocument();
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
     expect(cancelled()).toBe(0);
 
     await userEvent.click(app.getByRole("button", { name: "Cancel" }));
@@ -115,20 +117,22 @@ describe("Staking flow Leave Confirmation", () => {
       walletListFactory: customConnectors,
     });
     const tab = (label: string) => {
-      const section = app.container.querySelector("[data-rk='tabs-section']");
-      const found = [...(section?.querySelectorAll("p") ?? [])].find(
-        (el) => el.textContent === label
-      );
+      const found = [
+        ...app.container.querySelectorAll<HTMLElement>('[role="tab"]'),
+      ].find((el) => el.textContent === label);
       if (!found) throw new Error(`Missing dashboard tab: ${label}`);
       return found;
     };
-    const tabState = (label: string) => tab(label).getAttribute("data-state");
+    const tabState = (label: string) =>
+      tab(label).getAttribute("aria-selected") === "true"
+        ? "selected"
+        : "default";
     const signatureRequests = () =>
       requestFn.mock.calls.filter(
         ([{ method }]) => method === "eth_sendTransaction"
       ).length;
     const dialog = app.getByTestId("leave-confirmation");
-    const steps = app.getByText("Follow Steps");
+    const steps = app.getByText("Confirm in wallet");
 
     await expect
       .element(app.getByText(formatAddress(account)))

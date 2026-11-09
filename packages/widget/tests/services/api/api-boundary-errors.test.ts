@@ -1,10 +1,13 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Option } from "effect";
+import { Effect, Option, Schema } from "effect";
 import * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import { BorrowApiError } from "../../../src/generated/api/borrow-client";
-import { withApiRequestError } from "../../../src/services/api/api-operation";
+import {
+  decodeOptionalApiResponse,
+  withApiRequestError,
+} from "../../../src/services/api/api-operation";
 import {
   getApiRejectionReason,
   isTransientApiFailure,
@@ -252,4 +255,45 @@ describe("API request failures", () => {
   ])("retries $case: $transient", ({ error, transient }) => {
     expect(isTransientApiFailure(error)).toBe(transient);
   });
+});
+
+describe("optional API responses", () => {
+  const decodeOptional = decodeOptionalApiResponse(
+    "test",
+    Schema.Struct({ id: Schema.String })
+  );
+
+  it.effect("a 404 is absent", () =>
+    Effect.gen(function* () {
+      const result = yield* Effect.fail(statusError(404)).pipe(decodeOptional);
+      expect(result).toEqual(Option.none());
+    })
+  );
+
+  it.effect("a valid body is present", () =>
+    Effect.gen(function* () {
+      const result = yield* Effect.succeed({ id: "a" }).pipe(decodeOptional);
+      expect(result).toEqual(Option.some({ id: "a" }));
+    })
+  );
+
+  it.effect("a malformed body fails to decode", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.succeed({ id: 1 }).pipe(
+        decodeOptional,
+        Effect.flip
+      );
+      expect(error).toBeInstanceOf(ResponseDecodeError);
+    })
+  );
+
+  it.effect("any other error status stays a request error", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.fail(statusError(500)).pipe(
+        decodeOptional,
+        Effect.flip
+      );
+      expect(error).toBeInstanceOf(ApiRequestError);
+    })
+  );
 });

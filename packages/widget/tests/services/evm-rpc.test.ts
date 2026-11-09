@@ -6,10 +6,11 @@ import {
   TransactionNotFoundError,
   WaitForTransactionReceiptTimeoutError,
 } from "viem";
+import { mainnet } from "viem/chains";
 import { vi } from "vitest";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { EvmRpc } from "../../src/services/evm-rpc/evm-rpc";
+import { EvmRpc, explorerAddressUrl } from "../../src/services/evm-rpc/evm-rpc";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeTestWallet } from "../utils/services/wallet-service";
 
@@ -176,4 +177,29 @@ describe("EvmRpc", () => {
       })
     )
   );
+});
+
+describe("explorerAddressUrl", () => {
+  it("links the address on the chain's default explorer", () => {
+    expect(explorerAddressUrl(mainnet, "0xabc")).toBe(
+      "https://etherscan.io/address/0xabc"
+    );
+  });
+
+  it("joins an explorer URL with a trailing slash", () => {
+    expect(
+      explorerAddressUrl(
+        {
+          blockExplorers: {
+            default: { name: "Scan", url: "https://scan.example/" },
+          },
+        },
+        "0xabc"
+      )
+    ).toBe("https://scan.example/address/0xabc");
+  });
+
+  it("has no link on a chain without an explorer", () => {
+    expect(explorerAddressUrl({}, "cosmos1abc")).toBeNull();
+  });
 });

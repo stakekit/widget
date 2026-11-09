@@ -13,9 +13,13 @@ import {
   type WidgetNavigationError,
 } from "../../../services/navigation/widget-navigation";
 import {
+  handOffTransactionFlow,
+  makeTransactionFlowReviewPage,
+} from "../../transaction-flow/index";
+import {
   type BorrowFlowSession,
   getBorrowTransactionFlowDestination,
-} from "../model/borrow-transaction-flow";
+} from "../model/session";
 import { leaveBorrowFlow } from "./borrow-flow-session";
 
 /** The API refused to create the action and said why. */
@@ -121,32 +125,15 @@ export const confirmBorrowAction = Effect.fn("confirmBorrowAction")(function* (
 
   const navigation = yield* WidgetNavigation;
   const destination = getBorrowTransactionFlowDestination(session.intake.entry);
-  return yield* Effect.uninterruptible(
-    Effect.gen(function* () {
-      const held = yield* Ref.getAndUpdate(
-        handoff,
-        (current) => current ?? ({ _tag: "Waiting", action } as const)
-      );
-      if (held) return { _tag: "RejectedConfirmed" } as const;
-      // A Steps that never opened cannot start it; confirming again must.
-      yield* navigation
-        .execute({
-          _tag: "Push",
-          to: destination.steps({
-            borrowFlowSession: session,
-            executionActionId: action.id,
-          }),
-        })
-        .pipe(
-          Effect.tapError(() =>
-            Ref.update(handoff, (current) =>
-              current?._tag === "Waiting" && current.action === action
-                ? null
-                : current
-            )
-          )
-        );
-      return { _tag: "Confirmed" } as const;
+  return yield* handOffTransactionFlow(
+    handoff,
+    { _tag: "Waiting", action },
+    navigation.execute({
+      _tag: "Push",
+      to: destination.steps({
+        borrowFlowSession: session,
+        executionActionId: action.id,
+      }),
     })
   );
 });
@@ -162,30 +149,19 @@ export class BorrowFlowReviewVisit extends Data.Class<{
  * Atoms; leaving Review interrupts an action still being created.
  *
  * Arriving also releases an action still waiting for a Steps that never
- * started it, so confirming again hands off a new one. An action already
- * running stays held until its Execution ends.
- *
- * The model lives in an Atom: a family holds its values only weakly, so the
- * subscribed Atom is what keeps the model alive.
+ * started it; see `makeTransactionFlowReviewPage`.
  */
 export const borrowFlowReviewPage = Atom.family(
-  ({ session }: BorrowFlowReviewVisit) => {
-    const page = makeBorrowFlowReviewPage(session);
-    const arrivalAtom = Atom.make(
-      Ref.update(session.handoff, (current) =>
-        current?._tag === "Waiting" ? null : current
-      )
-    );
-    return Atom.make((get) => {
-      get(arrivalAtom);
-      return page;
-    }).pipe(Atom.withLabel("borrowFlowReviewPage"));
-  }
+  ({ session }: BorrowFlowReviewVisit) =>
+    makeTransactionFlowReviewPage(
+      session.handoff,
+      makeBorrowFlowReviewPage(session)
+    ).pipe(Atom.withLabel("borrowFlowReviewPage"))
 );
 
 export const makeBorrowFlowReviewPage = (session: BorrowFlowSession) => ({
   backAtom: walletRuntime
-    .fn(() => leaveBorrowFlow(session), { initialValue: undefined })
+    .fn(() => leaveBorrowFlow("Review"), { initialValue: undefined })
     .pipe(Atom.withLabel("backBorrowFlowReview")),
   confirmAtom: walletRuntime
     .fn(

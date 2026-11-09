@@ -1,14 +1,13 @@
 import type BigNumber from "bignumber.js";
+import { Equal } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import {
-  isConfidentialYield,
-  isUserRevealableBalance,
-} from "../../../domain/earn/confidential";
-import {
   type ConfidentialHandle,
   getVisibleShares,
-} from "../../../domain/earn/models";
+} from "../../../domain/earn/balance";
+import { isConfidentialYield } from "../../../domain/earn/confidential";
+import { isUserRevealableBalance } from "../../../domain/earn/confidential-balance";
 import {
   getRewardRateBreakdown,
   type YieldRewardRate,
@@ -23,6 +22,7 @@ import {
   inFlightCancelsResourceAtom,
 } from "../../../resources/in-flight-cancels/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
+import { resolvePositionDetailsPageState } from "../model/page-state";
 import { positionDetailsExitActions } from "./actions/exit";
 import {
   loadMorePositionDetailsExitValidatorsAtom,
@@ -30,10 +30,10 @@ import {
   positionDetailsExitResourcesViewAtom,
   refreshPositionDetailsExitKycAtom,
 } from "./exit-resources";
+import { retryPositionDetailsLoad } from "./retry";
 import type { PositionDetailsWorkflowKey } from "./workflow";
 import {
   dispatchPositionDetailsWorkflowAtom,
-  positionDetailsPricesAtom,
   positionDetailsWorkflowViewAtom,
 } from "./workflow-view";
 
@@ -45,6 +45,39 @@ export type PositionDetailsShareConversion = {
   readonly rate: BigNumber;
   readonly shareSymbol: string | undefined;
   readonly symbol: string;
+};
+
+/**
+ * Why the exit cannot run yet, the first the user can act on, as the Stake
+ * button's blocker reads: the exit's call to action says it in place of the
+ * verb while disabled.
+ */
+export type PositionDetailsExitBlocker =
+  | "AboveMaximum"
+  | "BelowMinimum"
+  | "EnterAmount"
+  | "InsufficientBalance"
+  | "VerifyIdentity";
+
+const getExitBlocker = ({
+  amount,
+  amountError,
+  amountGreaterThanAvailable,
+  kycBlocking,
+  minimum,
+}: {
+  readonly amount: BigNumber;
+  /** Below the minimum or above the maximum the exit allows. */
+  readonly amountError: boolean;
+  readonly amountGreaterThanAvailable: boolean;
+  readonly kycBlocking: boolean;
+  readonly minimum: BigNumber;
+}): PositionDetailsExitBlocker | null => {
+  if (kycBlocking) return "VerifyIdentity";
+  if (amount.isZero()) return "EnterAmount";
+  if (amountGreaterThanAvailable) return "InsufficientBalance";
+  if (amount.isLessThan(minimum)) return "BelowMinimum";
+  return amountError ? "AboveMaximum" : null;
 };
 
 /** The share of `value` that `part` of `whole` holds. */
@@ -150,6 +183,13 @@ export const positionDetailsViewAtom = Atom.family(
       const submittedBelowMinimum =
         action.submissionError &&
         workflow.unstakeAmount.isLessThan(workflow.minUnstakeAmount);
+      const unstakeBlocker = getExitBlocker({
+        amount: workflow.unstakeAmount,
+        amountError: workflow.unstakeAmountError,
+        amountGreaterThanAvailable: workflow.unstakeAmountGreaterThanAvailable,
+        kycBlocking: exitResources.kyc.isBlocking,
+        minimum,
+      });
 
       return {
         hasHiddenBalances,
@@ -173,20 +213,16 @@ export const positionDetailsViewAtom = Atom.family(
             ? ("validator" as const)
             : ("yield" as const),
         integrationData: integration,
-        isLoading:
-          AsyncResult.isInitial(workflow.positionBalancesResult) ||
-          AsyncResult.isInitial(get(positionDetailsPricesAtom(key))) ||
-          AsyncResult.isInitial(workflow.yieldOpportunity) ||
-          exitResources.isValidatorsLoading,
         isLoadingMoreValidators: exitResources.isLoadingMoreValidators,
         kycGate: exitResources.kyc.gate,
         kycGateIsChecking: exitResources.kyc.isChecking,
         kycProviderName: exitResources.kyc.providerName,
+        page: resolvePositionDetailsPageState({
+          position: workflow.positionResult,
+          validatorsLoading: exitResources.isValidatorsLoading,
+          yieldOpportunity: workflow.yieldResult,
+        }),
         personalizedRewardRate,
-        positionLost:
-          AsyncResult.isSuccess(workflow.positionBalancesResult) &&
-          !workflow.positionBalancesResult.waiting &&
-          workflow.positionBalancesResult.value === null,
         positionBalancesByType: workflow.positionBalancesByType,
         providersDetails: providers,
         shareToAmountConversions,
@@ -195,13 +231,13 @@ export const positionDetailsViewAtom = Atom.family(
           action.submissionError || workflow.unstakeAmountError,
         unstakeAmountGreaterThanAvailable:
           workflow.unstakeAmountGreaterThanAvailable,
-        // An empty amount stays submittable so the click can flag it; an
-        // out-of-range amount is already flagged, so it cannot be submitted.
+        unstakeBlocker,
+        // An empty or out-of-range amount cannot be submitted; the call to
+        // action says why (`unstakeBlocker`), as Stake's does.
         unstakeDisabled:
-          AsyncResult.isInitial(workflow.yieldOpportunity) ||
+          workflow.yieldResult._tag !== "Ready" ||
           !canUnstake ||
-          exitResources.kyc.isBlocking ||
-          workflow.unstakeAmountError,
+          unstakeBlocker !== null,
         unstakeAmountUsd: workflow.exitBalance
           ? prorate({
               part: workflow.unstakeAmount,
@@ -233,6 +269,36 @@ export const positionDetailsViewAtom = Atom.family(
         validatorsData: exitResources.validators,
       } as const;
     }).pipe(Atom.withLabel("positionDetailsViewAtom"))
+);
+
+/**
+ * What the position's summary card and Details read, and nothing of the exit
+ * form: with structural equality, typing an amount leaves it equal, so the
+ * page's right pane does not render again per keystroke.
+ */
+export const positionOverviewViewAtom = Atom.family(
+  (key: PositionDetailsWorkflowKey) =>
+    Atom.make((get) => {
+      const {
+        cancellingHandles,
+        integrationData,
+        personalizedRewardRate,
+        positionBalancesByType,
+        positionSource,
+        providersDetails,
+      } = get(positionDetailsViewAtom(key));
+      return {
+        cancellingHandles,
+        integrationData,
+        personalizedRewardRate,
+        positionBalancesByType,
+        positionSource,
+        providersDetails,
+      } as const;
+    }).pipe(
+      Atom.withEquality(Equal.equals),
+      Atom.withLabel("positionOverviewViewAtom")
+    )
 );
 
 export const setPositionDetailsExitAmountAtom = Atom.family(
@@ -275,6 +341,21 @@ export const refreshPositionDetailsKycAtom = Atom.family(
     )
 );
 
+/** Loads the position's page again after its first load failed. */
+export const retryPositionDetailsAtom = Atom.family(
+  (key: PositionDetailsWorkflowKey) =>
+    Atom.fnSync(
+      (_input: undefined, context) =>
+        retryPositionDetailsLoad(context, {
+          scope: key.scope,
+          yieldId: key.integrationId,
+        }),
+      { initialValue: undefined }
+    )
+);
+
+export const positionDetailsExitNetworkFeeAtom =
+  positionDetailsExitActions.networkFee;
 export const setPositionDetailsExitMaxAmountAtom =
   positionDetailsExitActions.setMaxAmount;
 export const setPositionDetailsExitReceiveTokenAtom =

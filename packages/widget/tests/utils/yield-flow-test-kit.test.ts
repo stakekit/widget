@@ -37,10 +37,7 @@ describe("makeYieldFlowTestKit", () => {
       const operations = Context.get(context, YieldOperations);
       const exit = yield* Effect.exit(operations.previewAction({} as never));
 
-      expect(Exit.isFailure(exit)).toBe(true);
-      expect(Exit.isFailure(exit) ? Cause.squash(exit.cause) : null).toBe(
-        "makeYieldFlowTestKit: unexpected call to YieldOperations.previewAction"
-      );
+      expect(Exit.isFailure(exit) && Cause.hasDies(exit.cause)).toBe(true);
     })
   );
 

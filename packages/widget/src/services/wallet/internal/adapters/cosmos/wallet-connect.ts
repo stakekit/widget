@@ -1,6 +1,7 @@
 import type { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { Effect, Option, Schema } from "effect";
+import { Effect, Option, Predicate, Schema } from "effect";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { makeWalletConnectAttempts } from "../../platform/wallet-connect-attempts";
 import {
   type CaipChainId,
   caipAddresses,
@@ -137,15 +138,22 @@ const makeSession = ({
   /** Sessions this connector approved or restored, by Cosmos chain id. */
   const owned = new Map<string, OwnedSession>();
   let activeChainId: string | undefined;
-  /** Bumped by every activation and disconnect; fences async persistence. */
-  let activation = 0;
+  const attempts = makeWalletConnectAttempts(() =>
+    cosmosError(
+      "cosmos-connect",
+      "Cosmos WalletConnect session ended while connecting"
+    )
+  );
+  const removeRecord = Effect.promise(async () =>
+    storage?.removeItem(cosmosWalletConnectStorageKey)
+  );
 
   const release = (chainId: string) => {
     owned.get(chainId)?.unsubscribe();
     owned.delete(chainId);
   };
 
-  const activate = async ({
+  const activate = ({
     address,
     chainId,
     caipChain,
@@ -155,44 +163,54 @@ const makeSession = ({
     readonly chainId: string;
     readonly caipChain: CaipChainId;
     readonly topic: WalletConnectTopic;
-  }): Promise<CosmosWalletConnection> => {
-    const attempt = ++activation;
-    if (owned.get(chainId)?.topic !== topic) {
-      release(chainId);
-      owned.set(chainId, {
-        topic,
-        address,
-        unsubscribe: protocol.subscribeEnded(topic, () => {
-          release(chainId);
-          if (activeChainId !== chainId) return;
-          activeChainId = undefined;
-          void storage?.removeItem(cosmosWalletConnectStorageKey);
-          onEnded();
-        }),
-      });
-    }
-    activeChainId = chainId;
-    await storage?.setItem(cosmosWalletConnectStorageKey, {
-      connectorId,
-      topic,
-      chainId,
-      address,
-    });
-    // The session may have ended, or been superseded, while persisting.
-    if (attempt !== activation || owned.get(chainId)?.topic !== topic) {
-      if (attempt === activation) {
-        await storage?.removeItem(cosmosWalletConnectStorageKey);
+  }) =>
+    Effect.gen(function* () {
+      if (owned.get(chainId)?.topic !== topic) {
+        release(chainId);
+        owned.set(chainId, {
+          topic,
+          address,
+          unsubscribe: protocol.subscribeEnded(topic, () => {
+            release(chainId);
+            if (activeChainId !== chainId) return;
+            activeChainId = undefined;
+            void storage?.removeItem(cosmosWalletConnectStorageKey);
+            onEnded();
+          }),
+        });
       }
-      throw cosmosError(
-        "cosmos-connect",
-        "Cosmos WalletConnect session ended while connecting"
+      activeChainId = chainId;
+      // A superseding connect or disconnect waits for this write, so its own
+      // persistence lands after it.
+      yield* Effect.uninterruptible(
+        Effect.promise(async () =>
+          storage?.setItem(cosmosWalletConnectStorageKey, {
+            connectorId,
+            topic,
+            chainId,
+            address,
+          })
+        )
       );
-    }
-    return {
-      address,
-      wallet: makeChainWallet({ address, chainId, caipChain, protocol, topic }),
-    };
-  };
+      // The wallet may have ended the session while it was being saved.
+      if (owned.get(chainId)?.topic !== topic) {
+        yield* removeRecord;
+        return yield* cosmosError(
+          "cosmos-connect",
+          "Cosmos WalletConnect session ended while connecting"
+        );
+      }
+      return {
+        address,
+        wallet: makeChainWallet({
+          address,
+          chainId,
+          caipChain,
+          protocol,
+          topic,
+        }),
+      } satisfies CosmosWalletConnection;
+    });
 
   const liveSession = (
     topic: WalletConnectTopic,
@@ -213,9 +231,11 @@ const makeSession = ({
       );
 
   /** The persisted connection, if its session is still live and holds its account. */
-  const restorable = async () => {
+  const restorable = Effect.gen(function* () {
     const record = Schema.decodeUnknownOption(CosmosWalletConnectRecord)(
-      await storage?.getItem(cosmosWalletConnectStorageKey)
+      yield* Effect.promise(async () =>
+        storage?.getItem(cosmosWalletConnectStorageKey)
+      )
     ).pipe(
       Option.filter((record) => record.connectorId === connectorId),
       Option.getOrUndefined
@@ -225,88 +245,108 @@ const makeSession = ({
       caipChainId("cosmos", record.chainId)
     );
     if (!caipChain) return undefined;
-    const live = await runWalletEffect(
-      liveSession(record.topic, caipChain, record.address)
-    );
+    const live = yield* liveSession(record.topic, caipChain, record.address);
     return live ? { ...record, caipChain } : undefined;
-  };
+  });
 
   return {
     ready: async () => {},
-    connect: async (chain: CosmosChainsAssets) => {
-      const chainId = chain.chain_id;
-      const caipChain = Option.getOrUndefined(caipChainId("cosmos", chainId));
-      if (!caipChain) {
-        throw cosmosError(
-          "cosmos-connect",
-          "Cosmos chain id is not a valid WalletConnect chain"
-        );
-      }
-      // A live session already holding this chain's account, e.g. approved
-      // before a reload; prefer the one this connector last used for it.
-      const reusable = (
-        await runWalletEffect(protocol.sessions("cosmos"))
-      ).flatMap((session) =>
-        hasRequiredMethods(session)
-          ? Option.toArray(
-              Option.map(sessionAddress(session, caipChain), (address) => ({
-                address,
-                topic: session.topic,
-              }))
-            )
-          : []
-      );
-      const existing =
-        reusable.find(({ topic }) => topic === owned.get(chainId)?.topic) ??
-        reusable[0];
-      if (existing) return activate({ ...existing, chainId, caipChain });
-      const session = await runWalletEffect(
-        protocol.connect({
-          namespace: "cosmos",
-          chains: [caipChain],
-          requiredMethods,
-          events: ["chainChanged", "accountsChanged"],
-        })
-      );
-      const address = Option.getOrUndefined(sessionAddress(session, caipChain));
-      if (!address) {
-        throw cosmosError(
-          "cosmos-connect",
-          "Wallet did not approve an account for this Cosmos chain"
-        );
-      }
-      return activate({ address, chainId, caipChain, topic: session.topic });
-    },
-    restore: async () => {
-      const record = await restorable();
-      if (!record) {
-        await storage?.removeItem(cosmosWalletConnectStorageKey);
-        throw cosmosError(
-          "cosmos-reconnect",
-          "No live Cosmos WalletConnect session was saved"
-        );
-      }
-      return activate(record);
-    },
-    isAuthorized: async () => (await restorable()) !== undefined,
-    disconnect: async () => {
-      const topics = [...owned.values()].map(({ topic }) => topic);
-      for (const chainId of [...owned.keys()]) release(chainId);
-      activeChainId = undefined;
-      activation++;
-      await storage?.removeItem(cosmosWalletConnectStorageKey);
-      await runWalletEffect(
-        Effect.forEach(new Set(topics), protocol.disconnect, {
-          discard: true,
-        }).pipe(
-          Effect.catch((error) =>
-            Effect.logWarning("Cosmos WalletConnect disconnect failed").pipe(
-              Effect.annotateLogs({ cause: error })
-            )
-          )
+    connect: (chain: CosmosChainsAssets) =>
+      runWalletEffect(
+        attempts.run(
+          Effect.gen(function* () {
+            const chainId = chain.chain_id;
+            const caipChain = Option.getOrUndefined(
+              caipChainId("cosmos", chainId)
+            );
+            if (!caipChain) {
+              return yield* cosmosError(
+                "cosmos-connect",
+                "Cosmos chain id is not a valid WalletConnect chain"
+              );
+            }
+            // A live session already holding this chain's account, e.g.
+            // approved before a reload; prefer the one this connector last
+            // used for it.
+            const reusable = (yield* protocol.sessions("cosmos")).flatMap(
+              (session) =>
+                hasRequiredMethods(session)
+                  ? Option.toArray(
+                      Option.map(
+                        sessionAddress(session, caipChain),
+                        (address) => ({ address, topic: session.topic })
+                      )
+                    )
+                  : []
+            );
+            const existing =
+              reusable.find(
+                ({ topic }) => topic === owned.get(chainId)?.topic
+              ) ?? reusable[0];
+            if (existing) {
+              return yield* activate({ ...existing, chainId, caipChain });
+            }
+            const session = yield* protocol.connect({
+              namespace: "cosmos",
+              chains: [caipChain],
+              requiredMethods,
+              events: ["chainChanged", "accountsChanged"],
+            });
+            const address = Option.getOrUndefined(
+              sessionAddress(session, caipChain)
+            );
+            if (!address) {
+              return yield* cosmosError(
+                "cosmos-connect",
+                "Wallet did not approve an account for this Cosmos chain"
+              );
+            }
+            return yield* activate({
+              address,
+              chainId,
+              caipChain,
+              topic: session.topic,
+            });
+          })
         )
-      );
-    },
+      ),
+    restore: () =>
+      runWalletEffect(
+        attempts.run(
+          Effect.gen(function* () {
+            const record = yield* restorable;
+            if (!record) {
+              yield* removeRecord;
+              return yield* cosmosError(
+                "cosmos-reconnect",
+                "No live Cosmos WalletConnect session was saved"
+              );
+            }
+            return yield* activate(record);
+          })
+        )
+      ),
+    isAuthorized: () =>
+      runWalletEffect(restorable.pipe(Effect.map(Predicate.isNotUndefined))),
+    disconnect: () =>
+      runWalletEffect(
+        Effect.gen(function* () {
+          yield* attempts.interrupt;
+          const topics = new Set([...owned.values()].map(({ topic }) => topic));
+          for (const chainId of [...owned.keys()]) release(chainId);
+          activeChainId = undefined;
+          yield* removeRecord;
+          yield* Effect.forEach(topics, protocol.disconnect, {
+            discard: true,
+          }).pipe(
+            Effect.catch((error) =>
+              Effect.logWarning("Cosmos WalletConnect disconnect failed").pipe(
+                Effect.annotateLogs({ cause: error })
+              )
+            )
+          );
+        })
+      ),
   };
 };
 

@@ -177,6 +177,143 @@ describe("Yield Steps view", () => {
     ).toEqual(["prepare-encrypt", "conversion-wrap", "deposit-tx"]);
   });
 
+  it("is resumable from Activity only once an API transaction is done", () => {
+    const ledger = new Map([
+      [
+        wrap.id,
+        {
+          _tag: "Confirmed" as const,
+          hash: TransactionHash.make("0x01"),
+          transaction: wrap,
+        },
+      ],
+    ]);
+    const prepared = prepare(
+      initializeTransactionWorkflow(makeInput([approve, wrap]), ledger)
+    );
+    // The approval was skipped: done without signing, like the wrap's Ledger.
+    const directDone = {
+      ...prepared,
+      batches: prepared.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) =>
+          transaction.source._tag === "Direct"
+            ? { ...transaction, meta: { ...transaction.meta, done: true } }
+            : transaction
+        ),
+      })),
+    };
+    const apiDone = {
+      ...directDone,
+      batches: directDone.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) => ({
+          ...transaction,
+          meta: { ...transaction.meta, done: true },
+        })),
+      })),
+    };
+
+    expect(
+      [prepared, directDone, apiDone].map(
+        (context) => view({ _tag: "Signing", context }).resumable
+      )
+    ).toEqual([false, false, true]);
+  });
+
+  it("carries a sent transaction's hash and explorer link", () => {
+    const prepared = prepare(initializeTransactionWorkflow(makeInput([])));
+    const hash = TransactionHash.make("0xabc");
+    const context = {
+      ...prepared,
+      batches: prepared.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) => ({
+          ...transaction,
+          meta: {
+            ...transaction.meta,
+            broadcasted: true as const,
+            done: true,
+            signedTx: hash,
+            url: "https://etherscan.io/tx/0xabc",
+          },
+        })),
+      })),
+    };
+
+    expect(
+      view({ _tag: "Completed", context }).txStates.map(
+        ({ explorerUrl, hash, id }) => [id, explorerUrl, hash]
+      )
+    ).toEqual([
+      ["prepare-encrypt", null, null],
+      ["deposit-tx", "https://etherscan.io/tx/0xabc", hash],
+    ]);
+  });
+
+  it("links a transaction once it is broadcast, and no longer offers to cancel", () => {
+    const prepared = prepare(initializeTransactionWorkflow(makeInput([])));
+    const hash = TransactionHash.make("0xabc");
+    const broadcast = {
+      ...prepared,
+      batches: prepared.batches.map((batch) => ({
+        ...batch,
+        transactions: batch.transactions.map((transaction) => ({
+          ...transaction,
+          meta: {
+            ...transaction.meta,
+            broadcasted: true as const,
+            signedTx: hash,
+            url: "https://etherscan.io/tx/0xabc",
+          },
+        })),
+      })),
+    };
+
+    const signing = view({ _tag: "Signing", context: prepared });
+    const confirming = view({ _tag: "Confirming", context: broadcast });
+
+    expect(signing.sent).toBe(false);
+    expect(confirming.sent).toBe(true);
+    expect(
+      confirming.txStates.map(({ explorerUrl, hash, id, phases }) => [
+        id,
+        phases.confirm,
+        explorerUrl,
+        hash,
+      ])
+    ).toEqual([
+      ["prepare-encrypt", "done", null, null],
+      ["deposit-tx", "active", "https://etherscan.io/tx/0xabc", hash],
+    ]);
+  });
+
+  it("does not offer to cancel a transaction the API reports confirmed without a local hash", () => {
+    const prepared = attachPreparedYieldAction({
+      context: initializeTransactionWorkflow(makeInput([])).context,
+      prepared: makeYieldTransactionWorkflowInput({
+        action: yieldApiActionFixture({
+          address,
+          transactions: [
+            yieldApiTransactionFixture({
+              id: "approval-tx",
+              network: "ethereum",
+              status: "CONFIRMED",
+              type: "APPROVAL",
+            }),
+            deposit,
+          ],
+          yieldId,
+        }),
+        inputToken: undefined,
+        providersDetails: [],
+        walletScope,
+      }),
+    });
+
+    expect(view({ _tag: "Signing", context: prepared }).sent).toBe(true);
+  });
+
   it("shows a preparation the API rejected as final", () => {
     const { context } = initializeTransactionWorkflow(makeInput([]));
 
@@ -211,6 +348,8 @@ describe("Yield Steps view", () => {
           batchId: "yield",
           message: "receipt unavailable",
           network: "ethereum",
+          outcome: "Unconfirmed",
+          reason: null,
           transactionId: wrap.id,
           workflowId: TransactionWorkflowId.make("w"),
         }),

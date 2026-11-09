@@ -1,283 +1,54 @@
-import { useTranslation } from "react-i18next";
-import { isCancellingBalance } from "../../../../domain/earn/confidential";
-import { getExtendedYieldType } from "../../../../domain/earn/yield";
-import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
+import { Match } from "effect";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
-import {
-  formatRewardRatePercent,
-  formatTokenAmount,
-} from "../../../../shared/lib/number-format";
-import { TokenIcon } from "../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Spinner } from "../../../../shared/ui/primitives/spinner";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { Stack } from "../../../../ui/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
-import { RewardRateBreakdown } from "../../../yield-summary/views";
 import { usePositionDetails } from "../../react/use-position-details";
-import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
-import { PositionDetailsUnstakeActions } from "../components/position-details-unstake-actions";
-import { PositionDetailsValidatorModal } from "../components/position-details-validator-modal";
-import { PositionBalances } from "./components/position-balances";
-import { ProviderDetails } from "./components/provider-details";
-import { YieldDetails } from "./components/yield-details";
-import { container } from "./styles.css";
+import { PositionDetailsActions } from "../components/position-details-actions";
+import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
+import { PositionDetailsLoadFailed } from "../components/position-details-load-failed";
+import { PositionDetailsSkeleton } from "../components/position-details-skeleton";
+import { PositionHeader } from "../components/position-header";
+import { PositionSummaryCard } from "../components/position-summary-card";
+import { PositionYieldFacts } from "../components/position-yield-facts";
 
+/**
+ * A position's page in the compact Layout, in the Dashboard's order: the
+ * header, the summary card, the actions, then the Details and the
+ * yield's facts.
+ * Entering further is a wide-Layout flow, so only the exit takes an amount.
+ */
 const PositionDetails = () => {
-  const {
-    onPendingActionAmountChange,
-    integrationData: integrationDataValue,
-    isLoading,
-    positionBalancesByType: positionBalancesByTypeValue,
-    onPendingActionClick,
-    pendingActions: pendingActionsValue,
-    positionLost,
-    providersDetails,
-    positionSource,
-    shareToAmountConversions: shareToAmountConversionsValue,
-    personalizedRewardRate,
-    apyCompositionRewardRate,
-    apyCompositionShowsUpToCampaign,
-    cancellingHandles,
-    hasHiddenBalances,
-    hasRevealedBalances,
-    onHideBalances,
-    onRevealBalances,
-    revealFailed,
-    revealing,
-  } = usePositionDetails();
+  const { integrationData, onRetry, page } = usePositionDetails();
 
   useTrackPage("positionDetails", {
-    yield: integrationDataValue?.metadata.name,
+    yield: integrationData?.metadata.name,
   });
 
-  const { t } = useTranslation();
-  const { locale } = useWidgetPresentation();
-
-  if (!isLoading && positionLost) {
+  if (page._tag === "PositionLost") {
     return <WidgetNavigate replace to={widgetRoutes.positions.build()} />;
   }
-
-  const balanceRows = positionBalancesByTypeValue
-    ? groupPositionBalanceRows(
-        [...positionBalancesByTypeValue.values()].flat(),
-        (balance) => isCancellingBalance(balance, cancellingHandles)
-      )
-    : [];
 
   return (
     <AnimationPage>
       <PageContainer>
-        {isLoading ? (
-          <Box
-            className={container}
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Spinner />
-          </Box>
-        ) : null}
-        {!isLoading && integrationDataValue && positionBalancesByTypeValue ? (
-          <Box
-            className={container}
-            flex={1}
-            display="flex"
-            flexDirection="column"
-            gap="1"
-          >
-            {(() => {
-              const token =
-                integrationDataValue.outputToken ?? integrationDataValue.token;
-              return (
-                <>
-                  <Box
-                    display="flex"
-                    justifyContent="center"
-                    alignItems="center"
-                  >
-                    <TokenIcon
-                      metadata={{
-                        logoURI: integrationDataValue.metadata.logoURI,
-                        name: integrationDataValue.metadata.name,
-                        provider: integrationDataValue.provider,
-                      }}
-                      token={token}
-                      tokenLogoHw="14"
-                    />
-                  </Box>
-                  <Box
-                    marginTop="3"
-                    display="flex"
-                    justifyContent="center"
-                    alignItems="center"
-                    flexDirection="column"
-                  >
-                    <Heading variant={{ level: "h4" }} textAlign="center">
-                      {integrationDataValue.metadata.name}
-                    </Heading>
-                    <Text variant={{ type: "muted" }}>{token.symbol}</Text>
-                  </Box>
-                </>
-              );
-            })()}
-
-            {personalizedRewardRate ? (
-              <Box marginTop="4">
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  gap="3"
-                >
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {t("position_details.personalized_apy")}
-                  </Text>
-
-                  <Heading
-                    variant={{ level: "h4" }}
-                    data-testid="personalized-reward-rate"
-                  >
-                    {formatRewardRatePercent(
-                      personalizedRewardRate.total,
-                      locale
-                    )}
-                  </Heading>
-                </Box>
-
-                <RewardRateBreakdown
-                  rewardRate={personalizedRewardRate}
-                  title={t("details.apy_composition.title")}
-                  testId="personalized-reward-rate-breakdown"
-                />
-              </Box>
-            ) : null}
-
-            {!personalizedRewardRate && apyCompositionRewardRate ? (
-              <Box marginTop="4">
-                <RewardRateBreakdown
-                  rewardRate={apyCompositionRewardRate}
-                  showUpToCampaign={apyCompositionShowsUpToCampaign}
-                  title={t("details.apy_composition.title")}
-                  testId="reward-rate-breakdown"
-                />
-              </Box>
-            ) : null}
-
-            <Box marginTop="4">
-              {positionSource === "validator" ? (
-                providersDetails?.map((p, idx) => (
-                  <ProviderDetails
-                    {...p}
-                    key={p.address ?? idx}
-                    isFirst={idx === 0}
-                    rewardRate={
-                      personalizedRewardRate ? undefined : p.rewardRate
-                    }
-                    rewardType={
-                      personalizedRewardRate ? undefined : p.rewardType
-                    }
-                    stakeType={t(
-                      `position_details.stake_type.${getExtendedYieldType(integrationDataValue)}`
-                    )}
-                    integrationData={integrationDataValue}
-                  />
-                ))
-              ) : (
-                <YieldDetails
-                  integrationData={integrationDataValue}
-                  showRewardRate={
-                    !personalizedRewardRate && !apyCompositionRewardRate
-                  }
-                />
-              )}
-            </Box>
-
-            <Box py="3" gap="2" display="flex" flexDirection="column">
-              {balanceRows.map((row, i) => (
-                <PositionBalances
-                  key={`${row.type}-${i}`}
-                  integrationData={integrationDataValue}
-                  yieldBalance={row}
-                />
-              ))}
-              {hasHiddenBalances ? (
-                <Box display="flex" flexDirection="column" gap="1">
-                  <Button
-                    variant={{ size: "small", color: "smallButtonLight" }}
-                    disabled={revealing}
-                    isLoading={revealing}
-                    onClick={onRevealBalances}
-                  >
-                    <Text>{t("shared.confidential.reveal")}</Text>
-                  </Button>
-                  {revealFailed ? (
-                    <Text variant={{ type: "danger", weight: "normal" }}>
-                      {t("shared.confidential.reveal_failed")}
-                    </Text>
-                  ) : null}
-                </Box>
-              ) : null}
-              {hasRevealedBalances ? (
-                <Button
-                  variant={{ size: "small", color: "smallButtonLight" }}
-                  onClick={onHideBalances}
-                >
-                  <Text>{t("shared.confidential.hide")}</Text>
-                </Button>
-              ) : null}
-            </Box>
-            {shareToAmountConversionsValue ? (
-              <Box
-                my="2"
-                display="flex"
-                alignItems="flex-end"
-                flexDirection="column"
-                gap="1"
-              >
-                {[...shareToAmountConversionsValue].map(
-                  ([tokenKey, conversion]) => (
-                    <Text
-                      variant={{ type: "muted", weight: "normal" }}
-                      key={tokenKey}
-                    >
-                      {`1 ${conversion.symbol} = ${formatTokenAmount(conversion.rate, locale, "nearest")} ${conversion.shareSymbol}`}
-                    </Text>
-                  )
-                )}
-              </Box>
-            ) : null}
-
-            <Box
-              display="flex"
-              flex={1}
-              justifyContent="flex-end"
-              flexDirection="column"
-              marginTop="10"
-              gap="2"
-            >
-              {/* Pending actions */}
-              <PositionDetailsPendingActions
-                flagsInvalidAmount
-                humanizesUntranslatedLabels={false}
-                positionDetails={{
-                  integrationData: integrationDataValue,
-                  pendingActions: pendingActionsValue,
-                  onPendingActionAmountChange,
-                  onPendingActionClick,
-                }}
-              />
-              {/* Unstake */}
-              <PositionDetailsUnstakeActions />
-            </Box>
-
-            <PositionDetailsValidatorModal />
-          </Box>
-        ) : null}
+        {Match.value(page).pipe(
+          Match.tag("Loading", () => <PositionDetailsSkeleton />),
+          Match.tag("Failed", () => (
+            <PositionDetailsLoadFailed onRetry={onRetry} />
+          )),
+          Match.tag("Ready", () => (
+            <Stack grow gap={24}>
+              <PositionHeader />
+              <PositionSummaryCard />
+              <PositionDetailsActions />
+              <PositionDetailsDisclosure />
+              <PositionYieldFacts />
+            </Stack>
+          )),
+          Match.exhaustive
+        )}
       </PageContainer>
     </AnimationPage>
   );

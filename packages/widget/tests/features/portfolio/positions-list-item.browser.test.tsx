@@ -5,7 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import type { YieldId } from "../../../src/domain/identity/identifiers";
-import type { InactiveValidatorStatus } from "../../../src/features/portfolio/state/read-models/position-list-item";
+import type { InactiveValidatorStatus } from "../../../src/domain/portfolio/position-callout";
 import type { PositionItem } from "../../../src/features/portfolio/state/read-models/positions";
 import { PositionsListItem as CompactPositionsListItem } from "../../../src/features/portfolio/ui/compact/positions-page/components/positions-list-item";
 import { PositionsListItem as DashboardPositionsListItem } from "../../../src/features/portfolio/ui/dashboard/positions/components/positions-list-item";
@@ -13,20 +13,16 @@ import { createWidgetI18nInstance } from "../../../src/services/translation/widg
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
-} from "../../../src/shared/ui/widget-presentation";
+} from "../../../src/shared/react/widget-presentation";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils";
 
 const frenchPresentation: WidgetPresentation = {
-  disableInputAutoResize: false,
   hideNetworkLogo: false,
   hostTokenIconMapping: false,
-  layout: "compact",
   locale: "fr",
   mapNetworkIconUrl: () => undefined,
   mapTokenIconUrl: () => undefined,
-  portalContainer: undefined,
-  variant: "default",
 };
 
 const i18nInstance = createWidgetI18nInstance();
@@ -35,7 +31,10 @@ type RowDetails = {
   readonly integrationData: unknown;
   readonly providersDetails: unknown;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-  readonly rewardRateAverage: string | null;
+  readonly rewardRateAverage: {
+    readonly text: string;
+    readonly isPositive: boolean;
+  } | null;
   readonly hasHiddenBalance?: boolean;
   readonly totalFormatted: string | null;
   readonly totalAmountUsd: BigNumber | null;
@@ -43,16 +42,14 @@ type RowDetails = {
 
 const hookState = vi.hoisted(() => ({
   details: undefined as unknown as RowDetails,
+  /** Per-Yield details, for a list of rows; others take `details`. */
+  detailsByYield: new Map<string, RowDetails>(),
 }));
 
 vi.mock("../../../src/features/portfolio/react/use-position-list-item", () => ({
-  usePositionListItem: () => hookState.details,
+  usePositionListItem: (item: { integrationId: string }) =>
+    hookState.detailsByYield.get(item.integrationId) ?? hookState.details,
 }));
-
-vi.mock(
-  "../../../src/features/portfolio/ui/dashboard/positions/hooks/use-position-list-item",
-  () => ({ usePositionListItem: () => hookState.details })
-);
 
 const integrationData = yieldApiYieldFixture();
 
@@ -63,7 +60,7 @@ const createDetails = (overrides: Partial<RowDetails> = {}): RowDetails => ({
     { address: "0xvalidator-b", name: "Validator B" },
   ],
   inactiveValidator: null,
-  rewardRateAverage: "4.2%",
+  rewardRateAverage: { text: "4.2%", isPositive: true },
   totalFormatted: `12.5 ${integrationData.token.symbol}`,
   totalAmountUsd: exactDecimal("25"),
   ...overrides,
@@ -73,7 +70,10 @@ const createItem = (
   overrides: Partial<
     Pick<
       PositionItem,
-      "actionRequired" | "hasPendingClaimRewards" | "hasPendingRequest"
+      | "requiredAction"
+      | "hasPendingClaimRewards"
+      | "hasPendingRequest"
+      | "integrationId"
     >
   > = {}
 ): PositionItem => ({
@@ -81,7 +81,7 @@ const createItem = (
   balancesWithAmount: [],
   allBalances: [],
   balanceId: "default",
-  actionRequired: false,
+  requiredAction: null,
   hasPendingRequest: false,
   pointsRewardTokenBalances: [],
   hasPendingClaimRewards: false,
@@ -121,6 +121,203 @@ const presentations = [
 
 afterEach(() => {
   vi.restoreAllMocks();
+  hookState.detailsByYield.clear();
+});
+
+/** A text's line boxes: one when it doesn't wrap. */
+const lineCount = (element: Element) => {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  return range.getClientRects().length;
+};
+
+/**
+ * A Manage list as a 400px compact Widget holds it: rows of every status,
+ * long names and long amounts. The list's inline size is the Widget's less
+ * its 16px page insets.
+ */
+const manageRows = [
+  {
+    name: "Ether.fi Liquid Restaking Vault Extra Long Name",
+    item: { requiredAction: "other" as const },
+    value: "0.00107 ETH",
+    fiat: exactDecimal("2.59"),
+  },
+  {
+    name: "POL Native Staking",
+    item: { hasPendingRequest: true },
+    value: "12.34M POL",
+    fiat: exactDecimal("1234567"),
+  },
+  {
+    name: "Lido Ethereum Staking",
+    item: { hasPendingClaimRewards: true },
+    value: "<0.000001 ETH",
+    fiat: null,
+  },
+  {
+    name: "Cosmos Hub Native Staking",
+    inactiveValidator: "jailed" as const,
+    item: {},
+    value: "1,234.56 ATOM",
+    fiat: exactDecimal("5000"),
+  },
+  {
+    name: "Resolv USDC vault",
+    item: {},
+    value: "1.2994 USDC",
+    fiat: exactDecimal("1.3"),
+  },
+];
+
+describe.each(presentations)("A $name Manage list", ({ row }) => {
+  it("shows every row at one height, its value on one line", async () => {
+    for (const [index, entry] of manageRows.entries()) {
+      hookState.detailsByYield.set(
+        `yield-${index}`,
+        createDetails({
+          integrationData: {
+            ...integrationData,
+            id: `yield-${index}`,
+            metadata: { ...integrationData.metadata, name: entry.name },
+          },
+          inactiveValidator: entry.inactiveValidator ?? null,
+          providersDetails: [{ address: "0xvalidator", name: "Luganodes" }],
+          totalFormatted: entry.value,
+          totalAmountUsd: entry.fiat,
+        })
+      );
+    }
+    const app = await renderRow(
+      <div style={{ containerType: "inline-size", width: 368 }}>
+        {manageRows.map((entry, index) => (
+          <div key={entry.name}>
+            {row(
+              createItem({
+                ...entry.item,
+                integrationId: `yield-${index}` as YieldId,
+              })
+            )}
+          </div>
+        ))}
+      </div>
+    );
+
+    await expect.element(app.getByText("Resolv USDC vault")).toBeVisible();
+    const links = app.getByRole("link").elements();
+    expect(links).toHaveLength(manageRows.length);
+
+    const heights = links.map((link) =>
+      Math.round(link.getBoundingClientRect().height)
+    );
+    expect(new Set(heights).size).toBe(1);
+
+    for (const [index, entry] of manageRows.entries()) {
+      const link = links[index];
+      expect(link).toBeDefined();
+      if (!link) continue;
+      // Nothing spills past the row's edge.
+      expect(link.scrollWidth).toBeLessThanOrEqual(link.clientWidth);
+
+      const value = app.getByText(entry.value, { exact: true }).element();
+      expect(lineCount(value)).toBe(1);
+      expect(value.getBoundingClientRect().right).toBeLessThanOrEqual(
+        link.getBoundingClientRect().right
+      );
+    }
+  });
+
+  it.each([
+    { expected: "Action required", item: { requiredAction: "other" as const } },
+    { expected: "Rewards to claim", item: { hasPendingClaimRewards: true } },
+    {
+      expected: "Ready to withdraw",
+      item: { requiredAction: "withdraw" as const },
+    },
+    {
+      expected: "Ready to unlock",
+      item: { requiredAction: "unlock" as const },
+    },
+    {
+      expected: "Locked balance",
+      item: { requiredAction: "locked" as const },
+    },
+    { expected: "In progress", item: { hasPendingRequest: true } },
+  ])(
+    "shows $expected on the provider line, under the title",
+    async ({ expected, item }) => {
+      hookState.details = createDetails();
+      const app = await renderRow(
+        <div style={{ containerType: "inline-size", width: 368 }}>
+          {row(createItem(item))}
+        </div>
+      );
+
+      const status = app.getByText(expected).element().getBoundingClientRect();
+      const provider = app
+        .getByText("via Validator A")
+        .element()
+        .getBoundingClientRect();
+      const title = app
+        .getByText(integrationData.metadata.name)
+        .element()
+        .getBoundingClientRect();
+
+      expect(status.top).toBeGreaterThanOrEqual(title.bottom - 1);
+      expect(
+        Math.abs(
+          status.top + status.height / 2 - (provider.top + provider.height / 2)
+        )
+      ).toBeLessThan(4);
+      expect(status.left).toBeGreaterThan(provider.right);
+    }
+  );
+
+  it("draws every status the Manage tab counts in one tone, apart from In progress", async () => {
+    const statusRows = [
+      {
+        expected: "Action required",
+        item: { requiredAction: "other" as const },
+      },
+      { expected: "Rewards to claim", item: { hasPendingClaimRewards: true } },
+      { expected: "Jailed", inactiveValidator: "jailed" as const, item: {} },
+      { expected: "Inactive", inactiveValidator: "other" as const, item: {} },
+      { expected: "In progress", item: { hasPendingRequest: true } },
+    ];
+    for (const [index, entry] of statusRows.entries()) {
+      hookState.detailsByYield.set(
+        `yield-${index}`,
+        createDetails({
+          integrationData: { ...integrationData, id: `yield-${index}` },
+          inactiveValidator: entry.inactiveValidator ?? null,
+        })
+      );
+    }
+    const app = await renderRow(
+      <div style={{ containerType: "inline-size", width: 368 }}>
+        {statusRows.map((entry, index) => (
+          <div key={entry.expected}>
+            {row(
+              createItem({
+                ...entry.item,
+                integrationId: `yield-${index}` as YieldId,
+              })
+            )}
+          </div>
+        ))}
+      </div>
+    );
+
+    await expect.element(app.getByText("In progress")).toBeVisible();
+    const colorOf = (text: string) =>
+      getComputedStyle(app.getByText(text, { exact: true }).element()).color;
+    const attention = colorOf("Action required");
+
+    for (const counted of ["Rewards to claim", "Jailed", "Inactive"]) {
+      expect(colorOf(counted), counted).toBe(attention);
+    }
+    expect(colorOf("In progress")).not.toBe(attention);
+  });
 });
 
 describe("Earn position list item", () => {
@@ -181,9 +378,9 @@ describe("Earn position list item", () => {
         </WidgetPresentationProvider>
       );
 
-      // French puts U+00A0 before `$` and compacts thousands.
+      // French groups thousands with U+202F and puts U+00A0 before `$`.
       await expect
-        .element(app.getByText("≈ 1,23\u00a0k\u00a0$"))
+        .element(app.getByText("≈ 1\u202f234,50\u00a0$"))
         .toBeInTheDocument();
     });
 
@@ -191,7 +388,7 @@ describe("Earn position list item", () => {
       {
         expected: "Action required",
         inactiveValidator: "jailed",
-        item: { actionRequired: true, hasPendingClaimRewards: true },
+        item: { requiredAction: "other", hasPendingClaimRewards: true },
       },
       {
         expected: "Jailed",
@@ -204,7 +401,7 @@ describe("Earn position list item", () => {
         item: { hasPendingClaimRewards: true },
       },
       {
-        expected: "Claim rewards",
+        expected: "Rewards to claim",
         inactiveValidator: null,
         item: { hasPendingClaimRewards: true, hasPendingRequest: true },
       },
@@ -224,11 +421,54 @@ describe("Earn position list item", () => {
           "Action required",
           "Jailed",
           "Inactive",
-          "Claim rewards",
+          "Rewards to claim",
           "In progress",
         ].filter((label) => label !== expected)) {
           await expect.element(app.getByText(other)).not.toBeInTheDocument();
         }
+      }
+    );
+
+    it.runIf(name === "dashboard")(
+      "shows a positive rate in the success tone and an unavailable one muted",
+      async () => {
+        hookState.detailsByYield.set(
+          "positive",
+          createDetails({
+            integrationData: { ...integrationData, id: "positive" },
+            rewardRateAverage: { text: "4.2%", isPositive: true },
+          })
+        );
+        hookState.detailsByYield.set(
+          "unavailable",
+          createDetails({
+            integrationData: { ...integrationData, id: "unavailable" },
+            rewardRateAverage: { text: "—", isPositive: false },
+          })
+        );
+        // Wide enough for the rate, which a narrow row leaves out.
+        const app = await renderRow(
+          <div style={{ containerType: "inline-size", width: 640 }}>
+            {row(createItem({ integrationId: "positive" as YieldId }))}
+            {row(createItem({ integrationId: "unavailable" as YieldId }))}
+          </div>
+        );
+
+        await expect.element(app.getByText("—")).toBeVisible();
+        const colorOf = (text: string) =>
+          getComputedStyle(app.getByText(text, { exact: true }).element())
+            .color;
+        const muted = getComputedStyle(
+          app.getByText("via Validator A").first().element()
+        ).color;
+
+        expect(colorOf("—")).toBe(muted);
+        expect(colorOf("4.2%")).not.toBe(muted);
+        expect(colorOf("4.2%")).not.toBe(
+          getComputedStyle(
+            app.getByText(integrationData.metadata.name).first().element()
+          ).color
+        );
       }
     );
 
@@ -240,7 +480,7 @@ describe("Earn position list item", () => {
         .element(app.getByText(integrationData.metadata.name))
         .toBeInTheDocument();
       await expect
-        .element(app.getByText("Claim rewards"))
+        .element(app.getByText("Rewards to claim"))
         .not.toBeInTheDocument();
     });
   });
@@ -265,7 +505,7 @@ describe("Earn position list item", () => {
     const dashboard = await renderRow(presentations[1].row(createItem()));
 
     await expect
-      .element(dashboard.getByText("-", { exact: true }))
+      .element(dashboard.getByText("—", { exact: true }))
       .toBeInTheDocument();
     await dashboard.unmount();
 
@@ -275,7 +515,7 @@ describe("Earn position list item", () => {
       .element(compact.getByText(integrationData.metadata.name))
       .toBeInTheDocument();
     await expect
-      .element(compact.getByText("-", { exact: true }))
+      .element(compact.getByText("—", { exact: true }))
       .not.toBeInTheDocument();
   });
 
@@ -290,7 +530,7 @@ describe("Earn position list item", () => {
 
       await expect.element(app.getByText("Hidden")).toBeInTheDocument();
       await expect
-        .element(app.getByText("-", { exact: true }))
+        .element(app.getByText("—", { exact: true }))
         .not.toBeInTheDocument();
     }
   );

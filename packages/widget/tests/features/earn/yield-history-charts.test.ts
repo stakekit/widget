@@ -56,6 +56,7 @@ describe("Earn history chart ranges", () => {
         isLoading: false,
         isRefreshing: true,
         period: "1y",
+        pointsPeriod: "90d",
       })
     );
     expect(registry.get(view).points).toHaveLength(2);

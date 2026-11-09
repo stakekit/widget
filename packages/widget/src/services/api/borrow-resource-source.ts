@@ -1,4 +1,4 @@
-import { Effect, Option, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { ActionId } from "../../domain/borrow/ids";
@@ -14,7 +14,7 @@ import type { WalletAddress } from "../../domain/identity/identifiers";
 import type * as BorrowApi from "../../generated/api/borrow-client";
 import {
   decodeApiResponse,
-  recoverNotFound,
+  decodeOptionalApiResponse,
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
@@ -89,28 +89,14 @@ export const makeBorrowResourceSource = (
     actionId: ActionId
   ) {
     const client = yield* requireTransport();
-    const response = yield* client
+    return yield* client
       .ActionsControllerGetActionV1(actionId, undefined)
       .pipe(
-        Effect.asSome,
-        Effect.catch(
-          recoverNotFound(
-            Option.none<BorrowApi.ActionsControllerGetActionV1200>()
-          )
-        ),
-        withApiRequestError("borrow-activity-action")
+        decodeOptionalApiResponse(
+          "borrow-activity-action",
+          BorrowActivityAction
+        )
       );
-
-    return yield* response.pipe(
-      Option.match({
-        onNone: () => Effect.succeed(Option.none<BorrowActivityAction>()),
-        onSome: (value) =>
-          Schema.decodeUnknownEffect(BorrowActivityAction)(value).pipe(
-            withResponseDecodeError("borrow-activity-action"),
-            Effect.asSome
-          ),
-      })
-    );
   });
 
   const listActions = Effect.fn("BorrowResourceSource.listActions")(function* (

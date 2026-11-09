@@ -34,17 +34,39 @@ export const positionDetailsFlowFactsAtom = Atom.family(
           })
         )
       );
+      const receiveToken = workflow.exitReceiveTokenSelection?.selected ?? null;
+      const stakedOrLiquidBalances = workflow.stakedOrLiquidBalances;
+      const token = workflow.unstakeToken;
 
       return {
         amount: workflow.unstakeAmount,
         amountValid: workflow.unstakeAmountValid,
+        /** The exit the connected wallet would submit, once it has one. */
+        exit:
+          wallet.status === "connected" &&
+          integration &&
+          stakedOrLiquidBalances &&
+          token
+            ? {
+                additionalAddresses: wallet.additionalAddresses,
+                address: wallet.address,
+                amount: workflow.unstakeAmount,
+                integration,
+                receiveToken,
+                stakedOrLiquidBalances,
+                token,
+                useMaxAmount:
+                  workflow.unstakeUseMaxAmount ||
+                  workflow.unstakeForceMaxAmount,
+              }
+            : null,
         integration,
         kycBlocking: kyc.isBlocking,
         positionBalancesByType: workflow.positionBalancesByType,
         providers: providers ?? [],
-        receiveToken: workflow.exitReceiveTokenSelection?.selected ?? null,
-        stakedOrLiquidBalances: workflow.stakedOrLiquidBalances,
-        token: workflow.unstakeToken,
+        receiveToken,
+        stakedOrLiquidBalances,
+        token,
         wallet,
         workflow,
       } as const;

@@ -1,7 +1,7 @@
 import { Data, Array as EArray, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import type { EarnValidator } from "../../../domain/earn/models";
+import type { EarnValidator } from "../../../domain/earn/validator";
 import { filterValidators } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { Network } from "../../../domain/network/network";

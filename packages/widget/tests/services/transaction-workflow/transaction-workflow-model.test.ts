@@ -12,7 +12,7 @@ import {
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   appendTransactionWorkflowBatch,
-  getTransactionWorkflowAction,
+  getNextTransactionWorkflowStage,
   initializeTransactionWorkflow,
   makeBorrowTransactionWorkflowBatch,
   updateCurrentTransactionWorkflowTransaction,
@@ -24,7 +24,9 @@ import {
   getTransactionSignCustomMessage,
   getTransactionStepProgress,
   isTransactionWorkflowLeaveGuarded,
+  isTransactionWorkflowSent,
   makeTransactionSignError,
+  projectTransactionWorkflowTransactions,
   TransactionAdvanceError,
   TransactionConfirmationError,
   type TransactionPhaseProgress,
@@ -302,7 +304,7 @@ describe("transaction workflow model", () => {
             reason: { _tag: "MissingUnsignedPayload" },
           }),
         } as const,
-        action: "sign",
+        stage: { _tag: "Sign" },
       },
       {
         state: {
@@ -313,7 +315,7 @@ describe("transaction workflow model", () => {
             broadcasted: false,
           }),
         } as const,
-        action: "submit",
+        stage: { _tag: "Submit" },
       },
       {
         state: {
@@ -322,9 +324,11 @@ describe("transaction workflow model", () => {
           error: new TransactionConfirmationError({
             ...common,
             network: "ethereum",
+            outcome: "Unconfirmed",
+            reason: null,
           }),
         } as const,
-        action: "confirm",
+        stage: { _tag: "Confirm" },
       },
       {
         state: {
@@ -332,18 +336,18 @@ describe("transaction workflow model", () => {
           context,
           error: new TransactionAdvanceError(common),
         } as const,
-        action: "advance",
+        stage: { _tag: "Advance", reconcile: true },
       },
     ];
 
-    for (const { action, state } of states) {
+    for (const { stage, state } of states) {
       expect(
-        getTransactionWorkflowAction({ command: { _tag: "Retry" }, state })
-      ).toBe(action);
+        getNextTransactionWorkflowStage({ _tag: "Retry", state })
+      ).toStrictEqual(stage);
     }
     expect(
-      getTransactionWorkflowAction({
-        command: { _tag: "Retry" },
+      getNextTransactionWorkflowStage({
+        _tag: "Retry",
         state: { _tag: "Signing", context },
       })
     ).toBeNull();
@@ -469,6 +473,8 @@ describe("transaction workflow model", () => {
           error: new TransactionConfirmationError({
             ...common,
             network: "ethereum",
+            outcome: "Unconfirmed",
+            reason: null,
           }),
         },
         phases("done", "done", "failed"),
@@ -535,6 +541,52 @@ describe("transaction workflow model", () => {
         disabled: true,
         phases: phases("done", "done", "done"),
       });
+    });
+  });
+
+  describe("transaction projection", () => {
+    const makeState = (status: ActionTransaction["status"]) =>
+      initializeTransactionWorkflow(
+        new YieldTransactionWorkflowInput({
+          actionMeta,
+          transactions: [
+            yieldTransaction("yield-1", status, 0),
+            yieldTransaction("yield-2", "CREATED", 1),
+          ],
+          walletScope: yieldWalletScope,
+          yieldId,
+        })
+      );
+    const sentFlags = (state: TransactionWorkflowState) =>
+      projectTransactionWorkflowTransactions(state).map(({ sent }) => sent);
+
+    it("counts nothing sent before the first broadcast", () => {
+      const state = makeState("CREATED");
+
+      expect(sentFlags(state)).toEqual([false, false]);
+      expect(
+        isTransactionWorkflowSent(projectTransactionWorkflowTransactions(state))
+      ).toBe(false);
+    });
+
+    it("counts the transaction being broadcast as sent", () => {
+      const { context } = makeState("CREATED");
+
+      expect(sentFlags({ _tag: "Submitting", context })).toEqual([true, false]);
+    });
+
+    it("counts a transaction the API reports broadcast as sent without a hash", () => {
+      const state = makeState("BROADCASTED");
+
+      expect(
+        projectTransactionWorkflowTransactions(state).map(({ hash, sent }) => [
+          hash,
+          sent,
+        ])
+      ).toEqual([
+        [null, true],
+        [null, false],
+      ]);
     });
   });
 

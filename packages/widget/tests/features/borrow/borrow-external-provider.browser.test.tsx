@@ -11,109 +11,35 @@ import type {
   SKBorrowWallet,
   SKEip712TypedData,
 } from "../../../src/public-api/types";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshotDto,
+  makeBorrowIntegrationDto,
+  makeBorrowMarketDto,
+  makeBorrowSupplyBalanceDto,
+  wethTokenAddress,
+} from "../../fixtures/borrow";
 import { borrowApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { describe, expect, it, vi } from "../../utils/test-extend";
 import { type RenderResult, render, renderApp } from "../../utils/test-utils";
 
-const account = "0x0000000000000000000000000000000000000001";
+const account = borrowWalletAddress;
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 
-const integration = {
-  id: "aave-borrow",
-  providerId: "aave",
-  name: "Aave V3 Borrow",
-  networks: ["ethereum"],
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  actions: [],
-} as const;
+const integration = makeBorrowIntegrationDto({ name: "Aave V3 Borrow" });
 
-const collateralToken = {
-  address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-  symbol: "WETH",
-  name: "Wrapped Ether",
-  decimals: 18,
-} as const;
+const market = makeBorrowMarketDto();
 
-const market = {
-  id: "aave-v3-ethereum-usdc",
-  integrationId: integration.id,
-  network: "ethereum",
-  type: "pool",
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-  },
-  collateralTokens: [
-    {
-      token: collateralToken,
-      priceUsd: "2000",
-      maxLtv: "0.8",
-      liquidationThreshold: "0.85",
-      liquidationPenalty: "0.05",
-      supplyRate: "0.02",
-    },
-  ],
-  borrowRate: "0.06",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  utilizationRate: "0.5",
-  loanTokenPriceUsd: "1",
-  isBorrowEnabled: true,
-  supplyCollateralFeeBps: "0",
-  feeWrapperAddress: null,
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  minLoan: null,
-} as const;
-
-const position = {
-  address: account,
-  availableToBorrowUsd: "450",
-  currentLtv: "0.4",
-  debtBalances: [
-    {
-      apy: "0.06",
-      balance: "400",
-      balanceRaw: "400000000",
-      balanceUsd: "400",
-      marketId: market.id,
-      pendingActions: [],
-      tokenAddress: market.loanToken.address,
-      tokenSymbol: "USDC",
-    },
-  ],
-  healthFactor: "2.125",
-  integrationId: integration.id,
-  netApy: "-0.006",
-  netWorthUsd: "600",
-  network: "ethereum",
+const position = makeBorrowAccountSnapshotDto({
   supplyBalances: [
-    {
-      apy: "0.02",
-      balance: "0.5",
-      balanceRaw: "500000000000000000",
-      balanceUsd: "1000",
-      isCollateral: true,
-      marketId: market.id,
+    makeBorrowSupplyBalanceDto({
       pendingActions: [
         {
           args: {
             amountRaw: "500000000000000000",
             marketId: market.id,
-            tokenAddress: collateralToken.address,
+            tokenAddress: wethTokenAddress,
           },
           label: "Withdraw",
           type: "withdraw",
@@ -125,14 +51,11 @@ const position = {
         healthFactor: "2.125",
         liquidationThreshold: "0.85",
       },
-      tokenAddress: collateralToken.address,
-      tokenSymbol: "WETH",
-    },
+    }),
   ],
-  totalBorrowedUsd: "400",
   totalCollateralUsd: "1000",
   totalSuppliedUsd: "1000",
-};
+});
 
 const typedData = {
   domain: {
@@ -202,7 +125,7 @@ const makeBorrowApi = ({
     rawArguments: {
       amount: "0.1",
       marketId: market.id,
-      tokenAddress: collateralToken.address,
+      tokenAddress: wethTokenAddress,
     },
     status: transactions.every(({ id }) => submitted.has(id))
       ? "SUCCESS"
@@ -295,7 +218,7 @@ const renderBorrowApp = (wallet: SKBorrowWallet) =>
 const confirmWithdraw = async (app: RenderResult) => {
   await userEvent.click(app.getByText("Manage"));
   await userEvent.click(app.getByText("WETH/USDC"));
-  await app.getByTestId("borrow-position-action__withdraw").click();
+  // The position's only action, Withdraw, opens inline without tabs.
   await userEvent.click(app.getByTestId("number-input"));
   await userEvent.keyboard("0.1");
   await app.getByRole("button", { name: "Review withdrawal" }).click();
@@ -331,9 +254,16 @@ describe("Borrow with an external provider", () => {
     await expect
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeEnabled();
+    // Sent to the network, the transaction can no longer be cancelled.
     await expect
-      .element(app.getByRole("button", { name: "Cancel" }))
+      .element(app.getByRole("button", { name: "Leave" }))
       .toBeEnabled();
+    await expect
+      .element(
+        app.getByText("Sent transactions can't be cancelled.", { exact: false })
+      )
+      .toBeInTheDocument();
+    expect(app.getByRole("button", { name: "Cancel" }).query()).toBeNull();
 
     broadcast.resolve(broadcastSuccess);
     await expect.poll(() => completePageShown(app)).toBe(true);
@@ -396,18 +326,22 @@ describe("Borrow with an external provider", () => {
       .element(app.getByRole("button", { name: "Cancel" }))
       .toBeEnabled();
 
-    await app.getByRole("button", { name: "Try Again" }).click();
+    await app.getByRole("button", { name: "Try again" }).click();
     await expect
-      .element(app.getByText("Borrow transaction could not be submitted."))
+      .element(app.getByText("The transaction couldn't be sent. Try again."))
       .toBeInTheDocument();
     expect(api.submitted.has(withdrawTransaction.id)).toBe(false);
     await expect
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeEnabled();
 
-    await app.getByRole("button", { name: "Cancel" }).click();
-    // The host broadcast the transaction, so leaving asks first.
+    // The host broadcast the transaction: the footer offers Leave, not
+    // Cancel, and leaving asks first.
     await app.getByRole("button", { name: "Leave" }).click();
+    await app
+      .getByTestId("leave-confirmation")
+      .getByRole("button", { name: "Leave" })
+      .click();
     await expect.poll(() => stepsPageShown(app)).toBe(false);
     await expect
       .poll(() => api.submitted.get(withdrawTransaction.id))
@@ -432,16 +366,31 @@ describe("Borrow with an external provider", () => {
     await confirmWithdraw(app);
 
     await expect
-      .element(app.getByText("You cancelled this request in your wallet."))
+      .element(app.getByText("Nothing was sent. Try again when you're ready."))
       .toBeInTheDocument();
     await expect
       .element(app.getByText("Withdrawal failed"))
       .not.toBeInTheDocument();
-    await expect
-      .element(app.getByRole("button", { name: "Cancel" }))
-      .toBeEnabled();
+    const cancel = app.getByRole("button", { name: "Cancel" });
+    await expect.element(cancel).toBeEnabled();
 
-    await app.getByRole("button", { name: "Try Again" }).click();
+    // Try again leads the page's footer, full width above Cancel, under the
+    // steps rather than inside the failed one.
+    const retry = app.getByRole("button", { name: "Try again" });
+    await expect.element(retry).toBeVisible();
+    const retryElement = retry.element();
+    expect(retryElement.getAttribute("data-rk")).toBe("borrow-steps-retry");
+    expect(retryElement.closest("li")).toBeNull();
+    const steps = app.getByRole("list", { name: "Transaction progress" });
+    const stepsBox = steps.element().getBoundingClientRect();
+    const retryBox = retryElement.getBoundingClientRect();
+    const cancelBox = cancel.element().getBoundingClientRect();
+    expect(retryBox.top).toBeGreaterThanOrEqual(stepsBox.bottom);
+    expect(retryBox.bottom).toBeLessThanOrEqual(cancelBox.top);
+    expect(retryBox.left).toBe(cancelBox.left);
+    expect(retryBox.width).toBe(cancelBox.width);
+
+    await retry.click();
     await expect.poll(() => completePageShown(app)).toBe(true);
     expect(sendBorrowTransaction).toHaveBeenCalledTimes(2);
 
@@ -594,7 +543,7 @@ describe("Borrow on a network outside Borrow", () => {
     await app.getByTestId(`wallet-chain-${base.id}`).click();
     await expect.poll(() => switchChain).toHaveBeenCalledWith(base.id);
     await expect
-      .element(app.getByRole("status").getByText("Confirm in Wallet"))
+      .element(app.getByRole("status").getByText("Confirm in wallet"))
       .toBeInTheDocument();
 
     await userEvent.keyboard("{Escape}");

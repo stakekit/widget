@@ -476,13 +476,13 @@ describe("RWA KYC flow", () => {
   it("keeps exit action 412 KYC failures on the global error path", async ({
     worker,
   }) => {
-    const { account, customConnectors, legacyYield, setUrl } =
+    const { account, customConnectors, yieldId, setUrl } =
       await setupTrustPosition(worker);
 
     setUrl({
       accountId: account,
       balanceId: "default",
-      yieldId: legacyYield.id,
+      yieldId,
     });
 
     const kycStatus = mockKycStatus({ status: "approved" });

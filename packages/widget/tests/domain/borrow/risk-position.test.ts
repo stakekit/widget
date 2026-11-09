@@ -2,8 +2,6 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../src/domain/borrow/catalog/market";
 import {
   decodeTokenId,
   TokenAddress,
@@ -15,76 +13,33 @@ import {
   emptyBorrowPositions,
 } from "../../../src/domain/borrow/positions/borrow-positions";
 import { getBorrowPositionDetailsModel } from "../../../src/features/borrow/market-position/model/details";
+import {
+  type BorrowMarketDto,
+  borrowWalletAddress,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  wethTokenAddress,
+} from "../../fixtures/borrow";
 
 const t = ((key: string) => key) as TFunction;
 
-const address = "0x0000000000000000000000000000000000000001";
-const integrationDto = {
-  actions: [],
-  id: "aave-borrow",
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  name: "Aave V3",
-  networks: ["ethereum"],
-  providerId: "aave",
-} as const;
-const collateralToken = {
-  liquidationPenalty: "0.05",
-  liquidationThreshold: "0.85",
-  maxLtv: "0.8",
-  priceUsd: "2000",
-  supplyRate: "0.02",
-  token: {
-    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    decimals: 18,
-    name: "Wrapped Ether",
-    symbol: "WETH",
-  },
-} as const;
+const address = borrowWalletAddress;
 const makeMarket = ({
-  id,
-  integrationId = integrationDto.id,
   loanTokenAddress,
   loanTokenSymbol,
-  type = "pool",
-}: {
-  readonly id: string;
-  readonly integrationId?: string;
+  ...overrides
+}: Partial<BorrowMarketDto> & {
   readonly loanTokenAddress: string;
   readonly loanTokenSymbol: string;
-  readonly type?: "isolated" | "pool";
 }) =>
-  Schema.decodeSync(Market)({
-    availableLiquidity: "500000",
-    availableLiquidityRaw: "500000000000",
-    borrowRate: "0.06",
-    collateralTokens: [collateralToken],
-    id,
-    integrationId,
-    isBorrowEnabled: true,
+  makeBorrowMarket({
+    ...overrides,
     loanToken: {
       address: loanTokenAddress,
       decimals: 6,
       name: loanTokenSymbol,
       symbol: loanTokenSymbol,
     },
-    loanTokenPriceUsd: "1",
-    minLoan: null,
-    network: "ethereum",
-    originationFeeBps: "0",
-    originationFeeWrapperAddress: null,
-    blueBundleOriginationFeeBps: null,
-    poolAddress: "0x0000000000000000000000000000000000000001",
-    supplyCollateralFeeBps: "0",
-    totalBorrow: "500000",
-    totalBorrowRaw: "500000000000",
-    totalSupply: "1000000",
-    totalSupplyRaw: "1000000000000",
-    type,
-    utilizationRate: "0.5",
   });
 
 describe("BorrowPositions", () => {
@@ -160,7 +115,7 @@ describe("BorrowPositions", () => {
           },
         ],
         healthFactor: "0.7",
-        integrationId: integrationDto.id,
+        integrationId: usdcMarket.integrationId,
         netApy: "-0.06",
         netWorthUsd: "-200",
         network: "ethereum",
@@ -183,7 +138,7 @@ describe("BorrowPositions", () => {
       loanTokenAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       loanTokenSymbol: "DAI",
     });
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const integration = makeBorrowIntegration();
     const snapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
       address,
       availableToBorrowUsd: "400",
@@ -214,8 +169,8 @@ describe("BorrowPositions", () => {
           isCollateral: true,
           marketId: usdcMarket.id,
           pendingActions: [],
-          tokenAddress: collateralToken.token.address,
-          tokenSymbol: collateralToken.token.symbol,
+          tokenAddress: wethTokenAddress,
+          tokenSymbol: "WETH",
         },
       ],
       totalBorrowedUsd: "400",
@@ -388,7 +343,7 @@ describe("BorrowPositions", () => {
       loanTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       loanTokenSymbol: "USDC",
     });
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const integration = makeBorrowIntegration();
     const snapshot = Schema.decodeSync(BorrowAccountSnapshot)({
       address,
       availableToBorrowUsd: "1.072",
@@ -408,8 +363,8 @@ describe("BorrowPositions", () => {
           isCollateral: true,
           marketId: usdcMarket.id,
           pendingActions: [],
-          tokenAddress: collateralToken.token.address,
-          tokenSymbol: collateralToken.token.symbol,
+          tokenAddress: wethTokenAddress,
+          tokenSymbol: "WETH",
         },
       ],
       totalBorrowedUsd: "0",
@@ -450,8 +405,7 @@ describe("BorrowPositions", () => {
       loanTokenSymbol: "DAI",
       type: "isolated",
     });
-    const integration = Schema.decodeSync(Integration)({
-      ...integrationDto,
+    const integration = makeBorrowIntegration({
       id: "morpho-blue-borrow",
       name: "Morpho Blue",
     });
@@ -491,8 +445,8 @@ describe("BorrowPositions", () => {
             healthFactor: "4.25",
             liquidationThreshold: "0.85",
           },
-          tokenAddress: collateralToken.token.address,
-          tokenSymbol: collateralToken.token.symbol,
+          tokenAddress: wethTokenAddress,
+          tokenSymbol: "WETH",
         },
       ],
       totalBorrowedUsd: "400",
@@ -563,8 +517,7 @@ describe("BorrowPositions", () => {
       loanTokenSymbol: "USDC",
       type: "isolated",
     });
-    const integration = Schema.decodeSync(Integration)({
-      ...integrationDto,
+    const integration = makeBorrowIntegration({
       id: "morpho-blue-borrow",
       name: "Morpho Blue",
     });
@@ -620,8 +573,8 @@ describe("BorrowPositions", () => {
             marketId: usdcMarket.id,
             pendingActions: [],
             positionState,
-            tokenAddress: collateralToken.token.address,
-            tokenSymbol: collateralToken.token.symbol,
+            tokenAddress: wethTokenAddress,
+            tokenSymbol: "WETH",
           },
         ],
         totalBorrowedUsd: debt,
@@ -891,7 +844,7 @@ describe("BorrowPositions", () => {
       loanTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       loanTokenSymbol: "USDC",
     });
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const integration = makeBorrowIntegration();
     const snapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
       address,
       availableToBorrowUsd: "0",
@@ -922,8 +875,8 @@ describe("BorrowPositions", () => {
           isCollateral: true,
           marketId: usdcMarket.id,
           pendingActions: [],
-          tokenAddress: collateralToken.token.address,
-          tokenSymbol: collateralToken.token.symbol,
+          tokenAddress: wethTokenAddress,
+          tokenSymbol: "WETH",
         },
       ],
       totalBorrowedUsd: "900",

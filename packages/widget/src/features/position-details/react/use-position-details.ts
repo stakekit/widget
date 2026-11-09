@@ -9,16 +9,17 @@ import {
   loadMorePositionDetailsValidatorsAtom,
   positionDetailsViewAtom,
   refreshPositionDetailsKycAtom,
+  retryPositionDetailsAtom,
   setPositionDetailsExitAmountAtom,
   setPositionDetailsExitMaxAmountAtom,
   setPositionDetailsExitReceiveTokenAtom,
   submitPositionDetailsExitAtom,
 } from "../state/details-view";
+import { useExitOrPendingAction } from "./use-exit-or-pending-action";
 import { usePendingActions } from "./use-pending-actions";
-import { useUnstakeOrPendingAction } from "./use-unstake-or-pending-action";
 
 export const usePositionDetails = () => {
-  const { dispatch, workflowKey } = useUnstakeOrPendingAction();
+  const { dispatch, workflowKey } = useExitOrPendingAction();
   const view = useAtomValue(positionDetailsViewAtom(workflowKey));
   const setAmount = useAtomSet(setPositionDetailsExitAmountAtom(workflowKey));
   const setMaxAmount = useAtomSet(
@@ -39,6 +40,7 @@ export const usePositionDetails = () => {
   const loadMoreValidators = useAtomSet(
     loadMorePositionDetailsValidatorsAtom(workflowKey)
   );
+  const retry = useAtomSet(retryPositionDetailsAtom(workflowKey));
   const {
     onPendingActionAmountChange,
     pendingActions,
@@ -60,6 +62,7 @@ export const usePositionDetails = () => {
     onReceiveTokenSelect: setReceiveToken,
     onHideBalances: () => hideBalances(undefined),
     onRevealBalances: () => revealBalances(undefined),
+    onRetry: () => retry(undefined),
     revealFailed: revealStatus.failed,
     revealing: revealStatus.revealing,
     onUnstakeAmountChange: (amount: BigNumber) => setAmount(amount),

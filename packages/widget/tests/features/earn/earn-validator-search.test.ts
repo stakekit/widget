@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Duration, Effect, Layer } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import type { EarnYield } from "../../../src/domain/earn/models";
+import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { yieldValidatorsAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   YieldValidatorsKey,

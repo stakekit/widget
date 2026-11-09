@@ -1,45 +1,47 @@
 import { useAtomValue } from "@effect/atom-react";
-import clsx from "clsx";
 import { capitalize, toLowerCase } from "effect/String";
 import { type ReactNode, useId } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
-import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
+import { capitalizeFirstLetters } from "../../../../shared/lib/formatters";
+import { formatTransactionHash } from "../../../../shared/lib/general";
+import { useNetworkLogoResolver } from "../../../../shared/react/token-logo";
 import {
-  capitalizeFirstLetters,
-  formatBorrowProviderName,
-} from "../../../../shared/lib/formatters";
-import { formatAddress } from "../../../../shared/lib/general";
-import { vars } from "../../../../shared/styles/theme/contract.css";
-import { Divider } from "../../../../shared/ui/components/divider";
-import { TokenIcon } from "../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { CaretLeftIcon } from "../../../../shared/ui/primitives/icons/caret-left";
-import { CheckCircleIcon } from "../../../../shared/ui/primitives/icons/check-circle";
-import { ClockClockWiseIcon } from "../../../../shared/ui/primitives/icons/clock-clock-wise";
-import { ExternalLinkIcon } from "../../../../shared/ui/primitives/icons/external-link";
-import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetNavigate } from "../../../navigation/index";
+  Badge,
+  Box,
+  Button,
+  Card,
+  CopyButton,
+  DetailList,
+  DetailRow,
+  Disclosure,
+  Divider,
+  Icon,
+  IconButton,
+  Notice,
+  Stack,
+  Text,
+} from "../../../../ui/index";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
+import { TransactionTerms } from "../../../transaction-steps/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import {
   formatTransactionTypeLabel,
   useYieldActionContinuationReview,
 } from "../../../yield-transaction-flow/index";
-import type {
-  BorrowActivityItem,
-  YieldActivityItem,
-} from "../../model/activity-action";
+import type { YieldActivityItem } from "../../model/activity-action";
 import {
   type ActivityActionDetailsProjection,
   projectActivityActionDetails,
 } from "../../model/activity-action-details";
 import { useActivityActionRoute } from "../../react/activity-action-route";
-import { ActivityIcon } from "../activity-page/components/activity-icon";
 import { useActivityActionTitle } from "../activity-page/hooks/use-activity-action-title";
-import * as styles from "./styles.css";
+import { ActivityAvatar } from "../components/activity-avatar";
+import {
+  activityStatusLook,
+  toActivityStatusCallout,
+} from "../components/activity-status";
 
 const reviewPageByIntent = {
   enter: "stakeReview",
@@ -49,11 +51,10 @@ const reviewPageByIntent = {
 
 const ContinuationControls = () => {
   const { t } = useTranslation();
-  const trackEvent = useTrackEvent();
   const review = useYieldActionContinuationReview();
 
   return (
-    <>
+    <Stack gap={12}>
       <PageCtaButton
         cta={{
           disabled: review.disabled,
@@ -63,42 +64,8 @@ const ContinuationControls = () => {
           onClick: review.confirm,
         }}
       />
-      <Box paddingTop="3">
-        <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
-          <Trans
-            i18nKey="activity.review.terms_of_use"
-            values={{ action: t("activity.review.continue") }}
-            components={{
-              underline0: (
-                // biome-ignore lint: third-party terms link
-                <a
-                  className={styles.termsLink}
-                  href="https://docs.yield.xyz/docs/terms-of-use"
-                  onClick={() => trackEvent("termsClicked")}
-                  rel="noreferrer"
-                  target="_blank"
-                />
-              ),
-            }}
-          />
-        </Text>
-      </Box>
-    </>
-  );
-};
-
-const StatusBadge = ({
-  status,
-}: {
-  readonly status: NonNullable<ActivityActionDetailsProjection["statusLabel"]>;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <Box className={styles.badgeMuted}>
-      <Text variant={{ size: "small", type: "muted", weight: "medium" }}>
-        {t(`activity.status.${status}`)}
-      </Text>
-    </Box>
+      <TransactionTerms action={t("activity.review.continue")} />
+    </Stack>
   );
 };
 
@@ -112,7 +79,7 @@ const TransactionsSummary = ({
   switch (summary._tag) {
     case "allConfirmed":
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text tone="muted">
           {t("activity.review.transactions_all_confirmed", {
             count: summary.count,
           })}
@@ -120,13 +87,13 @@ const TransactionsSummary = ({
       );
     case "failed":
       return (
-        <Text variant={{ type: "danger", weight: "normal" }}>
+        <Text tone="danger">
           {t("activity.review.transactions_failed", { count: summary.count })}
         </Text>
       );
     case "inProgress":
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text tone="muted">
           {t("activity.review.transactions_in_progress", {
             count: summary.count,
           })}
@@ -134,8 +101,8 @@ const TransactionsSummary = ({
       );
     case "total":
       return (
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {summary.count}
+        <Text tone="muted" numeric>
+          {String(summary.count)}
         </Text>
       );
   }
@@ -150,19 +117,22 @@ const TransactionStatusIcon = ({
   readonly status: ActivityDetailsTransaction["status"];
 }) => {
   switch (status) {
+    case "cancelled":
+      return <Icon name="MinusIcon" size="sm" tone="muted" />;
     case "confirmed":
-      return <CheckCircleIcon color={vars.color.statusSuccess} />;
+      return <Icon name="CheckCircleIcon" size="sm" tone="success" />;
     case "failed":
-      return <XIcon color="textDanger" hw={16} strokeWidth={2.5} />;
+      return <Icon name="XIcon" size="sm" tone="danger" />;
     case "skipped":
-      return <XIcon color="textMuted" hw={16} strokeWidth={2.5} />;
+      return <Icon name="XIcon" size="sm" tone="muted" />;
     case "in_progress":
     case "not_submitted":
-      return <ClockClockWiseIcon />;
+      return <Icon name="HistoryIcon" size="sm" tone="muted" />;
   }
 };
 
 const statusLabelKey = {
+  cancelled: "steps.state.cancelled",
   confirmed: "activity.review.confirmed",
   failed: "steps.failed",
   in_progress: "activity.review.in_progress",
@@ -170,6 +140,12 @@ const statusLabelKey = {
   skipped: "steps.skipped",
 } as const satisfies Record<ActivityDetailsTransaction["status"], string>;
 
+/**
+ * One transaction on one line: its status, its type over when it was sent,
+ * then its short hash with copy and explorer buttons. Why it failed follows
+ * in words on its own line, with the raw error the network or the wallet
+ * reported under a disclosure.
+ */
 const TransactionRow = ({
   onOpen,
   position,
@@ -185,6 +161,7 @@ const TransactionRow = ({
   const id = useId();
   const statusId = `${id}-status`;
   const detailsId = `${id}-details`;
+  const errorId = `${id}-error`;
   const type = capitalize(
     toLowerCase(
       transaction._tag === "borrow"
@@ -195,85 +172,89 @@ const TransactionRow = ({
     )
   );
   const statusLabel = t(statusLabelKey[transaction.status]);
-  const details = [
-    transaction.status === "confirmed"
-      ? (transaction.broadcastedAt ?? statusLabel)
-      : statusLabel,
-    transaction.error,
+  const sentAt =
+    transaction.status === "confirmed" ? transaction.broadcastedAt : null;
+  const { error, errorReason, explorerUrl, hash } = transaction;
+  // A sent time leaves the status to the icon; otherwise the line says it.
+  const describedBy = [
+    sentAt === null ? null : statusId,
+    detailsId,
+    errorReason === null ? null : errorId,
   ]
     .filter((part) => part !== null)
-    .join(" · ");
-  const content = (
-    <>
-      <Box aria-label={statusLabel} display="flex" id={statusId} role="img">
+    .join(" ");
+
+  return (
+    <Stack
+      direction="row"
+      align="start"
+      gap={12}
+      testId="activity-details-transaction"
+    >
+      {/* On the type's line, whose line box is taller than the icon. */}
+      <Box id={statusId} role="img" aria-label={statusLabel} paddingBlock={2}>
         <TransactionStatusIcon status={transaction.status} />
       </Box>
-      <Box className={styles.transactionText}>
-        <Text variant={{ weight: "normal" }}>{`${position}. ${type}`}</Text>
-        <Text
-          id={detailsId}
-          variant={{
-            size: "small",
-            type:
-              transaction.status === "failed" || transaction.error
-                ? "danger"
-                : "muted",
-            weight: "normal",
-          }}
-        >
-          {details}
-        </Text>
-      </Box>
-      {transaction.explorerUrl ? (
-        <Box className={styles.transactionExplorer}>
-          {transaction.hash ? (
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {formatAddress(transaction.hash, {
-                leadingChars: 6,
-                trailingChars: 4,
-              })}
+      <Stack gap={4} grow>
+        <Stack direction="row" align="center" gap={12}>
+          <Stack gap={2} grow>
+            <Text truncate>{`${position}. ${type}`}</Text>
+            <Text
+              id={detailsId}
+              variant="caption"
+              tone={transaction.status === "failed" ? "danger" : "muted"}
+              truncate
+            >
+              {sentAt ?? statusLabel}
             </Text>
+          </Stack>
+          {hash ? (
+            <Stack direction="row" align="center" gap={4}>
+              <Text tone="muted" numeric truncate>
+                {formatTransactionHash(hash)}
+              </Text>
+              <CopyButton
+                value={hash}
+                label={t("activity.copy_hash")}
+                copiedLabel={t("activity.copied")}
+              />
+            </Stack>
           ) : null}
-          <ExternalLinkIcon />
-        </Box>
-      ) : null}
-    </>
-  );
-  const { explorerUrl } = transaction;
-
-  return explorerUrl ? (
-    <Box
-      aria-describedby={`${statusId} ${detailsId}`}
-      aria-label={t("activity.review.view_transaction", { type })}
-      as="button"
-      className={clsx(styles.transaction, styles.transactionLink)}
-      data-rk="activity-details-transaction"
-      onClick={() => onOpen(explorerUrl)}
-      type="button"
-    >
-      {content}
-    </Box>
-  ) : (
-    <Box className={styles.transaction} data-rk="activity-details-transaction">
-      {content}
-    </Box>
+          {explorerUrl ? (
+            <IconButton
+              icon="ExternalLinkIcon"
+              size="xs"
+              label={t("activity.review.view_transaction", { type })}
+              aria-describedby={describedBy}
+              onClick={() => onOpen(explorerUrl)}
+            />
+          ) : null}
+        </Stack>
+        {errorReason === null ? null : (
+          <Stack gap={2}>
+            <Text
+              id={errorId}
+              variant="caption"
+              tone={errorReason === "cancelled_in_wallet" ? "muted" : "danger"}
+            >
+              {t(`activity.errors.${errorReason}`)}
+            </Text>
+            {error === null ? null : (
+              <Disclosure
+                title={t("activity.details.error_details")}
+                testId="activity-details-error-details"
+              >
+                <Text variant="caption" tone="muted" breakAnywhere>
+                  {error}
+                </Text>
+              </Disclosure>
+            )}
+          </Stack>
+        )}
+      </Stack>
+    </Stack>
   );
 };
-
-const ReceiptRow = ({
-  label,
-  value,
-}: {
-  readonly label: string;
-  readonly value: string;
-}) => (
-  <Box className={styles.row}>
-    <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
-    <Text className={styles.rowValue} variant={{ weight: "normal" }}>
-      {value}
-    </Text>
-  </Box>
-);
 
 const BorrowReceiptRows = ({
   borrow,
@@ -296,113 +277,152 @@ const BorrowReceiptRows = ({
   ];
 
   return rows.map(({ label, value }) =>
-    value ? <ReceiptRow key={label} label={label} value={value} /> : null
+    value ? <DetailRow key={label} label={label} value={value} /> : null
   );
 };
 
+/**
+ * An action's receipt: what happened and its amount, its facts, and the
+ * transactions that ran it. On the page it sits under the shell's back
+ * button; beside the Activity list it draws its own card.
+ */
 const Receipt = ({
   children,
-  providerName,
   transactionTypeContext,
   view,
 }: {
   readonly children?: ReactNode;
-  readonly providerName: string | null;
   readonly transactionTypeContext: "ETHENA_USDE" | undefined;
   readonly view: ActivityActionDetailsProjection;
 }) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { showsBackButton } = useActivityActionRoute();
-  const navigation = useWidgetNavigate();
+  const { receiptPlacement } = useActivityActionRoute();
   const title = useActivityActionTitle(view.title);
   const network = capitalizeFirstLetters(view.network.replaceAll("-", " "));
+  const networkLogo = useNetworkLogoResolver()(view.network);
+  const [firstValidator, ...otherValidators] = view.validators;
+  const statusText = view.statusLabel
+    ? t(`activity.status.${view.statusLabel}`)
+    : null;
+  const headStatus = toActivityStatusCallout(view.statusLabel, statusText);
+  const [onlyTransaction, ...otherTransactions] = view.transactions;
+  const explorerUrl =
+    otherTransactions.length === 0 ? onlyTransaction?.explorerUrl : null;
+  // The USD value stands under a token amount; with no token it is the amount.
+  const showsTokenAmount = Boolean(view.amount && view.amountTokenSymbol);
 
   const openTransaction = (url: string) => {
     window.open(url, "_blank");
     trackEvent("viewTxClicked");
   };
 
-  return (
-    <Box className={styles.page} data-rk="activity-details-receipt">
-      {showsBackButton ? (
-        <Box
-          as="button"
-          aria-label={t("activity.details.back")}
-          className={styles.back}
-          onClick={() => navigation.push(widgetRoutes.activity.build())}
-        >
-          <CaretLeftIcon />
-        </Box>
-      ) : null}
-
-      <Box className={styles.header}>
-        {view.titleToken ? (
-          <TokenIcon token={view.titleToken} tokenLogoHw="12" />
-        ) : (
-          <ActivityIcon type="neutral" />
-        )}
-        <Box
-          className={styles.heading}
-          display="flex"
-          flexDirection="column"
-          gap="1"
-        >
-          <Box alignItems="center" display="flex" flexWrap="wrap" gap="2">
-            <Text variant={{ size: "large", weight: "bold" }}>{title}</Text>
-            {view.statusLabel ? (
-              <StatusBadge status={view.statusLabel} />
+  const body = (
+    <Stack gap={20}>
+      <Stack gap={16}>
+        <Stack direction="row" align="center" gap={12}>
+          <ActivityAvatar
+            direction={view.direction}
+            size="lg"
+            token={view.titleToken}
+          />
+          <Stack gap={4} align="start" grow>
+            <Text variant="title" as="h2">
+              {title}
+            </Text>
+            {headStatus ? (
+              <Badge tone={headStatus.tone} icon={headStatus.icon}>
+                {headStatus.text}
+              </Badge>
             ) : null}
-          </Box>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {providerName
-              ? t("activity.details.via_network", {
-                  network,
-                  provider: providerName,
-                })
-              : network}
-          </Text>
-        </Box>
-      </Box>
+          </Stack>
+        </Stack>
 
-      {view.amount ? (
-        <Text className={styles.amount} variant={{ weight: "medium" }}>
-          {view.amount}
-          {view.amountTokenSymbol ? ` ${view.amountTokenSymbol}` : ""}
-        </Text>
-      ) : null}
+        {view.amountText ? (
+          <Stack gap={4}>
+            <Text variant="display" as="p" breakAnywhere>
+              {view.amountText}
+            </Text>
+            {showsTokenAmount && view.amountFiat ? (
+              <Text tone="muted" numeric>
+                {view.amountFiat}
+              </Text>
+            ) : null}
+          </Stack>
+        ) : null}
+      </Stack>
 
       <Divider />
-      <Box className={styles.rows}>
-        <ReceiptRow
+      <DetailList>
+        {view.statusLabel && statusText ? (
+          <DetailRow
+            label={t("activity.details.status")}
+            value={statusText}
+            tone={activityStatusLook[view.statusLabel].factTone}
+          />
+        ) : null}
+        <DetailRow
+          label={t("activity.details.network")}
+          value={network}
+          logo={networkLogo ? { name: network, src: networkLogo } : undefined}
+        />
+        {view.provider ? (
+          <DetailRow
+            label={t("activity.details.provider")}
+            value={view.provider.name}
+            logo={{
+              name: view.provider.name,
+              src: view.provider.logo ?? undefined,
+            }}
+          />
+        ) : null}
+        {firstValidator ? (
+          <DetailRow
+            label={t("activity.details.validators", {
+              count: view.validators.length,
+            })}
+            value={view.validators
+              .map((validator) => validator.name)
+              .join(", ")}
+            // One logo stands for one validator; a list stays names only.
+            logo={
+              otherValidators.length === 0
+                ? {
+                    name: firstValidator.name,
+                    shape: "square",
+                    src: firstValidator.logo ?? undefined,
+                  }
+                : undefined
+            }
+          />
+        ) : null}
+        <DetailRow
           label={t("activity.details.created")}
           value={view.createdAt}
         />
         {view.completedAt ? (
-          <ReceiptRow
+          <DetailRow
             label={t("activity.details.completed")}
             value={view.completedAt}
           />
         ) : null}
         {view.canceledAt ? (
-          <ReceiptRow
+          <DetailRow
             label={t("activity.details.canceled")}
             value={view.canceledAt}
           />
         ) : null}
         {view.borrow ? <BorrowReceiptRows borrow={view.borrow} /> : null}
-      </Box>
+      </DetailList>
 
       {view.transactions.length > 0 ? (
         <>
           <Divider />
-          <Box className={styles.transactions}>
-            <Box className={styles.transactionsHeader}>
-              <Text variant={{ weight: "medium" }}>
-                {t("activity.review.transactions")}
-              </Text>
+          <Stack gap={12}>
+            <Stack direction="row" justify="between" align="center" gap={16}>
+              <Text weight="medium">{t("activity.review.transactions")}</Text>
               <TransactionsSummary summary={view.transactionsSummary} />
-            </Box>
+            </Stack>
             {view.transactions.map((transaction, index) => (
               <TransactionRow
                 key={transaction.id}
@@ -412,12 +432,29 @@ const Receipt = ({
                 typeContext={transactionTypeContext}
               />
             ))}
-          </Box>
+            {explorerUrl ? (
+              <Button
+                iconEnd="ExternalLinkIcon"
+                onClick={() => openTransaction(explorerUrl)}
+                testId="activity-details-explorer"
+              >
+                {t("activity.details.view_on_explorer")}
+              </Button>
+            ) : null}
+          </Stack>
         </>
       ) : null}
 
       {children}
-    </Box>
+    </Stack>
+  );
+
+  return receiptPlacement === "pane" ? (
+    <Card grow padding={24} testId="activity-details-receipt">
+      {body}
+    </Card>
+  ) : (
+    <Stack testId="activity-details-receipt">{body}</Stack>
   );
 };
 
@@ -429,48 +466,26 @@ const YieldReceipt = ({
   readonly view: ActivityActionDetailsProjection;
 }) => {
   const { t } = useTranslation();
-  const { continuationReady, providersDetails } = useActivityActionRoute();
-  const firstProvider = providersDetails[0];
+  const { continuationReady } = useActivityActionRoute();
   useTrackPage(reviewPageByIntent[item.actionData.intent]);
 
   return (
     <Receipt
-      providerName={firstProvider?.name ?? firstProvider?.address ?? null}
       transactionTypeContext={
         isEthenaUsdeStaking(item.actionData.yieldId) ? "ETHENA_USDE" : undefined
       }
       view={view}
     >
       {view.continuationUnavailable ? (
-        <Text
-          className={styles.unavailable}
-          variant={{ type: "muted", weight: "normal" }}
-        >
+        <Notice tone="neutral">
           {t("activity.details.continuation_unavailable")}
-        </Text>
+        </Notice>
       ) : null}
 
       {view.canContinue && continuationReady ? <ContinuationControls /> : null}
     </Receipt>
   );
 };
-
-// Borrow receipts are not continuation reviews, so they track no review page.
-const BorrowReceipt = ({
-  item,
-  view,
-}: {
-  readonly item: BorrowActivityItem;
-  readonly view: ActivityActionDetailsProjection;
-}) => (
-  <Receipt
-    providerName={
-      item.integration ? formatBorrowProviderName(item.integration.name) : null
-    }
-    transactionTypeContext={undefined}
-    view={view}
-  />
-);
 
 export const ActivityDetailsPage = () => {
   const { i18n } = useTranslation();
@@ -484,9 +499,11 @@ export const ActivityDetailsPage = () => {
     presentationTime,
   });
 
+  // Borrow receipts are not continuation reviews, so they track no review
+  // page.
   return item._tag === "yield" ? (
     <YieldReceipt item={item} view={view} />
   ) : (
-    <BorrowReceipt item={item} view={view} />
+    <Receipt transactionTypeContext={undefined} view={view} />
   );
 };

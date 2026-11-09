@@ -8,14 +8,10 @@ import { useTrackEvent } from "../../tracking/index";
 import { useSKWallet, useWalletConfig } from "../../wallet/index";
 import { useWidgetConfig } from "../../widget-configuration/index";
 import { disconnectWidgetAtom } from "../state/disconnect-widget";
-import { headerElementAtom } from "../state/layout-height";
 import { useDetailsMatch } from "./use-details-match";
-import { useElementAtomRef } from "./use-element-atom-ref";
 
 export const useHeader = () => {
   const navigation = useWidgetNavigate();
-
-  const headerRef = useElementAtomRef(headerElementAtom);
 
   const { hidesHeaderWalletControl } = useWidgetConfig("hostProfile");
   const hideChainSelector = useWidgetConfig("hideChainSelector");
@@ -56,7 +52,6 @@ export const useHeader = () => {
   return {
     onLeftIconPress,
     onXPress,
-    headerRef,
     leaveConfirmationDialog: leaveConfirmation.dialog,
     walletConfigReady,
     hidesHeaderWalletControl,

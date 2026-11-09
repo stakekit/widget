@@ -70,24 +70,43 @@ const canUseWagmiSigning = (connector: Connector) =>
   !isCardanoConnector(connector) &&
   !isTonConnector(connector);
 
+/** Who signs a message or typed data for the connected wallet. */
+type EvmSigningAdmission = {
+  readonly connector: Connector;
+  readonly signer: "external-provider" | "wagmi";
+};
+
+const admitEvmSigning = (
+  state: NormalizedWalletState,
+  capability: "message" | "typed-data"
+): Effect.Effect<EvmSigningAdmission, WalletCapabilityUnavailableError> => {
+  if (state.status !== "connected") {
+    return Effect.fail(unavailable(capability, state));
+  }
+  if (isExternalProviderConnector(state.connector)) {
+    return Effect.succeed({
+      connector: state.connector,
+      signer: "external-provider",
+    });
+  }
+  if (
+    !isEvmWalletNetwork(state.network) ||
+    !canUseWagmiSigning(state.connector)
+  ) {
+    return Effect.fail(unavailable(capability, state));
+  }
+  return Effect.succeed({ connector: state.connector, signer: "wagmi" });
+};
+
 export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
-  routing: WalletRoutingContext,
+  { actions, state }: WalletRoutingContext,
   input: WalletSignMessageInput
 ) {
-  const { actions, state } = routing;
-  if (state.status !== "connected") {
-    return yield* unavailable("message", state);
-  }
-
-  const { connector } = state;
-  if (isExternalProviderConnector(connector)) {
+  const { connector, signer } = yield* admitEvmSigning(state, "message");
+  if (signer === "external-provider") {
     return yield* makeExternalProviderWalletDriver({
       connector,
     }).signMessage(input);
-  }
-
-  if (!isEvmWalletNetwork(state.network) || !canUseWagmiSigning(connector)) {
-    return yield* unavailable("message", state);
   }
 
   return yield* actions.signMessage({ ...input, connector });
@@ -95,23 +114,14 @@ export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
 
 export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
   function* (
-    routing: WalletRoutingContext,
+    { actions, state }: WalletRoutingContext,
     input: WalletSignBorrowTypedDataInput
   ) {
-    const { actions, state } = routing;
-    if (state.status !== "connected") {
-      return yield* unavailable("typed-data", state);
-    }
-
-    const { connector } = state;
-    if (isExternalProviderConnector(connector)) {
+    const { connector, signer } = yield* admitEvmSigning(state, "typed-data");
+    if (signer === "external-provider") {
       return yield* makeExternalProviderWalletDriver({
         connector,
       }).signTypedData(input);
-    }
-
-    if (!isEvmWalletNetwork(state.network) || !canUseWagmiSigning(connector)) {
-      return yield* unavailable("typed-data", state);
     }
 
     return yield* actions.signTypedData({ ...input.typedData, connector });
@@ -125,23 +135,14 @@ export const canRouteWalletPermit = ({ state }: WalletRoutingContext) =>
     : isEvmWalletNetwork(state.network) && canUseWagmiSigning(state.connector));
 
 export const routeWalletPermit = Effect.fn("routeWalletPermit")(function* (
-  routing: WalletRoutingContext,
+  { actions, state }: WalletRoutingContext,
   input: WalletSignPermitInput
 ) {
-  const { actions, state } = routing;
-  if (state.status !== "connected") {
-    return yield* unavailable("typed-data", state);
-  }
-
-  const { connector } = state;
-  if (isExternalProviderConnector(connector)) {
+  const { connector, signer } = yield* admitEvmSigning(state, "typed-data");
+  if (signer === "external-provider") {
     return yield* makeExternalProviderWalletDriver({
       connector,
     }).signZamaPermit(input);
-  }
-
-  if (!isEvmWalletNetwork(state.network) || !canUseWagmiSigning(connector)) {
-    return yield* unavailable("typed-data", state);
   }
 
   return yield* actions.signTypedData({ ...input.typedData, connector });

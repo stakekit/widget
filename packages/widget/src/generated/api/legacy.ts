@@ -136,13 +136,6 @@ export type AvalancheCAdditionalAddressesDto = {
   readonly cAddressBech: string;
   readonly pAddressBech: string;
 };
-export type YieldRewardsSummaryDto = {
-  readonly total: string;
-  readonly last24H: string;
-  readonly last7D: string;
-  readonly last30D: string;
-  readonly lastYear: string;
-};
 export type TokenDto = {
   readonly name: string;
   readonly network: Networks;
@@ -165,15 +158,6 @@ export type AddressWithTokenDto = {
   readonly network: Networks;
   readonly tokenAddress?: string;
 };
-export type AddressesDto = {
-  readonly address: string;
-  readonly additionalAddresses?:
-    | CosmosAdditionalAddressesDto
-    | BinanceAdditionalAddressesDto
-    | SolanaAdditionalAddressesDto
-    | TezosAdditionalAddressesDto
-    | AvalancheCAdditionalAddressesDto;
-};
 export type TokenBalanceScanResponseDto = {
   readonly token: TokenDto;
   readonly availableYields: ReadonlyArray<string>;
@@ -192,15 +176,8 @@ export type BalanceResponseDto = {
   readonly amount: string;
   readonly availableYields: ReadonlyArray<string>;
 };
-export type YieldRewardsSummaryResponseDto = {
-  readonly rewards: YieldRewardsSummaryDto;
-  readonly token: TokenDto;
-};
 export type BalancesRequestDto = {
   readonly addresses: ReadonlyArray<AddressWithTokenDto>;
-};
-export type YieldRewardsSummaryRequestDto = {
-  readonly addresses: AddressesDto;
 };
 // schemas
 export type NetworkAddressesTokenV2ControllerGetTokenBalancesParams = {
@@ -294,24 +271,6 @@ export type TokenControllerGetTokenBalances429 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances500 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances503 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummaryParams = {
-  readonly "X-API-KEY"?: string;
-};
-export type YieldControllerGetSingleYieldRewardsSummaryRequestJson =
-  YieldRewardsSummaryRequestDto;
-export type YieldControllerGetSingleYieldRewardsSummary201 =
-  YieldRewardsSummaryResponseDto;
-export type YieldControllerGetSingleYieldRewardsSummary400 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary401 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary404 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary408 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary409 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary410 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary412 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary500 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary502 = StakeKitErrorDto;
-export type YieldControllerGetSingleYieldRewardsSummary503 = StakeKitErrorDto;
 
 export interface OperationConfig {
   /**
@@ -342,16 +301,16 @@ export type WithOptionalResponse<
     ? A
     : A | [A, HttpClientResponse.HttpClientResponse];
 
-export const make = (
-  httpClient: HttpClient.HttpClient,
+export const make = <E, R>(
+  httpClient: HttpClient.HttpClient.With<E, R>,
   options: {
     readonly transformClient?:
       | ((
-          client: HttpClient.HttpClient
-        ) => Effect.Effect<HttpClient.HttpClient>)
+          client: HttpClient.HttpClient.With<E, R>
+        ) => Effect.Effect<HttpClient.HttpClient.With<E, R>>)
       | undefined;
   } = {}
-): LegacyApi => {
+): LegacyApi<E, R> => {
   const unexpectedStatus = (response: HttpClientResponse.HttpClientResponse) =>
     Effect.flatMap(
       Effect.orElseSucceed(response.json, () => "Unexpected status code"),
@@ -377,7 +336,7 @@ export const make = (
       ) => Effect.Effect<any, any>
     ): ((
       request: HttpClientRequest.HttpClientRequest
-    ) => Effect.Effect<any, any>) => {
+    ) => Effect.Effect<any, any, R>) => {
       const withOptionalResponse = (
         config?.includeResponse
           ? (response: HttpClientResponse.HttpClientResponse) =>
@@ -582,45 +541,11 @@ export const make = (
           "503": "TokenControllerGetTokenBalances503",
         })
       ),
-    YieldControllerGetSingleYieldRewardsSummary: (
-      integrationId,
-      options: Parameters<
-        LegacyApi["YieldControllerGetSingleYieldRewardsSummary"]
-      >[1]
-    ) =>
-      __makePathRequest(
-        HttpClientRequest.post,
-        [integrationId],
-        () =>
-          "/v1/yields/" + __encodePathParam(integrationId) + "/rewards-summary"
-      ).pipe(
-        Effect.flatMap((request) =>
-          request.pipe(
-            HttpClientRequest.setHeaders({
-              "X-API-KEY": options.params?.["X-API-KEY"] ?? undefined,
-            }),
-            HttpClientRequest.bodyJsonUnsafe(options.payload),
-            onRequest(options.config)(["2xx"], {
-              "400": "YieldControllerGetSingleYieldRewardsSummary400",
-              "401": "YieldControllerGetSingleYieldRewardsSummary401",
-              "404": "YieldControllerGetSingleYieldRewardsSummary404",
-              "408": "YieldControllerGetSingleYieldRewardsSummary408",
-              "409": "YieldControllerGetSingleYieldRewardsSummary409",
-              "410": "YieldControllerGetSingleYieldRewardsSummary410",
-              "412": "YieldControllerGetSingleYieldRewardsSummary412",
-              "429": "YieldControllerGetSingleYieldRewardsSummary429",
-              "500": "YieldControllerGetSingleYieldRewardsSummary500",
-              "502": "YieldControllerGetSingleYieldRewardsSummary502",
-              "503": "YieldControllerGetSingleYieldRewardsSummary503",
-            })
-          )
-        )
-      ),
   };
 };
 
-export interface LegacyApi {
-  readonly httpClient: HttpClient.HttpClient;
+export interface LegacyApi<E = HttpClientError.HttpClientError, R = never> {
+  readonly httpClient: HttpClient.HttpClient.With<E, R>;
   /**
    * Scans for tokens with balance with available yields
    */
@@ -639,6 +564,7 @@ export interface LegacyApi {
         NetworkAddressesTokenV2ControllerGetTokenBalances200,
         Config
       >,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "NetworkAddressesTokenV2ControllerGetTokenBalances400",
@@ -683,7 +609,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "NetworkAddressesTokenV2ControllerGetTokenBalances503",
           NetworkAddressesTokenV2ControllerGetTokenBalances503
-        >
+        >,
+      R
     >;
     <Config extends OperationConfig | undefined = undefined>(
       network: string,
@@ -701,6 +628,7 @@ export interface LegacyApi {
         NetworkAddressesTokenV2ControllerGetTokenBalances200,
         Config | undefined
       >,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "NetworkAddressesTokenV2ControllerGetTokenBalances400",
@@ -745,7 +673,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "NetworkAddressesTokenV2ControllerGetTokenBalances503",
           NetworkAddressesTokenV2ControllerGetTokenBalances503
-        >
+        >,
+      R
     >;
   };
   /**
@@ -757,6 +686,7 @@ export interface LegacyApi {
       readonly config: Config;
     }): Effect.Effect<
       WithOptionalResponse<TokenControllerGetTokens200, Config>,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "TokenControllerGetTokens400",
@@ -801,7 +731,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "TokenControllerGetTokens503",
           TokenControllerGetTokens503
-        >
+        >,
+      R
     >;
     <Config extends OperationConfig | undefined = undefined>(
       options:
@@ -812,6 +743,7 @@ export interface LegacyApi {
         | undefined
     ): Effect.Effect<
       WithOptionalResponse<TokenControllerGetTokens200, Config | undefined>,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "TokenControllerGetTokens400",
@@ -856,7 +788,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "TokenControllerGetTokens503",
           TokenControllerGetTokens503
-        >
+        >,
+      R
     >;
   };
   /**
@@ -869,6 +802,7 @@ export interface LegacyApi {
       readonly config: Config;
     }): Effect.Effect<
       WithOptionalResponse<TokenControllerGetTokenPrices200, Config>,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "TokenControllerGetTokenPrices400",
@@ -913,7 +847,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "TokenControllerGetTokenPrices503",
           TokenControllerGetTokenPrices503
-        >
+        >,
+      R
     >;
     <Config extends OperationConfig | undefined = undefined>(options: {
       readonly params?: TokenControllerGetTokenPricesParams | undefined;
@@ -924,6 +859,7 @@ export interface LegacyApi {
         TokenControllerGetTokenPrices200,
         Config | undefined
       >,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "TokenControllerGetTokenPrices400",
@@ -968,7 +904,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "TokenControllerGetTokenPrices503",
           TokenControllerGetTokenPrices503
-        >
+        >,
+      R
     >;
   };
   /**
@@ -981,6 +918,7 @@ export interface LegacyApi {
       readonly config: Config;
     }): Effect.Effect<
       WithOptionalResponse<TokenControllerGetTokenBalances200, Config>,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "TokenControllerGetTokenBalances400",
@@ -1025,7 +963,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "TokenControllerGetTokenBalances503",
           TokenControllerGetTokenBalances503
-        >
+        >,
+      R
     >;
     <Config extends OperationConfig | undefined = undefined>(options: {
       readonly params?: TokenControllerGetTokenBalancesParams | undefined;
@@ -1036,6 +975,7 @@ export interface LegacyApi {
         TokenControllerGetTokenBalances200,
         Config | undefined
       >,
+      | E
       | HttpClientError.HttpClientError
       | LegacyApiError<
           "TokenControllerGetTokenBalances400",
@@ -1080,132 +1020,8 @@ export interface LegacyApi {
       | LegacyApiError<
           "TokenControllerGetTokenBalances503",
           TokenControllerGetTokenBalances503
-        >
-    >;
-  };
-  /**
-   * Given addresses, returns a historic rewards summary for any yield
-   */
-  readonly YieldControllerGetSingleYieldRewardsSummary: {
-    <Config extends OperationConfig | undefined = undefined>(
-      integrationId: string,
-      options: {
-        readonly params?:
-          | YieldControllerGetSingleYieldRewardsSummaryParams
-          | undefined;
-        readonly payload: YieldControllerGetSingleYieldRewardsSummaryRequestJson;
-        readonly config: Config;
-      }
-    ): Effect.Effect<
-      WithOptionalResponse<
-        YieldControllerGetSingleYieldRewardsSummary201,
-        Config
-      >,
-      | HttpClientError.HttpClientError
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary400",
-          YieldControllerGetSingleYieldRewardsSummary400
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary401",
-          YieldControllerGetSingleYieldRewardsSummary401
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary404",
-          YieldControllerGetSingleYieldRewardsSummary404
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary408",
-          YieldControllerGetSingleYieldRewardsSummary408
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary409",
-          YieldControllerGetSingleYieldRewardsSummary409
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary410",
-          YieldControllerGetSingleYieldRewardsSummary410
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary412",
-          YieldControllerGetSingleYieldRewardsSummary412
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary429",
-          YieldControllerGetSingleYieldRewardsSummary429
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary500",
-          YieldControllerGetSingleYieldRewardsSummary500
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary502",
-          YieldControllerGetSingleYieldRewardsSummary502
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary503",
-          YieldControllerGetSingleYieldRewardsSummary503
-        >
-    >;
-    <Config extends OperationConfig | undefined = undefined>(
-      integrationId: string,
-      options: {
-        readonly params?:
-          | YieldControllerGetSingleYieldRewardsSummaryParams
-          | undefined;
-        readonly payload: YieldControllerGetSingleYieldRewardsSummaryRequestJson;
-        readonly config?: Config | undefined;
-      }
-    ): Effect.Effect<
-      WithOptionalResponse<
-        YieldControllerGetSingleYieldRewardsSummary201,
-        Config | undefined
-      >,
-      | HttpClientError.HttpClientError
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary400",
-          YieldControllerGetSingleYieldRewardsSummary400
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary401",
-          YieldControllerGetSingleYieldRewardsSummary401
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary404",
-          YieldControllerGetSingleYieldRewardsSummary404
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary408",
-          YieldControllerGetSingleYieldRewardsSummary408
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary409",
-          YieldControllerGetSingleYieldRewardsSummary409
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary410",
-          YieldControllerGetSingleYieldRewardsSummary410
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary412",
-          YieldControllerGetSingleYieldRewardsSummary412
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary429",
-          YieldControllerGetSingleYieldRewardsSummary429
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary500",
-          YieldControllerGetSingleYieldRewardsSummary500
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary502",
-          YieldControllerGetSingleYieldRewardsSummary502
-        >
-      | LegacyApiError<
-          "YieldControllerGetSingleYieldRewardsSummary503",
-          YieldControllerGetSingleYieldRewardsSummary503
-        >
+        >,
+      R
     >;
   };
 }

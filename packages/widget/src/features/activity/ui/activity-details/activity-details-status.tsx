@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { EmptyState, Stack } from "../../../../ui/index";
 import { ActivityRetryMessage } from "../components/activity-retry-message";
 
 export const ActivityDetailsFailure = ({
@@ -8,35 +7,20 @@ export const ActivityDetailsFailure = ({
 }: {
   readonly onRetry: () => void;
 }) => (
-  <Box
-    alignItems="center"
-    display="flex"
-    flex={1}
-    flexDirection="column"
-    gap="3"
-    justifyContent="center"
-  >
+  <Stack align="center" justify="center" grow>
     <ActivityRetryMessage onRetry={onRetry} />
-  </Box>
+  </Stack>
 );
 
 export const ActivityDetailsUnavailable = () => {
   const { t } = useTranslation();
   return (
-    <Box
-      alignItems="center"
-      display="flex"
-      flex={1}
-      flexDirection="column"
-      gap="2"
-      justifyContent="center"
-    >
-      <Text variant={{ weight: "medium" }} textAlign="center">
-        {t("activity.details.unavailable_title")}
-      </Text>
-      <Text variant={{ type: "muted", weight: "normal" }} textAlign="center">
-        {t("activity.details.unavailable_description")}
-      </Text>
-    </Box>
+    <Stack align="center" justify="center" grow>
+      <EmptyState
+        icon="InfoIcon"
+        title={t("activity.details.unavailable_title")}
+        body={t("activity.details.unavailable_description")}
+      />
+    </Stack>
   );
 };

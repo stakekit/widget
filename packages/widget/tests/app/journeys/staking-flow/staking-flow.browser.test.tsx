@@ -56,14 +56,16 @@ describe("Staking flow", () => {
     await expect.element(app.getByText("Stake").first()).toBeInTheDocument();
 
     await expect
-      .element(app.getByTestId("estimated-reward__percent").getByText("5.08%"))
+      .element(
+        app.getByTestId("estimated-reward__percent").getByText("5.08%").first()
+      )
       .toBeInTheDocument();
 
     await expect
       .element(
         app
           .getByTestId("estimated-reward__yearly")
-          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+          .getByText(`0.0051 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -71,7 +73,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__monthly")
-          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+          .getByText(`0.0004 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -109,23 +111,19 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
 
+    // Review shows the amount with its symbol, and the rate it earns as a row.
     await expect
-      .element(app.getByText(stakeAmount).first())
-      .toBeInTheDocument();
-
-    await expect
-      .element(app.getByText(yieldOp.token.symbol).first())
+      .element(app.getByText(`${stakeAmount} ${yieldOp.token.symbol}`).first())
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("& earn", { exact: false }).first())
+      .element(app.getByTestId("review-reward-rate").getByText("5.08%"))
       .toBeInTheDocument();
-    await expect.element(app.getByText("5.08%").first()).toBeInTheDocument();
 
     await expect
       .element(
         app
           .getByTestId("estimated-reward__yearly")
-          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+          .getByText(`0.0051 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -133,9 +131,15 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__monthly")
-          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+          .getByText(`0.0004 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("estimated-reward__yearly"))
+      .toHaveAttribute("data-rk", "estimated-reward__yearly");
+    await expect
+      .element(app.getByTestId("estimated-reward__monthly"))
+      .toHaveAttribute("data-rk", "estimated-reward__monthly");
 
     const confirmButton = app.getByRole("button", {
       exact: true,
@@ -146,7 +150,9 @@ describe("Staking flow", () => {
 
     await userEvent.click(confirmButton);
 
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
@@ -170,7 +176,7 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("View Stake transaction"))
+      .element(app.getByRole("link", { name: /^View Stake transaction/u }))
       .toBeInTheDocument();
     await app.unmount();
   });

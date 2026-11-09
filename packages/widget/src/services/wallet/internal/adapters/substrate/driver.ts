@@ -1,11 +1,10 @@
 import { Effect, Schema } from "effect";
 import type { Connector } from "wagmi";
+import { WalletDecodeError } from "../../../wallet-errors";
 import {
-  WalletCapabilityUnavailableError,
-  WalletDecodeError,
-  WalletSigningError,
-} from "../../../wallet-errors";
-import { decodeWalletSignedPayloadResult } from "../../../wallet-transactions";
+  requireTransactionSigner,
+  signedPayloadResult,
+} from "../transaction-signing";
 import { isSubstrateConnector } from "./substrate-connector-meta";
 import { substratePayloadCodec } from "./transaction";
 
@@ -16,18 +15,16 @@ export const makeSubstrateWalletDriver = ({
 }) => ({
   signTransaction: ({ tx }: { readonly tx: string }) =>
     Effect.gen(function* () {
-      if (!isSubstrateConnector(connector)) {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
-
+      const substrate = yield* requireTransactionSigner(
+        connector,
+        isSubstrateConnector(connector) ? connector : null
+      );
       const payload = yield* Schema.decodeEffect(
         Schema.fromJsonString(substratePayloadCodec)
       )(tx).pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
-      const signedTx = yield* connector
-        .signTransaction({
+
+      return yield* signedPayloadResult(
+        substrate.signTransaction({
           ...payload,
           rawTx: tx,
           tx: {
@@ -35,13 +32,6 @@ export const makeSubstrateWalletDriver = ({
             signedExtensions: [...payload.tx.signedExtensions],
           },
         })
-        .pipe(
-          Effect.mapError(
-            (cause) =>
-              new WalletSigningError({ cause, operation: "transaction" })
-          )
-        );
-
-      return yield* decodeWalletSignedPayloadResult(signedTx);
+      );
     }),
 });

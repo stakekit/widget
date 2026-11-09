@@ -15,6 +15,7 @@ import {
   yieldBalanceFixture,
   yieldRiskSummaryFixture,
 } from "../fixtures";
+import type { YieldRewardsSummaryResponseDto } from "../generated/yield-api-types";
 import { yieldApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
@@ -57,6 +58,11 @@ const createDefaultAction = (
     transactions: [transaction],
     rawArguments: body.arguments ?? null,
   });
+};
+
+/** What any enter or exit is estimated to cost, in the default gas token. */
+const defaultSimulation = {
+  gas: { amount: "0.0003", token: defaultToken, transactions: [] },
 };
 
 const isoAt = (milliseconds: number) =>
@@ -170,6 +176,28 @@ export const getYieldApiMock = () => [
     });
   }),
 
+  // All windows zero: tracked, with nothing earned yet, which the page
+  // reads as unknown and leaves out.
+  http.get(
+    yieldApiRoute("/v1/yields/:yieldId/rewards/summary"),
+    async ({ params, request }) => {
+      await mockDelay();
+
+      const zero = { amount: "0", amountRaw: "0" };
+
+      return HttpResponse.json({
+        yieldId: String(params.yieldId),
+        address: new URL(request.url).searchParams.get("address") ?? "",
+        token: { symbol: "ETH", decimals: 18, network: "ethereum" },
+        last24H: zero,
+        last7D: zero,
+        last30D: zero,
+        lastYear: zero,
+        total: zero,
+      } satisfies YieldRewardsSummaryResponseDto);
+    }
+  ),
+
   http.get(
     yieldApiRoute("/v1/yields/:yieldId/reward-rate/history"),
     async ({ params }) => {
@@ -246,6 +274,18 @@ export const getYieldApiMock = () => [
       });
     }
   ),
+
+  http.post(yieldApiRoute("/v1/actions/enter/simulate"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json(defaultSimulation);
+  }),
+
+  http.post(yieldApiRoute("/v1/actions/exit/simulate"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json(defaultSimulation);
+  }),
 
   http.post(yieldApiRoute("/v1/actions/enter"), async ({ request }) => {
     await mockDelay();

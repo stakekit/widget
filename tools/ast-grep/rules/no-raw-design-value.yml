@@ -1,0 +1,91 @@
+id: no-raw-design-value
+language: Tsx
+severity: error
+message: 'Design System styles read sizes, type, radii, shadows, layers and durations from tokens, never from raw values. Use the matching token or add one to the token definitions (`ui/tokens/`).'
+note: |
+  Rejected inside StyleX definitions: non-zero numbers on properties that take
+  a length, any px, rem, ch, ms or s value, any em value but `1em` (the text's
+  own size), any vw or vh value but `100vw` and `100vh` (the whole viewport),
+  and any literal font size, font weight, line height, letter spacing, radius,
+  shadow, z-index, duration or delay. Unitless counts (flex, opacity, order and
+  the like), 0, percentages and CSS keywords stay allowed. Token definitions
+  (`ui/tokens/`, the theme definitions `ui/theme/color-schemes.ts` and
+  `ui/theme/appearance-presets.ts`) and artwork (`ui/artwork/`) are exempt by
+  location.
+files:
+  - packages/widget/src/ui/**
+ignores:
+  - packages/widget/src/ui/tokens/**
+  - packages/widget/src/ui/theme/color-schemes.ts
+  - packages/widget/src/ui/theme/appearance-presets.ts
+  - packages/widget/src/ui/artwork/**
+utils:
+  stylex-definition:
+    kind: call_expression
+    has:
+      field: function
+      regex: ^stylex\.(?:create|keyframes|createTheme|defineVars|defineConsts|firstThatWorks|viewTransitionClass|positionTry)$
+  in-stylex-value:
+    all:
+      - inside:
+          stopBy: end
+          matches: stylex-definition
+      - not:
+          inside:
+            kind: pair
+            field: key
+      # A `stylex.when.*` argument is a selector, such as a Presentation
+      # Setting attribute, not a value.
+      - not:
+          inside:
+            stopBy: end
+            kind: call_expression
+            has:
+              field: function
+              regex: ^stylex\.when\.
+  design-value-property:
+    kind: pair
+    has:
+      field: key
+      regex: ^["']?(?:fontSize|fontWeight|lineHeight|letterSpacing|border(?:Top|Bottom|Start|End)?(?:Left|Right|Start|End)?Radius|boxShadow|textShadow|zIndex|transition|animation|(?:transition|animation)(?:Duration|Delay))["']?$
+  unitless-property:
+    kind: pair
+    has:
+      field: key
+      regex: ^["']?(?:flex|flexGrow|flexShrink|opacity|fillOpacity|strokeOpacity|stopOpacity|order|aspectRatio|animationIterationCount|columnCount|gridColumn(?:Start|End)?|gridRow(?:Start|End)?|scale|lineClamp|WebkitLineClamp|tabSize|widows|orphans)["']?$
+  css-keyword:
+    regex: ^["']?(?:0(?:px|m?s)?|inherit|initial|unset|revert|revert-layer|none|normal|auto)["']?$
+rule:
+  any:
+    - all:
+        - kind: number
+        - not:
+            regex: ^0*\.?0*$
+        - matches: in-stylex-value
+        - not:
+            inside:
+              kind: subscript_expression
+        - not:
+            inside:
+              stopBy: end
+              matches: unitless-property
+    - all:
+        - kind: string_fragment
+        - any:
+            - regex: '(?:^|[^\w.-])-?(?:[1-9]\d*(?:\.\d+)?|0?\.\d*[1-9]\d*)(?:px|rem|ch|m?s)\b'
+            - regex: '(?:^|[^\w.-])-?(?:(?:[2-9]|1\d)\d*(?:\.\d+)?|1\.\d*[1-9]\d*|0?\.\d*[1-9]\d*)em\b'
+            - regex: '(?:^|[^\w.-])-?(?:(?:[1-9]\d?|[2-9]\d{2}|1[1-9]\d|10[1-9]|[1-9]\d{3,})(?:\.\d+)?|100\.\d*[1-9]\d*|0?\.\d*[1-9]\d*)v[wh]\b'
+        - inside:
+            stopBy: end
+            matches: in-stylex-value
+    - all:
+        - any:
+            - kind: string
+            - kind: template_string
+            - kind: number
+        - matches: in-stylex-value
+        - inside:
+            stopBy: end
+            matches: design-value-property
+        - not:
+            matches: css-keyword

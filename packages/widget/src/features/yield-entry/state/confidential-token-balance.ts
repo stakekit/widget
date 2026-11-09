@@ -4,10 +4,10 @@ import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import {
-  ConfidentialTokenBalanceKey,
   getConfidentialAssetToken,
   getConfidentialChainId,
 } from "../../../domain/earn/confidential";
+import { ConfidentialTokenBalanceKey } from "../../../domain/earn/confidential-balance";
 import { revealedBalancesAtom } from "../../../resources/revealed-balances/index";
 import { RevealedBalances } from "../../../services/zama/revealed-balances";
 import { ZamaService } from "../../../services/zama/zama-service";

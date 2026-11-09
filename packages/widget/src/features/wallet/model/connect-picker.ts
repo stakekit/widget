@@ -24,7 +24,7 @@ export type ConnectPickerWallet = Readonly<{
   title: string;
 }>;
 
-export type ConnectPickerGroup = Readonly<{
+type ConnectPickerGroup = Readonly<{
   /** Unique within an ecosystem; never collides with a host group name. */
   id: string;
   /** The picker's own bucket of detected injected wallets, or a catalogue group. */
@@ -38,6 +38,79 @@ export type ConnectPickerEcosystem = Readonly<{
   chainGroup: WalletChainGroup;
   groups: ReadonlyArray<ConnectPickerGroup>;
 }>;
+
+/** A wallet row; `ecosystem` names its ecosystem in a list that mixes them. */
+export type ConnectPickerRow = Readonly<{
+  ecosystem: string | undefined;
+  wallet: ConnectPickerWallet;
+}>;
+
+export type ConnectPickerSection = Readonly<{
+  id: string;
+  label:
+    | ConnectPickerGroup["label"]
+    | Readonly<{ _tag: "Ecosystem"; title: string }>;
+  rows: ReadonlyArray<ConnectPickerRow>;
+}>;
+
+const rowsOf = (
+  groups: ReadonlyArray<ConnectPickerGroup>,
+  ecosystem: string | undefined
+): ReadonlyArray<ConnectPickerRow> =>
+  groups.flatMap(({ wallets }) =>
+    wallets.map((wallet) => ({ ecosystem, wallet }))
+  );
+
+/**
+ * The picker's list for the ecosystem `ecosystemId` names, or for all of
+ * them when it names none on offer. One ecosystem lists its groups as they
+ * are. Across several, the wallets the user has lead under Installed, each
+ * named by its ecosystem, then each ecosystem's other wallets under its
+ * name: no wallet waits behind a choice of ecosystem.
+ */
+export const connectPickerSections = (
+  ecosystems: ReadonlyArray<ConnectPickerEcosystem>,
+  ecosystemId: string | undefined
+): ReadonlyArray<ConnectPickerSection> => {
+  const only =
+    ecosystems.find(({ chainGroup }) => chainGroup.id === ecosystemId) ??
+    (ecosystems.length === 1 ? ecosystems[0] : undefined);
+  if (only) {
+    return only.groups.map((group) => ({
+      id: group.id,
+      label: group.label,
+      rows: rowsOf([group], undefined),
+    }));
+  }
+
+  const installed = ecosystems.flatMap(({ chainGroup, groups }) =>
+    rowsOf(
+      groups.filter(({ label }) => label._tag === "Installed"),
+      chainGroup.title
+    )
+  );
+  const others = ecosystems.flatMap(
+    ({ chainGroup, groups }): ReadonlyArray<ConnectPickerSection> => {
+      const rows = rowsOf(
+        groups.filter(({ label }) => label._tag !== "Installed"),
+        undefined
+      );
+      if (rows.length === 0) return [];
+      return [
+        {
+          id: `ecosystem:${chainGroup.id}`,
+          label: { _tag: "Ecosystem", title: chainGroup.title },
+          rows,
+        },
+      ];
+    }
+  );
+  if (installed.length === 0) return others;
+  return [
+    { id: installedGroup.id, label: installedGroup.label, rows: installed },
+    ...others,
+  ];
+};
 
 /** Where a wallet's row sits while the picker stays open. */
 type Placement = "Installed" | "Catalogue";

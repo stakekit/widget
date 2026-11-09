@@ -7,7 +7,6 @@ import type {
   SKHostVariant,
 } from "../../../src/public-api/types";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
-import type { WidgetConfig } from "../../../src/services/config/widget-config-model";
 import translationEN from "../../../src/services/translation/English/translations.json";
 import translationFR from "../../../src/services/translation/French/translations.json";
 import {
@@ -16,7 +15,6 @@ import {
   reconcileWidgetI18n,
   WidgetTranslation,
 } from "../../../src/services/translation/widget-translation";
-import { getTestWidgetConfig } from "../../utils/widget-config";
 
 const makeSettings = (
   overrides: Partial<
@@ -25,21 +23,17 @@ const makeSettings = (
       "customTranslations" | "disableInjectedProviderDiscovery" | "language"
     >
   > & { readonly variant?: Exclude<SKHostVariant, "zerion"> } = {}
-): WidgetConfig =>
-  getTestWidgetConfig({
-    apiKey: "test-key",
-    variant: "default",
-    ...overrides,
-  });
-
-const asHostConfiguration = (settings: WidgetConfig): SKAppProps =>
-  settings as unknown as SKAppProps;
+): SKAppProps => ({
+  apiKey: "test-key",
+  variant: "default",
+  ...overrides,
+});
 
 const makeTranslationLayer = (
-  initial: WidgetConfig,
+  initial: SKAppProps,
   load: (language: string) => Effect.Effect<Readonly<Record<string, unknown>>>
 ) => {
-  const configLayer = WidgetConfigService.layer(asHostConfiguration(initial));
+  const configLayer = WidgetConfigService.layer(initial);
   const httpClientLayer = Layer.succeed(
     HttpClient.HttpClient,
     HttpClient.make((request, url) => {
@@ -71,10 +65,10 @@ const expectEventually = <T>(read: () => T, expected: T) =>
 describe("WidgetTranslation", () => {
   it("describes vault withdrawal timing with valid pluralized copy", () => {
     expect(translationEN.details.vault.withdrawn_time_one).toBe(
-      "After withdrawing, your assets will be available in {{count}} day"
+      "After withdrawing, your assets will be available in {{count}} day."
     );
     expect(translationEN.details.vault.withdrawn_time_other).toBe(
-      "After withdrawing, your assets will be available in {{count}} days"
+      "After withdrawing, your assets will be available in {{count}} days."
     );
   });
 
@@ -137,7 +131,10 @@ describe("WidgetTranslation", () => {
           expect(translation.i18n.t("details.rewards.receive_output")).toBe(
             "CUSTOM"
           );
-          expect(translation.i18n.t("details.earn")).toBe("Stake");
+          // Utila renames only the Earn tab; the form keeps "Earn" so a
+          // lending yield never reads as staking.
+          expect(translation.i18n.t("details.tabs.earn")).toBe("Stake");
+          expect(translation.i18n.t("details.earn")).toBe("Earn");
 
           yield* Deferred.await(loaded);
           yield* expectEventually(
@@ -146,12 +143,12 @@ describe("WidgetTranslation", () => {
           );
           expect(translation.i18n.t("errors.stale")).toBe("API");
 
-          yield* config.update(asHostConfiguration(makeSettings()));
+          yield* config.update(makeSettings());
           yield* expectEventually(
             () => translation.i18n.t("details.rewards.receive_output"),
             "You'll receive"
           );
-          expect(translation.i18n.t("details.earn")).toBe("Earn");
+          expect(translation.i18n.t("details.tabs.earn")).toBe("Earn");
           expect(translation.i18n.t("errors.shared")).toBe("REMOTE");
           expect(translation.i18n.t("errors.stale")).toBe("API");
         })
@@ -182,9 +179,7 @@ describe("WidgetTranslation", () => {
             const config = yield* WidgetConfigService;
             yield* Deferred.await(englishStarted);
 
-            yield* config.update(
-              asHostConfiguration(makeSettings({ language: "fr" }))
-            );
+            yield* config.update(makeSettings({ language: "fr" }));
             yield* Deferred.await(frenchStarted);
             yield* expectEventually(
               () => translation.i18n.t("errors.shared"),
@@ -215,6 +210,46 @@ describe("WidgetTranslation", () => {
       })
   );
 
+  it.effect("interrupts in-flight enrichment when the language changes", () =>
+    Effect.gen(function* () {
+      const initial = makeSettings({ language: "en" });
+      const englishStarted = yield* Deferred.make<void>();
+      const englishInterrupted = yield* Deferred.make<void>();
+
+      yield* Effect.scoped(
+        Effect.gen(function* () {
+          const translation = yield* WidgetTranslation;
+          const config = yield* WidgetConfigService;
+          yield* Deferred.await(englishStarted);
+
+          yield* config.update(makeSettings({ language: "fr" }));
+          yield* Deferred.await(englishInterrupted);
+          yield* expectEventually(
+            () => translation.i18n.t("errors.shared"),
+            "FR_CURRENT"
+          );
+        })
+      ).pipe(
+        Effect.provide(
+          makeTranslationLayer(initial, (language) => {
+            if (language === "fr") {
+              return Effect.succeed({ shared: "FR_CURRENT" });
+            }
+
+            return Deferred.succeed(englishStarted, undefined).pipe(
+              Effect.andThen(Effect.never),
+              Effect.onInterrupt(() =>
+                Deferred.succeed(englishInterrupted, undefined).pipe(
+                  Effect.asVoid
+                )
+              )
+            );
+          })
+        )
+      );
+    })
+  );
+
   it.live("ignores unrelated config changes while enrichment is pending", () =>
     Effect.gen(function* () {
       const initial = makeSettings({ language: "en" });
@@ -229,12 +264,10 @@ describe("WidgetTranslation", () => {
           yield* Deferred.await(loadStarted);
 
           yield* config.update(
-            asHostConfiguration(
-              makeSettings({
-                disableInjectedProviderDiscovery: true,
-                language: "en",
-              })
-            )
+            makeSettings({
+              disableInjectedProviderDiscovery: true,
+              language: "en",
+            })
           );
           yield* Effect.sleep("20 millis");
           yield* Deferred.succeed(releaseLoad, undefined);
@@ -276,14 +309,12 @@ describe("WidgetTranslation", () => {
             yield* Deferred.await(firstStarted);
 
             yield* config.update(
-              asHostConfiguration(
-                makeSettings({
-                  customTranslations: {
-                    en: { translation: { details: { earn: "CUSTOM" } } },
-                  },
-                  language: "en",
-                })
-              )
+              makeSettings({
+                customTranslations: {
+                  en: { translation: { details: { earn: "CUSTOM" } } },
+                },
+                language: "en",
+              })
             );
             yield* Deferred.await(secondStarted);
             yield* expectEventually(
@@ -294,12 +325,10 @@ describe("WidgetTranslation", () => {
             yield* Deferred.succeed(releaseFirst, undefined);
             yield* Effect.yieldNow;
             yield* config.update(
-              asHostConfiguration(
-                makeSettings({ language: "en", variant: "utila" })
-              )
+              makeSettings({ language: "en", variant: "utila" })
             );
             yield* expectEventually(
-              () => translation.i18n.t("details.earn"),
+              () => translation.i18n.t("details.tabs.earn"),
               "Stake"
             );
             expect(translation.i18n.t("errors.shared")).toBe("NEW");
@@ -330,7 +359,7 @@ describe("WidgetTranslation", () => {
 
   it.effect("creates a clean i18next instance for each scoped generation", () =>
     Effect.gen(function* () {
-      const acquire = (settings: WidgetConfig) =>
+      const acquire = (settings: SKAppProps) =>
         Effect.scoped(WidgetTranslation).pipe(
           Effect.provide(
             makeTranslationLayer(settings, () => Effect.succeed({}))
@@ -399,7 +428,7 @@ describe("WidgetTranslation resource ownership", () => {
         translation: {
           errors: {
             KaminoLendingInsufficientSolForRentError: {
-              title: "Insufficient SOL for Account Rent",
+              title: "Insufficient SOL for account rent",
             },
           },
         },
@@ -502,7 +531,10 @@ describe("WidgetTranslation resource ownership", () => {
 
     expect(resources).toMatchObject({
       en: {
-        translation: { details: { earn: "Stake" }, errors: { shared: "HOST" } },
+        translation: {
+          details: { tabs: { earn: "Stake" } },
+          errors: { shared: "HOST" },
+        },
       },
     });
   });

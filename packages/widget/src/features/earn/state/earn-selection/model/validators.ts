@@ -1,4 +1,4 @@
-import type { EarnValidator } from "../../../../../domain/earn/models";
+import type { EarnValidator } from "../../../../../domain/earn/validator";
 import { validatorAddressIdentity } from "../../../../../domain/earn/validator";
 
 const sameValidator = (first: EarnValidator, second: EarnValidator) =>

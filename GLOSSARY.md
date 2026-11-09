@@ -25,11 +25,15 @@ keep their mount values for the Application Runtime Generation.
 mount for the Application Runtime Generation.
 
 **Host Profile**: The named capabilities a host variant enables, such as the
-Earn presentation, terms-of-service acknowledgement, or wallet catalogue.
-Features read capabilities, never variant names.
+Earn presentation, terms-of-service acknowledgement, or wallet catalogue, plus
+the Appearance Preset and Presentation Setting overrides that give the host its
+look. Features read capabilities, never variant names, and never style by host
+variant.
 
 **Layout**: The page arrangement a Widget Instance presents: the Compact Layout
-or the Dashboard Layout. It is independent of the host variant.
+or the Dashboard Layout, chosen by the host's `layout` option. It is independent
+of the host variant. Its visual differences reach the Design System as
+Presentation Settings.
 _Avoid_: variant, flavour, classic
 
 **Compact Layout**: The single-column Layout that shows one page at a time
@@ -45,6 +49,37 @@ completed. It carries identity for observers but does not prescribe a mutation.
 
 **Widget Maintenance**: The application-wide state in which new user journeys
 are unavailable.
+
+### Design System
+
+**Design System**: The Owned Module that holds every visual decision of the
+Widget: tokens, themes, the scoped reset, primitives, components, patterns,
+icons, and artwork. Features and application composition build UI only by
+composing it.
+_Avoid_: shared UI, component library
+
+**Appearance**: The host's semantic description of the Widget's look: a color
+scheme (`light`, `dark`, or `system`), Color Roles for each scheme, and radius,
+control-height, font, and weight settings. It applies live and beats the Host
+Profile's Appearance Preset and any legacy theme.
+_Avoid_: theme, theme tokens
+
+**Color Role**: A named semantic color every Design System part reads, such as
+`surface`, `textMuted`, or `accent`, with a value per color scheme. Hosts may
+set any Color Role; derived roles such as `accentHover` follow their base role
+unless set.
+_Avoid_: color token, palette color
+
+**Appearance Preset**: A Design System-owned set of Appearance values that a
+Host Profile names to give a partner host its look. It may fix the color
+scheme.
+_Avoid_: skin, host theme
+
+**Presentation Setting**: A named visual choice, such as call-to-action size,
+gutter, tabs indicator, or surface style, resolved from the Layout's defaults
+and the Host Profile's overrides and applied by the Design System. It is named
+after the difference, never after a Layout or host.
+_Avoid_: Layout style, variant style
 
 ### Wallet
 
@@ -276,7 +311,9 @@ one integration and network.
 **Market Risk Position**: A Risk Position owned by one isolated market.
 
 **Risk Unavailable**: A typed absence of consistent inputs for a risk
-projection. It is not a warning, blocker, or substitute metric.
+projection. It is not a warning, blocker, or substitute metric: the Borrow
+form keeps its LTV and health factor rows, reading "—" with a caption saying
+the projection couldn't be computed.
 
 **Borrow Constraint Warning**: A known liquidity, balance, debt-minimum, or
 capacity violation attached to a constructible Action Command for review. It
@@ -286,6 +323,15 @@ never blocks; the provider or blockchain remains authoritative at execution.
 change, made from its Risk Position projection. It is the only widget-side
 block and blocks only changes the protocol would reject; Risk Unavailable
 allows.
+
+**Risk Band**: How close a position with debt sits to liquidation: safe,
+caution (health factor below 1.5, or LTV within 90% of max LTV) or danger
+(health factor below 1.1, or LTV past max LTV). One band, the worse of the two
+figures, tones the LTV, its meter and the health factor alike: safe reads
+plain, caution as a warning, danger as danger; caution and danger raise an
+alert with Repay, and a status on the position's Manage row ("Close to
+liquidation", "High liquidation risk") that sorts it first and counts it in
+the Manage tab. It informs only; the Risk Gate decides.
 
 **Action Rejection Reason**: The API's own message when it refuses to create an
 action. Review shows it in place of generic failure copy.
@@ -328,8 +374,9 @@ claiming rewards, withdrawing, or cancelling a pending deposit.
 surface and Wallet Scope Owner.
 
 **Transaction Flow**: A Wallet Scope-bound journey through Review, Steps, and
-Complete. Yield and Borrow Transaction Flows share lifecycle language, not
-implementation.
+Complete. Yield and Borrow Transaction Flows share the lifecycle machinery
+(handoff, Execution start, Session mount); each owns its payloads,
+destinations and completion rule.
 
 **Yield Transaction Flow**: A Transaction Flow that enters, exits, or manages a
 yield position through a Yield Action.
@@ -366,8 +413,9 @@ user intends before the action is created.
 out an Action Command.
 
 **Handoff**: What Review gives Steps on confirmation: a previewed Yield Action,
-or a Confidential Vault's Action Preparation and Confidential Conversion. A
-Flow Session holds at most one, waiting for Steps or running.
+a Confidential Vault's Action Preparation and Confidential Conversion, or a
+created Borrow action. A Flow Session holds at most one, waiting for Steps or
+running.
 _Avoid_: confirmation, source
 
 **Execution**: The Steps-and-Complete portion of a Flow Session for one

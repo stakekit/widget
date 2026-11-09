@@ -1,14 +1,12 @@
 import { Arbitrary, DateTime, Effect, Random, Schema } from "effect";
 import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
-import type { EarnBalance, EarnProvider } from "../../src/domain/earn/models";
-import {
-  EarnProvider as EarnProviderSchema,
-  EarnYield,
-} from "../../src/domain/earn/models";
+import type { EarnBalance } from "../../src/domain/earn/balance";
+import type { EarnProvider } from "../../src/domain/earn/provider";
+import { EarnProvider as EarnProviderSchema } from "../../src/domain/earn/provider";
 import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
+import { EarnYield } from "../../src/domain/earn/yield-schema";
 import { exactDecimal } from "../../src/domain/finance/exact";
 import * as YieldApi from "../../src/generated/api/yield-schema";
-import type { TokenDto as LegacyTokenDto } from "../generated/legacy-api-types";
 import type {
   ValidatorDto,
   YieldDto as YieldApiYieldDto,
@@ -234,111 +232,6 @@ export const yieldBalanceFixture = (
     isEarning: true,
     ...overrides,
   } as typeof EarnBalance.Encoded;
-};
-
-type LegacyYieldMetadataFixture = {
-  readonly name: string;
-  readonly description?: string;
-  readonly documentation?: string;
-  readonly logoURI?: string;
-  readonly provider?: {
-    readonly id: string;
-    readonly name: string;
-    readonly description: string;
-    readonly externalLink: string;
-    readonly logoURI: string;
-  };
-  readonly rewardTokens?: ReadonlyArray<LegacyTokenDto>;
-  readonly supportsLedgerWalletApi?: boolean;
-  readonly type: string;
-  readonly [field: string]: unknown;
-};
-
-/**
- * Seed data for journeys that still mock Legacy yield payloads. The widget no
- * longer calls Legacy yield operations, so their schemas are not generated.
- */
-export type LegacyYieldFixture = {
-  readonly id: string;
-  readonly token: LegacyTokenDto;
-  readonly tokens: ReadonlyArray<LegacyTokenDto>;
-  readonly rewardRate: number;
-  readonly rewardType: string;
-  readonly apy: number;
-  readonly metadata: LegacyYieldMetadataFixture;
-  readonly status: { readonly enter: boolean; readonly exit: boolean };
-  readonly validators: ReadonlyArray<{
-    readonly address: string;
-    readonly [field: string]: unknown;
-  }>;
-  readonly [field: string]: unknown;
-};
-
-export const legacyYieldFixture = (
-  overrides?: Partial<LegacyYieldFixture>
-): LegacyYieldFixture => {
-  const token: LegacyTokenDto = {
-    name: "Ethereum",
-    symbol: "ETH",
-    decimals: 18,
-    network: "ethereum",
-    coinGeckoId: "ethereum",
-    logoURI: "https://assets.stakek.it/tokens/eth.svg",
-  };
-
-  return {
-    id: "ethereum-eth-native-staking",
-    token,
-    tokens: [token],
-    rewardRate: apyFaker(),
-    rewardType: "apy",
-    apy: apyFaker(),
-    args: {
-      enter: {
-        args: {
-          providerId: { required: false, options: [] },
-        },
-      },
-    },
-    feeConfigurations: [],
-    metadata: {
-      commission: [],
-      description: "Stake ETH",
-      documentation: "https://docs.stakek.it",
-      fee: {
-        depositFee: false,
-        enabled: false,
-        managementFee: false,
-        performanceFee: false,
-      },
-      gasFeeToken: token,
-      logoURI: "https://assets.stakek.it/yields/ethereum.svg",
-      minimumStake: 0,
-      name: "Ethereum Staking",
-      provider: {
-        id: "stakekit",
-        name: "StakeKit",
-        description: "",
-        externalLink: "https://stakek.it",
-        logoURI:
-          "https://assets.stakek.it/app/composition/providers/stakekit.svg",
-      },
-      revshare: { enabled: false },
-      rewardClaiming: "auto",
-      rewardSchedule: "day",
-      rewardTokens: [],
-      token,
-      tokens: [token],
-      tvl: [{ level: "network", value: "1000000000000000000" }],
-      type: "staking",
-      warmupPeriod: { days: 0 },
-      isIntegrationAggregator: false,
-    },
-    status: { enter: true, exit: true },
-    validators: [],
-    isAvailable: true,
-    ...overrides,
-  } as LegacyYieldFixture;
 };
 
 export const yieldApiValidatorsFixture = (

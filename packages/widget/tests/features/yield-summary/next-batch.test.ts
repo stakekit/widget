@@ -1,6 +1,6 @@
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
-import type { EarnInvestmentSchedule } from "../../../src/domain/earn/models";
+import type { EarnInvestmentSchedule } from "../../../src/domain/earn/yield-schema";
 import {
   formatDailyBatch,
   formatNextBatchTiming,

@@ -1,10 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { MarketId, TokenAddress } from "../../../../src/domain/borrow/ids";
-import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import {
   deriveBorrowPositions,
   emptyBorrowPositions,
@@ -12,109 +9,43 @@ import {
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import { prepareBorrowAction } from "../../../../src/features/borrow/action-preparation/model/prepare";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowSupplyBalanceDto,
+  usdcTokenAddress,
+  wethTokenAddress,
+} from "../../../fixtures/borrow";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
-const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const collateralTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 
-const integration = Schema.decodeSync(Integration)({
-  id: "aave-borrow",
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  name: "Aave V3",
-  networks: ["ethereum"],
-});
+const integration = makeBorrowIntegration();
 
-const market = Schema.decodeSync(Market)({
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  borrowRate: "0.06",
-  collateralTokens: [
-    {
-      liquidationPenalty: "0.05",
-      liquidationThreshold: "0.85",
-      maxLtv: "0.8",
-      priceUsd: "2000",
-      supplyRate: "0.02",
-      token: {
-        address: collateralTokenAddress,
-        decimals: 18,
-        name: "Wrapped Ether",
-        symbol: "WETH",
-      },
-    },
-  ],
-  id: "aave-v3-ethereum-usdc",
-  integrationId: integration.id,
-  isBorrowEnabled: true,
-  loanToken: {
-    address: loanTokenAddress,
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-  },
-  loanTokenPriceUsd: "1",
-  minLoan: null,
-  network: "ethereum",
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  supplyCollateralFeeBps: "0",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  type: "pool",
-  utilizationRate: "0.5",
-});
+const market = makeBorrowMarket();
 
-const accountSnapshot = Schema.decodeSync(BorrowAccountSnapshot)({
-  address,
-  availableToBorrowUsd: "450",
-  currentLtv: "0.4",
+const accountSnapshot = makeBorrowAccountSnapshot({
   debtBalances: [
-    {
-      apy: "0.06",
-      balance: "400",
-      balanceRaw: "400000000",
-      balanceUsd: "400",
-      marketId: market.id,
+    makeBorrowDebtBalanceDto({
       pendingActions: [
         {
-          args: { marketId: market.id, tokenAddress: loanTokenAddress },
+          args: { marketId: market.id, tokenAddress: usdcTokenAddress },
           label: "Repay",
           type: "repay",
         },
       ],
-      tokenAddress: loanTokenAddress,
-      tokenSymbol: "USDC",
-    },
+    }),
   ],
-  healthFactor: "2.125",
-  integrationId: integration.id,
-  netApy: "-0.006",
-  netWorthUsd: "600",
-  network: "ethereum",
   supplyBalances: [
-    {
-      apy: "0.02",
-      balance: "0.5",
-      balanceRaw: "500000000000000000",
-      balanceUsd: "1000",
-      isCollateral: true,
-      marketId: market.id,
+    makeBorrowSupplyBalanceDto({
       pendingActions: [
         {
           args: {
             amountRaw: "500000000000000000",
             marketId: market.id,
-            tokenAddress: collateralTokenAddress,
+            tokenAddress: wethTokenAddress,
           },
           label: "Withdraw",
           type: "withdraw",
@@ -122,17 +53,14 @@ const accountSnapshot = Schema.decodeSync(BorrowAccountSnapshot)({
         {
           args: {
             marketId: market.id,
-            tokenAddress: collateralTokenAddress,
+            tokenAddress: wethTokenAddress,
           },
           label: "Disable collateral",
           type: "disableCollateral",
         },
       ],
-      tokenAddress: collateralTokenAddress,
-      tokenSymbol: "WETH",
-    },
+    }),
   ],
-  totalBorrowedUsd: "400",
   totalCollateralUsd: "1000",
   totalSuppliedUsd: "1000",
 });
@@ -147,7 +75,7 @@ const tokenBalances = Schema.decodeSync(TokenBalancesResponse)([
     amount: "2",
     availableYields: [],
     token: {
-      address: collateralTokenAddress,
+      address: wethTokenAddress,
       decimals: 18,
       name: "Wrapped Ether",
       network: "ethereum",
@@ -275,7 +203,7 @@ describe("Borrow action preparation", () => {
         amount: "100",
         availableYields: [],
         token: {
-          address: collateralTokenAddress,
+          address: wethTokenAddress,
           decimals: 2,
           name: "Wrapped Ether",
           network: "ethereum",
@@ -725,7 +653,7 @@ describe("Borrow action preparation", () => {
           amount: "150",
           availableYields: [],
           token: {
-            address: loanTokenAddress,
+            address: usdcTokenAddress,
             decimals: 6,
             name: "USD Coin",
             network: "ethereum",
@@ -895,7 +823,7 @@ describe("Borrow action preparation", () => {
           amount: "150",
           availableYields: [],
           token: {
-            address: loanTokenAddress,
+            address: usdcTokenAddress,
             decimals: 6,
             name: "USD Coin",
             network: "ethereum",
@@ -1158,7 +1086,7 @@ describe("Withdrawal against dust debt", () => {
     healthFactor: new BigNumber("850000000"),
     totalBorrowedUsd: new BigNumber(0),
   };
-  const morpho = Schema.decodeSync(Integration)({
+  const morpho = makeBorrowIntegration({
     id: "morpho-blue-borrow",
     metadata: {
       description: "Morpho isolated markets",
@@ -1166,7 +1094,6 @@ describe("Withdrawal against dust debt", () => {
       logoURI: "https://assets.stakek.it/protocols/morpho.svg",
     },
     name: "Morpho Blue",
-    networks: ["ethereum"],
   });
   const isolatedMarket = {
     ...market,
@@ -1174,41 +1101,31 @@ describe("Withdrawal against dust debt", () => {
     integrationId: morpho.id,
     type: "isolated" as const,
   };
-  const isolatedSnapshot = Schema.decodeSync(BorrowAccountSnapshot)({
-    address,
+  const isolatedSnapshot = makeBorrowAccountSnapshot({
     availableToBorrowUsd: null,
     currentLtv: "0",
     debtBalances: [
-      {
-        apy: "0.06",
+      makeBorrowDebtBalanceDto({
         balance: "0.000001",
         balanceRaw: "1",
         balanceUsd: "0.00",
         marketId: isolatedMarket.id,
-        pendingActions: [],
-        tokenAddress: loanTokenAddress,
-        tokenSymbol: "USDC",
-      },
+      }),
     ],
     healthFactor: null,
     integrationId: morpho.id,
     netApy: "0",
     netWorthUsd: "1000",
-    network: "ethereum",
     supplyBalances: [
-      {
+      makeBorrowSupplyBalanceDto({
         apy: "0",
-        balance: "0.5",
-        balanceRaw: "500000000000000000",
-        balanceUsd: "1000",
-        isCollateral: true,
         marketId: isolatedMarket.id,
         pendingActions: [
           {
             args: {
               amountRaw: "500000000000000000",
               marketId: isolatedMarket.id,
-              tokenAddress: collateralTokenAddress,
+              tokenAddress: wethTokenAddress,
             },
             label: "Withdraw",
             type: "withdraw",
@@ -1220,9 +1137,7 @@ describe("Withdrawal against dust debt", () => {
           healthFactor: "850000000",
           liquidationThreshold: "0.85",
         },
-        tokenAddress: collateralTokenAddress,
-        tokenSymbol: "WETH",
-      },
+      }),
     ],
     totalBorrowedUsd: "0.00",
     totalCollateralUsd: "1000",

@@ -1,18 +1,19 @@
-import { Trigger } from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../../../../domain/earn/models";
+import type { EarnValidator } from "../../../../../../domain/earn/validator";
 import { isYieldValidatorSelectionRequired } from "../../../../../../domain/earn/yield";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { CaretDownIcon } from "../../../../../../shared/ui/primitives/icons/caret-down";
-import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
-import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
-import { Image } from "../../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../../shared/ui/widget-presentation";
+import type { EarnYieldWithProvider } from "../../../../../../domain/earn/yield-schema";
+import { useWidgetPresentation } from "../../../../../../shared/react/widget-presentation";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  ExternalLink,
+  IconButton,
+  Stack,
+  Text,
+} from "../../../../../../ui/index";
 import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import {
   formatCommission,
@@ -22,14 +23,12 @@ import {
   formatProviderWebsiteHref,
 } from "../../../../../yield-summary/index";
 import {
-  useEarnEntry,
+  useEarnDetails,
   useEarnFlowProviderOption,
 } from "../../../../react/use-earn-facades";
 import type { EarnProviderOption } from "../../../../state/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../components/earn-provider-option-selection";
 import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
-import * as styles from "../styles.css";
-import { ExternalLinkIcon } from "./external-link-icon";
 
 type ProviderDetailsItem = YieldSummaryProvider;
 
@@ -46,20 +45,18 @@ type ProviderCardItem = {
 };
 
 export const ProviderSelectionCard = () => {
-  const { view: entry } = useEarnEntry();
+  const { view: entry } = useEarnDetails();
   const providersDetails = entry.providers;
 
   return (
     <>
       <EarnProviderOptionSelection
-        renderTrigger={({ canSelect, selectedOption, title }) => (
-          <Box className={styles.providerCardList}>
-            <ProviderCard
-              action={canSelect ? <ProviderChangeTrigger /> : null}
-              item={getProviderOptionCardItem(selectedOption, title)}
-              meta={null}
-            />
-          </Box>
+        renderTrigger={({ canSelect, open, selectedOption, title }) => (
+          <ProviderCard
+            action={canSelect ? <ProviderChangeTrigger onClick={open} /> : null}
+            item={getProviderOptionCardItem(selectedOption, title)}
+            meta={null}
+          />
         )}
       />
 
@@ -67,6 +64,7 @@ export const ProviderSelectionCard = () => {
         renderTrigger={({
           multiSelect,
           onRemoveValidator,
+          open,
           selectedStake,
           selectedValidators,
         }) => (
@@ -77,6 +75,7 @@ export const ProviderSelectionCard = () => {
               yieldDto: selectedStake,
             })}
             multiSelect={multiSelect}
+            onOpen={open}
             onRemoveValidator={onRemoveValidator}
             tokenSymbol={selectedStake.token.symbol}
           />
@@ -108,7 +107,7 @@ export const ProviderSummary = ({
         advertises about validator selection. */}
     {selectedValidators.length > 0 ||
     isYieldValidatorSelectionRequired(yieldDto) ? (
-      <Box className={styles.providerCardList}>
+      <Stack gap={8}>
         {getProviderCardItems({
           providerDetailsArr: [],
           selectedValidatorsArr: [...selectedValidators],
@@ -126,7 +125,7 @@ export const ProviderSummary = ({
             }
           />
         ))}
-      </Box>
+      </Stack>
     ) : null}
   </>
 );
@@ -140,68 +139,59 @@ const ProviderOptionSummary = ({
   const option = useEarnFlowProviderOption(providerOption);
 
   return (
-    <Box className={styles.providerCardList}>
-      <ProviderCard
-        action={null}
-        item={getProviderOptionCardItem(
-          option,
-          t("details.provider_search_title")
-        )}
-        meta={null}
-      />
-    </Box>
+    <ProviderCard
+      action={null}
+      item={getProviderOptionCardItem(
+        option,
+        t("details.provider_search_title")
+      )}
+      meta={null}
+    />
   );
 };
 
-const ProviderChangeTrigger = () => {
+const ProviderChangeTrigger = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
 
   return (
-    <Trigger asChild>
-      <Box as="button" className={styles.providerChangeButton} type="button">
-        <Text variant={{ weight: "bold", size: "small" }}>
-          {t("shared.change")}
-        </Text>
-        <CaretDownIcon />
-      </Box>
-    </Trigger>
+    <Button variant="ghost" size="sm" iconEnd="CaretDownIcon" onClick={onClick}>
+      {t("shared.change")}
+    </Button>
   );
 };
 
 const ProviderCardsTrigger = ({
   items,
   multiSelect,
+  onOpen,
   onRemoveValidator,
   tokenSymbol,
 }: {
   items: ProviderCardItem[];
   multiSelect: boolean;
+  onOpen: () => void;
   onRemoveValidator: (item: EarnValidator) => void;
   tokenSymbol: string;
 }) => {
   const { t } = useTranslation();
 
   return (
-    <Box className={styles.providerCardList}>
+    <Stack gap={8}>
       {items.map((item) => {
         const removableValidator =
           multiSelect && items.length > 1 ? item.validator : undefined;
         const getProviderAction = (): ReactNode => {
           if (removableValidator) {
             return (
-              <Box
-                aria-label={`Remove ${item.name}`}
-                as="button"
-                className={styles.providerRemoveButton}
+              <IconButton
+                icon="XIcon"
+                label={`Remove ${item.name}`}
                 onClick={() => onRemoveValidator(removableValidator)}
-                type="button"
-              >
-                <XIcon hw={12} strokeWidth={4.9} />
-              </Box>
+              />
             );
           }
           if (multiSelect) return null;
-          return <ProviderChangeTrigger />;
+          return <ProviderChangeTrigger onClick={onOpen} />;
         };
 
         return (
@@ -215,20 +205,16 @@ const ProviderCardsTrigger = ({
       })}
 
       {multiSelect ? (
-        <Trigger asChild>
-          <Box
-            as="button"
-            className={styles.providerChangeButton}
-            type="button"
-          >
-            <PlusIcon hw={12} strokeWidth={4.9} />
-            <Text variant={{ weight: "bold", size: "small" }}>
-              {t("shared.manage_validators")}
-            </Text>
-          </Box>
-        </Trigger>
+        <Button
+          variant="secondary"
+          size="sm"
+          iconStart="PlusIcon"
+          onClick={onOpen}
+        >
+          {t("shared.manage_validators")}
+        </Button>
       ) : null}
-    </Box>
+    </Stack>
   );
 };
 
@@ -244,56 +230,47 @@ const ProviderCard = ({
   const { t } = useTranslation();
 
   return (
-    <Box className={styles.providerCard}>
-      <Box className={styles.providerCardMainRow}>
-        <Image
-          wrapperProps={{ hw: "8", flexShrink: 0 }}
-          imgProps={{ borderRadius: "base" }}
-          src={item.logo}
-          fallbackName={item.name}
-        />
+    <Card padding={12}>
+      <Stack gap={8}>
+        <Stack direction="row" align="center" gap={12}>
+          <Avatar
+            src={item.logo}
+            fallback={item.name}
+            shape={item.validator ? "square" : "round"}
+          />
 
-        <Box className={styles.providerCardContent}>
-          <Box className={styles.providerCardHeader}>
-            <Text
-              className={styles.providerNameText}
-              variant={{ weight: "bold" }}
-            >
-              {item.name}
-            </Text>
+          <Stack gap={2} grow>
+            {/* The name keeps priority: below `sm` the badge shrinks to its icon. */}
+            <Stack direction="row" align="center" gap={6}>
+              <Text weight="semibold" truncate>
+                {item.name}
+              </Text>
 
-            {item.preferred ? (
-              <Box className={styles.autoBadge}>
-                <Text
-                  className={styles.autoBadgeText}
-                  variant={{ weight: "bold", size: "small" }}
-                >
+              {item.preferred ? (
+                <Badge tone="accent" icon="PreferredIcon" collapse="belowSm">
                   {t("details.validators_preferred")}
-                </Text>
-              </Box>
-            ) : null}
-          </Box>
+                </Badge>
+              ) : null}
+            </Stack>
 
-          {meta}
-        </Box>
+            {meta}
+          </Stack>
 
-        {action}
-      </Box>
+          {action}
+        </Stack>
 
-      {item.website ? (
-        <Text
-          as="a"
-          className={styles.providerWebsiteText}
-          href={formatProviderWebsiteHref(item.website)}
-          rel="noreferrer"
-          target="_blank"
-          variant={{ type: "muted", weight: "normal" }}
-        >
-          {formatProviderWebsite(item.website)}
-          <ExternalLinkIcon />
-        </Text>
-      ) : null}
-    </Box>
+        {item.website ? (
+          <Text variant="caption">
+            <ExternalLink
+              href={formatProviderWebsiteHref(item.website)}
+              newTabLabel={t("shared.opens_in_new_tab")}
+            >
+              {formatProviderWebsite(item.website)}
+            </ExternalLink>
+          </Text>
+        ) : null}
+      </Stack>
+    </Card>
   );
 };
 
@@ -381,24 +358,8 @@ const ProviderMetaLine = ({
   if (!details.length) return null;
 
   return (
-    <Text
-      className={styles.providerMetaText}
-      variant={{ type: "muted", weight: "normal" }}
-    >
-      {details.map((detail, index) => (
-        <Box
-          as="span"
-          className={
-            detail === statusLabel && item.status === "active"
-              ? styles.providerStatusText
-              : undefined
-          }
-          key={detail}
-        >
-          {index > 0 ? "• " : ""}
-          {detail}
-        </Box>
-      ))}
+    <Text variant="caption" tone="muted">
+      {details.join(" • ")}
     </Text>
   );
 };

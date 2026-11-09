@@ -24,11 +24,11 @@ import { applicationRouterAtom } from "../../../src/app/runtime/application-rout
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import {
   makeYieldActionContinuationSession,
   YieldFlowHandoff,
-  type YieldTransactionFlowIntake,
-} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+} from "../../../src/features/yield-transaction-flow/model/session";
 import { makeYieldFlowExecutionPage } from "../../../src/features/yield-transaction-flow/state/execution-page";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import type { TransactionWorkflowHandle } from "../../../src/services/transaction-workflow/transaction-workflow-service";

@@ -59,6 +59,15 @@ export class BorrowMarketsInvalidationKey extends Data.TaggedClass(
   readonly network: BorrowNetwork;
 }> {}
 
+/**
+ * The yields API's catalog: the yields, the tokens that earn in them and
+ * their validators, which no wallet owns. Invalidated to load them again,
+ * such as from a failed page's Retry.
+ */
+class YieldCatalogInvalidationKey extends Data.TaggedClass(
+  "YieldCatalogInvalidationKey"
+)<Record<never, never>> {}
+
 type OptionalWalletOwnerScope =
   | WalletScopeKey
   | WalletScopeOwnerKey
@@ -86,6 +95,7 @@ export const resourceInvalidationKeys = {
   walletBalances: optionalWalletOwnerKeys(
     (scope) => new WalletBalancesInvalidationKey({ scope })
   ),
+  yieldCatalog: () => [new YieldCatalogInvalidationKey()],
   yieldPositions: optionalWalletOwnerKeys(
     (scope) => new YieldPositionsInvalidationKey({ scope })
   ),

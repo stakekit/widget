@@ -81,7 +81,7 @@ export const makePresentableResource = <
   local: PresentableAtom<ResourceAtom>
 ): PresentableResource<ResourceAtom> => {
   // A failed refetch over a value is background state; only a failure with
-  // nothing to show interrupts the user.
+  // nothing to show interrupts the user, with a way to load it again.
   const reporterAtom = appRuntime.atom((get) => {
     const presentable = toPresentable(get(local));
     const requestError =
@@ -91,9 +91,12 @@ export const makePresentableResource = <
             Option.getOrNull
           )
         : null;
+    const { registry } = get;
 
     return requestError
-      ? RichErrorService.use((service) => service.present(requestError))
+      ? RichErrorService.use((service) =>
+          service.present(requestError, () => registry.refresh(local))
+        )
       : Effect.void;
   });
 

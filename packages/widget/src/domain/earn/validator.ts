@@ -1,6 +1,55 @@
-import { addressIdentity } from "../identity/identifiers";
+import { Option, Schema, Struct } from "effect";
+import * as YieldApi from "../../generated/api/yield-schema";
+import {
+  addressIdentity,
+  ProviderId,
+  ValidatorAddress,
+} from "../identity/identifiers";
 import type { Network } from "../network/network";
-import type { EarnValidator } from "./models";
+import { EarnRewardRate, TolerantExactDecimal } from "./wire-fields";
+
+export const EarnValidatorKey = Schema.NonEmptyString.pipe(
+  Schema.brand("EarnValidatorKey")
+);
+export type EarnValidatorKey = typeof EarnValidatorKey.Type;
+
+const makeEarnValidatorKey = Schema.decodeSync(EarnValidatorKey);
+
+// `tvlRaw` is not decoded: TVL is displayed in token units from `tvl`.
+const EarnValidatorWire = Schema.Struct({
+  ...Struct.pick(YieldApi.ValidatorDto.fields, [
+    "name",
+    "logoURI",
+    "website",
+    "commission",
+    "votingPower",
+    "preferred",
+    "nominatorCount",
+    "status",
+    "subnet",
+  ]),
+  address: ValidatorAddress,
+  providerId: Schema.optionalKey(ProviderId),
+  rewardRate: Schema.optionalKey(EarnRewardRate),
+  tvl: Schema.optionalKey(TolerantExactDecimal("yield-validator", "tvl")),
+});
+
+export const EarnValidator = EarnValidatorWire.pipe(
+  Schema.extendTo(
+    { key: EarnValidatorKey },
+    {
+      key: (validator) =>
+        Option.some(
+          makeEarnValidatorKey(
+            validator.subnet?.id === undefined
+              ? validator.address
+              : `${validator.address}:${validator.subnet.id}`
+          )
+        ),
+    }
+  )
+);
+export type EarnValidator = typeof EarnValidator.Type;
 
 export type ValidatorInput = Omit<EarnValidator, "key">;
 

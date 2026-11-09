@@ -66,6 +66,22 @@ describe("mount animation state", () => {
     });
   });
 
+  it("starts with the layout step done when the host disables the reveal", () => {
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue({
+          ...makeWidgetConfig(false),
+          disableInitLayoutAnimation: true,
+        }),
+      ],
+    });
+
+    expect(registry.get(mountAnimationStateAtom)).toEqual({
+      earnPage: false,
+      layout: true,
+    });
+  });
+
   it("notifies the host once, no matter how often a step is dispatched", () => {
     const onMountAnimationComplete = vi.fn();
     const registry = AtomRegistry.make({

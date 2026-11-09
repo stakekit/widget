@@ -292,6 +292,34 @@ describe("Validator resources", () => {
     });
   });
 
+  it("matches hex validator addresses case-insensitively and other encodings exactly", () => {
+    const resolve = (listed: string, requested: string) => {
+      const registry = makeRegistry((() =>
+        Effect.succeed({
+          items: [makeValidator(listed)],
+          limit: 1,
+          offset: 0,
+          total: 1,
+        })) as never);
+
+      return AsyncResult.getOrThrow(
+        registry.get(
+          validatorByAddressAtom(
+            new ValidatorByAddressKey({
+              address: requested as never,
+              yieldId,
+            })
+          )
+        )
+      ).address;
+    };
+
+    expect(resolve("0xAbCd", "0xaBcD")).toBe("0xAbCd");
+    expect(resolve("cosmosvaloper1AbCd", "cosmosvaloper1aBcD")).toBe(
+      "cosmosvaloper1aBcD"
+    );
+  });
+
   it("publishes a typed failure and refreshes the exact discovery", () => {
     let offline = true;
     const requestError = new ApiRequestError({

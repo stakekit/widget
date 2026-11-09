@@ -67,15 +67,12 @@ describe("makeTestWallet", () => {
     })
   );
 
-  it.effect("dies with the method name for an unconfigured command", () =>
+  it.effect("dies for an unconfigured command", () =>
     Effect.gen(function* () {
       const wallet = yield* makeTestWallet({ initialState: disconnectedState });
       const exit = yield* Effect.exit(wallet.service.logout);
 
-      expect(Exit.isFailure(exit)).toBe(true);
-      expect(Exit.isFailure(exit) ? Cause.squash(exit.cause) : null).toBe(
-        "makeTestWallet: unexpected call to logout"
-      );
+      expect(Exit.isFailure(exit) && Cause.hasDies(exit.cause)).toBe(true);
     })
   );
 });

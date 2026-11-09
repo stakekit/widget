@@ -1,16 +1,20 @@
-import { Effect, Option, Schema } from "effect";
-import { YieldAction } from "../../domain/action/models";
+import { Effect } from "effect";
+import {
+  ActionCommand,
+  ActionSimulation,
+  YieldAction,
+} from "../../domain/action/models";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
-import { zeroEncryptedBalance } from "../../domain/earn/confidential";
+import { zeroEncryptedBalance } from "../../domain/earn/confidential-balance";
+import { EarnProvider } from "../../domain/earn/provider";
 import {
   EarnPositionsResponse,
-  EarnProvider,
   EarnValidatorPage,
-  EarnYield,
   EarnYieldBalancesResponse,
   EarnYieldPage,
-} from "../../domain/earn/models";
+} from "../../domain/earn/responses";
+import { EarnYield } from "../../domain/earn/yield-schema";
 import type { YieldBalancesCommand } from "../../domain/finance/models";
 import { HealthStatus } from "../../domain/health/models";
 import type {
@@ -24,16 +28,17 @@ import {
   KycStatus,
   RewardRateHistoryResponse,
   TvlHistoryResponse,
+  YieldRewardsSummary,
 } from "../../domain/portfolio/models";
 import { EnabledWalletNetworksResponse } from "../../domain/wallet/models";
 import type * as YieldApi from "../../generated/api/yield";
 import {
   decodeApiResponse,
-  recoverNotFound,
-  withApiRequestError,
-  withResponseDecodeError,
+  decodeOptionalApiResponse,
+  encodeApiRequest,
 } from "./api-operation";
 import type {
+  ActionSimulationRequest,
   ValidatorDirectoryRequest,
   YieldDirectoryRequest,
 } from "./resource-sources";
@@ -50,28 +55,9 @@ const toYieldDirectoryParams = (request: YieldDirectoryRequest) => ({
 export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
   const getActivityAction = Effect.fn("YieldResourceSource.getActivityAction")(
     function* (actionId: ActionId) {
-      const response = yield* yieldApi
+      return yield* yieldApi
         .ActionsControllerGetAction(actionId, undefined)
-        .pipe(
-          Effect.asSome,
-          Effect.catch(
-            recoverNotFound(
-              Option.none<YieldApi.ActionsControllerGetAction200>()
-            )
-          ),
-          withApiRequestError("activity-action")
-        );
-
-      return yield* response.pipe(
-        Option.match({
-          onNone: () => Effect.succeed(Option.none<YieldAction>()),
-          onSome: (value) =>
-            Schema.decodeUnknownEffect(YieldAction)(value).pipe(
-              withResponseDecodeError("activity-action"),
-              Effect.asSome
-            ),
-        })
-      );
+        .pipe(decodeOptionalApiResponse("activity-action", YieldAction));
     }
   );
 
@@ -103,6 +89,26 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
           params: { address: request.address },
         })
         .pipe(decodeApiResponse("yield-kyc-status", KycStatus));
+    }
+  );
+
+  // A 404 says the Yield's earnings are not tracked: unsupported, retired,
+  // or unknown to the API.
+  const getRewardsSummary = Effect.fn("YieldResourceSource.getRewardsSummary")(
+    function* (request: {
+      readonly address: WalletAddress;
+      readonly yieldId: YieldId;
+    }) {
+      return yield* yieldApi
+        .YieldsControllerGetYieldRewardsSummary(request.yieldId, {
+          params: { address: request.address },
+        })
+        .pipe(
+          decodeOptionalApiResponse(
+            "yield-rewards-summary",
+            YieldRewardsSummary
+          )
+        );
     }
   );
 
@@ -221,29 +227,25 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
   const getProvider = Effect.fn("YieldResourceSource.getProvider")(function* (
     providerId: ProviderId
   ) {
-    const response = yield* yieldApi
+    return yield* yieldApi
       .ProvidersControllerGetProvider(providerId, undefined)
-      .pipe(
-        Effect.asSome,
-        Effect.catch(
-          recoverNotFound(
-            Option.none<YieldApi.ProvidersControllerGetProvider200>()
-          )
-        ),
-        withApiRequestError("yield-provider")
-      );
-
-    return yield* response.pipe(
-      Option.match({
-        onNone: () => Effect.succeed(Option.none<EarnProvider>()),
-        onSome: (value) =>
-          Schema.decodeEffect(EarnProvider)(value).pipe(
-            withResponseDecodeError("yield-provider"),
-            Effect.asSome
-          ),
-      })
-    );
+      .pipe(decodeOptionalApiResponse("yield-provider", EarnProvider));
   });
+
+  // A simulation creates nothing, so it reads like any other request and
+  // retries a transient failure.
+  const simulateAction = Effect.fn("YieldResourceSource.simulateAction")(
+    function* (request: ActionSimulationRequest) {
+      const payload = yield* encodeApiRequest(
+        "action-simulation-request",
+        ActionCommand
+      )(request.command);
+      const decode = decodeApiResponse("action-simulation", ActionSimulation);
+      return yield* request.intent === "enter"
+        ? yieldApi.ActionsControllerSimulateEnter({ payload }).pipe(decode)
+        : yieldApi.ActionsControllerSimulateExit({ payload }).pipe(decode);
+    }
+  );
 
   return {
     getActivityAction,
@@ -254,10 +256,12 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
     getPositions,
     getProvider,
     getSingleYieldBalances,
+    getRewardsSummary,
     getRewardRateHistory,
     getTvlHistory,
     listYields,
     listValidators,
     listActivity,
+    simulateAction,
   } as const;
 };

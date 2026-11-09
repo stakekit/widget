@@ -1,5 +1,6 @@
 /**
- * Layer and owned-Module import rules used by `check-architecture.ts`.
+ * Layer and owned-Module import rules used by `check-architecture.ts`, and
+ * the Design System's dependency rules.
  */
 import type { IConfiguration, IForbiddenRuleType } from "dependency-cruiser";
 
@@ -12,6 +13,7 @@ const layerNames = [
   "shared",
   "generated",
   "public-api",
+  "ui",
 ] as const;
 const ambientSourceDirectories = ["types"] as const;
 type LayerName = (typeof layerNames)[number];
@@ -81,6 +83,7 @@ export const architecturePolicy = {
         "domain",
         "shared",
         "public-api",
+        "ui",
       ],
     }),
     defineLayer({
@@ -92,6 +95,7 @@ export const architecturePolicy = {
         "domain",
         "shared",
         "public-api",
+        "ui",
       ],
       additionalTargets: ["app-runtime"],
     }),
@@ -116,6 +120,10 @@ export const architecturePolicy = {
     defineLayer({
       name: "public-api",
       mayImport: ["domain", "public-api"],
+    }),
+    defineLayer({
+      name: "ui",
+      mayImport: ["ui"],
     }),
   ],
   moduleCollections: [
@@ -168,6 +176,11 @@ export const architecturePolicy = {
       kind: "service",
       name: "transaction-workflow",
       root: "src/services/transaction-workflow",
+    }),
+    ownedModule({
+      kind: "service",
+      name: "zama",
+      root: "src/services/zama",
     }),
   ],
   generatedRuntime: {
@@ -287,7 +300,7 @@ const makeCollectionRules = (
     {
       name: `${prefix}-cross-module-internals-private`,
       severity: "error",
-      from: { path: collection.path, pathNot: "\\.css\\.ts$" },
+      from: { path: collection.path },
       to: {
         path: collection.anyPath,
         pathNot: [collection.sameOwnerPath, collection.interfacePath],
@@ -296,9 +309,7 @@ const makeCollectionRules = (
     {
       name: `${prefix}-internals-private`,
       severity: "error",
-      from: {
-        pathNot: [collection.anyPath, "\\.css\\.ts$"],
-      },
+      from: { pathNot: collection.anyPath },
       to: {
         path: collection.anyPath,
         pathNot: collection.interfacePath,
@@ -370,34 +381,6 @@ const makeCollectionRules = (
       }
     );
   }
-
-  rules.push(
-    {
-      name:
-        collection.kind === "feature"
-          ? "style-imports-only-target-styles"
-          : `${prefix}-style-imports-only-target-styles`,
-      severity: "error",
-      from: { path: `${collection.path.slice(0, -1)}.*\\.css\\.ts$` },
-      to: {
-        path: collection.anyPath,
-        pathNot: [
-          collection.sameOwnerPath,
-          collection.interfacePath,
-          "\\.css\\.ts$",
-        ],
-      },
-    },
-    {
-      name: `${prefix}-external-style-imports-only-target-styles`,
-      severity: "error",
-      from: { path: "\\.css\\.ts$", pathNot: collection.anyPath },
-      to: {
-        path: collection.anyPath,
-        pathNot: [collection.interfacePath, "\\.css\\.ts$"],
-      },
-    }
-  );
 
   if (collection.parentInterfacePath !== undefined) {
     rules.push({
@@ -482,7 +465,21 @@ const makeOwnedModuleRules = (
     ? makeApiModuleRules(declaration)
     : makeServiceModuleRules(declaration);
 
-const configuration: IConfiguration = {
+/**
+ * Styling and behavior libraries only the Design System may import.
+ * Unresolved specifiers (a library not installed yet) match by name.
+ */
+const designSystemLibraries = [
+  "@stylexjs/[^/]+",
+  "@base-ui/react",
+  "motion",
+  "recharts",
+  "@tanstack/react-virtual",
+];
+const designSystemLibraryPath = `(?:^|/node_modules/)(?:${designSystemLibraries.join("|")})(?:/|$)`;
+const styleModulePath = "\\.stylex\\.ts$|\\.css$";
+
+const architectureConfiguration: IConfiguration = {
   forbidden: [
     {
       name: "undeclared-layer-imports",
@@ -536,26 +533,49 @@ const configuration: IConfiguration = {
       to: { path: "^src/services/errors/" },
     },
     {
-      name: "shared-public-theme-contract-only",
+      name: "shared-no-public-api",
       severity: "error",
       comment:
-        "Only shared theme implementation modules may implement the host-facing theme contract.",
-      from: {
-        path: "^src/shared/",
-        pathNot: "^src/shared/styles/(?:theme|tokens)/",
-      },
+        "Shared code never depends on the host-facing public API; hosts' types enter at host boundaries.",
+      from: { path: "^src/shared/" },
       to: { path: "^src/public-api/" },
     },
     {
-      name: "shared-theme-imports-only-theme-contract",
+      name: "design-system-owns-styling-libraries",
       severity: "error",
       comment:
-        "Shared theme implementation may depend only on the exact host-facing theme contract.",
-      from: { path: "^src/shared/styles/(?:theme|tokens)/" },
+        "Only the Design System imports StyleX, Base UI, motion, Recharts and TanStack Virtual. Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
+      from: { pathNot: "^src/ui/" },
+      to: { path: designSystemLibraryPath },
+    },
+    {
+      name: "design-system-owns-style-modules",
+      severity: "error",
+      comment:
+        "Only the Design System defines and imports style modules (`*.stylex.ts`, `.css`). Compose a Design System part, or extend the Design System when none fits (docs/design-system.md).",
+      from: { pathNot: "^src/ui/" },
+      to: { path: styleModulePath },
+    },
+    {
+      name: "design-system-internals-private",
+      severity: "error",
+      comment:
+        "Other owners use the Design System only through its main interface (`ui/index.ts`) or its composition interface (`ui/composition.ts`).",
+      from: { pathNot: "^src/ui/" },
       to: {
-        path: "^src/public-api/",
-        pathNot: "^src/public-api/theme\\.ts$",
+        path: "^src/ui/",
+        pathNot: "^src/ui/(?:index|composition)\\.ts$",
       },
+    },
+    {
+      name: "design-system-composition-importers",
+      severity: "error",
+      comment:
+        "Only application composition themes the Widget through the Design System's composition interface.",
+      from: {
+        pathNot: [...audiencePaths["app-composition"], "^src/ui/"],
+      },
+      to: { path: "^src/ui/composition\\.ts$" },
     },
     {
       name: "compact-layout-ui-independent",
@@ -607,7 +627,7 @@ const configuration: IConfiguration = {
   options: {
     combinedDependencies: true,
     doNotFollow: { path: "node_modules" },
-    includeOnly: ["^src/"],
+    includeOnly: ["^src/", designSystemLibraryPath],
     moduleSystems: ["es6", "cjs"],
     progress: { type: "none" },
     tsConfig: { fileName: "tsconfig.json" },
@@ -615,4 +635,4 @@ const configuration: IConfiguration = {
   },
 };
 
-export default configuration;
+export default architectureConfiguration;

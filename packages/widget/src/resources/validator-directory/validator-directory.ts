@@ -1,7 +1,10 @@
 import { Data, Duration, Effect, Option, Schema, Stream } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import { EarnValidator } from "../../domain/earn/models";
+import {
+  EarnValidator,
+  validatorAddressIdentity,
+} from "../../domain/earn/validator";
 import type {
   ValidatorAddress,
   YieldId,
@@ -12,6 +15,7 @@ import {
   type ValidatorDirectoryRequest,
   YieldResourceSource,
 } from "../../services/api/resource-sources";
+import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {
   API_MAX_PAGE_SIZE,
@@ -159,6 +163,7 @@ const validatorsCanonicalPullAtom = Atom.family((key: ValidatorsKey) =>
       ).pipe(Stream.mapError((cause) => new ValidatorsError({ cause })));
     })
     .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
       withPullPageDone,
       validatorPolicy,
       Atom.withLabel("validatorsPullAtom")
@@ -197,7 +202,11 @@ const preferredValidatorsCanonicalAtom = Atom.family((yieldId: YieldId) =>
         )
       )
     )
-    .pipe(validatorPolicy, Atom.withLabel("preferredValidatorsResourceAtom"))
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
+      validatorPolicy,
+      Atom.withLabel("preferredValidatorsResourceAtom")
+    )
 );
 
 export const preferredValidatorsResourceAtom = makePresentableResourceFamily(
@@ -226,9 +235,10 @@ const validatorByAddressCanonicalAtom = Atom.family(
             .pipe(
               Effect.mapError((cause) => new ValidatorsError({ cause })),
               Effect.flatMap((page) => {
-                const normalizedAddress = key.address.toLowerCase();
+                const addressIdentity = validatorAddressIdentity(key.address);
                 const validator = page.items?.find(
-                  (item) => item.address.toLowerCase() === normalizedAddress
+                  (item) =>
+                    validatorAddressIdentity(item.address) === addressIdentity
                 );
 
                 return validator

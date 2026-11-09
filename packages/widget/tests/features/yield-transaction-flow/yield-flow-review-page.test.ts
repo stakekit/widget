@@ -15,13 +15,13 @@ import {
   YieldId,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import {
   makeYieldActionContinuationSession,
   makeYieldFlowSession,
   YieldFlowHandoff,
   type YieldFlowSession,
-  type YieldTransactionFlowIntake,
-} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+} from "../../../src/features/yield-transaction-flow/model/session";
 import {
   makeYieldFlowReviewPage,
   YieldFlowReviewVisit,
@@ -39,10 +39,8 @@ import {
 } from "../../../src/services/api/resource-sources";
 import type { EvmRpc } from "../../../src/services/evm-rpc/evm-rpc";
 import { resourceInvalidationKeys } from "../../../src/services/resource-invalidation";
-import {
-  ConfidentialPreparationError,
-  type ZamaService,
-} from "../../../src/services/zama/zama-service";
+import { ConfidentialPreparationError } from "../../../src/services/zama/confidential-preparation";
+import type { ZamaService } from "../../../src/services/zama/zama-service";
 import {
   confidentialFixture,
   confidentialYieldFixture,
@@ -292,6 +290,59 @@ describe("Yield flow Review page", () => {
         expect(previewAction).not.toHaveBeenCalled();
         expect(yield* Ref.get(handle.handoff)).toBeNull();
         expect(yield* kit.navigation.commands).toEqual([]);
+      })
+  );
+
+  it.effect(
+    "charges an exit the yield's withdrawal fee on its amount, and no other flow",
+    () =>
+      Effect.gen(function* () {
+        const integration = {
+          ...selectedStake,
+          mechanics: {
+            ...selectedStake.mechanics,
+            fee: {
+              deposit: new BigNumber("1"),
+              withdrawal: new BigNumber("0.5"),
+            },
+          },
+        };
+        const exit = yield* makeReviewHarness({
+          session: makeYieldFlowSession(
+            {
+              intake: {
+                ...makeExitIntake(integration),
+                request: {
+                  address,
+                  arguments: { amount: "4" },
+                  yieldId: integration.id,
+                },
+              },
+              mount: {
+                _tag: "PositionExit",
+                balanceId: "default",
+                integrationId,
+              },
+            },
+            walletScope
+          ),
+        });
+        const fee = exit.registry.get(exit.page.reviewViewAtom).withdrawalFee;
+        expect(fee?.amount.toString()).toBe("0.02");
+        expect(fee?.ratio.toString()).toBe("0.005");
+
+        const enter = yield* makeReviewHarness({
+          session: makeYieldFlowSession(
+            {
+              intake: { ...enterIntake, selectedStake: integration },
+              mount: { _tag: "Earn" },
+            },
+            walletScope
+          ),
+        });
+        expect(
+          enter.registry.get(enter.page.reviewViewAtom).withdrawalFee
+        ).toBeNull();
       })
   );
 

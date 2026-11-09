@@ -14,17 +14,19 @@ import {
   isPendingActionValidatorAddressRequired,
 } from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
-import { toBaseUnits } from "../../../domain/earn/confidential";
-import { getExitUnit } from "../../../domain/earn/denomination";
 import {
   type EarnBalance,
+  getVisibleShares,
+} from "../../../domain/earn/balance";
+import { getExitUnit } from "../../../domain/earn/denomination";
+import {
   type EarnValidator,
   type EarnValidatorKey,
-  type EarnYieldWithProvider,
-  getVisibleShares,
-} from "../../../domain/earn/models";
-import { getMaxSelectedValidators } from "../../../domain/earn/validator";
+  getMaxSelectedValidators,
+} from "../../../domain/earn/validator";
 import { getYieldActionArg } from "../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
+import { toBaseUnits } from "../../../domain/finance/base-units";
 import { truncateToTokenDecimals } from "../../../domain/finance/exact";
 import type {
   ValidatorAddress,
@@ -331,7 +333,7 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
       );
     }
     // The exit form is denominated in the vault share.
-    return toBaseUnits(facts.amount, shareToken.decimals);
+    return toBaseUnits(facts.amount, shareToken.decimals, "truncate");
   };
   const shareAmountRaw = getShareAmountRaw();
   // Below one share unit the encrypted redeem would be zero.
@@ -380,6 +382,21 @@ export const resolvePositionDetailsExitSubmission = ({
     ? ({ _tag: "Start", prepared, token } as const)
     : ({ _tag: "Invalid" } as const);
 };
+
+/**
+ * The exit to simulate for its network fee: the one submission would start,
+ * once its amount can be used.
+ */
+export const getPositionDetailsExitSimulationCommand = ({
+  amountValid,
+  facts,
+}: {
+  readonly amountValid: boolean;
+  readonly facts: PositionDetailsExitFacts | null;
+}) =>
+  amountValid && facts
+    ? (preparePositionDetailsExitAction(facts)?.request ?? null)
+    : null;
 
 export type PositionPendingActionCommand =
   | Readonly<{

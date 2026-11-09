@@ -1,6 +1,5 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { IntegrationId } from "../../../../src/domain/borrow/ids";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import {
@@ -8,8 +7,11 @@ import {
   filterBorrowCollateralOptions,
   filterBorrowMarketGroups,
   rankBorrowCollateralOptions,
-  toBorrowEntryToken,
 } from "../../../../src/features/borrow/borrow-entry/model/market-groups";
+import {
+  makeBorrowCollateralTokenDto,
+  makeBorrowMarket,
+} from "../../../fixtures/borrow";
 
 const usdc = {
   address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -33,14 +35,7 @@ const collateralToken = (
     readonly symbol: string;
   },
   { maxLtv = "0.8", priceUsd = "2000" } = {}
-) => ({
-  token,
-  priceUsd,
-  maxLtv,
-  liquidationThreshold: "0.85",
-  liquidationPenalty: "0.05",
-  supplyRate: "0.02",
-});
+) => makeBorrowCollateralTokenDto({ maxLtv, priceUsd, token });
 
 const weth = {
   address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -75,29 +70,15 @@ const makeMarket = ({
   readonly loanToken: typeof usdc | typeof usdt;
   readonly loanTokenPriceUsd?: string;
 }) =>
-  Schema.decodeSync(Market)({
+  makeBorrowMarket({
+    availableLiquidity,
+    borrowRate,
+    collateralTokens,
     id,
     integrationId,
-    network: "ethereum",
-    type: "pool",
-    poolAddress: "0x0000000000000000000000000000000000000001",
-    loanToken,
-    collateralTokens,
-    borrowRate,
-    totalSupply: "1000000",
-    totalSupplyRaw: "1000000000000",
-    totalBorrow: "500000",
-    totalBorrowRaw: "500000000000",
-    availableLiquidity,
-    availableLiquidityRaw: "500000000000",
-    utilizationRate: "0.5",
-    loanTokenPriceUsd,
     isBorrowEnabled,
-    supplyCollateralFeeBps: "0",
-    originationFeeBps: "0",
-    originationFeeWrapperAddress: null,
-    blueBundleOriginationFeeBps: null,
-    minLoan: null,
+    loanToken,
+    loanTokenPriceUsd,
   });
 
 const aaveUsdc = makeMarket({
@@ -398,19 +379,5 @@ describe("borrow collateral options", () => {
     expect(filterBorrowCollateralOptions({ options, search: "wbtc" })).toEqual(
       []
     );
-  });
-});
-
-describe("dashboard borrow token projection", () => {
-  it("carries the network and omits absent optional fields", () => {
-    expect(
-      toBorrowEntryToken({ network: "ethereum", token: aaveUsdc.loanToken })
-    ).toEqual({
-      address: usdc.address.toLowerCase(),
-      decimals: 6,
-      name: "USD Coin",
-      network: "ethereum",
-      symbol: "USDC",
-    });
   });
 });

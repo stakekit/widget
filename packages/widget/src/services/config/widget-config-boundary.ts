@@ -1,5 +1,6 @@
 import {
   Data,
+  Equal,
   Option,
   Predicate,
   Result,
@@ -23,15 +24,24 @@ import type {
   SKHostConfiguration,
   VariantProps,
 } from "../../public-api/react-types";
-import type { SKTheme } from "../../public-api/theme";
 import type {
   SettingsProps,
   SKBorrowExternalProviders,
   SKExternalProviders,
 } from "../../public-api/types";
+import {
+  type AppearanceDecodeWarning,
+  decodeAppearance,
+} from "./appearance-decoder";
+import { exhaustiveLiterals } from "./exhaustive-literals";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
+import { variantHostProfiles } from "./host-profile";
+import {
+  mapLegacyTheme,
+  resolveWidgetAppearance,
+} from "./legacy-theme-mapping";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
-import type { WidgetLayout } from "./widget-config-model";
+import type { WidgetAppearance, WidgetLayout } from "./widget-config-model";
 
 // Hosts may pass `undefined` for any optional setting; decoding normalizes it
 // to an absent key so consumers see a single "not set" representation.
@@ -44,13 +54,6 @@ const optional = <S extends Schema.Top>(schema: S) =>
       encode: SchemaGetter.passthroughSubtype(),
     })
   );
-
-const exhaustiveLiterals =
-  <All extends number | string>() =>
-  <const Values extends ReadonlyArray<All>>(
-    values: Exclude<All, Values[number]> extends never ? Values : never
-  ) =>
-    values;
 
 const supportedChainIds = exhaustiveLiterals<SupportedSKChainIds>()([
   EvmChainIds.Ethereum,
@@ -108,6 +111,9 @@ const hostVariantValues = exhaustiveLiterals<HostVariant>()([
   "utila",
   "zerion",
 ]);
+const hostLayoutValues = exhaustiveLiterals<
+  NonNullable<SettingsProps["layout"]>
+>()(["compact", "dashboard"]);
 const hostYieldGroupingValues = exhaustiveLiterals<HostYieldGrouping>()([
   "flat",
   "category",
@@ -202,6 +208,7 @@ type HostConfigurationValueKey = Exclude<
 >;
 
 const hostConfigurationValueFields = {
+  appearance: optional(Schema.Unknown),
   apiKey: Schema.NonEmptyString,
   baseUrl: optional(Schema.String),
   borrowApiUrl: optional(Schema.String),
@@ -222,6 +229,7 @@ const hostConfigurationValueFields = {
   hideChainSelector: optional(Schema.Boolean),
   hideGasFee: optional(Schema.Boolean),
   hideNetworkLogo: optional(Schema.Boolean),
+  layout: optional(Schema.Literals(hostLayoutValues)),
   initialChain: optional(SupportedChainId),
   institutionalWallets: optional(Schema.Boolean),
   isSafe: optional(Schema.Boolean),
@@ -295,6 +303,7 @@ type NetworkKeyedField =
 
 export type DecodedHostConfiguration = Omit<
   HostConfigurationValueData,
+  | "appearance"
   | "chainModal"
   | "externalProviders"
   | "tokenIconMapping"
@@ -303,6 +312,8 @@ export type DecodedHostConfiguration = Omit<
   | "yieldProviderOrder"
 > &
   Readonly<{
+    /** `appearance` over the mapped legacy `theme`. */
+    appearance: WidgetAppearance;
     chainIconMapping: SettingsProps["chainIconMapping"];
     chainModal: ChainModal | undefined;
     externalProviders: ExternalProviderSnapshot | undefined;
@@ -310,7 +321,6 @@ export type DecodedHostConfiguration = Omit<
     onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
     portalContainer: SettingsProps["portalContainer"];
     preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | undefined;
-    theme: SKTheme | undefined;
     tokenIconMapping: SettingsProps["tokenIconMapping"];
     tracking: SettingsProps["tracking"];
     validatorsConfig:
@@ -324,6 +334,7 @@ export type InvalidHostConfigurationIssue =
   | "borrow-requires-category-grouping"
   | "borrow-requires-dashboard"
   | "host-configuration-decode-failed"
+  | "institutional-wallets-with-external-provider"
   | "zerion-chain-modal-missing";
 
 export class InvalidHostConfiguration extends Data.TaggedError(
@@ -338,6 +349,12 @@ export type HostConfigurationWarning =
   | Readonly<{
       readonly _tag: "Theme";
       readonly issue: ThemeDecodeWarning;
+    }>
+  /** An `appearance` value that does not decode; only that value is dropped. */
+  | Readonly<{
+      readonly _tag: "Appearance";
+      readonly issue: AppearanceDecodeWarning["issue"];
+      readonly path: string;
     }>
   /** An entry under a key that names no network; only that entry is dropped. */
   | Readonly<{
@@ -354,6 +371,13 @@ export type HostConfigurationWarning =
 
 export type HostConfigurationDecodeSuccess = Readonly<{
   configuration: DecodedHostConfiguration;
+  /**
+   * Customized legacy `theme` leaves that no longer apply, by dotted path,
+   * for the warning that points to `appearance`.
+   */
+  droppedLegacyThemeKeys: ReadonlyArray<string>;
+  /** Deprecated Host Configuration options the host set, for a warning. */
+  deprecatedOptions: ReadonlyArray<"dashboardVariant">;
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
@@ -467,6 +491,43 @@ const keepProviderIds = (
   return { order: kept, warnings };
 };
 
+/**
+ * The Widget's Appearance: `appearance` over the mapped legacy `theme`, the
+ * legacy `theme`'s only use. Invalid values of either are dropped with a
+ * warning.
+ */
+const decodeThemeAndAppearance = (
+  themeInput: unknown,
+  appearanceInput: unknown
+) => {
+  const theme =
+    themeInput === undefined
+      ? { theme: undefined, warnings: [] }
+      : decodeTheme(themeInput);
+  const appearance =
+    appearanceInput === undefined
+      ? { appearance: undefined, warnings: [] }
+      : decodeAppearance(appearanceInput);
+  const legacy =
+    theme.theme === undefined ? undefined : mapLegacyTheme(theme.theme);
+
+  return {
+    appearance: resolveWidgetAppearance(legacy, appearance.appearance),
+    droppedLegacyThemeKeys: legacy?.droppedKeys ?? [],
+    warnings: [
+      ...theme.warnings.map(
+        (issue): HostConfigurationWarning => ({ _tag: "Theme", issue })
+      ),
+      ...appearance.warnings.map(
+        (warning): HostConfigurationWarning => ({
+          _tag: "Appearance",
+          ...warning,
+        })
+      ),
+    ],
+  };
+};
+
 const makeCapabilities = (
   hostConfiguration: SKHostConfiguration,
   borrowEnabled: boolean | undefined
@@ -485,7 +546,11 @@ const makeCapabilities = (
   },
   mapWalletFn: hostConfiguration.mapWalletFn,
   onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
-  portalContainer: hostConfiguration.portalContainer,
+  // Widget Configuration is compared with `Equal.equals`, which would walk a
+  // DOM node's whole prototype graph; the container is the host's by reference.
+  portalContainer:
+    hostConfiguration.portalContainer &&
+    Equal.byReferenceUnsafe(hostConfiguration.portalContainer),
   tokenIconMapper:
     typeof hostConfiguration.tokenIconMapping === "function"
       ? hostConfiguration.tokenIconMapping
@@ -590,11 +655,26 @@ const combineExternalProvider = (
     : missingBorrowProviderCapability();
 };
 
-/** The Layout the host selects through the public `dashboardVariant` flag. */
+const isHostLayout = Schema.is(Schema.Literals(hostLayoutValues));
+
+/**
+ * The Layout the host selects: `layout`, or else the deprecated
+ * `dashboardVariant` flag. Values that are not a valid choice select nothing.
+ */
+const selectLayout = (options: {
+  readonly dashboardVariant?: unknown;
+  readonly layout?: unknown;
+}): WidgetLayout => {
+  if (isHostLayout(options.layout)) {
+    return options.layout === "dashboard" ? "Dashboard" : "Compact";
+  }
+  return options.dashboardVariant === true ? "Dashboard" : "Compact";
+};
+
+/** The Layout a decoded Host Configuration selects. */
 export const hostLayout = (
   hostConfiguration: DecodedHostConfiguration
-): WidgetLayout =>
-  hostConfiguration.dashboardVariant ? "Dashboard" : "Compact";
+): WidgetLayout => selectLayout(hostConfiguration);
 
 type SemanticHostConfigurationIssue = Exclude<
   InvalidHostConfigurationIssue,
@@ -621,6 +701,16 @@ const semanticIssues = (
   if (hostConfiguration.variant === "zerion" && !hostConfiguration.chainModal) {
     issues.push("zerion-chain-modal-missing");
   }
+  // Institutional wallets replace the widget's wallet list, while an external
+  // provider means the host owns the wallet and no list is shown.
+  if (
+    hostConfiguration.externalProviders !== undefined &&
+    (hostConfiguration.institutionalWallets === true ||
+      variantHostProfiles[hostConfiguration.variant ?? "default"]
+        .forcesInstitutionalWallets)
+  ) {
+    issues.push("institutional-wallets-with-external-provider");
+  }
 
   return issues;
 };
@@ -628,7 +718,8 @@ const semanticIssues = (
 const semanticIssuePath: Record<SemanticHostConfigurationIssue, string> = {
   "borrow-provider-capability-missing": "externalProviders.provider",
   "borrow-requires-category-grouping": "yieldGrouping",
-  "borrow-requires-dashboard": "dashboardVariant",
+  "borrow-requires-dashboard": "layout",
+  "institutional-wallets-with-external-provider": "externalProviders",
   "zerion-chain-modal-missing": "chainModal",
 };
 
@@ -654,10 +745,8 @@ export const decodeHostConfiguration = (
     return Result.fail(externalProviders.failure);
   }
 
-  const theme =
-    decoded.success.theme === undefined
-      ? { theme: undefined, warnings: [] }
-      : decodeTheme(decoded.success.theme);
+  const { theme: themeInput, ...values } = decoded.success;
+  const theme = decodeThemeAndAppearance(themeInput, values.appearance);
   const chainIcons = keepNetworkEntries(
     "chainIconMapping",
     decoded.success.chainIconMapping,
@@ -679,7 +768,8 @@ export const decodeHostConfiguration = (
   );
 
   const configuration: DecodedHostConfiguration = {
-    ...decoded.success,
+    ...values,
+    appearance: theme.appearance,
     chainIconMapping: capabilities.chainIconMapper ?? chainIcons.entries,
     chainModal: capabilities.chainModal,
     externalProviders: externalProviders.success,
@@ -687,7 +777,6 @@ export const decodeHostConfiguration = (
     onMountAnimationComplete: capabilities.onMountAnimationComplete,
     portalContainer: capabilities.portalContainer,
     preferredTokenYieldsPerNetwork: preferredTokenYields.entries,
-    theme: theme.theme,
     tokenIconMapping:
       capabilities.tokenIconMapper ?? decoded.success.tokenIconMapping,
     tracking: capabilities.tracking,
@@ -708,10 +797,11 @@ export const decodeHostConfiguration = (
 
   return Result.succeed({
     configuration,
+    droppedLegacyThemeKeys: theme.droppedLegacyThemeKeys,
+    deprecatedOptions:
+      configuration.dashboardVariant === undefined ? [] : ["dashboardVariant"],
     warnings: [
-      ...theme.warnings.map(
-        (issue): HostConfigurationWarning => ({ _tag: "Theme", issue })
-      ),
+      ...theme.warnings,
       ...chainIcons.warnings,
       ...preferredTokenYields.warnings,
       ...validators.warnings,
@@ -722,8 +812,8 @@ export const decodeHostConfiguration = (
 
 /** How the widget looks while it shows that the Host Configuration was rejected. */
 export type RejectedConfigurationPresentation = Readonly<{
+  appearance: WidgetAppearance;
   layout: WidgetLayout;
-  theme: SKTheme | undefined;
   variant: HostVariant;
 }>;
 
@@ -736,13 +826,17 @@ const isHostVariant = Schema.is(Schema.Literals(hostVariantValues));
  */
 export const decodeRejectedConfigurationPresentation = (
   hostConfiguration: Partial<SKHostConfiguration>
-): RejectedConfigurationPresentation => ({
-  layout: hostConfiguration.dashboardVariant === true ? "Dashboard" : "Compact",
-  theme:
-    hostConfiguration.theme === undefined
-      ? undefined
-      : decodeTheme(hostConfiguration.theme).theme,
-  variant: isHostVariant(hostConfiguration.variant)
-    ? hostConfiguration.variant
-    : "default",
-});
+): RejectedConfigurationPresentation => {
+  const { appearance } = decodeThemeAndAppearance(
+    hostConfiguration.theme,
+    hostConfiguration.appearance
+  );
+
+  return {
+    appearance,
+    layout: selectLayout(hostConfiguration),
+    variant: isHostVariant(hostConfiguration.variant)
+      ? hostConfiguration.variant
+      : "default",
+  };
+};

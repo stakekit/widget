@@ -1,8 +1,12 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   packageEntries,
   transpileEntryDeclaration,
 } from "../../scripts/declarations/entry-declarations";
+import { widgetRoot } from "../../scripts/paths";
 import type {
   HelpModalProps as PublicHelpModalProps,
   SKAppProps as PublicSKAppProps,
@@ -200,6 +204,7 @@ const sharedEntryExports = [
   "MiscChainIds",
   "SKActionArguments",
   "SKActionType",
+  "SKAppearance",
   "SKBorrowExternalProviders",
   "SKBorrowMarketsScope",
   "SKBorrowSignatureResult",
@@ -207,11 +212,13 @@ const sharedEntryExports = [
   "SKBorrowTxMeta",
   "SKBorrowTxResult",
   "SKBorrowWallet",
+  "SKColorRole",
   "SKCustomTranslations",
   "SKEip712TypedData",
   "SKExternalProviders",
   "SKHostVariant",
   "SKLanguage",
+  "SKLayout",
   "SKNetwork",
   "SKPreferredTokenYieldsPerNetwork",
   "SKTheme",
@@ -284,5 +291,60 @@ describe.each(packageEntries)("entry declarations: %s", (entry) => {
         new RegExp(`\\b${name}\\b`, "u").test(outputText)
       )
     ).toStrictEqual([]);
+  });
+
+  it("mark the legacy theme exports deprecated", async () => {
+    const { outputText } = await transpileEntryDeclaration(entry);
+
+    for (const name of ["darkTheme", "lightTheme"]) {
+      expect(outputText).toMatch(
+        new RegExp(`@deprecated[^/]*\\*/\\s*export declare const ${name}\\b`)
+      );
+    }
+  });
+});
+
+/** Every property signature named `name` in a source file. */
+const propertySignatures = (source: ts.SourceFile, name: string) => {
+  const found: Array<ts.PropertySignature> = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isPropertySignature(node) && node.name.getText(source) === name) {
+      found.push(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+};
+
+/**
+ * The JSDoc tag names of each property signature named `name` in the
+ * declaration `build:types` publishes for `src/public-api/types.ts`.
+ */
+const propertyTagNames = async (name: string) => {
+  const path = join(widgetRoot, "src", "public-api", "types.ts");
+  const { outputText } = ts.transpileDeclaration(await readFile(path, "utf8"), {
+    compilerOptions: { declaration: true },
+    fileName: path,
+  });
+  const declaration = ts.createSourceFile(
+    "types.d.ts",
+    outputText,
+    ts.ScriptTarget.ESNext,
+    true
+  );
+  return propertySignatures(declaration, name).map((prop) =>
+    ts.getJSDocTags(prop).map((tag) => tag.tagName.text)
+  );
+};
+
+describe.each(["theme", "dashboardVariant"])("legacy %s prop", (name) => {
+  it("is marked deprecated wherever hosts can pass it", async () => {
+    const tags = await propertyTagNames(name);
+
+    expect(tags).not.toHaveLength(0);
+    for (const propTags of tags) {
+      expect(propTags).toContain("deprecated");
+    }
   });
 });

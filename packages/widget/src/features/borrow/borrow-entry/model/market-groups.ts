@@ -13,7 +13,6 @@ import { decodeTokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import { exactZero, sumExact } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
-import type { Token } from "../../../../domain/token/token";
 import { deriveBorrowMarketWalletBalances } from "../../action-preparation/index";
 
 export type BorrowCollateralOption = {
@@ -22,8 +21,6 @@ export type BorrowCollateralOption = {
   readonly walletAmount: BigNumber | null;
   readonly walletUsd: BigNumber | null;
 };
-
-export type BorrowEntryToken = Token & { network: BorrowNetwork };
 
 type BorrowMarketGroup = {
   readonly availableLiquidityUsd: BigNumber;
@@ -34,21 +31,6 @@ type BorrowMarketGroup = {
   readonly marketItems: readonly Market[];
   readonly network: BorrowNetwork;
 };
-
-export const toBorrowEntryToken = ({
-  network,
-  token,
-}: {
-  readonly network: BorrowNetwork;
-  readonly token: BorrowToken;
-}): BorrowEntryToken => ({
-  decimals: token.decimals,
-  name: token.name,
-  network,
-  symbol: token.symbol,
-  ...(token.address ? { address: token.address } : {}),
-  ...(token.logoURI ? { logoURI: token.logoURI } : {}),
-});
 
 const normalizeSearch = (value: string) => value.trim().toLowerCase();
 

@@ -5,8 +5,10 @@ import {
   type EvmTx,
   type HelpModalProps,
   MiscChainIds,
+  type SKAppearance,
   type SKAppProps,
   type SKBorrowExternalProviders,
+  type SKColorRole,
   type SKCustomTranslations,
   type SKExternalProviders,
   type SKLanguage,
@@ -59,6 +61,13 @@ export type PackageTypeAssertions = [
     >
   >,
   Assert<Equal<NonNullable<ActionMeta["inputToken"]>, SKToken>>,
+  Assert<Equal<NonNullable<SKAppProps["appearance"]>, SKAppearance>>,
+  Assert<
+    Equal<
+      keyof NonNullable<NonNullable<SKAppearance["colors"]>["light"]>,
+      SKColorRole
+    >
+  >,
   Assert<Equal<SKTx, EvmTx | SolanaTx | TonTx | TronTx | BittensorTx>>,
   Assert<
     Equal<HelpModalProps["modal"]["type"], "getInTouch" | "whatIsStakeKit">

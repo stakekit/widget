@@ -1,7 +1,8 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
 import { YieldCategory } from "../../../src/public-api/types";
-import { legacyYieldFixture, yieldApiYieldDtoFixture } from "../../fixtures";
+import { yieldApiYieldDtoFixture } from "../../fixtures";
+import type { TokenDto as LegacyTokenDto } from "../../generated/legacy-api-types";
 import {
   borrowApiRoute,
   legacyApiRoute,
@@ -11,8 +12,6 @@ import { mockDelay } from "../../mocks/delay";
 import { mockWalletListFactory } from "../../utils/mock-connector";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
-
-type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
 const emptyBorrowPosition = {
   address: "0x0000000000000000000000000000000000000001",
@@ -83,31 +82,9 @@ describe("Renders initial page", () => {
       logoURI: "https://assets.stakek.it/tokens/eth.svg",
     };
 
-    const legacyYieldBase = legacyYieldFixture();
     const yieldApiYieldBase = yieldApiYieldDtoFixture();
-    const avalancheAvaxNativeStaking = legacyYieldFixture({
-      id: "avalanche-avax-native-staking",
-      token: avalancheCToken,
-      tokens: [avalancheCToken],
-      metadata: {
-        ...legacyYieldBase.metadata,
-        type: "staking",
-        gasFeeToken: avalancheCToken,
-      },
-    });
-    const etherNativeStaking = legacyYieldFixture({
-      id: "ethereum-eth-etherfi-staking",
-      token: ether,
-      tokens: [ether],
-      metadata: {
-        ...legacyYieldBase.metadata,
-        type: "staking",
-        gasFeeToken: ether,
-      },
-    });
-
     const avalancheAvaxNativeStakingYieldApi = yieldApiYieldDtoFixture({
-      id: avalancheAvaxNativeStaking.id,
+      id: "avalanche-avax-native-staking",
       network: avalancheCToken.network,
       token: avalancheCToken,
       tokens: [avalancheCToken],
@@ -120,7 +97,7 @@ describe("Renders initial page", () => {
       },
     });
     const etherNativeStakingYieldApi = yieldApiYieldDtoFixture({
-      id: etherNativeStaking.id,
+      id: "ethereum-eth-etherfi-staking",
       network: ether.network,
       token: ether,
       tokens: [ether],
@@ -137,8 +114,8 @@ describe("Renders initial page", () => {
       http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
         return HttpResponse.json([
-          { id: etherNativeStaking.token.network },
-          { id: avalancheAvaxNativeStaking.token.network },
+          { id: etherNativeStakingYieldApi.network },
+          { id: avalancheAvaxNativeStakingYieldApi.network },
         ]);
       }),
 
@@ -146,22 +123,14 @@ describe("Renders initial page", () => {
         await mockDelay();
 
         return HttpResponse.json([
-          { token: ether, availableYields: [etherNativeStaking.id] },
+          { token: ether, availableYields: [etherNativeStakingYieldApi.id] },
           {
             token: avalancheCToken,
-            availableYields: [avalancheAvaxNativeStaking.id],
+            availableYields: [avalancheAvaxNativeStakingYieldApi.id],
           },
         ]);
       }),
 
-      http.get(
-        legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
-        async () => {
-          await mockDelay();
-
-          return HttpResponse.json(etherNativeStaking);
-        }
-      ),
       http.get(yieldApiRoute("/v1/yields"), async () => {
         await mockDelay();
 
@@ -178,7 +147,7 @@ describe("Renders initial page", () => {
         });
       }),
       http.get(
-        yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+        yieldApiRoute(`/v1/yields/${etherNativeStakingYieldApi.id}`),
         async () => {
           await mockDelay();
 
@@ -186,15 +155,7 @@ describe("Renders initial page", () => {
         }
       ),
       http.get(
-        legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
-        async () => {
-          await mockDelay();
-
-          return HttpResponse.json(avalancheAvaxNativeStaking);
-        }
-      ),
-      http.get(
-        yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+        yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStakingYieldApi.id}`),
         async () => {
           await mockDelay();
 
@@ -207,7 +168,7 @@ describe("Renders initial page", () => {
 
     await expect.element(app.getByTestId("number-input")).toBeInTheDocument();
     await expect.element(app.getByText("Manage")).toBeInTheDocument();
-    await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
+    await expect.element(app.getByText("Connect wallet")).toBeInTheDocument();
 
     await app.unmount();
   });
@@ -354,60 +315,45 @@ describe("Renders initial page", () => {
         dashboardVariant: true,
       },
     });
-    const clickTab = (label: string) => {
-      const tabsSection = app.container.querySelector(
-        "[data-rk='tabs-section']"
-      );
-      const tab = [...(tabsSection?.querySelectorAll("p") ?? [])].find(
-        (el) => el.textContent === label
-      );
+    const tab = (label: string) =>
+      app.getByRole("tab", { name: label, exact: true });
+    const clickTab = (label: string) => tab(label).click();
 
-      expect(tab).not.toBeUndefined();
-      tab?.click();
-    };
+    // DeFi leads the default order and opens selected.
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
+    const tabsText =
+      app.container.querySelector("[data-rk='tabs-section']")?.textContent ??
+      "";
+    expect(tabsText.indexOf("DeFi")).toBeLessThan(tabsText.indexOf("Stake"));
+    expect(tabsText.indexOf("Stake")).toBeLessThan(tabsText.indexOf("RWA"));
 
+    await clickTab("RWA");
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "false");
+
+    await clickTab("Borrow");
     await expect
-      .element(app.getByText("RWA"))
-      .toHaveAttribute("data-state", "selected");
+      .element(tab("Borrow"))
+      .toHaveAttribute("aria-selected", "true");
 
-    clickTab("DeFi");
+    await clickTab("Stake");
+    await expect.element(tab("Stake")).toHaveAttribute("aria-selected", "true");
 
+    await clickTab("Manage");
     await expect
-      .element(app.getByText("DeFi"))
-      .toHaveAttribute("data-state", "selected");
-    await expect
-      .element(app.getByText("RWA"))
-      .toHaveAttribute("data-state", "default");
+      .element(tab("Manage"))
+      .toHaveAttribute("aria-selected", "true");
 
-    clickTab("Borrow");
-    await expect
-      .element(app.getByText("Borrow").first())
-      .toHaveAttribute("data-state", "selected");
+    await clickTab("DeFi");
+    await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
 
-    clickTab("Stake");
+    await clickTab("Activity");
     await expect
-      .element(app.getByText("Stake").first())
-      .toHaveAttribute("data-state", "selected");
+      .element(tab("Activity"))
+      .toHaveAttribute("aria-selected", "true");
 
-    clickTab("Manage");
-    await expect
-      .element(app.getByText("Manage").first())
-      .toHaveAttribute("data-state", "selected");
-
-    clickTab("RWA");
-    await expect
-      .element(app.getByText("RWA").first())
-      .toHaveAttribute("data-state", "selected");
-
-    clickTab("Activity");
-    await expect
-      .element(app.getByText("Activity").first())
-      .toHaveAttribute("data-state", "selected");
-
-    clickTab("DeFi");
-    await expect
-      .element(app.getByText("DeFi").first())
-      .toHaveAttribute("data-state", "selected");
+    await clickTab("RWA");
+    await expect.element(tab("RWA")).toHaveAttribute("aria-selected", "true");
 
     await app.unmount();
   });
@@ -576,7 +522,8 @@ describe("Renders initial page", () => {
 
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
     await expect.element(app.getByText("Market stats")).toBeInTheDocument();
-    await expect.element(app.getByText("LTV ratio")).not.toBeInTheDocument();
+    // Without amounts the LTV row stays, as a placeholder.
+    await expect.element(app.getByText("LTV ratio")).toBeInTheDocument();
     await expect
       .poll(() => tokenBalanceRequestSignals.length)
       .toBeGreaterThanOrEqual(1);
@@ -595,6 +542,9 @@ describe("Renders initial page", () => {
       )
       .click();
     await expect.element(app.getByText("WBTC / USDC")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-collateral-select"))
+      .toMatchTextContent("WBTC");
 
     await app.getByTestId("borrow-market-select").click();
     await expect
@@ -602,19 +552,21 @@ describe("Renders initial page", () => {
       .toBeInTheDocument();
     await app
       .getByTestId("select-modal__container")
-      .getByTestId("borrow-market-select__group_dai")
-      .click();
-    await app
-      .getByTestId("select-modal__container")
       .getByTestId("borrow-market-select__item_aave-v3-ethereum-dai")
       .click();
     await expect.element(app.getByText("WETH / DAI")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-market-select"))
+      .toMatchTextContent("DAI");
 
     await userEvent.click(app.getByTestId("number-input").last());
     await userEvent.keyboard("1");
     await expect
       .element(app.getByText("Amount exceeds wallet balance."))
       .toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("number-input").last())
+      .toHaveAttribute("aria-invalid", "true");
     expect(app.container.textContent).not.toContain("3M");
     expect(tokenBalanceRequestSignals.every((signal) => !signal.aborted)).toBe(
       true

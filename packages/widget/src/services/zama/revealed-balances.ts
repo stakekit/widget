@@ -7,11 +7,11 @@ import {
   type Stream,
   SubscriptionRef,
 } from "effect";
+import type { ConfidentialHandle } from "../../domain/earn/balance";
 import type {
   ConfidentialTokenBalanceKey,
   RevealedBalances as Values,
-} from "../../domain/earn/confidential";
-import type { ConfidentialHandle } from "../../domain/earn/models";
+} from "../../domain/earn/confidential-balance";
 import type { WalletScopeOwner } from "../../domain/wallet/wallet-scope";
 
 type RevealedBalancesApi = Readonly<{

@@ -1,5 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   hideEarnTokenBalanceAtom,
@@ -8,6 +8,7 @@ import {
 } from "../state/confidential";
 import type { EarnProviderOption } from "../state/earn-selection/types";
 import {
+  earnDetailsViewAtom,
   earnEntryViewAtom,
   earnProviderOptionsViewAtom,
   refreshEarnKycAtom,
@@ -21,7 +22,10 @@ import {
   earnFlowProviderOptionAtom,
   earnFlowYieldAtom,
 } from "../state/flow-target";
-import { earnPageStatusViewAtom } from "../state/page-status";
+import {
+  earnPageStatusViewAtom,
+  retryEarnPageAtom,
+} from "../state/page-status";
 import {
   earnTokenSelectionViewAtom,
   selectEarnTokenAtom,
@@ -83,12 +87,18 @@ export const useEarnEntry = () => ({
   view: useAtomValue(earnEntryViewAtom),
 });
 
+/** The Earn form's selection as the details pane shows it; typing leaves it. */
+export const useEarnDetails = () => ({
+  view: useAtomValue(earnDetailsViewAtom),
+});
+
 export const useEarnProviderOptions = () => ({
   select: useAtomSet(selectEarnProviderOptionAtom),
   view: useAtomValue(earnProviderOptionsViewAtom),
 });
 
 export const useEarnPageStatus = () => ({
+  retry: useAtomSet(retryEarnPageAtom),
   view: useAtomValue(earnPageStatusViewAtom),
 });
 

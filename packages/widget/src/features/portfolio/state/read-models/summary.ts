@@ -1,24 +1,23 @@
 import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { exactZero } from "../../../../domain/finance/exact";
-import { getTokenPriceInUSD } from "../../../../domain/finance/price";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import { getTokenSumsUsd } from "../../../../domain/portfolio/positions";
 import {
-  PricesKey,
-  pricesAtom,
-} from "../../../../resources/token-prices/index";
-import { toPresentable } from "../../../../shared/effect/async-result";
+  type Presentable,
+  toPresentable,
+} from "../../../../shared/effect/async-result";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../../yield-summary/index";
-import { type PositionItem, positionsTableDataAtom } from "./positions";
-import { tokenBalancesScanAtom } from "./token-balances";
-
-const DEFAULT_CURRENCY = "USD";
+import {
+  currentPortfolioBorrowPositionsAtom,
+  type PositionItem,
+  positionsTableDataAtom,
+} from "./positions";
 
 const positionsResultAtom = positionsTableDataAtom;
 
@@ -114,59 +113,173 @@ export const averageApySummaryAtom = Atom.make((get) =>
   )
 );
 
-const availableBalancePricesResultAtom = Atom.make((get) => {
-  const tokenBalances = AsyncResult.getOrElse(
-    get(tokenBalancesScanAtom).result,
-    () => null
-  );
+/**
+ * What the positions' claimable rewards are worth in USD: every claimable
+ * balance with a known value, points left out as they have no price.
+ */
+export const getClaimableRewardsUsd = (
+  positions: ReadonlyArray<PositionItem>
+) =>
+  positions
+    .flatMap((position) => position.balancesWithAmount)
+    .reduce(
+      (sum, balance) =>
+        balance.type === "claimable" &&
+        balance.isEncrypted !== true &&
+        balance.token.isPoints !== true
+          ? sum.plus(balance.amountUsd ?? 0)
+          : sum,
+      exactZero()
+    );
 
-  return get(
-    pricesAtom.foreground(
-      new PricesKey({
-        request: tokenBalances
-          ? {
-              currency: DEFAULT_CURRENCY,
-              tokenList: tokenBalances.map((balance) => balance.token),
-            }
-          : null,
-      })
-    )
-  );
+const claimableRewardsSummaryAtom = Atom.make((get) =>
+  get(positionsResultAtom).pipe(AsyncResult.map(getClaimableRewardsUsd))
+);
+
+/**
+ * A Manage summary value: loading, known, or unknown ("—"). Not a
+ * `Presentable`: a value combined from two sources has no one failure cause
+ * or refresh state to carry.
+ */
+export type SummaryValue =
+  | { readonly _tag: "Loading" }
+  | { readonly _tag: "Ready"; readonly value: BigNumber }
+  | { readonly _tag: "Unavailable" };
+
+/**
+ * The Manage summary, one set of figures for every Layout and state. Total
+ * value sums what the list shows: Earn positions and borrow collateral.
+ * Average APY weighs the Earn positions' reward rates by their value, so a
+ * borrowing cost never lowers it.
+ */
+type ManageSummary = {
+  readonly totalValue: SummaryValue;
+  /** In whole percents, such as 4.2. */
+  readonly averageApy: SummaryValue;
+  readonly claimableRewards: SummaryValue;
+  /** With borrow positions that owe debt: it, and the total value less it. */
+  readonly borrow: {
+    readonly debt: SummaryValue;
+    readonly netWorth: SummaryValue;
+  } | null;
+  /**
+   * A position source failed while another loaded: the figures it feeds are
+   * unavailable rather than totals of what loaded.
+   */
+  readonly isPartial: boolean;
+  readonly excludesHidden: boolean;
+};
+
+type BorrowSummarySource = {
+  readonly positions: Presentable<ReadonlyArray<unknown>, unknown>;
+  readonly totals: Presentable<
+    {
+      readonly totalBorrowedUsd: BigNumber;
+      readonly totalSuppliedUsd: BigNumber;
+    },
+    unknown
+  >;
+};
+
+const loadingSummaryValue: SummaryValue = { _tag: "Loading" };
+const unavailableSummaryValue: SummaryValue = { _tag: "Unavailable" };
+const readySummaryValue = (value: BigNumber): SummaryValue => ({
+  _tag: "Ready",
+  value,
 });
 
-export const availableBalanceSummaryAtom = Atom.make((get) => {
-  const tokenBalancesScan = get(tokenBalancesScanAtom);
-  if (!tokenBalancesScan.enabled) {
-    return AsyncResult.success<BigNumber | undefined>(undefined);
+const toSummaryValue = <A>(
+  presentable: Presentable<A, unknown>,
+  value: (a: A) => BigNumber
+): SummaryValue => {
+  if (presentable._tag === "Loading") return loadingSummaryValue;
+  if (presentable._tag === "Failed") return unavailableSummaryValue;
+  return readySummaryValue(value(presentable.value));
+};
+
+/** Two values combined once both are known; unknown if either is. */
+const combineSummaryValues = (
+  a: SummaryValue,
+  b: SummaryValue,
+  combine: (a: BigNumber, b: BigNumber) => BigNumber
+): SummaryValue => {
+  if (a._tag === "Ready" && b._tag === "Ready") {
+    return readySummaryValue(combine(a.value, b.value));
   }
+  if (a._tag === "Unavailable" || b._tag === "Unavailable") {
+    return unavailableSummaryValue;
+  }
+  return loadingSummaryValue;
+};
 
-  return AsyncResult.all({
-    prices: get(availableBalancePricesResultAtom),
-    tokenBalances: tokenBalancesScan.result,
-  }).pipe(
-    AsyncResult.map(({ prices, tokenBalances }) =>
-      prices
-        ? tokenBalances.reduce(
-            (sum, balance) =>
-              sum.plus(
-                getTokenPriceInUSD({
-                  amount: balance.amount,
-                  baseToken: balance.token,
-                  pricePerShare: null,
-                  prices,
-                  token: balance.token,
-                })
-              ),
-            exactZero()
-          )
-        : undefined
-    )
+/**
+ * Builds the Manage summary from its sources. `borrow` is null while no
+ * borrow wallet is connected.
+ */
+export const deriveManageSummary = ({
+  averageApy,
+  borrow,
+  claimableRewards,
+  earnPositions,
+  earnValue,
+}: {
+  readonly averageApy: Presentable<BigNumber, unknown>;
+  readonly borrow: BorrowSummarySource | null;
+  readonly claimableRewards: Presentable<BigNumber, unknown>;
+  readonly earnPositions: Presentable<unknown, unknown>;
+  readonly earnValue: Presentable<
+    { readonly allPositionsSum: BigNumber; readonly excludesHidden: boolean },
+    unknown
+  >;
+}): ManageSummary => {
+  const sources = borrow ? [earnPositions, borrow.positions] : [earnPositions];
+  const isPartial =
+    sources.some((source) => source._tag === "Failed") &&
+    sources.some((source) => source._tag === "Ready");
+  const totalValue = combineSummaryValues(
+    toSummaryValue(earnValue, (value) => value.allPositionsSum),
+    borrow
+      ? toSummaryValue(borrow.totals, (totals) => totals.totalSuppliedUsd)
+      : readySummaryValue(exactZero()),
+    (earn, collateral) => earn.plus(collateral)
   );
-});
+  const debt = borrow
+    ? toSummaryValue(borrow.totals, (totals) => totals.totalBorrowedUsd)
+    : unavailableSummaryValue;
+  // Debt and net worth show once borrow positions owe something: without
+  // debt, net worth would only repeat the total value.
+  const owesDebt =
+    borrow?.positions._tag === "Ready" &&
+    borrow.positions.value.length > 0 &&
+    !(debt._tag === "Ready" && debt.value.isZero());
 
-/** The Manage summary as it presents: each figure with its own view state. */
-export const summaryViewAtom = Atom.make((get) => ({
-  allPositions: toPresentable(get(allPositionsSummaryAtom)),
-  availableBalance: toPresentable(get(availableBalanceSummaryAtom)),
-  averageApy: toPresentable(get(averageApySummaryAtom)),
-})).pipe(Atom.withLabel("summaryViewAtom"));
+  return {
+    averageApy: toSummaryValue(averageApy, (value) => value),
+    borrow: owesDebt
+      ? {
+          debt,
+          netWorth: combineSummaryValues(totalValue, debt, (value, owed) =>
+            value.minus(owed)
+          ),
+        }
+      : null,
+    claimableRewards: toSummaryValue(claimableRewards, (value) => value),
+    excludesHidden:
+      earnValue._tag === "Ready" && earnValue.value.excludesHidden,
+    isPartial,
+    totalValue,
+  };
+};
+
+/** The Manage summary every Layout shows. */
+export const manageSummaryAtom = Atom.make((get) => {
+  const borrow = get(currentPortfolioBorrowPositionsAtom);
+
+  return deriveManageSummary({
+    averageApy: toPresentable(get(averageApySummaryAtom)),
+    borrow: borrow.connectionStatus === "connected" ? borrow : null,
+    claimableRewards: toPresentable(get(claimableRewardsSummaryAtom)),
+    earnPositions: toPresentable(get(positionsResultAtom)),
+    earnValue: toPresentable(get(allPositionsSummaryAtom)),
+  });
+}).pipe(Atom.withLabel("manageSummaryAtom"));

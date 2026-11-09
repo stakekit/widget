@@ -1,54 +1,27 @@
+import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { images } from "../../../../shared/assets/images";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { animationContainer } from "../layout.css";
-import { PoweredBy } from "../powered-by";
-import { container, imageStyle } from "./style.css";
+import { refreshWidgetHealthAtom } from "../../../../resources/widget-health/index";
+import { ShellNotice } from "../shell-notice";
 
+/**
+ * Widget Maintenance: the whole Widget says the service is down for now. It
+ * checks again on its own; "Try again" checks now.
+ */
 const UnderMaintenance = () => {
   const { t } = useTranslation();
+  const refreshHealth = useAtomSet(refreshWidgetHealthAtom);
 
   return (
-    <Box className={animationContainer}>
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        className={container}
-        data-testid="under-maintenance"
-      >
-        <Box as="img" src={images.fees} className={imageStyle} />
-        <Box>
-          <Heading
-            marginBottom="4"
-            textAlign="center"
-            variant={{ level: "h4" }}
-          >
-            {t("help_modals.under_maintenance.title")}
-          </Heading>
-
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-            marginBottom="4"
-          >
-            {t("help_modals.under_maintenance.description")}
-          </Text>
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-            marginBottom="4"
-          >
-            {t("help_modals.under_maintenance.description2")}
-          </Text>
-        </Box>
-      </Box>
-      <PoweredBy opacity={1} />
-    </Box>
+    <ShellNotice
+      testId="under-maintenance"
+      icon="WrenchIcon"
+      title={t("help_modals.under_maintenance.title")}
+      description={t("help_modals.under_maintenance.description")}
+      action={{
+        label: t("shared.retry"),
+        onClick: () => refreshHealth(undefined),
+      }}
+    />
   );
 };
 

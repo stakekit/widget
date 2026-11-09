@@ -1,10 +1,10 @@
-import { Duration, Option, Stream } from "effect";
+import { Duration, Equal, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { YieldCategory } from "../../../domain/earn/contract";
-import type { EarnValidatorKey } from "../../../domain/earn/models";
+import type { EarnValidatorKey } from "../../../domain/earn/validator";
 import { getMaxSelectedValidators } from "../../../domain/earn/validator";
 import {
   getYieldProviderOptions,
@@ -80,7 +80,10 @@ export const earnSelectionStatusViewAtom = Atom.make((get) => {
     loading: view.loading,
     empty: view.empty,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionStatusViewAtom"));
+}).pipe(
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnSelectionStatusViewAtom")
+);
 
 export const earnSelectionTokenOptionsViewAtom = Atom.make((get) => {
   const view = get(internalEarnSelectionViewAtom);
@@ -90,7 +93,10 @@ export const earnSelectionTokenOptionsViewAtom = Atom.make((get) => {
     selected: view.selection.token,
     waiting: view.resources.tokenOptions.waiting,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionTokenOptionsViewAtom"));
+}).pipe(
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnSelectionTokenOptionsViewAtom")
+);
 
 /** True once the Earn token catalog has settled successfully (not mid-category). */
 export const earnLandingPrimaryReadyAtom = Atom.make((get) => {
@@ -115,7 +121,10 @@ export const earnSelectionYieldOptionsViewAtom = Atom.make((get) => {
     selectedCategory: view.selection.category,
     waiting: view.resources.yields.waiting,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionYieldOptionsViewAtom"));
+}).pipe(
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnSelectionYieldOptionsViewAtom")
+);
 
 export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
   const view = get(internalEarnSelectionViewAtom);
@@ -138,7 +147,10 @@ export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
     selected: view.selection.validators,
     selectedYield: view.selection.yield,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionValidatorOptionsViewAtom"));
+}).pipe(
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnSelectionValidatorOptionsViewAtom")
+);
 
 /**
  * Advertised `providerId` options in order. Provider metadata is display-only:
@@ -156,7 +168,10 @@ export const earnSelectionProviderOptionsViewAtom = Atom.make((get) => {
     items,
     selected: view.form.providerOption,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionProviderOptionsViewAtom"));
+}).pipe(
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnSelectionProviderOptionsViewAtom")
+);
 
 export const setEarnSelectionValidatorSearchAtom = Atom.fnSync(
   (search: string, context) => context.set(validatorSearchAtom, search)

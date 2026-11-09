@@ -14,37 +14,7 @@ export const formatDateTime = (
   { timeZone, ...options }: DateTimeFormatOptions
 ) => DateTime.format(DateTime.setZone(value, timeZone), options);
 
-type ActivityDayKind = "today" | "yesterday" | "other";
-
-const isSameCalendarDay = (
-  left: DateTime.DateTime,
-  right: DateTime.DateTime
-) => {
-  const leftParts = DateTime.toParts(left);
-  const rightParts = DateTime.toParts(right);
-
-  return (
-    leftParts.year === rightParts.year &&
-    leftParts.month === rightParts.month &&
-    leftParts.day === rightParts.day
-  );
-};
-
-export const getActivityDayKind = (
-  date: DateTime.Utc,
-  now: DateTime.Utc,
-  timeZone: DateTime.TimeZone
-): ActivityDayKind => {
-  const localDate = DateTime.setZone(date, timeZone);
-  const localNow = DateTime.setZone(now, timeZone);
-  const localYesterday = DateTime.subtract(localNow, { days: 1 });
-
-  if (isSameCalendarDay(localDate, localNow)) return "today";
-  if (isSameCalendarDay(localDate, localYesterday)) return "yesterday";
-  return "other";
-};
-
-type ActivityRelativeTime =
+export type ActivityRelativeTime =
   | { unit: "now" }
   | { unit: "minutes" | "hours" | "days"; value: number };
 
@@ -124,4 +94,48 @@ export const getDisplayDurationUntil = (
     unit: "years",
     value: Math.floor(Duration.toDays(remaining) / 365),
   };
+};
+
+/** Past this span a time axis labels its ticks by month and year. */
+const yearBearingTimeAxisSpan = Duration.toMillis(Duration.days(183));
+
+/**
+ * Time-axis labels for epoch-millisecond ticks in `timeZone`: by day
+ * ("Aug 8") within six months; beyond, by month and year ("Dec '24" in
+ * English, the language's own "déc. 2024" otherwise), so a one-year axis does
+ * not read "Nov 6" at both ends.
+ */
+export const formatTimeAxis = (
+  times: ReadonlyArray<number>,
+  {
+    locale,
+    timeZone,
+  }: { readonly locale: string; readonly timeZone: DateTime.TimeZone }
+): ReadonlyArray<string> => {
+  const span = (times.at(-1) ?? 0) - (times[0] ?? 0);
+  const yearBearing = span > yearBearingTimeAxisSpan;
+  const english = new Intl.Locale(locale).language === "en";
+
+  return times.map((time) => {
+    const date = DateTime.makeUnsafe(time);
+    if (!yearBearing) {
+      return formatDateTime(date, {
+        timeZone,
+        locale,
+        month: "short",
+        day: "numeric",
+      });
+    }
+    if (!english) {
+      return formatDateTime(date, {
+        timeZone,
+        locale,
+        month: "short",
+        year: "numeric",
+      });
+    }
+    const month = formatDateTime(date, { timeZone, locale, month: "short" });
+    const year = formatDateTime(date, { timeZone, locale, year: "2-digit" });
+    return `${month} '${year}`;
+  });
 };

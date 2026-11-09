@@ -24,7 +24,7 @@ import {
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
-import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/session";
 import { useYieldFlowSession } from "../../../src/features/yield-transaction-flow/react/yield-flow-route";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
@@ -159,8 +159,8 @@ const renderActivity = async (
                 path="/activity"
                 element={
                   <ActivityActionRoute
+                    receiptPlacement="pane"
                     selectsDefaultAction
-                    showsBackButton={false}
                     source="yield"
                   />
                 }
@@ -174,8 +174,8 @@ const renderActivity = async (
               path="/activity/:actionId"
               element={
                 <ActivityActionRoute
+                  receiptPlacement="pane"
                   selectsDefaultAction={selectsDefaultAction}
-                  showsBackButton={false}
                   source="yield"
                 />
               }

@@ -1,6 +1,5 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { getEffectiveYieldRewardRateDetails } from "../../../domain/earn/reward-rate";
 import {
   getYieldActionArg,
@@ -8,34 +7,32 @@ import {
   hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
 } from "../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { getRewardTypeFormatted } from "../../../shared/lib/formatters";
 import {
   formatCompactNumber,
-  formatNumber,
   formatPercent,
+  formatRatio,
   formatRoundedPercent,
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../shared/lib/number-format";
 
 export const formatDisplayTokenSymbol = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
 
+/** A rate type's name, such as "APY" or "APR". */
+export const formatRateTypeLabel = (rateType: string, t: TFunction): string =>
+  getRewardTypeFormatted(rateType.toLowerCase()) ||
+  t("dashboard.earn_details.apy");
+
+/** The yield's own rate type, such as "APY" or "APR". */
 export const formatRewardRateLabel = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
-): string => {
-  const rewardType =
-    getRewardTypeFormatted(yieldDto.rewardRate.rateType.toLowerCase()) ||
-    t("dashboard.earn_details.apy");
-
-  return getYieldCategory(yieldDto) === "stake"
-    ? rewardType
-    : t("dashboard.earn_details.reward_rate_period", {
-        rewardType,
-      });
-};
+): string => formatRateTypeLabel(yieldDto.rewardRate.rateType, t);
 
 export const formatRewardRate = (
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>,
@@ -106,7 +103,7 @@ export const formatCommission = (
 
   const formatted = formatPercent(commission, locale);
 
-  return formatted === "-" ? null : `Commission ${formatted}`;
+  return formatted === unavailableFigure ? null : `Commission ${formatted}`;
 };
 
 export const formatProviderTvl = (
@@ -118,7 +115,9 @@ export const formatProviderTvl = (
 
   const formatted = formatCompactNumber(tvl, locale);
 
-  return formatted === "-" ? null : `TVL ${formatted} ${tokenSymbol}`;
+  return formatted === unavailableFigure
+    ? null
+    : `TVL ${formatted} ${tokenSymbol}`;
 };
 
 export const formatProviderStatus = (
@@ -160,13 +159,14 @@ export const formatRewardTokenLabel = (
     : symbol;
 };
 
+/** The price per share to 4–6 significant digits, the one share-price rule. */
 export const formatPricePerShare = (
   yieldDto: EarnYieldWithProvider,
   locale: string
 ): string | null => {
   const price = yieldDto.state?.pricePerShareState?.price;
 
-  return price?.isGreaterThan(0) ? formatNumber(price, locale, 8) : null;
+  return price?.isGreaterThan(0) ? formatRatio(price, locale) : null;
 };
 
 export const formatCooldownDays = (days: number, t: TFunction): string => {
@@ -203,16 +203,5 @@ export const formatMeaningfulCompactUsd = (
 
   const formatted = formatUsd(value, locale);
 
-  return formatted === "-" ? null : formatted;
-};
-
-export const formatMeaningfulCompactNumber = (
-  value: number | null | undefined,
-  locale: string
-) => {
-  if (value == null || value <= 0) return null;
-
-  const formatted = formatCompactNumber(value, locale);
-
-  return formatted === "-" ? null : formatted;
+  return formatted === unavailableFigure ? null : formatted;
 };

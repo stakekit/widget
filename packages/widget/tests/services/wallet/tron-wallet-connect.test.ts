@@ -195,6 +195,31 @@ describe("Tron WalletConnect connector", () => {
       }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 
+  it.live(
+    "keeps a session approved after disconnecting a pending connect out of the connector until the next connect",
+    () =>
+      Effect.gen(function* () {
+        const { connector, modal, signClient } = yield* makeFixture();
+        const abandoned = yield* connect(connector).pipe(
+          Effect.forkScoped({ startImmediately: true })
+        );
+        expect(yield* Queue.take(modal.opened)).toBe(uri);
+
+        yield* Effect.promise(() => connector.disconnect());
+        yield* Effect.flip(Fiber.join(abandoned));
+        signClient.approve(tronSession());
+        // Let the late approval settle in the protocol.
+        yield* Effect.sleep("20 millis");
+
+        yield* Effect.flip(Effect.tryPromise(() => connector.getAccounts()));
+        expect(signClient.state.disconnects).toEqual([]);
+        expect(yield* connect(connector)).toMatchObject({
+          accounts: [address],
+        });
+        expect(signClient.state.proposals).toHaveLength(1);
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
+  );
+
   it.live("restores an unexpired Tron session after reload without a QR", () =>
     Effect.gen(function* () {
       const { connector, signClient } = yield* makeFixture({

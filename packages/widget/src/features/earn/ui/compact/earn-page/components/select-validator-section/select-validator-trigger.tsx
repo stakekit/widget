@@ -1,262 +1,229 @@
-import { Trigger } from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../../../../../domain/earn/models";
+import type { EarnValidator } from "../../../../../../../domain/earn/validator";
+import type { EarnYieldWithProvider } from "../../../../../../../domain/earn/yield-schema";
 import {
   formatCompactNumber,
   formatRoundedPercent,
+  unavailableFigure,
 } from "../../../../../../../shared/lib/number-format";
-import { Divider } from "../../../../../../../shared/ui/components/divider";
-import { Box } from "../../../../../../../shared/ui/primitives/box";
-import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
-import { PlusIcon } from "../../../../../../../shared/ui/primitives/icons/plus";
-import { PreferredIcon } from "../../../../../../../shared/ui/primitives/icons/preferred";
-import { XIcon } from "../../../../../../../shared/ui/primitives/icons/x-icon";
-import { Image } from "../../../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../../../../shared/react/widget-presentation";
 import {
-  addValidatorContainer,
-  overflowEllipsis,
-  selectorSummaryActive,
-  selectorSummaryCard,
-  selectorSummaryChangeButton,
-  selectorSummaryContent,
-  selectorSummaryHeader,
-  selectorSummaryMetaText,
-  selectorSummaryText,
-  validatorChip,
-  validatorChipAddButton,
-  validatorChipName,
-  validatorChipRemoveButton,
-  validatorChipsContainer,
-} from "../../styles.css";
+  Badge,
+  Button,
+  Card,
+  Divider,
+  IconButton,
+  Stack,
+  Text,
+  TokenAvatar,
+} from "../../../../../../../ui/index";
 
-const formatCommission = (commission: number | undefined, locale: string) =>
-  typeof commission === "number"
-    ? formatRoundedPercent(commission, locale)
-    : null;
-
-const formatValidatorTvl = (
+/**
+ * A validator's labelled facts on one line, such as "0% commission · 76M POL
+ * staked"; a fact the API does not give is left out.
+ */
+const useValidatorMeta = (
   validator: EarnValidator,
-  selectedStake: EarnYieldWithProvider,
-  locale: string
+  selectedStake: EarnYieldWithProvider
 ) => {
-  const tvl = validator.tvl;
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+  const commission =
+    typeof validator.commission === "number"
+      ? t("details.validator_meta.commission", {
+          value: formatRoundedPercent(validator.commission, locale),
+        })
+      : null;
+  const stakedFigure = validator.tvl
+    ? formatCompactNumber(validator.tvl, locale)
+    : unavailableFigure;
+  const staked =
+    stakedFigure === unavailableFigure
+      ? null
+      : t("details.validator_meta.staked", {
+          amount: `${stakedFigure} ${selectedStake.token.symbol}`,
+        });
 
-  if (!tvl) return null;
-
-  const formatted = formatCompactNumber(tvl, locale);
-
-  return formatted === "-"
-    ? null
-    : `${formatted} ${selectedStake.token.symbol}`;
+  return [commission, staked]
+    .filter((part): part is string => part !== null)
+    .join(" · ");
 };
 
+/** The chosen validators of the Compact Layout, with the controls to change them. */
 export const SelectValidatorTrigger = ({
+  onOpen,
   onRemoveValidator,
   multiSelect,
   selectedValidatorsArr,
   selectedStake,
 }: {
+  onOpen: () => void;
   onRemoveValidator: (item: EarnValidator) => void;
   multiSelect: boolean;
   selectedValidatorsArr: EarnValidator[];
   selectedStake: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
-  const { locale } = useWidgetPresentation();
-  const hasSelectedValidators = selectedValidatorsArr.length > 0;
 
   if (multiSelect) {
     return (
-      <>
-        <Box
-          data-rk="select-validator-trigger-container"
-          className={validatorChipsContainer}
-        >
-          <Text flexShrink={0} variant={{ weight: "bold" }}>
-            {t("details.earn_with")}
-          </Text>
+      <Stack gap={12}>
+        <Stack direction="row" align="center" gap={8} wrap>
+          <Text weight="semibold">{t("details.earn_with")}</Text>
 
           {selectedValidatorsArr.map((sv) => {
-            const nameOrAddress = sv.name ?? sv.address;
+            const name = sv.name ?? sv.address;
 
             return (
-              <Box
-                key={sv.key}
-                data-rk="select-validator-trigger"
-                className={validatorChip}
-              >
-                <Image
-                  wrapperProps={{ hw: "5", flexShrink: 0 }}
-                  imgProps={{ borderRadius: "full" }}
-                  src={sv.logoURI}
-                  fallbackName={nameOrAddress}
-                />
-
-                <Text
-                  className={validatorChipName}
-                  variant={{ weight: "bold" }}
-                >
-                  {nameOrAddress}
-                </Text>
-
-                {sv.preferred ? <PreferredIcon /> : null}
-
-                {selectedValidatorsArr.length > 1 ? (
-                  <Box
-                    aria-label={`Remove ${nameOrAddress}`}
-                    as="button"
-                    className={validatorChipRemoveButton}
-                    onClick={() => onRemoveValidator(sv)}
-                    type="button"
-                  >
-                    <XIcon hw={12} strokeWidth={4.9} />
-                  </Box>
-                ) : null}
-              </Box>
+              <Card key={sv.key} padding={4}>
+                <Stack direction="row" align="center" gap={6}>
+                  <TokenAvatar
+                    name={name}
+                    {...(sv.logoURI ? { src: sv.logoURI } : {})}
+                    size="xs"
+                    shape="square"
+                    decorative
+                  />
+                  <Text weight="semibold" truncate>
+                    {name}
+                  </Text>
+                  {sv.preferred ? (
+                    <Badge
+                      tone="accent"
+                      icon="PreferredIcon"
+                      collapse="belowSm"
+                    >
+                      {t("details.validators_preferred")}
+                    </Badge>
+                  ) : null}
+                  {selectedValidatorsArr.length > 1 ? (
+                    <IconButton
+                      icon="XIcon"
+                      size="xs"
+                      label={t("details.validators_remove", { name })}
+                      onClick={() => onRemoveValidator(sv)}
+                    />
+                  ) : null}
+                </Stack>
+              </Card>
             );
           })}
 
-          <Trigger asChild>
-            <Box
-              aria-label={t("shared.manage_validators")}
-              as="button"
-              className={validatorChipAddButton}
-              data-rk="select-validator-plus"
-              type="button"
-            >
-              <PlusIcon hw={12} strokeWidth={4.9} />
-            </Box>
-          </Trigger>
-        </Box>
+          <IconButton
+            icon="PlusIcon"
+            variant="secondary"
+            label={t("shared.manage_validators")}
+            testId="select-validator-plus"
+            onClick={onOpen}
+          />
+        </Stack>
 
-        <Box marginTop="3">
-          <Divider />
-        </Box>
-      </>
+        <Divider />
+      </Stack>
+    );
+  }
+
+  if (!selectedValidatorsArr.length) {
+    return (
+      <Card padding={16}>
+        <Stack direction="row" align="center" justify="between" gap={12}>
+          <Text tone="muted">{t("details.validator_search_title_one")}</Text>
+          <ChangeButton onClick={onOpen} />
+        </Stack>
+      </Card>
     );
   }
 
   return (
-    <Box
-      data-rk="select-validator-trigger-container"
-      className={addValidatorContainer}
+    <Stack gap={8}>
+      {selectedValidatorsArr.map((sv) => (
+        <SelectedValidatorCard
+          key={sv.key}
+          onOpen={onOpen}
+          selectedStake={selectedStake}
+          validator={sv}
+        />
+      ))}
+    </Stack>
+  );
+};
+
+const ChangeButton = ({ onClick }: { readonly onClick: () => void }) => {
+  const { t } = useTranslation();
+
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      iconEnd="CaretDownIcon"
+      onClick={onClick}
     >
-      {!hasSelectedValidators && (
-        <Box data-rk="select-validator-trigger" className={selectorSummaryCard}>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("details.validator_search_title_one")}
-          </Text>
+      {t("shared.change")}
+    </Button>
+  );
+};
 
-          <Trigger asChild>
-            <Box
-              as="button"
-              data-rk="select-validator-caret-down"
-              className={selectorSummaryChangeButton}
-              type="button"
-            >
-              <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
-              <CaretDownIcon />
-            </Box>
-          </Trigger>
-        </Box>
-      )}
+/**
+ * The chosen validator, filled like the amount and Earn cards above it: its
+ * mark and name, which keeps its room over the badges, and its labelled
+ * facts under them. Only a status worth noticing (jailed, inactive) shows.
+ */
+const SelectedValidatorCard = ({
+  onOpen,
+  selectedStake,
+  validator,
+}: {
+  readonly onOpen: () => void;
+  readonly selectedStake: EarnYieldWithProvider;
+  readonly validator: EarnValidator;
+}) => {
+  const { t } = useTranslation();
+  const name = validator.name ?? validator.address;
+  const meta = useValidatorMeta(validator, selectedStake);
+  const getStatusBadge = () => {
+    if (validator.status === "jailed") {
+      return <Badge tone="warning">{t("details.validators_jailed")}</Badge>;
+    }
+    if (validator.status && validator.status !== "active") {
+      return <Badge tone="warning">{t("details.validators_inactive")}</Badge>;
+    }
+    return null;
+  };
 
-      {selectedValidatorsArr.map((sv) => {
-        const nameOrAddress = sv.name ?? sv.address;
-        const commission = formatCommission(sv.commission, locale);
-        const tvl = formatValidatorTvl(sv, selectedStake, locale);
-        const getStatusLabel = () => {
-          if (sv.status === "jailed") {
-            return t("details.validators_jailed");
-          }
-          if (sv.status && sv.status !== "active") {
-            return t("details.validators_inactive");
-          }
-          return t("position_details.balance_type.active");
-        };
-        const statusLabel = getStatusLabel();
-        const isActive = !sv.status || sv.status === "active";
-        const metaParts = [commission, tvl].filter(
-          (part): part is string => !!part
-        );
+  return (
+    <Card padding={16}>
+      <Stack direction="row" align="center" justify="between" gap={12}>
+        <Stack direction="row" align="center" gap={12} grow>
+          <TokenAvatar
+            name={name}
+            {...(validator.logoURI ? { src: validator.logoURI } : {})}
+            shape="square"
+            decorative
+          />
 
-        return (
-          <Box
-            key={sv.key}
-            data-rk="select-validator-trigger"
-            className={selectorSummaryCard}
-          >
-            <Box className={selectorSummaryContent}>
-              <Image
-                wrapperProps={{ hw: "8", flexShrink: 0 }}
-                imgProps={{ borderRadius: "full" }}
-                src={sv.logoURI}
-                fallbackName={nameOrAddress}
-              />
+          <Stack gap={2} grow>
+            <Stack direction="row" align="center" gap={8}>
+              <Text weight="semibold" truncate>
+                {name}
+              </Text>
+              {validator.preferred && (
+                <Badge tone="accent" icon="PreferredIcon" collapse="belowSm">
+                  {t("details.validators_preferred")}
+                </Badge>
+              )}
+              {getStatusBadge()}
+            </Stack>
 
-              <Box className={selectorSummaryText}>
-                <Box className={selectorSummaryHeader}>
-                  <Text
-                    className={overflowEllipsis}
-                    variant={{ weight: "bold" }}
-                  >
-                    {nameOrAddress}
-                  </Text>
+            {meta && (
+              <Text variant="caption" tone="muted" numeric>
+                {meta}
+              </Text>
+            )}
+          </Stack>
+        </Stack>
 
-                  {sv.preferred && (
-                    <Box
-                      aria-label={t("details.validators_preferred")}
-                      display="flex"
-                      flexShrink={0}
-                    >
-                      <PreferredIcon />
-                    </Box>
-                  )}
-                </Box>
-
-                <Text
-                  className={selectorSummaryMetaText}
-                  variant={{
-                    type: "muted",
-                    weight: "normal",
-                    size: "small",
-                  }}
-                >
-                  {metaParts.map((part) => (
-                    <Box as="span" key={part}>
-                      {part} ·{" "}
-                    </Box>
-                  ))}
-
-                  <Box
-                    as="span"
-                    className={isActive ? selectorSummaryActive : undefined}
-                  >
-                    {statusLabel}
-                  </Box>
-                </Text>
-              </Box>
-            </Box>
-
-            <Trigger asChild>
-              <Box
-                as="button"
-                data-rk="select-validator-caret-down"
-                className={selectorSummaryChangeButton}
-                type="button"
-              >
-                <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
-                <CaretDownIcon />
-              </Box>
-            </Trigger>
-          </Box>
-        );
-      })}
-    </Box>
+        <ChangeButton onClick={onOpen} />
+      </Stack>
+    </Card>
   );
 };

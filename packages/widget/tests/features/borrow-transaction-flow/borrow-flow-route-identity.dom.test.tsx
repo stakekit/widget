@@ -16,7 +16,7 @@ import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowEntry,
-} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+} from "../../../src/features/borrow-transaction-flow/model/session";
 import {
   BorrowTransactionFlowRoute,
   useBorrowTransactionFlow,

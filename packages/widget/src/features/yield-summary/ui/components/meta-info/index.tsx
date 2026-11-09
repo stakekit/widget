@@ -1,29 +1,31 @@
-import type { JSX, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type {
   EarnValidator,
   EarnValidatorKey,
-  EarnYieldWithProvider,
-} from "../../../../../domain/earn/models";
+} from "../../../../../domain/earn/validator";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import type { Token } from "../../../../../domain/token/token";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { ArrowsLeftRightIcon } from "../../../../../shared/ui/primitives/icons/arrows-left-right";
-import { ClockClockWiseIcon } from "../../../../../shared/ui/primitives/icons/clock-clock-wise";
-import { GifIcon } from "../../../../../shared/ui/primitives/icons/gift";
-import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
-import type { TextVariants } from "../../../../../shared/ui/primitives/typography/styles.css";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import {
+  type FixedIconName,
+  Icon,
+  Skeleton,
+  Stack,
+  Text,
+} from "../../../../../ui/index";
 import { useYieldMetaInfo } from "../../../react/use-yield-meta-info";
-import { dotContainer, dotText } from "./styles.css";
-
-type MetaInfoTextSize = NonNullable<NonNullable<TextVariants>["size"]>;
 
 type Props = {
   isLoading?: boolean;
   selectedStake: EarnYieldWithProvider | null;
   selectedValidators: Map<EarnValidatorKey, EarnValidator>;
   selectedToken: Token | null;
-  textSize?: MetaInfoTextSize | undefined;
+  /** `small` sets the notes in the caption role. */
+  textSize?: "small" | "medium" | undefined;
+};
+
+type MetaInfoItem = {
+  readonly text: ReactNode;
+  readonly icon: FixedIconName;
 };
 
 export const MetaInfo = ({
@@ -48,47 +50,40 @@ export const MetaInfo = ({
     tokenDto: selectedToken,
   });
 
-  const items = [
-    { text: description, icon: <ArrowsLeftRightIcon /> },
-    { text: earnPeriod, icon: <ClockClockWiseIcon /> },
-    { text: earnRewards, icon: <GifIcon /> },
-    { text: withdrawnNotAvailable, icon: <InfoIcon /> },
-    { text: withdrawnTime, icon: <InfoIcon /> },
-    { text: extra, icon: <InfoIcon /> },
-    { text: campaign, icon: <InfoIcon /> },
-    { text: lockupPeriod, icon: <InfoIcon /> },
-  ].filter(
-    (val): val is { text: string | ReactNode; icon: JSX.Element } => !!val.text
-  );
+  if (isLoading) {
+    return (
+      <Stack gap={12} aria-busy>
+        <Skeleton shape="line" />
+        <Skeleton shape="line" width="threeQuarters" />
+        <Skeleton shape="line" width="half" />
+      </Stack>
+    );
+  }
 
-  return isLoading ? (
-    <ContentLoaderSquare heightPx={150} />
-  ) : (
-    <Box as="footer" gap="3" display="flex" flexDirection="column">
+  const items: ReadonlyArray<MetaInfoItem> = [
+    { text: description, icon: "ArrowsLeftRightIcon" as const },
+    { text: earnPeriod, icon: "HistoryIcon" as const },
+    { text: earnRewards, icon: "GiftIcon" as const },
+    { text: withdrawnNotAvailable, icon: "InfoIcon" as const },
+    { text: withdrawnTime, icon: "InfoIcon" as const },
+    { text: extra, icon: "InfoIcon" as const },
+    { text: campaign, icon: "InfoIcon" as const },
+    { text: lockupPeriod, icon: "InfoIcon" as const },
+  ].filter((item) => !!item.text);
+
+  return (
+    <Stack as="footer" gap={12}>
       {items.map((item, i) => (
-        <Box key={i} display="flex" alignItems="center" gap="4">
-          <Box alignItems="center" justifyContent="center" display="flex">
-            {item.icon ? (
-              item.icon
-            ) : (
-              <Box className={dotContainer}>
-                <Text
-                  className={dotText}
-                  variant={{ weight: "normal", type: "muted" }}
-                >
-                  {"\u2B24"}
-                </Text>
-              </Box>
-            )}
-          </Box>
-
-          <Box>
-            <Text variant={{ weight: "normal", type: "muted", size: textSize }}>
-              {item.text}
-            </Text>
-          </Box>
-        </Box>
+        <Stack key={i} direction="row" align="center" gap={16}>
+          <Icon name={item.icon} size="sm" tone="muted" />
+          <Text
+            variant={textSize === "small" ? "caption" : "body"}
+            tone="muted"
+          >
+            {item.text}
+          </Text>
+        </Stack>
       ))}
-    </Box>
+    </Stack>
   );
 };

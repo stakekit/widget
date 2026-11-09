@@ -4,18 +4,18 @@ import {
   ActionTransactionReceipt,
   YieldAction,
 } from "../../../src/domain/action/models";
+import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
-  EarnBalance,
   EarnPositionsResponse,
-  EarnYield,
   EarnYieldPage,
-} from "../../../src/domain/earn/models";
+} from "../../../src/domain/earn/responses";
+import { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { PriceResponse } from "../../../src/domain/health/models";
 import {
   RewardRateHistoryResponse,
-  RewardsSummaryRecord,
   TvlHistoryResponse,
+  YieldRewardsSummary,
 } from "../../../src/domain/portfolio/models";
 import {
   yieldApiActionDtoFixture,
@@ -529,27 +529,39 @@ describe("Domain schemas decode only the fields the widget reads", () => {
             source: UNKNOWN,
           },
         ]);
-        const rewards = yield* decode(RewardsSummaryRecord, {
-          "ethereum-eth-native-staking": {
-            rewards: {
-              total: "1",
-              last24H: "0",
-              last7D: "0",
-              last30D: "0",
-              lastYear: "1",
-            },
-            token: legacyToken,
-          },
-        });
         const prices = yield* decode(PriceResponse, {
           "ethereum-undefined": { price: "2000", marketCap: UNKNOWN },
         });
 
         expect(balances[0]?.token).not.toHaveProperty("feeConfigurationId");
-        expect(Object.values(rewards)[0]?.token.symbol).toBe(token.symbol);
         expect(prices.getByToken({ network: "ethereum" })?.price).toEqual(
           expect.anything()
         );
       })
+  );
+  it.effect("decodes a rewards summary whose unread fields are unknown", () =>
+    Effect.gen(function* () {
+      const window = { amount: "1", amountRaw: "1", currency: UNKNOWN };
+      const summary = yield* decode(YieldRewardsSummary, {
+        yieldId: "ethereum-eth-native-staking",
+        address: "0xabc",
+        token: {
+          symbol: "ETH",
+          decimals: 18,
+          network: "ethereum",
+          logoURI: UNKNOWN,
+        },
+        last24H: window,
+        last7D: window,
+        last30D: window,
+        lastYear: window,
+        total: window,
+        lastAggregatedAt: UNKNOWN,
+      });
+
+      expect(summary.token.symbol).toBe("ETH");
+      expect(summary.total.amount.toFixed()).toBe("1");
+      expect(summary).not.toHaveProperty("lastAggregatedAt");
+    })
   );
 });

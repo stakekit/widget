@@ -18,6 +18,7 @@ export const walletExternalProviderChainsEnabledResultAtom =
 export const walletScopeAtom = currentWalletScopeAtom;
 export const walletStateResultAtom = currentWalletStateResultAtom;
 
+export { useConnectedWallet } from "./react/use-connected-wallet";
 export { useScopedWalletChainSelection } from "./react/use-scoped-wallet-chain-selection";
 export { useSKWallet } from "./react/use-wallet";
 export { useWalletConfig } from "./react/use-wallet-config";

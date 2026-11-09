@@ -1,10 +1,11 @@
 import BigNumber from "bignumber.js";
 import { Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
-import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import type { EarnYield } from "../../../src/domain/earn/models";
+import { EarnPosition } from "../../../src/domain/earn/balance";
+import type { EarnLegacyTokenOptionsResponse } from "../../../src/domain/earn/responses";
+import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { type PriceRequest, Prices } from "../../../src/domain/health/models";
 import {
@@ -31,8 +32,8 @@ import { earnEntryViewAtom } from "../../../src/features/earn/state/entry";
 import { earnYieldSelectionViewAtom } from "../../../src/features/earn/state/yield-selection";
 import {
   ApiRequestError,
-  LegacyResourceSource,
-  YieldResourceSource,
+  type LegacyResourceSource,
+  type YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import { decodeInitParams } from "../../../src/services/wallet/init-params";
 import {
@@ -40,7 +41,12 @@ import {
   yieldApiProviderFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
+  yieldBalanceFixture,
 } from "../../fixtures";
+import {
+  legacyResourceSourceLayer,
+  yieldResourceSourceLayer,
+} from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const firstYield = yieldApiYieldFixture();
@@ -83,14 +89,20 @@ const makeRegistry = ({
       offset: 0,
       total: 2,
     }),
+  /** Yield positions the wallet holds. */
+  positions = [],
+  /** USD prices by token symbol. */
+  prices = { USDC: 1 },
   scanTokenBalances,
   tokenOptions = tokenCatalog,
 }: {
   readonly entry?: EarnEntry;
   readonly getProvider?: YieldResourceSource["Service"]["getProvider"];
   readonly listYields?: YieldResourceSource["Service"]["listYields"];
+  readonly positions?: ReadonlyArray<EarnPosition>;
+  readonly prices?: Readonly<Record<string, number>>;
   readonly scanTokenBalances: LegacyResourceSource["Service"]["scanTokenBalances"];
-  readonly tokenOptions?: typeof tokenCatalog;
+  readonly tokenOptions?: typeof EarnLegacyTokenOptionsResponse.Type;
 }) => {
   const getTokenOptions = vi.fn(() => Effect.succeed(tokenOptions));
   const registry = AtomRegistry.make({
@@ -100,39 +112,37 @@ const makeRegistry = ({
       Atom.initialValue(
         appRuntime.layer,
         Layer.mergeAll(
-          Reactivity.layer,
-          Layer.succeed(
-            LegacyResourceSource,
-            LegacyResourceSource.of({
-              getPrices: (request: PriceRequest) =>
-                Effect.succeed(
-                  new Prices(
-                    new Map(
-                      request.tokenList
-                        .filter((token) => token.symbol === "USDC")
-                        .map((token) => [
-                          `${token.network}-${token.address?.toLowerCase()}`,
-                          {
-                            price: new BigNumber(1),
-                            price24H: new BigNumber(0),
-                          },
-                        ])
-                    )
+          legacyResourceSourceLayer({
+            getPrices: (request: PriceRequest) =>
+              Effect.succeed(
+                new Prices(
+                  new Map(
+                    request.tokenList.flatMap((token) => {
+                      const price = prices[token.symbol];
+                      return price === undefined
+                        ? []
+                        : [
+                            [
+                              `${token.network}-${token.address?.toLowerCase() ?? ""}`,
+                              {
+                                price: new BigNumber(price),
+                                price24H: new BigNumber(0),
+                              },
+                            ] as const,
+                          ];
+                    })
                   )
-                ),
-              getTokenOptions,
-              scanTokenBalances,
-            } as never)
-          ),
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getPositions: () => Effect.succeed({ errors: [], items: [] }),
-              getProvider,
-              listYields,
-            } as never)
-          )
-        ) as never
+                )
+              ),
+            getTokenOptions,
+            scanTokenBalances,
+          }),
+          yieldResourceSourceLayer({
+            getPositions: () => Effect.succeed({ items: [...positions] }),
+            getProvider,
+            listYields,
+          })
+        )
       ),
     ],
   });
@@ -240,7 +250,7 @@ describe("Earn Selection", () => {
       );
       await vi.waitFor(() =>
         expect(registry.get(earnSelectionViewAtom)).toMatchObject({
-          form: { stakeAmount: "0", useMaxAmount: false },
+          form: { stakeAmount: "", useMaxAmount: false },
           selection: {
             token: { token: secondYield.token },
             yield: secondYield,
@@ -917,9 +927,7 @@ describe("Earn Selection", () => {
         }),
       scanTokenBalances: () =>
         Effect.succeed(Schema.decodeSync(TokenBalancesResponse)([])),
-      tokenOptions: [
-        { availableYields: [confidentialYield.id], token: cUsdc },
-      ] as never,
+      tokenOptions: [{ availableYields: [confidentialYield.id], token: cUsdc }],
     });
     const unmount = registry.mount(earnSelectionViewAtom);
 
@@ -1047,6 +1055,39 @@ describe("Earn Selection", () => {
         ["USDC", "5"],
         [firstYield.token.symbol, "0.000000000000000001"],
       ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("judges a priced balance under a cent as dust when defaulting too", async () => {
+    const { registry } = makeRegistry({
+      prices: { USDC: 1 },
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "0",
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: "0.005",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+        ).toBe(firstYield.token.symbol)
+      );
     } finally {
       unmount();
       registry.dispose();
@@ -1292,6 +1333,371 @@ describe("Earn Selection", () => {
       } finally {
         unmountOptions();
         unmountView();
+        registry.dispose();
+      }
+    });
+  });
+
+  describe("default selection", () => {
+    const baseDto = yieldApiYieldDtoFixture();
+    const usdcYield = (
+      id: string,
+      {
+        kycRequired = false,
+        minimum,
+      }: { readonly kycRequired?: boolean; readonly minimum?: string } = {}
+    ) =>
+      yieldApiYieldFixture({
+        id,
+        mechanics: {
+          ...baseDto.mechanics,
+          arguments: {
+            ...baseDto.mechanics.arguments,
+            enter: {
+              fields:
+                minimum === undefined
+                  ? []
+                  : [
+                      {
+                        label: "Amount",
+                        minimum,
+                        name: "amount",
+                        type: "string",
+                      },
+                    ],
+            },
+          },
+          requirements: { kycRequired },
+        },
+        token: secondYield.token,
+      });
+    const kycYield = usdcYield("ethereum-usdc-kyc-fund", { kycRequired: true });
+    const largeMinimumYield = usdcYield("ethereum-usdc-large-minimum", {
+      minimum: "50000",
+    });
+    const balances =
+      (amounts: { readonly eth: string; readonly usdc: string }) => () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: amounts.eth,
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: amounts.usdc,
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        );
+    const yieldsList =
+      (items: ReadonlyArray<ReturnType<typeof yieldApiYieldFixture>>) => () =>
+        Effect.succeed({
+          items: [...items],
+          limit: 100,
+          offset: 0,
+          total: items.length,
+        });
+    const catalogWith = (
+      usdcYields: ReadonlyArray<ReturnType<typeof yieldApiYieldFixture>>
+    ) => [
+      { availableYields: [firstYield.id], token: firstYield.token },
+      {
+        availableYields: usdcYields.map(({ id }) => id),
+        token: secondYield.token,
+      },
+    ];
+    const waitForSelection = async (
+      registry: AtomRegistry.AtomRegistry,
+      expected: { readonly token: string; readonly yieldId: string }
+    ) =>
+      vi.waitFor(() => {
+        const { selection } = registry.get(earnSelectionViewAtom);
+        expect({
+          token: selection.token?.token.symbol,
+          yieldId: selection.yield?.id,
+        }).toEqual(expected);
+      });
+
+    it("starts with no amount, whatever the yield's minimum", async () => {
+      const { registry } = makeRegistry({
+        listYields: yieldsList([firstYield, largeMinimumYield]),
+        scanTokenBalances: balances({ eth: "0", usdc: "100000" }),
+        tokenOptions: catalogWith([largeMinimumYield]),
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: "USDC",
+          yieldId: largeMinimumYield.id,
+        });
+        expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("");
+        expect(registry.get(earnSelectionViewAtom).canSubmit).toBe(false);
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it.each([
+      { eth: "1", expected: "ETH", name: "ETH worth more" },
+      { eth: "0.01", expected: "USDC", name: "USDC worth more" },
+    ])(
+      "defaults to the token held the most of by value, with $name",
+      async ({ eth, expected }) => {
+        const { registry } = makeRegistry({
+          prices: { ETH: 3000, USDC: 1 },
+          scanTokenBalances: balances({ eth, usdc: "100" }),
+        });
+        const unmount = registry.mount(earnSelectionViewAtom);
+
+        try {
+          await vi.waitFor(() =>
+            expect(
+              registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+            ).toBe(expected)
+          );
+          const [first] = registry.get(earnSelectionTokenOptionsViewAtom).items;
+          expect(first?.token.symbol).toBe(expected);
+        } finally {
+          unmount();
+          registry.dispose();
+        }
+      }
+    );
+
+    it("skips a KYC-gated yield and a minimum above the balance", async () => {
+      const usdcYields = [kycYield, largeMinimumYield, secondYield];
+      const { registry } = makeRegistry({
+        listYields: yieldsList([firstYield, ...usdcYields]),
+        scanTokenBalances: balances({ eth: "0", usdc: "100" }),
+        tokenOptions: catalogWith(usdcYields),
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: "USDC",
+          yieldId: secondYield.id,
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("moves to the next funded token when the largest has no yield the user can reach", async () => {
+      const { registry } = makeRegistry({
+        listYields: yieldsList([firstYield, kycYield, largeMinimumYield]),
+        prices: { ETH: 3000, USDC: 1 },
+        scanTokenBalances: balances({ eth: "0.01", usdc: "100" }),
+        tokenOptions: catalogWith([kycYield, largeMinimumYield]),
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: firstYield.token.symbol,
+          yieldId: firstYield.id,
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("keeps a gated yield when no funded token has another", async () => {
+      const { registry } = makeRegistry({
+        listYields: yieldsList([kycYield]),
+        scanTokenBalances: balances({ eth: "0", usdc: "100" }),
+        tokenOptions: catalogWith([kycYield]),
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: "USDC",
+          yieldId: kycYield.id,
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("never opens on a KYC-gated yield without a wallet when another is open", async () => {
+      const usdcYields = [kycYield, secondYield];
+      const { registry } = makeRegistry({
+        entry: { ...compactEntry, walletScope: null },
+        listYields: yieldsList(usdcYields),
+        scanTokenBalances: () => Effect.die("no wallet to scan"),
+        tokenOptions: [
+          {
+            availableYields: usdcYields.map(({ id }) => id),
+            token: secondYield.token,
+          },
+        ],
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: "USDC",
+          yieldId: secondYield.id,
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it.each([
+      { name: "a KYC-gated yield", seeded: kycYield },
+      {
+        name: "a yield whose minimum is above the balance",
+        seeded: largeMinimumYield,
+      },
+    ])(
+      "keeps a deep-linked $name once the user enters an amount",
+      async ({ seeded }) => {
+        const { registry } = makeRegistry({
+          entry: {
+            ...compactEntry,
+            initParams: {
+              accountId: null,
+              balanceId: null,
+              network: "ethereum",
+              pendingaction: null,
+              tab: "earn",
+              token: null,
+              validator: null,
+              yieldId: seeded.id,
+            },
+          },
+          listYields: yieldsList([firstYield, seeded]),
+          prices: { ETH: 3000, USDC: 1 },
+          scanTokenBalances: balances({ eth: "1", usdc: "100" }),
+          tokenOptions: catalogWith([seeded]),
+        });
+        const unmount = registry.mount(earnSelectionViewAtom);
+
+        try {
+          await waitForSelection(registry, {
+            token: "USDC",
+            yieldId: seeded.id,
+          });
+          // Entering an amount ends initialization; the deep link still holds.
+          registry.set(setEarnSelectionAmountAtom, "5");
+
+          // Moving to another token would first drop the selection to load.
+          const { form, selection } = registry.get(earnSelectionViewAtom);
+          expect({
+            stakeAmount: form.stakeAmount,
+            token: selection.token?.token.symbol,
+            yieldId: selection.yield?.id,
+          }).toEqual({
+            stakeAmount: "5",
+            token: "USDC",
+            yieldId: seeded.id,
+          });
+        } finally {
+          unmount();
+          registry.dispose();
+        }
+      }
+    );
+
+    it("keeps the largest token for a holder whose next deposit fits the subsequent minimum", async () => {
+      const holderYield = yieldApiYieldFixture({
+        id: "ethereum-usdc-holder",
+        mechanics: {
+          ...baseDto.mechanics,
+          entryLimits: {
+            maximum: null,
+            minimum: "50000",
+            subsequentMinimum: "1",
+          },
+        },
+        token: secondYield.token,
+      });
+      const { registry } = makeRegistry({
+        listYields: yieldsList([firstYield, holderYield]),
+        positions: [
+          Schema.decodeSync(EarnPosition)({
+            balances: [
+              yieldBalanceFixture({ amount: "10", token: secondYield.token }),
+            ],
+            outputTokenBalance: null,
+            yieldId: holderYield.id,
+          }),
+        ],
+        prices: { ETH: 3000, USDC: 1 },
+        scanTokenBalances: balances({ eth: "0.01", usdc: "100" }),
+        tokenOptions: catalogWith([holderYield]),
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: "USDC",
+          yieldId: holderYield.id,
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("opens without a wallet on the first token with a yield open to everyone", async () => {
+      const { registry } = makeRegistry({
+        entry: { ...compactEntry, walletScope: null },
+        listYields: yieldsList([kycYield, firstYield]),
+        scanTokenBalances: () => Effect.die("no wallet to scan"),
+        tokenOptions: [
+          { availableYields: [kycYield.id], token: secondYield.token },
+          { availableYields: [firstYield.id], token: firstYield.token },
+        ],
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        await waitForSelection(registry, {
+          token: firstYield.token.symbol,
+          yieldId: firstYield.id,
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("validates the amount from the first input on, even once cleared", async () => {
+      const { registry } = makeRegistry({
+        scanTokenBalances: balances({ eth: "1", usdc: "100" }),
+      });
+      const unmount = registry.mount(earnEntryViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).selection.yield).not.toBe(
+            null
+          )
+        );
+        expect(registry.get(earnSelectionViewAtom).form.amountTouched).toBe(
+          false
+        );
+
+        registry.set(setEarnSelectionAmountAtom, "5");
+        registry.set(setEarnSelectionAmountAtom, "");
+
+        expect(registry.get(earnSelectionViewAtom).form).toMatchObject({
+          amountTouched: true,
+          stakeAmount: "",
+        });
+      } finally {
+        unmount();
         registry.dispose();
       }
     });

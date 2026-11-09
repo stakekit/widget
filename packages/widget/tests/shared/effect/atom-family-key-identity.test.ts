@@ -13,9 +13,9 @@ import {
 import { earnYieldCatalogAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
 import { YieldCatalogKey } from "../../../src/features/earn/state/earn-selection/catalog/keys";
 import {
-  CurrentRewardsSummaryKey,
-  currentRewardsSummaryAtom,
-} from "../../../src/features/yield-summary/state/yield-insights";
+  YieldRewardsSummaryKey,
+  yieldRewardsSummaryResourceAtom,
+} from "../../../src/resources/yield-rewards-summary/index";
 import {
   ActivityInvalidationKey,
   BorrowMarketsInvalidationKey,
@@ -50,17 +50,15 @@ const connectedWalletState = ({
 });
 
 describe("atom family key identity", () => {
-  it("canonicalizes unordered reward identifiers before family selection", () => {
-    const first = new CurrentRewardsSummaryKey({
-      yieldIds: [secondYieldId, firstYieldId, secondYieldId],
-    });
-    const equivalent = new CurrentRewardsSummaryKey({
-      yieldIds: [firstYieldId, secondYieldId],
-    });
+  it("shares one rewards summary resource per wallet and Yield", () => {
+    const key = (yieldId: YieldId) =>
+      new YieldRewardsSummaryKey({ address: firstAddress, yieldId });
 
-    expect(first.yieldIds).toEqual([firstYieldId, secondYieldId]);
-    expect(currentRewardsSummaryAtom(first)).toBe(
-      currentRewardsSummaryAtom(equivalent)
+    expect(yieldRewardsSummaryResourceAtom(key(firstYieldId))).toBe(
+      yieldRewardsSummaryResourceAtom(key(firstYieldId))
+    );
+    expect(yieldRewardsSummaryResourceAtom(key(firstYieldId))).not.toBe(
+      yieldRewardsSummaryResourceAtom(key(secondYieldId))
     );
   });
 

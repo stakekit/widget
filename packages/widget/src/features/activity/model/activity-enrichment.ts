@@ -10,10 +10,8 @@ import type {
   TokenAddress,
 } from "../../../domain/borrow/ids";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../domain/earn/models";
+import type { EarnValidator } from "../../../domain/earn/validator";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type {
   ValidatorAddress,
   YieldId,

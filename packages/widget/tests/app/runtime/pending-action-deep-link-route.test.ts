@@ -4,7 +4,7 @@ import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,
 } from "../../../src/app/runtime/deep-link-coordinator";
-import { EarnBalance } from "../../../src/domain/earn/models";
+import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
   WalletAddress,
   YieldId,
@@ -12,7 +12,7 @@ import {
 import { BalanceDataKey } from "../../../src/domain/portfolio/positions";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { findPendingActionDeepLinkTarget } from "../../../src/features/earn/model/pending-action-deep-link";
-import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/session";
 import {
   type WidgetNavigationCommand,
   WidgetNavigationError,

@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Route } from "react-router";
 import { widgetBorrowFlowRoutes } from "../../../services/navigation/widget-routes";
-import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
+import type { BorrowTransactionFlowEntry } from "../model/session";
 import {
   BorrowTransactionFlowExecutionPage,
   BorrowTransactionFlowExecutionRoute,

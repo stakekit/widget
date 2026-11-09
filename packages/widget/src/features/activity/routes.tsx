@@ -10,7 +10,10 @@ import {
   YieldActionContinuationExecution,
   YieldActionContinuationStepsPage,
 } from "../yield-transaction-flow/views";
-import { ActivityActionRoute } from "./react/activity-action-route";
+import {
+  ActivityActionRoute,
+  type ActivityReceiptPlacement,
+} from "./react/activity-action-route";
 import { ActivityDetailsPage } from "./ui/activity-details/activity-details.page";
 
 const continuationRoutes = widgetYieldFlowRoutes.YieldActionContinuation;
@@ -33,21 +36,21 @@ const activityActionChildRoutes = (
 
 export const createActivityActionRoutes = ({
   ActionScopeGuard,
+  receiptPlacement,
   selectsDefaultAction,
-  showsBackButton,
 }: {
   readonly ActionScopeGuard?: ComponentType<{
     readonly fallbackPath: WidgetPath;
   }>;
+  /** Where the action details draw their receipt. */
+  readonly receiptPlacement: ActivityReceiptPlacement;
   /** Whether the bare Activity route selects a default action. */
   readonly selectsDefaultAction: boolean;
-  /** Whether the action details render a back button to the Activity list. */
-  readonly showsBackButton: boolean;
 }) => {
   const actionRoute = (source: "borrow" | "yield") => (
     <ActivityActionRoute
+      receiptPlacement={receiptPlacement}
       selectsDefaultAction={selectsDefaultAction}
-      showsBackButton={showsBackButton}
       source={source}
     />
   );

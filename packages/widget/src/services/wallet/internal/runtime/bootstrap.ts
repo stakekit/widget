@@ -1,5 +1,5 @@
 import { Duration, Effect, Schedule, Schema } from "effect";
-import type { EarnYield } from "../../../../domain/earn/models";
+import type { EarnYield } from "../../../../domain/earn/yield-schema";
 import { hostTokenKey } from "../../../../domain/token/token";
 import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
 import {

@@ -1,18 +1,7 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { KycGate } from "../../../../../domain/earn/kyc";
-import { vars } from "../../../../../shared/styles/theme/contract.css";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../shared/ui/primitives/button";
-import { Arrow } from "../../../../../shared/ui/primitives/icons/arrow";
-import { WarningIcon } from "../../../../../shared/ui/primitives/icons/warning";
-import { Spinner } from "../../../../../shared/ui/primitives/spinner";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  cardStyle,
-  iconContainerStyle,
-  spinnerContainerStyle,
-} from "./styles.css";
+import { Button, Notice, type Tone } from "../../../../../ui/index";
 import { KycVerificationModal } from "./verification-modal";
 
 type KycGateCardProps = {
@@ -23,6 +12,14 @@ type KycGateCardProps = {
 };
 
 type CardState = Exclude<KycGate["state"], "pass"> | "checking";
+
+const cardTones = {
+  checking: "neutral",
+  start_kyc: "warning",
+  pending: "warning",
+  rejected: "danger",
+  unknown: "neutral",
+} as const satisfies Record<CardState, Tone>;
 
 const translationKeys = {
   checking: {
@@ -132,60 +129,41 @@ export const KycGateCard = ({
 
   return (
     <>
-      <Box
-        className={cardStyle({ state: cardState })}
-        data-testid={`kyc-gate-card-${cardState}`}
-      >
-        <Box
-          display="flex"
-          alignItems="center"
-          gap="4"
-          flexDirection={cardState === "checking" ? "row" : "column"}
-        >
-          <Box flex={1} width="full">
-            <Box marginBottom="2" display="flex" alignItems="center" gap="1">
-              <Text variant={{ weight: "semibold" }}>{t(copy.title)}</Text>
-
-              {cardState === "checking" ? (
-                <Box className={spinnerContainerStyle}>
-                  <Spinner variant={{ size: "small" }} />
-                </Box>
-              ) : (
-                <Box className={iconContainerStyle({ state: cardState })}>
-                  <WarningIcon />
-                </Box>
-              )}
-            </Box>
-
-            <Text variant={{ weight: "normal" }}>{t(bodyKey, values)}</Text>
-
-            <Box marginTop="3" display="flex" gap="2" flexWrap="wrap">
+      <Notice
+        tone={cardTones[cardState]}
+        title={t(copy.title)}
+        busy={cardState === "checking"}
+        testId={`kyc-gate-card-${cardState}`}
+        action={
+          showVerifyButton || showCheckStatusButton ? (
+            <>
               {showVerifyButton && (
                 <Button
+                  variant="primary"
+                  size="sm"
                   onClick={onVerifyClick}
-                  variant={{ size: "small", color: "primary" }}
-                  data-testid="kyc-gate-verify"
+                  testId="kyc-gate-verify"
                 >
-                  <Text variant={{ type: "inverted" }}>{t(ctaKey)}</Text>
+                  {t(ctaKey)}
                 </Button>
               )}
 
               {showCheckStatusButton && (
                 <Button
+                  variant="primary"
+                  size="sm"
                   onClick={onCheckStatus}
-                  variant={{ size: "small", color: "primary" }}
-                  data-testid="kyc-gate-check-status"
+                  testId="kyc-gate-check-status"
                 >
-                  <Text variant={{ type: "inverted" }}>
-                    {t("details.kyc_gate.check_status")}
-                  </Text>
-                  <Arrow direction="right" color={vars.color.background} />
+                  {t("details.kyc_gate.check_status")}
                 </Button>
               )}
-            </Box>
-          </Box>
-        </Box>
-      </Box>
+            </>
+          ) : undefined
+        }
+      >
+        {t(bodyKey, values)}
+      </Notice>
 
       {showEmbeddedVerification && (
         <KycVerificationModal

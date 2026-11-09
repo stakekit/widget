@@ -1,32 +1,27 @@
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { Box, ListRow } from "../../../../../../ui/index";
 import type { ActivityActionItem } from "../../../../model/activity-action";
+import { ActivityAvatar } from "../../../components/activity-avatar";
+import { toActivityStatusCallout } from "../../../components/activity-status";
 import { useActionListItem } from "../../hooks/use-action-list-item";
-import { ActivityIcon } from "../activity-icon";
-import {
-  amountNeutral,
-  amountPositive,
-  completedStatusBadge,
-  infoColumn,
-  listItem,
-  metaRow,
-  noWrap,
-  statusBadge,
-  timeColumn,
-  titleText,
-  viaText,
-} from "../activity-item.css";
 
+/**
+ * An action on two lines, under the header of its day: its token badged with
+ * what it did, what happened beside its amount, then who ran it and its
+ * status unless it completed, beside when: how long ago within a day, its
+ * time of day after that. An action that failed or was canceled strikes its
+ * amount, which never moved, and says when it ended. Its full date and time
+ * are the receipt's. An amount whose token is unknown shows in USD, never as
+ * a bare number.
+ */
 export const ActionListItem = ({
   action,
   isSelected = false,
   onActionSelect,
 }: {
-  action: ActivityActionItem;
+  readonly action: ActivityActionItem;
   readonly isSelected?: boolean;
-  onActionSelect: (action: ActivityActionItem) => void;
+  readonly onActionSelect: (action: ActivityActionItem) => void;
 }) => {
   const { t } = useTranslation();
   const listItemView = useActionListItem(action);
@@ -35,125 +30,43 @@ export const ActionListItem = ({
 
   const {
     providersDetails,
-    iconType,
+    direction,
+    token,
     title,
-    amountTokenSymbol,
-    amount,
-    amountSign,
-    isPositive,
-    timestampAbsolute,
-    timestampRelative,
-    badgeLabel,
+    amountText,
+    timestamp,
+    statusText,
     statusLabel,
+    voided,
   } = listItemView;
 
   const firstProvider = providersDetails?.[0];
-  const providerLabel = firstProvider
+  const viaLabel = firstProvider
     ? t("positions.via", {
         providerName: firstProvider.name ?? firstProvider.address,
         count: Math.max((providersDetails?.length ?? 0) - 1, 1),
       })
-    : null;
-  const viaLabel = providerLabel;
-  // Statuses that ask nothing of the user are not highlighted.
-  const neutralStatus =
-    statusLabel === "completed" || statusLabel === "awaiting_settlement";
+    : undefined;
+  const status = toActivityStatusCallout(statusLabel, statusText);
 
+  // Amounts stay neutral: green is for positive rates and claimable amounts.
   return (
-    <Box py="1" width="full">
-      <ListItem
+    <Box paddingBlock={4} width="full">
+      <ListRow
+        leading={<ActivityAvatar direction={direction} token={token} />}
+        title={title}
+        subtitle={viaLabel}
+        {...(status === null ? {} : { status })}
+        {...(amountText === null
+          ? {}
+          : { value: amountText, valueStruck: voided })}
+        {...(timestamp === "" ? {} : { subvalue: timestamp })}
         onClick={() => onActionSelect(action)}
-        className={listItem}
-        data-rk={
+        selected={isSelected}
+        testId={
           isSelected ? "activity-list-item-selected" : "activity-list-item"
         }
-        variant={{
-          active: isSelected ? "active" : "inactive",
-          hover: "enabled",
-        }}
-      >
-        <Box
-          display="flex"
-          width="full"
-          justifyContent="space-between"
-          alignItems="center"
-          gap="2"
-        >
-          <Box
-            display="flex"
-            justifyContent="flex-start"
-            alignItems="center"
-            gap="2"
-            flex={1}
-            minWidth="0"
-          >
-            <ActivityIcon type={iconType} />
-
-            <Box className={infoColumn}>
-              <Text className={titleText}>{title}</Text>
-
-              {badgeLabel || viaLabel ? (
-                <Box className={metaRow}>
-                  {badgeLabel && statusLabel ? (
-                    <Box
-                      className={
-                        neutralStatus ? completedStatusBadge : statusBadge
-                      }
-                    >
-                      <Text
-                        variant={{
-                          type: neutralStatus ? "muted" : "white",
-                          size: "small",
-                        }}
-                        className={noWrap}
-                      >
-                        {badgeLabel}
-                      </Text>
-                    </Box>
-                  ) : null}
-
-                  {viaLabel ? (
-                    <Text
-                      className={viaText}
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {viaLabel}
-                    </Text>
-                  ) : null}
-                </Box>
-              ) : null}
-            </Box>
-          </Box>
-
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="flex-end"
-            gap="3"
-            flexShrink={0}
-          >
-            {amount ? (
-              <Text className={isPositive ? amountPositive : amountNeutral}>
-                {amountSign}
-                {amountTokenSymbol ? `${amount} ${amountTokenSymbol}` : amount}
-              </Text>
-            ) : null}
-
-            <Box className={timeColumn}>
-              <Text
-                variant={{ type: "muted", weight: "normal", size: "small" }}
-              >
-                {timestampAbsolute}
-              </Text>
-              <Text
-                variant={{ type: "muted", weight: "normal", size: "small" }}
-              >
-                {timestampRelative}
-              </Text>
-            </Box>
-          </Box>
-        </Box>
-      </ListItem>
+      />
     </Box>
   );
 };

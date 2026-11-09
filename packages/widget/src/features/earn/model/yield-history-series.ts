@@ -1,5 +1,8 @@
 import { DateTime } from "effect";
-import type { HistoryPoint } from "../../../domain/portfolio/models";
+import type {
+  HistoryPeriod,
+  HistoryPoint,
+} from "../../../domain/portfolio/models";
 
 const minimumRenderablePoints = 2;
 
@@ -8,6 +11,8 @@ export type YieldHistorySeries = {
   readonly hasFailed: boolean;
   readonly isLoading: boolean;
   readonly isRefreshing: boolean;
+  /** The period `points` belong to, which lags the selected one while it loads. */
+  readonly period: HistoryPeriod;
   readonly points: ReadonlyArray<HistoryPoint>;
 };
 
@@ -27,18 +32,21 @@ const isRenderable = (points: ReadonlyArray<HistoryPoint>) =>
   points.length >= minimumRenderablePoints;
 
 /**
- * Keeps the previously displayed points on screen while another period loads,
- * so a range switch dims the existing chart instead of replacing it with a
- * skeleton.
+ * Keeps the previously displayed points, and the period they belong to, on
+ * screen while another period loads, so a range switch dims the existing
+ * chart instead of replacing it with a skeleton or drawing the old points
+ * against the new period's time axis.
  */
 export const resolveYieldHistorySeries = ({
   hasFailed,
   isWaiting,
+  period,
   points,
   previous,
 }: {
   readonly hasFailed: boolean;
   readonly isWaiting: boolean;
+  readonly period: HistoryPeriod;
   readonly points: ReadonlyArray<HistoryPoint> | null;
   readonly previous: YieldHistorySeries | null;
 }): YieldHistorySeries => {
@@ -50,6 +58,7 @@ export const resolveYieldHistorySeries = ({
       hasFailed: false,
       isLoading: false,
       isRefreshing: isWaiting,
+      period,
       points,
     };
   }
@@ -60,26 +69,26 @@ export const resolveYieldHistorySeries = ({
       hasFailed: true,
       isLoading: false,
       isRefreshing: false,
+      period,
       points: [],
     };
   }
 
-  const retained =
-    previous && isRenderable(previous.points) ? previous.points : null;
-
-  return retained
+  return previous && isRenderable(previous.points)
     ? {
         hasDisplayedPoints: true,
         hasFailed: false,
         isLoading: false,
         isRefreshing: true,
-        points: retained,
+        period: previous.period,
+        points: previous.points,
       }
     : {
         hasDisplayedPoints: hadPoints,
         hasFailed: false,
         isLoading: true,
         isRefreshing: false,
+        period,
         points: [],
       };
 };

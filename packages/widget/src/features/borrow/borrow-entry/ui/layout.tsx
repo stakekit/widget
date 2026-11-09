@@ -2,13 +2,13 @@ import { useAtomValue } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
+import { exactDecimal } from "../../../../domain/finance/exact";
+import { EmptyState, SplitView, Stack } from "../../../../ui/index";
 import {
   type BorrowEntryFlowDetails,
   useBorrowTransactionFlow,
 } from "../../../borrow-transaction-flow/index";
-import { AnimationPage, SplitView } from "../../../widget-shell/views";
+import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowWalletView } from "../../wallet/index";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import { borrowFlowDetailsAtom } from "../state/flow-details";
@@ -16,8 +16,7 @@ import {
   BorrowEntryDetailsPanel,
   BorrowMarketDetails,
 } from "./components/details-panel";
-import { BorrowDetailsEmpty } from "./components/notices";
-import * as styles from "./styles.css";
+import { BorrowDetailsSkeleton } from "./components/skeletons";
 
 /**
  * Stays mounted across the form and the flow, so moving between their split
@@ -34,18 +33,13 @@ const BorrowSplitView = ({ details }: { readonly details: ReactNode }) => {
 
   return (
     <SplitView
-      primaryBarLabel={t("dashboard.split_view.actions")}
-      secondaryBarLabel={t("dashboard.split_view.details")}
+      secondaryLabel={t("dashboard.split_view.details")}
       primary={
-        <Box className={styles.formPane} width="0">
+        <Stack gap={8} grow>
           <Outlet />
-        </Box>
+        </Stack>
       }
-      secondary={
-        <Box className={styles.detailsPaneWrapper} flex={1} width="0">
-          {details}
-        </Box>
-      }
+      secondary={details}
     />
   );
 };
@@ -62,12 +56,13 @@ export const BorrowEntryLayout = () => {
   const getDetails = (): ReactNode => {
     if (walletView.status === "ready") return <BorrowConnectedEntryDetails />;
     if (walletView.status === "connecting") {
-      return <ContentLoaderSquare heightPx={430} />;
+      return <BorrowDetailsSkeleton />;
     }
     return (
-      <BorrowDetailsEmpty title={t("dashboard.borrow.details.empty_title")}>
-        {t("dashboard.borrow.details.empty_description")}
-      </BorrowDetailsEmpty>
+      <EmptyState
+        title={t("dashboard.borrow.details.empty_title")}
+        body={t("dashboard.borrow.details.empty_description")}
+      />
     );
   };
 
@@ -76,8 +71,10 @@ export const BorrowEntryLayout = () => {
 
 const BorrowFlowDetails = ({
   captured,
+  projectedMaxLtv,
 }: {
   readonly captured: BorrowEntryFlowDetails;
+  readonly projectedMaxLtv: string | undefined;
 }) => {
   const details = useAtomValue(borrowFlowDetailsAtom(captured));
 
@@ -86,22 +83,31 @@ const BorrowFlowDetails = ({
       collateralToken={details.collateralToken}
       integration={details.integration}
       market={details.market}
+      {...(projectedMaxLtv === undefined
+        ? {}
+        : { projectedMaxLtv: exactDecimal(projectedMaxLtv) })}
     />
   );
 };
 
 /**
  * Review, steps and complete beside the market the flow started on, never the
- * entry form's current selection.
+ * entry form's current selection, with the max LTV the flow projected so the
+ * card reads the same limit as Review's LTV meter.
  */
 export const BorrowFlowLayout = () => {
-  const { entry } = useBorrowTransactionFlow().intake;
+  const { entry, summary } = useBorrowTransactionFlow().intake;
+  const projectedMaxLtv =
+    summary.riskStatus === "available" ? summary.maxLtv : undefined;
 
   return (
     <BorrowSplitView
       details={
         entry._tag === "BorrowEntry" ? (
-          <BorrowFlowDetails captured={entry.details} />
+          <BorrowFlowDetails
+            captured={entry.details}
+            projectedMaxLtv={projectedMaxLtv}
+          />
         ) : null
       }
     />

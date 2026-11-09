@@ -36,7 +36,5 @@ const makeTestLayers = (api: ApplicationApiIdentity) => {
 export const makeTestStakeKitApiLayer = (api: ApplicationApiIdentity) => {
   const { apiLayer, geoBlockLayer, richErrorLayer } = makeTestLayers(api);
 
-  return Layer.mergeAll(apiLayer, geoBlockLayer, richErrorLayer).pipe(
-    Layer.fresh
-  );
+  return Layer.mergeAll(apiLayer, geoBlockLayer, richErrorLayer);
 };

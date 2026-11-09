@@ -44,10 +44,6 @@ vi.mock("../../../src/app/layouts/dashboard/dashboard-routes", () => ({
   DashboardRoutes: () => <div>active dashboard</div>,
 }));
 
-vi.mock("../../../src/shared/ui/primitives/box", () => ({
-  Box: ({ children }: PropsWithChildren) => children,
-}));
-
 import { type RenderedSKWidget, renderSKWidget, SKApp } from "../../../src/App";
 
 const originalHref = window.location.href;

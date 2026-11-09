@@ -7,97 +7,37 @@ import {
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
 } from "../../../src/domain/borrow/responses";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshotDto,
+  makeBorrowIntegrationDto,
+  makeBorrowMarketDto,
+  makeBorrowSupplyBalanceDto,
+} from "../../fixtures/borrow";
 
-const address = "0x0000000000000000000000000000000000000001";
-
+// Wire payloads carry fields the domain schemas do not read.
 const integration = {
-  id: "aave-borrow",
+  ...makeBorrowIntegrationDto(),
   providerId: "aave",
-  name: "Aave V3",
-  networks: ["ethereum"],
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
   actions: [],
-} as const;
+};
 
-const market = {
-  id: "aave-v3-ethereum-usdc",
-  integrationId: "aave-borrow",
-  network: "ethereum",
-  type: "pool",
-  poolAddress: address,
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-  },
-  collateralTokens: [
-    {
-      token: {
-        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        symbol: "WETH",
-        name: "Wrapped Ether",
-        decimals: 18,
-      },
-      priceUsd: "2000",
-      maxLtv: "0.8",
-      liquidationThreshold: "0.85",
-      liquidationPenalty: "0.05",
-      supplyRate: "0.02",
-    },
-  ],
-  borrowRate: "0.06",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  utilizationRate: "0.5",
-  loanTokenPriceUsd: "1",
-  isBorrowEnabled: true,
-  supplyCollateralFeeBps: "0",
-  feeWrapperAddress: null,
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  minLoan: null,
-} as const;
+const market = { ...makeBorrowMarketDto(), feeWrapperAddress: null };
 
-const supplyBalance = {
-  apy: "0.02",
-  balance: "0.5",
-  balanceRaw: "500000000000000000",
-  balanceUsd: "1000",
-  isCollateral: true,
-  marketId: market.id,
-  pendingActions: [],
-  tokenAddress: market.collateralTokens[0].token.address,
-  tokenSymbol: "WETH",
-} as const;
+const supplyBalance = makeBorrowSupplyBalanceDto();
 
-const accountPosition = {
-  address,
-  availableToBorrowUsd: "450",
-  currentLtv: "0.4",
+const accountPosition = makeBorrowAccountSnapshotDto({
   debtBalances: [],
-  healthFactor: "2.125",
-  integrationId: integration.id,
   netApy: "0.02",
   netWorthUsd: "1000",
-  network: "ethereum",
   supplyBalances: [supplyBalance],
   totalBorrowedUsd: "0",
   totalCollateralUsd: "1000",
   totalSuppliedUsd: "1000",
-} as const;
+});
 
 const transaction = {
-  address,
+  address: borrowWalletAddress,
   chainId: "1",
   id: "transaction-1",
   network: "ethereum",
@@ -109,7 +49,7 @@ const action = {
   id: "action-1",
   integrationId: integration.id,
   action: "borrow",
-  address,
+  address: borrowWalletAddress,
   status: "CREATED",
   transactions: [transaction],
   hasNextStep: false,
@@ -299,7 +239,9 @@ describe("Borrow schemas decode only the fields the widget reads", () => {
           { ...unreadIntegration, provider_id: "aave", actions: [UNKNOWN] },
         ]);
         const markets = yield* decode(BorrowMarketsResponse, {
-          items: [{ ...unreadMarket, fee_wrapper_address: address }],
+          items: [
+            { ...unreadMarket, fee_wrapper_address: borrowWalletAddress },
+          ],
           limit: 100,
           offset: 0,
           total: 1,

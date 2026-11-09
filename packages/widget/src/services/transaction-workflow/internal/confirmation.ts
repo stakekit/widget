@@ -10,15 +10,16 @@ import { EvmRpc } from "../../evm-rpc/evm-rpc";
 import {
   type DirectTransactionLedger,
   TransactionConfirmationError,
+  type TransactionConfirmationOutcome,
   type TransactionWorkflowContext,
   type TransactionWorkflowInput,
 } from "../transaction-workflow-model";
 import { requireCurrentWorkflow } from "./current";
 import { recordDirectTransaction } from "./ledger";
 import {
+  confirmCurrentTransactionWorkflowTransaction,
   isTransactionWorkflowDoneStatus,
   reconcileBorrowTransactionWorkflowBatch,
-  selectNextTransactionWorkflowTransaction,
   updateCurrentTransactionWorkflowTransaction,
 } from "./model";
 
@@ -58,15 +59,27 @@ export const makeConfirmCurrent = Effect.gen(function* () {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
-    const fail = (message: string, cause?: unknown) =>
+    const makeError = (
+      outcome: TransactionConfirmationOutcome,
+      message: string,
+      { cause, reason = null }: { cause?: unknown; reason?: string | null }
+    ) =>
       new TransactionConfirmationError({
         batchId: batch.id,
         cause,
         message,
         network: source.transaction.network,
+        outcome,
+        reason,
         transactionId: source.transaction.id,
         workflowId,
       });
+    /** Its outcome could not be learned: retrying checks again. */
+    const fail = (message: string, cause?: unknown) =>
+      makeError("Unconfirmed", message, { cause });
+    /** The chain or the API says it failed, with why when the API says. */
+    const failed = (message: string, reason: string | null) =>
+      makeError("Failed", message, { reason });
 
     if (current._tag === "Direct") {
       const direct = current.transaction.source.transaction;
@@ -103,11 +116,9 @@ export const makeConfirmCurrent = Effect.gen(function* () {
             }),
           })
         );
-        return yield* fail(
-          outcome === "Reverted"
-            ? "The transaction reverted."
-            : "The transaction was dropped."
-        );
+        return yield* outcome === "Reverted"
+          ? failed("The transaction reverted.", null)
+          : makeError("Dropped", "The transaction was dropped.", {});
       }
 
       yield* recordDirectTransaction(ledger, direct, {
@@ -115,21 +126,11 @@ export const makeConfirmCurrent = Effect.gen(function* () {
         hash,
       });
       return {
-        context: selectNextTransactionWorkflowTransaction(
-          updateCurrentTransactionWorkflowTransaction({
-            context,
-            update: (current) => ({
-              ...current,
-              meta: {
-                ...current.meta,
-                confirmationError: null,
-                done: true,
-                signError: null,
-                url: evmRpc.explorerUrl({ chainId, hash }),
-              },
-            }),
-          })
-        ),
+        context: confirmCurrentTransactionWorkflowTransaction({
+          context,
+          terminal: false,
+          url: () => evmRpc.explorerUrl({ chainId, hash }),
+        }),
       };
     }
 
@@ -152,7 +153,10 @@ export const makeConfirmCurrent = Effect.gen(function* () {
               > => {
                 if (isTransactionError(status.status)) {
                   return Effect.fail(
-                    fail(`Transaction ended with ${status.status} status.`)
+                    failed(
+                      `Transaction ended with ${status.status} status.`,
+                      status.error ?? null
+                    )
                   );
                 }
 
@@ -196,7 +200,10 @@ export const makeConfirmCurrent = Effect.gen(function* () {
 
               if (isUnsuccessfulBorrowActionStatus(action.status)) {
                 return Effect.fail(
-                  fail(`Borrow action ended with ${action.status} status.`)
+                  failed(
+                    `Borrow action ended with ${action.status} status.`,
+                    null
+                  )
                 );
               }
 
@@ -220,14 +227,14 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                 );
               }
 
-              if (
-                updated.status === "FAILED" ||
-                updated.status === "NOT_FOUND"
-              ) {
+              if (updated.status === "FAILED") {
                 return Effect.fail(
-                  fail(
-                    `Borrow transaction ended with ${updated.status} status.`
-                  )
+                  failed("Borrow transaction ended with FAILED status.", null)
+                );
+              }
+              if (updated.status === "NOT_FOUND") {
+                return Effect.fail(
+                  fail("Borrow transaction ended with NOT_FOUND status.")
                 );
               }
 
@@ -264,38 +271,25 @@ export const makeConfirmCurrent = Effect.gen(function* () {
       )
     );
 
-    const reconciled =
-      result._tag === "Borrow"
-        ? reconcileBorrowTransactionWorkflowBatch({
-            action: result.action,
-            context,
-          })
-        : context;
-    const confirmed = updateCurrentTransactionWorkflowTransaction({
-      context: reconciled,
-      update: (current) => ({
-        ...current,
-        meta: {
-          ...current.meta,
-          confirmationError: null,
-          done: true,
-          signError: null,
-          url:
-            result.explorerUrl ??
-            (current.meta.submissionIndex === null
-              ? current.meta.url
-              : (context.submissions[current.meta.submissionIndex]?.link ??
-                current.meta.url)),
-        },
-      }),
-    });
-
     // A successful Borrow action is terminal: nothing in the batch is signed.
     return {
-      context:
-        result._tag === "Borrow" && result.action.status === "SUCCESS"
-          ? { ...confirmed, currentTransactionIndex: null }
-          : selectNextTransactionWorkflowTransaction(confirmed),
+      context: confirmCurrentTransactionWorkflowTransaction({
+        context:
+          result._tag === "Borrow"
+            ? reconcileBorrowTransactionWorkflowBatch({
+                action: result.action,
+                context,
+              })
+            : context,
+        terminal:
+          result._tag === "Borrow" && result.action.status === "SUCCESS",
+        url: (current) =>
+          result.explorerUrl ??
+          (current.meta.submissionIndex === null
+            ? current.meta.url
+            : (context.submissions[current.meta.submissionIndex]?.link ??
+              current.meta.url)),
+      }),
     };
   });
 });

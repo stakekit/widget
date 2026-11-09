@@ -67,6 +67,41 @@ describe("Token Balances resource", () => {
     });
   });
 
+  it("shares one request across additional addresses and EVM address casing", () => {
+    const checksumAddress = Schema.decodeSync(WalletAddress)(
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    );
+    const lowercaseAddress = Schema.decodeSync(WalletAddress)(
+      checksumAddress.toLowerCase()
+    );
+    const scanTokenBalances = vi.fn((_command: TokenBalanceScanCommand) =>
+      Effect.succeed([])
+    );
+    const registry = makeRegistry(
+      LegacyResourceSource.of({ scanTokenBalances } as never)
+    );
+    const checksumScope = new WalletScopeKey({
+      additionalAddresses: { binanceBeaconAddress: "bnb-address" },
+      address: checksumAddress,
+      network: "ethereum",
+    });
+    const lowercaseScope = new WalletScopeKey({
+      address: lowercaseAddress,
+      network: "ethereum",
+    });
+
+    registry.get(tokenBalancesResourceAtom(checksumScope));
+    registry.get(tokenBalancesResourceAtom(lowercaseScope));
+    registry.set(refreshTokenBalancesAtom(lowercaseScope), undefined);
+    registry.get(tokenBalancesResourceAtom(checksumScope));
+
+    expect(scanTokenBalances).toHaveBeenCalledTimes(2);
+    expect(scanTokenBalances).toHaveBeenNthCalledWith(1, {
+      address: lowercaseAddress,
+      network: "ethereum",
+    });
+  });
+
   it("does not acquire balances while the current wallet scope is empty", () => {
     const scanTokenBalances = vi.fn(() => Effect.succeed([]));
     const registry = makeRegistry(

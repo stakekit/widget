@@ -2,26 +2,28 @@ import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
 import {
+  ConfidentialHandle,
+  type EarnBalance,
+} from "../../src/domain/earn/balance";
+import {
   type ConfidentialEncryption,
-  fillConfidentialBalance,
-  getCancellingHandles,
-  getConfidentialCampaignUrl,
   getConfidentialConversion,
   getConfidentialHandleContract,
   getConfidentialRedeemOperators,
   getConfidentialSettlement,
-  getPendingActionDecryptHandle,
-  isCancellingBalance,
   isConfidentialInstantExit,
   isConfidentialYield,
-  isUserRevealableBalance,
   planConfidentialEncryption,
   toConfidentialArguments,
 } from "../../src/domain/earn/confidential";
 import {
-  ConfidentialHandle,
-  type EarnBalance,
-} from "../../src/domain/earn/models";
+  fillConfidentialBalance,
+  getCancellingHandles,
+  getPendingActionDecryptHandle,
+  isCancellingBalance,
+  isUserRevealableBalance,
+} from "../../src/domain/earn/confidential-balance";
+import { getConfidentialCampaignUrl } from "../../src/domain/earn/confidential-campaign";
 import { Token } from "../../src/domain/token/token";
 import {
   confidentialFixture,

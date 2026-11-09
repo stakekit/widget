@@ -1,140 +1,172 @@
 import type { TFunction } from "i18next";
-import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
-import {
-  getTransactionStepPhases,
-  TransactionSteps,
-} from "../../../../../shared/ui/components/transaction-steps";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../shared/ui/primitives/button";
-import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { Button, Notice, Stack, Text } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
+import {
+  describeTransactionFailure,
+  getTransactionStepState,
+  useSlowTransactionStep,
+} from "../../../../transaction-steps/index";
+import {
+  type TransactionStep,
+  TransactionSteps,
+} from "../../../../transaction-steps/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
+  PageCtaSlot,
 } from "../../../../widget-shell/views";
 import {
   formatTransactionTypeLabel,
   type YieldStepRow,
 } from "../../../model/yield-transaction-workflow";
 import { useSteps } from "../hooks/use-steps.hook";
-import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 
-const getStepPhases = (t: TFunction, row: YieldStepRow) => {
-  if (row.type !== "ENCRYPT" && row.type !== "DECRYPT") {
-    return getTransactionStepPhases(t, row.phases);
+/** A preparation runs in the browser: one phase, with its own messages. */
+const getPreparationStep = (
+  t: TFunction,
+  row: YieldStepRow,
+  kind: "encrypt" | "decrypt"
+): Pick<TransactionStep, "state" | "message"> => {
+  switch (row.done ? "done" : row.phases.sign) {
+    case "done":
+      return { state: "done" };
+    case "active":
+      return { message: t(`steps.${kind}_desc`), state: "active" };
+    case "failed":
+      return {
+        message: row.rejected
+          ? t("steps.prepare_rejected")
+          : t(`steps.${kind}_error`),
+        state: "failed",
+      };
+    default:
+      return { state: "pending" };
   }
-  // Runs in the browser: no wallet or broadcast phases.
-  const kind = row.type === "DECRYPT" ? "decrypt" : "encrypt";
-  return [
-    {
-      description: t(`steps.${kind}_desc`),
-      failureMessage: row.rejected
-        ? t("steps.prepare_rejected")
-        : t(`steps.${kind}_error`),
-      label: t(`steps.${kind}`),
-      status: row.phases.sign,
-    },
-  ];
 };
 
 export const StepsPage = () => {
   const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
   const {
-    cancelled,
+    error,
     numbered,
     retry,
     txStates,
     cta,
-    customSignErrorMessage,
+    ctaNote,
     leaveConfirmationDialog,
+    summary,
+    details,
+    wallet,
     yieldId,
   } = useSteps();
 
   const { t } = useTranslation();
+  const slowStepId = useSlowTransactionStep(txStates);
+  // One surface for what failed: its step, with the wallet's or API's own
+  // words after the plain message.
+  const failure = describeTransactionFailure(t, error);
+  const failureDetail = failure?.detail
+    ? ` ${t("steps.failure.detail", { detail: failure.detail })}`
+    : "";
+  const stepFailure = failure
+    ? {
+        cancelled: failure.cancelled,
+        message: `${failure.message}${failureDetail}`,
+      }
+    : null;
+
+  const steps = txStates.map((row, index): TransactionStep => {
+    const type = formatTransactionTypeLabel(row.type, t, {
+      context: isEthenaUsdeStaking(yieldId) ? "ETHENA_USDE" : undefined,
+    });
+
+    return {
+      explorerUrl: row.explorerUrl,
+      hash: row.hash,
+      id: row.id,
+      // Unnumbered: the singular form shows no index.
+      label: t("steps.tx_of", {
+        count: numbered ? txStates.length : 1,
+        current: numbered ? index + 1 : undefined,
+        type,
+      }),
+      type,
+      ...(row.type === "ENCRYPT" || row.type === "DECRYPT"
+        ? getPreparationStep(
+            t,
+            row,
+            row.type === "ENCRYPT" ? "encrypt" : "decrypt"
+          )
+        : getTransactionStepState(t, {
+            done: row.done,
+            failure: stepFailure,
+            phases: row.phases,
+            slow: row.id === slowStepId,
+          })),
+    };
+  });
 
   return (
     <AnimationPage>
-      <motion.div layout="position">
-        <PageContainer position="relative">
-          <Box marginBottom="2">
-            <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>
-          </Box>
-
-          {customSignErrorMessage && (
-            <Box
-              className={stepsErrorBanner}
-              data-rk="steps-custom-sign-error"
-              px="4"
-              py="3"
-            >
-              <Text variant={{ weight: "normal", type: "inverted" }}>
-                {customSignErrorMessage}
-              </Text>
-            </Box>
-          )}
-
-          {cancelled && (
-            <Box data-rk="steps-cancelled" marginBottom="2">
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t("steps.cancelled")}
-              </Text>
-            </Box>
-          )}
+      <PageContainer>
+        <Stack gap={16}>
+          <Text variant="title" as="h1">
+            {t("steps.title")}
+          </Text>
 
           {showsPendingApprovalsNotice && (
-            <Box
-              className={utilaPendingApprovalsBanner}
-              data-rk="utila-pending-approvals"
-              px="4"
-              py="3"
-            >
-              <Text variant={{ weight: "bold" }}>
-                {t("steps.pending_approvals")}
-              </Text>
-              <Text variant={{ weight: "normal" }}>
-                {t("steps.pending_approvals_desc")}
-              </Text>
-            </Box>
+            <Notice tone="warning" title={t("steps.pending_approvals")}>
+              {t("steps.pending_approvals_desc")}
+            </Notice>
           )}
 
-          <Box flex={1} display="flex">
-            <TransactionSteps
-              numbered={numbered}
-              steps={txStates.map((row) => ({
-                done: row.done,
-                id: row.id,
-                phases: getStepPhases(t, row),
-                type: formatTransactionTypeLabel(row.type, t, {
-                  context: isEthenaUsdeStaking(yieldId)
-                    ? "ETHENA_USDE"
-                    : undefined,
-                }),
-              }))}
-            />
-          </Box>
+          <TransactionSteps
+            {...(summary ? { summary } : {})}
+            details={details}
+            steps={steps}
+            wallet={wallet}
+          />
+        </Stack>
 
-          {retry && (
-            <Box my="4">
+        <PageCtaSlot>
+          <Stack gap={12}>
+            {retry && (
               <Button
-                data-rk="footer-button-primary"
+                hostHook="footer-button-primary"
                 onClick={retry}
-                variant={{ size: "layout" }}
+                size="cta"
+                variant="primary"
               >
                 {t("shared.retry")}
               </Button>
-            </Box>
-          )}
-          <PageCtaButton cta={cta} />
+            )}
+            <PageCtaButton
+              cta={cta}
+              {...(ctaNote
+                ? {
+                    notice: (
+                      <Text
+                        as="p"
+                        variant="caption"
+                        tone="muted"
+                        align="center"
+                      >
+                        {ctaNote}
+                      </Text>
+                    ),
+                  }
+                : {})}
+            />
+          </Stack>
+        </PageCtaSlot>
 
-          <LeaveConfirmationDialog {...leaveConfirmationDialog} />
-        </PageContainer>
-      </motion.div>
+        <LeaveConfirmationDialog {...leaveConfirmationDialog} />
+      </PageContainer>
     </AnimationPage>
   );
 };

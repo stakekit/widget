@@ -1,28 +1,22 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  SelectModal,
-  SelectModalItem,
-  SelectModalItemContainer,
-} from "../../../../shared/ui/components/select-modal";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Image } from "../../../../shared/ui/primitives/image";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { SelectSheet } from "../../../../ui/index";
 import { useEarnProviderOptions } from "../../react/use-earn-facades";
 import type { EarnProviderOption } from "../../state/earn-selection/types";
-import { providerOptionName } from "./earn-provider-option-selection.css";
 
 export type EarnProviderOptionTriggerState = {
-  /** `true` when the trigger must render a dialog `Trigger` to open the option list. */
+  /** `true` when the trigger offers to `open` the option list. */
   readonly canSelect: boolean;
   readonly selectedOption: EarnProviderOption | null;
   readonly title: string;
+  /** Opens the option list; focus returns to the opener on close. */
+  readonly open: () => void;
 };
 
 /**
  * Renders the yield's advertised `providerId` options: nothing without options,
  * the trigger alone for a single option, and the trigger plus a selectable
- * option list for several options. Callers own the trigger styling.
+ * option list for several options. Callers own the trigger.
  */
 export const EarnProviderOptionSelection = ({
   loading = null,
@@ -33,6 +27,7 @@ export const EarnProviderOptionSelection = ({
 }) => {
   const { select, view } = useEarnProviderOptions();
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
 
   if (view.appLoading) return loading;
 
@@ -43,48 +38,48 @@ export const EarnProviderOptionSelection = ({
     view.items.find((option) => option.value === view.selected) ?? null;
 
   if (!view.canSelect) {
-    return renderTrigger({ canSelect: false, selectedOption, title });
+    return renderTrigger({
+      canSelect: false,
+      open: () => undefined,
+      selectedOption,
+      title,
+    });
   }
 
   return (
-    <SelectModal
-      title={title}
-      trigger={renderTrigger({ canSelect: true, selectedOption, title })}
-    >
-      <Box>
-        {view.items.map((option) => {
+    <>
+      {renderTrigger({
+        canSelect: true,
+        open: () => setOpen(true),
+        selectedOption,
+        title,
+      })}
+      <SelectSheet
+        title={title}
+        closeLabel={t("shared.close")}
+        listLabel={title}
+        open={open}
+        onOpenChange={setOpen}
+        options={view.items.map((option) => {
           const name = option.provider?.name ?? option.value;
-
-          return (
-            <SelectModalItemContainer key={option.value}>
-              <SelectModalItem
-                testId={`select-provider-option-${option.value}`}
-                selected={option.value === view.selected}
-                onItemClick={({ closeModal }) => {
-                  select(option.value);
-                  closeModal();
-                }}
-              >
-                <Image
-                  wrapperProps={{ hw: "8", flexShrink: 0 }}
-                  imgProps={{ borderRadius: "base" }}
-                  src={option.provider?.logoURI}
-                  fallbackName={name}
-                />
-
-                <Box flex={1} marginLeft="2" minWidth="0">
-                  <Text
-                    className={providerOptionName}
-                    variant={{ weight: "bold" }}
-                  >
-                    {name}
-                  </Text>
-                </Box>
-              </SelectModalItem>
-            </SelectModalItemContainer>
-          );
+          return {
+            id: option.value,
+            testId: `select-provider-option-${option.value}`,
+            title: name,
+            logo: {
+              name,
+              ...(option.provider?.logoURI
+                ? { src: option.provider.logoURI }
+                : {}),
+            },
+          };
         })}
-      </Box>
-    </SelectModal>
+        {...(view.selected === null ? {} : { selectedId: view.selected })}
+        onSelect={(id) => {
+          const option = view.items.find((item) => item.value === id);
+          if (option) select(option.value);
+        }}
+      />
+    </>
   );
 };

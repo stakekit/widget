@@ -17,7 +17,7 @@ flowchart TB
     Picker["connect-modal<br/>choose chain family, then wallet"]
     Account["account-modal<br/>copy address, disconnect"]
     Chain["chain-modal<br/>switch network, add Ledger account"]
-    Dialog["wallet-dialog<br/>shared dialog shell, focus, portal"]
+    Dialog["Design System Modal<br/>dialog shell, focus, portal"]
   end
 
   subgraph State["features/wallet/state (Effect Atom adapters)"]
@@ -104,7 +104,7 @@ flowchart TB
 
 | Part | Responsibility |
 |---|---|
-| `ui/wallet-dialog` | Radix dialog used by every wallet dialog. Portals into the configured container, carries the theme root, restores focus to the opener, and hides itself (`suspended`) while AppKit or TonConnect's modal is on top. Bottom sheet below 520px, centred dialog above. |
+| Wallet dialogs | Every wallet dialog is the Design System's `Modal`. It portals into the portal container, carries the theme root, restores focus to the opener, and hides itself (`suspended`) while AppKit or TonConnect's modal is on top or a Leave Confirmation asks. Bottom sheet below 520px, centred dialog above. `ui/wallet-dialog/chain-icon.tsx` holds the chain icon the dialogs share. |
 | `ui/connect-modal` | The picker: chain family list, then wallets grouped into "Installed" and catalogue groups. Shows Connect, Install (store link) or a non-interactive Checking row. Footer disclaimer. |
 | `ui/account-modal`, `ui/chain-modal` | Account actions and network switching; Ledger chains not yet added route to "add Ledger account". |
 | `model/connect-picker.ts` | Plain functions: the availability policy, grouping, first-paint placement, and `connectionChainId` (host `initialChain` when the wallet supports it). |

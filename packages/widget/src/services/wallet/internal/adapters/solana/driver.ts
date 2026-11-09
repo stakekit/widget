@@ -2,13 +2,14 @@ import { Effect, Schema } from "effect";
 import type { Connector } from "wagmi";
 import {
   WalletBroadcastError,
-  WalletCapabilityUnavailableError,
+  type WalletCapabilityUnavailableError,
   WalletDecodeError,
 } from "../../../wallet-errors";
 import {
   decodeWalletBroadcastResult,
   type WalletBroadcastResult,
 } from "../../../wallet-transactions";
+import { requireTransactionSigner } from "../transaction-signing";
 import { isSolanaConnector } from "./solana-connector-meta";
 import { unsignedSolanaTransactionCodec } from "./transaction";
 
@@ -26,18 +27,16 @@ export const makeSolanaWalletDriver = ({
     WalletBroadcastError | WalletCapabilityUnavailableError | WalletDecodeError
   > =>
     Effect.gen(function* () {
-      if (!isSolanaConnector(connector)) {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
-
+      const solana = yield* requireTransactionSigner(
+        connector,
+        isSolanaConnector(connector) ? connector : null
+      );
       const decodedTx = yield* Schema.decodeEffect(
         unsignedSolanaTransactionCodec
       )(tx).pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
+
       const signedTx = yield* Effect.tryPromise({
-        try: () => connector.sendTransaction(decodedTx),
+        try: () => solana.sendTransaction(decodedTx),
         catch: (cause) =>
           new WalletBroadcastError({ cause, customMessage: null }),
       });

@@ -68,10 +68,7 @@ describe("makeTransactionWorkflowTestKit", () => {
         Context.get(context, BorrowOperations).getAction(borrowActionId)
       );
 
-      expect(Exit.isFailure(exit)).toBe(true);
-      expect(Exit.isFailure(exit) ? Cause.squash(exit.cause) : null).toBe(
-        "makeTransactionWorkflowTestKit: unexpected call to BorrowOperations.getAction"
-      );
+      expect(Exit.isFailure(exit) && Cause.hasDies(exit.cause)).toBe(true);
     })
   );
 

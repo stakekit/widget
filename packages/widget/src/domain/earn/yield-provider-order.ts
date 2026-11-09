@@ -1,6 +1,5 @@
 import type { ProviderId } from "../identity/identifiers";
 import type { YieldCategory } from "./contract";
-import type { EarnYieldWithProvider } from "./models";
 import {
   type ExtendedYieldType,
   getExtendedYieldType,
@@ -8,6 +7,7 @@ import {
   getYieldTypesSortRank,
   isNonZeroRewardRateYield,
 } from "./yield";
+import type { EarnYieldWithProvider } from "./yield-schema";
 
 /**
  * Yield provider IDs to list first, per Yield Category, in rank order.

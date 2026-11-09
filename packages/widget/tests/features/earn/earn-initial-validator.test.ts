@@ -3,7 +3,7 @@ import { Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import type { EarnYield } from "../../../src/domain/earn/models";
+import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import {
   ValidatorAddress,

@@ -9,7 +9,8 @@ const WalletFailure = Schema.Struct({
 
 /**
  * Whether a wallet's error, or one it wraps, shows the user declined the
- * request. TonConnect reports a declined action as "User rejects the action".
+ * request. TonConnect reports a declined action as "User rejects the action",
+ * MetaMask's older errors as "User denied transaction signature".
  */
 export const isWalletRejection = (cause: unknown): boolean => {
   const visited = new Set<unknown>();
@@ -23,7 +24,7 @@ export const isWalletRejection = (cause: unknown): boolean => {
       failure.code === "4001" ||
       failure.name === "UserRejectedRequestError" ||
       failure.name === "WalletWindowClosedError" ||
-      /user rejected|user rejects|request rejected|connection request reset|user closed|modal closed/i.test(
+      /user rejected|user rejects|user denied|request rejected|connection request reset|user closed|modal closed/i.test(
         failure.message ?? ""
       )
     )

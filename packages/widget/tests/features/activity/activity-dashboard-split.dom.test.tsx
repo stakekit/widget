@@ -74,7 +74,7 @@ describe("Dashboard Activity split view", () => {
       app.container.querySelector('[data-rk="activity-details-outlet"]')
     ).not.toBe(null);
     expect(
-      app.container.querySelector('[data-rk="activity-details-panel"]')
+      app.container.querySelector('[data-testid="activity-details-panel"]')
     ).not.toBe(null);
   });
 
@@ -82,10 +82,10 @@ describe("Dashboard Activity split view", () => {
     const app = await renderTab("/activity/a1/steps");
 
     expect(
-      app.container.querySelector('[data-rk="activity-details-panel"]')
+      app.container.querySelector('[data-testid="activity-details-panel"]')
     ).toBe(null);
     expect(
-      app.container.querySelector('[data-rk="activity-execution-panel"]')
+      app.container.querySelector('[data-testid="activity-execution-panel"]')
     ).not.toBe(null);
   });
 
@@ -112,7 +112,7 @@ describe("Dashboard Activity split view", () => {
     });
 
     expect(
-      app.container.querySelector('[data-rk="activity-execution-panel"]')
+      app.container.querySelector('[data-testid="activity-execution-panel"]')
     ).not.toBe(null);
     // The action route below the outlet owns the continuation Session.
     expect(outletMount()).toBe(reviewMount);

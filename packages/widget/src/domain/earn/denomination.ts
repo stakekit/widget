@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { ManageActionCommand, PendingAction } from "../action/models";
+import { fromBaseUnits } from "../finance/base-units";
 import { exactDecimal, exactZero } from "../finance/exact";
 import {
   equalTokens,
@@ -12,11 +13,11 @@ import {
   type BalanceShares,
   type EarnBalance,
   type EarnBalanceShares,
-  type EarnYieldWithProvider,
   getEncryptedHandle,
   getVisibleShares,
-} from "./models";
+} from "./balance";
 import { getYieldActionArg } from "./yield";
+import type { EarnYieldWithProvider } from "./yield-schema";
 
 /**
  * Every number is labelled with the token of the field it came from: a
@@ -48,7 +49,7 @@ const getVisibleShareAmount = (
   if (shares?.amount) return shares.amount;
   return shares?.amountRaw === undefined
     ? null
-    : exactDecimal(shares.amountRaw.toString()).shiftedBy(-shareToken.decimals);
+    : fromBaseUnits(shares.amountRaw, shareToken.decimals);
 };
 
 /**

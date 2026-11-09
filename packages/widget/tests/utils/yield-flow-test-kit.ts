@@ -1,11 +1,9 @@
 import { Effect, Layer, Stream, type SubscriptionRef } from "effect";
-import {
-  BorrowOperations,
-  YieldOperations,
-} from "../../src/services/api/operations";
+import { YieldOperations } from "../../src/services/api/operations";
 import { EvmRpc } from "../../src/services/evm-rpc/evm-rpc";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
+import { borrowOperationsLayer } from "./services/borrow-operations";
 import {
   makeTestTracking,
   type TestTrackingOptions,
@@ -104,14 +102,7 @@ export const makeYieldFlowTestKit = Effect.fn("makeYieldFlowTestKit")(
     );
     const engineLayer = TransactionWorkflowService.layer.pipe(
       Layer.provide(
-        Layer.mergeAll(
-          dependencies,
-          events.layer,
-          Layer.succeed(
-            BorrowOperations,
-            BorrowOperations.of({} as BorrowOperations["Service"])
-          )
-        )
+        Layer.mergeAll(dependencies, events.layer, borrowOperationsLayer())
       )
     );
     const workflow = options.engine

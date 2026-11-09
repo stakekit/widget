@@ -7,6 +7,7 @@ export const NoEnabledYields = () => {
   return (
     <ShellNotice
       testId="no-enabled-yields"
+      icon="LayersIcon"
       title={t("help_modals.no_enabled_yields.title")}
       description={t("help_modals.no_enabled_yields.description")}
     />

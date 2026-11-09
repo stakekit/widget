@@ -20,7 +20,7 @@ import {
   type DirectTransaction,
   DirectTransactionId,
 } from "../../src/domain/action/direct-transaction";
-import { ConfidentialHandle } from "../../src/domain/earn/models";
+import { ConfidentialHandle } from "../../src/domain/earn/balance";
 import {
   SignedTransactionPayload,
   TokenAddress,
@@ -29,14 +29,14 @@ import {
 } from "../../src/domain/identity/identifiers";
 import { Token } from "../../src/domain/token/token";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
+import { getYieldFlowExitCompletion } from "../../src/features/yield-transaction-flow/model/completion";
+import { getYieldFlowPlannedStepTypes } from "../../src/features/yield-transaction-flow/model/confidential-preparation";
 import {
-  getYieldFlowExitCompletion,
-  getYieldFlowPlannedStepTypes,
-  getYieldFlowWorkflowInput,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
   type YieldFlowHandoff,
-} from "../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+} from "../../src/features/yield-transaction-flow/model/session";
+import { getYieldFlowWorkflowInput } from "../../src/features/yield-transaction-flow/model/workflow-input";
 import { getYieldTransactionStepsView } from "../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
 import { startYieldFlowExecution } from "../../src/features/yield-transaction-flow/state/execution-page";
 import { makeYieldFlowReviewPage } from "../../src/features/yield-transaction-flow/state/review-page";

@@ -3,6 +3,7 @@ import {
   useActivityComplete,
   useActivityCompleteView,
 } from "../hooks/use-activity-complete.hook";
+import { useExitSummary } from "../hooks/use-exit-summary.hook";
 import { CompletePage } from "./common.page.tsx";
 
 const continuationCompletePageByIntent = {
@@ -22,23 +23,24 @@ const ActivityCompleteContent = ({
 }: {
   readonly view: NonNullable<ReturnType<typeof useActivityComplete>>;
 }) => {
-  const {
-    amount,
-    yieldType,
-    inputToken,
-    metadata,
-    network,
-    providerDetails,
-    selectedAction,
-  } = useActivityCompleteView(view);
+  const { amount, yieldType, network, selectedAction } =
+    useActivityCompleteView(view);
   useContinuationCompleteTracking(selectedAction.intent);
+  // Only an exit unlocks later or pays out in another token.
+  const { note, rows } = useExitSummary({
+    amount,
+    batched: view.batchSide === "redemption",
+    receiveSymbol: view.receiveToken?.symbol ?? null,
+    symbol: network,
+  });
+  // An exit's payout token, else the token the action moved: what an entry
+  // deposited, or what an exit or a pending action moved.
+  const markToken = view.receiveToken ?? view.inputToken;
 
   return (
     <CompletePage
       yieldType={yieldType}
-      providersDetails={providerDetails}
-      token={inputToken}
-      metadata={metadata}
+      markToken={markToken}
       network={network}
       amount={amount}
       pendingActionType={selectedAction.type}
@@ -48,6 +50,8 @@ const ActivityCompleteContent = ({
           : null
       }
       integrationId={selectedAction.yieldId}
+      note={note}
+      rows={rows}
     />
   );
 };

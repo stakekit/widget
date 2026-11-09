@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../../../src/app/runtime/app-runtime";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
+import type { Market } from "../../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import {
@@ -18,11 +18,14 @@ import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../../../src/services/events/widget-domain-events";
+import {
+  borrowWalletAddress,
+  makeBorrowCollateralTokenDto,
+  makeBorrowMarket,
+} from "../../../fixtures/borrow";
 import { applicationRuntimeInitInitialValue } from "../../../utils/widget-config";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
 const otherWalletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
@@ -40,48 +43,19 @@ const makeMarket = ({
   readonly collateralSymbol: string;
   readonly id: string;
 }) =>
-  Schema.decodeSync(Market)({
-    availableLiquidity: "500000",
-    availableLiquidityRaw: "500000000000",
-    blueBundleOriginationFeeBps: null,
-    borrowRate: "0.06",
+  makeBorrowMarket({
     collateralTokens: [
-      {
-        liquidationPenalty: "0.05",
-        liquidationThreshold: "0.85",
-        maxLtv: "0.8",
+      makeBorrowCollateralTokenDto({
         priceUsd: "1",
-        supplyRate: "0.02",
         token: {
           address: collateralAddress,
           decimals: 18,
           name: collateralSymbol,
           symbol: collateralSymbol,
         },
-      },
+      }),
     ],
     id,
-    integrationId: "aave-borrow",
-    isBorrowEnabled: true,
-    loanToken: {
-      address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      decimals: 6,
-      name: "USD Coin",
-      symbol: "USDC",
-    },
-    loanTokenPriceUsd: "1",
-    minLoan: null,
-    network: "ethereum",
-    originationFeeBps: "0",
-    originationFeeWrapperAddress: null,
-    poolAddress: "0x0000000000000000000000000000000000000001",
-    supplyCollateralFeeBps: "0",
-    totalBorrow: "500000",
-    totalBorrowRaw: "500000000000",
-    totalSupply: "1000000",
-    totalSupplyRaw: "1000000000000",
-    type: "pool",
-    utilizationRate: "0.5",
   });
 
 const makeEntryRegistry = ({

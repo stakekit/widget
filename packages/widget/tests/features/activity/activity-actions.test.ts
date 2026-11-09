@@ -5,6 +5,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import type { YieldAction } from "../../../src/domain/action/models";
 import { ActivityActionsPage } from "../../../src/domain/activity/models";
+import { EarnValidator } from "../../../src/domain/earn/validator";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   ActivityExplicitIntent,
@@ -19,8 +20,9 @@ import {
 } from "../../../src/features/activity/state/page-resources";
 import { yieldOpportunityResourceAtom } from "../../../src/resources/yield-opportunity/yield-opportunity";
 import {
-  BorrowResourceSource,
-  YieldResourceSource,
+  ApiRequestError,
+  type ValidatorDirectoryRequest,
+  type YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import { toPresentable } from "../../../src/shared/effect/async-result";
 import { getPullResultItems } from "../../../src/shared/effect/pagination";
@@ -30,7 +32,11 @@ import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
-import { unconfiguredBorrowResourceSourceLayer } from "../../utils/services/borrow-resource-source";
+import {
+  borrowResourceSourceLayer,
+  unconfiguredBorrowResourceSourceLayer,
+} from "../../utils/services/borrow-resource-source";
+import { yieldResourceSourceLayer } from "../../utils/services/resource-sources";
 
 const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
@@ -128,33 +134,23 @@ describe("activity action atom boundary", () => {
         yieldId: yieldModel.id,
       })
     );
-    const listActivity = vi.fn(
-      ({
+    const listActivity = vi.fn<ListActivity>(({ limit = 50, offset = 0 }) =>
+      Effect.succeed({
+        items: actions.slice(offset, offset + limit),
         limit,
         offset,
-      }: {
-        readonly limit: number;
-        readonly offset: number;
-      }) =>
-        Effect.succeed({
-          items: actions.slice(offset, offset + limit),
-          limit,
-          offset,
-          total: actions.length,
-        })
+        total: actions.length,
+      })
     );
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getOpportunity,
-              getProvider: () => Effect.succeedNone,
-              listActivity,
-            } as never)
-          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
+          yieldResourceSourceLayer({
+            getOpportunity,
+            getProvider: () => Effect.succeedNone,
+            listActivity,
+          }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -232,22 +228,8 @@ describe("activity action atom boundary", () => {
       tracked(yieldsById.get(yieldId)!)
     );
     const getProvider = vi.fn(() => tracked(Option.none()));
-    const listValidators = vi.fn(
-      (request: {
-        readonly address?: string;
-        readonly limit: number;
-        readonly offset: number;
-      }) =>
-        tracked({
-          items: [
-            yieldApiValidatorFixture(
-              request.address === undefined ? {} : { address: request.address }
-            ),
-          ],
-          limit: request.limit,
-          offset: request.offset,
-          total: 1,
-        })
+    const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
+      tracked(validatorPage(request))
     );
     const listActivity = vi.fn(() =>
       Effect.succeed({
@@ -261,15 +243,12 @@ describe("activity action atom boundary", () => {
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getOpportunity,
-              getProvider,
-              listActivity,
-              listValidators,
-            } as never)
-          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
+          yieldResourceSourceLayer({
+            getOpportunity,
+            getProvider,
+            listActivity,
+            listValidators,
+          }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -314,14 +293,10 @@ describe("activity action atom boundary", () => {
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getOpportunity: () =>
-                Effect.fail(new Cause.UnknownError("unavailable")),
-              listActivity,
-            } as never)
-          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
+          yieldResourceSourceLayer({
+            getOpportunity: () => Effect.fail(yieldUnavailable),
+            listActivity,
+          }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -347,35 +322,25 @@ describe("activity action atom boundary", () => {
   it("manual refresh republishes data from the shared history authority", async () => {
     const yieldModel = yieldApiYieldFixture();
     let actionId = "action-before-refresh";
-    const listActivity = vi.fn(
-      ({
+    const listActivity = vi.fn<ListActivity>(({ limit = 50, offset = 0 }) =>
+      Effect.succeed({
+        items: [
+          yieldApiActionFixture({ id: actionId, yieldId: yieldModel.id }),
+        ],
         limit,
         offset,
-      }: {
-        readonly limit: number;
-        readonly offset: number;
-      }) =>
-        Effect.succeed({
-          items: [
-            yieldApiActionFixture({ id: actionId, yieldId: yieldModel.id }),
-          ],
-          limit,
-          offset,
-          total: 1,
-        })
+        total: 1,
+      })
     );
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getOpportunity: () => Effect.succeed(yieldModel),
-              getProvider: () => Effect.succeedNone,
-              listActivity,
-            } as never)
-          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
+          yieldResourceSourceLayer({
+            getOpportunity: () => Effect.succeed(yieldModel),
+            getProvider: () => Effect.succeedNone,
+            listActivity,
+          }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -409,25 +374,36 @@ describe("activity action atom boundary", () => {
   });
 });
 
-const makeEnrichmentRegistry = (source: Record<string, unknown>) =>
+const makeEnrichmentRegistry = (
+  source: Partial<YieldResourceSource["Service"]>
+) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.succeed(
-          YieldResourceSource,
-          YieldResourceSource.of({
-            getProvider: () => Effect.succeedNone,
-            ...source,
-          } as never)
-        ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
+        yieldResourceSourceLayer({
+          getProvider: () => Effect.succeedNone,
+          ...source,
+        }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
       ),
     ],
   });
 
+type ListActivity = YieldResourceSource["Service"]["listActivity"];
+
+const yieldUnavailable = new ApiRequestError({
+  cause: new Error("unavailable"),
+  failure: {
+    _tag: "ErrorStatus",
+    body: { message: "unavailable" },
+    status: 503,
+  },
+  operation: "yield-opportunity",
+});
+
 const pagedActivity =
-  (actions: ReadonlyArray<YieldAction>) =>
-  ({ limit, offset }: { readonly limit: number; readonly offset: number }) =>
+  (actions: ReadonlyArray<YieldAction>): ListActivity =>
+  ({ limit = 50, offset = 0 }) =>
     Effect.succeed({
       items: actions.slice(offset, offset + limit),
       limit,
@@ -435,14 +411,12 @@ const pagedActivity =
       total: actions.length,
     });
 
-const validatorPage = (request: {
-  readonly address?: string;
-  readonly limit: number;
-  readonly offset: number;
-}) => ({
+const validatorPage = (request: ValidatorDirectoryRequest) => ({
   items: [
-    yieldApiValidatorFixture(
-      request.address === undefined ? {} : { address: request.address }
+    Schema.decodeSync(EarnValidator)(
+      yieldApiValidatorFixture(
+        request.address === undefined ? {} : { address: request.address }
+      )
     ),
   ],
   limit: request.limit,
@@ -483,13 +457,12 @@ describe("activity enrichment per loaded page", () => {
         ? Effect.promise(() => unseenGate).pipe(Effect.as(unseenYield))
         : Effect.succeed(seenYield)
     );
-    const listValidators = vi.fn(
-      (request: Parameters<typeof validatorPage>[0]) =>
-        request.address === "unseen-validator"
-          ? Effect.promise(() => unseenGate).pipe(
-              Effect.as(validatorPage(request))
-            )
-          : Effect.succeed(validatorPage(request))
+    const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
+      request.address === "unseen-validator"
+        ? Effect.promise(() => unseenGate).pipe(
+            Effect.as(validatorPage(request))
+          )
+        : Effect.succeed(validatorPage(request))
     );
     const listActivity = vi.fn(pagedActivity(actions));
     const registry = makeEnrichmentRegistry({
@@ -657,7 +630,7 @@ describe("activity enrichment per loaded page", () => {
       getOpportunity: () =>
         yieldAvailable
           ? Effect.succeed(yieldModel)
-          : Effect.fail(new Cause.UnknownError("unavailable")),
+          : Effect.fail(yieldUnavailable),
       listValidators: (request: Parameters<typeof validatorPage>[0]) =>
         Effect.succeed(validatorPage(request)),
     });
@@ -717,14 +690,8 @@ describe("Activity filter options", () => {
         Atom.initialValue(
           appRuntime.layer,
           Layer.mergeAll(
-            Layer.succeed(
-              YieldResourceSource,
-              YieldResourceSource.of({ listActivity } as never)
-            ),
-            Layer.succeed(
-              BorrowResourceSource,
-              BorrowResourceSource.of({ listActions } as never)
-            )
+            yieldResourceSourceLayer({ listActivity }),
+            borrowResourceSourceLayer({ listActions })
           )
         ),
       ],

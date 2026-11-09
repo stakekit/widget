@@ -1,5 +1,9 @@
 import { Context, Data, type Effect, type Option, Schema } from "effect";
-import type { YieldAction } from "../../domain/action/models";
+import type {
+  ActionCommand,
+  ActionSimulation,
+  YieldAction,
+} from "../../domain/action/models";
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
@@ -17,16 +21,16 @@ import type {
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
 } from "../../domain/borrow/responses";
+import type { EarnProvider } from "../../domain/earn/provider";
 import type {
   EarnLegacyTokenOptionsResponse,
   EarnPositionsResponse,
-  EarnProvider,
   EarnValidatorPage,
-  EarnYield,
   EarnYieldBalancesResponse,
   EarnYieldPage,
-} from "../../domain/earn/models";
+} from "../../domain/earn/responses";
 import type { KnownApiYieldType } from "../../domain/earn/yield";
+import type { EarnYield } from "../../domain/earn/yield-schema";
 import type {
   GasBalancesCommand,
   GasTokenBalancesResponse,
@@ -50,13 +54,18 @@ import type {
   HistoryPeriod,
   KycStatus,
   RewardRateHistoryResponse,
-  RewardsAddresses,
-  RewardsSummaryRecord,
   TvlHistoryResponse,
+  YieldRewardsSummary,
 } from "../../domain/portfolio/models";
 import type { EnabledWalletNetworks } from "../../domain/wallet/models";
 import type * as BorrowApi from "../../generated/api/borrow";
 import { RichError } from "../errors/rich-error";
+
+/** An enter or exit to estimate without creating it. */
+export type ActionSimulationRequest = {
+  readonly command: ActionCommand;
+  readonly intent: "enter" | "exit";
+};
 
 export type YieldDirectoryRequest = {
   readonly limit: number;
@@ -204,10 +213,6 @@ type LegacyResourceSourceService = {
     typeof PriceResponse.Type,
     ApiReadFailure | InputValidationError
   >;
-  readonly getRewardsSummaries: (request: {
-    readonly addresses: RewardsAddresses;
-    readonly yieldIds: ReadonlyArray<YieldId>;
-  }) => Effect.Effect<typeof RewardsSummaryRecord.Type, ApiReadFailure>;
   readonly getTokenOptions: (
     request: EarnTokenCatalogRequest
   ) => Effect.Effect<
@@ -241,6 +246,11 @@ type YieldResourceSourceService = {
   readonly getProvider: (
     providerId: ProviderId
   ) => Effect.Effect<Option.Option<EarnProvider>, ApiReadFailure>;
+  /** A wallet's fixed-window earnings; none when the Yield is untracked. */
+  readonly getRewardsSummary: (request: {
+    readonly address: WalletAddress;
+    readonly yieldId: YieldId;
+  }) => Effect.Effect<Option.Option<YieldRewardsSummary>, ApiReadFailure>;
   readonly getRewardRateHistory: (request: {
     readonly interval: "day" | "week";
     readonly period: HistoryPeriod;
@@ -264,6 +274,10 @@ type YieldResourceSourceService = {
   readonly listYields: (
     request: YieldDirectoryRequest
   ) => Effect.Effect<typeof EarnYieldPage.Type, ApiReadFailure>;
+  /** Estimates an enter or exit; the API creates no action. */
+  readonly simulateAction: (
+    request: ActionSimulationRequest
+  ) => Effect.Effect<ActionSimulation, ApiReadFailure | InputValidationError>;
 };
 
 export class BorrowResourceSource extends Context.Service<

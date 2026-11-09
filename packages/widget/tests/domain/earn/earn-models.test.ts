@@ -1,14 +1,11 @@
 import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, Schema } from "effect";
-import {
-  EarnBalance,
-  EarnPosition,
-  EarnProvider,
-  EarnValidator,
-  EarnValidatorPage,
-  EarnYield,
-} from "../../../src/domain/earn/models";
+import { EarnBalance, EarnPosition } from "../../../src/domain/earn/balance";
+import { EarnProvider } from "../../../src/domain/earn/provider";
+import { EarnValidatorPage } from "../../../src/domain/earn/responses";
+import { EarnValidator } from "../../../src/domain/earn/validator";
+import { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { Token } from "../../../src/domain/token/token";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../../fixtures";
 

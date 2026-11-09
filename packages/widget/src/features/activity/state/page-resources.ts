@@ -24,9 +24,11 @@ import { withPullPageDone } from "../../../shared/effect/pagination";
 import type { ActivityActionItem } from "../model/activity-action";
 import { projectActivityActionItem } from "../model/activity-enrichment";
 import {
+  type ActivityFeedFilter,
   type ActivityFilter,
   activityFilterCategories,
   getActivityFilterSources,
+  projectActivityFilterOptions,
 } from "../model/filters";
 import {
   ActivityEnrichmentKey,
@@ -37,9 +39,10 @@ const ACTIVITY_ACTION_STATUSES = Object.values(ActionStatus).filter(
   (status) => getActivityActionCapabilities(status).visibleInFeed
 );
 
+/** A feed's key: the Other filter reads the All feed, so it has none. */
 export class ActivityActionsKey extends Data.Class<{
   readonly borrowEnabled: boolean;
-  readonly filter: ActivityFilter;
+  readonly filter: ActivityFeedFilter;
   readonly scope: WalletScopeKey | null;
 }> {}
 
@@ -94,7 +97,9 @@ export const activityActionsPullAtom = Atom.family(
     if (!historyKey || !key.scope) return emptyActivityActionsPullAtom;
 
     const walletScope = key.scope;
-    const source = activityHistoryPullAtom.foreground(historyKey);
+    // The page shows its own error with a retry, so a failure raises no
+    // global error sheet.
+    const source = activityHistoryPullAtom.local(historyKey);
 
     return Atom.transform(
       source,
@@ -174,7 +179,7 @@ export const activityFilterOptionsAtom = Atom.family(
       Effect.gen(function* () {
         if (!key.scope) return [];
         const scope = key.scope;
-        const count = (filter: ActivityFilter) => {
+        const count = (filter: ActivityFeedFilter) => {
           const historyKey = getActivityHistoryKey(
             new ActivityActionsKey({
               borrowEnabled: key.borrowEnabled,
@@ -199,11 +204,8 @@ export const activityFilterOptionsAtom = Atom.family(
             ),
           { concurrency: 3 }
         );
-        const visible = categoryCounts.filter((item) => item.count > 0);
 
-        return visible.length > 0
-          ? [{ filter: "all" as const, count: allCount }, ...visible]
-          : [];
+        return projectActivityFilterOptions({ allCount, categoryCounts });
       }).pipe(Effect.mapError(toActivityActionsError))
     )
 );

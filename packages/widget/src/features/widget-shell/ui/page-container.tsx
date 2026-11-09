@@ -1,22 +1,14 @@
 import type { PropsWithChildren } from "react";
-import type { BoxProps } from "../../../shared/ui/primitives/box";
-import { Box } from "../../../shared/ui/primitives/box";
+import { Stack } from "../../../ui/index";
 import { BackButton } from "./back-button";
-import { pageContainer } from "./layout.css";
 
+/** A page's column under the shell's back button. */
 export const PageContainer = ({
   children,
-  ...rest
-}: PropsWithChildren<BoxProps>) => (
-  <Box
-    data-rk="page-container"
-    display="flex"
-    flexDirection="column"
-    flex={1}
-    className={pageContainer}
-    {...rest}
-  >
+  testId,
+}: PropsWithChildren<{ readonly testId?: string }>) => (
+  <Stack hostHook="page-container" grow gap="gutter" testId={testId}>
     <BackButton />
     {children}
-  </Box>
+  </Stack>
 );

@@ -11,7 +11,7 @@ import {
   WalletAddress,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import { BorrowFlowSession } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import { BorrowFlowSession } from "../../../src/features/borrow-transaction-flow/model/session";
 import {
   BorrowTransactionFlowExecutionPage,
   BorrowTransactionFlowExecutionRoute,
@@ -20,7 +20,6 @@ import {
   useBorrowTransactionFlowReview,
 } from "../../../src/features/borrow-transaction-flow/react/borrow-flow-route";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
-import { BorrowOperations } from "../../../src/services/api/operations";
 import {
   makeWidgetNavigation,
   WidgetNavigation,
@@ -39,6 +38,7 @@ import {
   borrowEntryFlowEntry,
   withUnserializedState,
 } from "../../utils/borrow-flow-entry";
+import { borrowOperationsLayer } from "../../utils/services/borrow-operations";
 import { render } from "../../utils/test-utils.dom.tsx";
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
@@ -163,7 +163,8 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     }
   );
   const navigation = makeWidgetNavigation({
-    back: () => Effect.promise(() => router.navigate(-1)),
+    back: (options) =>
+      Effect.promise(() => router.navigate(-(options?.steps ?? 1))),
     push: (to) =>
       Effect.promise(() =>
         router.navigate(widgetTargetPath(to), {
@@ -180,16 +181,7 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
   });
   const layer = Layer.mergeAll(
     Layer.succeed(WidgetNavigation, navigation),
-    Layer.succeed(
-      BorrowOperations,
-      BorrowOperations.of({
-        executeAction: () => Effect.succeed(action),
-        getAction: () => Effect.die("Not used"),
-        stepAction: () => Effect.die("Not used"),
-        submitTransaction: () => Effect.die("Not used"),
-        submitTransactionInBackground: () => Effect.die("Not used"),
-      })
-    ),
+    borrowOperationsLayer({ executeAction: () => Effect.succeed(action) }),
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({

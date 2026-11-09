@@ -1,12 +1,17 @@
+import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
+import { toBorrowNetworkToken } from "../../../../domain/borrow/catalog/token";
 import {
   deriveMarketPositionOverview,
   type MarketPosition,
 } from "../../../../domain/borrow/positions/market-position";
 import type { BorrowPositionActionKey } from "../../../../domain/borrow/positions/position-action-key";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
-import { borrowTokenToAppToken } from "../../../../shared/lib/borrow-token";
+import {
+  classifyRiskBand,
+  liquidationPriceDrop,
+  type RiskBand,
+} from "../../../../domain/borrow/risk/risk-band";
 import {
   formatBorrowProviderName,
   formatNetworkName,
@@ -14,26 +19,67 @@ import {
 import {
   formatHealthFactor,
   formatPercent,
+  formatRoundedPercent,
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../../shared/lib/number-format";
+import {
+  type RiskValueTone,
+  riskValueTone,
+} from "../../../borrow-transaction-flow/index";
 import type {
   BorrowPositionPendingActionContext,
   BorrowWithdrawTokenOption,
 } from "../../action-preparation/index";
 
-type BorrowPositionMetricCard = {
+/** A figure beside the net worth in the position's summary. */
+type BorrowPositionSummaryMetric = {
   readonly id: string;
   readonly label: string;
-  readonly subValue?: string;
   readonly value: string;
+  /** A risk figure's tone: the position's risk band. */
+  readonly tone?: RiskValueTone;
 };
 
-type BorrowPositionRow = {
-  readonly id: string;
-  readonly label: string;
-  readonly subValue?: string;
-  readonly value: string;
+/**
+ * The alert a position at risk of liquidation raises: a warning in caution,
+ * danger in danger, with Repay as its way out.
+ */
+export type BorrowPositionRiskAlert = {
+  readonly tone: "warning" | "danger";
+  readonly title: string;
+  readonly body: string;
+};
+
+const getRiskAlert = ({
+  band,
+  healthFactor,
+  locale,
+  t,
+}: {
+  readonly band: RiskBand | null;
+  readonly healthFactor: BigNumber | null;
+  readonly locale: string;
+  readonly t: TFunction;
+}): BorrowPositionRiskAlert | null => {
+  if (band === null || band === "safe") return null;
+
+  const drop =
+    healthFactor === null ? null : liquidationPriceDrop(healthFactor);
+  const getBody = () => {
+    if (drop === null) return t("dashboard.borrow.risk.alert.near_max_ltv");
+    if (drop.isZero()) return t("dashboard.borrow.risk.alert.liquidatable");
+    return t("dashboard.borrow.risk.alert.price_drop", {
+      drop: formatPercent(drop, locale),
+    });
+  };
+
+  return {
+    tone: band === "danger" ? "danger" : "warning",
+    title: t(`dashboard.borrow.risk.alert.${band}_title`),
+    body: getBody(),
+  };
 };
 
 type BorrowPositionDetailRow = {
@@ -226,27 +272,15 @@ export const getBorrowPositionDetailsModel = ({
     currentRisk.status === "available"
       ? currentRisk.liquidationThreshold
       : marketRisk.liquidationThreshold;
-  const metricCards: BorrowPositionMetricCard[] = [
-    {
-      id: "net-worth",
-      label: t("dashboard.borrow.position_details.net_worth"),
-      value: formatUsd(position.metrics.netWorthUsd, locale),
-    },
+  // One band for the LTV, its meter and the health factor.
+  const riskBand = classifyRiskBand({ healthFactor, ltv: currentLtv, maxLtv });
+  const riskTone = riskValueTone(riskBand);
+  const summaryMetrics: BorrowPositionSummaryMetric[] = [
     {
       id: "debt",
       label: t("dashboard.borrow.position_details.debt"),
-      ...(debtBalance ? { subValue: debtBalance.tokenSymbol } : {}),
       value: formatUsd(position.metrics.totalBorrowedUsd, locale),
     },
-    ...(currentLtv === null
-      ? []
-      : [
-          {
-            id: "ltv",
-            label: t("dashboard.borrow.position_details.ltv"),
-            value: formatPercent(currentLtv, locale),
-          },
-        ]),
     ...(healthFactor === null
       ? []
       : [
@@ -254,39 +288,29 @@ export const getBorrowPositionDetailsModel = ({
             id: "health-factor",
             label: t("dashboard.borrow.position_details.health_factor"),
             value: formatHealthFactor(healthFactor, locale),
+            tone: riskTone,
           },
         ]),
   ];
-  const breakdownRows: BorrowPositionRow[] = [
-    ...supplyBalances.map((balance) => ({
-      id: `supply-${balance.tokenAddress}`,
-      label: balance.isCollateral
-        ? t("dashboard.borrow.position_details.collateral")
-        : t("dashboard.borrow.position_details.supplied"),
-      subValue: formatUsd(balance.balanceUsd, locale),
-      value: `${formatTokenAmount(balance.balance, locale, "down")} ${balance.tokenSymbol}`,
-    })),
+  // The summary's loan to value gauge marks the liquidation threshold; without
+  // a loan to value there is no gauge, so the details carry it.
+  const detailRows: BorrowPositionDetailRow[] = [
     ...(debtBalance
       ? [
           {
-            id: `debt-${debtBalance.tokenAddress}`,
+            id: "borrowed",
             label: t("dashboard.borrow.position_details.borrowed"),
-            subValue: formatUsd(debtBalance.balanceUsd, locale),
             value: `${formatTokenAmount(debtBalance.balance, locale, "up")} ${debtBalance.tokenSymbol}`,
           },
         ]
       : []),
-  ];
-  const detailRows: BorrowPositionDetailRow[] = [
     {
-      id: "provider",
-      label: t("dashboard.borrow.details.provider"),
-      value: formatBorrowProviderName(position.integration.name),
-    },
-    {
-      id: "network",
-      label: t("dashboard.borrow.details.network"),
-      value: formatNetworkName(position.market.network),
+      id: "borrow-apy",
+      label: t("dashboard.borrow.details.borrow_apy"),
+      value:
+        position.metrics.borrowApy === null
+          ? unavailableFigure
+          : formatRoundedPercent(position.metrics.borrowApy, locale),
     },
     {
       id: "market-type",
@@ -298,20 +322,19 @@ export const getBorrowPositionDetailsModel = ({
       label: t("dashboard.borrow.details.max_ltv"),
       value: formatPercent(maxLtv, locale),
     },
-    {
-      id: "liquidation-threshold",
-      label: t("dashboard.borrow.position_details.liquidation_threshold"),
-      value: formatPercent(liquidationThreshold, locale),
-    },
+    ...(currentLtv === null
+      ? [
+          {
+            id: "liquidation-threshold",
+            label: t("dashboard.borrow.position_details.liquidation_threshold"),
+            value: formatPercent(liquidationThreshold, locale),
+          },
+        ]
+      : []),
     {
       id: "liquidation-penalty",
       label: t("dashboard.borrow.position_details.liquidation_penalty"),
       value: formatPercent(marketRisk.liquidationPenalty, locale),
-    },
-    {
-      id: "borrow-apy",
-      label: t("dashboard.borrow.details.borrow_apy"),
-      value: formatPercent(position.metrics.borrowApy, locale),
     },
   ];
   const collateralItems = supplyBalances.map((balance) => {
@@ -338,25 +361,42 @@ export const getBorrowPositionDetailsModel = ({
       id: balance.tokenAddress,
       isCollateral: balance.isCollateral,
       label: balance.tokenSymbol,
-      supplyRate: formatPercent(balance.apy, locale),
+      supplyRate: t(
+        "dashboard.borrow.position_details.collateral_supply_rate",
+        {
+          rate: formatRoundedPercent(balance.apy, locale),
+        }
+      ),
     };
   });
 
   return {
-    breakdownRows,
     collateralItems,
     currentLtv,
     detailRows,
-    headerToken: borrowTokenToAppToken({
+    headerToken: toBorrowNetworkToken({
       network: position.market.network,
       token: overview.headerToken,
     }),
     healthFactor,
     liquidationThreshold,
-    marketLabel: getBorrowMarketPairLabel(position.market),
-    metricCards,
+    maxLtv,
+    networkName: formatNetworkName(position.market.network),
+    riskBand,
+    riskAlert: getRiskAlert({ band: riskBand, healthFactor, locale, t }),
     providerName: formatBorrowProviderName(position.integration.name),
-    totalCollateralUsd: formatUsd(position.metrics.totalCollateralUsd, locale),
+    summary: {
+      value: formatUsd(position.metrics.netWorthUsd, locale),
+      subvalue: t("dashboard.borrow.position_details.net_worth_caption", {
+        collateral: formatUsd(position.metrics.totalCollateralUsd, locale),
+      }),
+      metrics: summaryMetrics,
+    },
     title: overview.title,
   };
 };
+
+/** What a market position's page shows of it. */
+export type BorrowPositionDetailsModel = ReturnType<
+  typeof getBorrowPositionDetailsModel
+>;

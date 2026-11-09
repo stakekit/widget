@@ -1,7 +1,8 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option, Result, Schema } from "effect";
-import type { EarnBalance, EarnYieldWithProvider } from "../earn/models";
+import type { EarnBalance } from "../earn/balance";
 import type { ValidatorInput as ValidatorDto } from "../earn/validator";
+import type { EarnYieldWithProvider } from "../earn/yield-schema";
 import { truncateToTokenDecimals } from "../finance/exact";
 import type { WalletAddress } from "../identity/identifiers";
 import type { YieldBalanceType } from "../portfolio/positions";

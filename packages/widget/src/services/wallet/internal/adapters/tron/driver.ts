@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import type { Connector } from "wagmi";
 import {
-  WalletCapabilityUnavailableError,
+  type WalletCapabilityUnavailableError,
   WalletDecodeError,
   WalletSigningError,
 } from "../../../wallet-errors";
@@ -9,6 +9,7 @@ import {
   decodeWalletSignedPayloadResult,
   type WalletSignedPayloadResult,
 } from "../../../wallet-transactions";
+import { requireTransactionSigner } from "../transaction-signing";
 import { unsignedTronTransactionCodec } from "./transaction";
 import { isTronConnector } from "./tron-connector-meta";
 
@@ -26,18 +27,16 @@ export const makeTronWalletDriver = ({
     WalletCapabilityUnavailableError | WalletDecodeError | WalletSigningError
   > =>
     Effect.gen(function* () {
-      if (!isTronConnector(connector)) {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
-
+      const tron = yield* requireTransactionSigner(
+        connector,
+        isTronConnector(connector) ? connector : null
+      );
       const decodedTx = yield* Schema.decodeEffect(
         Schema.fromJsonString(unsignedTronTransactionCodec)
       )(tx).pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
+
       const signed = yield* Effect.tryPromise({
-        try: () => connector.signTransaction(decodedTx),
+        try: () => tron.signTransaction(decodedTx),
         catch: (cause) =>
           new WalletSigningError({ cause, operation: "transaction" }),
       });

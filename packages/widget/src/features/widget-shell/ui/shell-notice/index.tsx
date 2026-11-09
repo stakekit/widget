@@ -1,62 +1,48 @@
-import type { ReactNode } from "react";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Heading } from "../../../../shared/ui/primitives/typography/heading";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { PoweredBy } from "../powered-by";
-import { container, frame } from "./style.css";
+import type { ComponentProps } from "react";
+import { EmptyState, ErrorState } from "../../../../ui/index";
+import { ShellFrame } from "../shell-frame";
+
+type StateProps = ComponentProps<typeof EmptyState>;
 
 type ShellNoticeContent = {
   readonly description: string;
+  readonly icon: NonNullable<StateProps["icon"]>;
   readonly testId: string;
   readonly title: string;
+  /** What the user can do about it, such as switching network. */
+  readonly action?: StateProps["action"];
+  /** A failure, announced and drawn in the danger tone. */
+  readonly failure?: boolean;
 };
 
-export const ShellNotice = (content: ShellNoticeContent) => (
-  <ShellNoticeFrame {...content} footer={<PoweredBy opacity={1} />} />
-);
-
 /**
- * A full-widget notice that renders without Widget Configuration; the Layout
- * attribute on the app container frames it.
+ * A full-widget notice in the shell's frame: a spot, a title, what happened
+ * and, when the user can resolve it, an action, centered in the frame. It
+ * renders without Widget Configuration: the app container gives the frame
+ * its width.
  */
-export const ShellNoticeFrame = ({
+export const ShellNotice = ({
+  action,
   description,
-  footer,
+  failure = false,
+  icon,
   testId,
   title,
-}: ShellNoticeContent & {
-  readonly footer?: ReactNode;
-}) => {
-  return (
-    <Box className={frame}>
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        paddingBottom={{ mobile: "8" }}
-        className={container}
-        data-testid={testId}
-      >
-        <Box>
-          <Heading
-            marginBottom="4"
-            textAlign="center"
-            variant={{ level: "h4" }}
-          >
-            {title}
-          </Heading>
+}: ShellNoticeContent) => {
+  const State = failure ? ErrorState : EmptyState;
 
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-            marginBottom="4"
-          >
-            {description}
-          </Text>
-        </Box>
-      </Box>
-      {footer}
-    </Box>
+  return (
+    <ShellFrame>
+      <State
+        testId={testId}
+        size="lg"
+        fill
+        as="h2"
+        icon={icon}
+        title={title}
+        body={description}
+        action={action}
+      />
+    </ShellFrame>
   );
 };

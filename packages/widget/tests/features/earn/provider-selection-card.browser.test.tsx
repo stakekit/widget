@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
-import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 
 import type { useSelectValidator } from "../../../src/features/earn/react/use-select-validator";
 import { SelectYieldRewardDetails } from "../../../src/features/earn/ui/components/select-yield-section/select-yield-reward-details";
@@ -35,6 +35,7 @@ vi.mock(
     const actual = await importOriginal<object>();
     return {
       ...actual,
+      useEarnDetails: () => ({ view: hookState.entryView }),
       useEarnEntry: () => ({ view: hookState.entryView }),
     };
   }
@@ -213,7 +214,7 @@ describe("ProviderSelectionCard", () => {
       .element(app.getByTestId("select-modal__search-input"))
       .toHaveValue("missing validator");
     await expect
-      .element(app.getByText("No validators found"))
+      .element(app.getByText("No validators found").first())
       .toBeInTheDocument();
   });
 });

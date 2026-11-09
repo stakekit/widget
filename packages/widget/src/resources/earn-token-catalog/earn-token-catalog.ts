@@ -13,6 +13,7 @@ import type {
   ResponseDecodeError,
 } from "../../services/api/resource-sources";
 import { LegacyResourceSource } from "../../services/api/resource-sources";
+import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
@@ -79,6 +80,7 @@ const earnTokenCatalogCanonicalAtom = Atom.family((key: EarnTokenCatalogKey) =>
       })
     )
     .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
       earnTokenCatalogPolicy,
       Atom.withLabel("earnTokenCatalogResourceAtom")
     )

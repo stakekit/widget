@@ -5,13 +5,10 @@
  */
 import type { ReactElement } from "react";
 import { SKApp as SKAppImplementation } from "./App";
-import { HelpModal as HelpModalImplementation } from "./features/preferences/views";
+import { HelpModal as HelpModalImplementation } from "./app/composition/help-modal";
 import type { HelpModalProps, SKAppProps } from "./public-api/react-types.js";
 import type { SKTheme } from "./public-api/types.js";
-import {
-  darkTheme as darkThemeTokens,
-  lightTheme as lightThemeTokens,
-} from "./shared/styles/theme/themes";
+import { legacyThemeDefaults } from "./services/config/legacy-theme-defaults";
 
 export type { HelpModalProps, SKAppProps } from "./public-api/react-types.js";
 export type {
@@ -20,6 +17,7 @@ export type {
   EvmTx,
   SKActionArguments,
   SKActionType,
+  SKAppearance,
   SKBorrowExternalProviders,
   SKBorrowMarketsScope,
   SKBorrowSignatureResult,
@@ -27,11 +25,13 @@ export type {
   SKBorrowTxMeta,
   SKBorrowTxResult,
   SKBorrowWallet,
+  SKColorRole,
   SKCustomTranslations,
   SKEip712TypedData,
   SKExternalProviders,
   SKHostVariant,
   SKLanguage,
+  SKLayout,
   SKNetwork,
   SKPreferredTokenYieldsPerNetwork,
   SKSignMessageResult,
@@ -66,5 +66,17 @@ export {
 export const SKApp: (props: SKAppProps) => ReactElement = SKAppImplementation;
 export const HelpModal: (props: HelpModalProps) => ReactElement =
   HelpModalImplementation;
-export const darkTheme: SKTheme = darkThemeTokens;
-export const lightTheme: SKTheme = lightThemeTokens;
+/**
+ * The legacy dark theme tokens.
+ *
+ * @deprecated Use `appearance: { colorScheme: "dark" }`. Passed unchanged as
+ * `theme`, it gives the dark default. Removed in the next major version.
+ */
+export const darkTheme: SKTheme = legacyThemeDefaults.dark;
+/**
+ * The legacy light theme tokens.
+ *
+ * @deprecated Use `appearance`. Passed unchanged as `theme`, it gives the
+ * light default. Removed in the next major version.
+ */
+export const lightTheme: SKTheme = legacyThemeDefaults.light;

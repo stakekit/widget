@@ -4,7 +4,7 @@ import { Action } from "../../../src/domain/borrow/execution/action";
 import {
   type BorrowTransactionFlowReview,
   projectBorrowTransactionFlowSummary,
-} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+} from "../../../src/features/borrow-transaction-flow/model/review";
 
 const summary: BorrowTransactionFlowReview["summary"] = {
   action: "borrowAndSupply",

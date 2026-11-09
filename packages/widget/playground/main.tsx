@@ -9,7 +9,11 @@ import { EvmChainIds } from "../src/index.package";
 import { readConnectionSettings } from "./connection-settings";
 import { installDevConsole, logWalletEntry } from "./dev-console";
 import { PlaygroundApp } from "./playground-app";
-import { mountedTheme, readPlaygroundConfig } from "./playground-config";
+import {
+  mountedColorScheme,
+  mountedWallet,
+  readPlaygroundConfig,
+} from "./playground-config";
 import { connectInjectedWallet } from "./wallet/injected-wallet-backend";
 import {
   makePlaygroundWallet,
@@ -25,7 +29,7 @@ const connection = readConnectionSettings();
 const scriptedWalletDelayMs = 800;
 
 const startHostWallet = async (): Promise<PlaygroundWallet | undefined> => {
-  switch (config.wallet) {
+  switch (mountedWallet(config)) {
     case "builtin":
       return undefined;
     case "scripted":
@@ -51,7 +55,13 @@ const startHostWallet = async (): Promise<PlaygroundWallet | undefined> => {
 };
 
 const start = async () => {
-  document.body.dataset.theme = mountedTheme(config);
+  const colorScheme = mountedColorScheme(config);
+  const systemScheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+  // The page follows the scheme it starts in; the widget follows `system` live.
+  document.body.dataset.theme =
+    colorScheme === "system" ? systemScheme : colorScheme;
   document.body.dataset.variant = config.variant;
 
   const wallet = await startHostWallet();

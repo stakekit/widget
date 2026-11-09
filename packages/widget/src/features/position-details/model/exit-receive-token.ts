@@ -4,8 +4,8 @@ import {
   getConfidentialAssetToken,
   isConfidentialYield,
 } from "../../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { getYieldActionArg } from "../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import {
   addressIdentity,
   type TokenAddress,

@@ -13,7 +13,7 @@ import { walletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 import { WidgetDomainEvents } from "../events/widget-domain-events";
 import { makeHeldHashRegistration } from "./internal/held-hash-registration";
 import {
-  getTransactionWorkflowAction,
+  getNextTransactionWorkflowStage,
   initializeTransactionWorkflow,
   validateTransactionWorkflowInput,
 } from "./internal/model";
@@ -135,7 +135,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           dispatch: (command) =>
             SubscriptionRef.get(stateRef).pipe(
               Effect.flatMap((state) =>
-                getTransactionWorkflowAction({ command, state })
+                getNextTransactionWorkflowStage({ _tag: command._tag, state })
                   ? Queue.offer(queue, state)
                   : Effect.void
               ),
