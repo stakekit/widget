@@ -1,5 +1,22 @@
 # @stakekit/widget
 
+## [0.0.295](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.294...@stakekit/widget@0.0.295) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **widget:** `DashboardYieldCategory` is now `YieldCategory` and the `dashboardYieldCategoryOrder` option is now `yieldCategoryOrder`.
+
+### Features
+
+* **widget:** confidential vault fixes, settlement events, and one token display rule ([#613](https://github.com/stakekit/widget/issues/613)) ([8fac401](https://github.com/stakekit/widget/commit/8fac401155deb3ddd8f4fe84fb3d07ffe7e808a5))
+* **widget:** one Design System on StyleX and Base UI ([#617](https://github.com/stakekit/widget/issues/617)) ([723c011](https://github.com/stakekit/widget/commit/723c0113c948346dadad8566c100aba8c3e1fd1e))
+
+
+### Code Refactoring
+
+* **widget:** rename the Classic flow and layout, and dashboard yield categories ([#607](https://github.com/stakekit/widget/issues/607)) ([2a12e1d](https://github.com/stakekit/widget/commit/2a12e1d8eff2d854cd92ba21f950f85ef0d58608))
+
 ## [0.0.294](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.293...@stakekit/widget@0.0.294) (2026-10-26)
 
 
