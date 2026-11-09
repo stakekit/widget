@@ -1,28 +1,16 @@
-import {
-  currentWalletConfigResultAtom,
-  currentWalletEnabledNetworksResultAtom,
-  currentWalletExternalProviderChainsEnabledResultAtom,
-  currentWalletStateResultAtom,
+export {
+  walletConfigReadyAtom,
+  walletConfigResultAtom,
+  walletEnabledNetworksResultAtom,
+  walletExternalProviderChainsEnabledResultAtom,
+  walletStateResultAtom,
 } from "./state/root-atom";
-import {
-  currentWalletScopeAtom,
-  currentWalletStateAtom,
-} from "./state/selectors";
+export { walletScopeAtom, walletConnectionStateAtom } from "./state/selectors";
 
-export const walletConnectionStateAtom = currentWalletStateAtom;
-export const walletConfigResultAtom = currentWalletConfigResultAtom;
-export const walletEnabledNetworksResultAtom =
-  currentWalletEnabledNetworksResultAtom;
-export const walletExternalProviderChainsEnabledResultAtom =
-  currentWalletExternalProviderChainsEnabledResultAtom;
-export const walletScopeAtom = currentWalletScopeAtom;
-export const walletStateResultAtom = currentWalletStateResultAtom;
-
-export { useConnectedWallet } from "./react/use-connected-wallet";
-export { useScopedWalletChainSelection } from "./react/use-scoped-wallet-chain-selection";
-export { useSKWallet } from "./react/use-wallet";
-export { useWalletConfig } from "./react/use-wallet-config";
-export { useWalletScopeRoute } from "./react/wallet-scope-route";
+export { useConnectedWallet } from "./ui/use-connected-wallet";
+export { useScopedWalletChainSelection } from "./ui/use-scoped-wallet-chain-selection";
+export { useSKWallet } from "./ui/use-wallet";
+export { useWalletScopeRoute } from "./ui/wallet-scope-route-context";
 export { walletChainSelectionAtom } from "./state/account-presentation";
 export { selectCurrentWalletAtom } from "./state/selectors";
 export { logoutAtom } from "./state/workflows";

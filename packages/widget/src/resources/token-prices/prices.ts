@@ -1,8 +1,9 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { EarnYieldWithProvider } from "../../domain/earn/yield-schema";
-import type { PriceRequest } from "../../domain/health/models";
+import type { PriceRequest } from "../../domain/finance/prices";
 import type { Token } from "../../domain/token/token";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { TokenPricesKey, tokenPricesResourceAtom } from "./token-prices";

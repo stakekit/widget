@@ -13,6 +13,7 @@ import {
 import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import type { Connector } from "wagmi";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import type { WalletNetwork } from "../../../src/domain/wallet/network";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";

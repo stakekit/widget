@@ -1,7 +1,8 @@
 import { Option, Predicate, Schema } from "effect";
-import { YieldPendingActionType } from "../../domain/action/pending-action";
+
 import { ActionId as BorrowActionId, MarketId } from "../../domain/borrow/ids";
-import { BorrowPositionActionKey } from "../../domain/borrow/positions/position-action-key";
+import { BorrowPositionActionKey } from "../../domain/borrow/position-action-key";
+import { YieldPendingActionType } from "../../domain/earn/action-models";
 import { ActionId, YieldId } from "../../domain/identity/identifiers";
 import { BalanceDataKey } from "../../domain/portfolio/positions";
 import type { WidgetLayout } from "../config/widget-config-model";

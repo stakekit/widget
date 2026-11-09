@@ -1,6 +1,7 @@
 import { Data, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   isKycGateBlocking,
   mapKycStatusToGate,
@@ -20,11 +21,11 @@ import {
   yieldKycStatusResourceAtom,
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
-} from "../../../resources/yield-insights/index";
+} from "../../../resources/yield-insights/yield-insights";
 import {
   YieldRewardsSummaryKey,
   yieldRewardsSummaryResourceAtom,
-} from "../../../resources/yield-rewards-summary/index";
+} from "../../../resources/yield-rewards-summary/yield-rewards-summary";
 import { toPresentable } from "../../../shared/effect/async-result";
 import {
   selectCurrentWalletAtom,

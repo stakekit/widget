@@ -1,4 +1,5 @@
 import { Option, Schema } from "effect";
+
 import type { SKAppearance, SKColorRole } from "../../public-api/appearance";
 import { exhaustiveLiterals } from "./exhaustive-literals";
 

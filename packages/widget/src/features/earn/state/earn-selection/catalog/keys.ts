@@ -1,4 +1,5 @@
 import { Data } from "effect";
+
 import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";

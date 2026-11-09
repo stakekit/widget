@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Stream } from "effect";
 import type { DataRouter } from "react-router";
+
 import { ApplicationRouter } from "../../../src/services/navigation/application-router";
 import { WidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import { widgetRoutes } from "../../../src/services/navigation/widget-routes";

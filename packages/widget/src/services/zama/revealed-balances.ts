@@ -7,6 +7,7 @@ import {
   type Stream,
   SubscriptionRef,
 } from "effect";
+
 import type { ConfidentialHandle } from "../../domain/earn/balance";
 import type {
   ConfidentialTokenBalanceKey,
@@ -40,7 +41,7 @@ const empty: Values = { handles: new Map(), tokenBalances: HashMap.empty() };
 export class RevealedBalances extends Context.Service<
   RevealedBalances,
   RevealedBalancesApi
->()("stakekit/widget/RevealedBalances") {
+>()("@stakekit/widget/services/zama/revealed-balances/RevealedBalances") {
   static readonly layer = Layer.effect(
     RevealedBalances,
     Effect.gen(function* () {

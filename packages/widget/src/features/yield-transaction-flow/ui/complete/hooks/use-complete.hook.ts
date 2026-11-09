@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { isMobile } from "../../../../../shared/lib/general";
 import { useTrackEvent } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
@@ -9,7 +10,7 @@ import { getYieldTransactionCompletionUrls } from "../../../model/yield-transact
 import {
   useYieldFlowExecution,
   useYieldFlowSession,
-} from "../../../react/yield-flow-route";
+} from "../../yield-flow-session";
 
 export const useComplete = () => {
   const execution = useYieldFlowExecution();

@@ -1,8 +1,9 @@
 import { Data, Duration, Effect, Option } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import type { EarnYieldWithProvider } from "../../domain/earn/yield-schema";
 import type { YieldId } from "../../domain/identity/identifiers";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -10,7 +11,7 @@ import type {
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-import { yieldProviderResourceAtom } from "../yield-provider/index";
+import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
 
 export class YieldOpportunityError extends Data.TaggedError(
   "YieldOpportunityError"

@@ -10,6 +10,7 @@ import {
 import { decodeFunctionData, erc20Abi } from "viem";
 import { sepolia } from "viem/chains";
 import { vi } from "vitest";
+
 import { ConfidentialHandle } from "../../src/domain/earn/balance";
 import type { ConfidentialConversion } from "../../src/domain/earn/confidential";
 import { ConfidentialTokenBalanceKey } from "../../src/domain/earn/confidential-balance";

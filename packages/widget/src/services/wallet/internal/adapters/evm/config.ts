@@ -1,7 +1,8 @@
 import { Effect, Record } from "effect";
+
 import type { Network } from "../../../../../domain/network/network";
 import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
-import portoIcon from "../../../../../shared/assets/images/porto.svg";
+import portoIcon from "../../../../../shared/assets/porto.svg";
 import type { HostProfile } from "../../../../config/host-profile";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";

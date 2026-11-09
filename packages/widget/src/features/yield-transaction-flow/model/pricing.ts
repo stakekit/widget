@@ -1,10 +1,11 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
-import type { YieldAction } from "../../../domain/action/models";
+
 import {
   getActionInputToken,
   getTransactionGasEstimate,
 } from "../../../domain/action/rules";
+import type { YieldAction } from "../../../domain/earn/action-models";
 import { isBittensorStaking } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { exactDecimal } from "../../../domain/finance/exact";

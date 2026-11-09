@@ -6,6 +6,7 @@ import {
   type HttpClientRequest,
   HttpClientResponse,
 } from "effect/http";
+
 import { isEncryptWorkerServed } from "../../../src/services/zama/encrypt-worker";
 
 const workerUrl = "https://host.example/assets/encrypt.worker-abc.js";

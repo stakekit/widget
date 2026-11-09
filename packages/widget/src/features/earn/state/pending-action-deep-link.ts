@@ -1,7 +1,7 @@
 import { Data, Effect, Result } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
+
 import { preparePendingActionCommand } from "../../../domain/action/action-command";
 import {
   isPendingActionValidatorAddressesRequired,
@@ -12,11 +12,12 @@ import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   SingleYieldBalancesKey,
   singleYieldBalancesResourceAtom,
-} from "../../../resources/single-yield-balances/index";
+} from "../../../resources/single-yield-balances/single-yield-balances";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/index";
+} from "../../../resources/yield-opportunity/provider";
+import { appRuntime } from "../../../runtime/app-runtime";
 import type { YieldTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { InitParams } from "../../../services/wallet/init-params";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";

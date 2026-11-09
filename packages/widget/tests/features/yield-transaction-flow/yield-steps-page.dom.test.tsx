@@ -1,5 +1,6 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
+
 import {
   TransactionHash,
   TransactionWorkflowId,
@@ -55,7 +56,7 @@ vi.mock(
     }),
   })
 );
-vi.mock("../../../src/features/widget-shell/react/use-header", () => ({
+vi.mock("../../../src/features/widget-shell/ui/use-header", () => ({
   useHeader: () => ({ onLeftIconPress: () => {} }),
 }));
 

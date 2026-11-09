@@ -2,7 +2,7 @@ import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
@@ -14,6 +14,7 @@ import { earnEntryViewAtom } from "../../../src/features/earn/state/entry";
 import { earnAppLoadingAtom } from "../../../src/features/earn/state/page-status";
 import { earnYieldSelectionViewAtom } from "../../../src/features/earn/state/yield-selection";
 import { walletConfigResultAtom } from "../../../src/features/wallet/index";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   LegacyResourceSource,
   YieldResourceSource,

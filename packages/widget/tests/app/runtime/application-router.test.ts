@@ -1,13 +1,14 @@
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import {
   applicationRouterAtom,
   applicationRouterLocationAtom,
 } from "../../../src/app/runtime/application-router";
-import { applicationRuntimeInitAtom } from "../../../src/app/runtime/application-runtime-init";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { applicationRuntimeInitAtom } from "../../../src/runtime/application-runtime-init";
 import {
   WidgetNavigation,
   type WidgetNavigationCommand,

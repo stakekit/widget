@@ -1,9 +1,10 @@
 import { DateTime, Duration } from "effect";
-import type { YieldAction } from "../action/models";
+
 import {
   ActionStatus,
   type ActionStatus as ActionStatusValue,
 } from "../action/rules";
+import type { YieldAction } from "../earn/action-models";
 import type { EarnYield } from "../earn/yield-schema";
 import {
   type WalletScopeKey,

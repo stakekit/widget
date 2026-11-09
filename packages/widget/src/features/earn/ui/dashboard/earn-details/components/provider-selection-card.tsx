@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { EarnValidator } from "../../../../../../domain/earn/validator";
 import { isYieldValidatorSelectionRequired } from "../../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../../domain/earn/yield-schema";
@@ -14,32 +15,32 @@ import {
   Stack,
   Text,
 } from "../../../../../../ui/index";
-import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import {
   formatCommission,
   formatProviderStatus,
   formatProviderTvl,
   formatProviderWebsite,
   formatProviderWebsiteHref,
-} from "../../../../../yield-summary/index";
-import {
-  useEarnDetails,
-  useEarnFlowProviderOption,
-} from "../../../../react/use-earn-facades";
+} from "../../../../../yield-presentation/index";
+import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import type { EarnProviderOption } from "../../../../state/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../components/earn-provider-option-selection";
 import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
+import {
+  useEarnDetails,
+  useEarnFlowProviderOption,
+} from "../../../use-earn-facades";
 
 type ProviderDetailsItem = YieldSummaryProvider;
 
 type ProviderCardItem = {
   key: string;
-  commission: ProviderDetailsItem["commission"] | EarnValidator["commission"];
+  commission: ProviderDetailsItem["commission"];
   logo: string | undefined;
   name: string;
   preferred: boolean | undefined;
   stakedBalance: ProviderDetailsItem["stakedBalance"];
-  status: ProviderDetailsItem["status"] | EarnValidator["status"];
+  status: ProviderDetailsItem["status"];
   validator: EarnValidator | undefined;
   website: string | undefined;
 };

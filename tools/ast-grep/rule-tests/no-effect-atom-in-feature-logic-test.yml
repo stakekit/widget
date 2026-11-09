@@ -1,7 +1,0 @@
-id: no-effect-atom-in-feature-logic
-valid:
-  - 'import { Effect } from "effect"'
-  - 'import type { YieldAction } from "../../../domain/schema/action-models"'
-invalid:
-  - 'import * as Atom from "effect/reactivity/Atom"'
-  - 'import * as AtomRegistry from "effect/reactivity/AtomRegistry"'

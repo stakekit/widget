@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Option, Stream } from "effect";
+
 import { GeoBlockService } from "../../src/services/geoblocking";
 
 const readGeneration = (response?: {

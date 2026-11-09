@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { useTranslation } from "react-i18next";
+
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
@@ -35,11 +36,11 @@ import {
   getBorrowTransactionFlowTitle,
   projectBorrowTransactionFlowSummary,
 } from "../model/review";
+import { BorrowReviewConfirmationFailure } from "../state/review-page";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
-} from "../react/borrow-flow-route";
-import { BorrowReviewConfirmationFailure } from "../state/review-page";
+} from "./borrow-flow-session";
 import {
   getBorrowFlowCollateralAmountRow,
   getBorrowFlowOriginationRows,

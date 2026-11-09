@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import type { EarnValidator } from "../../../src/domain/earn/validator";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { ProviderOption } from "../../../src/domain/identity/identifiers";
@@ -21,7 +22,7 @@ const hookState = vi.hoisted(() => ({
   selectedValidators: new Map<string, EarnValidator>(),
 }));
 
-vi.mock("../../../src/features/earn/react/use-select-validator", () => ({
+vi.mock("../../../src/features/earn/ui/use-select-validator", () => ({
   useSelectValidator: () => ({
     hasMoreValidators: false,
     isLoading: false,
@@ -41,7 +42,7 @@ vi.mock("../../../src/features/earn/react/use-select-validator", () => ({
 }));
 
 vi.mock(
-  "../../../src/features/earn/react/use-earn-facades",
+  "../../../src/features/earn/ui/use-earn-facades",
   async (importOriginal) => {
     const actual = await importOriginal<object>();
     return {

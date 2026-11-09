@@ -1,11 +1,12 @@
 import { Schema } from "effect";
-import { Integration } from "../../src/domain/borrow/catalog/integration";
-import { Market } from "../../src/domain/borrow/catalog/market";
+
 import {
   BorrowAccountSnapshot,
   type DebtBalance,
   type SupplyBalance,
-} from "../../src/domain/borrow/positions/borrow-account-snapshot";
+} from "../../src/domain/borrow/borrow-account-snapshot";
+import { Integration } from "../../src/domain/borrow/integration";
+import { Market } from "../../src/domain/borrow/market";
 
 /**
  * Borrow API payloads in their encoded shape, defaulting to one Aave V3

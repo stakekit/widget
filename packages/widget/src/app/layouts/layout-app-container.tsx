@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+
 import { AppContainer } from "../../features/widget-shell/composition";
 import type { WidgetLayout } from "../../services/config/widget-config-model";
 

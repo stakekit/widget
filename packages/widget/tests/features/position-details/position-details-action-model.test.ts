@@ -3,6 +3,7 @@ import { Result, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
+
 import {
   getPendingActionStateKey,
   PendingActionStateKey,
@@ -10,7 +11,7 @@ import {
 } from "../../../src/domain/action/action-command";
 import { EarnBalance } from "../../../src/domain/earn/balance";
 import { EarnValidator } from "../../../src/domain/earn/validator";
-import { Prices } from "../../../src/domain/health/models";
+import { Prices } from "../../../src/domain/finance/prices";
 import {
   TokenAddress,
   WalletAddress,

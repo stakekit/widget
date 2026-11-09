@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { appRuntime } from "../../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../../src/app/runtime/wallet-runtime";
-import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
+
+import { deriveBorrowPositions } from "../../../../src/domain/borrow/borrow-positions";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import {
@@ -22,6 +21,8 @@ import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../../src/resources/borrow-positions/borrow-positions";
+import { appRuntime } from "../../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../../src/runtime/wallet-runtime";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,

@@ -2,9 +2,10 @@ import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+
+import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/borrow-account-snapshot";
+import { deriveBorrowPositions } from "../../../../src/domain/borrow/borrow-positions";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
-import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
-import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import { getBorrowDetailsModel } from "../../../../src/features/borrow/borrow-entry/model/details";
 import {

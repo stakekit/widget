@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { vi } from "vitest";
 import type { Connector } from "wagmi";
+
 import { getTonConnectors } from "../../../src/services/wallet/internal/adapters/ton/ton-connector";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { runWalletEffect } from "../../utils/run-wallet-effect";

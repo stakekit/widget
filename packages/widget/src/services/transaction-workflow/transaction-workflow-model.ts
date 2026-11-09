@@ -1,12 +1,13 @@
 import type BigNumber from "bignumber.js";
 import { Data, Match, Ref, type Schema } from "effect";
+
 import type { DirectTransaction } from "../../domain/action/direct-transaction";
+import type { Action as BorrowAction } from "../../domain/borrow/action";
+import type { Transaction as BorrowTransaction } from "../../domain/borrow/transaction";
 import type {
   ActionTransaction,
   YieldAction,
-} from "../../domain/action/models";
-import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
-import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
+} from "../../domain/earn/action-models";
 import type { ConfidentialChainId } from "../../domain/earn/confidential";
 import type {
   SignedTransactionPayload,
@@ -303,7 +304,7 @@ const transactionSignFailureMessage = (
       "Borrow action metadata is unavailable for signing.",
     UnsupportedBorrowSigningFormat: () =>
       "This borrow transaction requires an unsupported signing method.",
-    DecodeFailed: () => "Borrow transaction payload could not be decoded.",
+    DecodeFailed: () => "The transaction payload could not be decoded.",
     EstimateFailed: () => "The transaction could not be estimated.",
     WalletRequestCancelled: () => "The request was cancelled in the wallet.",
     WalletOperationFailed: ({ operation }) =>

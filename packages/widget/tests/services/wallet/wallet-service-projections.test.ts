@@ -2,12 +2,13 @@ import { Effect, Layer, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import {
   walletConfigResultAtom,
   walletStateResultAtom,
 } from "../../../src/features/wallet/index";
-import { currentWalletLedgerStateAtom as walletLedgerStateAtom } from "../../../src/features/wallet/state/root-atom";
+import { walletLedgerStateResultAtom as walletLedgerStateAtom } from "../../../src/features/wallet/state/root-atom";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {

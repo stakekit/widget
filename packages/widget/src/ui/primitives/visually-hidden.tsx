@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { createElement, type ReactNode } from "react";
+
 import { visuallyHiddenBox } from "../tokens/size.stylex";
 
 /**

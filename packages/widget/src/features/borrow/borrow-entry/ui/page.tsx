@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
   formatNumber,
   formatTokenAmount,
@@ -13,7 +14,6 @@ import { BorrowAmountField } from "../../amount-input/views";
 import type { BorrowWalletView } from "../../wallet/index";
 import { useBorrowWalletView } from "../../wallet/index";
 import type { BorrowEntryView } from "../model/borrow-entry";
-import { useBorrowEntryView } from "../react/use-borrow-entry";
 import {
   setBorrowAmountAtom,
   setBorrowCollateralAmountAtom,
@@ -28,6 +28,7 @@ import {
   BorrowNetworkRecoveryPanel,
 } from "./components/network-recovery";
 import { BorrowFormSkeleton } from "./components/skeletons";
+import { useBorrowEntryView } from "./use-borrow-entry";
 
 type BorrowEntryWalletView = Exclude<
   BorrowWalletView,

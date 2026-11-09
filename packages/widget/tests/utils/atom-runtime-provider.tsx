@@ -1,9 +1,10 @@
 import { RegistryProvider } from "@effect/atom-react";
 import type { ComponentProps, PropsWithChildren } from "react";
+
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
-import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
 import type { SKAppProps } from "../../src/public-api/react-types";
+import { applicationRuntimeInitAtom } from "../../src/runtime/application-runtime-init";
 
 export const TestAtomRuntimeProvider = ({
   children,

@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+
 import { render } from "../../utils/test-utils";
 
 const header = vi.hoisted(() => ({ showBack: false, showDisconnect: true }));
@@ -38,7 +39,7 @@ vi.mock(
   }
 );
 
-vi.mock("../../../src/features/widget-shell/react/use-header", () => ({
+vi.mock("../../../src/features/widget-shell/ui/use-header", () => ({
   useHeader: () => ({
     hidesHeaderWalletControl: false,
     hideChainSelector: false,

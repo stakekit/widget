@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { type Token, tokenString } from "../../../../../domain/token/token";
 import {
   formatTokenAmount,
@@ -11,11 +12,8 @@ import {
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
 import { useTrackEvent } from "../../../../tracking/index";
-import {
-  useEarnEntry,
-  useEarnTokenSelection,
-} from "../../../react/use-earn-facades";
 import type { EarnTokenSelectionItem } from "../../../state/token-selection";
+import { useEarnEntry, useEarnTokenSelection } from "../../use-earn-facades";
 
 /** The entry token beside the amount, and the sheet to choose another. */
 export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {

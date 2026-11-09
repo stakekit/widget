@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+
 import { Badge } from "./badge";
 import { DetailList, DetailRow } from "./detail-list";
 import { ExpandableAmount } from "./expandable-amount";
 
 const address = "0x9f8d3e2b7c1a4f6e5d0c8b7a6f5e4d3c2b1a0f9e";
+const writeText = fn(async (_text: string) => {});
 
 const meta = {
   title: "Components/DetailList",
@@ -76,7 +78,7 @@ export const WithCaptionDark: Story = {
 export const Copy: Story = {
   beforeEach: () => {
     const clipboard = navigator.clipboard;
-    const writeText = fn(async (_text: string) => {});
+    writeText.mockClear();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText },
@@ -93,7 +95,7 @@ export const Copy: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Copy address" }));
 
-    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(address);
+    await expect(writeText).toHaveBeenCalledWith(address);
     await waitFor(() =>
       expect(canvas.getByRole("status")).toHaveTextContent("Copied")
     );

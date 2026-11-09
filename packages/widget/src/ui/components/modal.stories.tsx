@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
+
 import { Text } from "../primitives/text";
 import { Button } from "./button";
 import { EmbeddedPage } from "./embedded-page";
@@ -435,6 +436,7 @@ const RerenderingModal = () => {
 export const ObservesBodyOnce: Story = {
   render: () => <RerenderingModal />,
   beforeEach: () => {
+    // oxlint-disable-next-line typescript/unbound-method -- kept to restore the prototype; the patch calls it with `.call(this, …)`
     const observe = ResizeObserver.prototype.observe;
     observedBodies.length = 0;
     ResizeObserver.prototype.observe = function (target, options) {

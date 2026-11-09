@@ -5,7 +5,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as Reactivity from "effect/reactivity/Reactivity";
-import { appRuntime } from "../../src/app/runtime/app-runtime";
+
 import { isBorrowNetwork } from "../../src/domain/borrow/network";
 import { EarnLegacyTokenOptionsResponse } from "../../src/domain/earn/responses";
 import {
@@ -36,6 +36,7 @@ import {
   TokenOptionsKey,
 } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import { activityHistoryPullAtom } from "../../src/resources/activity-history/activity-history";
+import { appRuntime } from "../../src/runtime/app-runtime";
 import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";
 import {
   BorrowResourceSource,

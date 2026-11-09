@@ -9,6 +9,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+
 import { walletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 import { WidgetDomainEvents } from "../events/widget-domain-events";
 import { makeHeldHashRegistration } from "./internal/held-hash-registration";
@@ -34,7 +35,7 @@ export type TransactionWorkflowHandle = {
 };
 
 export class TransactionWorkflowService extends Context.Service<TransactionWorkflowService>()(
-  "stakekit/widget/workflow/TransactionWorkflowService",
+  "@stakekit/widget/services/transaction-workflow/transaction-workflow-service/TransactionWorkflowService",
   {
     make: Effect.gen(function* () {
       const heldHashes = yield* makeHeldHashRegistration;

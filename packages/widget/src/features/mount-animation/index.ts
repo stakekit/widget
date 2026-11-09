@@ -1,5 +1,5 @@
-export { useMountAnimation } from "./react/use-mount-animation";
-export { useMountRevealReady } from "./react/use-mount-reveal-ready";
+export { useMountAnimation } from "./ui/use-mount-animation";
+export { useMountRevealReady } from "./ui/use-mount-reveal-ready";
 export {
   isMountAnimationFinished,
   mountAnimationCompletionAtom,

@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { Connector } from "wagmi";
+
 import {
   WalletBroadcastError,
   type WalletCapabilityUnavailableError,

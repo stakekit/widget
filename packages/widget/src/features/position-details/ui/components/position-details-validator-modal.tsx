@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
+
 import { SelectValidator } from "../../../yield-entry/views";
-import { usePositionDetails } from "../../react/use-position-details";
+import { usePositionDetails } from "../use-position-details";
 
 /**
  * Rendered next to the whole position-details surface, not inside the exit

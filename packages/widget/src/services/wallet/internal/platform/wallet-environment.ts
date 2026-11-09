@@ -1,4 +1,5 @@
 import { Context, Effect, Layer } from "effect";
+
 import { isMobileWalletEnvironment } from "../../browser-environment";
 
 type WalletEnvironmentService = {
@@ -9,7 +10,9 @@ type WalletEnvironmentService = {
 export class WalletEnvironment extends Context.Service<
   WalletEnvironment,
   WalletEnvironmentService
->()("stakekit/widget/wallet/platform/WalletEnvironment") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/wallet-environment/WalletEnvironment"
+) {
   static readonly layer = Layer.succeed(
     WalletEnvironment,
     WalletEnvironment.of({

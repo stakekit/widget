@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { TokenAmount } from "../../../../domain/earn/denomination";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
@@ -9,7 +10,7 @@ import {
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../../resources/yield-opportunity/index";
+} from "../../../../resources/yield-opportunity/provider";
 import { toPresentable } from "../../../../shared/effect/async-result";
 
 /** A position row's Yield, as the row presents it. */

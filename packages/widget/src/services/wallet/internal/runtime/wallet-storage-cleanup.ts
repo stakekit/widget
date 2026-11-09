@@ -11,7 +11,9 @@ export class WalletStorageCleanup extends Context.Service<
   {
     readonly clearOwnedStorage: Effect.Effect<void, WalletStorageCleanupError>;
   }
->()("stakekit/widget/wallet/WalletStorageCleanup") {
+>()(
+  "@stakekit/widget/services/wallet/internal/runtime/wallet-storage-cleanup/WalletStorageCleanup"
+) {
   /**
    * The default is deliberately a no-op. Logout previously enumerated and
    * deleted every IndexedDB database on the embedding origin, which could

@@ -37,7 +37,7 @@ type GeoBlockServiceContract = {
 export class GeoBlockService extends Context.Service<
   GeoBlockService,
   GeoBlockServiceContract
->()("stakekit/widget/services/GeoBlockService") {
+>()("@stakekit/widget/services/geoblocking/GeoBlockService") {
   static readonly layer = Layer.effect(
     GeoBlockService,
     Effect.gen(function* () {

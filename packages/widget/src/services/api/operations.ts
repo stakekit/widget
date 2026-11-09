@@ -1,4 +1,16 @@
 import { Context, type Effect, Option } from "effect";
+
+import type { Action as BorrowAction } from "../../domain/borrow/action";
+import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/action-command";
+import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
+import type {
+  ActionId as BorrowActionId,
+  TransactionId as BorrowTransactionId,
+} from "../../domain/borrow/ids";
+import type {
+  SubmitTransactionCommand as BorrowSubmitTransactionCommand,
+  SubmitTransactionResult as BorrowSubmitTransactionResult,
+} from "../../domain/borrow/transaction";
 import type {
   ActionCommand,
   ActionTransactionReceipt,
@@ -7,18 +19,7 @@ import type {
   SubmitTransactionHashCommand,
   TransactionStatusCommand,
   YieldAction,
-} from "../../domain/action/models";
-import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
-import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
-import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/execution/action-command";
-import type {
-  SubmitTransactionCommand as BorrowSubmitTransactionCommand,
-  SubmitTransactionResult as BorrowSubmitTransactionResult,
-} from "../../domain/borrow/execution/transaction";
-import type {
-  ActionId as BorrowActionId,
-  TransactionId as BorrowTransactionId,
-} from "../../domain/borrow/ids";
+} from "../../domain/earn/action-models";
 import type { EarnYieldBalancesResponse } from "../../domain/earn/responses";
 import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
 import {
@@ -99,12 +100,12 @@ type YieldOperationsService = {
 export class BorrowOperations extends Context.Service<
   BorrowOperations,
   BorrowOperationsService
->()("stakekit/widget/services/api/BorrowOperations") {}
+>()("@stakekit/widget/services/api/operations/BorrowOperations") {}
 
 export class YieldOperations extends Context.Service<
   YieldOperations,
   YieldOperationsService
->()("stakekit/widget/services/api/YieldOperations") {}
+>()("@stakekit/widget/services/api/operations/YieldOperations") {}
 
 const transientStatuses: ReadonlySet<number> = new Set([
   408, 429, 500, 502, 503, 504,

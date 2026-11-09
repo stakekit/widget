@@ -3,8 +3,8 @@ import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
-import { ActionCommand } from "../../../src/domain/action/models";
+
+import { ActionCommand } from "../../../src/domain/earn/action-models";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   walletScopeAtom,
@@ -14,6 +14,7 @@ import type { YieldTransactionFlowIntake } from "../../../src/features/yield-tra
 import { makeYieldFlowSession } from "../../../src/features/yield-transaction-flow/model/session";
 import { makeYieldFlowReviewPage } from "../../../src/features/yield-transaction-flow/state/review-page";
 import type { SKAppProps } from "../../../src/public-api/react-types";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { TransactionWorkflowService } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import {
   yieldApiActionFixture,

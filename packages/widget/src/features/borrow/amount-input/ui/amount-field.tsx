@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
   amountSeparators,
   fromAmountValue,

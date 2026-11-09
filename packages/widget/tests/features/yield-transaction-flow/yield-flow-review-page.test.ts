@@ -3,8 +3,7 @@ import BigNumber from "bignumber.js";
 import { DateTime, Effect, Layer, Option, Ref, Schema, Stream } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import {
   type DirectTransaction,
   DirectTransactionId,
@@ -27,6 +26,8 @@ import {
   YieldFlowReviewVisit,
   yieldFlowReviewPage,
 } from "../../../src/features/yield-transaction-flow/state/review-page";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import type {
   ActionPreviewRequest,
   YieldOperations,

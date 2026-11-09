@@ -1,8 +1,10 @@
 import path from "node:path";
+
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vite";
 import type { BrowserConfigOptions } from "vitest/node";
+
 import { getConfig } from "./vite.config.base.ts";
 
 const browserTestPattern = "tests/**/*.browser.test.{ts,tsx}";
@@ -87,16 +89,12 @@ export default defineConfig(
           {
             extends: true,
             cacheDir: testCacheDir("browser"),
-            // MSW's service worker script is test infrastructure: only the
-            // browser tests serve it, never the playground or its builds.
-            publicDir: path.resolve(
-              import.meta.dirname,
-              "..",
-              "tests/mocks/public"
-            ),
             test: {
               name: "browser",
-              fileParallelism: false,
+              // Files run in parallel pages. More than two at once starves
+              // Playwright's user events (locator.click timeouts) on a 10-core
+              // machine, and CI runners have four cores.
+              maxWorkers: 2,
               include: [browserTestPattern],
               setupFiles: [
                 path.resolve(
@@ -106,7 +104,19 @@ export default defineConfig(
                 ),
               ],
               testTimeout: 20_000,
-              browser: chromium,
+              browser: {
+                ...chromium,
+                // MSW intercepts fetch and XMLHttpRequest in the page; images,
+                // fonts, scripts and frames bypass it. Resolving every host but
+                // the Vitest server to nothing keeps those off the real network.
+                provider: playwright({
+                  launchOptions: {
+                    args: [
+                      "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1",
+                    ],
+                  },
+                }),
+              },
             },
           },
           {

@@ -3,11 +3,12 @@ import { Effect, Option, Schema } from "effect";
 import * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
+
 import { BorrowApiError } from "../../../src/generated/api/borrow-client";
 import {
   decodeOptionalApiResponse,
   withApiRequestError,
-} from "../../../src/services/api/api-operation";
+} from "../../../src/services/api/internal/api-operation";
 import {
   getApiRejectionReason,
   isTransientApiFailure,

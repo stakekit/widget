@@ -1,7 +1,7 @@
 import { Data, DateTime, Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
 import {
   findYieldToken,
   getActionInputToken,
@@ -10,11 +10,12 @@ import { getConfidentialActionBatchSide } from "../../../domain/earn/confidentia
 import { exactZero } from "../../../domain/finance/exact";
 import { getPositionValueTotal } from "../../../domain/portfolio/positions";
 import { equalTokens } from "../../../domain/token/token";
-import { pricesAtom } from "../../../resources/token-prices/index";
+import { pricesAtom } from "../../../resources/token-prices/prices";
 import {
   PositionDataKey,
   positionDataAtom,
-} from "../../../resources/yield-positions/index";
+} from "../../../resources/yield-positions/yield-positions";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import {
   WidgetNavigation,
   type WidgetNavigationCommand,
@@ -22,6 +23,7 @@ import {
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import {
   makeTransactionFlowWorkflowAtoms,
+  type TransactionFlowExecutionStatus,
   startTransactionFlowExecution,
 } from "../../transaction-flow/index";
 import {
@@ -37,7 +39,10 @@ import {
   type YieldFlowSession,
 } from "../model/session";
 import { getYieldFlowWorkflowInput } from "../model/workflow-input";
-import { getYieldTransactionStepsView } from "../model/yield-transaction-workflow";
+import {
+  getYieldTransactionStepsView,
+  isYieldTransactionWorkflowFinished,
+} from "../model/yield-transaction-workflow";
 import { getYieldFlowReviewPricesKey } from "./review-prices";
 import { makeYieldFlowEnterCompleteViewAtom } from "./yield-summary";
 
@@ -239,6 +244,26 @@ export const makeYieldFlowExecutionPage = (
   const enterIntake = getYieldTransactionFlowIntakeVariant(intake, "Enter");
 
   return {
+    /** Whether the workflow finished; confidential steps run before it has a state. */
+    completedAtom: Atom.make((get) => {
+      const state = get(stateAtom);
+      return (
+        AsyncResult.isSuccess(state) &&
+        isYieldTransactionWorkflowFinished(state.value)
+      );
+    }).pipe(Atom.withLabel("yieldFlowExecutionCompleted")),
+    /**
+     * `Failed` when the handoff cannot start or its workflow input proves
+     * invalid after its confidential steps; `Starting` until it runs.
+     */
+    executionStatusAtom: Atom.make((get): TransactionFlowExecutionStatus => {
+      const execution = get(executionAtom);
+      const state = get(stateAtom);
+      if (AsyncResult.isFailure(execution) || AsyncResult.isFailure(state)) {
+        return "Failed";
+      }
+      return AsyncResult.isInitial(execution) ? "Starting" : "Running";
+    }).pipe(Atom.withLabel("yieldFlowExecutionStatus")),
     activityCompleteViewAtom: Atom.make((get) => {
       const { state } = get(workflowViewAtom);
       if (state?.context.domain._tag !== "Yield") return null;

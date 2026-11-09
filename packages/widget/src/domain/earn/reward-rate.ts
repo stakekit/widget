@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Match } from "effect";
+
 import { exactZero } from "../finance/exact";
 import type { EarnValidator, EarnValidatorKey } from "./validator";
 import type { EarnYieldWithProvider } from "./yield-schema";
@@ -61,7 +62,7 @@ export const getEffectiveYieldRewardRateDetails = ({
 }: {
   selectedValidators?: SelectedValidators | null;
   yieldDto: YieldWithRewardRate | null | undefined;
-}): YieldRewardRate | ValidatorRewardRateDto | undefined =>
+}): YieldRewardRate | undefined =>
   getSelectedValidatorsRewardRate(selectedValidators) ??
   getYieldRewardRateDetails(yieldDto);
 

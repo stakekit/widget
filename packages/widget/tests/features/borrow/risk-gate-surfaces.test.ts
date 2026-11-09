@@ -1,11 +1,13 @@
 import { Schema } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
+
+import { deriveBorrowPositions } from "../../../src/domain/borrow/borrow-positions";
 import { decodeTokenId } from "../../../src/domain/borrow/ids";
-import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
-import type { RiskGateVerdict } from "../../../src/domain/borrow/risk/risk-gate";
+import type { RiskGateVerdict } from "../../../src/domain/borrow/risk-gate";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { getBorrowReviewRiskBlock } from "../../../src/features/borrow-transaction-flow/model/review";
 import type { BorrowActionPreparation } from "../../../src/features/borrow/action-preparation/index";
 import {
   BorrowEntryKey,
@@ -16,7 +18,6 @@ import {
   resolveBorrowWithdrawFormView,
 } from "../../../src/features/borrow/market-position/model/action-form";
 import { getBorrowPositionActionDescriptors } from "../../../src/features/borrow/market-position/model/details";
-import { getBorrowReviewRiskBlock } from "../../../src/features/borrow-transaction-flow/model/review";
 import {
   borrowWalletAddress,
   makeBorrowAccountSnapshot,

@@ -1,8 +1,9 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { getTokenPriceInUSD } from "../../../src/domain/finance/price";
-import { PriceResponse } from "../../../src/domain/health/models";
+import { PriceResponse } from "../../../src/domain/finance/prices";
 import { formatUsd } from "../../../src/shared/lib/number-format";
 
 describe("token USD prices", () => {

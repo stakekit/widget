@@ -1,7 +1,7 @@
 import { Cause, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import {
   preferredValidatorsResourceAtom,
   ValidatorByAddressKey,
@@ -10,6 +10,7 @@ import {
   validatorByAddressAtom,
   validatorsPullAtom,
 } from "../../../src/resources/validator-directory/validator-directory";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   type ValidatorDirectoryRequest,

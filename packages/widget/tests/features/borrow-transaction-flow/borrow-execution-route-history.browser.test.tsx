@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Schema } from "effect";
 import { userEvent } from "vitest/browser";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { BorrowStepsPage } from "../../../src/features/borrow-transaction-flow/ui/steps";
 import {

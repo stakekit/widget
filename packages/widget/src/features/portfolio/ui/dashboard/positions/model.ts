@@ -1,9 +1,10 @@
 import type { TFunction } from "i18next";
-import { toBorrowNetworkToken } from "../../../../../domain/borrow/catalog/token";
+
 import {
   deriveMarketPositionOverview,
   type MarketPosition,
-} from "../../../../../domain/borrow/positions/market-position";
+} from "../../../../../domain/borrow/market-position";
+import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
   formatPercent,

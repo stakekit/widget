@@ -1,7 +1,11 @@
 import type BigNumber from "bignumber.js";
 import { type DateTime, Option } from "effect";
 import type { TFunction } from "i18next";
-import type { ConfidentialHandle } from "../../../domain/earn/balance";
+
+import type {
+  ConfidentialHandle,
+  YieldBalanceType,
+} from "../../../domain/earn/balance";
 import { isCancellingBalance } from "../../../domain/earn/confidential-balance";
 import {
   getPositionShares,
@@ -22,7 +26,6 @@ import {
   type PositionBalanceRow,
   type PositionBalancesByType,
   sortBalancesByPriority,
-  type YieldBalanceType,
 } from "../../../domain/portfolio/positions";
 import type { Presentable } from "../../../shared/effect/async-result";
 import {
@@ -34,7 +37,7 @@ import {
   formatRateTypeLabel,
   getEstimatedRewardsUsd,
   type YieldFactId,
-} from "../../yield-summary/index";
+} from "../../yield-presentation/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
 import { getPositionEarned, type PositionEarned } from "./position-earned";
 

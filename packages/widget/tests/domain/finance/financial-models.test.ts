@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, Schema } from "effect";
+
 import {
   GasBalancesCommand,
   TokenBalanceScanCommand,

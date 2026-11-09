@@ -1,4 +1,5 @@
 import { Context, Effect, Layer } from "effect";
+
 import { WalletIntegrationError } from "./wallet-errors";
 
 export class WalletClipboard extends Context.Service<
@@ -8,7 +9,7 @@ export class WalletClipboard extends Context.Service<
       address: string
     ) => Effect.Effect<void, WalletIntegrationError>;
   }
->()("stakekit/widget/wallet/WalletClipboard") {
+>()("@stakekit/widget/services/wallet/wallet-clipboard/WalletClipboard") {
   static readonly layer = Layer.succeed(
     WalletClipboard,
     WalletClipboard.of({

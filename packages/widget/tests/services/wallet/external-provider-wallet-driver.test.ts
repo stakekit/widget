@@ -2,16 +2,17 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Exit, Schema } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
-import {
-  decodeBorrowTransactionForWallet,
-  Transaction,
-} from "../../../src/domain/borrow/execution/transaction";
+
 import {
   ActionId as BorrowActionId,
   IntegrationId as BorrowIntegrationId,
   MarketId as BorrowMarketId,
   TransactionId as BorrowTransactionId,
 } from "../../../src/domain/borrow/ids";
+import {
+  decodeBorrowTransactionForWallet,
+  Transaction,
+} from "../../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { ExternalProviderError } from "../../../src/services/wallet/external-provider";
 import { makeExternalProviderWalletDriver } from "../../../src/services/wallet/internal/adapters/external-provider/driver";

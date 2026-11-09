@@ -1,6 +1,6 @@
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import { Box } from "../../../../ui/index";
-import { useSKWallet } from "../../react/use-wallet";
+import { useSKWallet } from "../use-wallet";
 
 export const ZerionChainModal = () => {
   const chainModal = useWidgetConfig("chainModal");
@@ -14,7 +14,9 @@ export const ZerionChainModal = () => {
 
   const switchChain = connector?.switchChain;
 
-  const onSwitchChain = (chainId: number) => switchChain?.({ chainId });
+  const onSwitchChain = (chainId: number) => {
+    void switchChain?.({ chainId });
+  };
 
   if (!chainModal || !switchChain || !connector || !chain || !wallet?.network) {
     return null;

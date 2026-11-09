@@ -1,10 +1,10 @@
 import { Match } from "effect";
+
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { Stack } from "../../../../ui/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
-import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsActions } from "../components/position-details-actions";
 import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
 import { PositionDetailsLoadFailed } from "../components/position-details-load-failed";
@@ -12,6 +12,7 @@ import { PositionDetailsSkeleton } from "../components/position-details-skeleton
 import { PositionHeader } from "../components/position-header";
 import { PositionSummaryCard } from "../components/position-summary-card";
 import { PositionYieldFacts } from "../components/position-yield-facts";
+import { usePositionDetails } from "../use-position-details";
 
 /**
  * A position's page in the compact Layout, in the Dashboard's order: the

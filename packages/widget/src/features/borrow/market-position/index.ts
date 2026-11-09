@@ -1,1 +1,1 @@
-export { resetBorrowMarketPositionIntentForOwnerAtom } from "./state/action-form";
+export { borrowMarketPositionIntentEventProjectionAtom } from "./state/intent-projection";

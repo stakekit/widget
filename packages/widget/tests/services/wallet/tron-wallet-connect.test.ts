@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Fiber, FiberSet, Queue } from "effect";
 import type { Connector } from "wagmi";
+
 import { makeTronWalletDriver } from "../../../src/services/wallet/internal/adapters/tron/driver";
 import { getTronConnectors } from "../../../src/services/wallet/internal/adapters/tron/tron-connector";
 import type { WalletConnectProtocol } from "../../../src/services/wallet/internal/platform/wallet-connect-protocol";

@@ -16,6 +16,7 @@ import {
 } from "effect";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import { UserRejectedRequestError } from "viem";
+
 import { config } from "../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../wallet-errors";
 import {
@@ -369,7 +370,8 @@ export const makeWalletConnectProtocol = Effect.fn("makeWalletConnectProtocol")(
       client = loaded;
       unsubscribeEnded = loaded.subscribeEnded((topic) => {
         runFork(sessionOwners.remove(topic).pipe(Effect.ignore));
-        for (const listener of [...(endedListeners.get(topic) ?? [])])
+        // Snapshot: a listener may unsubscribe or subscribe while this runs.
+        for (const listener of Array.from(endedListeners.get(topic) ?? []))
           listener();
       });
       return loaded;
@@ -557,10 +559,10 @@ export const makeWalletConnectProtocol = Effect.fn("makeWalletConnectProtocol")(
             catch: (cause) => protocolError("wallet-connect-disconnect", cause),
           });
           yield* sessionOwners.remove(topic).pipe(Effect.ignore);
-          yield* Effect.try(() => signClient.sessions().length > 0).pipe(
-            Effect.flatMap(sessionHint.set),
-            Effect.ignore
-          );
+          yield* Effect.try({
+            try: () => signClient.sessions().length > 0,
+            catch: (cause) => protocolError("wallet-connect-sessions", cause),
+          }).pipe(Effect.flatMap(sessionHint.set), Effect.ignore);
         }
       ),
       subscribeEnded: (topic, listener) => {
@@ -670,7 +672,9 @@ export class WalletConnectProtocolPlatform extends Context.Service<
   Readonly<{
     make: Effect.Effect<WalletConnectProtocol, never, Scope.Scope>;
   }>
->()("stakekit/widget/wallet/platform/WalletConnectProtocolPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/wallet-connect-protocol/WalletConnectProtocolPlatform"
+) {
   static readonly layer = Layer.effect(
     WalletConnectProtocolPlatform,
     Effect.gen(function* () {

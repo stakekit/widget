@@ -1,10 +1,11 @@
 import { useAtomSet } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
-import type { Integration } from "../../../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../../../domain/borrow/catalog/market";
-import { toBorrowNetworkToken } from "../../../../../domain/borrow/catalog/token";
+
+import type { CollateralToken } from "../../../../../domain/borrow/collateral-token";
+import type { Integration } from "../../../../../domain/borrow/integration";
+import type { Market } from "../../../../../domain/borrow/market";
+import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
 import { exactZero } from "../../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,

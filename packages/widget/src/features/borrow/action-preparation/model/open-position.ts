@@ -1,7 +1,7 @@
-import { resolveBorrowOrigination } from "../../../../domain/borrow/execution/origination-fee";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
-import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
-import { assessRiskGate } from "../../../../domain/borrow/risk/risk-gate";
+import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/minimum-debt";
+import { resolveBorrowOrigination } from "../../../../domain/borrow/origination-fee";
+import { assessRiskGate } from "../../../../domain/borrow/risk-gate";
 import {
   exactZero,
   truncateToTokenDecimals,

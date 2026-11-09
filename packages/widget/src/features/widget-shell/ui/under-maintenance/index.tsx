@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { refreshWidgetHealthAtom } from "../../../../resources/widget-health/index";
+
+import { refreshWidgetHealthAtom } from "../../../../resources/widget-health/widget-health";
 import { ShellNotice } from "../shell-notice";
 
 /**

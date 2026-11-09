@@ -1,5 +1,5 @@
 import { useTrackPage } from "../../../tracking/index";
-import { useActivityPage } from "../../react/use-activity-page";
+import { useActivityPage } from "../use-activity-page";
 import { ActivityPagePresentation } from "./activity-page-presentation";
 
 export const ActivityPageContent = ({

@@ -1,23 +1,21 @@
 /**
- * Architecture check for owned Modules, layer imports, and test layout.
+ * Architecture check for Modules, layer imports, Feature UI values, and test
+ * layout.
  *
  * Run via `pnpm check-hygiene:architecture`. Cruises `src` with the
- * dependency-cruiser config, then fails on owned-Module cycles that are not
- * listed in the baseline and on test directories that mirror no `src` or
+ * dependency-cruiser config, then fails on Module cycles, on `AsyncResult`
+ * values in Feature UI, and on test directories that mirror no `src` or
  * `playground` directory.
  */
 import { readdirSync } from "node:fs";
-import { join, sep } from "node:path";
+import { join, relative, sep } from "node:path";
+
 import { cruise, format } from "dependency-cruiser";
+
 import { widgetRoot } from "../paths";
-import architectureConfiguration, {
-  architecturePolicy,
-} from "./dependency-cruiser.config.mts";
-import { moduleCycleBaseline } from "./module-cycle-baseline";
-import {
-  checkOwnedModuleCycles,
-  formatModuleCycleCheck,
-} from "./module-cycle-policy";
+import { findAsyncResultValues } from "./async-result-in-ui";
+import architectureConfiguration from "./dependency-cruiser.config.mts";
+import { findModuleCycles, formatModuleCycles } from "./module-cycle-policy";
 import { findMisplacedTestDirectories } from "./test-layout-policy";
 
 const { options: configuredOptions = {}, ...ruleSet } =
@@ -41,18 +39,28 @@ if (typeof dependencyReport.output === "string") {
   process.stdout.write(dependencyReport.output);
 }
 
-const moduleCycleCheck = checkOwnedModuleCycles({
-  baseline: moduleCycleBaseline,
-  cruiseResult: cruiseOutput.output,
-  policy: architecturePolicy,
-});
+const moduleCycles = findModuleCycles(cruiseOutput.output);
 
-const invalidModuleBaseline =
-  moduleCycleCheck.staleBaseline.length > 0 ||
-  moduleCycleCheck.unbaselinedEdges.length > 0;
+if (moduleCycles.length > 0) {
+  process.stderr.write(`${formatModuleCycles(moduleCycles)}\n`);
+}
 
-if (invalidModuleBaseline) {
-  process.stderr.write(`${formatModuleCycleCheck(moduleCycleCheck)}\n`);
+const featureUiFile = /^src\/features\/.+\/ui\//i;
+const asyncResultValues = findAsyncResultValues(
+  join(widgetRoot, "tsconfig.json"),
+  (fileName) =>
+    featureUiFile.test(relative(widgetRoot, fileName).split(sep).join("/"))
+);
+
+if (asyncResultValues.length > 0) {
+  process.stderr.write(
+    `Feature UI holds AsyncResult values; publish a plain value or a Presentable from state/ instead:\n${asyncResultValues
+      .map(
+        (use) =>
+          `  ${relative(widgetRoot, use.file)}:${use.line}:${use.column} ${use.text}`
+      )
+      .join("\n")}\n`
+  );
 }
 
 const listRelativePaths = (
@@ -93,7 +101,8 @@ if (misplacedTestDirectories.length > 0) {
 
 if (
   dependencyReport.exitCode !== 0 ||
-  invalidModuleBaseline ||
+  asyncResultValues.length > 0 ||
+  moduleCycles.length > 0 ||
   misplacedTestDirectories.length > 0
 ) {
   process.exitCode = 1;

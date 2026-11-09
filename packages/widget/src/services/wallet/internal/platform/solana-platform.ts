@@ -7,6 +7,7 @@ import {
   type Scope,
   Stream,
 } from "effect";
+
 import {
   type HeadlessSolanaRuntime,
   makeDefaultHeadlessSolanaRuntime,
@@ -26,9 +27,7 @@ type SolanaPlatformService = {
   }) => Effect.Effect<SolanaRuntime, never, Scope.Scope>;
 };
 
-const fromHeadlessRuntime = Effect.fn("fromHeadlessRuntime")(function* (
-  runtime: HeadlessSolanaRuntime
-) {
+const fromHeadlessRuntime = (runtime: HeadlessSolanaRuntime): SolanaRuntime => {
   const changes = Stream.callback<SolanaWalletSnapshot>(
     (queue) =>
       Effect.acquireRelease(
@@ -52,13 +51,15 @@ const fromHeadlessRuntime = Effect.fn("fromHeadlessRuntime")(function* (
     connection: runtime.connection,
     current: Effect.sync(runtime.getWalletSnapshot),
     states: changes,
-  } satisfies SolanaRuntime;
-});
+  };
+};
 
 export class SolanaPlatform extends Context.Service<
   SolanaPlatform,
   SolanaPlatformService
->()("stakekit/widget/wallet/platform/SolanaPlatform") {
+>()(
+  "@stakekit/widget/services/wallet/internal/platform/solana-platform/SolanaPlatform"
+) {
   static readonly layer = Layer.effect(
     SolanaPlatform,
     Effect.gen(function* () {
@@ -72,7 +73,7 @@ export class SolanaPlatform extends Context.Service<
             walletConnectProtocol,
             runWalletEffect,
           });
-          return yield* fromHeadlessRuntime(runtime);
+          return fromHeadlessRuntime(runtime);
         }
       );
       return SolanaPlatform.of({ makeRuntime });

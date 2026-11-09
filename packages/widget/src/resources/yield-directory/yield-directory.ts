@@ -1,12 +1,13 @@
 import { Data, Duration, Effect, Option, Result, Schedule } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import type {
   EarnYield,
   EarnYieldWithProvider,
 } from "../../domain/earn/yield-schema";
 import type { ProviderId, YieldId } from "../../domain/identity/identifiers";
 import type { Network } from "../../domain/network/network";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -21,8 +22,8 @@ import {
   YIELD_IDS_CHUNK_SIZE,
 } from "../../shared/effect/pagination";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-import type { YieldProviderError } from "../yield-provider/index";
-import { yieldProviderResourceAtom } from "../yield-provider/index";
+import type { YieldProviderError } from "../yield-provider/yield-provider";
+import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
 
 const CONCURRENCY = 5;
 

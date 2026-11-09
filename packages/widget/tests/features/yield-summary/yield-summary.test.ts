@@ -1,10 +1,11 @@
 import { Effect, Layer } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { resolveYieldSummaryView } from "../../../src/features/yield-summary/model/yield-summary";
 import { makeYieldSummary } from "../../../src/features/yield-summary/state/yield-summary";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import { YieldResourceSource } from "../../../src/services/api/resource-sources";
 import {
   yieldApiValidatorFixture,

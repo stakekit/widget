@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { isValidElement, useEffect, useEffectEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
+
 import { formatCountryCode } from "../../../../shared/lib/formatters";
 import {
   Button,
@@ -12,9 +13,9 @@ import {
   Text,
 } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
-import type { useGeoBlock } from "../../react/use-geo-block";
-import { WidgetTranslationGate } from "../../react/widget-translation-gate";
 import { TranslatedLink } from "../translated-link";
+import type { useGeoBlock } from "../use-geo-block";
+import { WidgetTranslationGate } from "../widget-translation-gate";
 
 type ModalType =
   | ({ type: "geoBlock"; onClose: () => void } & Exclude<

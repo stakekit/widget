@@ -1,6 +1,7 @@
 import { Switch as BaseSwitch } from "@base-ui/react/switch";
 import * as stylex from "@stylexjs/stylex";
 import { useId } from "react";
+
 import type { HostHook } from "../host-hook";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { color } from "../tokens/color.stylex";

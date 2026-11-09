@@ -11,8 +11,9 @@ import {
   SubscriptionRef,
 } from "effect";
 import { HttpResponse, http } from "msw";
+
 import { version as widgetVersion } from "../../../package.json";
-import { ActionCommand } from "../../../src/domain/action/models";
+import { ActionCommand } from "../../../src/domain/earn/action-models";
 import {
   mountAnimationStateAtom,
   useMountAnimation,

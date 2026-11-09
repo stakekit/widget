@@ -15,11 +15,10 @@ import { mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
+
 import { ApplicationRouteContentProvider } from "../../../src/app/composition/application-route-content";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
-import { applicationBaseRuntime } from "../../../src/app/runtime/application-base-runtime";
 import { applicationRouterAtom } from "../../../src/app/runtime/application-router";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
@@ -38,6 +37,8 @@ import {
   PositionBalancesKey,
   positionBalancesByTypeAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
+import { applicationBaseRuntime } from "../../../src/runtime/application-base-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";

@@ -1,5 +1,6 @@
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
+
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import { getConfidentialCampaignUrl } from "../../../domain/earn/confidential-campaign";
 import type { ValidatorInput } from "../../../domain/earn/validator";
@@ -14,7 +15,10 @@ import {
 } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { Token } from "../../../domain/token/token";
-import { formatNextBatchTiming, getNextBatchCopyOptions } from "./next-batch";
+import {
+  formatNextBatchTiming,
+  getNextBatchCopyOptions,
+} from "../../yield-presentation/index";
 
 /** A selected validator, named by its name or else its address. */
 export type YieldMetaValidator = {

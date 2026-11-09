@@ -1,6 +1,7 @@
 import { Collapsible } from "@base-ui/react/collapsible";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { Icon } from "../primitives/icon";
 import { space } from "../tokens/space.stylex";
 import { disclosureStyles } from "./disclosure-styles";

@@ -6,6 +6,7 @@ import type {
 import type { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
+
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { Chain } from "../../../wallet-descriptors";
 import type { WalletIntegrationError } from "../../../wallet-errors";

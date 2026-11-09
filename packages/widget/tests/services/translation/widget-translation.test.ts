@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Deferred, Effect, Layer, Ref } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
+
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import type {
   SettingsProps,

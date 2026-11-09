@@ -1,10 +1,10 @@
-import type { YieldAction } from "../../../domain/action/models";
-import type { Integration } from "../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../domain/borrow/catalog/market";
-import type { BorrowToken } from "../../../domain/borrow/catalog/token";
 import type { ActionId as BorrowActionId } from "../../../domain/borrow/ids";
+import type { Integration } from "../../../domain/borrow/integration";
+import type { Market } from "../../../domain/borrow/market";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
+import type { BorrowToken } from "../../../domain/borrow/token";
+import type { YieldAction } from "../../../domain/earn/action-models";
 import type { EarnValidator } from "../../../domain/earn/validator";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { ActionId } from "../../../domain/identity/identifiers";

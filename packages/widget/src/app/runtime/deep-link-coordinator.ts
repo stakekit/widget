@@ -1,5 +1,6 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
-import type { YieldPendingActionType } from "../../domain/action/pending-action";
+
+import type { YieldPendingActionType } from "../../domain/earn/action-models";
 import type {
   ValidatorAddress,
   YieldId,
@@ -20,6 +21,7 @@ import type { WalletRuntimeInvariantError } from "../../services/wallet/wallet-e
 import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
+import { compositeKey } from "../../shared/lib/composite-key";
 
 type YieldFlowStartInput = Parameters<
   Effect.Success<typeof makeStartYieldTransactionFlow>
@@ -77,7 +79,7 @@ type DeepLinkClaims = Readonly<{
 const pendingActionClaimKey = (intent: PendingActionIntent) => {
   const owner = walletScopeOwnerKey(intent);
 
-  return JSON.stringify([
+  return compositeKey([
     "pending-action",
     owner.address,
     owner.network,
@@ -91,12 +93,12 @@ const positionClaimKey = ({
   balanceId,
   yieldId,
 }: NonNullable<DeepLinkRouteObservation["position"]>) =>
-  JSON.stringify(["position", yieldId, balanceId]);
+  compositeKey(["position", yieldId, balanceId]);
 
 export class DeepLinkCoordinator extends Context.Service<
   DeepLinkCoordinator,
   DeepLinkCoordinatorService
->()("stakekit/widget/app/DeepLinkCoordinator") {
+>()("@stakekit/widget/app/runtime/deep-link-coordinator/DeepLinkCoordinator") {
   static readonly layer = Layer.effect(
     DeepLinkCoordinator,
     Effect.gen(function* () {

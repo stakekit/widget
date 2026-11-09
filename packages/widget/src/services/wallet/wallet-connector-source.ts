@@ -1,5 +1,6 @@
 import { Context, Layer } from "effect";
 import type { Chain } from "wagmi/chains";
+
 import type { WalletList } from "./wallet-descriptors";
 
 export type WalletListFactory = (chains: Chain[]) => WalletList;
@@ -11,7 +12,9 @@ type WalletConnectorSourceService = Readonly<{
 export class WalletConnectorSource extends Context.Service<
   WalletConnectorSource,
   WalletConnectorSourceService
->()("stakekit/widget/services/wallet/WalletConnectorSource") {
+>()(
+  "@stakekit/widget/services/wallet/wallet-connector-source/WalletConnectorSource"
+) {
   static readonly defaultLayer = Layer.succeed(
     WalletConnectorSource,
     WalletConnectorSource.of({ walletListFactory: undefined })

@@ -2,6 +2,7 @@ import { Array as EArray, Option } from "effect";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
+
 import { config } from "../../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type { ExternalProviderSnapshot } from "../../../../config/external-provider-snapshot";

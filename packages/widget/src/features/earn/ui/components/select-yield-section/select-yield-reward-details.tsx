@@ -1,4 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
+
 import { getEffectiveYieldRewardRateDetails } from "../../../../../domain/earn/reward-rate";
 import type { EarnValidator } from "../../../../../domain/earn/validator";
 import {
@@ -21,7 +22,7 @@ import {
   isMorphoProvider,
   RewardRateBreakdown,
 } from "../../../../yield-summary/views";
-import { useEarnEntry } from "../../../react/use-earn-facades";
+import { useEarnEntry } from "../../use-earn-facades";
 import { formatEntryFigure, formatEstimatedRewards } from "./entry-figure";
 
 type StrategyProvider = {

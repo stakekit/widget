@@ -3,8 +3,8 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+
 import { tabResourcesPrefetchAtom } from "../../../src/app/routes/state/tab-resources-prefetch";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { applicationRouterLocationAtom } from "../../../src/app/runtime/application-router";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
@@ -12,6 +12,7 @@ import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../../src/features/wallet/index";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import type { YieldResourceSource } from "../../../src/services/api/resource-sources";
 import { unconfiguredBorrowResourceSourceLayer } from "../../utils/services/borrow-resource-source";
 import {

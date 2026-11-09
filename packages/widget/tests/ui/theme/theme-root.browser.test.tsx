@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { describe, expect, it, onTestFinished } from "vitest";
+
 import {
   type ColorScheme,
   type PresentationSettings,

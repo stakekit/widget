@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
 import {
   getYieldActionArg,

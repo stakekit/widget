@@ -1,11 +1,12 @@
 import * as Atom from "effect/reactivity/Atom";
-import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/index";
+
+import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/borrow-integrations";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../resources/borrow-positions/index";
+} from "../../../resources/borrow-positions/borrow-positions";
+import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { walletScopeAtom } from "../../wallet/index";
-import { widgetConfigAtom } from "../../widget-configuration/index";
 import { yieldBalancesScanAtom } from "./read-models/yield-balances";
 
 /**

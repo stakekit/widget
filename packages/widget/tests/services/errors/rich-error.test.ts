@@ -1,5 +1,6 @@
 import { Option, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { RichError } from "../../../src/services/errors/rich-error";
 
 describe("RichError", () => {

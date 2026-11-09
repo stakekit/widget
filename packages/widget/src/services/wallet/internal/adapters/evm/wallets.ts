@@ -6,6 +6,7 @@ import {
   injected,
   walletConnect,
 } from "wagmi/connectors";
+
 import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
 import { isMobileWalletEnvironment } from "../../../browser-environment";
 import type {

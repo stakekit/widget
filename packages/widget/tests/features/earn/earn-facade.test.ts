@@ -4,8 +4,8 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { type PriceRequest, Prices } from "../../../src/domain/health/models";
+
+import { type PriceRequest, Prices } from "../../../src/domain/finance/prices";
 import { TokenAddress } from "../../../src/domain/identity/identifiers";
 import {
   type EarnTokenOption,
@@ -29,6 +29,7 @@ import {
   earnYieldSelectionViewAtom,
   setEarnYieldSearchAtom,
 } from "../../../src/features/earn/state/yield-selection";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import { LegacyResourceSource } from "../../../src/services/api/resource-sources";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
 import { makeTestTracking } from "../../utils/services/tracking-service";

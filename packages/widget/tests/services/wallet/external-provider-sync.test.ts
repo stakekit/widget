@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Stream } from "effect";
 import { mainnet } from "viem/chains";
 import type { Connector } from "wagmi";
+
 import type {
   SettingsProps,
   SKExternalProviders,

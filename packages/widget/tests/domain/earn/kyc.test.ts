@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+
 import {
   getKycProviderName,
   getKycUrl,
   mapKycStatusToGate,
 } from "../../../src/domain/earn/kyc";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
-
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../../fixtures";
 
 const createYield = (

@@ -3,13 +3,14 @@ import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { positionsViewAtom } from "../../../src/features/portfolio/state/read-models/positions";
 import { yieldBalancesScanAtom } from "../../../src/features/portfolio/state/read-models/yield-balances";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   YieldResourceSource,

@@ -1,15 +1,16 @@
 import type BigNumber from "bignumber.js";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
-import type { Integration } from "../../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../../domain/borrow/catalog/market";
+
+import type { BorrowPositions } from "../../../../domain/borrow/borrow-positions";
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
 import type {
   IntegrationId,
   MarketId,
   TokenAddress,
 } from "../../../../domain/borrow/ids";
+import type { Integration } from "../../../../domain/borrow/integration";
+import type { Market } from "../../../../domain/borrow/market";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import type { BorrowPositions } from "../../../../domain/borrow/positions/borrow-positions";
-import type { RiskGateVerdict } from "../../../../domain/borrow/risk/risk-gate";
+import type { RiskGateVerdict } from "../../../../domain/borrow/risk-gate";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type {

@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from "react";
+
 import type { EarnValidator } from "../../../../domain/earn/validator";
 import {
   isYieldActionArgRequired,
@@ -6,7 +7,7 @@ import {
 } from "../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { SelectValidator } from "../../../yield-entry/views";
-import { useSelectValidator } from "../../react/use-select-validator";
+import { useSelectValidator } from "../use-select-validator";
 
 export type EarnValidatorTriggerState = {
   readonly selectedStake: EarnYieldWithProvider;

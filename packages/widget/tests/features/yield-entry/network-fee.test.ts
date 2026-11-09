@@ -1,11 +1,12 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import type {
   ActionCommand,
   ActionSimulation,
-} from "../../../src/domain/action/models";
-import { Prices } from "../../../src/domain/health/models";
+} from "../../../src/domain/earn/action-models";
+import { Prices } from "../../../src/domain/finance/prices";
 import {
   TokenAddress,
   WalletAddress,

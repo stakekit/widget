@@ -1,8 +1,9 @@
 import type BigNumber from "bignumber.js";
 import { toLowerCase } from "effect/String";
 import { Trans, useTranslation } from "react-i18next";
-import type { PendingAction } from "../../../../domain/action/models";
+
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
+import type { PendingAction } from "../../../../domain/earn/action-models";
 import type { EarnBalance } from "../../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { getPendingActionReturn } from "../../../../domain/earn/denomination";
@@ -14,7 +15,7 @@ import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { ActionCard, Text } from "../../../../ui/index";
-import type { usePositionDetails } from "../../react/use-position-details";
+import type { usePositionDetails } from "../use-position-details";
 
 type StaticActionBlockProps = {
   pendingAction: PendingAction;

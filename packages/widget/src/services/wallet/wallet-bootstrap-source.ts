@@ -1,4 +1,5 @@
 import { Context, type Effect, Schema } from "effect";
+
 import type { EarnYield } from "../../domain/earn/yield-schema";
 import type { YieldId } from "../../domain/identity/identifiers";
 import type { EnabledWalletNetworks } from "../../domain/wallet/models";
@@ -23,4 +24,6 @@ type WalletBootstrapSourceService = {
 export class WalletBootstrapSource extends Context.Service<
   WalletBootstrapSource,
   WalletBootstrapSourceService
->()("stakekit/widget/services/wallet/WalletBootstrapSource") {}
+>()(
+  "@stakekit/widget/services/wallet/wallet-bootstrap-source/WalletBootstrapSource"
+) {}

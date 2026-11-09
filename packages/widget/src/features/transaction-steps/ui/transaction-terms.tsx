@@ -1,4 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
+
 import { ExternalLink, Text } from "../../../ui/index";
 import { useTrackEvent } from "../../tracking/index";
 

@@ -1,9 +1,10 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { isHostExternalProvider } from "../../../services/wallet/external-provider-connector-id";
 import type { ConnectorWithWalletDetails } from "../../../services/wallet/wallet-descriptors";
-import { currentWalletStateResultAtom } from "./root-atom";
+import { walletStateResultAtom } from "./root-atom";
 import { walletIconUrlAtom } from "./wallet-icon";
 
 /**
@@ -14,7 +15,7 @@ import { walletIconUrlAtom } from "./wallet-icon";
  */
 export const connectedWalletAtom = Atom.make((get) => {
   const connected =
-    Option.getOrNull(AsyncResult.value(get(currentWalletStateResultAtom)))
+    Option.getOrNull(AsyncResult.value(get(walletStateResultAtom)))
       ?.connector ?? null;
   const connector: ConnectorWithWalletDetails | null =
     connected && !isHostExternalProvider(connected) ? connected : null;

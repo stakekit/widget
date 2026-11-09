@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import {
   canPresentRewardRateHistory,

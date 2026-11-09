@@ -1,8 +1,9 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
-import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
+
+import type { BorrowMarketsScope } from "../../domain/borrow/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
+import { appRuntime } from "../../runtime/app-runtime";
 import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";

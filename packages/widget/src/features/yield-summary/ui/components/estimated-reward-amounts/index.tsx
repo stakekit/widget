@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { unavailableFigure } from "../../../../../shared/lib/number-format";
 import { Stack, Text } from "../../../../../ui/index";

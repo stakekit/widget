@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
+
 import {
   ProviderId,
   ProviderOption,
@@ -9,8 +10,8 @@ import {
   earnFlowProviderOptionAtom,
   earnFlowYieldAtom,
 } from "../../../src/features/earn/state/flow-target";
-import { enrichedYieldOpportunityResourceAtom } from "../../../src/resources/yield-opportunity/index";
-import { yieldProviderResourceAtom } from "../../../src/resources/yield-provider/index";
+import { enrichedYieldOpportunityResourceAtom } from "../../../src/resources/yield-opportunity/yield-opportunity";
+import { yieldProviderResourceAtom } from "../../../src/resources/yield-provider/yield-provider";
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../../fixtures";
 
 const provider = yieldApiProviderFixture({ name: "Kiln" });

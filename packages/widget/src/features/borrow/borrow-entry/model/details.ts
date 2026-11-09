@@ -1,13 +1,14 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
-import type { Integration } from "../../../../domain/borrow/catalog/integration";
+
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
+import type { Integration } from "../../../../domain/borrow/integration";
 import {
   getBorrowMarketPairLabel,
   type Market,
-} from "../../../../domain/borrow/catalog/market";
-import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
-import { classifyRiskBand } from "../../../../domain/borrow/risk/risk-band";
+} from "../../../../domain/borrow/market";
+import { deriveMarketRiskLimits } from "../../../../domain/borrow/market-risk";
+import { classifyRiskBand } from "../../../../domain/borrow/risk-band";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,

@@ -1,12 +1,13 @@
 import { Effect, Schema } from "effect";
 import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
+
+import type { Action as BorrowAction } from "../../domain/borrow/action";
+import type { Transaction as BorrowTransaction } from "../../domain/borrow/transaction";
 import type {
   ActionTransaction,
   YieldAction,
-} from "../../domain/action/models";
-import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
-import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
+} from "../../domain/earn/action-models";
 import {
   SignedTransactionPayload,
   TransactionHash,
@@ -137,10 +138,11 @@ export const decodeWalletBroadcastResult = (
   hash: unknown
 ): Effect.Effect<WalletBroadcastResult, WalletBroadcastError> =>
   Schema.decodeUnknownEffect(TransactionHash)(hash).pipe(
-    Effect.map((signedTx) => ({ broadcasted: true, signedTx }) as const),
-    Effect.mapError(
-      (cause) => new WalletBroadcastError({ cause, customMessage: null })
-    )
+    Effect.mapBoth({
+      onSuccess: (signedTx) => ({ broadcasted: true, signedTx }) as const,
+      onFailure: (cause) =>
+        new WalletBroadcastError({ cause, customMessage: null }),
+    })
   );
 
 /** What a wallet answered for a transaction it signed but did not broadcast. */
@@ -148,10 +150,11 @@ export const decodeWalletSignedPayloadResult = (
   payload: unknown
 ): Effect.Effect<WalletSignedPayloadResult, WalletSigningError> =>
   Schema.decodeUnknownEffect(SignedTransactionPayload)(payload).pipe(
-    Effect.map((signedTx) => ({ broadcasted: false, signedTx }) as const),
-    Effect.mapError(
-      (cause) => new WalletSigningError({ cause, operation: "transaction" })
-    )
+    Effect.mapBoth({
+      onSuccess: (signedTx) => ({ broadcasted: false, signedTx }) as const,
+      onFailure: (cause) =>
+        new WalletSigningError({ cause, operation: "transaction" }),
+    })
   );
 
 /** The signature a wallet answered for a message or typed data. */

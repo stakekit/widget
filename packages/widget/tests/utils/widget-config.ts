@@ -1,12 +1,13 @@
 import { Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import type { RouteObject } from "react-router";
+
+import type { SKAppProps } from "../../src/public-api/react-types";
 import {
   type ApplicationRuntimeInit,
   applicationRuntimeInitAtom,
-} from "../../src/app/runtime/application-runtime-init";
-import { widgetConfigAtom } from "../../src/features/widget-configuration/index";
-import type { SKAppProps } from "../../src/public-api/react-types";
+} from "../../src/runtime/application-runtime-init";
+import { widgetConfigAtom } from "../../src/runtime/widget-config";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 
@@ -16,7 +17,7 @@ export const getTestWidgetConfig = (
   hostConfiguration: SKAppProps,
   options: { readonly isLedgerLive?: boolean } = {}
 ): WidgetConfig =>
-  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture factory for non-Effect UI tests
+  // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture factory for non-Effect UI tests
   Effect.runSync(
     WidgetConfigService.use((config) => config.current).pipe(
       Effect.provide(WidgetConfigService.layer(hostConfiguration, options))

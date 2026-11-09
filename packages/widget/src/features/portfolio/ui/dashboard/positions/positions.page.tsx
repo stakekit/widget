@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
+
 import { Stack, Text, VirtualList } from "../../../../../ui/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
-import { usePortfolioPositionsPage } from "../../../react/use-positions";
 import type { PositionsListRow } from "../../../state/read-models/positions";
 import {
   PositionsConnectWallet,
@@ -12,6 +12,7 @@ import {
   PositionsSkeleton,
 } from "../../components/positions-states";
 import { RevealBalancesHeader } from "../../components/reveal-balances-header";
+import { usePortfolioPositionsPage } from "../../use-positions";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
 

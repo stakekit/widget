@@ -1,10 +1,11 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+
 import { getYieldTypeLabels } from "../../../../domain/earn/yield";
 import type { PageCta } from "../../../widget-shell/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import type { YieldEntryCtaBlocker } from "../../../yield-entry/index";
-import { useEarnEntry, useEarnPageStatus } from "../../react/use-earn-facades";
+import { useEarnEntry, useEarnPageStatus } from "../use-earn-facades";
 
 /** A disabled CTA says what to do next in place of the action. */
 const blockerLabel = (

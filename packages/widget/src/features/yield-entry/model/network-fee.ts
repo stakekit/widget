@@ -1,10 +1,11 @@
 import type BigNumber from "bignumber.js";
-import type { ActionSimulation } from "../../../domain/action/models";
+
+import type { ActionSimulation } from "../../../domain/earn/action-models";
 import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
-import type { Prices } from "../../../domain/health/models";
+import type { Prices } from "../../../domain/finance/prices";
 import type { Token } from "../../../domain/token/token";
 
 /** What an amount's action is estimated to cost the network, in its gas token. */

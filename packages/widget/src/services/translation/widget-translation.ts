@@ -16,6 +16,7 @@ import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/http";
 import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
+
 import { mergeDeep } from "../../shared/effect/merge-deep";
 import type { HostProfile } from "../config/host-profile";
 import { WidgetConfigService } from "../config/widget-config";
@@ -32,7 +33,9 @@ const localResources = {
 declare module "i18next" {
   interface CustomTypeOptions {
     resources: {
-      [Key in keyof (typeof localResources)["en"]]: (typeof localResources)["en"][Key] & {
+      [
+        Key in keyof (typeof localResources)["en"]
+      ]: (typeof localResources)["en"][Key] & {
         errors: Record<
           string,
           | string
@@ -95,7 +98,7 @@ export const composeWidgetTranslationResources = ({
 export const createWidgetI18nInstance = () => {
   const instance = createInstance();
 
-  instance
+  void instance
     .use(initReactI18next)
     .use(LanguageDetector)
     .init({
@@ -139,7 +142,7 @@ export const reconcileWidgetI18n = ({
     );
   }
 
-  i18n.changeLanguage(language);
+  void i18n.changeLanguage(language);
 };
 
 const resolveSupportedLanguage = (
@@ -262,7 +265,9 @@ export class WidgetTranslation extends Context.Service<
   {
     readonly i18n: WidgetI18nInstance;
   }
->()("stakekit/widget/translation/WidgetTranslation") {
+>()(
+  "@stakekit/widget/services/translation/widget-translation/WidgetTranslation"
+) {
   static readonly layerNoDeps = Layer.effect(
     WidgetTranslation,
     makeWidgetTranslation()

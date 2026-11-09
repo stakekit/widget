@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
+
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { motionEasing, motionSeconds } from "../tokens/motion-timing";
 import { useReducedMotion } from "./use-reduced-motion";

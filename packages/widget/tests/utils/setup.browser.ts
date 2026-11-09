@@ -1,5 +1,6 @@
 import { MotionGlobalConfig } from "motion/react";
 import { beforeEach, vi } from "vitest";
+
 import { failOnReactErrors } from "./fail-on-react-errors";
 import { movePointerOffPage } from "./pointer";
 

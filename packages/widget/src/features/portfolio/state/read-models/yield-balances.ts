@@ -1,9 +1,10 @@
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import {
   refreshYieldPositionsAtom,
   yieldPositionsResourceAtom,
-} from "../../../../resources/yield-positions/index";
+} from "../../../../resources/yield-positions/yield-positions";
 import { walletScopeAtom } from "../../../wallet/index";
 
 const yieldBalancesScanResourceAtom = Atom.readable((get) => {

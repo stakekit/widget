@@ -2,12 +2,12 @@ import BigNumber from "bignumber.js";
 import { Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { EarnLegacyTokenOptionsResponse } from "../../../src/domain/earn/responses";
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
-import { type PriceRequest, Prices } from "../../../src/domain/health/models";
+import { type PriceRequest, Prices } from "../../../src/domain/finance/prices";
 import {
   ProviderId,
   ProviderOption,
@@ -30,6 +30,7 @@ import { earnEntryAtom } from "../../../src/features/earn/state/earn-selection/s
 import type { EarnEntry } from "../../../src/features/earn/state/earn-selection/types";
 import { earnEntryViewAtom } from "../../../src/features/earn/state/entry";
 import { earnYieldSelectionViewAtom } from "../../../src/features/earn/state/yield-selection";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   type LegacyResourceSource,

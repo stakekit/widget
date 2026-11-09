@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { SplitView, Stack } from "../../../../ui/index";
 import {
@@ -13,12 +14,12 @@ import {
   BackButtonProvider,
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
-import { usePositionDetails } from "../../react/use-position-details";
 import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
 import { PositionDetailsLoadFailed } from "../components/position-details-load-failed";
 import { PositionHeader } from "../components/position-header";
 import { PositionSummaryCard } from "../components/position-summary-card";
 import { PositionYieldFacts } from "../components/position-yield-facts";
+import { usePositionDetails } from "../use-position-details";
 import {
   PositionDetailsBreadcrumb,
   PositionDetailsPane,

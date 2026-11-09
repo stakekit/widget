@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, HashMap, Option, Schema } from "effect";
+
 import { ConfidentialTokenBalanceKey } from "../../src/domain/earn/confidential-balance";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { RevealedBalances } from "../../src/services/zama/revealed-balances";

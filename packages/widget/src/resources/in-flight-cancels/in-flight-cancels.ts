@@ -1,9 +1,10 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import { getCancellingHandles } from "../../domain/earn/confidential-balance";
 import type { YieldId } from "../../domain/identity/identifiers";
 import type { WalletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,

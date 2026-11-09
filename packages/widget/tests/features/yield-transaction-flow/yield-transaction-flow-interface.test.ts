@@ -4,8 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import {
   WalletAddress,
   YieldId,
@@ -21,6 +20,8 @@ import {
   type NavigatingYieldTransactionFlowStart,
   yieldFlowRoutes,
 } from "../../../src/features/yield-transaction-flow/model/session";
+import { appRuntime } from "../../../src/runtime/app-runtime";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import {
   type WidgetNavigationTarget,

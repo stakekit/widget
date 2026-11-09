@@ -1,7 +1,7 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../src/app/runtime/app-runtime";
+
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
@@ -13,6 +13,7 @@ import {
   SingleYieldBalancesKey,
   singleYieldBalancesResourceAtom,
 } from "../../src/resources/single-yield-balances/single-yield-balances";
+import { appRuntime } from "../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   LegacyResourceSource,

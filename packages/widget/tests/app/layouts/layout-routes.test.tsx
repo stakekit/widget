@@ -4,6 +4,7 @@ import {
   type RouteObject,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import { createCompactRoutes } from "../../../src/app/layouts/compact/compact-routes";
 import { createDashboardRoutes } from "../../../src/app/layouts/dashboard/dashboard-routes";
 import type { WidgetLayout } from "../../../src/services/config/widget-config-model";

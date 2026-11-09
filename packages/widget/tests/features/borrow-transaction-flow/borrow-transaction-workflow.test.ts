@@ -1,7 +1,8 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { Action } from "../../../src/domain/borrow/execution/action";
-import { Transaction } from "../../../src/domain/borrow/execution/transaction";
+
+import { Action } from "../../../src/domain/borrow/action";
+import { Transaction } from "../../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { projectBorrowExecution } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";

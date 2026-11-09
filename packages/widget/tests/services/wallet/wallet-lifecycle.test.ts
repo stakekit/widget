@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { mainnet } from "viem/chains";
 import type { Connector } from "wagmi";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeWalletLifecyclePolicy } from "../../../src/services/wallet/internal/runtime/lifecycle";

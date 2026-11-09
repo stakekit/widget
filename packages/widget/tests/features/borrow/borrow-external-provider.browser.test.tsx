@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { base, mainnet, polygon } from "viem/chains";
 import { userEvent } from "vitest/browser";
+
 import { SKApp } from "../../../src/App";
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import type {

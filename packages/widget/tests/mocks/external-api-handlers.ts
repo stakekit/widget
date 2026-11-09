@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+
 import { mockDelay } from "./delay";
 
 export const getExternalApiMock = (appOrigin: () => string) => [

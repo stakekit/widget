@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+
 import { getActionInputToken } from "../../../../../domain/action/rules";
 import { getConfidentialActionKind } from "../../../../../domain/earn/confidential";
 import {
@@ -29,11 +30,11 @@ import {
 } from "../../../model/action-title";
 import { getYieldFlowAttribution } from "../../../model/attribution";
 import type { YieldTransactionFlowIntake } from "../../../model/intake";
+import { formatReviewDestination } from "../../review/hooks/review-facts";
 import {
   useYieldFlowExecution,
   useYieldFlowSession,
-} from "../../../react/yield-flow-route";
-import { formatReviewDestination } from "../../review/hooks/review-facts";
+} from "../../yield-flow-session";
 
 type ContinuationIntake = Extract<
   YieldTransactionFlowIntake,

@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { explorerAddressUrl } from "../../../../services/evm-rpc/evm-rpc";
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
@@ -24,8 +25,6 @@ import {
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
-import { useConnectedWallet } from "../../react/use-connected-wallet";
-import { useSKWallet } from "../../react/use-wallet";
 import { getOtherAccounts } from "../../state/account-identities";
 import {
   copyWalletAddressAtom,
@@ -33,6 +32,8 @@ import {
   walletGasTokenBalanceAtom,
 } from "../../state/account-presentation";
 import { logoutAtom, switchAccountAtom } from "../../state/workflows";
+import { useConnectedWallet } from "../use-connected-wallet";
+import { useSKWallet } from "../use-wallet";
 import { WalletChainIcon } from "../wallet-dialog/chain-icon";
 
 /**

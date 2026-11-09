@@ -1,9 +1,8 @@
 import { Option, Record } from "effect";
 import type { TFunction } from "i18next";
-import {
-  isOptionalPendingAction,
-  type YieldPendingActionType,
-} from "../action/pending-action";
+
+import { isOptionalPendingAction } from "../action/pending-action";
+import type { YieldPendingActionType } from "../earn/action-models";
 import type { EarnBalance } from "../earn/balance";
 import { isUnfinishedInstantExit } from "../earn/confidential-balance";
 

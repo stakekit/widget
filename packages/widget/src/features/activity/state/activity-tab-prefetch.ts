@@ -1,6 +1,7 @@
 import * as Atom from "effect/reactivity/Atom";
+
+import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { walletScopeAtom } from "../../wallet/index";
-import { widgetConfigAtom } from "../../widget-configuration/index";
 import { ActivityActionsKey, activityActionsPullAtom } from "./page-resources";
 
 /**

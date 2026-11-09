@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+
 import "./config";
 
 export const exactDecimal = (value: string | number | BigNumber): BigNumber =>

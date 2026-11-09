@@ -10,6 +10,7 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
@@ -17,10 +18,8 @@ import {
   BorrowFlowSession,
   type BorrowTransactionFlowEntry,
 } from "../../../src/features/borrow-transaction-flow/model/session";
-import {
-  BorrowTransactionFlowRoute,
-  useBorrowTransactionFlow,
-} from "../../../src/features/borrow-transaction-flow/react/borrow-flow-route";
+import { BorrowTransactionFlowRoute } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-route";
+import { useBorrowTransactionFlow } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-session";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   borrowEntryFlowEntry,

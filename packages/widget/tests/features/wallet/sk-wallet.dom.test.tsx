@@ -8,7 +8,7 @@ import {
 } from "@ton/core";
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
-import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
+
 import {
   ActionId,
   TransactionId,
@@ -18,6 +18,7 @@ import {
 import { WagmiConfigProvider } from "../../../src/features/wallet/composition";
 import { useSKWallet } from "../../../src/features/wallet/index";
 import type { SKExternalProviders } from "../../../src/public-api/types";
+import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import {
   solana,
   ton,
@@ -164,7 +165,9 @@ const createDefaultTonTransactionFixture = () => {
 
 describe("SK Wallet", () => {
   it("should work with solana external provider", async ({ worker }) => {
-    const switchChainSpy = vi.fn(async (_: number) => {});
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
@@ -213,7 +216,9 @@ describe("SK Wallet", () => {
   it("keeps hex solana external provider transactions in hex form", async ({
     worker,
   }) => {
-    const switchChainSpy = vi.fn(async (_: number) => {});
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
@@ -263,7 +268,9 @@ describe("SK Wallet", () => {
     worker,
   }) => {
     const customMessage = "Transaction blocked by policy";
-    const switchChainSpy = vi.fn(async (_: number) => {});
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
     const sendTransactionSpy = vi.fn(async () => ({
       type: "error" as const,
       error: customMessage,
@@ -306,8 +313,12 @@ describe("SK Wallet", () => {
   });
 
   it("should work with ton external provider", async ({ worker }) => {
-    const switchChainSpy = vi.fn(async (_: number) => {});
-    const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
+    const sendTransactionSpy = vi.fn<(tx: unknown) => Promise<string>>(
+      async () => "hash"
+    );
 
     worker.use(
       http.get(yieldApiRoute("/v1/networks"), async () => {
@@ -355,8 +366,12 @@ describe("SK Wallet", () => {
   it("keeps raw ton transactions unchanged for external provider", async ({
     worker,
   }) => {
-    const switchChainSpy = vi.fn(async (_: number) => {});
-    const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
+    const switchChainSpy = vi.fn<(chainId: number) => Promise<void>>(
+      async () => {}
+    );
+    const sendTransactionSpy = vi.fn<(tx: unknown) => Promise<string>>(
+      async () => "hash"
+    );
     const rawTx = [
       {
         address: "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",

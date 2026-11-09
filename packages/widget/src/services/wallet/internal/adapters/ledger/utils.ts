@@ -6,6 +6,7 @@ import type {
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
 import { Effect, Record } from "effect";
+
 import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import type { Chain } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";

@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect, Result } from "effect";
 import { vi } from "vitest";
+
 import type { Network } from "../../../src/domain/network/network";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
@@ -47,12 +48,10 @@ vi.mock(
 );
 
 const signPayload = vi.hoisted(() =>
-  vi.fn(
-    async (): Promise<Record<string, unknown>> => ({
-      id: 1,
-      signature: "0xsignature",
-    })
-  )
+  vi.fn(async (): Promise<Record<string, unknown>> => ({
+    id: 1,
+    signature: "0xsignature",
+  }))
 );
 
 vi.mock("@luno-kit/core/connectors", () => {

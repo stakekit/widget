@@ -22,6 +22,7 @@ import {
   unichain,
   viction,
 } from "viem/chains";
+
 import {
   getWalletRoutingId,
   type WalletEvmNetwork,

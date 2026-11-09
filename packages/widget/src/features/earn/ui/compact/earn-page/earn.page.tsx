@@ -4,7 +4,6 @@ import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
-import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import {
   AmountPanelSkeleton,
   EarnCardSkeleton,
@@ -16,6 +15,7 @@ import { ExtraArgsSelection } from "../../components/extra-args-selection";
 import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
 import { SelectYieldSection } from "../../components/select-yield-section";
+import { useEarnPageStatus } from "../../use-earn-facades";
 import { SelectProvider } from "./components/select-provider";
 import { SelectValidatorSection } from "./components/select-validator-section";
 

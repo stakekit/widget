@@ -1,6 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+
 import {
   type ExtendedYieldType,
   getYieldTypeLabels,
@@ -20,10 +21,7 @@ import {
   type YieldEntryBalanceWarning,
 } from "../../../../yield-entry/index";
 import { useConfidentialTokenBalance } from "../../../../yield-entry/views";
-import {
-  useEarnEntry,
-  useEarnTokenSelection,
-} from "../../../react/use-earn-facades";
+import { useEarnEntry, useEarnTokenSelection } from "../../use-earn-facades";
 import { AmountPanelSkeleton } from "../earn-form-skeleton";
 import { SelectToken } from "./select-token";
 

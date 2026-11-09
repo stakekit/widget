@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+
 import { render } from "../../utils/test-utils";
 
 const wallet = vi.hoisted(() => ({ isConnected: true }));
@@ -13,7 +14,7 @@ vi.mock("../../../src/features/wallet/views", async (importOriginal) => {
   };
 });
 
-vi.mock("../../../src/features/widget-shell/react/use-header", () => ({
+vi.mock("../../../src/features/widget-shell/ui/use-header", () => ({
   useHeader: () => ({
     hideAccountAndChainSelector: false,
     hideChainSelector: false,

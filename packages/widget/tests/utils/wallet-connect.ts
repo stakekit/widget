@@ -1,5 +1,6 @@
 import { Effect, Option, Queue, Schema, type Scope } from "effect";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
+
 import {
   makeWalletConnectPresentation,
   type WalletConnectModal,

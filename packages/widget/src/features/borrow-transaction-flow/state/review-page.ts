@@ -1,8 +1,9 @@
 import { Cause, Data, Effect, Option, Ref, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { isTerminalBorrowActionStatus } from "../../../domain/borrow/execution/action";
+
+import { isTerminalBorrowActionStatus } from "../../../domain/borrow/action";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import {
   type BorrowOperationFailure,
   BorrowOperations,

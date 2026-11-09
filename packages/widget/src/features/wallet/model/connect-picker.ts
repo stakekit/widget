@@ -1,5 +1,6 @@
 import { Effect, Option, Stream } from "effect";
 import type { Connector } from "wagmi";
+
 import { EvmChainIds } from "../../../domain/wallet/chain-ids";
 import { evmChainGroup } from "../../../services/wallet/evm-chain-group";
 import { isConnectorWithFilteredChains } from "../../../services/wallet/wallet-connectors";
@@ -341,9 +342,8 @@ export const connectionChainId = Effect.fn("connectionChainId")(function* ({
 
   const chains: ReadonlyArray<{ readonly id: number }> =
     isConnectorWithFilteredChains(connector)
-      ? Option.getOrElse(
-          yield* Stream.runHead(connector.$filteredChains),
-          () => []
+      ? yield* Stream.runHead(connector.$filteredChains).pipe(
+          Effect.map(Option.getOrElse(() => []))
         )
       : enabledChains.filter((chain) => evmChainIds.has(chain.id));
 

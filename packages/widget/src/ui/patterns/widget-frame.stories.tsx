@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+
 import { Button } from "../components/button";
 import { Card } from "../components/card";
 import { Disclosure } from "../components/disclosure";
@@ -321,10 +322,10 @@ export const Reveal: Story = {
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "Ready" })
     );
-    await waitFor(() => {
+    await waitFor(async () => {
       const height = frame.getBoundingClientRect().height;
-      expect(height).toBeGreaterThan(0);
-      expect(height).toBe(content.getBoundingClientRect().height);
+      await expect(height).toBeGreaterThan(0);
+      await expect(height).toBe(content.getBoundingClientRect().height);
     });
   },
 };

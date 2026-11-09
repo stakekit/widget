@@ -2,7 +2,7 @@ import { Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import { Token } from "../../../src/domain/token/token";
 import { availableYieldCategoriesAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
@@ -11,6 +11,7 @@ import {
   EarnTokenCatalogKey,
   earnTokenCatalogResourceAtom,
 } from "../../../src/resources/earn-token-catalog/earn-token-catalog";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import type { EarnTokenCatalogRequest } from "../../../src/services/api/resource-sources";
 import {
   ApiRequestError,

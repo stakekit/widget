@@ -1,10 +1,11 @@
 import { Data } from "effect";
 import * as Atom from "effect/reactivity/Atom";
+
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
-} from "../../../resources/yield-directory/index";
+} from "../../../resources/yield-directory/yield-directory";
 
 export class MultiYieldsKey extends Data.Class<{
   readonly yieldIds: ReadonlyArray<YieldId>;

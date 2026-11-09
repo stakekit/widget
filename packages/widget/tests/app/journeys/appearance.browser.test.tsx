@@ -1,5 +1,6 @@
 import { afterEach } from "vitest";
 import { cdp } from "vitest/browser";
+
 import { darkTheme, lightTheme } from "../../../src/index.package";
 import { describe, expect, it } from "../../utils/test-extend";
 import {

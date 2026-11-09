@@ -2,11 +2,12 @@ import type BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
+
 import { isFundedBalance } from "../../../domain/finance/funded-balance";
-import type { Prices } from "../../../domain/health/models";
+import type { Prices } from "../../../domain/finance/prices";
 import { tokenString } from "../../../domain/token/token";
-import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
+import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
+import { appRuntime } from "../../../runtime/app-runtime";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { config } from "../../../shared/config/widget-defaults";
 import {

@@ -1,4 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
+
 import { ExternalLink } from "../../../../../ui/index";
 import type { YieldMetaLinkedCopy } from "../../../model/yield-meta-info";
 

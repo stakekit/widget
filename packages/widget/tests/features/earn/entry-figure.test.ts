@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { describe, expect, it } from "vitest";
+
 import { formatEntryFigure } from "../../../src/features/earn/ui/components/select-yield-section/entry-figure";
 
 describe("formatEntryFigure", () => {

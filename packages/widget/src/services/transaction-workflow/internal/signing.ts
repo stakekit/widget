@@ -1,10 +1,11 @@
-import { Effect, Match } from "effect";
+import { Effect, Match, Schema } from "effect";
 import { isAddress } from "viem";
-import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
+
+import type { Action as BorrowAction } from "../../../domain/borrow/action";
 import {
   decodeBorrowTransactionForWallet,
   decodeBorrowTypedDataForWallet,
-} from "../../../domain/borrow/execution/transaction";
+} from "../../../domain/borrow/transaction";
 import {
   TransactionId,
   type WalletSignature,
@@ -25,6 +26,7 @@ import type {
 import {
   type DirectTransactionLedger,
   makeTransactionSignError,
+  type TransactionSignError,
   type TransactionSignFailureReason,
   type TransactionSignWalletOperationCause,
   type TransactionWorkflowContext,
@@ -39,6 +41,8 @@ import type {
 } from "./held-hash-registration";
 import { recordDirectTransaction } from "./ledger";
 import { updateCurrentTransactionWorkflowTransaction } from "./model";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 type WalletSignFailure =
   | TransactionSignWalletOperationCause
@@ -286,36 +290,49 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
           return Effect.fail(fail({ _tag: "MissingUnsignedPayload" }));
         }
 
-        const payload =
+        const payload: Effect.Effect<string, Schema.SchemaError> =
           typeof source.transaction.unsignedTransaction === "string"
-            ? source.transaction.unsignedTransaction
-            : JSON.stringify(source.transaction.unsignedTransaction);
+            ? Effect.succeed(source.transaction.unsignedTransaction)
+            : encodeJson(source.transaction.unsignedTransaction);
 
-        return source.transaction.isMessage
-          ? wallet.signMessage({ expectedOwner, message: payload }).pipe(
-              Effect.map((signedTx) => ({
-                broadcasted: false as const,
-                signedTx,
-              })),
-              Effect.mapError((cause) =>
-                fail(walletSignFailureReason(cause, "message"))
-              )
-            )
-          : signRecordedTransaction(source, {
-              expectedOwner,
-              family: "yield",
-              ledgerHwAppId: null,
-              network,
-              tx: payload,
-              txMeta: {
-                ...domain.actionMeta,
-                annotatedTransaction: source.transaction.annotatedTransaction,
-                gasEstimate: source.transaction.gasEstimate,
-                structuredTransaction: source.transaction.structuredTransaction,
-                txId: source.transaction.id,
-                txType: source.transaction.type,
-              },
-            });
+        return payload.pipe(
+          Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
+          Effect.flatMap(
+            (
+              serialized
+            ): Effect.Effect<WorkflowSignedResult, TransactionSignError> =>
+              source.transaction.isMessage
+                ? wallet
+                    .signMessage({ expectedOwner, message: serialized })
+                    .pipe(
+                      Effect.mapBoth({
+                        onSuccess: (signedTx) => ({
+                          broadcasted: false as const,
+                          signedTx,
+                        }),
+                        onFailure: (cause) =>
+                          fail(walletSignFailureReason(cause, "message")),
+                      })
+                    )
+                : signRecordedTransaction(source, {
+                    expectedOwner,
+                    family: "yield",
+                    ledgerHwAppId: null,
+                    network,
+                    tx: serialized,
+                    txMeta: {
+                      ...domain.actionMeta,
+                      annotatedTransaction:
+                        source.transaction.annotatedTransaction,
+                      gasEstimate: source.transaction.gasEstimate,
+                      structuredTransaction:
+                        source.transaction.structuredTransaction,
+                      txId: source.transaction.id,
+                      txType: source.transaction.type,
+                    },
+                  })
+          )
+        );
       }),
       Match.tag("Borrow", ({ domain, transaction }) => {
         const { source } = transaction;
@@ -344,13 +361,14 @@ export const makePrepareAndSign = Effect.fn("makePrepareAndSign")(function* (
             Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
             Effect.flatMap((typedData) =>
               wallet.signTypedData({ expectedOwner, txMeta, typedData }).pipe(
-                Effect.map((signedTx) => ({
-                  broadcasted: false as const,
-                  signedTx,
-                })),
-                Effect.mapError((cause) =>
-                  fail(walletSignFailureReason(cause, "typed-data"))
-                )
+                Effect.mapBoth({
+                  onSuccess: (signedTx) => ({
+                    broadcasted: false as const,
+                    signedTx,
+                  }),
+                  onFailure: (cause) =>
+                    fail(walletSignFailureReason(cause, "typed-data")),
+                })
               )
             )
           );

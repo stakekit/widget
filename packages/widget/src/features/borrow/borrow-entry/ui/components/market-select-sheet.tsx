@@ -1,16 +1,17 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Integration } from "../../../../../domain/borrow/catalog/integration";
+
+import type { MarketId } from "../../../../../domain/borrow/ids";
+import type { Integration } from "../../../../../domain/borrow/integration";
 import {
   getBorrowMarketPairLabel,
   getListedCollateralTokens,
   getMarketAvailableLiquidityUsd,
   type Market,
-} from "../../../../../domain/borrow/catalog/market";
-import { toBorrowNetworkToken } from "../../../../../domain/borrow/catalog/token";
-import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/execution/origination-fee";
-import type { MarketId } from "../../../../../domain/borrow/ids";
+} from "../../../../../domain/borrow/market";
+import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/origination-fee";
+import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
 import type { Token } from "../../../../../domain/token/token";
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {

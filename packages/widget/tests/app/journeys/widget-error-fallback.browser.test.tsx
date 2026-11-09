@@ -1,4 +1,5 @@
 import { onTestFinished } from "vitest";
+
 import type { SKAppProps } from "../../../src/public-api/react-types";
 import { formatAddress } from "../../../src/shared/lib/general";
 import { describe, expect, it, vi } from "../../utils/test-extend";

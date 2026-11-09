@@ -1,8 +1,9 @@
 import type BigNumber from "bignumber.js";
-import type { Market } from "../../../domain/borrow/catalog/market";
-import type { ActionMetadata } from "../../../domain/borrow/execution/action";
+
+import type { ActionMetadata } from "../../../domain/borrow/action";
+import type { BorrowPositions } from "../../../domain/borrow/borrow-positions";
 import type { MarketId } from "../../../domain/borrow/ids";
-import type { BorrowPositions } from "../../../domain/borrow/positions/borrow-positions";
+import type { Market } from "../../../domain/borrow/market";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
 import {

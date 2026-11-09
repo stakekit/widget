@@ -1,12 +1,13 @@
 import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
+import type { MarketPosition } from "../../../../domain/borrow/market-position";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
-import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import {
   classifyRiskBand,
   type RiskBand,
-} from "../../../../domain/borrow/risk/risk-band";
+} from "../../../../domain/borrow/risk-band";
 import type { EarnBalance } from "../../../../domain/earn/balance";
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import { getYieldCategory } from "../../../../domain/earn/yield";
@@ -25,15 +26,15 @@ import {
   type PositionValidators,
   toPositionsData,
 } from "../../../../domain/portfolio/positions";
-import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../../resources/borrow-positions/index";
+} from "../../../../resources/borrow-positions/borrow-positions";
 import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
-} from "../../../../resources/yield-directory/index";
+} from "../../../../resources/yield-directory/yield-directory";
+import { widgetConfigAtom } from "../../../../runtime/widget-config";
 import { toPresentable } from "../../../../shared/effect/async-result";
 import { walletScopeAtom } from "../../../wallet/index";
 import { yieldBalancesScanAtom } from "./yield-balances";

@@ -30,10 +30,12 @@ import { createServer } from "node:net";
 import { join, relative, sep } from "node:path";
 import type { Readable } from "node:stream";
 import { stripVTControlCharacters } from "node:util";
+
 import { defineNetworkFixture } from "@msw/playwright";
 import { WebSocketNetworkFrame } from "msw/experimental";
 import { type Browser, chromium, type Page } from "playwright";
 import { runnerImport } from "vite";
+
 import type * as MockHandlers from "../../tests/mocks/handlers";
 import { repositoryRoot, widgetRoot } from "../paths";
 
@@ -309,9 +311,7 @@ const assertEncryptWorkerStarts = async (
       "default" in inlineChunk &&
       typeof inlineChunk.default === "function"
         ? // Vite's `?worker&inline` default export is a Worker constructor.
-          (inlineChunk.default as new (options: {
-            name: string;
-          }) => Worker)
+          (inlineChunk.default as new (options: { name: string }) => Worker)
         : undefined;
     // Code here runs in the page: a named helper would be compiled to
     // `__name(...)`, which the page does not define.
@@ -896,7 +896,7 @@ const run = async () => {
     await main();
   } catch (error) {
     console.error(
-      `[smoke] FAIL ${error instanceof Error ? (error.stack ?? error.message) : error}`
+      `[smoke] FAIL ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
     );
     process.exitCode = 1;
   } finally {

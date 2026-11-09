@@ -1,8 +1,9 @@
 import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
+import { appRuntime } from "../../../runtime/app-runtime";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { WidgetConfigService } from "../../../services/config/widget-config";
 import { isMobileWalletEnvironment } from "../../../services/wallet/browser-environment";
 import type { ConnectorWithWalletDetails } from "../../../services/wallet/wallet-descriptors";

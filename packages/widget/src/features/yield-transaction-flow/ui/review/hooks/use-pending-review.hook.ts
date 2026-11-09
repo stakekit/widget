@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import {
   formatTokenAmountInUSD,
@@ -14,7 +15,7 @@ import { getYieldFlowAttribution } from "../../../model/attribution";
 import {
   useYieldFlowIntake,
   useYieldFlowReview,
-} from "../../../react/yield-flow-route";
+} from "../../yield-flow-session";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
 import {

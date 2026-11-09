@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveBorrowOrigination } from "../../../src/domain/borrow/execution/origination-fee";
+
+import { resolveBorrowOrigination } from "../../../src/domain/borrow/origination-fee";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import {
   makeBorrowCollateralTokenDto,

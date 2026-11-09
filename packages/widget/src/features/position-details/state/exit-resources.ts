@@ -1,13 +1,14 @@
 import { Data, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { getKycProviderName } from "../../../domain/earn/kyc";
 import { isYieldValidatorSelectionRequired } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/index";
+} from "../../../resources/yield-opportunity/provider";
 import {
   presentedValue,
   toPresentable,

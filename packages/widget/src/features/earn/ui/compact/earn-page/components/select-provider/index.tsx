@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+
 import {
   formatUsd,
   unavailableFigure,
@@ -17,7 +18,7 @@ import {
 import {
   formatProviderWebsite,
   formatProviderWebsiteHref,
-} from "../../../../../../yield-summary/index";
+} from "../../../../../../yield-presentation/index";
 import type { EarnProviderOption } from "../../../../../state/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../../components/earn-provider-option-selection";
 

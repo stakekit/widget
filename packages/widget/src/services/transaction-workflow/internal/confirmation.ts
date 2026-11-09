@@ -1,10 +1,11 @@
 import { Data, Duration, Effect, Match, Ref, Schedule } from "effect";
 import { isHex } from "viem";
+
 import { isTransactionError } from "../../../domain/action/rules";
 import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
-} from "../../../domain/borrow/execution/action";
+} from "../../../domain/borrow/action";
 import { BorrowOperations, YieldOperations } from "../../api/operations";
 import { EvmRpc } from "../../evm-rpc/evm-rpc";
 import {

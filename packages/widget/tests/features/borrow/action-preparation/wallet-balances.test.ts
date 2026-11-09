@@ -1,7 +1,8 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
-import { BorrowToken } from "../../../../src/domain/borrow/catalog/token";
+
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
+import { BorrowToken } from "../../../../src/domain/borrow/token";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import {
   deriveBorrowMarketWalletBalances,

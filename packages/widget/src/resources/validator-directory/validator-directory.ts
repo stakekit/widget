@@ -1,6 +1,6 @@
 import { Data, Duration, Effect, Option, Schema, Stream } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import {
   EarnValidator,
   validatorAddressIdentity,
@@ -9,6 +9,7 @@ import type {
   ValidatorAddress,
   YieldId,
 } from "../../domain/identity/identifiers";
+import { appRuntime } from "../../runtime/app-runtime";
 import {
   type ApiRequestError,
   ResponseDecodeError,
@@ -190,15 +191,17 @@ const preferredValidatorsCanonicalAtom = Atom.family((yieldId: YieldId) =>
             }),
           pageSize: API_MAX_PAGE_SIZE,
         }).pipe(
-          Effect.map((validators) => {
-            const seen = new Set<string>();
-            return validators.filter((validator) => {
-              if (seen.has(validator.key)) return false;
-              seen.add(validator.key);
-              return true;
-            });
-          }),
-          Effect.mapError((cause) => new ValidatorsError({ cause }))
+          Effect.mapBoth({
+            onFailure: (cause) => new ValidatorsError({ cause }),
+            onSuccess: (validators) => {
+              const seen = new Set<string>();
+              return validators.filter((validator) => {
+                if (seen.has(validator.key)) return false;
+                seen.add(validator.key);
+                return true;
+              });
+            },
+          })
         )
       )
     )
@@ -249,7 +252,7 @@ const validatorByAddressCanonicalAtom = Atom.family(
                       Effect.mapError(
                         (cause) =>
                           new ValidatorsError({
-                            cause: new ResponseDecodeError({
+                            cause: ResponseDecodeError.make({
                               cause,
                               issue: cause.message,
                               operation: "validator-by-address-fallback",

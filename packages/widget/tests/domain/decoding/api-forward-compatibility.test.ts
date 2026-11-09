@@ -1,9 +1,10 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Logger, References, Schema } from "effect";
+
 import {
   ActionTransactionReceipt,
   YieldAction,
-} from "../../../src/domain/action/models";
+} from "../../../src/domain/earn/action-models";
 import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
   EarnPositionsResponse,
@@ -11,7 +12,7 @@ import {
 } from "../../../src/domain/earn/responses";
 import { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
-import { PriceResponse } from "../../../src/domain/health/models";
+import { PriceResponse } from "../../../src/domain/finance/prices";
 import {
   RewardRateHistoryResponse,
   TvlHistoryResponse,

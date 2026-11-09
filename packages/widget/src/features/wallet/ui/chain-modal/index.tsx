@@ -1,6 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { shouldShowDisconnect } from "../../../../services/wallet/wallet-connectors";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import {
@@ -13,9 +14,6 @@ import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { useTrackEvent } from "../../../tracking/index";
 import { networkPickerGroups } from "../../model/network-picker";
-import { useLedgerDisabledChain } from "../../react/use-ledger-disabled-chains";
-import { useScopedWalletChainSelection } from "../../react/use-scoped-wallet-chain-selection";
-import { useSKWallet } from "../../react/use-wallet";
 import {
   selectWalletChainAtom,
   walletChainSelectionAtom,
@@ -25,6 +23,9 @@ import {
   walletChainModalOpenAtom,
 } from "../../state/wallet-modal";
 import { logoutAtom } from "../../state/workflows";
+import { useLedgerDisabledChain } from "../use-ledger-disabled-chains";
+import { useScopedWalletChainSelection } from "../use-scoped-wallet-chain-selection";
+import { useSKWallet } from "../use-wallet";
 import {
   useWalletChainIconUrl,
   WalletChainIcon,

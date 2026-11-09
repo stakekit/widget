@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
+
 import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import {
@@ -13,7 +14,7 @@ import {
   getYieldFigures,
   type YieldFact,
   type YieldFactId,
-} from "../../../../yield-summary/index";
+} from "../../../../yield-presentation/index";
 import { YieldFactValue } from "../../../../yield-summary/views";
 
 export type EarnDetailsMetricCard = {

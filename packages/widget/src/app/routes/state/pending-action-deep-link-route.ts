@@ -1,22 +1,23 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+
 import { getPendingActionReturn } from "../../../domain/earn/denomination";
 import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/index";
 import { walletConnectionStateAtom } from "../../../features/wallet/index";
-import { underMaintenanceAtom } from "../../../resources/widget-health/index";
+import { underMaintenanceAtom } from "../../../resources/widget-health/widget-health";
+import {
+  atomToStream,
+  makeScopedEffectAtom,
+} from "../../../runtime/scoped-effect-atom";
 import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,
   type PendingActionDeepLinkObservation,
 } from "../../runtime/deep-link-coordinator";
-import {
-  atomToStream,
-  makeScopedEffectAtom,
-} from "../../runtime/scoped-effect-atom";
-import { walletRuntime } from "../../runtime/wallet-runtime";
+import { deepLinkRuntime } from "../../runtime/deep-link-runtime";
 
 const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
   (get) => {
@@ -97,5 +98,5 @@ export const pendingActionDeepLinkRouteAtom = makeScopedEffectAtom({
     ),
   label: "pendingActionDeepLinkRoute",
   makeValue: () => undefined,
-  runtime: walletRuntime,
+  runtime: deepLinkRuntime,
 });

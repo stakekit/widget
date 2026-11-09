@@ -1,8 +1,0 @@
-id: no-global-fetch
-valid:
-  - 'client.execute(request)'
-  - 'object.fetch(request)'
-invalid:
-  - 'fetch(url)'
-  - 'window.fetch(url)'
-  - 'globalThis.fetch(url)'

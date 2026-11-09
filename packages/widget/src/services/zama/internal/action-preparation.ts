@@ -1,5 +1,6 @@
 import { Effect, HashMap, Option } from "effect";
 import { isHex } from "viem";
+
 import {
   planConfidentialEncryption,
   toConfidentialArguments,
@@ -136,15 +137,17 @@ export const makeConfidentialPreparation = Effect.fn(
     sdk
       .publicDecrypt({ chainId, owner: command.address, requestId: handle })
       .pipe(
-        Effect.map(({ cleartext, decryptionProof }) => ({
-          ...command,
-          arguments: {
-            ...command.arguments,
-            decryptedAmount: cleartext.toString(),
-            decryptionProof,
-          },
-        })),
-        Effect.mapError(retryableFailure)
+        Effect.mapBoth({
+          onSuccess: ({ cleartext, decryptionProof }) => ({
+            ...command,
+            arguments: {
+              ...command.arguments,
+              decryptedAmount: cleartext.toString(),
+              decryptionProof,
+            },
+          }),
+          onFailure: retryableFailure,
+        })
       );
 
   const readUnwrapRequest: ConfidentialPreparationApi["readUnwrapRequest"] =

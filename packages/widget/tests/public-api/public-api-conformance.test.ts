@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+
 import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
+
 import {
   packageEntries,
   transpileEntryDeclaration,

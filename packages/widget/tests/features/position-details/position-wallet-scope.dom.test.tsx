@@ -11,7 +11,7 @@ import * as Atom from "effect/reactivity/Atom";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -25,6 +25,7 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../../src/resources/yield-positions/yield-positions";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import { YieldResourceSource } from "../../../src/services/api/resource-sources";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";

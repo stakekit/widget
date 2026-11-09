@@ -12,9 +12,10 @@ import {
 } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { TestClock } from "effect/testing";
+
 import { transactionWorkflowResourceEventProjection } from "../../../src/app/runtime/transaction-workflow-event-projection";
-import { Action } from "../../../src/domain/borrow/execution/action";
-import { Transaction } from "../../../src/domain/borrow/execution/transaction";
+import { Action } from "../../../src/domain/borrow/action";
+import { Transaction } from "../../../src/domain/borrow/transaction";
 import {
   SignedTransactionPayload,
   TransactionHash,

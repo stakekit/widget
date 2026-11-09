@@ -1,13 +1,14 @@
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
 import { ListRow, Stack, Switch, Text } from "../../../../../ui/index";
 import {
   type BorrowPositionAction,
   findBorrowCollateralToggleAction,
   type getBorrowPositionDetailsModel,
 } from "../../model/details";
-import { useBorrowCollateralToggleForm } from "../../react/use-action-form";
 import { borrowPositionActionHostHooks } from "../host-hooks";
+import { useBorrowCollateralToggleForm } from "../use-action-form";
 
 type CollateralItem = ReturnType<
   typeof getBorrowPositionDetailsModel

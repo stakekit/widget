@@ -1,4 +1,4 @@
-export { useYieldMetaInfo } from "./react/use-yield-meta-info";
+export { useYieldMetaInfo } from "./ui/use-yield-meta-info";
 export { EstimatedRewardAmounts } from "./ui/components/estimated-reward-amounts";
 export { KycGateCard } from "./ui/components/kyc-gate-card";
 export { MetaInfo } from "./ui/components/meta-info";
@@ -6,8 +6,5 @@ export { RewardRateBreakdown } from "./ui/components/reward-rate-breakdown";
 export { isMorphoProvider } from "./ui/components/reward-token-details";
 export { getRewardTokenSymbols } from "./ui/components/reward-token-details/get-reward-token-symbols";
 export { YieldDetailsHeader } from "./ui/components/yield-details-header";
-export {
-  YieldFactsSection,
-  YieldFactValue,
-} from "./ui/components/yield-facts";
+export { YieldFactsSection, YieldFactValue } from "./ui/components/yield-facts";
 export { YieldRiskRatingSummary } from "./ui/components/yield-risk";

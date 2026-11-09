@@ -12,6 +12,7 @@ import {
 import { createConfig, http } from "wagmi";
 import { avalanche, mainnet } from "wagmi/chains";
 import { mock } from "wagmi/connectors";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletChainSelection } from "../../../src/services/wallet/wallet-chain-selection";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";

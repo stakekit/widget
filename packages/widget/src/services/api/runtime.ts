@@ -1,22 +1,23 @@
 import { Effect, Layer } from "effect";
+
 import { WidgetConfigService } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
 import {
   WalletBootstrapSource,
   WalletBootstrapSourceReadError,
 } from "../wallet/wallet-bootstrap-source";
-import { makeBorrowOperations } from "./borrow-operations";
-import { makeBorrowResourceSource } from "./borrow-resource-source";
-import { makeLegacyResourceSource } from "./legacy-resource-source";
+import { makeBorrowOperations } from "./internal/borrow-operations";
+import { makeBorrowResourceSource } from "./internal/borrow-resource-source";
+import { makeLegacyResourceSource } from "./internal/legacy-resource-source";
+import { ApiTransportService } from "./internal/transport";
+import { makeYieldOperations } from "./internal/yield-operations";
+import { makeYieldResourceSource } from "./internal/yield-resource-source";
 import { BorrowOperations, YieldOperations } from "./operations";
 import {
   BorrowResourceSource,
   LegacyResourceSource,
   YieldResourceSource,
 } from "./resource-sources";
-import { ApiTransportService } from "./transport";
-import { makeYieldOperations } from "./yield-operations";
-import { makeYieldResourceSource } from "./yield-resource-source";
 
 const borrowOperationsLayer = Layer.effect(
   BorrowOperations,
@@ -78,8 +79,8 @@ const walletBootstrapSourceLayer = Layer.effect(
       effect: Effect.Effect<A, E>
     ): Effect.Effect<A, WalletBootstrapSourceReadError> =>
       effect.pipe(
-        Effect.mapError(
-          (cause) => new WalletBootstrapSourceReadError({ cause })
+        Effect.mapError((cause) =>
+          WalletBootstrapSourceReadError.make({ cause })
         )
       );
 

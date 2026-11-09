@@ -10,22 +10,23 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import type { YieldActivityItem } from "../../../src/features/activity/model/activity-action";
-import {
-  ActivityActionRoute,
-  useActivityActionRoute,
-} from "../../../src/features/activity/react/activity-action-route";
 import {
   ActivityDefaultIntent,
   ActivityExplicitIntent,
   ActivitySelectionKey,
   activityDetailsViewAtom,
 } from "../../../src/features/activity/state/details";
+import {
+  ActivityActionRoute,
+  useActivityActionRoute,
+} from "../../../src/features/activity/ui/activity-action-route";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import type { YieldFlowSession } from "../../../src/features/yield-transaction-flow/model/session";
-import { useYieldFlowSession } from "../../../src/features/yield-transaction-flow/react/yield-flow-route";
+import { useYieldFlowSession } from "../../../src/features/yield-transaction-flow/ui/yield-flow-session";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
 

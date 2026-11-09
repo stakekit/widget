@@ -1,7 +1,8 @@
 import { Schema } from "effect";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { TronResource } from "../../../../domain/action/tron-resource";
+
+import { TronResource } from "../../../../domain/earn/tron-resource";
 import { getYieldActionArg } from "../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { Field, Select, Stack } from "../../../../ui/index";

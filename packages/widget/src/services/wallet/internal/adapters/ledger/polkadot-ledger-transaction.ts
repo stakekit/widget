@@ -4,6 +4,7 @@ import type {
 } from "@ledgerhq/wallet-api-core";
 import { TypeRegistry } from "@polkadot/types";
 import { Option, Result, Schema } from "effect";
+
 import type { YieldTransactionMeta } from "../../../wallet-transactions";
 import type { substratePayloadCodec } from "../substrate/transaction";
 
@@ -182,10 +183,7 @@ const toCamelCase = (key: string): string =>
 const isNumericString = (value: string): boolean =>
   /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(value.trim());
 
-const readString = (
-  value: unknown,
-  fallback: string | null | undefined = undefined
-): string => {
+const readString = (value: unknown, fallback?: string | null): string => {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "bigint") {
     return value.toString();

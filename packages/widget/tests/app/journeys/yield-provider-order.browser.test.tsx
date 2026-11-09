@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+
 import { YieldProviderId } from "../../../src/public-api/types";
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";

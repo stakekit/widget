@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+
 import { Button, Checkbox, Modal, Stack, Text } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import { TranslatedLink } from "../translated-link";

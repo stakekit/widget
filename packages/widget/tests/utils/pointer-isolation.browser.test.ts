@@ -1,5 +1,6 @@
 import { expect, it, onTestFinished } from "vitest";
 import { userEvent } from "vitest/browser";
+
 import { movePointerOffPage } from "./pointer";
 
 const nextFrame = () => {

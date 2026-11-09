@@ -1,9 +1,10 @@
 import type BigNumber from "bignumber.js";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
-import type { Market } from "../../../../domain/borrow/catalog/market";
-import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
+
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
 import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
+import type { Market } from "../../../../domain/borrow/market";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import type { BorrowToken } from "../../../../domain/borrow/token";
 import { exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import { addressIdentity } from "../../../../domain/identity/identifiers";

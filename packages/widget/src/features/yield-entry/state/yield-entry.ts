@@ -2,15 +2,17 @@ import type BigNumber from "bignumber.js";
 import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import type { ActionCommand } from "../../../domain/action/models";
+
+import type { ActionCommand } from "../../../domain/earn/action-models";
 import { getKycProviderName } from "../../../domain/earn/kyc";
 import { ProviderId } from "../../../domain/identity/identifiers";
 import {
   ActionSimulationKey,
   actionSimulationResourceAtom,
-} from "../../../resources/action-simulation/index";
-import { yieldProviderResourceAtom } from "../../../resources/yield-provider/index";
+} from "../../../resources/action-simulation/action-simulation";
+import { yieldProviderResourceAtom } from "../../../resources/yield-provider/yield-provider";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
+import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
   sameWalletCommandIdentity,
@@ -20,7 +22,6 @@ import {
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
-import { widgetConfigAtom } from "../../widget-configuration/index";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,

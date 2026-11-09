@@ -3,6 +3,7 @@ import { Effect, Layer, type Scope } from "effect";
 import { vi } from "vitest";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
+
 import { getConfig } from "../../../src/services/wallet/internal/adapters/evm/config";
 import { WalletConnectPresentationPlatform } from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
 import {

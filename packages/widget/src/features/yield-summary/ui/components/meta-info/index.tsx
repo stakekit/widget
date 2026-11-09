@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import type {
   EarnValidator,
   EarnValidatorKey,
@@ -12,7 +13,7 @@ import {
   Stack,
   Text,
 } from "../../../../../ui/index";
-import { useYieldMetaInfo } from "../../../react/use-yield-meta-info";
+import { useYieldMetaInfo } from "../../use-yield-meta-info";
 
 type Props = {
   isLoading?: boolean;

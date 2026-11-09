@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import {
   WidgetNavigation,
   type WidgetNavigationError,
@@ -12,9 +13,6 @@ import {
   type NavigatingYieldTransactionFlowStart,
   type YieldFlowSession,
 } from "../model/session";
-
-// Kept apart from `start-atom.ts`: DeepLinkCoordinator, which the wallet
-// runtime builds, starts flows too, so importing the runtime here would cycle.
 
 type StartYieldTransactionFlowOutcome =
   | Readonly<{

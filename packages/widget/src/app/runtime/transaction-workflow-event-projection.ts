@@ -1,11 +1,13 @@
 import { Cause, Effect, Match, Schedule, Stream } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import * as Reactivity from "effect/reactivity/Reactivity";
+
 import { isBorrowNetwork } from "../../domain/borrow/network";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
+import { walletRuntime } from "../../runtime/wallet-runtime";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
@@ -13,7 +15,6 @@ import {
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { WalletService } from "../../services/wallet/wallet-service";
 import type { WalletState } from "../../services/wallet/wallet-state";
-import { walletRuntime } from "./wallet-runtime";
 
 /**
  * Workflow facts after which wallet-owned resources may differ on-chain:

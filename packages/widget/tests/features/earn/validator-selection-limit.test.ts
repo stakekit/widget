@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import type { EarnBalance } from "../../../src/domain/earn/balance";
 import type { EarnValidator } from "../../../src/domain/earn/validator";
 import { getMaxSelectedValidators } from "../../../src/domain/earn/validator";

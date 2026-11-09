@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
+
 import { ContainerFrame } from "../storybook/container-frame";
 import { Button } from "./button";
 import {
@@ -290,7 +291,10 @@ export const Tooltip: Story = {
     const target = surface.parentElement ?? surface;
     const cursorY = box.top + box.height * 0.75;
     await waitFor(async () => {
-      fireEvent.mouseMove(target, { clientX: box.left + 2, clientY: cursorY });
+      await fireEvent.mouseMove(target, {
+        clientX: box.left + 2,
+        clientY: cursorY,
+      });
       await expect(within(frame).getByText("January 1, 2026")).toBeVisible();
     });
     await expect(within(frame).getByText("4.00%")).toBeVisible();

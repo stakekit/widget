@@ -4,7 +4,9 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
 import ts from "typescript";
+
 import { widgetRoot } from "../paths";
 
 type JsonObject = Record<string, unknown>;

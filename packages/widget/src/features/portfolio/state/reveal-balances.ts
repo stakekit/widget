@@ -1,12 +1,13 @@
 import { Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
-import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+
 import {
   isRevealedConfidentialBalance,
   isUserRevealableBalance,
 } from "../../../domain/earn/confidential-balance";
+import { appRuntime } from "../../../runtime/app-runtime";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import {
   hideConfidentialPositions,
   revealConfidentialPositions,

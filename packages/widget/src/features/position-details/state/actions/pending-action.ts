@@ -1,8 +1,8 @@
 import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../../app/runtime/app-runtime";
-import type { PendingAction } from "../../../../domain/action/models";
+
+import type { PendingAction } from "../../../../domain/earn/action-models";
 import type { EarnBalance } from "../../../../domain/earn/balance";
 import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential-balance";
 import { getPendingActionReturn } from "../../../../domain/earn/denomination";
@@ -10,6 +10,7 @@ import type { EarnValidator } from "../../../../domain/earn/validator";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import type { BalanceDataKey } from "../../../../domain/portfolio/positions";
 import { walletScopeOwnerKey } from "../../../../domain/wallet/wallet-scope";
+import { appRuntime } from "../../../../runtime/app-runtime";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { startYieldTransactionFlowAtom } from "../../../yield-transaction-flow/index";
 import {
@@ -299,15 +300,14 @@ const runPositionPendingActionAtom = Atom.family(
             },
           })
           .pipe(
-            Effect.map(
-              (outcome): PositionPendingActionOutcome =>
-                outcome._tag === "Started"
-                  ? { _tag: "Started", attemptId: decision.attemptId }
-                  : {
-                      _tag: "Rejected",
-                      attemptId: decision.attemptId,
-                      reason: outcome._tag,
-                    }
+            Effect.map((outcome): PositionPendingActionOutcome =>
+              outcome._tag === "Started"
+                ? { _tag: "Started", attemptId: decision.attemptId }
+                : {
+                    _tag: "Rejected",
+                    attemptId: decision.attemptId,
+                    reason: outcome._tag,
+                  }
             )
           );
         const bestEffortTracking = Effect.exit(tracking).pipe(

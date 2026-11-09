@@ -5,6 +5,14 @@ interfaces required by real consumers. This adds interface-maintenance cost but
 keeps dependency direction enforceable and lets implementations change without
 creating accidental cross-Module contracts.
 
+The folder layout is the interface: a Module's root files are its interface and
+its subdirectories are private, so a Module keeps its root to the files its
+consumers need. Modules are found by path (each child of a Module layer, or of
+a declared Module Collection), never registered one by one, so a new Module is
+covered by the same rules the moment it exists. The cost is that a Module
+cannot keep a private file at its root; private code moves into a subdirectory
+such as `internal/`.
+
 The public-api layer may depend on a Domain Module only through that Module's
 `contract.ts` interface. A Domain contract may expose selected stable types and
 runtime values required by hosts, while Effect schemas, decoders, and other
@@ -26,8 +34,10 @@ may remove implementation-shaped host APIs instead of preserving third-party
 types under Widget-owned names.
 
 Dependency-cruiser restricts direct imports from `public-api` to Domain
-`contract.ts` files. The declaration build emits the source files reachable
-from the public entries with `src` as its root.
+`contract.ts` files, and derives every Module rule from the Module map
+(`packages/widget/scripts/architecture/module-map.ts`). The declaration build
+emits the source files reachable from the public entries with `src` as its
+root.
 
 Published declarations expose only dependencies that belong to the host
 contract. The package entry may reference only `react`; the standalone bundle

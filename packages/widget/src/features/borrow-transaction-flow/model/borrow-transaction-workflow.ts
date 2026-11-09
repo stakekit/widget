@@ -1,4 +1,4 @@
-import type { Transaction } from "../../../domain/borrow/execution/transaction";
+import type { Transaction } from "../../../domain/borrow/transaction";
 import type { TransactionHash } from "../../../domain/identity/identifiers";
 import {
   getCurrentTransactionWorkflowBatch,

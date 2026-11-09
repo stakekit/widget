@@ -1,5 +1,12 @@
-import type { KycStatus } from "../portfolio/models";
+import { Struct } from "effect";
+
+import * as YieldApi from "../../generated/api/yield-schema";
 import type { EarnYieldWithProvider } from "./yield-schema";
+
+export const KycStatus = YieldApi.KycStatusResponseDto.mapFields(
+  Struct.pick(["kycStatus", "authorizeUrl"])
+);
+export type KycStatus = typeof KycStatus.Type;
 
 export type KycGate =
   | { state: "pass" }

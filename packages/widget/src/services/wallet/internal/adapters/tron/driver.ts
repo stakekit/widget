@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { Connector } from "wagmi";
+
 import {
   type WalletCapabilityUnavailableError,
   WalletDecodeError,
@@ -40,11 +41,13 @@ export const makeTronWalletDriver = ({
         catch: (cause) =>
           new WalletSigningError({ cause, operation: "transaction" }),
       });
-      const signedTx = yield* Effect.try({
-        try: () => JSON.stringify(signed),
-        catch: (cause) =>
-          new WalletSigningError({ cause, operation: "transaction" }),
-      });
+      const signedTx = yield* Schema.encodeEffect(
+        Schema.fromJsonString(Schema.Unknown)
+      )(signed).pipe(
+        Effect.mapError(
+          (cause) => new WalletSigningError({ cause, operation: "transaction" })
+        )
+      );
 
       return yield* decodeWalletSignedPayloadResult(signedTx);
     }),

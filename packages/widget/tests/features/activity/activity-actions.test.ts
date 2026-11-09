@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import type { YieldAction } from "../../../src/domain/action/models";
+
 import { ActivityActionsPage } from "../../../src/domain/activity/models";
+import type { YieldAction } from "../../../src/domain/earn/action-models";
 import { EarnValidator } from "../../../src/domain/earn/validator";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
@@ -19,6 +19,7 @@ import {
   activityFilterOptionsAtom,
 } from "../../../src/features/activity/state/page-resources";
 import { yieldOpportunityResourceAtom } from "../../../src/resources/yield-opportunity/yield-opportunity";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   type ValidatorDirectoryRequest,

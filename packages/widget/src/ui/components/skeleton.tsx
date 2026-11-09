@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+
 import type { TypeRole } from "../primitives/type-role";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";

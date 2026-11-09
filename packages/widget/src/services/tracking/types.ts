@@ -1,5 +1,5 @@
-import type { YieldPendingActionType } from "../../domain/action/pending-action";
 import type { MarketId } from "../../domain/borrow/ids";
+import type { YieldPendingActionType } from "../../domain/earn/action-models";
 import type { YieldCategory } from "../../domain/earn/contract";
 import type {
   ValidatorAddress,

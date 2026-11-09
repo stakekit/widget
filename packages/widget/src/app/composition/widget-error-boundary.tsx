@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+
 import { decodeRejectedConfigurationPresentation } from "../../services/config/widget-config-boundary";
 import { StandaloneWidgetUnavailable } from "./standalone-widget-unavailable";
 

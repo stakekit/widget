@@ -1,10 +1,11 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Schema } from "effect";
+
 import {
   decodeBorrowTransactionForWallet,
   decodeBorrowTypedDataForWallet,
   Transaction,
-} from "../../../src/domain/borrow/execution/transaction";
+} from "../../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 
 const address = Schema.decodeSync(WalletAddress)(

@@ -1,9 +1,10 @@
 import type { PropsWithChildren } from "react";
 import { describe, expect, it, vi } from "vitest";
+
 import { SKAtomRegistryProvider } from "../../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../../src/app/routes/application-routes";
-import { useTrackEvent } from "../../../src/features/tracking/react/use-track-event";
-import { useTrackPage } from "../../../src/features/tracking/react/use-track-page";
+import { useTrackEvent } from "../../../src/features/tracking/ui/use-track-event";
+import { useTrackPage } from "../../../src/features/tracking/ui/use-track-page";
 import { renderHook } from "../../utils/test-utils.dom.tsx";
 
 describe("application tracking ingress", () => {

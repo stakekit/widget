@@ -4,6 +4,7 @@ import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
 import { type Connector, createConfig, http } from "wagmi";
 import { type Chain, mainnet } from "wagmi/chains";
+
 import type { Network } from "../../../../domain/network/network";
 import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
 import type { WalletNetwork } from "../../../../domain/wallet/network";

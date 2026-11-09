@@ -1,8 +1,6 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"
-  },
-  "exclude": ["node_modules", ".repos"]
+  // No TypeScript lives at the repository root; each package owns its
+  // tsconfig. Listing no files keeps this config from claiming a stray file:
+  // the one-pass lint type-checks every program a linted file belongs to.
+  "files": []
 }

@@ -1,8 +1,8 @@
 import { Effect, Equal, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
-import type { TronResource } from "../../../domain/action/tron-resource";
+
+import type { TronResource } from "../../../domain/earn/tron-resource";
 import {
   getExtendedYieldType,
   getYieldRewardTokens,
@@ -15,7 +15,8 @@ import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-} from "../../../resources/token-prices/index";
+} from "../../../resources/token-prices/prices";
+import { appRuntime } from "../../../runtime/app-runtime";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
   getNetworkFeeEstimate,

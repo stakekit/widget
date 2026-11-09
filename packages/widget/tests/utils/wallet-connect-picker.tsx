@@ -6,12 +6,13 @@ import { type Address, type Chain, UserRejectedRequestError } from "viem";
 import { vi } from "vitest";
 import type { CreateConnectorFn } from "wagmi";
 import { mock } from "wagmi/connectors";
-import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { walletConnectorSourceRuntime } from "../../src/app/runtime/wallet-connector-source-runtime";
+
 import { WagmiConfigProvider } from "../../src/features/wallet/composition";
 import { setWalletConnectModalOpenAtom } from "../../src/features/wallet/state/wallet-modal";
 import { WalletModalsProvider } from "../../src/features/wallet/views";
 import type { SKAppProps } from "../../src/public-api/react-types";
+import { appRuntime } from "../../src/runtime/app-runtime";
+import { walletConnectorSourceRuntime } from "../../src/runtime/wallet-connector-source-runtime";
 import {
   composeWidgetTranslationResources,
   createWidgetI18nInstance,

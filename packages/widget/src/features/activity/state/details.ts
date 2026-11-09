@@ -1,6 +1,6 @@
 import { Data, Effect, Option, Schema } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
+
 import {
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
@@ -13,7 +13,8 @@ import {
   activityActionResourceAtom,
   BorrowActivityActionKey,
   borrowActivityActionResourceAtom,
-} from "../../../resources/activity-history/index";
+} from "../../../resources/activity-history/activity-history";
+import { appRuntime } from "../../../runtime/app-runtime";
 import {
   type Presentable,
   toPresentable,
@@ -66,14 +67,11 @@ const activityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
 
         // Details tracks its Resources so a recovered Yield or validator
         // re-projects the row (ADR 0003); the feed takes them once per page.
-        const item = projectYieldActivityItem(
-          action,
-          key.scope,
-          yield* loadActivityEnrichmentFacts(
-            new ActivityEnrichmentKey([{ _tag: "yield", action }]),
-            (resource) => context.result(resource)
-          )
+        const facts = yield* loadActivityEnrichmentFacts(
+          new ActivityEnrichmentKey([{ _tag: "yield", action }]),
+          (resource) => context.result(resource)
         );
+        const item = projectYieldActivityItem(action, key.scope, facts);
 
         return isActivityActionOwnedByScope({
           action,
@@ -103,14 +101,11 @@ const borrowActivityActionDetailsAtom = Atom.family(
           if (!entry) return null;
 
           // Ownership is settled by the Resource; facts only name its tokens.
-          return projectBorrowActivityItem(
-            entry,
-            key.scope,
-            yield* loadActivityEnrichmentFacts(
-              new ActivityEnrichmentKey([entry]),
-              (resource) => context.result(resource)
-            )
+          const facts = yield* loadActivityEnrichmentFacts(
+            new ActivityEnrichmentKey([entry]),
+            (resource) => context.result(resource)
           );
+          return projectBorrowActivityItem(entry, key.scope, facts);
         })
       )
       .pipe(Atom.withLabel("borrowActivityActionDetailsAtom"))

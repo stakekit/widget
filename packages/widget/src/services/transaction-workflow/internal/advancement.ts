@@ -1,8 +1,9 @@
 import { Effect, Match } from "effect";
+
 import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
-} from "../../../domain/borrow/execution/action";
+} from "../../../domain/borrow/action";
 import type { TransactionWorkflowId } from "../../../domain/identity/identifiers";
 import { BorrowOperations } from "../../api/operations";
 import {

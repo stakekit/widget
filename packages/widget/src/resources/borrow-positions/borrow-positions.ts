@@ -1,23 +1,24 @@
 import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
+import { deriveBorrowPositions } from "../../domain/borrow/borrow-positions";
 import { isBorrowNetwork } from "../../domain/borrow/network";
-import { deriveBorrowPositions } from "../../domain/borrow/positions/borrow-positions";
 import type { BorrowIntegrationPositionsResponse } from "../../domain/borrow/responses";
 import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
+import { appRuntime } from "../../runtime/app-runtime";
 import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
-import { borrowIntegrationsResourceAtom } from "../borrow-integrations/index";
+import { borrowIntegrationsResourceAtom } from "../borrow-integrations/borrow-integrations";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../borrow-markets/index";
+} from "../borrow-markets/borrow-markets";
 import { withBorrowResourceError } from "../borrow-resource-error";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 

@@ -1,4 +1,4 @@
-import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import type { YieldPendingActionType } from "../../../domain/earn/action-models";
 import type { EarnBalance } from "../../../domain/earn/balance";
 import { getPendingActionUrgency } from "../../../domain/portfolio/position-callout";
 import type { PositionDetailsPageState } from "./page-state";

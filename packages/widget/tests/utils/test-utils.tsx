@@ -5,12 +5,13 @@ import {
   type RenderResult,
   render,
 } from "vitest-browser-react";
+
 import { type SKApp, SKAppRegistryContent } from "../../src/App";
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
 import { WidgetErrorBoundary } from "../../src/app/composition/widget-error-boundary";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
-import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
-import { walletConnectorSourceRuntime } from "../../src/app/runtime/wallet-connector-source-runtime";
+import { applicationRuntimeInitAtom } from "../../src/runtime/application-runtime-init";
+import { walletConnectorSourceRuntime } from "../../src/runtime/wallet-connector-source-runtime";
 import {
   WalletConnectorSource,
   type WalletListFactory,

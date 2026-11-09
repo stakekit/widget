@@ -1,4 +1,5 @@
 import { Effect, Ref } from "effect";
+
 import { TrackingService } from "../../../tracking/tracking-service";
 import type { NormalizedWalletState } from "../../wallet-state";
 import { isExternalProviderConnector } from "../adapters/external-provider";

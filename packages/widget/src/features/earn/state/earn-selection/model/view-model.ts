@@ -1,4 +1,5 @@
 import { Option } from "effect";
+
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type {
   EarnEntryIntent,

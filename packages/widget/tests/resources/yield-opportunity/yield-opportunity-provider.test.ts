@@ -1,7 +1,7 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
   YieldOpportunityKey,
@@ -15,6 +15,7 @@ import {
   YieldProviderError,
   yieldProviderResourceAtom,
 } from "../../../src/resources/yield-provider/yield-provider";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   YieldResourceSource,

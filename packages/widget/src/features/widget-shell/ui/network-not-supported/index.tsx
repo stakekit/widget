@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useSKWallet } from "../../../wallet/index";
 import { WalletChainPicker } from "../../../wallet/views";
 import { ShellNotice } from "../shell-notice";

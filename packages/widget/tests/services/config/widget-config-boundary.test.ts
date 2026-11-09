@@ -1,5 +1,6 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { ProviderId, YieldId } from "../../../src/domain/identity/identifiers";
 import type { SKHostConfiguration } from "../../../src/public-api/react-types";
 import type {

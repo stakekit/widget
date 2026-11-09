@@ -1,7 +1,8 @@
 import { describe, expect, it } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
+
+import { KycStatus } from "../../../src/domain/earn/kyc";
 import {
-  KycStatus,
   RewardRateHistoryResponse,
   TvlHistoryResponse,
   YieldRewardsSummary,

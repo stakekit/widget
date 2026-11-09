@@ -1,7 +1,7 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../src/app/runtime/app-runtime";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import {
   YieldHistoryResourceKey,
@@ -11,6 +11,7 @@ import {
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
 } from "../../../src/resources/yield-insights/yield-insights";
+import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   ApiRequestError,
   YieldResourceSource,

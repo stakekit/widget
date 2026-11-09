@@ -2,11 +2,11 @@ import BigNumber from "bignumber.js";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../../../src/app/runtime/app-runtime";
+
 import {
   deriveBorrowPositions,
   emptyBorrowPositions,
-} from "../../../../src/domain/borrow/positions/borrow-positions";
+} from "../../../../src/domain/borrow/borrow-positions";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../../src/domain/wallet/wallet-scope";
 import {
@@ -25,7 +25,8 @@ import {
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../../src/resources/borrow-positions/borrow-positions";
 import { BorrowResourceError as BorrowAtomError } from "../../../../src/resources/borrow-resource-error";
-import { makeBorrowResourceSource } from "../../../../src/services/api/borrow-resource-source";
+import { appRuntime } from "../../../../src/runtime/app-runtime";
+import { makeBorrowResourceSource } from "../../../../src/services/api/internal/borrow-resource-source";
 import {
   ApiRequestError,
   BorrowResourceSource,

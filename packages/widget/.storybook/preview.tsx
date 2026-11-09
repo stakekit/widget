@@ -1,4 +1,5 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
+
 import {
   appearancePresets,
   type ColorScheme,

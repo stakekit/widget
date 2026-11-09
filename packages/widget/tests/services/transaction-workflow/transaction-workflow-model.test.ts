@@ -1,8 +1,9 @@
 import { Equal, Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import type { ActionTransaction } from "../../../src/domain/action/models";
-import { Action } from "../../../src/domain/borrow/execution/action";
-import { Transaction } from "../../../src/domain/borrow/execution/transaction";
+
+import { Action } from "../../../src/domain/borrow/action";
+import { Transaction } from "../../../src/domain/borrow/transaction";
+import type { ActionTransaction } from "../../../src/domain/earn/action-models";
 import {
   TransactionId,
   TransactionWorkflowId,

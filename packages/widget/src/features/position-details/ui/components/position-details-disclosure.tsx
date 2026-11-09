@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
@@ -11,8 +12,8 @@ import {
   Text,
 } from "../../../../ui/index";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
-import { usePositionDetails } from "../../react/use-position-details";
-import { usePositionOverview } from "../../react/use-position-overview";
+import { usePositionDetails } from "../use-position-details";
+import { usePositionOverview } from "../use-position-overview";
 import { ProviderDetails } from "./provider-details";
 
 /**

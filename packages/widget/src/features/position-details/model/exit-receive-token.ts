@@ -1,4 +1,5 @@
 import { Array as Arr, Struct } from "effect";
+
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import {
   getConfidentialAssetToken,

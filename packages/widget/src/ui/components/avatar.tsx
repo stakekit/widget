@@ -1,6 +1,7 @@
 import { Avatar as BaseAvatar } from "@base-ui/react/avatar";
 import * as stylex from "@stylexjs/stylex";
 import { type ReactElement, useState } from "react";
+
 import { accountAvatar } from "../artwork/account-avatar";
 import { initialsAvatar } from "../artwork/initials-avatar";
 import type { FixedIconName } from "../icons/glyphs";

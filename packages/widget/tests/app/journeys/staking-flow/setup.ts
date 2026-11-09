@@ -2,7 +2,8 @@ import { Array as EArray, Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type { ActionCommand } from "../../../../src/domain/action/models";
+
+import type { ActionCommand } from "../../../../src/domain/earn/action-models";
 import { EarnYieldWithProvider } from "../../../../src/domain/earn/yield-schema";
 import { TransactionHash } from "../../../../src/domain/identity/identifiers";
 import type { LegacyTransaction } from "../../../../src/services/wallet/wallet-transactions";

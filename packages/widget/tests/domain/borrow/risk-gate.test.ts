@@ -1,13 +1,14 @@
 import BigNumber from "bignumber.js";
 import { describe, expect, it } from "vitest";
+
 import {
   assessRiskGate,
   type RiskGateVerdict,
-} from "../../../src/domain/borrow/risk/risk-gate";
+} from "../../../src/domain/borrow/risk-gate";
 import type {
   RiskAssessment,
   RiskProjection,
-} from "../../../src/domain/borrow/risk/risk-model";
+} from "../../../src/domain/borrow/risk-model";
 
 const available = ({
   healthFactor,

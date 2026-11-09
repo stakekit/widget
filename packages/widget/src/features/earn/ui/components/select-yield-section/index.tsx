@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 import {
   formatUsd,
   getRoundedPercentParts,
@@ -16,12 +17,9 @@ import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   getEstimatedRewardsUsd,
   getYieldFigures,
-} from "../../../../yield-summary/index";
+} from "../../../../yield-presentation/index";
 import { YieldRiskRatingSummary } from "../../../../yield-summary/views";
-import {
-  useEarnEntry,
-  useEarnYieldSelection,
-} from "../../../react/use-earn-facades";
+import { useEarnEntry, useEarnYieldSelection } from "../../use-earn-facades";
 import { EarnCardSkeleton } from "../earn-form-skeleton";
 import { SelectYield } from "./select-yield";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";

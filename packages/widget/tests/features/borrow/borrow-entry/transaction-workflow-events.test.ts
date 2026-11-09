@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { appRuntime } from "../../../../src/app/runtime/app-runtime";
-import type { Market } from "../../../../src/domain/borrow/catalog/market";
+
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
+import type { Market } from "../../../../src/domain/borrow/market";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import {
   WalletScopeKey,
@@ -13,6 +13,7 @@ import { currentBorrowEntryAtom } from "../../../../src/features/borrow/borrow-e
 import { borrowEntryIntentEventProjectionAtom } from "../../../../src/features/borrow/index";
 import { tokenBalancesScanAtom } from "../../../../src/features/portfolio/index";
 import { walletScopeAtom } from "../../../../src/features/wallet/index";
+import { appRuntime } from "../../../../src/runtime/app-runtime";
 import { BorrowResourceSource } from "../../../../src/services/api/resource-sources";
 import {
   type WidgetDomainEvent,

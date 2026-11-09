@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
+
 import { ErrorState } from "../../../../ui/index";
 
 /** A failed Activity request, in place of what it would show, with a retry. */

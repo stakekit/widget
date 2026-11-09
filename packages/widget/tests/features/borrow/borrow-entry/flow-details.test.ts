@@ -1,16 +1,17 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { appRuntime } from "../../../../src/app/runtime/app-runtime";
-import type { Market } from "../../../../src/domain/borrow/catalog/market";
+
 import { MarketId } from "../../../../src/domain/borrow/ids";
+import type { Market } from "../../../../src/domain/borrow/market";
 import { exactDecimal } from "../../../../src/domain/finance/exact";
 import { borrowFlowDetailsAtom } from "../../../../src/features/borrow/borrow-entry/state/flow-details";
-import { widgetConfigAtom } from "../../../../src/features/widget-configuration/index";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../../../../src/resources/borrow-markets/index";
+} from "../../../../src/resources/borrow-markets/borrow-markets";
+import { appRuntime } from "../../../../src/runtime/app-runtime";
+import { widgetConfigAtom } from "../../../../src/runtime/widget-config";
 import { BorrowResourceSource } from "../../../../src/services/api/resource-sources";
 import {
   borrowEntryFlowDetails,

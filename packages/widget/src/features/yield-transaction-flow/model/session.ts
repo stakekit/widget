@@ -1,6 +1,7 @@
 import { Equal, Option, Ref, Schema } from "effect";
+
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
-import type { YieldAction } from "../../../domain/action/models";
+import type { YieldAction } from "../../../domain/earn/action-models";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { BalanceDataKey } from "../../../domain/portfolio/positions";
 import { WalletScopeKey } from "../../../domain/wallet/wallet-scope";

@@ -5,9 +5,10 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { type Connector, createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { mock } from "wagmi/connectors";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { connectedWalletAtom } from "../../../src/features/wallet/state/connected-wallet";
-import { currentWalletStateResultAtom } from "../../../src/features/wallet/state/root-atom";
+import { walletStateResultAtom } from "../../../src/features/wallet/state/root-atom";
 import { externalProviderConnectorId } from "../../../src/services/wallet/external-provider-connector-id";
 import {
   disconnectedNormalizedWalletState,
@@ -39,9 +40,7 @@ const connectedThrough = (connector: Connector): NormalizedWalletState => ({
 
 const readConnectedWallet = (connection: NormalizedWalletState) =>
   AtomRegistry.make({
-    initialValues: [
-      [currentWalletStateResultAtom, AsyncResult.success(connection)],
-    ],
+    initialValues: [[walletStateResultAtom, AsyncResult.success(connection)]],
   }).get(connectedWalletAtom);
 
 describe("connectedWalletAtom", () => {

@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
+
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { projectYieldEntry } from "../../../src/features/yield-entry/model/yield-entry";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../../fixtures";

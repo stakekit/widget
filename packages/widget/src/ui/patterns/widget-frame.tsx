@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { Logo } from "../artwork/logo";
 import { useReducedMotion } from "../components/use-reduced-motion";
 import type { HostHook } from "../host-hook";

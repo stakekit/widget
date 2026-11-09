@@ -11,6 +11,7 @@ import {
   useNavigate,
 } from "react-router";
 import { describe, expect, it } from "vitest";
+
 import {
   WalletAddress,
   YieldId,
@@ -21,10 +22,8 @@ import {
   makeYieldFlowSession,
   type YieldFlowSession,
 } from "../../../src/features/yield-transaction-flow/model/session";
-import {
-  useYieldFlowSession,
-  YieldFlowRoute,
-} from "../../../src/features/yield-transaction-flow/react/yield-flow-route";
+import { YieldFlowRoute } from "../../../src/features/yield-transaction-flow/ui/yield-flow-route";
+import { useYieldFlowSession } from "../../../src/features/yield-transaction-flow/ui/yield-flow-session";
 import { yieldApiYieldFixture } from "../../fixtures";
 import { render } from "../../utils/test-utils.dom.tsx";
 

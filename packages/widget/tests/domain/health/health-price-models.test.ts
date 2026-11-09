@@ -1,11 +1,12 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
+
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import {
-  HealthStatus,
   PriceRequest,
   PriceResponse,
-} from "../../../src/domain/health/models";
+} from "../../../src/domain/finance/prices";
+import { HealthStatus } from "../../../src/domain/health/models";
 import { Token } from "../../../src/domain/token/token";
 
 describe("health and price application schemas", () => {

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
+
 import { Stack } from "../primitives/stack";
 import { Spot } from "./spot";
 

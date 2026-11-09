@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
+
 import { YieldDetailsHeader } from "../../../yield-summary/views";
 import {
   getPositionHeaderBadges,
   getPositionProviderName,
 } from "../../model/position-overview";
-import { usePositionDetails } from "../../react/use-position-details";
+import { usePositionDetails } from "../use-position-details";
 
 /**
  * The head of a position's page in both Layouts: a 40px logo, the name and

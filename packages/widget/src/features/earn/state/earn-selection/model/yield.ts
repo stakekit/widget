@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
+
 import { getMinStakeAmount } from "../../../../../domain/earn/stake";
 import {
   isNonZeroRewardRateYield,

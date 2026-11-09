@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+
 import type { BorrowPositionActionFormWarning } from "../../model/action-form";
 
 const warningTranslationKeys = {

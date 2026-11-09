@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+
 import { getProtocolChainIdentity } from "../../../../../domain/wallet/network";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { WalletSignTransactionInput } from "../../../wallet-transactions";

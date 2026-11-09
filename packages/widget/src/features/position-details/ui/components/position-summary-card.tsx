@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
+
 import { PositionSummary } from "../../../../ui/index";
-import { usePositionDetails } from "../../react/use-position-details";
-import { usePositionOverview } from "../../react/use-position-overview";
+import { usePositionDetails } from "../use-position-details";
+import { usePositionOverview } from "../use-position-overview";
 
 /**
  * What the position is worth, leading its page under the header: the USD

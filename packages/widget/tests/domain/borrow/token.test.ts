@@ -1,9 +1,10 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
+
 import {
   BorrowToken,
   toBorrowNetworkToken,
-} from "../../../src/domain/borrow/catalog/token";
+} from "../../../src/domain/borrow/token";
 
 const decodeBorrowToken = Schema.decodeUnknownSync(BorrowToken);
 

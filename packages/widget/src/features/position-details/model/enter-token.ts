@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { equalTokens, type Token } from "../../../domain/token/token";
 

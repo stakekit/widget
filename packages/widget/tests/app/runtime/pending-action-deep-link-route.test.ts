@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
+
 import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,

@@ -1,4 +1,5 @@
 import * as Atom from "effect/reactivity/Atom";
+
 import type { YieldCategory } from "../../../domain/earn/contract";
 import {
   getExtendedYieldType,
@@ -7,7 +8,7 @@ import {
 } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
-import { widgetConfigAtom } from "../../../features/widget-configuration/index";
+import { widgetConfigAtom } from "../../../runtime/widget-config";
 import {
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,

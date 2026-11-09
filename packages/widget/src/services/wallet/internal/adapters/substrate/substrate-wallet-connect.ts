@@ -1,6 +1,7 @@
 import { isSameAddress } from "@luno-kit/core/utils";
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import { Array as EArray, Effect, Option, Predicate, Schema } from "effect";
+
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { makeWalletConnectAttempts } from "../../platform/wallet-connect-attempts";
 import {

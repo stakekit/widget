@@ -1,5 +1,6 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import * as stylex from "@stylexjs/stylex";
+
 import { Icon } from "../primitives/icon";
 import { scrollStyles } from "../primitives/scroll";
 import { usePortalContainer } from "../theme/portal-container";

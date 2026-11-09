@@ -1,6 +1,7 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
+
 import type { WalletScopeOwner } from "../../domain/wallet/wallet-scope";
 import type { BorrowTransactionMeta } from "./wallet-transactions";
 

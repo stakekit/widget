@@ -1,5 +1,5 @@
 import { toChartNumber } from "../../../../../shared/lib/number-format";
-import type { YieldRateFigure } from "../../../../yield-summary/index";
+import type { YieldRateFigure } from "../../../../yield-presentation/index";
 
 /**
  * The yield's reward rate as the Earn form shows it: a ratio to count to, or,

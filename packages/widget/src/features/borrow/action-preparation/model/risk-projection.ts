@@ -1,4 +1,4 @@
-import type { RiskPosition } from "../../../../domain/borrow/risk/risk-position";
+import type { RiskPosition } from "../../../../domain/borrow/risk-position";
 import type { BorrowRiskProjection } from "./types";
 
 type DomainRiskProjection = ReturnType<RiskPosition["assess"]>["projection"];

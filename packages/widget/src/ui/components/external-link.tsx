@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { Icon } from "../primitives/icon";
 import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";

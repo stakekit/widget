@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+
 import { Badge } from "../components/badge";
 import { Card } from "../components/card";
 import { type DetailItem, DetailRows } from "../components/detail-list";

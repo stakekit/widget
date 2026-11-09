@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Box, Grid, IconButton, Stack } from "../../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
 import {
@@ -8,8 +9,8 @@ import {
   useMountRevealReady,
 } from "../../../../mount-animation/index";
 import { AccountModal, ChainModal } from "../../../../wallet/views";
-import { useHeader } from "../../../react/use-header";
 import { ShellFrame } from "../../shell-frame";
+import { useHeader } from "../../use-header";
 
 /**
  * The Compact Layout's frame: one header row above the page, with the back

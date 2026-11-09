@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
+
 import { Box } from "../primitives/box";
 import { EmbeddedPage } from "./embedded-page";
 

@@ -1,10 +1,11 @@
 import type BigNumber from "bignumber.js";
 import { DateTime } from "effect";
-import type { ActionTransaction } from "../../../domain/action/models";
+
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
-import { getBorrowMarketPairLabel } from "../../../domain/borrow/catalog/market";
-import type { BorrowToken } from "../../../domain/borrow/catalog/token";
+import { getBorrowMarketPairLabel } from "../../../domain/borrow/market";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
+import type { BorrowToken } from "../../../domain/borrow/token";
+import type { ActionTransaction } from "../../../domain/earn/action-models";
 import type { ConfidentialSettlement } from "../../../domain/earn/confidential";
 import type { Token } from "../../../domain/token/token";
 import { formatDateTime } from "../../../shared/lib/date";
@@ -136,9 +137,10 @@ const formatDate = (
     minute: "2-digit",
   });
 
-// Yield and Borrow transactions share the same ten statuses.
+// Yield and Borrow transactions share the same ten statuses, so one type
+// covers both.
 const projectTransactionStatus = (
-  status: ActionTransaction["status"] | BorrowActivityTransaction["status"]
+  status: ActionTransaction["status"]
 ): ActivityDetailsTransactionStatus => {
   switch (status) {
     case "CONFIRMED":

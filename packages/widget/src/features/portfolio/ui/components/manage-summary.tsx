@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
+
 import { Card, Stack, Text } from "../../../../ui/index";
-import { useSummary } from "../../react/use-summary";
+import { useSummary } from "../use-summary";
 import { SummaryMetric } from "./summary-metric";
 
 /**

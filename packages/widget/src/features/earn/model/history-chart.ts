@@ -1,5 +1,6 @@
 import { DateTime, Duration } from "effect";
 import type { TFunction } from "i18next";
+
 import { exactDecimal } from "../../../domain/finance/exact";
 import type {
   HistoryPeriod,
@@ -16,7 +17,7 @@ import {
   formatTvlAmount,
   type YieldRateFigure,
   type YieldTvlFigure,
-} from "../../yield-summary/index";
+} from "../../yield-presentation/index";
 
 // History is sampled per day, week, or month at UTC midnight; formatting in
 // any other zone would show the neighbouring calendar day.

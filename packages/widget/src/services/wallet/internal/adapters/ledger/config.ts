@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type { InitParams } from "../../../../../services/wallet/init-params";
 import type { WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";

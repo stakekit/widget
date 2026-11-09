@@ -1,7 +1,8 @@
 import { Match, Predicate } from "effect";
+
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
-import type { YieldAction } from "../../../domain/action/models";
-import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
+import type { Action as BorrowAction } from "../../../domain/borrow/action";
+import type { YieldAction } from "../../../domain/earn/action-models";
 import { TransactionWorkflowId } from "../../../domain/identity/identifiers";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
@@ -22,9 +23,9 @@ type TransactionWorkflowTransaction =
 type TransactionWorkflowSource = TransactionWorkflowTransaction["source"];
 type TransactionWorkflowDomainContext = TransactionWorkflowContext["domain"];
 
+// Yield and Borrow transactions share one status set.
 type TransactionWorkflowRemoteStatus =
-  | YieldAction["transactions"][number]["status"]
-  | BorrowAction["transactions"][number]["status"];
+  YieldAction["transactions"][number]["status"];
 
 /** Every remote status is classified, so a new one must be placed here. */
 const transactionWorkflowStatusProgress = {
@@ -159,13 +160,10 @@ const toTransactionWorkflowDomain = (
         yieldId,
       })
     ),
-    Match.tag(
-      "Borrow",
-      ({ action }): TransactionWorkflowDomainContext => ({
-        _tag: "Borrow",
-        action,
-      })
-    ),
+    Match.tag("Borrow", ({ action }): TransactionWorkflowDomainContext => ({
+      _tag: "Borrow",
+      action,
+    })),
     Match.exhaustive
   );
 

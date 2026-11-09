@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { vi } from "vitest";
+
 import { ValidatorAddress } from "../../../src/domain/identity/identifiers";
 import type { Network } from "../../../src/domain/network/network";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";

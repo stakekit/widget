@@ -98,7 +98,7 @@ no mapping is named once, in every build, in a warning that points to
 dependency-cruiser allows StyleX, Base UI, `motion`, Recharts, TanStack Virtual
 and style definition modules only inside the Design System, restricts Features
 and application composition to its main interface, and restricts its
-composition interface to application composition. ast-grep rejects lowercase
+composition interface to application composition. oxlint rejects lowercase
 JSX elements and `className` or `style` attributes in Features and application
 composition, and color literals and raw sizes, weights, line heights, radii,
 shadows, z-indices and durations inside the Design System outside its token

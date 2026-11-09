@@ -1,10 +1,11 @@
 import type BigNumber from "bignumber.js";
+
 import type { TokenAddress } from "../../../../domain/borrow/ids";
 import {
   classifyRiskBand,
   type RiskBand,
-} from "../../../../domain/borrow/risk/risk-band";
-import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
+} from "../../../../domain/borrow/risk-band";
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk-gate";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
@@ -13,15 +14,15 @@ import type {
   BorrowRepayActionContext,
   BorrowWithdrawActionContext,
   BorrowWithdrawTokenOption,
+  BorrowActionPreparation,
+  BorrowConstraintWarning,
+  CollateralToggleProjection,
+  RepayProjection,
+  WithdrawProjection,
 } from "../../action-preparation/index";
 import {
-  type BorrowActionPreparation,
-  type BorrowConstraintWarning,
-  type CollateralToggleProjection,
   getBorrowActionRiskBlock,
   prepareBorrowAction,
-  type RepayProjection,
-  type WithdrawProjection,
 } from "../../action-preparation/index";
 
 export type BorrowPositionActionFormWarning =
@@ -73,9 +74,8 @@ export type BorrowActionFormRisk = {
   readonly maxLtv: BigNumber | null;
 };
 
-const toProjectedRisk = (
-  risk: RepayProjection["risk"] | WithdrawProjection["risk"]
-): BorrowActionFormRisk =>
+// Repay and withdraw projections share one risk type.
+const toProjectedRisk = (risk: RepayProjection["risk"]): BorrowActionFormRisk =>
   risk.status === "available"
     ? {
         band: classifyRiskBand({

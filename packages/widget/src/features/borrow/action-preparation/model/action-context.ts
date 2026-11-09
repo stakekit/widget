@@ -1,16 +1,17 @@
 import type BigNumber from "bignumber.js";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
+
 import type {
   DebtBalance,
   SupplyBalance,
-} from "../../../../domain/borrow/positions/borrow-account-snapshot";
-import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
+} from "../../../../domain/borrow/borrow-account-snapshot";
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
+import type { MarketPosition } from "../../../../domain/borrow/market-position";
 import type {
   DisableCollateralPendingAction,
   EnableCollateralPendingAction,
   RepayPendingAction,
   WithdrawPendingAction,
-} from "../../../../domain/borrow/positions/pending-action";
+} from "../../../../domain/borrow/pending-action";
 
 export type BorrowWithdrawTokenOption = {
   readonly action: WithdrawPendingAction;

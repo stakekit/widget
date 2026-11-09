@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import type { ManageActionCommand, PendingAction } from "../action/models";
+
 import { fromBaseUnits } from "../finance/base-units";
 import { exactDecimal, exactZero } from "../finance/exact";
 import {
@@ -9,6 +9,7 @@ import {
   type TokenString,
   tokenString,
 } from "../token/token";
+import type { PendingAction } from "./action-models";
 import {
   type BalanceShares,
   type EarnBalance,
@@ -161,7 +162,7 @@ export const getSharesExitBalance = (
  * encrypted. Every other pending action pays the Value Token, so it is null.
  */
 export const getPendingActionReturn = (
-  pendingActionType: PendingAction["type"] | ManageActionCommand["action"],
+  pendingActionType: PendingAction["type"],
   balance: SharesSource
 ): TokenAmount | null => {
   const token = getShareToken(balance);

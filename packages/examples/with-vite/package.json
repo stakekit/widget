@@ -6,8 +6,7 @@
     "dev": "vite",
     "start": "pnpm dev",
     "build": "tsc && vite build",
-    "lint": "tsc && biome check .",
-    "format": "biome check --write .",
+    "lint": "tsc && effect-tsgo --tsrs-lint oxlint -c ../../../.oxlintrc.json .",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -2,25 +2,26 @@ import type BigNumber from "bignumber.js";
 import { Data, Option } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/reactivity/AsyncResult";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
-import type { Integration } from "../../../../domain/borrow/catalog/integration";
+
 import {
-  getListedCollateralTokens,
-  isListedBorrowMarket,
-  type Market,
-} from "../../../../domain/borrow/catalog/market";
+  type BorrowPositions,
+  emptyBorrowPositions,
+} from "../../../../domain/borrow/borrow-positions";
+import type { CollateralToken } from "../../../../domain/borrow/collateral-token";
 import {
   decodeTokenId,
   type MarketId,
   type TokenId,
 } from "../../../../domain/borrow/ids";
-import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import type { Integration } from "../../../../domain/borrow/integration";
 import {
-  type BorrowPositions,
-  emptyBorrowPositions,
-} from "../../../../domain/borrow/positions/borrow-positions";
-import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import type { RiskGateBlockReason } from "../../../../domain/borrow/risk/risk-gate";
+  getListedCollateralTokens,
+  isListedBorrowMarket,
+  type Market,
+} from "../../../../domain/borrow/market";
+import type { MarketPosition } from "../../../../domain/borrow/market-position";
+import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import type { RiskGateBlockReason } from "../../../../domain/borrow/risk-gate";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";

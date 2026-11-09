@@ -2,8 +2,8 @@ import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
-import { toPresentable } from "../../../../shared/effect/async-result";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { EmptyState, Notice, SplitView, Stack } from "../../../../ui/index";
 import {
@@ -77,9 +77,8 @@ export const BorrowPositionDetailsPage = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
-  const borrowPosition = useBorrowPosition(marketId);
   // A failed or in-flight refetch keeps the last known position on screen.
-  const presentablePosition = toPresentable(borrowPosition.positionResult);
+  const presentablePosition = useBorrowPosition(marketId);
   const position =
     presentablePosition._tag === "Ready" ? presentablePosition.value : null;
   const model = position

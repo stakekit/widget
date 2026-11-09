@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Context, Effect, Exit, Layer, Schema } from "effect";
+
 import { ActionId as BorrowActionId } from "../../src/domain/borrow/ids";
 import type { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeOwnerKey } from "../../src/domain/wallet/wallet-scope";

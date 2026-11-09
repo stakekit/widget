@@ -11,5 +11,5 @@ export {
   toLtvMeter,
 } from "./model/risk-display";
 export type { BorrowEntryFlowDetails } from "./model/session";
-export { useBorrowTransactionFlow } from "./react/borrow-flow-route";
+export { useBorrowTransactionFlow } from "./ui/borrow-flow-session";
 export { startBorrowTransactionFlowAtom } from "./state/borrow-flow-session";

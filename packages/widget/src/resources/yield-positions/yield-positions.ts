@@ -1,7 +1,7 @@
 import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { appRuntime } from "../../app/runtime/app-runtime";
+
 import type { YieldBalancesCommand } from "../../domain/finance/models";
 import type { YieldId } from "../../domain/identity/identifiers";
 import {
@@ -17,6 +17,7 @@ import {
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
+import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -25,7 +26,7 @@ import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-import { fillRevealedPositions } from "../revealed-balances/index";
+import { fillRevealedPositions } from "../revealed-balances/revealed-balances";
 
 const yieldPositionsPolicy = withApiResourcePolicy({
   staleTime: Duration.minutes(1),
