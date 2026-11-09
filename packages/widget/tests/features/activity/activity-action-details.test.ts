@@ -1,8 +1,8 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../../src/domain/action/models";
-import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowActivityAction } from "../../../src/domain/borrow/responses";
+import { EarnValidator } from "../../../src/domain/earn/validator";
 import { TransactionHash } from "../../../src/domain/identity/identifiers";
 import type {
   BorrowActivityItem,
@@ -13,9 +13,12 @@ import {
   confidentialFixture,
   confidentialYieldFixture,
   yieldApiActionFixture,
+  yieldApiProviderFixture,
   yieldApiTransactionFixture,
+  yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
+import { makeBorrowMarket, usdcTokenAddress } from "../../fixtures/borrow";
 
 const makeItem = (
   overrides: Parameters<typeof yieldApiActionFixture>[0] = {},
@@ -68,7 +71,7 @@ describe("Activity action details projection", () => {
     });
 
     expect(view).toMatchObject({
-      amount: "-1,000,000,000,000,000.12",
+      amount: "\u22121000T",
       canContinue: false,
       statusLabel: "failed",
       transactions: [
@@ -85,6 +88,36 @@ describe("Activity action details projection", () => {
     });
   });
 
+  it("reads a transaction declined in the wallet as cancelled, not failed", () => {
+    const view = projectActivityActionDetails({
+      item: makeItem({
+        status: "FAILED",
+        transactions: [
+          yieldApiTransactionFixture({
+            error: "User rejected the request.",
+            id: "stake",
+            status: "FAILED",
+            type: "STAKE",
+          }),
+        ],
+        type: "STAKE",
+      }),
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view).toMatchObject({
+      transactions: [
+        {
+          errorReason: "cancelled_in_wallet",
+          id: "stake",
+          status: "cancelled",
+        },
+      ],
+      transactionsSummary: { _tag: "total", count: 1 },
+    });
+  });
+
   it("rounds the amount down with the Widget language separators", () => {
     const view = projectActivityActionDetails({
       item: makeItem({ amount: "1234.56789", type: "STAKE" }),
@@ -93,7 +126,52 @@ describe("Activity action details projection", () => {
     });
 
     // French groups digits with U+202F and uses a decimal comma.
-    expect(view.amount).toBe("+1\u202f234,56");
+    expect(view.amount).toBe("+1\u202f234,5678");
+  });
+
+  it("lists the fiat value, the provider and the validators", () => {
+    const yieldData = {
+      ...yieldApiYieldFixture(),
+      provider: yieldApiProviderFixture({ name: "Lido" }),
+    };
+    const { name: _name, ...unnamedValidator } = yieldApiValidatorFixture({
+      address: "0x12345678cdef",
+    });
+    const view = projectActivityActionDetails({
+      item: {
+        ...makeItem({ amount: "2", amountUsd: "64.5", type: "STAKE" }),
+        validatorsData: [
+          yieldApiValidatorFixture({ name: "Chorus One" }),
+          unnamedValidator,
+        ].map((validator) => Schema.decodeSync(EarnValidator)(validator)),
+        yieldData,
+      },
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view).toMatchObject({
+      amountFiat: "$64.50",
+      provider: { logo: yieldData.provider.logoURI ?? null, name: "Lido" },
+      validators: [
+        expect.objectContaining({ name: "Chorus One" }),
+        expect.objectContaining({ name: "0x12…cdef" }),
+      ],
+    });
+  });
+
+  it("lists no fiat value, provider or validators it does not know", () => {
+    const view = projectActivityActionDetails({
+      item: makeItem({ amount: "2", amountUsd: null }, false),
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view).toMatchObject({
+      amountFiat: null,
+      provider: null,
+      validators: [],
+    });
   });
 
   it("orders steps without a step index last, then by creation time", () => {
@@ -324,49 +402,10 @@ describe("Activity action details projection", () => {
   );
 
   it("projects a Borrow receipt with market, fees, LTV and health factor changes", () => {
-    const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-    const market = Schema.decodeSync(Market)({
-      availableLiquidity: "500000",
-      availableLiquidityRaw: "500000000000",
-      blueBundleOriginationFeeBps: null,
-      borrowRate: "0.06",
-      collateralTokens: [
-        {
-          liquidationPenalty: "0.05",
-          liquidationThreshold: "0.85",
-          maxLtv: "0.8",
-          priceUsd: "2000",
-          supplyRate: "0.02",
-          token: {
-            address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            decimals: 18,
-            name: "Wrapped Ether",
-            symbol: "WETH",
-          },
-        },
-      ],
+    const market = makeBorrowMarket({
       id: "morpho-weth-usdc",
       integrationId: "morpho-borrow",
-      isBorrowEnabled: true,
-      loanToken: {
-        address: loanTokenAddress,
-        decimals: 6,
-        name: "USD Coin",
-        symbol: "USDC",
-      },
-      loanTokenPriceUsd: "1",
-      minLoan: null,
-      network: "ethereum",
-      originationFeeBps: "0",
-      originationFeeWrapperAddress: null,
-      poolAddress: "0x0000000000000000000000000000000000000001",
-      supplyCollateralFeeBps: "0",
-      totalBorrow: "500000",
-      totalBorrowRaw: "500000000000",
-      totalSupply: "1000000",
-      totalSupplyRaw: "1000000000000",
       type: "isolated",
-      utilizationRate: "0.5",
     });
     const item: BorrowActivityItem = {
       _tag: "borrow",
@@ -387,7 +426,7 @@ describe("Activity action details projection", () => {
         rawArguments: {
           amount: "100",
           marketId: market.id,
-          tokenAddress: loanTokenAddress,
+          tokenAddress: usdcTokenAddress,
         },
         status: "SUCCESS",
         transactions: [

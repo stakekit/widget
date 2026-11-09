@@ -5,7 +5,6 @@ import {
   getCurrentTransactionWorkflowTransaction,
   isFinalizePending,
   makeDirectTransactionLedger,
-  type TransactionWorkflowAction,
   type TransactionWorkflowContext,
   type TransactionWorkflowInput,
   TransactionWorkflowInvariantError,
@@ -16,8 +15,9 @@ import { makeCheckApproval } from "./approval-check";
 import { makeConfirmCurrent } from "./confirmation";
 import type { HeldHashRegistration } from "./held-hash-registration";
 import {
-  getTransactionWorkflowAction,
+  getNextTransactionWorkflowStage,
   getTransactionWorkflowId,
+  type TransactionWorkflowStage,
   updateCurrentTransactionWorkflowTransaction,
 } from "./model";
 import { makePrepareAction } from "./preparation";
@@ -52,8 +52,6 @@ export const makeTransactionWorkflowProcessor = Effect.fn(
       input._tag === "Confidential"
         ? input.ledger
         : makeDirectTransactionLedger();
-    const complete = (context: TransactionWorkflowContext) =>
-      SubscriptionRef.set(stateRef, { _tag: "Completed", context });
 
     /**
      * A failed action still changed the wallet if any of its transactions
@@ -80,56 +78,155 @@ export const makeTransactionWorkflowProcessor = Effect.fn(
         )
       );
 
-    const runAdvance = (
-      context: TransactionWorkflowContext,
-      reconcile: boolean
-    ): Effect.Effect<void> =>
-      SubscriptionRef.set(stateRef, { _tag: "Advancing", context }).pipe(
-        Effect.andThen(advanceBatch({ context, reconcile })),
-        Effect.matchEffect({
-          onFailure: (error) =>
-            settleFailed({ _tag: "AdvanceFailed", context, error }),
-          onSuccess: Match.valueTags({
-            // An instant exit finalizes its confirmed unwrap before completing.
-            Complete: (result) =>
-              input._tag === "Confidential" &&
-              input.finalizeUnwrap &&
-              !result.context.finalize?.done
-                ? resourcesChanged.pipe(
-                    Effect.andThen(
-                      runPreparation({
-                        ...result.context,
-                        finalize: {
-                          done: false,
-                          position: flattenTransactionWorkflowTransactions(
-                            result.context
-                          ).length,
-                        },
-                      })
-                    )
-                  )
-                : complete(result.context).pipe(
-                    Effect.andThen(resourcesChanged)
-                  ),
-            Continue: (result) => runCurrent(result.context),
-          }),
-        })
+    /**
+     * Publishes a stage's active state and runs its operation, then publishes
+     * how it failed or continues with what it produced.
+     */
+    const runStage = <A, E>({
+      active,
+      onFailure,
+      onSuccess,
+      operation,
+    }: {
+      readonly active: Extract<
+        TransactionWorkflowState,
+        {
+          readonly _tag:
+            | "Preparing"
+            | "Signing"
+            | "Submitting"
+            | "Confirming"
+            | "Advancing";
+        }
+      >;
+      readonly onFailure: (error: E) => Effect.Effect<void>;
+      readonly onSuccess: (result: A) => Effect.Effect<void>;
+      readonly operation: Effect.Effect<A, E>;
+    }): Effect.Effect<void> =>
+      SubscriptionRef.set(stateRef, active).pipe(
+        Effect.andThen(operation),
+        Effect.matchEffect({ onFailure, onSuccess })
       );
 
-    const runConfirmation = (
+    // A pending finalize prepares the unwrap's WITHDRAW; else the action.
+    const prepare = (
+      context: TransactionWorkflowContext
+    ): Effect.Effect<void> => {
+      if (input._tag !== "Confidential") {
+        return Effect.die(
+          new TransactionWorkflowInvariantError({
+            message: "Only a confidential workflow prepares its action.",
+            workflowId: getTransactionWorkflowId(context.domain),
+          })
+        );
+      }
+      return runStage({
+        active: { _tag: "Preparing", context },
+        operation:
+          isFinalizePending(context) && input.finalizeUnwrap
+            ? finalizeUnwrap({
+                chainId: input.finalizeUnwrap.chainId,
+                context,
+                input,
+              })
+            : prepareAction({ context, input }),
+        onFailure: (error) =>
+          SubscriptionRef.set(stateRef, {
+            _tag: "PrepareFailed",
+            context,
+            error,
+          }),
+        onSuccess: continueFrom,
+      });
+    };
+
+    const sign = (context: TransactionWorkflowContext): Effect.Effect<void> =>
+      runStage({
+        active: { _tag: "Signing", context },
+        operation: checkApproval(context).pipe(
+          Effect.filterOrElse(
+            (check) => check._tag === "Continue",
+            () =>
+              prepareAndSign({
+                context,
+                expectedOwner: input.walletScope,
+                ledger,
+                // The wallet's answer is the workflow's at once: a workflow
+                // ending before Submitting still holds a broadcast hash to
+                // register as a Held Hash.
+                recordSigned: (signed) =>
+                  SubscriptionRef.update(stateRef, (state) => ({
+                    ...state,
+                    context: withSignedTransaction(state.context, signed),
+                  })),
+              }).pipe(
+                Effect.map((signed) => ({ _tag: "Signed", signed }) as const)
+              )
+          )
+        ),
+        onFailure: (error) =>
+          SubscriptionRef.set(stateRef, {
+            _tag: "SignFailed",
+            context: updateCurrentTransactionWorkflowTransaction({
+              context,
+              update: (current) => ({
+                ...current,
+                meta: {
+                  ...current.meta,
+                  confirmationError: null,
+                  signError: error,
+                },
+              }),
+            }),
+            error,
+          }),
+        onSuccess: (result) => {
+          // An approval that was skipped, or now resets first, moves on.
+          if (result._tag === "Continue") return continueFrom(result.context);
+          const { signed } = result;
+          const current = getCurrentTransactionWorkflowTransaction(signed);
+          const batch = getCurrentTransactionWorkflowBatch(signed);
+
+          if (!current || !batch) {
+            return Effect.die(
+              new TransactionWorkflowInvariantError({
+                message: "Signing completed without a current transaction.",
+                workflowId: getTransactionWorkflowId(signed.domain),
+              })
+            );
+          }
+
+          return run({ _tag: "Submit" }, signed);
+        },
+      });
+
+    const submit = (context: TransactionWorkflowContext): Effect.Effect<void> =>
+      runStage({
+        active: { _tag: "Submitting", context },
+        operation: submitCurrent({ context, ledger }),
+        onFailure: (error) =>
+          SubscriptionRef.set(stateRef, {
+            _tag: "SubmissionFailed",
+            context,
+            error,
+          }),
+        onSuccess: ({ context: submitted }) =>
+          run({ _tag: "Confirm" }, submitted),
+      });
+
+    const confirm = (
       context: TransactionWorkflowContext
     ): Effect.Effect<void> =>
-      Effect.gen(function* () {
-        const latestContextRef = yield* Ref.make(context);
-        yield* SubscriptionRef.set(stateRef, { _tag: "Confirming", context });
-
-        return yield* confirmCurrent({
-          context,
-          input,
-          latestContextRef,
-          ledger,
-        }).pipe(
-          Effect.matchEffect({
+      Ref.make(context).pipe(
+        Effect.flatMap((latestContextRef) =>
+          runStage({
+            active: { _tag: "Confirming", context },
+            operation: confirmCurrent({
+              context,
+              input,
+              latestContextRef,
+              ledger,
+            }),
             onFailure: (error) =>
               Ref.get(latestContextRef).pipe(
                 Effect.flatMap((latestContext) =>
@@ -147,206 +244,105 @@ export const makeTransactionWorkflowProcessor = Effect.fn(
                 )
               ),
             onSuccess: ({ context: confirmed }) =>
-              resourcesChanged.pipe(
-                Effect.andThen(
-                  getCurrentTransactionWorkflowTransaction(confirmed)
-                    ? runCurrent(confirmed)
-                    : runAdvance(confirmed, false)
-                )
-              ),
+              resourcesChanged.pipe(Effect.andThen(continueFrom(confirmed))),
           })
-        );
+        )
+      );
+
+    const advance = (
+      context: TransactionWorkflowContext,
+      reconcile: boolean
+    ): Effect.Effect<void> =>
+      runStage({
+        active: { _tag: "Advancing", context },
+        operation: advanceBatch({ context, reconcile }),
+        onFailure: (error) =>
+          settleFailed({ _tag: "AdvanceFailed", context, error }),
+        onSuccess: (advanced) =>
+          Match.valueTags(advanced, {
+            // An instant exit finalizes its confirmed unwrap before completing.
+            Complete: (result) =>
+              input._tag === "Confidential" &&
+              input.finalizeUnwrap &&
+              !result.context.finalize?.done
+                ? resourcesChanged.pipe(
+                    Effect.andThen(
+                      run(
+                        { _tag: "Prepare" },
+                        {
+                          ...result.context,
+                          finalize: {
+                            done: false,
+                            position: flattenTransactionWorkflowTransactions(
+                              result.context
+                            ).length,
+                          },
+                        }
+                      )
+                    )
+                  )
+                : run({ _tag: "Complete" }, result.context).pipe(
+                    Effect.andThen(resourcesChanged)
+                  ),
+            Continue: (result) => continueFrom(result.context),
+          }),
       });
 
-    const runSubmission = (
-      context: TransactionWorkflowContext
-    ): Effect.Effect<void> =>
-      SubscriptionRef.set(stateRef, { _tag: "Submitting", context }).pipe(
-        Effect.andThen(submitCurrent({ context, ledger })),
-        Effect.matchEffect({
-          onFailure: (error) =>
-            SubscriptionRef.set(stateRef, {
-              _tag: "SubmissionFailed",
-              context,
-              error,
-            }),
-          onSuccess: ({ context: submitted }) => runConfirmation(submitted),
-        })
-      );
-
-    const runSigning = (
-      context: TransactionWorkflowContext
-    ): Effect.Effect<void> =>
-      SubscriptionRef.set(stateRef, { _tag: "Signing", context }).pipe(
-        Effect.andThen(checkApproval(context)),
-        Effect.filterOrElse(
-          (check) => check._tag === "Continue",
-          () =>
-            prepareAndSign({
-              context,
-              expectedOwner: input.walletScope,
-              ledger,
-              // The wallet's answer is the workflow's at once: a workflow
-              // ending before Submitting still holds a broadcast hash to
-              // register as a Held Hash.
-              recordSigned: (signed) =>
-                SubscriptionRef.update(stateRef, (state) => ({
-                  ...state,
-                  context: withSignedTransaction(state.context, signed),
-                })),
-            }).pipe(
-              Effect.map((signed) => ({ _tag: "Signed", signed }) as const)
-            )
-        ),
-        Effect.matchEffect({
-          onFailure: (error) =>
-            SubscriptionRef.set(stateRef, {
-              _tag: "SignFailed",
-              context: updateCurrentTransactionWorkflowTransaction({
-                context,
-                update: (current) => ({
-                  ...current,
-                  meta: {
-                    ...current.meta,
-                    confirmationError: null,
-                    signError: error,
-                  },
-                }),
-              }),
-              error,
-            }),
-          onSuccess: (result) => {
-            // An approval that was skipped, or now resets first, moves on.
-            if (result._tag === "Continue") return runCurrent(result.context);
-            const { signed } = result;
-            const current = getCurrentTransactionWorkflowTransaction(signed);
-            const batch = getCurrentTransactionWorkflowBatch(signed);
-
-            if (!current || !batch) {
-              return Effect.die(
-                new TransactionWorkflowInvariantError({
-                  message: "Signing completed without a current transaction.",
-                  workflowId: getTransactionWorkflowId(signed.domain),
-                })
-              );
-            }
-
-            return runSubmission(signed);
-          },
-        })
-      );
-
-    const runCurrent = (
+    /** Runs `stage` on `context`; the stage runs whatever follows it. */
+    const run = (
+      stage: TransactionWorkflowStage | null,
       context: TransactionWorkflowContext
     ): Effect.Effect<void> => {
-      const current = getCurrentTransactionWorkflowTransaction(context);
+      if (!stage) return Effect.void;
 
-      if (!current) return runAdvance(context, false);
-
-      return current.meta.broadcasted === true ||
-        (current.source._tag === "Borrow" &&
-          current.source.transaction.signablePayload == null)
-        ? runConfirmation(context)
-        : runSigning(context);
-    };
-
-    // A pending finalize prepares the unwrap's WITHDRAW; else the action.
-    const runPreparation = (
-      context: TransactionWorkflowContext
-    ): Effect.Effect<void> => {
-      if (input._tag !== "Confidential") {
-        return Effect.die(
-          new TransactionWorkflowInvariantError({
-            message: "Only a confidential workflow prepares its action.",
-            workflowId: getTransactionWorkflowId(context.domain),
-          })
-        );
-      }
-      const prepare =
-        isFinalizePending(context) && input.finalizeUnwrap
-          ? finalizeUnwrap({
-              chainId: input.finalizeUnwrap.chainId,
-              context,
-              input,
-            })
-          : prepareAction({ context, input });
-      return SubscriptionRef.set(stateRef, { _tag: "Preparing", context }).pipe(
-        Effect.andThen(prepare),
-        Effect.matchEffect({
-          onFailure: (error) =>
-            SubscriptionRef.set(stateRef, {
-              _tag: "PrepareFailed",
-              context,
-              error,
-            }),
-          onSuccess: runCurrent,
-        })
-      );
-    };
-
-    const execute = (
-      action: TransactionWorkflowAction,
-      context: TransactionWorkflowContext
-    ) => {
-      switch (action) {
-        case "prepare":
-          return runPreparation(context);
-        case "sign":
-          return runSigning(context);
-        case "submit":
-          return runSubmission(context);
-        case "confirm":
-          return runConfirmation(context);
-        case "advance":
-          return runAdvance(context, true);
+      switch (stage._tag) {
+        case "Prepare":
+          return prepare(context);
+        case "Sign":
+          return sign(context);
+        case "Submit":
+          return submit(context);
+        case "Confirm":
+          return confirm(context);
+        case "Advance":
+          return advance(context, stage.reconcile);
+        case "Complete":
+          return SubscriptionRef.set(stateRef, { _tag: "Completed", context });
       }
     };
 
-    const initial = SubscriptionRef.get(stateRef).pipe(
-      Effect.flatMap((state) => {
-        switch (state._tag) {
-          case "Preparing":
-            return runPreparation(state.context);
-          case "Signing":
-            return runSigning(state.context);
-          case "Confirming":
-            return runConfirmation(state.context);
-          case "Advancing":
-            return runAdvance(state.context, false);
-          case "Completed":
-            return complete(state.context);
-          case "Disabled":
-          case "PrepareFailed":
-          case "SignFailed":
-          case "Submitting":
-          case "SubmissionFailed":
-          case "ConfirmationFailed":
-          case "AdvanceFailed":
-            return Effect.void;
-        }
-      })
+    const continueFrom = (context: TransactionWorkflowContext) =>
+      run(
+        getNextTransactionWorkflowStage({ _tag: "Continue", context }),
+        context
+      );
+
+    const start = SubscriptionRef.get(stateRef).pipe(
+      Effect.flatMap((state) =>
+        run(
+          getNextTransactionWorkflowStage({ _tag: "Start", state }),
+          state.context
+        )
+      )
     );
 
     // A Retry answers the failure it saw; a later failure needs its own.
     const commands = Queue.take(queue).pipe(
       Effect.flatMap((retried) =>
         SubscriptionRef.get(stateRef).pipe(
-          Effect.flatMap((state) => {
-            const action =
-              state === retried
-                ? getTransactionWorkflowAction({
-                    command: { _tag: "Retry" },
-                    state,
-                  })
-                : null;
-
-            return action ? execute(action, state.context) : Effect.void;
-          })
+          Effect.flatMap((state) =>
+            state === retried
+              ? run(
+                  getNextTransactionWorkflowStage({ _tag: "Retry", state }),
+                  state.context
+                )
+              : Effect.void
+          )
         )
       ),
       Effect.forever
     );
 
-    return initial.pipe(Effect.andThen(commands));
+    return start.pipe(Effect.andThen(commands));
   };
 });

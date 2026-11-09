@@ -4,7 +4,7 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { EarnPosition } from "../../../src/domain/earn/models";
+import { EarnPosition } from "../../../src/domain/earn/balance";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { positionsViewAtom } from "../../../src/features/portfolio/state/read-models/positions";

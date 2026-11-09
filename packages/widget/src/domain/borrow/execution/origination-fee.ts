@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { exactDecimal } from "../../finance/exact";
+import { fromBaseUnits, toBaseUnits } from "../../finance/base-units";
 import type { Market } from "../catalog/market";
 
 const BPS = 10_000n;
@@ -92,7 +92,7 @@ export const resolveBorrowOrigination = ({
 }): BorrowOrigination => {
   const { decimals } = market.loanToken;
   const { feeBps, route } = resolveRoute(market);
-  const netRaw = BigInt(netAmount.shiftedBy(decimals).toFixed(0));
+  const netRaw = toBaseUnits(netAmount, decimals, "round");
   const feeBpsRaw = BigInt(feeBps);
   const raw = (() => {
     if (feeBpsRaw === 0n) return { feeRaw: 0n, grossRaw: netRaw };
@@ -102,9 +102,9 @@ export const resolveBorrowOrigination = ({
   })();
 
   return {
-    feeAmount: exactDecimal(raw.feeRaw.toString()).shiftedBy(-decimals),
+    feeAmount: fromBaseUnits(raw.feeRaw, decimals),
     feeBps,
-    grossAmount: exactDecimal(raw.grossRaw.toString()).shiftedBy(-decimals),
+    grossAmount: fromBaseUnits(raw.grossRaw, decimals),
     route,
   };
 };

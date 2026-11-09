@@ -1,6 +1,7 @@
 import { Context, Data, Duration, Effect, Layer } from "effect";
 import {
   BaseError,
+  type Chain,
   erc20Abi,
   type Hex,
   isAddress,
@@ -36,6 +37,24 @@ export class EvmBroadcastRejectedError extends Data.TaggedError(
 
 /** How a broadcast transaction ended; a dropped one was never mined. */
 type EvmTransactionOutcome = "Confirmed" | "Dropped" | "Reverted";
+
+/** A page on `chain`'s default block explorer; `null` when it names none. */
+const explorerPageUrl = (
+  chain: Pick<Chain, "blockExplorers"> | undefined,
+  page: string
+): string | null => {
+  const explorer = chain?.blockExplorers?.default.url;
+  return explorer ? `${explorer.replace(/\/$/, "")}/${page}` : null;
+};
+
+/**
+ * An account's page on `chain`'s default block explorer; `null` when the
+ * chain names none, as only EVM chains do.
+ */
+export const explorerAddressUrl = (
+  chain: Pick<Chain, "blockExplorers">,
+  address: string
+): string | null => explorerPageUrl(chain, `address/${address}`);
 
 type EvmRpcApi = Readonly<{
   /** The unsigned EIP-1559 transaction a wallet signs, gas and fees estimated. */
@@ -181,11 +200,11 @@ export class EvmRpc extends Context.Service<EvmRpc, EvmRpcApi>()(
               )
             );
           }),
-        explorerUrl: ({ chainId, hash }) => {
-          const explorer = wagmiConfig.chains.find(({ id }) => id === chainId)
-            ?.blockExplorers?.default.url;
-          return explorer ? `${explorer.replace(/\/$/, "")}/tx/${hash}` : null;
-        },
+        explorerUrl: ({ chainId, hash }) =>
+          explorerPageUrl(
+            wagmiConfig.chains.find(({ id }) => id === chainId),
+            `tx/${hash}`
+          ),
         prepare: ({ chainId, data, from, to }) =>
           Effect.gen(function* () {
             const client = yield* clientFor(chainId);

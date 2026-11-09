@@ -14,6 +14,8 @@ export type LeaveConfirmationDialogProps = Readonly<{
   readonly onLeave: () => void;
   readonly onStay: () => void;
   readonly open: boolean;
+  /** The Execution's action continues from Activity once the user leaves. */
+  readonly resumable: boolean;
 }>;
 
 type HeldLeave = Readonly<{ readonly leave: () => void }>;
@@ -53,6 +55,8 @@ export const useLeaveConfirmation = () => {
       },
       onStay: release,
       open: held !== null,
+      // A wallet or header control cannot tell which Execution it would end.
+      resumable: false,
     } satisfies LeaveConfirmationDialogProps,
     /** A held action waits for the user's answer. */
     pending: held !== null,
@@ -63,9 +67,13 @@ export const useLeaveConfirmation = () => {
  * Steps' Leave Confirmation: asks before any navigation away from Steps, and
  * before the page unloads, while its Execution is leave-guarded. Moving on to
  * `completePath` never asks. `confirm` asks before Steps' own exit, so
- * leaving asks once.
+ * leaving asks once. `resumable` says the action can be finished later from
+ * Activity.
  */
-export const useExecutionLeaveConfirmation = (completePath: WidgetPath) => {
+export const useExecutionLeaveConfirmation = (
+  completePath: WidgetPath,
+  { resumable }: { readonly resumable: boolean }
+) => {
   const { confirm, guarded, held, release } = useHeldLeave();
   useAtomMount(beforeUnloadLeaveGuardAtom);
   // Once the user chose to leave, this page never holds a navigation again,
@@ -106,6 +114,7 @@ export const useExecutionLeaveConfirmation = (completePath: WidgetPath) => {
       },
       // Both questions are cleared during render once nothing is guarded.
       open: asking || held !== null,
+      resumable,
     } satisfies LeaveConfirmationDialogProps,
   };
 };

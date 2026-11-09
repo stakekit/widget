@@ -4,6 +4,10 @@ import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import {
+  gasTokenBalancesResourceAtom,
+  walletScopeGasTokenBalancesKey,
+} from "../../../resources/gas-token-balances/index";
+import {
   WalletChainSelection,
   type WalletChainSelectionInput,
 } from "../../../services/wallet/wallet-chain-selection";
@@ -113,3 +117,22 @@ export const copyWalletAddressAtom = walletRuntime
     )
   )
   .pipe(Atom.withLabel("copyWalletAddressAtom"));
+
+/**
+ * The connected account's gas token balance: the native token of its
+ * network. `null` while it loads, when the lookup fails, and without a
+ * connected account. A failure stays local: the balance is a detail of the
+ * account dialog, not something to interrupt the user with.
+ */
+export const walletGasTokenBalanceAtom = Atom.make((get) => {
+  const connection = get(currentWalletStateResultAtom);
+  if (!AsyncResult.isSuccess(connection)) return null;
+  const { additionalAddresses, address, network } = connection.value;
+  if (address === null || network === null) return null;
+  const balances = get(
+    gasTokenBalancesResourceAtom.local(
+      walletScopeGasTokenBalancesKey({ additionalAddresses, address, network })
+    )
+  );
+  return AsyncResult.getOrElse(balances, () => [])[0] ?? null;
+}).pipe(Atom.withLabel("walletGasTokenBalanceAtom"));

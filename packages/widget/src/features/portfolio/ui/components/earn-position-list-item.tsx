@@ -1,99 +1,170 @@
 import type BigNumber from "bignumber.js";
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
+import {
+  formatPositionCallout,
+  getPositionCallout,
+  type InactiveValidatorStatus,
+  type PositionCallout,
+} from "../../../../domain/portfolio/position-callout";
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatTokenAmount,
   formatUsd,
+  unavailableFigure,
 } from "../../../../shared/lib/number-format";
-import { TokenIcon } from "../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
-import { ListItem } from "../../../../shared/ui/primitives/list/list-item";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
-import { WidgetLink } from "../../../navigation/views";
+import { useTokenLogo } from "../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { Box, ListRow, Skeleton, TokenAvatar } from "../../../../ui/index";
+import { useWidgetLinkProps } from "../../../navigation/index";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
-import type { InactiveValidatorStatus } from "../../state/read-models/position-list-item";
 import type { PositionItem } from "../../state/read-models/positions";
-import {
-  listItem,
-  noWrap,
-  positionBadge,
-  positionInfoColumn,
-  positionName,
-  rewardRateText,
-  viaText,
-} from "./position-list-item.css";
 
 export type EarnPositionListItemDetails = {
   readonly hasHiddenBalance: boolean;
   readonly integrationData: EarnYieldWithProvider | null;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider> | null;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-  readonly rewardRateAverage: string | null;
+  /** The average rate as shown, and whether it is a gain. */
+  readonly rewardRateAverage: {
+    readonly text: string;
+    readonly isPositive: boolean;
+  } | null;
   /** The total: its amount and token, or its USD value across tokens. */
   readonly totalFormatted: string | null;
   /** USD value beside a single-token total, when priced. */
   readonly totalAmountUsd: BigNumber | null;
 };
 
-/** The row's right side: the APY beside the value and its USD estimate. */
-const EarnPositionValue = ({
+type RowStatus = NonNullable<ComponentProps<typeof ListRow>["status"]>;
+
+/**
+ * How each status a row calls out reads. Every status that asks something of
+ * the user, rewards to claim among them, shares the warning tone the Manage
+ * tab's count wears; work already under way is info.
+ */
+const calloutLook = {
+  readyToWithdraw: { tone: "warning", icon: "ArrowDownIcon" },
+  readyToUnlock: { tone: "warning", icon: "LockIcon" },
+  lockedBalance: { tone: "warning", icon: "LockIcon" },
+  actionRequired: { tone: "warning", icon: "WarningIcon" },
+  validatorsJailed: { tone: "warning", icon: "WarningIcon" },
+  validatorsInactive: { tone: "warning", icon: "WarningIcon" },
+  rewardsToClaim: { tone: "warning", icon: "GiftIcon" },
+  inProgress: { tone: "info", icon: "HistoryIcon" },
+} as const satisfies Record<PositionCallout, Omit<RowStatus, "text">>;
+
+/** The one status a row shows, the most pressing first. */
+const usePositionRowStatus = (
+  item: PositionItem,
+  inactiveValidator: InactiveValidatorStatus | null
+): RowStatus | null => {
+  const { t } = useTranslation();
+  const callout = getPositionCallout({ attention: item, inactiveValidator });
+
+  if (callout === null) return null;
+  return { text: formatPositionCallout(callout, t), ...calloutLook[callout] };
+};
+
+/** The row's figures: the total and its USD estimate, or a placeholder. */
+const useValueProps = ({
   details,
-  rewardRate,
   showsMissingAmountPlaceholder,
 }: {
   readonly details: EarnPositionListItemDetails;
-  readonly rewardRate: string | null;
   readonly showsMissingAmountPlaceholder: boolean;
+}): { readonly value?: string; readonly subvalue?: string } => {
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+
+  if (details.hasHiddenBalance) {
+    return { value: t("shared.confidential.hidden") };
+  }
+  if (!details.totalFormatted) {
+    return showsMissingAmountPlaceholder ? { value: unavailableFigure } : {};
+  }
+  return details.totalAmountUsd
+    ? {
+        value: details.totalFormatted,
+        subvalue: `≈ ${formatUsd(details.totalAmountUsd, locale)}`,
+      }
+    : { value: details.totalFormatted };
+};
+
+const EarnPositionRow = ({
+  item,
+  details,
+  integrationData,
+  opensDetailsWithViewTransition,
+  showsMissingAmountPlaceholder,
+  showsRewardRate,
+}: {
+  readonly item: PositionItem;
+  readonly details: EarnPositionListItemDetails;
+  readonly integrationData: EarnYieldWithProvider;
+  readonly opensDetailsWithViewTransition: boolean;
+  readonly showsMissingAmountPlaceholder: boolean;
+  readonly showsRewardRate: boolean;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const rate = rewardRate ? (
-    <Text className={rewardRateText}>{rewardRate}</Text>
-  ) : null;
-
-  if (!details.totalFormatted && !details.hasHiddenBalance) {
-    return (
-      <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-        {rate}
-        {showsMissingAmountPlaceholder ? <Text>-</Text> : null}
-      </Box>
-    );
-  }
-
-  const usd =
-    details.totalAmountUsd && !details.hasHiddenBalance
-      ? `≈ ${formatUsd(details.totalAmountUsd, locale)}`
-      : null;
+  const link = useWidgetLinkProps(
+    widgetRoutes.positionDetails.build({
+      balanceId: item.balanceId,
+      integrationId: item.integrationId,
+    }),
+    { viewTransition: opensDetailsWithViewTransition }
+  );
+  // The primary Value Token labels the total.
+  const logo = useTokenLogo(item.total[0]?.token ?? integrationData.token, {
+    metadata: {
+      logoURI: integrationData.metadata.logoURI,
+      name: integrationData.metadata.name,
+      provider: integrationData.provider,
+    },
+  });
+  const status = usePositionRowStatus(item, details.inactiveValidator);
+  const values = useValueProps({ details, showsMissingAmountPlaceholder });
+  const provider = details.providersDetails?.[0];
+  const rewardRate = showsRewardRate ? details.rewardRateAverage : null;
+  // Success is for gains only: zero or an unknown rate reads muted.
+  const rewardRateTone = rewardRate?.isPositive ? "success" : "muted";
 
   return (
-    <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-      {rate}
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="flex-end"
-        textAlign="end"
-        gap="1"
-      >
-        <Text className={noWrap}>
-          {details.hasHiddenBalance
-            ? t("shared.confidential.hidden")
-            : details.totalFormatted}
-        </Text>
-        {usd ? (
-          <Text
-            className={noWrap}
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {usd}
-          </Text>
-        ) : null}
-      </Box>
-    </Box>
+    <ListRow
+      link={link}
+      leading={<TokenAvatar {...logo} />}
+      title={integrationData.metadata.name}
+      {...(provider
+        ? {
+            subtitle: t("positions.via", {
+              providerName: provider.name ?? provider.address,
+              count: Math.max((details.providersDetails?.length ?? 1) - 1, 1),
+            }),
+          }
+        : {})}
+      {...(status ? { status } : {})}
+      {...(rewardRate
+        ? {
+            // A narrow row keeps its room for the title and the value.
+            figure: {
+              text: rewardRate.text,
+              tone: rewardRateTone,
+              from: "sm",
+            } as const,
+          }
+        : {})}
+      {...values}
+      {...(item.pointsRewardTokenBalances.length > 0
+        ? {
+            details: item.pointsRewardTokenBalances.map((balance) => ({
+              label: balance.token.symbol,
+              value: formatTokenAmount(balance.amount, locale, "down"),
+            })),
+          }
+        : {})}
+    />
   );
 };
 
@@ -108,157 +179,23 @@ export const EarnPositionListItem = ({
   readonly details: EarnPositionListItemDetails;
   /** Whether opening Position Details runs a view transition. */
   readonly opensDetailsWithViewTransition: boolean;
-  /** Whether an unpriced or unloaded amount renders a "-" placeholder. */
+  /** Whether an unpriced or unloaded amount renders a "—" placeholder. */
   readonly showsMissingAmountPlaceholder: boolean;
   /** Whether the row shows the average reward rate next to the amount. */
   readonly showsRewardRate: boolean;
-}): ReactElement => {
-  const { t } = useTranslation();
-  const { locale } = useWidgetPresentation();
-
-  const {
-    integrationData,
-    providersDetails,
-    inactiveValidator,
-    rewardRateAverage,
-  } = details;
-  const actionBadge = (() => {
-    if (item.actionRequired) {
-      return {
-        label: t("positions.action_required"),
-        type: "actionRequired",
-      } as const;
-    }
-    if (inactiveValidator === "jailed") {
-      return {
-        label: t("details.validators_jailed"),
-        type: "actionRequired",
-      } as const;
-    }
-    if (inactiveValidator) {
-      return {
-        label: t("details.validators_inactive"),
-        type: "actionRequired",
-      } as const;
-    }
-    if (item.hasPendingClaimRewards) {
-      return { label: t("positions.claim_rewards"), type: "claim" } as const;
-    }
-    if (item.hasPendingRequest) {
-      return { label: t("positions.in_progress"), type: "pending" } as const;
-    }
-    return null;
-  })();
-
-  return (
-    <WidgetLink
-      to={widgetRoutes.positionDetails.build({
-        balanceId: item.balanceId,
-        integrationId: item.integrationId,
-      })}
-      viewTransition={opensDetailsWithViewTransition}
-    >
-      <Box py="1">
-        {integrationData ? (
-          <ListItem className={listItem}>
-            <Box
-              display="flex"
-              width="full"
-              alignItems="center"
-              justifyContent="space-between"
-              gap="2"
-            >
-              {/* Yield */}
-              <Box
-                display="flex"
-                alignItems="center"
-                gap="2"
-                flex={1}
-                minWidth="0"
-              >
-                <TokenIcon
-                  metadata={{
-                    logoURI: integrationData.metadata.logoURI,
-                    name: integrationData.metadata.name,
-                    provider: integrationData.provider,
-                  }}
-                  // The primary Value Token labels the total.
-                  token={item.total[0]?.token ?? integrationData.token}
-                />
-
-                <Box className={positionInfoColumn}>
-                  <Box display="flex" alignItems="center" gap="1">
-                    <Text className={positionName}>
-                      {integrationData.metadata.name}
-                    </Text>
-
-                    {actionBadge ? (
-                      <Box
-                        className={positionBadge({ type: actionBadge.type })}
-                      >
-                        <Text variant={{ type: "white" }} className={noWrap}>
-                          {actionBadge.label}
-                        </Text>
-                      </Box>
-                    ) : null}
-                  </Box>
-
-                  {providersDetails?.[0] ? (
-                    <Text
-                      className={viaText}
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {t("positions.via", {
-                        providerName:
-                          providersDetails[0].name ??
-                          providersDetails[0].address,
-                        count: Math.max(providersDetails.length - 1, 1),
-                      })}
-                    </Text>
-                  ) : null}
-                </Box>
-              </Box>
-
-              {/* Reward rate + staked */}
-              <EarnPositionValue
-                details={details}
-                rewardRate={showsRewardRate ? rewardRateAverage : null}
-                showsMissingAmountPlaceholder={showsMissingAmountPlaceholder}
-              />
-            </Box>
-
-            {item.pointsRewardTokenBalances.length > 0 && (
-              <Box display="flex" alignSelf="flex-end" gap="1">
-                {item.pointsRewardTokenBalances.map((val, i) => (
-                  <Box
-                    key={i}
-                    alignSelf="flex-end"
-                    background="background"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    borderRadius="lg"
-                    px="2"
-                    py="1"
-                    gap="1"
-                  >
-                    <TokenIcon token={val.token} hideNetwork tokenLogoHw="5" />
-
-                    <Text
-                      overflowWrap="anywhere"
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {formatTokenAmount(val.amount, locale, "down")}
-                    </Text>
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </ListItem>
-        ) : (
-          <ContentLoaderSquare heightPx={60} />
-        )}
-      </Box>
-    </WidgetLink>
-  );
-};
+}): ReactElement => (
+  <Box paddingBlock={4}>
+    {details.integrationData ? (
+      <EarnPositionRow
+        item={item}
+        details={details}
+        integrationData={details.integrationData}
+        opensDetailsWithViewTransition={opensDetailsWithViewTransition}
+        showsMissingAmountPlaceholder={showsMissingAmountPlaceholder}
+        showsRewardRate={showsRewardRate}
+      />
+    ) : (
+      <Skeleton shape="rect" height="lg" />
+    )}
+  </Box>
+);

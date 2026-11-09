@@ -22,8 +22,7 @@ const makeRegistry = () =>
               baseUrl: "https://api.example.com",
               variant: "default",
             })
-          ),
-          Layer.fresh
+          )
         ),
       ],
     ],

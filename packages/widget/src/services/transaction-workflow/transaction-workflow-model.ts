@@ -28,7 +28,7 @@ import type {
   WalletSigningError,
 } from "../wallet/wallet-errors";
 import type { YieldActionMeta } from "../wallet/wallet-transactions";
-import type { ConfidentialPreparation } from "../zama/zama-service";
+import type { ConfidentialPreparation } from "../zama/confidential-preparation";
 
 export type DirectTransactionRecord = Readonly<{
   readonly _tag: "Confirmed" | "Sent";
@@ -362,9 +362,27 @@ export class TransactionSubmissionError extends Data.TaggedError(
   "TransactionSubmissionError"
 )<WorkflowErrorFields & { readonly broadcasted: boolean }> {}
 
+/**
+ * The transaction did not confirm. `Failed`: the chain or the API says it
+ * failed. `Dropped`: the network dropped it unspent, so retrying signs it
+ * again. `Unconfirmed`: its outcome could not be learned, such as when
+ * polling ran out or the status could not be read.
+ */
+export type TransactionConfirmationOutcome =
+  | "Dropped"
+  | "Failed"
+  | "Unconfirmed";
+
 export class TransactionConfirmationError extends Data.TaggedError(
   "TransactionConfirmationError"
-)<WorkflowErrorFields & { readonly network: Network }> {}
+)<
+  WorkflowErrorFields & {
+    readonly network: Network;
+    readonly outcome: TransactionConfirmationOutcome;
+    /** Why it failed as the API reports it, such as a revert reason. */
+    readonly reason: string | null;
+  }
+> {}
 
 export class TransactionAdvanceError extends Data.TaggedError(
   "TransactionAdvanceError"
@@ -504,13 +522,6 @@ export type TransactionWorkflowState =
 
 export type TransactionWorkflowCommand = { readonly _tag: "Retry" };
 
-export type TransactionWorkflowAction =
-  | "prepare"
-  | "sign"
-  | "submit"
-  | "confirm"
-  | "advance";
-
 export const getCurrentTransactionWorkflowBatch = (
   context: TransactionWorkflowContext
 ): TransactionWorkflowBatch | null =>
@@ -532,6 +543,32 @@ export const flattenTransactionWorkflowTransactions = (
   context: TransactionWorkflowContext
 ): ReadonlyArray<TransactionWorkflowTransaction> =>
   context.batches.flatMap((batch) => batch.transactions);
+
+/** Where a sent transaction is found, each part once it is known. */
+type TransactionWorkflowTransactionReference = Readonly<{
+  explorerUrl: string | null;
+  hash: TransactionHash | null;
+}>;
+
+/**
+ * A transaction's hash and block explorer link: its submission's, or the
+ * hash the wallet returned when it broadcast the transaction itself.
+ */
+export const getTransactionWorkflowTransactionReference = (
+  context: TransactionWorkflowContext,
+  { meta }: TransactionWorkflowTransaction
+): TransactionWorkflowTransactionReference => {
+  const submission =
+    meta.submissionIndex === null
+      ? undefined
+      : context.submissions[meta.submissionIndex];
+
+  return {
+    explorerUrl: meta.url ?? submission?.link ?? null,
+    hash:
+      submission?.hash ?? (meta.broadcasted === true ? meta.signedTx : null),
+  };
+};
 
 /**
  * Whether ending the workflow now abandons work already under way: a wallet
@@ -632,3 +669,44 @@ export const getTransactionStepProgress = (
         : notStarted,
   };
 };
+
+/** A workflow transaction as Steps and Complete read it, whatever its flow. */
+export type TransactionWorkflowTransactionView =
+  TransactionWorkflowTransactionReference &
+    Readonly<{
+      done: boolean;
+      progress: TransactionStepProgress;
+      /**
+       * The transaction went to the network: being sent, sent with its hash,
+       * or one the API reports broadcast though no hash was recorded here.
+       */
+      sent: boolean;
+      source: TransactionWorkflowSource;
+    }>;
+
+/** Every transaction of the workflow, in order, with its reference and progress. */
+export const projectTransactionWorkflowTransactions = (
+  state: TransactionWorkflowState
+): ReadonlyArray<TransactionWorkflowTransactionView> =>
+  flattenTransactionWorkflowTransactions(state.context).map((transaction) => {
+    const reference = getTransactionWorkflowTransactionReference(
+      state.context,
+      transaction
+    );
+    const progress = getTransactionStepProgress(state, transaction);
+    return {
+      ...reference,
+      done: transaction.meta.done,
+      progress,
+      sent:
+        reference.hash !== null ||
+        transaction.meta.broadcasted === true ||
+        progress.phases.broadcast === "active",
+      source: transaction.source,
+    };
+  });
+
+/** Whether any transaction went to the network; what is sent cannot be called back. */
+export const isTransactionWorkflowSent = (
+  transactions: ReadonlyArray<Pick<TransactionWorkflowTransactionView, "sent">>
+) => transactions.some(({ sent }) => sent);

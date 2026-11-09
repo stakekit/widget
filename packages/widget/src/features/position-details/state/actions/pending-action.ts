@@ -3,12 +3,10 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { PendingAction } from "../../../../domain/action/models";
-import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential";
+import type { EarnBalance } from "../../../../domain/earn/balance";
+import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential-balance";
 import { getPendingActionReturn } from "../../../../domain/earn/denomination";
-import type {
-  EarnBalance,
-  EarnValidator,
-} from "../../../../domain/earn/models";
+import type { EarnValidator } from "../../../../domain/earn/validator";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import type { BalanceDataKey } from "../../../../domain/portfolio/positions";
 import { walletScopeOwnerKey } from "../../../../domain/wallet/wallet-scope";

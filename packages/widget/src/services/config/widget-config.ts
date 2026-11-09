@@ -169,6 +169,8 @@ type WidgetConfigServiceValue = {
 
 type NormalizedWidgetConfiguration = Readonly<{
   config: WidgetConfig;
+  droppedLegacyThemeKeys: ReadonlyArray<string>;
+  deprecatedOptions: ReadonlyArray<"dashboardVariant">;
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
@@ -254,6 +256,7 @@ const normalizeWidgetConfig = (
       "walletPolicy",
     ]),
     apiKey: hostConfiguration.apiKey,
+    appearance: hostConfiguration.appearance,
     baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
     borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
       .trim()
@@ -299,7 +302,6 @@ const normalizeWidgetConfig = (
           preferredTokenYieldsPerNetwork:
             hostConfiguration.preferredTokenYieldsPerNetwork,
         }),
-    theme: hostConfiguration.theme,
     tokenIconMapping: hostConfiguration.tokenIconMapping,
     tracking: hostConfiguration.tracking,
     validatorsConfig,
@@ -320,6 +322,8 @@ const prepareWidgetConfig = (
 
   return Result.succeed({
     config: normalizeWidgetConfig(decoded.success.configuration, environment),
+    droppedLegacyThemeKeys: decoded.success.droppedLegacyThemeKeys,
+    deprecatedOptions: decoded.success.deprecatedOptions,
     warnings: decoded.success.warnings,
   });
 };
@@ -372,6 +376,50 @@ export class WidgetConfigService extends Context.Service<
         }
 
         yield* logHostConfigurationWarnings(initialResult.success.warnings);
+        const reportedLegacyThemeKeys = yield* Ref.make<ReadonlyArray<string>>(
+          []
+        );
+        // Once per key, in every build, like invalid `appearance` warnings.
+        const reportDroppedLegacyThemeKeys = Effect.fn(
+          "WidgetConfigService.reportDroppedLegacyThemeKeys"
+        )(function* (keys: ReadonlyArray<string>) {
+          const reported = yield* Ref.get(reportedLegacyThemeKeys);
+          const fresh = keys.filter((key) => !reported.includes(key));
+          if (fresh.length === 0) return;
+
+          yield* Ref.set(reportedLegacyThemeKeys, [...reported, ...fresh]);
+          yield* Effect.logWarning(
+            "Legacy theme values no longer apply; set them through `appearance`"
+          ).pipe(
+            Effect.annotateLogs({
+              event: "legacy_theme_keys_dropped",
+              keys: fresh,
+            })
+          );
+        });
+        yield* reportDroppedLegacyThemeKeys(
+          initialResult.success.droppedLegacyThemeKeys
+        );
+        const reportedDeprecatedOptions = yield* Ref.make<
+          ReadonlyArray<"dashboardVariant">
+        >([]);
+        // Once per option and Widget, in every build, like dropped legacy
+        // theme keys.
+        const reportDeprecatedOptions = Effect.fn(
+          "WidgetConfigService.reportDeprecatedOptions"
+        )(function* (options: ReadonlyArray<"dashboardVariant">) {
+          const reported = yield* Ref.get(reportedDeprecatedOptions);
+          const fresh = options.filter((option) => !reported.includes(option));
+          if (fresh.length === 0) return;
+
+          yield* Ref.set(reportedDeprecatedOptions, [...reported, ...fresh]);
+          yield* Effect.logWarning(
+            '`dashboardVariant` is deprecated; set `layout: "dashboard"` or `layout: "compact"` instead'
+          ).pipe(
+            Effect.annotateLogs({ event: "deprecated_dashboard_variant" })
+          );
+        });
+        yield* reportDeprecatedOptions(initialResult.success.deprecatedOptions);
         const initial = initialResult.success.config;
         const state = yield* SubscriptionRef.make(initial);
         const updatePermit = yield* Semaphore.make(1);
@@ -444,6 +492,10 @@ export class WidgetConfigService extends Context.Service<
 
           yield* reportIgnoredMountFixedKeys(changed);
           yield* logHostConfigurationWarnings(nextResult.success.warnings);
+          yield* reportDroppedLegacyThemeKeys(
+            nextResult.success.droppedLegacyThemeKeys
+          );
+          yield* reportDeprecatedOptions(nextResult.success.deprecatedOptions);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
         }, updatePermit.withPermit);

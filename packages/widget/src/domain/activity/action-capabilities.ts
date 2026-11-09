@@ -4,7 +4,7 @@ import {
   ActionStatus,
   type ActionStatus as ActionStatusValue,
 } from "../action/rules";
-import type { EarnYield } from "../earn/models";
+import type { EarnYield } from "../earn/yield-schema";
 import {
   type WalletScopeKey,
   walletScopeOwnerKey,

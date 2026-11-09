@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { EarnBalance } from "../../../src/domain/earn/models";
+import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
   positionDetailsExitHasContent,
   positionDetailsPendingHasContent,
@@ -39,12 +39,7 @@ describe("position details action content", () => {
     expect(
       resolvePositionDetailsPageLayout({
         flowActive: false,
-        integrationData: yieldApiYieldFixture({
-          status: { enter: false, exit: false },
-        }),
-        isLoading: false,
-        positionBalancesByType: new Map(),
-        positionLost: false,
+        page: { _tag: "Ready" },
       })
     ).toBe("Actions");
   });
@@ -76,10 +71,7 @@ describe("position details action content", () => {
     expect(
       resolvePositionDetailsPageLayout({
         flowActive: false,
-        integrationData: yieldApiYieldFixture(),
-        isLoading: false,
-        positionBalancesByType: null,
-        positionLost: true,
+        page: { _tag: "PositionLost" },
       })
     ).toBe("PositionLost");
   });
@@ -88,23 +80,26 @@ describe("position details action content", () => {
     expect(
       resolvePositionDetailsPageLayout({
         flowActive: true,
-        integrationData: yieldApiYieldFixture(),
-        isLoading: false,
-        positionBalancesByType: null,
-        positionLost: true,
+        page: { _tag: "PositionLost" },
       })
     ).toBe("Actions");
   });
 
-  it("shows only details when the position cannot be resolved", () => {
+  it("presents a failed first load in place of the actions", () => {
     expect(
       resolvePositionDetailsPageLayout({
         flowActive: false,
-        integrationData: null,
-        isLoading: false,
-        positionBalancesByType: null,
-        positionLost: false,
+        page: { _tag: "Failed" },
       })
-    ).toBe("InfoOnly");
+    ).toBe("Failed");
+  });
+
+  it("keeps an active flow mounted when the position fails to load", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: true,
+        page: { _tag: "Failed" },
+      })
+    ).toBe("Actions");
   });
 });

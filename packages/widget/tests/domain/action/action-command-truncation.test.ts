@@ -6,7 +6,7 @@ import {
   preparePendingActionCommand,
 } from "../../../src/domain/action/action-command";
 import { YieldAction } from "../../../src/domain/action/models";
-import { EarnBalance } from "../../../src/domain/earn/models";
+import { EarnBalance } from "../../../src/domain/earn/balance";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { projectYieldEntry } from "../../../src/features/yield-entry/model/yield-entry";
 import {

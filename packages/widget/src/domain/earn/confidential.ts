@@ -1,27 +1,13 @@
-import type BigNumber from "bignumber.js";
-import { Data, DateTime, type HashMap, Option, Schema, Struct } from "effect";
+import { DateTime, Struct } from "effect";
 import type { ActionEvent, YieldAction } from "../action/models";
-import type { YieldPendingActionType } from "../action/pending-action";
-import { exactDecimal, truncateToTokenDecimals } from "../finance/exact";
-import {
-  type ContractAddress,
-  TokenAddress,
-  WalletAddress,
-} from "../identity/identifiers";
+import type { ContractAddress, TokenAddress } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { sameTokenContract, type Token } from "../token/token";
 import type { EvmChainIds } from "../wallet/chain-ids";
 import { getWalletRoutingId } from "../wallet/network";
-import type { WalletScopeOwner } from "../wallet/wallet-scope";
-import {
-  type BalanceShares,
-  ConfidentialHandle,
-  type EarnBalance,
-  type EarnBalanceShares,
-  type EarnYieldWithProvider,
-  getEncryptedHandle,
-} from "./models";
+import type { ConfidentialHandle, EarnBalance } from "./balance";
 import { getYieldActionArg } from "./yield";
+import type { EarnYieldWithProvider } from "./yield-schema";
 
 type ConfidentialIntent = "enter" | "exit";
 
@@ -106,42 +92,6 @@ export const getConfidentialRedeemOperators = (
   );
   return { chainId: legs.chainId, operator: legs.router, tokens } as const;
 };
-
-const zamaCampaignUrl = (vault: string, slug: string) =>
-  `https://app.zama.org/earn/ethereum/${vault}/${slug}`;
-
-// Zama's campaign pages, where holders enable delegation for extra incentives.
-const confidentialCampaignUrls: Record<string, string> = {
-  "ethereum-usdc-zama-steakhouse-usdc-confidential-vault": zamaCampaignUrl(
-    "0xbEEF00A59B577423653A1526c7009bdE103F542B",
-    "steakhouse-confidential-prime-usdc"
-  ),
-  "ethereum-usdt-zama-flowdesk-usdt-high-yield-confidential-vault":
-    zamaCampaignUrl(
-      "0xb48C056C5608bA2Ee4cD94AF2bF4b1F25295Bd7e",
-      "flowdesk-usdt-high-yield"
-    ),
-  "ethereum-usdc-zama-rockawayx-usdc-rwa-confidential-vault": zamaCampaignUrl(
-    "0xc207d3f66537D7F66456808379A0E560cF20Da36",
-    "rockawayx-usdc-rwa"
-  ),
-  "ethereum-usdt-zama-steakhouse-usdt-prime-confidential-vault":
-    zamaCampaignUrl(
-      "0xbeef003C68896c7D2c3c60d363e8d71a49Ab2bf9",
-      "steakhouse-usdt-prime"
-    ),
-  "ethereum-wbtc-zama-wintermute-wbtc-confidential-vault": zamaCampaignUrl(
-    "0x3d5EcCb62974178236A768A7ef14D3ce468Fbe91",
-    "confidential-wintermute-wbtc"
-  ),
-  "ethereum-ausd-zama-bitwise-ausd-rwa-confidential-vault": zamaCampaignUrl(
-    "0xB344e331A3cDa61D329fb3Cca2Be5942da87c418",
-    "bitwise-ausd-premium-rwa"
-  ),
-};
-
-export const getConfidentialCampaignUrl = (yieldDto: EarnYieldWithProvider) =>
-  confidentialCampaignUrls[yieldDto.id] ?? null;
 
 export const getConfidentialChainId = (yieldDto: EarnYieldWithProvider) =>
   isConfidentialYield(yieldDto) ? (getChainId(yieldDto.network) ?? null) : null;
@@ -380,155 +330,6 @@ export const toConfidentialArguments = <Arguments extends PlainAmountArguments>(
     : {}),
 });
 
-export const toBaseUnits = (amount: BigNumber, decimals: number): bigint =>
-  BigInt(
-    truncateToTokenDecimals(amount, decimals).shiftedBy(decimals).toFixed(0)
-  );
-
-/** A token balance its owner revealed; EVM addresses compare lowercased. */
-export class ConfidentialTokenBalanceKey extends Data.Class<{
-  readonly network: Network;
-  readonly owner: WalletAddress;
-  readonly token: TokenAddress | null;
-}> {
-  constructor({
-    owner,
-    token,
-  }: {
-    readonly owner: WalletAddress;
-    readonly token: Token;
-  }) {
-    // Lowercasing a non-empty address keeps it non-empty, so `make` cannot throw.
-    super({
-      network: token.network,
-      owner: WalletAddress.make(owner.toLowerCase()),
-      token: token.address
-        ? TokenAddress.make(token.address.toLowerCase())
-        : null,
-    });
-  }
-
-  isOwnedBy(owner: WalletScopeOwner) {
-    return (
-      this.network === owner.network &&
-      this.owner === owner.address.toLowerCase()
-    );
-  }
-}
-
-/**
- * Revealed balances, held in memory only: position balances by the handle the
- * API returned, wallet token balances by owner and token.
- */
-export type RevealedBalances = Readonly<{
-  readonly handles: ReadonlyMap<ConfidentialHandle, bigint>;
-  readonly tokenBalances: HashMap.HashMap<ConfidentialTokenBalanceKey, bigint>;
-}>;
-
-const decodeHandle = (value: string | null | undefined) =>
-  value
-    ? Option.getOrNull(Schema.decodeOption(ConfidentialHandle)(value))
-    : null;
-
-/**
- * Whether a balance's pending position, hidden or revealed, has a cancel in
- * flight.
- */
-export const isCancellingBalance = (
-  balance: BalanceShares,
-  cancellingHandles: ReadonlySet<ConfidentialHandle>
-): boolean =>
-  (balance.shares?._tag === "Encrypted" ||
-    balance.shares?._tag === "Revealed") &&
-  cancellingHandles.has(balance.shares.handle);
-
-/**
- * Pending positions with a cancel broadcast but not yet confirmed; the cancel
- * carries the position's handle as its encrypted amount.
- */
-export const getCancellingHandles = (
-  actions: ReadonlyArray<
-    Pick<YieldAction, "encryptedAmount" | "status" | "type">
-  >
-): ReadonlySet<ConfidentialHandle> =>
-  new Set(
-    actions.flatMap((action) => {
-      const handle =
-        action.type === "CANCEL_PENDING" && action.status === "PROCESSING"
-          ? decodeHandle(action.encryptedAmount)
-          : null;
-      return handle ? [handle] : [];
-    })
-  );
-
-type ConfidentialBalance = Readonly<{
-  readonly amount: BigNumber;
-  readonly amountRaw: bigint;
-  readonly amountUsd?: BigNumber | null;
-  readonly isEncrypted?: boolean;
-  readonly shares?: EarnBalanceShares;
-  readonly shareToken?: Pick<Token, "address" | "decimals">;
-  readonly token: Pick<Token, "decimals">;
-}>;
-
-const getConfidentialPricePerShare = (
-  yieldDto: EarnYieldWithProvider,
-  shareToken: Pick<Token, "address">
-): BigNumber => {
-  const state = yieldDto.state?.pricePerShareState;
-  return state?.price.isGreaterThan(0) &&
-    state.shareToken.address &&
-    shareToken.address &&
-    sameAddress(state.shareToken.address, shareToken.address)
-    ? state.price
-    : exactDecimal(1);
-};
-
-export type ConfidentialValuation = Readonly<{
-  readonly yieldDto: EarnYieldWithProvider;
-  readonly usdPrice: BigNumber | null;
-}>;
-
-type RevealedHandles = RevealedBalances["handles"];
-
-const isRevealedBalance = (
-  balance: ConfidentialBalance,
-  handles: RevealedHandles
-) => {
-  const handle = getEncryptedHandle(balance);
-  return handle !== null && handles.has(handle);
-};
-
-export const hasRevealedBalance = (
-  position: Readonly<{ readonly balances: ReadonlyArray<ConfidentialBalance> }>,
-  handles: RevealedHandles
-) => position.balances.some((balance) => isRevealedBalance(balance, handles));
-
-// Withdrawable unwraps are publicly decrypted by WITHDRAW, not revealed.
-export const isUserRevealableBalance = (
-  balance: Pick<EarnBalance, "isEncrypted" | "type">
-) => !!balance.isEncrypted && balance.type !== "withdrawable";
-
-/**
- * An Instant Exit its unwrap began, still to finalize: an encrypted
- * withdrawable balance's WITHDRAW, which decrypts the unwrapped amount.
- */
-export const isUnfinishedInstantExit = (
-  balance: Pick<EarnBalance, "isEncrypted" | "type">,
-  pendingActionType: YieldPendingActionType
-) =>
-  !!balance.isEncrypted &&
-  balance.type === "withdrawable" &&
-  pendingActionType === "WITHDRAW";
-
-export const getPendingActionDecryptHandle = (
-  balance: Pick<EarnBalance, "isEncrypted" | "shares" | "type">,
-  pendingActionType: YieldPendingActionType
-): ConfidentialHandle | null =>
-  isUnfinishedInstantExit(balance, pendingActionType)
-    ? getEncryptedHandle(balance)
-    : null;
-
 /**
  * The batch a confidential action only joins: a deposit joins the next
  * subscription batch, a private exit's REDEEM the next redemption batch.
@@ -544,89 +345,6 @@ export const getConfidentialActionBatchSide = (
     ? "redemption"
     : null;
 };
-
-// The API sends empty amounts for encrypted balances; their shares are a handle.
-export const zeroEncryptedBalance = <
-  Balance extends Readonly<{ readonly isEncrypted?: boolean }>,
->(
-  balance: Balance
-): Balance =>
-  balance.isEncrypted ? { ...balance, amount: "0", amountRaw: "0" } : balance;
-
-/**
- * An encrypted balance after its handle is revealed: no longer encrypted,
- * valued from the decrypted share count, and still carrying the handle so a
- * cancel of its pending position stays recognisable.
- */
-export type RevealedBalance<Balance extends ConfidentialBalance> = Omit<
-  Balance,
-  "amount" | "amountRaw" | "amountUsd" | "isEncrypted" | "shares"
-> &
-  Readonly<{
-    readonly amount: BigNumber;
-    readonly amountRaw: bigint;
-    readonly amountUsd?: BigNumber | null;
-    readonly shares: typeof EarnBalanceShares.cases.Revealed.Type;
-  }>;
-
-export const fillConfidentialBalance = <Balance extends ConfidentialBalance>(
-  balance: Balance,
-  handles: RevealedHandles,
-  valuation: ConfidentialValuation | null = null
-): Balance | RevealedBalance<Balance> => {
-  const handle = getEncryptedHandle(balance);
-  if (handle === null) return balance;
-  const revealed = handles.get(handle);
-  if (revealed === undefined) return balance;
-
-  const shareDecimals = balance.shareToken?.decimals ?? balance.token.decimals;
-  const shareAmount = exactDecimal(revealed.toString()).shiftedBy(
-    -shareDecimals
-  );
-  const pricePerShare =
-    valuation && balance.shareToken
-      ? getConfidentialPricePerShare(valuation.yieldDto, balance.shareToken)
-      : exactDecimal(1);
-  const amount = truncateToTokenDecimals(
-    shareAmount.times(pricePerShare),
-    balance.token.decimals
-  );
-  const amountUsd = valuation?.usdPrice
-    ? amount.times(valuation.usdPrice)
-    : balance.amountUsd;
-  return {
-    ...Struct.omit(balance, [
-      "amount",
-      "amountRaw",
-      "amountUsd",
-      "isEncrypted",
-      "shares",
-    ]),
-    amount,
-    amountRaw: toBaseUnits(amount, balance.token.decimals),
-    ...(amountUsd === undefined ? {} : { amountUsd }),
-    shares: {
-      _tag: "Revealed",
-      amount: shareAmount,
-      amountRaw: revealed,
-      handle,
-    },
-  };
-};
-
-export const fillConfidentialPosition = <
-  Balance extends ConfidentialBalance,
-  Position extends Readonly<{ readonly balances: ReadonlyArray<Balance> }>,
->(
-  position: Position,
-  handles: RevealedHandles,
-  valuation: ConfidentialValuation | null = null
-) => ({
-  ...position,
-  balances: position.balances.map((balance) =>
-    fillConfidentialBalance(balance, handles, valuation)
-  ),
-});
 
 export const getConfidentialHandleContract = (
   yieldDto: EarnYieldWithProvider,
@@ -651,51 +369,4 @@ const getOwnBatcher = (
 ) => {
   const legs = getConfidentialLegs(yieldDto, intent);
   return legs ? (legs.legs[legs.ownIndex] ?? null) : null;
-};
-
-/** A balance whose shares the user revealed this session. */
-export const isRevealedConfidentialBalance = (balance: BalanceShares) =>
-  balance.shares?._tag === "Revealed";
-
-export type ConfidentialRevealPosition = Readonly<{
-  readonly balances: ReadonlyArray<
-    Pick<EarnBalance, "isEncrypted" | "shares" | "shareToken" | "type">
-  >;
-  readonly yieldDto: EarnYieldWithProvider;
-}>;
-
-type ConfidentialRevealRequest = Readonly<{
-  readonly chainId: ConfidentialChainId;
-  readonly handles: ReadonlyArray<
-    Readonly<{ readonly contract: string; readonly handle: ConfidentialHandle }>
-  >;
-}>;
-
-/**
- * The user-revealable handles of positions: one request per chain, each
- * handle once.
- */
-export const getConfidentialRevealRequests = (
-  positions: ReadonlyArray<ConfidentialRevealPosition>
-): ReadonlyArray<ConfidentialRevealRequest> => {
-  const byChain = new Map<
-    ConfidentialChainId,
-    Map<ConfidentialHandle, string>
-  >();
-  for (const { balances, yieldDto } of positions) {
-    const chainId = getConfidentialChainId(yieldDto);
-    if (chainId === null) continue;
-    const handles = byChain.get(chainId) ?? new Map();
-    for (const balance of balances) {
-      if (!isUserRevealableBalance(balance)) continue;
-      const contract = getConfidentialHandleContract(yieldDto, balance);
-      const handle = getEncryptedHandle(balance);
-      if (handle && contract) handles.set(handle, contract);
-    }
-    if (handles.size > 0) byChain.set(chainId, handles);
-  }
-  return [...byChain].map(([chainId, handles]) => ({
-    chainId,
-    handles: [...handles].map(([handle, contract]) => ({ contract, handle })),
-  }));
 };

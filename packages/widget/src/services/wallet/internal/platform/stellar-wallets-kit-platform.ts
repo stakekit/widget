@@ -1,9 +1,6 @@
 import {
-  Cause,
   Context,
   Effect,
-  Exit,
-  Fiber,
   FiberHandle,
   Layer,
   Schema,
@@ -15,6 +12,7 @@ import {
   WalletIntegrationError,
   WalletNotAvailableError,
 } from "../../wallet-errors";
+import { runLatest } from "./wallet-connect-attempts";
 import {
   CaipChainId,
   caipAddresses,
@@ -321,24 +319,11 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
     operation: Effect.Effect<A, E>,
     whenDisposed: Effect.Effect<A, E | WalletIntegrationError>
   ): Effect.Effect<A, E | WalletIntegrationError> =>
-    Effect.uninterruptibleMask((restore) => {
-      if (operations.state._tag === "Closed") return restore(whenDisposed);
-      return FiberHandle.run(operations, operation, {
-        startImmediately: false,
-      }).pipe(
-        Effect.flatMap((fiber) =>
-          restore(Fiber.await(fiber)).pipe(
-            Effect.onInterrupt(() => Fiber.interrupt(fiber))
-          )
-        ),
-        Effect.flatMap(
-          (exit): Effect.Effect<A, E | WalletIntegrationError> =>
-            Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)
-              ? Effect.fail(cancelled())
-              : exit
-        )
-      );
-    });
+    Effect.suspend(() =>
+      operations.state._tag === "Closed"
+        ? whenDisposed
+        : runLatest(operations, operation, cancelled)
+    );
 
   return {
     connect: latest(

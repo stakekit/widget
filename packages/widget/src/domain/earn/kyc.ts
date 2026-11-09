@@ -1,5 +1,5 @@
 import type { KycStatus } from "../portfolio/models";
-import type { EarnYieldWithProvider } from "./models";
+import type { EarnYieldWithProvider } from "./yield-schema";
 
 export type KycGate =
   | { state: "pass" }

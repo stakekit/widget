@@ -1,4 +1,3 @@
-import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import {
   AnimatedActivityPage,
@@ -11,21 +10,15 @@ import { usePortfolioPendingActionsCount } from "../../../features/portfolio/ind
 import { CompactPositionDetailsPage } from "../../../features/position-details/composition";
 import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import {
-  AnimationLayout,
-  CompactLayout,
+  CompactFrame,
   Details,
   GlobalModals,
-  Header,
-  PoweredBy,
 } from "../../../features/widget-shell/composition";
 import { useDetailsMatch } from "../../../features/widget-shell/index";
-import {
-  container,
-  headerContainer,
-} from "../../../features/widget-shell/views";
 import { createYieldFlowRoutes } from "../../../features/yield-transaction-flow/composition";
 import { getYieldFlowRouteGroup } from "../../../features/yield-transaction-flow/index";
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
+import { PageTransition } from "../../../ui/index";
 
 const CompactDetails = () => {
   const pendingActionsCount = usePortfolioPendingActionsCount();
@@ -37,7 +30,7 @@ export const createCompactRoutes = () => {
   const earnPath = widgetRoutes.earn.build();
 
   return (
-    <Route element={<CompactLayout />}>
+    <Route>
       {/* Home + Tabs */}
       <Route element={<CompactDetails />}>
         <Route index element={<AnimatedEarnPage />} />
@@ -45,21 +38,22 @@ export const createCompactRoutes = () => {
           path={widgetRoutes.positions.pattern}
           element={<AnimatedPositionsPage />}
         />
-        <Route path={widgetRoutes.activity.pattern}>
-          <Route index element={<AnimatedActivityPage />} />
-          <Route
-            element={
-              <WalletScopeRouteGuard
-                fallbackPath={widgetRoutes.activity.build()}
-              />
-            }
-          >
-            {createActivityActionRoutes({
-              selectsDefaultAction: false,
-              showsBackButton: true,
-            })}
-          </Route>
-        </Route>
+        <Route
+          path={widgetRoutes.activity.pattern}
+          element={<AnimatedActivityPage />}
+        />
+      </Route>
+
+      {/* Activity action details + continuation flow, outside the tabs */}
+      <Route
+        element={
+          <WalletScopeRouteGuard fallbackPath={widgetRoutes.activity.build()} />
+        }
+      >
+        {createActivityActionRoutes({
+          receiptPlacement: "page",
+          selectsDefaultAction: false,
+        })}
       </Route>
 
       <Route element={<WalletScopeRouteGuard fallbackPath={earnPath} />}>
@@ -129,23 +123,11 @@ export const CompactRoutes = () => {
 
   return (
     <>
-      <AnimationLayout>
-        <LayoutGroup>
-          <motion.div layout="position" className={headerContainer}>
-            <Header />
-          </motion.div>
-
-          <motion.div layout="position" className={container}>
-            <AnimatePresence>
-              <Routes location={location} key={key}>
-                {createCompactRoutes()}
-              </Routes>
-            </AnimatePresence>
-          </motion.div>
-
-          <PoweredBy />
-        </LayoutGroup>
-      </AnimationLayout>
+      <CompactFrame pageKey={location.pathname}>
+        <PageTransition pageKey={key} variant="rise" waitForExit fill>
+          <Routes location={location}>{createCompactRoutes()}</Routes>
+        </PageTransition>
+      </CompactFrame>
 
       <GlobalModals />
     </>

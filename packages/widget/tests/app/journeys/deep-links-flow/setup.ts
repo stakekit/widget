@@ -4,21 +4,19 @@ import { vitest } from "vitest";
 import type { ManageActionCommand } from "../../../../src/domain/action/models";
 import { TransactionHash } from "../../../../src/domain/identity/identifiers";
 import {
-  legacyYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldDtoFixture,
 } from "../../../fixtures";
+import type { TokenDto as LegacyTokenDto } from "../../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../../mocks/api-routes";
 import { mockDelay } from "../../../mocks/delay";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
 import type { TestWorker } from "../../../utils/test-extend";
 import { waitForMs } from "../../../utils/wait";
 import { setUrl as _setUrl } from "./utils";
-
-type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
 export const setup = async (
   worker: TestWorker,
@@ -50,54 +48,28 @@ export const setup = async (
   const avaxNativeStakingRewardRate = 0.0508;
   const avaxLiquidStakingRewardRate = 0.0475;
 
-  const legacyYieldBase = legacyYieldFixture();
   const yieldApiYieldBase = yieldApiYieldDtoFixture();
-  const avaxNativeStaking = legacyYieldFixture({
-    id: "avalanche-avax-native-staking",
-    token,
-    tokens: [token],
-    rewardRate: avaxNativeStakingRewardRate,
-    rewardType: "apy",
-    apy: avaxNativeStakingRewardRate,
-    metadata: { ...legacyYieldBase.metadata, type: "staking" },
-    validators: [],
-  });
 
-  const avaxLiquidStakingLegacyValidators = opts?.withValidatorAddressesRequired
+  const avaxLiquidStakingValidators = opts?.withValidatorAddressesRequired
     ? [
-        {
+        yieldApiValidatorFixture({
           address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
-          status: "active" as const,
+          status: "active",
           name: "Stakely",
-          image: "https://assets.stakek.it/validators/stakely.png",
+          logoURI: "https://assets.stakek.it/validators/stakely.png",
           website: "https://stakely.io/",
-          apr: 0.0393,
+          rewardRate: {
+            total: 0.0393,
+            rateType: "APR",
+            components: [],
+          },
           commission: 0.1,
-          stakedBalance: "2263157",
+          tvl: "2263157",
           votingPower: 0.0090962642447408,
           preferred: true,
-        },
+        }),
       ]
     : [];
-  const avaxLiquidStakingValidators = avaxLiquidStakingLegacyValidators.map(
-    (validator) =>
-      yieldApiValidatorFixture({
-        address: validator.address,
-        status: validator.status,
-        name: validator.name,
-        logoURI: validator.image,
-        website: validator.website,
-        rewardRate: {
-          total: validator.apr,
-          rateType: "APR",
-          components: [],
-        },
-        commission: validator.commission,
-        tvl: validator.stakedBalance,
-        votingPower: validator.votingPower,
-        preferred: validator.preferred,
-      })
-  );
 
   const rewardToken = {
     name: "Staked AVAX",
@@ -107,30 +79,8 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/savax.svg",
     address: "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
   };
-  const avaxLiquidStaking = legacyYieldFixture({
-    id: "avalanche-avax-liquid-staking",
-    token,
-    tokens: [token],
-    rewardRate: avaxLiquidStakingRewardRate,
-    rewardType: "apy",
-    apy: avaxLiquidStakingRewardRate,
-    metadata: {
-      ...legacyYieldBase.metadata,
-      name: "AVAX Liquid Staking",
-      type: "liquid-staking",
-      provider: {
-        id: "benqi",
-        name: "Benqi",
-        description: "",
-        externalLink: "https://benqi.fi/",
-        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
-      },
-      rewardTokens: [rewardToken],
-    },
-    validators: avaxLiquidStakingLegacyValidators,
-  });
-  const avaxNativeStakingYieldApi = yieldApiYieldDtoFixture({
-    id: avaxNativeStaking.id,
+  const avaxNativeStaking = yieldApiYieldDtoFixture({
+    id: "avalanche-avax-native-staking",
     network: token.network,
     token,
     tokens: [token],
@@ -138,7 +88,7 @@ export const setup = async (
     outputToken: token,
     rewardRate: {
       ...yieldApiYieldBase.rewardRate,
-      total: avaxNativeStaking.rewardRate,
+      total: avaxNativeStakingRewardRate,
     },
     mechanics: {
       ...yieldApiYieldBase.mechanics,
@@ -146,17 +96,17 @@ export const setup = async (
       gasFeeToken: token,
     },
   });
-  const avaxLiquidStakingYieldApi = yieldApiYieldDtoFixture({
-    id: avaxLiquidStaking.id,
+  const avaxLiquidStaking = yieldApiYieldDtoFixture({
+    id: "avalanche-avax-liquid-staking",
     network: token.network,
-    providerId: avaxLiquidStaking.metadata.provider?.id ?? "benqi",
+    providerId: "benqi",
     token,
     tokens: [token],
     inputTokens: [token],
     outputToken: rewardToken,
     rewardRate: {
       ...yieldApiYieldBase.rewardRate,
-      total: avaxLiquidStaking.rewardRate,
+      total: avaxLiquidStakingRewardRate,
     },
     metadata: {
       ...yieldApiYieldBase.metadata,
@@ -171,22 +121,7 @@ export const setup = async (
   });
 
   const pendingActionAmount = "0.019258000000000000";
-  const legacyPendingActions = [
-    {
-      args: {
-        args: {
-          validatorAddresses: {
-            required: !!opts?.withValidatorAddressesRequired,
-          },
-        },
-      },
-      amount: pendingActionAmount,
-      type: "CLAIM_REWARDS" as const,
-      passthrough:
-        "eyJhZGRyZXNzZXMiOnsiYWRkcmVzcyI6IlRTWjFBazlaVjNOam1Wd3NUejNxMnNuYzdYR1FFSlZTRUQifX0=",
-    },
-  ];
-  const yieldApiPendingActions = [
+  const pendingActions = [
     {
       intent: "manage" as const,
       type: "CLAIM_REWARDS" as const,
@@ -210,23 +145,12 @@ export const setup = async (
   ];
   const avaxLiquidStakingBalances = [
     {
-      groupId: "b4684f63-fe54-540d-b0ae-06a2c2ecdb9e",
-      type: "rewards",
-      amount: pendingActionAmount,
-      pendingActions: legacyPendingActions,
-      pricePerShare: "1",
-      token: avaxLiquidStaking.token,
-    },
-  ];
-
-  const avaxLiquidStakingBalancesV2 = [
-    {
       address: account,
       type: "claimable",
       amount: pendingActionAmount,
       amountRaw: "19258000000000000",
-      pendingActions: yieldApiPendingActions,
-      token: avaxLiquidStaking.token,
+      pendingActions,
+      token,
       amountUsd: "0.84",
       isEarning: false,
     },
@@ -306,14 +230,10 @@ export const setup = async (
         },
       });
     }),
-    http.get(legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
-      await mockDelay();
-      return HttpResponse.json(avaxNativeStaking);
-    }),
     http.get(yieldApiRoute("/v1/yields"), async () => {
       await mockDelay();
 
-      const items = [avaxNativeStakingYieldApi, avaxLiquidStakingYieldApi];
+      const items = [avaxNativeStaking, avaxLiquidStaking];
 
       return HttpResponse.json({
         items,
@@ -324,15 +244,11 @@ export const setup = async (
     }),
     http.get(yieldApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
       await mockDelay();
-      return HttpResponse.json(avaxNativeStakingYieldApi);
-    }),
-    http.get(legacyApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
-      await mockDelay();
-      return HttpResponse.json(avaxLiquidStaking);
+      return HttpResponse.json(avaxNativeStaking);
     }),
     http.get(yieldApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
       await mockDelay();
-      return HttpResponse.json(avaxLiquidStakingYieldApi);
+      return HttpResponse.json(avaxLiquidStaking);
     }),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {
       await mockDelay();
@@ -351,44 +267,25 @@ export const setup = async (
         limit: 20,
       });
     }),
-    http.post(legacyApiRoute("/v1/yields/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          balances: avaxLiquidStakingBalances,
-          integrationId: avaxLiquidStaking.id,
-        },
-      ]);
-    }),
     http.post(yieldApiRoute("/v1/yields/balances"), async () => {
       await mockDelay();
       return HttpResponse.json({
         items: [
           {
             yieldId: avaxLiquidStaking.id,
-            balances: avaxLiquidStakingBalancesV2,
+            balances: avaxLiquidStakingBalances,
           },
         ],
         errors: [],
       });
     }),
     http.post(
-      legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}/balances/scan`),
-      async () => {
-        await mockDelay();
-        return HttpResponse.json({
-          integrationId: avaxLiquidStaking.id,
-          balances: avaxLiquidStakingBalances,
-        });
-      }
-    ),
-    http.post(
       yieldApiRoute(`/v1/yields/${avaxLiquidStaking.id}/balances`),
       async () => {
         await mockDelay();
         return HttpResponse.json({
           yieldId: avaxLiquidStaking.id,
-          balances: avaxLiquidStakingBalancesV2,
+          balances: avaxLiquidStakingBalances,
         });
       }
     ),
@@ -448,7 +345,7 @@ export const setup = async (
           type: "CLAIM_REWARDS",
           explorerUrl:
             "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-          network: avaxLiquidStaking.token.network,
+          network: token.network,
           hash: TransactionHash.make(
             "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb"
           ),
@@ -513,7 +410,11 @@ export const setup = async (
     customConnectors,
     setUrl,
     avaxLiquidStaking,
+    avaxLiquidStakingRewardRate,
+    avaxLiquidStakingValidators,
     avaxNativeStaking,
+    avaxNativeStakingRewardRate,
+    rewardToken,
     account,
     requestFn,
     setCurrentChainId,

@@ -2,7 +2,11 @@ import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../domain/finance/models";
-import type { WalletScopeKey } from "../../domain/wallet/wallet-scope";
+import {
+  type WalletScopeKey,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../domain/wallet/wallet-scope";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -22,13 +26,13 @@ export class TokenBalancesError extends Data.TaggedError("TokenBalancesError")<{
 }> {}
 
 const toTokenBalancesScanCommand = (
-  scope: WalletScopeKey
+  scope: WalletScopeOwnerKey
 ): TokenBalanceScanCommand => ({
   address: scope.address,
   network: scope.network,
 });
 
-const tokenBalancesRequestAtom = Atom.family((scope: WalletScopeKey) =>
+const tokenBalancesRequestAtom = Atom.family((scope: WalletScopeOwnerKey) =>
   appRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -45,19 +49,38 @@ const tokenBalancesRequestAtom = Atom.family((scope: WalletScopeKey) =>
     )
 );
 
-const tokenBalancesCanonicalAtom = Atom.family((scope: WalletScopeKey) =>
-  tokenBalancesRequestAtom(scope).pipe(
-    Atom.withRefresh(scheduledRefreshInterval),
-    Atom.withLabel("tokenBalancesResourceAtom")
-  )
+const tokenBalancesByOwnerCanonicalAtom = Atom.family(
+  (scope: WalletScopeOwnerKey) =>
+    tokenBalancesRequestAtom(scope).pipe(
+      Atom.withRefresh(scheduledRefreshInterval),
+      Atom.withLabel("tokenBalancesResourceAtom")
+    )
 );
 
-export const tokenBalancesResourceAtom = makePresentableResourceFamily(
-  tokenBalancesCanonicalAtom
+const tokenBalancesByOwnerResource = makePresentableResourceFamily(
+  tokenBalancesByOwnerCanonicalAtom
 );
 
-export const refreshTokenBalancesAtom = Atom.family((scope: WalletScopeKey) =>
-  Atom.fnSync((_input: undefined, get) =>
-    get.refresh(tokenBalancesRequestAtom(scope))
-  )
+const localTokenBalancesResourceAtom = (scope: WalletScopeKey) =>
+  tokenBalancesByOwnerResource.local(walletScopeOwnerKey(scope));
+
+const foregroundTokenBalancesResourceAtom = (scope: WalletScopeKey) =>
+  tokenBalancesByOwnerResource.foreground(walletScopeOwnerKey(scope));
+
+export const tokenBalancesResourceAtom = Object.assign(
+  foregroundTokenBalancesResourceAtom,
+  {
+    foreground: foregroundTokenBalancesResourceAtom,
+    local: localTokenBalancesResourceAtom,
+  }
 );
+
+const refreshTokenBalancesByOwnerAtom = Atom.family(
+  (scope: WalletScopeOwnerKey) =>
+    Atom.fnSync((_input: undefined, get) =>
+      get.refresh(tokenBalancesRequestAtom(scope))
+    )
+);
+
+export const refreshTokenBalancesAtom = (scope: WalletScopeKey) =>
+  refreshTokenBalancesByOwnerAtom(walletScopeOwnerKey(scope));

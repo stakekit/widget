@@ -1,19 +1,23 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { isMobile } from "../../../../../shared/lib/general";
+import { useTrackEvent } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
+import { getYieldFlowAttribution } from "../../../model/attribution";
 import { getYieldTransactionCompletionUrls } from "../../../model/yield-transaction-workflow";
 import {
   useYieldFlowExecution,
   useYieldFlowSession,
 } from "../../../react/yield-flow-route";
-import { useViewTransaction } from "../../use-view-transaction";
 
 export const useComplete = () => {
   const execution = useYieldFlowExecution();
   const session = useYieldFlowSession();
   const finish = useAtomSet(execution.finishAtom);
+  const viewPosition = useAtomSet(execution.viewPositionAtom);
+  const positionBalanceId = useAtomValue(execution.positionBalanceIdAtom);
+  const positionTotal = useAtomValue(execution.positionTotalAtom);
   const workflowView = useAtomValue(execution.workflow.viewAtom);
 
   // Ledger Live desktop leaves for its Earn dashboard; elsewhere the flow finishes in the widget.
@@ -23,7 +27,9 @@ export const useComplete = () => {
     ? getYieldTransactionCompletionUrls(workflowView.state.context)
     : [];
 
-  const onViewTransactionClick = useViewTransaction();
+  const trackEvent = useTrackEvent();
+  // The explorer link opens the transaction itself; the visit is recorded.
+  const onViewTransactionClick = () => trackEvent("viewTxClicked");
 
   const onClick = () => {
     if (opensLedgerEarn) {
@@ -57,11 +63,27 @@ export const useComplete = () => {
     hide: false,
   });
 
+  // Once the portfolio holds the position the flow acted on, it leads there;
+  // Ledger Live's own dashboard shows positions instead.
+  const viewPositionCta: PageCta =
+    positionBalanceId && !opensLedgerEarn
+      ? {
+          disabled: false,
+          isLoading: false,
+          label: t("complete.view_position"),
+          onClick: () => viewPosition(undefined),
+        }
+      : null;
+
   return {
+    /** Who ran the action, as Review and Steps named them. */
+    attribution: getYieldFlowAttribution(session.intake),
     urls,
     unstakeMatch: unstake,
     pendingActionMatch: pendingAction,
     onViewTransactionClick,
     cta: resolveCta(),
+    positionTotal,
+    viewPositionCta,
   };
 };

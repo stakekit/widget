@@ -1,13 +1,14 @@
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
-import {
+import type {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
 } from "../../../wallet-errors";
+import type { WalletBroadcastResult } from "../../../wallet-transactions";
 import {
-  decodeWalletBroadcastResult,
-  type WalletBroadcastResult,
-} from "../../../wallet-transactions";
+  broadcastResult,
+  requireTransactionSigner,
+} from "../transaction-signing";
 import { isTonConnector } from "./ton-connector-meta";
 
 export const makeTonWalletDriver = ({
@@ -23,22 +24,8 @@ export const makeTonWalletDriver = ({
     WalletBroadcastResult,
     WalletBroadcastError | WalletCapabilityUnavailableError
   > =>
-    Effect.gen(function* () {
-      if (!isTonConnector(connector)) {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
-
-      const signedTx = yield* connector
-        .signTransaction(tx)
-        .pipe(
-          Effect.mapError(
-            (cause) => new WalletBroadcastError({ cause, customMessage: null })
-          )
-        );
-
-      return yield* decodeWalletBroadcastResult(signedTx);
-    }),
+    requireTransactionSigner(
+      connector,
+      isTonConnector(connector) ? connector : null
+    ).pipe(Effect.flatMap((ton) => broadcastResult(ton.signTransaction(tx)))),
 });

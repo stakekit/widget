@@ -1,28 +1,24 @@
-import type BigNumber from "bignumber.js";
 import { Data, Effect, Option, Predicate, Ref, Result } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { getDirectTransactionFallbackGas } from "../../../domain/action/direct-transaction";
-import type { YieldAction } from "../../../domain/action/models";
 import {
-  getTransactionGasEstimate,
-  getValidStakeSessionTx,
-} from "../../../domain/action/rules";
+  type DirectTransaction,
+  getDirectTransactionFallbackGas,
+} from "../../../domain/action/direct-transaction";
+import type { YieldAction } from "../../../domain/action/models";
+import { getValidStakeSessionTx } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import { getConfidentialRedeemOperators } from "../../../domain/earn/confidential";
-import { exactDecimal, exactZero } from "../../../domain/finance/exact";
+import { fromBaseUnits } from "../../../domain/finance/base-units";
+import { exactZero } from "../../../domain/finance/exact";
 import { checkGasAmount } from "../../../domain/finance/gas";
 import type { Token } from "../../../domain/token/token";
 import {
-  GasTokenBalancesKey,
   gasTokenBalancesResourceAtom,
+  walletScopeGasTokenBalancesKey,
 } from "../../../resources/gas-token-balances/index";
-import {
-  getTokensPricesRequest,
-  PricesKey,
-  pricesAtom,
-} from "../../../resources/token-prices/index";
+import { pricesAtom } from "../../../resources/token-prices/index";
 import {
   type ActionPreviewRequest,
   YieldOperations,
@@ -36,10 +32,15 @@ import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
   type ConfidentialPreparation,
   prepareConfidentialCommand,
-  ZamaService,
-} from "../../../services/zama/zama-service";
+} from "../../../services/zama/confidential-preparation";
+import { ZamaService } from "../../../services/zama/zama-service";
 import { toPresentable } from "../../../shared/effect/async-result";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
+import {
+  handOffTransactionFlow,
+  makeTransactionFlowReviewPage,
+  type TransactionFlowHandoffOutcome,
+} from "../../transaction-flow/index";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
@@ -48,16 +49,27 @@ import {
 import {
   getYieldFlowConfidentialPreparation,
   getYieldFlowPlannedStepTypes,
-  getYieldTransactionFlowGasWarningInput,
+} from "../model/confidential-preparation";
+import {
   getYieldTransactionFlowKycYield,
-  getYieldTransactionFlowReviewPricingInput,
+  type YieldPreviewIntake,
+  type YieldTransactionFlowIntake,
+} from "../model/intake";
+import {
+  getYieldFlowGasAmount,
+  getYieldTransactionFlowGasWarningInput,
+} from "../model/pricing";
+import {
   type YieldFlowExecutionSource,
   YieldFlowHandoff,
   type YieldFlowSession,
-  type YieldPreviewIntake,
-  type YieldTransactionFlowIntake,
-} from "../model/yield-transaction-flow";
-import { makeYieldFlowStakeReviewViewAtom } from "./yield-summary";
+} from "../model/session";
+import { getYieldFlowTransactionsToSign } from "../model/yield-transaction-workflow";
+import { getYieldFlowReviewPricesKey } from "./review-prices";
+import {
+  getYieldFlowWithdrawalFee,
+  makeYieldFlowStakeReviewViewAtom,
+} from "./yield-summary";
 
 class YieldFlowPreviewError extends Data.TaggedError("YieldFlowPreviewError")<{
   readonly cause: unknown;
@@ -180,10 +192,6 @@ export const previewYieldFlowAction = Effect.fn("previewYieldFlowAction")(
   }
 );
 
-type HandOffOutcome =
-  | Readonly<{ readonly _tag: "Confirmed" }>
-  | Readonly<{ readonly _tag: "RejectedConfirmed" }>;
-
 /**
  * Hands what Review confirmed to the Execution that Steps opens, once: while
  * the Session holds a handoff, another confirmation is rejected. Steps learns
@@ -194,7 +202,7 @@ export const handOffYieldFlowSource = Effect.fn("handOffYieldFlowSource")(
     session: YieldFlowSession,
     source: YieldFlowExecutionSource
   ): Effect.fn.Return<
-    HandOffOutcome,
+    TransactionFlowHandoffOutcome,
     WidgetNavigationError,
     TrackingService | WidgetNavigation
   > {
@@ -212,64 +220,25 @@ export const handOffYieldFlowSource = Effect.fn("handOffYieldFlowSource")(
         : Effect.void;
 
     const next = new YieldFlowHandoff(source);
-    return yield* Effect.uninterruptible(
-      Effect.gen(function* () {
-        const held = yield* Ref.getAndUpdate(
-          handoff,
-          (current) => current ?? ({ _tag: "Waiting", handoff: next } as const)
-        );
-        if (held) return { _tag: "RejectedConfirmed" } as const;
-        yield* Effect.all(
-          [
-            // A Steps that never opened cannot start it; confirming again must.
-            navigation
-              .execute({
-                _tag: "Push",
-                to: destination.steps({
-                  executionHandoff: next,
-                  yieldFlowSession: session,
-                }),
-              })
-              .pipe(
-                Effect.tapError(() =>
-                  Ref.update(handoff, (current) =>
-                    current?.handoff === next && current._tag === "Waiting"
-                      ? null
-                      : current
-                  )
-                )
-              ),
-            trackConfirmation,
-          ],
-          { concurrency: "unbounded", discard: true }
-        );
-        return { _tag: "Confirmed" } as const;
-      })
+    return yield* handOffTransactionFlow(
+      handoff,
+      { _tag: "Waiting", handoff: next },
+      Effect.all(
+        [
+          navigation.execute({
+            _tag: "Push",
+            to: destination.steps({
+              executionHandoff: next,
+              yieldFlowSession: session,
+            }),
+          }),
+          trackConfirmation,
+        ],
+        { concurrency: "unbounded", discard: true }
+      )
     );
   }
 );
-
-/**
- * What Review estimates the flow's transactions cost in the gas token: the
- * action's, plus the conversion before it. Null when any part is unknown, so
- * Review never shows a partial total.
- */
-const getGasAmount = (
-  action: YieldAction | null,
-  conversionGas: BigNumber | null
-) => {
-  if (!action || !conversionGas) return null;
-
-  const estimates = action.transactions.map(getTransactionGasEstimate);
-  if (estimates.some((estimate) => !estimate)) return null;
-
-  const total = estimates.reduce(
-    (sum, estimate) => sum.plus(estimate?.amount ?? 0),
-    conversionGas
-  );
-
-  return total.isZero() ? null : total;
-};
 
 type ConfirmDecision =
   | Readonly<{
@@ -352,30 +321,38 @@ const planYieldFlowConversion = Effect.fn("planYieldFlowConversion")(function* (
 });
 
 /**
+ * The approve and wrap a confidential deposit of the underlying token still
+ * needs: what the Session already sent is left out. Nothing for any other
+ * action.
+ */
+const planPendingYieldFlowConversion = Effect.fn(
+  "planPendingYieldFlowConversion"
+)(function* (session: YieldFlowSession, preparation: ConfidentialPreparation) {
+  const sent = yield* Ref.get(session.ledger);
+  return (yield* planYieldFlowConversion(session, preparation)).filter(
+    ({ id }) => !sent.has(id)
+  );
+});
+
+/**
  * What the transactions around a confidential action cost, in the gas token:
- * the approve and wrap a deposit of the underlying token needs; what the
- * Session already sent costs nothing more. Null when it cannot be estimated,
- * as for an instant exit, whose finishing withdrawal only exists once its
- * unwrap confirms, or when the gas token is not the chain's native one the
- * node prices fees in.
+ * the approve and wrap a deposit of the underlying token still needs. Null
+ * when it cannot be estimated, as for an instant exit, whose finishing
+ * withdrawal only exists once its unwrap confirms, or when the gas token is
+ * not the chain's native one the node prices fees in.
  */
 const estimateYieldFlowConversionGas = Effect.fn(
   "estimateYieldFlowConversionGas"
 )(
   function* (
-    session: YieldFlowSession,
     preparation: ConfidentialPreparation,
+    pending: ReadonlyArray<DirectTransaction>,
     gasFeeToken: Token
   ) {
     if (preparation._tag === "Encrypt" && preparation.instant) return null;
     if (preparation._tag !== "Encrypt" || !preparation.conversion) {
       return exactZero();
     }
-    const sent = yield* Ref.get(session.ledger);
-    const pending = (yield* planYieldFlowConversion(
-      session,
-      preparation
-    )).filter(({ id }) => !sent.has(id));
     if (pending.length === 0) return exactZero();
     if (gasFeeToken.address !== undefined) return null;
     const evmRpc = yield* EvmRpc;
@@ -388,7 +365,7 @@ const estimateYieldFlowConversionGas = Effect.fn(
         to: transaction.to,
       })),
     });
-    return exactDecimal(fee.toString()).shiftedBy(-gasFeeToken.decimals);
+    return fromBaseUnits(fee, gasFeeToken.decimals);
   },
   (effect) =>
     effect.pipe(
@@ -465,26 +442,15 @@ export class YieldFlowReviewVisit extends Data.Class<{
  * visit, even one React discards, gets the same Atoms; arriving again previews
  * a fresh action, and leaving interrupts an in-flight preview.
  *
- * Arriving also releases an action still waiting for a Steps that never
- * started it, so confirming again hands off a new one. An action already
- * running stays held until its Execution ends.
- *
- * The model lives in an Atom: a family holds its values only weakly, so the
- * subscribed Atom is what keeps the model alive.
+ * Arriving also releases a Handoff still waiting for a Steps that never
+ * started it; see `makeTransactionFlowReviewPage`.
  */
 export const yieldFlowReviewPage = Atom.family(
-  ({ session }: YieldFlowReviewVisit) => {
-    const page = makeYieldFlowReviewPage(session);
-    const arrivalAtom = Atom.make(
-      Ref.update(session.handoff, (current) =>
-        current?._tag === "Waiting" ? null : current
-      )
-    );
-    return Atom.make((get) => {
-      get(arrivalAtom);
-      return page;
-    }).pipe(Atom.withLabel("yieldFlowReviewPage"));
-  }
+  ({ session }: YieldFlowReviewVisit) =>
+    makeTransactionFlowReviewPage(
+      session.handoff,
+      makeYieldFlowReviewPage(session)
+    ).pipe(Atom.withLabel("yieldFlowReviewPage"))
 );
 
 export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
@@ -515,45 +481,39 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     )
     .pipe(Atom.withLabel("yieldFlowReviewPreview"));
 
-  const pricingInput = getYieldTransactionFlowReviewPricingInput(intake);
-  const pricesKey = new PricesKey({
-    request: pricingInput
-      ? getTokensPricesRequest({
-          token: pricingInput.token,
-          yieldDto: pricingInput.yield,
-        })
-      : null,
-  });
+  const pricesKey = getYieldFlowReviewPricesKey(intake);
   const gasWarningInput = getYieldTransactionFlowGasWarningInput(intake);
-  const { additionalAddresses, address } = gasWarningInput.walletScope;
-  const gasBalancesKey = new GasTokenBalancesKey({
-    command: {
-      addresses: [
-        {
-          address,
-          ...(additionalAddresses ? { additionalAddresses } : {}),
-          network: gasWarningInput.gasFeeToken.network,
-          ...(gasWarningInput.gasFeeToken.address
-            ? { tokenAddress: gasWarningInput.gasFeeToken.address }
-            : {}),
-        },
-      ],
-    },
-  });
+  const gasBalancesKey = walletScopeGasTokenBalancesKey(
+    gasWarningInput.walletScope,
+    gasWarningInput.gasFeeToken
+  );
 
   const preparation = getYieldFlowConfidentialPreparation(intake);
-  // A deposit of the underlying token also pays for its approve and wrap;
-  // anything else converts nothing.
+  // A deposit of the underlying token also signs and pays for its approve
+  // and wrap; anything else converts nothing.
+  const conversionAtom = walletRuntime
+    .atom((get) =>
+      !preparation || get(kycBlockingAtom)
+        ? Effect.succeed([])
+        : planPendingYieldFlowConversion(session, preparation)
+    )
+    .pipe(Atom.withLabel("yieldFlowReviewConversion"));
   const conversionGasAtom = walletRuntime
     .atom((get) => {
       if (!preparation) return Effect.succeed(exactZero());
       return get(kycBlockingAtom)
         ? Effect.succeed(null)
-        : estimateYieldFlowConversionGas(
-            session,
-            preparation,
-            gasWarningInput.gasFeeToken
-          );
+        : get
+            .result(conversionAtom)
+            .pipe(
+              Effect.flatMap((pending) =>
+                estimateYieldFlowConversionGas(
+                  preparation,
+                  pending,
+                  gasWarningInput.gasFeeToken
+                )
+              )
+            );
     })
     .pipe(Atom.withLabel("yieldFlowReviewConversionGas"));
 
@@ -564,10 +524,13 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     const previewError = Option.getOrNull(AsyncResult.error(preview));
     const actionPreviewLoading =
       AsyncResult.isInitial(preview) || preview.waiting;
+    const conversion = get(conversionAtom);
+    const conversionLoading =
+      AsyncResult.isInitial(conversion) || conversion.waiting;
     const conversionGas = get(conversionGasAtom);
     const conversionGasLoading =
       AsyncResult.isInitial(conversionGas) || conversionGas.waiting;
-    const gasAmount = getGasAmount(
+    const gasAmount = getYieldFlowGasAmount(
       action,
       AsyncResult.getOrElse(conversionGas, () => null)
     );
@@ -592,6 +555,15 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     return {
       action,
       actionPreviewLoading,
+      /** What the wallet still signs, in order; null until it is known. */
+      transactionsToSign:
+        action && !conversionLoading
+          ? getYieldFlowTransactionsToSign(
+              action,
+              AsyncResult.getOrElse(conversion, () => [])
+            )
+          : null,
+      transactionsToSignLoading: actionPreviewLoading || conversionLoading,
       confirmDisabled:
         kyc.isBlocking ||
         (previewError !== null && !isRetryablePreviewError(previewError)),
@@ -617,6 +589,8 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     intake._tag === "Enter"
       ? makeYieldFlowStakeReviewViewAtom(intake, baseViewAtom)
       : null;
+  const withdrawalFee =
+    intake._tag === "Exit" ? getYieldFlowWithdrawalFee(intake) : null;
 
   return {
     activityReviewViewAtom: Atom.make((get) => {
@@ -667,6 +641,7 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     reviewViewAtom: Atom.make((get) => ({
       ...get(baseViewAtom),
       stake: stakeViewAtom ? get(stakeViewAtom) : null,
+      withdrawalFee,
     })).pipe(Atom.withLabel("yieldFlowReviewView")),
   } as const;
 };

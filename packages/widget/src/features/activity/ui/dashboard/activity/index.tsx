@@ -1,7 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Outlet } from "react-router";
 import { widgetYieldFlowRoutes } from "../../../../../services/navigation/widget-routes";
-import { Box } from "../../../../../shared/ui/primitives/box";
+import { Grid, Stack } from "../../../../../ui/index";
 import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useSKWallet } from "../../../../wallet/index";
 import {
@@ -10,7 +10,6 @@ import {
 } from "../../../../widget-shell/views";
 import { activityPageViewAtom, hasActivityActions } from "../../../state/page";
 import { ActivityPageContent } from "../../activity-page/activity-page-content";
-import * as styles from "./styles.css";
 
 export const ActivityTabPage = () => {
   const wallet = useSKWallet();
@@ -34,23 +33,23 @@ export const ActivityTabPage = () => {
 
   return (
     <AnimationPage>
-      <Box className={styles.split}>
-        <Box className={styles.feed}>
+      <Grid grow columns={{ base: 1, split: 2 }} gap={24} align="stretch">
+        <Stack>
           <ActivityPageContent allowDefaultSelection />
-        </Box>
-        <Box
-          className={isExecution ? styles.execution : styles.details}
-          data-rk={
+        </Stack>
+        {/* One tree shape for Review and execution: the action route below
+            owns the continuation Session across them. The Review draws its
+            own surface; execution keeps the primary column's. */}
+        <Stack
+          testId={
             isExecution ? "activity-execution-panel" : "activity-details-panel"
           }
         >
-          {/* One tree shape for Review and execution: the action route below
-              owns the continuation Session across them. */}
           <BackButtonProvider enabled={isExecution}>
             <Outlet />
           </BackButtonProvider>
-        </Box>
-      </Box>
+        </Stack>
+      </Grid>
     </AnimationPage>
   );
 };

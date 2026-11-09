@@ -8,7 +8,7 @@ import type { Mock } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { getPendingActionStateKey } from "../../../src/domain/action/action-command";
-import { EarnBalance } from "../../../src/domain/earn/models";
+import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
   TokenAddress,
   WalletAddress,
@@ -28,10 +28,8 @@ import {
   positionDetailsWorkflowAtom,
 } from "../../../src/features/position-details/state/workflow";
 import { walletConnectionStateAtom } from "../../../src/features/wallet/index";
-import {
-  type YieldTransactionFlowIntake,
-  yieldFlowRoutes,
-} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
+import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/session";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -375,7 +373,7 @@ const makeRegistry = ({
 };
 
 describe("Position Details exit command", () => {
-  it("keeps an untouched exit amount neutral until submission", async () => {
+  it("keeps an untouched exit amount neutral, disabled with its reason", async () => {
     const yieldDto = yieldApiYieldDtoFixture();
     const constrainedYield = yieldApiYieldFixture({
       ...skySavingsRateFields,
@@ -411,7 +409,8 @@ describe("Position Details exit command", () => {
     try {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
-        unstakeDisabled: false,
+        unstakeBlocker: "EnterAmount",
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
@@ -424,6 +423,7 @@ describe("Position Details exit command", () => {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
         unstakeAmountGreaterThanAvailable: false,
+        unstakeBlocker: "BelowMinimum",
         unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: true,
       });
@@ -436,7 +436,8 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: false,
-        unstakeDisabled: false,
+        unstakeBlocker: "EnterAmount",
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: false,
       });
 
@@ -450,7 +451,7 @@ describe("Position Details exit command", () => {
       });
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
-        unstakeDisabled: false,
+        unstakeDisabled: true,
         unstakeIsGreaterOrLessIntegrationLimitError: true,
       });
     } finally {
@@ -501,6 +502,7 @@ describe("Position Details exit command", () => {
       expect(registry.get(viewAtom)).toMatchObject({
         unstakeAmountError: true,
         unstakeAmountGreaterThanAvailable: true,
+        unstakeBlocker: "InsufficientBalance",
         unstakeDisabled: true,
       });
 

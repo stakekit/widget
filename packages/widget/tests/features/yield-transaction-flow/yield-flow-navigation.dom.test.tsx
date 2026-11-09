@@ -26,7 +26,7 @@ import {
   getYieldFlowRouteGroup,
   startYieldTransactionFlowAtom,
 } from "../../../src/features/yield-transaction-flow/index";
-import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import {
   useYieldFlowExecution,
   useYieldFlowReview,

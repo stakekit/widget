@@ -16,31 +16,33 @@ import { Transaction } from "../../../src/domain/borrow/execution/transaction";
 import { IntegrationId, MarketId } from "../../../src/domain/borrow/ids";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { emptyBorrowExecutionView } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";
 import {
   BorrowFlowSession,
   type BorrowTransactionFlowIntake,
   getBorrowTransactionFlowDestination,
-} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
-import { emptyBorrowExecutionView } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-workflow";
+} from "../../../src/features/borrow-transaction-flow/model/session";
 import { makeBorrowFlowExecutionPage } from "../../../src/features/borrow-transaction-flow/state/execution-page";
 import {
   BorrowFlowReviewVisit,
   borrowFlowReviewPage,
   makeBorrowFlowReviewPage,
 } from "../../../src/features/borrow-transaction-flow/state/review-page";
-import { BorrowOperations } from "../../../src/services/api/operations";
+import type { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import { initializeTransactionWorkflow } from "../../../src/services/transaction-workflow/internal/model";
 import type { TransactionWorkflowCommand } from "../../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import { borrowEntryFlowEntry } from "../../utils/borrow-flow-entry";
+import { borrowOperationsLayer } from "../../utils/services/borrow-operations";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
 const walletScope = new WalletScopeKey({ address, network: "base" });
+const positionMarketId = Schema.decodeSync(MarketId)("market-position-1");
 const intake: BorrowTransactionFlowIntake = {
   riskVerdict: { _tag: "Allow" },
   command: {
@@ -95,14 +97,12 @@ const action = Schema.decodeSync(Action)({
   ],
 });
 
-const unexpected = <A>(method: string): Effect.Effect<A> =>
-  Effect.die(`borrow flow pages test: unexpected call to ${method}`);
-
 type HarnessOptions = Readonly<{
   readonly dispatch?: (
     command: TransactionWorkflowCommand
   ) => Effect.Effect<void>;
   readonly executeAction?: BorrowOperations["Service"]["executeAction"];
+  readonly sessionIntake?: BorrowTransactionFlowIntake;
 }>;
 
 // Page operations run on the wallet runtime; the test replaces its layer with
@@ -110,23 +110,13 @@ type HarnessOptions = Readonly<{
 const makeHarness = Effect.fn("test.makeBorrowPageHarness")(function* ({
   dispatch = () => Effect.void,
   executeAction = () => Effect.succeed(action),
+  sessionIntake = intake,
 }: HarnessOptions = {}) {
   const navigation = yield* makeTestNavigation();
   const workflowClosed = yield* Deferred.make<void>();
   const layer = Layer.mergeAll(
     navigation.layer,
-    Layer.succeed(
-      BorrowOperations,
-      BorrowOperations.of({
-        executeAction,
-        getAction: () => unexpected("BorrowOperations.getAction"),
-        stepAction: () => unexpected("BorrowOperations.stepAction"),
-        submitTransaction: () =>
-          unexpected("BorrowOperations.submitTransaction"),
-        submitTransactionInBackground: () =>
-          unexpected("BorrowOperations.submitTransactionInBackground"),
-      })
-    ),
+    borrowOperationsLayer({ executeAction }),
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({
@@ -147,7 +137,10 @@ const makeHarness = Effect.fn("test.makeBorrowPageHarness")(function* ({
     initialValues: [Atom.initialValue(walletRuntime.layer, layer as never)],
   });
   yield* Effect.addFinalizer(() => Effect.sync(() => registry.dispose()));
-  const handle = new BorrowFlowSession({ intake, walletScope });
+  const handle = new BorrowFlowSession({
+    intake: sessionIntake,
+    walletScope,
+  });
 
   return {
     awaitValue: <A>(
@@ -312,9 +305,7 @@ describe("Borrow flow Review page", () => {
         suspendOnWaiting: true,
       });
 
-      expect(yield* navigation.commands).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
+      expect(yield* navigation.commands).toEqual([{ _tag: "Back", steps: 1 }]);
     })
   );
 });
@@ -391,7 +382,7 @@ describe("Borrow flow Execution page", () => {
     })
   );
 
-  it.effect("leaves for where the flow began", () =>
+  it.effect("leaves for where the flow began, past its Review", () =>
     Effect.gen(function* () {
       const { handle, navigation, registry } = yield* makeHarness();
       const page = makeBorrowFlowExecutionPage(handle, action.id);
@@ -402,8 +393,99 @@ describe("Borrow flow Execution page", () => {
         suspendOnWaiting: true,
       });
 
+      expect(yield* navigation.commands).toEqual([{ _tag: "Back", steps: 2 }]);
+    })
+  );
+
+  it.effect("finishes a new borrow where it began", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness();
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.finishAtom);
+
+      registry.set(page.finishAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.finishAtom, {
+        suspendOnWaiting: true,
+      });
+
       expect(yield* navigation.commands).toEqual([
         { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
+      ]);
+    })
+  );
+
+  it.effect("finishes a position's action on the position's page", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness({
+        sessionIntake: {
+          ...intake,
+          entry: { _tag: "MarketPosition", marketId: positionMarketId },
+        },
+      });
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.finishAtom);
+
+      registry.set(page.finishAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.finishAtom, {
+        suspendOnWaiting: true,
+      });
+
+      expect(yield* navigation.commands).toEqual([
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: positionMarketId,
+          }),
+        },
+      ]);
+    })
+  );
+
+  it.effect("views the position page of the market the flow acted on", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness({
+        sessionIntake: {
+          ...intake,
+          entry: { _tag: "MarketPosition", marketId: positionMarketId },
+        },
+      });
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.viewPositionAtom);
+
+      registry.set(page.viewPositionAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.viewPositionAtom, {
+        suspendOnWaiting: true,
+      });
+
+      expect(yield* navigation.commands).toEqual([
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: positionMarketId,
+          }),
+        },
+      ]);
+    })
+  );
+
+  it.effect("views a new borrow's position in the market it opened", () =>
+    Effect.gen(function* () {
+      const { handle, navigation, registry } = yield* makeHarness();
+      const page = makeBorrowFlowExecutionPage(handle, action.id);
+      registry.mount(page.viewPositionAtom);
+
+      registry.set(page.viewPositionAtom, undefined);
+      yield* AtomRegistry.getResult(registry, page.viewPositionAtom, {
+        suspendOnWaiting: true,
+      });
+
+      expect(yield* navigation.commands).toEqual([
+        {
+          _tag: "Replace",
+          to: widgetRoutes.borrowPosition.build("Dashboard", {
+            marketId: intake.command.args.marketId,
+          }),
+        },
       ]);
     })
   );

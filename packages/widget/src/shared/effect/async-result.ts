@@ -79,3 +79,8 @@ export const toPresentable = <A, E>(
   }
   return { _tag: "Loading" };
 };
+
+/** The value a view shows, or nothing while it loads or after it failed. */
+export const presentedValue = <A, E>(
+  presentable: Presentable<A | null, E>
+): A | null => (presentable._tag === "Ready" ? presentable.value : null);

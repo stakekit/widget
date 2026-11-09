@@ -1,5 +1,5 @@
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
-import type { EarnBalance } from "../../../domain/earn/models";
+import type { EarnBalance } from "../../../domain/earn/balance";
 import type { ValidatorAddress } from "../../../domain/identity/identifiers";
 import {
   type BalanceDataKey,

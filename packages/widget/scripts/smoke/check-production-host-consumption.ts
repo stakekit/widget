@@ -11,11 +11,13 @@
  * pre-bundling, so Angular's esbuild bundles `dist` itself, as hosts that
  * exclude the widget from pre-bundling do.
  *
- * Green means the widget shell mounted and a catalog-backed control appeared,
- * with no `pageerror` and no fatal console errors (TDZ, missing modules, chunk
- * load, minified React). It is not a journey test. Every page answers API
- * calls from the widget's MSW fixtures and fails other cross-origin requests,
- * so the hosts run with a placeholder API key and never reach a live API.
+ * Green means the widget shell mounted, a catalog-backed control appeared,
+ * and every StyleX class the Widget rendered has a rule in the page's
+ * stylesheets, with no `pageerror` and no fatal console errors (TDZ, missing
+ * modules, chunk load, minified React). It is not a journey test. Every page
+ * answers API calls from the widget's MSW fixtures and fails other
+ * cross-origin requests, so the hosts run with a placeholder API key and
+ * never reach a live API.
  *
  * Run via `pnpm test:smoke`. Not part of `check`, `test`, or `test:changed`.
  */
@@ -564,6 +566,46 @@ const waitForServer = async (
   );
 };
 
+// StyleX classes are `sk` and a lowercase base-36 hash. The Earn
+// call-to-action renders through the Design System, so a host that dropped or
+// never loaded the Widget's stylesheet leaves its classes without rules.
+const assertStyleXStylesLoaded = async (page: Page, label: string) => {
+  await page
+    .locator(
+      '[data-testid="earn-live-presentation"] [data-rk="footer-button-primary"]'
+    )
+    .waitFor({ state: "visible", timeout: 90_000 });
+  const { rendered, unstyled } = await page.evaluate(() => {
+    const classes = new Set(
+      [
+        ...document.querySelectorAll('[data-rk="widget-container"] [class]'),
+      ].flatMap((element) =>
+        [...element.classList].filter((name) => /^sk[0-9a-z]{5,}$/.test(name))
+      )
+    );
+    // A cross-origin stylesheet's rules are unreadable; the Widget's are
+    // served by the host itself.
+    const rules = [...document.styleSheets]
+      .filter(
+        (sheet) =>
+          sheet.href === null || new URL(sheet.href).origin === location.origin
+      )
+      .flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText))
+      .join("\n");
+
+    return {
+      rendered: classes.size,
+      unstyled: [...classes].filter((name) => !rules.includes(`.${name}`)),
+    };
+  });
+
+  if (rendered === 0 || unstyled.length > 0) {
+    throw new Error(
+      `${label} rendered ${rendered} StyleX classes; without rules: ${unstyled.join(", ") || "none"}.`
+    );
+  }
+};
+
 const assertWidgetLoads = async ({
   browser,
   getMockHandlers,
@@ -633,10 +675,11 @@ const assertWidgetLoads = async ({
       .waitFor({ state: "visible", timeout: 90_000 });
     await page
       .locator(
-        '[data-rk="earn-live-presentation"] [data-testid="select-token"]'
+        '[data-testid="earn-live-presentation"] [data-testid="select-token"]'
       )
       .waitFor({ state: "visible", timeout: 90_000 });
     await page.waitForTimeout(500);
+    await assertStyleXStylesLoaded(page, label);
     if (encryptWorker) {
       await assertEncryptWorkerStarts(page, label, encryptWorker);
     }

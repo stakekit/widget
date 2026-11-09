@@ -19,7 +19,7 @@ import type {
   ActionId as BorrowActionId,
   TransactionId as BorrowTransactionId,
 } from "../../domain/borrow/ids";
-import type { EarnYieldBalancesResponse } from "../../domain/earn/models";
+import type { EarnYieldBalancesResponse } from "../../domain/earn/responses";
 import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
 import {
   ApiFailure,

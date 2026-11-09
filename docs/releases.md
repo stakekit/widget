@@ -26,3 +26,13 @@ The workflow publishes only when all of these conditions hold:
 
 Stable releases publish without an alternate dist-tag and therefore update
 `latest`.
+
+## Release notes
+
+Release Please writes `packages/widget/CHANGELOG.md` from the Conventional
+Commit subjects merged to `main`; do not edit it by hand. A change hosts must
+act on or will notice (a deprecation, a precedence change, a visual change, a
+removed styling hook) also documents it in the README's
+[Upgrading](../README.md#upgrading) section, in the same change, with the
+migration. Its commit subject names the change so the changelog entry points
+hosts to that section.

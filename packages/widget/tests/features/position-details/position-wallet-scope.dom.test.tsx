@@ -12,7 +12,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { EarnPosition } from "../../../src/domain/earn/models";
+import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";

@@ -9,21 +9,42 @@ export type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
 type EarnPresentation = Readonly<{
   condensed: boolean;
   zerion: boolean;
+  /**
+   * The "Earn" title of the yield card: above it, as the amount's title is;
+   * inside it (Zerion); or left out (Utila, whose own UI has none).
+   */
+  yieldTitle: "above" | "inside" | "hidden";
+}>;
+
+/**
+ * The Presentation Settings a Host Profile overrides over the Layout's
+ * defaults. Application composition merges them and checks at compile time
+ * that the names and values are the Design System's.
+ */
+type PresentationOverrides = Readonly<{
+  callToActionSize?: "md" | "lg";
+  gutter?: "md" | "lg";
+  surfaceStyle?: "filled" | "elevated" | "outlined";
+  tabsIndicator?: "underline" | "pill" | "tint";
 }>;
 
 /**
  * Named capabilities a host variant enables, resolved once from `variant` and
  * the Layout. Features, services, and wallet adapters read these rather
  * than the variant name. The host chain modal is the `chainModal` Widget
- * Configuration field, which only Zerion hosts supply.
+ * Configuration field, which only Zerion hosts supply. The Appearance Preset
+ * and Presentation Setting overrides give the host its look; only
+ * application composition reads them, and the Design System owns the preset's
+ * values.
  */
 export type HostProfile = Readonly<{
+  appearancePreset: "default" | "finery" | "porto" | "utila";
   earnPresentation: EarnPresentation;
   forcesInstitutionalWallets: boolean;
-  hidesEarnLoadingSpinner: boolean;
   hidesHeaderWalletControl: boolean;
   hostTokenIconMapping: boolean;
   hostTracking: boolean;
+  presentation: PresentationOverrides;
   requiresTermsAcknowledgement: boolean;
   showsPendingApprovalsNotice: boolean;
   translationOverlay: "none" | "utila";
@@ -32,12 +53,13 @@ export type HostProfile = Readonly<{
 }>;
 
 const standardProfile: HostProfile = {
-  earnPresentation: { condensed: false, zerion: false },
+  appearancePreset: "default",
+  earnPresentation: { condensed: false, yieldTitle: "above", zerion: false },
   forcesInstitutionalWallets: false,
-  hidesEarnLoadingSpinner: false,
   hidesHeaderWalletControl: false,
   hostTokenIconMapping: false,
   hostTracking: false,
+  presentation: {},
   requiresTermsAcknowledgement: false,
   showsPendingApprovalsNotice: false,
   translationOverlay: "none",
@@ -48,23 +70,48 @@ const standardProfile: HostProfile = {
 export const variantHostProfiles: Readonly<Record<WidgetVariant, HostProfile>> =
   {
     default: standardProfile,
-    finery: { ...standardProfile, forcesInstitutionalWallets: true },
+    finery: {
+      ...standardProfile,
+      appearancePreset: "finery",
+      forcesInstitutionalWallets: true,
+      presentation: { surfaceStyle: "elevated", tabsIndicator: "underline" },
+    },
     porto: {
       ...standardProfile,
-      earnPresentation: { condensed: true, zerion: false },
+      appearancePreset: "porto",
+      earnPresentation: { condensed: true, yieldTitle: "above", zerion: false },
+      presentation: {
+        callToActionSize: "md",
+        surfaceStyle: "outlined",
+        tabsIndicator: "pill",
+      },
       walletCatalogue: "porto",
     },
     utila: {
       ...standardProfile,
-      earnPresentation: { condensed: true, zerion: false },
+      appearancePreset: "utila",
+      earnPresentation: {
+        condensed: true,
+        yieldTitle: "hidden",
+        zerion: false,
+      },
+      presentation: {
+        callToActionSize: "lg",
+        gutter: "md",
+        surfaceStyle: "outlined",
+        tabsIndicator: "tint",
+      },
       requiresTermsAcknowledgement: true,
       showsPendingApprovalsNotice: true,
       translationOverlay: "utila",
     },
     zerion: {
       ...standardProfile,
-      earnPresentation: { condensed: false, zerion: true },
-      hidesEarnLoadingSpinner: true,
+      earnPresentation: {
+        condensed: false,
+        yieldTitle: "inside",
+        zerion: true,
+      },
       hidesHeaderWalletControl: true,
       hostTokenIconMapping: true,
       hostTracking: true,

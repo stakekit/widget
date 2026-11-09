@@ -1,8 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { YieldCategory } from "../../../../../../domain/earn/contract";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { sectionHeader, sectionTitle } from "../styles.css";
+import { Box, Stack, Text } from "../../../../../../ui/index";
 
 export const PositionsSectionHeader = ({
   category,
@@ -14,17 +12,15 @@ export const PositionsSectionHeader = ({
   const { t } = useTranslation();
 
   return (
-    <Box className={sectionHeader} paddingTop="3" paddingBottom="1">
-      <Text
-        className={sectionTitle}
-        variant={{ type: "muted", weight: "semibold", size: "small" }}
-      >
-        {t(`dashboard.details.positions_sections.${category}`)}
-      </Text>
-
-      <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
-        {count}
-      </Text>
+    <Box paddingBlock={8}>
+      <Stack direction="row" align="center" justify="between" gap={8}>
+        <Text variant="overline" tone="muted">
+          {t(`dashboard.details.positions_sections.${category}`)}
+        </Text>
+        <Text variant="caption" tone="muted" numeric>
+          {count}
+        </Text>
+      </Stack>
     </Box>
   );
 };

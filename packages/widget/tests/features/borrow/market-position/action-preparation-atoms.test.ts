@@ -3,9 +3,6 @@ import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../../src/app/runtime/wallet-runtime";
-import { Integration } from "../../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
-import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
@@ -25,7 +22,6 @@ import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../../src/resources/borrow-positions/borrow-positions";
-import { BorrowResourceSource } from "../../../../src/services/api/resource-sources";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
@@ -35,128 +31,41 @@ import {
   type NormalizedWalletState,
   type WalletState,
 } from "../../../../src/services/wallet/wallet-state";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+} from "../../../fixtures/borrow";
+import { borrowResourceSourceLayer } from "../../../utils/services/borrow-resource-source";
 import { makeTestWallet } from "../../../utils/services/wallet-service";
 import { applicationRuntimeInitInitialValue } from "../../../utils/widget-config";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 const walletScope = new WalletScopeKey({
   address,
   network: "ethereum",
 });
-
-const integrationDto = {
-  id: "aave-borrow",
-  providerId: "aave",
-  name: "Aave V3",
-  networks: ["ethereum"],
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  actions: [],
-} as const;
-
-const marketDto = {
-  id: "aave-v3-ethereum-usdc",
-  integrationId: integrationDto.id,
-  network: "ethereum",
-  type: "pool",
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-  },
-  collateralTokens: [
-    {
-      token: {
-        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        symbol: "WETH",
-        name: "Wrapped Ether",
-        decimals: 18,
-      },
-      priceUsd: "2000",
-      maxLtv: "0.8",
-      liquidationThreshold: "0.85",
-      liquidationPenalty: "0.05",
-      supplyRate: "0.02",
-    },
-  ],
-  borrowRate: "0.06",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  utilizationRate: "0.5",
-  loanTokenPriceUsd: "1",
-  isBorrowEnabled: true,
-  supplyCollateralFeeBps: "0",
-  feeWrapperAddress: null,
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  minLoan: null,
-} as const;
-
-const positionDto = {
-  address,
-  availableToBorrowUsd: "450",
-  currentLtv: "0.4",
-  debtBalances: [
-    {
-      apy: "0.06",
-      balance: "400",
-      balanceRaw: "400000000",
-      balanceUsd: "400",
-      marketId: marketDto.id,
-      pendingActions: [],
-      tokenAddress: marketDto.loanToken.address,
-      tokenSymbol: "USDC",
-    },
-  ],
-  healthFactor: "2.125",
-  integrationId: integrationDto.id,
-  netApy: "-0.006",
-  netWorthUsd: "600",
-  network: "ethereum",
-  supplyBalances: [],
-  totalBorrowedUsd: "400",
-  totalCollateralUsd: "0",
-  totalSuppliedUsd: "0",
-} as const;
 
 describe("Market Position action preparation atoms", () => {
   it.effect(
     "owns active position intent and derives Ready from current facts",
     () =>
       Effect.gen(function* () {
-        const integration =
-          yield* Schema.decodeEffect(Integration)(integrationDto);
-        const market = yield* Schema.decodeEffect(Market)(marketDto);
-        const accountSnapshot = yield* Schema.decodeEffect(
-          BorrowAccountSnapshot
-        )({
-          ...positionDto,
+        const integration = makeBorrowIntegration();
+        const market = makeBorrowMarket();
+        const repayPendingAction = {
+          args: {
+            marketId: market.id,
+            tokenAddress: market.loanToken.address,
+          },
+          label: "Repay",
+          type: "repay",
+        };
+        const accountSnapshot = makeBorrowAccountSnapshot({
           debtBalances: [
-            {
-              ...positionDto.debtBalances[0],
-              pendingActions: [
-                {
-                  args: {
-                    marketId: market.id,
-                    tokenAddress: market.loanToken.address,
-                  },
-                  label: "Repay",
-                  type: "repay",
-                },
-              ],
-            },
+            makeBorrowDebtBalanceDto({ pendingActions: [repayPendingAction] }),
           ],
         });
         const position = deriveBorrowPositions({
@@ -225,7 +134,7 @@ describe("Market Position action preparation atoms", () => {
             Atom.initialValue(
               appRuntime.layer,
               Layer.merge(
-                Layer.succeed(BorrowResourceSource, {
+                borrowResourceSourceLayer({
                   getIntegrations: Effect.succeed([integration]),
                   getMarkets: () =>
                     Effect.succeed({
@@ -238,9 +147,9 @@ describe("Market Position action preparation atoms", () => {
                     Effect.succeed([
                       { integration, position: currentAccountSnapshot },
                     ]),
-                } as never),
+                }),
                 Layer.succeed(WidgetDomainEvents, domainEvents)
-              ) as never
+              )
             ),
             Atom.initialValue(walletRuntime.layer, wallet.layer as never),
             applicationRuntimeInitInitialValue({
@@ -332,18 +241,14 @@ describe("Market Position action preparation atoms", () => {
           type: "amount/set",
         });
 
-        const refreshedAccountSnapshot = yield* Schema.decodeUnknownEffect(
-          BorrowAccountSnapshot
-        )({
-          ...positionDto,
+        const refreshedAccountSnapshot = makeBorrowAccountSnapshot({
           debtBalances: [
-            {
-              ...positionDto.debtBalances[0],
+            makeBorrowDebtBalanceDto({
               balance: "20",
               balanceRaw: "20000000",
               balanceUsd: "20",
-              pendingActions: accountSnapshot.debtBalances[0]?.pendingActions,
-            },
+              pendingActions: [repayPendingAction],
+            }),
           ],
           totalBorrowedUsd: "20",
         });

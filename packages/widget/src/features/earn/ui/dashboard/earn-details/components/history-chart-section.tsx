@@ -1,77 +1,85 @@
+import { useTranslation } from "react-i18next";
 import type { HistoryPeriod } from "../../../../../../domain/portfolio/models";
-import { lazyComponent } from "../../../../../../shared/ui/components/lazy-component";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { useDelayedBusy } from "../../../../../../shared/react/use-delayed-busy";
+import {
+  SegmentedControl,
+  Stack,
+  Text,
+  TimeSeriesChart,
+  type ToggleOption,
+} from "../../../../../../ui/index";
+import type { HistoryChart } from "../../../../model/history-chart";
 import type { YieldHistoryChartView } from "../../../../state/yield-history-charts";
-import * as styles from "../styles.css";
-
-// The chart carries recharts, so both load when a chart first renders. The
-// fallback matches the chart's own loading skeleton.
-const HistoryChart = lazyComponent(
-  () => import("../reward-rate-chart"),
-  "HistoryChart",
-  <ContentLoaderSquare heightPx={150} />
-);
 
 const periods = [
-  ["30d", "1M"],
-  ["90d", "3M"],
-  ["1y", "1Y"],
-  ["all", "ALL"],
-] as const satisfies ReadonlyArray<readonly [HistoryPeriod, string]>;
+  { value: "30d", label: "1M" },
+  { value: "90d", label: "3M" },
+  { value: "1y", label: "1Y" },
+  { value: "all", label: "ALL" },
+] as const satisfies ReadonlyArray<ToggleOption<HistoryPeriod>>;
 
+/**
+ * A yield's history chart under its title and headline figure, and the
+ * period control.
+ */
 export const HistoryChartSection = ({
-  chartId,
+  chart,
   onPeriodChange,
-  tickFormatter,
-  title,
-  value,
-  valueFormatter,
   view,
 }: {
-  chartId: string;
-  onPeriodChange: (period: HistoryPeriod) => void;
-  tickFormatter: (value: number) => string;
-  title: string;
-  value: string;
-  valueFormatter?: (value: number) => string;
-  view: YieldHistoryChartView;
-}) => (
-  <Box>
-    <Box display="flex" justifyContent="space-between" alignItems="center">
-      <Text variant={{ weight: "normal" }}>
-        {title}{" "}
-        <Box as="span" fontWeight="bold">
-          {value}
-        </Box>
-      </Text>
+  readonly chart: HistoryChart;
+  readonly onPeriodChange: (period: HistoryPeriod) => void;
+  readonly view: YieldHistoryChartView;
+}) => {
+  const { t } = useTranslation();
+  const refreshing = useDelayedBusy(view.isRefreshing, view.period);
 
-      <Box display="flex" gap="1">
-        {periods.map(([periodValue, label]) => (
-          <Box
-            as="button"
-            className={styles.rangeButton({
-              active: view.period === periodValue,
-            })}
-            key={periodValue}
-            onClick={() => onPeriodChange(periodValue)}
-            type="button"
-          >
-            <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
-          </Box>
-        ))}
-      </Box>
-    </Box>
+  return (
+    <Stack gap={12}>
+      <Stack direction="row" align="center" justify="between" gap={8} wrap>
+        <Stack gap={2}>
+          <Text>
+            {chart.title}
+            {chart.figure !== null && (
+              <>
+                {" "}
+                <Text.Strong>{chart.figure}</Text.Strong>
+              </>
+            )}
+          </Text>
+          {chart.secondary !== null && (
+            <Text variant="caption" tone="muted" numeric>
+              {chart.secondary}
+            </Text>
+          )}
+        </Stack>
 
-    <HistoryChart
-      chartId={chartId}
-      data={view.points}
-      isLoading={view.isLoading}
-      isRefreshing={view.isRefreshing}
-      refreshKey={view.period}
-      tickFormatter={tickFormatter}
-      valueFormatter={valueFormatter}
-    />
-  </Box>
-);
+        <SegmentedControl
+          label={t("dashboard.earn_details.chart_period", {
+            chart: chart.title,
+          })}
+          options={periods}
+          value={view.period}
+          onValueChange={onPeriodChange}
+        />
+      </Stack>
+
+      <TimeSeriesChart
+        label={t("dashboard.earn_details.chart_history", {
+          chart: chart.title,
+        })}
+        data={chart.data}
+        valueAxis={chart.valueAxis}
+        timeAxis={chart.timeAxis}
+        formatTooltipValue={chart.formatValue}
+        formatTooltipTime={chart.formatTime}
+        {...(chart.latestLabel === null
+          ? {}
+          : { latestLabel: chart.latestLabel })}
+        {...(chart.caption === null ? {} : { caption: chart.caption })}
+        loading={view.isLoading || refreshing}
+        emptyLabel={t("dashboard.earn_details.no_chart_data")}
+      />
+    </Stack>
+  );
+};

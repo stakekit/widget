@@ -1,12 +1,12 @@
 import type BigNumber from "bignumber.js";
 import { HashMap, Option } from "effect";
+import { getConfidentialAssetToken } from "../../../domain/earn/confidential";
 import {
   ConfidentialTokenBalanceKey,
-  getConfidentialAssetToken,
   type RevealedBalances,
-} from "../../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
-import { exactDecimal } from "../../../domain/finance/exact";
+} from "../../../domain/earn/confidential-balance";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
+import { fromBaseUnits } from "../../../domain/finance/base-units";
 import type { WalletAddress } from "../../../domain/identity/identifiers";
 import { sameTokenContract, type Token } from "../../../domain/token/token";
 
@@ -74,9 +74,7 @@ export const resolveYieldEntryTokenBalance = ({
     };
   }
   return {
-    availableAmount: exactDecimal(revealed.value.toString()).shiftedBy(
-      -token.decimals
-    ),
+    availableAmount: fromBaseUnits(revealed.value, token.decimals),
     hiddenTokenBalance: false,
     revealedTokenBalance: true,
   };

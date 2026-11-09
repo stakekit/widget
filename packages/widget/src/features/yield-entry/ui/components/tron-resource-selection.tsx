@@ -1,24 +1,30 @@
-import type { PropsWithChildren } from "react";
+import { Schema } from "effect";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { TronResource } from "../../../../domain/action/tron-resource";
-import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
+import { TronResource } from "../../../../domain/action/tron-resource";
 import { getYieldActionArg } from "../../../../domain/earn/yield";
-import { Dropdown } from "../../../../shared/ui/components/dropdown";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
+import { Field, Select, Stack } from "../../../../ui/index";
 
+const isTronResource = Schema.is(TronResource);
+
+/**
+ * The Tron resource a Yield Entry stakes for, when the yield asks for one;
+ * `children` follow it, such as a divider, only then.
+ */
 export const TronResourceSelection = ({
   children,
   isError,
   onSelect,
   selectedYield,
   value,
-}: PropsWithChildren<{
+}: {
+  readonly children?: ReactNode;
   readonly selectedYield: EarnYieldWithProvider | null;
   readonly value: TronResource | null;
   readonly isError: boolean;
   readonly onSelect: (value: TronResource) => void;
-}>) => {
+}) => {
   const { t } = useTranslation();
 
   const tronResources = selectedYield
@@ -26,33 +32,24 @@ export const TronResourceSelection = ({
     : null;
   if (!tronResources) return null;
 
-  const options = (tronResources.options ?? []).map((option) => ({
-    label: option,
-    value: option,
-  }));
-  const selectedOption = value ? { value, label: value } : undefined;
+  const options = (tronResources.options ?? [])
+    .filter(isTronResource)
+    .map((option) => ({ label: option, value: option }));
+  const label = t("details.tron_resources.label");
+  const placeholder = t("details.tron_resources.placeholder");
 
   return (
-    <Box>
-      <Box my="2">
-        <Text
-          variant={{
-            type: isError ? "danger" : "regular",
-          }}
-        >
-          {t("details.tron_resources.label")}
-        </Text>
-      </Box>
-
-      <Dropdown
-        options={options}
-        onSelect={onSelect}
-        selectedOption={selectedOption}
-        placeholder={t("details.tron_resources.placeholder")}
-        isError={isError}
-      />
-
+    <Stack gap={12}>
+      <Field label={label} {...(isError ? { error: placeholder } : {})}>
+        <Select
+          options={options}
+          value={value}
+          onValueChange={onSelect}
+          label={label}
+          placeholder={placeholder}
+        />
+      </Field>
       {children}
-    </Box>
+    </Stack>
   );
 };

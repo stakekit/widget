@@ -1,4 +1,1 @@
-export type {
-  TokenDto,
-  YieldRewardsSummaryResponseDto,
-} from "../../src/generated/api/legacy-schema";
+export type { TokenDto } from "../../src/generated/api/legacy-schema";

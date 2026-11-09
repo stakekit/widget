@@ -63,7 +63,7 @@ export const sameTokenContract = (
   a.network === b.network &&
   !!a.address &&
   !!b.address &&
-  a.address.toLowerCase() === b.address.toLowerCase();
+  addressIdentity(a.address) === addressIdentity(b.address);
 
 /**
  * Token reference hosts write in `token`, `initToken` and

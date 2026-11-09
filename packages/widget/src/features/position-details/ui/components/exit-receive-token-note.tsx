@@ -1,11 +1,9 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import type { Token } from "../../../../domain/token/token";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { InfoIcon } from "../../../../shared/ui/primitives/icons/info";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { Stack, Text } from "../../../../ui/index";
 import {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
@@ -40,17 +38,8 @@ export const ExitReceiveTokenNote = ({
           })
         : null;
     return (
-      <Box
-        data-testid="position-details-exit-receive-token-note"
-        display="flex"
-        alignItems="center"
-        justifyContent="flex-start"
-        gap="1"
-      >
-        <Box display="flex" alignItems="center" justifyContent="center">
-          <InfoIcon />
-        </Box>
-        <Text variant={{ type: "muted", size: "small" }}>
+      <Stack testId="position-details-exit-receive-token-note">
+        <Text variant="caption" tone="muted" icon="InfoIcon">
           {t(
             `position_details.receive_token.confidential_${selection.confidentialExit}`,
             {
@@ -59,7 +48,7 @@ export const ExitReceiveTokenNote = ({
             }
           )}
         </Text>
-      </Box>
+      </Stack>
     );
   }
 
@@ -79,17 +68,10 @@ export const ExitReceiveTokenNote = ({
       });
 
   return (
-    <Box
-      data-testid="position-details-exit-receive-token-note"
-      display="flex"
-      alignItems="center"
-      justifyContent="flex-start"
-      gap="1"
-    >
-      <Box display="flex" alignItems="center" justifyContent="center">
-        <InfoIcon />
-      </Box>
-      <Text variant={{ type: "muted", size: "small" }}>{message}</Text>
-    </Box>
+    <Stack testId="position-details-exit-receive-token-note">
+      <Text variant="caption" tone="muted" icon="InfoIcon">
+        {message}
+      </Text>
+    </Stack>
   );
 };

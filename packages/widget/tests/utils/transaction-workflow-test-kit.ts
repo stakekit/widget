@@ -1,6 +1,6 @@
 import { Effect, Layer, PubSub, Ref, Stream } from "effect";
 import {
-  BorrowOperations,
+  type BorrowOperations,
   YieldOperations,
 } from "../../src/services/api/operations";
 import {
@@ -12,6 +12,7 @@ import { TransactionWorkflowService } from "../../src/services/transaction-workf
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
 import type { ZamaService } from "../../src/services/zama/zama-service";
+import { borrowOperationsLayer } from "./services/borrow-operations";
 import {
   makeTestTracking,
   type TestTrackingOptions,
@@ -91,22 +92,7 @@ export const makeTransactionWorkflowTestKit = Effect.fn(
     });
   });
   const dependencies = Layer.mergeAll(
-    Layer.succeed(
-      BorrowOperations,
-      BorrowOperations.of({
-        executeAction: () =>
-          unexpectedWorkflowCall("BorrowOperations.executeAction"),
-        getAction: () => unexpectedWorkflowCall("BorrowOperations.getAction"),
-        stepAction: () => unexpectedWorkflowCall("BorrowOperations.stepAction"),
-        submitTransaction: () =>
-          unexpectedWorkflowCall("BorrowOperations.submitTransaction"),
-        submitTransactionInBackground: () =>
-          unexpectedWorkflowCall(
-            "BorrowOperations.submitTransactionInBackground"
-          ),
-        ...options.borrow,
-      })
-    ),
+    borrowOperationsLayer(options.borrow),
     Layer.succeed(
       EvmRpc,
       EvmRpc.of({

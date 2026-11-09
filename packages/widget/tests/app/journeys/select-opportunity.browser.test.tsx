@@ -2,16 +2,14 @@ import { Array as EArray } from "effect";
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
 import {
-  legacyYieldFixture,
   yieldApiYieldDtoFixture,
   yieldRiskSummaryFixture,
 } from "../../fixtures";
+import type { TokenDto as LegacyTokenDto } from "../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
-
-type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
 describe("Select opportunity", () => {
   it("Works as expected", async ({ worker }) => {
@@ -31,7 +29,6 @@ describe("Select opportunity", () => {
       "ethereum-eth-reth-staking",
     ] as const;
 
-    const legacyYieldBase = legacyYieldFixture();
     const yieldApiYieldBase = yieldApiYieldDtoFixture();
     const getRewardToken = (integrationId: (typeof yieldIds)[number]) => {
       switch (integrationId) {
@@ -57,32 +54,6 @@ describe("Select opportunity", () => {
             symbol: "bananaETH",
           };
       }
-    };
-    const getLegacyYield = (integrationId: (typeof yieldIds)[number]) => {
-      const rewardToken = getRewardToken(integrationId);
-
-      return legacyYieldFixture({
-        id: integrationId,
-        args: { enter: { args: { nfts: undefined } } },
-        token,
-        metadata: {
-          ...legacyYieldBase.metadata,
-          type: "liquid-staking",
-          rewardTokens: [rewardToken],
-          provider: {
-            id: "stakewise",
-            name: "Stakewise",
-            description: "",
-            externalLink: "https://stakewise.io",
-            logoURI:
-              "https://assets.stakek.it/app/composition/providers/stakewise.svg",
-          },
-        },
-        status: {
-          ...legacyYieldBase.status,
-          enter: integrationId !== "ethereum-eth-stakewise-staking",
-        },
-      });
     };
     const getYieldApiYield = (integrationId: (typeof yieldIds)[number]) => {
       const rewardToken = getRewardToken(integrationId);
@@ -112,7 +83,7 @@ describe("Select opportunity", () => {
         },
         metadata: {
           ...yieldApiYieldBase.metadata,
-          name: legacyYieldBase.metadata.name,
+          name: "Ethereum Staking",
         },
         mechanics: {
           ...yieldApiYieldBase.mechanics,
@@ -173,20 +144,12 @@ describe("Select opportunity", () => {
         });
       }),
 
-      ...yieldIds.flatMap((integrationId) => {
-        const legacyYield = getLegacyYield(integrationId);
-
-        return [
-          http.get(legacyApiRoute(`/v1/yields/${integrationId}`), async () => {
-            await mockDelay();
-            return HttpResponse.json(legacyYield);
-          }),
-          http.get(yieldApiRoute(`/v1/yields/${integrationId}`), async () => {
-            await mockDelay();
-            return HttpResponse.json(getYieldApiYield(integrationId));
-          }),
-        ];
-      })
+      ...yieldIds.map((integrationId) =>
+        http.get(yieldApiRoute(`/v1/yields/${integrationId}`), async () => {
+          await mockDelay();
+          return HttpResponse.json(getYieldApiYield(integrationId));
+        })
+      )
     );
 
     const app = await renderApp();
@@ -199,13 +162,6 @@ describe("Select opportunity", () => {
       await expect.poll(() => item.elements()[0]).toBeTruthy();
       await userEvent.click(EArray.getUnsafe(item.elements(), 0));
     };
-    const clickText = async (text: string) => {
-      const item = app.getByText(text).first();
-
-      await expect.element(item).toBeInTheDocument();
-      await expect.poll(() => item.elements()[0]).toBeTruthy();
-      (item.elements()[0] as HTMLElement).click();
-    };
 
     await app.getByTestId("select-token").click();
 
@@ -217,9 +173,12 @@ describe("Select opportunity", () => {
       EArray.getUnsafe(searchInput.elements(), 0),
       "missing token"
     );
-    await expect.element(app.getByText("No tokens found")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("No tokens found").first())
+      .toBeInTheDocument();
 
-    await userEvent.keyboard("[Escape]");
+    // Escape clears the query first, then closes the sheet.
+    await userEvent.keyboard("[Escape][Escape]");
 
     await app.getByTestId("select-opportunity").click();
 
@@ -237,7 +196,9 @@ describe("Select opportunity", () => {
       EArray.getUnsafe(searchInput.elements(), 0),
       "missing yield"
     );
-    await expect.element(app.getByText("No yields found")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("No yields found").first())
+      .toBeInTheDocument();
     await userEvent.clear(EArray.getUnsafe(searchInput.elements(), 0));
 
     selectContainer = app.getByTestId("select-modal__container");
@@ -276,29 +237,25 @@ describe("Select opportunity", () => {
       .element(app.getByTestId("yield-risk-rating-summary"))
       .not.toBeInTheDocument();
 
-    await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
+    await expect.element(app.getByText("Connect wallet")).toBeInTheDocument();
 
-    await app.getByText("Connect Wallet").click();
+    await app.getByText("Connect wallet").click();
 
-    await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
-
-    await clickText("EVM");
-
+    // The picker opens onto the wallets; a chip narrows them to EVM.
     await expect
       .element(
         app.getByRole("heading", { name: "Connect wallet", exact: true })
       )
       .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("button", { name: "All", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
+
+    await app.getByRole("button", { name: "EVM", exact: true }).click();
 
     await expect
-      .element(app.getByTestId("connect-ecosystem-back"))
-      .toBeInTheDocument();
-
-    await app.getByTestId("connect-ecosystem-back").click();
-
-    await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
-
-    await clickText("EVM");
+      .element(app.getByRole("button", { name: "EVM", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
 
     await userEvent.keyboard("[Escape]");
 

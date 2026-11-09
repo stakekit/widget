@@ -6,12 +6,12 @@ import {
 import type { WalletRuntimeInvariantError } from "../../../services/wallet/wallet-errors";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../../services/wallet/wallet-service";
+import { isYieldTransactionFlowWalletScopeValid } from "../model/intake";
 import {
-  isYieldTransactionFlowWalletScopeValid,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
   type YieldFlowSession,
-} from "../model/yield-transaction-flow";
+} from "../model/session";
 
 // Kept apart from `start-atom.ts`: DeepLinkCoordinator, which the wallet
 // runtime builds, starts flows too, so importing the runtime here would cycle.

@@ -1,87 +1,38 @@
 import { HttpResponse, http } from "msw";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshotDto,
+  makeBorrowCollateralTokenDto,
+  makeBorrowIntegrationDto,
+  makeBorrowMarketDto,
+  makeBorrowSupplyBalanceDto,
+} from "../../../fixtures/borrow";
 import { borrowApiRoute, legacyApiRoute } from "../../../mocks/api-routes";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
-import { describe, expect, it } from "../../../utils/test-extend";
+import {
+  describe,
+  expect,
+  it,
+  type TestWorker,
+} from "../../../utils/test-extend";
 import { renderApp } from "../../../utils/test-utils";
 
-const account = "0x0000000000000000000000000000000000000001";
+const account = borrowWalletAddress;
 
-const integration = {
-  id: "aave-borrow",
-  providerId: "aave",
-  name: "Aave V3",
-  networks: ["ethereum"],
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  actions: [],
-} as const;
+const integration = makeBorrowIntegrationDto();
 
-const weth = {
-  address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-  symbol: "WETH",
-  name: "Wrapped Ether",
-  decimals: 18,
-} as const;
+const market = makeBorrowMarketDto();
 
-const market = {
-  id: "aave-v3-ethereum-usdc",
-  integrationId: integration.id,
-  network: "ethereum",
-  type: "pool",
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-  },
-  collateralTokens: [
-    {
-      token: weth,
-      priceUsd: "2000",
-      maxLtv: "0.8",
-      liquidationThreshold: "0.85",
-      liquidationPenalty: "0.05",
-      supplyRate: "0.02",
-    },
-  ],
-  borrowRate: "0.06",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  utilizationRate: "0.5",
-  loanTokenPriceUsd: "1",
-  isBorrowEnabled: true,
-  supplyCollateralFeeBps: "0",
-  feeWrapperAddress: null,
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  minLoan: null,
-} as const;
-
-const emptyPosition = {
-  address: account,
+const emptyPosition = makeBorrowAccountSnapshotDto({
   availableToBorrowUsd: "0",
   currentLtv: "0",
   debtBalances: [],
   healthFactor: null,
-  integrationId: integration.id,
   netApy: "0",
   netWorthUsd: "0",
-  network: "ethereum",
-  supplyBalances: [],
   totalBorrowedUsd: "0",
-  totalCollateralUsd: "0",
-  totalSuppliedUsd: "0",
-} as const;
+});
 
 const transaction = {
   address: account,
@@ -105,7 +56,91 @@ const action = {
   transactions: [transaction],
 } as const;
 
+// $400 of USDC debt behind 0.5 WETH ($1,000) of collateral: 40% LTV, 2.125 HF.
+const existingPosition = makeBorrowAccountSnapshotDto({
+  supplyBalances: [
+    makeBorrowSupplyBalanceDto({
+      positionState: {
+        availableToBorrowUsd: "450",
+        currentLtv: "0.4",
+        healthFactor: "2.125",
+        liquidationThreshold: "0.85",
+      },
+    }),
+  ],
+  totalCollateralUsd: "1000",
+  totalSuppliedUsd: "1000",
+});
+
+/** Borrow in the stacked Dashboard, below its two-column width. */
+const renderBorrowEntryAt900 = async (
+  worker: TestWorker,
+  position: typeof existingPosition
+) => {
+  worker.use(
+    http.get(borrowApiRoute("/v1/positions"), () =>
+      HttpResponse.json(position)
+    ),
+    http.get(borrowApiRoute("/v1/integrations"), () =>
+      HttpResponse.json([integration])
+    ),
+    http.get(borrowApiRoute("/v1/markets"), () =>
+      HttpResponse.json({ items: [market], limit: 100, offset: 0, total: 1 })
+    )
+  );
+  await page.viewport(900, 1000);
+  const app = await renderApp({
+    walletListFactory: mockWalletListFactory({ accounts: [account] }),
+    skProps: {
+      apiKey: import.meta.env.VITE_API_KEY,
+      borrowEnabled: true,
+      layout: "dashboard",
+    },
+  });
+  await userEvent.click(app.getByText("Borrow"));
+  await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+  return app;
+};
+
 describe("Borrow Entry flow details", () => {
+  it("projects the LTV and health factor of an existing position in the stacked Dashboard", async ({
+    worker,
+  }) => {
+    const app = await renderBorrowEntryAt900(worker, existingPosition);
+
+    await expect
+      .element(app.getByText("2.12", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("40%", { exact: true }))
+      .toBeInTheDocument();
+
+    await app.unmount();
+    await page.viewport(800, 900);
+  });
+
+  it("shows placeholders and says why when the position can't be projected", async ({
+    worker,
+  }) => {
+    // The account's collateral total disagrees with its collateral balances.
+    const app = await renderBorrowEntryAt900(worker, {
+      ...existingPosition,
+      totalCollateralUsd: "1500",
+    });
+
+    await expect
+      .element(
+        app.getByText(
+          "We couldn't compute the LTV and health factor from this position's data."
+        )
+      )
+      .toBeInTheDocument();
+    await expect.element(app.getByText("Health factor")).toBeInTheDocument();
+
+    await app.unmount();
+    await page.viewport(800, 900);
+  });
+
   it("keeps describing the started market after the catalog drops it", async ({
     worker,
   }) => {
@@ -117,7 +152,10 @@ describe("Borrow Entry flow details", () => {
         () =>
           HttpResponse.json([
             {
-              token: { ...weth, network: "ethereum" },
+              token: {
+                ...makeBorrowCollateralTokenDto().token,
+                network: "ethereum",
+              },
               amount: "1",
               availableYields: [],
             },

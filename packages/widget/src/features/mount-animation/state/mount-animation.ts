@@ -11,9 +11,12 @@ type MountAnimationAction = {
   readonly type: "all" | keyof MountAnimationState;
 };
 
-const makeMountAnimationState = (finished = false): MountAnimationState => ({
+const makeMountAnimationState = (
+  finished: boolean,
+  layoutFinished = finished
+): MountAnimationState => ({
   earnPage: finished,
-  layout: finished,
+  layout: layoutFinished,
 });
 
 export const isMountAnimationFinished = (state: MountAnimationState) =>
@@ -33,8 +36,11 @@ export const mountAnimationStateAtom = Atom.writable<
       Option.getOrElse(() => {
         const widgetConfig = context.once(widgetConfigAtom);
 
+        // A host that disables the frame's reveal has no layout step to wait for.
         return makeMountAnimationState(
-          widgetConfig.mountAnimationStartsFinished
+          widgetConfig.mountAnimationStartsFinished,
+          widgetConfig.mountAnimationStartsFinished ||
+            widgetConfig.disableInitLayoutAnimation
         );
       })
     ),

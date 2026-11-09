@@ -8,8 +8,6 @@ import {
   type DirectTransactionRecord,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
-  type TransactionWorkflowAction,
-  type TransactionWorkflowCommand,
   type TransactionWorkflowContext,
   type TransactionWorkflowInput,
   TransactionWorkflowInputError,
@@ -493,7 +491,7 @@ export const reconcileBorrowTransactionWorkflowBatch = ({
   };
 };
 
-export const selectNextTransactionWorkflowTransaction = (
+const selectNextTransactionWorkflowTransaction = (
   context: TransactionWorkflowContext
 ): TransactionWorkflowContext => {
   const batch = getCurrentTransactionWorkflowBatch(context);
@@ -524,6 +522,38 @@ export const skipCurrentTransactionWorkflowTransaction = (
       }),
     })
   );
+
+/**
+ * Marks the current transaction confirmed, linked at `url`, then selects the
+ * next one; a `terminal` confirmation leaves nothing current.
+ */
+export const confirmCurrentTransactionWorkflowTransaction = ({
+  context,
+  terminal,
+  url,
+}: {
+  readonly context: TransactionWorkflowContext;
+  readonly terminal: boolean;
+  readonly url: (current: TransactionWorkflowTransaction) => string | null;
+}): TransactionWorkflowContext => {
+  const confirmed = updateCurrentTransactionWorkflowTransaction({
+    context,
+    update: (current) => ({
+      ...current,
+      meta: {
+        ...current.meta,
+        confirmationError: null,
+        done: true,
+        signError: null,
+        url: url(current),
+      },
+    }),
+  });
+
+  return terminal
+    ? { ...confirmed, currentTransactionIndex: null }
+    : selectNextTransactionWorkflowTransaction(confirmed);
+};
 
 /** Runs `transaction` before the current one; it becomes current. */
 export const insertBeforeCurrentTransactionWorkflowTransaction = (
@@ -587,41 +617,75 @@ export const appendTransactionWorkflowBatch = ({
   };
 };
 
-export const getTransactionWorkflowAction = ({
-  command,
-  state,
-}: {
-  readonly command: TransactionWorkflowCommand;
-  readonly state: TransactionWorkflowState;
-}): TransactionWorkflowAction | null => {
-  if (command._tag !== "Retry") return null;
+/** What a workflow runs next. */
+export type TransactionWorkflowStage =
+  | { readonly _tag: "Prepare" }
+  | { readonly _tag: "Sign" }
+  | { readonly _tag: "Submit" }
+  | { readonly _tag: "Confirm" }
+  /** A retried Advance first reconciles the Borrow action it failed on. */
+  | { readonly _tag: "Advance"; readonly reconcile: boolean }
+  | { readonly _tag: "Complete" };
+
+export type TransactionWorkflowStep =
+  /** The workflow starts from the state it was created in. */
+  | { readonly _tag: "Start"; readonly state: TransactionWorkflowState }
+  /** A stage succeeded: the current transaction decides what runs next. */
+  | { readonly _tag: "Continue"; readonly context: TransactionWorkflowContext }
+  /** A Retry answers the failed state it was dispatched from. */
+  | { readonly _tag: "Retry"; readonly state: TransactionWorkflowState };
+
+/** The stage `step` leads to, or `null` when the workflow waits. */
+export const getNextTransactionWorkflowStage = (
+  step: TransactionWorkflowStep
+): TransactionWorkflowStage | null => {
+  if (step._tag === "Continue") {
+    const current = getCurrentTransactionWorkflowTransaction(step.context);
+
+    if (!current) return { _tag: "Advance", reconcile: false };
+
+    return shouldConfirmWithoutSigning(current)
+      ? { _tag: "Confirm" }
+      : { _tag: "Sign" };
+  }
+
+  const { state } = step;
+  const retry = step._tag === "Retry";
 
   switch (state._tag) {
+    case "Preparing":
+      return retry ? null : { _tag: "Prepare" };
+    case "Signing":
+      return retry ? null : { _tag: "Sign" };
+    case "Confirming":
+      return retry ? null : { _tag: "Confirm" };
+    case "Advancing":
+      return retry ? null : { _tag: "Advance", reconcile: false };
+    case "Completed":
+      return retry ? null : { _tag: "Complete" };
     case "PrepareFailed":
-      return state.error.retryable ? "prepare" : null;
+      return retry && state.error.retryable ? { _tag: "Prepare" } : null;
     case "SignFailed":
-      return "sign";
+      return retry ? { _tag: "Sign" } : null;
     case "SubmissionFailed":
+      if (!retry) return null;
       // A Direct broadcast the node refused cannot be sent again as signed.
       return Predicate.isTagged(state.error.cause, "EvmBroadcastRejectedError")
-        ? "sign"
-        : "submit";
+        ? { _tag: "Sign" }
+        : { _tag: "Submit" };
     case "ConfirmationFailed": {
+      if (!retry) return null;
       // A reverted or dropped Direct transaction left no hash to wait on.
       const current = getCurrentTransactionWorkflowTransaction(state.context);
       return current?.source._tag === "Direct" && current.meta.signedTx === null
-        ? "sign"
-        : "confirm";
+        ? { _tag: "Sign" }
+        : { _tag: "Confirm" };
     }
     case "AdvanceFailed":
-      return "advance";
+      return retry ? { _tag: "Advance", reconcile: true } : null;
+    // A workflow never starts mid-submission: its signature was not kept.
     case "Disabled":
-    case "Preparing":
-    case "Signing":
     case "Submitting":
-    case "Confirming":
-    case "Advancing":
-    case "Completed":
       return null;
   }
 };

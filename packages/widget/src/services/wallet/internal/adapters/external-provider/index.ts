@@ -6,6 +6,10 @@ import { config } from "../../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type { ExternalProviderSnapshot } from "../../../../config/external-provider-snapshot";
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
+import {
+  externalProviderConnectorId,
+  isHostExternalProvider,
+} from "../../../external-provider-connector-id";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { WalletList } from "../../../wallet-descriptors";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
@@ -17,7 +21,7 @@ import {
 import { wagmiConnectResult } from "../wagmi-connect-result";
 
 const configMeta = {
-  id: "externalProviderConnector",
+  id: externalProviderConnectorId,
   name: "External Provider",
   type: "externalProvider",
 } as const;
@@ -42,7 +46,7 @@ type ExternalConnector = Connector & ExtraProps;
 
 export const isExternalProviderConnector = (
   connector: Connector
-): connector is ExternalConnector => connector.id === configMeta.id;
+): connector is ExternalConnector => isHostExternalProvider(connector);
 
 /**
  * The configured chains the host's supported chain IDs keep, in configured

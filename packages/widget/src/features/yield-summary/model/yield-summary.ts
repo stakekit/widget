@@ -2,12 +2,12 @@ import type BigNumber from "bignumber.js";
 import type {
   EarnValidator,
   EarnValidatorKey,
-  EarnYieldWithProvider,
-} from "../../../domain/earn/models";
+} from "../../../domain/earn/validator";
 import {
   getExtendedYieldType,
   getYieldRewardTokens,
 } from "../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 
 export type YieldSummaryProvider = Readonly<{
   readonly address?: EarnValidator["address"];

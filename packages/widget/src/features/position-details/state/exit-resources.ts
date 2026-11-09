@@ -8,6 +8,10 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/index";
+import {
+  presentedValue,
+  toPresentable,
+} from "../../../shared/effect/async-result";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import {
   YieldValidatorsKey,
@@ -23,13 +27,22 @@ export class PositionDetailsExitResourcesKey extends Data.Class<{
   readonly yieldId: YieldId | null;
 }> {}
 
+/**
+ * The yield whose validators and KYC the exit reads. Its load failure is the
+ * page's to present (`resolvePositionDetailsPageState`); here it only leaves
+ * nothing to read.
+ */
 const selectedYieldAtom = Atom.family((key: PositionDetailsExitResourcesKey) =>
   Atom.make((get) =>
-    get(
-      yieldOpportunityAtom.foreground(
-        new YieldOpportunityKey({ yieldId: key.yieldId })
+    presentedValue(
+      toPresentable(
+        get(
+          yieldOpportunityAtom.foreground(
+            new YieldOpportunityKey({ yieldId: key.yieldId })
+          )
+        )
       )
-    ).pipe(AsyncResult.value, Option.getOrNull)
+    )
   )
 );
 

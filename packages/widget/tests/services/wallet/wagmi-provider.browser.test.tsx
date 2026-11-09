@@ -65,7 +65,6 @@ import { TestAtomRuntimeProvider } from "../../utils/atom-runtime-provider";
 import { mockWalletListFactory } from "../../utils/mock-connector";
 import { describe, expect, it, vi } from "../../utils/test-extend";
 import { render, renderHook } from "../../utils/test-utils";
-import { getTestWidgetConfig } from "../../utils/widget-config";
 
 const baseConnectorSourceProbeAtom = applicationBaseRuntime.atom(
   WalletConnectorSource.use((source) => Effect.succeed(source))
@@ -234,11 +233,11 @@ const ControllerHarness = ({
 }) => (
   <StrictMode>
     <TestAtomRuntimeProvider
-      settings={getTestWidgetConfig({
+      hostConfiguration={{
         apiKey: import.meta.env.VITE_API_KEY,
         disableInjectedProviderDiscovery: true,
         variant: "default",
-      })}
+      }}
     >
       <WagmiConfigProvider>
         <ConfigObserver onConfig={onConfig} />
@@ -280,11 +279,11 @@ describe("WagmiConfigProvider", () => {
         initialValues={[
           [walletConnectorSourceRuntime.layer, connectorSourceLayer],
         ]}
-        settings={getTestWidgetConfig({
+        hostConfiguration={{
           apiKey: import.meta.env.VITE_API_KEY,
           disableInjectedProviderDiscovery: true,
           variant: "default",
-        })}
+        }}
       >
         <WagmiConfigProvider>
           <RuntimeConnectorSourceObserver onSources={onSources} />
@@ -428,11 +427,11 @@ describe("WagmiConfigProvider", () => {
       wrapper: ({ children }) => (
         <StrictMode>
           <TestAtomRuntimeProvider
-            settings={getTestWidgetConfig({
+            hostConfiguration={{
               apiKey: import.meta.env.VITE_API_KEY,
               disableInjectedProviderDiscovery: true,
               variant: "default",
-            })}
+            }}
           >
             <WagmiConfigProvider>{children}</WagmiConfigProvider>
           </TestAtomRuntimeProvider>
@@ -509,11 +508,11 @@ describe("WagmiConfigProvider", () => {
               ),
             ],
           ]}
-          settings={getTestWidgetConfig({
+          hostConfiguration={{
             apiKey: import.meta.env.VITE_API_KEY,
             disableInjectedProviderDiscovery: true,
             variant: "default",
-          })}
+          }}
         >
           <WagmiConfigProvider>{children}</WagmiConfigProvider>
         </TestAtomRuntimeProvider>

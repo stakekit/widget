@@ -5,8 +5,6 @@ message: Feature modules must use the shared app-runtime lifecycle adapters inst
 files:
   - packages/widget/src/features/**/*.ts
   - packages/widget/src/features/**/*.tsx
-ignores:
-  - packages/widget/src/features/**/resources/**
 rule:
   any:
     - pattern: $CONTEXT.registry

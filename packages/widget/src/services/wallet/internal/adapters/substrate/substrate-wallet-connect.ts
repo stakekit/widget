@@ -2,6 +2,7 @@ import { isSameAddress } from "@luno-kit/core/utils";
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import { Array as EArray, Effect, Option, Predicate, Schema } from "effect";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { makeWalletConnectAttempts } from "../../platform/wallet-connect-attempts";
 import {
   caipAddresses,
   caipChainId,
@@ -55,8 +56,10 @@ export const makeSubstrateWalletConnect = ({
   const state: {
     session: WalletConnectSession | undefined;
     unsubscribeEnded: (() => void) | undefined;
-    attempt: number;
-  } = { session: undefined, unsubscribeEnded: undefined, attempt: 0 };
+  } = { session: undefined, unsubscribeEnded: undefined };
+  const attempts = makeWalletConnectAttempts(() =>
+    walletError("substrate-connect", "Connection attempt was superseded")
+  );
 
   const usable = (session: WalletConnectSession) =>
     session.methods.includes(signTransactionMethod) &&
@@ -74,13 +77,7 @@ export const makeSubstrateWalletConnect = ({
     state.session = undefined;
   };
 
-  const establish = (attempt: number) => (session: WalletConnectSession) => {
-    // A late approval after disconnect stays out of connector state.
-    if (attempt !== state.attempt) {
-      return Effect.fail(
-        walletError("substrate-connect", "Connection attempt was superseded")
-      );
-    }
+  const establish = (session: WalletConnectSession) => {
     if (!usable(session)) {
       return Effect.fail(
         walletError(
@@ -99,36 +96,40 @@ export const makeSubstrateWalletConnect = ({
   };
 
   return {
-    connect: ({ isReconnecting }) => {
-      const attempt = ++state.attempt;
-      return runWalletEffect(
-        restoredSession.pipe(
-          Effect.filterOrElse(Predicate.isNotUndefined, () =>
-            isReconnecting
-              ? Effect.fail(
-                  walletError(
-                    "substrate-reconnect",
-                    "No WalletConnect session to restore"
+    connect: ({ isReconnecting }) =>
+      runWalletEffect(
+        attempts.run(
+          restoredSession.pipe(
+            Effect.filterOrElse(Predicate.isNotUndefined, () =>
+              isReconnecting
+                ? Effect.fail(
+                    walletError(
+                      "substrate-reconnect",
+                      "No WalletConnect session to restore"
+                    )
                   )
-                )
-              : protocol.connect({
-                  namespace: "polkadot",
-                  chains,
-                  requiredMethods: methods,
-                  optionalMethods: methods,
-                  events: ["accountsChanged", "chainChanged", "connect"],
-                })
-          ),
-          Effect.flatMap(establish(attempt))
+                : protocol.connect({
+                    namespace: "polkadot",
+                    chains,
+                    requiredMethods: methods,
+                    optionalMethods: methods,
+                    events: ["accountsChanged", "chainChanged", "connect"],
+                  })
+            ),
+            Effect.flatMap(establish)
+          )
         )
-      );
-    },
-    disconnect: async () => {
-      ++state.attempt;
-      const topic = state.session?.topic;
-      release();
-      if (topic) await runWalletEffect(protocol.disconnect(topic));
-    },
+      ),
+    disconnect: () =>
+      runWalletEffect(
+        attempts.interrupt.pipe(
+          Effect.andThen(() => {
+            const topic = state.session?.topic;
+            release();
+            return topic ? protocol.disconnect(topic) : Effect.void;
+          })
+        )
+      ),
     getAccounts: async (wagmiChainId) => {
       const chainId = configured.find(
         ({ chain }) => chain.wagmiChain.id === wagmiChainId

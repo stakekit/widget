@@ -3,6 +3,7 @@ import {
   Deferred,
   Effect,
   Equal,
+  FiberHandle,
   Layer,
   Predicate,
   Ref,
@@ -166,7 +167,10 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
     const apiErrorsByLanguage = yield* Ref.make(
       new Map<SupportedLanguage, ApiErrorTranslations>()
     );
-    const reconciliationVersion = yield* Ref.make(0);
+    // Holds the enrichment for the latest configuration only. Each new
+    // configuration interrupts the previous enrichment before reconciling, so a
+    // superseded response can never be cached or applied.
+    const enrichment = yield* FiberHandle.make<void>();
 
     const loadApiErrors = Effect.fn("WidgetTranslation.loadApiErrors")(
       function* (language: SupportedLanguage) {
@@ -207,18 +211,12 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
     const enrich = Effect.fn("WidgetTranslation.enrich")(
       function* (
         settings: WidgetTranslationSettings,
-        language: SupportedLanguage,
-        version: number
+        language: SupportedLanguage
       ) {
         const apiErrors = yield* loadApiErrors(language);
-        const currentVersion = yield* Ref.get(reconciliationVersion);
-        if (currentVersion !== version) return;
-
-        yield* Ref.update(apiErrorsByLanguage, (current) => {
-          const next = new Map(current);
-          next.set(language, apiErrors);
-          return next;
-        });
+        yield* Ref.update(apiErrorsByLanguage, (current) =>
+          new Map(current).set(language, apiErrors)
+        );
         yield* reconcile(settings, apiErrors);
       },
       (effect) => Effect.ignore(effect)
@@ -227,10 +225,7 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
     const applyConfig = Effect.fn("WidgetTranslation.applyConfig")(function* (
       settings: WidgetTranslationSettings
     ) {
-      const version = yield* Ref.updateAndGet(
-        reconciliationVersion,
-        (current) => current + 1
-      );
+      yield* FiberHandle.clear(enrichment);
       const language = resolveSupportedLanguage(
         settings.language,
         detectedLanguage
@@ -239,9 +234,7 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
       yield* reconcile(settings, cachedErrors);
       if (cachedErrors) return;
 
-      yield* enrich(settings, language, version).pipe(
-        Effect.forkScoped({ startImmediately: true })
-      );
+      yield* FiberHandle.run(enrichment, enrich(settings, language));
     });
 
     // Local resources are ready before the module is exposed. Remote error

@@ -19,6 +19,7 @@ import {
 } from "@solana/web3.js";
 import base58 from "bs58";
 import { Effect, Predicate, Schema } from "effect";
+import { makeWalletConnectAttempts } from "../platform/wallet-connect-attempts";
 import {
   CaipChainId,
   caipAddresses,
@@ -100,8 +101,9 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
   private chainId: CaipChainId | undefined;
   private connectingPromise: Promise<void> | undefined;
   private unsubscribeEnded: (() => void) | undefined;
-  private attempt = 0;
-  private disposed = false;
+  private readonly attempts = makeWalletConnectAttempts(
+    () => new WalletNotConnectedError()
+  );
   private readonly endedListeners = new Set<() => void>();
 
   constructor(private readonly options: Options) {
@@ -165,69 +167,83 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
   }
 
   connect(): Promise<void> {
-    if (this.disposed || this.readyState !== WalletReadyState.Loadable) {
+    if (
+      this.attempts.isClosed() ||
+      this.readyState !== WalletReadyState.Loadable
+    ) {
       return Promise.reject(new WalletNotReadyError());
     }
     if (this.connected) return Promise.resolve();
     if (this.connectingPromise !== undefined) return this.connectingPromise;
-    const attempt = ++this.attempt;
     const protocol = this.options.walletConnectProtocol;
-    this.connectingPromise = this.options
+    const connecting: Promise<void> = this.options
       .runWalletEffect(
-        this.restoredSession().pipe(
-          Effect.filterOrElse(Predicate.isNotUndefined, () =>
-            protocol.connect({
-              namespace: "solana",
-              chains: this.chains,
-              requiredMethods: [],
-              optionalMethods: solanaMethods,
+        this.attempts.run(
+          this.restoredSession().pipe(
+            Effect.filterOrElse(Predicate.isNotUndefined, () =>
+              protocol.connect({
+                namespace: "solana",
+                chains: this.chains,
+                requiredMethods: [],
+                optionalMethods: solanaMethods,
+              })
+            ),
+            Effect.flatMap((session) => {
+              const account = this.account(session);
+              if (!account) {
+                return Effect.fail(
+                  new WalletConnectionError("No Solana account approved")
+                );
+              }
+              this.release();
+              this.session = session;
+              this.chainId = account.chainId;
+              this.key = account.publicKey;
+              this.unsubscribeEnded = protocol.subscribeEnded(
+                session.topic,
+                () => {
+                  this.release();
+                  this.emit("disconnect");
+                  for (const listener of [...this.endedListeners]) listener();
+                }
+              );
+              this.emit("connect", account.publicKey);
+              return Effect.void;
             })
           )
         )
       )
-      .then((session) => {
-        // A late approval after disconnect/destroy stays out of adapter state.
-        if (this.disposed || attempt !== this.attempt) {
-          throw new WalletNotConnectedError();
-        }
-        const account = this.account(session);
-        if (!account)
-          throw new WalletConnectionError("No Solana account approved");
-        this.release();
-        this.session = session;
-        this.chainId = account.chainId;
-        this.key = account.publicKey;
-        this.unsubscribeEnded = protocol.subscribeEnded(session.topic, () => {
-          this.release();
-          this.emit("disconnect");
-          for (const listener of [...this.endedListeners]) listener();
-        });
-        this.emit("connect", account.publicKey);
-      })
       .finally(() => {
-        if (attempt === this.attempt) this.connectingPromise = undefined;
+        // A disconnect may have released this slot for a newer connect.
+        if (this.connectingPromise === connecting) {
+          this.connectingPromise = undefined;
+        }
       });
-    return this.connectingPromise;
+    this.connectingPromise = connecting;
+    return connecting;
   }
 
   override async autoConnect(): Promise<void> {
-    if (this.disposed) throw new WalletNotReadyError();
+    if (this.attempts.isClosed()) throw new WalletNotReadyError();
     if (await this.options.runWalletEffect(this.restoredSession())) {
       await this.connect();
     }
   }
 
   async disconnect(): Promise<void> {
-    ++this.attempt;
     this.connectingPromise = undefined;
-    const topic = this.session?.topic;
-    this.release();
     try {
-      if (topic) {
-        await this.options.runWalletEffect(
-          this.options.walletConnectProtocol.disconnect(topic)
-        );
-      }
+      await this.options.runWalletEffect(
+        this.attempts.interrupt.pipe(
+          Effect.andThen(() => {
+            const topic = this.session?.topic;
+            this.release();
+            return topic
+              ? this.options.walletConnectProtocol.disconnect(topic)
+              : Effect.void;
+          })
+        )
+      );
     } catch (cause) {
       this.emit(
         "error",
@@ -374,9 +390,7 @@ export class WalletConnectSolanaAdapter extends BaseMessageSignerWalletAdapter {
   }
 
   destroy(): void {
-    if (this.disposed) return;
-    this.disposed = true;
-    ++this.attempt;
+    void this.options.runWalletEffect(this.attempts.close);
     this.connectingPromise = undefined;
     this.release();
     this.removeAllListeners();

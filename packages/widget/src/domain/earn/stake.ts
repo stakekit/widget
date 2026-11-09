@@ -4,8 +4,8 @@ import { exactDecimal, exactZero } from "../finance/exact";
 import { YieldId } from "../identity/identifiers";
 import { equalTokens, type Token } from "../token/token";
 import { isConfidentialYield } from "./confidential";
-import type { EarnYieldWithProvider } from "./models";
 import { getYieldActionArg, isBittensorStaking } from "./yield";
+import type { EarnYieldWithProvider } from "./yield-schema";
 
 export const stakeTokenSameAsGasToken = ({
   stakeToken,

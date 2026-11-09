@@ -8,10 +8,8 @@ import type { Integration } from "../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../domain/borrow/catalog/market";
 import type { IntegrationId, MarketId } from "../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../domain/earn/models";
+import type { EarnValidator } from "../../../domain/earn/validator";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { ActivityHistoryEntry } from "../../../resources/activity-history/index";
 import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/index";

@@ -4,10 +4,8 @@ import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../../src/app/runtime/wallet-runtime";
-import { Integration } from "../../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
+import type { Market } from "../../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
-import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import { TokenBalancesResponse } from "../../../../src/domain/finance/models";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
@@ -33,115 +31,36 @@ import {
   type NormalizedWalletState,
   type WalletState,
 } from "../../../../src/services/wallet/wallet-state";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowCollateralTokenDto,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowSupplyBalanceDto,
+  wethTokenAddress,
+} from "../../../fixtures/borrow";
 import { makeTestWallet } from "../../../utils/services/wallet-service";
 import { applicationRuntimeInitInitialValue } from "../../../utils/widget-config";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 const walletScope = new WalletScopeKey({
   address,
   network: "ethereum",
 });
 
-const integrationDto = {
-  id: "aave-borrow",
-  providerId: "aave",
-  name: "Aave V3",
-  networks: ["ethereum"],
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  actions: [],
-} as const;
-
-const marketDto = {
-  id: "aave-v3-ethereum-usdc",
-  integrationId: integrationDto.id,
-  network: "ethereum",
-  type: "pool",
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-  },
-  collateralTokens: [
-    {
-      token: {
-        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        symbol: "WETH",
-        name: "Wrapped Ether",
-        decimals: 18,
-      },
-      priceUsd: "2000",
-      maxLtv: "0.8",
-      liquidationThreshold: "0.85",
-      liquidationPenalty: "0.05",
-      supplyRate: "0.02",
-    },
-  ],
-  borrowRate: "0.06",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  utilizationRate: "0.5",
-  loanTokenPriceUsd: "1",
-  isBorrowEnabled: true,
-  supplyCollateralFeeBps: "0",
-  feeWrapperAddress: null,
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  minLoan: null,
-} as const;
-
-const positionDto = {
-  address,
-  availableToBorrowUsd: "450",
-  currentLtv: "0.4",
-  debtBalances: [
-    {
-      apy: "0.06",
-      balance: "400",
-      balanceRaw: "400000000",
-      balanceUsd: "400",
-      marketId: marketDto.id,
-      pendingActions: [],
-      tokenAddress: marketDto.loanToken.address,
-      tokenSymbol: "USDC",
-    },
-  ],
-  healthFactor: "2.125",
-  integrationId: integrationDto.id,
-  netApy: "-0.006",
-  netWorthUsd: "600",
-  network: "ethereum",
-  supplyBalances: [],
-  totalBorrowedUsd: "400",
-  totalCollateralUsd: "0",
-  totalSuppliedUsd: "0",
-} as const;
-
 describe("Borrow Entry atoms", () => {
   it("keeps a non-first native collateral token explicitly selected", () => {
-    const nativeCollateral = {
-      ...marketDto.collateralTokens[0],
+    const nativeCollateral = makeBorrowCollateralTokenDto({
       token: {
         decimals: 18,
         name: "Ether",
         symbol: "ETH",
       },
-    };
-    const market = Schema.decodeSync(Market)({
-      ...marketDto,
-      collateralTokens: [marketDto.collateralTokens[0], nativeCollateral],
+    });
+    const market = makeBorrowMarket({
+      collateralTokens: [makeBorrowCollateralTokenDto(), nativeCollateral],
     });
     const nativeToken = market.collateralTokens[1]!;
     const nativeTokenId = decodeTokenId(nativeToken.token);
@@ -201,8 +120,8 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("reduces form intent and prepares borrow review state in the atom view", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = makeBorrowMarket();
+    const integration = makeBorrowIntegration();
     const selectedIntent = applyBorrowFormAction({
       action: {
         marketId: market.id,
@@ -243,7 +162,7 @@ describe("Borrow Entry atoms", () => {
           amount: "2",
           availableYields: [],
           token: {
-            address: marketDto.collateralTokens[0].token.address,
+            address: wethTokenAddress,
             decimals: 18,
             name: "Wrapped Ether",
             network: "ethereum",
@@ -271,7 +190,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("blocks borrow review when authoritative positions are unavailable", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
+    const market = makeBorrowMarket();
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
       intent: {
@@ -293,7 +212,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("blocks collateral review when wallet balances are unavailable", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
+    const market = makeBorrowMarket();
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
       intent: {
@@ -315,7 +234,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("keeps retained markets visible but blocks review after refresh failure", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
+    const market = makeBorrowMarket();
     const previousMarkets = AsyncResult.success([market]);
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
@@ -336,7 +255,7 @@ describe("Borrow Entry atoms", () => {
           amount: "2",
           availableYields: [],
           token: {
-            address: marketDto.collateralTokens[0].token.address,
+            address: wethTokenAddress,
             decimals: 18,
             name: "Wrapped Ether",
             network: "ethereum",
@@ -357,13 +276,11 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("defaults the form to the first market where borrowing is enabled", () => {
-    const disabledMarket = Schema.decodeSync(Market)({
-      ...marketDto,
+    const disabledMarket = makeBorrowMarket({
       id: "disabled-market",
       isBorrowEnabled: false,
     });
-    const enabledMarket = Schema.decodeSync(Market)({
-      ...marketDto,
+    const enabledMarket = makeBorrowMarket({
       id: "enabled-market",
     });
 
@@ -416,7 +333,7 @@ describe("Borrow Entry atoms", () => {
           amount: "2",
           availableYields: [],
           token: {
-            address: marketDto.collateralTokens[0].token.address,
+            address: wethTokenAddress,
             decimals: 18,
             name: "Wrapped Ether",
             network: "ethereum",
@@ -438,7 +355,7 @@ describe("Borrow Entry atoms", () => {
       const view = resolveWethCollateralView({
         borrowAmount,
         collateralAmount: "1",
-        market: Schema.decodeSync(Market)({ ...marketDto, minLoan }),
+        market: makeBorrowMarket({ minLoan }),
       });
 
       expect(view.isActionReady).toBe(true);
@@ -460,7 +377,7 @@ describe("Borrow Entry atoms", () => {
       const view = resolveWethCollateralView({
         borrowAmount,
         collateralAmount: "1",
-        market: Schema.decodeSync(Market)(marketDto),
+        market: makeBorrowMarket(),
       });
 
       expect(view.validation.riskBlock).toBe(riskBlock);
@@ -473,14 +390,12 @@ describe("Borrow Entry atoms", () => {
     const view = resolveWethCollateralView({
       borrowAmount: "2000",
       collateralAmount: "1",
-      market: Schema.decodeSync(Market)({
-        ...marketDto,
+      market: makeBorrowMarket({
         collateralTokens: [
-          {
-            ...marketDto.collateralTokens[0],
+          makeBorrowCollateralTokenDto({
             liquidationThreshold: "0.99",
             maxLtv: "0.99",
-          },
+          }),
         ],
       }),
     });
@@ -490,12 +405,11 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("resets persisted form intent when a successful refresh removes the selected market", () => {
-    const selectedMarket = Schema.decodeSync(Market)(marketDto);
-    const replacementMarket = Schema.decodeSync(Market)({
-      ...marketDto,
+    const selectedMarket = makeBorrowMarket();
+    const replacementMarket = makeBorrowMarket({
       id: "replacement-market",
     });
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const integration = makeBorrowIntegration();
     let catalog = [selectedMarket];
     const registry = AtomRegistry.make({
       initialValues: [
@@ -561,9 +475,8 @@ describe("Borrow Entry atoms", () => {
   ] as const)(
     "lists the $expected market catalog when the host sets borrowMarketsScope to $configured",
     ({ configured, expected }) => {
-      const enabledMarket = Schema.decodeSync(Market)(marketDto);
-      const otherMarket = Schema.decodeSync(Market)({
-        ...marketDto,
+      const enabledMarket = makeBorrowMarket();
+      const otherMarket = makeBorrowMarket({
         id: "project-disabled-market",
       });
       const catalogs = {
@@ -666,9 +579,8 @@ describe("Borrow Entry atoms", () => {
     "preserves form intent when Wallet Scope enrichment keeps the same owner",
     () =>
       Effect.gen(function* () {
-        const selectedMarket = yield* Schema.decodeEffect(Market)(marketDto);
-        const integration =
-          yield* Schema.decodeEffect(Integration)(integrationDto);
+        const selectedMarket = makeBorrowMarket();
+        const integration = makeBorrowIntegration();
         const connection = (
           scope: WalletScopeKey
         ): Extract<
@@ -827,9 +739,8 @@ describe("Borrow Entry atoms", () => {
   );
 
   it("uses stable catalog identities when deciding whether to reset the form", () => {
-    const selectedMarket = Schema.decodeSync(Market)(marketDto);
-    const otherMarket = Schema.decodeSync(Market)({
-      ...marketDto,
+    const selectedMarket = makeBorrowMarket();
+    const otherMarket = makeBorrowMarket({
       id: "other-market",
     });
     const intent: BorrowFormIntent = {
@@ -844,7 +755,7 @@ describe("Borrow Entry atoms", () => {
     expect(
       shouldResetBorrowFormForCatalog({
         intent,
-        markets: [otherMarket, Schema.decodeSync(Market)({ ...marketDto })],
+        markets: [otherMarket, makeBorrowMarket()],
       })
     ).toBe(false);
     expect(
@@ -857,8 +768,7 @@ describe("Borrow Entry atoms", () => {
       shouldResetBorrowFormForCatalog({
         intent,
         markets: [
-          Schema.decodeSync(Market)({
-            ...marketDto,
+          makeBorrowMarket({
             isBorrowEnabled: false,
           }),
         ],
@@ -868,8 +778,7 @@ describe("Borrow Entry atoms", () => {
       shouldResetBorrowFormForCatalog({
         intent,
         markets: [
-          Schema.decodeSync(Market)({
-            ...marketDto,
+          makeBorrowMarket({
             collateralTokens: [],
           }),
         ],
@@ -878,26 +787,15 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("projects borrow form risk from existing selected-market positions", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = makeBorrowMarket();
+    const integration = makeBorrowIntegration();
     const positions = deriveBorrowPositions({
       integrationAccountSnapshots: [
         {
           integration,
-          accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
-            ...positionDto,
+          accountSnapshot: makeBorrowAccountSnapshot({
             supplyBalances: [
-              {
-                apy: "0.02",
-                balance: "0.5",
-                balanceRaw: "500000000000000000",
-                balanceUsd: "1000",
-                isCollateral: true,
-                marketId: marketDto.id,
-                pendingActions: [],
-                tokenAddress: marketDto.collateralTokens[0].token.address,
-                tokenSymbol: "WETH",
-              },
+              makeBorrowSupplyBalanceDto({ marketId: market.id }),
             ],
             totalCollateralUsd: "1000",
             totalSuppliedUsd: "1000",
@@ -941,9 +839,8 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("projects a new pool market against same-integration account risk", () => {
-    const existingMarket = Schema.decodeSync(Market)(marketDto);
-    const selectedMarket = Schema.decodeSync(Market)({
-      ...marketDto,
+    const existingMarket = makeBorrowMarket();
+    const selectedMarket = makeBorrowMarket({
       id: "aave-v3-ethereum-dai",
       loanToken: {
         address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
@@ -952,25 +849,14 @@ describe("Borrow Entry atoms", () => {
         symbol: "DAI",
       },
     });
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const integration = makeBorrowIntegration();
     const positions = deriveBorrowPositions({
       integrationAccountSnapshots: [
         {
           integration,
-          accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
-            ...positionDto,
+          accountSnapshot: makeBorrowAccountSnapshot({
             supplyBalances: [
-              {
-                apy: "0.02",
-                balance: "0.5",
-                balanceRaw: "500000000000000000",
-                balanceUsd: "1000",
-                isCollateral: true,
-                marketId: existingMarket.id,
-                pendingActions: [],
-                tokenAddress: marketDto.collateralTokens[0].token.address,
-                tokenSymbol: "WETH",
-              },
+              makeBorrowSupplyBalanceDto({ marketId: existingMarket.id }),
             ],
             totalCollateralUsd: "1000",
             totalSuppliedUsd: "1000",
@@ -1013,13 +899,11 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("validates borrow-only intent against the complete collateral composition", () => {
-    const strictToken = {
-      ...marketDto.collateralTokens[0],
+    const strictToken = makeBorrowCollateralTokenDto({
       liquidationThreshold: "0.6",
       maxLtv: "0.5",
-    };
-    const defaultToken = {
-      ...marketDto.collateralTokens[0],
+    });
+    const defaultToken = makeBorrowCollateralTokenDto({
       liquidationThreshold: "0.9",
       maxLtv: "0.8",
       token: {
@@ -1028,37 +912,25 @@ describe("Borrow Entry atoms", () => {
         name: "Wrapped BTC",
         symbol: "WBTC",
       },
-    };
-    const market = Schema.decodeSync(Market)({
-      ...marketDto,
+    });
+    const market = makeBorrowMarket({
       collateralTokens: [defaultToken, strictToken],
     });
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const integration = makeBorrowIntegration();
     const positions = deriveBorrowPositions({
       integrationAccountSnapshots: [
         {
           integration,
-          accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
-            ...positionDto,
+          accountSnapshot: makeBorrowAccountSnapshot({
             debtBalances: [
-              {
-                ...positionDto.debtBalances[0],
-                balance: "400",
-                balanceUsd: "400",
-              },
+              makeBorrowDebtBalanceDto({ balance: "400", balanceUsd: "400" }),
             ],
             supplyBalances: [
-              {
-                apy: "0.02",
-                balance: "0.5",
-                balanceRaw: "500000000000000000",
-                balanceUsd: "1000",
-                isCollateral: true,
+              makeBorrowSupplyBalanceDto({
                 marketId: market.id,
-                pendingActions: [],
-                tokenAddress: strictToken.token.address,
-                tokenSymbol: strictToken.token.symbol,
-              },
+                tokenAddress: wethTokenAddress,
+                tokenSymbol: "WETH",
+              }),
             ],
             totalBorrowedUsd: "400",
             totalCollateralUsd: "1000",
@@ -1101,14 +973,8 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("allows review without presenting unavailable projected risk", () => {
-    const market = Schema.decodeSync(Market)({
-      ...marketDto,
-      collateralTokens: [
-        {
-          ...marketDto.collateralTokens[0],
-          priceUsd: "0",
-        },
-      ],
+    const market = makeBorrowMarket({
+      collateralTokens: [makeBorrowCollateralTokenDto({ priceUsd: "0" })],
     });
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
@@ -1130,7 +996,7 @@ describe("Borrow Entry atoms", () => {
           amount: "2",
           availableYields: [],
           token: {
-            address: marketDto.collateralTokens[0].token.address,
+            address: wethTokenAddress,
             decimals: 18,
             name: "Wrapped Ether",
             network: "ethereum",

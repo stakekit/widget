@@ -6,7 +6,7 @@ import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import {
   isRevealedConfidentialBalance,
   isUserRevealableBalance,
-} from "../../../domain/earn/confidential";
+} from "../../../domain/earn/confidential-balance";
 import {
   hideConfidentialPositions,
   revealConfidentialPositions,

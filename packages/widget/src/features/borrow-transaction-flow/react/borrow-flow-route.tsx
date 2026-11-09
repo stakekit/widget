@@ -1,11 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import {
-  createContext,
-  type PropsWithChildren,
-  useContext,
-  useState,
-} from "react";
+import { createContext, type PropsWithChildren, useContext } from "react";
 import { Outlet, useLocation } from "react-router";
 import type { MarketId } from "../../../domain/borrow/ids";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
@@ -15,13 +10,17 @@ import {
   useWidgetRouteState,
 } from "../../navigation/index";
 import { WidgetNavigate } from "../../navigation/views";
+import {
+  TransactionFlowExecutionPage,
+  TransactionFlowSessionMount,
+} from "../../transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
 import {
   type BorrowFlowSession,
   type BorrowTransactionFlowEntry,
   borrowFlowRoutes,
   getBorrowTransactionFlowDestination,
-} from "../model/borrow-transaction-flow";
+} from "../model/session";
 import {
   BorrowFlowExecutionKey,
   borrowFlowExecutionPage,
@@ -90,12 +89,6 @@ const getEntryFallbackPath = (
   return widgetRoutes.positions.build();
 };
 
-type MountedBorrowFlowSession = Readonly<{
-  /** The location that delivered the Session; remounts the Session subtree. */
-  readonly key: string;
-  readonly session: BorrowFlowSession;
-}>;
-
 /**
  * Owns the Flow Session it was navigated to: the Session lives while this
  * route stays mounted and ends when it unmounts. A Start that navigates here
@@ -109,23 +102,19 @@ export const BorrowTransactionFlowRoute = ({
   const marketId = useWidgetRoutePrefixMatch(
     widgetRoutes.borrowPosition
   )?.marketId;
-  const location = useLocation();
   const navigated =
     useWidgetRouteState(borrowFlowRoutes[expected])?.borrowFlowSession ?? null;
-  const [mounted, setMounted] = useState<MountedBorrowFlowSession | null>(null);
-  if (navigated && navigated !== mounted?.session) {
-    setMounted({ key: location.key, session: navigated });
-    return null;
-  }
-  if (
-    !mounted ||
-    !matchesEntry(mounted.session.intake.entry, expected, marketId)
-  ) {
-    return (
-      <WidgetNavigate replace to={getEntryFallbackPath(expected, marketId)} />
-    );
-  }
-  return <BorrowFlowSessionRoute key={mounted.key} session={mounted.session} />;
+  return (
+    <TransactionFlowSessionMount
+      accepts={(session) =>
+        matchesEntry(session.intake.entry, expected, marketId)
+      }
+      fallback={getEntryFallbackPath(expected, marketId)}
+      navigated={navigated}
+    >
+      {(session) => <BorrowFlowSessionRoute session={session} />}
+    </TransactionFlowSessionMount>
+  );
 };
 
 /** Provides `session` to its pages while the connected wallet owns it. */
@@ -196,19 +185,17 @@ export const BorrowTransactionFlowExecutionPage = ({
   const actionId = useBorrowFlowExecutionActionId();
   const state = useAtomValue(useBorrowTransactionFlowExecution().stateAtom);
   if (!AsyncResult.isSuccess(state)) return null;
-  const destination = getBorrowTransactionFlowDestination(session.intake.entry);
-  const navigationState = {
-    borrowFlowSession: session,
-    ...(actionId ? { executionActionId: actionId } : {}),
-  };
-  const completed = state.value._tag === "Completed";
-  if (page === "Steps" && completed) {
-    return (
-      <WidgetNavigate replace to={destination.complete(navigationState)} />
-    );
-  }
-  if (page === "Complete" && !completed) {
-    return <WidgetNavigate replace to={destination.steps(navigationState)} />;
-  }
-  return children ?? <Outlet />;
+  return (
+    <TransactionFlowExecutionPage
+      completed={state.value._tag === "Completed"}
+      destination={getBorrowTransactionFlowDestination(session.intake.entry)}
+      navigationState={{
+        borrowFlowSession: session,
+        ...(actionId ? { executionActionId: actionId } : {}),
+      }}
+      page={page}
+    >
+      {children}
+    </TransactionFlowExecutionPage>
+  );
 };

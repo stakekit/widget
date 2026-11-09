@@ -12,7 +12,10 @@ describe("Deep links flow", () => {
       setUrl,
       account,
       avaxLiquidStaking,
+      avaxLiquidStakingRewardRate,
       avaxNativeStaking,
+      avaxNativeStakingRewardRate,
+      rewardToken,
     } = await setup(worker);
 
     setUrl({ accountId: account, yieldId: avaxLiquidStaking.id });
@@ -25,17 +28,14 @@ describe("Deep links flow", () => {
       .element(
         withAvaxLiquidStakingApp
           .getByTestId("select-opportunity")
-          .getByText(
-            avaxLiquidStaking.metadata.rewardTokens?.[0]?.symbol ??
-              avaxLiquidStaking.token.symbol
-          )
+          .getByText(rewardToken.symbol)
       )
       .toBeInTheDocument();
 
     await expect
       .element(
         withAvaxLiquidStakingApp
-          .getByText(formatRoundedPercent(avaxLiquidStaking.rewardRate, "en"))
+          .getByText(formatRoundedPercent(avaxLiquidStakingRewardRate, "en"))
           .first()
       )
       .toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("Deep links flow", () => {
     await expect
       .element(
         withAvaxNativeStakingApp
-          .getByText(formatRoundedPercent(avaxNativeStaking.rewardRate, "en"))
+          .getByText(formatRoundedPercent(avaxNativeStakingRewardRate, "en"))
           .first()
       )
       .toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("Deep links flow", () => {
 
     await expect
       .element(
-        app.getByText("By clicking confirm you agree to", { exact: false })
+        app.getByText("By selecting Confirm, you agree to", { exact: false })
       )
       .toBeInTheDocument();
 
@@ -106,7 +106,9 @@ describe("Deep links flow", () => {
 
     await confirmButton.click();
 
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
@@ -127,7 +129,11 @@ describe("Deep links flow", () => {
       .element(app.getByText("Successfully claimed rewards", { exact: false }))
       .toBeInTheDocument();
 
-    expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
+    await expect
+      .element(
+        app.getByRole("link", { name: /^View Claim rewards transaction/u })
+      )
+      .toBeInTheDocument();
 
     await app.unmount();
   });
@@ -135,8 +141,14 @@ describe("Deep links flow", () => {
   it("Works correctly with pending action query param with validator address requirement", async ({
     worker,
   }) => {
-    const { customConnectors, setUrl, account, avaxLiquidStaking, requestFn } =
-      await setup(worker, { withValidatorAddressesRequired: true });
+    const {
+      customConnectors,
+      setUrl,
+      account,
+      avaxLiquidStaking,
+      avaxLiquidStakingValidators,
+      requestFn,
+    } = await setup(worker, { withValidatorAddressesRequired: true });
 
     setUrl({
       accountId: account,
@@ -155,13 +167,13 @@ describe("Deep links flow", () => {
     await expect
       .element(
         app.getByTestId(
-          EArray.getUnsafe(avaxLiquidStaking.validators, 0).address
+          EArray.getUnsafe(avaxLiquidStakingValidators, 0).address
         )
       )
       .toBeInTheDocument();
 
     await app
-      .getByTestId(EArray.getUnsafe(avaxLiquidStaking.validators, 0).address)
+      .getByTestId(EArray.getUnsafe(avaxLiquidStakingValidators, 0).address)
       .click();
     await app.getByText("Submit").click();
 
@@ -171,7 +183,7 @@ describe("Deep links flow", () => {
 
     await expect
       .element(
-        app.getByText("By clicking confirm you agree to", { exact: false })
+        app.getByText("By selecting Confirm, you agree to", { exact: false })
       )
       .toBeInTheDocument();
 
@@ -181,7 +193,9 @@ describe("Deep links flow", () => {
 
     await app.getByRole("button", { name: "Confirm" }).click();
 
-    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Confirm in wallet"))
+      .toBeInTheDocument();
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
@@ -203,7 +217,9 @@ describe("Deep links flow", () => {
       .toBeInTheDocument();
 
     await expect
-      .element(app.getByText("View Claim rewards transaction"))
+      .element(
+        app.getByRole("link", { name: /^View Claim rewards transaction/u })
+      )
       .toBeInTheDocument();
 
     await app.unmount();

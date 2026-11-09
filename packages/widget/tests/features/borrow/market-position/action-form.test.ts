@@ -1,10 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { TokenAddress } from "../../../../src/domain/borrow/ids";
-import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import {
   type TokenBalance,
@@ -18,6 +15,16 @@ import {
   makeDefaultBorrowWithdrawFormIntent,
   resolveBorrowRepayFormView,
 } from "../../../../src/features/borrow/market-position/model/action-form";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowMarketDto,
+  makeBorrowSupplyBalanceDto,
+  usdcTokenAddress,
+} from "../../../fixtures/borrow";
 
 describe("Borrow position action form intent", () => {
   it("normalizes and resets repayment intent", () => {
@@ -63,113 +70,38 @@ describe("Borrow position action form intent", () => {
 });
 
 describe("Borrow repay form view", () => {
-  const address = Schema.decodeSync(WalletAddress)(
-    "0x0000000000000000000000000000000000000001"
-  );
-  const loanToken = {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-  };
-  const collateralTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-  const integration = Schema.decodeSync(Integration)({
-    id: "aave-borrow",
-    metadata: {
-      description: "Aave lending and borrowing",
-      externalLink: "https://aave.com",
-      logoURI: "https://assets.stakek.it/protocols/aave.svg",
-    },
-    name: "Aave V3",
-    networks: ["ethereum"],
-  });
-  const market = Schema.decodeSync(Market)({
-    availableLiquidity: "500000",
-    availableLiquidityRaw: "500000000000",
-    blueBundleOriginationFeeBps: null,
-    borrowRate: "0.06",
-    collateralTokens: [
-      {
-        liquidationPenalty: "0.05",
-        liquidationThreshold: "0.85",
-        maxLtv: "0.8",
-        priceUsd: "2000",
-        supplyRate: "0.02",
-        token: {
-          address: collateralTokenAddress,
-          decimals: 18,
-          name: "Wrapped Ether",
-          symbol: "WETH",
-        },
-      },
-    ],
-    id: "aave-v3-ethereum-usdc",
-    integrationId: integration.id,
-    isBorrowEnabled: true,
-    loanToken,
-    loanTokenPriceUsd: "1",
-    minLoan: null,
-    network: "ethereum",
-    originationFeeBps: "0",
-    originationFeeWrapperAddress: null,
-    poolAddress: "0x0000000000000000000000000000000000000001",
-    supplyCollateralFeeBps: "0",
-    totalBorrow: "500000",
-    totalBorrowRaw: "500000000000",
-    totalSupply: "1000000",
-    totalSupplyRaw: "1000000000000",
-    type: "pool",
-    utilizationRate: "0.5",
-  });
+  const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
+  const loanToken = makeBorrowMarketDto().loanToken;
+  const integration = makeBorrowIntegration();
+  const market = makeBorrowMarket();
   // Interest accrued on top of the borrowed 400 USDC.
   const debt = "400.123456";
   const position = deriveBorrowPositions({
     integrationAccountSnapshots: [
       {
-        accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
-          address,
+        accountSnapshot: makeBorrowAccountSnapshot({
           availableToBorrowUsd: "400",
-          currentLtv: "0.4",
           debtBalances: [
-            {
-              apy: "0.06",
+            makeBorrowDebtBalanceDto({
               balance: debt,
               balanceRaw: "400123456",
               balanceUsd: "400.12",
-              marketId: market.id,
               pendingActions: [
                 {
                   args: {
                     marketId: market.id,
                     repayAll: true,
-                    tokenAddress: loanToken.address,
+                    tokenAddress: usdcTokenAddress,
                   },
                   label: "Repay",
                   type: "repay",
                 },
               ],
-              tokenAddress: loanToken.address,
-              tokenSymbol: "USDC",
-            },
+            }),
           ],
           healthFactor: "2.124",
-          integrationId: integration.id,
-          netApy: "-0.006",
           netWorthUsd: "599.88",
-          network: "ethereum",
-          supplyBalances: [
-            {
-              apy: "0.02",
-              balance: "0.5",
-              balanceRaw: "500000000000000000",
-              balanceUsd: "1000",
-              isCollateral: true,
-              marketId: market.id,
-              pendingActions: [],
-              tokenAddress: collateralTokenAddress,
-              tokenSymbol: "WETH",
-            },
-          ],
+          supplyBalances: [makeBorrowSupplyBalanceDto()],
           totalBorrowedUsd: "400.12",
           totalCollateralUsd: "1000",
           totalSuppliedUsd: "1000",

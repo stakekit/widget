@@ -1,73 +1,25 @@
-import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
-import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import type { YieldCategory } from "../../../../../domain/earn/contract";
-import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import {
-  getEffectiveYieldRewardRateDetails,
-  type SelectedValidators,
-} from "../../../../../domain/earn/reward-rate";
+import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import {
   getExtendedYieldType,
   getYieldCategory,
-  getYieldCooldownPeriod,
-  getYieldFeePercent,
-  getYieldLockupPeriod,
-  getYieldRiskDisplay,
-  getYieldRiskSourceLabel,
-  getYieldTvlUsd,
-  getYieldTypeLabels,
-  getYieldWarmupPeriod,
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/earn/yield";
-import { Network } from "../../../../../domain/network/network";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import {
-  formatNetworkName,
-  humanizeEnumValue,
-} from "../../../../../shared/lib/formatters";
-import {
-  formatRoundedPercent,
-  formatUsd,
-} from "../../../../../shared/lib/number-format";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import {
-  formatCooldownDays,
-  formatDailyBatch,
-  formatMeaningfulCompactNumber,
-  formatMeaningfulCompactUsd,
-  formatMinStake,
-  formatMinStakeLabel,
-  formatOptionalDays,
-  formatPricePerShare,
-  formatRequirementStatus,
-  formatRewardClaiming,
-  formatRewardRate,
-  formatRewardRateLabel,
-  formatRewardTokenLabel,
+  getYieldFacts,
+  getYieldFigures,
+  type YieldFact,
+  type YieldFactId,
 } from "../../../../yield-summary/index";
-import {
-  RiskRatingBadge,
-  riskSummaryActions,
-  YieldRiskInfoTooltip,
-} from "../../../../yield-summary/views";
-import { NetworkDetailValue } from "./components/network-detail-value";
+import { YieldFactValue } from "../../../../yield-summary/views";
 
 export type EarnDetailsMetricCard = {
   label: string;
-  subValue?: string;
+  subValue?: string | undefined;
   value: ReactNode;
-};
-
-export type EarnDetailRow = {
-  id: string;
-  label: string;
-  value: ReactNode;
-};
-
-export type EarnDetailAddressRow = {
-  address: string;
-  label: string;
 };
 
 export type EarnDetailsHeaderBadge = {
@@ -75,33 +27,7 @@ export type EarnDetailsHeaderBadge = {
   tone: "default" | "auto";
 };
 
-type EarnDetailFactId =
-  | "reward-rate"
-  | "risk"
-  | "min-stake"
-  | "cooldown"
-  | "warmup"
-  | "lockup"
-  | "withdrawal"
-  | "tvl"
-  | "fees"
-  | "status"
-  | "average-position"
-  | "users"
-  | "type"
-  | "reward-schedule"
-  | "reward-claiming";
-
-type EarnDetailFact = {
-  detailEligible: boolean;
-  id: EarnDetailFactId;
-  kpiEligible: boolean;
-  kpiPrimaryEligible: boolean;
-  label: string;
-  subValue?: string;
-  value: ReactNode;
-};
-
+/** The facts a category's metric cards lead with, in order of priority. */
 const kpiPriorities = {
   stake: [
     "reward-rate",
@@ -115,25 +41,15 @@ const kpiPriorities = {
   defi: [
     "reward-rate",
     "tvl",
-    "fees",
     "withdrawal",
     "status",
     "average-position",
-    "users",
     "risk",
   ],
-  rwa: [
-    "reward-rate",
-    "status",
-    "tvl",
-    "average-position",
-    "users",
-    "lockup",
-    "risk",
-  ],
+  rwa: ["reward-rate", "status", "tvl", "average-position", "lockup", "risk"],
 } as const satisfies Record<
   Exclude<YieldCategory, null>,
-  readonly EarnDetailFactId[]
+  readonly YieldFactId[]
 >;
 
 const maxMetricCards = 3;
@@ -141,6 +57,11 @@ const maxMetricCards = 3;
 export const canPresentRewardRateHistory = (yieldDto: EarnYieldWithProvider) =>
   !isYieldValidatorSelectionRequired(yieldDto);
 
+/**
+ * The Earn details pane: the facts its metric cards lead with, and the facts
+ * its yield-facts section leaves out because the metric cards show them
+ * already.
+ */
 export const getEarnDetailsModel = ({
   locale,
   selectedValidators = null,
@@ -152,442 +73,60 @@ export const getEarnDetailsModel = ({
   t: TFunction;
   yieldDto: EarnYieldWithProvider;
 }) => {
-  const provider = yieldDto.provider;
   const yieldCategory = getYieldCategory(yieldDto);
-  const effectiveRewardRate = getEffectiveYieldRewardRateDetails({
-    selectedValidators,
-    yieldDto,
-  });
-  const detailFacts = getEarnDetailFacts({
-    effectiveRewardRate,
-    locale,
-    provider,
-    t,
-    yieldDto,
-  });
-  const promotedFactIds = getPromotedFactIds(detailFacts, yieldCategory);
+  const facts = getYieldFacts({ locale, selectedValidators, t, yieldDto });
+  const promotedFacts = getPromotedFacts(facts, yieldCategory);
 
   return {
-    addressRows: getAddressRows(yieldDto, t),
-    yieldCategory,
-    detailRows: getDetailRows({
-      facts: detailFacts,
-      locale,
-      promotedFactIds,
-      t,
-      yieldDto,
-    }),
+    figures: getYieldFigures({ locale, selectedValidators, t, yieldDto }),
     headerBadges: getHeaderBadges(yieldDto, t),
     isStakeCategory: yieldCategory === "stake",
-    metricCards: detailFacts
-      .filter((fact) => promotedFactIds.has(fact.id))
-      .map(toMetricCard),
+    metricCards: promotedFacts.map(toMetricCard),
+    omittedYieldFacts: promotedFacts.map(
+      (fact) => fact.id
+    ) satisfies YieldFactId[],
     providerName: getSelectedProviderName({
       selectedValidators,
       yieldDto,
     }),
-    rewardRateFormatted:
-      formatRewardRate(effectiveRewardRate, yieldDto, locale) ?? "-",
-    tvlChartValue: formatUsd(yieldDto.statistics?.tvlUsd, locale),
   };
 };
 
-const getPromotedFactIds = (
-  facts: EarnDetailFact[],
+/**
+ * Up to three facts in the category's priority, notable ones first, kept in
+ * the yield's own fact order.
+ */
+const getPromotedFacts = (
+  facts: ReadonlyArray<YieldFact>,
   category: YieldCategory | null
-): Set<EarnDetailFactId> => {
-  const priority = category ? kpiPriorities[category] : kpiPriorities.defi;
+): YieldFact[] => {
+  const priority: ReadonlyArray<YieldFactId> = category
+    ? kpiPriorities[category]
+    : kpiPriorities.defi;
   const factsById = new Map(facts.map((fact) => [fact.id, fact]));
   const orderedFacts = priority.flatMap((id) => {
     const fact = factsById.get(id);
 
-    return fact?.kpiEligible ? [fact] : [];
+    return fact ? [fact] : [];
   });
   const primaryFacts = orderedFacts
-    .filter((fact) => fact.kpiPrimaryEligible)
+    .filter((fact) => fact.notable)
     .slice(0, maxMetricCards);
   const primaryFactIds = new Set(primaryFacts.map((fact) => fact.id));
   const fallbackFacts = orderedFacts
     .filter((fact) => !primaryFactIds.has(fact.id))
     .slice(0, maxMetricCards - primaryFacts.length);
+  const promotedIds = new Set(
+    [...primaryFacts, ...fallbackFacts].map((fact) => fact.id)
+  );
 
-  return new Set([...primaryFacts, ...fallbackFacts].map((fact) => fact.id));
+  return facts.filter((fact) => promotedIds.has(fact.id));
 };
 
-const toMetricCard = (fact: EarnDetailFact): EarnDetailsMetricCard => ({
+const toMetricCard = (fact: YieldFact): EarnDetailsMetricCard => ({
   label: fact.label,
-  ...(fact.subValue === undefined ? {} : { subValue: fact.subValue }),
-  value: fact.value,
-});
-
-const getEarnDetailFacts = ({
-  effectiveRewardRate,
-  locale,
-  provider,
-  t,
-  yieldDto,
-}: {
-  effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
-  locale: string;
-  provider: EarnYieldWithProvider["provider"];
-  t: TFunction;
-  yieldDto: EarnYieldWithProvider;
-}) =>
-  [
-    getRewardRateFact({ effectiveRewardRate, locale, t, yieldDto }),
-    getRiskFact(yieldDto, t),
-    getMinStakeFact(yieldDto, t, locale),
-    getCooldownFact(yieldDto, t),
-    getWarmupFact(yieldDto, t),
-    getLockupFact(yieldDto, t),
-    getWithdrawalFact(yieldDto, t),
-    getTvlFact(yieldDto, t, locale),
-    getFeesFact(yieldDto, t, locale),
-    getStatusFact({ provider, t, yieldDto }),
-    getAveragePositionFact(yieldDto, t, locale),
-    getUsersFact(yieldDto, t, locale),
-    getTypeFact(yieldDto, t),
-    getRewardScheduleFact(yieldDto, t),
-    getRewardClaimingFact({ t, yieldDto }),
-  ].filter((fact): fact is EarnDetailFact => !!fact);
-
-const getDetailRows = ({
-  facts,
-  locale,
-  promotedFactIds,
-  t,
-  yieldDto,
-}: {
-  facts: EarnDetailFact[];
-  locale: string;
-  promotedFactIds: Set<EarnDetailFactId>;
-  t: TFunction;
-  yieldDto: EarnYieldWithProvider;
-}): EarnDetailRow[] => [
-  {
-    id: "network",
-    label: t("dashboard.earn_details.network"),
-    value: Schema.is(Network)(yieldDto.network) ? (
-      <NetworkDetailValue network={yieldDto.network} />
-    ) : (
-      formatNetworkName(yieldDto.network)
-    ),
-  },
-  {
-    id: "provider",
-    label: t("dashboard.earn_details.provider"),
-    value: yieldDto.provider?.name ?? yieldDto.providerId,
-  },
-  {
-    id: "reward-token",
-    label: t("dashboard.earn_details.reward_token"),
-    value: formatRewardTokenLabel(yieldDto, t),
-  },
-  ...getPricePerShareRows(yieldDto, t, locale),
-  ...facts
-    .filter((fact) => fact.detailEligible && !promotedFactIds.has(fact.id))
-    .map((fact) => ({
-      id: fact.id,
-      label: fact.label,
-      value: fact.value,
-    })),
-];
-
-const getPricePerShareRows = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction,
-  locale: string
-): EarnDetailRow[] => {
-  const value = formatPricePerShare(yieldDto, locale);
-
-  if (!value) return [];
-
-  return [
-    {
-      id: "price-per-share",
-      label: t("dashboard.earn_details.price_per_share"),
-      value,
-    },
-  ];
-};
-
-const getRewardRateFact = ({
-  effectiveRewardRate,
-  locale,
-  t,
-  yieldDto,
-}: {
-  effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
-  locale: string;
-  t: TFunction;
-  yieldDto: EarnYieldWithProvider;
-}): EarnDetailFact | null => {
-  const value = formatRewardRate(effectiveRewardRate, yieldDto, locale);
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "reward-rate",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: formatRewardRateLabel(yieldDto, t),
-    value,
-  };
-};
-
-const getRiskFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact | null => {
-  const risk = getYieldRiskDisplay(yieldDto);
-
-  if (!risk) return null;
-
-  return {
-    detailEligible: true,
-    id: "risk",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("dashboard.earn_details.risk"),
-    subValue: getYieldRiskSourceLabel(risk.source, t).toUpperCase(),
-    value: (
-      <Box className={riskSummaryActions}>
-        <RiskRatingBadge risk={risk} />
-        <YieldRiskInfoTooltip />
-      </Box>
-    ),
-  };
-};
-
-const getMinStakeFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction,
-  locale: string
-): EarnDetailFact | null => {
-  const value = formatMinStake(yieldDto, t, locale);
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "min-stake",
-    kpiEligible: true,
-    kpiPrimaryEligible: value.kpiPrimaryEligible,
-    label: formatMinStakeLabel(yieldDto, t),
-    value: value.value,
-  };
-};
-
-const getCooldownFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact | null => {
-  if (isConfidentialYield(yieldDto)) return null;
-  const days = getYieldCooldownPeriod(yieldDto)?.days ?? 0;
-  // Batched vaults redeem with a daily batch, not after a fixed cooldown.
-  const dailyBatch = formatDailyBatch({ side: "redemption", t, yieldDto });
-
-  return {
-    detailEligible: true,
-    id: "cooldown",
-    kpiEligible: true,
-    kpiPrimaryEligible: !!dailyBatch || days > 0,
-    label: t("dashboard.earn_details.cooldown"),
-    value: dailyBatch ?? formatCooldownDays(days, t),
-  };
-};
-
-const getWarmupFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact | null => {
-  if (isConfidentialYield(yieldDto)) return null;
-  const value =
-    formatDailyBatch({ side: "subscription", t, yieldDto }) ??
-    formatOptionalDays(getYieldWarmupPeriod(yieldDto)?.days, t);
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "warmup",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("dashboard.earn_details.warmup"),
-    value,
-  };
-};
-
-const getLockupFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact | null => {
-  const value = formatOptionalDays(getYieldLockupPeriod(yieldDto)?.days, t);
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "lockup",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("dashboard.earn_details.lockup"),
-    value,
-  };
-};
-
-const getWithdrawalFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact => ({
-  detailEligible: true,
-  id: "withdrawal",
-  kpiEligible: true,
-  kpiPrimaryEligible: true,
-  label: t("dashboard.earn_details.withdrawal"),
-  value: yieldDto.status.exit
-    ? t("dashboard.earn_details.available")
-    : t("dashboard.earn_details.unavailable"),
-});
-
-const getTvlFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction,
-  locale: string
-): EarnDetailFact | null => {
-  const value = formatMeaningfulCompactUsd(getYieldTvlUsd(yieldDto), locale);
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "tvl",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("dashboard.earn_details.tvl"),
-    value,
-  };
-};
-
-const getFeesFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction,
-  locale: string
-): EarnDetailFact | null => {
-  const fee = getYieldFeePercent(yieldDto);
-
-  if (fee === null) return null;
-
-  return {
-    detailEligible: true,
-    id: "fees",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("shared.fees"),
-    value: formatRoundedPercent(fee, locale),
-  };
-};
-
-const getStatusFact = ({
-  provider,
-  t,
-  yieldDto,
-}: {
-  provider: EarnYieldWithProvider["provider"];
-  t: TFunction;
-  yieldDto: EarnYieldWithProvider;
-}): EarnDetailFact => ({
-  detailEligible: true,
-  id: "status",
-  kpiEligible: true,
-  kpiPrimaryEligible: true,
-  label: t("dashboard.earn_details.status"),
-  subValue: provider?.name ?? formatNetworkName(yieldDto.network).toUpperCase(),
-  value: formatRequirementStatus(yieldDto, t),
-});
-
-const getAveragePositionFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction,
-  locale: string
-): EarnDetailFact | null => {
-  const value = formatMeaningfulCompactUsd(
-    yieldDto.statistics?.averagePositionSizeUsd,
-    locale
-  );
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "average-position",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("dashboard.earn_details.average_position"),
-    value,
-  };
-};
-
-const getUsersFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction,
-  locale: string
-): EarnDetailFact | null => {
-  const value = formatMeaningfulCompactNumber(
-    yieldDto.statistics?.uniqueUsers,
-    locale
-  );
-
-  if (!value) return null;
-
-  return {
-    detailEligible: true,
-    id: "users",
-    kpiEligible: true,
-    kpiPrimaryEligible: true,
-    label: t("dashboard.earn_details.users"),
-    value,
-  };
-};
-
-const getTypeFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact => ({
-  detailEligible: true,
-  id: "type",
-  kpiEligible: false,
-  kpiPrimaryEligible: false,
-  label: t("dashboard.earn_details.type"),
-  value: getYieldTypeLabels(yieldDto, t).title,
-});
-
-const getRewardScheduleFact = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailFact => ({
-  detailEligible: true,
-  id: "reward-schedule",
-  kpiEligible: false,
-  kpiPrimaryEligible: false,
-  label: t("dashboard.earn_details.reward_schedule"),
-  value: humanizeEnumValue(yieldDto.mechanics.rewardSchedule),
-});
-
-const getRewardClaimingFact = ({
-  t,
-  yieldDto,
-}: {
-  t: TFunction;
-  yieldDto: EarnYieldWithProvider;
-}): EarnDetailFact => ({
-  detailEligible: true,
-  id: "reward-claiming",
-  kpiEligible: false,
-  kpiPrimaryEligible: false,
-  label: t("dashboard.earn_details.reward_claiming"),
-  value: formatRewardClaiming(yieldDto, t),
+  subValue: fact.subValue,
+  value: <YieldFactValue value={fact.value} />,
 });
 
 const getSelectedProviderName = ({
@@ -656,28 +195,4 @@ const getHeaderBadges = (
   }
 
   return badges;
-};
-
-const getAddressRows = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): EarnDetailAddressRow[] => {
-  const rows: Array<EarnDetailAddressRow | null> = [
-    yieldDto.outputToken?.address
-      ? {
-          label: t("dashboard.earn_details.vault"),
-          address: yieldDto.outputToken.address,
-        }
-      : null,
-    yieldDto.token.address
-      ? {
-          label: t("dashboard.earn_details.asset", {
-            symbol: yieldDto.token.symbol,
-          }),
-          address: yieldDto.token.address,
-        }
-      : null,
-  ];
-
-  return rows.filter((row): row is EarnDetailAddressRow => row !== null);
 };

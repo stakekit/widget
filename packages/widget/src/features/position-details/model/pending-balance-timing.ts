@@ -1,7 +1,7 @@
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { PositionBalanceRow } from "../../../domain/portfolio/positions";
 import {
   formatDurationUntil,

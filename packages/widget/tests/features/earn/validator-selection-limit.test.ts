@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type {
-  EarnBalance,
-  EarnValidator,
-} from "../../../src/domain/earn/models";
+import type { EarnBalance } from "../../../src/domain/earn/balance";
+import type { EarnValidator } from "../../../src/domain/earn/validator";
 import { getMaxSelectedValidators } from "../../../src/domain/earn/validator";
 import { selectValidator } from "../../../src/features/earn/state/earn-selection/model/transitions";
 import { makeDefaultEarnIntent } from "../../../src/features/earn/state/earn-selection/types";

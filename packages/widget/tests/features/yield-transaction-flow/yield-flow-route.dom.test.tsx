@@ -20,7 +20,7 @@ import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   makeYieldFlowSession,
   type YieldFlowSession,
-} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+} from "../../../src/features/yield-transaction-flow/model/session";
 import {
   useYieldFlowSession,
   YieldFlowRoute,

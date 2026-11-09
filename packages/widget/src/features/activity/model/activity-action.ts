@@ -5,10 +5,8 @@ import type { BorrowToken } from "../../../domain/borrow/catalog/token";
 import type { ActionId as BorrowActionId } from "../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../domain/earn/models";
+import type { EarnValidator } from "../../../domain/earn/validator";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { ActionId } from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {

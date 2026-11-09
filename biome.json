@@ -9,9 +9,7 @@
       "!**/next",
       "!**/.angular",
       "!**/.vitest",
-      "!**/node_modules",
-      "!**/dist",
-      "!**/.next",
+      "!**/storybook-static",
       "!**/region-iso-3166-codes.ts",
       "!**/mockServiceWorker.js",
       "!**/package.json",
@@ -89,6 +87,20 @@
         "rules": {
           "nursery": {
             "noUnsafeTypeAssertion": "error"
+          },
+          "style": {
+            "useExportType": "error",
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["**/index.package", "**/index.bundle"],
+                    "message": "Public widget entrypoints are outbound-only; import from the defining module."
+                  }
+                ]
+              }
+            }
           }
         }
       }
@@ -122,26 +134,14 @@
         "!packages/widget/src/resources/*/index.ts",
         "!packages/widget/src/services/api/operations.ts",
         "!packages/widget/src/services/api/resource-sources.ts",
-        "!packages/widget/src/services/api/runtime.ts"
+        "!packages/widget/src/services/api/runtime.ts",
+        "!packages/widget/src/ui/index.ts",
+        "!packages/widget/src/ui/composition.ts"
       ],
       "linter": {
         "rules": {
           "performance": {
             "noBarrelFile": "error"
-          },
-          "style": {
-            "useExportType": "error",
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "patterns": [
-                  {
-                    "group": ["**/index.package", "**/index.bundle"],
-                    "message": "Public widget entrypoints are outbound-only; import from the defining module."
-                  }
-                ]
-              }
-            }
           }
         }
       }

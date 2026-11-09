@@ -6,11 +6,8 @@ import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { Integration } from "../../src/domain/borrow/catalog/integration";
-import { Market } from "../../src/domain/borrow/catalog/market";
 import { isBorrowNetwork } from "../../src/domain/borrow/network";
-import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
-import { EarnLegacyTokenOptionsResponse } from "../../src/domain/earn/models";
+import { EarnLegacyTokenOptionsResponse } from "../../src/domain/earn/responses";
 import {
   TokenBalancesResponse,
   type YieldBalancesCommand,
@@ -51,6 +48,12 @@ import {
 } from "../../src/services/resource-invalidation";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import {
+  makeBorrowAccountSnapshot,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+} from "../fixtures/borrow";
 import { unconfiguredBorrowResourceSourceLayer } from "../utils/services/borrow-resource-source";
 
 const address = (suffix: string) =>
@@ -94,71 +97,18 @@ const sameAddressOtherNetworkScope = new WalletScopeKey({
 });
 const yieldDto = yieldApiYieldFixture();
 const yieldId = Schema.decodeSync(YieldId)(yieldDto.id);
-const borrowIntegration = Schema.decodeSync(Integration)({
-  id: "aave-borrow",
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  name: "Aave V3",
-  networks: ["ethereum"],
-});
-const borrowMarket = Schema.decodeSync(Market)({
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  borrowRate: "0.06",
-  collateralTokens: [
-    {
-      liquidationPenalty: "0.05",
-      liquidationThreshold: "0.85",
-      maxLtv: "0.8",
-      priceUsd: "2000",
-      supplyRate: "0.02",
-      token: {
-        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        decimals: 18,
-        name: "Wrapped Ether",
-        symbol: "WETH",
-      },
-    },
-  ],
-  id: "aave-v3-ethereum-usdc",
-  integrationId: borrowIntegration.id,
-  isBorrowEnabled: true,
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-  },
-  loanTokenPriceUsd: "1",
-  minLoan: null,
-  network: "ethereum",
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  supplyCollateralFeeBps: "0",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  type: "pool",
-  utilizationRate: "0.5",
-});
+const borrowIntegration = makeBorrowIntegration();
+const borrowMarket = makeBorrowMarket();
 const borrowAccountPosition = (updated: boolean) =>
-  Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+  makeBorrowAccountSnapshot({
     address: scopeA.address,
     availableToBorrowUsd: updated ? "750" : "450",
     currentLtv: updated ? "0.1" : "0.4",
     debtBalances: [
-      {
-        apy: "0.06",
+      makeBorrowDebtBalanceDto({
         balance: updated ? "100" : "400",
         balanceRaw: updated ? "100000000" : "400000000",
         balanceUsd: updated ? "100" : "400",
-        marketId: borrowMarket.id,
         pendingActions: updated
           ? []
           : [
@@ -171,19 +121,11 @@ const borrowAccountPosition = (updated: boolean) =>
                 type: "repay",
               },
             ],
-        tokenAddress: borrowMarket.loanToken.address,
-        tokenSymbol: "USDC",
-      },
+      }),
     ],
     healthFactor: updated ? "8" : "2.125",
-    integrationId: borrowIntegration.id,
-    netApy: "-0.006",
     netWorthUsd: updated ? "900" : "600",
-    network: "ethereum",
-    supplyBalances: [],
     totalBorrowedUsd: updated ? "100" : "400",
-    totalCollateralUsd: "0",
-    totalSuppliedUsd: "0",
   });
 const reactivityAtom = appRuntime.atom(Reactivity.Reactivity);
 
@@ -311,7 +253,8 @@ describe("semantic resource invalidation", () => {
         );
         yield* Effect.promise(() =>
           vi.waitFor(() => {
-            expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(4);
+            // Both scopes share one owner-keyed balance request.
+            expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(2);
             expect(positionCalls.get(sameWalletCachedScope.address)).toBe(2);
             expect(
               AsyncResult.getOrThrow(

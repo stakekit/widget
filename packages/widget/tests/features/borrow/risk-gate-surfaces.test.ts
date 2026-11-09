@@ -1,10 +1,7 @@
 import { Schema } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../src/domain/borrow/ids";
-import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 import type { RiskGateVerdict } from "../../../src/domain/borrow/risk/risk-gate";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -19,109 +16,37 @@ import {
   resolveBorrowWithdrawFormView,
 } from "../../../src/features/borrow/market-position/model/action-form";
 import { getBorrowPositionActionDescriptors } from "../../../src/features/borrow/market-position/model/details";
-import { getBorrowReviewRiskBlock } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import { getBorrowReviewRiskBlock } from "../../../src/features/borrow-transaction-flow/model/review";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowSupplyBalanceDto,
+  wethTokenAddress,
+} from "../../fixtures/borrow";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
-const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const collateralTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 
-const integration = Schema.decodeSync(Integration)({
-  id: "aave-borrow",
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  name: "Aave V3",
-  networks: ["ethereum"],
-});
+const integration = makeBorrowIntegration();
 
 // A display-priced pool market: WETH at $2000, max LTV 0.8, liquidation 0.85.
-const market = Schema.decodeSync(Market)({
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  borrowRate: "0.06",
-  collateralTokens: [
-    {
-      liquidationPenalty: "0.05",
-      liquidationThreshold: "0.85",
-      maxLtv: "0.8",
-      priceUsd: "2000",
-      supplyRate: "0.02",
-      token: {
-        address: collateralTokenAddress,
-        decimals: 18,
-        name: "Wrapped Ether",
-        symbol: "WETH",
-      },
-    },
-  ],
-  id: "aave-v3-ethereum-usdc",
-  integrationId: integration.id,
-  isBorrowEnabled: true,
-  loanToken: {
-    address: loanTokenAddress,
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-  },
-  loanTokenPriceUsd: "1",
-  minLoan: null,
-  network: "ethereum",
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  supplyCollateralFeeBps: "0",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  type: "pool",
-  utilizationRate: "0.5",
-});
+const market = makeBorrowMarket();
 
 // 0.5 WETH ($1000) of collateral against $400 of USDC debt.
 const positions = deriveBorrowPositions({
   integrationAccountSnapshots: [
     {
-      accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
-        address,
+      accountSnapshot: makeBorrowAccountSnapshot({
         availableToBorrowUsd: "400",
-        currentLtv: "0.4",
-        debtBalances: [
-          {
-            apy: "0.06",
-            balance: "400",
-            balanceRaw: "400000000",
-            balanceUsd: "400",
-            marketId: market.id,
-            pendingActions: [],
-            tokenAddress: loanTokenAddress,
-            tokenSymbol: "USDC",
-          },
-        ],
-        healthFactor: "2.125",
-        integrationId: integration.id,
-        netApy: "-0.006",
-        netWorthUsd: "600",
-        network: "ethereum",
         supplyBalances: [
-          {
-            apy: "0.02",
-            balance: "0.5",
-            balanceRaw: "500000000000000000",
-            balanceUsd: "1000",
-            isCollateral: true,
-            marketId: market.id,
+          makeBorrowSupplyBalanceDto({
             pendingActions: [
               {
                 args: {
                   amountRaw: "500000000000000000",
                   marketId: market.id,
-                  tokenAddress: collateralTokenAddress,
+                  tokenAddress: wethTokenAddress,
                 },
                 label: "Withdraw",
                 type: "withdraw",
@@ -129,17 +54,14 @@ const positions = deriveBorrowPositions({
               {
                 args: {
                   marketId: market.id,
-                  tokenAddress: collateralTokenAddress,
+                  tokenAddress: wethTokenAddress,
                 },
                 label: "Disable collateral",
                 type: "disableCollateral",
               },
             ],
-            tokenAddress: collateralTokenAddress,
-            tokenSymbol: "WETH",
-          },
+          }),
         ],
-        totalBorrowedUsd: "400",
         totalCollateralUsd: "1000",
         totalSuppliedUsd: "1000",
       }),

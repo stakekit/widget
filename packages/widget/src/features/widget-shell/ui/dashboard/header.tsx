@@ -1,11 +1,17 @@
-import { Box } from "../../../../shared/ui/primitives/box";
-import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
+import { useTranslation } from "react-i18next";
+import { IconButton, Stack } from "../../../../ui/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
 import { AccountModal, ChainModal } from "../../../wallet/views";
 import { useHeader } from "../../react/use-header";
-import { disconnectButton, headerContainer, middleItem } from "./styles.css";
 
+/**
+ * The Dashboard Layout's wallet controls: the chain and account buttons and
+ * the disconnect button, in one row that sits at the end of the tabs' row.
+ * While no wallet is connected it renders nothing, so where the controls
+ * would wrap under the tabs no empty band is left.
+ */
 export const Header = () => {
+  const { t } = useTranslation();
   const {
     onXPress,
     walletConfigReady,
@@ -13,45 +19,26 @@ export const Header = () => {
     isConnected,
     isConnecting,
     showDisconnect,
-    headerRef,
     hideAccountAndChainSelector,
     leaveConfirmationDialog,
   } = useHeader();
 
-  if (
-    !walletConfigReady ||
-    hideAccountAndChainSelector ||
-    (!isConnected && !isConnecting)
-  ) {
-    return null;
-  }
+  if (hideAccountAndChainSelector) return null;
+
+  if (!walletConfigReady || (!isConnected && !isConnecting)) return null;
 
   return (
-    <Box ref={headerRef} data-rk="header" className={headerContainer}>
-      <Box
-        className={middleItem}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        gap="2"
-      >
-        {!hideChainSelector && <ChainModal />}
-        <AccountModal />
-      </Box>
-
+    <Stack hostHook="header" direction="row" align="center" gap={8}>
+      {!hideChainSelector && <ChainModal triggerSize="tabs" />}
+      <AccountModal triggerSize="tabs" />
       {showDisconnect && (
-        <Box
-          as="button"
-          className={disconnectButton}
+        <IconButton
+          icon="XIcon"
+          label={t("wallet_modal.disconnect")}
           onClick={onXPress}
-          display="flex"
-          alignItems="center"
-          justifyContent="flex-end"
-        >
-          <XIcon hw={24} />
-        </Box>
+        />
       )}
       <LeaveConfirmationDialog {...leaveConfirmationDialog} />
-    </Box>
+    </Stack>
   );
 };

@@ -1,15 +1,12 @@
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
 import { getProtocolChainIdentity } from "../../../../../domain/wallet/network";
+import { WalletIntegrationError } from "../../../wallet-errors";
+import type { WalletSignTransactionInput } from "../../../wallet-transactions";
 import {
-  WalletCapabilityUnavailableError,
-  WalletIntegrationError,
-  WalletSigningError,
-} from "../../../wallet-errors";
-import {
-  decodeWalletSignedPayloadResult,
-  type WalletSignTransactionInput,
-} from "../../../wallet-transactions";
+  requireTransactionSigner,
+  signedPayloadResult,
+} from "../transaction-signing";
 import { isStellarConnector } from "./stellar-connector-meta";
 
 const stellarMainnetIdentity = getProtocolChainIdentity("stellar");
@@ -23,37 +20,37 @@ export const makeStellarWalletDriver = ({
     function* (
       input: WalletSignTransactionInput & { readonly address: string }
     ) {
-      if (!isStellarConnector(connector) || input.network !== "stellar") {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
+      const stellar = yield* requireTransactionSigner(
+        connector,
+        isStellarConnector(connector) && input.network === "stellar"
+          ? connector
+          : null
+      );
 
-      const result = yield* connector
-        .signTransaction({
-          address: input.address,
-          networkPassphrase: stellarMainnetIdentity.networkPassphrase,
-          transactionXdr: input.tx,
-        })
-        .pipe(
-          Effect.mapError(
-            (cause) =>
-              new WalletSigningError({ cause, operation: "transaction" })
+      return yield* signedPayloadResult(
+        stellar
+          .signTransaction({
+            address: input.address,
+            networkPassphrase: stellarMainnetIdentity.networkPassphrase,
+            transactionXdr: input.tx,
+          })
+          .pipe(
+            Effect.flatMap(
+              ({
+                signedTxXdr,
+              }): Effect.Effect<string, WalletIntegrationError> =>
+                signedTxXdr.trim().length === 0
+                  ? Effect.fail(
+                      new WalletIntegrationError({
+                        message:
+                          "Stellar wallet returned an empty signed transaction",
+                        operation: "stellar-sign-transaction",
+                      })
+                    )
+                  : Effect.succeed(signedTxXdr)
+            )
           )
-        );
-
-      if (result.signedTxXdr.trim().length === 0) {
-        return yield* new WalletSigningError({
-          cause: new WalletIntegrationError({
-            message: "Stellar wallet returned an empty signed transaction",
-            operation: "stellar-sign-transaction",
-          }),
-          operation: "transaction",
-        });
-      }
-
-      return yield* decodeWalletSignedPayloadResult(result.signedTxXdr);
+      );
     }
   );
 

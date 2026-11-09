@@ -33,7 +33,6 @@ import { mockDelay } from "../../mocks/delay";
 import { TestAtomRuntimeProvider } from "../../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../../utils/test-extend.dom.ts";
 import { renderHook } from "../../utils/test-utils.dom.tsx";
-import { getTestWidgetConfig } from "../../utils/widget-config";
 
 const signTransactionAtom = walletRuntime.fn(
   (input: WalletOwnerCheckedInput<WalletSignTransactionInput>) =>
@@ -61,12 +60,12 @@ const renderHookWithExternalProvider = (
   return renderHook(useTestWallet, {
     wrapper: ({ children }) => (
       <TestAtomRuntimeProvider
-        settings={getTestWidgetConfig({
+        hostConfiguration={{
           apiKey: import.meta.env.VITE_API_KEY,
           borrowEnabled: false,
           externalProviders,
           ...variantProps,
-        })}
+        }}
       >
         <WagmiConfigProvider>{children}</WagmiConfigProvider>
       </TestAtomRuntimeProvider>

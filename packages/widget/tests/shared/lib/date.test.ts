@@ -2,7 +2,7 @@ import { DateTime, Duration } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   formatDateTime,
-  getActivityDayKind,
+  formatTimeAxis,
   getActivityRelativeTime,
   getDisplayDurationUntil,
 } from "../../../src/shared/lib/date";
@@ -10,22 +10,6 @@ import {
 const utc = (value: string) => DateTime.makeUnsafe(value);
 
 describe("date presentation helpers", () => {
-  it("classifies local calendar days across a daylight-saving transition", () => {
-    const now = utc("2026-03-08T07:30:00.000Z");
-    const earlier = utc("2026-03-08T04:30:00.000Z");
-
-    expect(
-      getActivityDayKind(
-        earlier,
-        now,
-        DateTime.zoneMakeNamedUnsafe("America/New_York")
-      )
-    ).toBe("yesterday");
-    expect(
-      getActivityDayKind(earlier, now, DateTime.zoneMakeNamedUnsafe("UTC"))
-    ).toBe("today");
-  });
-
   it.each([
     ["UTC", "Jul 28, 2026, 23:30"],
     ["Pacific/Kiritimati", "Jul 29, 2026, 13:30"],
@@ -77,4 +61,49 @@ describe("date presentation helpers", () => {
       ).toEqual(expected);
     }
   );
+});
+
+describe("formatTimeAxis", () => {
+  const utcZone = DateTime.zoneMakeNamedUnsafe("UTC");
+  const times = (...isoDates: ReadonlyArray<string>) =>
+    isoDates.map((iso) => DateTime.toEpochMillis(DateTime.makeUnsafe(iso)));
+
+  it("labels ticks by day within six months", () => {
+    const ticks = times("2026-08-08", "2026-09-22", "2026-11-06");
+
+    expect(formatTimeAxis(ticks, { locale: "en", timeZone: utcZone })).toEqual([
+      "Aug 8",
+      "Sep 22",
+      "Nov 6",
+    ]);
+    expect(formatTimeAxis(ticks, { locale: "fr", timeZone: utcZone })).toEqual([
+      "8 août",
+      "22 sept.",
+      "6 nov.",
+    ]);
+  });
+
+  it("labels ticks by month and year beyond six months", () => {
+    const ticks = times("2024-12-01", "2025-11-30", "2026-11-06");
+
+    expect(formatTimeAxis(ticks, { locale: "en", timeZone: utcZone })).toEqual([
+      "Dec '24",
+      "Nov '25",
+      "Nov '26",
+    ]);
+    expect(formatTimeAxis(ticks, { locale: "fr", timeZone: utcZone })).toEqual([
+      "déc. 2024",
+      "nov. 2025",
+      "nov. 2026",
+    ]);
+  });
+
+  it("reads each tick in the given zone", () => {
+    const ticks = times("2026-08-08T00:00:00Z", "2026-11-06T00:00:00Z");
+    const losAngeles = DateTime.zoneMakeNamedUnsafe("America/Los_Angeles");
+
+    expect(
+      formatTimeAxis(ticks, { locale: "en", timeZone: losAngeles })
+    ).toEqual(["Aug 7", "Nov 5"]);
+  });
 });

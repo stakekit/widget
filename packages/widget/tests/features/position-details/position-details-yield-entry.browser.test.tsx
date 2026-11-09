@@ -23,17 +23,13 @@ import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
-import { PositionDetailsStakeEntryKey } from "../../../src/features/position-details/state/stake-entry";
-import {
-  positionDetailsStakeViewAtom,
-  setPositionDetailsStakeAmountAtom,
-  submitPositionDetailsStakeAtom,
-} from "../../../src/features/position-details/state/stake-view";
+import { PositionDetailsEnterKey } from "../../../src/features/position-details/state/enter-entry";
+import { positionDetailsEnterAtoms } from "../../../src/features/position-details/state/enter-view";
 import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../../src/features/wallet/index";
-import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/session";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -63,7 +59,7 @@ const walletScope = new WalletScopeKey({
   network: "ethereum",
 });
 const selectedYield = yieldApiYieldFixture();
-const entryKey = new PositionDetailsStakeEntryKey({
+const entryKey = new PositionDetailsEnterKey({
   balanceId: "default",
   integrationId: selectedYield.id,
   walletScope,
@@ -120,9 +116,10 @@ const NavigationBridge = () => {
 };
 
 const PositionEntry = () => {
-  const view = useAtomValue(positionDetailsStakeViewAtom(entryKey));
-  const setAmount = useAtomSet(setPositionDetailsStakeAmountAtom(entryKey));
-  const submit = useAtomSet(submitPositionDetailsStakeAtom(entryKey));
+  const atoms = useAtomValue(positionDetailsEnterAtoms(entryKey));
+  const view = useAtomValue(atoms.viewAtom);
+  const setAmount = useAtomSet(atoms.setAmountAtom);
+  const submit = useAtomSet(atoms.submitAtom);
 
   return (
     <>
@@ -214,7 +211,7 @@ const TestApp = () => {
               dashboardVariant: true,
               variant: "default",
             })
-          ).pipe(Layer.fresh),
+          ),
         ],
         [walletRuntime.layer, makeYieldFlowLayer()],
         [walletConnectionStateAtom, connectedWalletState],

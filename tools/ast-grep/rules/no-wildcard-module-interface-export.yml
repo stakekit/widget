@@ -3,6 +3,7 @@ language: Tsx
 severity: error
 message: Module interfaces must use explicit named exports.
 files:
+  - packages/widget/src/domain/**/contract.ts
   - packages/widget/src/features/*/index.ts
   - packages/widget/src/features/*/composition.ts
   - packages/widget/src/features/*/views.ts
@@ -15,6 +16,8 @@ files:
   - packages/widget/src/services/api/operations.ts
   - packages/widget/src/services/api/resource-sources.ts
   - packages/widget/src/services/api/runtime.ts
+  - packages/widget/src/ui/index.ts
+  - packages/widget/src/ui/composition.ts
 rule:
   all:
     - kind: export_statement

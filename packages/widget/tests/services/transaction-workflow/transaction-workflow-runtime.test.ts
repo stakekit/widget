@@ -852,8 +852,122 @@ describe("transaction workflow runtime", () => {
         expect(checks).toBe(75);
         expect(failed).toMatchObject({
           _tag: "ConfirmationFailed",
-          error: { _tag: "TransactionConfirmationError" },
+          error: {
+            _tag: "TransactionConfirmationError",
+            outcome: "Unconfirmed",
+            reason: null,
+          },
         });
+      })
+  );
+
+  const runToConfirmationFailure = (
+    key: YieldTransactionWorkflowInput | BorrowTransactionWorkflowInput,
+    capabilities: TransactionWorkflowTestKitOptions
+  ) =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const machine = yield* makeWorkflowFromService({ capabilities, key });
+        const failed = yield* waitForState(
+          machine,
+          (state) => state._tag === "ConfirmationFailed"
+        );
+        const state = Option.getOrThrow(yield* Fiber.join(failed));
+        return state._tag === "ConfirmationFailed" ? state.error : null;
+      })
+    );
+
+  const yieldConfirmationFailure = (
+    getTransactionStatus: YieldOperations["Service"]["getTransactionStatus"]
+  ) =>
+    runToConfirmationFailure(
+      new YieldTransactionWorkflowInput({
+        actionMeta,
+        transactions: [yieldTransaction("confirm-outcome")],
+        walletScope: yieldWalletScope,
+        yieldId,
+      }),
+      makeCapabilities({ yieldOperations: { getTransactionStatus } })
+    );
+
+  it.effect.each(["FAILED", "BLOCKED"] as const)(
+    "reports a yield transaction the API marks %s as failed, with its reason",
+    (status) =>
+      Effect.gen(function* () {
+        const error = yield* yieldConfirmationFailure(() =>
+          Effect.succeed({
+            error: "execution reverted: insufficient allowance",
+            explorerUrl: null,
+            hash: transactionHash,
+            status,
+          })
+        );
+
+        expect(error).toMatchObject({
+          outcome: "Failed",
+          reason: "execution reverted: insufficient allowance",
+        });
+      })
+  );
+
+  it.effect(
+    "reports a yield transaction whose status cannot be read as unconfirmed",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* yieldConfirmationFailure(() =>
+          Effect.fail(
+            new ApiRequestError({
+              cause: new Error("status failed"),
+              failure: { _tag: "Unreachable" },
+              operation: "get-transaction-status",
+            })
+          )
+        );
+
+        expect(error).toMatchObject({ outcome: "Unconfirmed", reason: null });
+      })
+  );
+
+  it.effect.each([
+    ["the action failed", borrowAction({ status: "FAILED" }), "Failed"],
+    [
+      "its transaction failed",
+      borrowAction({
+        status: "PROCESSING",
+        transactions: [borrowTransaction("borrow-1", { status: "FAILED" })],
+      }),
+      "Failed",
+    ],
+    [
+      "its transaction was not found",
+      borrowAction({
+        status: "PROCESSING",
+        transactions: [borrowTransaction("borrow-1", { status: "NOT_FOUND" })],
+      }),
+      "Unconfirmed",
+    ],
+    [
+      "its transaction is missing from the action",
+      borrowAction({ status: "PROCESSING", transactions: [] }),
+      "Unconfirmed",
+    ],
+    ["the action is not found", null, "Unconfirmed"],
+  ] as const)(
+    "reports a borrow confirmation where %s",
+    ([, checked, outcome]) =>
+      Effect.gen(function* () {
+        const error = yield* runToConfirmationFailure(
+          new BorrowTransactionWorkflowInput({
+            action: borrowAction(),
+            walletScope: borrowWalletScope,
+          }),
+          makeCapabilities({
+            borrow: { getAction: () => Effect.succeed(checked) },
+            initialWalletState: makeConnectedWalletState(borrowWalletScope),
+          })
+        );
+
+        expect(error).toMatchObject({ outcome, reason: null });
       })
   );
 

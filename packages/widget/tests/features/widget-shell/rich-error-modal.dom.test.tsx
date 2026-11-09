@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RichError } from "../../../src/services/errors/rich-error";
@@ -9,24 +9,16 @@ const richErrorState = vi.hoisted(
   (): {
     error: RichError | null;
     resetError: ReturnType<typeof vi.fn>;
+    retry: (() => void) | null;
   } => ({
     error: null,
     resetError: vi.fn(),
+    retry: null,
   })
 );
 
 vi.mock("../../../src/features/widget-shell/react/use-rich-errors", () => ({
   useRichErrors: () => richErrorState,
-}));
-
-vi.mock("../../../src/shared/ui/components/select-modal", () => ({
-  SelectModal: ({
-    children,
-    state,
-  }: {
-    children: ReactNode;
-    state: { isOpen: boolean };
-  }) => (state.isOpen ? children : null),
 }));
 
 import { RichErrorModal } from "../../../src/features/widget-shell/ui/rich-error-modal";
@@ -41,7 +33,36 @@ const renderModal = () =>
 describe("RichErrorModal", () => {
   afterEach(() => {
     richErrorState.error = null;
+    richErrorState.retry = null;
     richErrorState.resetError.mockClear();
+  });
+
+  it("offers Try again before the dismiss action when the work can run again", async () => {
+    const retry = vi.fn();
+    richErrorState.error = { message: "ApiUnreachableError" };
+    richErrorState.retry = retry;
+    await renderModal();
+
+    const labels = [...document.querySelectorAll("button")].map(
+      (button) => button.textContent
+    );
+    expect(labels.indexOf("Try again")).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf("Try again")).toBeLessThan(labels.indexOf("Got it"));
+
+    await act(async () =>
+      [...document.querySelectorAll("button")]
+        .find((button) => button.textContent === "Try again")
+        ?.click()
+    );
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("offers no Try again when the work cannot run again", async () => {
+    richErrorState.error = { message: "ApiUnreachableError" };
+    await renderModal();
+
+    expect(document.body.textContent).toContain("Got it");
+    expect(document.body.textContent).not.toContain("Try again");
   });
 
   it("renders English Error Copy details instead of the API reason", async () => {
@@ -56,12 +77,12 @@ describe("RichErrorModal", () => {
     await renderModal();
 
     expect(document.body.textContent).toContain(
-      "Insufficient SOL for Account Rent"
+      "Insufficient SOL for account rent"
     );
     expect(document.body.textContent).toContain(
       "There is not enough SOL to fund the account rent required by Kamino Lending"
     );
-    expect(document.body.textContent).toContain("Potential solution:");
+    expect(document.body.textContent).toContain("How to fix it");
     expect(document.body.textContent).toContain(
       "Add SOL to the account and try again"
     );
@@ -202,7 +223,9 @@ describe("RichErrorModal", () => {
     );
   });
 
-  it("renders only the generic French title for an unknown identity", async () => {
+  // An unknown error still says what to do next and how to dismiss it: the
+  // sheet never shows a bare title.
+  it("renders the generic French copy for an unknown identity", async () => {
     const i18n = createWidgetI18nInstance();
     await i18n.changeLanguage("fr");
     richErrorState.error = {
@@ -216,21 +239,32 @@ describe("RichErrorModal", () => {
       </I18nextProvider>
     );
 
-    expect(document.body.textContent?.trim()).toBe("Une erreur s'est produite");
+    expect(document.body.textContent?.trim()).toBe(
+      "Une erreur s'est produiteNous n'avons pas pu traiter cette demande. Réessayez dans un instant.Compris"
+    );
   });
 
-  it("renders only the generic title for an unknown English identity", async () => {
+  it("renders the generic copy and a dismiss action for an unknown English identity", async () => {
     richErrorState.error = {
       message: "FutureApiError",
       details: { reason: "The operation is temporarily unavailable." },
     };
     await renderModal();
 
-    expect(document.body.textContent?.trim()).toBe("Something went wrong");
+    expect(document.body.textContent?.trim()).toBe(
+      "Something went wrongWe couldn't complete that request. Try again in a moment.Got it"
+    );
     expect(document.body.textContent).not.toContain(
       "The operation is temporarily unavailable."
     );
     expect(document.body.textContent).not.toContain("FutureApiError");
+
+    await act(async () =>
+      [...document.querySelectorAll("button")]
+        .find((button) => button.textContent === "Got it")
+        ?.click()
+    );
+    expect(richErrorState.resetError).toHaveBeenCalled();
   });
 
   it("treats incomplete catalog copy as unknown and hides the identity", async () => {
@@ -270,10 +304,12 @@ describe("RichErrorModal", () => {
 
     expect(document.body.textContent).toContain("Something went wrong");
     expect(document.body.textContent).not.toContain("KYC required");
-    expect(document.body.textContent?.trim()).toBe("Something went wrong");
+    expect(document.body.textContent).toContain(
+      "We couldn't complete that request."
+    );
   });
 
-  it("renders only the generic title when an unknown error has no usable reason", async () => {
+  it("renders the generic copy when an unknown error has no usable reason", async () => {
     richErrorState.error = {
       message: "FutureApiError",
       details: { reason: "   " },
@@ -283,6 +319,8 @@ describe("RichErrorModal", () => {
 
     expect(document.body.textContent).toContain("Something went wrong");
     expect(document.body.textContent).not.toContain("FutureApiError");
-    expect(document.body.textContent?.trim()).toBe("Something went wrong");
+    expect(document.body.textContent).toContain(
+      "We couldn't complete that request."
+    );
   });
 });

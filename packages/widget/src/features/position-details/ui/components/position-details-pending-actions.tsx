@@ -3,29 +3,21 @@ import { useTranslation } from "react-i18next";
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
-import { formatUsd } from "../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
-import type { usePositionDetails } from "../../react/use-position-details";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { Stack } from "../../../../ui/index";
+import { getLeadingPendingAction } from "../../model/hub";
+import { getPricedFiat } from "../../model/priced-fiat";
+import { usePositionDetails } from "../../react/use-position-details";
 import { AmountBlock } from "./amount-block";
 import { StaticActionBlock } from "./static-action-block";
 
-export const PositionDetailsPendingActions = ({
-  flagsInvalidAmount,
-  humanizesUntranslatedLabels,
-  positionDetails,
-}: {
-  /** Whether an invalid pending-action amount is flagged on its block. */
-  readonly flagsInvalidAmount: boolean;
-  /** Whether action types without a translation fall back to a humanized label. */
-  readonly humanizesUntranslatedLabels: boolean;
-  readonly positionDetails: Pick<
-    ReturnType<typeof usePositionDetails>,
-    | "integrationData"
-    | "pendingActions"
-    | "onPendingActionAmountChange"
-    | "onPendingActionClick"
-  >;
-}) => {
+/**
+ * A card for each pending action the position has, such as claiming
+ * rewards or withdrawing what is unlocked; nothing when it has none. The
+ * leading action (`getLeadingPendingAction`) comes first, as the page's
+ * primary action.
+ */
+export const PositionDetailsPendingActions = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const {
@@ -33,14 +25,22 @@ export const PositionDetailsPendingActions = ({
     pendingActions,
     onPendingActionAmountChange,
     onPendingActionClick,
-  } = positionDetails;
+  } = usePositionDetails();
 
   if (!integrationData || !pendingActions?.length) return null;
 
+  // The leading action comes first, as the page's primary action.
+  const leading = getLeadingPendingAction(pendingActions);
+  const ordered = leading
+    ? [leading, ...pendingActions.filter((action) => action !== leading)]
+    : pendingActions;
+
+  // Sibling action cards sit 8px apart, as one group.
   return (
-    <>
-      {pendingActions.map((val) => {
+    <Stack gap={8}>
+      {ordered.map((val) => {
         const key = `${val.pendingAction.type}-${val.pendingAction.passthrough}`;
+        const primary = val === leading;
 
         if (!val.amount) {
           return (
@@ -49,6 +49,7 @@ export const PositionDetailsPendingActions = ({
               key={key}
               onPendingActionClick={onPendingActionClick}
               integration={integrationData}
+              primary={primary}
             />
           );
         }
@@ -62,20 +63,18 @@ export const PositionDetailsPendingActions = ({
         );
         const labelOptions =
           labelContext === undefined ? {} : { context: labelContext };
-        const label = humanizesUntranslatedLabels
-          ? t(labelKey, {
-              ...labelOptions,
-              defaultValue: humanizePendingActionType(val.pendingAction.type),
-            })
-          : t(labelKey, labelOptions);
-        const unstakeAmountError = flagsInvalidAmount
-          ? val.validation !== null
-          : undefined;
+        // Types the API adds before a translation exists read humanized.
+        const label = t(labelKey, {
+          ...labelOptions,
+          defaultValue: humanizePendingActionType(val.pendingAction.type),
+        });
+        const exitAmountError = val.validation !== null;
 
         return (
           <AmountBlock
             key={key}
             variant="action"
+            primary={primary}
             onAmountChange={(amount) =>
               onPendingActionAmountChange({
                 balanceType: val.yieldBalance.type,
@@ -95,14 +94,16 @@ export const PositionDetailsPendingActions = ({
             }
             label={label}
             onMaxClick={null}
-            formattedAmount={
-              val.amountUsd ? formatUsd(val.amountUsd, locale) : ""
-            }
+            {...getPricedFiat({
+              amountUsd: val.amountUsd,
+              locale,
+              status: val.amountUsdStatus,
+            })}
             balance={null}
-            unstakeAmountError={unstakeAmountError}
+            exitAmountError={exitAmountError}
           />
         );
       })}
-    </>
+    </Stack>
   );
 };

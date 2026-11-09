@@ -24,8 +24,7 @@ const makeRegistry = (baseUrl: string) =>
               baseUrl,
               variant: "default",
             })
-          ),
-          Layer.fresh
+          )
         ),
       ],
     ],

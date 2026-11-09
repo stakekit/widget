@@ -4,7 +4,7 @@ import { appRuntime } from "../../../app/runtime/app-runtime";
 import type {
   EarnValidator,
   EarnValidatorKey,
-} from "../../../domain/earn/models";
+} from "../../../domain/earn/validator";
 import { exactZero } from "../../../domain/finance/exact";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";

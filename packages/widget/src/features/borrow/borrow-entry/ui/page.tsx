@@ -1,10 +1,14 @@
 import { useAtomSet } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
+import {
+  formatNumber,
+  formatTokenAmount,
+} from "../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { Notice } from "../../../../ui/index";
 import { useTrackPage } from "../../../tracking/index";
 import { PageCtaButton } from "../../../widget-shell/views";
-import { BorrowNotice } from "../../action-feedback/views";
 import { BorrowAmountField } from "../../amount-input/views";
 import type { BorrowWalletView } from "../../wallet/index";
 import { useBorrowWalletView } from "../../wallet/index";
@@ -16,14 +20,14 @@ import {
   setBorrowCollateralMaxAmountAtom,
   startBorrowEntryReviewAtom,
 } from "../state/borrow-entry";
-import { BorrowBalanceLabel } from "./components/balance-label";
-import { CollateralSelectModal } from "./components/collateral-select-modal";
+import { CollateralSelectSheet } from "./components/collateral-select-sheet";
 import { BorrowFormDetails } from "./components/form-details";
-import { MarketSelectModal } from "./components/market-select-modal";
+import { MarketSelectSheet } from "./components/market-select-sheet";
 import {
   BorrowConnectCta,
   BorrowNetworkRecoveryPanel,
 } from "./components/network-recovery";
+import { BorrowFormSkeleton } from "./components/skeletons";
 
 type BorrowEntryWalletView = Exclude<
   BorrowWalletView,
@@ -56,15 +60,15 @@ const BorrowEntryFormPage = ({
   const { t } = useTranslation();
 
   if (walletView.status === "connecting") {
-    return <ContentLoaderSquare heightPx={340} />;
+    return <BorrowFormSkeleton />;
   }
 
   if (walletView.status === "connection-required") {
     return (
       <>
-        <BorrowNotice title={t("dashboard.borrow.connect_title")}>
+        <Notice title={t("dashboard.borrow.connect_title")}>
           {t("dashboard.borrow.connect_description")}
-        </BorrowNotice>
+        </Notice>
 
         <BorrowConnectCta />
       </>
@@ -76,6 +80,7 @@ const BorrowEntryFormPage = ({
 
 const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
   const setBorrowAmount = useAtomSet(setBorrowAmountAtom);
   const setCollateralAmount = useAtomSet(setBorrowCollateralAmountAtom);
   const setCollateralMaxAmount = useAtomSet(setBorrowCollateralMaxAmountAtom);
@@ -120,35 +125,38 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
   const getFormContent = (): ReactNode => {
     if (marketsView._tag === "Loading") {
-      return <ContentLoaderSquare heightPx={340} />;
+      return <BorrowFormSkeleton />;
     }
     if (marketsView._tag === "Failed") {
       return (
-        <BorrowNotice tone="error" title={t("dashboard.borrow.error_title")}>
+        <Notice tone="danger" title={t("dashboard.borrow.error_title")}>
           {t("dashboard.borrow.error_description")}
-        </BorrowNotice>
+        </Notice>
       );
     }
     if (!selectedMarket || !selectedCollateralToken) {
       return (
-        <BorrowNotice title={t("dashboard.borrow.empty_title")}>
+        <Notice title={t("dashboard.borrow.empty_title")}>
           {t("dashboard.borrow.empty_description")}
-        </BorrowNotice>
+        </Notice>
       );
     }
+
+    const collateralBalance = selectedCollateralBalance?.amount ?? "0";
+    const collateralSymbol = selectedCollateralToken.token.symbol;
 
     return (
       <>
         <BorrowAmountField
+          testId="borrow-amount-section"
           accessory={
-            <MarketSelectModal
+            <MarketSelectSheet
               integrations={integrations}
               markets={markets}
               selectedMarketId={selectedMarketId}
             />
           }
           amount={borrowAmount}
-          dataRk="borrow-amount-section"
           label={t("dashboard.borrow.form.borrow")}
           onAmountChange={setBorrowAmount}
           usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
@@ -157,21 +165,23 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
         <BorrowAmountField
           accessory={
-            <CollateralSelectModal
+            <CollateralSelectSheet
               collateralOptions={collateralOptions}
               marketNetwork={selectedMarket.network}
               selectedCollateralTokenId={selectedCollateralTokenId}
             />
           }
           amount={collateralAmount}
-          balance={
-            <BorrowBalanceLabel
-              amount={selectedCollateralBalance?.amount ?? "0"}
-              symbol={selectedCollateralToken.token.symbol}
-            />
-          }
-          balanceError={collateralAmountGreaterThanBalance}
-          dataRk="borrow-amount-section"
+          balance={{
+            short: t("dashboard.borrow.form.wallet_balance", {
+              amount: formatTokenAmount(collateralBalance, locale, "down"),
+              symbol: collateralSymbol,
+            }),
+            full: t("dashboard.borrow.form.wallet_balance", {
+              amount: formatNumber(collateralBalance, locale),
+              symbol: collateralSymbol,
+            }),
+          }}
           label={t("dashboard.borrow.form.collateral")}
           onAmountChange={setCollateralAmount}
           onMaxClick={
@@ -218,9 +228,9 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   return (
     <>
       {catalogResetNotice ? (
-        <BorrowNotice title={t("dashboard.borrow.form_reset.title")}>
+        <Notice title={t("dashboard.borrow.form_reset.title")}>
           {t("dashboard.borrow.form_reset.description")}
-        </BorrowNotice>
+        </Notice>
       ) : null}
 
       {formContent}

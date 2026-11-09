@@ -1,16 +1,69 @@
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
+import {
+  ActionSimulationKey,
+  actionSimulationResourceAtom,
+} from "../../../../resources/action-simulation/index";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
+import { widgetConfigAtom } from "../../../widget-configuration/index";
+import { getNetworkFeeEstimate } from "../../../yield-entry/index";
 import { startYieldTransactionFlowAtom } from "../../../yield-transaction-flow/index";
-import { resolvePositionDetailsExitSubmission } from "../../model/flow-actions";
+import {
+  getPositionDetailsExitSimulationCommand,
+  resolvePositionDetailsExitSubmission,
+} from "../../model/flow-actions";
 import type { PositionDetailsWorkflowKey } from "../workflow";
 import {
   dispatchPositionDetailsWorkflowAtom,
+  positionDetailsPricesAtom,
   positionDetailsWorkflowViewAtom,
 } from "../workflow-view";
 import { positionDetailsFlowFactsAtom } from "./facts";
+
+/**
+ * The fee line under the exit amount (see `getNetworkFeeEstimate`); null,
+ * with no line, when the host hides gas fees, which are then never asked
+ * for, or no wallet is connected.
+ */
+const positionDetailsExitNetworkFeeAtom = Atom.family(
+  (key: PositionDetailsWorkflowKey) =>
+    Atom.make((get) => {
+      const hidden = get(widgetConfigAtom).hideGasFee;
+      const facts = get(positionDetailsFlowFactsAtom(key));
+      const connected = facts.wallet.status === "connected";
+      if (hidden || !connected) return null;
+      const command = getPositionDetailsExitSimulationCommand({
+        amountValid: facts.amountValid,
+        facts: facts.exit,
+      });
+      const result = command
+        ? get(
+            actionSimulationResourceAtom.local(
+              new ActionSimulationKey({ request: { command, intent: "exit" } })
+            )
+          )
+        : null;
+      const simulation = result
+        ? result.pipe(AsyncResult.value, Option.getOrNull)
+        : null;
+      return getNetworkFeeEstimate({
+        connected,
+        hidden,
+        pending:
+          result !== null &&
+          simulation === null &&
+          !AsyncResult.isFailure(result),
+        prices: get(positionDetailsPricesAtom(key)).pipe(
+          AsyncResult.value,
+          Option.getOrNull
+        ),
+        simulation,
+      });
+    }).pipe(Atom.withLabel("positionDetailsExitNetworkFeeAtom"))
+);
 
 const exitSubmittedAtom = Atom.family((_key: PositionDetailsWorkflowKey) =>
   Atom.make(false).pipe(Atom.withLabel("positionDetailsExitSubmittedAtom"))
@@ -35,28 +88,10 @@ const submitPositionDetailsExitAtom = Atom.family(
     appRuntime
       .fn((_input: undefined, context) => {
         const facts = context(positionDetailsFlowFactsAtom(key));
-        const exitFacts =
-          facts.wallet.status === "connected" &&
-          facts.integration &&
-          facts.stakedOrLiquidBalances &&
-          facts.token
-            ? {
-                additionalAddresses: facts.wallet.additionalAddresses,
-                address: facts.wallet.address,
-                amount: facts.amount,
-                integration: facts.integration,
-                receiveToken: facts.receiveToken,
-                stakedOrLiquidBalances: facts.stakedOrLiquidBalances,
-                token: facts.token,
-                useMaxAmount:
-                  facts.workflow.unstakeUseMaxAmount ||
-                  facts.workflow.unstakeForceMaxAmount,
-              }
-            : null;
         const decision = resolvePositionDetailsExitSubmission({
           amountValid: facts.amountValid,
           canMount: Boolean(key.integrationId && key.balanceId),
-          facts: exitFacts,
+          facts: facts.exit,
           kycBlocking: facts.kycBlocking,
           token: facts.token,
         });
@@ -135,6 +170,7 @@ const setPositionDetailsExitMaxAmountAtom = Atom.family(
 );
 
 export const positionDetailsExitActions = {
+  networkFee: positionDetailsExitNetworkFeeAtom,
   setMaxAmount: setPositionDetailsExitMaxAmountAtom,
   setReceiveToken: setPositionDetailsExitReceiveTokenAtom,
   submit: submitPositionDetailsExitAtom,

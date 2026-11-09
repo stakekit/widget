@@ -3,8 +3,8 @@ import { DateTime, Effect, Schema } from "effect";
 import {
   KycStatus,
   RewardRateHistoryResponse,
-  RewardsSummaryRecord,
   TvlHistoryResponse,
+  YieldRewardsSummary,
 } from "../../../src/domain/portfolio/models";
 
 const envelope = {
@@ -70,26 +70,33 @@ describe("dashboard application schemas", () => {
     })
   );
 
-  it.effect(
-    "omits a malformed reward summary while retaining valid siblings",
-    () =>
-      Effect.gen(function* () {
-        const rewards = {
-          last24H: "0",
-          last30D: "3",
-          last7D: "1",
-          lastYear: "12",
-          total: "20",
-        };
-        const decoded = yield* Schema.decodeEffect(RewardsSummaryRecord)({
-          "ethereum-eth-native-staking": { rewards, token },
-          "cosmos-atom-native-staking": {
-            rewards,
-            token: { ...token, decimals: "invalid" },
-          },
-        });
+  it("decodes signed reward windows exactly in token units", () => {
+    const window = (amount: string) => ({ amount, amountRaw: "0" });
+    const input = {
+      yieldId: "ethereum-eth-native-staking",
+      address: "0xabc",
+      token,
+      last24H: window("0.000000000000000001"),
+      last7D: window("-0.25"),
+      last30D: window("3"),
+      lastYear: window("12"),
+      total: window("20.123456789012345678"),
+    };
+    const summary = Schema.decodeSync(YieldRewardsSummary)(input);
 
-        expect(Object.keys(decoded)).toEqual(["ethereum-eth-native-staking"]);
+    expect(summary.last24H.amount.toFixed()).toBe("0.000000000000000001");
+    expect(summary.last7D.amount.toFixed()).toBe("-0.25");
+    expect(summary.total.amount.toFixed()).toBe("20.123456789012345678");
+    expect(summary.token).toEqual({
+      decimals: 18,
+      network: "ethereum",
+      symbol: "ETH",
+    });
+    expect(() =>
+      Schema.decodeSync(YieldRewardsSummary)({
+        ...input,
+        last7D: window("not-a-number"),
       })
-  );
+    ).toThrow();
+  });
 });

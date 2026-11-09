@@ -2,16 +2,12 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { Integration } from "../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../src/domain/borrow/catalog/market";
 import { ActionCommand } from "../../../src/domain/borrow/execution/action-command";
-import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
+import type { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
-import {
-  BorrowFlowSession,
-  type BorrowTransactionFlowReview,
-} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import type { BorrowTransactionFlowReview } from "../../../src/features/borrow-transaction-flow/model/review";
+import { BorrowFlowSession } from "../../../src/features/borrow-transaction-flow/model/session";
 import { makeBorrowFlowSettledPositionAtom } from "../../../src/features/borrow-transaction-flow/state/execution-page";
 import {
   BorrowPositionsKey,
@@ -21,80 +17,26 @@ import {
   ApiRequestError,
   BorrowResourceSource,
 } from "../../../src/services/api/resource-sources";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowCollateralTokenDto,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowSupplyBalanceDto,
+  wethTokenAddress,
+} from "../../fixtures/borrow";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
 
-const integration = Schema.decodeSync(Integration)({
-  id: "aave-borrow",
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  name: "Aave V3",
-  networks: ["ethereum"],
+const integration = makeBorrowIntegration();
+const usdcMarket = makeBorrowMarket();
+const wethMarket = makeBorrowMarket({
+  id: "aave-v3-ethereum-weth",
+  loanToken: makeBorrowCollateralTokenDto().token,
 });
-
-const weth = {
-  address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-  decimals: 18,
-  name: "Wrapped Ether",
-  symbol: "WETH",
-} as const;
-
-const marketDto = (
-  id: string,
-  loanToken: (typeof Market.Encoded)["loanToken"]
-) =>
-  ({
-    availableLiquidity: "500000",
-    availableLiquidityRaw: "500000000000",
-    blueBundleOriginationFeeBps: null,
-    borrowRate: "0.06",
-    collateralTokens: [
-      {
-        liquidationPenalty: "0.05",
-        liquidationThreshold: "0.85",
-        maxLtv: "0.8",
-        priceUsd: "2000",
-        supplyRate: "0.02",
-        token: weth,
-      },
-    ],
-    feeWrapperAddress: null,
-    id,
-    integrationId: integration.id,
-    isBorrowEnabled: true,
-    loanToken,
-    loanTokenPriceUsd: "1",
-    minLoan: null,
-    network: "ethereum",
-    originationFeeBps: "0",
-    originationFeeWrapperAddress: null,
-    poolAddress: "0x0000000000000000000000000000000000000001",
-    supplyCollateralFeeBps: "0",
-    totalBorrow: "500000",
-    totalBorrowRaw: "500000000000",
-    totalSupply: "1000000",
-    totalSupplyRaw: "1000000000000",
-    type: "pool",
-    utilizationRate: "0.5",
-  }) as const;
-
-const usdcMarket = Schema.decodeSync(Market)(
-  marketDto("aave-v3-ethereum-usdc", {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-  })
-);
-const wethMarket = Schema.decodeSync(Market)(
-  marketDto("aave-v3-ethereum-weth", weth)
-);
 
 /** One pooled account: USDC debt backed by WETH collateral. */
 const snapshot = ({
@@ -104,39 +46,25 @@ const snapshot = ({
   readonly collateralUsd: string;
   readonly debtUsd: string;
 }) =>
-  Schema.decodeSync(BorrowAccountSnapshot)({
-    address,
+  makeBorrowAccountSnapshot({
     availableToBorrowUsd: "0",
-    currentLtv: "0.4",
     debtBalances: [
-      {
-        apy: "0.06",
+      makeBorrowDebtBalanceDto({
         balance: debtUsd,
-        balanceRaw: "0",
         balanceUsd: debtUsd,
         marketId: usdcMarket.id,
-        pendingActions: [],
-        tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        tokenSymbol: "USDC",
-      },
+      }),
     ],
     healthFactor: "2",
-    integrationId: integration.id,
     netApy: "0",
     netWorthUsd: "0",
-    network: "ethereum",
     supplyBalances: [
-      {
-        apy: "0.02",
+      makeBorrowSupplyBalanceDto({
         balance: "1",
         balanceRaw: "1000000000000000000",
         balanceUsd: collateralUsd,
-        isCollateral: true,
         marketId: wethMarket.id,
-        pendingActions: [],
-        tokenAddress: weth.address,
-        tokenSymbol: "WETH",
-      },
+      }),
     ],
     totalBorrowedUsd: debtUsd,
     totalCollateralUsd: collateralUsd,
@@ -152,7 +80,7 @@ const withdrawSession = new BorrowFlowSession({
       args: {
         amount: "0.5",
         marketId: wethMarket.id,
-        tokenAddress: weth.address,
+        tokenAddress: wethTokenAddress,
       },
       integrationId: integration.id,
     }),

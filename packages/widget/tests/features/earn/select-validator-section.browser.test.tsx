@@ -1,7 +1,7 @@
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { userEvent } from "vitest/browser";
-import type { EarnYieldWithProvider } from "../../../src/domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import type { useSelectValidator } from "../../../src/features/earn/react/use-select-validator";
 import { SelectValidatorSection } from "../../../src/features/earn/ui/compact/earn-page/components/select-validator-section";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
@@ -111,7 +111,7 @@ describe("SelectValidatorSection", () => {
       .element(app.getByTestId("select-modal__search-input"))
       .toHaveValue("missing validator");
     await expect
-      .element(app.getByText("No validators found"))
+      .element(app.getByText("No validators found").first())
       .toBeInTheDocument();
   });
 
@@ -154,7 +154,7 @@ describe("SelectValidatorSection", () => {
     await userEvent.click(trigger as HTMLButtonElement);
 
     await expect
-      .element(app.getByText("No validators available"))
+      .element(app.getByText("No validators available").first())
       .toBeInTheDocument();
   });
 
@@ -178,7 +178,7 @@ describe("SelectValidatorSection", () => {
     await expect.element(app.getByText("Earn with")).toBeInTheDocument();
 
     const trigger = app.container.querySelector(
-      '[data-rk="select-validator-plus"]'
+      '[data-testid="select-validator-plus"]'
     );
     expect(trigger).not.toBeNull();
 
@@ -203,7 +203,7 @@ describe("SelectValidatorSection", () => {
 
     const app = await renderSection();
     const trigger = app.container.querySelector(
-      '[data-rk="select-validator-plus"]'
+      '[data-testid="select-validator-plus"]'
     );
     await userEvent.click(trigger as HTMLButtonElement);
     await expect.element(app.getByText("Validator 0")).toBeInTheDocument();
@@ -229,5 +229,53 @@ describe("SelectValidatorSection", () => {
       .toBeInTheDocument();
 
     await expect.poll(() => onLoadMoreValidators.mock.calls.length).toBe(1);
+  });
+
+  it("copies a validator's address without choosing the validator", async () => {
+    const address = "cosmosvaloper1copyaddress0000000000000000000000";
+    const onItemClick = vi.fn();
+    const writeText = vi.fn(async (_text: string) => {});
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    // Removing the own property brings back Navigator's clipboard getter.
+    onTestFinished(() => {
+      Reflect.deleteProperty(navigator, "clipboard");
+    });
+    hookState.current = createHookValue({
+      onItemClick,
+      validatorsData: [
+        decodeValidator(
+          yieldApiValidatorFixture({ address, name: "Copy Validator" })
+        ),
+      ],
+    });
+
+    const app = await renderSection();
+    await userEvent.click(app.container.querySelector("button") as HTMLElement);
+    await expect.element(app.getByText("Copy Validator")).toBeInTheDocument();
+
+    await userEvent.click(app.getByTitle("Copy Address"));
+
+    expect(writeText).toHaveBeenCalledWith(address);
+    expect(onItemClick).not.toHaveBeenCalled();
+  });
+
+  it("shows that validators load while a search replaces those shown", async () => {
+    hookState.current = createHookValue({
+      isLoading: true,
+      validatorSearch: "stake",
+    });
+
+    const app = await renderSection();
+    await userEvent.click(app.container.querySelector("button") as HTMLElement);
+
+    await expect
+      .element(app.getByText("StakeKit Validator"))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("status", { name: "Loading validators" }))
+      .toBeInTheDocument();
   });
 });

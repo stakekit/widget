@@ -5,8 +5,8 @@ import type {
   YieldAction,
 } from "../../../domain/action/models";
 import { getValidStakeSessionTx } from "../../../domain/action/rules";
+import { getEncryptedHandle } from "../../../domain/earn/balance";
 import type { ConfidentialChainId } from "../../../domain/earn/confidential";
-import { getEncryptedHandle } from "../../../domain/earn/models";
 import { TransactionHash } from "../../../domain/identity/identifiers";
 import {
   type ActionPreviewRequest,
@@ -16,8 +16,8 @@ import {
 import {
   type ConfidentialPreparationError,
   prepareConfidentialCommand,
-  ZamaService,
-} from "../../zama/zama-service";
+} from "../../zama/confidential-preparation";
+import { ZamaService } from "../../zama/zama-service";
 import {
   type ConfidentialTransactionWorkflowInput,
   flattenTransactionWorkflowTransactions,

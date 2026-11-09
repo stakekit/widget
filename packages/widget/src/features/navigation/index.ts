@@ -1,4 +1,5 @@
 export {
+  useWidgetLinkProps,
   useWidgetNavigate,
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,

@@ -12,11 +12,12 @@ import {
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../../src/features/wallet/index";
-import {
-  LegacyResourceSource,
-  YieldResourceSource,
-} from "../../../src/services/api/resource-sources";
+import type { YieldResourceSource } from "../../../src/services/api/resource-sources";
 import { unconfiguredBorrowResourceSourceLayer } from "../../utils/services/borrow-resource-source";
+import {
+  legacyResourceSourceLayer,
+  yieldResourceSourceLayer,
+} from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(
@@ -72,21 +73,10 @@ const makeRegistry = ({
       Atom.initialValue(
         appRuntime.layer,
         Layer.mergeAll(
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({
-              getOpportunity: () => Effect.succeed({} as never),
-              getPositions,
-              getProvider: () => Effect.succeed({} as never),
-              listActivity,
-            } as never)
-          ),
-          Layer.succeed(
-            LegacyResourceSource,
-            LegacyResourceSource.of({
-              scanTokenBalances: () => Effect.succeed([]),
-            } as never)
-          ),
+          yieldResourceSourceLayer({ getPositions, listActivity }),
+          legacyResourceSourceLayer({
+            scanTokenBalances: () => Effect.succeed([]),
+          }),
           unconfiguredBorrowResourceSourceLayer
         )
       ),

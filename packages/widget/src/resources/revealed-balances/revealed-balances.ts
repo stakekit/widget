@@ -2,11 +2,11 @@ import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { EarnBalance } from "../../domain/earn/balance";
 import {
   fillConfidentialPosition,
   hasRevealedBalance,
-} from "../../domain/earn/confidential";
-import type { EarnBalance } from "../../domain/earn/models";
+} from "../../domain/earn/confidential-balance";
 import type { YieldId } from "../../domain/identity/identifiers";
 import { RevealedBalances } from "../../services/zama/revealed-balances";
 import { TokenPricesKey, tokenPricesResourceAtom } from "../token-prices/index";

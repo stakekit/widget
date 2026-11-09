@@ -3,19 +3,17 @@ import { vitest } from "vitest";
 import type { ActionCommand } from "../../../../src/domain/action/models";
 import { exactDecimal } from "../../../../src/domain/finance/exact";
 import {
-  legacyYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldDtoFixture,
 } from "../../../fixtures";
+import type { TokenDto as LegacyTokenDto } from "../../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../../mocks/api-routes";
 import { mockDelay } from "../../../mocks/delay";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
 import type { TestWorker } from "../../../utils/test-extend";
 import { waitForMs } from "../../../utils/wait";
-
-type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
 export const setup = (worker: TestWorker) => {
   const avalancheCToken: LegacyTokenDto = {
@@ -36,29 +34,8 @@ export const setup = (worker: TestWorker) => {
     logoURI: "https://assets.stakek.it/tokens/usdc.svg",
   };
 
-  const legacyYieldBase = legacyYieldFixture();
   const yieldApiYieldBase = yieldApiYieldDtoFixture();
-  const createLegacyYield = ({
-    id,
-    token,
-    gasFeeToken,
-  }: {
-    id: string;
-    token: LegacyTokenDto;
-    gasFeeToken: LegacyTokenDto;
-  }) =>
-    legacyYieldFixture({
-      id,
-      token,
-      tokens: [token],
-      validators: [],
-      metadata: {
-        ...legacyYieldBase.metadata,
-        type: "staking",
-        gasFeeToken,
-      },
-    });
-  const createYieldApiYield = ({
+  const createYield = ({
     id,
     token,
     gasFeeToken,
@@ -100,12 +77,7 @@ export const setup = (worker: TestWorker) => {
     });
 
   const yieldWithSameGasAndStakeToken = {
-    yieldDto: createLegacyYield({
-      id: "avalanche-avax-native-staking",
-      token: avalancheCToken,
-      gasFeeToken: avalancheCToken,
-    }),
-    yieldApiDto: createYieldApiYield({
+    yieldDto: createYield({
       id: "avalanche-avax-native-staking",
       token: avalancheCToken,
       gasFeeToken: avalancheCToken,
@@ -114,12 +86,7 @@ export const setup = (worker: TestWorker) => {
   };
 
   const yieldWithDifferentGasAndStakeToken = {
-    yieldDto: createLegacyYield({
-      id: "avalanche-c-usdc-aave-v3-lending",
-      token: usdcToken,
-      gasFeeToken: avalancheCToken,
-    }),
-    yieldApiDto: createYieldApiYield({
+    yieldDto: createYield({
       id: "avalanche-c-usdc-aave-v3-lending",
       token: usdcToken,
       gasFeeToken: avalancheCToken,
@@ -138,18 +105,10 @@ export const setup = (worker: TestWorker) => {
     usdcTokenAmount = amount.toString();
   };
 
-  const yieldsTxGasAmountMap = new Map<
-    ReturnType<typeof legacyYieldFixture>["id"],
-    string
-  >([]);
+  const yieldsTxGasAmountMap = new Map<string, string>([]);
 
-  const setTxGas = ({
-    yieldId,
-    amount,
-  }: {
-    yieldId: ReturnType<typeof legacyYieldFixture>["id"];
-    amount: string;
-  }) => yieldsTxGasAmountMap.set(yieldId, amount);
+  const setTxGas = ({ yieldId, amount }: { yieldId: string; amount: string }) =>
+    yieldsTxGasAmountMap.set(yieldId, amount);
 
   worker.use(
     http.get(yieldApiRoute("/v1/networks"), async () => {
@@ -207,20 +166,12 @@ export const setup = (worker: TestWorker) => {
       ]);
     }),
 
-    http.get(
-      legacyApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
-      async () => {
-        await mockDelay();
-
-        return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldDto);
-      }
-    ),
     http.get(yieldApiRoute("/v1/yields"), async () => {
       await mockDelay();
 
       const items = [
-        yieldWithSameGasAndStakeToken.yieldApiDto,
-        yieldWithDifferentGasAndStakeToken.yieldApiDto,
+        yieldWithSameGasAndStakeToken.yieldDto,
+        yieldWithDifferentGasAndStakeToken.yieldDto,
       ];
 
       return HttpResponse.json({
@@ -235,17 +186,7 @@ export const setup = (worker: TestWorker) => {
       async () => {
         await mockDelay();
 
-        return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldApiDto);
-      }
-    ),
-    http.get(
-      legacyApiRoute(
-        `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
-      ),
-      async () => {
-        await mockDelay();
-
-        return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
+        return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldDto);
       }
     ),
     http.get(
@@ -255,9 +196,7 @@ export const setup = (worker: TestWorker) => {
       async () => {
         await mockDelay();
 
-        return HttpResponse.json(
-          yieldWithDifferentGasAndStakeToken.yieldApiDto
-        );
+        return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
       }
     ),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {

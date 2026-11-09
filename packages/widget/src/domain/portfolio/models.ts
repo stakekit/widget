@@ -1,10 +1,8 @@
 import { Schema, Struct } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TolerantArray, TolerantRecord } from "../decoding/response-schema";
+import { TolerantArray } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
-import { WalletAddress, YieldId } from "../identity/identifiers";
-import { LegacyToken } from "../token/token";
-import { AdditionalAddresses } from "../wallet/address";
+import { TokenAddress, YieldId } from "../identity/identifiers";
 
 export const KycStatus = YieldApi.KycStatusResponseDto.mapFields(
   Struct.pick(["kycStatus", "authorizeUrl"])
@@ -53,19 +51,27 @@ export const TvlHistoryResponse = Schema.Struct({
   }),
 });
 
-// Only the reward total is read.
-export const RewardsSummary = Schema.Struct({
-  rewards: Schema.Struct({ total: ExactDecimal }),
-  token: LegacyToken,
-});
-export type RewardsSummary = typeof RewardsSummary.Type;
+/** Signed earnings over one window, in token units; `amountRaw` is unread. */
+const RewardWindowAmount = Schema.Struct({ amount: ExactDecimal });
 
-export const RewardsSummaryRecord = TolerantRecord(YieldId, RewardsSummary, {
-  operation: "yield-rewards-summary",
+/**
+ * What a wallet has earned in a Yield's base token since it was first
+ * indexed, over fixed windows ending at the last aggregated hour. Each
+ * window is signed: a loss reads negative.
+ */
+export const YieldRewardsSummary = Schema.Struct({
+  token: Schema.Struct({
+    ...Struct.pick(YieldApi.YieldRewardTokenDto.fields, [
+      "symbol",
+      "decimals",
+      "network",
+    ]),
+    address: Schema.optionalKey(TokenAddress),
+  }),
+  last24H: RewardWindowAmount,
+  last7D: RewardWindowAmount,
+  last30D: RewardWindowAmount,
+  lastYear: RewardWindowAmount,
+  total: RewardWindowAmount,
 });
-
-export const RewardsAddresses = Schema.Struct({
-  address: WalletAddress,
-  additionalAddresses: Schema.optionalKey(AdditionalAddresses),
-});
-export type RewardsAddresses = typeof RewardsAddresses.Type;
+export type YieldRewardsSummary = typeof YieldRewardsSummary.Type;

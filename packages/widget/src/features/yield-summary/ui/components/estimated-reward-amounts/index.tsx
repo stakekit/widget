@@ -1,142 +1,75 @@
-import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  compactAmount,
-  compactAmountsClip,
-  compactAmountsRow,
-  selectYieldRewardsText,
-} from "./styles.css";
+import { unavailableFigure } from "../../../../../shared/lib/number-format";
+import { Stack, Text } from "../../../../../ui/index";
+
+/** An estimated reward in the reward token and, when priced, in USD. */
+type RewardFigure = { readonly token: string; readonly usd: string | null };
 
 type EstimatedRewardAmountsProps = {
-  earnYearly: string;
-  earnMonthly: string;
+  /**
+   * The estimated rewards, formatted, such as "0.0834 ETH" and "$243.10";
+   * null before an amount is entered, when each row says "—" so the rows
+   * hold their place as the amount changes.
+   */
+  readonly figures: {
+    readonly yearly: RewardFigure;
+    readonly monthly: RewardFigure;
+  } | null;
 };
+
+/**
+ * The token figure, then its USD value after a separator: an estimate of
+ * what the amount earns, in `success`, or a muted "—" while unknown.
+ */
+const RewardValue = ({ figure }: { readonly figure: RewardFigure | null }) => (
+  <Stack direction="row" align="center" gap={4}>
+    <Text numeric tone={figure ? "success" : "muted"}>
+      {figure?.token ?? unavailableFigure}
+    </Text>
+    {figure?.usd != null && (
+      <Text tone="muted" numeric>
+        {`· ${figure.usd}`}
+      </Text>
+    )}
+  </Stack>
+);
 
 export const EstimatedRewardAmounts = ({
-  earnYearly,
-  earnMonthly,
-}: EstimatedRewardAmountsProps) => {
-  const { earnPresentation } = useWidgetConfig("hostProfile");
-
-  if (earnPresentation.condensed) {
-    return (
-      <CondensedEarnYearlyOrMonthly
-        earnMonthly={earnMonthly}
-        earnYearly={earnYearly}
-      />
-    );
-  }
-
-  return (
-    <DefaultEarnYearlyOrMonthly
-      earnMonthly={earnMonthly}
-      earnYearly={earnYearly}
-    />
-  );
-};
-
-const DefaultEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
+  figures,
 }: EstimatedRewardAmountsProps) => {
   const { t } = useTranslation();
-  const variant = useWidgetConfig("variant");
   const { earnPresentation } = useWidgetConfig("hostProfile");
 
   return (
-    <>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        data-testid="estimated-reward__yearly"
-        data-rk="estimated-reward__yearly"
-        gap="2"
+    <Stack gap={8}>
+      <Stack
+        direction="row"
+        align="center"
+        justify="between"
+        gap={8}
+        testId="estimated-reward__yearly"
+        hostHook="estimated-reward__yearly"
       >
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
+        <Text tone="muted">
           {t(
             earnPresentation.zerion ? "details.rewards.yearly" : "shared.yearly"
           )}
         </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {earnYearly}
-        </Text>
-      </Box>
+        <RewardValue figure={figures?.yearly ?? null} />
+      </Stack>
 
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        data-testid="estimated-reward__monthly"
-        data-rk="estimated-reward__monthly"
-        gap="2"
+      <Stack
+        direction="row"
+        align="center"
+        justify="between"
+        gap={8}
+        testId="estimated-reward__monthly"
+        hostHook="estimated-reward__monthly"
       >
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {t("shared.monthly")}
-        </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {earnMonthly}
-        </Text>
-      </Box>
-    </>
-  );
-};
-
-const CondensedEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: EstimatedRewardAmountsProps) => {
-  const { t } = useTranslation();
-
-  return (
-    <Box className={compactAmountsClip}>
-      <Box className={compactAmountsRow}>
-        <Box className={compactAmount}>
-          <Text variant={{ weight: "normal" }}>{t("shared.yearly")}</Text>
-          <Text variant={{ weight: "normal" }}>{earnYearly}</Text>
-        </Box>
-
-        <Box className={compactAmount}>
-          <Text variant={{ weight: "normal" }}>{t("shared.monthly")}</Text>
-          <Text variant={{ weight: "normal" }}>{earnMonthly}</Text>
-        </Box>
-      </Box>
-    </Box>
+        <Text tone="muted">{t("shared.monthly")}</Text>
+        <RewardValue figure={figures?.monthly ?? null} />
+      </Stack>
+    </Stack>
   );
 };

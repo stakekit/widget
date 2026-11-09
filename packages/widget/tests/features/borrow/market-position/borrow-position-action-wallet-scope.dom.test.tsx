@@ -7,9 +7,6 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
-import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
 import { WalletAddress } from "../../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../../src/domain/wallet/wallet-scope";
@@ -21,67 +18,20 @@ import { BorrowPositionActionPage } from "../../../../src/features/borrow/market
 import { currentBorrowPositionsAtom } from "../../../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../../../src/features/wallet/index";
 import { createWidgetI18nInstance } from "../../../../src/services/translation/widget-translation";
+import {
+  makeBorrowAccountSnapshot,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowSupplyBalanceDto,
+} from "../../../fixtures/borrow";
 import { render } from "../../../utils/test-utils.dom.tsx";
 import { applicationRuntimeInitInitialValue } from "../../../utils/widget-config";
 
 const i18nInstance = createWidgetI18nInstance();
 
-const marketDto = {
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  borrowRate: "0.06",
-  collateralTokens: [
-    {
-      liquidationPenalty: "0.05",
-      liquidationThreshold: "0.85",
-      maxLtv: "0.8",
-      priceUsd: "2000",
-      supplyRate: "0.02",
-      token: {
-        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        decimals: 18,
-        name: "Wrapped Ether",
-        symbol: "WETH",
-      },
-    },
-  ],
-  feeWrapperAddress: null,
-  id: "aave-v3-ethereum-usdc",
-  integrationId: "aave-borrow",
-  isBorrowEnabled: true,
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-  },
-  loanTokenPriceUsd: "1",
-  minLoan: null,
-  network: "ethereum",
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  supplyCollateralFeeBps: "0",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  type: "pool",
-  utilizationRate: "0.5",
-} as const;
-
-const integration = Schema.decodeSync(Integration)({
-  id: marketDto.integrationId,
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  name: "Aave V3",
-  networks: ["ethereum"],
-});
-const market = Schema.decodeSync(Market)(marketDto);
+const integration = makeBorrowIntegration();
+const market = makeBorrowMarket();
 const address = (suffix: string) =>
   Schema.decodeSync(WalletAddress)(`0x${suffix.padStart(40, "0")}`);
 const t = ((key: string) => key) as TFunction;
@@ -97,17 +47,10 @@ const makePosition = ({
     integrationAccountSnapshots: [
       {
         integration,
-        accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+        accountSnapshot: makeBorrowAccountSnapshot({
           address: owner,
-          availableToBorrowUsd: "450",
-          currentLtv: "0.4",
           debtBalances: [
-            {
-              apy: "0.06",
-              balance: "400",
-              balanceRaw: "400000000",
-              balanceUsd: "400",
-              marketId: market.id,
+            makeBorrowDebtBalanceDto({
               pendingActions: [
                 {
                   args: {
@@ -118,23 +61,13 @@ const makePosition = ({
                   type: "repay",
                 },
               ],
-              tokenAddress: market.loanToken.address,
-              tokenSymbol: market.loanToken.symbol,
-            },
+            }),
           ],
-          healthFactor: "2.125",
-          integrationId: integration.id,
-          netApy: "-0.006",
-          netWorthUsd: "600",
-          network: market.network,
           supplyBalances: [
-            {
-              apy: "0.02",
+            makeBorrowSupplyBalanceDto({
               balance: supplied,
               balanceRaw: new BigNumber(supplied).shiftedBy(18).toFixed(0),
               balanceUsd: (Number(supplied) * 2000).toString(),
-              isCollateral: true,
-              marketId: market.id,
               pendingActions: [
                 {
                   args: {
@@ -146,11 +79,8 @@ const makePosition = ({
                   type: "withdraw",
                 },
               ],
-              tokenAddress: market.collateralTokens[0]!.token.address,
-              tokenSymbol: market.collateralTokens[0]!.token.symbol,
-            },
+            }),
           ],
-          totalBorrowedUsd: "400",
           totalCollateralUsd: "1000",
           totalSuppliedUsd: "1000",
         }),
@@ -186,7 +116,9 @@ const PositionOutlet = ({
       actions: [action],
       borrowPosition: null,
       model: null,
+      onSelectAction: () => undefined,
       position,
+      selection: { actionId: action.id, focusRequest: 0 },
     }}
   />
 );
@@ -259,7 +191,7 @@ describe("Borrow position action wallet ownership", () => {
     const action = getAction(position, "withdraw");
     const app = await render(renderAction({ action, owner, position }));
     const maxButton = app.container.querySelector<HTMLButtonElement>(
-      '[data-rk="stake-token-section-max-button"]'
+      '[data-testid="stake-token-section-max-button"]'
     );
     if (!maxButton) throw new Error("Expected Max button");
 
@@ -299,7 +231,7 @@ describe("Borrow position action wallet ownership", () => {
       app.container.querySelector<HTMLInputElement>(
         '[data-testid="number-input"]'
       )?.value
-    ).toBe("0");
+    ).toBe("");
     expect(app.container.textContent).toContain("0.2 WETH withdrawable");
   });
 
@@ -329,6 +261,6 @@ describe("Borrow position action wallet ownership", () => {
       app.container.querySelector<HTMLInputElement>(
         '[data-testid="number-input"]'
       )?.value
-    ).toBe("0");
+    ).toBe("");
   });
 });

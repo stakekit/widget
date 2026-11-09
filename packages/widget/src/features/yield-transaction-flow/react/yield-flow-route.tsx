@@ -1,24 +1,25 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import {
-  createContext,
-  type PropsWithChildren,
-  useContext,
-  useState,
-} from "react";
+import { createContext, type PropsWithChildren, useContext } from "react";
 import { Outlet, useLocation } from "react-router";
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import { useWidgetRouteState } from "../../navigation/index";
 import { WidgetNavigate } from "../../navigation/views";
+import {
+  TransactionFlowExecutionPage,
+  TransactionFlowSessionMount,
+} from "../../transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
 import {
   getYieldTransactionFlowIntakeVariant,
   isYieldTransactionFlowWalletScopeValid,
+  type YieldTransactionFlowIntake,
+} from "../model/intake";
+import {
   type YieldFlowMountTag,
   type YieldFlowSession,
-  type YieldTransactionFlowIntake,
   yieldFlowRoutes,
-} from "../model/yield-transaction-flow";
+} from "../model/session";
 import { isYieldTransactionWorkflowFinished } from "../model/yield-transaction-workflow";
 import {
   YieldFlowExecutionKey,
@@ -80,12 +81,6 @@ export const useYieldFlowIntake = <
   return intake;
 };
 
-type MountedYieldFlowSession = Readonly<{
-  /** The location that delivered the Session; remounts the Session subtree. */
-  readonly key: string;
-  readonly session: YieldFlowSession;
-}>;
-
 /**
  * Holds the Flow Session it was navigated to while this route stays mounted.
  * A Start that navigates here again carries a new Session, which replaces it.
@@ -100,21 +95,19 @@ export const YieldFlowRoute = ({
   >;
   readonly mount: Exclude<YieldFlowMountTag, "YieldActionContinuation">;
 }) => {
-  const location = useLocation();
   const navigated =
     useWidgetRouteState(yieldFlowRoutes[mount])?.yieldFlowSession ?? null;
-  const [mounted, setMounted] = useState<MountedYieldFlowSession | null>(null);
-  if (navigated && navigated !== mounted?.session) {
-    setMounted({ key: location.key, session: navigated });
-    return null;
-  }
-  if (
-    !mounted ||
-    !getYieldTransactionFlowIntakeVariant(mounted.session.intake, expected)
-  ) {
-    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
-  }
-  return <YieldFlowSessionRoute key={mounted.key} session={mounted.session} />;
+  return (
+    <TransactionFlowSessionMount
+      accepts={(session) =>
+        getYieldTransactionFlowIntakeVariant(session.intake, expected) !== null
+      }
+      fallback={widgetRoutes.earn.build()}
+      navigated={navigated}
+    >
+      {(session) => <YieldFlowSessionRoute session={session} />}
+    </TransactionFlowSessionMount>
+  );
 };
 
 /** Provides `session` to its pages while the connected wallet owns it. */
@@ -171,22 +164,17 @@ export const YieldFlowExecutionPage = ({
   const finished =
     AsyncResult.isSuccess(state) &&
     isYieldTransactionWorkflowFinished(state.value);
-  const navigationState = {
-    ...(handoff ? { executionHandoff: handoff } : {}),
-    yieldFlowSession: session,
-  };
-  if (page === "Steps" && finished) {
-    return (
-      <WidgetNavigate
-        replace
-        to={session.destination.complete(navigationState)}
-      />
-    );
-  }
-  if (page === "Complete" && !finished) {
-    return (
-      <WidgetNavigate replace to={session.destination.steps(navigationState)} />
-    );
-  }
-  return children ?? <Outlet />;
+  return (
+    <TransactionFlowExecutionPage
+      completed={finished}
+      destination={session.destination}
+      navigationState={{
+        ...(handoff ? { executionHandoff: handoff } : {}),
+        yieldFlowSession: session,
+      }}
+      page={page}
+    >
+      {children}
+    </TransactionFlowExecutionPage>
+  );
 };

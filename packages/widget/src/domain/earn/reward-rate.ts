@@ -1,11 +1,8 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Match } from "effect";
 import { exactZero } from "../finance/exact";
-import type {
-  EarnValidator,
-  EarnValidatorKey,
-  EarnYieldWithProvider,
-} from "./models";
+import type { EarnValidator, EarnValidatorKey } from "./validator";
+import type { EarnYieldWithProvider } from "./yield-schema";
 
 export type YieldRewardRate = NonNullable<EarnYieldWithProvider["rewardRate"]>;
 type YieldRewardDto = YieldRewardRate["components"][number];

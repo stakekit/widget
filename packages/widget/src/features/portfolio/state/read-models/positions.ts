@@ -1,17 +1,25 @@
+import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
-import { isOptionalPendingAction } from "../../../../domain/action/pending-action";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import { isUnfinishedInstantExit } from "../../../../domain/earn/confidential";
+import {
+  classifyRiskBand,
+  type RiskBand,
+} from "../../../../domain/borrow/risk/risk-band";
+import type { EarnBalance } from "../../../../domain/earn/balance";
 import type { YieldCategory } from "../../../../domain/earn/contract";
-import type { EarnBalance } from "../../../../domain/earn/models";
 import { getYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
+  getPositionAttention,
+  type PositionAttention,
+} from "../../../../domain/portfolio/position-callout";
+import {
   type BalanceDataKey,
   getPositionValueTotal,
+  getTokenSumsUsd,
   type PositionData,
   type PositionTokenSum,
   type PositionValidators,
@@ -30,28 +38,25 @@ import { toPresentable } from "../../../../shared/effect/async-result";
 import { walletScopeAtom } from "../../../wallet/index";
 import { yieldBalancesScanAtom } from "./yield-balances";
 
-export type PositionItem = {
+/**
+ * One balance group of an Earn position, with what it asks of the user
+ * (`PositionAttention`).
+ */
+export type PositionItem = PositionAttention & {
   readonly integrationId: YieldId;
   readonly balancesWithAmount: EarnBalance[];
   readonly allBalances: EarnBalance[];
   readonly balanceId: BalanceDataKey;
-  readonly actionRequired: boolean;
-  /**
-   * Only optional cancellations are pending, or an Instant Exit is still to
-   * finalize: the request is in progress.
-   */
-  readonly hasPendingRequest: boolean;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
-  readonly hasPendingClaimRewards: boolean;
   /**
    * Every balance with an amount: one sum in the primary Value Token when all
    * are priced, else one per Value Token.
    */
   readonly total: ReadonlyArray<PositionTokenSum>;
 } & (
-  | { readonly type: "validators"; readonly validators: PositionValidators }
-  | { readonly type: "default" }
-);
+    | { readonly type: "validators"; readonly validators: PositionValidators }
+    | { readonly type: "default" }
+  );
 
 export type UnifiedPositionItem =
   | { readonly kind: "borrow"; readonly position: MarketPosition }
@@ -83,46 +88,21 @@ export const toPositionItems = (
 
         if (balancesWithAmount.length === 0) continue;
 
-        const pendingTypes = balancesWithAmount.flatMap((balance) =>
-          balance.pendingActions.map((action) => action.type)
-        );
-        // An Instant Exit already began; finalizing it is in progress.
-        const hasUnfinishedInstantExit = balancesWithAmount.some((balance) =>
-          balance.pendingActions.some(({ type }) =>
-            isUnfinishedInstantExit(balance, type)
-          )
-        );
-        // Claims have their own badge; optional actions require nothing.
-        const hasRequiredPendingAction = balancesWithAmount.some((balance) =>
-          balance.pendingActions.some(
-            ({ type }) =>
-              type !== "CLAIM_REWARDS" &&
-              !isOptionalPendingAction(type) &&
-              !isUnfinishedInstantExit(balance, type)
-          )
-        );
-        const actionRequired =
-          balancesWithAmount.some((balance) => balance.type === "locked") ||
-          hasRequiredPendingAction;
         items.push({
           ...value,
+          ...getPositionAttention({
+            balanceTypes: balancesWithAmount.map((balance) => balance.type),
+            pendingActions: balancesWithAmount.flatMap((balance) =>
+              balance.pendingActions.map(({ type }) => ({ type, balance }))
+            ),
+          }),
           integrationId: position.yieldId,
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,
           total: getPositionValueTotal(balancesWithAmount),
-          actionRequired,
-          hasPendingRequest:
-            !actionRequired &&
-            (pendingTypes.includes("CANCEL_PENDING") ||
-              hasUnfinishedInstantExit),
           pointsRewardTokenBalances: balancesWithAmount.filter(
             (balance) => !!balance.token.isPoints
-          ),
-          hasPendingClaimRewards: balancesWithAmount.some((balance) =>
-            balance.pendingActions.some(
-              (action) => action.type === "CLAIM_REWARDS"
-            )
           ),
         });
       }
@@ -132,14 +112,91 @@ export const toPositionItems = (
     []
   );
 
-  return prioritizePendingClaims
-    ? [...rows].sort((a, b) => {
-        if (a.hasPendingClaimRewards) return -1;
-        if (b.hasPendingClaimRewards) return 1;
-        return 0;
-      })
-    : rows;
+  return toManageOrder(rows, prioritizePendingClaims);
 };
+
+/** A position that asks something of the user: an action or a claim. */
+const needsAction = (item: PositionItem) =>
+  item.requiredAction !== null || item.hasPendingClaimRewards;
+
+/**
+ * Sorts by rank, lowest first, then by USD value, largest first. The sort is
+ * stable, so equal positions keep the API's order. Values are computed once.
+ */
+const sortByManageOrder = <A>(
+  items: ReadonlyArray<A>,
+  rank: (item: A) => number,
+  valueUsd: (item: A) => BigNumber
+): A[] =>
+  items
+    .map((item) => ({ item, rank: rank(item), valueUsd: valueUsd(item) }))
+    .sort((a, b) => a.rank - b.rank || (b.valueUsd.comparedTo(a.valueUsd) ?? 0))
+    .map(({ item }) => item);
+
+/**
+ * Manage order: positions that ask for action first, a Host Profile that
+ * prioritizes claims putting those ahead of them, then by USD value.
+ */
+const toManageOrder = (
+  items: ReadonlyArray<PositionItem>,
+  prioritizePendingClaims: boolean
+): PositionItem[] =>
+  sortByManageOrder(
+    items,
+    (item) => {
+      if (prioritizePendingClaims && item.hasPendingClaimRewards) return 0;
+      return needsAction(item) ? 1 : 2;
+    },
+    (item) => getTokenSumsUsd(item.total)
+  );
+
+/** What Manage orders a borrow position by: its risk and supplied value. */
+type BorrowManageFigures = {
+  readonly metrics: Pick<MarketPosition["metrics"], "totalSuppliedUsd">;
+  readonly risk: Pick<MarketPosition["risk"], "current">;
+};
+
+/** A borrow position's risk band now; null without debt or risk figures. */
+export const getBorrowPositionRiskBand = ({
+  risk: { current },
+}: Pick<BorrowManageFigures, "risk">): RiskBand | null =>
+  current.status === "available"
+    ? classifyRiskBand({
+        healthFactor: current.healthFactor,
+        ltv: current.ltv,
+        maxLtv: current.maxLtv,
+      })
+    : null;
+
+/** A borrow position in the caution or danger band: it asks for action. */
+const isBorrowPositionAtRisk = (
+  position: Pick<BorrowManageFigures, "risk">
+) => {
+  const band = getBorrowPositionRiskBand(position);
+  return band === "caution" || band === "danger";
+};
+
+const borrowRiskRank = {
+  danger: 0,
+  caution: 1,
+  safe: 2,
+} as const satisfies Record<RiskBand, number>;
+
+/**
+ * Borrow positions in Manage order: danger first, then caution, then by
+ * supplied USD value, largest first.
+ */
+export const toBorrowManageOrder = <P extends BorrowManageFigures>(
+  positions: ReadonlyArray<P>
+): P[] =>
+  sortByManageOrder(
+    positions,
+    (position) => {
+      const band = getBorrowPositionRiskBand(position);
+      return band === null ? borrowRiskRank.safe : borrowRiskRank[band];
+    },
+    (position) => position.metrics.totalSuppliedUsd
+  );
 
 const positionsDataAtom = yieldBalancesScanAtom.pipe(
   Atom.map(({ result }) =>
@@ -170,7 +227,7 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
   const scope = get(walletScopeAtom);
   const connected = enabled && scope !== null && isBorrowNetwork(scope.network);
   const borrowPositionsResult = get(
-    borrowPositionsResourceAtom.foreground(
+    borrowPositionsResourceAtom.local(
       new BorrowPositionsKey({
         scope: connected ? scope : null,
       })
@@ -195,23 +252,38 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
   };
 }).pipe(Atom.withLabel("currentPortfolioBorrowPositionsAtom"));
 
+/**
+ * How many positions ask for the user's attention: Earn positions with an
+ * action or rewards to claim, and borrow positions in the caution or danger
+ * risk band.
+ */
+export const portfolioPendingActionsCountAtom = Atom.make((get) => {
+  const earnPositions = get(positionsViewAtom);
+  const borrowPositions = get(currentPortfolioBorrowPositionsAtom).positions;
+  const earnCount =
+    earnPositions._tag === "Ready"
+      ? earnPositions.value.filter(needsAction).length
+      : 0;
+  const borrowCount =
+    borrowPositions._tag === "Ready"
+      ? borrowPositions.value.filter(isBorrowPositionAtRisk).length
+      : 0;
+  return earnCount + borrowCount;
+}).pipe(Atom.withLabel("portfolioPendingActionsCountAtom"));
+
+/**
+ * The Dashboard list's rows: Earn positions, grouped by Yield category when
+ * configured, then the wallet's Borrow positions in Manage order.
+ */
 export const currentGroupedPositionsAtom = Atom.make(
   (get): PositionsListRow[] => {
     const config = get(widgetConfigAtom);
     const earnPositions = get(positionsTableDataAtom).pipe(
       AsyncResult.getOrElse(() => [])
     );
-    const borrowManageEnabled = config.borrowEnabled;
-    const borrowPositions = get(
-      borrowPositionsResourceAtom.foreground(
-        new BorrowPositionsKey({
-          scope: borrowManageEnabled ? get(walletScopeAtom) : null,
-        })
-      )
-    ).pipe(
-      AsyncResult.map((positions) => positions.items),
-      AsyncResult.getOrElse(() => [])
-    );
+    const borrowView = get(currentPortfolioBorrowPositionsAtom).positions;
+    const borrowPositions =
+      borrowView._tag === "Ready" ? toBorrowManageOrder(borrowView.value) : [];
 
     if (config.yieldGrouping !== "category") {
       return [

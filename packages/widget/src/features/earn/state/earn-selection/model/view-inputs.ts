@@ -1,10 +1,8 @@
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
 import type { YieldCategory } from "../../../../../domain/earn/contract";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../../../domain/earn/models";
+import type { EarnValidator } from "../../../../../domain/earn/validator";
 import type { ValidatorsConfig } from "../../../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import type { Network } from "../../../../../domain/network/network";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type { EarnCatalogError, EarnTokenOption } from "../types";
@@ -42,6 +40,13 @@ export type ValidatorObservation =
 export type EarnViewObservations = Readonly<{
   readonly category: CategoryObservation;
   readonly initial: InitialViewObservations;
+  /**
+   * The yields of every funded token, read only when the token picked for
+   * the user has no yield they can reach; null otherwise.
+   */
+  readonly reachableDefaultYields: EarnResourceResult<
+    ReadonlyArray<EarnYieldWithProvider>
+  > | null;
   readonly tokenOptions: EarnResourceResult<ReadonlyArray<EarnTokenOption>>;
   readonly validators: ValidatorObservation;
   readonly yieldCatalog: EarnResourceResult<

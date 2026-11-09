@@ -1,20 +1,25 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { ErrorState } from "../../../../ui/index";
 
+/** A failed Activity request, in place of what it would show, with a retry. */
 export const ActivityRetryMessage = ({
   onRetry,
+  title,
+  fill = false,
 }: {
   readonly onRetry: () => void;
+  /** What failed; "Something went wrong" unset. */
+  readonly title?: string;
+  readonly fill?: boolean;
 }): ReactElement => {
   const { t } = useTranslation();
   return (
-    <>
-      <Text variant={{ type: "danger" }} textAlign="center">
-        {t("shared.something_went_wrong")}
-      </Text>
-      <Button onClick={onRetry}>{t("shared.retry")}</Button>
-    </>
+    <ErrorState
+      fill={fill}
+      title={title ?? t("shared.something_went_wrong")}
+      body={t("shared.load_failed_description")}
+      action={{ label: t("shared.retry"), onClick: onRetry }}
+    />
   );
 };

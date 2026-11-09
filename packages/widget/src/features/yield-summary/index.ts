@@ -1,4 +1,7 @@
-export { getYieldEstimatedRewards } from "./model/estimated-rewards";
+export {
+  getEstimatedRewardsUsd,
+  getYieldEstimatedRewards,
+} from "./model/estimated-rewards";
 export {
   formatDailyBatch,
   formatDurationUntil,
@@ -6,32 +9,34 @@ export {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
 } from "./model/next-batch";
+export { getRiskRatingTone } from "./model/risk-rating-tone";
 export {
   formatCommission,
   formatCooldownDays,
-  formatMeaningfulCompactNumber,
-  formatMeaningfulCompactUsd,
-  formatMinStake,
-  formatMinStakeLabel,
-  formatOptionalDays,
-  formatPricePerShare,
   formatProviderStatus,
   formatProviderTvl,
   formatProviderWebsite,
   formatProviderWebsiteHref,
-  formatRequirementStatus,
-  formatRewardClaiming,
-  formatRewardRate,
+  formatRateTypeLabel,
   formatRewardRateLabel,
-  formatRewardTokenLabel,
 } from "./model/yield-details-formatters";
+export {
+  getYieldFacts,
+  type YieldFact,
+  type YieldFactId,
+} from "./model/yield-facts";
+export {
+  formatTvlAmount,
+  getYieldFigures,
+  type YieldRateFigure,
+  type YieldTvlFigure,
+} from "./model/yield-figures";
 export type { YieldSummaryProvider } from "./model/yield-summary";
 export { MultiYieldsKey, multiYieldsByIdAtom } from "./state/multi-yields";
 export {
-  CurrentRewardsSummaryKey,
   CurrentYieldKycGateKey,
-  currentRewardsSummaryAtom,
   currentYieldKycGateAtom,
+  currentYieldRewardsSummaryAtom,
   refreshCurrentYieldKycAtom,
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,

@@ -9,7 +9,8 @@
  * not Angular's other build options.
  *
  * Bundles both entries plus the scripts emitted under `assets/`, such as the
- * Zama encrypt worker. Run via `pnpm check:host-bundlers` after
+ * Zama encrypt worker, and the stylesheets hosts import, which must still hold
+ * the Design System's StyleX rules. Run via `pnpm check:host-bundlers` after
  * `build:package` and `build:bundle`.
  */
 
@@ -17,9 +18,11 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { build, type Message } from "esbuild";
 import { widgetRoot } from "../paths";
+import { countStyleXRules } from "../styles/stylex-rules";
 
 type Manifest = {
   readonly dependencies?: Record<string, string>;
+  readonly exports?: Record<string, { readonly default?: string }>;
   readonly peerDependencies?: Record<string, string>;
 };
 
@@ -92,6 +95,45 @@ for (const { directory, entry } of entries) {
   }
 }
 
+// Package hosts import `@stakekit/widget/style.css`; CDN hosts link the
+// bundle's stylesheet.
+const packageStylesheet = manifest.exports?.["./style.css"]?.default;
+if (packageStylesheet === undefined) {
+  failures.push('package.json does not export "./style.css".');
+}
+const stylesheets = [
+  ...(packageStylesheet === undefined ? [] : [packageStylesheet]),
+  "dist/bundle/index.bundle.css",
+];
+
+for (const stylesheet of stylesheets) {
+  const outcome = await build({
+    absWorkingDir: widgetRoot,
+    bundle: true,
+    entryPoints: [join(widgetRoot, stylesheet)],
+    logLevel: "silent",
+    outdir: join(widgetRoot, "node_modules/.esbuild-host-check"),
+    write: false,
+  }).then(
+    (result) => ({
+      errors: result.errors,
+      rules: result.outputFiles
+        .map((file) => countStyleXRules(file.text))
+        .reduce((a, b) => a + b, 0),
+    }),
+    (error: unknown) => {
+      if (isBuildFailure(error)) return { errors: error.errors, rules: 0 };
+      throw error;
+    }
+  );
+
+  if (outcome.errors.length > 0) {
+    failures.push(`${stylesheet}:`, ...outcome.errors.map(formatMessage));
+  } else if (outcome.rules === 0) {
+    failures.push(`${stylesheet}: no StyleX rules after bundling.`);
+  }
+}
+
 if (failures.length > 0) {
   console.error(
     [
@@ -103,6 +145,6 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    `esbuild bundled ${entries.map(({ entry }) => entry).join(" and ")} for the browser.`
+    `esbuild bundled ${[...entries.map(({ entry }) => entry), ...stylesheets].join(", ")} for the browser.`
   );
 }

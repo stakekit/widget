@@ -1,11 +1,11 @@
 import * as Atom from "effect/reactivity/Atom";
 import type { YieldCategory } from "../../../domain/earn/contract";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import {
   getExtendedYieldType,
   getYieldCategory,
   getYieldRewardTokens,
 } from "../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import {

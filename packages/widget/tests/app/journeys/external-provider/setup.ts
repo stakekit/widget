@@ -1,14 +1,12 @@
 import { HttpResponse, http } from "msw";
 import {
-  legacyYieldFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldDtoFixture,
 } from "../../../fixtures";
+import type { TokenDto as LegacyTokenDto } from "../../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../../mocks/api-routes";
 import { mockDelay } from "../../../mocks/delay";
 import type { TestWorker } from "../../../utils/test-extend";
-
-type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
 export const setup = (worker: TestWorker) => {
   const avalancheCToken: LegacyTokenDto = {
@@ -47,27 +45,8 @@ export const setup = (worker: TestWorker) => {
     logoURI: "https://assets.stakek.it/tokens/ton.svg",
   };
 
-  const legacyYieldBase = legacyYieldFixture();
   const yieldApiYieldBase = yieldApiYieldDtoFixture();
-  const createLegacyNativeStaking = ({
-    id,
-    token,
-  }: {
-    id: string;
-    token: LegacyTokenDto;
-  }) =>
-    legacyYieldFixture({
-      id,
-      token,
-      tokens: [token],
-      validators: [],
-      metadata: {
-        ...legacyYieldBase.metadata,
-        type: "staking",
-        gasFeeToken: token,
-      },
-    });
-  const createYieldApiNativeStaking = ({
+  const createNativeStaking = ({
     id,
     token,
   }: {
@@ -88,37 +67,20 @@ export const setup = (worker: TestWorker) => {
       },
     });
 
-  const avalancheAvaxNativeStaking = createLegacyNativeStaking({
+  const avalancheAvaxNativeStaking = createNativeStaking({
     id: "avalanche-avax-native-staking",
     token: avalancheCToken,
   });
-  const etherNativeStaking = createLegacyNativeStaking({
+  const etherNativeStaking = createNativeStaking({
     id: "ethereum-eth-etherfi-staking",
     token: ether,
   });
-  const solanaNativeStaking = createLegacyNativeStaking({
+  const solanaNativeStaking = createNativeStaking({
     id: "solana-sol-native-staking",
     token: solanaToken,
   });
-  const tonNativeStaking = createLegacyNativeStaking({
+  const tonNativeStaking = createNativeStaking({
     id: "ton-native-staking",
-    token: tonToken,
-  });
-
-  const etherNativeStakingYieldApi = createYieldApiNativeStaking({
-    id: etherNativeStaking.id,
-    token: ether,
-  });
-  const avalancheAvaxNativeStakingYieldApi = createYieldApiNativeStaking({
-    id: avalancheAvaxNativeStaking.id,
-    token: avalancheCToken,
-  });
-  const solanaNativeStakingYieldApi = createYieldApiNativeStaking({
-    id: solanaNativeStaking.id,
-    token: solanaToken,
-  });
-  const tonNativeStakingYieldApi = createYieldApiNativeStaking({
-    id: tonNativeStaking.id,
     token: tonToken,
   });
 
@@ -176,61 +138,18 @@ export const setup = (worker: TestWorker) => {
       }
     ),
 
-    http.get(
-      legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
-      async () => {
+    ...[
+      etherNativeStaking,
+      avalancheAvaxNativeStaking,
+      solanaNativeStaking,
+      tonNativeStaking,
+    ].map((yieldDto) =>
+      http.get(yieldApiRoute(`/v1/yields/${yieldDto.id}`), async () => {
         await mockDelay();
 
-        return HttpResponse.json(etherNativeStaking);
-      }
+        return HttpResponse.json(yieldDto);
+      })
     ),
-    http.get(yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`), async () => {
-      await mockDelay();
-
-      return HttpResponse.json(etherNativeStakingYieldApi);
-    }),
-    http.get(
-      legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
-      async () => {
-        await mockDelay();
-
-        return HttpResponse.json(avalancheAvaxNativeStaking);
-      }
-    ),
-    http.get(
-      yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
-      async () => {
-        await mockDelay();
-
-        return HttpResponse.json(avalancheAvaxNativeStakingYieldApi);
-      }
-    ),
-    http.get(
-      legacyApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
-      async () => {
-        await mockDelay();
-
-        return HttpResponse.json(solanaNativeStaking);
-      }
-    ),
-    http.get(
-      yieldApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
-      async () => {
-        await mockDelay();
-
-        return HttpResponse.json(solanaNativeStakingYieldApi);
-      }
-    ),
-    http.get(legacyApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
-      await mockDelay();
-
-      return HttpResponse.json(tonNativeStaking);
-    }),
-    http.get(yieldApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
-      await mockDelay();
-
-      return HttpResponse.json(tonNativeStakingYieldApi);
-    }),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async () => {
       await mockDelay();
 

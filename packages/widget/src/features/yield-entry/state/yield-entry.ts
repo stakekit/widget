@@ -3,8 +3,13 @@ import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+import type { ActionCommand } from "../../../domain/action/models";
 import { getKycProviderName } from "../../../domain/earn/kyc";
 import { ProviderId } from "../../../domain/identity/identifiers";
+import {
+  ActionSimulationKey,
+  actionSimulationResourceAtom,
+} from "../../../resources/action-simulation/index";
 import { yieldProviderResourceAtom } from "../../../resources/yield-provider/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
@@ -26,7 +31,9 @@ import {
   startYieldTransactionFlowAtom,
   type YieldTransactionFlowEnterMount,
 } from "../../yield-transaction-flow/index";
+import { getMaxGasReserve, getMaxGasReserveNote } from "../model/network-fee";
 import {
+  getYieldEntrySimulations,
   projectYieldEntry,
   type YieldEntryAmountInitialization,
   type YieldEntryProjectionInput,
@@ -104,6 +111,11 @@ export const addYieldEntryLedgerAccount = Effect.fn(
 });
 
 export type YieldEntryFacadeInput = Readonly<{
+  /**
+   * Whether the user has entered an amount. Earn validates the amount only
+   * once one is entered; a Position's stake form always validates.
+   */
+  readonly amountEntered: boolean;
   readonly amountInitialization: YieldEntryAmountInitialization;
   readonly availableAmount: BigNumber | null;
   readonly entry: YieldEntryProjectionInput["entry"];
@@ -142,6 +154,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
     const summaryView = get(summary.viewAtom);
 
     return {
+      hideGasFee: config.hideGasFee,
       input,
       isWalletConnecting: wallet.status === "connecting",
       kyc: {
@@ -165,7 +178,9 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
         providers: summaryView.providers,
         readiness,
         selectedYieldHasActivePosition: input.selectedYieldHasActivePosition,
-        validateAmount: connected || input.mount._tag === "PositionStake",
+        validateAmount:
+          input.mount._tag === "PositionStake" ||
+          (connected && input.amountEntered),
         wallet: {
           additionalAddresses: connected ? wallet.additionalAddresses : null,
           address: connected ? wallet.address : null,
@@ -177,25 +192,77 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
       walletScope,
     } as const;
   }).pipe(Atom.withLabel("yieldEntryResolvedInputAtom"));
+  // What the enter as it stands is estimated to cost, and the gas Max must
+  // leave of a gas token balance. Either is null until its estimate settles,
+  // and pending while it loads with none settled yet.
+  const simulationsAtom = Atom.make((get) => {
+    const targets = getYieldEntrySimulations(get(resolvedInputAtom).projection);
+    const simulate = (command: ActionCommand | null) => {
+      if (!command) return { pending: false, simulation: null } as const;
+      const result = get(
+        actionSimulationResourceAtom.local(
+          new ActionSimulationKey({ request: { command, intent: "enter" } })
+        )
+      );
+      const simulation = result.pipe(AsyncResult.value, Option.getOrNull);
+      return {
+        pending: simulation === null && !AsyncResult.isFailure(result),
+        simulation,
+      } as const;
+    };
+    return { fee: simulate(targets.fee), reserve: simulate(targets.reserve) };
+  }).pipe(Atom.withLabel("yieldEntrySimulationsAtom"));
   const submittedValidationKeyAtom = Atom.make<string | null>(null).pipe(
     Atom.withLabel("yieldEntrySubmittedValidationKeyAtom")
   );
   const viewAtom = Atom.make((get) => {
     const resolved = get(resolvedInputAtom);
     const readiness = resolved.projection.readiness;
+    const simulations = get(simulationsAtom);
+    const { entry } = resolved.projection;
+    const gasReserve = getMaxGasReserve({
+      simulation: simulations.reserve.simulation,
+      stakeToken: entry.token,
+      yieldDto: entry.yield,
+    });
+    const projection = projectYieldEntry({
+      gasReserve,
+      input: resolved.projection,
+      submitted:
+        get(submittedValidationKeyAtom) === resolved.input.validationKey,
+    });
+    const { errors } = projection.validation;
+    // An amount that cannot be used says so; its fee would only add noise.
+    const amountUsable =
+      !errors.stakeAmountGreaterThanAvailableAmount &&
+      !errors.stakeAmountGreaterThanMax &&
+      !errors.stakeAmountLessThanMin;
     return {
-      ...projectYieldEntry({
-        input: resolved.projection,
-        submitted:
-          get(submittedValidationKeyAtom) === resolved.input.validationKey,
-      }),
+      ...projection,
       appLoading: readiness._tag === "Loading",
       canSubmit: readiness._tag === "Ready" || readiness._tag === "Refreshing",
       connected: resolved.projection.connected,
+      /** The host hides gas fees. */
+      gasFeeHidden: resolved.hideGasFee,
       isFetching: readiness._tag === "Refreshing",
       isLedgerAccountPlaceholder:
         resolved.projection.isLedgerAccountPlaceholder,
       kyc: resolved.kyc,
+      maxGasReserveNote: projection.constraints.forceMax
+        ? null
+        : getMaxGasReserveNote({
+            availableAmount: resolved.projection.availableAmount,
+            hidden: resolved.hideGasFee,
+            maximum: projection.constraints.maximum,
+            reserve: gasReserve,
+            reservePending: simulations.reserve.pending,
+            stakeToken: entry.token,
+            yieldDto: entry.yield,
+          }),
+      /** The typed amount's estimate is loading, with none settled yet. */
+      networkFeePending: amountUsable && simulations.fee.pending,
+      /** The estimate of the typed amount, once it settled; null otherwise. */
+      networkFeeSimulation: amountUsable ? simulations.fee.simulation : null,
       providers: resolved.projection.providers,
       readiness,
       rewardToken: resolved.rewardToken,

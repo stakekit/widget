@@ -1,5 +1,6 @@
 import { Effect, Predicate, Schema, SchemaTransformation } from "effect";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { makeWalletConnectAttempts } from "../../platform/wallet-connect-attempts";
 import {
   CaipChainId,
   caipAddresses,
@@ -50,7 +51,13 @@ export const makeTronWalletConnect = ({
 }): TronWallet => {
   const endedListeners = new Set<() => void>();
   let connection: Connection | undefined;
-  let attempt = 0;
+  const attempts = makeWalletConnectAttempts(
+    () =>
+      new WalletIntegrationError({
+        message: "Tron connection superseded",
+        operation: "tron-connect",
+      })
+  );
 
   const restoredSession = protocol
     .sessions("tron")
@@ -71,62 +78,59 @@ export const makeTronWalletConnect = ({
       runWalletEffect(
         restoredSession.pipe(Effect.map(Predicate.isNotUndefined))
       ),
-    connect: ({ isReconnecting }) => {
-      const current = ++attempt;
-      return runWalletEffect(
-        Effect.gen(function* () {
-          const session = yield* restoredSession.pipe(
-            Effect.filterOrElse(Predicate.isNotUndefined, () =>
-              isReconnecting
-                ? Effect.fail(
-                    new WalletIntegrationError({
-                      message: "No Tron WalletConnect session to restore",
-                      operation: "tron-reconnect",
+    connect: ({ isReconnecting }) =>
+      runWalletEffect(
+        attempts.run(
+          Effect.gen(function* () {
+            const session = yield* restoredSession.pipe(
+              Effect.filterOrElse(Predicate.isNotUndefined, () =>
+                isReconnecting
+                  ? Effect.fail(
+                      new WalletIntegrationError({
+                        message: "No Tron WalletConnect session to restore",
+                        operation: "tron-reconnect",
+                      })
+                    )
+                  : protocol.connect({
+                      namespace: "tron",
+                      chains: [mainnet],
+                      requiredMethods: [],
+                      optionalMethods: [
+                        "tron_signTransaction",
+                        "tron_signMessage",
+                      ],
                     })
-                  )
-                : protocol.connect({
-                    namespace: "tron",
-                    chains: [mainnet],
-                    requiredMethods: [],
-                    optionalMethods: [
-                      "tron_signTransaction",
-                      "tron_signMessage",
-                    ],
-                  })
-            )
-          );
-          // A late approval after disconnect stays out of wallet state.
-          if (current !== attempt) {
-            return yield* new WalletIntegrationError({
-              message: "Tron connection superseded",
-              operation: "tron-connect",
-            });
-          }
-          const address = mainnetAddress(session);
-          if (address === undefined) {
-            return yield* new WalletIntegrationError({
-              message: "No Tron mainnet account approved",
-              operation: "tron-connect",
-            });
-          }
-          release();
-          connection = {
-            session,
-            address,
-            unsubscribeEnded: protocol.subscribeEnded(session.topic, () => {
-              release();
-              for (const listener of endedListeners) listener();
-            }),
-          };
-        })
-      );
-    },
-    disconnect: async () => {
-      ++attempt;
-      const topic = connection?.session.topic;
-      release();
-      if (topic) await runWalletEffect(protocol.disconnect(topic));
-    },
+              )
+            );
+            const address = mainnetAddress(session);
+            if (address === undefined) {
+              return yield* new WalletIntegrationError({
+                message: "No Tron mainnet account approved",
+                operation: "tron-connect",
+              });
+            }
+            release();
+            connection = {
+              session,
+              address,
+              unsubscribeEnded: protocol.subscribeEnded(session.topic, () => {
+                release();
+                for (const listener of endedListeners) listener();
+              }),
+            };
+          })
+        )
+      ),
+    disconnect: () =>
+      runWalletEffect(
+        attempts.interrupt.pipe(
+          Effect.andThen(() => {
+            const topic = connection?.session.topic;
+            release();
+            return topic ? protocol.disconnect(topic) : Effect.void;
+          })
+        )
+      ),
     signTransaction: (transaction: UnsignedTronTransaction) =>
       runWalletEffect(
         Effect.gen(function* () {

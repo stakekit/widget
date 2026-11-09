@@ -1,48 +1,19 @@
-import { dashboardMetricGrid } from "../../../../../../shared/ui/components/dashboard-details/styles.css";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { Metric, MetricGroup } from "../../../../../../ui/index";
 import type { EarnDetailsMetricCard } from "../earn-details-model";
-import * as styles from "../styles.css";
 
 export const EarnDetailsMetrics = ({
   cards,
 }: {
   cards: EarnDetailsMetricCard[];
 }) => (
-  <Box className={dashboardMetricGrid}>
+  <MetricGroup framed>
     {cards.map((card) => (
-      <MetricCard key={card.label} {...card} />
+      <Metric
+        key={card.label}
+        label={card.label}
+        value={card.value}
+        caption={card.subValue}
+      />
     ))}
-  </Box>
-);
-
-const MetricCard = ({ label, subValue, value }: EarnDetailsMetricCard) => (
-  <Box
-    className={styles.metricCard}
-    display="flex"
-    flexDirection="column"
-    gap="1"
-  >
-    <Text
-      className={styles.metricLabelText}
-      variant={{ type: "muted", weight: "normal" }}
-    >
-      {label}
-    </Text>
-    {typeof value === "string" ? (
-      <Text className={styles.metricValueText} variant={{ weight: "bold" }}>
-        {value}
-      </Text>
-    ) : (
-      <Box>{value}</Box>
-    )}
-    {subValue && (
-      <Text
-        className={styles.metricSubValueText}
-        variant={{ type: "muted", weight: "normal" }}
-      >
-        {subValue}
-      </Text>
-    )}
-  </Box>
+  </MetricGroup>
 );

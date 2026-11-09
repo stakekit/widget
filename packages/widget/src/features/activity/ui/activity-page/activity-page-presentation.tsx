@@ -1,15 +1,27 @@
+import { useAtomValue } from "@effect/atom-react";
 import { Match } from "effect";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { VirtualList } from "../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { FallbackContent } from "../../../widget-shell/views";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
+import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
+import {
+  EmptyState,
+  ListSkeleton,
+  Stack,
+  Text,
+  VirtualList,
+} from "../../../../ui/index";
+import { useWidgetNavigate } from "../../../navigation/index";
+import { ConnectWalletState } from "../../../wallet/views";
 import {
   type ActivityActionItem,
   type ActivitySelectionTarget,
   isActivitySelectionTarget,
 } from "../../model/activity-action";
+import {
+  type ActivityDayLabel,
+  groupActivityActionsByDay,
+} from "../../model/activity-days";
 import type { ActivityFilter } from "../../model/filters";
 import type {
   ActivityPagePagination,
@@ -18,69 +30,152 @@ import type {
 import { ActivityRetryMessage } from "../components/activity-retry-message";
 import { ActionListItem } from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";
-import { container } from "./style.css";
 
 type ActivityPageReadyView = Extract<ActivityPageView, { status: "ready" }>;
 
-const ActivityPageSkeleton = () => (
-  <Box
-    aria-hidden="true"
-    data-rk="activity-page-skeleton"
-    display="flex"
-    gap="1"
-    flexDirection="column"
-  >
-    {[...Array(5).keys()].map((item) => (
-      <ContentLoaderSquare key={item} heightPx={60} />
-    ))}
-  </Box>
-);
+const ActivityPageSkeleton = () => {
+  const { t } = useTranslation();
+
+  return (
+    <ListSkeleton
+      testId="activity-page-skeleton"
+      label={t("activity.loading")}
+    />
+  );
+};
 
 const ActivityPageError = ({
-  dataRk,
+  testId,
   onRetry,
+  fill = false,
 }: {
-  readonly dataRk: string;
+  readonly testId: string;
   readonly onRetry: () => void;
-}) => (
-  <Box
-    alignItems="center"
-    data-rk={dataRk}
-    display="flex"
-    flexDirection="column"
-    gap="2"
-    justifyContent="center"
-    my="4"
-  >
-    <ActivityRetryMessage onRetry={onRetry} />
-  </Box>
-);
+  readonly fill?: boolean;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Stack align="stretch" justify="center" grow={fill} testId={testId}>
+      <ActivityRetryMessage
+        onRetry={onRetry}
+        fill={fill}
+        title={t("activity.load_failed_title")}
+      />
+    </Stack>
+  );
+};
+
+/** No activity at all: it leads to Earn, where activity starts. */
+const ActivityPageEmpty = () => {
+  const { t } = useTranslation();
+  const navigation = useWidgetNavigate();
+
+  return (
+    <EmptyState
+      fill
+      testId="activity-empty"
+      icon="HistoryIcon"
+      title={t("activity.empty_title")}
+      body={t("activity.empty_description")}
+      action={{
+        label: t("shared.start_earning"),
+        onClick: () => void navigation.push(widgetRoutes.earn.build()),
+      }}
+    />
+  );
+};
 
 const resolveInfiniteScroll = (
   pagination: ActivityPagePagination
 ): {
-  readonly hasNextPage: boolean;
-  readonly isFetchingNextPage: boolean;
+  readonly hasMore: boolean;
+  readonly loadingMore: boolean;
 } =>
   Match.value(pagination).pipe(
     Match.when({ status: "idle" }, () => ({
-      hasNextPage: true,
-      isFetchingNextPage: false,
+      hasMore: true,
+      loadingMore: false,
     })),
     Match.when({ status: "loading-more" }, () => ({
-      hasNextPage: true,
-      isFetchingNextPage: true,
+      hasMore: true,
+      loadingMore: true,
     })),
     Match.when({ status: "complete" }, () => ({
-      hasNextPage: false,
-      isFetchingNextPage: false,
+      hasMore: false,
+      loadingMore: false,
     })),
     Match.when({ status: "load-more-failed" }, () => ({
-      hasNextPage: false,
-      isFetchingNextPage: false,
+      hasMore: false,
+      loadingMore: false,
     })),
     Match.exhaustive
   );
+
+/**
+ * The feed under a sticky header per day. It starts at its top for each
+ * filter: a filter's list is a new list, not a scrolled one.
+ */
+const ActivityList = ({
+  onActionSelect,
+  onLoadMore,
+  selectedAction,
+  view,
+}: {
+  readonly onActionSelect: (item: ActivityActionItem) => void;
+  readonly onLoadMore: () => void;
+  readonly selectedAction: ActivitySelectionTarget | null;
+  readonly view: ActivityPageReadyView;
+}) => {
+  const { t, i18n } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
+  const infiniteScroll = resolveInfiniteScroll(view.pagination);
+  const dayLabel = (day: ActivityDayLabel) =>
+    Match.value(day).pipe(
+      Match.when({ _tag: "today" }, () => t("activity.groups.today")),
+      Match.when({ _tag: "yesterday" }, () => t("activity.groups.yesterday")),
+      Match.when({ _tag: "date" }, ({ label }) => label),
+      Match.exhaustive
+    );
+  const list = {
+    label: t("activity.list_label"),
+    getKey: (item: ActivityActionItem) => `${item._tag}:${item.actionData.id}`,
+    hasMore: infiniteScroll.hasMore,
+    loadingMore: infiniteScroll.loadingMore,
+    loadingMoreLabel: t("activity.loading_more"),
+    onEndReached: onLoadMore,
+    estimateSize: 72,
+    maxHeight: "lg",
+    grow: true,
+    renderItem: (item: ActivityActionItem): ReactNode => (
+      <ActionListItem
+        action={item}
+        isSelected={isActivitySelectionTarget(item, selectedAction)}
+        onActionSelect={onActionSelect}
+      />
+    ),
+  } as const;
+
+  // Days need the presentation zone; until it is known the feed is one run.
+  return presentationTime ? (
+    <VirtualList
+      key={view.selectedFilter}
+      {...list}
+      groups={groupActivityActionsByDay({
+        actions: view.actions,
+        locale: i18n.language,
+        presentationTime,
+      }).map(({ day, items, key }) => ({
+        items,
+        key,
+        label: dayLabel(day),
+      }))}
+      stickyHeaders
+    />
+  ) : (
+    <VirtualList key={view.selectedFilter} {...list} items={view.actions} />
+  );
+};
 
 const ReadyActivityPage = ({
   onActionSelect,
@@ -96,10 +191,12 @@ const ReadyActivityPage = ({
   readonly view: ActivityPageReadyView;
 }) => {
   const { t } = useTranslation();
-  const infiniteScroll = resolveInfiniteScroll(view.pagination);
+  // Once every action is on screen the count says nothing the list does not.
+  const showsCount =
+    view.pagination.status !== "complete" && view.showingCount < view.total;
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Stack grow gap={12}>
       <ActivityFilters
         options={view.filterOptions}
         selectedFilter={view.selectedFilter}
@@ -107,50 +204,40 @@ const ReadyActivityPage = ({
       />
 
       {view.actions.length > 0 ? (
-        <>
-          <Box display="flex" justifyContent="flex-end" paddingBottom="2">
-            <Text
-              variant={{
-                type: "muted",
-                weight: "normal",
-                size: "small",
-              }}
-            >
-              {t("activity.showing_count", {
-                showing: view.showingCount,
-                total: view.total,
-              })}
-            </Text>
-          </Box>
+        <Stack grow gap={8}>
+          {showsCount ? (
+            <Stack direction="row" justify="end">
+              <Text variant="caption" tone="muted">
+                {t("activity.showing_count", {
+                  showing: view.showingCount,
+                  total: view.total,
+                })}
+              </Text>
+            </Stack>
+          ) : null}
 
-          <VirtualList
-            data={view.actions}
-            hasNextPage={infiniteScroll.hasNextPage}
-            isFetchingNextPage={infiniteScroll.isFetchingNextPage}
-            fetchNextPage={onLoadMore}
-            estimateSize={() => 80}
-            itemContent={(_index, item) => (
-              <ActionListItem
-                action={item}
-                isSelected={isActivitySelectionTarget(item, selectedAction)}
-                onActionSelect={onActionSelect}
-              />
-            )}
+          <ActivityList
+            onActionSelect={onActionSelect}
+            onLoadMore={onLoadMore}
+            selectedAction={selectedAction}
+            view={view}
           />
 
           {view.pagination.status === "load-more-failed" && (
             <ActivityPageError
-              dataRk="activity-load-more-error"
+              testId="activity-load-more-error"
               onRetry={onLoadMore}
             />
           )}
-        </>
+        </Stack>
       ) : (
-        <Box my="4">
-          <FallbackContent type="no_previous_activity" />
-        </Box>
+        <EmptyState
+          testId="activity-filter-empty"
+          icon="HistoryIcon"
+          title={t("activity.filter_empty_title")}
+        />
       )}
-    </Box>
+    </Stack>
   );
 };
 
@@ -173,36 +260,17 @@ export const ActivityPagePresentation = ({
 
   const content = Match.value(view).pipe(
     Match.when({ status: "connect-wallet" }, () => (
-      <Box
-        alignItems="center"
-        data-rk="activity-connect-wallet"
-        display="flex"
-        flex={1}
-        justifyContent="center"
-      >
-        <Text variant={{ weight: "medium", size: "large" }} textAlign="center">
-          {t("dashboard.details.activity_connect_wallet")}
-        </Text>
-      </Box>
+      <ConnectWalletState
+        testId="activity-connect-wallet"
+        title={t("dashboard.details.activity_connect_wallet")}
+      />
     )),
     Match.when({ status: "connecting" }, () => <ActivityPageSkeleton />),
     Match.when({ status: "loading" }, () => <ActivityPageSkeleton />),
     Match.when({ status: "failed" }, () => (
-      <ActivityPageError dataRk="activity-page-error" onRetry={onRetry} />
+      <ActivityPageError fill testId="activity-page-error" onRetry={onRetry} />
     )),
-    Match.when({ status: "empty" }, () => (
-      <Box
-        alignItems="center"
-        data-rk="activity-empty"
-        display="flex"
-        flex={1}
-        justifyContent="center"
-      >
-        <Text variant={{ weight: "medium", size: "large" }} textAlign="center">
-          {t("activity.no_previous_activity")}
-        </Text>
-      </Box>
-    )),
+    Match.when({ status: "empty" }, () => <ActivityPageEmpty />),
     Match.when({ status: "ready" }, (readyView) => (
       <ReadyActivityPage
         onActionSelect={onActionSelect}
@@ -215,9 +283,5 @@ export const ActivityPagePresentation = ({
     Match.exhaustive
   );
 
-  return (
-    <Box className={container} display="flex" flex={1} flexDirection="column">
-      {content}
-    </Box>
-  );
+  return <Stack grow>{content}</Stack>;
 };

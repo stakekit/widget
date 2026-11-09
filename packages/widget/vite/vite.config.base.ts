@@ -1,5 +1,4 @@
 import path from "node:path";
-import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import macros from "unplugin-macros/vite";
@@ -13,6 +12,7 @@ import {
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
 import { hostBundlerOutputPlugin } from "./host-bundler-output.ts";
+import { type StyleXInjection, stylexPlugins } from "./stylex.ts";
 
 declare module "vite" {
   interface UserConfig {
@@ -45,11 +45,14 @@ export const getConfig = (
     plugins?: Plugin[];
     /** Keeps `console` calls in minified output; the playground logs to the console. */
     keepConsole?: boolean;
+    /** Defaults to `stylesheet`; see `StyleXInjection`. */
+    stylexInjection?: StyleXInjection;
   }
 ): UserConfigFnObject =>
   defineConfig(({ command }) => {
     const isBuild = command === "build";
     const shouldMinifyOutput = isBuild && overides?.build?.minify !== false;
+    const stylexInjection = options?.stylexInjection ?? "stylesheet";
 
     return mergeConfig(overides ?? {}, {
       root: path.resolve(import.meta.dirname, ".."),
@@ -58,15 +61,46 @@ export const getConfig = (
           "vite-plugin-node-polyfills/shims/buffer",
           "vite-plugin-node-polyfills/shims/global",
           "vite-plugin-node-polyfills/shims/process",
-          "@vanilla-extract/recipes/createRuntimeFn",
-          "@vanilla-extract/sprinkles/createRuntimeSprinkles",
           "react-router/dom",
+          // Every Base UI part the Design System imports (`src/ui`). The
+          // dependency scan can miss a newly imported subpath when the cache
+          // hash is unchanged; found mid-run, it would reload the page and
+          // fail a test run. Keep in step with `@base-ui/react/*` imports.
+          "@base-ui/react/alert-dialog",
+          "@base-ui/react/avatar",
+          "@base-ui/react/checkbox",
+          "@base-ui/react/collapsible",
+          "@base-ui/react/dialog",
+          "@base-ui/react/field",
+          "@base-ui/react/input",
+          "@base-ui/react/meter",
+          "@base-ui/react/popover",
+          "@base-ui/react/scroll-area",
+          "@base-ui/react/select",
+          "@base-ui/react/separator",
+          "@base-ui/react/switch",
+          "@base-ui/react/tabs",
+          "@base-ui/react/toggle",
+          "@base-ui/react/toggle-group",
+          "@base-ui/react/tooltip",
+          // The data and motion libraries the Design System imports, for the
+          // same reason.
+          "@tanstack/react-virtual",
+          "motion/react",
+          "recharts",
+          // Runtime injection imports this once a compiled module loads. The
+          // dependency scan can't see an import the transform adds; found
+          // mid-run, it would reload the page and fail a test run.
+          ...(stylexInjection === "runtime"
+            ? ["@stylexjs/stylex/lib/stylex-inject"]
+            : []),
         ],
       },
       plugins: [
         ...(options?.plugins ?? []),
         nodePolyfills({ include: ["buffer", "crypto", "stream"] }),
         macros(),
+        ...stylexPlugins({ command, injection: stylexInjection }),
         react({
           compiler: true,
           // Skip large generated and data-only modules that gain nothing from
@@ -78,7 +112,6 @@ export const getConfig = (
             /[/\\]adapters[/\\]cosmos[/\\]chains[/\\]chain-registry\.ts$/,
           ],
         }),
-        vanillaExtractPlugin(),
         hostBundlerOutputPlugin(),
       ],
       css: {

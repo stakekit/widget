@@ -2,8 +2,6 @@ import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import { Integration } from "../../../../src/domain/borrow/catalog/integration";
-import { Market } from "../../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../../src/domain/borrow/positions/borrow-positions";
@@ -13,113 +11,44 @@ import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "../../../../src/features/borrow/market-position/model/details";
+import {
+  borrowWalletAddress,
+  makeBorrowAccountSnapshot,
+  makeBorrowCollateralTokenDto,
+  makeBorrowDebtBalanceDto,
+  makeBorrowIntegration,
+  makeBorrowMarket,
+  makeBorrowSupplyBalanceDto,
+  usdcTokenAddress,
+  wethTokenAddress,
+} from "../../../fixtures/borrow";
 
-const address = Schema.decodeSync(WalletAddress)(
-  "0x0000000000000000000000000000000000000001"
-);
+const address = Schema.decodeSync(WalletAddress)(borrowWalletAddress);
 
-const marketDto = {
-  id: "aave-v3-ethereum-usdc",
-  integrationId: "aave-borrow",
-  network: "ethereum",
-  type: "pool",
-  poolAddress: "0x0000000000000000000000000000000000000001",
-  loanToken: {
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-  },
-  collateralTokens: [
-    {
-      token: {
-        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        symbol: "WETH",
-        name: "Wrapped Ether",
-        decimals: 18,
-      },
-      priceUsd: "2000",
-      maxLtv: "0.8",
-      liquidationThreshold: "0.85",
-      liquidationPenalty: "0.05",
-      supplyRate: "0.02",
-    },
-  ],
-  borrowRate: "0.06",
-  totalSupply: "1000000",
-  totalSupplyRaw: "1000000000000",
-  totalBorrow: "500000",
-  totalBorrowRaw: "500000000000",
-  availableLiquidity: "500000",
-  availableLiquidityRaw: "500000000000",
-  utilizationRate: "0.5",
-  loanTokenPriceUsd: "1",
-  isBorrowEnabled: true,
-  supplyCollateralFeeBps: "0",
-  feeWrapperAddress: null,
-  originationFeeBps: "0",
-  originationFeeWrapperAddress: null,
-  blueBundleOriginationFeeBps: null,
-  minLoan: null,
-} as const;
-
-const integrationDto = {
-  id: "aave-borrow",
-  providerId: "aave",
-  name: "Aave V3",
-  networks: ["ethereum"],
-  metadata: {
-    description: "Aave lending and borrowing",
-    externalLink: "https://aave.com",
-    logoURI: "https://assets.stakek.it/protocols/aave.svg",
-  },
-  actions: [],
-} as const;
-
-const positionDto = Schema.decodeSync(BorrowAccountSnapshot)({
-  address,
-  availableToBorrowUsd: "450",
-  currentLtv: "0.4",
+const aaveAccountSnapshot = makeBorrowAccountSnapshot({
   debtBalances: [
-    {
-      apy: "0.06",
-      balance: "400",
-      balanceRaw: "400000000",
-      balanceUsd: "400",
-      marketId: marketDto.id,
+    makeBorrowDebtBalanceDto({
       pendingActions: [
         {
           args: {
-            marketId: marketDto.id,
-            tokenAddress: marketDto.loanToken.address,
+            marketId: "aave-v3-ethereum-usdc",
+            tokenAddress: usdcTokenAddress,
           },
           label: "Repay",
           type: "repay",
         },
       ],
-      tokenAddress: marketDto.loanToken.address,
-      tokenSymbol: "USDC",
-    },
+    }),
   ],
-  healthFactor: "2.125",
-  integrationId: integrationDto.id,
-  netApy: "-0.006",
-  netWorthUsd: "600",
-  network: "ethereum",
   supplyBalances: [
-    {
-      apy: "0.02",
-      balance: "0.5",
-      balanceRaw: "500000000000000000",
-      balanceUsd: "1000",
-      isCollateral: true,
+    makeBorrowSupplyBalanceDto({
       marketId: "aave-v3-ethereum-weth",
       pendingActions: [
         {
           args: {
             amountRaw: "500000000000000000",
             marketId: "aave-v3-ethereum-weth",
-            tokenAddress: marketDto.collateralTokens[0].token.address,
+            tokenAddress: wethTokenAddress,
           },
           label: "Withdraw",
           type: "withdraw",
@@ -127,17 +56,14 @@ const positionDto = Schema.decodeSync(BorrowAccountSnapshot)({
         {
           args: {
             marketId: "aave-v3-ethereum-weth",
-            tokenAddress: marketDto.collateralTokens[0].token.address,
+            tokenAddress: wethTokenAddress,
           },
           label: "Disable collateral",
           type: "disableCollateral",
         },
       ],
-      tokenAddress: marketDto.collateralTokens[0].token.address,
-      tokenSymbol: "WETH",
-    },
+    }),
   ],
-  totalBorrowedUsd: "400",
   totalCollateralUsd: "1000",
   totalSuppliedUsd: "1000",
 });
@@ -152,11 +78,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeSync(Integration)(integrationDto),
-          accountSnapshot: positionDto,
+          integration: makeBorrowIntegration(),
+          accountSnapshot: aaveAccountSnapshot,
         },
       ],
-      markets: [Schema.decodeSync(Market)(marketDto)],
+      markets: [makeBorrowMarket()],
     });
 
     expect(position?.id).toBe("aave-v3-ethereum-usdc");
@@ -173,11 +99,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeSync(Integration)(integrationDto),
-          accountSnapshot: positionDto,
+          integration: makeBorrowIntegration(),
+          accountSnapshot: aaveAccountSnapshot,
         },
       ],
-      markets: [Schema.decodeSync(Market)(marketDto)],
+      markets: [makeBorrowMarket()],
     });
 
     if (!position) {
@@ -200,11 +126,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeSync(Integration)(integrationDto),
-          accountSnapshot: positionDto,
+          integration: makeBorrowIntegration(),
+          accountSnapshot: aaveAccountSnapshot,
         },
       ],
-      markets: [Schema.decodeSync(Market)(marketDto)],
+      markets: [makeBorrowMarket()],
     });
 
     if (!position) {
@@ -241,11 +167,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeSync(Integration)(integrationDto),
-          accountSnapshot: positionDto,
+          integration: makeBorrowIntegration(),
+          accountSnapshot: aaveAccountSnapshot,
         },
       ],
-      markets: [Schema.decodeSync(Market)(marketDto)],
+      markets: [makeBorrowMarket()],
     });
 
     if (!position) {
@@ -256,17 +182,19 @@ describe("borrow position items", () => {
 
     expect(model.title).toBe("WETH/USDC");
     expect(model.providerName).toBe("Aave V3");
-    expect(model.metricCards.map((card) => card.id)).toEqual([
-      "net-worth",
+    expect(model.summary.metrics.map((metric) => metric.id)).toEqual([
       "debt",
-      "ltv",
       "health-factor",
     ]);
-    expect(model.breakdownRows.map((row) => row.id)).toEqual([
-      `supply-${marketDto.collateralTokens[0].token.address.toLowerCase()}`,
-      `debt-${marketDto.loanToken.address.toLowerCase()}`,
+    // The summary's gauge marks the liquidation threshold, so the details
+    // leave it out, as they leave the header's provider and network.
+    expect(model.detailRows.map((row) => row.id)).toEqual([
+      "borrowed",
+      "borrow-apy",
+      "market-type",
+      "max-ltv",
+      "liquidation-penalty",
     ]);
-    expect(model.detailRows.map((row) => row.id)).toContain("borrow-apy");
     expect(model.currentLtv).toEqual(new BigNumber("0.4"));
     expect(model.healthFactor).toEqual(new BigNumber("2.125"));
     expect(model.liquidationThreshold).toEqual(new BigNumber("0.85"));
@@ -279,8 +207,8 @@ describe("borrow position items", () => {
   });
 
   it("shows only borrowing metrics on the entry details screen", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
-    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = makeBorrowMarket();
+    const integration = makeBorrowIntegration();
     const model = getBorrowDetailsModel({
       collateralToken: null,
       borrowAmount: new BigNumber(0),
@@ -303,38 +231,72 @@ describe("borrow position items", () => {
     );
   });
 
-  it("omits unavailable entry risk facts without placeholder values", () => {
-    const market = Schema.decodeSync(Market)(marketDto);
+  it("shows the max LTV a captured flow projected over the market's own", () => {
     const model = getBorrowDetailsModel({
       collateralToken: null,
-      borrowAmount: new BigNumber(1),
-      collateralAmount: new BigNumber(1),
-      integration: Schema.decodeSync(Integration)(integrationDto),
+      borrowAmount: new BigNumber(0),
+      collateralAmount: new BigNumber(0),
+      integration: null,
       locale: "en",
-      market,
-      projection: {
-        borrowMaxAmount: new BigNumber(10),
-        borrowUsd: new BigNumber(1),
-        collateralMaxAmount: new BigNumber(10),
-        collateralUsd: new BigNumber(1),
-        existingCollateralUsd: new BigNumber(0),
-        existingDebtUsd: new BigNumber(0),
-        maxLtv: null,
-        projectedCollateralUsd: new BigNumber(1),
-        projectedDebtUsd: new BigNumber(1),
-        projectedHealthFactor: null,
-        projectedLtv: new BigNumber(1),
-        riskStatus: "unavailable",
-      },
+      market: makeBorrowMarket(),
+      projectedMaxLtv: new BigNumber("0.8098"),
       t,
     });
 
-    expect(model.formRows.map((row) => row.id)).not.toContain("ltv");
-    expect(model.formRows.map((row) => row.id)).not.toContain("health-factor");
-    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).not.toBe(
-      "-"
+    expect(model.metricCards.find((card) => card.id === "max-ltv")?.value).toBe(
+      "80.98%"
+    );
+    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).toBe(
+      "80.98%"
     );
   });
+
+  it.each([
+    { riskStatus: "unavailable" as const, explains: true },
+    { riskStatus: "pending" as const, explains: false },
+  ])(
+    "keeps the LTV and health factor rows as placeholders while risk is $riskStatus",
+    ({ explains, riskStatus }) => {
+      const market = makeBorrowMarket();
+      const model = getBorrowDetailsModel({
+        collateralToken: null,
+        borrowAmount: new BigNumber(1),
+        collateralAmount: new BigNumber(1),
+        integration: makeBorrowIntegration(),
+        locale: "en",
+        market,
+        projection: {
+          borrowMaxAmount: new BigNumber(10),
+          borrowUsd: new BigNumber(1),
+          collateralMaxAmount: new BigNumber(10),
+          collateralUsd: new BigNumber(1),
+          existingCollateralUsd: new BigNumber(0),
+          existingDebtUsd: new BigNumber(0),
+          maxLtv: null,
+          projectedCollateralUsd: new BigNumber(1),
+          projectedDebtUsd: new BigNumber(1),
+          projectedHealthFactor: null,
+          projectedLtv: new BigNumber(1),
+          riskStatus,
+        },
+        t,
+      });
+      const row = (id: string) =>
+        model.formRows.find((candidate) => candidate.id === id);
+
+      expect(row("ltv")).toEqual({
+        id: "ltv",
+        label: t("dashboard.borrow.form.ltv_ratio"),
+        value: "—",
+        ...(explains
+          ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+          : {}),
+      });
+      expect(row("health-factor")?.value).toBe("—");
+      expect(row("health-factor")?.tone).toBeUndefined();
+      expect(row("max-ltv")?.value).not.toBe("—");
+    }
+  );
 
   it.each([
     {
@@ -343,9 +305,14 @@ describe("borrow position items", () => {
       expected: { hf: ["2", "default"], ltv: ["40%", "default"] },
     },
     {
+      hf: "1.3",
+      ltv: "0.5",
+      expected: { hf: ["1.3", "warning"], ltv: ["50%", "warning"] },
+    },
+    {
       hf: "1.05",
       ltv: "0.7",
-      expected: { hf: ["1.05", "warning"], ltv: ["70%", "warning"] },
+      expected: { hf: ["1.05", "danger"], ltv: ["70%", "danger"] },
     },
     {
       hf: "0.9",
@@ -358,7 +325,7 @@ describe("borrow position items", () => {
       expected: { hf: ["<0.01", "danger"], ltv: [">100%", "danger"] },
     },
   ])(
-    "flags projected LTV $ltv and health factor $hf against a 75% max LTV",
+    "reads projected LTV $ltv and health factor $hf in one band against a 75% max LTV",
     ({ expected, hf, ltv }) => {
       const model = getBorrowDetailsModel({
         collateralToken: null,
@@ -366,7 +333,7 @@ describe("borrow position items", () => {
         collateralAmount: new BigNumber(1),
         integration: null,
         locale: "en",
-        market: Schema.decodeSync(Market)(marketDto),
+        market: makeBorrowMarket(),
         projection: {
           borrowMaxAmount: new BigNumber(10),
           borrowUsd: new BigNumber(1),
@@ -392,12 +359,43 @@ describe("borrow position items", () => {
       expect(row("health-factor")).toEqual(expected.hf);
     }
   );
+
+  it("draws the projected LTV as a meter under its row, with max LTV marked", () => {
+    const model = getBorrowDetailsModel({
+      collateralToken: null,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(1),
+      integration: null,
+      locale: "en",
+      market: makeBorrowMarket(),
+      projection: {
+        borrowMaxAmount: new BigNumber(10),
+        borrowUsd: new BigNumber(1),
+        collateralMaxAmount: new BigNumber(10),
+        collateralUsd: new BigNumber(1),
+        existingCollateralUsd: new BigNumber(0),
+        existingDebtUsd: new BigNumber(0),
+        maxLtv: new BigNumber("0.75"),
+        projectedCollateralUsd: new BigNumber(1),
+        projectedDebtUsd: new BigNumber(1),
+        projectedHealthFactor: new BigNumber("1.3"),
+        projectedLtv: new BigNumber("0.5"),
+        riskStatus: "available",
+      },
+      t,
+    });
+
+    expect(model.formRows.find((row) => row.id === "ltv")?.meter).toEqual({
+      value: 50,
+      valueText: "50%",
+      marker: { value: 75, label: "dashboard.borrow.risk.max_ltv_marker" },
+    });
+  });
   it("keeps same-token collateral isolated by market and preserves API risk state", () => {
     const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
     const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";
     const usdtMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdt";
-    const morphoIntegration = Schema.decodeSync(Integration)({
-      ...integrationDto,
+    const morphoIntegration = makeBorrowIntegration({
       id: "morpho-blue-borrow",
       name: "Morpho Blue Borrow",
     });
@@ -410,12 +408,10 @@ describe("borrow position items", () => {
       readonly loanTokenAddress: string;
       readonly loanTokenSymbol: string;
     }) =>
-      Schema.decodeSync(Market)({
-        ...marketDto,
+      makeBorrowMarket({
         borrowRate: "0.03856649526282294",
         collateralTokens: [
-          {
-            ...marketDto.collateralTokens[0],
+          makeBorrowCollateralTokenDto({
             liquidationThreshold: "0.86",
             priceUsd: "63500",
             supplyRate: "0",
@@ -425,7 +421,7 @@ describe("borrow position items", () => {
               name: "Coinbase Wrapped BTC",
               symbol: "cbBTC",
             },
-          },
+          }),
         ],
         id,
         integrationId: morphoIntegration.id,
@@ -439,7 +435,7 @@ describe("borrow position items", () => {
       });
     const usdcMarket = makeMarket({
       id: usdcMarketId,
-      loanTokenAddress: marketDto.loanToken.address,
+      loanTokenAddress: usdcTokenAddress,
       loanTokenSymbol: "USDC",
     });
     const usdtMarket = makeMarket({
@@ -447,8 +443,7 @@ describe("borrow position items", () => {
       loanTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       loanTokenSymbol: "USDT",
     });
-    const accountPosition = Schema.decodeSync(BorrowAccountSnapshot)({
-      ...positionDto,
+    const accountPosition = makeBorrowAccountSnapshot({
       availableToBorrowUsd: null,
       currentLtv: "0.1462",
       debtBalances: [
@@ -459,7 +454,7 @@ describe("borrow position items", () => {
           balanceUsd: "0.50",
           marketId: usdcMarketId,
           pendingActions: [],
-          tokenAddress: marketDto.loanToken.address,
+          tokenAddress: usdcTokenAddress,
           tokenSymbol: "USDC",
         },
       ],
@@ -550,14 +545,23 @@ describe("borrow position items", () => {
     });
     expect(model.providerName).toBe("Morpho Blue");
     expect(model.healthFactor).toEqual(new BigNumber("4.3708"));
-    expect(model.totalCollateralUsd).toBe("$2.54");
-    expect(model.metricCards.find((card) => card.id === "debt")?.value).toBe(
-      "$0.50"
-    );
+    // The summary's caption carries the collateral value.
+    const captionT = ((key: string, options?: { collateral?: string }) =>
+      options?.collateral ?? key) as TFunction;
+    expect(
+      getBorrowPositionDetailsModel({
+        locale: "en",
+        position: usdcPosition,
+        t: captionT,
+      }).summary.subvalue
+    ).toBe("$2.54");
+    expect(
+      model.summary.metrics.find((metric) => metric.id === "debt")?.value
+    ).toBe("$0.50");
+    expect(model.networkName).toBe("Ethereum");
     expect(model.detailRows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "network", value: "Ethereum" }),
-        expect.objectContaining({ id: "borrow-apy", value: "3.85%" }),
+        expect.objectContaining({ id: "borrow-apy", value: "3.86%" }),
       ])
     );
   });
@@ -567,22 +571,21 @@ describe("borrow position items", () => {
     const ghoAddress = "0x7dfF72693f6A4149b17e7C6314655f6A9F7c8B33";
     const usdcMarketId = `aave-borrow-arbitrum-${usdcAddress.toLowerCase()}`;
     const ghoMarketId = `aave-borrow-arbitrum-${ghoAddress.toLowerCase()}`;
-    const integration = Schema.decodeSync(Integration)({
-      ...integrationDto,
+    const integration = makeBorrowIntegration({
       networks: ["arbitrum"],
     });
-    const usdcCollateral = {
-      ...marketDto.collateralTokens[0],
+    const usdcToken = {
+      address: usdcAddress,
+      decimals: 6,
+      name: "USDC",
+      symbol: "USDC",
+    };
+    const usdcCollateral = makeBorrowCollateralTokenDto({
       liquidationThreshold: "0.78",
       maxLtv: "0.75",
       priceUsd: "1",
-      token: {
-        address: usdcAddress,
-        decimals: 6,
-        name: "USDC",
-        symbol: "USDC",
-      },
-    };
+      token: usdcToken,
+    });
     const makePoolMarket = (
       id: string,
       loanToken: {
@@ -592,14 +595,13 @@ describe("borrow position items", () => {
         readonly symbol: string;
       }
     ) =>
-      Schema.decodeSync(Market)({
-        ...marketDto,
+      makeBorrowMarket({
         collateralTokens: [usdcCollateral],
         id,
         loanToken,
         network: "arbitrum",
       });
-    const usdcMarket = makePoolMarket(usdcMarketId, usdcCollateral.token);
+    const usdcMarket = makePoolMarket(usdcMarketId, usdcToken);
     const ghoMarket = makePoolMarket(ghoMarketId, {
       address: ghoAddress,
       decimals: 18,
@@ -673,9 +675,7 @@ describe("borrow position items", () => {
         t,
       });
       expect(model.title).toBe("USDC/GHO");
-      expect(
-        model.metricCards.find((card) => card.id === "net-worth")?.value
-      ).toBe("$0.03");
+      expect(model.summary.value).toBe("$0.03");
     });
 
     it("shares pool collateral across debts without double-counting account totals", () => {
@@ -724,9 +724,7 @@ describe("borrow position items", () => {
         { collateral: [usdcMarketId], id: daiMarketId, netWorthUsd: "0.02" },
       ]);
       expect(positions.totals).toEqual({
-        netApy: new BigNumber("0.018"),
-        netApyWeightUsd: new BigNumber("0.02"),
-        netWorthUsd: new BigNumber("0.02"),
+        totalBorrowedUsd: new BigNumber("0.02"),
         totalSuppliedUsd: new BigNumber("0.04"),
       });
     });

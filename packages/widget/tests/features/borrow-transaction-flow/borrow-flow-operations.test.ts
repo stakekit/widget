@@ -11,6 +11,8 @@ import {
   Scope,
   Stream,
 } from "effect";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import { Transaction } from "../../../src/domain/borrow/execution/transaction";
 import {
@@ -28,14 +30,15 @@ import {
   type BorrowTransactionFlowIntake,
   borrowFlowRoutes,
   getBorrowTransactionFlowDestination,
-} from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+} from "../../../src/features/borrow-transaction-flow/model/session";
 import {
   leaveBorrowFlow,
+  restartBorrowFlow,
   startBorrowTransactionFlow,
 } from "../../../src/features/borrow-transaction-flow/state/borrow-flow-session";
 import { startBorrowFlowExecution } from "../../../src/features/borrow-transaction-flow/state/execution-page";
 import { confirmBorrowAction } from "../../../src/features/borrow-transaction-flow/state/review-page";
-import { BorrowOperations } from "../../../src/services/api/operations";
+import type { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import {
@@ -63,6 +66,7 @@ import {
   makeConnectingWalletState,
 } from "../../fixtures/wallet-state";
 import { borrowEntryFlowEntry } from "../../utils/borrow-flow-entry";
+import { borrowOperationsLayer } from "../../utils/services/borrow-operations";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestWallet } from "../../utils/services/wallet-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
@@ -157,9 +161,6 @@ const idleWorkflow = (
   states: Stream.succeed(initializeTransactionWorkflow(input)),
 });
 
-const unexpected = <A>(method: string): Effect.Effect<A> =>
-  Effect.die(`borrow flow operations test: unexpected call to ${method}`);
-
 type KitOverrides = Readonly<{
   readonly borrowEnabled?: boolean;
   readonly execute?: WidgetNavigation["Service"]["execute"];
@@ -189,19 +190,10 @@ const makeKit = Effect.fn("test.makeBorrowFlowKit")(function* (
     navigation.layer,
     tracking.layer,
     wallet.layer,
-    Layer.succeed(
-      BorrowOperations,
-      BorrowOperations.of({
-        executeAction:
-          overrides.executeAction ?? (() => Effect.succeed(makeAction())),
-        getAction: () => unexpected("BorrowOperations.getAction"),
-        stepAction: () => unexpected("BorrowOperations.stepAction"),
-        submitTransaction: () =>
-          unexpected("BorrowOperations.submitTransaction"),
-        submitTransactionInBackground: () =>
-          unexpected("BorrowOperations.submitTransactionInBackground"),
-      })
-    ),
+    borrowOperationsLayer({
+      executeAction:
+        overrides.executeAction ?? (() => Effect.succeed(makeAction())),
+    }),
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({
@@ -768,6 +760,39 @@ describe("startBorrowFlowExecution", () => {
       })
   );
 
+  // Steps first reads the Atom that starts its workflow while React renders,
+  // and the Atom runtime runs what that read forks before it returns. The
+  // workflow's first wallet request and lifecycle event must not land there.
+  it.effect("makes no workflow in the Atom read that starts it", () =>
+    Effect.gen(function* () {
+      const action = makeAction("CREATED", "render-read");
+      const handle = openSession();
+      const makeWorkflow = vi.fn<TransactionWorkflowService["Service"]["make"]>(
+        (input) => Effect.succeed(idleWorkflow(input))
+      );
+      const kit = yield* makeKit({
+        executeAction: () => Effect.succeed(action),
+        makeWorkflow,
+      });
+      yield* confirmBorrowAction(handle).pipe(Effect.provide(kit.layer));
+      // Built up front, so the read cannot wait on the layer instead.
+      const services = yield* Layer.build(kit.layer);
+      const executionAtom = Atom.runtime(Layer.succeedContext(services)).atom(
+        startBorrowFlowExecution(handle, action.id)
+      );
+      const registry = AtomRegistry.make();
+      const unmount = registry.mount(executionAtom);
+
+      registry.get(executionAtom);
+
+      expect(makeWorkflow).not.toHaveBeenCalled();
+      yield* Effect.promise(() =>
+        vi.waitFor(() => expect(makeWorkflow).toHaveBeenCalledOnce())
+      );
+      unmount();
+    })
+  );
+
   it.effect("interrupts an Execution started before any handoff", () =>
     Effect.gen(function* () {
       const makeWorkflow = vi.fn<TransactionWorkflowService["Service"]["make"]>(
@@ -878,33 +903,21 @@ describe("startBorrowFlowExecution", () => {
 });
 
 describe("leaveBorrowFlow", () => {
-  const leave = (intake: BorrowTransactionFlowIntake) =>
+  const leave = (from: "Review" | "Steps") =>
     Effect.gen(function* () {
       const kit = yield* makeKit();
-      yield* leaveBorrowFlow(
-        new BorrowFlowSession({ intake, walletScope })
-      ).pipe(Effect.provide(kit.layer));
+      yield* leaveBorrowFlow(from).pipe(Effect.provide(kit.layer));
       return yield* kit.navigation.commands;
     });
 
-  it.effect("replaces the flow with Borrow for a Borrow Entry flow", () =>
-    Effect.gen(function* () {
-      expect(yield* leave(borrowEntryIntake)).toEqual([
-        { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
-      ]);
-    })
-  );
-
-  it.effect(
-    "replaces the flow with its position for a Market Position flow",
-    () =>
+  it.effect.each([
+    ["Review", 1],
+    ["Steps", 2],
+  ] as const)(
+    "goes back from %s to the page the flow started from",
+    ([from, steps]) =>
       Effect.gen(function* () {
-        expect(yield* leave(marketPositionIntake)).toEqual([
-          {
-            _tag: "Replace",
-            to: widgetRoutes.borrowPosition.build("Dashboard", { marketId }),
-          },
-        ]);
+        expect(yield* leave(from)).toEqual([{ _tag: "Back", steps }]);
       })
   );
 
@@ -919,7 +932,7 @@ describe("leaveBorrowFlow", () => {
           ),
       });
 
-      const leaving = yield* leaveBorrowFlow(openSession()).pipe(
+      const leaving = yield* leaveBorrowFlow("Steps").pipe(
         Effect.provide(kit.layer),
         Effect.forkChild({ startImmediately: true })
       );
@@ -934,8 +947,40 @@ describe("leaveBorrowFlow", () => {
 
       expect(interruptedWhileLeaving).toBeUndefined();
       expect(yield* kit.navigation.commands).toEqual([
+        { _tag: "Back", steps: 2 },
+      ]);
+    })
+  );
+});
+
+describe("restartBorrowFlow", () => {
+  const restart = (intake: BorrowTransactionFlowIntake) =>
+    Effect.gen(function* () {
+      const kit = yield* makeKit();
+      yield* restartBorrowFlow(
+        new BorrowFlowSession({ intake, walletScope })
+      ).pipe(Effect.provide(kit.layer));
+      return yield* kit.navigation.commands;
+    });
+
+  it.effect("replaces the flow with Borrow for a Borrow Entry flow", () =>
+    Effect.gen(function* () {
+      expect(yield* restart(borrowEntryIntake)).toEqual([
         { _tag: "Replace", to: widgetRoutes.borrow.build("Dashboard") },
       ]);
     })
+  );
+
+  it.effect(
+    "replaces the flow with its position for a Market Position flow",
+    () =>
+      Effect.gen(function* () {
+        expect(yield* restart(marketPositionIntake)).toEqual([
+          {
+            _tag: "Replace",
+            to: widgetRoutes.borrowPosition.build("Dashboard", { marketId }),
+          },
+        ]);
+      })
   );
 });

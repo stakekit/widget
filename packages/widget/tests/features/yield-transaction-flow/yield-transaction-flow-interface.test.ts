@@ -16,11 +16,11 @@ import {
   getYieldFlowRouteGroup,
   startYieldTransactionFlowAtom,
 } from "../../../src/features/yield-transaction-flow/index";
+import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import {
   type NavigatingYieldTransactionFlowStart,
-  type YieldTransactionFlowIntake,
   yieldFlowRoutes,
-} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+} from "../../../src/features/yield-transaction-flow/model/session";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import {
   type WidgetNavigationTarget,
@@ -188,7 +188,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/default/stake/complete",
-    finishPath: "/positions",
+    finishPath: "/positions/yield/default",
     makeCommand: () => ({
       intake: makeEnterIntake(),
       mount: {
@@ -203,7 +203,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/default/unstake/complete",
-    finishPath: "/positions",
+    finishPath: "/positions/yield/default",
     makeCommand: () => ({
       intake: makeExitIntake(),
       mount: {
@@ -218,7 +218,7 @@ const startCases: ReadonlyArray<
   },
   {
     completePath: "/positions/yield/default/pending-action/complete",
-    finishPath: "/positions",
+    finishPath: "/positions/yield/default",
     makeCommand: () => ({
       intake: makeManageIntake(),
       mount: {

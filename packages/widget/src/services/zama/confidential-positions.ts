@@ -3,7 +3,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import {
   type ConfidentialRevealPosition,
   getConfidentialRevealRequests,
-} from "../../domain/earn/confidential";
+} from "../../domain/earn/confidential-balance";
 import type { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import { resourceInvalidationKeys } from "../resource-invalidation";
 import { RevealedBalances } from "./revealed-balances";

@@ -1,1 +1,1 @@
-export { WidgetLink, WidgetNavigate } from "./ui/widget-navigate";
+export { WidgetNavigate } from "./ui/widget-navigate";

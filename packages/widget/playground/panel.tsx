@@ -7,15 +7,19 @@ import {
   saveConnectionSettings,
 } from "./connection-settings";
 import {
+  colorSchemes,
   decodeExtraProps,
   defaultPlaygroundConfig,
-  fixedVariantTheme,
+  fixedVariantColorScheme,
+  fixedVariantWallet,
   hostVariants,
   languages,
+  layouts,
+  legacyThemes,
   mountedBorrowEnabled,
-  mountedTheme,
+  mountedColorScheme,
+  mountedWallet,
   type PlaygroundConfig,
-  themes,
   walletModes,
   writePlaygroundConfig,
 } from "./playground-config";
@@ -209,7 +213,8 @@ export const PlaygroundPanel = ({
   );
   const [error, setError] = useState<string>();
   const [linkCopied, setLinkCopied] = useState(false);
-  const variantTheme = fixedVariantTheme(draft.variant);
+  const variantColorScheme = fixedVariantColorScheme(draft.variant);
+  const variantWallet = fixedVariantWallet(draft.variant);
 
   const update = <Key extends keyof PlaygroundConfig>(
     key: Key,
@@ -277,12 +282,17 @@ export const PlaygroundPanel = ({
       <section className="pg-section">
         <h3>Harness</h3>
         <Choice
+          disabled={variantWallet !== undefined}
+          hint={
+            variantWallet &&
+            `${draft.variant} uses its institutional wallet list`
+          }
           label="Wallet"
           onChange={(value) => update("wallet", value)}
           options={walletModes}
-          value={draft.wallet}
+          value={mountedWallet(draft)}
         />
-        {draft.wallet === "scripted" && (
+        {mountedWallet(draft) === "scripted" && (
           <TextField
             label="Scripted account"
             onChange={(value) => update("scriptedAddress", value)}
@@ -305,12 +315,22 @@ export const PlaygroundPanel = ({
           value={draft.variant}
         />
         <Choice
-          disabled={variantTheme !== undefined}
-          hint={variantTheme && `${draft.variant} is ${variantTheme} only`}
-          label="theme"
-          onChange={(value) => update("theme", value)}
-          options={themes}
-          value={mountedTheme(draft)}
+          disabled={variantColorScheme !== undefined}
+          hint={
+            variantColorScheme &&
+            `${draft.variant} is ${variantColorScheme} only`
+          }
+          label="appearance.colorScheme"
+          onChange={(value) => update("colorScheme", value)}
+          options={colorSchemes}
+          value={mountedColorScheme(draft)}
+        />
+        <Choice
+          hint="deprecated `theme`, mapped onto appearance"
+          label="theme (legacy)"
+          onChange={(value) => update("legacyTheme", value)}
+          options={legacyThemes}
+          value={draft.legacyTheme}
         />
         <Choice
           label="language"
@@ -318,15 +338,18 @@ export const PlaygroundPanel = ({
           options={languages}
           value={draft.language}
         />
-        <Toggle
-          checked={draft.dashboardVariant}
-          label="dashboardVariant"
-          onChange={(value) => update("dashboardVariant", value)}
+        <Choice
+          label="layout"
+          onChange={(value) => update("layout", value)}
+          options={layouts}
+          value={draft.layout}
         />
         <Toggle
           checked={mountedBorrowEnabled(draft)}
-          disabled={!draft.dashboardVariant}
-          hint={draft.dashboardVariant ? undefined : "needs dashboardVariant"}
+          disabled={draft.layout !== "dashboard"}
+          hint={
+            draft.layout === "dashboard" ? undefined : "needs layout dashboard"
+          }
           label="borrowEnabled"
           onChange={(value) => update("borrowEnabled", value)}
         />

@@ -4,7 +4,7 @@ import {
   getNextBatchCutoff,
   isPublishedBatchDue,
 } from "../../../src/domain/earn/batch-schedule";
-import type { EarnInvestmentSchedule } from "../../../src/domain/earn/models";
+import type { EarnInvestmentSchedule } from "../../../src/domain/earn/yield-schema";
 
 type Path = EarnInvestmentSchedule["subscription"]["paths"][number];
 

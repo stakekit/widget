@@ -3,11 +3,10 @@ import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { ActionCommand } from "../../../../src/domain/action/models";
-import { EarnYieldWithProvider } from "../../../../src/domain/earn/models";
+import { EarnYieldWithProvider } from "../../../../src/domain/earn/yield-schema";
 import { TransactionHash } from "../../../../src/domain/identity/identifiers";
 import type { LegacyTransaction } from "../../../../src/services/wallet/wallet-transactions";
 import {
-  type LegacyYieldFixture,
   yieldApiActionDtoFixture,
   yieldApiProviderFixture,
   yieldApiTransactionDtoFixture,
@@ -42,139 +41,50 @@ export const setup = async (
 
   const amount = "6.367499123588739454";
 
-  const yieldOp: LegacyYieldFixture = {
-    apy: 0.05082415753100329,
-    rewardRate: 0.05082415753100329,
-    rewardType: "apy",
-    feeConfigurations: [],
-    args: {
-      enter: {
-        addresses: {
-          address: {
-            required: true,
-            network: "avalanche-c",
-          },
-        },
-        args: {
-          amount: {
-            required: true,
-            minimum: 0,
-          },
-        },
-      },
-      exit: {
-        addresses: {
-          address: {
-            required: true,
-            network: "avalanche-c",
-          },
-        },
-        args: {
-          amount: {
-            required: true,
-            minimum: 0,
-          },
-        },
-      },
-    },
-    id: "avalanche-avax-liquid-staking",
-    token,
-    tokens: [token],
-    metadata: {
-      cooldownPeriod: {
-        days: 15,
-      },
-      description: "Stake your AVAX with Benqi",
-      fee: {
-        enabled: false,
-        depositFee: false,
-        managementFee: false,
-        performanceFee: false,
-      },
-      gasFeeToken: token,
-      logoURI: "https://assets.stakek.it/tokens/savax.svg",
-      name: "Benqi Staked AVAX",
-      provider: {
-        id: "benqi",
-        name: "Benqi",
-        description: "",
-        externalLink: "https://benqi.fi/",
-        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
-      },
-      revshare: {
-        enabled: true,
-      },
-      rewardClaiming: "auto",
-      rewardSchedule: "day",
-      rewardTokens: [
-        {
-          name: "Staked AVAX",
-          symbol: "sAVAX",
-          decimals: 18,
-          network: "avalanche-c",
-          logoURI: "https://assets.stakek.it/tokens/savax.svg",
-          address: "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-        },
-      ],
-      supportsMultipleValidators: false,
-      token,
-      type: "liquid-staking",
-      warmupPeriod: {
-        days: 0,
-      },
-      withdrawPeriod: {
-        days: 2,
-      },
-      documentation:
-        "https://docs.stakek.it/docs/avalanche-avax-liquid-staking",
-      supportsLedgerWalletApi: true,
-      supportsCampaigns: false,
-    },
-    status: {
-      enter: true,
-      exit: true,
-    },
-    validators: [],
-    isAvailable: true,
+  const rewardRate = 0.05082415753100329;
+  const rewardToken: TokenDto = {
+    name: "Staked AVAX",
+    symbol: "sAVAX",
+    decimals: 18,
+    network: "avalanche-c",
+    logoURI: "https://assets.stakek.it/tokens/savax.svg",
+    address: "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
   };
   const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const yieldApiYieldOp = yieldApiYieldDtoFixture({
-    id: yieldOp.id,
+    id: "avalanche-avax-liquid-staking",
     network: token.network,
-    providerId: yieldOp.metadata.provider?.id ?? "benqi",
+    providerId: "benqi",
     token,
     tokens: [token],
     inputTokens: [token],
-    outputToken: yieldOp.metadata.rewardTokens?.[0] ?? token,
+    outputToken: rewardToken,
     rewardRate: {
       ...yieldApiYieldBase.rewardRate,
-      total: yieldOp.rewardRate,
+      total: rewardRate,
       components: [
         {
-          rate: yieldOp.rewardRate,
+          rate: rewardRate,
           rateType: "APY",
-          token: yieldOp.metadata.rewardTokens?.[0] ?? token,
+          token: rewardToken,
           yieldSource: "staking",
         },
       ],
     },
-    status: yieldOp.status,
+    status: { enter: true, exit: true },
     metadata: {
       ...yieldApiYieldBase.metadata,
-      name: yieldOp.metadata.name,
-      description: yieldOp.metadata.description ?? "",
-      documentation: yieldOp.metadata.documentation ?? "",
-      logoURI: yieldOp.metadata.logoURI ?? "",
+      name: "Benqi Staked AVAX",
+      description: "Stake your AVAX with Benqi",
+      documentation:
+        "https://docs.stakek.it/docs/avalanche-avax-liquid-staking",
+      logoURI: "https://assets.stakek.it/tokens/savax.svg",
     },
     mechanics: {
       ...yieldApiYieldBase.mechanics,
       type: "staking",
       gasFeeToken: token,
-      ...(yieldOp.metadata.supportsLedgerWalletApi === undefined
-        ? {}
-        : {
-            supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
-          }),
+      supportsLedgerWalletApi: true,
     },
   });
   const defiYieldOp = yieldApiYieldDtoFixture({
@@ -322,13 +232,6 @@ export const setup = async (
         },
       });
     }),
-    http.get(
-      legacyApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
-      async () => {
-        await mockDelay();
-        return HttpResponse.json(yieldOp);
-      }
-    ),
     http.get(yieldApiRoute("/v1/yields"), async () => {
       await mockDelay();
 
@@ -351,7 +254,7 @@ export const setup = async (
 
       const yieldId = info.params.yieldId as string;
       const validators =
-        yieldId === yieldOp.id ? yieldApiValidatorsFixture([]) : [];
+        yieldId === yieldApiYieldOp.id ? yieldApiValidatorsFixture([]) : [];
 
       return HttpResponse.json({
         items: validators,

@@ -90,7 +90,7 @@ export const withApiRequestError = (operation: string) =>
  * A 404 means absence, whether the spec declares it or not; any other
  * failure stays a failure.
  */
-export const recoverNotFound =
+const recoverNotFound =
   <A>(absent: A) =>
   <E extends ApiClientError>(error: E) =>
     toApiFailure(error).pipe(
@@ -168,6 +168,35 @@ export const decodeApiResponse = <
       Effect.flatMap((response) =>
         Schema.decodeUnknownEffect(schema)(response).pipe(
           withResponseDecodeError(operation)
+        )
+      )
+    );
+  };
+
+/**
+ * Like `decodeApiResponse`, but a 404 decodes to `Option.none()`; a 2xx body
+ * that does not match the schema still fails to decode.
+ */
+export const decodeOptionalApiResponse = <
+  ResponseSchema extends Schema.ConstraintDecoder<unknown>,
+>(
+  operation: string,
+  schema: ResponseSchema
+) =>
+  function decodeOptionalResponse<E extends ApiClientError, R>(
+    effect: Effect.Effect<unknown, E, R>
+  ) {
+    return effect.pipe(
+      Effect.asSome,
+      Effect.catch(recoverNotFound(Option.none<unknown>())),
+      withApiRequestError(operation),
+      Effect.flatMap((response) =>
+        Effect.transposeOption(
+          Option.map(response, (body) =>
+            Schema.decodeUnknownEffect(schema)(body).pipe(
+              withResponseDecodeError(operation)
+            )
+          )
         )
       )
     );

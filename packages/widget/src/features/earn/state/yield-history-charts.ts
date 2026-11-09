@@ -29,8 +29,11 @@ export type YieldHistoryChartView = {
   readonly canRender: boolean;
   readonly isLoading: boolean;
   readonly isRefreshing: boolean;
+  /** The selected period. */
   readonly period: HistoryPeriod;
   readonly points: ReadonlyArray<HistoryPoint>;
+  /** The period `points` belong to: the one the chart frames them in. */
+  readonly pointsPeriod: HistoryPeriod;
 };
 
 type HistoryPage<Item> = { readonly items: ReadonlyArray<Item> } | null;
@@ -59,6 +62,7 @@ const makeHistoryChart = <Item>({
       return resolveYieldHistorySeries({
         hasFailed: AsyncResult.isFailure(result),
         isWaiting: result.waiting,
+        period,
         points: result.pipe(
           AsyncResult.value,
           Option.map((page) => toHistoryPoints(page?.items ?? [], toPoint)),
@@ -83,6 +87,7 @@ const makeHistoryChart = <Item>({
           isRefreshing: series.isRefreshing,
           period: get(periodAtom),
           points: series.points,
+          pointsPeriod: series.period,
         };
       }).pipe(Atom.withLabel(`${label}ViewAtom`))
     ),

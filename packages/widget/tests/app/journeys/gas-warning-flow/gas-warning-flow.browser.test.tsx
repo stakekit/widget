@@ -69,10 +69,9 @@ describe("Gas warning flow", () => {
     );
 
     const estimatedGasFee = app.getByTestId("estimated_gas_fee");
+    // The fees section is busy until the gas estimate settles.
     await expect
-      .poll(() =>
-        estimatedGasFee.element().querySelector(".react-loading-skeleton")
-      )
+      .poll(() => estimatedGasFee.element().closest('[aria-busy="true"]'))
       .toBeNull();
 
     if (withWarning) {

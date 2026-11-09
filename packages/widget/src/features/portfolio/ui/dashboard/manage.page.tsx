@@ -1,15 +1,23 @@
-import { Box } from "../../../../shared/ui/primitives/box";
+import { Stack } from "../../../../ui/index";
+import { useSKWallet } from "../../../wallet/index";
 import { AnimationPage } from "../../../widget-shell/views";
+import { ManageSummary } from "../components/manage-summary";
 import { PositionsPage } from "./positions/positions.page.tsx";
-import { Summary } from "./summary";
 
+/**
+ * The Manage tab: the summary over the positions, the full width of the
+ * page. A position opens its own page.
+ */
 export const ManagePage = () => {
+  // Without a wallet there is nothing to sum up; the list asks to connect.
+  const showsSummary = useSKWallet()?.status === "connected";
+
   return (
     <AnimationPage>
-      <Box display="flex" flexDirection="column" gap="8">
-        <Summary />
+      <Stack gap={16} grow>
+        {showsSummary && <ManageSummary />}
         <PositionsPage />
-      </Box>
+      </Stack>
     </AnimationPage>
   );
 };

@@ -1,13 +1,14 @@
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
-import {
+import type {
   WalletCapabilityUnavailableError,
   WalletSigningError,
 } from "../../../wallet-errors";
+import type { WalletSignedPayloadResult } from "../../../wallet-transactions";
 import {
-  decodeWalletSignedPayloadResult,
-  type WalletSignedPayloadResult,
-} from "../../../wallet-transactions";
+  requireTransactionSigner,
+  signedPayloadResult,
+} from "../transaction-signing";
 import { isCardanoConnector } from "./cardano-connector-meta";
 
 export const makeCardanoWalletDriver = ({
@@ -23,23 +24,12 @@ export const makeCardanoWalletDriver = ({
     WalletSignedPayloadResult,
     WalletCapabilityUnavailableError | WalletSigningError
   > =>
-    Effect.gen(function* () {
-      if (!isCardanoConnector(connector)) {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
-
-      const signedTx = yield* connector
-        .signTransaction(tx)
-        .pipe(
-          Effect.mapError(
-            (cause) =>
-              new WalletSigningError({ cause, operation: "transaction" })
-          )
-        );
-
-      return yield* decodeWalletSignedPayloadResult(signedTx);
-    }),
+    requireTransactionSigner(
+      connector,
+      isCardanoConnector(connector) ? connector : null
+    ).pipe(
+      Effect.flatMap((cardano) =>
+        signedPayloadResult(cardano.signTransaction(tx))
+      )
+    ),
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
-import { EarnYieldPage } from "../../../src/domain/earn/models";
+import { EarnYieldPage } from "../../../src/domain/earn/responses";
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 
 describe("yield summary atom boundary", () => {

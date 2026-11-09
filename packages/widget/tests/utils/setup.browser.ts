@@ -1,6 +1,7 @@
 import { MotionGlobalConfig } from "motion/react";
-import { vi } from "vitest";
+import { beforeEach, vi } from "vitest";
 import { failOnReactErrors } from "./fail-on-react-errors";
+import { movePointerOffPage } from "./pointer";
 
 MotionGlobalConfig.skipAnimations = true;
 // Before the console spies below, so they forward to the detecting console.error.
@@ -41,3 +42,8 @@ const silenceConsoleNoise = (method: "error" | "log" | "warn") => {
 silenceConsoleNoise("error");
 silenceConsoleNoise("log");
 silenceConsoleNoise("warn");
+
+// The pointer stays wherever the last test left it, across test files too;
+// a Widget mounted under it renders hovered and then changes as hover is
+// re-evaluated. Each test starts with the pointer off the page.
+beforeEach(movePointerOffPage);

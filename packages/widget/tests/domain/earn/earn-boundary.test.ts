@@ -1,12 +1,12 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Logger, Schema } from "effect";
+import { EarnProvider } from "../../../src/domain/earn/provider";
 import {
   EarnLegacyTokenOptionsResponse,
-  EarnProvider,
   EarnValidatorPage,
-  EarnYield,
   EarnYieldPage,
-} from "../../../src/domain/earn/models";
+} from "../../../src/domain/earn/responses";
+import { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { yieldApiYieldDtoFixture } from "../../fixtures";
 

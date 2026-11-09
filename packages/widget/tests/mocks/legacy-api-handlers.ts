@@ -1,9 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { legacyYieldFixture } from "../fixtures";
-import type {
-  TokenDto,
-  YieldRewardsSummaryResponseDto,
-} from "../generated/legacy-api-types";
+import type { TokenDto } from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
@@ -16,12 +12,7 @@ const defaultToken: TokenDto = {
   logoURI: "https://assets.stakek.it/tokens/eth.svg",
 };
 
-const defaultYield = legacyYieldFixture({
-  id: "ethereum-eth-native-staking",
-  token: defaultToken,
-  tokens: [defaultToken],
-  validators: [],
-});
+const defaultYieldId = "ethereum-eth-native-staking";
 
 export const getLegacyApiMock = () => [
   http.get(legacyApiRoute("/v1/tokens"), async () => {
@@ -30,7 +21,7 @@ export const getLegacyApiMock = () => [
     return HttpResponse.json([
       {
         token: defaultToken,
-        availableYields: [defaultYield.id],
+        availableYields: [defaultYieldId],
       },
     ]);
   }),
@@ -44,7 +35,7 @@ export const getLegacyApiMock = () => [
         {
           token: defaultToken,
           amount: "0",
-          availableYields: [defaultYield.id],
+          availableYields: [defaultYieldId],
         },
       ]);
     }
@@ -54,7 +45,7 @@ export const getLegacyApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json([
-      { token: defaultToken, amount: "0", availableYields: [defaultYield.id] },
+      { token: defaultToken, amount: "0", availableYields: [defaultYieldId] },
     ]);
   }),
 
@@ -68,42 +59,4 @@ export const getLegacyApiMock = () => [
       },
     });
   }),
-
-  http.get(legacyApiRoute("/v1/yields/:integrationId"), async ({ params }) => {
-    await mockDelay();
-
-    return HttpResponse.json(
-      legacyYieldFixture({
-        ...defaultYield,
-        id: String(params.integrationId),
-      })
-    );
-  }),
-
-  http.post(
-    legacyApiRoute("/v1/yields/:integrationId/rewards-summary"),
-    async () => {
-      await mockDelay();
-
-      return HttpResponse.json({
-        rewards: {
-          total: "0",
-          last24H: "0",
-          last7D: "0",
-          last30D: "0",
-          lastYear: "0",
-        },
-        token: defaultToken,
-      } satisfies YieldRewardsSummaryResponseDto);
-    }
-  ),
-
-  http.post(
-    legacyApiRoute("/v1/transactions/verification/:network"),
-    async () => {
-      await mockDelay();
-
-      return HttpResponse.json({ message: "verification-message" });
-    }
-  ),
 ];

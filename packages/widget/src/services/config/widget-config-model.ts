@@ -7,6 +7,7 @@ import type {
 import type { YieldProviderOrder } from "../../domain/earn/yield-provider-order";
 import type { SupportedSKChainIds } from "../../domain/wallet/chain-ids";
 import type { WalletPolicy } from "../../domain/wallet/wallet-policy";
+import type { SKColorRole } from "../../public-api/appearance";
 import type { VariantProps } from "../../public-api/react-types";
 import type { SettingsProps } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
@@ -16,6 +17,34 @@ type YieldGrouping = "flat" | "category";
 
 /** Which shell and route tree the Widget renders. */
 export type WidgetLayout = "Compact" | "Dashboard";
+
+/** The color scheme the host asks for; `system` follows the OS preference. */
+type WidgetColorScheme = "light" | "dark" | "system";
+
+type CssValues<Key extends string> = Readonly<Partial<Record<Key, string>>>;
+
+/**
+ * The host's Appearance after the legacy theme mapping: the color scheme and
+ * the CSS values set over the Design System's defaults. A legacy theme's
+ * colors stay apart from the host's, in the scheme the theme was inferred as.
+ */
+export type WidgetAppearance = Readonly<{
+  colorScheme: WidgetColorScheme;
+  colors: Readonly<{
+    light: CssValues<SKColorRole>;
+    dark: CssValues<SKColorRole>;
+  }>;
+  legacyColors:
+    | Readonly<{
+        colorScheme: "light" | "dark";
+        values: CssValues<SKColorRole>;
+      }>
+    | undefined;
+  radius: CssValues<"badge" | "control" | "card" | "overlay" | "shell">;
+  controlHeight: CssValues<"sm" | "md" | "lg">;
+  font: CssValues<"sans" | "mono">;
+  fontWeight: CssValues<"regular" | "medium" | "semibold">;
+}>;
 
 type WidgetLanguage = "en" | "fr";
 
@@ -38,6 +67,8 @@ export type WidgetConfig = {
   readonly baseUrl: string;
   readonly borrowApiUrl: string;
   readonly borrowEnabled: boolean;
+  /** The host's `appearance` over its mapped legacy `theme`. */
+  readonly appearance: WidgetAppearance;
   readonly borrowMarketsScope: BorrowMarketsScope;
   readonly chainIconMapping?: SettingsProps["chainIconMapping"];
   readonly chainModal?: ZerionChainModal;
@@ -60,7 +91,7 @@ export type WidgetConfig = {
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
-  /** Derived from the public `dashboardVariant` flag. */
+  /** The public `layout`, or else the deprecated `dashboardVariant` flag. */
   readonly layout: WidgetLayout;
   readonly language?: WidgetLanguage;
   readonly mapWalletFn?: SettingsProps["mapWalletFn"];
@@ -68,7 +99,6 @@ export type WidgetConfig = {
   readonly onMountAnimationComplete?: SettingsProps["onMountAnimationComplete"];
   readonly portalContainer?: SettingsProps["portalContainer"];
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
-  readonly theme?: SettingsProps["theme"];
   readonly tokenIconMapping?: SettingsProps["tokenIconMapping"];
   readonly tonConnectManifestUrl?: string;
   readonly tracking?: SettingsProps["tracking"];

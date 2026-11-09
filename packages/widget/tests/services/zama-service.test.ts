@@ -10,11 +10,9 @@ import {
 import { decodeFunctionData, erc20Abi } from "viem";
 import { sepolia } from "viem/chains";
 import { vi } from "vitest";
-import {
-  type ConfidentialConversion,
-  ConfidentialTokenBalanceKey,
-} from "../../src/domain/earn/confidential";
-import { ConfidentialHandle } from "../../src/domain/earn/models";
+import { ConfidentialHandle } from "../../src/domain/earn/balance";
+import type { ConfidentialConversion } from "../../src/domain/earn/confidential";
+import { ConfidentialTokenBalanceKey } from "../../src/domain/earn/confidential-balance";
 import {
   WalletAddress,
   WalletSignature,
@@ -26,11 +24,9 @@ import {
 } from "../../src/domain/wallet/wallet-scope";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
+import type { ConfidentialPreparation } from "../../src/services/zama/confidential-preparation";
 import { RevealedBalances } from "../../src/services/zama/revealed-balances";
-import {
-  type ConfidentialPreparation,
-  ZamaService,
-} from "../../src/services/zama/zama-service";
+import { ZamaService } from "../../src/services/zama/zama-service";
 import { confidentialFixture, confidentialYieldFixture } from "../fixtures";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeTestWallet } from "../utils/services/wallet-service";

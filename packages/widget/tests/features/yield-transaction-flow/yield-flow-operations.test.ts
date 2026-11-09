@@ -1,17 +1,22 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import {
+  DateTime,
   Deferred,
   Effect,
   Exit,
   Fiber,
+  Layer,
   Option,
   Ref,
   Schema,
   Scope,
   Stream,
 } from "effect";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import type { YieldAction } from "../../../src/domain/action/models";
+import { EarnValidator } from "../../../src/domain/earn/validator";
 import {
   TransactionWorkflowId,
   WalletAddress,
@@ -19,14 +24,18 @@ import {
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
+  getYieldFlowExitUnlockDate,
+  getYieldFlowPositionBalanceId,
+} from "../../../src/features/yield-transaction-flow/model/completion";
+import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
+import {
   makeYieldActionContinuationSession,
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
   YieldFlowHandoff,
   type YieldFlowSession,
-  type YieldTransactionFlowIntake,
   yieldFlowRoutes,
-} from "../../../src/features/yield-transaction-flow/model/yield-transaction-flow";
+} from "../../../src/features/yield-transaction-flow/model/session";
 import {
   leaveYieldFlowExecution,
   startYieldFlowExecution,
@@ -63,6 +72,7 @@ import type { WalletState } from "../../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
 import {
@@ -738,6 +748,38 @@ describe("startYieldFlowExecution", () => {
       })
   );
 
+  // Steps first reads the Atom that starts its workflow while React renders,
+  // and the Atom runtime runs what that read forks before it returns. The
+  // workflow's first wallet request and lifecycle event must not land there.
+  it.effect("makes no workflow in the Atom read that starts it", () =>
+    Effect.gen(function* () {
+      const handle = openEnterSession();
+      const makeWorkflow = vi.fn<TransactionWorkflowService["Service"]["make"]>(
+        (input) => Effect.succeed(idleWorkflow(input))
+      );
+      const kit = yield* makeKit({ makeWorkflow });
+      yield* handOffAction(handle, yieldApiActionFixture()).pipe(
+        Effect.provide(kit.layer)
+      );
+      const handoff = yield* heldHandoff(handle);
+      // Built up front, so the read cannot wait on the layer instead.
+      const services = yield* Layer.build(kit.layer);
+      const executionAtom = Atom.runtime(Layer.succeedContext(services)).atom(
+        startYieldFlowExecution(handle, handoff)
+      );
+      const registry = AtomRegistry.make();
+      const unmount = registry.mount(executionAtom);
+
+      registry.get(executionAtom);
+
+      expect(makeWorkflow).not.toHaveBeenCalled();
+      yield* Effect.promise(() =>
+        vi.waitFor(() => expect(makeWorkflow).toHaveBeenCalledOnce())
+      );
+      unmount();
+    })
+  );
+
   it.effect("interrupts an Execution started before any handoff", () =>
     Effect.gen(function* () {
       const makeWorkflow = vi.fn<TransactionWorkflowService["Service"]["make"]>(
@@ -955,19 +997,26 @@ describe("leaveYieldFlowExecution", () => {
       return yield* kit.navigation.commands;
     });
 
-  it.effect("replaces Steps with Review when going back", () =>
+  it.effect("goes back to Review's own history entry", () =>
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(enterStart(), walletScope), "Review")
-      ).toEqual([{ _tag: "Replace", to: "/review" }]);
+      ).toEqual([{ _tag: "Back" }]);
     })
   );
 
-  it.effect("leaves a finished flow for Earn", () =>
+  // Back through Review and Steps, then the finish page in place of the page
+  // the flow started from, so Back from there never lands on Review again.
+  const leftFor = (to: string) => [
+    { _tag: "Back", steps: 2 },
+    { _tag: "Replace", to },
+  ];
+
+  it.effect("leaves a finished flow for Earn, out of its history", () =>
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(enterStart(), walletScope), "Exit")
-      ).toEqual([{ _tag: "Push", to: "/" }]);
+      ).toEqual(leftFor("/"));
     })
   );
 
@@ -995,11 +1044,11 @@ describe("leaveYieldFlowExecution", () => {
         },
       }),
     ],
-  ] as const)("leaves a finished %s flow for Positions", ([, start]) =>
+  ] as const)("leaves a finished %s flow for the position", ([, start]) =>
     Effect.gen(function* () {
       expect(
         yield* leave(makeYieldFlowSession(start(), walletScope), "Exit")
-      ).toEqual([{ _tag: "Push", to: "/positions" }]);
+      ).toEqual(leftFor("/positions/integration/default"));
     })
   );
 
@@ -1010,7 +1059,7 @@ describe("leaveYieldFlowExecution", () => {
           makeYieldActionContinuationSession(makeContinuationIntake()),
           "Exit"
         )
-      ).toEqual([{ _tag: "Push", to: "/activity" }]);
+      ).toEqual(leftFor("/activity"));
     })
   );
 
@@ -1042,9 +1091,152 @@ describe("leaveYieldFlowExecution", () => {
       yield* Fiber.join(interrupt);
 
       expect(interruptedWhileBackPending).toBeUndefined();
-      expect(yield* kit.navigation.commands).toEqual([
-        { _tag: "Replace", to: "/review" },
-      ]);
+      expect(yield* kit.navigation.commands).toEqual([{ _tag: "Back" }]);
     })
   );
+});
+
+const makeValidator = (address: string) =>
+  Schema.decodeSync(EarnValidator)(yieldApiValidatorFixture({ address }));
+
+describe("getYieldFlowPositionBalanceId", () => {
+  it("leads an Earn flow to the yield's default balance", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldFlowSession(enterStart(), walletScope),
+        ["validators", "default"]
+      )
+    ).toBe("default");
+  });
+
+  it("leads an Earn flow to the yield's only balance", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldFlowSession(enterStart(), walletScope),
+        ["validators"]
+      )
+    ).toBe("validators");
+  });
+
+  it("leads nowhere before the portfolio holds the position", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldFlowSession(enterStart(), walletScope),
+        []
+      )
+    ).toBeNull();
+  });
+
+  it("returns a position page's flow to its own balance while it exists", () => {
+    const session = makeYieldFlowSession(exitStart(), walletScope);
+    expect(
+      getYieldFlowPositionBalanceId(session, ["validators", "default"])
+    ).toBe("default");
+    expect(getYieldFlowPositionBalanceId(session, ["validators"])).toBeNull();
+  });
+
+  it("leads a continued action to the yield's default balance", () => {
+    expect(
+      getYieldFlowPositionBalanceId(
+        makeYieldActionContinuationSession(makeContinuationIntake()),
+        ["default"]
+      )
+    ).toBe("default");
+  });
+
+  it("hides the position when only another validator's balance remains", () => {
+    const exited = makeValidator("0xexited");
+    const remaining = makeValidator("0xremaining");
+    const session = makeYieldActionContinuationSession({
+      ...makeContinuationIntake(),
+      selectedValidators: [exited],
+    });
+
+    expect(
+      getYieldFlowPositionBalanceId(session, [`validator::${remaining.key}`])
+    ).toBeNull();
+    expect(
+      getYieldFlowPositionBalanceId(session, [`validator::${exited.key}`])
+    ).toBe(`validator::${exited.key}`);
+  });
+
+  it("leads a flow over several validators to the one balance left among them", () => {
+    const first = makeValidator("0xfirst");
+    const second = makeValidator("0xsecond");
+    const other = makeValidator("0xother");
+    const session = makeYieldActionContinuationSession({
+      ...makeContinuationIntake(),
+      selectedValidators: [first, second],
+    });
+
+    expect(
+      getYieldFlowPositionBalanceId(session, [
+        `validator::${first.key}`,
+        `validator::${other.key}`,
+      ])
+    ).toBe(`validator::${first.key}`);
+    expect(
+      getYieldFlowPositionBalanceId(session, [`validator::${other.key}`])
+    ).toBeNull();
+  });
+});
+
+describe("getYieldFlowExitUnlockDate", () => {
+  const now = DateTime.makeUnsafe("2026-11-05T12:00:00Z");
+  const sixHourCooldown = {
+    ...yieldApiYieldFixture(),
+    mechanics: {
+      ...yieldApiYieldFixture().mechanics,
+      cooldownPeriod: { seconds: 6 * 3600 },
+    },
+  };
+
+  it("prefers the API's date for the exiting balance", () => {
+    const apiDate = DateTime.makeUnsafe("2026-11-09T08:00:00Z");
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [
+          {
+            date: DateTime.makeUnsafe("2026-11-01T00:00:00Z"),
+            type: "exiting",
+          },
+          { date: apiDate, type: "exiting" },
+          { date: DateTime.makeUnsafe("2026-12-01T00:00:00Z"), type: "active" },
+        ],
+        batched: false,
+        completedAt: now,
+        yieldDto: sixHourCooldown,
+      })
+    ).toEqual(apiDate);
+  });
+
+  it("falls back to the cooldown to the hour", () => {
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [],
+        batched: false,
+        completedAt: now,
+        yieldDto: sixHourCooldown,
+      })
+    ).toEqual(DateTime.makeUnsafe("2026-11-05T18:00:00Z"));
+  });
+
+  it("leaves a batched exit or one without a cooldown undated", () => {
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [],
+        batched: true,
+        completedAt: now,
+        yieldDto: sixHourCooldown,
+      })
+    ).toBeNull();
+    expect(
+      getYieldFlowExitUnlockDate({
+        balances: [],
+        batched: false,
+        completedAt: now,
+        yieldDto: yieldApiYieldFixture(),
+      })
+    ).toBeNull();
+  });
 });

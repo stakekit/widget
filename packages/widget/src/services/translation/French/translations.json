@@ -1,5 +1,10 @@
 {
   "shared": {
+    "amount": "Montant",
+    "clear_search": "Effacer la recherche",
+    "search": "Rechercher",
+    "search_tokens": "Rechercher des jetons",
+    "search_yields": "Rechercher des rendements",
     "insufficient_balance": "Solde insuffisant",
     "confidential": {
       "decrypt": "Déchiffrer",
@@ -34,14 +39,20 @@
     "something_went_wrong": "Une erreur s'est produite",
     "not_enough_gas_token": "Gas insuffisant",
     "retry": "Réessayer",
+    "load_failed_description": "Vérifiez votre connexion et réessayez.",
+    "start_earning": "Commencer à gagner",
     "unsupported_network": "Réseau non supporté",
     "points": "Points",
-    "continue": "Continuer",
     "powered_by": "Alimenté par <span0>{{name}}</span0>",
     "learn_more": "En savoir plus",
     "change": "Changer",
     "manage_validators": "Gérer les validateurs",
-    "fee": "Frais"
+    "fee": "Frais",
+    "back": "Retour",
+    "close": "Fermer",
+    "opens_in_new_tab": "s'ouvre dans un nouvel onglet",
+    "powered_by_label": "Alimenté par",
+    "widget_sections": "Sections du widget"
   },
   "errors": {
     "InvalidArgumentError": {
@@ -261,7 +272,14 @@
     }
   },
   "chain_modal": {
-    "disabled_chain_info": "Ajoutez un portefeuille"
+    "disabled_chain_info": "Ajoutez un portefeuille",
+    "search": "Rechercher un réseau",
+    "no_results": "Aucun réseau trouvé",
+    "groups": {
+      "current": "Actuel",
+      "networks": "Réseaux",
+      "testnets": "Réseaux de test"
+    }
   },
   "init": {
     "get_started": "Connectez votre portefeuille pour commencer…",
@@ -273,17 +291,19 @@
     "close": "Fermer",
     "copy_address": "Copier l'adresse",
     "copied": "Copié !",
-    "connected": "Connecté",
     "confirm": "Confirmer dans le portefeuille",
     "confirm_error": "Erreur de changement de réseau",
     "wrong_network": "Mauvais réseau détecté, changez ou déconnectez-vous pour continuer.",
     "chain_error": "Impossible de changer de réseau. Réessayez.",
-    "select_ecosystem": "Choisissez un écosystème",
     "connect_wallet": "Connectez un portefeuille",
-    "change_ecosystem": "Choisissez un autre écosystème",
+    "ecosystems": "Écosystèmes",
+    "all_ecosystems": "Tous",
     "connection_error": "Impossible de connecter le portefeuille. Réessayez.",
     "wallet_not_available": "Ce portefeuille n'est plus disponible. Activez ou installez son extension, puis réessayez.",
     "disconnect": "Déconnecter",
+    "connected_to": "Connecté à {{network}}",
+    "other_accounts": "Autres comptes",
+    "view_on_explorer": "Voir dans l'explorateur",
     "network": "Changer de réseau",
     "install": "Installer",
     "checking": "Vérification",
@@ -294,25 +314,42 @@
     }
   },
   "activity": {
+    "list_label": "Activité",
+    "loading_more": "Chargement de plus d'activités",
+    "copy_hash": "Copier le hash de la transaction",
+    "copied": "Copié",
     "complete": {
       "continue": "Continuer"
     },
     "details": {
-      "back": "Retour à l'activité",
       "canceled": "Annulée",
       "collateral_fee": "Frais de garantie",
       "completed": "Terminée",
       "continuation_unavailable": "Cette action ne peut pas continuer, car ses informations de rendement sont indisponibles.",
       "created": "Créée",
+      "error_details": "Détails",
       "health_factor": "Facteur de santé",
       "ltv": "LTV",
       "market": "Marché",
+      "network": "Réseau",
       "origination_fee": "Frais d'ouverture",
+      "provider": "Fournisseur",
+      "status": "Statut",
       "unavailable_description": "Cette action n'existe pas ou appartient à un autre portefeuille.",
       "unavailable_title": "Activité indisponible",
-      "via_network": "via {{provider}} · {{network}}"
+      "validators_one": "Validateur",
+      "validators_other": "Validateurs",
+      "view_on_explorer": "Voir dans l'explorateur"
     },
-    "date_group_labels": {
+    "errors": {
+      "contract_rejected": "Le contrat a rejeté cette transaction",
+      "insufficient_funds": "Fonds insuffisants pour payer les frais de réseau",
+      "network": "La transaction a échoué sur le réseau",
+      "nonce": "La transaction a été remplacée ou envoyée dans le désordre",
+      "out_of_gas": "La transaction a manqué de gas",
+      "cancelled_in_wallet": "Annulée dans le portefeuille"
+    },
+    "groups": {
       "today": "Aujourd'hui",
       "yesterday": "Hier"
     },
@@ -321,7 +358,6 @@
       "retry": "Réessayer",
       "continue": "Continuer",
       "unknown_error": "Erreur inconnue",
-      "terms_of_use": "En cliquant sur {{action}} vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
       "in_progress": "En cours",
       "confirmed": "Confirmée",
       "not_submitted": "Non soumise",
@@ -333,16 +369,24 @@
       "transactions_in_progress_other": "{{count}} en cours",
       "view_transaction": "Voir la transaction {{type}}"
     },
-    "no_previous_activity": "Aucune activité précédente",
+    "empty_title": "Aucune activité pour l'instant",
+    "empty_description": "Vos dépôts, retraits et réclamations s'afficheront ici.",
+    "filter_empty_title": "Aucune activité de ce type",
+    "load_failed_title": "Impossible de charger votre activité",
+    "loading": "Chargement de l'activité",
     "item": {
       "deposited": "Dépôt de {{token}}",
       "deposited_without_token": "Dépôt",
+      "deposit": "Dépôt de {{token}}",
+      "deposit_without_token": "Dépôt",
       "deposit_submitted": "Dépôt de {{token}} soumis",
       "deposit_submitted_without_token": "Dépôt soumis",
       "deposit_canceled": "Dépôt de {{token}} annulé",
       "deposit_canceled_without_token": "Dépôt annulé",
       "withdrew": "Retrait de {{token}}",
       "withdrew_without_token": "Retrait",
+      "withdraw": "Retrait de {{token}}",
+      "withdraw_without_token": "Retrait",
       "private_withdrawal_requested": "Retrait privé de {{token}} demandé",
       "private_withdrawal_requested_without_token": "Retrait privé demandé",
       "private_withdrawal_canceled": "Retrait privé de {{token}} annulé",
@@ -354,6 +398,22 @@
       "generic_without_token": "{{action}}",
       "borrow": {
         "supply": "Fourniture de {{token}}",
+        "supply_without_token": "Fourni",
+        "borrow": "Emprunt de {{token}}",
+        "borrow_without_token": "Emprunté",
+        "supplyAndBorrow": "Fourniture et emprunt de {{token}}",
+        "supplyAndBorrow_without_token": "Fourni et emprunté",
+        "repay": "Remboursement de {{token}}",
+        "repay_without_token": "Remboursé",
+        "withdraw": "Retrait de {{token}}",
+        "withdraw_without_token": "Retrait",
+        "enableCollateral": "{{token}} activé comme garantie",
+        "enableCollateral_without_token": "Garantie activée",
+        "disableCollateral": "{{token}} désactivé comme garantie",
+        "disableCollateral_without_token": "Garantie désactivée"
+      },
+      "borrow_in_progress": {
+        "supply": "Fourniture de {{token}}",
         "supply_without_token": "Fourniture",
         "borrow": "Emprunt de {{token}}",
         "borrow_without_token": "Emprunt",
@@ -363,17 +423,17 @@
         "repay_without_token": "Remboursement",
         "withdraw": "Retrait de {{token}}",
         "withdraw_without_token": "Retrait",
-        "enableCollateral": "{{token}} activé comme garantie",
-        "enableCollateral_without_token": "Garantie activée",
-        "disableCollateral": "{{token}} désactivé comme garantie",
-        "disableCollateral_without_token": "Garantie désactivée"
+        "enableCollateral": "Activation de {{token}} comme garantie",
+        "enableCollateral_without_token": "Activation de la garantie",
+        "disableCollateral": "Désactivation de {{token}} comme garantie",
+        "disableCollateral_without_token": "Désactivation de la garantie"
       }
     },
     "time": {
       "now": "à l'instant",
       "minutes_ago": "il y a {{count}} min",
       "hours_ago": "il y a {{count}} h",
-      "days_ago": "il y a {{count}} j"
+      "ended": "Terminé {{time}}"
     },
     "failed": "Échec",
     "status": {
@@ -383,16 +443,19 @@
       "created": "Créée",
       "expired": "Expirée",
       "failed": "Échec",
+      "in_progress": "En cours",
       "processing": "En cours",
       "stale": "Obsolète"
     },
     "showing_count": "Affichage de {{showing}} sur {{total}}",
     "filters": {
+      "label": "Filtrer l'activité",
       "all": "Tout",
       "stake": "Stake",
       "defi": "DeFi",
       "rwa": "RWA",
-      "borrow": "Emprunt"
+      "borrow": "Emprunt",
+      "other": "Autres"
     }
   },
   "details": {
@@ -403,6 +466,30 @@
     "yield_strategy": "Stratégie de rendement",
     "via": "via {{providerName}}",
     "additional_info": "Infos supplémentaires",
+    "amount_error": {
+      "above_maximum": "Saisissez au plus {{amount}} {{symbol}}",
+      "balance_below_minimum": "Il vous faut au moins {{amount}} {{symbol}} pour staker",
+      "balance_below_minimum_deposit": "Il vous faut au moins {{amount}} {{symbol}} pour déposer",
+      "below_minimum": "Saisissez au moins {{amount}} {{symbol}}",
+      "no_balance": "Vous n'avez pas de {{symbol}} à staker",
+      "no_balance_deposit": "Vous n'avez pas de {{symbol}} à déposer"
+    },
+    "cta_blocker": {
+      "above_maximum": "Supérieur au maximum",
+      "below_minimum": "Inférieur au minimum",
+      "enter_amount": "Saisissez un montant",
+      "insufficient_token": "{{symbol}} insuffisant",
+      "select_provider": "Sélectionnez un fournisseur",
+      "select_validator": "Sélectionnez un validateur",
+      "verify_identity": "Vérifiez d'abord votre identité",
+      "yield_closed": "Fermé aux dépôts"
+    },
+    "network_fee": {
+      "estimate": "Frais de réseau ≈ {{fee}}",
+      "estimate_unknown": "Frais de réseau —",
+      "max_reserve": "Max conserve {{amount}} {{symbol}} pour les frais de réseau",
+      "max_reserve_unstated": "Max conserve un peu de {{symbol}} pour les frais de réseau"
+    },
     "kyc_gate": {
       "check_status": "Vérifier le statut",
       "modal": {
@@ -442,7 +529,8 @@
       "receive": "Vous recevrez des <symbols1></symbols1> via",
       "receive_output": "Vous recevrez",
       "yearly": "Gains annuels estimés",
-      "monthly": "Gains mensuels estimés"
+      "monthly": "Gains mensuels estimés",
+      "usd_per_year": "+{{amount}} / an"
     },
     "tron_resources": {
       "label": "Ressource",
@@ -451,8 +539,20 @@
     "risk": {
       "title": "Note de risque",
       "rated_by": "Évalué par {{source}}",
-      "tooltip": "Les notes de risque sont fournies par des prestataires tiers d'évaluation du risque.",
+      "scale": {
+        "credora": "Credora évalue la probabilité qu'un dépôt perde 1 % ou plus en un an, de A+, le risque le plus faible, à D, le plus élevé.",
+        "staking_rewards": "Staking Rewards évalue l'exploitation, la fiabilité et la sécurité d'un prestataire, de AAA, la meilleure note, à D, la plus risquée.",
+        "other": "{{source}} note le risque par des lettres : A est le risque le plus faible, et chaque lettre suivante en indique davantage."
+      },
+      "grade": {
+        "positive": "{{rating}} fait partie de ses notes de risque le plus faible.",
+        "warning": "{{rating}} est une note intermédiaire : risque modéré.",
+        "danger": "{{rating}} est une note basse : risque élevé."
+      },
+      "not_a_guarantee": "Une note est un avis indépendant, pas une garantie contre les pertes.",
+      "methodology": "Méthode de notation de {{source}}",
       "info_aria_label": "Détails de la note de risque",
+      "badge": "Risque {{rating}}",
       "sources": {
         "credora": "Credora",
         "staking_rewards": "Staking Rewards"
@@ -461,56 +561,63 @@
     "reward_rate_estimate_tooltip": "Le taux de récompense ne peut pas être estimé de façon précise",
     "unstake_before": "Vous avez déjà délégué vos fonds à un validateur. Déstakez et réessayez",
     "no_opportunities": "Pas d'opportunité de yield pour ce token",
+    "load_failed_title": "Impossible de charger les rendements",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} autres",
     "selected_validators_summary_other": "{{providerName}} et autres",
     "campaign_susd_description": "Après avoir staké sUSD, la position est bloquée jusqu'au 20 avril 2026.",
     "campaign_susd_extra": "Les récompenses gagnées sont distribuées périodiquement sous forme de SNX et se débloquent linéairement sur 3 mois après la fin du programme.",
-    "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>",
-    "campaign_susd": "En savoir plus sur le programme de staking sUSD <link0>ici</link0>",
-    "confidential_campaign": "Consultez les incitations et les options de délégation de ce vault sur Zama. <link0>En savoir plus</link0>",
-    "campaign": "Les récompenses sont bloquées jusqu'au 28 mai 2026. Les retraits anticipés peuvent entraîner des pénalités. <link0>En savoir plus</link0>",
-    "lockup_period_one": "La période de blocage minimum est de {{count}} jour",
-    "lockup_period_other": "La période de blocage minimum est de {{count}} jours",
+    "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>.",
+    "campaign_susd": "En savoir plus sur le programme de staking sUSD <link0>ici</link0>.",
+    "confidential_campaign": "Consultez les incitations et les options de délégation de ce vault sur Zama. <link0>En savoir plus</link0>.",
+    "campaign": "Les récompenses sont bloquées jusqu'au 28 mai 2026. Les retraits anticipés peuvent entraîner des pénalités. <link0>En savoir plus</link0>.",
+    "lockup_period_one": "La période de blocage minimum est de {{count}} jour.",
+    "lockup_period_other": "La période de blocage minimum est de {{count}} jours.",
     "native_staking": {
-      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
-      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
-      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
-      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement. Vos gains se cumulent, si vous les réclamez et restakez rapidement",
-      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
-      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles",
-      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles"
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs.",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs.",
+      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement.",
+      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement. Vos gains se cumulent si vous les réclamez et restakez rapidement.",
+      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement.",
+      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles.",
+      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles."
     },
     "vault": {
-      "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
+      "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment.",
       "description_with_fee_configuration": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
       "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
-      "description_confidential": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Votre solde reste chiffré on-chain",
-      "earn_after_batch": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot",
-      "earn_after_batch_imminent": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, attendu d'un instant à l'autre",
-      "earn_after_batch_timed": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, dans {{duration}}",
-      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
-      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
-      "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement",
-      "earn_yield_manual": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et doit être réclamé manuellement",
-      "withdrawn_time_immediately": "Après leur retrait, vos actifs seront disponibles immédiatement",
-      "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour",
-      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours",
-      "withdrawn_time_confidential": "Retirez en privé au règlement du prochain lot, ou instantanément avec un montant public",
-      "withdrawn_time_confidential_imminent": "Retirez en privé au règlement du prochain lot, attendu d'un instant à l'autre, ou instantanément avec un montant public",
-      "withdrawn_time_confidential_timed": "Retirez en privé au règlement du prochain lot dans {{duration}}, ou instantanément avec un montant public"
+      "description_confidential": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Votre solde reste chiffré on-chain.",
+      "description_without_receipt": "Déposez du {{stakeToken}} pour générer du rendement.",
+      "description_without_receipt_with_fee_configuration": "Votre dépôt de {{stakeToken}} accumule du rendement et représente votre part dans le vault.",
+      "description_without_receipt_confidential": "Déposez du {{stakeToken}} pour générer du rendement. Votre solde reste chiffré on-chain.",
+      "earn_after_batch": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot.",
+      "earn_after_batch_imminent": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, attendu d'un instant à l'autre.",
+      "earn_after_batch_timed": "Vous commencerez à être récompensé une fois votre dépôt réglé par le batcher lors du prochain lot, dans {{duration}}.",
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs.",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs.",
+      "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement.",
+      "earn_yield_manual": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et doit être réclamé manuellement.",
+      "withdrawn_time_immediately": "Après leur retrait, vos actifs seront disponibles immédiatement.",
+      "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour.",
+      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours.",
+      "withdrawn_time_confidential": "Retirez en privé au règlement du prochain lot, ou instantanément avec un montant public.",
+      "withdrawn_time_confidential_imminent": "Retirez en privé au règlement du prochain lot, attendu d'un instant à l'autre, ou instantanément avec un montant public.",
+      "withdrawn_time_confidential_timed": "Retirez en privé au règlement du prochain lot dans {{duration}}, ou instantanément avec un montant public."
     },
     "lend": {
-      "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
+      "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}.",
       "description_with_fee_configuration": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Ce jeton accumule du rendement et représente votre part dans le vault.",
-      "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}",
-      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
-      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
-      "earn_interest_auto": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et se cumulent automatiquement",
-      "earn_interest_manual": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et doivent être réclamés manuellement",
-      "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
-      "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour",
-      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours"
+      "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}.",
+      "description_without_receipt": "Fournissez du {{stakeToken}} pour percevoir des intérêts. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}.",
+      "description_without_receipt_with_fee_configuration": "Votre {{stakeToken}} fourni accumule du rendement et représente votre part dans le vault.",
+      "description_compound_without_receipt": "Fournissez du {{stakeToken}} pour percevoir des intérêts.",
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs.",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs.",
+      "earn_interest_auto": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et se cumulent automatiquement.",
+      "earn_interest_manual": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et doivent être réclamés manuellement.",
+      "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement.",
+      "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour.",
+      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours."
     },
     "liquid_stake": {
       "description": "En stakant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
@@ -526,21 +633,24 @@
       "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
     },
     "restake": {
-      "description": "En déposant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
-      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké",
-      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir staké",
-      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
-      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement",
-      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
-      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles",
-      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles",
-      "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
+      "description": "En déposant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment.",
+      "description_without_receipt": "Déposez du {{stakeToken}} pour percevoir des récompenses de restaking.",
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké.",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir staké.",
+      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement.",
+      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement.",
+      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement.",
+      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles.",
+      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles.",
+      "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs.",
+      "withdrawn_not_available_without_receipt": "Les retraits ne sont pas disponibles pour le moment."
     },
-    "extra_tezos": "Vous pouvez utiliser ou envoyer des XTZ stakés normalement",
+    "extra_tezos": "Vous pouvez utiliser ou envoyer des XTZ stakés normalement.",
     "reward_type_varialbe": " Le taux de récompense de staking de {{symbol}} varie selon les trades et les frais de transaction que le protocole gagne, ce qui ne peut être estimé précisément",
     "opportunity_search_title": "Sélectionnez un rendement",
     "opportunities_no_results": "Aucun rendement trouvé",
     "opportunity_item_subtitle_no_network": "via {{provider}}",
+    "opportunity_item_tvl": "TVL {{amount}}",
     "validator_search_title_one": "Sélectionnez un validateur",
     "validator_search_title_other": "Sélectionnez des validateurs",
     "provider_search_title": "Sélectionnez un fournisseur",
@@ -557,7 +667,13 @@
     "validators_jailed": "Banni",
     "validators_empty": "Aucun validateur disponible",
     "validators_no_results": "Aucun validateur trouvé",
+    "validators_loading": "Chargement des validateurs",
     "validators_staked_balance": "Solde validateur",
+    "validators_remove": "Retirer {{name}}",
+    "validator_meta": {
+      "commission": "{{value}} de commission",
+      "staked": "{{amount}} stakés"
+    },
     "validators_voting_power": "Droit de vote",
     "validators_address": "Adresse",
     "validators_comission": "Commission",
@@ -575,31 +691,48 @@
     }
   },
   "review": {
-    "estimated_reward": "Récompenses estimées",
+    "estimated_yearly_rewards": "Récompenses annuelles estimées",
+    "estimated_monthly_rewards": "Récompenses mensuelles estimées",
     "estimated_gas_fee": "Frais de gas estimés",
     "gas_fee_unavailable": "Indisponible",
     "wallet_fee": "Frais de {{wallet}}",
     "claim": "Réclamer",
-    "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
-    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
+    "terms_of_use": "En sélectionnant {{action}}, vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les <underline1>Informations sur les risques</underline1>.",
+    "fee_info": "À propos : {{fee}}",
+    "gas_warning": "Cette action risque d'échouer : les fonds sont insuffisants pour couvrir les frais de gas",
     "additional_info": "Infos supplémentaires",
-    "deposit_fee": "Frais de Dépôt",
-    "management_fee": "Frais de Gestion",
-    "performance_fee": "Frais de Performance",
+    "deposit_fee": "Frais de dépôt",
+    "management_fee": "Frais de gestion",
+    "performance_fee": "Frais de performance",
+    "withdrawal_fee": "Frais de retrait",
     "deposit_fee_explanation": "Une commission fixe déduite lors du dépôt, réduisant le capital investi.",
     "management_fee_explanation": "Une commission annuelle fixe déduite des dépôts du vault en émettant de nouvelles parts, ce qui dilue les participants. Calculée en fonction du temps écoulé depuis la dernière récolte et appliquée lors de la récolte.",
     "performance_fee_explanation": "Une commission déduite des gains lorsqu'un vault récolte une stratégie. Elle n'est appliquée qu'après avoir dépassé un seuil variable.",
-    "receive_token": "Jeton reçu",
-    "staking_fee": "Frais de staking"
+    "withdrawal_fee_explanation": "Une commission déduite du montant retiré, réduisant ce que vous recevez.",
+    "staking_fee": "Frais de staking",
+    "signatures": "Signatures du portefeuille",
+    "unlock_period": "Période de déblocage",
+    "lockup_period": "Période de blocage",
+    "destination": "{{yieldName}} via {{providerName}}",
+    "you_receive": "Vous recevez",
+    "confirm_anyway": "Confirmer quand même",
+    "fee_warning": {
+      "title": "Frais de réseau élevés",
+      "rewards_exceeds": "Les frais de réseau dépassent les récompenses que vous réclameriez.",
+      "rewards_half": "Les frais de réseau dépassent la moitié des récompenses que vous réclameriez.",
+      "amount_exceeds": "Les frais de réseau dépassent le montant de cette transaction.",
+      "amount_half": "Les frais de réseau dépassent la moitié du montant de cette transaction."
+    }
   },
   "leave_confirmation": {
     "title": "Quitter cette transaction ?",
-    "description": "Votre transaction est en cours. Si vous quittez maintenant, les étapes restantes ne seront pas effectuées et vous devrez recommencer.",
+    "description": "Votre transaction est en cours. Si vous quittez maintenant, les étapes restantes ne seront pas effectuées.",
+    "description_resumable": "Votre transaction est en cours. Si vous quittez maintenant, vous pourrez terminer les étapes restantes plus tard depuis Activité.",
     "stay": "Rester",
     "leave": "Quitter"
   },
   "steps": {
-    "title": "Suivi des étapes",
+    "title": "Confirmer dans le portefeuille",
     "sign_transaction": "Signez la transaction",
     "sign_transaction_desc": "Retournez sur le portefeuille connecté pour autoriser la transaction",
     "transaction_status": "Statut de la transaction",
@@ -613,12 +746,11 @@
     "pending": "En cours",
     "completed": "Complétée",
     "failed": "Echouée",
-    "tx_of_one": "Transaction - {{type}}",
-    "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
+    "tx_of_one": "{{type}}",
+    "tx_of_other": "Étape {{current}} sur {{count}} · {{type}}",
     "skipped": "Ignorée",
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
-    "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
     "decrypt": "Déchiffrement du montant retiré",
     "decrypt_desc": "Zama publie le montant débloqué. Prend généralement 10 à 30 secondes.",
     "decrypt_error": "Le déchiffrement a échoué. Réessayez.",
@@ -626,8 +758,51 @@
     "encrypt_desc": "Prend généralement 10 à 30 secondes. Gardez cette page ouverte.",
     "encrypt_error": "Le chiffrement a échoué. Réessayez.",
     "prepare_rejected": "Cette demande ne peut pas aboutir. Revenez en arrière pour la modifier.",
-    "approve_error": "Une erreur s'est produite",
-    "view_transaction": "Voir la transaction",
+    "failure": {
+      "rejected": "Rien n'a été envoyé. Réessayez quand vous êtes prêt.",
+      "wallet_failed": "Votre portefeuille n'a pas pu traiter la demande. Réessayez.",
+      "network_changed": "Votre portefeuille a changé de réseau. Revenez au réseau d'origine et réessayez.",
+      "account_changed": "Votre portefeuille a changé de compte. Revenez au compte d'origine et réessayez.",
+      "disconnected": "Votre portefeuille s'est déconnecté. Reconnectez-le et réessayez.",
+      "estimate_failed": "Les frais de réseau n'ont pas pu être estimés. Réessayez.",
+      "unsignable": "Cette transaction ne peut pas être signée. Revenez en arrière et réessayez.",
+      "prepare_failed": "Cette transaction n'a pas pu être préparée. Réessayez.",
+      "not_sent": "La transaction n'a pas pu être envoyée. Réessayez.",
+      "failed": "La transaction a échoué. Réessayez.",
+      "failed_on_chain": "La transaction a échoué sur la blockchain : {{reason}}.",
+      "unconfirmed": "Nous n'avons pas pu confirmer la transaction. Réessayez pour vérifier son statut.",
+      "dropped": "La transaction a été abandonnée par le réseau. Réessayez pour l'envoyer.",
+      "advance_failed": "L'étape suivante n'a pas pu être préparée. Réessayez.",
+      "detail": "Détails : {{detail}}"
+    },
+    "progress_label": "Progression de la transaction",
+    "progress_count": "{{confirmed}} sur {{total}} confirmées",
+    "summary": "{{action}} {{amount}}",
+    "slow": "Plus long que d'habitude. La transaction est toujours en cours.",
+    "leave": "Quitter",
+    "sent_note": "Les transactions envoyées ne peuvent pas être annulées. Elles se poursuivent si vous quittez.",
+    "check_wallet": {
+      "title": "Vérifiez votre portefeuille",
+      "description": "Approuvez la transaction {{type}} dans {{wallet}}",
+      "description_unknown_wallet": "Approuvez la transaction {{type}} dans votre portefeuille"
+    },
+    "details": {
+      "amount": "Montant",
+      "yield": "Rendement",
+      "market": "Marché",
+      "gas": "Gas estimé",
+      "receive": "Vous recevrez"
+    },
+    "state": {
+      "pending": "En attente",
+      "active": "En cours",
+      "signing": "En attente de signature",
+      "broadcasting": "Diffusion",
+      "done": "Confirmée",
+      "failed": "Échouée",
+      "cancelled": "Annulée dans le portefeuille"
+    },
+    "view_transaction": "Voir sur l'explorateur",
     "tx_type": {
       "DECRYPT": "Déchiffrer le montant",
       "ENCRYPT": "Chiffrer le montant",
@@ -698,7 +873,6 @@
   "complete": {
     "successfully_staked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
     "deposit_submitted": "Dépôt de {{amount}} {{tokenNetwork}} soumis",
-    "receive_token": "Jeton reçu : {{symbol}}",
     "withdrawal_submitted": "Retrait de {{amount}} {{tokenNetwork}} soumis",
     "next_batch_in": "Rejoint le prochain lot dans {{duration}}",
     "next_batch_imminent": "Rejoint le prochain lot, attendu d'un instant à l'autre",
@@ -708,6 +882,10 @@
     "via": "via {{providerName}}",
     "continue": "Terminé",
     "continue_ledger": "Aller au tableau de bord Earn",
+    "position": {
+      "heading": "Votre position",
+      "yearly_earnings": "Gains annuels estimés"
+    },
     "stake": {
       "staking": "staké",
       "staking_ethena_usde": "déposé",
@@ -775,11 +953,17 @@
       "verify_checkpoint_proofs": "preuves de checkpoint vérifiées",
       "queue_withdrawals": "retraits mis en file",
       "complete_queued_withdrawals": "retraits en file complétés"
-    }
+    },
+    "view_position": "Voir la position",
+    "you_received": "Vous avez reçu",
+    "you_will_receive": "Vous recevrez",
+    "unlock_reminder": "{{amount}} {{symbol}} sera débloqué vers le {{date}}. Revenez alors pour le retirer de votre position.",
+    "transactions": "Transactions"
   },
   "help_modals": {
+    "close": "Fermer",
     "geo_block": {
-      "title": "Bloquage Géographique",
+      "title": "Non disponible dans votre région",
       "ofac": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”). Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
       "ofsi": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFSI et ses programmes de sanctions via ce lien : <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
       "pending_litigation": "Cette fonctionnalité n'est actuellement pas disponible en {{nameOfRegion}} du fait des litiges en cours au sujet du staking des cryptomonnaies",
@@ -790,21 +974,21 @@
       "default": "Cette fonctionnalité n'est pas disponible en {{countryName}}."
     },
     "get_in_touch": {
-      "title": "Une question? Besoin d'aide?",
+      "title": "Une question ? Besoin d'aide ?",
       "button": "Contactez-nous"
     },
     "what_is_stakekit": {
-      "title": "Qu'est-ce que Yield.xyz?",
+      "title": "Qu'est-ce que Yield.xyz ?",
       "description": "Yield.xyz est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. Yield.xyz abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de Yield.xyz sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
     },
     "under_maintenance": {
       "title": "En maintenance",
-      "description": "Yield.xyz est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
-      "description2": "Nous apprécions votre patience et vous encourageons à revenir bientôt !"
+      "description": "Yield.xyz est en maintenance de routine et devrait être de retour dans environ 5 à 10 minutes."
     },
     "network_not_supported": {
       "title": "Réseau non pris en charge",
-      "description": "Le réseau sélectionné n'est pas activé pour ce widget. Passez à un réseau pris en charge pour continuer."
+      "description": "Le réseau sélectionné n'est pas activé pour ce widget. Passez à un réseau pris en charge pour continuer.",
+      "switch_network": "Changer de réseau"
     },
     "no_enabled_yields": {
       "title": "Aucun rendement activé",
@@ -816,16 +1000,24 @@
     }
   },
   "positions": {
-    "title": "Mes Positions",
+    "title": "Mes positions",
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} autres",
     "connect_wallet": "Connecter un portefeuille",
     "connect_wallet_manage": "Connectez un portefeuille pour gérer vos positions",
-    "no_current_positions": "Aucune position",
-    "claim_rewards": "Réclamer les récompenses",
+    "empty_title": "Aucune position pour l'instant",
+    "empty_description": "Commencez à gagner et vos positions s'afficheront ici.",
+    "load_failed_title": "Impossible de charger vos positions",
+    "loading": "Chargement des positions",
+    "rewards_to_claim": "Récompenses à réclamer",
+    "ready_to_withdraw": "Prêt à retirer",
+    "ready_to_unlock": "Prêt à débloquer",
+    "locked_balance": "Solde bloqué",
     "action_required": "Action requise",
+    "attention_count_one": "{{count}} action à effectuer",
+    "attention_count_other": "{{count}} actions à effectuer",
     "in_progress": "En cours",
-    "dont_see_position": "Vous ne voyez pas une position?",
+    "dont_see_position": "Vous ne voyez pas une position ?",
     "import_validator": "Importez un validateur à qui vous avez délégué des fonds pour voir votre position",
     "import_button": "Importer",
     "import_validator_modal_title": "Importer un validateur",
@@ -834,32 +1026,32 @@
   },
   "yield_types": {
     "native_staking": {
-      "title": "Staking Native",
+      "title": "Staking natif",
       "review": "Staker",
       "cta": "Staker"
     },
     "pooled_staking": {
-      "title": "Staking Pooled",
+      "title": "Staking mutualisé",
       "review": "Staker",
       "cta": "Staker"
     },
     "fixed_yield": {
-      "title": "Rendement Fixe",
+      "title": "Rendement fixe",
       "review": "Déposer",
       "cta": "Déposer"
     },
     "real_world_asset": {
-      "title": "Actif Réel",
+      "title": "Actif réel",
       "review": "Déposer",
       "cta": "Déposer"
     },
     "concentrated_liquidity_pool": {
-      "title": "Liquidité Concentrée",
+      "title": "Liquidité concentrée",
       "review": "Déposer",
       "cta": "Déposer"
     },
     "liquidity_pool": {
-      "title": "Pool de Liquidité",
+      "title": "Pool de liquidité",
       "review": "Déposer",
       "cta": "Déposer"
     },
@@ -869,12 +1061,12 @@
       "cta": "Staker"
     },
     "liquid-staking": {
-      "title": "Staking Liquide",
+      "title": "Staking liquide",
       "review": "Staker",
       "cta": "Staker"
     },
     "liquid_staking": {
-      "title": "Staking Liquide",
+      "title": "Staking liquide",
       "review": "Staker",
       "cta": "Staker"
     },
@@ -896,17 +1088,28 @@
   },
   "position_details": {
     "via": "{{stakeType}} via {{providerName}}",
+    "your_position": "Votre position",
+    "details": "Détails",
+    "load_failed_title": "Impossible de charger cette position",
+    "rate_badge": "{{rate}} {{label}}",
+    "earned_last_7d": "Gagné · 7 derniers jours",
+    "earned_all_time": "Gagné · depuis le début",
+    "projected_yearly": "Projection · par an",
+    "projected_amount": "≈ {{amount}}",
+    "earned_info_label": "À propos des gains",
+    "earned_info": "Suivi depuis la première indexation de votre portefeuille · mis à jour toutes les heures",
     "rewards": "Récompenses",
-    "available_to": "<bold>{{amount}} {{symbol}}</bold> disponibles pour {{pendingAction, lowercase}}",
-    "available_to_deposit": "<bold>{{amount}} {{symbol}}</bold> Dépôt en attente",
-    "available_to_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Retrait en attente",
-    "available_to_instant_withdrawal": "<bold>{{amount}} {{symbol}}</bold> Retrait instantané en cours",
+    "action_title": "{{pendingAction}} <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_deposit": "Dépôt en attente <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_withdrawal": "Retrait en attente <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_instant_withdrawal": "Retrait instantané en cours <bold>{{amount}} {{symbol}}</bold>",
     "cancel_returns": "L'annulation vous renvoie immédiatement tout ce que vous avez dans ce lot, en {{symbol}}",
     "cancelling": "Annulation en cours…",
     "claim": "Réclamer",
     "unstake": "Déstaker",
     "withdraw": "Retirer",
     "available": "{{amount}} {{symbol}} disponibles",
+    "amount_above_maximum": "Saisissez au plus {{amount}} {{symbol}}",
     "underlying_amount": "≈ {{amount}} {{symbol}}",
     "personalized_apy": "APY personnalise",
     "receive_token": {
@@ -1057,10 +1260,9 @@
       "cancel_pending_deposit": "Annuler le dépôt",
       "cancel_pending_withdrawal": "Annuler le retrait"
     },
-    "unstake_sign": {
-      "title": "Vérifier la propriété",
-      "description": "Vous devez vérifier la propriété de cette adresse avant de procéder. Vous serez invité(e) à signer un message qui sera utilisé pour confirmer que vous possédez bien cette adresse."
-    }
+    "actions_label": "Actions de la position",
+    "copy_address": "Copier {{label}}",
+    "copied": "Copié"
   },
   "unstake_review": {
     "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
@@ -1107,14 +1309,13 @@
     "up_to_rate_type": "JUSQU'À {{rateType}}"
   },
   "error_modal": {
-    "solution": "Solution potentielle :"
+    "solution": "Comment résoudre ce problème",
+    "generic_description": "Nous n'avons pas pu traiter cette demande. Réessayez dans un instant.",
+    "dismiss": "Compris"
   },
-  "chain_modal_disclaimer": "Alimenté par Yield.xyz",
   "dashboard": {
     "split_view": {
-      "earn": "Earn",
-      "details": "Détails",
-      "actions": "Actions"
+      "details": "Détails"
     },
     "details": {
       "tabs": {
@@ -1159,13 +1360,14 @@
       "native": "Natif",
       "pooled": "Groupé",
       "auto_compound": "Auto-compounding",
-      "reward_rate_period": "{{rewardType}} (7J)",
       "reward_rate": "Taux de récompense",
       "about": "À propos",
       "read_docs": "Lire la documentation d'intégration",
-      "details": "Détails",
-      "network": "Réseau",
-      "provider": "Fournisseur",
+      "chart_history": "Historique : {{chart}}",
+      "chart_period": "Période : {{chart}}",
+      "no_chart_data": "Aucune donnée de graphique",
+      "chart_data_to": "Données jusqu'au {{date}}",
+      "tvl_in_token": "≈ {{amount}}",
       "reward_token": "Token de récompense",
       "yield_bearing_reward_token": "{{symbol}} (porteur de rendement)",
       "price_per_share": "Prix par part",
@@ -1180,7 +1382,8 @@
       "withdrawal": "Retrait",
       "reward_claiming": "Réclamation des récompenses",
       "average_position": "Position moy.",
-      "users": "Utilisateurs",
+      "fee_per_year": "{{fee}} / an",
+      "fee_of_earnings": "{{fee}} des gains",
       "vault": "Vault",
       "asset": "Actif ({{symbol}})",
       "none": "Aucun",
@@ -1229,7 +1432,7 @@
         "collateral_assets": "Actifs de garantie",
         "no_assets": "Aucun actif trouvé",
         "collateral_terms": "LTV max. {{maxLtv}} · Liq. {{liquidationThreshold}}",
-        "collateral_earns": "Rapporte {{rate}}",
+        "collateral_earns": "Rapporte {{rate}} APY",
         "balance_column": "Solde",
         "available": "{{amount}} {{symbol}} disponibles",
         "wallet_balance": "{{amount}} {{symbol}} dans le portefeuille",
@@ -1244,6 +1447,7 @@
         "pooled_collaterals_other": "Groupé · {{count}} garanties",
         "health_factor": "Facteur de santé",
         "ltv_note": "La liquidation peut survenir si le LTV dépasse le seuil du marché sélectionné.",
+        "projection_unavailable": "Impossible de calculer le LTV et le facteur de santé à partir des données de cette position.",
         "validation": {
           "available_liquidity": "Le montant dépasse la liquidité disponible.",
           "minimum_loan": "La dette résultante est inférieure au minimum du marché.",
@@ -1299,6 +1503,10 @@
         "collateral_fee": "Frais de garantie",
         "origination_fee": "Frais d'ouverture",
         "debt_principal": "Principal de la dette",
+        "gas_fee": "Frais de gaz",
+        "gas_fee_in_wallet": "Estimés dans votre portefeuille",
+        "gas_fee_info_label": "À propos des frais de gaz",
+        "gas_fee_info": "Les transactions sont créées lorsque vous confirmez : votre portefeuille estime donc les frais de gaz de chacune avant que vous ne la signiez.",
         "confirmation_error_description": "Nous n'avons pas pu préparer cette transaction. Veuillez réessayer.",
         "warning_title": "Avertissement avant confirmation",
         "warnings": {
@@ -1319,6 +1527,16 @@
           "withdraw": "Retirer une garantie peut augmenter le LTV et le risque de liquidation."
         }
       },
+      "risk": {
+        "max_ltv_marker": "LTV max. {{value}}",
+        "alert": {
+          "caution_title": "Proche de la liquidation",
+          "danger_title": "Risque de liquidation élevé",
+          "price_drop": "Une baisse de {{drop}} de la valeur de la garantie entraînerait la liquidation de cette position. Remboursez la dette pour réduire le risque.",
+          "liquidatable": "Cette position peut être liquidée dès maintenant. Remboursez la dette pour réduire le risque.",
+          "near_max_ltv": "Le LTV est proche du LTV maximal du marché. Remboursez la dette pour réduire le risque."
+        }
+      },
       "risk_block": {
         "title": "Cette action ne peut pas être confirmée",
         "healthFactor": "Le facteur de santé projeté passerait sous 1 : le protocole rejetterait cette action ou la position pourrait être liquidée. Réduisez le montant ou ajoutez une garantie.",
@@ -1336,7 +1554,8 @@
           "supply": "L'apport a échoué",
           "withdraw": "Le retrait a échoué"
         },
-        "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
+        "partial_supplied": "Vos {{amount}} ont été apportés en garantie, mais l'emprunt n'a pas abouti. Relancez l'emprunt ou retirez la garantie depuis votre position.",
+        "partial_supplied_without_amount": "Votre garantie a été apportée, mais l'emprunt n'a pas abouti. Relancez l'emprunt ou retirez la garantie depuis votre position.",
         "batch_progress": "Étape {{current}} sur {{total}}",
         "preparing_next_step": "Préparation de l'étape suivante",
         "tx_type": {
@@ -1357,8 +1576,8 @@
         "titles": {
           "borrow": "Emprunt terminé",
           "borrowAndSupply": "Emprunt terminé",
-          "disableCollateral": "Garantie désactivée",
-          "enableCollateral": "Garantie activée",
+          "disableCollateral": "{{symbol}} désactivé comme garantie",
+          "enableCollateral": "{{symbol}} activé comme garantie",
           "repay": "Remboursement terminé",
           "supply": "Apport terminé",
           "withdraw": "Retrait terminé"
@@ -1367,7 +1586,6 @@
         "unavailable_description": "Revenez à Emprunter pour lancer une nouvelle action.",
         "transactions": "Transactions",
         "view_transaction": "Voir la transaction : {{type}}",
-        "view_on_explorer": "Voir dans l'explorateur",
         "collateral_supplied": "Garantie fournie",
         "position": {
           "estimated": "Position estimée",
@@ -1377,13 +1595,12 @@
         "back_to_positions": "Retour aux positions"
       },
       "position_details": {
-        "actions_title": "Actions",
         "borrowed": "Emprunté",
-        "collateral": "Garantie",
+        "collateral_supply_rate": "{{rate}} APY",
         "debt": "Dette",
-        "details": "Détails de l'emprunt",
         "empty": "Aucune position ouverte sur ce marché.",
         "health_factor": "Facteur de santé",
+        "net_worth_caption": "Valeur nette · {{collateral}} de garantie",
         "liquidation_penalty": "Pénalité de liquidation",
         "liquidation_threshold": "Seuil de liquidation",
         "ltv": "LTV",
@@ -1391,12 +1608,10 @@
         "low_risk": "Risque plus faible",
         "liquidation_at": "Liquidation {{value}}",
         "net_apy": "APY net",
-        "net_worth": "Valeur nette",
         "no_actions": "Aucune action disponible",
         "supplied": "Fourni",
         "unsupported_network": "Les positions d'emprunt ne sont pas disponibles sur ce réseau.",
-        "collateral_list": "Valeur de la garantie",
-        "configure_action": "Gérer",
+        "collateral_list": "Garantie",
         "select_withdraw_token": "Sélectionner la garantie à retirer",
         "outstanding_debt": "{{amount}} {{symbol}} dus",
         "withdrawable": "{{amount}} {{symbol}} retirable",
@@ -1417,12 +1632,6 @@
           "withdraw_balance": "Le montant dépasse le solde retirable.",
           "withdraw_ltv": "Le retrait dépasserait la limite LTV du marché."
         },
-        "action_descriptions": {
-          "disableCollateral": "Vérifiez l'impact sur la santé avant de désactiver cette garantie.",
-          "enableCollateral": "Vérifiez l'impact sur la santé avant d'activer cette garantie.",
-          "repay": "Choisissez un montant ou remboursez toute la dette.",
-          "withdraw": "Choisissez la garantie et le montant à retirer."
-        },
         "actions": {
           "disableCollateral": "Désactiver la garantie",
           "enableCollateral": "Activer la garantie",
@@ -1432,34 +1641,18 @@
       }
     },
     "position_details": {
-      "action_available": "Action disponible",
-      "action_required": "Action requise",
-      "actions_available_one": "{{count}} action disponible",
-      "actions_available_other": "{{count}} actions disponibles",
-      "active": "Actif",
-      "instant_withdrawal_in_progress": "Retrait instantané en cours",
-      "balance": "Solde",
       "shares": "Parts",
       "breadcrumb_root": "Positions",
-      "breakdown": "Repartition du solde",
-      "details": "Details du staking",
-      "empty": "Details de position indisponibles",
-      "no_actions": "Aucune action disponible",
-      "rewards": "Recompenses",
-      "rewards_total": "Total gagne",
-      "status": "Statut",
-      "withdrawal_unavailable": "Retrait indisponible"
-    },
-    "position_details_info": {
-      "balances": "Soldes"
+      "no_actions": "Aucune action disponible"
     },
     "overview": {
       "summary": {
-        "total_staked": "Total staké",
-        "total_supplied": "Total fourni",
+        "total_value": "Valeur totale",
+        "debt": "Dette",
         "total_rewards": "Total des récompenses",
         "average_apy": "APY moyen",
-        "available_balance": "Disponible",
+        "claimable_rewards": "Récompenses à réclamer",
+        "partial": "Partiel",
         "net_worth": "Valeur nette",
         "excludes_confidential": "Les totaux excluent les positions confidentielles masquées. Affichez leurs soldes pour les inclure."
       }
@@ -1473,20 +1666,14 @@
       }
     },
     "activity_details": {
-      "your_position": "Votre Position"
-    },
-    "enabled_rewards_summary_yield_names": {
-      "polkadot_dot_validator_staking": "Staking natif DOT",
-      "avalanche_avax_liquid_staking": "Staking liquide AVAX",
-      "cronos_cro_native_staking": "Staking natif CRO",
-      "ethereum_matic_native_staking": "Staking natif POL",
-      "bsc_bnb_native_staking": "Staking natif BNB",
-      "tron_trx_native_staking": "Staking natif TRX"
+      "your_position": "Votre position"
     }
   },
   "tos_modal": {
     "title": "Conditions d'utilisation",
     "accept_button": "J'accepte",
+    "agree_checkbox": "J'ai lu et j'accepte les Conditions d'utilisation",
+    "close": "Fermer",
     "introduction": "Ces Conditions d'utilisation de StakeKit sont conclues entre vous (« vous » ou « votre ») et StakeKit LLC, ainsi qu'Omni Ltd. et ses autres filiales (« StakeKit », « nous », « notre » et « nos »). En accédant, téléchargeant, utilisant ou en cliquant sur « J'accepte » pour accepter tout « Service StakeKit » fourni par StakeKit, vous acceptez d'avoir lu attentivement, compris et accepté tous les termes et conditions de ces Conditions d'utilisation (« Conditions ») ainsi que notre Politique de confidentialité. Notre Politique de confidentialité peut être consultée ici : Politique de confidentialité StakeKit.",
     "additional_terms": "De plus, lors de l'utilisation de certaines fonctionnalités des Services, vous pourriez être soumis à des termes et conditions supplémentaires spécifiques applicables à ces fonctionnalités.",
     "risk_warning": "Comme pour tout actif, les valeurs des « Cryptomonnaies » peuvent fluctuer de manière significative et il existe un risque substantiel de pertes économiques lors de l'achat, de la vente, de la détention ou de l'investissement dans les cryptomonnaies et leurs dérivés. En utilisant les Services StakeKit, vous reconnaissez et acceptez que (1) vous êtes conscient des risques associés aux transactions de cryptomonnaies et de leurs dérivés, (2) vous assumez tous les risques liés à l'utilisation des Services StakeKit et aux transactions de monnaies numériques et de leurs dérivés, et (3) StakeKit ne sera pas responsable de ces risques ou de leurs conséquences négatives.",
@@ -1497,7 +1684,7 @@
         "content": "StakeKit vous permet de staker des actifs de cryptomonnaies sur toutes les principales blockchains et vous permet de gagner des intérêts sur vos cryptomonnaies. Les Services StakeKit incluent la création de portefeuilles de cryptomonnaies où la garde et les clés personnelles restent avec l'utilisateur. Les Services incluent également la possibilité d'envoyer, recevoir, staker, faire des ponts et échanger des actifs de cryptomonnaies. Les actifs de cryptomonnaies supportés par StakeKit sont sujets à changement."
       },
       "agreement_to_terms": {
-        "title": "Accord aux Conditions",
+        "title": "Accord aux conditions",
         "content": "Lorsque vous cliquez sur « J'accepte » ou lorsque vous accédez à l'application StakeKit ou utilisez l'un des Services StakeKit, vous acceptez d'être lié par ces conditions. Si vous n'acceptez pas ces Conditions, n'acceptez pas ou n'utilisez pas les Services."
       },
       "intellectual_property": {

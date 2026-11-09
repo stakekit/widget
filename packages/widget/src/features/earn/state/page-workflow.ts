@@ -1,6 +1,7 @@
+import { Equal } from "effect";
 import * as Atom from "effect/reactivity/Atom";
-import { exactDecimal } from "../../../domain/finance/exact";
 import { tokenString } from "../../../domain/token/token";
+import { fromAmountValue } from "../../../shared/lib/amount-value";
 import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
 
 export const earnPageSearchAtom = Atom.make({
@@ -21,7 +22,11 @@ export const earnPageInputAtom = Atom.make(
 
 export const earnPageSelectionAtom = Atom.make(
   (context) => context.get(earnSelectionViewAtom).selection
-).pipe(Atom.withLabel("earnPageSelectionAtom"));
+).pipe(
+  // Each amount typed rebuilds an equal selection; its readers keep the last.
+  Atom.withEquality(Equal.equals),
+  Atom.withLabel("earnPageSelectionAtom")
+);
 
 export const earnPageQuoteAtom = Atom.make((context) => {
   const view = context.get(earnSelectionViewAtom);
@@ -31,6 +36,6 @@ export const earnPageQuoteAtom = Atom.make((context) => {
     selectedStake: view.selection.yield,
     selectedToken: view.selection.token?.token ?? null,
     selectedValidators: view.selection.validators,
-    stakeAmount: exactDecimal(view.form.stakeAmount),
+    stakeAmount: fromAmountValue(view.form.stakeAmount),
   };
 }).pipe(Atom.withLabel("earnPageQuoteAtom"));

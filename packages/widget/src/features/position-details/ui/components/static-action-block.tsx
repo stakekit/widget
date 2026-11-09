@@ -3,22 +3,18 @@ import { toLowerCase } from "effect/String";
 import { Trans, useTranslation } from "react-i18next";
 import type { PendingAction } from "../../../../domain/action/models";
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
+import type { EarnBalance } from "../../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
 import { getPendingActionReturn } from "../../../../domain/earn/denomination";
-import type {
-  EarnBalance,
-  EarnYieldWithProvider,
-} from "../../../../domain/earn/models";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { exactDecimal } from "../../../../domain/finance/exact";
+import { isPayoutPendingAction } from "../../../../domain/portfolio/position-callout";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
-import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
-import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useWidgetPresentation } from "../../../../shared/ui/widget-presentation";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { ActionCard, Text } from "../../../../ui/index";
 import type { usePositionDetails } from "../../react/use-position-details";
-import { actionBlockCta, actionBlockText, noWrap } from "./styles.css";
 
 type StaticActionBlockProps = {
   pendingAction: PendingAction;
@@ -29,6 +25,8 @@ type StaticActionBlockProps = {
     typeof usePositionDetails
   >["onPendingActionClick"];
   integration: EarnYieldWithProvider;
+  /** The page leads with this action: see `getLeadingPendingAction`. */
+  primary: boolean;
 };
 
 export const StaticActionBlock = ({
@@ -36,6 +34,7 @@ export const StaticActionBlock = ({
   yieldBalance,
   onPendingActionClick,
   integration,
+  primary,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -46,77 +45,53 @@ export const StaticActionBlock = ({
     { confidential: isConfidentialYield(integration) }
   );
   const cancelReturn = getPendingActionReturn(pendingAction.type, yieldBalance);
+  // An amount paid out to the user is a gain, in the success tone.
+  const figure = isPayoutPendingAction(pendingAction.type) ? (
+    <Text as="strong" weight="semibold" tone="success" />
+  ) : (
+    <Text.Strong />
+  );
 
   return (
-    <Box
-      display="flex"
-      flexWrap="wrap"
-      justifyContent="space-between"
-      alignItems="center"
-      gap="3"
-      px="4"
-      py="4"
-      borderRadius="xl"
-      borderColor="backgroundMuted"
-      borderWidth={1}
-      borderStyle="solid"
-    >
-      <Box className={actionBlockText}>
-        <Text variant={{ weight: "normal" }}>
-          <Trans
-            i18nKey="position_details.available_to"
-            context={labelContext}
-            values={{
-              amount: yieldBalance.isEncrypted
-                ? t("shared.confidential.hidden")
-                : formatTokenAmount(
-                    cancelReturn?.amount ?? exactDecimal(yieldBalance.amount),
-                    locale,
-                    "down"
-                  ),
-              symbol: (cancelReturn?.token ?? yieldBalance.token).symbol,
-              pendingAction: t(`position_details.pending_action.${actionKey}`, {
-                context: isEthenaUsdeStaking(integration.id)
-                  ? "ethena_usde"
-                  : undefined,
-                defaultValue: humanizePendingActionType(pendingAction.type),
-              }),
-            }}
-            components={{
-              bold: <Box as="span" fontWeight="bold" display="block" />,
-            }}
-          />
-        </Text>
-        {cancelReturn ? (
-          <Text variant={{ type: "muted", size: "small" }}>
-            {t("position_details.cancel_returns", {
-              symbol: cancelReturn.token.symbol,
-            })}
-          </Text>
-        ) : null}
-      </Box>
-
-      <Box className={actionBlockCta}>
-        <Button
-          variant={{
-            size: "small",
-            color: "smallButtonLight",
-          }}
-          onClick={() =>
-            onPendingActionClick({
-              yieldBalance: yieldBalance,
-              pendingAction: pendingAction,
-            })
-          }
-        >
-          <Text className={noWrap}>
-            {t(`position_details.pending_action_button.${actionKey}`, {
-              context: labelContext,
+    <ActionCard
+      primary={primary}
+      title={
+        <Trans
+          i18nKey="position_details.action_title"
+          context={labelContext}
+          values={{
+            amount: yieldBalance.isEncrypted
+              ? t("shared.confidential.hidden")
+              : formatTokenAmount(
+                  cancelReturn?.amount ?? exactDecimal(yieldBalance.amount),
+                  locale,
+                  "down"
+                ),
+            symbol: (cancelReturn?.token ?? yieldBalance.token).symbol,
+            pendingAction: t(`position_details.pending_action.${actionKey}`, {
+              context: isEthenaUsdeStaking(integration.id)
+                ? "ethena_usde"
+                : undefined,
               defaultValue: humanizePendingActionType(pendingAction.type),
-            })}
-          </Text>
-        </Button>
-      </Box>
-    </Box>
+            }),
+          }}
+          components={{ bold: figure }}
+        />
+      }
+      {...(cancelReturn
+        ? {
+            description: t("position_details.cancel_returns", {
+              symbol: cancelReturn.token.symbol,
+            }),
+          }
+        : {})}
+      action={{
+        label: t(`position_details.pending_action_button.${actionKey}`, {
+          context: labelContext,
+          defaultValue: humanizePendingActionType(pendingAction.type),
+        }),
+        onClick: () => onPendingActionClick({ yieldBalance, pendingAction }),
+      }}
+    />
   );
 };

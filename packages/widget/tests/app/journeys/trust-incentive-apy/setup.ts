@@ -1,25 +1,24 @@
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type { EarnYield } from "../../../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../../../src/domain/earn/reward-rate";
+import type { EarnYield } from "../../../../src/domain/earn/yield-schema";
 import { exactDecimal } from "../../../../src/domain/finance/exact";
 import { Token } from "../../../../src/domain/token/token";
 import {
   encodeYieldRewardRateFixture,
-  legacyYieldFixture,
   yieldApiYieldDtoFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
 } from "../../../fixtures";
+import type { TokenDto as LegacyTokenDto } from "../../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../../mocks/api-routes";
 import { mockDelay } from "../../../mocks/delay";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
 import type { TestWorker } from "../../../utils/test-extend";
 import { waitForMs } from "../../../utils/wait";
 
-type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 type YieldApiYieldDto = typeof EarnYield.Encoded;
 
 const setUrl = ({
@@ -53,9 +52,14 @@ const setUrl = ({
 export const setup = async (
   worker: TestWorker,
   {
+    discoveryRateType = "APY",
+    editableAmounts = false,
     personalizedRewardRate: providedPersonalizedRewardRate,
     useRewardRateWithoutCampaign,
   }: {
+    discoveryRateType?: string;
+    /** Gives enter and exit an `amount` argument, so the user types it. */
+    editableAmounts?: boolean;
     personalizedRewardRate?: YieldRewardRate;
     useRewardRateWithoutCampaign?: boolean;
   } = {}
@@ -91,7 +95,7 @@ export const setup = async (
 
   const discoveryRewardRate: YieldRewardRate = yieldRewardRateFixture({
     total: exactDecimal("0.045507546653006034"),
-    rateType: "APY",
+    rateType: discoveryRateType,
     components: [
       {
         rate: exactDecimal("0.0028386677110199426"),
@@ -170,56 +174,7 @@ export const setup = async (
   const yieldId =
     "avalanche-c-usda-trust-0xbeefa1abfebe621df50ceaef9f54fdb73648c92c-vault";
 
-  const legacyYieldBase = legacyYieldFixture();
   const rawYieldBase = yieldApiYieldDtoFixture();
-
-  const legacyYield: ReturnType<typeof legacyYieldFixture> = {
-    ...legacyYieldBase,
-    id: yieldId,
-    token,
-    tokens: [token],
-    rewardRate: discoveryRewardRate.total.toNumber(),
-    rewardType: "apy",
-    apy: discoveryRewardRate.total.toNumber(),
-    validators: [],
-    feeConfigurations: [],
-    args: {
-      enter: {
-        args: {
-          amount: {
-            required: true,
-            minimum: 0,
-          },
-        },
-      },
-      exit: {
-        args: {
-          amount: {
-            required: true,
-            minimum: 0,
-          },
-        },
-      },
-    },
-    metadata: {
-      ...Struct.omit(legacyYieldBase.metadata, ["rewardTokens"]),
-      name: "Trust USDA Earn",
-      type: "vault",
-      token,
-      gasFeeToken: token,
-      provider: {
-        id: legacyYieldBase.metadata.provider?.id ?? "benqi",
-        name: "Trust",
-        description: "",
-        externalLink: "https://trustwallet.com",
-        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
-      },
-    },
-    status: {
-      enter: true,
-      exit: true,
-    },
-  };
 
   const rawYield: YieldApiYieldDto = {
     ...rawYieldBase,
@@ -248,6 +203,18 @@ export const setup = async (
       rewardClaiming: "auto",
       rewardSchedule: "day",
       requiresValidatorSelection: false,
+      ...(editableAmounts
+        ? {
+            arguments: {
+              enter: {
+                fields: [{ name: "amount", required: true, type: "string" }],
+              },
+              exit: {
+                fields: [{ name: "amount", required: true, type: "string" }],
+              },
+            },
+          }
+        : {}),
     },
     status: {
       enter: true,
@@ -311,10 +278,6 @@ export const setup = async (
         },
       });
     }),
-    http.get(legacyApiRoute(`/v1/yields/${yieldId}`), async () => {
-      await mockDelay();
-      return HttpResponse.json(legacyYield);
-    }),
     http.get(yieldApiRoute("/v1/yields"), async () => {
       await mockDelay();
 
@@ -375,7 +338,7 @@ export const setup = async (
     account,
     customConnectors,
     setUrl,
-    legacyYield,
+    yieldId,
     discoveryRewardRate,
     personalizedRewardRate,
   };

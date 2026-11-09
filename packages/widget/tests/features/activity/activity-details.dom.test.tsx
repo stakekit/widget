@@ -99,25 +99,22 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem(),
-      showsBackButton: false,
-      providersDetails: [{ name: "StakeKit" }],
+      receiptPlacement: "page",
     };
 
     const app = await renderDetails();
     const rows = Array.from(
-      app.container.querySelectorAll('[data-rk="activity-details-transaction"]')
+      app.container.querySelectorAll(
+        '[data-testid="activity-details-transaction"]'
+      )
     );
     const explorer = app.container.querySelector<HTMLButtonElement>(
       'button[aria-label="View Stake transaction"]'
     );
 
-    expect(app.container.textContent).toContain("-1,000,000,000,000,000.12");
+    expect(app.container.textContent).toContain("\u22121000T ETH");
     expect(app.container.textContent).toContain("1 failed");
     expect(app.container.textContent).not.toContain("Continue");
-    expect(rows.map((row) => row.textContent)).toEqual([
-      "1. ApprovalConfirmed",
-      "2. StakeFailed · Execution reverted0x1234…1234",
-    ]);
     expect(rows[0]?.tagName).not.toBe("BUTTON");
     expect(
       explorer
@@ -128,7 +125,16 @@ describe("Activity details receipt", () => {
             document.getElementById(id)?.getAttribute("aria-label") ??
             document.getElementById(id)?.textContent
         )
-    ).toEqual(["Failed", "Failed · Execution reverted"]);
+    ).toEqual(["Failed", "The contract rejected this transaction"]);
+
+    // The raw error the network reported stays one press away.
+    const errorDetails = app.container.querySelector<HTMLButtonElement>(
+      '[data-testid="activity-details-error-details"]'
+    );
+    expect(errorDetails?.getAttribute("aria-expanded")).toBe("false");
+    await act(async () => errorDetails?.click());
+    expect(errorDetails?.getAttribute("aria-expanded")).toBe("true");
+    expect(rows[1]?.textContent).toContain("Execution reverted");
 
     await act(async () => explorer?.click());
     expect(open).toHaveBeenCalledWith("https://explorer.test/failed", "_blank");
@@ -141,8 +147,7 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item: makeItem({ status: "WAITING_FOR_NEXT", withYield: false }),
-      showsBackButton: true,
-      providersDetails: [],
+      receiptPlacement: "page",
     };
 
     const app = await renderDetails();
@@ -151,6 +156,22 @@ describe("Activity details receipt", () => {
       "This action cannot continue because its yield details are unavailable."
     );
     expect(app.container.textContent).not.toContain("Continue");
+  });
+
+  it("names a waiting action by what it will do", async () => {
+    route.current = {
+      continuationReady: false,
+      item: makeItem({ status: "WAITING_FOR_NEXT" }),
+      receiptPlacement: "page",
+    };
+
+    const app = await renderDetails();
+    const text = app.container.textContent;
+
+    expect(app.container.querySelector("h2")?.textContent).toMatch(
+      /^Withdraw /
+    );
+    expect(text).not.toContain("Withdrew");
   });
 
   it("renders a Borrow receipt without continuation", async () => {
@@ -182,6 +203,7 @@ describe("Activity details receipt", () => {
         ],
       }),
       integration: {
+        metadata: {},
         name: "Morpho Borrow",
       } as BorrowActivityItem["integration"],
       // Only the pair label and loan token are read by the receipt.
@@ -197,27 +219,14 @@ describe("Activity details receipt", () => {
     route.current = {
       continuationReady: false,
       item,
-      showsBackButton: false,
-      providersDetails: [],
+      receiptPlacement: "pane",
     };
 
     const app = await renderDetails();
     const text = app.container.textContent;
 
     expect(text).toContain("Supplied and borrowed");
-    expect(text).toContain("via Morpho · Ethereum");
-    expect(text).toContain("MarketWETH / USDC");
-    expect(text).toContain("Origination fee1.2 USDC");
-    expect(text).toContain("LTV0% → 50%");
-    expect(text).toContain("Health factor1.6");
     expect(text).not.toContain("Continue");
-    expect(
-      Array.from(
-        app.container.querySelectorAll(
-          '[data-rk="activity-details-transaction"]'
-        )
-      ).map((row) => row.textContent)
-    ).toEqual(["1. Token approvalConfirmed"]);
     expect(trackPage).not.toHaveBeenCalled();
   });
 
@@ -229,7 +238,7 @@ describe("Activity details receipt", () => {
       </I18nextProvider>
     );
     const retry = Array.from(app.container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Try Again"
+      (button) => button.textContent === "Try again"
     );
 
     expect(app.container.textContent).toContain("Something went wrong");

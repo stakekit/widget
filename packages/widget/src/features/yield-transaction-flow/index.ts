@@ -1,5 +1,7 @@
-export type { YieldTransactionFlowEnterMount } from "./model/yield-transaction-flow";
-export { getYieldFlowRouteGroup } from "./model/yield-transaction-flow";
+export {
+  getYieldFlowRouteGroup,
+  type YieldTransactionFlowEnterMount,
+} from "./model/session";
 export { formatTransactionTypeLabel } from "./model/yield-transaction-workflow";
 export { useYieldActionContinuationReview } from "./react/use-yield-action-continuation-review";
 export { useYieldFlowIntake } from "./react/yield-flow-route";

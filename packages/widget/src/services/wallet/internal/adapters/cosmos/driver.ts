@@ -1,10 +1,9 @@
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
 import {
-  WalletCapabilityUnavailableError,
-  WalletSigningError,
-} from "../../../wallet-errors";
-import { decodeWalletSignedPayloadResult } from "../../../wallet-transactions";
+  requireTransactionSigner,
+  signedPayloadResult,
+} from "../transaction-signing";
 import {
   type CosmosChainWallet,
   isCosmosConnector,
@@ -18,23 +17,14 @@ export const makeCosmosWalletDriver = ({
   readonly connector: Connector;
 }) => ({
   signTransaction: ({ tx }: { readonly tx: string }) =>
-    Effect.gen(function* () {
-      if (!isCosmosConnector(connector) || !chainWallet) {
-        return yield* new WalletCapabilityUnavailableError({
-          capability: "transaction",
-          connectorId: connector.id,
-        });
-      }
-
-      const signedTx = yield* connector
-        .signTransaction({ cw: chainWallet, tx })
-        .pipe(
-          Effect.mapError(
-            (cause) =>
-              new WalletSigningError({ cause, operation: "transaction" })
-          )
-        );
-
-      return yield* decodeWalletSignedPayloadResult(signedTx);
-    }),
+    requireTransactionSigner(
+      connector,
+      isCosmosConnector(connector) && chainWallet
+        ? { cosmos: connector, cw: chainWallet }
+        : null
+    ).pipe(
+      Effect.flatMap(({ cosmos, cw }) =>
+        signedPayloadResult(cosmos.signTransaction({ cw, tx }))
+      )
+    ),
 });
