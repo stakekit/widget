@@ -3,7 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 import { type ReactElement, type ReactNode, useRef } from "react";
 
 import { Text } from "../primitives/text";
-import { usePortalContainer } from "../theme/portal-container";
+import { usePortalProps } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -58,7 +58,7 @@ export const AlertDialog = ({
   tone = "primary",
   testId,
 }: AlertDialogProps) => {
-  const container = usePortalContainer();
+  const portalProps = usePortalProps();
   // Confirm closes the dialog itself, so only other closes count as cancelling.
   const confirming = useRef(false);
   const actions = useRef<BaseAlertDialog.Root.Actions>(null);
@@ -74,7 +74,7 @@ export const AlertDialog = ({
       }}
     >
       {trigger && <BaseAlertDialog.Trigger render={trigger} />}
-      <BaseAlertDialog.Portal container={container}>
+      <BaseAlertDialog.Portal {...portalProps}>
         <BaseAlertDialog.Backdrop {...stylex.props(dialogStyles.backdrop)} />
         <BaseAlertDialog.Popup
           {...stylex.props(styles.popup)}
@@ -83,7 +83,7 @@ export const AlertDialog = ({
           <BaseAlertDialog.Title render={<Text variant="title" as="h2" />}>
             {title}
           </BaseAlertDialog.Title>
-          <BaseAlertDialog.Description render={<Text as="p" tone="muted" />}>
+          <BaseAlertDialog.Description render={<Text as="p" tone="default" />}>
             {description}
           </BaseAlertDialog.Description>
           <div {...stylex.props(styles.actions)}>

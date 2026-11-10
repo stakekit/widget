@@ -3,7 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 
 import { Icon } from "../primitives/icon";
 import { scrollStyles } from "../primitives/scroll";
-import { usePortalContainer } from "../theme/portal-container";
+import { usePortalProps } from "../theme/portal-container";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -50,7 +50,7 @@ export const Select = <const T extends string>({
   size = "md",
   disabled = false,
 }: SelectProps<T>) => {
-  const container = usePortalContainer();
+  const portalProps = usePortalProps();
 
   return (
     <BaseSelect.Root<T>
@@ -73,7 +73,7 @@ export const Select = <const T extends string>({
           <Icon name="CaretDownIcon" size="sm" />
         </BaseSelect.Icon>
       </BaseSelect.Trigger>
-      <BaseSelect.Portal container={container}>
+      <BaseSelect.Portal {...portalProps}>
         <BaseSelect.Positioner
           alignItemWithTrigger={false}
           sideOffset={Number.parseFloat(popupOffset.list)}

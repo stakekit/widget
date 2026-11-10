@@ -17,6 +17,7 @@ import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
+import { radius } from "../tokens/radius.stylex";
 import { iconSize, scrollAreaMaxHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { focusRingStyles } from "./focus-ring";
@@ -472,6 +473,9 @@ const styles = stylex.create({
     width: "100%",
   },
   header: {
+    // As a `ListRow`'s corners, so where its fill shows, as over a pane of
+    // another color, it reads as one of the list's shapes.
+    borderRadius: radius.control,
     paddingBlock: space[8],
     // As a `ListRow`'s, so a title lines up with its rows' avatars.
     paddingInline: space[12],

@@ -1318,24 +1318,34 @@
   },
   "help_modals": {
     "close": "Close",
+    "faq": "Read the FAQ",
     "geo_block": {
       "title": "Not available in your region",
-      "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
-      "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
-      "pending_litigation": "This feature is currently unavailable in {{nameOfRegion}} due to pending litigation on the subject of staking cryptocurrencies",
-      "crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} has implemented firm regulations against the use of cryptocurrencies. Please refer to official {{countryName}} resources to learn more.",
-      "staking_ban": "This feature is not available in {{countryName}}. The Securities and Exchange Commission (\"SEC\") of {{countryName}} has restricted digital asset business operators from offering staking services. You can learn more about the SEC regualtions here <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
-      "ofsi_crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} has further implemented firm regulations against the use of cryptocurrencies.",
-      "ofac_ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on both the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries, as well as the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, as well as OFSI and its sanctions programs here <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>.",
+      "title_in": "Not available in {{place}}",
+      "dismiss": "Got it",
+      "ofac": "{{countryName}} is on the Office of Foreign Assets Control (OFAC) list of sanctioned countries, so this feature is not available there. Learn more about <link0>OFAC sanctions</link0>.",
+      "ofsi": "{{countryName}} is on the U.K. Office of Financial Sanctions Implementation (OFSI) list of sanctioned countries, so this feature is not available there. Learn more about <link0>OFSI sanctions</link0>.",
+      "pending_litigation": "This feature is not available in {{nameOfRegion}} while litigation on staking cryptocurrencies is pending.",
+      "crypto_ban": "{{countryName}} has firm regulations against the use of cryptocurrencies, so this feature is not available there. See official {{countryName}} resources to learn more.",
+      "staking_ban": "The Securities and Exchange Commission (SEC) of {{countryName}} restricts digital asset businesses from offering staking, so this feature is not available there. Learn more in the <link0>SEC notice</link0>.",
+      "ofsi_crypto_ban": "{{countryName}} is on the U.K. Office of Financial Sanctions Implementation (OFSI) list of sanctioned countries and has firm regulations against the use of cryptocurrencies, so this feature is not available there. Learn more about <link0>OFSI sanctions</link0>.",
+      "ofac_ofsi": "{{countryName}} is on both the Office of Foreign Assets Control (OFAC) and the U.K. Office of Financial Sanctions Implementation (OFSI) lists of sanctioned countries, so this feature is not available there. Learn more about <link0>OFAC sanctions</link0> and <link1>OFSI sanctions</link1>.",
       "default": "This feature is not available in {{countryName}}."
     },
     "get_in_touch": {
-      "title": "Need help or have a questions?",
-      "button": "Get in touch"
+      "title": "Need help?",
+      "description": "Questions about a yield or your position? Read the FAQ or message our team on X.",
+      "button": "Message us on X"
     },
     "what_is_stakekit": {
       "title": "What is Yield.xyz?",
-      "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it's fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
+      "description": "Yield.xyz lets you earn self-custodial yield across all major networks and tokens in a few clicks.",
+      "points": {
+        "yields": "Staking, liquid staking, vaults and lending in one place",
+        "custody": "Your assets stay in your own wallet",
+        "flow": "One simple flow for every yield"
+      },
+      "visit": "Visit yield.xyz"
     },
     "under_maintenance": {
       "title": "Under maintenance",

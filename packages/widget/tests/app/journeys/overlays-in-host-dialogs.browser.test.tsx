@@ -13,6 +13,8 @@ import { describe, expect, it, vi } from "../../utils/test-extend";
 import { render, renderApp } from "../../utils/test-utils";
 
 const hostDialogName = "Host dialog";
+/** The geo-block notice's title for the blocked country below. */
+const geoBlockTitle = "Not available in Austria";
 
 /** Answers the Widget's first request with a geo block, so it opens its help dialog. */
 const geoBlock = (worker: TestWorker) =>
@@ -153,7 +155,7 @@ describe.each(hosts)(
       });
 
       const modal = app.getByRole("dialog", {
-        name: "Not available in your region",
+        name: geoBlockTitle,
       });
       await expect.element(modal).toBeVisible();
       const modalElement = modal.element();
@@ -167,7 +169,7 @@ describe.each(hosts)(
       await userEvent.click(
         app.getByRole("heading", {
           level: 2,
-          name: "Not available in your region",
+          name: geoBlockTitle,
         })
       );
       await expect.element(modal).toBeInTheDocument();
@@ -255,7 +257,7 @@ describe("Widget portal container", () => {
     const app = await renderApp();
 
     const modal = app.getByRole("dialog", {
-      name: "Not available in your region",
+      name: geoBlockTitle,
     });
     await expect.element(modal).toBeVisible();
     await expect
@@ -287,7 +289,7 @@ describe("Widget portal container", () => {
     });
 
     const modal = app.getByRole("dialog", {
-      name: "Not available in your region",
+      name: geoBlockTitle,
     });
     await expect.element(modal).toBeVisible();
     expect(modal.element().closest("[data-sk-root]")).toBeNull();
@@ -383,7 +385,7 @@ describe("Widget portal container", () => {
     const app = await renderApp();
 
     const modal = app.getByRole("dialog", {
-      name: "Not available in your region",
+      name: geoBlockTitle,
     });
     await expect.element(modal).toBeVisible();
     await expect

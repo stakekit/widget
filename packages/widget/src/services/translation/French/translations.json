@@ -962,24 +962,34 @@
   },
   "help_modals": {
     "close": "Fermer",
+    "faq": "Lire la FAQ",
     "geo_block": {
       "title": "Non disponible dans votre région",
-      "ofac": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”). Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
-      "ofsi": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFSI et ses programmes de sanctions via ce lien : <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
-      "pending_litigation": "Cette fonctionnalité n'est actuellement pas disponible en {{nameOfRegion}} du fait des litiges en cours au sujet du staking des cryptomonnaies",
-      "crypto_ban": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} a mis en place une régulation stricte à l'usage des cryptomonnaies. Merci de vous référer aux ressources officielles de {{countryName}} pour en savoir plus.",
-      "staking_ban": "Cette fonctionnalité n'est pas disponible en {{countryName}}. La Securities and Exchange Commission (“SEC”) de {{countryName}} a interdit aux opérateurs d'actifs numériques d'offrir des services de staking. Vous pouvez en apprendre plus sur les régulations de la SEC via ce lien : <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
-      "ofsi_crypto_ban": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFSI et ses programmes de sanctions via ce lien : <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} a aussi mis en place une régulatin stricte concernant l'usage des cryptomonnaies.",
-      "ofac_ofsi": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur les listes des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”) et de l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, ainsi que sur ceux de l'OFSI via ce lien : <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>.",
+      "title_in": "Non disponible : {{place}}",
+      "dismiss": "Compris",
+      "ofac": "{{countryName}} figure sur la liste des pays sanctionnés par l'Office of Foreign Assets Control (OFAC) : cette fonctionnalité n'y est donc pas disponible. En savoir plus sur les <link0>sanctions de l'OFAC</link0>.",
+      "ofsi": "{{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (OFSI) britannique : cette fonctionnalité n'y est donc pas disponible. En savoir plus sur les <link0>sanctions de l'OFSI</link0>.",
+      "pending_litigation": "Cette fonctionnalité n'est pas disponible en {{nameOfRegion}} tant que des litiges au sujet du staking des cryptomonnaies sont en cours.",
+      "crypto_ban": "{{countryName}} applique une régulation stricte à l'usage des cryptomonnaies : cette fonctionnalité n'y est donc pas disponible. Consultez les ressources officielles de {{countryName}} pour en savoir plus.",
+      "staking_ban": "La Securities and Exchange Commission (SEC) de {{countryName}} interdit aux opérateurs d'actifs numériques d'offrir des services de staking : cette fonctionnalité n'y est donc pas disponible. En savoir plus dans l'<link0>avis de la SEC</link0>.",
+      "ofsi_crypto_ban": "{{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (OFSI) britannique et applique une régulation stricte à l'usage des cryptomonnaies : cette fonctionnalité n'y est donc pas disponible. En savoir plus sur les <link0>sanctions de l'OFSI</link0>.",
+      "ofac_ofsi": "{{countryName}} figure sur les listes des pays sanctionnés par l'Office of Foreign Assets Control (OFAC) et par l'Office of Financial Sanctions Implementation (OFSI) britannique : cette fonctionnalité n'y est donc pas disponible. En savoir plus sur les <link0>sanctions de l'OFAC</link0> et les <link1>sanctions de l'OFSI</link1>.",
       "default": "Cette fonctionnalité n'est pas disponible en {{countryName}}."
     },
     "get_in_touch": {
-      "title": "Une question ? Besoin d'aide ?",
-      "button": "Contactez-nous"
+      "title": "Besoin d'aide ?",
+      "description": "Une question sur un rendement ou votre position ? Lisez la FAQ ou écrivez à notre équipe sur X.",
+      "button": "Nous écrire sur X"
     },
     "what_is_stakekit": {
       "title": "Qu'est-ce que Yield.xyz ?",
-      "description": "Yield.xyz est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. Yield.xyz abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de Yield.xyz sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
+      "description": "Yield.xyz vous permet de générer des rendements en conservant la garde de vos fonds, sur les principaux réseaux et tokens, en quelques clics.",
+      "points": {
+        "yields": "Staking, staking liquide, vaults et lending au même endroit",
+        "custody": "Vos actifs restent dans votre propre wallet",
+        "flow": "Un parcours simple pour chaque rendement"
+      },
+      "visit": "Visiter yield.xyz"
     },
     "under_maintenance": {
       "title": "En maintenance",

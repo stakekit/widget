@@ -17,9 +17,6 @@ const PortalContainerContext = createContext<HTMLElement | null | undefined>(
   undefined
 );
 
-/** The element Design System popups portal into. */
-export const usePortalContainer = () => use(PortalContainerContext);
-
 const styles = stylex.create({
   // The size container responsive layout queries. The portal container stays
   // outside it: before Safari 18.4, `container-type` also contains
@@ -28,6 +25,20 @@ const styles = stylex.create({
   // An inline theme root's content and portal container generate no box, so
   // they leave the host's layout as it is.
   inline: { display: "contents" },
+  // The element a Base UI Portal inserts into the portal container. It holds
+  // only fixed or absolutely positioned parts, so it needs no box in any
+  // container; in an inline one, a box would add an item, and a gap, to the
+  // host's flex or grid layout while a popup is open.
+  portal: { display: "contents" },
+});
+
+/**
+ * The props Design System popups give their Base UI Portal: the portal
+ * container to render into and a portal element that generates no box.
+ */
+export const usePortalProps = () => ({
+  container: use(PortalContainerContext),
+  ...stylex.props(styles.portal),
 });
 
 /**

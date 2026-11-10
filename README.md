@@ -352,6 +352,22 @@ once per legacy key that no longer applies, naming it.
 
 ## Upgrading
 
+### Help dialogs and in-text links
+
+No API changes. Hosts will notice:
+
+- An open `HelpModal` placed among `SKApp` children no longer adds a gap to
+  the host's flex or grid layout, so host content beside its trigger stays put.
+- The help dialogs lead with their message and name where each action goes
+  ("Read the FAQ", "Message us on X"); they open focused on the dialog, so no
+  focus ring shows on the close button. The geo-block notice names the
+  country in its title and closes with "Got it".
+- Dialog descriptions (`Modal`, `AlertDialog`) use the default text color
+  instead of the muted one.
+- Links inside text are underlined and wrap with their sentence.
+- `helpModalOpened` reports "Need help?" for the get-in-touch dialog, which
+  was "Need help or have a questions?".
+
 ### Design System release
 
 The widget now renders every screen with one Design System. Hosts that only

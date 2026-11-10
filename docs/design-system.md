@@ -87,7 +87,14 @@ One look per concept:
   reduced motion. `InfoTip` and `Tooltip` stay inside the dialog they open
   from, else the Widget's frame (`data-sk-frame`), else the Widget root,
   flipping or shifting rather than passing its edge; an `InfoTip` may hold a
-  few paragraphs and a source link.
+  few paragraphs and a source link. A `Modal` or `AlertDialog` description is
+  the dialog's message, in the default tone; muted text in a dialog is for
+  side notes only. A dialog's actions name where they lead ("Read the FAQ",
+  "Message us on X").
+- **Links in text.** An `ExternalLink` inside a sentence is underlined, so it
+  reads as a link without its color, and wraps with the sentence; its new-tab
+  icon stays on the line of its last word. Its label names the destination
+  ("OFAC sanctions"), never a raw URL.
 - **Scrolling panes.** `ScrollArea` and `VirtualList` fade an edge that cuts
   content off, deeper (up to 24px) the more lies past it, so a clipped pane
   reads as scrolling; a sticky group title marks the top instead, and
@@ -421,7 +428,10 @@ Presentation Settings, to the Widget root and the portal container. Host
 Host Profile's Appearance Preset, which wins over the base scheme. An `inline`
 theme root themes standalone content placed in a host's own layout, such as the
 public `HelpModal` among `SKApp` children: its root and content generate no
-box and are no size container, so the content flows as if unwrapped.
+box and are no size container, so the content flows as if unwrapped. The
+element each popup's Base UI Portal inserts into the portal container
+generates no box either (`usePortalProps`), so an open popup adds no item, and
+no gap, to the host's flex or grid layout.
 
 - A Host Profile names an Appearance Preset and may override Presentation
   Settings. Preset values live in the Design System. Components never branch
