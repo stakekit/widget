@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.296](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.295...@stakekit/widget@0.0.296) (2026-11-10)
+
+
+### Features
+
+* **widget:** clearer help dialogs that leave the host layout alone ([#621](https://github.com/stakekit/widget/issues/621)) ([db5868a](https://github.com/stakekit/widget/commit/db5868a5d5c7324e5122551154370ce38e166858))
+
 ## [0.0.295](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.294...@stakekit/widget@0.0.295) (2026-11-09)
 
 
