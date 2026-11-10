@@ -94,3 +94,36 @@ export const ButtonLookDark: Story = {
   ...ButtonLook,
   globals: { colorScheme: "dark" },
 };
+
+/**
+ * In a sentence, a long link wraps like the text around it; the new-tab icon
+ * stays on its last line, right after its last word.
+ */
+export const WrapsInText: Story = {
+  args: { children: "the Office of Foreign Assets Control sanctions programs" },
+  render: (args) => (
+    <div style={{ width: 240 }}>
+      <Text as="p">
+        {"Learn more about "}
+        <ExternalLink {...args} />.
+      </Text>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const link = within(canvasElement).getByRole("link", {
+      name: "the Office of Foreign Assets Control sanctions programs opens in a new tab",
+    });
+    const lines = Array.from(link.getClientRects());
+    await expect(lines.length).toBeGreaterThan(1);
+    const icon = within(link).getByRole("img");
+    const lastLine = lines.at(-1);
+    if (lastLine === undefined) throw new Error("The link has no lines.");
+    const iconBox = icon.getBoundingClientRect();
+    const iconMiddle = (iconBox.top + iconBox.bottom) / 2;
+    // The icon sits on the link's last line, after its last word, not on a
+    // line of its own.
+    await expect(iconMiddle).toBeGreaterThan(lastLine.top);
+    await expect(iconMiddle).toBeLessThan(lastLine.bottom);
+    await expect(iconBox.left).toBeGreaterThan(lastLine.left);
+  },
+};

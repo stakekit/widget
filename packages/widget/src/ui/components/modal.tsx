@@ -12,7 +12,7 @@ import { useId, useRef, useState } from "react";
 
 import { scrollStyles } from "../primitives/scroll";
 import { Text } from "../primitives/text";
-import { usePortalContainer } from "../theme/portal-container";
+import { usePortalProps } from "../theme/portal-container";
 import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
@@ -40,6 +40,7 @@ type ModalProps = {
   readonly trigger?: ReactElement | undefined;
   /** Names the dialog; shown in the title type role. */
   readonly title: string;
+  /** The dialog's message, in the default tone, announced as it opens. */
   readonly description?: ReactNode;
   /** The close button's accessible name. */
   readonly closeLabel: string;
@@ -196,7 +197,7 @@ export const Modal = ({
   fixedHeight = false,
   contentScrolls = false,
 }: ModalProps) => {
-  const container = usePortalContainer();
+  const portalProps = usePortalProps();
   const opener = useRef<HTMLElement | null>(null);
   const popup = useRef<HTMLDivElement | null>(null);
   const actions = useRef<Dialog.Root.Actions | null>(null);
@@ -265,12 +266,12 @@ export const Modal = ({
       actionsRef={actions}
     >
       {trigger && <Dialog.Trigger render={trigger} />}
-      <Dialog.Portal container={container}>
+      <Dialog.Portal {...portalProps}>
         <Dialog.Backdrop {...stylex.props(dialogStyles.backdrop)} />
         <Dialog.Popup
           initialFocus={() => {
             if (!resuming || !opener.current?.isConnected) {
-              const root = container?.getRootNode() ?? document;
+              const root = portalProps.container?.getRootNode() ?? document;
               const active =
                 root instanceof ShadowRoot || root instanceof Document
                   ? root.activeElement
@@ -364,7 +365,7 @@ export const Modal = ({
             )}
           >
             {description !== undefined && (
-              <Dialog.Description render={<Text as="p" tone="muted" />}>
+              <Dialog.Description render={<Text as="p" tone="default" />}>
                 {description}
               </Dialog.Description>
             )}

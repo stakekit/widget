@@ -65,21 +65,30 @@ export const ExternalLink = ({
     );
   }
 
+  // A word joiner keeps the icon on the line of the label's last word; it is
+  // hidden, so the link's name stays the label and the icon's.
   return (
     <a {...link} {...stylex.props(styles.root, focusRingStyles.visible)}>
       {children}
-      <Icon name="ExternalLinkIcon" size="sm" label={newTabLabel} />
+      <span aria-hidden="true">{"\u2060"}</span>
+      <span {...stylex.props(styles.icon)}>
+        <Icon name="ExternalLinkIcon" size="sm" label={newTabLabel} />
+      </span>
     </a>
   );
 };
 
+// Inline, so a long label wraps with the sentence around it; underlined, so
+// it reads as a link without relying on its color.
 const styles = stylex.create({
   root: {
     borderRadius: radius.badge,
-    gap: space[4],
-    textDecoration: { default: "none", ":hover": "underline" },
-    alignItems: "center",
+    textDecoration: { default: "underline", ":hover": "none" },
     color: color.accentText,
+  },
+  icon: {
     display: "inline-flex",
+    marginInlineStart: space[4],
+    verticalAlign: "text-bottom",
   },
 });

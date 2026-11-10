@@ -2,7 +2,7 @@ import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactElement } from "react";
 
-import { usePortalContainer } from "../theme/portal-container";
+import { usePortalProps } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -35,13 +35,13 @@ type TooltipProps = {
  * than passing their edge.
  */
 export const Tooltip = ({ label, children, side = "top" }: TooltipProps) => {
-  const container = usePortalContainer();
+  const portalProps = usePortalProps();
   const { anchorRef, collisionBoundary } = usePopupBoundary();
 
   return (
     <BaseTooltip.Root>
       <BaseTooltip.Trigger ref={anchorRef} render={children} />
-      <BaseTooltip.Portal container={container}>
+      <BaseTooltip.Portal {...portalProps}>
         <BaseTooltip.Positioner
           side={side}
           sideOffset={Number.parseFloat(popupOffset.hint)}

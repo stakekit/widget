@@ -3,7 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 import { type ReactNode, useId, useState } from "react";
 
 import { Text } from "../primitives/text";
-import { usePortalContainer } from "../theme/portal-container";
+import { usePortalProps } from "../theme/portal-container";
 import { layer } from "../tokens/layer.stylex";
 import { popupOffset } from "../tokens/overlay.stylex";
 import { IconButton } from "./icon-button";
@@ -30,7 +30,7 @@ type InfoTipProps = {
  * rather than passing their edge.
  */
 export const InfoTip = ({ label, children, side = "top" }: InfoTipProps) => {
-  const container = usePortalContainer();
+  const portalProps = usePortalProps();
   const [open, setOpen] = useState(false);
   const contentId = useId();
   const { anchorRef, collisionBoundary } = usePopupBoundary();
@@ -54,7 +54,7 @@ export const InfoTip = ({ label, children, side = "top" }: InfoTipProps) => {
           />
         }
       />
-      <BasePopover.Portal container={container}>
+      <BasePopover.Portal {...portalProps}>
         <BasePopover.Positioner
           side={side}
           sideOffset={Number.parseFloat(popupOffset.hint)}

@@ -5,10 +5,10 @@ import { Trans, useTranslation } from "react-i18next";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
 import {
   Button,
-  type FixedIconName,
+  ExternalLink,
   Icon,
+  InlineIcon,
   Modal,
-  Spot,
   Stack,
   Text,
 } from "../../../../ui/index";
@@ -32,162 +32,168 @@ type HelpModalProps = {
   customTrigger?: ReactNode;
 };
 
+const siteUrl = "https://yield.xyz/";
+const faqUrl = "https://docs.yield.xyz/docs/faqs";
+const xUrl = "https://x.com/yield_xyz";
+const ofacUrl =
+  "https://ofac.treasury.gov/sanctions-programs-and-country-information";
+const ofsiUrl =
+  "https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases";
+const secUrl = "https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018";
+
+type GeoBlockNotice =
+  | "ofac_ofsi"
+  | "ofsi_crypto_ban"
+  | "crypto_ban"
+  | "ofac"
+  | "ofsi"
+  | "pending_litigation"
+  | "staking_ban"
+  | "default";
+
+/** The sources a notice's `<link0>` and `<link1>` name. */
+type NoticeLinks = Readonly<Partial<Record<"link0" | "link1", string>>>;
+
+/** The notice for a geo block's tags, most specific first. */
+const geoBlockNotice = (
+  tags: ReadonlySet<string>
+): { readonly key: GeoBlockNotice; readonly links: NoticeLinks } => {
+  if (tags.has("OFAC") && tags.has("OFSI")) {
+    return { key: "ofac_ofsi", links: { link0: ofacUrl, link1: ofsiUrl } };
+  }
+  if (tags.has("OFSI") && tags.has("Crypto Ban")) {
+    return { key: "ofsi_crypto_ban", links: { link0: ofsiUrl } };
+  }
+  if (tags.has("Crypto Ban")) return { key: "crypto_ban", links: {} };
+  if (tags.has("OFAC")) return { key: "ofac", links: { link0: ofacUrl } };
+  if (tags.has("OFSI")) return { key: "ofsi", links: { link0: ofsiUrl } };
+  if (tags.has("Pending Litigation")) {
+    return { key: "pending_litigation", links: {} };
+  }
+  if (tags.has("Staking Ban")) {
+    return { key: "staking_ban", links: { link0: secUrl } };
+  }
+  return { key: "default", links: {} };
+};
+
+type Content = {
+  readonly title: string;
+  /** The title analytics records, when the title names a place. */
+  readonly trackedTitle?: string;
+  readonly description: ReactNode;
+  readonly body?: ReactNode;
+  readonly footer: ReactNode;
+};
+
 const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   const { t, i18n } = useTranslation();
+  const newTabLabel = t("shared.opens_in_new_tab");
 
-  const getContent = (
-    modal: ModalType
-  ): {
-    title: string;
-    description: string | ReactNode;
-    icon: FixedIconName;
-    button?: { title: string; onClick: () => void };
-  } => {
+  const linkAction = (
+    href: string,
+    label: string,
+    variant: "primary" | "secondary"
+  ) => (
+    <ExternalLink
+      href={href}
+      newTabLabel={newTabLabel}
+      button={{ variant, size: "cta" }}
+    >
+      {label}
+    </ExternalLink>
+  );
+
+  const getContent = (modal: ModalType): Content => {
     switch (modal.type) {
       case "geoBlock": {
-        const title = t("help_modals.geo_block.title");
         const countryName = formatCountryCode({
           language: i18n.language,
           countryCode: modal.countryCode,
         });
-
-        if (modal.tags.has("OFAC") && modal.tags.has("OFSI")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.ofac_ofsi"
-                values={{ countryName }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
-        if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.ofsi_crypto_ban"
-                values={{ countryName }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
-        if (modal.tags.has("Crypto Ban")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.crypto_ban"
-                values={{ countryName }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
-        if (modal.tags.has("OFAC")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.ofac"
-                values={{ countryName }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
-        if (modal.tags.has("OFSI")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.ofsi"
-                values={{ countryName }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
-        if (modal.tags.has("Pending Litigation")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.pending_litigation"
-                values={{
-                  countryName,
-                  nameOfRegion: modal.regionCodeName ?? "",
-                }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
-        if (modal.tags.has("Staking Ban")) {
-          return {
-            title,
-            description: (
-              <Trans
-                i18nKey="help_modals.geo_block.staking_ban"
-                values={{ countryName }}
-                components={{ link0: <TranslatedLink /> }}
-              />
-            ),
-            icon: "GlobeIcon",
-          };
-        }
+        const notice = geoBlockNotice(modal.tags);
+        // The place the notice's copy names: the region under litigation,
+        // otherwise the country.
+        const place =
+          notice.key === "pending_litigation"
+            ? modal.regionCodeName
+            : countryName;
+        const genericTitle = t("help_modals.geo_block.title");
 
         return {
-          title,
+          title:
+            place === undefined
+              ? genericTitle
+              : t("help_modals.geo_block.title_in", { place }),
+          trackedTitle: genericTitle,
           description: (
             <Trans
-              i18nKey="help_modals.geo_block.default"
-              values={{ countryName }}
-              components={{ link0: <TranslatedLink /> }}
+              i18nKey={`help_modals.geo_block.${notice.key}`}
+              values={{
+                countryName,
+                nameOfRegion: modal.regionCodeName ?? "",
+              }}
+              components={Object.fromEntries(
+                Object.entries(notice.links).map(([tag, href]) => [
+                  tag,
+                  <TranslatedLink key={tag} href={href} />,
+                ])
+              )}
             />
           ),
-          icon: "GlobeIcon",
+          footer: (
+            <Button variant="secondary" size="cta" onClick={modal.onClose}>
+              {t("help_modals.geo_block.dismiss")}
+            </Button>
+          ),
         };
       }
 
       case "getInTouch": {
         return {
           title: t("help_modals.get_in_touch.title"),
-          button: {
-            title: t("help_modals.get_in_touch.button"),
-            onClick: () =>
-              window.open("https://twitter.com/yield_xyz", "_blank"),
-          },
-          description: "",
-          icon: "HelpIcon",
+          description: t("help_modals.get_in_touch.description"),
+          footer: (
+            <>
+              {linkAction(faqUrl, t("help_modals.faq"), "primary")}
+              {linkAction(
+                xUrl,
+                t("help_modals.get_in_touch.button"),
+                "secondary"
+              )}
+            </>
+          ),
         };
       }
 
       case "whatIsStakeKit": {
         return {
           title: t("help_modals.what_is_stakekit.title"),
-          description: (
-            <Trans
-              i18nKey="help_modals.what_is_stakekit.description"
-              components={{
-                br0: <Text.Break />,
-                link0: <TranslatedLink href="https://yield.xyz/" />,
-                link1: (
-                  <TranslatedLink href="https://docs.yield.xyz/docs/faqs" />
-                ),
-              }}
-            />
+          description: t("help_modals.what_is_stakekit.description"),
+          // Facts that each carry an icon keep the icons in a column.
+          body: (
+            <Stack as="ul" gap={8}>
+              {(["yields", "custody", "flow"] as const).map((point) => (
+                <Stack as="li" key={point} direction="row">
+                  <InlineIcon variant="body" gap={8}>
+                    <Icon name="CheckIcon" size="sm" />
+                  </InlineIcon>
+                  <Text>
+                    {t(`help_modals.what_is_stakekit.points.${point}`)}
+                  </Text>
+                </Stack>
+              ))}
+            </Stack>
           ),
-          icon: "InfoIcon",
+          footer: (
+            <>
+              {linkAction(
+                siteUrl,
+                t("help_modals.what_is_stakekit.visit"),
+                "primary"
+              )}
+              {linkAction(faqUrl, t("help_modals.faq"), "secondary")}
+            </>
+          ),
         };
       }
     }
@@ -197,12 +203,18 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   // same Application Runtime registry; tracking uses that tree's config.
   const trackEvent = useTrackEvent();
 
-  const { description, icon, title, button } = getContent(modal);
+  const {
+    title,
+    trackedTitle = title,
+    description,
+    body,
+    footer,
+  } = getContent(modal);
 
   const isGeoBlock = modal.type === "geoBlock";
 
   const reportOpened = useEffectEvent(() =>
-    trackEvent("helpModalOpened", { modal: title })
+    trackEvent("helpModalOpened", { modal: trackedTitle })
   );
 
   useEffect(() => {
@@ -234,7 +246,7 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
             </Button>
           ),
           onOpenChange: (open: boolean) => {
-            if (open) trackEvent("helpModalOpened", { modal: title });
+            if (open) trackEvent("helpModalOpened", { modal: trackedTitle });
           },
         };
 
@@ -242,19 +254,12 @@ const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
     <Modal
       {...openProps}
       title={title}
-      description={description === "" ? undefined : description}
+      description={description}
       closeLabel={t("help_modals.close")}
-      footer={
-        button && (
-          <Button variant="secondary" size="cta" onClick={button.onClick}>
-            {button.title}
-          </Button>
-        )
-      }
+      initialFocus="dialog"
+      footer={footer}
     >
-      <Stack align="center">
-        <Spot icon={icon} tone="accent" size="lg" />
-      </Stack>
+      {body}
     </Modal>
   );
 };
