@@ -99,6 +99,9 @@ export const YieldFactsSection = ({
             <DetailRow
               key={fact.id}
               label={fact.label}
+              {...(fact.id === "capacity" && fact.subValue
+                ? { caption: fact.subValue }
+                : {})}
               logo={
                 fact.token === undefined
                   ? undefined

@@ -18,7 +18,10 @@ import {
   formatNetworkName,
   humanizeEnumValue,
 } from "../../../shared/lib/formatters";
-import { formatRoundedPercent } from "../../../shared/lib/number-format";
+import {
+  formatRoundedPercent,
+  formatTokenAmountWithSymbol,
+} from "../../../shared/lib/number-format";
 import {
   formatDailyBatch,
   formatNextBatchLabel,
@@ -43,6 +46,7 @@ export type YieldFactId =
   | "reward-rate"
   | "reward-token"
   | "price-per-share"
+  | "capacity"
   | "risk"
   | "min-stake"
   | "cooldown"
@@ -153,6 +157,7 @@ export const getYieldFacts = ({
           value: pricePerShare,
         }
       : null,
+    getCapacityFact({ locale, t, yieldDto }),
     risk
       ? {
           id: "risk",
@@ -246,6 +251,62 @@ export const getYieldFacts = ({
   ];
 
   return facts.filter((fact): fact is YieldFact => !!fact);
+};
+
+/** Makina capacity amounts are already denominated in the API's Value Token. */
+const getCapacityFact = ({
+  locale,
+  t,
+  yieldDto,
+}: {
+  readonly locale: string;
+  readonly t: TFunction;
+  readonly yieldDto: EarnYieldWithProvider;
+}): YieldFact | null => {
+  const capacity = yieldDto.state?.capacityState;
+  if (yieldDto.providerId !== "makina" || !capacity) return null;
+  const amount = (value: NonNullable<typeof capacity.max>) =>
+    formatTokenAmountWithSymbol(
+      { amount: value, token: yieldDto.token },
+      locale
+    );
+  const used = t("dashboard.earn_details.capacity_used", {
+    amount: amount(capacity.current),
+  });
+  const fact = {
+    id: "capacity",
+    label: t("dashboard.earn_details.capacity"),
+    notable: true,
+  } as const;
+  if (capacity.max === null && capacity.remaining === null) {
+    return {
+      ...fact,
+      value: t("dashboard.earn_details.capacity_unlimited"),
+      subValue: used,
+    };
+  }
+  const remaining = capacity.remaining;
+  const getAvailability = (): string | undefined => {
+    if (remaining == null) return undefined;
+    return remaining.isZero()
+      ? t("dashboard.earn_details.capacity_full")
+      : t("dashboard.earn_details.capacity_remaining", {
+          amount: amount(remaining),
+        });
+  };
+  const availability = getAvailability();
+  if (capacity.max != null) {
+    return {
+      ...fact,
+      value: `${amount(capacity.current)} / ${amount(capacity.max)}`,
+      ...(availability === undefined ? {} : { subValue: availability }),
+    };
+  }
+  return {
+    ...fact,
+    value: availability ?? t("dashboard.earn_details.capacity_unknown"),
+    subValue: used,
+  };
 };
 
 /** Each fee type, and the basis its percent reads on. */

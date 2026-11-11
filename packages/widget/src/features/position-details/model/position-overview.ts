@@ -20,6 +20,7 @@ import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldRewardsSummary } from "../../../domain/portfolio/models";
 import {
+  getEarningPositionBalances,
   getPositionValueTotal,
   getTokenSumsUsd,
   groupPositionBalanceRows,
@@ -85,6 +86,7 @@ type PositionOverviewDetailRow = {
 export type PositionOverviewModel = {
   breakdownRows: PositionOverviewBreakdownRow[];
   detailRows: PositionOverviewDetailRow[];
+  hasEarningBalances: boolean;
   /** The yield's facts the page already shows, left out of its facts section. */
   omittedYieldFacts: YieldFactId[];
   summary: PositionOverviewSummary;
@@ -167,6 +169,9 @@ export const getPositionOverviewModel = ({
     t,
     validators,
   });
+  const hasEarningBalances =
+    getEarningPositionBalances(getBalancesByPriority(positionBalancesByType))
+      .length > 0;
 
   return {
     breakdownRows: getBreakdownRows({
@@ -181,7 +186,9 @@ export const getPositionOverviewModel = ({
       positionBalancesByType,
       t,
     }),
-    omittedYieldFacts: summary.rate === undefined ? [] : ["reward-rate"],
+    hasEarningBalances,
+    omittedYieldFacts:
+      hasEarningBalances && summary.rate === undefined ? [] : ["reward-rate"],
     summary,
   };
 };
@@ -252,9 +259,11 @@ const getPositionSummary = ({
       }
     : integrationData.rewardRate;
   const rate = exactDecimal((personalizedRate ?? effectiveRate).total);
-  const hasRate = rate.isFinite() && !rate.isZero();
+  const earningBalances = getEarningPositionBalances(balances);
+  const hasRate =
+    earningBalances.length > 0 && rate.isFinite() && !rate.isZero();
   const yearly = getEstimatedRewardsUsd({
-    amountUsd: totalUsd,
+    amountUsd: getTokenSumsUsd(getPositionValueTotal(earningBalances)),
     estimatedRewards: { rewardRateAverage: rate },
   })?.yearly;
   const rateLabel = personalizedRate
@@ -368,6 +377,7 @@ const getBreakdownRows = ({
       : formatUsdSubValue(row.amountUsd, locale);
     const batchTiming = formatPendingBalanceTiming({
       integrationData,
+      locale,
       now,
       row,
       t,

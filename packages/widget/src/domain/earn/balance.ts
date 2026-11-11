@@ -107,6 +107,12 @@ const EarnBalanceWire = Schema.Struct({
   amount: ExactDecimal,
   amountRaw: ExactBaseUnitAmount,
   amountUsd: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
+  isEarning: Schema.optionalKey(
+    TolerantNullOr(Schema.Boolean, {
+      operation: "yield-balance",
+      field: "isEarning",
+    })
+  ),
   date: Schema.optionalKey(
     TolerantOptionalUtcDateTimeFromString({
       operation: "yield-balance",

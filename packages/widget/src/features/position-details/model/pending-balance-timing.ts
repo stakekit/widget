@@ -1,9 +1,10 @@
-import type { DateTime } from "effect";
+import { DateTime } from "effect";
 import type { TFunction } from "i18next";
 
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { PositionBalanceRow } from "../../../domain/portfolio/positions";
+import { formatDateTime } from "../../../shared/lib/date";
 import {
   formatDurationUntil,
   formatNextBatchLabel,
@@ -17,11 +18,13 @@ import {
  */
 export const formatPendingBalanceTiming = ({
   integrationData,
+  locale,
   now,
   row,
   t,
 }: {
   readonly integrationData: EarnYieldWithProvider;
+  readonly locale: string;
   readonly now: DateTime.Utc | null;
   readonly row: Pick<PositionBalanceRow, "cancelling" | "date" | "type">;
   readonly t: TFunction;
@@ -29,6 +32,28 @@ export const formatPendingBalanceTiming = ({
   const { type } = row;
   if (type !== "entering" && type !== "exiting") return null;
   if (row.cancelling) return t("position_details.cancelling");
+  if (type === "exiting" && integrationData.providerId === "makina") {
+    const pending = t("position_details.awaiting_finalization", {
+      provider: integrationData.provider?.name ?? "Makina",
+    });
+    if (!row.date) return pending;
+    const estimated = t("position_details.estimated_unlock", {
+      date: formatDateTime(row.date, {
+        locale,
+        timeZone: DateTime.zoneMakeOffset(0),
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+        timeZoneName: "short",
+      }),
+    });
+    return now && DateTime.isLessThanOrEqualTo(row.date, now)
+      ? `${estimated} · ${pending}`
+      : estimated;
+  }
   if (!now) return null;
   if (row.date) {
     const duration = formatDurationUntil(row.date, now, t);

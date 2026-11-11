@@ -96,16 +96,18 @@ export const PositionDetailsDisclosure = () => {
           </Stack>
         ) : null}
 
-        <RewardRateBreakdown
-          rewardRate={positionDetails.apyCompositionRewardRate}
-          showUpToCampaign={positionDetails.apyCompositionShowsUpToCampaign}
-          title={t("details.apy_composition.title")}
-          testId={
-            personalizedRewardRate
-              ? "personalized-reward-rate-breakdown"
-              : "reward-rate-breakdown"
-          }
-        />
+        {overview.hasEarningBalances ? (
+          <RewardRateBreakdown
+            rewardRate={positionDetails.apyCompositionRewardRate}
+            showUpToCampaign={positionDetails.apyCompositionShowsUpToCampaign}
+            title={t("details.apy_composition.title")}
+            testId={
+              personalizedRewardRate
+                ? "personalized-reward-rate-breakdown"
+                : "reward-rate-breakdown"
+            }
+          />
+        ) : null}
 
         {positionDetails.positionSource === "validator" ? (
           <Stack gap={8}>
@@ -114,10 +116,14 @@ export const PositionDetailsDisclosure = () => {
                 {...provider}
                 key={provider.address ?? index}
                 rewardRate={
-                  personalizedRewardRate ? undefined : provider.rewardRate
+                  !overview.hasEarningBalances || personalizedRewardRate
+                    ? undefined
+                    : provider.rewardRate
                 }
                 rewardType={
-                  personalizedRewardRate ? undefined : provider.rewardType
+                  !overview.hasEarningBalances || personalizedRewardRate
+                    ? undefined
+                    : provider.rewardType
                 }
                 stakeType={stakeType}
                 integrationData={integrationData}

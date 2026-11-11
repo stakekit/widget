@@ -5,7 +5,11 @@ import * as Atom from "effect/reactivity/Atom";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { exactZero } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
-import { getTokenSumsUsd } from "../../../../domain/portfolio/positions";
+import {
+  getEarningPositionBalances,
+  getPositionValueTotal,
+  getTokenSumsUsd,
+} from "../../../../domain/portfolio/positions";
 import {
   type Presentable,
   toPresentable,
@@ -71,7 +75,11 @@ export const getPositionsAverageApy = (
       const yieldDto = getSummableYield(position, yields);
       if (!yieldDto) return summary;
 
-      const value = getTokenSumsUsd(position.total);
+      const value = getTokenSumsUsd(
+        getPositionValueTotal(
+          getEarningPositionBalances(position.balancesWithAmount)
+        )
+      );
       const rewardRate = yieldDto.rewardRate.total;
 
       return rewardRate.isGreaterThan(0) && value.gt(0)

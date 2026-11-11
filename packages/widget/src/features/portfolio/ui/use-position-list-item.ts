@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { exactZero } from "../../../domain/finance/exact";
 import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
+import { getEarningPositionBalances } from "../../../domain/portfolio/positions";
 import {
   formatRewardRatePercent,
   formatTokenAmountWithSymbol,
@@ -35,7 +36,12 @@ export const usePositionListItem = (item: PositionItem) => {
   // only a positive rate reads in the success tone, not zero or an unknown
   // rate, the same rule as the yield picker's.
   const getRewardRateAverage = () => {
-    if (!providersDetails || !integrationData) return null;
+    if (
+      !providersDetails ||
+      !integrationData ||
+      getEarningPositionBalances(item.balancesWithAmount).length === 0
+    )
+      return null;
     const average = providersDetails
       .reduce(
         (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
