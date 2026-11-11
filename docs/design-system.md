@@ -48,9 +48,7 @@ Virtual and SVG icon markup.
   `EmptyState`, `Entrance`, `ErrorState`, `FlowSteps`, `ListSkeleton`,
   `PageHeader`, `PageTransition`, `PositionSummary`, `ReviewSummary`,
   `SelectSheet`, `SplitView`, `StandIn`, `TokenTrigger`, `WidgetFrame`.
-- **Artwork**: `MorphoMark`, `Spot` (a flat illustration: one icon of the
-  set on a tone's soft disc, used by `EmptyState`, `ErrorState` and dialogs
-  instead of raster artwork).
+- **Artwork**: `MorphoMark`.
 - **Prop types**: `Tone`, `FixedIconName`, `HostHook`, `TabOption`,
   `ToggleOption`, `AmountPanelNote`, `SelectSheetAction`.
 
