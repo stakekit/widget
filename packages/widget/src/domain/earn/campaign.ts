@@ -295,9 +295,9 @@ export const getCampaignRewardsEstimate = ({
 };
 
 /**
- * Campaign yields first within each run of same-type yields, which the yield
- * selector shows as one group. Order within the campaign and non-campaign
- * parts, and the order of the groups, stay as given.
+ * Campaign yields first: within each run of same-type yields, which the yield
+ * selector shows as one group, and the groups holding one before the rest.
+ * Otherwise the given order of groups and of yields within them stays.
  */
 export const pinCampaignYields = <Y extends EarnYield>(
   yields: ReadonlyArray<Y>,
@@ -310,11 +310,17 @@ export const pinCampaignYields = <Y extends EarnYield>(
     else acc.push([item]);
     return acc;
   }, []);
-
-  return runs.flatMap((run) => [
+  const pinned = runs.map((run) => [
     ...run.filter((item) => campaignYieldIds.has(item.id)),
     ...run.filter((item) => !campaignYieldIds.has(item.id)),
   ]);
+  const hasCampaign = (run: ReadonlyArray<Y>) =>
+    !!run[0] && campaignYieldIds.has(run[0].id);
+
+  return [
+    ...pinned.filter(hasCampaign),
+    ...pinned.filter((run) => !hasCampaign(run)),
+  ].flat();
 };
 
 const day = Duration.days(1);

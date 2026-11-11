@@ -207,12 +207,27 @@ describe("pinCampaignYields", () => {
     ]);
   });
 
-  it("never moves a yield into another group", () => {
-    const yields = [lending("lend"), vault("plain"), vault("campaign")];
+  it("moves a group with a campaign yield above the others, keeping each group whole", () => {
+    const yields = [
+      lending("lend"),
+      lending("other-lend"),
+      vault("plain"),
+      vault("campaign"),
+    ];
+
+    expect(ids(pinCampaignYields(yields, campaignYields))).toEqual([
+      "campaign",
+      "plain",
+      "lend",
+      "other-lend",
+    ]);
+  });
+
+  it("keeps the given group order without a campaign yield", () => {
+    const yields = [lending("lend"), vault("plain")];
 
     expect(ids(pinCampaignYields(yields, campaignYields))).toEqual([
       "lend",
-      "campaign",
       "plain",
     ]);
   });
