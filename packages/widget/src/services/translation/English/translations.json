@@ -458,6 +458,208 @@
       "other": "Other"
     }
   },
+  "campaign": {
+    "label": "Campaign",
+    "label_upcoming": "Upcoming",
+    "status_active": "Live",
+    "status_upcoming": "Starts soon",
+    "status_ending_soon": "Ending soon",
+    "status_paused": "Paused",
+    "details_link": "Details",
+    "view_details": "View campaign details",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "time": {
+      "upcoming": "Starts {{date}} · in {{days}}",
+      "paused": "Paused · ends {{date}}",
+      "active": "Ends {{date}} · {{days}} left"
+    },
+    "strip": {
+      "upcoming_note": "The boost starts on {{date}}. Rewards build up from that day.",
+      "paused_note": "Rewards are paused. Rewards you've earned are kept."
+    },
+    "rate": {
+      "up_to": "Up to {{rate}}",
+      "up_to_from": "Up to {{rate}} from {{date}}",
+      "from": "From {{date}}",
+      "paused": "Paused",
+      "incentive": "+{{rate}}",
+      "incentive_from": "+{{rate}} from {{date}}"
+    },
+    "tip": {
+      "label": "About the campaign rate",
+      "total": "Total",
+      "total_today": "Total today",
+      "incentive": "Campaign boost"
+    },
+    "metric": {
+      "active": "Incl. +{{rate}} campaign",
+      "upcoming": "+{{rate}} from {{date}}",
+      "paused": "Campaign paused"
+    },
+    "footer": {
+      "active": "Extra campaign rewards, {{payment}} until {{date}}.",
+      "upcoming": "Extra campaign rewards from {{start}} until {{end}}, {{payment}}.",
+      "paused": "Campaign rewards are paused. Rewards you've earned so far are kept.",
+      "active_sponsor": "{{sponsor}} adds extra rewards, {{payment}} until {{date}}.",
+      "upcoming_sponsor": "{{sponsor}} adds extra rewards from {{start}} until {{end}}, {{payment}}.",
+      "paused_sponsor": "{{sponsor}} campaign rewards are paused. Rewards you've earned so far are kept."
+    },
+    "payment": {
+      "compound": "paid {{cadence}} into your position",
+      "normal": "paid {{cadence}} in {{symbol}}",
+      "compound_no_cadence": "paid into your position",
+      "normal_no_cadence": "paid in {{symbol}}"
+    },
+    "cadence": {
+      "daily": "daily",
+      "weekly": "weekly",
+      "six_hourly": "every 6 hours",
+      "end_of_campaign": "at the end of the campaign",
+      "monthly": "monthly"
+    },
+    "frequency": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "six_hourly": "Every 6 hours",
+      "end_of_campaign": "At campaign end",
+      "monthly": "Monthly"
+    },
+    "hint": {
+      "other_yield": "{{name}} has a campaign: up to {{rate}}.",
+      "switch": "Switch",
+      "other_yield_sponsor": "{{name}} has a {{sponsor}} campaign: up to {{rate}}.",
+      "other_yield_paused": "{{name}} has a campaign. Its rewards are paused right now.",
+      "other_yield_paused_sponsor": "{{name}} has a {{sponsor}} campaign. Its rewards are paused right now.",
+      "other_yield_upcoming": "{{name}} has a campaign from {{date}}: up to {{rate}}.",
+      "other_yield_upcoming_sponsor": "{{name}} has a {{sponsor}} campaign from {{date}}: up to {{rate}}.",
+      "other_yield_upcoming_no_rate": "{{name}} has a campaign from {{date}}.",
+      "other_yield_upcoming_no_rate_sponsor": "{{name}} has a {{sponsor}} campaign from {{date}}."
+    },
+    "section": {
+      "title": "Campaign",
+      "payouts_compound": "{{frequency}}, added to your position",
+      "payouts_normal": "{{frequency}}, in {{symbol}}",
+      "notice_upcoming": "Starts {{date}}, in {{days}}. Until then you earn this yield's own rate.",
+      "notice_paused": "Paused. No new rewards build up for now. Rewards you've already earned are kept.",
+      "notice_ending_soon": "{{days}} left. Rewards stop on {{date}}."
+    },
+    "details": {
+      "title": "Campaign details",
+      "got_it": "Got it",
+      "notice": {
+        "upcoming_title": "Starts {{date}}",
+        "upcoming": "Rewards begin on the start date. The campaign rate below is the planned rate from then.",
+        "paused_title": "Campaign paused",
+        "paused": "No new rewards build up while it's paused. Rewards you've already earned are kept.",
+        "ending_soon_title": "{{days}} left",
+        "ending_soon": "Rewards stop on {{date}}. What you earn until then is still paid out.",
+        "upcoming_no_rate": "Rewards begin on the start date. The campaign rate is set then."
+      },
+      "timeline": "Timeline",
+      "start": "Start",
+      "end": "End",
+      "progress": "Campaign progress",
+      "day_of": "Day {{day}} of {{total}}",
+      "days_left": "{{days}} left",
+      "starts_in": "Starts in {{days}}",
+      "runs": "Runs {{days}}",
+      "paused_until_end": "Paused · {{days}} until the end date",
+      "payouts": "Payouts",
+      "next_payout": "Next payout planned {{date}}",
+      "first_payout": "First payout after the start",
+      "payouts_resume": "Payouts resume when the campaign resumes",
+      "rewards": "Rewards",
+      "total": "Total {{rateType}}",
+      "campaign_caption_active": "Adjusts with deposits",
+      "campaign_caption_upcoming": "Planned, from {{date}}",
+      "campaign_caption_paused": "Paused",
+      "total_caption_upcoming": "From the start",
+      "payment": "How you get paid",
+      "payment_compound": "Paid {{cadence}} as {{symbol}} ({{name}}), added straight to your position, so they keep earning.",
+      "payment_normal": "Paid {{cadence}} in {{symbol}} ({{name}}) to your wallet.",
+      "payment_compound_no_cadence": "Paid as {{symbol}} ({{name}}), added straight to your position, so they keep earning.",
+      "payment_normal_no_cadence": "Paid in {{symbol}} ({{name}}) to your wallet.",
+      "reward_token": "Reward token",
+      "rules": "Who can earn",
+      "minimum": "Minimum balance",
+      "maximum": "Max per wallet",
+      "maximum_caption": "Above this, only this yield's own rate applies",
+      "funded_by": "Funded by {{sponsor}}",
+      "about": "About",
+      "about_text": "{{sponsor}} funds extra rewards on {{yield}} from {{start}} to {{end}}, on top of the yield's own rate.",
+      "terms": "Read the campaign terms",
+      "ceiling": {
+        "label_incentive": "Cap on campaign {{rateType}}",
+        "label_combined": "Cap on total {{rateType}}",
+        "explanation_incentive": "The campaign {{rateType}} is capped at {{ceiling}}. It adjusts with deposits and the remaining budget.",
+        "explanation_combined": "Total {{rateType}} is capped at {{ceiling}}. The campaign part adjusts with deposits and the remaining budget.",
+        "step_start": "From launch",
+        "step_deposits": "After deposits average {{amount}}",
+        "step_date": "From {{date}}",
+        "step_deposits_or_date": "After deposits average {{amount}}, or from {{date}}",
+        "step_now": "Now",
+        "steps_note": "A step starts once deposits over the last 14 days average above its level for long enough.",
+        "stepped_down_title": "{{rateType}} cap is now {{ceiling}}",
+        "stepped_down_deposits": "Deposits have averaged above {{amount}}, so the cap moved from {{from}} to {{ceiling}}, as planned in the steps below.",
+        "stepped_down_deposits_now": "Deposits have averaged above {{amount}}, so the cap is now {{ceiling}}, as planned in the steps below.",
+        "stepped_down_date": "Since {{date}}, the cap moved from {{from}} to {{ceiling}}, as planned in the steps below.",
+        "stepped_down_date_now": "Since {{date}}, the cap is {{ceiling}}, as planned in the steps below.",
+        "stepped_down": "The cap moved from {{from}} to {{ceiling}}, as planned in the steps below.",
+        "stepped_down_now": "The cap is now {{ceiling}}, as planned in the steps below.",
+        "section_stepped_down": "{{label}} is now {{ceiling}}, down from {{from}} as planned.",
+        "section_stepped_down_now": "{{label}} is now {{ceiling}}, as planned."
+      }
+    },
+    "rewards": {
+      "title": "Campaign rewards",
+      "earned_line": "Campaign rewards earned",
+      "total_earned": "Total earned",
+      "since": "Since {{date}}",
+      "paid_out": "Paid out",
+      "pending": "Pending",
+      "final_payout": "Final payout",
+      "next_payout": "Next payout planned {{date}}",
+      "paused": "Paused",
+      "paused_caption": "Earned rewards are kept",
+      "final_payout_due": "Due {{date}}",
+      "final_payout_preparing": "Being prepared",
+      "updated": "Updated {{date}}",
+      "last_updated": "Last updated {{date}}",
+      "notice": {
+        "paused": "The campaign is paused, so no new rewards build up. What you've earned stays yours.",
+        "final_payout": "This campaign has ended. Your final payout is on its way, and your position keeps earning this yield's own rate.",
+        "paid_out": "This campaign has ended and all its rewards are paid out. Your position keeps earning this yield's own rate.",
+        "over_cap": "Only the first {{cap}} earns campaign rewards. The other {{rest}} still earns this yield's own rate.",
+        "below_minimum_title": "Not earning campaign rewards yet",
+        "below_minimum": "Deposit {{shortfall}} more to start earning. Campaign rewards need at least {{minimum}} in this position.",
+        "below_minimum_unknown": "This position holds less than the campaign's minimum, so it isn't earning campaign rewards yet.",
+        "not_eligible_title": "Not earning campaign rewards",
+        "not_eligible": "This wallet isn't earning campaign rewards. If you think this is a mistake, contact support.",
+        "unavailable": "Campaign rewards can't be loaded right now. Your rewards are safe and keep building up.",
+        "retry": "Try again"
+      },
+      "compound_payouts": "Payouts are added to your position as {{symbol}}. {{amount}} of your balance came from campaign rewards.",
+      "payouts": {
+        "recent": "Recent payouts",
+        "all": "All payouts ({{count}})",
+        "show_all": "Show all {{count}}",
+        "show_less": "Show less",
+        "show_more": "Show more",
+        "pending": "Pending",
+        "empty": "No payouts yet. Your first payout arrives after you start earning.",
+        "unavailable": "Payouts can't be loaded right now.",
+        "retry": "Load payouts again"
+      },
+      "row_not_earning": "Not earning",
+      "row_below_minimum": "Below the minimum"
+    },
+    "selector": {
+      "paused": "Rewards paused",
+      "upcoming": "Starts {{date}}",
+      "incentive": "+{{rate}} boost"
+    }
+  },
   "details": {
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
@@ -565,12 +767,7 @@
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
     "selected_validators_summary_other": "{{providerName}} and others",
-    "campaign_susd_description": "After staking sUSD, the position is locked until April 20, 2026.",
-    "campaign_susd_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
-    "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>.",
-    "campaign_susd": "Learn more about the sUSD staking program <link0>here</link0>.",
-    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>.",
-    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>.",
+    "confidential_incentives": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>.",
     "lockup_period_one": "Minimum lock-up time is {{count}} day.",
     "lockup_period_other": "Minimum lock-up time is {{count}} days.",
     "native_staking": {
@@ -685,8 +882,11 @@
     "apy_composition": {
       "title": "APY composition",
       "native": "Native APY",
+      "native_apr": "Native APR",
       "protocol_incentive": "Protocol incentive APY",
+      "protocol_incentive_apr": "Protocol incentive APR",
       "campaign": "Campaign APY",
+      "campaign_apr": "Campaign APR",
       "up_to": "Up to {{value}}"
     }
   },
@@ -1541,7 +1741,8 @@
       "preparing": "Preparing",
       "rewards": "Rewards",
       "locked": "Locked",
-      "unlocking": "Unlocking"
+      "unlocking": "Unlocking",
+      "campaign_rewards": "Pending campaign rewards"
     },
     "duration": {
       "less_than_minute": "less than a minute",

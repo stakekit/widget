@@ -9,10 +9,7 @@ import {
 } from "../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import { isUserRevealableBalance } from "../../../domain/earn/confidential-balance";
-import {
-  getRewardRateBreakdown,
-  type YieldRewardRate,
-} from "../../../domain/earn/reward-rate";
+import { hasCampaignIncentive } from "../../../domain/earn/reward-rate";
 import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
@@ -22,6 +19,10 @@ import {
   InFlightCancelsKey,
   inFlightCancelsResourceAtom,
 } from "../../../resources/in-flight-cancels/in-flight-cancels";
+import {
+  PositionCampaignRewardsKey,
+  positionCanEarnCampaignAtom,
+} from "../../campaigns/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { resolvePositionDetailsPageState } from "../model/page-state";
 import { positionDetailsExitActions } from "./actions/exit";
@@ -37,10 +38,6 @@ import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsWorkflowViewAtom,
 } from "./workflow-view";
-
-const hasCampaignRewardRate = (
-  rewardRate: YieldRewardRate | null | undefined
-) => getRewardRateBreakdown(rewardRate).some((item) => item.key === "campaign");
 
 export type PositionDetailsShareConversion = {
   readonly rate: BigNumber;
@@ -128,11 +125,22 @@ export const positionDetailsViewAtom = Atom.family(
       ).providers;
       const personalizedRewardRate =
         workflow.positionBalances &&
-        hasCampaignRewardRate(workflow.positionBalances.rewardRate)
+        hasCampaignIncentive(workflow.positionBalances.rewardRate)
           ? workflow.positionBalances.rewardRate
           : null;
+      // A wallet below the minimum or excluded earns no campaign part, so
+      // the yield's "up to" campaign rate would misstate its rate.
       const fallbackRewardRate =
-        integration && hasCampaignRewardRate(integration.rewardRate)
+        integration &&
+        hasCampaignIncentive(integration.rewardRate) &&
+        get(
+          positionCanEarnCampaignAtom(
+            new PositionCampaignRewardsKey({
+              scope: key.scope,
+              yieldId: integration.id,
+            })
+          )
+        )
           ? integration.rewardRate
           : null;
       const shareToAmountConversions =

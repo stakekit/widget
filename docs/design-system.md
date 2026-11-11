@@ -70,8 +70,9 @@ One look per concept:
   it. Every row of a choice keeps the check's slot, chosen or not, so values
   line up. Condensed rows are always flat. On the second line the subtitle
   keeps its room: a status truncates first, and below `sm` shows its icon
-  alone. A value that did not happen (a failed transfer) is muted and struck
-  through (`valueStruck`). A row may end with a control of its own
+  alone. A value that did not happen (a failed transfer) or no longer holds
+  (a cap a later step replaced) is muted and struck through (`valueStruck`,
+  on `ListRow` and `DetailRow` alike). A row may end with a control of its own
   (`trailing`), such as a collateral `Switch`, which keeps its own press on
   a static row, and carry a `note` under its main line, inside its surface,
   such as why that switch cannot change (`danger`) or a risk (`warning`).
@@ -151,8 +152,13 @@ One look per concept:
   `Disclosure`, "Details", open by default, never repeating a figure
   the summary shows; each validator there is a filled `Card` of its own,
   8px apart, with no dividers: its logo and "Staked via …" lead, and its
-  facts open in a `Disclosure` inside the card. The yield's facts follow
-  the Details. In the Dashboard the
+  facts open in a `Disclosure` inside the card. A position in a yield's
+  Campaign has a "Campaign rewards" `Disclosure`, open, just before the
+  Details: what the wallet earned over the whole campaign, paid out and
+  pending as framed `Metric`s, a `Notice` for why it does or doesn't earn,
+  and its payouts; the unpaid rewards also stay in the breakdown, labelled
+  as pending campaign rewards, since they are part of the balance. The
+  yield's facts follow the Details. In the Dashboard the
   Manage tab is the positions list alone, full width under its summary, and
   a position opens its own page laid out as the Earn tab is: a `SplitView`
   with the trail back to the positions list, the header and the actions on

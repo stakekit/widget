@@ -139,3 +139,16 @@ export const getRewardRateBreakdown = (
     return item?.rate.isGreaterThan(0) ? [item] : [];
   });
 };
+
+/** The campaign incentive part of a reward rate; zero without a live campaign. */
+export const getCampaignIncentiveRate = (
+  rewardRate: YieldRewardRate | null | undefined
+): BigNumber =>
+  (rewardRate?.components ?? [])
+    .filter((component) => component.yieldSource === "campaign_incentive")
+    .reduce((total, component) => total.plus(component.rate), exactZero());
+
+/** Whether a reward rate includes a live campaign's incentive. */
+export const hasCampaignIncentive = (
+  rewardRate: YieldRewardRate | null | undefined
+) => getCampaignIncentiveRate(rewardRate).isGreaterThan(0);

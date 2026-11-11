@@ -14,6 +14,10 @@ import {
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
+import {
+  getCampaignBadge,
+  getCampaignSelectorNote,
+} from "../../../../campaigns/index";
 import { useTrackEvent } from "../../../../tracking/index";
 import {
   getRiskRatingTone,
@@ -113,11 +117,23 @@ const SelectYieldSheet = ({
               tvl: null,
             };
             const risk = getYieldRiskDisplay(item);
+            const campaign = view.campaigns.get(item.id);
+            const campaignBadge = campaign
+              ? getCampaignBadge(campaign.lifecycle, t)
+              : null;
+            const campaignNote = campaign
+              ? getCampaignSelectorNote(campaign, item, t, locale)
+              : null;
             const via = item.provider?.name
               ? t("details.opportunity_item_subtitle_no_network", {
                   provider: item.provider.name,
                 })
               : capitalizeFirstLetters(item.token.network);
+            // A campaign yield's note stands under its rate, as the campaign
+            // is why it leads its group; other rows keep their rate type.
+            const subvalue = campaignNote
+              ? { subvalue: campaignNote, subvalueTone: "accent" as const }
+              : { subvalue: sharedRateLabel ? undefined : rate?.label };
 
             return {
               id: item.id,
@@ -127,14 +143,21 @@ const SelectYieldSheet = ({
                 ? `${via} · ${t("details.opportunity_item_tvl", { amount: tvl.usd })}`
                 : via,
               value: rate?.value ?? unavailableFigure,
-              ...(rate && !sharedRateLabel ? { subvalue: rate.label } : {}),
-              ...(risk
+              ...subvalue,
+              ...(campaignBadge || risk
                 ? {
                     badges: [
-                      {
-                        label: t("details.risk.badge", { rating: risk.rating }),
-                        tone: getRiskRatingTone(risk),
-                      },
+                      ...(campaignBadge ? [campaignBadge] : []),
+                      ...(risk
+                        ? [
+                            {
+                              label: t("details.risk.badge", {
+                                rating: risk.rating,
+                              }),
+                              tone: getRiskRatingTone(risk),
+                            },
+                          ]
+                        : []),
                     ],
                   }
                 : {}),

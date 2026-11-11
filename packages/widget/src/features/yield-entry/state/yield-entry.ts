@@ -21,6 +21,7 @@ import {
 } from "../../../services/wallet/wallet-command-identity";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
+import { yieldCampaignAtom } from "../../campaigns/index";
 import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
 import {
   CurrentYieldKycGateKey,
@@ -168,6 +169,9 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
       projection: {
         amountInitialization: input.amountInitialization,
         availableAmount: input.availableAmount,
+        campaign: input.entry.yield
+          ? get(yieldCampaignAtom(input.entry.yield.id))
+          : null,
         connected,
         entry: input.entry,
         externalProviders: Boolean(config.externalProviders),

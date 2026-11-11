@@ -235,6 +235,25 @@ Rate.
 **Reward Rate History**: A yield-scoped time series of Yield Reward Rate
 snapshots, not validator or Effective Reward Rates.
 
+**Campaign**: A project-scoped, sponsor-funded incentive on one yield, with a
+budget, schedule, minimum-balance rule, per-wallet cap, and payout cadence.
+Only the newest live Campaign of a yield adds to its Yield Reward Rate.
+_Avoid_: boost, promotion
+
+**Campaign Incentive Rate**: The `campaign_incentive` part of a Yield Reward
+Rate, an APR the API already reduces for the campaign's ceiling. The widget
+shows it as given and never recomputes a cap.
+
+**Campaign Lifecycle**: Upcoming, active, ending soon (under 14 days left),
+paused, or ended, derived from the API status, the start and end times, and the
+presentation clock. An ended Campaign is never shown on Earn.
+
+**Campaign Rate Ceiling**: The highest rate a Campaign lets a yield reach:
+the campaign rate alone (`incentive` mode) or the yield's own rate plus it
+(`combined`). Milestones step it, so reaching one replaces it. Not the
+per-wallet cap, which limits the balance that earns.
+_Avoid_: APY cap (in code)
+
 ### Confidential vaults
 
 **Confidential Vault**: A yield whose position balances are encrypted on-chain,

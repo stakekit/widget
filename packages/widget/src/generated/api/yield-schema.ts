@@ -1833,6 +1833,52 @@ export const TvlHistoryResponseDto = Schema.Struct({
     examples: ["2025-07-12T00:00:00.000Z"],
   }),
 }).annotate({ identifier: "TvlHistoryResponseDto" });
+export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+export const CampaignStatus = Schema.Literals([
+  "draft",
+  "active",
+  "paused",
+  "ended",
+]).annotate({ identifier: "CampaignStatus" });
+export type CampaignRewardMode = "normal" | "compound";
+export const CampaignRewardMode = Schema.Literals([
+  "normal",
+  "compound",
+]).annotate({ identifier: "CampaignRewardMode" });
+export type CampaignRewardTotalsDto = {
+  readonly earned: string;
+  readonly paid: string;
+  readonly unpaid: string;
+};
+export const CampaignRewardTotalsDto = Schema.Struct({
+  earned: Schema.String.annotate({
+    description:
+      "Total earned over the campaign: paid plus unpaid. Unpaid is an estimate.",
+    examples: ["125.5"],
+  }),
+  paid: Schema.String.annotate({
+    description: "Paid out on-chain.",
+    examples: ["100"],
+  }),
+  unpaid: Schema.String.annotate({
+    description:
+      "Earned but not yet paid out on-chain, including payouts awaiting approval or execution. Estimated from the released budget.",
+    examples: ["25.5"],
+  }),
+}).annotate({ identifier: "CampaignRewardTotalsDto" });
+export type CampaignQualificationStatus =
+  | "qualified"
+  | "below_threshold"
+  | "not_eligible";
+export const CampaignQualificationStatus = Schema.Literals([
+  "qualified",
+  "below_threshold",
+  "not_eligible",
+]).annotate({
+  description:
+    "qualified: the counted balance meets the minimum. below_threshold: it does not. not_eligible: the wallet is excluded from payouts.",
+  identifier: "CampaignQualificationStatus",
+});
 export type TransactionDto = {
   readonly id: string;
   readonly title: string;
@@ -4155,6 +4201,86 @@ export const RewardRateHistoryResponseDto = Schema.Struct({
     examples: ["2025-07-10T00:00:00.000Z"],
   }),
 }).annotate({ identifier: "RewardRateHistoryResponseDto" });
+export type CampaignRewardsDto = {
+  readonly campaignId: string;
+  readonly yieldId: string;
+  readonly status: CampaignStatus;
+  readonly rewardMode: CampaignRewardMode;
+  readonly rewardToken: TokenDto;
+  readonly totals: CampaignRewardTotalsDto;
+  readonly inputTokenTotals: {
+    readonly earned: string;
+    readonly paid: string;
+    readonly unpaid: string;
+  };
+  readonly accruedThrough: string | null;
+  readonly nextPayoutDueAt: string | null;
+  readonly qualification: {
+    readonly status: CampaignQualificationStatus;
+    readonly qualifyingBalance: string;
+    readonly incentivizedBalance: string;
+  };
+};
+export const CampaignRewardsDto = Schema.Struct({
+  campaignId: Schema.String.annotate({ format: "uuid" }),
+  yieldId: Schema.String,
+  status: CampaignStatus,
+  rewardMode: CampaignRewardMode,
+  rewardToken: Schema.suspend((): Schema.Codec<TokenDto> => TokenDto).annotate({
+    description: "Reward token metadata.",
+  }),
+  totals: Schema.suspend(
+    (): Schema.Codec<CampaignRewardTotalsDto> => CampaignRewardTotalsDto
+  ).annotate({ description: "Totals in reward-token units." }),
+  inputTokenTotals: Schema.Struct({
+    earned: Schema.String.annotate({
+      description:
+        "Total earned over the campaign: paid plus unpaid. Unpaid is an estimate.",
+      examples: ["125.5"],
+    }),
+    paid: Schema.String.annotate({
+      description: "Paid out on-chain.",
+      examples: ["100"],
+    }),
+    unpaid: Schema.String.annotate({
+      description:
+        "Earned but not yet paid out on-chain, including payouts awaiting approval or execution. Estimated from the released budget.",
+      examples: ["25.5"],
+    }),
+  }).annotate({
+    description:
+      "Compound mode only: totals valued in the yield's input token at the latest price per share. Null otherwise, or when the price is unavailable.",
+  }),
+  accruedThrough: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description: "Rewards are accrued up to this time.",
+    format: "date-time",
+  }),
+  nextPayoutDueAt: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "date-time",
+  }),
+  qualification: Schema.Struct({
+    status: Schema.suspend(
+      (): Schema.Codec<CampaignQualificationStatus> =>
+        CampaignQualificationStatus
+    ).annotate({
+      description:
+        "qualified: the counted balance meets the minimum. below_threshold: it does not. not_eligible: the wallet is excluded from payouts.",
+    }),
+    qualifyingBalance: Schema.String.annotate({
+      description:
+        "Balance the campaign counts for this wallet, in the yield's input token, as of accruedThrough.",
+      examples: ["105.000000"],
+    }),
+    incentivizedBalance: Schema.String.annotate({
+      description:
+        "Part of qualifyingBalance that earns campaign rewards after the per-wallet cap. Zero unless status is qualified; lower than qualifyingBalance when the wallet is over the cap.",
+      examples: ["100.000000"],
+    }),
+  }).annotate({
+    description:
+      "The wallet's qualification state. Null when the counted balance can't be determined yet.",
+  }),
+}).annotate({ identifier: "CampaignRewardsDto" });
 export type ActionDto = {
   readonly id: string;
   readonly intent: "enter" | "manage" | "exit";
@@ -5563,6 +5689,12 @@ export const KycMetadataDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "KycMetadataDto" });
+export type CampaignRewardsResponseDto = {
+  readonly items: ReadonlyArray<CampaignRewardsDto>;
+};
+export const CampaignRewardsResponseDto = Schema.Struct({
+  items: Schema.Array(CampaignRewardsDto),
+}).annotate({ identifier: "CampaignRewardsResponseDto" });
 export type SimulationGasDto = {
   readonly amount: string | null;
   readonly token: TokenDto;
@@ -5864,6 +5996,7 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
+  readonly campaignId?: string;
 };
 export const BalanceDto = Schema.Struct({
   address: Schema.String.annotate({
@@ -6084,6 +6217,13 @@ export const BalanceDto = Schema.Struct({
         "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
     })
   ),
+  campaignId: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Campaign that this locked reward balance belongs to. Use it with /v1/campaigns/{campaignId}/payouts.",
+      format: "uuid",
+    })
+  ),
 }).annotate({ identifier: "BalanceDto" });
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -6255,6 +6395,7 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
+    readonly campaignId?: string;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -6499,6 +6640,13 @@ export const YieldBalancesDto = Schema.Struct({
         Schema.Boolean.annotate({
           description:
             "True when the position is confidential: amount, amountRaw and shareAmount are empty, amountUsd is null, and shareAmountRaw holds the ERC-7984 ciphertext handle. Decrypt it client-side with the Zama SDK.",
+        })
+      ),
+      campaignId: Schema.optionalKey(
+        Schema.String.annotate({
+          description:
+            "Campaign that this locked reward balance belongs to. Use it with /v1/campaigns/{campaignId}/payouts.",
+          format: "uuid",
         })
       ),
     }).annotate({ description: "Balance for the output token" })
@@ -7031,6 +7179,7 @@ export type YieldsControllerGetYieldsParams = {
   readonly providers?: ReadonlyArray<string>;
   readonly search?: string;
   readonly prime?: boolean;
+  readonly testnet?: boolean;
   readonly sort?:
     | "statusEnterAsc"
     | "statusEnterDesc"
@@ -7235,6 +7384,7 @@ export const YieldsControllerGetYieldsParams = Schema.Struct({
   providers: Schema.optionalKey(Schema.Array(Schema.String)),
   search: Schema.optionalKey(Schema.String),
   prime: Schema.optionalKey(Schema.Boolean.annotate({ examples: [true] })),
+  testnet: Schema.optionalKey(Schema.Boolean.annotate({ examples: [true] })),
   sort: Schema.optionalKey(
     Schema.Literals([
       "statusEnterAsc",
@@ -8051,6 +8201,360 @@ export type YieldsControllerGetYieldValidators500 = {
   readonly statusCode?: number;
 };
 export const YieldsControllerGetYieldValidators500 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Internal server error"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Internal Server Error"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [500] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetProjectCampaignsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly status?: "active" | "paused";
+};
+export const CampaignsControllerGetProjectCampaignsParams = Schema.Struct({
+  offset: Schema.optionalKey(
+    Schema.Number.annotate({ default: 0, examples: [0] })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(0).annotate({
+          expected: "a value greater than or equal to 0",
+        })
+      )
+  ),
+  limit: Schema.optionalKey(
+    Schema.Number.annotate({ default: 20, examples: [20] })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(1).annotate({
+          expected: "a value greater than or equal to 1",
+        })
+      )
+      .check(
+        Schema.isLessThanOrEqualTo(100).annotate({
+          expected: "a value less than or equal to 100",
+        })
+      )
+  ),
+  status: Schema.optionalKey(
+    Schema.Literals(["active", "paused"]).annotate({ default: "active" })
+  ),
+});
+export type CampaignsControllerGetProjectCampaigns200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: never;
+};
+export const CampaignsControllerGetProjectCampaigns200 = Schema.Struct({
+  total: Schema.Number.annotate({
+    description: "Total number of items available",
+    examples: [100],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  offset: Schema.Number.annotate({
+    description: "Offset of the current page",
+    examples: [0],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  limit: Schema.Number.annotate({
+    description: "Limit of the current page",
+    examples: [20],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  items: Schema.optionalKey(Schema.Never),
+});
+export type CampaignsControllerGetProjectCampaigns400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetProjectCampaigns400 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Validation failed"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Bad Request"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [400] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetProjectCampaigns401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetProjectCampaigns401 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Invalid API key"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Unauthorized"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [401] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetProjectCampaigns429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export const CampaignsControllerGetProjectCampaigns429 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Too Many Requests"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [429] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+  retryAfter: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [30] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetProjectCampaigns500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetProjectCampaigns500 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Internal server error"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Internal Server Error"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [500] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignRewardsParams = {
+  readonly address: string;
+  readonly yieldId?: string;
+};
+export const CampaignsControllerGetCampaignRewardsParams = Schema.Struct({
+  address: Schema.String.annotate({ examples: ["0x1234..."] }),
+  yieldId: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["solana-kamino-usdc-a1usdzqd-vault"] })
+  ),
+});
+export type CampaignsControllerGetCampaignRewards200 =
+  CampaignRewardsResponseDto;
+export const CampaignsControllerGetCampaignRewards200 =
+  CampaignRewardsResponseDto;
+export type CampaignsControllerGetCampaignRewards400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetCampaignRewards400 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Validation failed"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Bad Request"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [400] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignRewards401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetCampaignRewards401 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Invalid API key"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Unauthorized"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [401] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignRewards429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export const CampaignsControllerGetCampaignRewards429 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Too Many Requests"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [429] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+  retryAfter: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [30] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignRewards500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetCampaignRewards500 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Internal server error"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Internal Server Error"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [500] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignPayoutsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address: string;
+};
+export const CampaignsControllerGetCampaignPayoutsParams = Schema.Struct({
+  offset: Schema.optionalKey(
+    Schema.Number.annotate({ default: 0, examples: [0] })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(0).annotate({
+          expected: "a value greater than or equal to 0",
+        })
+      )
+  ),
+  limit: Schema.optionalKey(
+    Schema.Number.annotate({ default: 20, examples: [20] })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(1).annotate({
+          expected: "a value greater than or equal to 1",
+        })
+      )
+      .check(
+        Schema.isLessThanOrEqualTo(100).annotate({
+          expected: "a value less than or equal to 100",
+        })
+      )
+  ),
+  address: Schema.String.annotate({ examples: ["0x1234..."] }),
+});
+export type CampaignsControllerGetCampaignPayouts200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: never;
+};
+export const CampaignsControllerGetCampaignPayouts200 = Schema.Struct({
+  total: Schema.Number.annotate({
+    description: "Total number of items available",
+    examples: [100],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  offset: Schema.Number.annotate({
+    description: "Offset of the current page",
+    examples: [0],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  limit: Schema.Number.annotate({
+    description: "Limit of the current page",
+    examples: [20],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  items: Schema.optionalKey(Schema.Never),
+});
+export type CampaignsControllerGetCampaignPayouts400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetCampaignPayouts400 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Validation failed"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Bad Request"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [400] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignPayouts401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetCampaignPayouts401 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Invalid API key"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Unauthorized"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [401] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignPayouts429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export const CampaignsControllerGetCampaignPayouts429 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Too Many Requests"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [429] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+  retryAfter: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [30] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type CampaignsControllerGetCampaignPayouts500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const CampaignsControllerGetCampaignPayouts500 = Schema.Struct({
   message: Schema.optionalKey(
     Schema.String.annotate({ examples: ["Internal server error"] })
   ),

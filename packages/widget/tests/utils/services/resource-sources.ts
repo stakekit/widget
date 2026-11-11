@@ -52,8 +52,14 @@ export const yieldResourceSourceLayer = (
         unexpectedCall("YieldResourceSource.getSingleYieldBalances"),
       getTvlHistory: () => unexpectedCall("YieldResourceSource.getTvlHistory"),
       listActivity: () => unexpectedCall("YieldResourceSource.listActivity"),
+      listCampaignPayouts: () =>
+        unexpectedCall("YieldResourceSource.listCampaignPayouts"),
       listValidators: () =>
         unexpectedCall("YieldResourceSource.listValidators"),
+      listWalletCampaignRewards: () =>
+        unexpectedCall("YieldResourceSource.listWalletCampaignRewards"),
+      listProjectCampaigns: () =>
+        unexpectedCall("YieldResourceSource.listProjectCampaigns"),
       listYields: () => unexpectedCall("YieldResourceSource.listYields"),
       simulateAction: () =>
         unexpectedCall("YieldResourceSource.simulateAction"),

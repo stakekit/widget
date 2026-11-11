@@ -458,6 +458,208 @@
       "other": "Autres"
     }
   },
+  "campaign": {
+    "label": "Campagne",
+    "label_upcoming": "À venir",
+    "status_active": "En cours",
+    "status_upcoming": "Bientôt",
+    "status_ending_soon": "Fin proche",
+    "status_paused": "En pause",
+    "details_link": "Détails",
+    "view_details": "Voir les détails de la campagne",
+    "days_one": "{{count}} jour",
+    "days_other": "{{count}} jours",
+    "time": {
+      "upcoming": "Commence le {{date}} · dans {{days}}",
+      "paused": "En pause · se termine le {{date}}",
+      "active": "Se termine le {{date}} · {{days}} restants"
+    },
+    "strip": {
+      "upcoming_note": "Le bonus commence le {{date}}. Les récompenses s'accumulent à partir de ce jour.",
+      "paused_note": "Les récompenses sont en pause. Les récompenses déjà gagnées sont conservées."
+    },
+    "rate": {
+      "up_to": "Jusqu'à {{rate}}",
+      "up_to_from": "Jusqu'à {{rate}} dès le {{date}}",
+      "from": "Dès le {{date}}",
+      "paused": "En pause",
+      "incentive": "+{{rate}}",
+      "incentive_from": "+{{rate}} dès le {{date}}"
+    },
+    "tip": {
+      "label": "À propos du taux de campagne",
+      "total": "Total",
+      "total_today": "Total aujourd'hui",
+      "incentive": "Bonus de campagne"
+    },
+    "metric": {
+      "active": "Dont +{{rate}} de campagne",
+      "upcoming": "+{{rate}} dès le {{date}}",
+      "paused": "Campagne en pause"
+    },
+    "footer": {
+      "active": "Récompenses de campagne en plus, {{payment}} jusqu'au {{date}}.",
+      "upcoming": "Récompenses de campagne en plus du {{start}} au {{end}}, {{payment}}.",
+      "paused": "Les récompenses de campagne sont en pause. Les récompenses déjà gagnées sont conservées.",
+      "active_sponsor": "{{sponsor}} ajoute des récompenses, {{payment}} jusqu'au {{date}}.",
+      "upcoming_sponsor": "{{sponsor}} ajoute des récompenses du {{start}} au {{end}}, {{payment}}.",
+      "paused_sponsor": "Les récompenses de la campagne {{sponsor}} sont en pause. Les récompenses déjà gagnées sont conservées."
+    },
+    "payment": {
+      "compound": "versées {{cadence}} dans votre position",
+      "normal": "versées {{cadence}} en {{symbol}}",
+      "compound_no_cadence": "versées dans votre position",
+      "normal_no_cadence": "versées en {{symbol}}"
+    },
+    "cadence": {
+      "daily": "chaque jour",
+      "weekly": "chaque semaine",
+      "six_hourly": "toutes les 6 heures",
+      "end_of_campaign": "à la fin de la campagne",
+      "monthly": "chaque mois"
+    },
+    "frequency": {
+      "daily": "Quotidiens",
+      "weekly": "Hebdomadaires",
+      "six_hourly": "Toutes les 6 heures",
+      "end_of_campaign": "À la fin de la campagne",
+      "monthly": "Mensuels"
+    },
+    "hint": {
+      "other_yield": "{{name}} a une campagne : jusqu'à {{rate}}.",
+      "switch": "Changer",
+      "other_yield_sponsor": "{{name}} a une campagne {{sponsor}} : jusqu'à {{rate}}.",
+      "other_yield_paused": "{{name}} a une campagne. Ses récompenses sont en pause pour le moment.",
+      "other_yield_paused_sponsor": "{{name}} a une campagne {{sponsor}}. Ses récompenses sont en pause pour le moment.",
+      "other_yield_upcoming": "{{name}} a une campagne à partir du {{date}} : jusqu'à {{rate}}.",
+      "other_yield_upcoming_sponsor": "{{name}} a une campagne {{sponsor}} à partir du {{date}} : jusqu'à {{rate}}.",
+      "other_yield_upcoming_no_rate": "{{name}} a une campagne à partir du {{date}}.",
+      "other_yield_upcoming_no_rate_sponsor": "{{name}} a une campagne {{sponsor}} à partir du {{date}}."
+    },
+    "section": {
+      "title": "Campagne",
+      "payouts_compound": "{{frequency}}, ajoutés à votre position",
+      "payouts_normal": "{{frequency}}, en {{symbol}}",
+      "notice_upcoming": "Commence le {{date}}, dans {{days}}. D'ici là, vous gagnez le rendement propre de ce placement.",
+      "notice_paused": "En pause. Aucune nouvelle récompense ne s'accumule pour le moment. Les récompenses déjà gagnées sont conservées.",
+      "notice_ending_soon": "Plus que {{days}}. Les récompenses s'arrêtent le {{date}}."
+    },
+    "details": {
+      "title": "Détails de la campagne",
+      "got_it": "Compris",
+      "notice": {
+        "upcoming_title": "Commence le {{date}}",
+        "upcoming": "Les récompenses commencent à la date de début. Le taux de campagne ci-dessous est le taux prévu à partir de cette date.",
+        "paused_title": "Campagne en pause",
+        "paused": "Aucune nouvelle récompense ne s'accumule pendant la pause. Les récompenses déjà gagnées sont conservées.",
+        "ending_soon_title": "Plus que {{days}}",
+        "ending_soon": "Les récompenses s'arrêtent le {{date}}. Ce que vous gagnez d'ici là est toujours versé.",
+        "upcoming_no_rate": "Les récompenses commencent à la date de début. Le taux de campagne sera fixé à ce moment-là."
+      },
+      "timeline": "Calendrier",
+      "start": "Début",
+      "end": "Fin",
+      "progress": "Avancement de la campagne",
+      "day_of": "Jour {{day}} sur {{total}}",
+      "days_left": "{{days}} restants",
+      "starts_in": "Commence dans {{days}}",
+      "runs": "Dure {{days}}",
+      "paused_until_end": "En pause · {{days}} avant la date de fin",
+      "payouts": "Versements",
+      "next_payout": "Prochain versement prévu le {{date}}",
+      "first_payout": "Premier versement après le début",
+      "payouts_resume": "Les versements reprennent à la reprise de la campagne",
+      "rewards": "Récompenses",
+      "total": "{{rateType}} total",
+      "campaign_caption_active": "Varie avec les dépôts",
+      "campaign_caption_upcoming": "Prévu, dès le {{date}}",
+      "campaign_caption_paused": "En pause",
+      "total_caption_upcoming": "Dès le début",
+      "payment": "Comment vous êtes payé",
+      "payment_compound": "Versées {{cadence}} en {{symbol}} ({{name}}), ajoutées directement à votre position pour continuer à rapporter.",
+      "payment_normal": "Versées {{cadence}} en {{symbol}} ({{name}}) sur votre portefeuille.",
+      "payment_compound_no_cadence": "Versées en {{symbol}} ({{name}}), ajoutées directement à votre position pour continuer à rapporter.",
+      "payment_normal_no_cadence": "Versées en {{symbol}} ({{name}}) sur votre portefeuille.",
+      "reward_token": "Token de récompense",
+      "rules": "Qui peut gagner",
+      "minimum": "Solde minimum",
+      "maximum": "Maximum par portefeuille",
+      "maximum_caption": "Au-delà, seul le rendement propre de ce placement s'applique",
+      "funded_by": "Financée par {{sponsor}}",
+      "about": "À propos",
+      "about_text": "{{sponsor}} finance des récompenses supplémentaires sur {{yield}} du {{start}} au {{end}}, en plus du rendement propre du placement.",
+      "terms": "Lire les conditions de la campagne",
+      "ceiling": {
+        "label_incentive": "Plafond de l'{{rateType}} de campagne",
+        "label_combined": "Plafond de l'{{rateType}} total",
+        "explanation_incentive": "L'{{rateType}} de campagne est plafonné à {{ceiling}}. Il varie avec les dépôts et le budget restant.",
+        "explanation_combined": "L'{{rateType}} total est plafonné à {{ceiling}}. La part de campagne varie avec les dépôts et le budget restant.",
+        "step_start": "Dès le lancement",
+        "step_deposits": "Quand les dépôts atteignent en moyenne {{amount}}",
+        "step_date": "À partir du {{date}}",
+        "step_deposits_or_date": "Quand les dépôts atteignent en moyenne {{amount}}, ou à partir du {{date}}",
+        "step_now": "Actuel",
+        "steps_note": "Un palier démarre quand la moyenne des dépôts sur les 14 derniers jours dépasse son niveau assez longtemps.",
+        "stepped_down_title": "Le plafond d'{{rateType}} est maintenant de {{ceiling}}",
+        "stepped_down_deposits": "Les dépôts ont dépassé en moyenne {{amount}} : le plafond est passé de {{from}} à {{ceiling}}, comme prévu dans les paliers ci-dessous.",
+        "stepped_down_deposits_now": "Les dépôts ont dépassé en moyenne {{amount}} : le plafond est maintenant de {{ceiling}}, comme prévu dans les paliers ci-dessous.",
+        "stepped_down_date": "Depuis le {{date}}, le plafond est passé de {{from}} à {{ceiling}}, comme prévu dans les paliers ci-dessous.",
+        "stepped_down_date_now": "Depuis le {{date}}, le plafond est de {{ceiling}}, comme prévu dans les paliers ci-dessous.",
+        "stepped_down": "Le plafond est passé de {{from}} à {{ceiling}}, comme prévu dans les paliers ci-dessous.",
+        "stepped_down_now": "Le plafond est maintenant de {{ceiling}}, comme prévu dans les paliers ci-dessous.",
+        "section_stepped_down": "{{label}} est maintenant de {{ceiling}}, contre {{from}} auparavant, comme prévu.",
+        "section_stepped_down_now": "{{label}} est maintenant de {{ceiling}}, comme prévu."
+      }
+    },
+    "rewards": {
+      "title": "Récompenses de campagne",
+      "earned_line": "Récompenses de campagne gagnées",
+      "total_earned": "Total gagné",
+      "since": "Depuis le {{date}}",
+      "paid_out": "Versé",
+      "pending": "En attente",
+      "final_payout": "Dernier versement",
+      "next_payout": "Prochain versement prévu le {{date}}",
+      "paused": "En pause",
+      "paused_caption": "Les récompenses gagnées sont conservées",
+      "final_payout_due": "Prévu le {{date}}",
+      "final_payout_preparing": "En préparation",
+      "updated": "Mis à jour le {{date}}",
+      "last_updated": "Dernière mise à jour le {{date}}",
+      "notice": {
+        "paused": "La campagne est en pause : aucune nouvelle récompense ne s'accumule. Ce que vous avez gagné vous reste acquis.",
+        "final_payout": "Cette campagne est terminée. Votre dernier versement arrive, et votre position continue de rapporter le rendement propre de ce placement.",
+        "paid_out": "Cette campagne est terminée et toutes ses récompenses ont été versées. Votre position continue de rapporter le rendement propre de ce placement.",
+        "over_cap": "Seuls les premiers {{cap}} rapportent des récompenses de campagne. Les {{rest}} restants rapportent toujours le rendement propre de ce placement.",
+        "below_minimum_title": "Pas encore de récompenses de campagne",
+        "below_minimum": "Déposez encore {{shortfall}} pour commencer à gagner. Les récompenses de campagne demandent au moins {{minimum}} dans cette position.",
+        "below_minimum_unknown": "Cette position détient moins que le minimum de la campagne : elle ne rapporte pas encore de récompenses de campagne.",
+        "not_eligible_title": "Pas de récompenses de campagne",
+        "not_eligible": "Ce portefeuille ne gagne pas de récompenses de campagne. Si vous pensez qu'il s'agit d'une erreur, contactez le support.",
+        "unavailable": "Les récompenses de campagne ne peuvent pas être chargées pour le moment. Vos récompenses sont en sécurité et continuent de s'accumuler.",
+        "retry": "Réessayer"
+      },
+      "compound_payouts": "Les versements sont ajoutés à votre position en {{symbol}}. {{amount}} de votre solde provient des récompenses de campagne.",
+      "payouts": {
+        "recent": "Versements récents",
+        "all": "Tous les versements ({{count}})",
+        "show_all": "Tout afficher ({{count}})",
+        "show_less": "Afficher moins",
+        "show_more": "Afficher plus",
+        "pending": "En attente",
+        "empty": "Aucun versement pour l'instant. Votre premier versement arrive une fois que vous commencez à gagner.",
+        "unavailable": "Les versements ne peuvent pas être chargés pour le moment.",
+        "retry": "Recharger les versements"
+      },
+      "row_not_earning": "Ne rapporte pas",
+      "row_below_minimum": "Sous le minimum"
+    },
+    "selector": {
+      "paused": "Récompenses en pause",
+      "upcoming": "Dès le {{date}}",
+      "incentive": "+{{rate}} de bonus"
+    }
+  },
   "details": {
     "earn": "Earn",
     "estimated_reward": "Récompenses estimées",
@@ -565,12 +767,7 @@
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} autres",
     "selected_validators_summary_other": "{{providerName}} et autres",
-    "campaign_susd_description": "Après avoir staké sUSD, la position est bloquée jusqu'au 20 avril 2026.",
-    "campaign_susd_extra": "Les récompenses gagnées sont distribuées périodiquement sous forme de SNX et se débloquent linéairement sur 3 mois après la fin du programme.",
-    "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>.",
-    "campaign_susd": "En savoir plus sur le programme de staking sUSD <link0>ici</link0>.",
-    "confidential_campaign": "Consultez les incitations et les options de délégation de ce vault sur Zama. <link0>En savoir plus</link0>.",
-    "campaign": "Les récompenses sont bloquées jusqu'au 28 mai 2026. Les retraits anticipés peuvent entraîner des pénalités. <link0>En savoir plus</link0>.",
+    "confidential_incentives": "Consultez les incitations et les options de délégation de ce vault sur Zama. <link0>En savoir plus</link0>.",
     "lockup_period_one": "La période de blocage minimum est de {{count}} jour.",
     "lockup_period_other": "La période de blocage minimum est de {{count}} jours.",
     "native_staking": {
@@ -685,8 +882,11 @@
     "apy_composition": {
       "title": "Composition de l'APY",
       "native": "APY natif",
+      "native_apr": "APR natif",
       "protocol_incentive": "APY d'incitation protocolaire",
+      "protocol_incentive_apr": "APR d'incitation protocolaire",
       "campaign": "APY de campagne",
+      "campaign_apr": "APR de campagne",
       "up_to": "Jusqu'a {{value}}"
     }
   },
@@ -1185,7 +1385,8 @@
       "preparing": "En cours de préparation",
       "rewards": "Récompenses",
       "locked": "Bloqué",
-      "unlocking": "En cours de déblocage"
+      "unlocking": "En cours de déblocage",
+      "campaign_rewards": "Récompenses de campagne en attente"
     },
     "duration": {
       "less_than_minute": "moins d'une minute",

@@ -685,6 +685,17 @@ export type TvlHistoryResponseDto = {
   readonly from: string;
   readonly to: string;
 };
+export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+export type CampaignRewardMode = "normal" | "compound";
+export type CampaignRewardTotalsDto = {
+  readonly earned: string;
+  readonly paid: string;
+  readonly unpaid: string;
+};
+export type CampaignQualificationStatus =
+  | "qualified"
+  | "below_threshold"
+  | "not_eligible";
 export type TransactionDto = {
   readonly id: string;
   readonly title: string;
@@ -1496,6 +1507,26 @@ export type RewardRateHistoryResponseDto = {
   readonly from: string;
   readonly to: string;
 };
+export type CampaignRewardsDto = {
+  readonly campaignId: string;
+  readonly yieldId: string;
+  readonly status: CampaignStatus;
+  readonly rewardMode: CampaignRewardMode;
+  readonly rewardToken: TokenDto;
+  readonly totals: CampaignRewardTotalsDto;
+  readonly inputTokenTotals: {
+    readonly earned: string;
+    readonly paid: string;
+    readonly unpaid: string;
+  };
+  readonly accruedThrough: string | null;
+  readonly nextPayoutDueAt: string | null;
+  readonly qualification: {
+    readonly status: CampaignQualificationStatus;
+    readonly qualifyingBalance: string;
+    readonly incentivizedBalance: string;
+  };
+};
 export type ActionDto = {
   readonly id: string;
   readonly intent: "enter" | "manage" | "exit";
@@ -1922,6 +1953,9 @@ export type KycMetadataDto = {
   readonly selfAttestation?: SelfAttestationDto;
   readonly mandatoryDisclosureUrl?: string;
 };
+export type CampaignRewardsResponseDto = {
+  readonly items: ReadonlyArray<CampaignRewardsDto>;
+};
 export type SimulationGasDto = {
   readonly amount: string | null;
   readonly token: TokenDto;
@@ -2012,6 +2046,7 @@ export type BalanceDto = {
   readonly shareAmountRaw?: string;
   readonly shareToken?: TokenDto;
   readonly isEncrypted?: boolean;
+  readonly campaignId?: string;
 };
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -2080,6 +2115,7 @@ export type YieldBalancesDto = {
     readonly shareAmountRaw?: string;
     readonly shareToken?: TokenDto;
     readonly isEncrypted?: boolean;
+    readonly campaignId?: string;
   };
   readonly rewardRate?: {
     readonly total: number;
@@ -2367,6 +2403,7 @@ export type YieldsControllerGetYieldsParams = {
   readonly providers?: ReadonlyArray<string>;
   readonly search?: string;
   readonly prime?: boolean;
+  readonly testnet?: boolean;
   readonly sort?:
     | "statusEnterAsc"
     | "statusEnterDesc"
@@ -2588,6 +2625,97 @@ export type YieldsControllerGetYieldValidators429 = {
   readonly retryAfter?: number;
 };
 export type YieldsControllerGetYieldValidators500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetProjectCampaignsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly status?: "active" | "paused";
+};
+export type CampaignsControllerGetProjectCampaigns200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: never;
+};
+export type CampaignsControllerGetProjectCampaigns400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetProjectCampaigns401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetProjectCampaigns429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export type CampaignsControllerGetProjectCampaigns500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetCampaignRewardsParams = {
+  readonly address: string;
+  readonly yieldId?: string;
+};
+export type CampaignsControllerGetCampaignRewards200 =
+  CampaignRewardsResponseDto;
+export type CampaignsControllerGetCampaignRewards400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetCampaignRewards401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetCampaignRewards429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export type CampaignsControllerGetCampaignRewards500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetCampaignPayoutsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address: string;
+};
+export type CampaignsControllerGetCampaignPayouts200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: never;
+};
+export type CampaignsControllerGetCampaignPayouts400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetCampaignPayouts401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type CampaignsControllerGetCampaignPayouts429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export type CampaignsControllerGetCampaignPayouts500 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
@@ -3329,6 +3457,7 @@ export const make = <E, R>(
           providers: options?.params?.["providers"] as any,
           search: options?.params?.["search"] as any,
           prime: options?.params?.["prime"] as any,
+          testnet: options?.params?.["testnet"] as any,
           sort: options?.params?.["sort"] as any,
         }),
         onRequest(options?.config)(["2xx"], {
@@ -3523,6 +3652,66 @@ export const make = <E, R>(
                 "401": "YieldsControllerGetYieldValidators401",
                 "429": "YieldsControllerGetYieldValidators429",
                 "500": "YieldsControllerGetYieldValidators500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
+      ),
+    CampaignsControllerGetProjectCampaigns: (
+      options: Parameters<YieldApi["CampaignsControllerGetProjectCampaigns"]>[0]
+    ) =>
+      HttpClientRequest.get("/v1/campaigns").pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          status: options?.params?.["status"] as any,
+        }),
+        onRequest(options?.config)(["2xx"], {
+          "400": "CampaignsControllerGetProjectCampaigns400",
+          "401": "CampaignsControllerGetProjectCampaigns401",
+          "429": "CampaignsControllerGetProjectCampaigns429",
+          "500": "CampaignsControllerGetProjectCampaigns500",
+        })
+      ),
+    CampaignsControllerGetCampaignRewards: (
+      options: Parameters<YieldApi["CampaignsControllerGetCampaignRewards"]>[0]
+    ) =>
+      HttpClientRequest.get("/v1/campaigns/rewards").pipe(
+        HttpClientRequest.setUrlParams({
+          address: options.params["address"] as any,
+          yieldId: options.params["yieldId"] as any,
+        }),
+        onRequest(options.config)(["2xx"], {
+          "400": "CampaignsControllerGetCampaignRewards400",
+          "401": "CampaignsControllerGetCampaignRewards401",
+          "429": "CampaignsControllerGetCampaignRewards429",
+          "500": "CampaignsControllerGetCampaignRewards500",
+        })
+      ),
+    CampaignsControllerGetCampaignPayouts: (
+      campaignId,
+      options: Parameters<YieldApi["CampaignsControllerGetCampaignPayouts"]>[1]
+    ) =>
+      __makePathRequest(
+        HttpClientRequest.get,
+        [campaignId],
+        () => "/v1/campaigns/" + __encodePathParam(campaignId) + "/payouts"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.setUrlParams({
+              offset: options.params["offset"] as any,
+              limit: options.params["limit"] as any,
+              address: options.params["address"] as any,
+            }),
+            onRequest(options.config)(
+              ["2xx"],
+              {
+                "400": "CampaignsControllerGetCampaignPayouts400",
+                "401": "CampaignsControllerGetCampaignPayouts401",
+                "429": "CampaignsControllerGetCampaignPayouts429",
+                "500": "CampaignsControllerGetCampaignPayouts500",
               },
               { binary: [], voidSuccess: [], voidError: ["404"] }
             )
@@ -4316,6 +4505,196 @@ export interface YieldApi<E = HttpClientError.HttpClientError, R = never> {
       | YieldApiError<
           "YieldsControllerGetYieldValidators500",
           YieldsControllerGetYieldValidators500
+        >
+      | YieldApiError<"404", undefined>,
+      R
+    >;
+  };
+  /**
+   * Returns campaign metadata for every yield in the API key's project. Active includes upcoming campaigns.
+   */
+  readonly CampaignsControllerGetProjectCampaigns: {
+    <Config extends OperationConfig | undefined = undefined>(options: {
+      readonly params?:
+        | CampaignsControllerGetProjectCampaignsParams
+        | undefined;
+      readonly config: Config;
+    }): Effect.Effect<
+      WithOptionalResponse<CampaignsControllerGetProjectCampaigns200, Config>,
+      | E
+      | HttpClientError.HttpClientError
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns400",
+          CampaignsControllerGetProjectCampaigns400
+        >
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns401",
+          CampaignsControllerGetProjectCampaigns401
+        >
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns429",
+          CampaignsControllerGetProjectCampaigns429
+        >
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns500",
+          CampaignsControllerGetProjectCampaigns500
+        >,
+      R
+    >;
+    <Config extends OperationConfig | undefined = undefined>(
+      options:
+        | {
+            readonly params?:
+              | CampaignsControllerGetProjectCampaignsParams
+              | undefined;
+            readonly config?: Config | undefined;
+          }
+        | undefined
+    ): Effect.Effect<
+      WithOptionalResponse<
+        CampaignsControllerGetProjectCampaigns200,
+        Config | undefined
+      >,
+      | E
+      | HttpClientError.HttpClientError
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns400",
+          CampaignsControllerGetProjectCampaigns400
+        >
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns401",
+          CampaignsControllerGetProjectCampaigns401
+        >
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns429",
+          CampaignsControllerGetProjectCampaigns429
+        >
+      | YieldApiError<
+          "CampaignsControllerGetProjectCampaigns500",
+          CampaignsControllerGetProjectCampaigns500
+        >,
+      R
+    >;
+  };
+  /**
+   * Returns earned, paid and unpaid campaign rewards for a wallet, one item per campaign in the API key's project that the wallet has accrued in. Unpaid is estimated from the campaign's released budget.
+   */
+  readonly CampaignsControllerGetCampaignRewards: {
+    <Config extends OperationConfig | undefined = undefined>(options: {
+      readonly params: CampaignsControllerGetCampaignRewardsParams;
+      readonly config: Config;
+    }): Effect.Effect<
+      WithOptionalResponse<CampaignsControllerGetCampaignRewards200, Config>,
+      | E
+      | HttpClientError.HttpClientError
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards400",
+          CampaignsControllerGetCampaignRewards400
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards401",
+          CampaignsControllerGetCampaignRewards401
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards429",
+          CampaignsControllerGetCampaignRewards429
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards500",
+          CampaignsControllerGetCampaignRewards500
+        >,
+      R
+    >;
+    <Config extends OperationConfig | undefined = undefined>(options: {
+      readonly params: CampaignsControllerGetCampaignRewardsParams;
+      readonly config?: Config | undefined;
+    }): Effect.Effect<
+      WithOptionalResponse<
+        CampaignsControllerGetCampaignRewards200,
+        Config | undefined
+      >,
+      | E
+      | HttpClientError.HttpClientError
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards400",
+          CampaignsControllerGetCampaignRewards400
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards401",
+          CampaignsControllerGetCampaignRewards401
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards429",
+          CampaignsControllerGetCampaignRewards429
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignRewards500",
+          CampaignsControllerGetCampaignRewards500
+        >,
+      R
+    >;
+  };
+  /**
+   * Returns the payout history of a wallet in a campaign. Pending payouts (approved, awaiting multisig execution) come first, then executed payouts, newest first.
+   */
+  readonly CampaignsControllerGetCampaignPayouts: {
+    <Config extends OperationConfig | undefined = undefined>(
+      campaignId: string,
+      options: {
+        readonly params: CampaignsControllerGetCampaignPayoutsParams;
+        readonly config: Config;
+      }
+    ): Effect.Effect<
+      WithOptionalResponse<CampaignsControllerGetCampaignPayouts200, Config>,
+      | E
+      | HttpClientError.HttpClientError
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts400",
+          CampaignsControllerGetCampaignPayouts400
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts401",
+          CampaignsControllerGetCampaignPayouts401
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts429",
+          CampaignsControllerGetCampaignPayouts429
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts500",
+          CampaignsControllerGetCampaignPayouts500
+        >
+      | YieldApiError<"404", undefined>,
+      R
+    >;
+    <Config extends OperationConfig | undefined = undefined>(
+      campaignId: string,
+      options: {
+        readonly params: CampaignsControllerGetCampaignPayoutsParams;
+        readonly config?: Config | undefined;
+      }
+    ): Effect.Effect<
+      WithOptionalResponse<
+        CampaignsControllerGetCampaignPayouts200,
+        Config | undefined
+      >,
+      | E
+      | HttpClientError.HttpClientError
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts400",
+          CampaignsControllerGetCampaignPayouts400
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts401",
+          CampaignsControllerGetCampaignPayouts401
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts429",
+          CampaignsControllerGetCampaignPayouts429
+        >
+      | YieldApiError<
+          "CampaignsControllerGetCampaignPayouts500",
+          CampaignsControllerGetCampaignPayouts500
         >
       | YieldApiError<"404", undefined>,
       R

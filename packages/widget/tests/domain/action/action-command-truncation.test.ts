@@ -29,6 +29,7 @@ const projectEnter = (
     input: {
       amountInitialization: "PreserveIntent",
       availableAmount: new BigNumber("2"),
+      campaign: null,
       connected: true,
       entry: {
         amount: new BigNumber(amount),

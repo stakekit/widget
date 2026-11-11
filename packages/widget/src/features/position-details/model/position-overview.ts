@@ -6,6 +6,7 @@ import type {
   ConfidentialHandle,
   YieldBalanceType,
 } from "../../../domain/earn/balance";
+import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import { isCancellingBalance } from "../../../domain/earn/confidential-balance";
 import {
   getPositionShares,
@@ -384,7 +385,9 @@ const getBreakdownRows = ({
       (row.type === "claimable" || row.type === "withdrawable");
     return {
       id: `${row.type}-${row.token.symbol}-${index}`,
-      label: formatBalanceTypeLabel(row.type, deposit, t),
+      label: isCampaignRewardsBalance(row)
+        ? t("position_details.balance_type.campaign_rewards")
+        : formatBalanceTypeLabel(row.type, deposit, t),
       ...(subValue ? { subValue } : {}),
       tone: collectable ? "success" : "default",
       value: row.isEncrypted

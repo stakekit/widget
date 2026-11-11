@@ -6,6 +6,7 @@ import { getYieldOutputAmount } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { Prices } from "../../../domain/finance/prices";
+import { yieldCampaignAtom } from "../../campaigns/index";
 import { getYieldEstimatedRewards } from "../../yield-presentation/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import type { YieldTransactionFlowIntake } from "../model/intake";
@@ -80,6 +81,7 @@ export const makeYieldFlowStakeReviewViewAtom = (
     const rewardsTokenSymbol = getYieldFlowRewardsTokenSymbol(intake);
     const estimatedRewards = getYieldEstimatedRewards({
       amount: stakeAmount,
+      campaign: get(yieldCampaignAtom(intake.selectedStake.id)),
       providers: yieldSummary.providers,
       validators: new Map(intake.selectedValidators),
       yield: intake.selectedStake,
@@ -136,6 +138,7 @@ export const makeYieldFlowEnterCompleteViewAtom = (
     const { prices } = get(pricingAtom);
     const yearly = getYieldEstimatedRewards({
       amount,
+      campaign: get(yieldCampaignAtom(intake.selectedStake.id)),
       providers: yieldSummary.providers,
       validators,
       yield: intake.selectedStake,

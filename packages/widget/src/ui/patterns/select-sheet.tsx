@@ -39,6 +39,8 @@ type SelectSheetOption = {
   readonly value?: string | undefined;
   /** Under the value, such as its fiat equivalent. */
   readonly subvalue?: string | undefined;
+  /** `accent` marks the subvalue as an incentive, such as a campaign's rate. */
+  readonly subvalueTone?: "muted" | "accent" | undefined;
   /** The leading logo, with its network badge. */
   readonly logo?: TokenLogo;
   /**
@@ -337,6 +339,7 @@ export const SelectSheet = ({
       subtitle: option.subtitle,
       value: option.value,
       subvalue: option.subvalue,
+      subvalueTone: option.subvalueTone ?? "muted",
       details: option.details,
       testId: option.testId,
       leading,

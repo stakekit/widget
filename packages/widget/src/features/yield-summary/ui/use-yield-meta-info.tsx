@@ -25,9 +25,8 @@ export const useYieldMetaInfo = ({
   selectedStake: EarnYieldWithProvider | null;
   validators: ReadonlyArray<YieldMetaValidator>;
   tokenDto: Token | null;
-}): Omit<YieldMetaInfo, "campaign" | "positionLocked"> & {
-  readonly campaign: ReactNode;
-  readonly positionLocked: ReactNode;
+}): Omit<YieldMetaInfo, "confidentialIncentives"> & {
+  readonly confidentialIncentives: ReactNode;
 } => {
   const { t } = useTranslation();
   const presentationTime = useAtomValue(presentationClockAtom);
@@ -45,7 +44,6 @@ export const useYieldMetaInfo = ({
 
   return {
     ...info,
-    campaign: renderLinkedCopy(info.campaign),
-    positionLocked: renderLinkedCopy(info.positionLocked),
+    confidentialIncentives: renderLinkedCopy(info.confidentialIncentives),
   };
 };

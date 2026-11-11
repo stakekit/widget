@@ -358,7 +358,7 @@ export const Modal = ({
               : {})}
             {...stylex.props(
               styles.body,
-              footer !== undefined && styles.bodyOverFooter,
+              footer !== undefined && !bodyOverflows && styles.bodyOverFooter,
               size === "page" && styles.pageBody,
               size !== "page" && !contentScrolls && scrollStyles.stableGutter,
               styles.bodyFocusRing
@@ -507,8 +507,9 @@ const styles = stylex.create({
     outlineStyle: { default: "none", ":focus-visible": "solid" },
     outlineWidth: focusRing.width,
   },
-  // The footer's own top padding parts it from the body, so that space stays
-  // put while the body scrolls under it.
+  // The footer's own top padding parts it from a body that fits. A body that
+  // scrolls keeps its bottom padding, so its last row ends clear of the
+  // footer's divider rather than against it.
   bodyOverFooter: { paddingBottom: 0 },
   pageBody: {
     paddingBlock: 0,

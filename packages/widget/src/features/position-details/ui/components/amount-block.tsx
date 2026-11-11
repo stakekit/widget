@@ -216,17 +216,15 @@ export const ExitInfo = ({
   }[];
   exitToken: Token;
 }) => {
-  const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
-    useYieldMetaInfo({
-      validators,
-      selectedStake: yieldDto,
-      tokenDto: exitToken,
-    });
+  const { withdrawnTime, withdrawnNotAvailable } = useYieldMetaInfo({
+    validators,
+    selectedStake: yieldDto,
+    tokenDto: exitToken,
+  });
 
   const values = [
     hideWithdrawnTime ? null : withdrawnTime,
     withdrawnNotAvailable,
-    positionLocked,
   ].filter((value) => !!value);
 
   return values.length > 0 ? (

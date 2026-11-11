@@ -198,6 +198,24 @@ export const getYieldApiMock = () => [
     }
   ),
 
+  http.get(yieldApiRoute("/v1/campaigns"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json({ items: [], total: 0, offset: 0, limit: 100 });
+  }),
+
+  http.get(yieldApiRoute("/v1/campaigns/rewards"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json({ items: [] });
+  }),
+
+  http.get(yieldApiRoute("/v1/campaigns/:campaignId/payouts"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json({ items: [], total: 0, offset: 0, limit: 20 });
+  }),
+
   http.get(
     yieldApiRoute("/v1/yields/:yieldId/reward-rate/history"),
     async ({ params }) => {

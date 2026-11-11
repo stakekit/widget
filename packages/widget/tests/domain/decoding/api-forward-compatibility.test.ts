@@ -6,6 +6,11 @@ import {
   YieldAction,
 } from "../../../src/domain/earn/action-models";
 import { EarnBalance } from "../../../src/domain/earn/balance";
+import { YieldCampaignPage } from "../../../src/domain/earn/campaign";
+import {
+  CampaignPayoutPage,
+  WalletCampaignRewardsPage,
+} from "../../../src/domain/earn/campaign-rewards";
 import {
   EarnPositionsResponse,
   EarnYieldPage,
@@ -20,6 +25,9 @@ import {
 } from "../../../src/domain/portfolio/models";
 import {
   yieldApiActionDtoFixture,
+  yieldApiCampaignDtoFixture,
+  yieldApiCampaignPayoutDtoFixture,
+  yieldApiCampaignRewardsDtoFixture,
   yieldApiTransactionDtoFixture,
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
@@ -452,6 +460,113 @@ describe("API responses with values added after client generation", () => {
       expect(rewardRates.items).toHaveLength(1);
       expect(tvl.items).toHaveLength(1);
     })
+  );
+
+  it.effect(
+    "keeps a campaign whose display-only fields have unknown values",
+    () =>
+      Effect.gen(function* () {
+        const result = yield* decode(YieldCampaignPage, {
+          items: [
+            yieldApiCampaignDtoFixture({
+              rewardMode: UNKNOWN,
+              payoutFrequency: UNKNOWN,
+              qualificationConfig: { type: UNKNOWN, threshold: "10" },
+              apyCeilingMode: UNKNOWN,
+            }),
+          ],
+          limit: 20,
+          offset: 0,
+          total: 1,
+        });
+
+        const [campaign] = result.items ?? [];
+        expect(campaign?.name).toBe("Kamino × Utila USDC Boost");
+        expect(campaign?.rewardMode).toBeNull();
+        expect(campaign?.payoutFrequency).toBeNull();
+        // An unknown rule type hides the rules instead of misreading them.
+        expect(campaign?.qualificationConfig).toBeNull();
+      })
+  );
+
+  it.effect(
+    "drops only the campaigns whose status or schedule it cannot read",
+    () =>
+      Effect.gen(function* () {
+        const result = yield* decode(YieldCampaignPage, {
+          items: [
+            yieldApiCampaignDtoFixture({ id: "draft", status: "draft" }),
+            yieldApiCampaignDtoFixture({ id: "unknown", status: UNKNOWN }),
+            yieldApiCampaignDtoFixture({ id: "no-end", endTime: null }),
+            yieldApiCampaignDtoFixture({ id: "live" }),
+          ],
+          limit: 20,
+          offset: 0,
+          total: 4,
+        });
+
+        expect(result.items?.map(({ id }) => id)).toEqual(["live"]);
+      })
+  );
+
+  it.effect(
+    "keeps a wallet's campaign rewards whose secondary fields it cannot read",
+    () =>
+      Effect.gen(function* () {
+        const result = yield* decode(WalletCampaignRewardsPage, {
+          items: [
+            yieldApiCampaignRewardsDtoFixture({
+              rewardMode: UNKNOWN,
+              qualification: {
+                status: UNKNOWN,
+                qualifyingBalance: "1",
+                incentivizedBalance: "1",
+              },
+              accruedThrough: "not-a-date",
+              extraField: UNKNOWN,
+            }),
+            yieldApiCampaignRewardsDtoFixture({
+              campaignId: "draft",
+              status: "draft",
+            }),
+            yieldApiCampaignRewardsDtoFixture({
+              campaignId: "no-totals",
+              totals: null,
+            }),
+          ],
+        });
+
+        const [rewards, ...dropped] = result.items;
+        expect(dropped).toEqual([]);
+        expect(rewards?.totals.earned.toString()).toBe("77.1");
+        expect(rewards?.rewardMode).toBeNull();
+        // An unknown status hides the eligibility rather than misreading it.
+        expect(rewards?.qualification).toBeNull();
+        expect(rewards?.accruedThrough).toBeNull();
+      })
+  );
+
+  it.effect(
+    "drops only the payouts whose amount or status it cannot read",
+    () =>
+      Effect.gen(function* () {
+        const result = yield* decode(CampaignPayoutPage, {
+          items: [
+            yieldApiCampaignPayoutDtoFixture({ status: UNKNOWN }),
+            yieldApiCampaignPayoutDtoFixture({ amount: "-1" }),
+            yieldApiCampaignPayoutDtoFixture({
+              status: "pending",
+              paidAt: null,
+              txHash: null,
+            }),
+          ],
+          limit: 20,
+          offset: 0,
+          total: 3,
+        });
+
+        expect(result.items?.map(({ status }) => status)).toEqual(["pending"]);
+      })
   );
 });
 

@@ -10,19 +10,25 @@ import type { Token } from "../../../../../domain/token/token";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   Avatar,
+  Box,
+  Button,
   Divider,
   MorphoMark,
   Stack,
   Text,
 } from "../../../../../ui/index";
+import { getCampaignHint } from "../../../../campaigns/index";
+import {
+  CampaignRateBreakdown,
+  CampaignStrip,
+} from "../../../../campaigns/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   EstimatedRewardAmounts,
   getRewardTokenSymbols,
   isMorphoProvider,
-  RewardRateBreakdown,
 } from "../../../../yield-summary/views";
-import { useEarnEntry } from "../../use-earn-facades";
+import { useEarnEntry, useEarnYieldSelection } from "../../use-earn-facades";
 import { formatEntryFigure, formatEstimatedRewards } from "./entry-figure";
 
 type StrategyProvider = {
@@ -132,16 +138,17 @@ export const SelectYieldRewardDetails = ({
 
   return (
     <Stack gap={16}>
-      {showYieldStrategyDetails && (
-        <>
-          {strategyDetails &&
-          (alwaysShowStrategy || strategyDetails.outputToken) ? (
-            <YieldStrategyDetails {...strategyDetails} />
-          ) : null}
+      {showYieldStrategyDetails &&
+      strategyDetails &&
+      (alwaysShowStrategy || strategyDetails.outputToken) ? (
+        <YieldStrategyDetails {...strategyDetails} />
+      ) : null}
 
-          {alwaysShowStrategy && <Divider />}
-        </>
-      )}
+      {selectedStake ? <CampaignStrip yieldDto={selectedStake} /> : null}
+
+      <CampaignAlternativeHint />
+
+      {showYieldStrategyDetails && alwaysShowStrategy && <Divider />}
 
       {earnPresentation.zerion && rewardToken ? (
         <Stack direction="row" align="center" justify="between" gap={8}>
@@ -174,15 +181,43 @@ export const SelectYieldRewardDetails = ({
 
       <EstimatedRewardAmounts figures={estimatedRewardFigures} />
 
-      {rewardRateDetails ? (
-        <RewardRateBreakdown
+      {selectedStake && rewardRateDetails ? (
+        <CampaignRateBreakdown
+          yieldDto={selectedStake}
           rewardRate={rewardRateDetails}
-          showUpToCampaign
           title={t("details.apy_composition.title")}
           testId="reward-rate-breakdown"
         />
       ) : null}
     </Stack>
+  );
+};
+
+/**
+ * A quiet line pointing to the campaign yield for the same token when the
+ * choice has no campaign, so the campaign stays discoverable.
+ */
+const CampaignAlternativeHint = () => {
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+  const {
+    select,
+    view: { campaignAlternative },
+  } = useEarnYieldSelection();
+
+  if (!campaignAlternative) return null;
+
+  const { campaign, yieldDto } = campaignAlternative;
+
+  return (
+    <Box testId="campaign-alternative">
+      <Text variant="caption" tone="muted" icon="SparkleIcon">
+        {getCampaignHint(campaign, yieldDto, t, locale)}{" "}
+        <Button size="sm" variant="link" onClick={() => select(yieldDto.id)}>
+          {t("campaign.hint.switch")}
+        </Button>
+      </Text>
+    </Box>
   );
 };
 

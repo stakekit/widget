@@ -10,6 +10,10 @@ import {
   withFigureUnit,
 } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import {
+  getCampaignRowModel,
+  positionCampaignRowAtom,
+} from "../../campaigns/index";
 import { formatRewardRateLabel } from "../../yield-presentation/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { type PositionItem, toPositionTotalDisplay } from "../model/positions";
@@ -65,7 +69,16 @@ export const usePositionListItem = (item: PositionItem) => {
     return total.amountUsd ? formatUsd(total.amountUsd, locale) : null;
   };
 
+  // A yield's rewards belong to the whole position, so a position split by
+  // validator shows none rather than repeating them on every row.
+  const campaignRow = useAtomValue(positionCampaignRowAtom(item.integrationId));
+  const campaign =
+    campaignRow && integrationData && item.type === "default"
+      ? getCampaignRowModel(campaignRow, integrationData.token, t, locale)
+      : null;
+
   return {
+    campaign,
     hasHiddenBalance: item.balancesWithAmount.some(
       (balance) => balance.isEncrypted
     ),

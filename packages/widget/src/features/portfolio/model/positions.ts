@@ -6,6 +6,7 @@ import {
   type RiskBand,
 } from "../../../domain/borrow/risk-band";
 import type { EarnBalance } from "../../../domain/earn/balance";
+import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import type { TokenAmount } from "../../../domain/earn/denomination";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldId } from "../../../domain/identity/identifiers";
@@ -62,7 +63,10 @@ export const toPositionItems = (
         items.push({
           ...value,
           ...getPositionAttention({
-            balanceTypes: balancesWithAmount.map((balance) => balance.type),
+            // Unpaid campaign rewards pay out on their own; nothing to unlock.
+            balanceTypes: balancesWithAmount
+              .filter((balance) => !isCampaignRewardsBalance(balance))
+              .map((balance) => balance.type),
             pendingActions: balancesWithAmount.flatMap((balance) =>
               balance.pendingActions.map(({ type }) => ({ type, balance }))
             ),

@@ -132,6 +132,8 @@ type CommonProps = {
   readonly trailing?: ReactNode;
   /** Context under the value, such as its fiat equivalent. */
   readonly subvalue?: string | undefined;
+  /** `accent` marks the subvalue as an incentive, such as a campaign's rate. */
+  readonly subvalueTone?: "muted" | "accent";
   /**
    * Label-value rows under the row's main line, such as a validator's
    * commission and staked balance. A detail with `copy` copies its value
@@ -258,6 +260,7 @@ export const ListRow = ({
   valueStruck = false,
   figure,
   subvalue,
+  subvalueTone = "muted",
   trailing,
   details,
   note,
@@ -311,7 +314,7 @@ export const ListRow = ({
         valueText
       )}
       {subvalue !== undefined && (
-        <Text variant="caption" tone="muted" numeric>
+        <Text variant="caption" tone={subvalueTone} numeric>
           {subvalue}
         </Text>
       )}

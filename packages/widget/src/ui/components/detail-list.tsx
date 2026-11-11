@@ -6,7 +6,7 @@ import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";
 import { Avatar } from "./avatar";
 import { CopyButton } from "./copy-button";
-import { InfoTip } from "./info-tip";
+import { InfoTip, type InfoTipAction } from "./info-tip";
 import { Meter } from "./meter";
 import { Skeleton } from "./skeleton";
 
@@ -45,7 +45,10 @@ type DetailRowTone = "default" | "muted" | "success" | "warning" | "danger";
 type DetailRowInfo = {
   /** Names the info button, such as "About the deposit fee". */
   readonly label: string;
-  readonly text: string;
+  /** A sentence, or a short summary, as `InfoTip` holds. */
+  readonly text: ReactNode;
+  /** Closes the tip as it runs, such as opening the full details. */
+  readonly action?: InfoTipAction | undefined;
 };
 
 type Copyable = {
@@ -69,6 +72,20 @@ export type DetailRowLogo = {
   readonly shape?: "round" | "square";
 };
 
+const DetailValue = ({
+  value,
+  struck,
+  tone,
+}: {
+  readonly value: ReactNode;
+  readonly struck: boolean;
+  readonly tone: DetailRowTone;
+}) => (
+  <Text numeric truncate tone={struck ? "muted" : tone}>
+    {struck ? <s {...stylex.props(styles.struck)}>{value}</s> : value}
+  </Text>
+);
+
 /**
  * One row of a `DetailList`: the label, and the value at the end. With
  * `copyable` a button beside the value copies it and announces the outcome.
@@ -87,6 +104,7 @@ export const DetailRow = ({
   info,
   tone = "default",
   meter,
+  valueStruck = false,
   testId,
   hostHook,
 }: {
@@ -100,6 +118,11 @@ export const DetailRow = ({
   readonly info?: DetailRowInfo | undefined;
   readonly tone?: DetailRowTone | undefined;
   readonly meter?: DetailRowMeter | undefined;
+  /**
+   * The value no longer holds, such as a cap a later step replaced: it reads
+   * muted and struck through.
+   */
+  readonly valueStruck?: boolean | undefined;
   /** Renders as the row's `data-testid`. */
   readonly testId?: string | undefined;
   /** Renders as the row's `data-rk`, for hosts to locate it. */
@@ -112,7 +135,11 @@ export const DetailRow = ({
   >
     <dt {...stylex.props(styles.term)}>
       <Text tone="muted">{label}</Text>
-      {info && <InfoTip label={info.label}>{info.text}</InfoTip>}
+      {info && (
+        <InfoTip label={info.label} action={info.action}>
+          {info.text}
+        </InfoTip>
+      )}
     </dt>
     <dd {...stylex.props(styles.description)}>
       {logo && (
@@ -124,14 +151,10 @@ export const DetailRow = ({
         />
       )}
       {caption === undefined ? (
-        <Text numeric truncate tone={tone}>
-          {value}
-        </Text>
+        <DetailValue value={value} struck={valueStruck} tone={tone} />
       ) : (
         <span {...stylex.props(styles.values)}>
-          <Text numeric truncate tone={tone}>
-            {value}
-          </Text>
+          <DetailValue value={value} struck={valueStruck} tone={tone} />
           <Text variant="caption" tone="muted" numeric>
             {caption}
           </Text>
@@ -212,6 +235,7 @@ export const DetailRows = ({
 );
 
 const styles = stylex.create({
+  struck: { textDecorationLine: "line-through" },
   list: {
     margin: 0,
     gap: space[12],

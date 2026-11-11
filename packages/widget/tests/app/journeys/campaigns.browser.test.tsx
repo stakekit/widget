@@ -1,0 +1,527 @@
+import { DateTime, Effect } from "effect";
+import { HttpResponse, http } from "msw";
+
+import {
+  yieldApiCampaignDtoFixture,
+  yieldApiYieldDtoFixture,
+} from "../../fixtures";
+import type { YieldDto } from "../../generated/yield-api-types";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
+import { projectCampaignsHandler } from "../../mocks/campaigns";
+import { mockDelay } from "../../mocks/delay";
+import { describe, expect, it } from "../../utils/test-extend";
+import { renderApp } from "../../utils/test-utils";
+
+const baseYield = yieldApiYieldDtoFixture();
+const campaignYieldId = "ethereum-eth-kamino-allez-vault";
+const plainYieldId = "ethereum-eth-kamino-main-vault";
+
+const vault = (id: string, name: string, campaignRate: number | null) =>
+  yieldApiYieldDtoFixture({
+    id,
+    mechanics: { ...baseYield.mechanics, type: "vault" },
+    metadata: { ...baseYield.metadata, name },
+    rewardRate: {
+      rateType: "APY",
+      total: 0.058 + (campaignRate ?? 0),
+      components: [
+        {
+          rate: 0.058,
+          rateType: "APY",
+          token: baseYield.token,
+          yieldSource: "vault",
+        },
+        ...(campaignRate === null
+          ? []
+          : [
+              {
+                rate: campaignRate,
+                rateType: "APR" as const,
+                token: baseYield.token,
+                yieldSource: "campaign_incentive" as const,
+              },
+            ]),
+      ],
+    },
+  });
+
+// The campaign's schedule is far from the test run, so its lifecycle holds.
+const liveCampaign = yieldApiCampaignDtoFixture({
+  yieldId: campaignYieldId,
+  startTime: "2026-01-01T00:00:00.000Z",
+  endTime: "2030-01-01T00:00:00.000Z",
+});
+
+const catalogHandlers = ({
+  yields,
+  campaigns,
+}: {
+  readonly yields: ReadonlyArray<YieldDto>;
+  readonly campaigns: ReadonlyArray<Readonly<Record<string, unknown>>>;
+}) => [
+  http.get(yieldApiRoute("/v1/yields"), async () => {
+    await mockDelay();
+    return HttpResponse.json({
+      items: yields,
+      limit: yields.length,
+      offset: 0,
+      total: yields.length,
+    });
+  }),
+  http.get(legacyApiRoute("/v1/tokens"), async () => {
+    await mockDelay();
+    return HttpResponse.json([
+      { availableYields: yields.map(({ id }) => id), token: baseYield.token },
+    ]);
+  }),
+  projectCampaignsHandler(campaigns),
+];
+
+type App = Awaited<ReturnType<typeof renderApp>>;
+
+const listedYieldIds = async (app: App, count: number) => {
+  await app.getByTestId("select-opportunity").click();
+  const ids = () =>
+    [
+      ...app.container.ownerDocument.querySelectorAll(
+        "[data-testid^='select-opportunity__item_']"
+      ),
+    ].map((element) =>
+      element
+        .getAttribute("data-testid")
+        ?.replace(/^select-opportunity__item_/, "")
+        .replace(/-\d+$/, "")
+    );
+  await expect.poll(() => ids().length).toBe(count);
+  return ids();
+};
+
+describe("Campaigns on Earn", () => {
+  it("explains a running campaign on the selected yield", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.042)],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp();
+
+    const strip = app.getByTestId("campaign-strip");
+    await expect.element(strip.getByText("Campaign")).toBeVisible();
+    await expect
+      .element(strip.getByText(/^Ends .+ · \d+ days left$/))
+      .toBeVisible();
+    const campaignRow = app.getByTestId("reward-rate-breakdown__campaign");
+    await expect.element(campaignRow.getByText("Campaign APR")).toBeVisible();
+    await expect.element(campaignRow.getByText("Up to 4.20%")).toBeVisible();
+    await expect
+      .element(
+        app.getByText(
+          /^Extra campaign rewards, paid daily into your position until /
+        )
+      )
+      .toBeVisible();
+
+    await campaignRow
+      .getByRole("button", { name: "About the campaign rate" })
+      .click();
+    await expect.element(app.getByText("Campaign boost")).toBeVisible();
+    await expect.element(app.getByText("+4.20%")).toBeVisible();
+    await app.getByRole("button", { name: "View campaign details" }).click();
+
+    const details = app.getByTestId("campaign-details");
+    await expect
+      .element(details.getByText("Kamino × Utila USDC Boost"))
+      .toBeVisible();
+    await expect.element(details.getByText("Live")).toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-details__rate").getByText("+4.20%"))
+      .toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-details__minimum").getByText("10 ETH"))
+      .toBeVisible();
+    await expect
+      .element(
+        app.getByTestId("campaign-details__maximum").getByText("50,000 ETH")
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        details.getByText(
+          /^Paid daily as kAllezUSDC \(Allez USDC vault shares\), added straight to your position/
+        )
+      )
+      .toBeVisible();
+    await details.getByRole("button", { name: "Got it" }).click();
+    await expect.element(details).not.toBeInTheDocument();
+
+    const detailsTrigger = strip.getByRole("button", { name: "Details" });
+    await detailsTrigger.click();
+    await expect.element(details).toBeVisible();
+    await details.getByRole("button", { name: "Got it" }).click();
+    await expect.element(detailsTrigger).toHaveFocus();
+
+    await app.unmount();
+  });
+
+  it("badges and pins the campaign yield with its boost, and points to it from another yield", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [
+          vault(plainYieldId, "USDC Main Market", null),
+          vault(campaignYieldId, "Allez USDC Vault", 0.042),
+        ],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp();
+
+    const hint = app.getByTestId("campaign-alternative");
+    await expect
+      .element(
+        hint.getByText(/^Allez USDC Vault has a campaign: up to 10\.00%\./)
+      )
+      .toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-strip"))
+      .not.toBeInTheDocument();
+
+    await expect(listedYieldIds(app, 2)).resolves.toEqual([
+      campaignYieldId,
+      plainYieldId,
+    ]);
+    const campaignOption = app.getByTestId(
+      new RegExp(`^select-opportunity__item_${campaignYieldId}`)
+    );
+    await expect.element(campaignOption.getByText("Campaign")).toBeVisible();
+    await expect
+      .element(campaignOption.getByText("+4.20% boost"))
+      .toBeVisible();
+    await app
+      .getByTestId("select-modal__container")
+      .getByRole("button", { name: "Close" })
+      .click();
+
+    await hint.getByRole("button", { name: "Switch" }).click();
+
+    await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-alternative"))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("keeps a paused campaign visible without its rate", async ({ worker }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", null)],
+        campaigns: [{ ...liveCampaign, status: "paused" }],
+      })
+    );
+
+    const app = await renderApp();
+
+    const strip = app.getByTestId("campaign-strip");
+    await expect.element(strip.getByText(/^Paused · ends /)).toBeVisible();
+    await expect
+      .element(
+        strip.getByText("Rewards are paused. Rewards you've earned are kept.")
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        app.getByTestId("reward-rate-breakdown__campaign").getByText("Paused")
+      )
+      .toBeVisible();
+
+    await strip.getByRole("button", { name: "Details" }).click();
+    await expect
+      .element(app.getByTestId("campaign-details").getByText("Campaign paused"))
+      .toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("names the sponsor, links the terms and explains a cap that stepped down", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.017)],
+        campaigns: [
+          {
+            ...liveCampaign,
+            sponsor: { name: "Kamino", logoURI: null },
+            termsUrl: "https://example.com/kamino-terms",
+            apyCeiling: 0.075,
+            apyCeilingMode: "combined",
+            milestones: [
+              {
+                order: 1,
+                apyCeiling: 0.075,
+                twTvlThreshold: "10000000",
+                tvlYearsTarget: null,
+                unlockAfter: null,
+                status: "funded",
+                unlockedAt: "2026-12-01T00:00:00.000Z",
+              },
+              {
+                order: 2,
+                apyCeiling: 0.06,
+                twTvlThreshold: "25000000",
+                tvlYearsTarget: null,
+                unlockAfter: null,
+                status: "locked",
+                unlockedAt: null,
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    const app = await renderApp();
+
+    await expect
+      .element(
+        app.getByText(
+          /^Kamino adds extra rewards, paid daily into your position/
+        )
+      )
+      .toBeVisible();
+
+    await app
+      .getByTestId("campaign-strip")
+      .getByRole("button", { name: "Details" })
+      .click();
+
+    const details = app.getByTestId("campaign-details");
+    await expect
+      .element(
+        app
+          .getByTestId("campaign-details__sponsor")
+          .getByText("Funded by Kamino")
+      )
+      .toBeVisible();
+    await expect
+      .element(details.getByRole("link", { name: /Read the campaign terms/ }))
+      .toHaveAttribute("href", "https://example.com/kamino-terms");
+    await expect
+      .element(
+        app
+          .getByTestId("campaign-details__stepped-down")
+          .getByText(
+            "Deposits have averaged above 10M ETH, so the cap is now 7.50%, as planned in the steps below."
+          )
+      )
+      .toBeVisible();
+
+    const cap = app.getByTestId("campaign-details__ceiling");
+    await expect.element(cap.getByText("Cap on total APY")).toBeVisible();
+    await expect
+      .element(cap.getByText("After deposits average 25M ETH"))
+      .toBeVisible();
+    await expect.element(cap.getByText("Now")).toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("pins and badges a paused campaign's yield, whose rate holds no campaign part", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [
+          vault(plainYieldId, "USDC Main Market", null),
+          vault(campaignYieldId, "Allez USDC Vault", null),
+        ],
+        campaigns: [{ ...liveCampaign, status: "paused" }],
+      })
+    );
+
+    const app = await renderApp();
+
+    await expect
+      .element(
+        app
+          .getByTestId("campaign-alternative")
+          .getByText(
+            /^Allez USDC Vault has a campaign\. Its rewards are paused right now\./
+          )
+      )
+      .toBeVisible();
+    await expect(listedYieldIds(app, 2)).resolves.toEqual([
+      campaignYieldId,
+      plainYieldId,
+    ]);
+    await expect
+      .element(
+        app
+          .getByTestId(
+            new RegExp(`^select-opportunity__item_${campaignYieldId}`)
+          )
+          .getByText("Campaign")
+      )
+      .toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("announces an upcoming campaign by its start date alone when it has no rate yet", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", null)],
+        campaigns: [
+          {
+            ...liveCampaign,
+            rewardRate: null,
+            startTime: "2030-01-01T00:00:00.000Z",
+            endTime: "2030-06-01T00:00:00.000Z",
+          },
+        ],
+      })
+    );
+
+    const app = await renderApp();
+
+    const strip = app.getByTestId("campaign-strip");
+    await expect.element(strip.getByText("Upcoming")).toBeVisible();
+    await expect
+      .element(strip.getByText(/^Starts .+ · in \d+ days$/))
+      .toBeVisible();
+    await expect
+      .element(
+        app.getByTestId("reward-rate-breakdown__campaign").getByText(/^From /)
+      )
+      .toBeVisible();
+
+    await strip.getByRole("button", { name: "Details" }).click();
+    const details = app.getByTestId("campaign-details");
+    await expect
+      .element(details.getByText(/^Starts in \d+ days$/))
+      .toBeVisible();
+    // No planned rate, so the notice doesn't point to one.
+    await expect
+      .element(
+        details.getByText(
+          "Rewards begin on the start date. The campaign rate is set then."
+        )
+      )
+      .toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("warns that a campaign ends soon, in the strip and its details", async ({
+    worker,
+  }) => {
+    // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture: the schedule must end days after the real clock the widget reads
+    const now = Effect.runSync(DateTime.now);
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.042)],
+        campaigns: [
+          {
+            ...liveCampaign,
+            endTime: DateTime.formatIso(
+              DateTime.add(now, { days: 4, hours: 12 })
+            ),
+          },
+        ],
+      })
+    );
+
+    const app = await renderApp();
+
+    const strip = app.getByTestId("campaign-strip");
+    await expect.element(strip.getByText(/· 5 days left$/)).toBeVisible();
+
+    await strip.getByRole("button", { name: "Details" }).click();
+    const details = app.getByTestId("campaign-details");
+    await expect.element(details.getByText("Ending soon")).toBeVisible();
+    await expect
+      .element(details.getByText("5 days left").first())
+      .toBeVisible();
+    await expect
+      .element(
+        details.getByText(
+          /^Rewards stop on .+\. What you earn until then is still paid out\.$/
+        )
+      )
+      .toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("shows nothing for a campaign past its end, even while the API still lists it", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", null)],
+        campaigns: [
+          {
+            ...liveCampaign,
+            startTime: "2026-01-01T00:00:00.000Z",
+            endTime: "2026-06-01T00:00:00.000Z",
+          },
+        ],
+      })
+    );
+
+    const app = await renderApp({
+      skProps: { apiKey: import.meta.env.VITE_API_KEY, dashboardVariant: true },
+    });
+
+    await expect
+      .element(app.getByTestId("estimated-reward__percent"))
+      .toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-strip"))
+      .not.toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("campaign-section"))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("summarises the campaign in the Dashboard yield details", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.042)],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp({
+      skProps: { apiKey: import.meta.env.VITE_API_KEY, dashboardVariant: true },
+    });
+
+    await expect.element(app.getByText("Incl. +4.20% campaign")).toBeVisible();
+    const section = app.getByTestId("campaign-section");
+    await expect
+      .element(section.getByText("Kamino × Utila USDC Boost"))
+      .toBeVisible();
+    await expect.element(section.getByText("Live")).toBeVisible();
+    await expect
+      .element(section.getByText("Daily, added to your position"))
+      .toBeVisible();
+
+    await section.getByTestId("campaign-section__details").click();
+    await expect.element(app.getByTestId("campaign-details")).toBeVisible();
+
+    await app.unmount();
+  });
+});
