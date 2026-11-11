@@ -472,10 +472,10 @@
     "time": {
       "upcoming": "Commence le {{date}} · dans {{days}}",
       "paused": "En pause · se termine le {{date}}",
-      "active": "Se termine le {{date}} · {{days}} restants"
+      "active": "Se termine le {{date}} · plus que {{days}}"
     },
     "strip": {
-      "upcoming_note": "Le bonus commence le {{date}}. Les récompenses s'accumulent à partir de ce jour.",
+      "upcoming_note": "La campagne commence le {{date}}. Les récompenses s'accumulent à partir de ce jour.",
       "paused_note": "Les récompenses sont en pause. Les récompenses déjà gagnées sont conservées."
     },
     "rate": {
@@ -490,7 +490,7 @@
       "label": "À propos du taux de campagne",
       "total": "Total",
       "total_today": "Total aujourd'hui",
-      "incentive": "Bonus de campagne"
+      "incentive": "Taux de campagne"
     },
     "metric": {
       "active": "Dont +{{rate}} de campagne",
@@ -561,7 +561,7 @@
       "end": "Fin",
       "progress": "Avancement de la campagne",
       "day_of": "Jour {{day}} sur {{total}}",
-      "days_left": "{{days}} restants",
+      "days_left": "Plus que {{days}}",
       "starts_in": "Commence dans {{days}}",
       "runs": "Dure {{days}}",
       "paused_until_end": "En pause · {{days}} avant la date de fin",
@@ -620,8 +620,7 @@
       "pending": "En attente",
       "final_payout": "Dernier versement",
       "next_payout": "Prochain versement prévu le {{date}}",
-      "paused": "En pause",
-      "paused_caption": "Les récompenses gagnées sont conservées",
+      "paused_caption": "En pause. Les récompenses gagnées sont conservées",
       "final_payout_due": "Prévu le {{date}}",
       "final_payout_preparing": "En préparation",
       "updated": "Mis à jour le {{date}}",
@@ -657,7 +656,7 @@
     "selector": {
       "paused": "Récompenses en pause",
       "upcoming": "Dès le {{date}}",
-      "incentive": "+{{rate}} de bonus"
+      "incentive": "+{{rate}} de campagne"
     }
   },
   "details": {

@@ -475,7 +475,7 @@
       "active": "Ends {{date}} · {{days}} left"
     },
     "strip": {
-      "upcoming_note": "The boost starts on {{date}}. Rewards build up from that day.",
+      "upcoming_note": "The campaign starts on {{date}}. Rewards build up from that day.",
       "paused_note": "Rewards are paused. Rewards you've earned are kept."
     },
     "rate": {
@@ -490,7 +490,7 @@
       "label": "About the campaign rate",
       "total": "Total",
       "total_today": "Total today",
-      "incentive": "Campaign boost"
+      "incentive": "Campaign rate"
     },
     "metric": {
       "active": "Incl. +{{rate}} campaign",
@@ -620,8 +620,7 @@
       "pending": "Pending",
       "final_payout": "Final payout",
       "next_payout": "Next payout planned {{date}}",
-      "paused": "Paused",
-      "paused_caption": "Earned rewards are kept",
+      "paused_caption": "Paused. Earned rewards are kept",
       "final_payout_due": "Due {{date}}",
       "final_payout_preparing": "Being prepared",
       "updated": "Updated {{date}}",
@@ -657,7 +656,7 @@
     "selector": {
       "paused": "Rewards paused",
       "upcoming": "Starts {{date}}",
-      "incentive": "+{{rate}} boost"
+      "incentive": "+{{rate}} campaign"
     }
   },
   "details": {

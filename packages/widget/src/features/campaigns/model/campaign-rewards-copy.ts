@@ -128,7 +128,7 @@ const getUnpaidMetric = (
       return {
         id: "pending",
         label: t("campaign.rewards.pending"),
-        value: t("campaign.rewards.paused"),
+        value: unpaid,
         caption: t("campaign.rewards.paused_caption"),
       };
     case "final_payout_pending":

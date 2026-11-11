@@ -70,12 +70,17 @@ export const usePositionListItem = (item: PositionItem) => {
   };
 
   // A yield's rewards belong to the whole position, so a position split by
-  // validator shows none rather than repeating them on every row.
+  // validator badges every row but shows the earned line on none, rather
+  // than repeating it on each.
   const campaignRow = useAtomValue(positionCampaignRowAtom(item.integrationId));
-  const campaign =
-    campaignRow && integrationData && item.type === "default"
+  const campaignModel =
+    campaignRow && integrationData
       ? getCampaignRowModel(campaignRow, integrationData.token, t, locale)
       : null;
+  const campaign =
+    campaignModel && item.type === "validators"
+      ? { ...campaignModel, line: null }
+      : campaignModel;
 
   return {
     campaign,

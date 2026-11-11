@@ -1,14 +1,14 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  getRewardRateBreakdown,
-  type RewardRateBreakdownItem,
-  type YieldRewardRate,
+import type {
+  RewardRateBreakdownItem,
+  YieldRewardRate,
 } from "../../../../../domain/earn/reward-rate";
 import { formatRewardRatePercent } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { DetailList, DetailRow, Stack, Text } from "../../../../../ui/index";
+import { getRewardRateRows } from "../../../model/reward-rate-rows";
 
 const getLabelKey = (key: RewardRateBreakdownItem["key"]) => {
   switch (key) {
@@ -32,39 +32,6 @@ export type RewardRateCampaignRow = {
   readonly info?: ComponentProps<typeof DetailRow>["info"];
 };
 
-/**
- * The rows a breakdown shows: the rate's own parts, with the campaign's row
- * worded by `campaign` and added when the rate holds no campaign part yet.
- */
-const getRows = (
-  rewardRate: YieldRewardRate | null | undefined,
-  showUpToCampaign: boolean,
-  campaign: RewardRateCampaignRow | undefined
-): ReadonlyArray<RewardRateBreakdownItem> => {
-  const items = getRewardRateBreakdown(rewardRate, { showUpToCampaign });
-  if (!campaign || !rewardRate) return items;
-
-  const ownParts = items.filter((item) => item.key !== "campaign");
-  const parts: ReadonlyArray<RewardRateBreakdownItem> = ownParts.length
-    ? ownParts
-    : [
-        {
-          key: "native",
-          rate: rewardRate.total,
-          rewardType: rewardRate.rateType,
-          isUpTo: false,
-        },
-      ];
-  const campaignItem: RewardRateBreakdownItem = {
-    key: "campaign",
-    rate: rewardRate.total,
-    rewardType: campaign.rateType ?? undefined,
-    isUpTo: false,
-  };
-
-  return [...parts, campaignItem];
-};
-
 export const RewardRateBreakdown = ({
   rewardRate,
   showUpToCampaign = false,
@@ -82,7 +49,7 @@ export const RewardRateBreakdown = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
 
-  const items = getRows(rewardRate, showUpToCampaign, campaign);
+  const items = getRewardRateRows(rewardRate, showUpToCampaign, campaign);
 
   if (items.length < 2) {
     return null;

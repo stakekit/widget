@@ -6,6 +6,7 @@ import {
   yieldApiCampaignDtoFixture,
   yieldApiCampaignPayoutDtoFixture,
   yieldApiCampaignRewardsDtoFixture,
+  yieldApiValidatorFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
 import { yieldApiRoute } from "../../mocks/api-routes";
@@ -131,6 +132,7 @@ const campaignSetup = async (
   base.setUrl({ accountId: base.account });
 
   return {
+    base,
     /** Renders the widget with the wallet connected, on the Manage tab. */
     openPositions: async ({
       dashboard = true,
@@ -304,6 +306,71 @@ describe("Campaign rewards on positions", () => {
       )
       .toBeVisible();
     expect(app.getByText(/blacklist/i).query()).toBeNull();
+
+    await app.unmount();
+  });
+
+  it("badges a position split by validator without repeating its earned total", async ({
+    worker,
+  }) => {
+    const { openPositions, base } = await campaignSetup(worker, {
+      rewards: {},
+    });
+    worker.use(
+      http.post(yieldApiRoute("/v1/yields/balances"), async () => {
+        await mockDelay();
+        return HttpResponse.json({
+          items: [
+            {
+              yieldId: base.yieldId,
+              balances: [
+                yieldBalanceFixture({
+                  address: base.account,
+                  type: "active",
+                  amount: "25000",
+                  amountRaw: "25000000000000000000000",
+                  amountUsd: "25000",
+                  token: usda,
+                  pendingActions: [],
+                  validator: yieldApiValidatorFixture({
+                    address: "0x1111111111111111111111111111111111111111",
+                    name: "Validator One",
+                  }),
+                }),
+              ],
+            },
+          ],
+          errors: [],
+        });
+      })
+    );
+    const app = await openPositions();
+
+    const row = app.getByRole("link", { name: /Trust USDA Earn/ });
+    await expect
+      .element(row.getByText("Campaign", { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(row.getByText("Campaign rewards earned"))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("keeps the unpaid amount in view while the campaign is paused", async ({
+    worker,
+  }) => {
+    const { openPositions } = await campaignSetup(worker, {
+      rewards: { status: "paused" },
+    });
+    const app = await openPositions();
+    await userEvent.click(app.getByRole("link", { name: /Trust USDA Earn/ }));
+
+    const pending = app.getByTestId("campaign-rewards__pending");
+    await expect.element(pending.getByText("2.52 USDA")).toBeVisible();
+    await expect
+      .element(pending.getByText("Paused. Earned rewards are kept"))
+      .toBeVisible();
 
     await app.unmount();
   });

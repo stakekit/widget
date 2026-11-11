@@ -128,7 +128,7 @@ describe("Campaigns on Earn", () => {
     await campaignRow
       .getByRole("button", { name: "About the campaign rate" })
       .click();
-    await expect.element(app.getByText("Campaign boost")).toBeVisible();
+    await expect.element(app.getByText("Campaign rate")).toBeVisible();
     await expect.element(app.getByText("+4.20%")).toBeVisible();
     await app.getByRole("button", { name: "View campaign details" }).click();
 
@@ -167,7 +167,7 @@ describe("Campaigns on Earn", () => {
     await app.unmount();
   });
 
-  it("badges and pins the campaign yield with its boost, and points to it from another yield", async ({
+  it("badges and pins the campaign yield with its rate, and points to it from another yield", async ({
     worker,
   }) => {
     worker.use(
@@ -201,7 +201,7 @@ describe("Campaigns on Earn", () => {
     );
     await expect.element(campaignOption.getByText("Campaign")).toBeVisible();
     await expect
-      .element(campaignOption.getByText("+4.20% boost"))
+      .element(campaignOption.getByText("+4.20% campaign"))
       .toBeVisible();
     await app
       .getByTestId("select-modal__container")
