@@ -85,6 +85,7 @@ const createItem = (
   requiredAction: null,
   hasPendingRequest: false,
   pointsRewardTokenBalances: [],
+  hasEarningBalances: true,
   hasPendingClaimRewards: false,
   total: [],
   type: "default",

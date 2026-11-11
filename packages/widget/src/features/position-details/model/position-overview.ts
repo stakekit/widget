@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { type DateTime, Option } from "effect";
+import { Option } from "effect";
 import type { TFunction } from "i18next";
 
 import type {
@@ -29,6 +29,7 @@ import {
   sortBalancesByPriority,
 } from "../../../domain/portfolio/positions";
 import type { Presentable } from "../../../shared/effect/async-result";
+import type { PresentationTime } from "../../../shared/effect/presentation-clock";
 import {
   formatRoundedPercent,
   formatTokenAmountWithSymbol,
@@ -114,7 +115,7 @@ export const getPositionOverviewModel = ({
   cancellingHandles = new Set(),
   integrationData,
   locale,
-  now = null,
+  presentationTime = null,
   personalizedRewardRate,
   positionBalancesByType,
   rewardsSummary,
@@ -125,8 +126,8 @@ export const getPositionOverviewModel = ({
   cancellingHandles?: ReadonlySet<ConfidentialHandle>;
   integrationData: EarnYieldWithProvider;
   locale: string;
-  /** Presentation time; batch timing is omitted without it. */
-  now?: DateTime.Utc | null;
+  /** Presentation time; pending balance timing is omitted without it. */
+  presentationTime?: PresentationTime | null;
   personalizedRewardRate?: YieldRewardRate | null | undefined;
   positionBalancesByType: PositionBalancesByType;
   /**
@@ -144,9 +145,11 @@ export const getPositionOverviewModel = ({
    */
   validators: PositionValidators | null;
 }): PositionOverviewModel => {
-  const balanceRows = groupPositionBalanceRows(
-    getBalancesByPriority(positionBalancesByType),
-    (balance) => isCancellingBalance(balance, cancellingHandles)
+  const balances = getBalancesByPriority(positionBalancesByType);
+  const earningBalances = getEarningPositionBalances(balances);
+  const hasEarningBalances = earningBalances.length > 0;
+  const balanceRows = groupPositionBalanceRows(balances, (balance) =>
+    isCancellingBalance(balance, cancellingHandles)
   );
   // Shown only from a current success: while loading, and whenever the
   // latest attempt failed, even after an earlier success, the figure hides
@@ -161,24 +164,22 @@ export const getPositionOverviewModel = ({
         : undefined,
   });
   const summary = getPositionSummary({
+    balances,
     earned,
+    earningBalances,
     integrationData,
     locale,
     personalizedRewardRate,
-    positionBalancesByType,
     t,
     validators,
   });
-  const hasEarningBalances =
-    getEarningPositionBalances(getBalancesByPriority(positionBalancesByType))
-      .length > 0;
 
   return {
     breakdownRows: getBreakdownRows({
       balanceRows,
       integrationData,
       locale,
-      now,
+      presentationTime,
       t,
     }),
     detailRows: getDetailRows({
@@ -201,23 +202,25 @@ export const getPositionOverviewModel = ({
  * nothing, as for a dust or unpriced position.
  */
 const getPositionSummary = ({
+  balances,
   earned,
+  earningBalances,
   integrationData,
   locale,
   personalizedRewardRate,
-  positionBalancesByType,
   t,
   validators,
 }: {
+  balances: PricedBalances;
   earned: PositionEarned | null;
+  /** The balances that earn the rate, which alone project rewards. */
+  earningBalances: PricedBalances;
   integrationData: EarnYieldWithProvider;
   locale: string;
   personalizedRewardRate?: YieldRewardRate | null | undefined;
-  positionBalancesByType: PositionBalancesByType;
   t: TFunction;
   validators: PositionValidators | null;
 }): PositionOverviewSummary => {
-  const balances = getBalancesByPriority(positionBalancesByType);
   // The same total Manage shows, in the primary Value Token when priced.
   const sums = getPositionValueTotal(balances).filter((sum) =>
     sum.amount.isGreaterThan(0)
@@ -259,7 +262,7 @@ const getPositionSummary = ({
       }
     : integrationData.rewardRate;
   const rate = exactDecimal((personalizedRate ?? effectiveRate).total);
-  const earningBalances = getEarningPositionBalances(balances);
+  // The rate is only earned on earning balances; without any it is not shown.
   const hasRate =
     earningBalances.length > 0 && rate.isFinite() && !rate.isZero();
   const yearly = getEstimatedRewardsUsd({
@@ -360,13 +363,13 @@ const getBreakdownRows = ({
   balanceRows,
   integrationData,
   locale,
-  now,
+  presentationTime,
   t,
 }: {
   balanceRows: ReadonlyArray<PositionBalanceRow>;
   integrationData: EarnYieldWithProvider;
   locale: string;
-  now: DateTime.Utc | null;
+  presentationTime: PresentationTime | null;
   t: TFunction;
 }): PositionOverviewBreakdownRow[] => {
   const deposit = isDepositYieldType(getExtendedYieldType(integrationData));
@@ -378,7 +381,7 @@ const getBreakdownRows = ({
     const batchTiming = formatPendingBalanceTiming({
       integrationData,
       locale,
-      now,
+      presentationTime,
       row,
       t,
     });
@@ -434,6 +437,9 @@ const getDetailRows = ({
 const getBalancesByPriority = (
   positionBalancesByType: PositionBalancesByType
 ) => sortBalancesByPriority([...positionBalancesByType.values()].flat());
+
+/** A position's balances with their token prices, in display priority. */
+type PricedBalances = ReturnType<typeof getBalancesByPriority>;
 
 const formatBalanceTypeLabel = (
   type: YieldBalanceType,

@@ -2,7 +2,7 @@ import { DateTime, Schedule, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-type PresentationTime = {
+export type PresentationTime = {
   readonly now: DateTime.Utc;
   readonly timeZone: DateTime.TimeZone;
 };

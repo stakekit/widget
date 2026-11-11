@@ -26,6 +26,12 @@ import {
 const makeBalance = (overrides?: Parameters<typeof yieldBalanceFixture>[0]) =>
   Schema.decodeSync(EarnBalance)(yieldBalanceFixture(overrides));
 
+/** Presentation time at an instant, in UTC. */
+const presentationAt = (iso: string) => ({
+  now: DateTime.makeUnsafe(iso),
+  timeZone: DateTime.zoneMakeOffset(0),
+});
+
 /** A tracked summary as the page presents it: the latest attempt succeeded. */
 const makeRewardsSummary = ({
   last7D = "0",
@@ -210,7 +216,7 @@ describe("getPositionOverviewModel", () => {
   it("sums the position up: its USD value, token amount, rate and projected earnings", () => {
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: yieldRewardRateFixture({ total: 0.025 }),
       positionBalancesByType: makePositionBalances(),
@@ -240,7 +246,7 @@ describe("getPositionOverviewModel", () => {
     const token = yieldApiYieldFixture().token;
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
@@ -270,7 +276,7 @@ describe("getPositionOverviewModel", () => {
   it("reads a validator position's rate as its validators' average", () => {
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
@@ -289,7 +295,7 @@ describe("getPositionOverviewModel", () => {
   it("averages only the validators with rates, in their rate type", () => {
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
@@ -306,7 +312,7 @@ describe("getPositionOverviewModel", () => {
   it("estimates no earnings and leaves the rate to the yield's facts without one", () => {
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield({
         rewardRate: yieldRewardRateFixture({ total: 0 }),
       }),
@@ -325,7 +331,7 @@ describe("getPositionOverviewModel", () => {
     const { cShare, cUsdc } = confidentialFixture;
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
@@ -371,7 +377,7 @@ describe("getPositionOverviewModel", () => {
 
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
@@ -404,7 +410,7 @@ describe("getPositionOverviewModel", () => {
     };
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
@@ -465,7 +471,7 @@ describe("getPositionOverviewModel", () => {
 
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
@@ -546,7 +552,7 @@ describe("getPositionOverviewModel", () => {
           timezone: "UTC",
         },
       }),
-      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      presentationTime: presentationAt("2026-10-19T12:00:00Z"),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         ["active", [balance({ amount: "1", amountUsd: "1", token })]],
@@ -608,7 +614,7 @@ describe("getPositionOverviewModel", () => {
         },
         provider: yieldApiProviderFixture({ name: "Zama" }),
       } as EarnYieldWithProvider,
-      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      presentationTime: presentationAt("2026-10-19T12:00:00Z"),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -651,7 +657,7 @@ describe("getPositionOverviewModel", () => {
         ...confidentialYieldFixture(),
         provider: yieldApiProviderFixture({ name: "Zama" }),
       } as EarnYieldWithProvider,
-      now: DateTime.makeUnsafe("2026-10-19T15:00:00Z"),
+      presentationTime: presentationAt("2026-10-19T15:00:00Z"),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         [
@@ -724,7 +730,7 @@ describe("getPositionOverviewModel", () => {
           timezone: "UTC",
         },
       }),
-      now: DateTime.makeUnsafe("2026-10-19T12:00:00Z"),
+      presentationTime: presentationAt("2026-10-19T12:00:00Z"),
       personalizedRewardRate: null,
       positionBalancesByType: new Map([
         ["active", [balance({ amount: "1" })]],
@@ -753,7 +759,7 @@ describe("getPositionOverviewModel", () => {
   it("renders balance breakdown rows and points metadata, leaving the rewards earned to the summary", () => {
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: makeYield(),
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
@@ -795,7 +801,7 @@ describe("getPositionOverviewModel", () => {
     const integrationData = makeYield();
     const model = getPositionOverviewModel({
       locale: "en",
-      now: null,
+      presentationTime: null,
       integrationData: {
         ...integrationData,
         mechanics: { ...integrationData.mechanics, type: "vault" },
@@ -828,7 +834,7 @@ describe("getPositionOverviewModel", () => {
     const overview = (positionBalancesByType: PositionBalancesByType) =>
       getPositionOverviewModel({
         locale: "en",
-        now: null,
+        presentationTime: null,
         integrationData: makeYield(),
         personalizedRewardRate: null,
         positionBalancesByType,
@@ -1155,5 +1161,60 @@ describe("getPositionProviderName", () => {
         providersDetails: [],
       })
     ).toBe("Rocket Pool");
+  });
+});
+
+describe("position reward eligibility", () => {
+  const balance = (
+    type: "active" | "exiting",
+    amount: string,
+    isEarning: boolean
+  ) => ({
+    ...makeBalance({ amount, amountUsd: amount, isEarning, type }),
+    tokenPriceInUsd: new BigNumber(1),
+  });
+  const overview = (positionBalancesByType: PositionBalancesByType) =>
+    getPositionOverviewModel({
+      integrationData: makeYield(),
+      locale: "en",
+      positionBalancesByType,
+      t: t as TFunction,
+      validators: null,
+    });
+
+  it("keeps the value but hides the rate and projection without earning funds", () => {
+    const model = overview(
+      new Map([["exiting", [balance("exiting", "1000", false)]]])
+    );
+
+    expect(model.summary.value).toBe("$1,000.00");
+    expect(model.summary.rate).toBeUndefined();
+    expect(model.summary.rows).toEqual([]);
+    expect(model.hasEarningBalances).toBe(false);
+    expect(model.omittedYieldFacts).toContain("reward-rate");
+  });
+
+  it("keeps the rate for earning funds and projects only their share", () => {
+    const model = overview(
+      new Map([
+        ["active", [balance("active", "100", true)]],
+        ["exiting", [balance("exiting", "900", false)]],
+      ])
+    );
+
+    expect(model.summary.value).toBe("$1,000.00");
+    expect(model.summary.rate).toBe("4.00% APY");
+    expect(
+      model.summary.rows.find((row) => row.id === "projected")?.value
+    ).toBe("≈ $4.00");
+    expect(model.hasEarningBalances).toBe(true);
+  });
+
+  it("follows the API's flag rather than assuming every exit stops earning", () => {
+    const model = overview(
+      new Map([["exiting", [balance("exiting", "100", true)]]])
+    );
+
+    expect(model.summary.rate).toBe("4.00% APY");
   });
 });

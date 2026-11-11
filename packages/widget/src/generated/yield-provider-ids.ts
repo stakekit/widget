@@ -63,6 +63,7 @@ export const YieldProviderId = {
   YieldXyz: "yield-xyz",
   Kamino: "kamino",
   Veda: "veda",
+  Makina: "makina",
   Kinetiq: "kinetiq",
   Lista: "lista",
   Dolomite: "dolomite",

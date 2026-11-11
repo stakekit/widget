@@ -41,6 +41,10 @@ export const PositionDetailsDisclosure = () => {
   const stakeType = t(
     `position_details.stake_type.${getExtendedYieldType(integrationData)}`
   );
+  // Validators show their own rates only when they set what the position
+  // earns: not over a Personalized Reward Rate, nor with nothing earning.
+  const showValidatorRates =
+    overview.hasEarningBalances && !personalizedRewardRate;
 
   return (
     <Disclosure
@@ -116,14 +120,10 @@ export const PositionDetailsDisclosure = () => {
                 {...provider}
                 key={provider.address ?? index}
                 rewardRate={
-                  !overview.hasEarningBalances || personalizedRewardRate
-                    ? undefined
-                    : provider.rewardRate
+                  showValidatorRates ? provider.rewardRate : undefined
                 }
                 rewardType={
-                  !overview.hasEarningBalances || personalizedRewardRate
-                    ? undefined
-                    : provider.rewardType
+                  showValidatorRates ? provider.rewardType : undefined
                 }
                 stakeType={stakeType}
                 integrationData={integrationData}

@@ -10,6 +10,7 @@ import {
   getYieldRiskSourceLabel,
   getYieldTypeLabels,
   getYieldWarmupPeriod,
+  isMakinaYield,
   type YieldRiskDisplay,
 } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
@@ -83,6 +84,8 @@ export type YieldFact = Readonly<{
   readonly label: string;
   /** A line under the value where the fact stands as a figure on its own. */
   readonly subValue?: string;
+  /** A line under the value wherever the fact is listed. */
+  readonly caption?: string;
   readonly value: YieldFactValue;
   /** The token the value names, whose logo leads it. */
   readonly token?: Token;
@@ -253,7 +256,7 @@ export const getYieldFacts = ({
   return facts.filter((fact): fact is YieldFact => !!fact);
 };
 
-/** Makina capacity amounts are already denominated in the API's Value Token. */
+/** Capacity amounts are in the yield's token, as the API reports them. */
 const getCapacityFact = ({
   locale,
   t,
@@ -264,8 +267,8 @@ const getCapacityFact = ({
   readonly yieldDto: EarnYieldWithProvider;
 }): YieldFact | null => {
   const capacity = yieldDto.state?.capacityState;
-  if (yieldDto.providerId !== "makina" || !capacity) return null;
-  const amount = (value: NonNullable<typeof capacity.max>) =>
+  if (!isMakinaYield(yieldDto) || !capacity) return null;
+  const amount = (value: typeof capacity.current) =>
     formatTokenAmountWithSymbol(
       { amount: value, token: yieldDto.token },
       locale
@@ -276,13 +279,13 @@ const getCapacityFact = ({
   const fact = {
     id: "capacity",
     label: t("dashboard.earn_details.capacity"),
-    notable: true,
+    notable: false,
   } as const;
   if (capacity.max === null && capacity.remaining === null) {
     return {
       ...fact,
       value: t("dashboard.earn_details.capacity_unlimited"),
-      subValue: used,
+      caption: used,
     };
   }
   const remaining = capacity.remaining;
@@ -299,13 +302,13 @@ const getCapacityFact = ({
     return {
       ...fact,
       value: `${amount(capacity.current)} / ${amount(capacity.max)}`,
-      ...(availability === undefined ? {} : { subValue: availability }),
+      ...(availability === undefined ? {} : { caption: availability }),
     };
   }
   return {
     ...fact,
     value: availability ?? t("dashboard.earn_details.capacity_unknown"),
-    subValue: used,
+    caption: used,
   };
 };
 

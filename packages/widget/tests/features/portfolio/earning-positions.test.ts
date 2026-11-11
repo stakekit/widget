@@ -71,6 +71,23 @@ describe("earning position amounts", () => {
     expect(getPositionsAverageApy(items, yields).toFixed()).toBe("7.5");
   });
 
+  it("tells which Manage rows hold earning funds, the rows that show a rate", () => {
+    const earningYieldId = yieldApiYieldFixture({ id: "ethereum-earning" }).id;
+    const items = toPositionItems(
+      toPositionsData([
+        { ...position(true, "100"), yieldId: earningYieldId },
+        position(false, "900"),
+      ]),
+      false
+    );
+
+    expect(
+      Object.fromEntries(
+        items.map((item) => [item.integrationId, item.hasEarningBalances])
+      )
+    ).toEqual({ [earningYieldId]: true, [yieldDto.id]: false });
+  });
+
   it.each([undefined, null, "unknown"])(
     "preserves usable balances when the optional flag is %s",
     (isEarning) => {

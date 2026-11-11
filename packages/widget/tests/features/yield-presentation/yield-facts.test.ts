@@ -1,8 +1,11 @@
 import BigNumber from "bignumber.js";
-import { DateTime } from "effect";
+import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
-import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
+import {
+  EarnYield,
+  type EarnYieldWithProvider,
+} from "../../../src/domain/earn/yield-schema";
 import {
   getYieldContracts,
   getYieldFacts,
@@ -11,6 +14,7 @@ import { createWidgetI18nInstance } from "../../../src/services/translation/widg
 import {
   confidentialYieldFixture,
   yieldApiProviderFixture,
+  yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
 
@@ -254,6 +258,78 @@ describe("getYieldFacts", () => {
 
     expect(ids).not.toContain("cooldown");
     expect(ids).not.toContain("warmup");
+  });
+});
+
+describe("Makina capacity", () => {
+  const capacityFact = (capacityState: unknown, providerId = "makina") =>
+    factOf(
+      Schema.decodeSync(EarnYield)({
+        ...yieldApiYieldDtoFixture({ providerId }),
+        token: {
+          name: "Wrapped Bitcoin",
+          symbol: "wBTC",
+          network: "ethereum",
+          decimals: 8,
+          address: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        },
+        state: { capacityState },
+      }),
+      "capacity"
+    );
+
+  it("shows used and maximum capacity in token units, captioned with what is available", () => {
+    expect(
+      capacityFact({ current: "1.5", max: "2", remaining: "0.5" })
+    ).toEqual(
+      expect.objectContaining({
+        label: "Capacity",
+        value: "1.5 wBTC / 2 wBTC",
+        caption: "0.5 wBTC available",
+      })
+    );
+  });
+
+  it("shows a full vault and handles zero capacity without dividing by zero", () => {
+    expect(
+      capacityFact({ current: "2", max: "2", remaining: "0" })?.caption
+    ).toBe("Full");
+    expect(
+      capacityFact({ current: "0", max: "0", remaining: "0" })?.value
+    ).toBe("0 wBTC / 0 wBTC");
+  });
+
+  it("labels only explicitly unlimited capacity as unlimited", () => {
+    expect(
+      capacityFact({ current: "1.5", max: null, remaining: null })
+    ).toEqual(
+      expect.objectContaining({
+        value: "Unlimited",
+        caption: "1.5 wBTC deposited",
+      })
+    );
+    expect(capacityFact({ current: "1.5" })?.value).toBe("Limit unavailable");
+    expect(capacityFact({ current: "1.5", remaining: "0.5" })?.value).toBe(
+      "0.5 wBTC available"
+    );
+  });
+
+  it.each([
+    undefined,
+    null,
+    { current: "invalid", max: "2" },
+    { current: "1", max: "invalid", remaining: null },
+    { current: "1", max: null, remaining: "invalid" },
+    { current: "-1", max: "2", remaining: "3" },
+    { current: "1", remaining: "-1" },
+  ])("drops only missing or invalid capacity: %j", (input) => {
+    expect(capacityFact(input)).toBeUndefined();
+  });
+
+  it("leaves other providers' capacity out", () => {
+    expect(
+      capacityFact({ current: "1", max: "2", remaining: "1" }, "lido")
+    ).toBeUndefined();
   });
 });
 

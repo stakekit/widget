@@ -166,8 +166,10 @@ export const positionDetailsEnterAtoms = Atom.family(
       // zero balance only when that wallet owns this position.
       const getPublicAmount = (token: Token) => {
         if (tokenBalanceValues === null) return null;
-        const balance = tokenBalanceValues.find((item) =>
-          equalTokens(item.token, token) || sameTokenContract(item.token, token)
+        const balance = tokenBalanceValues.find(
+          (item) =>
+            equalTokens(item.token, token) ||
+            sameTokenContract(item.token, token)
         );
         if (balance) return exactDecimal(balance.amount);
         return ownerCurrent ? exactZero() : null;
