@@ -26,6 +26,7 @@ import {
 import { space } from "../tokens/space.stylex";
 import { CopyButton } from "./copy-button";
 import { interactiveStyles } from "./interactive-styles";
+import { createSearchHighlighter } from "./search-highlight";
 import { Spinner } from "./spinner";
 import { toneTextStyles } from "./tone-styles";
 import { useCopy } from "./use-copy";
@@ -86,6 +87,12 @@ type CommonProps = {
   readonly leading?: ReactNode | undefined;
   readonly title: string;
   readonly subtitle?: string | undefined;
+  /**
+   * A search query, such as a picker's: each of its whitespace-separated
+   * terms is marked where it shows in the title and subtitle, matched as
+   * typed but for case. The strings read and name the row unchanged.
+   */
+  readonly highlight?: string | undefined;
   /**
    * Badges beside the title; below the `sm` container size they move to the
    * second line, so the title keeps its room.
@@ -252,6 +259,7 @@ export const ListRow = ({
   leading,
   title,
   subtitle,
+  highlight,
   badges,
   status,
   density,
@@ -273,6 +281,7 @@ export const ListRow = ({
   option,
   link,
 }: ListRowProps) => {
+  const markSearchMatches = createSearchHighlighter(highlight);
   const group = use(InListGroup);
   const condensed = (density ?? group?.density) === "condensed";
   const flat = condensed || variant === "flat";
@@ -344,7 +353,7 @@ export const ListRow = ({
     <span {...stylex.props(styles.secondLine)}>
       {subtitle !== undefined && (
         <Text variant="caption" tone="muted" truncate>
-          {subtitle}
+          {markSearchMatches(subtitle)}
         </Text>
       )}
       {subtitle !== undefined && status !== undefined && (
@@ -385,7 +394,7 @@ export const ListRow = ({
       >
         <span {...stylex.props(styles.title)}>
           <Text weight="medium" truncate>
-            {title}
+            {markSearchMatches(title)}
           </Text>
         </span>
         {badges !== undefined && (

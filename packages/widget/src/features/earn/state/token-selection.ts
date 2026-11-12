@@ -10,6 +10,7 @@ import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
 import { appRuntime } from "../../../runtime/app-runtime";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { config } from "../../../shared/config/widget-defaults";
+import { getSearchTerms, matchesSearchTerms } from "../model/search";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -68,14 +69,17 @@ export const earnTokenSelectionViewAtom = Atom.make((get) => {
     )
   ).pipe(AsyncResult.value, Option.getOrNull);
   const all = options.items.map((option) => toSelectionItem(option, prices));
-  const normalizedSearch = search.toLowerCase();
-  const filtered = normalizedSearch
-    ? all.filter(
-        (option) =>
-          option.token.name.toLowerCase().includes(normalizedSearch) ||
-          option.token.symbol.toLowerCase().includes(normalizedSearch)
-      )
-    : all;
+  const searchTerms = getSearchTerms(search);
+  const filtered =
+    searchTerms.length > 0
+      ? all.filter((option) =>
+          matchesSearchTerms(searchTerms, [
+            option.token.name,
+            option.token.symbol,
+            option.token.address,
+          ])
+        )
+      : all;
   const loading =
     status.loading.wallet ||
     status.loading.tokens ||

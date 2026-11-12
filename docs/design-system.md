@@ -80,6 +80,11 @@ One look per concept:
   were. Every search field has a placeholder that says what it searches
   ("Search tokens"; unset, its label). With a coarse pointer the field does
   not take focus on open, so no on-screen keyboard covers the options.
+  Searchable sheets highlight literal, case-insensitive matches in option
+  titles and subtitles without changing the text or its spacing. Matches in
+  hidden fields do not need a visible highlight. Search matches use an accent
+  tint and accent text, with no padding or weight change; unlike `Text.Mark`'s
+  emphasis of a phrase in copy, marking a substring never shifts its line.
 - **Overlays.** A bottom sheet (below the 520px viewport) shows a grab
   handle: dragging it or the header down past a third of the sheet, or
   flicking it, closes the sheet; a shorter drag settles back, at once under

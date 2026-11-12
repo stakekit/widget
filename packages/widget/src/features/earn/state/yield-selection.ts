@@ -14,6 +14,7 @@ import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { yieldCampaignAtom } from "../../campaigns/index";
+import { getSearchTerms, matchesSearchTerms } from "../model/search";
 import {
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
@@ -50,20 +51,22 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
   // Earn Selection orders the options, and resolves the selection among them.
   const all = yieldOptions.items;
   const search = get(earnPageSearchAtom).stake;
-  const normalizedSearch = search.toLowerCase();
-  const searchFiltered = normalizedSearch
-    ? all.filter(
-        (item) =>
-          item.token.name.toLowerCase().includes(normalizedSearch) ||
-          item.token.symbol.toLowerCase().includes(normalizedSearch) ||
-          item.metadata.name.toLowerCase().includes(normalizedSearch) ||
-          getYieldRewardTokens(item).some(
-            (rewardToken) =>
-              rewardToken.name.toLowerCase().includes(normalizedSearch) ||
-              rewardToken.symbol.toLowerCase().includes(normalizedSearch)
-          )
-      )
-    : all;
+  const searchTerms = getSearchTerms(search);
+  const searchFiltered =
+    searchTerms.length > 0
+      ? all.filter((item) =>
+          matchesSearchTerms(searchTerms, [
+            item.token.name,
+            item.token.symbol,
+            item.metadata.name,
+            item.provider?.name,
+            ...getYieldRewardTokens(item).flatMap((rewardToken) => [
+              rewardToken.name,
+              rewardToken.symbol,
+            ]),
+          ])
+        )
+      : all;
   const categoryGrouping = config.earnCategoryGrouping;
   const category = yieldOptions.selectedCategory;
   const inCategory = (item: EarnYieldWithProvider) =>
