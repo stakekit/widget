@@ -141,6 +141,7 @@ const withdrawUnwrapStart = (): NavigatingYieldTransactionFlowStart => {
   return {
     intake: {
       _tag: "Manage",
+      amount: null,
       balanceType: "withdrawable",
       confidentialHandle: Schema.decodeSync(ConfidentialHandle)(
         `0x${"ab".repeat(32)}`

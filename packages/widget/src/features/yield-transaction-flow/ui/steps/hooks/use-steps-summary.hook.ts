@@ -44,8 +44,8 @@ type ContinuationIntake = Extract<
 /** What the Steps run, as Review showed it: the action, amount and token. */
 type StepsSubject = Readonly<{
   readonly action: string;
-  /** Unknown while the balance is encrypted. */
-  readonly amount: BigNumber | "hidden";
+  /** Unknown while the balance is encrypted; null when the action names none. */
+  readonly amount: BigNumber | "hidden" | null;
   readonly token: Token;
   readonly yieldDto: EarnYieldWithProvider;
 }>;
@@ -92,23 +92,21 @@ const getStepsSubject = (
         yieldDto: intake.integration,
       };
     case "Manage": {
-      // As Review: an entered amount in the balance's Value Token; without
-      // one, what a cancel returns.
-      const requestAmount = intake.request.arguments?.amount;
-      const shown = requestAmount
-        ? { amount: exactDecimal(requestAmount), token: intake.interactedToken }
-        : (intake.cancelReturn ?? {
-            amount: exactDecimal(0),
-            token: intake.interactedToken,
-          });
+      // As Review: the action's amount, hidden while encrypted, or none.
+      const getAmount = () => {
+        if (!intake.amount) return null;
+        return intake.balanceHidden
+          ? ("hidden" as const)
+          : intake.amount.amount;
+      };
       return {
         action: getManageActionTitle(t, {
           balanceType: intake.balanceType,
           type: intake.request.action,
           yieldDto: intake.integration,
         }),
-        amount: intake.balanceHidden ? "hidden" : shown.amount,
-        token: shown.token,
+        amount: getAmount(),
+        token: intake.amount?.token ?? intake.interactedToken,
         yieldDto: intake.integration,
       };
     }
@@ -144,14 +142,17 @@ export const useStepsSummary = () => {
 
   const { action, amount, token } = subject;
   const attribution = getYieldFlowAttribution(intake);
+  // As Review: an action without an amount names its token alone.
+  const getSummaryAmount = () => {
+    if (amount === "hidden") return t("shared.confidential.hidden");
+    if (amount === null) return token.symbol;
+    return `${formatTokenAmount(amount, locale, "down")} ${token.symbol}`;
+  };
 
   return {
     title: t("steps.summary", {
       action,
-      amount:
-        amount === "hidden"
-          ? t("shared.confidential.hidden")
-          : `${formatTokenAmount(amount, locale, "down")} ${token.symbol}`,
+      amount: getSummaryAmount(),
     }),
     ...(attribution
       ? {
@@ -183,7 +184,7 @@ export const useStepsDetails = (): ReadonlyArray<TransactionStepsDetail> => {
   if (!subject) return [];
 
   const { amount, token, yieldDto } = subject;
-  // A hidden amount shows no value of it either.
+  // A hidden or unknown amount shows no value of it either.
   const shown = amount === "hidden" ? null : amount;
   const fiat =
     shown &&
@@ -196,15 +197,17 @@ export const useStepsDetails = (): ReadonlyArray<TransactionStepsDetail> => {
       ? getYieldOutputAmount(yieldDto, shown)
       : null;
 
+  const amountDetail = () => ({
+    label: t("steps.details.amount"),
+    testId: "steps-details-amount",
+    value: shown
+      ? `${formatTokenAmount(shown, locale, "down")} ${token.symbol}`
+      : t("shared.confidential.hidden"),
+    ...(fiat ? { caption: fiat } : {}),
+  });
+
   return [
-    {
-      label: t("steps.details.amount"),
-      testId: "steps-details-amount",
-      value: shown
-        ? `${formatTokenAmount(shown, locale, "down")} ${token.symbol}`
-        : t("shared.confidential.hidden"),
-      ...(fiat ? { caption: fiat } : {}),
-    },
+    ...(amount === null ? [] : [amountDetail()]),
     {
       label: t("steps.details.yield"),
       testId: "steps-details-yield",

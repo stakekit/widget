@@ -56,7 +56,8 @@ type ReviewPageProps = {
 } & MetaInfoProps;
 
 type PositionActionReview = {
-  readonly amount: string;
+  /** Null when the action names no amount: its token alone shows. */
+  readonly amount: string | null;
   readonly amountFiat: string | null;
   readonly attribution: YieldFlowAttribution | null;
   readonly cta: PageCta;
@@ -75,7 +76,10 @@ type PositionActionReview = {
  * exit passes its withdrawal fee beside them.
  */
 export const getPositionActionReviewProps = (review: PositionActionReview) => ({
-  amount: `${review.amount} ${review.token.symbol}`,
+  amount:
+    review.amount === null
+      ? review.token.symbol
+      : `${review.amount} ${review.token.symbol}`,
   amountFiat: review.amountFiat,
   attribution: review.attribution,
   commissionFee: null,

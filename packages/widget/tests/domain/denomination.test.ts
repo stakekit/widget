@@ -10,6 +10,7 @@ import {
   getBalanceShares,
   getExitAmountToken,
   getExitUnit,
+  getPendingActionAmount,
   getPendingActionReturn,
   getPositionShares,
 } from "../../src/domain/earn/denomination";
@@ -160,6 +161,64 @@ describe("denomination", () => {
         token: usdc,
       })
     ).toBeNull();
+  });
+
+  describe("a pending action's amount", () => {
+    const claim = (amount: string | null) => ({
+      amount: amount === null ? null : new BigNumber(amount),
+      intent: "manage" as const,
+      passthrough: "claim",
+      type: "CLAIM_REWARDS" as const,
+    });
+    // A claim offered on the staked principal: its amount is not the claim's.
+    const principal = { token: usdc, amount: new BigNumber("1.5") };
+    const shown = (
+      input: Parameters<typeof getPendingActionAmount>[0]
+    ): [string, string] | null => {
+      const amount = getPendingActionAmount(input);
+      return amount ? [amount.amount.toFixed(), amount.token.symbol] : null;
+    };
+
+    it("names no amount when the action carries none, never its balance's", () => {
+      expect(
+        shown({
+          balance: principal,
+          enteredAmount: null,
+          pendingAction: claim(null),
+        })
+      ).toBeNull();
+    });
+
+    it("shows the amount entered, else the action's own, in the Value Token", () => {
+      expect(
+        shown({
+          balance: principal,
+          enteredAmount: new BigNumber("0.4"),
+          pendingAction: claim("0.2"),
+        })
+      ).toEqual(["0.4", usdc.symbol]);
+      expect(
+        shown({
+          balance: principal,
+          enteredAmount: null,
+          pendingAction: claim("0.2"),
+        })
+      ).toEqual(["0.2", usdc.symbol]);
+    });
+
+    it("shows what a cancel returns when the action carries no amount", () => {
+      expect(
+        shown({
+          balance: {
+            shares: { _tag: "Plain", amount: new BigNumber("0.097168") },
+            shareToken: cShare,
+            token: cUsdc,
+          },
+          enteredAmount: null,
+          pendingAction: { ...claim(null), type: "CANCEL_PENDING" },
+        })
+      ).toEqual(["0.097168", cShare.symbol]);
+    });
   });
 });
 

@@ -585,7 +585,7 @@ describe("Position Details action model", () => {
     registry.dispose();
   });
 
-  it("offers an action several balances share once, with no one balance as its amount", () => {
+  it("offers an action several balances share once", () => {
     const claim = {
       amount: null,
       arguments: null,
@@ -614,9 +614,8 @@ describe("Position Details action model", () => {
       );
       const view = registry
         .get(positionDetailsPendingActionsViewAtom(workflowKey))
-        ?.map(({ pendingAction, sharedByBalances, yieldBalance }) => ({
+        ?.map(({ pendingAction, yieldBalance }) => ({
           passthrough: pendingAction.passthrough,
-          sharedByBalances,
           type: yieldBalance.type,
         }));
       registry.dispose();
@@ -628,17 +627,7 @@ describe("Position Details action model", () => {
         withClaim("active", "1.5", [claim]),
         withClaim("claimable", "0.000001", [claim]),
       ])
-    ).toEqual([
-      { passthrough: "claim-all", sharedByBalances: true, type: "active" },
-    ]);
-    expect(
-      read([
-        withClaim("active", "1.5", []),
-        withClaim("claimable", "0.000001", [claim]),
-      ])
-    ).toEqual([
-      { passthrough: "claim-all", sharedByBalances: false, type: "claimable" },
-    ]);
+    ).toEqual([{ passthrough: "claim-all", type: "active" }]);
   });
 
   it("withdraws a confidential position in its revealed vault shares, valued in the underlying", () => {

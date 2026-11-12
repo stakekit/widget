@@ -369,11 +369,6 @@ type PositionDetailsPendingActionView = {
   /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
   readonly amountUsdStatus: PricesStatus;
   readonly pendingAction: PendingAction;
-  /**
-   * Several balances offer this action, so no one balance's amount is its
-   * amount: see `getPendingActionOffers`.
-   */
-  readonly sharedByBalances: boolean;
   readonly validation: PendingActionAmountValidation;
   readonly yieldBalance: PricedEarnBalance;
 };
@@ -382,7 +377,8 @@ type PositionDetailsPendingActionView = {
  * A position's pending actions, each once. An action is one transaction,
  * named by its type and passthrough, and the API can offer the same one on
  * several balances, such as a claim on both the staked balance and the
- * rewards it claims. Each keeps the first balance that offers it.
+ * rewards it claims. Each keeps the first balance that offers it; none of
+ * them is its amount (see `getPendingActionAmount`).
  */
 const getPendingActionOffers = (balancesByType: PositionBalancesByType) => {
   const offers = new Map<
@@ -390,19 +386,12 @@ const getPendingActionOffers = (balancesByType: PositionBalancesByType) => {
     {
       readonly balance: PricedEarnBalance;
       readonly pendingAction: PendingAction;
-      readonly sharedByBalances: boolean;
     }
   >();
   for (const balance of [...balancesByType.values()].flat()) {
     for (const pendingAction of balance.pendingActions) {
       const id = `${pendingAction.type}-${pendingAction.passthrough}`;
-      const offer = offers.get(id);
-      offers.set(
-        id,
-        offer
-          ? { ...offer, sharedByBalances: true }
-          : { balance, pendingAction, sharedByBalances: false }
-      );
+      if (!offers.has(id)) offers.set(id, { balance, pendingAction });
     }
   }
   return [...offers.values()];
@@ -447,7 +436,7 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
       const prices = pricesResult.pipe(AsyncResult.value, Option.getOrNull);
       return view.positionBalancesByType
         ? getPendingActionOffers(view.positionBalancesByType).map(
-            ({ balance, pendingAction, sharedByBalances }) => {
+            ({ balance, pendingAction }) => {
               const pendingKey = getPendingActionStateKey({
                 actionType: pendingAction.type,
                 balanceType: balance.type,
@@ -476,7 +465,6 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 amountUsd,
                 amountUsdStatus,
                 pendingAction,
-                sharedByBalances,
                 validation: projection?.validation ?? null,
                 yieldBalance: balance,
               };

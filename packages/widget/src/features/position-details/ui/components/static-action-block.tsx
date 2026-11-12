@@ -6,10 +6,12 @@ import { getPendingActionLabelContext } from "../../../../domain/action/pending-
 import type { PendingAction } from "../../../../domain/earn/action-models";
 import type { EarnBalance } from "../../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
-import { getPendingActionReturn } from "../../../../domain/earn/denomination";
+import {
+  getPendingActionAmount,
+  getPendingActionReturn,
+} from "../../../../domain/earn/denomination";
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
-import { exactDecimal } from "../../../../domain/finance/exact";
 import { isPayoutPendingAction } from "../../../../domain/portfolio/position-callout";
 import { humanizePendingActionType } from "../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
@@ -28,8 +30,6 @@ type StaticActionBlockProps = {
   integration: EarnYieldWithProvider;
   /** The page leads with this action: see `getLeadingPendingAction`. */
   primary: boolean;
-  /** Several balances offer the action, so its title names no amount. */
-  sharedByBalances: boolean;
 };
 
 export const StaticActionBlock = ({
@@ -38,7 +38,6 @@ export const StaticActionBlock = ({
   onPendingActionClick,
   integration,
   primary,
-  sharedByBalances,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -49,6 +48,11 @@ export const StaticActionBlock = ({
     { confidential: isConfidentialYield(integration) }
   );
   const cancelReturn = getPendingActionReturn(pendingAction.type, yieldBalance);
+  const shown = getPendingActionAmount({
+    balance: yieldBalance,
+    enteredAmount: null,
+    pendingAction,
+  });
   const pendingActionLabel = t(`position_details.pending_action.${actionKey}`, {
     context: isEthenaUsdeStaking(integration.id) ? "ethena_usde" : undefined,
     defaultValue: humanizePendingActionType(pendingAction.type),
@@ -59,29 +63,33 @@ export const StaticActionBlock = ({
   ) : (
     <Text.Strong />
   );
-  const amountTitle = (
-    <Trans
-      i18nKey="position_details.action_title"
-      context={labelContext}
-      values={{
-        amount: yieldBalance.isEncrypted
-          ? t("shared.confidential.hidden")
-          : formatTokenAmount(
-              cancelReturn?.amount ?? exactDecimal(yieldBalance.amount),
-              locale,
-              "down"
-            ),
-        symbol: (cancelReturn?.token ?? yieldBalance.token).symbol,
+  const getTitle = () => {
+    if (!shown) {
+      return t("position_details.action_title_no_amount", {
+        ...(labelContext === undefined ? {} : { context: labelContext }),
         pendingAction: pendingActionLabel,
-      }}
-      components={{ bold: figure }}
-    />
-  );
+      });
+    }
+    return (
+      <Trans
+        i18nKey="position_details.action_title"
+        context={labelContext}
+        values={{
+          amount: yieldBalance.isEncrypted
+            ? t("shared.confidential.hidden")
+            : formatTokenAmount(shown.amount, locale, "down"),
+          symbol: shown.token.symbol,
+          pendingAction: pendingActionLabel,
+        }}
+        components={{ bold: figure }}
+      />
+    );
+  };
 
   return (
     <ActionCard
       primary={primary}
-      title={sharedByBalances ? pendingActionLabel : amountTitle}
+      title={getTitle()}
       {...(cancelReturn
         ? {
             description: t("position_details.cancel_returns", {
